@@ -1298,6 +1298,7 @@ u36-states-overview-noreply-dark
 u36-states-overview-noreply-light
 u36-states-overview-timed-out-child-dark
 u36-states-overview-timed-out-child-light
+u37-monitoring-branch
 update-card
 update-card-long-version
 update-card-narrow

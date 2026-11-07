@@ -53,7 +53,7 @@ type AnswerParams = {
   readonly payload: unknown;
 };
 
-const answerOf = ({ command, payload }: AnswerParams) => {
+export const answerOf = ({ command, payload }: AnswerParams) => {
   if (command === 'monitor_snapshot') {
     return PORTS_SNAPSHOT;
   }

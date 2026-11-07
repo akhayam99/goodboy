@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_HOVER, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
+import { useMonitoringFold } from '../../hooks/useMonitoringFold';
 import { portListText } from '../../portListText';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { MetricCells } from './MetricCells';
@@ -27,7 +28,7 @@ type Props = {
 const PORTS_SHOWN = 3;
 
 export const SharedProcessRow = ({ layer, pid, rows, process, now, renderRow }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, toggle } = useMonitoringFold({ foldKey: `shared:${layer}:${pid}` });
   const first = rows[0];
   if (first === undefined) {
     return null;
@@ -56,7 +57,7 @@ export const SharedProcessRow = ({ layer, pid, rows, process, now, renderRow }: 
             pid={pid}
             toggleLabel={`${isOpen ? 'Hide' : 'Show'} ${portCount} ports of ${processName}`}
             isOpen={isOpen}
-            onToggle={() => setIsOpen((wasOpen) => !wasOpen)}
+            onToggle={toggle}
           />
           <MetricCells process={process} now={now} />
           <SharedProcessActions row={first} layer={layer} />

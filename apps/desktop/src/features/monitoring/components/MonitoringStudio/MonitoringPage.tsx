@@ -1,4 +1,12 @@
-import { EmptyState, HeaderActions, PaneShell, ScrollFade, SearchField } from '@goodboy/ui';
+import { useRef } from 'react';
+import {
+  EmptyState,
+  HeaderActions,
+  PaneShell,
+  ScrollFade,
+  SearchField,
+  useScrollMemory,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -8,6 +16,7 @@ import { useMonitoringModel } from '../../hooks/useMonitoringModel';
 import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
 import type { PortSummary } from '../../portSummary';
 import { summaryMeta } from '../../summaryMeta';
+import { BranchFilterChip } from './BranchFilterChip';
 import { ColumnHeader } from './ColumnHeader';
 import { GoodboySection } from './GoodboySection';
 import { HiddenFooter } from './HiddenFooter';
@@ -36,15 +45,21 @@ const metaOf = ({ isReady, isEmpty, summary, takenAt, now }: MetaParams): string
   return summaryMeta({ summary, takenAt, now }) ?? undefined;
 };
 
+const NO_LEFTOVERS: ReturnType<typeof useLeftoverRows> = [];
+
 export const MonitoringPage = () => {
   useMonitorPolling();
   const model = useMonitoringModel();
+  const setMonitoringQuery = useAppStore((state) => state.setMonitoringQuery);
   const now = useNow(5_000);
-  const leftovers = useLeftoverRows();
+  const allLeftovers = useLeftoverRows();
   const idleCounts = useIdleCounts();
   const sweptCount = useAppStore((state) => state.monitorSweptCount);
   const isReady = model.status === 'ready';
-  const isEmpty = isReady && model.query === '' && model.isTrackedEmpty;
+  const leftovers = model.branch === null ? allLeftovers : NO_LEFTOVERS;
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const onScroll = useScrollMemory({ memoryKey: 'monitoring', isLoaded: isReady, viewportRef });
+  const isEmpty = isReady && model.query === '' && model.isTrackedEmpty && model.branch === null;
   const hasGoodboy = model.goodboy.length > 0 || model.processes.length > 0 || leftovers.length > 0;
 
   return (
@@ -61,7 +76,7 @@ export const MonitoringPage = () => {
                 ariaLabel="Filter ports"
                 placeholder="Port or folder"
                 value={model.query}
-                onChange={model.setQuery}
+                onChange={(query) => setMonitoringQuery({ query })}
                 className="w-56"
               />
             ) : null
@@ -70,7 +85,22 @@ export const MonitoringPage = () => {
         />
       }
     >
-      <ScrollFade viewportClassName="flex flex-col gap-6 pb-6">
+      <ScrollFade
+        viewportClassName="flex flex-col gap-6 pb-6"
+        viewportRef={viewportRef}
+        onViewportScroll={onScroll}
+      >
+        {model.branch === null ? null : <BranchFilterChip branch={model.branch} />}
+        {isReady && model.isBranchEmpty ? (
+          <EmptyState
+            icon={CONCEPT_ICONS.monitoring}
+            tone={CONCEPT_TONE.monitoring}
+            title="Nothing running on this branch"
+            description="Ports and processes started from this branch show here."
+            size="page"
+            headingLevel={2}
+          />
+        ) : null}
         {model.status === 'loading' ? <MonitoringSkeleton /> : null}
         {model.status === 'failed' ? <ReadFailedNotice tone="danger" detail={model.error} /> : null}
         {model.status === 'unsupported' ? (
@@ -94,7 +124,7 @@ export const MonitoringPage = () => {
             headingLevel={2}
           />
         ) : null}
-        {isReady && !isEmpty ? <ColumnHeader /> : null}
+        {isReady && !isEmpty && !model.isBranchEmpty ? <ColumnHeader /> : null}
         {isReady && model.pinned.length > 0 ? (
           <PinnedSection rows={model.pinned} processOf={model.processOf} now={now} />
         ) : null}

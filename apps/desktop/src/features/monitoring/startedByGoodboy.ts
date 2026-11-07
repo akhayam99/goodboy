@@ -22,6 +22,7 @@ export type StartedRow = {
   readonly kindWord: string;
   readonly processName: string;
   readonly where: string;
+  readonly branch: string | null;
   readonly startedAt: number;
   readonly rssBytes: number;
   readonly pid: number;
@@ -41,6 +42,14 @@ const whereOf = ({ entry, projects, sessionMounts }: WhereParams): string => {
   }
   const project = projectById(projects, mount.projectId);
   return project === undefined ? mount.branch : `${project.name} · ${mount.branch}`;
+};
+
+const branchOf = ({
+  entry,
+  sessionMounts,
+}: Pick<WhereParams, 'entry' | 'sessionMounts'>): string | null => {
+  const mounts = entry.sessionId === null ? [] : (sessionMounts[entry.sessionId] ?? []);
+  return mounts.find((item) => item.worktreePath === entry.mountPath)?.branch ?? null;
 };
 
 export const startedByGoodboy = ({
@@ -67,6 +76,7 @@ export const startedByGoodboy = ({
         kindWord: ledgerKindWord({ kind: entry.kind }),
         processName: process?.name ?? 'process',
         where: whereOf({ entry, projects, sessionMounts }),
+        branch: branchOf({ entry, sessionMounts }),
         startedAt: entry.startedAt,
         rssBytes: process?.rssBytes ?? 0,
         pid: entry.pid,

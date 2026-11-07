@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { ListGridGroup } from '@goodboy/ui';
+import { useAppStore } from '../../../../store';
 import {
   ARCHIVED_GROUP_KEY,
   type TerminalGroup,
@@ -26,7 +26,8 @@ export const TerminalGroupSection = ({
   onSelect,
   onCloseAll,
 }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const isOpen = useAppStore((state) => state.isTerminalArchivedOpen);
+  const setArchivedOpen = useAppStore((state) => state.setTerminalArchivedOpen);
   const rowCount = group.worktrees.length;
   const isArchived = group.key === ARCHIVED_GROUP_KEY;
   const hasSelected = group.worktrees.some((worktree) => worktree.key === selectedKey);
@@ -39,7 +40,7 @@ export const TerminalGroupSection = ({
       {...(isArchived && {
         fold: {
           label: isShown ? 'Hide' : `Show ${rowCount}`,
-          onToggle: () => setIsOpen(!isShown),
+          onToggle: () => setArchivedOpen({ isOpen: !isShown }),
         },
         action: <CloseGroupButton group={group} onCloseAll={onCloseAll} />,
       })}

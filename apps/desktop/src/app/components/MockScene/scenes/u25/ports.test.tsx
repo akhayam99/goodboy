@@ -255,11 +255,7 @@ describe('the row menu of a workspace or Goodboy port', () => {
     expect(store.getState().monitorHidden).toContainEqual({ port: 5002, source: 'workspace' });
 
     await act(() => store.getState().undoLastOperation({}));
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: '1 free: :5002' })).toBeDefined(),
-    );
-    openFreeFolds();
-    expect(portRows(5002)).toHaveLength(1);
+    await waitFor(() => expect(portRows(5002)).toHaveLength(1));
     expect(screen.getByText('1 hidden')).toBeDefined();
   });
 
@@ -367,7 +363,6 @@ describe('the row menu of a pinned port', () => {
     await waitFor(() =>
       expect(within(layer({ name: 'Pinned' })).getByText(/^1 free$/)).toBeDefined(),
     );
-    openFreeFolds();
     expect(within(layer({ name: 'Pinned' })).getByText('Mock API')).toBeDefined();
   });
 });

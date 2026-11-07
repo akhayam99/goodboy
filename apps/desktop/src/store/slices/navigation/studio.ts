@@ -20,7 +20,7 @@ export type StudioPlace =
   | { readonly kind: 'impact'; readonly scope: ImpactScope | null }
   | { readonly kind: 'changelog' }
   | { readonly kind: 'notifications' }
-  | { readonly kind: 'monitoring' }
+  | { readonly kind: 'monitoring'; readonly branch?: string | null }
   | { readonly kind: 'chat'; readonly chatId: ChatId | null }
   | {
       readonly kind: 'terminal';
@@ -54,10 +54,11 @@ export const studioKey = ({ studio }: KeyParams): string => {
       return joined(['terminal', studio.sessionId, studio.terminalId]);
     case 'addWorkspace':
       return 'add-workspace';
+    case 'monitoring':
+      return joined(['monitoring', studio.branch]);
     case 'guide':
     case 'changelog':
     case 'notifications':
-    case 'monitoring':
       return studio.kind;
     default: {
       const unreachable: never = studio;

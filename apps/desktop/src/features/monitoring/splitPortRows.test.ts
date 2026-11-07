@@ -264,6 +264,7 @@ describe('unmatchedStarted', () => {
     kindWord: 'Agent',
     processName: 'claude',
     where: 'payments-api',
+    branch: null,
     startedAt: 0,
     rssBytes: 0,
     pid: 1,

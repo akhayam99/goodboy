@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { selectPortRows } from '../../../../store/slices/monitoring/selectPortRows';
 import { filterPortRows } from '../../filterPortRows';
+import { isOnBranch } from '../../isOnBranch';
 import { portSummary, type PortSummary } from '../../portSummary';
 import { splitPortRows } from '../../splitPortRows';
 import { startedByGoodboy, type StartedRow } from '../../startedByGoodboy';
@@ -26,7 +27,8 @@ export type MonitoringModel = {
   readonly isTrackedEmpty: boolean;
   readonly processOf: (pid: number | null) => MonitorProcess | null;
   readonly query: string;
-  readonly setQuery: (query: string) => void;
+  readonly branch: string | null;
+  readonly isBranchEmpty: boolean;
 };
 
 const statusOf = ({
@@ -54,7 +56,10 @@ export const useMonitoringModel = (): MonitoringModel => {
   const hidden = useAppStore((state) => state.monitorHidden);
   const projects = useAppStore((state) => state.projects);
   const sessionMounts = useAppStore((state) => state.sessionMounts);
-  const [query, setQuery] = useState('');
+  const query = useAppStore((state) => state.monitoringView.query);
+  const branch = useAppStore((state) =>
+    state.appStudio?.kind === 'monitoring' ? (state.appStudio.branch ?? null) : null,
+  );
 
   return useMemo(() => {
     const split = splitPortRows({
@@ -73,6 +78,26 @@ export const useMonitoringModel = (): MonitoringModel => {
     const processRows = unmatchedStarted({
       started: startedByGoodboy({ snapshot, ledger, projects, sessionMounts }),
       rows,
+    }).filter((row) => branch === null || row.branch === branch);
+    const pinnedRows = filterPortRows({
+      rows: split.pinned.filter((row) => isOnBranch({ row, branch, sessionMounts })),
+      query,
+      projectNameOf,
+    });
+    const goodboyRows = filterPortRows({
+      rows: split.goodboy.filter((row) => isOnBranch({ row, branch, sessionMounts })),
+      query,
+      projectNameOf,
+    });
+    const workspaceRows = filterPortRows({
+      rows: split.workspace.filter((row) => isOnBranch({ row, branch, sessionMounts })),
+      query,
+      projectNameOf,
+    });
+    const listeningRows = filterPortRows({
+      rows: split.listening.filter((row) => isOnBranch({ row, branch, sessionMounts })),
+      query,
+      projectNameOf,
     });
     return {
       status: statusOf({
@@ -83,16 +108,33 @@ export const useMonitoringModel = (): MonitoringModel => {
       error,
       takenAt: snapshot?.takenAt ?? null,
       summary: portSummary({ ports: tracked }),
-      pinned: filterPortRows({ rows: split.pinned, query, projectNameOf }),
-      goodboy: filterPortRows({ rows: split.goodboy, query, projectNameOf }),
-      workspace: filterPortRows({ rows: split.workspace, query, projectNameOf }),
-      listening: filterPortRows({ rows: split.listening, query, projectNameOf }),
+      pinned: pinnedRows,
+      goodboy: goodboyRows,
+      workspace: workspaceRows,
+      listening: listeningRows,
       processes: processRows,
       hiddenCount: split.hiddenCount,
       isTrackedEmpty: tracked.length === 0 && split.hiddenCount === 0,
       processOf: (pid) => (pid === null ? null : (processes.get(pid) ?? null)),
       query,
-      setQuery,
+      branch,
+      isBranchEmpty:
+        branch !== null &&
+        pinnedRows.length + goodboyRows.length + workspaceRows.length + listeningRows.length ===
+          0 &&
+        processRows.length === 0,
     };
-  }, [snapshot, ledger, error, rows, scanned, pinned, hidden, projects, sessionMounts, query]);
+  }, [
+    snapshot,
+    ledger,
+    error,
+    rows,
+    scanned,
+    pinned,
+    hidden,
+    projects,
+    sessionMounts,
+    query,
+    branch,
+  ]);
 };

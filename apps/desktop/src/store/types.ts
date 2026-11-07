@@ -66,6 +66,7 @@ import type { ProjectMountsState } from './slices/project-mounts/state';
 import type { OverridesState } from './slices/overrides/state';
 import type { SidebarState } from './slices/sidebar/state';
 import type { SettingsLastPageState } from './slices/settings-last-page/state';
+import type { MonitoringViewState } from './slices/monitoring-view/state';
 import type { LocalChecksState } from './slices/local-checks/state';
 import type { ChatLastOpenState } from './slices/chat-last-open/state';
 import type { SessionGroupingState } from './slices/session-grouping/state';
@@ -185,6 +186,7 @@ type AppSliceState = ArtifactsState &
   OverridesState &
   SidebarState &
   SettingsLastPageState &
+  MonitoringViewState &
   LocalChecksState &
   ChatLastOpenState &
   SessionGroupingState &

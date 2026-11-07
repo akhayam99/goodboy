@@ -48,6 +48,7 @@ import { reviewDraftsInitialState } from './slices/review-drafts/state';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
+import { createMonitoringViewSlice } from './slices/monitoring-view';
 import { createLocalChecksSlice } from './slices/local-checks';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
 import { createSessionGroupingSlice } from './slices/session-grouping';
@@ -176,6 +177,7 @@ import { worktreesInitialState } from './slices/worktrees/state';
 import { overridesInitialState } from './slices/overrides/state';
 import { sidebarInitialState } from './slices/sidebar/state';
 import { settingsLastPageInitialState } from './slices/settings-last-page/state';
+import { monitoringViewInitialState } from './slices/monitoring-view/state';
 import { localChecksInitialState } from './slices/local-checks/state';
 import { chatLastOpenInitialState } from './slices/chat-last-open/state';
 import { sessionGroupingInitialState } from './slices/session-grouping/state';
@@ -250,6 +252,7 @@ export type AppStore = AppState &
   ReturnType<typeof createNavigationSlice> &
   ReturnType<typeof createSidebarSlice> &
   ReturnType<typeof createSettingsLastPageSlice> &
+  ReturnType<typeof createMonitoringViewSlice> &
   ReturnType<typeof createLocalChecksSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
   ReturnType<typeof createSessionGroupingSlice> &
@@ -373,6 +376,7 @@ const initialState: AppState = {
   ...overridesInitialState,
   ...sidebarInitialState,
   ...settingsLastPageInitialState,
+  ...monitoringViewInitialState,
   ...localChecksInitialState,
   ...chatLastOpenInitialState,
   ...sessionGroupingInitialState,
@@ -442,6 +446,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createIntegrationsSlice({ set, get }),
   ...createSidebarSlice({ set, get }),
   ...createSettingsLastPageSlice({ set, get }),
+  ...createMonitoringViewSlice({ set, get }),
   ...createLocalChecksSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
   ...createSessionGroupingSlice({ set, get }),
