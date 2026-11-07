@@ -134,7 +134,11 @@ database.
   the lease and never waits. **Answer without editing**
   (`answerWithoutEditing`) ends the wait and starts the same turn with
   `confinedRole` `scout`, no lease and no writable roots, so the CLI enforces
-  read only; **Cancel** (`cancelWriterWait`) leaves the queue and records
+  read only. It is offered only on a provider that confines a read-only role
+  (`isAutoOwnProvider`, so not the opencode family): there the band drops the
+  button and says the answer works only on Claude or Codex, the turn keeps
+  waiting, and `turn_spawn` refuses a read-only role on opencode anyway;
+  **Cancel** (`cancelWriterWait`) leaves the queue and records
   nothing. The guard is `[folder-scope]` (`scopeGuard.ts`): every write,
   shell commands and links included, stays inside the folders, no repository
   is created, and a Documents folder (its face read at send time,

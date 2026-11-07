@@ -445,6 +445,39 @@ describe('one session writes in a folder at a time', () => {
     await firstTurn;
     await secondTurn;
   });
+
+  it('does not offer an answer without editing on OpenCode: the turn keeps waiting', async () => {
+    const holders = fakeRegistry();
+    const first = await startAgent({ kind: 'generic', goal: 'Tighten the launch memo' });
+    const second = await startAgent({ kind: 'generic', goal: 'Summarize interview notes' });
+    storySpies.runTurn.mockClear();
+    const hold = gate();
+    storySpies.runTurn.mockImplementation(({ runId }: RunArgs) =>
+      heldStream({ runId, hold: hold.opened }),
+    );
+    const routingMod = await import('../features/providers/routing');
+    const firstTurn = send(first);
+    await vi.waitFor(() => expect(holders.get(NOTES)).toBe(first.agentId));
+    vi.mocked(routingMod.resolveProviderForTurn).mockResolvedValueOnce({
+      selectedProvider: 'opencode',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'preferred',
+      fallbackUsed: false,
+    });
+    const secondTurn = send(second);
+    await vi.waitFor(() => expect(waitOf(second.agentId)).toBeDefined());
+
+    expect(waitOf(second.agentId)?.canAnswerReadOnly).toBe(false);
+    expect(useAppStore.getState().answerWithoutEditing({ agentId: second.agentId })).toBe(false);
+    expect(storySpies.runTurn).toHaveBeenCalledOnce();
+
+    hold.open();
+    await firstTurn;
+    await secondTurn;
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    expect(spawnOf(second.sessionId).confinedRole).toBeUndefined();
+  });
 });
 
 describe('a writing turn starts only after its before snapshot', () => {

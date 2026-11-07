@@ -555,15 +555,27 @@ writing to it reopens it to **Deciding**.
   queue, a retry, a resume after a restart, Auto): `routeTurn` reads the newest
   stored delegation of the agent (`resolveChildTurn`, `getLatestAutoDelegationOfChild`)
   before each spawn, never the tree view of the window, and carries that role
-  and route through the turn and its retries (`recoverTurnFailure`). An adopted
-  agent counts while its adoption row stands and runs normally once a detach
-  deleted it. When the delegation cannot be read the turn is refused
-  (`auto_child_unread`), never started without its role. The turn runs only on
-  the routed provider and model, and only on a provider in `AUTO_CHILD_PROVIDERS`:
-  a model picked in the child's composer or a retry aimed elsewhere is refused
-  (`auto_child_off_route`), agent pins are ignored, a provider fallback that
+  and route through the turn and its retries (`recoverTurnFailure`, which also
+  keeps the caller's `onSettled`). An adopted agent counts while its adoption
+  row stands and runs normally once a detach deleted it. What was read is
+  claimed in one transaction before the agent is marked running
+  (`claimTurnAdmission` in `startTurnRun`): the claim checks that the newest
+  delegation of the agent is still the one read and sets the agent running, so
+  an adoption or a detach from another window either lands first and refuses
+  the turn, or comes after and is refused itself as a running turn. The turn
+  runs only on the routed provider and model, and only on a provider in
+  `AUTO_CHILD_PROVIDERS`: a model picked in the child's composer or a retry
+  aimed elsewhere is refused, agent pins are ignored, a provider fallback that
   leaves the route is dropped so the failure reaches Auto, and a cooldown or
-  budget move off the route is refused. A reading role (Scout, Planner,
+  budget move off the route is refused. Each refusal shows the person a plain
+  sentence (`turnRefusalMessage`): Goodboy could not check whether the agent
+  works for Auto, try again; the agent runs only on the model Auto chose, ask
+  Auto to continue it; the agent joined or left Auto while the turn started,
+  send it again. A refused or failed retry reaches Auto as a failed end that
+  carries the sentence (`startDeliveredTurn` `failure`, the attempt reason in
+  `finishAttempt`), never as an empty success. A usage-limit continuation that
+  is refused keeps its saved stop, so **Continue** stays, and Auto gets a note
+  with the sentence (`continueAfterLimit`, `noticeAutoOfRefusedContinue`). A reading role (Scout, Planner,
   Investigator, Reviewer) cannot write: on Claude it keeps Read, Grep and Glob
   in plan mode with no shell; on Codex it runs in the read-only sandbox, which
   blocks writes but can still run read-only commands.

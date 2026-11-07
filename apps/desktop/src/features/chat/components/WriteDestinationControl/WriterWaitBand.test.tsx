@@ -108,6 +108,29 @@ describe('WriterWaitBand', () => {
     expect(cancelWriterWait).toHaveBeenCalledWith({ agentId: waiter.id });
   });
 
+  it('names Claude and Codex instead of offering an answer without editing it cannot give', () => {
+    act(() => {
+      useAppStore.setState({
+        agentWriterWait: {
+          [waiter.id]: {
+            sessionId: waiting.id,
+            blockedPath: NOTES,
+            blockedBy: writer.id,
+            canAnswerReadOnly: false,
+            since: SINCE,
+          },
+        },
+      });
+    });
+    render(<WriterWaitBand sessionId={waiting.id} agentId={waiter.id} />);
+
+    expect(screen.queryByRole('button', { name: 'Answer without editing' })).toBeNull();
+    expect(screen.getByRole('status').textContent).toContain(
+      'Answer without editing works only on Claude or Codex, so this agent waits for the folder.',
+    );
+    screen.getByRole('button', { name: 'Cancel' });
+  });
+
   it('falls back to the plain writer line when the blocked path is no plain folder', () => {
     waitBehind({
       agentId: waiter.id,

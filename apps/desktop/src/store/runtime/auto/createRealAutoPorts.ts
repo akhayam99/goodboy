@@ -132,6 +132,7 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
           sessionId: params.sessionId,
           assistantText: ended.assistantText,
           exit: ended.exit,
+          ...(ended.failure !== null && { failure: ended.failure }),
           costUsd: ended.costUsd,
           filesTouched: ended.filesTouched,
           durationMs: ended.durationMs,

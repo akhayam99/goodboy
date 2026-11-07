@@ -30,6 +30,9 @@ import {
 import { aView } from '../features/auto/testing/autoViewFixtures';
 import { deliverQueuedTurn } from './slices/agentQueue/deliverQueuedTurn';
 import { resumeAfterRestart } from './slices/turn/resumeAfterRestart';
+import { turnRefusalMessage } from './slices/turn/refusal/turnRefusalMessage';
+import { startDeliveredTurn } from './runtime/auto/startDeliveredTurn';
+import { registerAutoUserTurnPort } from '../features/auto/autoUserTurnPort';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -39,6 +42,7 @@ vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibMo
 vi.mock('@goodboy/db', async () =>
   (await import('./storyHarness')).dbModuleMock({
     replaceAgentQueuedMessages: vi.fn(async () => undefined),
+    getAutoTree: vi.fn(async () => null),
   }),
 );
 vi.mock('../features/chat/turn', async () => (await import('./storyHarness')).turnModuleMock());
@@ -179,12 +183,12 @@ const wireDefaults = async () => {
   });
 };
 
-type RouterAnswer = Readonly<{
+type RouterAnswerParams = Readonly<{
   provider: ProviderId;
   model: string;
 }>;
 
-const routerAnswers = async ({ provider, model }: RouterAnswer) => {
+const routerAnswers = async ({ provider, model }: RouterAnswerParams) => {
   const routingMod = await import('../features/providers/routing');
   vi.mocked(routingMod.resolveProviderForTurn).mockResolvedValue({
     selectedProvider: provider,
@@ -327,9 +331,7 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
 
     expect(spawns()).toEqual([]);
     expect(result.autoChildRefusal).toBe('auto_child_unread');
-    expect(errorTexts({ agentId })).toContain(
-      "Couldn't read this agent's role in Auto, so the turn didn't start. Try again in a moment.",
-    );
+    expect(errorTexts({ agentId })).toContain(turnRefusalMessage({ refusal: 'auto_child_unread' }));
   });
 
   it('confines an adopted agent while its adoption stands, even with no tree view loaded', async () => {
@@ -505,5 +507,99 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
 
     expect(spawns()).toEqual([]);
     expect(result.autoChildRefusal).toBe('auto_child_off_route');
+  });
+
+  it('reports a refused automatic retry to Auto as a failed end that carries its message', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+    runTurnSpy.mockImplementationOnce(() => {
+      stored = new Error('database is locked');
+      return unreachableStream();
+    });
+    const runId = brandId<ProviderRunId>({ value: 'run-delivered-1' });
+    const ended = vi.fn();
+
+    const outcome = await startDeliveredTurn({
+      deps: {
+        sendTurn: useAppStore.getState().sendTurn,
+        lookupDeliveryRun: async () => (spawns().length > 0 ? { runId, isLive: true } : null),
+        readRunCostUsd: async () => null,
+        sleep: () => Promise.resolve(),
+        nowMs: () => 0,
+      },
+      input: {
+        sessionId,
+        agentId,
+        content: 'Find where the rounding drifts.',
+        origin: 'delegation',
+        confinedRole: 'scout',
+        override: { providerId: 'anthropic', model: ROUTED_MODEL, explicit: true },
+      },
+      runId,
+      deliveryId: 'attempt-ledger-core-1',
+      acceptTimeoutMs: 600_000,
+      onEnded: ended,
+    });
+
+    expect(outcome).toEqual({ kind: 'started', runId });
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
+    expect(spawns()).toHaveLength(1);
+    expect(ended).toHaveBeenCalledWith(
+      expect.objectContaining({
+        exit: 'error',
+        failure: turnRefusalMessage({ refusal: 'auto_child_unread' }),
+      }),
+    );
+  });
+
+  it('keeps a usage-limit continuation that is refused and tells Auto why', async () => {
+    const { sessionId, rootAgentId, agentId } = await childSession({ kind: 'scout' });
+    const delegation = delegationOf({ childAgentId: agentId, role: 'scout' });
+    stored = delegation;
+    const dbMod = await import('@goodboy/db');
+    vi.mocked(dbMod.getAutoTree).mockResolvedValue({
+      ...aView({}).tree,
+      id: delegation.treeId,
+      rootAgentId,
+      sessionId,
+    });
+    const notes = vi.fn(async (): Promise<'queued'> => 'queued');
+    registerAutoUserTurnPort({ port: notes });
+    const runId = brandId<ProviderRunId>({ value: 'run-limit-1' });
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      useAppStore.getState().recordLimitStop({
+        stop: {
+          runId,
+          agentId,
+          sessionId,
+          provider: 'anthropic',
+          resetAtMs: 0,
+          isScheduled: false,
+          input: {
+            sessionId,
+            agentId,
+            content: 'Find where the rounding drifts.',
+            origin: 'delegation',
+            confinedRole: 'scout',
+            retry: { attempt: 0, provider: 'anthropic', model: OTHER_MODEL, attachmentRefs: [] },
+          },
+        },
+      });
+      useAppStore.getState().continueAfterLimit({ runId });
+      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.waitFor(() => expect(notes).toHaveBeenCalledOnce());
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(spawns()).toEqual([]);
+    expect(useAppStore.getState().limitStops[runId]).toMatchObject({ isScheduled: false });
+    expect(notes).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: rootAgentId,
+        text: expect.stringContaining(turnRefusalMessage({ refusal: 'auto_child_off_route' })),
+      }),
+    );
   });
 });

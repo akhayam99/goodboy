@@ -27,6 +27,8 @@ import { resolvedAsksAtWrite } from '../permissions/resolvedAsksAtWrite';
 import { withHeldAnswers } from '../permissions/withHeldAnswers';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart, isTurnStartCancelled } from './turnStartWindow';
+import { claimTurnAdmission } from './childTurn/claimTurnAdmission';
+import { turnRefusalMessage } from './refusal/turnRefusalMessage';
 import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
 import { hasOwnTurnRun } from './hasOwnTurnRun';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
@@ -210,6 +212,23 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     }
   }
   if (!phaseDefinition) {
+    const isAdmitted = await claimTurnAdmission({
+      agentId: activeAgentId,
+      delegationId: ctx.childTurn?.delegationId ?? null,
+    });
+    if (!isAdmitted) {
+      const message = turnRefusalMessage({ refusal: 'auto_child_changed' });
+      releaseUnstartedTurn({ set, get, sessionId, agentId: activeAgentId });
+      await updateProviderRunStatus(tauriDatabase, runId, {
+        kind: 'failed',
+        finishedAt: now(),
+        error: message,
+      });
+      get().appendTurnEvent(activeAgentId, sessionId, { kind: 'error', runId, message, at: now() });
+      return turnDone({
+        result: { blockedOverBudget: false, autoChildRefusal: 'auto_child_changed' },
+      });
+    }
     await invokeAgentUpdateStatus(activeAgentId, {
       status: 'running',
       providerRunId: runId,

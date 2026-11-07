@@ -179,11 +179,14 @@ type ProviderParams = {
 
 const routeTo = async ({ provider }: ProviderParams): Promise<void> => {
   const routingMod = await import('../features/providers/routing');
-  vi.mocked(routingMod.resolveProviderForTurn).mockResolvedValue({
-    selectedProvider: provider,
-    selectedModel: provider === 'codex' ? 'gpt-6-astra' : 'claude-sonnet-4-5',
-    reason: 'preferred',
-    fallbackUsed: false,
+  vi.mocked(routingMod.resolveProviderForTurn).mockImplementation(async ({ turnOverride }) => {
+    const pinned = turnOverride?.explicit === true ? turnOverride : undefined;
+    return {
+      selectedProvider: pinned?.providerId ?? provider,
+      selectedModel: pinned?.model ?? (provider === 'codex' ? 'gpt-6-astra' : 'claude-sonnet-4-5'),
+      reason: 'preferred',
+      fallbackUsed: false,
+    };
   });
 };
 

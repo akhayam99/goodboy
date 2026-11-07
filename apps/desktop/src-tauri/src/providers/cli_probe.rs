@@ -136,7 +136,7 @@ pub(crate) fn ensure_confinement(binary: &str, role: &str) -> Verdict {
         Cli::of_binary(binary).ok_or_else(|| format!("{binary} is not a binary Goodboy drives"))?;
     if access == RoleAccess::ReadOnly && cli == Cli::Opencode {
         return Err(format!(
-            "{role} does not run on opencode: its plan agent still asks before a shell command and the run flag approves it"
+            "A read-only {role} turn does not run on OpenCode, because OpenCode can still run shell commands there. Use Claude or Codex for it."
         ));
     }
     let id = binary_id(binary);
@@ -162,11 +162,13 @@ pub(crate) fn ensure_confinement(binary: &str, role: &str) -> Verdict {
 pub(crate) fn ensure_auto_child(binary: &str, role: Option<&str>) -> Verdict {
     let role = role
         .filter(|role| *role != AUTO_ROLE)
-        .ok_or_else(|| "an Auto child turn needs its delegation role".to_string())?;
+        .ok_or_else(|| {
+            "This agent works for Auto but the turn carried no role from Auto, so it did not start. Ask Auto to continue it.".to_string()
+        })?;
     match Cli::of_binary(binary) {
         Some(Cli::Claude) | Some(Cli::Codex) => Ok(()),
         _ => Err(format!(
-            "an Auto child runs only on claude or codex, not {binary}, as {role}"
+            "An agent that works for Auto runs only on Claude or Codex, so this {role} turn on {binary} did not start. Ask Auto to continue it."
         )),
     }
 }
@@ -295,7 +297,7 @@ mod tests {
             for role in ["auto", "scout", "planner", "investigator", "reviewer"] {
                 let refusal = ensure_confinement(binary, role).expect_err("refused");
                 assert!(
-                    refusal.contains(&format!("{role} does not run on opencode")),
+                    refusal.contains(&format!("A read-only {role} turn does not run on OpenCode")),
                     "{refusal}"
                 );
                 assert!(!refusal.contains("did not start"), "{refusal}");
@@ -314,11 +316,14 @@ mod tests {
         }
         for binary in ["opencode", "cursor-agent", "agy", "copilot", "openrouter"] {
             let refusal = ensure_auto_child(binary, Some("scout")).expect_err("refused");
-            assert!(refusal.contains("only on claude or codex"), "{refusal}");
+            assert!(
+                refusal.contains("runs only on Claude or Codex"),
+                "{refusal}"
+            );
         }
         for role in [None, Some("auto")] {
             let refusal = ensure_auto_child("claude", role).expect_err("refused");
-            assert!(refusal.contains("needs its delegation role"), "{refusal}");
+            assert!(refusal.contains("carried no role from Auto"), "{refusal}");
         }
     }
 

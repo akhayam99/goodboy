@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { brandId, type AutoDelegationId } from '@goodboy/types';
+import { brandId, type AutoDelegationId, type AutoTreeId } from '@goodboy/types';
 import { confinedRoleOf } from './confinedRoleOf';
 import type { ChildTurn } from './childTurn/resolveChildTurn';
 
 const SCOUT_CHILD: ChildTurn = {
   delegationId: brandId<AutoDelegationId>({ value: 'delegation-scout' }),
+  treeId: brandId<AutoTreeId>({ value: 'tree-ledger-core' }),
   role: 'scout',
   route: { provider: 'anthropic', model: 'claude-haiku-5' },
 };

@@ -1,3 +1,4 @@
+import { isAutoOwnProvider } from '@goodboy/core/auto';
 import { getAgentById } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { brandId, type ProviderRunId } from '@goodboy/types';
@@ -166,6 +167,7 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
       agentId: activeAgentId,
       paths: turnWriteSet({ workingDir: ctx.workingDir, writableRoots }),
       lease,
+      canAnswerReadOnly: isAutoOwnProvider({ provider }),
     });
     if (acquisition === 'cancelled') {
       return turnDone({ result: NOT_BLOCKED });

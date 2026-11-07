@@ -24,7 +24,7 @@ export type SendTurnResult = Readonly<{
   autoChildRefusal?: AutoChildRefusal;
 }>;
 
-export type AutoChildRefusal = 'auto_child_unread' | 'auto_child_off_route';
+export type AutoChildRefusal = 'auto_child_unread' | 'auto_child_off_route' | 'auto_child_changed';
 
 export type TurnRefusal = 'provider_limit' | 'folder_busy' | AutoChildRefusal;
 

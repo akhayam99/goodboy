@@ -376,6 +376,9 @@ type PlainOutcome = Readonly<{
 
 const plainOutcomeOf = ({ params, envelope }: PlainOutcomeParams): PlainOutcome => {
   const { ended, delegation, closing, attribution } = params;
+  if (ended.exit === 'error' && ended.failure !== undefined) {
+    return { outcome: 'failed', reason: ended.failure };
+  }
   if (attribution.hasReadOnlyViolation && ended.exit === 'ok') {
     return { outcome: 'failed', reason: 'role_read_only_violation' };
   }

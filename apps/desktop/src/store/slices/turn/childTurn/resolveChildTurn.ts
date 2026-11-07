@@ -1,11 +1,12 @@
 import { parseAutoDelegationRole, type AutoDelegationRole } from '@goodboy/core/auto';
 import { getLatestAutoDelegationOfChild, type AutoDelegation } from '@goodboy/db';
-import type { AgentId, AutoDelegationId, ProviderId } from '@goodboy/types';
+import type { AgentId, AutoDelegationId, AutoTreeId, ProviderId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { routedModelOf } from './routedModelOf';
 
 export type ChildTurn = Readonly<{
   delegationId: AutoDelegationId;
+  treeId: AutoTreeId;
   role: AutoDelegationRole;
   route: Readonly<{ provider: ProviderId; model: string }>;
 }>;
@@ -49,5 +50,8 @@ export const resolveChildTurn = async ({ agentId }: Params): Promise<ChildTurnRe
   if (role === null || route === undefined) {
     return UNRESOLVED;
   }
-  return { kind: 'child', child: { delegationId: read.delegation.id, role, route } };
+  return {
+    kind: 'child',
+    child: { delegationId: read.delegation.id, treeId: read.delegation.treeId, role, route },
+  };
 };

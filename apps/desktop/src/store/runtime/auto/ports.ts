@@ -133,6 +133,7 @@ export type ChildTurnEnded = Readonly<{
   sessionId: SessionId;
   assistantText: string;
   exit: TurnExit;
+  failure?: string;
   costUsd: number | null;
   filesTouched: ReadonlyArray<string>;
   durationMs: number;

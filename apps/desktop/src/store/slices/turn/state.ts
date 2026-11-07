@@ -6,6 +6,7 @@ type WriterWait = Readonly<{
   blockedPath: string;
   blockedBy: string | null;
   blockedPart?: string;
+  canAnswerReadOnly?: boolean;
   since: IsoDateTime;
 }>;
 

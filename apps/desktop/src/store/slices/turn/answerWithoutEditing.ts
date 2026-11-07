@@ -9,7 +9,8 @@ type Params = Readonly<{ agentId: AgentId }>;
 
 export const answerWithoutEditing = ({ get }: Deps) => {
   return ({ agentId }: Params): boolean => {
-    if (get().agentWriterWait[agentId] === undefined) {
+    const wait = get().agentWriterWait[agentId];
+    if (wait === undefined || wait.canAnswerReadOnly === false) {
       return false;
     }
     readOnlyAnswers.request({ agentId });
