@@ -44,16 +44,18 @@ const clampedTopOf = ({ viewport }: ViewportParams): number =>
 const rangeOf = ({ viewport }: ViewportParams): number =>
   Math.max(0, viewport.scrollHeight - viewport.clientHeight);
 
+const NO_RELEASE = (): void => {};
+
 export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealEngine => {
-  const scrollers = new Map<PageScroller, AbortController>();
-  const lastTops = new Map<HTMLElement, number>();
   const intent = scrollIntent();
   let state: HeaderRevealState = { isShown: true, anchor: 0 };
-  let source: HTMLElement | null = null;
+  let claim: PageScroller | null = null;
+  let lastTop = 0;
   let headerHeight = 0;
   let isSliding = false;
   let isFocusHeld = false;
   let isSettling = false;
+  let settleGeneration = 0;
   let observer: ResizeObserver | null = null;
   let drag: Drag | null = null;
   let extendTimer: ReturnType<typeof setTimeout> | null = null;
@@ -92,16 +94,22 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     paintExtend({ region, shift, isShown });
   };
 
-  const liveScrollers = (): ReadonlyArray<PageScroller> => {
+  const liveViewport = (): HTMLElement | null => {
     const body = bodyRef.current;
-    if (body === null) {
-      return [];
+    if (claim === null || body === null || !body.contains(claim.root)) {
+      return null;
     }
-    return [...scrollers.keys()].filter((scroller) => body.contains(scroller.root));
+    return claim.viewport;
   };
 
-  const isLive = ({ viewport }: ViewportParams): boolean =>
-    liveScrollers().some((scroller) => scroller.viewport === viewport);
+  const isLive = ({ viewport }: ViewportParams): boolean => liveViewport() === viewport;
+
+  const forget = () => {
+    settleGeneration += 1;
+    isSettling = false;
+    drag = null;
+    intent.forget();
+  };
 
   const evaluate = ({ viewport, isUserScroll }: EvaluateParams) => {
     const next = headerRevealOf({
@@ -122,18 +130,24 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
   };
 
   const settle = ({ viewport }: ViewportParams) => {
+    settleGeneration += 1;
+    const generation = settleGeneration;
     isSettling = true;
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
+        if (generation !== settleGeneration) {
+          return;
+        }
         isSettling = false;
-        lastTops.set(viewport, clampedTopOf({ viewport }));
+        lastTop = clampedTopOf({ viewport });
         evaluate({ viewport, isUserScroll: false });
       }),
     );
   };
 
   const reset = () => {
-    state = { isShown: true, anchor: source === null ? 0 : clampedTopOf({ viewport: source }) };
+    const viewport = liveViewport();
+    state = { isShown: true, anchor: viewport === null ? 0 : clampedTopOf({ viewport }) };
     paint();
   };
 
@@ -142,36 +156,27 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     if (header === null) {
       return;
     }
-    const isNowSliding = liveScrollers().length > 0;
+    const viewport = liveViewport();
+    const isNowSliding = viewport !== null;
     headerHeight = header.offsetHeight;
     if (isNowSliding !== isSliding) {
       isSliding = isNowSliding;
-      state = { isShown: true, anchor: source === null ? 0 : clampedTopOf({ viewport: source }) };
+      state = { isShown: true, anchor: viewport === null ? 0 : clampedTopOf({ viewport }) };
     }
     paint();
-    if (
-      isSliding &&
-      source !== null &&
-      !isSettling &&
-      drag === null &&
-      isLive({ viewport: source })
-    ) {
-      evaluate({ viewport: source, isUserScroll: false });
+    if (viewport !== null && !isSettling && drag === null) {
+      evaluate({ viewport, isUserScroll: false });
     }
   };
 
   const onScroll = ({ viewport }: ViewportParams) => {
     const top = clampedTopOf({ viewport });
-    const before = lastTops.get(viewport) ?? top;
-    lastTops.set(viewport, top);
-    if (!isSliding || !isLive({ viewport }) || drag?.viewport === viewport) {
+    const before = lastTop;
+    lastTop = top;
+    if (!isSliding || !isLive({ viewport }) || drag !== null) {
       return;
     }
     const isUserScroll = intent.isUserScroll({ viewport, delta: top - before });
-    if (source !== viewport) {
-      source = viewport;
-      state = { isShown: state.isShown, anchor: before };
-    }
     if (isSettling) {
       state = { isShown: state.isShown, anchor: top };
       return;
@@ -186,7 +191,7 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     const { viewport, startTop } = drag;
     drag = null;
     const top = clampedTopOf({ viewport });
-    lastTops.set(viewport, top);
+    lastTop = top;
     if (top === startTop) {
       intent.onTrackPress({ viewport });
       return;
@@ -194,13 +199,17 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     if (!isSliding || !isLive({ viewport }) || isSettling) {
       return;
     }
-    source = viewport;
     state = { isShown: state.isShown, anchor: startTop };
     evaluate({ viewport, isUserScroll: true });
   };
 
   const register = ({ root, viewport }: PageScroller): (() => void) => {
-    const scroller = { root, viewport };
+    const body = bodyRef.current;
+    if (claim !== null || (body !== null && !body.contains(root))) {
+      return NO_RELEASE;
+    }
+    claim = { root, viewport };
+    forget();
     const controller = new AbortController();
     const { signal } = controller;
     const passive = { passive: true, signal };
@@ -224,25 +233,17 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
       },
       { signal },
     );
-    scrollers.set(scroller, controller);
-    lastTops.set(viewport, viewport.scrollTop);
+    lastTop = viewport.scrollTop;
+    state = { isShown: true, anchor: viewport.scrollTop };
     observer?.observe(root);
-    const body = bodyRef.current;
-    if (body === null || body.contains(root)) {
-      source = viewport;
-      state = { isShown: true, anchor: viewport.scrollTop };
-    }
     if (observer !== null) {
       measure();
     }
     return () => {
       controller.abort();
-      scrollers.delete(scroller);
-      lastTops.delete(viewport);
+      claim = null;
+      forget();
       observer?.unobserve(root);
-      if (source === viewport) {
-        source = null;
-      }
       if (observer !== null) {
         measure();
       }
@@ -287,7 +288,9 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     if (body !== null) {
       resize.observe(body);
     }
-    scrollers.forEach((_controller, scroller) => resize.observe(scroller.root));
+    if (claim !== null) {
+      resize.observe(claim.root);
+    }
     measure();
     return () => {
       controller.abort();
@@ -297,7 +300,7 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
         clearTimeout(extendTimer);
         extendTimer = null;
       }
-      drag = null;
+      forget();
       isFocusHeld = false;
     };
   };

@@ -120,9 +120,15 @@ type PageProps = {
   readonly tab?: string;
   readonly isKeyed?: boolean;
   readonly hasToolbar?: boolean;
+  readonly hasRail?: boolean;
 };
 
-const Page = ({ tab = 'files', isKeyed = false, hasToolbar = false }: PageProps) => (
+const Page = ({
+  tab = 'files',
+  isKeyed = false,
+  hasToolbar = false,
+  hasRail = false,
+}: PageProps) => (
   <PageTrailContext.Provider value={<button type="button">Back to overview</button>}>
     <PaneShell
       title="Stop retried webhooks posting a second credit"
@@ -139,6 +145,11 @@ const Page = ({ tab = 'files', isKeyed = false, hasToolbar = false }: PageProps)
           <p>Inner list</p>
         </ScrollFade>
       </ScrollFade>
+      {hasRail ? (
+        <ScrollFade className="min-h-0 w-64">
+          <p>ledger-core/src/credit.ts</p>
+        </ScrollFade>
+      ) : null}
     </PaneShell>
   </PageTrailContext.Provider>
 );
@@ -165,6 +176,24 @@ describe('PaneShell header reveal', () => {
 
     expect(document.querySelectorAll('[data-page-scroller]')).toHaveLength(1);
     expect(pageViewport().contains(screen.getByText('Inner list'))).toBe(true);
+  });
+
+  it('lets the file rail in the body scroll without moving the header', () => {
+    const viewport = mountPage({ hasRail: true });
+    const rail = htmlElementOf({
+      node: screen.getByText('ledger-core/src/credit.ts').parentElement,
+    });
+    Object.defineProperty(rail, 'scrollHeight', { value: CONTENT_PX, configurable: true });
+    Object.defineProperty(rail, 'clientHeight', { value: VIEW_PX, configurable: true });
+
+    scrollTo({ viewport: rail, top: 600 });
+    expect(headerState()).toBe('shown');
+    scrollTo({ viewport, top: 900 });
+    expect(headerState()).toBe('hidden');
+    scrollTo({ viewport: rail, top: 0 });
+    expect(headerState()).toBe('hidden');
+    scrollTo({ viewport, top: 880 });
+    expect(headerState()).toBe('shown');
   });
 
   it.each([false, true])(

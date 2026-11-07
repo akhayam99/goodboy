@@ -51,6 +51,7 @@ export type ScrollIntent = {
   readonly onTouchEnd: (params: ViewportParams) => void;
   readonly onTrackPress: (params: ViewportParams) => void;
   readonly hold: () => void;
+  readonly forget: () => void;
   readonly isUserScroll: (params: ClassifyParams) => boolean;
 };
 
@@ -183,6 +184,11 @@ export const scrollIntent = (): ScrollIntent => {
     );
   };
 
+  const forget = () => {
+    grants.clear();
+    touches.clear();
+  };
+
   const isUserScroll = ({ viewport, delta }: ClassifyParams): boolean => {
     if (isHeld || delta === 0) {
       return false;
@@ -215,6 +221,7 @@ export const scrollIntent = (): ScrollIntent => {
     onTouchEnd,
     onTrackPress,
     hold,
+    forget,
     isUserScroll,
   };
 };

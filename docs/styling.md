@@ -439,10 +439,14 @@ flex-col` roots and only ever falls.
 
 `PaneShell` with `headerMode="reveal"` keeps the back row (the page trail) and
 the `lead` pinned at the top; the rest of the header sits above the body and
-steps aside while you read. The first vertical `ScrollFade` of the body is the
-page scroller: it finds the header through `HeaderRevealContext`
-(`packages/ui/src/useHeaderReveal`) and claims the role, so a nested scroller
-never drives the header and a page adds nothing. One pure function,
+steps aside while you read. The first vertical `ScrollFade` of the body to
+mount is the page scroller: it finds the header through `HeaderRevealContext`
+(`packages/ui/src/useHeaderReveal`) and claims the role, so a nested scroller or
+a later sibling (the Changes file rail before it moves to its own column) never
+drives the header and a page adds nothing. The role frees only when that
+scroller unmounts, and the next claim starts clean: no wheel, touch or thumb
+drag from before counts, and a settle still waiting for its frames is dropped
+(`revealEngine.ts`). One pure function,
 `headerRevealOf`, decides, with the same numbers on every page whatever the
 header height or what sits above the scroller: 24px of deliberate scroll down
 hides the header, 8px up brings it back, and so do the top of the page,
