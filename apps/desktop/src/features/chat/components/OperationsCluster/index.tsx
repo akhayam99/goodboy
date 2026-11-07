@@ -1,21 +1,23 @@
 import type { RetryRunParams } from '../../retryRun';
 import { memo, useMemo, useState } from 'react';
 import { MetaRow, tintClasses, WorkNode, type Tone, type WorkNodeState } from '@goodboy/ui';
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
+import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { transcriptItemsEqual } from '../../utils/transcriptItemEqual';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
-import { permissionFor, toolStatus } from '../../utils/toolStatus';
+import { permissionFor } from '../../utils/toolStatus';
 import { TranscriptCard } from '../TranscriptCards';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { NAMES } from '../../../../shared/utils/names';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { turnSummary } from '../../utils/turnSummary';
+import { clusterSummaryOf, type ClusterState } from './clusterSummaryOf';
 
 type Props = {
   readonly items: ReadonlyArray<TranscriptItem>;
   readonly isInitiallyOpen?: boolean;
+  readonly hasAsks?: boolean;
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly workingDir?: string | null;
@@ -25,10 +27,6 @@ type Props = {
   readonly retryingRunId?: ProviderRunId | null;
   readonly activeRunId?: ProviderRunId | null;
 };
-
-type ToolItem = Extract<TranscriptItem, { kind: 'tool_call' }>;
-
-type ClusterState = 'approval' | 'running' | 'stopped' | 'failed' | 'done';
 
 const NODE_STATE_FOR: Record<ClusterState, WorkNodeState> = {
   approval: 'approval',
@@ -54,91 +52,15 @@ const CLUSTER_LABEL: Record<ClusterState, string> = {
   done: 'Done',
 };
 
+const ASK_KINDS = new Set<TranscriptItem['kind']>(['permission_request', 'permission_decision']);
+
 const dangerTint = tintClasses('danger');
 const successTint = tintClasses('success');
-
-type ClusterSummary = {
-  readonly state: ClusterState;
-  readonly runningTool: ToolItem | null;
-  readonly approvalTool: ToolItem | null;
-  readonly stoppedCount: number;
-  readonly failedCount: number;
-  readonly successCount: number;
-  readonly earliestStartedAt: IsoDateTime | null;
-  readonly latestEndedAt: IsoDateTime | null;
-};
-
-type SummarizeParams = {
-  readonly items: ReadonlyArray<TranscriptItem>;
-  readonly activeRunId?: ProviderRunId | null;
-};
-
-const summarize = ({ items, activeRunId }: SummarizeParams): ClusterSummary => {
-  let runningTool: ToolItem | null = null;
-  let approvalTool: ToolItem | null = null;
-  let stoppedCount = 0;
-  let failedCount = 0;
-  let successCount = 0;
-  let earliestStartedAt: IsoDateTime | null = null;
-  let latestEndedAt: IsoDateTime | null = null;
-
-  for (const item of items) {
-    if (item.kind !== 'tool_call') {
-      continue;
-    }
-    if (earliestStartedAt === null || item.startedAt < earliestStartedAt) {
-      earliestStartedAt = item.startedAt;
-    }
-    if (item.endedAt !== null && (latestEndedAt === null || item.endedAt > latestEndedAt)) {
-      latestEndedAt = item.endedAt;
-    }
-    const permission = permissionFor({ items, toolUseId: item.toolUseId });
-    const status = toolStatus({ item, activeRunId, permission });
-    if (status === 'running') {
-      runningTool = item;
-      continue;
-    }
-    if (status === 'approval') {
-      approvalTool = item;
-      continue;
-    }
-    if (status === 'stopped') {
-      stoppedCount += 1;
-      continue;
-    }
-    if (status === 'failed' || status === 'denied') {
-      failedCount += 1;
-      continue;
-    }
-    successCount += 1;
-  }
-
-  const state: ClusterState =
-    approvalTool != null
-      ? 'approval'
-      : runningTool != null
-        ? 'running'
-        : stoppedCount > 0
-          ? 'stopped'
-          : failedCount > 0
-            ? 'failed'
-            : 'done';
-
-  return {
-    state,
-    runningTool,
-    approvalTool,
-    stoppedCount,
-    failedCount,
-    successCount,
-    earliestStartedAt,
-    latestEndedAt,
-  };
-};
 
 const OperationsClusterView = ({
   items,
   isInitiallyOpen = false,
+  hasAsks = true,
   sessionId = null,
   agentId = null,
   workingDir = null,
@@ -149,7 +71,7 @@ const OperationsClusterView = ({
   activeRunId,
 }: Props) => {
   const [open, setOpen] = useState(isInitiallyOpen);
-  const summary = useMemo(() => summarize({ items, activeRunId }), [items, activeRunId]);
+  const summary = useMemo(() => clusterSummaryOf({ items, activeRunId }), [items, activeRunId]);
   const { state, runningTool, approvalTool, stoppedCount, failedCount, successCount } = summary;
   const elapsedMs = useElapsedMs({
     running: state === 'running',
@@ -235,25 +157,27 @@ const OperationsClusterView = ({
         />
       }
     >
-      {items.map((item) => (
-        <TranscriptCard
-          key={item.key}
-          item={item}
-          sessionId={sessionId}
-          agentId={agentId}
-          workingDir={workingDir}
-          onRefreshAuth={onRefreshAuth}
-          onOpenDiff={onOpenDiff}
-          onRetryRun={onRetryRun}
-          retryingRunId={retryingRunId}
-          activeRunId={activeRunId}
-          permission={
-            item.kind === 'tool_call'
-              ? permissionFor({ items, toolUseId: item.toolUseId })
-              : undefined
-          }
-        />
-      ))}
+      {items
+        .filter((item) => hasAsks || !ASK_KINDS.has(item.kind))
+        .map((item) => (
+          <TranscriptCard
+            key={item.key}
+            item={item}
+            sessionId={sessionId}
+            agentId={agentId}
+            workingDir={workingDir}
+            onRefreshAuth={onRefreshAuth}
+            onOpenDiff={onOpenDiff}
+            onRetryRun={onRetryRun}
+            retryingRunId={retryingRunId}
+            activeRunId={activeRunId}
+            permission={
+              item.kind === 'tool_call'
+                ? permissionFor({ items, toolUseId: item.toolUseId })
+                : undefined
+            }
+          />
+        ))}
     </TranscriptDisclosure>
   );
 };
@@ -261,6 +185,7 @@ const OperationsClusterView = ({
 const propsEqual = (previous: Props, next: Props): boolean =>
   transcriptItemsEqual({ previous: previous.items, next: next.items }) &&
   previous.isInitiallyOpen === next.isInitiallyOpen &&
+  previous.hasAsks === next.hasAsks &&
   previous.sessionId === next.sessionId &&
   previous.agentId === next.agentId &&
   previous.workingDir === next.workingDir &&

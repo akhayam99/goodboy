@@ -1,20 +1,28 @@
 // @vitest-environment happy-dom
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { anAgent } from '@goodboy/types/testing';
 import type { AutoDelegation } from '@goodboy/db';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
-import { aDelegation, FIXTURE_SESSION } from '../testing/autoViewFixtures';
-import { delegationCardOf } from '../chat/delegationCardOf';
-import { registerDelegationDecisionPort } from '../delegationDecisionPort';
-import { AutoChildEnd } from './AutoChildEnd';
+import type { Agent } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+} from '../../../../store/storyHarness';
+import { aDelegation, FIXTURE_SESSION } from '../../testing/autoViewFixtures';
+import { delegationCardOf } from '../../chat/delegationCardOf';
+import {
+  registerDelegationDecisionPort,
+  type DelegationDecisionPort,
+} from '../../delegationDecisionPort';
+import { AutoChildEnd } from './index';
 
 beforeAll(async () => {
   await importStore();
@@ -31,19 +39,20 @@ afterEach(() => {
 
 type ShowParams = {
   readonly delegation: AutoDelegation;
+  readonly status?: Agent['status'];
 };
 
-const show = ({ delegation }: ShowParams) => {
-  const agent = anAgent({ id: delegation.childAgentId });
+const show = ({ delegation, status = 'running' }: ShowParams) => {
+  const agent = anAgent({ id: delegation.childAgentId, status });
   const card = delegationCardOf({ delegation, childAgent: agent });
   render(
     <AutoChildEnd sessionId={FIXTURE_SESSION} delegation={delegation} card={card} agent={agent} />,
   );
 };
 
-describe('the end of an Auto child pane', () => {
+describe('the end of an Auto child page', () => {
   it('asks for your OK with Confirm and Decline, never Queued or Stop', async () => {
-    const port = vi.fn(async () => 'confirmed' as const);
+    const port = vi.fn<DelegationDecisionPort>(async () => 'confirmed');
     registerDelegationDecisionPort({ port });
     const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'awaiting_confirm' });
     show({ delegation });
@@ -58,7 +67,7 @@ describe('the end of an Auto child pane', () => {
   });
 
   it('declines the child through the same port', async () => {
-    const port = vi.fn(async () => 'declined' as const);
+    const port = vi.fn<DelegationDecisionPort>(async () => 'declined');
     registerDelegationDecisionPort({ port });
     const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'awaiting_confirm' });
     show({ delegation });
@@ -85,5 +94,31 @@ describe('the end of an Auto child pane', () => {
 
     screen.getByText('Queued');
     screen.getByRole('button', { name: 'Stop' });
+  });
+
+  it('leaves a stopped child to the page notice, with no second Retry at the end', () => {
+    const delegation = aDelegation({
+      key: 'impl',
+      role: 'implementer',
+      state: 'settled',
+      outcome: 'stopped',
+    });
+    show({ delegation, status: 'stopped' });
+
+    expect(screen.queryByText('Stopped')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry through Auto' })).toBeNull();
+  });
+
+  it('keeps the failure and leaves Retry to the dock when the child failed', () => {
+    const delegation = aDelegation({
+      key: 'impl',
+      role: 'implementer',
+      state: 'settled',
+      outcome: 'failed',
+    });
+    show({ delegation, status: 'failed' });
+
+    screen.getByText(/^Failed/);
+    expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull();
   });
 });

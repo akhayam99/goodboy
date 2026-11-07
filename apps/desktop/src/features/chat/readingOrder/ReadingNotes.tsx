@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Disclosure, Markdown } from '@goodboy/ui';
 import type { NotesRole } from './readingOrderOf';
 
@@ -8,10 +8,15 @@ type Props = {
 
 export const ReadingNotes = ({ role }: Props) => {
   const [isOpen, setIsOpen] = useState(role.isOpen);
+  useEffect(() => {
+    if (role.isOpen) {
+      setIsOpen(true);
+    }
+  }, [role.isOpen]);
   return (
     <Disclosure
       label={
-        <span className="text-meta text-muted-foreground">{`Notes, ${role.lineCount} ${
+        <span className="text-meta text-muted-foreground">{`Earlier in this reply, ${role.lineCount} ${
           role.lineCount === 1 ? 'line' : 'lines'
         }`}</span>
       }

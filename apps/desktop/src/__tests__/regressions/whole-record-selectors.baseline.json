@@ -29,7 +29,6 @@
   "apps/desktop/src/features/session/central/done/useDoneRows/index.ts": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/DelegationLines.tsx": 1,
   "apps/desktop/src/features/session/components/PresetRun/RunTail.tsx": 1,
-  "apps/desktop/src/features/session/components/RunStepDrawer.tsx": 1,
   "apps/desktop/src/features/session/hooks/useJobActivity/index.ts": 2,
   "apps/desktop/src/features/session/hooks/useSessionRuns/index.ts": 2,
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceTerminalFolderRow.tsx": 1,

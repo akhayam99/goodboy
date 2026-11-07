@@ -49,8 +49,8 @@
   card carries the question itself. The role in that title is a link to the asker
   (`openAsker`, `features/session/openAsker.ts`): an agent you started opens its
   conversation scrolled to the question, a step of a preset run opens that step on
-  the run page, a step of an orchestrated run opens the run with the step in the
-  pane (drawer `run-step`). A deleted asker keeps its role with no link. A row's
+  the run page, a step of an orchestrated run opens that step's page the same way.
+  A deleted asker keeps its role with no link. A row's
   right click menu is the registry kind `question` (`features/actions/kinds/question.ts`):
   **Open question** and **Open the agent** (the same `openAsker`, hidden for a
   deleted asker); the card in the drawer (variant `full`) names no asker, the head does,
@@ -180,9 +180,9 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   `SegmentedTabs`: Fix and
   Transcript (`FixRunTranscriptDrawer` in `app/components`, which hands
   `AgentTranscriptDrawer` a `lead`; a drawer without a `lead` has no tabs).
-  The transcript pane shows only the steps of each turn while the agent's
-  conversation is the page beside it, and the whole record otherwise (a fix
-  run, an agent opened from another page), so it never repeats the page.
+  The drawer reads **Steps** while the agent's conversation is the page beside it:
+  tool rows only, with no message and no action. Otherwise it holds the whole record
+  (a fix run, an agent opened from another page), so it never repeats the page.
   Fix is the fix run summary at full height with its own scroll
   (`FixRunSummary`: one status line that says each shared fact once, `Working ·
 2m 48s · Opus 5.5 · High` while it works and `Done · 8m · 8 fix ready · Opus 5.5
@@ -219,9 +219,8 @@ comments`; the Needs you row for the pull request calls `openReview` with the
   destination `{ kind: 'threads', mountId, threadIds: [first comment that waits
 on you] }`. Any other agent keeps its page, one conversation with no tabs
   (`AgentDetailPane`): every door lands on it, and its address names the
-  agent only (`agentPlace({ sessionId, agentId })`). The full record opens beside it in the `transcript` drawer, from
-  **Open transcript**, from "Open in transcript" under a turn's summary line,
-  and from a delegation line's **See more** for a child agent. The `threads` destination needs no
+  agent only (`agentPlace({ sessionId, agentId })`). Its steps open beside it in the `transcript` drawer, from a turn's summary
+  line and from **Open transcript** on a failure. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }`, like a `threads` set made only of notes,
@@ -333,7 +332,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   starts. With auto-run off, nothing advances without a click.
 - **The Agent page always has its header.** Every agent page (the planner,
   Scribe, a missing or loading agent) renders one header row: role chip, title,
-  provider mark, overflow (which holds Open transcript). The composer model chip always names
+  provider mark, overflow. The composer model chip always names
   the model the next turn will use, with its provider mark, never a bare
   `Model` word. Each turn footer shows the model chip, the duration and the
   cost; tokens, cache share and context window sit in its detail popover. The

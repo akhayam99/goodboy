@@ -130,7 +130,7 @@ describe('ReadingNotes', () => {
 
   it('is closed by default and says how many lines are behind it', () => {
     render(<ReadingNotes role={notesRole({ lineCount: 14, isOpen: false })} />);
-    const trigger = screen.getByRole('button', { name: 'Notes, 14 lines' });
+    const trigger = screen.getByRole('button', { name: 'Earlier in this reply, 14 lines' });
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(trigger);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
@@ -139,7 +139,9 @@ describe('ReadingNotes', () => {
   it('starts open for a failed turn', () => {
     render(<ReadingNotes role={notesRole({ lineCount: 1, isOpen: true })} />);
     expect(
-      screen.getByRole('button', { name: 'Notes, 1 line' }).getAttribute('aria-expanded'),
+      screen
+        .getByRole('button', { name: 'Earlier in this reply, 1 line' })
+        .getAttribute('aria-expanded'),
     ).toBe('true');
   });
 });

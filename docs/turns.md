@@ -421,6 +421,8 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   answer you gave leaves one quiet line (`PermissionRecordLine`). The task list a `TodoWrite`, `update_plan` or `write_todos` call
   writes is one checklist (`planChecklist`) in the turn that first wrote it.
   `mode="record"` (the transcript drawer) keeps today's full rows.
+  Steps keeps error explanations after a later reply succeeds, without recovery
+  buttons (`TranscriptRows`, `TranscriptErrorRow` `isReadOnly`).
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and
@@ -988,11 +990,19 @@ cards, 4 chips, an answer clamped at 12 lines).
 
 - `readingOrderOf` is pure. It splits the rows into turns at each `user_text`,
   `handoff`, `oq_answer` and `auto_delivery` row. In a finished turn the last
-  `assistant_text` is the answer (clamped at 12 lines, `answerClampLines`) and the earlier ones become one closed **Notes** line
+  `assistant_text` is the answer (clamped at 12 lines, `answerClampLines`) and the earlier ones become one closed **Earlier in this reply, N lines** line
   (`ReadingNotes`) drawn in place of the first of them; the others draw
   nothing. A text with a control marker is never folded.
 - A turn with a text of the active run is live and untouched, so the reveal
-  types it whole. A turn with an `error` item keeps its notes open.
+  types it whole. A turn with an `error` item keeps its notes open. A live reply
+  that ends is never folded under the reader's eyes: `useReadingOrder` keeps it
+  open (`unfoldedKeys`) and folds it only once every held text has scrolled above
+  the top of the chat viewport (`scrollerRef` of `ChatView`), or on error as before.
+- The first message of an agent keeps one shape whether or not an answer exists
+  (there is no collapsed **Asked:** pill). When an agent is still named by its role,
+  the page title is its brief (first line); clicking it opens the full text
+  (**Read full brief**), double click renames it, and the kind chip is dropped
+  because the title is the brief. A named agent keeps the chip and its name.
 - `ReadingOrderMessage` is the only place agent prose reaches `Markdown`. It
   draws the optional `OutcomeLine` (`text-heading`, 14/20 at 600), the text (clamped with **Show more** only when it is prose: a message with a fenced block or a table is never clamped, `hasUnclampableBlock`), then
   the chips with **+N** past 4. `AssistantText` is a thin caller, and it draws no copy row: **Copy** is a `row-actions` button on the message root (`group/row`), at its top right, so it shows on hover and on keyboard focus and takes no room in the flow; the message context menu (`message.copy`) always has it. It reads
@@ -1006,7 +1016,7 @@ cards, 4 chips, an answer clamped at 12 lines).
 - The Auto child result cards use the same pieces without the message renderer:
   `AutoResultCard` and `DelegationResult` draw `OutcomeLine`, chips
   (`DelegationResultChips`, same 4 chip budget) and `ReadingNotes`. A result is the outcome
-  line, the artifact rows, the chips and a closed Notes line, never a stack of rows.
+  line, the artifact rows, the chips and a closed **Earlier in this reply** line, never a stack of rows.
 - `Markdown` (`packages/ui/src/components/Markdown/`) draws the body of a message as sections. A section opens at a heading, so the heading sits 8px above its text and the blocks of the body 12px apart, and sections are 24px apart. `h1` and `h2` are `text-title`, `h3` is `text-heading`. A fenced block is `CodeBlockFrame`: one surface with a header (the language, **Wrap**, and the host's actions such as **Copy**) over `text-ui font-mono` code that scrolls inside the column until **Wrap** is on (off at the start, one block at a time). Inline code is whole `text-ui`. A table has a `text-meta` header, one hairline between rows (`renderTable`) and tabular figures on a right aligned or all numeric column.
 - `reading-order.test.ts` counts `<Markdown` in `features/chat` and
   `features/auto` outside `readingOrder/` against
@@ -1442,7 +1452,9 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   (status `sending`, `isDirect`), then `deliverQueuedTurn` sends it with
   `queue:<id>`, so the dedup above covers it. A row that could not be saved
   is taken back and sends nothing: `isUnwritten` tells the composer and the
-  transcript drawer to keep the text in the box. A refusal, a cancelled writer
+  transcript drawer to keep the text in the box. `useComposerSend` also restores
+  saved attachments to the captured agent's store entry, even after its
+  composer unmounts (`ChatInput/childComposer.test.tsx`). A refusal, a cancelled writer
   wait or an error puts the row back as `queued` with `hold.reason`; the hold
   and `writtenTexts` are saved inside `override_json` under `queueState`, so a
   reload keeps them. The row owns Retry (`retryQueuedMessage`), and

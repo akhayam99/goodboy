@@ -1,5 +1,4 @@
 {
-  "apps/desktop/src/app/components/AutoChildPane.tsx": 1,
   "apps/desktop/src/features/branch/components/BranchFiles.tsx": 1,
   "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestDescription.tsx": 1,
   "apps/desktop/src/features/branch/components/PullRequestTab/ResolvesProperty.tsx": 1,

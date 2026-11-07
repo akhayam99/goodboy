@@ -19,8 +19,7 @@ import {
   PermissionRequestCard,
 } from '../../../permissions/permissionSurfaces';
 import { ToolCallCard } from '../ToolCallCard';
-import { TurnChangesCard } from '../TurnChangesCard';
-import { TurnFooter } from '../TurnFooter';
+import { TranscriptUsage } from './TranscriptUsage';
 import { AssistantText } from './AssistantText';
 import { AutoDeliveryResults } from './AutoDeliveryResults';
 import { AutoDeliveryRow } from './AutoDeliveryRow';
@@ -47,8 +46,9 @@ type TranscriptCardProps = {
   readonly turnOutcome?: TurnOutcome;
   readonly turnStartedAt?: IsoDateTime | null;
   readonly previousRunId?: ProviderRunId | null;
-  readonly isBrief?: boolean;
+  readonly isReadOnly?: boolean;
   readonly clampLines?: number;
+  readonly turn?: number | null;
 };
 
 const TranscriptCardImpl = ({
@@ -66,9 +66,10 @@ const TranscriptCardImpl = ({
   turnOutcome,
   turnStartedAt,
   previousRunId = null,
-  isBrief = false,
+  isReadOnly = false,
   clampLines,
   errorDock = null,
+  turn = null,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
@@ -81,7 +82,6 @@ const TranscriptCardImpl = ({
           workingDir={workingDir}
           sessionId={sessionId}
           agentId={agentId}
-          isBrief={isBrief}
         />
       );
     case 'auto_delivery':
@@ -96,13 +96,7 @@ const TranscriptCardImpl = ({
       );
     case 'handoff':
       return (
-        <HandoffBlock
-          item={item}
-          sessionId={sessionId}
-          agentId={agentId}
-          workingDir={workingDir}
-          isBrief={isBrief}
-        />
+        <HandoffBlock item={item} sessionId={sessionId} agentId={agentId} workingDir={workingDir} />
       );
     case 'assistant_text':
       return (
@@ -148,27 +142,26 @@ const TranscriptCardImpl = ({
       );
     case 'usage':
       return (
-        <>
-          {sessionId === null ? null : <TurnChangesCard sessionId={sessionId} runId={item.runId} />}
-          <TurnFooter
-            item={item}
-            sessionId={sessionId}
-            agentId={agentId}
-            outcome={turnOutcome}
-            startedAt={turnStartedAt}
-            previousRunId={previousRunId}
-          />
-        </>
+        <TranscriptUsage
+          item={item}
+          sessionId={sessionId}
+          agentId={agentId}
+          outcome={turnOutcome}
+          startedAt={turnStartedAt}
+          previousRunId={previousRunId}
+        />
       );
     case 'error': {
       const errorRunId = item.runId;
       return (
         <TranscriptErrorRow
+          isReadOnly={isReadOnly}
           message={item.message}
           runId={errorRunId ?? null}
           sessionId={sessionId}
           agentId={agentId}
           failedToolUseId={item.failedToolUseId ?? null}
+          turn={turn}
           onRetry={
             item.retryable === true && errorRunId != null && onRetryRun != null
               ? () => onRetryRun({ runId: errorRunId, model: null })
@@ -247,6 +240,7 @@ export const TranscriptCard = memo(
     prev.turnOutcome === next.turnOutcome &&
     prev.turnStartedAt === next.turnStartedAt &&
     prev.previousRunId === next.previousRunId &&
-    prev.isBrief === next.isBrief &&
-    prev.clampLines === next.clampLines,
+    prev.isReadOnly === next.isReadOnly &&
+    prev.clampLines === next.clampLines &&
+    prev.turn === next.turn,
 );

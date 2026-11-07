@@ -28,7 +28,6 @@
   "apps/desktop/src/features/auto/chat/AutoDelegationLines.tsx": 1,
   "apps/desktop/src/features/auto/chat/DelegationClock.tsx": 1,
   "apps/desktop/src/features/auto/chat/DelegationResult.tsx": 1,
-  "apps/desktop/src/features/auto/child/AutoChildEnd.tsx": 1,
   "apps/desktop/src/features/branch/components/BranchChecks.tsx": 1,
   "apps/desktop/src/features/branch/components/PullRequestTab/BitbucketNoPullRequest.tsx": 1,
   "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 1,

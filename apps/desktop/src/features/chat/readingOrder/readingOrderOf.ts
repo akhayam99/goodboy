@@ -26,6 +26,7 @@ export type ReadingRole =
 type Params = {
   readonly rows: ReadonlyArray<ConversationRow>;
   readonly activeRunId?: ProviderRunId | null;
+  readonly unfoldedKeys?: ReadonlySet<string>;
 };
 
 type TextRow = {
@@ -79,6 +80,7 @@ const turnSegmentsOf = ({ rows }: SegmentParams) => {
 export const readingOrderOf = ({
   rows,
   activeRunId = null,
+  unfoldedKeys = new Set(),
 }: Params): ReadonlyMap<string, ReadingRole> => {
   const roles = new Map<string, ReadingRole>();
   for (const segment of turnSegmentsOf({ rows })) {
@@ -87,7 +89,7 @@ export const readingOrderOf = ({
       continue;
     }
     const isLive = segment.texts.some((text) => text.runId !== null && text.runId === activeRunId);
-    if (isLive) {
+    if (isLive || (!segment.hasError && segment.texts.some((text) => unfoldedKeys.has(text.key)))) {
       continue;
     }
     const earlierAll = segment.texts.slice(0, -1);

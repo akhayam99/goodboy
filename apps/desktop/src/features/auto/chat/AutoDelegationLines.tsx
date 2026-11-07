@@ -1,7 +1,5 @@
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { Button, TruncatedText } from '@goodboy/ui';
-import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { AutoChildCard } from './AutoChildCard';
@@ -40,37 +38,14 @@ export const AutoDelegationLines = ({
         const revision = revisionWordOf({ card });
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
-            {delegation.state === 'settled' ? (
-              <span className="flex h-7 min-w-0 items-center gap-2 text-meta">
-                <AgentKindChip kind={card.role} density="glyph" />
-                <TruncatedText
-                  className="min-w-0 truncate text-foreground"
-                  tooltip={card.task ?? title}
-                >
-                  {name}
-                </TruncatedText>
-                {revision === null ? null : (
-                  <span className="shrink-0 text-muted-foreground">{revision}</span>
-                )}
-                <Button
-                  variant="quiet"
-                  size="xs"
-                  aria-label={`Open ${name}`}
-                  onClick={() => onOpenChild(card.childAgentId)}
-                >
-                  Open
-                </Button>
-              </span>
-            ) : (
-              <AutoChildCard
-                sessionId={sessionId}
-                delegation={delegation}
-                card={card}
-                name={name}
-                revision={revision}
-                onOpen={onOpenChild}
-              />
-            )}
+            <AutoChildCard
+              sessionId={sessionId}
+              delegation={delegation}
+              card={card}
+              name={name}
+              revision={revision}
+              onOpen={onOpenChild}
+            />
           </li>
         );
       })}

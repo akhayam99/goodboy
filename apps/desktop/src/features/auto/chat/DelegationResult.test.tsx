@@ -32,7 +32,7 @@ describe('DelegationResult summary', () => {
         result={resultWith({ summary: '- **Trailer grep:** none found\n- **Remote:** in sync' })}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Notes, 2 lines' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Earlier in this reply, 2 lines' }));
 
     expect(container.textContent).not.toContain('**');
     expect(container.querySelectorAll('li').length).toBe(2);
@@ -43,7 +43,7 @@ describe('DelegationResult summary', () => {
     const summary =
       '**Done** for ledger-core\n<<artifact v=1 kind=report>>\n{"title":"Audit"}\n<</artifact>>';
     const { container } = render(<DelegationResult result={resultWith({ summary })} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Notes, 1 line' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Earlier in this reply, 1 line' }));
 
     expect(screen.getByText('Done').tagName).toBe('STRONG');
     expect(container.textContent).not.toContain('<<artifact');
@@ -212,7 +212,9 @@ describe('DelegationResult reading order', () => {
       'Posted the credit once for payments-api',
     );
     expect(
-      screen.getByRole('button', { name: 'Notes, 1 line' }).getAttribute('aria-expanded'),
+      screen
+        .getByRole('button', { name: 'Earlier in this reply, 1 line' })
+        .getAttribute('aria-expanded'),
     ).toBe('false');
     expect(screen.queryByText(/<<outcome>>/)).toBeNull();
   });
@@ -258,7 +260,9 @@ describe('DelegationResult reading order', () => {
     render(<DelegationResult result={view} />);
 
     expect(
-      screen.getByRole('button', { name: 'Notes, 1 line' }).getAttribute('aria-expanded'),
+      screen
+        .getByRole('button', { name: 'Earlier in this reply, 1 line' })
+        .getAttribute('aria-expanded'),
     ).toBe('true');
   });
 

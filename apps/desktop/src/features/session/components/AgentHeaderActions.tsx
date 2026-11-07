@@ -8,6 +8,16 @@ import { useActionEnv } from '../../actions/useActionEnv';
 import { useObjectActions } from '../../actions/useObjectActions';
 
 const STATE_BUTTONS = ['agent.stop', 'agent.close', 'agent.reopen'];
+const MENU_ACTIONS = [
+  'agent.rename',
+  'agent.close',
+  'agent.reopen',
+  'agent.moveToAuto',
+  'agent.detachFromAuto',
+  'agent.markAutoFinished',
+  'agent.copyReply',
+  'agent.delete',
+];
 const DELETE_ACTION = 'agent.delete';
 
 type Props = {
@@ -69,7 +79,8 @@ export const AgentHeaderActions = ({
               anchorKey={`agent-header:${agent.id}`}
               viewing={viewing}
               size="control"
-              {...(omit !== undefined && { omit })}
+              omit={omit}
+              only={MENU_ACTIONS}
               hideWhenEmpty
               onArm={({ action, run: runAction }) =>
                 setArmed({

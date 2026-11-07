@@ -1,20 +1,21 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn((command: string, args?: BridgeArgs) => bridge(command, args)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn(async () => () => undefined),
-  emit: vi.fn(async () => undefined),
-}));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Agent, ProviderRunId } from '@goodboy/types';
+import { brandId, type Agent, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
+import { aDelegation, aTree, aView } from '../../auto/testing/autoViewFixtures';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../store/storyHarness';
 import {
@@ -25,29 +26,21 @@ import {
   mountFixture,
   seedActionState,
 } from '../../../__tests__/helpers/actionFixtures';
-import { bindTarget } from '../../actions/registry';
+import type { AgentKind } from '../agent-kind';
 import { AgentHeaderActions } from './AgentHeaderActions';
 
-type BridgeArgs = {
-  readonly statements?: ReadonlyArray<unknown>;
-};
-
-const bridge = (command: string, args?: BridgeArgs): Promise<unknown> => {
-  if (command === 'db_transaction') {
-    return Promise.resolve({
-      status: 'committed',
-      results: (args?.statements ?? []).map(() => ({ rowsAffected: 1, rows: [] })),
-    });
-  }
-  if (command === 'db_execute') {
-    return Promise.resolve({ rowsAffected: 1, lastInsertId: 0 });
-  }
-  if (command === 'db_select' || command.includes('_list')) {
-    return Promise.resolve([]);
-  }
-  return Promise.resolve(null);
-};
-
+const KINDS: ReadonlyArray<AgentKind> = [
+  'generic',
+  'planner',
+  'implementer',
+  'tester',
+  'reviewer',
+  'auto',
+  'scout',
+  'resolver',
+  'rewriter',
+];
+const STATUSES: ReadonlyArray<Agent['status']> = ['running', 'failed', 'completed', 'stopped'];
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -56,6 +49,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  stubStoryInvoke({
+    db_execute: { rowsAffected: 1, lastInsertId: 0 },
+    db_select: [],
+    db_transaction: { status: 'committed', results: [] },
+  });
 });
 
 afterEach(cleanup);
@@ -154,7 +152,7 @@ describe('AgentHeaderActions', () => {
         turnStates: {
           [agent.id]: {
             kind: 'running',
-            runId: 'run-1' as ProviderRunId,
+            runId: brandId<ProviderRunId>({ value: 'run-1' }),
             startedAt: FIXTURE_NOW,
           },
         },
@@ -167,22 +165,108 @@ describe('AgentHeaderActions', () => {
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
-  it('lists every available verb in the overflow, the buttoned ones too, in the registry order', () => {
-    const agent = agentFixture({ status: 'failed' });
-    renderFor(agent);
-    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
-    const labels = screen
-      .getAllByRole('menuitem')
-      .map((item) => item.getAttribute('data-menu-label'));
-    const registry = (
-      bindTarget({
-        state: useAppStore.getState(),
-        target: { kind: 'agent', sessionId: SESSION, agentId: agent.id },
-      })?.resolve({ viewing: { kind: 'agent', id: agent.id } }) ?? []
-    ).map((action) => action.label);
-
-    expect(labels).toEqual(registry);
-    expect(labels).toContain('Delete agent');
-    expect(labels).not.toContain('Open agent');
+  it.each(KINDS)('keeps the %s header menu short in every lifecycle state', (kind) => {
+    for (const status of STATUSES) {
+      const agent = agentFixture({ status, kind, name: 'Harborline' });
+      seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
+      useAppStore.setState({ agentKindOverride: { [agent.id]: kind } });
+      render(<AgentHeaderActions agent={agent} sessionId={SESSION} hasStateButton={false} />);
+      fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+      const labels = screen
+        .getAllByRole('menuitem')
+        .map((item) => item.getAttribute('data-menu-label'));
+      expect(labels.length).toBeLessThanOrEqual(5);
+      expect(labels).toContain('Rename');
+      expect(labels).toContain('Delete agent');
+      expect(labels).not.toContain('Copy name');
+      expect(labels).not.toContain('Show its changes');
+      expect(labels).not.toContain('Change model');
+      cleanup();
+    }
   });
+
+  it('keeps Close on an open agent and Reopen on a closed one, never both', () => {
+    const open = agentFixture({ status: 'failed', name: 'Harborline' });
+    const closed = agentFixture({
+      status: 'failed',
+      name: 'Harborline',
+      doneAt: FIXTURE_NOW,
+    });
+    const labelsOf = (agent: Agent) => {
+      seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
+      render(<AgentHeaderActions agent={agent} sessionId={SESSION} hasStateButton={false} />);
+      fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+      const labels = screen
+        .getAllByRole('menuitem')
+        .map((item) => item.getAttribute('data-menu-label'));
+      cleanup();
+      return labels;
+    };
+    const openLabels = labelsOf(open);
+    const closedLabels = labelsOf(closed);
+
+    expect(openLabels).toContain('Close');
+    expect(openLabels).not.toContain('Reopen');
+    expect(closedLabels).toContain('Reopen');
+    expect(closedLabels).not.toContain('Close');
+    expect(closedLabels.length).toBeLessThanOrEqual(5);
+  });
+
+  it.each(['plain', 'adopted', 'autoRoot'] as const)(
+    'keeps the %s Auto state within five rows and names every row it keeps',
+    (state) => {
+      const agent = agentFixture({ status: 'completed', kind: 'implementer', name: 'Harborline' });
+      seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
+      const view = aView({
+        delegations:
+          state === 'adopted'
+            ? [
+                {
+                  ...aDelegation({ key: 'adopted', role: 'implementer', state: 'settled' }),
+                  childAgentId: agent.id,
+                  isAdopted: true,
+                },
+              ]
+            : [],
+      });
+      useAppStore.setState({
+        agentKindOverride: { [agent.id]: state === 'autoRoot' ? 'auto' : 'implementer' },
+        autoTreeViews:
+          state === 'plain'
+            ? {}
+            : {
+                [SESSION]: [
+                  {
+                    ...view,
+                    tree: {
+                      ...aTree(),
+                      rootAgentId: state === 'autoRoot' ? agent.id : view.tree.rootAgentId,
+                    },
+                  },
+                ],
+              },
+        transcripts: {
+          [agent.id]: [
+            {
+              kind: 'assistant_text',
+              runId: brandId<ProviderRunId>({ value: 'run-ledger-core' }),
+              delta: 'The retry is fixed.',
+              at: brandId<IsoDateTime>({ value: '2026-10-13T12:00:00.000Z' }),
+            },
+          ],
+        },
+      });
+      render(<AgentHeaderActions agent={agent} sessionId={SESSION} hasStateButton={false} />);
+      fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+      const labels = screen
+        .getAllByRole('menuitem')
+        .map((item) => item.getAttribute('data-menu-label'));
+      const expected = {
+        plain: ['Rename', 'Let Auto take it from here', 'Copy last reply', 'Delete agent'],
+        adopted: ['Rename', 'Detach from Auto', 'Copy last reply', 'Delete agent'],
+        autoRoot: ['Rename', 'Mark finished', 'Copy last reply', 'Delete agent'],
+      } as const;
+      expect(labels).toEqual(expected[state]);
+    },
+  );
 });
