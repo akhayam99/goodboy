@@ -16,6 +16,7 @@ import { turnSummary } from '../../utils/turnSummary';
 type Props = {
   readonly items: ReadonlyArray<TranscriptItem>;
   readonly isInitiallyOpen?: boolean;
+  readonly hasAsks?: boolean;
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly workingDir?: string | null;
@@ -53,6 +54,8 @@ const CLUSTER_LABEL: Record<ClusterState, string> = {
   failed: 'Failed',
   done: 'Done',
 };
+
+const ASK_KINDS = new Set<TranscriptItem['kind']>(['permission_request', 'permission_decision']);
 
 const dangerTint = tintClasses('danger');
 const successTint = tintClasses('success');
@@ -139,6 +142,7 @@ const summarize = ({ items, activeRunId }: SummarizeParams): ClusterSummary => {
 const OperationsClusterView = ({
   items,
   isInitiallyOpen = false,
+  hasAsks = true,
   sessionId = null,
   agentId = null,
   workingDir = null,
@@ -235,25 +239,27 @@ const OperationsClusterView = ({
         />
       }
     >
-      {items.map((item) => (
-        <TranscriptCard
-          key={item.key}
-          item={item}
-          sessionId={sessionId}
-          agentId={agentId}
-          workingDir={workingDir}
-          onRefreshAuth={onRefreshAuth}
-          onOpenDiff={onOpenDiff}
-          onRetryRun={onRetryRun}
-          retryingRunId={retryingRunId}
-          activeRunId={activeRunId}
-          permission={
-            item.kind === 'tool_call'
-              ? permissionFor({ items, toolUseId: item.toolUseId })
-              : undefined
-          }
-        />
-      ))}
+      {items
+        .filter((item) => hasAsks || !ASK_KINDS.has(item.kind))
+        .map((item) => (
+          <TranscriptCard
+            key={item.key}
+            item={item}
+            sessionId={sessionId}
+            agentId={agentId}
+            workingDir={workingDir}
+            onRefreshAuth={onRefreshAuth}
+            onOpenDiff={onOpenDiff}
+            onRetryRun={onRetryRun}
+            retryingRunId={retryingRunId}
+            activeRunId={activeRunId}
+            permission={
+              item.kind === 'tool_call'
+                ? permissionFor({ items, toolUseId: item.toolUseId })
+                : undefined
+            }
+          />
+        ))}
     </TranscriptDisclosure>
   );
 };
@@ -261,6 +267,7 @@ const OperationsClusterView = ({
 const propsEqual = (previous: Props, next: Props): boolean =>
   transcriptItemsEqual({ previous: previous.items, next: next.items }) &&
   previous.isInitiallyOpen === next.isInitiallyOpen &&
+  previous.hasAsks === next.hasAsks &&
   previous.sessionId === next.sessionId &&
   previous.agentId === next.agentId &&
   previous.workingDir === next.workingDir &&

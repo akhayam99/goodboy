@@ -55,6 +55,19 @@ function request(toolUseId: string): TranscriptItem {
 afterEach(cleanup);
 
 describe('OperationsCluster', () => {
+  it('leaves the permission asks out of Steps and still says one waits', () => {
+    render(
+      <OperationsCluster
+        items={[tool('a', false), request('a')]}
+        isInitiallyOpen
+        hasAsks={false}
+      />,
+    );
+
+    expect(screen.getAllByTestId('card').map((card) => card.textContent)).toEqual(['tool-a']);
+    expect(screen.getByRole('button', { name: /waiting for your permission/ })).toBeDefined();
+  });
+
   it('renders collapsed with no eyebrow or count badge and hides children', () => {
     render(<OperationsCluster items={[tool('a'), tool('b')]} />);
     expect(screen.queryByText('operations')).toBeNull();

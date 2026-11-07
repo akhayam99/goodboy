@@ -139,6 +139,9 @@ export const AgentTranscriptDrawer = ({
   }, [turn]);
 
   const title = agent === null ? null : agentTranscriptTitle({ agent });
+  const shownTitle = isConversationCenter
+    ? TRANSCRIPT_DRAWER_COPY.steps
+    : (title ?? TRANSCRIPT_DRAWER_COPY.title);
   const kind = agent === null ? null : classifyAgent({ agent, override: null });
   const name = kind === null || kind === 'resolver' ? title : AGENT_KIND_META[kind].noun;
   const reply =
@@ -201,7 +204,7 @@ export const AgentTranscriptDrawer = ({
           topInset="tight"
           hasComposer={false}
           mode={isConversationCenter ? 'steps' : 'record'}
-          briefLabel={briefLabel}
+          briefLabel={isConversationCenter ? undefined : briefLabel}
         />
       )}
     </div>
@@ -209,7 +212,7 @@ export const AgentTranscriptDrawer = ({
 
   return (
     <DrawerFrame
-      title={title ?? TRANSCRIPT_DRAWER_COPY.title}
+      title={shownTitle}
       icon={CONCEPT_ICONS.agents}
       onClose={onClose}
       scroll="self"

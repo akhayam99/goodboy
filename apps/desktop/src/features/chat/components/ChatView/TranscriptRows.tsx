@@ -10,7 +10,6 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { ConversationRow } from '../../utils/conversationRows';
-import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { ReadingNotes } from '../../readingOrder/ReadingNotes';
 import { readingOrderOf } from '../../readingOrder/readingOrderOf';
@@ -28,7 +27,6 @@ import { NewRowsDivider } from './NewRowsDivider';
 import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, rowAnchorOf } from './lib';
 import { DayDivider } from './DayDivider';
-import { TurnHeading } from './TurnHeading';
 import { planBlockVersions } from './planBlockVersions';
 import { rowVisibilityStyle } from './rowVisibilityStyle';
 import { splitTurns } from './splitTurns';
@@ -70,8 +68,6 @@ type Props = {
   clockStepAgentId?: AgentId;
   newFromKey?: string | null;
 };
-
-const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'usage']);
 
 const RAIL_ROW_PX = 56;
 
@@ -148,6 +144,7 @@ export const TranscriptRows = ({
   let lastDay: string | null = null;
   let userTurnOrdinal = 0;
   let turnIndex = -1;
+  let isStepHeadDue = false;
   const firstAnswerIndex = rows.findIndex(
     (row) => row.kind === 'summary' || (row.kind === 'item' && row.item.kind === 'assistant_text'),
   );
@@ -239,13 +236,13 @@ export const TranscriptRows = ({
       if (!(row.item.kind === 'user_text' && row.item.isOperatorEcho === true)) {
         turnIndex += 1;
       }
-      if (isStepsOnly && row !== briefRow) {
+      if (isStepsOnly) {
         flushRailGroup();
-        out.push(<TurnHeading key={row.key} index={turnIndex} text={row.item.text} />);
+        isStepHeadDue = true;
         return;
       }
     }
-    if (isStepsOnly && row.kind === 'item' && STEPS_ONLY_HIDDEN.has(row.item.kind)) {
+    if (isStepsOnly && row.kind === 'item') {
       return;
     }
     if (row.kind === 'item' && isWorkflowRailRow({ row })) {
@@ -276,10 +273,13 @@ export const TranscriptRows = ({
       lastFooterRunId = row.item.runId;
     }
     const heightKey = heightKeyOf({ agentId: selectedAgentId, isStepsOnly, key: row.key });
+    const stepHead = isStepHeadDue ? { 'data-turn-heading': Math.max(0, turnIndex) } : null;
+    isStepHeadDue = false;
     out.push(
       <li
         key={row.key}
         {...rowAnchorOf({ row, heightKey })}
+        {...stepHead}
         style={rowVisibilityStyle({
           px:
             rowHeightCache.read({ key: heightKey }) ??
@@ -298,6 +298,7 @@ export const TranscriptRows = ({
           <OperationsCluster
             items={row.items}
             isInitiallyOpen={isStepsOnly}
+            hasAsks={!isStepsOnly}
             sessionId={sessionId}
             agentId={selectedAgentId}
             workingDir={workingDir}
@@ -356,7 +357,7 @@ export const TranscriptRows = ({
     flushOrdinal(ordinal);
   }
   for (const [runId, node] of suggestions) {
-    if (placedRunIds.has(runId)) {
+    if (placedRunIds.has(runId) || isStepsOnly) {
       continue;
     }
     placedRunIds.add(runId);
@@ -370,10 +371,17 @@ export const TranscriptRows = ({
       </li>,
     );
   }
-  for (const draft of slackDrafts) {
+  for (const draft of isStepsOnly ? [] : slackDrafts) {
     out.push(
       <li key={`slack-draft-${draft.id}`}>
         <SlackDraftCard draft={draft} sessionId={sessionId} />
+      </li>,
+    );
+  }
+  if (isStepsOnly && !isThinking && !rows.some((row) => row.kind === 'operations')) {
+    out.push(
+      <li key="no-steps" className="text-meta text-muted-foreground">
+        No steps yet
       </li>,
     );
   }

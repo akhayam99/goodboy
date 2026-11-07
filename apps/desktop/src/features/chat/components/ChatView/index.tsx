@@ -589,7 +589,7 @@ export const ChatView = ({
             )}
           </ConversationColumn>
         </ScrollFade>
-        {!pinned && waitingHere[0] !== undefined && (
+        {!pinned && mode !== 'steps' && waitingHere[0] !== undefined && (
           <QuestionWaitingPill count={waitingHere.length} questionId={waitingHere[0].id} />
         )}
         <JumpToLatest
