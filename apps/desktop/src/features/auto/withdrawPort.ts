@@ -1,3 +1,5 @@
+import { createPort } from './createPort';
+
 export type WithdrawResult =
   | Readonly<{ kind: 'withdrawn' }>
   | Readonly<{ kind: 'delivered' }>
@@ -10,18 +12,8 @@ export type WithdrawParams = {
 
 export type WithdrawPort = (params: WithdrawParams) => Promise<WithdrawResult>;
 
-type Registry = {
-  port: WithdrawPort | null;
-};
+const slot = createPort<WithdrawPort>();
 
-const registry: Registry = { port: null };
+export const registerWithdrawPort = slot.register;
 
-type RegisterParams = {
-  readonly port: WithdrawPort | null;
-};
-
-export const registerWithdrawPort = ({ port }: RegisterParams): void => {
-  registry.port = port;
-};
-
-export const currentWithdrawPort = (): WithdrawPort | null => registry.port;
+export const currentWithdrawPort = slot.current;

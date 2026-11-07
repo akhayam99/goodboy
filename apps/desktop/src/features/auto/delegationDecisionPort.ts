@@ -1,3 +1,5 @@
+import { createPort } from './createPort';
+
 export type DelegationDecision = 'confirm' | 'decline';
 
 export type DelegationDecisionResult = 'confirmed' | 'declined' | 'lost';
@@ -10,18 +12,8 @@ type DecisionParams = {
 
 export type DelegationDecisionPort = (params: DecisionParams) => Promise<DelegationDecisionResult>;
 
-type Registry = {
-  port: DelegationDecisionPort | null;
-};
+const slot = createPort<DelegationDecisionPort>();
 
-const registry: Registry = { port: null };
+export const registerDelegationDecisionPort = slot.register;
 
-type RegisterParams = {
-  readonly port: DelegationDecisionPort | null;
-};
-
-export const registerDelegationDecisionPort = ({ port }: RegisterParams): void => {
-  registry.port = port;
-};
-
-export const currentDelegationDecisionPort = (): DelegationDecisionPort | null => registry.port;
+export const currentDelegationDecisionPort = slot.current;

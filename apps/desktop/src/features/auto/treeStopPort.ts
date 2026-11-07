@@ -1,3 +1,5 @@
+import { createPort } from './createPort';
+
 export type TreeStopResult = 'stopped' | 'stuck' | 'not_owner';
 
 type StopParams = {
@@ -6,18 +8,8 @@ type StopParams = {
 
 export type TreeStopPort = (params: StopParams) => Promise<TreeStopResult>;
 
-type Registry = {
-  port: TreeStopPort | null;
-};
+const slot = createPort<TreeStopPort>();
 
-const registry: Registry = { port: null };
+export const registerTreeStopPort = slot.register;
 
-type RegisterParams = {
-  readonly port: TreeStopPort | null;
-};
-
-export const registerTreeStopPort = ({ port }: RegisterParams): void => {
-  registry.port = port;
-};
-
-export const currentTreeStopPort = (): TreeStopPort | null => registry.port;
+export const currentTreeStopPort = slot.current;

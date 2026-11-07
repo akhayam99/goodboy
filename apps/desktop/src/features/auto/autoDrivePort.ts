@@ -1,4 +1,5 @@
 import type { AutoTreeId } from '@goodboy/types';
+import { createPort } from './createPort';
 
 type DriveParams = {
   readonly treeId: AutoTreeId;
@@ -6,18 +7,8 @@ type DriveParams = {
 
 export type AutoDrivePort = (params: DriveParams) => Promise<void>;
 
-type Registry = {
-  port: AutoDrivePort | null;
-};
+const slot = createPort<AutoDrivePort>();
 
-const registry: Registry = { port: null };
+export const registerAutoDrivePort = slot.register;
 
-type RegisterParams = {
-  readonly port: AutoDrivePort | null;
-};
-
-export const registerAutoDrivePort = ({ port }: RegisterParams): void => {
-  registry.port = port;
-};
-
-export const currentAutoDrivePort = (): AutoDrivePort | null => registry.port;
+export const currentAutoDrivePort = slot.current;
