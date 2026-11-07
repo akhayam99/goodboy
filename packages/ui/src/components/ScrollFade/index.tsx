@@ -7,6 +7,7 @@ import {
   type RefObject,
 } from 'react';
 import { cn } from '../../cn';
+import { ClaimedScrollerContext } from '../../useHeaderReveal/claimedScrollerContext';
 import { HeaderRevealContext } from '../../useHeaderReveal/headerRevealContext';
 import { OverlayThumb } from './OverlayThumb';
 
@@ -56,7 +57,8 @@ export const ScrollFade = ({
   const ref = viewportRef ?? ownRef;
   const horizontal = orientation === 'horizontal';
   const reveal = useContext(HeaderRevealContext);
-  const isPageScroller = reveal !== null && !horizontal;
+  const isClaimed = useContext(ClaimedScrollerContext);
+  const isPageScroller = reveal !== null && !isClaimed && !horizontal;
   const edge = edgeProp ?? (isPageScroller ? 'shade' : 'fade');
   const isLineEdge = edge === 'line';
   const isShadeEdge = edge === 'shade';
@@ -143,18 +145,13 @@ export const ScrollFade = ({
           horizontal
             ? 'mask-fade-x h-full max-w-[inherit] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
             : 'mask-fade-y h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-          isPageScroller && 'scroll-pt-[var(--reveal-inset,0px)]',
           viewportClassName,
         )}
+        data-page-scroller={isPageScroller ? '' : undefined}
       >
-        {isPageScroller ? (
-          <div
-            aria-hidden
-            data-slot="reveal-spacer"
-            className="pointer-events-none h-[var(--reveal-head,0px)] shrink-0"
-          />
-        ) : null}
-        <HeaderRevealContext.Provider value={null}>{children}</HeaderRevealContext.Provider>
+        <ClaimedScrollerContext.Provider value={isClaimed || isPageScroller}>
+          {children}
+        </ClaimedScrollerContext.Provider>
       </div>
       {isLineEdge && !horizontal ? (
         <span
@@ -171,11 +168,8 @@ export const ScrollFade = ({
           aria-hidden
           data-slot="scroll-shade"
           className={cn(
-            'pointer-events-none absolute inset-x-0 z-10 h-3 bg-gradient-to-b from-scroll-edge to-transparent opacity-0',
-            'group-data-[scrolled=true]/edge:opacity-100',
-            isPageScroller
-              ? 'top-[var(--reveal-inset,0px)] motion-safe:transition-[top,opacity] motion-safe:duration-(--reveal-duration) motion-safe:ease-(--reveal-ease)'
-              : 'top-0 motion-safe:transition-opacity motion-safe:duration-120',
+            'pointer-events-none absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b from-scroll-edge to-transparent opacity-0',
+            'motion-safe:transition-opacity motion-safe:duration-120 group-data-[scrolled=true]/edge:opacity-100',
           )}
         />
       ) : null}

@@ -406,7 +406,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     detail: github?.detail ?? null,
     view: pullRequestView.view,
   });
-  const checksUnreadReason = checksUnreadReasonOf({ pr, detail: github?.detail ?? null });
   const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
   const threadCounts = reviewCounts({
     threads: branchReview.branchEntries.map((e) => e.row.thread),
@@ -420,7 +419,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     commits: start.step.ahead,
     notPushed: pushCount,
     checks: checksRuns,
-    checksUnreadReason,
+    checksUnreadReason: checksUnreadReasonOf({ pr, detail: github?.detail ?? null }),
   });
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
@@ -430,6 +429,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         page="branch"
         scroll="self"
         headerMode="reveal"
+        revealKey={tab}
         headerRhythm="section"
         lead={
           <>

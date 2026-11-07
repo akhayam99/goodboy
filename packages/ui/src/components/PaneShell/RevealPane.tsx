@@ -2,6 +2,7 @@ import { useContext, useRef, type ReactNode } from 'react';
 import { cn } from '../../cn';
 import { PANE_RHYTHM } from '../../paneRhythm';
 import { useHeaderReveal } from '../../useHeaderReveal';
+import { ClaimedScrollerContext } from '../../useHeaderReveal/claimedScrollerContext';
 import { HeaderRevealContext } from '../../useHeaderReveal/headerRevealContext';
 import { PageColumn, type PageColumnWidth } from '../PageColumn';
 import { ScrollFade } from '../ScrollFade';
@@ -15,6 +16,7 @@ type Props = {
   readonly lead: ReactNode;
   readonly dockBlock: ReactNode;
   readonly isSelfScroll: boolean;
+  readonly resetKey: string | null;
   readonly animationClassName: string;
   readonly children: ReactNode;
 };
@@ -26,13 +28,14 @@ export const RevealPane = ({
   lead,
   dockBlock,
   isSelfScroll,
+  resetKey,
   animationClassName,
   children,
 }: Props) => {
   const regionRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const reveal = useHeaderReveal({ regionRef, headerRef, bodyRef });
+  const reveal = useHeaderReveal({ regionRef, headerRef, bodyRef, resetKey });
   const trail = useContext(PageTrailContext);
   const isOuterUnderTrail = useContext(UnderTrailContext);
   const hasTrail = trail != null;
@@ -90,26 +93,28 @@ export const RevealPane = ({
             </PageColumn>
           </div>
           <HeaderRevealContext.Provider value={reveal}>
-            <div
-              ref={bodyRef}
-              data-slot="pane-body"
-              className={cn(
-                'flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-pad,0px)]',
-                'group-data-[reveal=slide]/reveal:h-[calc(100%+var(--reveal-extend,0px))] group-data-[reveal=slide]/reveal:flex-none',
-                'group-data-[reveal=slide]/reveal:translate-y-[calc(var(--reveal-shift,0px)*-1)]',
-                'motion-safe:duration-(--reveal-duration) motion-safe:ease-(--reveal-ease) group-data-[reveal=slide]/reveal:motion-safe:transition-transform',
-              )}
-            >
-              {isSelfScroll ? (
-                children
-              ) : (
-                <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-                  <PageColumn width={width} className="pb-5">
-                    <div className={cn(PANE_RHYTHM.stack, animationClassName)}>{children}</div>
-                  </PageColumn>
-                </ScrollFade>
-              )}
-            </div>
+            <ClaimedScrollerContext.Provider value={false}>
+              <div
+                ref={bodyRef}
+                data-slot="pane-body"
+                className={cn(
+                  'flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-pad,0px)]',
+                  'group-data-[reveal=slide]/reveal:h-[calc(100%+var(--reveal-extend,0px))] group-data-[reveal=slide]/reveal:flex-none',
+                  'group-data-[reveal=slide]/reveal:translate-y-[calc(var(--reveal-shift,0px)*-1)]',
+                  'motion-safe:duration-(--reveal-duration) motion-safe:ease-(--reveal-ease) group-data-[reveal=slide]/reveal:motion-safe:transition-transform',
+                )}
+              >
+                {isSelfScroll ? (
+                  children
+                ) : (
+                  <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+                    <PageColumn width={width} className="pb-5">
+                      <div className={cn(PANE_RHYTHM.stack, animationClassName)}>{children}</div>
+                    </PageColumn>
+                  </ScrollFade>
+                )}
+              </div>
+            </ClaimedScrollerContext.Provider>
           </HeaderRevealContext.Provider>
         </div>
         {dockBlock}

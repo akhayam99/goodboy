@@ -7,6 +7,7 @@ export type PageScroller = {
 
 export type HeaderReveal = {
   readonly register: (scroller: PageScroller) => () => void;
+  readonly holdAppScroll: () => void;
 };
 
 export const HeaderRevealContext = createContext<HeaderReveal | null>(null);

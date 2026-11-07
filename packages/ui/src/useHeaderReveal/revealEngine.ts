@@ -3,19 +3,9 @@ import { isKeyboardFocus } from '../isKeyboardFocus';
 import { DURATION_BASE_MS } from '../motionTimings';
 import { prefersReducedMotion } from '../prefersReducedMotion';
 import type { HeaderReveal, PageScroller } from './headerRevealContext';
-import { headerRevealOf, type HeaderRevealState } from './headerRevealOf';
-
-const INTENT_MS = 500;
-const AT_TOP_SLACK_PX = 1;
-const SCROLL_KEYS: ReadonlySet<string> = new Set([
-  'ArrowUp',
-  'ArrowDown',
-  'PageUp',
-  'PageDown',
-  'Home',
-  'End',
-  ' ',
-]);
+import { headerRevealOf } from './headerRevealOf';
+import type { HeaderRevealState } from './headerRevealState';
+import { scrollIntent } from './scrollIntent';
 
 type Params = {
   readonly regionRef: RefObject<HTMLElement | null>;
@@ -23,11 +13,18 @@ type Params = {
   readonly bodyRef: RefObject<HTMLElement | null>;
 };
 
-type Mode = 'static' | 'overlay' | 'slide';
-
 export type RevealEngine = {
   readonly reveal: HeaderReveal;
   readonly attach: () => () => void;
+  readonly reset: () => void;
+};
+
+type ViewportParams = {
+  readonly viewport: HTMLElement;
+};
+
+type EvaluateParams = ViewportParams & {
+  readonly isUserScroll: boolean;
 };
 
 type ExtendParams = {
@@ -36,53 +33,24 @@ type ExtendParams = {
   readonly isShown: boolean;
 };
 
-type ScrollerParams = {
-  readonly viewport: HTMLElement;
-};
+const clampedTopOf = ({ viewport }: ViewportParams): number =>
+  Math.min(Math.max(0, viewport.scrollTop), rangeOf({ viewport }));
 
-type BodyParams = {
-  readonly body: HTMLElement;
-};
-
-type TopParams = BodyParams & {
-  readonly scroller: PageScroller;
-};
-
-const paddingTopOf = ({ body }: BodyParams): number => {
-  const value = Number.parseFloat(getComputedStyle(body).paddingTop);
-  return Number.isNaN(value) ? 0 : value;
-};
-
-const isAtBodyTop = ({ body, scroller }: TopParams): boolean =>
-  scroller.root.getBoundingClientRect().top -
-    body.getBoundingClientRect().top -
-    paddingTopOf({ body }) <=
-  AT_TOP_SLACK_PX;
-
-const clampedTopOf = ({ viewport }: ScrollerParams): number => {
-  const max = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
-  return Math.min(Math.max(0, viewport.scrollTop), max);
-};
+const rangeOf = ({ viewport }: ViewportParams): number =>
+  Math.max(0, viewport.scrollHeight - viewport.clientHeight);
 
 export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealEngine => {
   const scrollers = new Map<PageScroller, AbortController>();
+  const lastTops = new Map<HTMLElement, number>();
+  const intent = scrollIntent();
   let state: HeaderRevealState = { isShown: true, anchor: 0 };
   let source: HTMLElement | null = null;
-  const lastTops = new Map<HTMLElement, number>();
   let headerHeight = 0;
-  let mode: Mode = 'static';
-  let intentAt = Number.NEGATIVE_INFINITY;
-  let isDragging = false;
+  let isSliding = false;
   let isFocusHeld = false;
-  let observer: ResizeObserver | null = null;
   let isSettling = false;
+  let observer: ResizeObserver | null = null;
   let extendTimer: ReturnType<typeof setTimeout> | null = null;
-
-  const markIntent = () => {
-    intentAt = performance.now();
-  };
-
-  const isUserScroll = (): boolean => isDragging || performance.now() - intentAt <= INTENT_MS;
 
   const paintExtend = ({ region, shift, isShown }: ExtendParams) => {
     if (extendTimer !== null) {
@@ -104,15 +72,11 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     if (region === null) {
       return;
     }
-    const isOverlay = mode === 'overlay';
-    const isSlide = mode === 'slide';
-    const isShown = mode === 'static' || state.isShown;
-    const shift = isSlide && !isShown ? `${headerHeight}px` : '0px';
-    region.setAttribute('data-reveal', mode);
+    const isShown = !isSliding || state.isShown;
+    const shift = isShown ? '0px' : `${headerHeight}px`;
+    region.setAttribute('data-reveal', isSliding ? 'slide' : 'static');
     region.setAttribute('data-reveal-header', isShown ? 'shown' : 'hidden');
-    region.style.setProperty('--reveal-pad', isOverlay ? '0px' : `${headerHeight}px`);
-    region.style.setProperty('--reveal-head', isOverlay ? `${headerHeight}px` : '0px');
-    region.style.setProperty('--reveal-inset', isOverlay && isShown ? `${headerHeight}px` : '0px');
+    region.style.setProperty('--reveal-pad', `${headerHeight}px`);
     region.style.setProperty('--reveal-shift', shift);
     region.style.setProperty(
       '--reveal-duration',
@@ -130,69 +94,16 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     return [...scrollers.keys()].filter((scroller) => body.contains(scroller.root));
   };
 
-  const measure = () => {
-    const header = headerRef.current;
-    const body = bodyRef.current;
-    if (header === null || body === null) {
-      return;
-    }
-    const live = liveScrollers();
-    const nextHeight = header.offsetHeight;
-    const nextMode: Mode = live.some((scroller) => isAtBodyTop({ body, scroller }))
-      ? 'overlay'
-      : live.length > 0
-        ? 'slide'
-        : 'static';
-    const delta = nextHeight - headerHeight;
-    if (delta !== 0 && mode === 'overlay' && nextMode === 'overlay' && !state.isShown) {
-      live.forEach((scroller) => {
-        if (scroller.viewport.scrollTop > 0) {
-          scroller.viewport.scrollTop += delta;
-        }
-      });
-      state = { isShown: false, anchor: state.anchor + delta };
-    }
-    headerHeight = nextHeight;
-    if (nextMode !== mode) {
-      mode = nextMode;
-      state = { isShown: true, anchor: source?.scrollTop ?? 0 };
-    }
-    paint();
-  };
-
-  const settle = ({ viewport }: ScrollerParams) => {
-    isSettling = true;
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        isSettling = false;
-        state = { isShown: state.isShown, anchor: clampedTopOf({ viewport }) };
-      }),
-    );
-  };
-
-  const isLive = ({ viewport }: ScrollerParams): boolean =>
+  const isLive = ({ viewport }: ViewportParams): boolean =>
     liveScrollers().some((scroller) => scroller.viewport === viewport);
 
-  const onScroll = ({ viewport }: ScrollerParams) => {
-    const top = clampedTopOf({ viewport });
-    const before = lastTops.get(viewport) ?? top;
-    lastTops.set(viewport, top);
-    if (mode === 'static' || !isLive({ viewport })) {
-      return;
-    }
-    if (source !== viewport) {
-      source = viewport;
-      state = { isShown: state.isShown, anchor: before };
-    }
-    if (isSettling) {
-      state = { isShown: state.isShown, anchor: clampedTopOf({ viewport }) };
-      return;
-    }
+  const evaluate = ({ viewport, isUserScroll }: EvaluateParams) => {
     const next = headerRevealOf({
       state,
-      scrollTop: top,
-      headerHeight: mode === 'overlay' ? headerHeight : 0,
-      isUserScroll: isUserScroll(),
+      scrollTop: clampedTopOf({ viewport }),
+      range: rangeOf({ viewport }),
+      headerHeight,
+      isUserScroll,
       isFocusHeld,
     });
     const isFlipped = next.isShown !== state.isShown;
@@ -201,34 +112,77 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
       return;
     }
     paint();
-    if (mode === 'slide') {
-      settle({ viewport });
+    settle({ viewport });
+  };
+
+  const settle = ({ viewport }: ViewportParams) => {
+    isSettling = true;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        isSettling = false;
+        lastTops.set(viewport, clampedTopOf({ viewport }));
+        evaluate({ viewport, isUserScroll: false });
+      }),
+    );
+  };
+
+  const reset = () => {
+    state = { isShown: true, anchor: source === null ? 0 : clampedTopOf({ viewport: source }) };
+    paint();
+  };
+
+  const measure = () => {
+    const header = headerRef.current;
+    if (header === null) {
+      return;
     }
+    const isNowSliding = liveScrollers().length > 0;
+    headerHeight = header.offsetHeight;
+    if (isNowSliding !== isSliding) {
+      isSliding = isNowSliding;
+      state = { isShown: true, anchor: source === null ? 0 : clampedTopOf({ viewport: source }) };
+    }
+    paint();
+    if (isSliding && source !== null && !isSettling && isLive({ viewport: source })) {
+      evaluate({ viewport: source, isUserScroll: false });
+    }
+  };
+
+  const onScroll = ({ viewport }: ViewportParams) => {
+    const top = clampedTopOf({ viewport });
+    const before = lastTops.get(viewport) ?? top;
+    lastTops.set(viewport, top);
+    if (!isSliding || !isLive({ viewport })) {
+      return;
+    }
+    const isUserScroll = intent.isUserScroll({ viewport, delta: top - before });
+    if (source !== viewport) {
+      source = viewport;
+      state = { isShown: state.isShown, anchor: before };
+    }
+    if (isSettling) {
+      state = { isShown: state.isShown, anchor: top };
+      return;
+    }
+    evaluate({ viewport, isUserScroll });
   };
 
   const register = ({ root, viewport }: PageScroller): (() => void) => {
     const scroller = { root, viewport };
     const controller = new AbortController();
     const { signal } = controller;
-    viewport.addEventListener('scroll', () => onScroll({ viewport }), { passive: true, signal });
-    root.addEventListener('wheel', markIntent, { passive: true, signal });
-    root.addEventListener('touchmove', markIntent, { passive: true, signal });
-    root.addEventListener(
-      'keydown',
-      (event) => {
-        if (SCROLL_KEYS.has(event.key)) {
-          markIntent();
-        }
-      },
-      { signal },
-    );
+    const passive = { passive: true, signal };
+    viewport.addEventListener('scroll', () => onScroll({ viewport }), passive);
+    root.addEventListener('wheel', (event) => intent.onWheel({ viewport, event }), passive);
+    root.addEventListener('touchmove', () => intent.onTouch({ viewport }), passive);
+    root.addEventListener('keydown', (event) => intent.onKey({ viewport, event }), { signal });
     root.addEventListener(
       'pointerdown',
       (event) => {
         if (event.target instanceof Node && viewport.contains(event.target)) {
           return;
         }
-        isDragging = true;
+        intent.onDragStart({ viewport });
       },
       { signal },
     );
@@ -262,15 +216,8 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     const body = bodyRef.current;
     const controller = new AbortController();
     const { signal } = controller;
-    const release = () => {
-      if (!isDragging) {
-        return;
-      }
-      isDragging = false;
-      markIntent();
-    };
-    window.addEventListener('pointerup', release, { signal });
-    window.addEventListener('pointercancel', release, { signal });
+    window.addEventListener('pointerup', intent.onDragEnd, { signal });
+    window.addEventListener('pointercancel', intent.onDragEnd, { signal });
     header?.addEventListener(
       'focusin',
       (event) => {
@@ -278,11 +225,9 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
           return;
         }
         isFocusHeld = true;
-        if (state.isShown) {
-          return;
+        if (!state.isShown) {
+          reset();
         }
-        state = { isShown: true, anchor: source?.scrollTop ?? 0 };
-        paint();
       },
       { signal },
     );
@@ -314,10 +259,10 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
         clearTimeout(extendTimer);
         extendTimer = null;
       }
-      isDragging = false;
+      intent.onDragEnd();
       isFocusHeld = false;
     };
   };
 
-  return { reveal: { register }, attach };
+  return { reveal: { register, holdAppScroll: intent.hold }, attach, reset };
 };

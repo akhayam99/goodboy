@@ -1,15 +1,13 @@
-export const HIDE_THRESHOLD_PX = 24;
+import type { HeaderRevealState } from './headerRevealState';
 
-export const SHOW_THRESHOLD_PX = 8;
-
-export type HeaderRevealState = {
-  readonly isShown: boolean;
-  readonly anchor: number;
-};
+const HIDE_AFTER_PX = 24;
+const SHOW_AFTER_PX = 8;
+const AT_TOP_PX = 1;
 
 type Params = {
   readonly state: HeaderRevealState;
   readonly scrollTop: number;
+  readonly range: number;
   readonly headerHeight: number;
   readonly isUserScroll: boolean;
   readonly isFocusHeld: boolean;
@@ -18,12 +16,14 @@ type Params = {
 export const headerRevealOf = ({
   state,
   scrollTop,
+  range,
   headerHeight,
   isUserScroll,
   isFocusHeld,
 }: Params): HeaderRevealState => {
   const top = Math.max(0, scrollTop);
-  if (top <= headerHeight || isFocusHeld) {
+  const roomWhenHidden = state.isShown ? range - headerHeight : range;
+  if (top <= AT_TOP_PX || isFocusHeld || roomWhenHidden < HIDE_AFTER_PX) {
     return { isShown: true, anchor: top };
   }
   if (!isUserScroll) {
@@ -31,13 +31,13 @@ export const headerRevealOf = ({
   }
   if (state.isShown) {
     const anchor = Math.min(state.anchor, top);
-    if (top - anchor >= HIDE_THRESHOLD_PX) {
+    if (top - anchor >= HIDE_AFTER_PX) {
       return { isShown: false, anchor: top };
     }
     return { isShown: true, anchor };
   }
   const anchor = Math.max(state.anchor, top);
-  if (anchor - top >= SHOW_THRESHOLD_PX) {
+  if (anchor - top >= SHOW_AFTER_PX) {
     return { isShown: true, anchor: top };
   }
   return { isShown: false, anchor };

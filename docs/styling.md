@@ -438,35 +438,35 @@ flex-col` roots and only ever falls.
 ### A header that steps aside while you read
 
 `PaneShell` with `headerMode="reveal"` keeps the back row (the page trail) and
-the `lead` pinned at the top, and lays the rest of the header over the body.
-The first vertical `ScrollFade` of the body is the page scroller: it finds the
-header through `HeaderRevealContext` (`packages/ui/src/useHeaderReveal`), so a
-page adds nothing. A deliberate scroll down by the reader, 24px
-(`HIDE_THRESHOLD_PX`) past the header's height, slides the header up and out;
-a scroll up of 8px (`SHOW_THRESHOLD_PX`), the top of
-the page, keyboard focus inside the header or a new page scroller (a tab
-change) brings it back over the content, never pushing it. One pure function,
-`headerRevealOf`, decides. A scroll the app makes (scroll memory,
-`scrollIntoView`, a list that shrinks) never hides it: only a scroll that
-follows a wheel, a touch, a scroll key or a thumb drag counts. The hook
-publishes three variables on the region and nothing else measures:
-`--reveal-head` (the room the page scroller keeps at its top, so the page at
-rest looks as before), `--reveal-inset` (where the visible header ends: a
-sticky row inside the body uses `top-[var(--reveal-inset,0px)]`) and
-`--reveal-pad`. The slide uses `--duration-base` and `--ease-enter` to arrive,
+the `lead` pinned at the top; the rest of the header sits above the body and
+steps aside while you read. The first vertical `ScrollFade` of the body is the
+page scroller: it finds the header through `HeaderRevealContext`
+(`packages/ui/src/useHeaderReveal`) and claims the role, so a nested scroller
+never drives the header and a page adds nothing. One pure function,
+`headerRevealOf`, decides, with the same numbers on every page whatever the
+header height or what sits above the scroller: 24px of deliberate scroll down
+hides the header, 8px up brings it back, and so do the top of the page,
+keyboard focus inside the header and a new `revealKey` (the Branch page passes
+its tab, so a tab change brings the header back even when React keeps the
+scroller). When the header leaves, the whole body (a toolbar above the
+scroller included) moves up with it (`--reveal-shift`) and grows by the same
+height at the bottom (`--reveal-extend`, kept until the header is back in), so
+the scroller never sits under the header and its thumb, shade and sticky rows
+need nothing. A page with less than 24px left to scroll once the header is gone
+never hides it, and a hidden page that runs out of room brings it back, so a
+short diff never strands the header. Only the reader moves the header
+(`scrollIntent.ts`): a scroll counts when it follows a wheel, a scroll key on
+the content (never one typed into a field), a touch or a thumb drag on that
+same viewport, in that direction and no larger than the input asked for. A
+jump the app makes right after (`scrollIntoView`, a restored position, the
+clamp when the body grows at the end of a list) reads as the app, and code
+that scrolls on purpose calls `holdAppScroll` first (`useScrollMemory` does).
+The slide uses `--duration-base` and `--ease-enter` to arrive,
 `--duration-quick` and `--ease-exit` to leave, and is off under reduced motion.
-A body whose page scroller does not start the body (a toolbar above the diff,
-the Comments filter above its list) slides instead: the region pads the body by
-the header height, and when the header leaves the whole body moves up with it
-(`--reveal-shift`) and grows by the same height at the bottom
-(`--reveal-extend`, kept until the header is back in), so the toolbar rides
-under the back row; the clamp that growth causes at the end of a list is not
-read as a scroll. A body with no scroller keeps the header in place. The
-terminal output (xterm) owns its own viewport, not a `ScrollFade`, and never
-drives the header. A failure banner never goes in the
-header: it is the page's `lead`, pinned under the back row (rule 13). The
-header paints `bg-background`, so the mode is for pages on the content sheet,
-not for drawers or popovers.
+A body with no scroller keeps the header in place. The terminal output (xterm)
+owns its own viewport, not a `ScrollFade`, and never drives the header. A
+failure banner never goes in the header: it is the page's `lead`, pinned under
+the back row (rule 13).
 
 ## Scroll edges fade, never hard-cut
 
@@ -507,8 +507,7 @@ sharp.
 `ScrollFade edge="shade"` draws, once the view is scrolled, a 12px band from
 the `scroll-edge` color token to transparent under its top edge, fading in over
 `--duration-quick`. No line, no blur; the bottom edge keeps its fade. The page
-scroller under a `headerMode="reveal"` header takes the shade by default and
-moves it with the header (`--reveal-inset`, on the header's own timing). `fadeEdges="end"` keeps the top
+scroller under a `headerMode="reveal"` header takes the shade by default. `fadeEdges="end"` keeps the top
 edge to the sticky rows, so no shade is drawn there.
 
 ## Dividers separate chrome from content, never content from content

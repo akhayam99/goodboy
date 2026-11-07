@@ -19,14 +19,13 @@ its title (`BranchTabStrip`); the page computes its counts once
 one pill. A host with no session rail (a scene, a test) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next. The header steps aside
-while you read (`PaneShell headerMode="reveal"`): scrolling a section down keeps
-only the back row (`Back to overview`) and the banners pinned, and a small
-scroll up of 8px (it leaves only after a deliberate 24px down), the top of the
-section, keyboard focus in the header or another tab
-brings the title, the line, the tabs and the work lines back over the content.
-On a section whose scroller does not start its body (Changes, with its toolbar
-above the diff; Comments, with its filter above the list) the toolbar rides up
-with the content and stays under the back row.
+while you read (`PaneShell headerMode="reveal"`, `revealKey` the tab): 24px of
+scroll down keeps only the back row (`Back to overview`) and the banners
+pinned, and 8px up, the top of the section, keyboard focus in the header or
+another tab brings the title, the line, the tabs and the work lines back. On a
+section whose scroller does not start its body (Changes, with its toolbar above
+the diff; Comments, with its filter above the list) the toolbar rides up with
+the content and stays under the back row.
 
 **Header.** One row: the title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on

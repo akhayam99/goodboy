@@ -24,9 +24,7 @@ type ScrollParams = {
 };
 
 const userScroll = ({ delta }: ScrollParams): void => {
-  const viewport = document.querySelector<HTMLElement>(
-    '[data-slot="reveal-spacer"]',
-  )?.parentElement;
+  const viewport = document.querySelector<HTMLElement>('[data-page-scroller]');
   if (viewport === null || viewport === undefined) {
     return;
   }

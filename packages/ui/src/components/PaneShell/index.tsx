@@ -17,6 +17,7 @@ type BaseProps = {
   readonly animationClassName?: string;
   readonly scroll?: 'pane' | 'body' | 'self';
   readonly headerMode?: 'static' | 'reveal';
+  readonly revealKey?: string;
   readonly tabs?: ReactNode;
   readonly dock?: ReactNode;
   readonly dockEdge?: 'line' | 'space';
@@ -50,6 +51,7 @@ export const PaneShell = (props: Props) => {
     animationClassName = 'motion-safe:animate-studio-in',
     scroll = 'pane',
     headerMode = 'static',
+    revealKey,
     tabs,
     dock,
     dockEdge = 'line',
@@ -131,6 +133,7 @@ export const PaneShell = (props: Props) => {
         lead={lead}
         dockBlock={dockBlock}
         isSelfScroll={scroll === 'self'}
+        resetKey={revealKey ?? null}
         animationClassName={animationClassName}
       >
         {children}

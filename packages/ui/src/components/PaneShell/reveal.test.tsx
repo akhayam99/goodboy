@@ -42,6 +42,10 @@ const resizeAll = (): void => {
 
 beforeEach(() => {
   vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    callback(0);
+    return 0;
+  });
 });
 
 afterEach(() => {
@@ -66,13 +70,7 @@ const nodeOf = ({ selector }: NodeParams): HTMLElement => {
 const region = (): HTMLElement => nodeOf({ selector: '[data-slot="reveal-region"]' });
 const headerNode = (): HTMLElement => nodeOf({ selector: '[data-slot="reveal-header"]' });
 
-const pageViewport = (): HTMLElement => {
-  const viewport = nodeOf({ selector: '[data-slot="reveal-spacer"]' }).parentElement;
-  if (viewport === null) {
-    throw new Error('the page scroller has no viewport');
-  }
-  return viewport;
-};
+const pageViewport = (): HTMLElement => nodeOf({ selector: '[data-page-scroller]' });
 
 type SizeParams = {
   readonly height: number;
@@ -83,10 +81,15 @@ const sizeHeader = ({ height }: SizeParams): void => {
   resizeAll();
 };
 
-const sizeViewport = (): HTMLElement => {
+type ViewportSizeParams = {
+  readonly content?: number;
+  readonly view?: number;
+};
+
+const sizeViewport = ({ content = CONTENT_PX, view = VIEW_PX }: ViewportSizeParams = {}) => {
   const viewport = pageViewport();
-  Object.defineProperty(viewport, 'scrollHeight', { value: CONTENT_PX, configurable: true });
-  Object.defineProperty(viewport, 'clientHeight', { value: VIEW_PX, configurable: true });
+  Object.defineProperty(viewport, 'scrollHeight', { value: content, configurable: true });
+  Object.defineProperty(viewport, 'clientHeight', { value: view, configurable: true });
   return viewport;
 };
 
@@ -98,7 +101,7 @@ type ScrollParams = {
 
 const scrollTo = ({ viewport, top, isUser = true }: ScrollParams): void => {
   if (isUser) {
-    fireEvent.wheel(viewport);
+    fireEvent.wheel(viewport, { deltaY: top - viewport.scrollTop });
   }
   viewport.scrollTop = top;
   fireEvent.scroll(viewport);
@@ -108,18 +111,22 @@ const headerState = (): string | null => region().getAttribute('data-reveal-head
 
 type PageProps = {
   readonly tab?: string;
+  readonly isKeyed?: boolean;
+  readonly hasToolbar?: boolean;
 };
 
-const Page = ({ tab = 'files' }: PageProps) => (
+const Page = ({ tab = 'files', isKeyed = false, hasToolbar = false }: PageProps) => (
   <PageTrailContext.Provider value={<button type="button">Back to overview</button>}>
     <PaneShell
       title="Stop retried webhooks posting a second credit"
       actions={<button type="button">Fix checks</button>}
       headerMode="reveal"
+      revealKey={tab}
       scroll="self"
       lead={<p>Push failed</p>}
     >
-      <ScrollFade key={tab} className="min-h-0 flex-1">
+      {hasToolbar ? <div>Compared with main</div> : null}
+      <ScrollFade key={isKeyed ? tab : 'page'} className="min-h-0 flex-1">
         <p>Diff body</p>
         <ScrollFade className="max-h-40">
           <p>Inner list</p>
@@ -129,8 +136,8 @@ const Page = ({ tab = 'files' }: PageProps) => (
   </PageTrailContext.Provider>
 );
 
-const mountPage = (): HTMLElement => {
-  render(<Page />);
+const mountPage = (props: PageProps = {}): HTMLElement => {
+  render(<Page {...props} />);
   sizeHeader({ height: HEADER_PX });
   return sizeViewport();
 };
@@ -149,33 +156,31 @@ describe('PaneShell header reveal', () => {
   it('makes only the outer scroller of the body the page scroller', () => {
     mountPage();
 
-    expect(document.querySelectorAll('[data-slot="reveal-spacer"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-page-scroller]')).toHaveLength(1);
     expect(pageViewport().contains(screen.getByText('Inner list'))).toBe(true);
   });
 
-  it('reserves the header height inside the page scroller, so nothing shifts on reveal', () => {
-    mountPage();
+  it.each([false, true])(
+    'hides after the same 24px and returns on 8px up, toolbar above the scroller %s',
+    (hasToolbar) => {
+      const viewport = mountPage({ hasToolbar });
 
-    expect(region().getAttribute('data-reveal')).toBe('overlay');
-    expect(region().style.getPropertyValue('--reveal-head')).toBe(`${HEADER_PX}px`);
-    expect(region().style.getPropertyValue('--reveal-pad')).toBe('0px');
-    expect(region().style.getPropertyValue('--reveal-inset')).toBe(`${HEADER_PX}px`);
-  });
-
-  it('hides the header on a scroll down and brings it back on a small scroll up', () => {
-    const viewport = mountPage();
-
-    scrollTo({ viewport, top: 100 });
-    expect(headerState()).toBe('shown');
-    scrollTo({ viewport, top: 520 });
-    expect(headerState()).toBe('hidden');
-    expect(region().style.getPropertyValue('--reveal-inset')).toBe('0px');
-    scrollTo({ viewport, top: 516 });
-    expect(headerState()).toBe('hidden');
-    scrollTo({ viewport, top: 510 });
-    expect(headerState()).toBe('shown');
-    expect(region().style.getPropertyValue('--reveal-inset')).toBe(`${HEADER_PX}px`);
-  });
+      expect(region().getAttribute('data-reveal')).toBe('slide');
+      expect(region().style.getPropertyValue('--reveal-pad')).toBe(`${HEADER_PX}px`);
+      scrollTo({ viewport, top: 23 });
+      expect(headerState()).toBe('shown');
+      scrollTo({ viewport, top: 24 });
+      expect(headerState()).toBe('hidden');
+      expect(region().style.getPropertyValue('--reveal-shift')).toBe(`${HEADER_PX}px`);
+      expect(region().style.getPropertyValue('--reveal-extend')).toBe(`${HEADER_PX}px`);
+      scrollTo({ viewport, top: 600 });
+      scrollTo({ viewport, top: 593 });
+      expect(headerState()).toBe('hidden');
+      scrollTo({ viewport, top: 592 });
+      expect(headerState()).toBe('shown');
+      expect(region().style.getPropertyValue('--reveal-shift')).toBe('0px');
+    },
+  );
 
   it('never hides the header on a scroll the app makes', () => {
     const viewport = mountPage();
@@ -186,10 +191,32 @@ describe('PaneShell header reveal', () => {
     expect(headerState()).toBe('shown');
   });
 
+  it('never hides the header on an app jump right after the wheel', () => {
+    const viewport = mountPage();
+    fireEvent.wheel(viewport, { deltaY: 40 });
+
+    scrollTo({ viewport, top: 1200, isUser: false });
+
+    expect(headerState()).toBe('shown');
+  });
+
+  it('never hides the header on a wheel that scrolls a nested list', () => {
+    const viewport = mountPage();
+    const inner = screen.getByText('Inner list').parentElement as HTMLElement;
+    Object.defineProperty(inner, 'scrollHeight', { value: 800, configurable: true });
+    Object.defineProperty(inner, 'clientHeight', { value: 160, configurable: true });
+    inner.style.overflowY = 'auto';
+    fireEvent.wheel(screen.getByText('Inner list'), { deltaY: 200 });
+
+    viewport.scrollTop = 200;
+    fireEvent.scroll(viewport);
+
+    expect(headerState()).toBe('shown');
+  });
+
   it('brings the header back when keyboard focus moves into it', () => {
     const viewport = mountPage();
     scrollTo({ viewport, top: 100 });
-    scrollTo({ viewport, top: 700 });
     expect(headerState()).toBe('hidden');
 
     act(() => {
@@ -201,51 +228,39 @@ describe('PaneShell header reveal', () => {
     expect(headerState()).toBe('shown');
   });
 
-  it('keeps the reading line when the hidden header grows', () => {
+  it('never hides the header of a page too short to scroll without it', () => {
     const viewport = mountPage();
-    scrollTo({ viewport, top: 100 });
-    scrollTo({ viewport, top: 700 });
+    sizeViewport({ content: 780, view: VIEW_PX });
 
-    sizeHeader({ height: HEADER_PX + 40 });
+    scrollTo({ viewport, top: 60 });
 
-    expect(viewport.scrollTop).toBe(740);
-    expect(headerState()).toBe('hidden');
+    expect(headerState()).toBe('shown');
   });
 
-  it('slides the header and the toolbar away when the page scroller does not start the body', () => {
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      callback(0);
-      return 0;
-    });
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function rectOf(
-      this: Element,
-    ) {
-      const top = this.closest('[data-probe]') === null ? 0 : 48;
-      return DOMRect.fromRect({ x: 0, y: top, width: 800, height: 400 });
-    });
-    render(
-      <PaneShell title="Changes" headerMode="reveal" scroll="self">
-        <div>Toolbar</div>
-        <div data-probe="">
-          <ScrollFade className="min-h-0 flex-1">
-            <p>Diff body</p>
-          </ScrollFade>
-        </div>
-      </PaneShell>,
-    );
-    sizeHeader({ height: HEADER_PX });
-    const viewport = sizeViewport();
-
-    expect(region().getAttribute('data-reveal')).toBe('slide');
-    expect(region().style.getPropertyValue('--reveal-pad')).toBe(`${HEADER_PX}px`);
-    expect(region().style.getPropertyValue('--reveal-head')).toBe('0px');
+  it('brings the header back when the hidden page runs out of room', () => {
+    const viewport = mountPage();
+    sizeViewport({ content: 800, view: VIEW_PX });
     scrollTo({ viewport, top: 40 });
     expect(headerState()).toBe('hidden');
-    expect(region().style.getPropertyValue('--reveal-shift')).toBe(`${HEADER_PX}px`);
-    expect(region().style.getPropertyValue('--reveal-extend')).toBe(`${HEADER_PX}px`);
-    scrollTo({ viewport, top: 30 });
+
+    sizeViewport({ content: 700, view: VIEW_PX + HEADER_PX });
+    viewport.scrollTop = 0;
+    resizeAll();
+
     expect(headerState()).toBe('shown');
-    expect(region().style.getPropertyValue('--reveal-shift')).toBe('0px');
+  });
+
+  it('keeps the header away when the bottom clamps as the body grows', () => {
+    const viewport = mountPage();
+    scrollTo({ viewport, top: CONTENT_PX - VIEW_PX });
+    expect(headerState()).toBe('hidden');
+
+    sizeViewport({ view: VIEW_PX + HEADER_PX });
+    viewport.scrollTop = CONTENT_PX - VIEW_PX - HEADER_PX;
+    fireEvent.scroll(viewport);
+    resizeAll();
+
+    expect(headerState()).toBe('hidden');
   });
 
   it('keeps the header in place when nothing in the body scrolls', () => {
@@ -260,15 +275,27 @@ describe('PaneShell header reveal', () => {
     expect(region().style.getPropertyValue('--reveal-pad')).toBe(`${HEADER_PX}px`);
   });
 
-  it('shows the header again when the body swaps its scroller', () => {
+  it('shows the header again on a tab change that keeps the same scroller', () => {
     const { rerender } = render(<Page />);
     sizeHeader({ height: HEADER_PX });
     const viewport = sizeViewport();
-    scrollTo({ viewport, top: 100 });
     scrollTo({ viewport, top: 900 });
     expect(headerState()).toBe('hidden');
 
-    rerender(<Page tab="commits" />);
+    rerender(<Page tab="checks" />);
+
+    expect(headerState()).toBe('shown');
+    expect(pageViewport()).toBe(viewport);
+  });
+
+  it('shows the header again when the body swaps its scroller', () => {
+    const { rerender } = render(<Page isKeyed />);
+    sizeHeader({ height: HEADER_PX });
+    const viewport = sizeViewport();
+    scrollTo({ viewport, top: 900 });
+    expect(headerState()).toBe('hidden');
+
+    rerender(<Page isKeyed tab="commits" />);
 
     expect(headerState()).toBe('shown');
     expect(pageViewport()).not.toBe(viewport);

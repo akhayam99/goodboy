@@ -80,9 +80,7 @@ describe('u37 header reveal scenes', () => {
       const title = await screen.findByRole('heading', { level: 1 });
       expect(revealHeader().contains(title)).toBe(true);
       expect(revealHeader().contains(back)).toBe(false);
-      await waitFor(() =>
-        expect(document.querySelector('[data-slot="reveal-spacer"]')).not.toBeNull(),
-      );
+      await waitFor(() => expect(document.querySelector('[data-page-scroller]')).not.toBeNull());
     },
   );
 });
