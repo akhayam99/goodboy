@@ -14,7 +14,7 @@ import { IntegrationGlyph } from '../../../../features/integrations/components/I
 import { ObjectMenuArea } from '../../../../features/actions/components/ObjectMenuArea';
 import { LinkIssueAction } from '../../../../features/session/components/SessionOverviewPane/LinkIssueAction';
 import { openGithubIssue } from '../../../../features/session/openGithubIssue';
-import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../shared/hooks/useMountRows';
 import { githubRefOf } from './githubRefOf';
 import { countSlotText } from '../../../../shared/utils/countSlotText';
 import { LevelCard } from './LevelCard';

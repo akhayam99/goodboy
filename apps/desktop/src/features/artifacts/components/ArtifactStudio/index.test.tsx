@@ -82,6 +82,13 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
         notify();
       }),
       artifactFilter: noEntries<string>(),
+      groupBySession: {},
+      setGroupBy: vi.fn(),
+      projects: [],
+      sessionMounts: noEntries<ReadonlyArray<unknown>>(),
+      sessionProjectMounts: {},
+      mountBranchObservations: {},
+      prSeries: {},
       setArtifactFilter: vi.fn(),
       sessions: noRecords(),
       workspaces: noRecords(),

@@ -8,6 +8,7 @@ import {
   branchGroupKeysOf,
   branchGroupShownCountOf,
   branchGroupsOf,
+  namedBranchGroupCountOf,
   NO_BRANCH_KEY,
 } from './branchGroupsOf';
 import { aMountView } from './testing/aMountView';
@@ -178,5 +179,13 @@ describe('branchGroupsOf', () => {
     const [group] = branchGroupsOf({ runs, mounts: MOUNTS });
 
     expect(group === undefined ? -1 : branchGroupShownCountOf({ group })).toBe(2);
+  });
+
+  it('counts the parts of one series as a single group', () => {
+    expect(namedBranchGroupCountOf({ branchLists: [[REC1, REC2]], mounts: MOUNTS })).toBe(1);
+    expect(namedBranchGroupCountOf({ branchLists: [[REC1], [REC2], [DUP]], mounts: MOUNTS })).toBe(
+      2,
+    );
+    expect(namedBranchGroupCountOf({ branchLists: [[], [DUP]], mounts: MOUNTS })).toBe(1);
   });
 });
