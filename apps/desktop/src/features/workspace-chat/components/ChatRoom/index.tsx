@@ -21,8 +21,6 @@ import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
 import { ChatArchivedBanner } from './ChatArchivedBanner';
 import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
-import { ChatHeaderDelete } from './ChatHeaderDelete';
-import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
 import { useChatDrafts } from '../../hooks/useChatDrafts';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
@@ -198,46 +196,45 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
     >
       <ChatHeader
         title={chat?.title ?? NEW_CHAT_HEADING}
-        sessions={
-          linked.stage === null || linked.entries.length < 2 ? null : (
-            <ChatSessionsChip entries={linked.entries} stage={linked.stage} onOpen={openSession} />
-          )
-        }
-        action={chat === null ? null : <ChatHeaderDelete chat={chat} onRemoved={onRemoved} />}
-      />
-      {isEmpty ? (
-        <PageColumn width="measure" className="flex min-h-0 flex-1 flex-col">
-          <ChatEmpty
-            workspaceName={workspaceName}
-            projectNames={projectNames}
-            suggestions={chatSuggestions({ projectNames })}
-            isLoading={chatId !== null && messages === undefined}
-            composer={composer}
-            onAsk={(question) => void send({ text: question })}
-            onAddProject={() =>
-              openStudio({
-                studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
-              })
-            }
-          />
-        </PageColumn>
-      ) : (
-        <>
-          <ChatThread
-            messages={shown}
-            workspaceName={workspaceName}
-            onStartWork={openWork}
-            sessions={linked.entries}
-            onOpenSession={openSession}
-            drafts={drafts}
-          />
-          <div className="shrink-0 pb-4 pt-2">
-            <PageColumn width="measure" className="flex flex-col gap-2">
-              {composer}
-            </PageColumn>
-          </div>
-        </>
-      )}
+        chat={chat}
+        linked={linked}
+        onOpenSession={openSession}
+        onRemoved={onRemoved}
+      >
+        {isEmpty ? (
+          <PageColumn width="measure" className="flex min-h-0 flex-1 flex-col">
+            <ChatEmpty
+              workspaceName={workspaceName}
+              projectNames={projectNames}
+              suggestions={chatSuggestions({ projectNames })}
+              isLoading={chatId !== null && messages === undefined}
+              composer={composer}
+              onAsk={(question) => void send({ text: question })}
+              onAddProject={() =>
+                openStudio({
+                  studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
+                })
+              }
+            />
+          </PageColumn>
+        ) : (
+          <>
+            <ChatThread
+              messages={shown}
+              workspaceName={workspaceName}
+              onStartWork={openWork}
+              sessions={linked.entries}
+              onOpenSession={openSession}
+              drafts={drafts}
+            />
+            <div className="shrink-0 pb-4 pt-2">
+              <PageColumn width="measure" className="flex flex-col gap-2">
+                {composer}
+              </PageColumn>
+            </div>
+          </>
+        )}
+      </ChatHeader>
     </section>
   );
 

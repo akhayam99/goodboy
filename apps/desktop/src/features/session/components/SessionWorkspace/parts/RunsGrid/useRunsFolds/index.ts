@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../../../../../store';
 import { runGroupFocusOf } from '../../../../../../../store/slices/navigation/runGroupFocusOf';
 import type { GroupBy } from '../../../../../../../store/slices/session-grouping/state';
@@ -104,7 +105,7 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
       return;
     }
     setRevealRowKey(null);
-    row.scrollIntoView?.({ block: 'center' });
+    appScrollIntoView({ element: row, block: 'center' });
     row.focus();
   }, [revealRowKey]);
 

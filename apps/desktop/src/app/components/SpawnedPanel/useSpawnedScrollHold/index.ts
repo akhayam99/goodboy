@@ -1,4 +1,5 @@
 import { useLayoutEffect, type RefObject } from 'react';
+import { appScrollTo } from '@goodboy/ui';
 import { anchorShift } from '../../../../shared/hooks/useScrollAnchor/anchorShift';
 import { spawnedTreeItemsOf } from '../spawnedTreeItemsOf';
 
@@ -65,7 +66,7 @@ export const useSpawnedScrollHold = ({ rootRef }: Params): void => {
           isHeld: scroller.scrollTop <= 0,
         });
         if (shift !== 0) {
-          scroller.scrollTop += shift;
+          appScrollTo({ viewport: scroller, top: scroller.scrollTop + shift });
         }
       }
       record();

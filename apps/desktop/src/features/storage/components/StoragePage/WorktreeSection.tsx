@@ -5,6 +5,7 @@ import {
   SectionHeader,
   SegmentedTabs,
   type SegmentedTabOption,
+  appScrollIntoView,
 } from '@goodboy/ui';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import {
@@ -64,7 +65,11 @@ export const WorktreeSection = ({ scope }: Props) => {
       return;
     }
     setFilter(focus.filter);
-    sectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    appScrollIntoView({
+      element: sectionRef.current,
+      behavior: 'smooth',
+      block: 'start',
+    });
     focusStorage(null);
   }, [focus, focusStorage]);
 

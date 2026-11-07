@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
+import { appScrollTo } from '@goodboy/ui';
 
 const SCROLL_ANCHOR_HOLD_MS = 260;
 
@@ -59,7 +60,7 @@ export const useScrollAnchor = ({ listRef }: Params): ScrollAnchor => {
       const hold = (now: number) => {
         const drift = row.getBoundingClientRect().top - top;
         if (Math.abs(drift) > DRIFT_EPSILON) {
-          scroller.scrollTop += drift;
+          appScrollTo({ viewport: scroller, top: scroller.scrollTop + drift });
         }
         frame.current =
           now - start < SCROLL_ANCHOR_HOLD_MS ? window.requestAnimationFrame(hold) : null;

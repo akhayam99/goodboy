@@ -1299,8 +1299,15 @@ u36-states-overview-noreply-light
 u36-states-overview-timed-out-child-dark
 u36-states-overview-timed-out-child-light
 u37-header-reveal
+u37-header-reveal-agent
 u37-header-reveal-back
+u37-header-reveal-board
+u37-header-reveal-chat
+u37-header-reveal-drawer
+u37-header-reveal-monitoring
+u37-header-reveal-overview
 u37-header-reveal-reading
+u37-header-reveal-runs
 u37-monitoring-branch
 update-card
 update-card-long-version

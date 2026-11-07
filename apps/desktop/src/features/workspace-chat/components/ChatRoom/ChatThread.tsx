@@ -1,5 +1,5 @@
 import { Fragment, useLayoutEffect, useMemo, useRef } from 'react';
-import { PageColumn, ScrollFade } from '@goodboy/ui';
+import { PageColumn, ScrollFade, appScrollTo } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId, SessionId } from '@goodboy/types';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
 import { ChatAssistantMessage } from './ChatAssistantMessage';
@@ -58,7 +58,7 @@ export const ChatThread = ({
     if (viewport === null || !isPinnedRef.current) {
       return;
     }
-    viewport.scrollTop = viewport.scrollHeight;
+    appScrollTo({ viewport, top: viewport.scrollHeight });
   }, [messages, sessions, drafts]);
 
   const onScroll = (): void => {

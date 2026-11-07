@@ -7,7 +7,7 @@ import {
   type FocusEvent,
   type KeyboardEvent,
 } from 'react';
-import { ScrollFade } from '@goodboy/ui';
+import { ScrollFade, appScrollTo } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ExploreFileActionTarget } from '../../../actions/types';
 import { useHeldPaletteScope } from '../../../palette/useHeldPaletteScope';
@@ -179,7 +179,7 @@ export const ExploreTree = ({
         viewport: element.clientHeight,
       });
       if (next !== element.scrollTop) {
-        element.scrollTop = next;
+        appScrollTo({ viewport: element, top: next });
       }
     },
     [layout, rows],

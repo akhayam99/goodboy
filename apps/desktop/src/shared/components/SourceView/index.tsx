@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollFade, cn } from '@goodboy/ui';
+import { ScrollFade, cn, appScrollIntoView } from '@goodboy/ui';
 import {
   SYNTAX_CLASS,
   highlightCode,
@@ -64,7 +64,7 @@ const plainReasonOf = ({ lineCount, source }: ReasonParams): string | null => {
 };
 
 const scrollRowIntoView = (node: HTMLElement | null) => {
-  node?.scrollIntoView?.({ block: 'center' });
+  appScrollIntoView({ element: node, block: 'center' });
 };
 
 export const SourceView = ({ text, path, isWrapped, line: targetLine }: Props) => {

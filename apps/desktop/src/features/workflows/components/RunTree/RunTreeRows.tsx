@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 import type { Agent, AgentId, OpenQuestion, PlanWithCount, SessionId } from '@goodboy/types';
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
@@ -82,9 +83,7 @@ export const RunTreeRows = ({
       return;
     }
     scrolledKeyRef.current = scrollKey;
-    if (typeof element.scrollIntoView === 'function') {
-      element.scrollIntoView({ block: 'nearest' });
-    }
+    appScrollIntoView({ element, block: 'nearest' });
   }, [activeRowId, scrollKey]);
 
   const isFixed = density !== 'rail';

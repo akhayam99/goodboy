@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type RefObject } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 
 type Params = {
   readonly ids: ReadonlyArray<string>;
@@ -56,9 +57,10 @@ export const useListboxCursor = ({
     if (activeId === null) {
       return;
     }
-    listRef.current
-      ?.querySelector(`#${CSS.escape(optionId({ id: activeId }))}`)
-      ?.scrollIntoView?.({ block: 'nearest' });
+    appScrollIntoView({
+      element: listRef.current?.querySelector(`#${CSS.escape(optionId({ id: activeId }))}`),
+      block: 'nearest',
+    });
   }, [activeId, optionId, listRef]);
 
   return { activeId, selectedIndex, select, move, optionId };

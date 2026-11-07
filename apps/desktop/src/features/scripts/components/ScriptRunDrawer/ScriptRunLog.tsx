@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
-import { Button, ICON_SIZE, ScrollFade } from '@goodboy/ui';
+import { Button, ICON_SIZE, ScrollFade, appScrollTo } from '@goodboy/ui';
 
 import { LinkedLogText, type LogFileLink } from './LinkedLogText';
 import { splitLogLines } from './splitLogLines';
@@ -24,7 +24,7 @@ export const ScriptRunLog = ({ stdout, stderr, placeholder, onOpenFile = null }:
     if (!isFollowing || viewport === null) {
       return;
     }
-    viewport.scrollTop = viewport.scrollHeight;
+    appScrollTo({ viewport, top: viewport.scrollHeight });
   }, [isFollowing, lines]);
 
   const onViewportScroll = () => {
@@ -39,7 +39,7 @@ export const ScriptRunLog = ({ stdout, stderr, placeholder, onOpenFile = null }:
   const jumpToLatest = () => {
     const viewport = viewportRef.current;
     if (viewport !== null) {
-      viewport.scrollTop = viewport.scrollHeight;
+      appScrollTo({ viewport, top: viewport.scrollHeight });
     }
     setIsFollowing(true);
   };

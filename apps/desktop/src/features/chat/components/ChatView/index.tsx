@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
-import { PANE_RHYTHM, ScrollFade } from '@goodboy/ui';
+import { PANE_RHYTHM, ScrollFade, appScrollIntoView, appScrollTo } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -296,9 +296,8 @@ export const ChatView = ({
 
   const onSelectRun = (runId: ProviderRunId) => {
     suspendAnchor();
-    document
-      .querySelector(`[data-run-column="${runId}"]`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const column = document.querySelector(`[data-run-column="${runId}"]`);
+    appScrollIntoView({ element: column, behavior: 'smooth', block: 'start' });
   };
 
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -442,7 +441,7 @@ export const ChatView = ({
     const node = document.querySelector(`[data-oq-anchor="${target.questionId}"]`);
     if (node) {
       suspendAnchor();
-      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      appScrollIntoView({ element: node, behavior: 'smooth', block: 'center' });
       clearOpenQuestionScroll();
       return;
     }
@@ -459,7 +458,7 @@ export const ChatView = ({
     const el = scrollerRef.current;
     if (el) {
       suspendAnchor();
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      appScrollTo({ viewport: el, top: el.scrollHeight, behavior: 'smooth' });
     }
     clearOpenQuestionScroll();
   }, [

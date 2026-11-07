@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { PANE_RHYTHM, cn, tintClasses } from '@goodboy/ui';
+import { PANE_RHYTHM, cn, tintClasses, appScrollIntoView } from '@goodboy/ui';
 
 type Props = {
   readonly term: string;
@@ -15,7 +15,7 @@ export const GuidePoint = ({ term, desc, flashNonce }: Props) => {
     if (!isFlashing) {
       return;
     }
-    ref.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    appScrollIntoView({ element: ref.current, block: 'center', behavior: 'smooth' });
   }, [isFlashing, flashNonce]);
 
   return (

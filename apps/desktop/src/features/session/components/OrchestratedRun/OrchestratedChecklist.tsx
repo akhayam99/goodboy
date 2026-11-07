@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { SectionLabel } from '@goodboy/ui';
+import { SectionLabel, appScrollIntoView } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core/orchestrator';
 import type { AgentId, Session } from '@goodboy/types';
 import { runPlace } from '../../../workflows/runPlace';
@@ -89,7 +89,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
       openStep({ agentId });
       return;
     }
-    row.scrollIntoView({ block: 'nearest' });
+    appScrollIntoView({ element: row, block: 'nearest' });
     target.focus();
   };
 

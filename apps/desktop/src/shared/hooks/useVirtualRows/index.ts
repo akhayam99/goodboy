@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { appScrollTo } from '@goodboy/ui';
 
 const UNMEASURED_ROWS = 40;
 const OVERSCAN_ROWS = 8;
@@ -123,7 +124,7 @@ export const useVirtualRows = ({ count, rowHeight, anchorRef, isEnabled }: Param
       if (rowTop >= rowHeight && rowTop + rowHeight <= scroller.clientHeight) {
         return;
       }
-      scroller.scrollTop += rowTop - rowHeight;
+      appScrollTo({ viewport: scroller, top: scroller.scrollTop + rowTop - rowHeight });
       measure();
     },
     [anchorRef, rowHeight, measure],

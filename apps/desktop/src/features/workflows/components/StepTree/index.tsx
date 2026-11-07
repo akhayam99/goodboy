@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Eyebrow, cn } from '@goodboy/ui';
+import { Eyebrow, cn, appScrollIntoView } from '@goodboy/ui';
 import type { StepDraft } from '../../engine';
 import type { SavedStep, SavedStepGroups } from '../../savedSteps';
 import { AddStepRow } from './AddStepRow';
@@ -59,9 +59,7 @@ export const StepTree = ({
     hasPendingAddRef.current = false;
     const rows = listRef.current?.querySelectorAll<HTMLElement>('[data-plan-step]');
     const last = rows?.item(rows.length - 1);
-    if (typeof last?.scrollIntoView === 'function') {
-      last.scrollIntoView({ block: 'nearest' });
-    }
+    appScrollIntoView({ element: last, block: 'nearest' });
   }, [count]);
   const addStep = ({ step }: { readonly step: SavedStep | null }) => {
     hasPendingAddRef.current = true;

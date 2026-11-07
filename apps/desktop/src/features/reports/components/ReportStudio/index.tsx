@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn, ScrollFade } from '@goodboy/ui';
+import { cn, ScrollFade, appScrollIntoView } from '@goodboy/ui';
 import type { ReportArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { buildReportOutline } from '../../reportOutline';
@@ -43,7 +43,7 @@ export const ReportStudio = ({ sessionId, artifact }: Props) => {
     const heading = bodyRef.current
       .querySelectorAll('.print-body h1, .print-body h2, .print-body h3')
       .item(position);
-    heading?.scrollIntoView({ block: 'start' });
+    appScrollIntoView({ element: heading, block: 'start' });
   };
 
   const hasOutline = outline.length > 0;

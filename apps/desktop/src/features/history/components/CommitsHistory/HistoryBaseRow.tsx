@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 import type { HistoryGraph, SessionId } from '@goodboy/types';
 
 import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
@@ -29,7 +30,7 @@ export const HistoryBaseRow = ({
       if (heading === null) {
         return;
       }
-      heading.scrollIntoView({ block: 'center' });
+      appScrollIntoView({ element: heading, block: 'center' });
       const page = heading.closest('[data-branch-pane]') ?? document;
       const own = page.querySelector<HTMLElement>('[data-base-rebase]');
       const rail = document.querySelector<HTMLElement>('[data-worktree-verb="mount.rebase"]');
