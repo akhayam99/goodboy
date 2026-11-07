@@ -1,6 +1,7 @@
 import type { Agent, Session, Workflow, WorkflowRunId } from '@goodboy/types';
 import { splitWorkflowRuns } from '../../../features/workflows/activeWorkflowRuns';
-import { runRowFactsOf, type RunWait } from '../../../features/workflows/runRowFactsOf';
+import { runRowFactsOf } from '../../../features/workflows/runRowFactsOf';
+import type { RunWait } from '../../../features/workflows/runStateOf';
 import type { AppState } from '../../types';
 import {
   isRunRevisingPlanIn,
@@ -18,6 +19,7 @@ export type RunWaitState = PlanReviewState &
 export type RunWaitEntry = {
   readonly runId: WorkflowRunId;
   readonly wait: RunWait;
+  readonly word: string;
 };
 
 type Params = {
@@ -51,7 +53,7 @@ export const runWaitEntriesOf = ({
   const { agentsByRunId } = splitWorkflowRuns({ attachedRuns, agents });
   const questions = state.sessionOpenQuestions?.[sessionId] ?? [];
   return attachedRuns.flatMap(({ run, workflow }) => {
-    const { wait } = runRowFactsOf({
+    const { wait, word } = runRowFactsOf({
       run,
       workflow,
       agents: agentsByRunId.get(run.id) ?? NO_AGENTS,
@@ -60,6 +62,6 @@ export const runWaitEntriesOf = ({
       questions,
       isPlanRevising: isRunRevisingPlanIn({ state, sessionId, run }),
     });
-    return wait === null ? [] : [{ runId: run.id, wait }];
+    return wait === null ? [] : [{ runId: run.id, wait, word }];
   });
 };

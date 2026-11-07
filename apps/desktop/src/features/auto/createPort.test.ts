@@ -3,7 +3,11 @@
 import { describe, expect, it } from 'vitest';
 import { createPort } from './createPort';
 
-type NamePort = (params: { readonly name: string }) => Promise<string>;
+type NameParams = {
+  readonly name: string;
+};
+
+type NamePort = (params: NameParams) => Promise<string>;
 
 describe('createPort', () => {
   it('holds no port until one is registered', () => {

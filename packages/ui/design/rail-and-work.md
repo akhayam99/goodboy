@@ -404,7 +404,7 @@ the check and the half-filled core of the queue.
 | reason                | node                 | tone    | words                                    |
 | --------------------- | -------------------- | ------- | ---------------------------------------- |
 | `agent-error`         | `failed`, `!`        | danger  | An agent stopped on an error             |
-| `run-stopped`         | `failed`, `!`        | danger  | A run stopped                            |
+| `run-stopped`         | `failed`, `!`        | danger  | Failed (Not finished for a halted step)  |
 | `ci-failed`           | `failed`, `!`        | danger  | Checks failing                           |
 | `open-question`       | `question`, `?`      | warning | 1 question for you (plural by the count) |
 | `fix-needs-you`       | `question`, `?`      | warning | 3 comments need you                      |

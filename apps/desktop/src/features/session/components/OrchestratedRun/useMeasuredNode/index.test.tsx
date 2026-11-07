@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { useMeasuredNode } from './index';
 
-const measureHeight = ({ node }: { readonly node: HTMLElement }): number => node.offsetHeight;
+type MeasureParams = {
+  readonly node: HTMLElement;
+};
+
+const measureHeight = ({ node }: MeasureParams): number => node.offsetHeight;
 
 const Probe = () => {
   const { ref, value } = useMeasuredNode({ measure: measureHeight, initial: 0 });

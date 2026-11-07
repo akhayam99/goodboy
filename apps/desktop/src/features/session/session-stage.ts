@@ -5,6 +5,7 @@ import type { SessionAttentionReason, SessionStage, SessionStageInfo } from '@go
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import { couldntFixWords, needsYouWords, pushFailedWords } from '../resolve/notes/attentionWords';
 import { NAMES } from '../../shared/utils/names';
+import { runStateFromKind } from '../workflows/runStateOf';
 import { PULL_REQUEST_PRESENTATION } from '../../shared/utils/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
@@ -95,7 +96,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'runFailed',
     tone: 'danger',
     mark: '!',
-    words: 'A run stopped',
+    words: runStateFromKind({ kind: 'failed-stop' }).word,
   }),
   'run-paused-at-limit': entryOf({
     icon: 'budget',

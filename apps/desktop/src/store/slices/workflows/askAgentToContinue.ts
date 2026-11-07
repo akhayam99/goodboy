@@ -1,14 +1,16 @@
 import { isAgentStatusSettled } from '@goodboy/core/workflows';
 import { formatError } from '@goodboy/ui';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { waitTurnSettled } from '../turn/turnSettled';
 import { composeStepBoundary } from '../turn/kickoff';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
+import { clearWorkflowTurns } from '../turn/workflowTurnBreaker';
 import type { GetFn } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+  readonly override?: TurnProviderOverride;
 };
 
 const continuePrompt = ({ agentId }: { readonly agentId: AgentId }): string =>
@@ -19,7 +21,7 @@ const continuePrompt = ({ agentId }: { readonly agentId: AgentId }): string =>
   ].join('\n');
 
 export const askAgentToContinue = (get: GetFn) => {
-  return async ({ sessionId, agentId }: Params): Promise<void> => {
+  return async ({ sessionId, agentId, override }: Params): Promise<void> => {
     try {
       const agent = (get().sessionPhaseRuns[sessionId] ?? []).find(
         (candidate) => candidate.id === agentId,
@@ -32,12 +34,14 @@ export const askAgentToContinue = (get: GetFn) => {
         await get().cancelCurrentTurn(sessionId, agentId, 'handoff');
         await waitTurnSettled({ agentId });
       }
+      clearWorkflowTurns({ agentId });
       throwIfRefused({
         result: await get().sendTurn({
           sessionId,
           agentId,
           content: continuePrompt({ agentId }),
           origin: 'workflow',
+          ...(override !== undefined && { override }),
         }),
       });
     } catch (error) {

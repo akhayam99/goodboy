@@ -3,6 +3,7 @@ import { WorkflowRunStartButton } from '../WorkflowRunStartButton';
 import { sessionPlace, useAppStore } from '../../../../../store';
 import type { RunPrimary } from '../../../../workflows/runPrimaryOf';
 import type { RunView } from '../useRunView';
+import { OpenStepPrimary } from './OpenStepPrimary';
 import { RaiseCapPrimary } from './RaiseCapPrimary';
 import { RunPrimaryButton } from './RunPrimaryButton';
 import { StartStepPrimary } from './StartStepPrimary';
@@ -42,6 +43,10 @@ export const RunPrimaryAction = ({ session, view, primary, variant = 'primary' }
     case 'start-step':
       return (
         <StartStepPrimary session={session} view={view} label={primary.label} variant={variant} />
+      );
+    case 'open-step':
+      return (
+        <OpenStepPrimary session={session} view={view} label={primary.label} variant={variant} />
       );
     case 'raise-cap':
       return <RaiseCapPrimary session={session} view={view} variant={variant} />;

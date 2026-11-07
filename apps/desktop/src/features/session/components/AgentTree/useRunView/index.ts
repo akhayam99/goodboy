@@ -11,6 +11,7 @@ import {
   heldAdmissionBlock,
   isRunHeldForPlan,
 } from '../../../../../store/slices/workflows/workflowPlanApproval';
+import { stepNumberOf } from '../../PresetRun/stepNumberOf';
 import { useSessionAgentTree } from '../useSessionAgentTree';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { workflowKindName } from '../../../../workflows/workflowKindName';
@@ -24,6 +25,7 @@ import {
   type RunPlanHold,
   type RunPrimary,
 } from '../../../../workflows/runPrimaryOf';
+import { haltedStepOf } from '../../../../workflows/haltedStepOf';
 import { runStepCountOf } from '../../../../workflows/runStepCountOf';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import {
@@ -132,6 +134,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
       : [...workflow.steps]
           .sort((first, second) => first.ordinal - second.ordinal)
           .findIndex((step) => step.id === nextStep.id);
+  const halted = isDynamic ? null : haltedStepOf({ agents });
   const flow: RunFlow = isDynamic
     ? {
         kind: 'dynamic',
@@ -141,12 +144,14 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
             ? orchestrator.planQuestion !== null
             : orchestrator.runQuestion !== null,
         isAutoRun: run.autoRun === true,
+        haltedStepNumber: orchestrator.state.haltedStepNumber,
       }
     : {
         kind: 'static',
         isPaused: isRunPaused({ run }),
         nextStepNumber: nextStepIndex < 0 ? null : nextStepIndex + 1,
         nextStepName: run.autoRun === true ? null : (nextStepAgent?.name ?? null),
+        haltedStep: halted === null ? null : { number: stepNumberOf({ workflow, agent: halted }) },
       };
   const predecessor =
     run.chainAfterId == null

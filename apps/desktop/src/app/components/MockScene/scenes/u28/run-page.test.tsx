@@ -87,45 +87,20 @@ describe('the u28 run page scenes', () => {
     }
   });
 
-  it('u28-run-step-blocked reads Not finished with the doors and no reason on the run page', async () => {
+  it('u28-run-step-blocked reads Needs you once on the run page, with no reason and no step verbs', async () => {
     await mount('u28-run-step-blocked');
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('step-failed');
-    within(tail()).getByText('Not finished');
+    expect(screen.getAllByText('Needs you')).toHaveLength(1);
+    expect(within(tail()).queryByText('Needs you')).toBeNull();
     expect(document.querySelector('[data-blocked-question]')).toBeNull();
     expect(tail().textContent).not.toContain('The benchmark script writes its report');
-    const form = within(tail()).getByRole('form', { name: 'Answer the step' });
-    const verbs = within(tail())
-      .getAllByRole('button')
-      .map((button) => button.textContent);
-    expect(verbs).toContain('Retry step');
-    expect(verbs).toContain('Open agent');
-    expect(
-      within(form).getByRole('button', { name: 'Keep working' }).hasAttribute('disabled'),
-    ).toBe(true);
+    expect(within(tail()).queryByRole('form', { name: 'Answer the step' })).toBeNull();
+    for (const name of ['Restart step', 'Open agent chat', 'Keep working', 'Stop step']) {
+      expect(within(tail()).queryByRole('button', { name })).toBeNull();
+    }
     within(checklist()).getByRole('button', { name: /^Skip step/ });
-    expect(header().textContent).not.toContain('Retry step');
-  });
-
-  it('u28-run-step-blocked sends the answer to the blocked step and clears the field', async () => {
-    await mount('u28-run-step-blocked');
-    const answerBlockedStep = vi.fn(async () => undefined);
-    act(() => {
-      useAppStore.setState({ answerBlockedStep });
-    });
-    type('Answer the step', 'Attach it to the notes only.');
-    const form = within(tail()).getByRole('form', { name: 'Answer the step' });
-
-    await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Keep working' }));
-    });
-
-    expect(answerBlockedStep).toHaveBeenCalledWith({
-      sessionId: C09_SESSION_ID,
-      agentId: C09_TESTER_ID,
-      text: 'Attach it to the notes only.',
-    });
-    expect(fieldValue('Answer the step')).toBe('');
+    expect(header().textContent).not.toContain('Restart step');
   });
 
   it('u28-run-needs-answer shows the question as a card and sends the pick to the asking step', async () => {
@@ -257,25 +232,6 @@ describe('the u28 run page scenes', () => {
     expect(answerOpenQuestions.mock.calls[1]).toEqual(answerOpenQuestions.mock.calls[0]);
   });
 
-  it('u28-run-step-blocked keeps the answer and says why when the send fails', async () => {
-    await mount('u28-run-step-blocked');
-    const answerBlockedStep = vi.fn(async () => {
-      throw new Error('This step is no longer waiting for an answer.');
-    });
-    act(() => {
-      useAppStore.setState({ answerBlockedStep });
-    });
-    type('Answer the step', 'Attach it to the notes only.');
-    const form = within(tail()).getByRole('form', { name: 'Answer the step' });
-
-    await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Keep working' }));
-    });
-
-    expect(within(form).getByRole('alert').textContent).toContain('no longer waiting');
-    expect(fieldValue('Answer the step')).toBe('Attach it to the notes only.');
-  });
-
   it('u28-run-step-blocked shows a roleless Left item as a note, not a step, and a repeated step once', async () => {
     await mount('u28-run-step-blocked');
 
@@ -290,16 +246,12 @@ describe('the u28 run page scenes', () => {
     within(nodeOf('[data-orchestrated-notes]')).getByText('Stream rows to CSV');
   });
 
-  it('u28-run-orch-blocked shows the reason as text with Add a hint and continue instead of Retry', async () => {
+  it('u28-run-orch-blocked keeps the reason off the run page and offers Add a hint and continue', async () => {
     await mount('u28-run-orch-blocked');
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('blocked');
-    const block = nodeOf('[data-orchestrated-block]');
-    expect(block.textContent).toContain('Needs a human call.');
-    expect(block.textContent).not.toContain('**');
-    expect(block.textContent).not.toContain('`');
-    expect(block.querySelector('strong')?.textContent).toBe('Needs a human call.');
-    expect(block.querySelectorAll('li')).toHaveLength(2);
+    expect(document.querySelector('[data-orchestrated-block]')).toBeNull();
+    expect(tail().textContent).not.toContain('Needs a human call.');
     expect(within(header()).queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(screen.queryByPlaceholderText('Hint the orchestrator')).toBeNull();
