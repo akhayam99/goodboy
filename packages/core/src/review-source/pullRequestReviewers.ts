@@ -8,10 +8,17 @@ import type {
 const personOf = ({
   login,
   avatarUrl,
+  isBot,
 }: {
   readonly login: string;
   readonly avatarUrl?: string | null;
-}): PullRequestPerson => ({ login, name: null, avatarUrl: avatarUrl ?? null });
+  readonly isBot?: boolean;
+}): PullRequestPerson => ({
+  login,
+  name: null,
+  avatarUrl: avatarUrl ?? null,
+  ...(isBot === undefined ? {} : { isBot }),
+});
 
 const TERMINAL_REVIEW_STATES: ReadonlySet<PrReview['state']> = new Set([
   'approved',
@@ -54,11 +61,19 @@ export const pullRequestReviewersOf = ({
     .filter((review) => !pending.has(review.author.toLowerCase()))
     .sort((a, b) => (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''))
     .map((review): PullRequestReviewer => ({
-      person: personOf({ login: review.author, avatarUrl: review.authorAvatarUrl }),
+      person: personOf({
+        login: review.author,
+        avatarUrl: review.authorAvatarUrl,
+        ...(review.isAuthorBot === undefined ? {} : { isBot: review.isAuthorBot }),
+      }),
       state: review.state,
     }));
   const awaiting = requests.map((request): PullRequestReviewer => ({
-    person: personOf({ login: request.login, avatarUrl: request.avatarUrl }),
+    person: personOf({
+      login: request.login,
+      avatarUrl: request.avatarUrl,
+      ...(request.isBot === undefined ? {} : { isBot: request.isBot }),
+    }),
     state: 'pending',
   }));
   return [...reviewed, ...awaiting];

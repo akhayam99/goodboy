@@ -40,9 +40,9 @@ describe('queued pull request ports', () => {
       mergeQueue: { position: 3 },
       isAutoMerge: false,
     });
-    expect(calls.find((args) => args[1] === 'graphql')).toContain(
-      `branch=${PR_VIEW_JSON.headRefName}`,
-    );
+    expect(
+      calls.find((args) => args[1] === 'graphql' && args.some((arg) => arg.startsWith('branch='))),
+    ).toContain(`branch=${PR_VIEW_JSON.headRefName}`);
   });
 
   it('reads GitHub auto-merge as queued independently of a queue placement', async () => {

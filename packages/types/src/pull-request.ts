@@ -6,6 +6,7 @@ export type PullRequestPerson = {
   readonly login: string;
   readonly name: string | null;
   readonly avatarUrl: string | null;
+  readonly isBot?: boolean;
 };
 
 export type PullRequestReviewerState =

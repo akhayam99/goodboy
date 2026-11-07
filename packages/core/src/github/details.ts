@@ -9,6 +9,7 @@ import type {
   PrReviewState,
 } from '@goodboy/types';
 import { classifyGhFailure } from './classifyGhFailure';
+import { fetchReviewBotLogins } from './fetchReviewBotLogins';
 import type { GhRunner, GhRunOptions } from './gh';
 import { GhCliError, GhJsonParseError, runJson } from './gh';
 
@@ -64,6 +65,7 @@ type RawReview = {
 };
 
 type RawReviewRequestUser = {
+  __typename?: string | null;
   login: string;
   avatarUrl?: string | null;
 };
@@ -426,7 +428,7 @@ export const fetchPrReadStates = async (
   prNumber: number,
   opts: GhRunOptions = {},
 ): Promise<PrReadStates> => {
-  const [reviewsRead, requestsRead, checksRead] = await Promise.all([
+  const [reviewsRead, requestsRead, checksRead, botLogins] = await Promise.all([
     readPrViewField({ runner, repo, prNumber, field: 'reviews', pick: (raw) => raw.reviews, opts }),
     readPrViewField({
       runner,
@@ -444,12 +446,16 @@ export const fetchPrReadStates = async (
       pick: (raw) => raw.statusCheckRollup,
       opts,
     }),
+    fetchReviewBotLogins({ runner, repo, prNumber, opts }),
   ]);
 
   const reviews: ReadonlyArray<PrReview> = reviewsRead.value.map((r) => ({
     id: `review-${r.id}`,
     author: r.author?.login ?? 'unknown',
     authorAvatarUrl: null,
+    ...(botLogins === null
+      ? {}
+      : { isAuthorBot: botLogins.has((r.author?.login ?? '').toLowerCase()) }),
     state: mapReviewState(r.state),
     submittedAt: r.submittedAt,
     body: r.body ?? '',
@@ -461,6 +467,7 @@ export const fetchPrReadStates = async (
         login: rr.login,
         avatarUrl: rr.avatarUrl ?? null,
         kind: 'user' as const,
+        ...(typeof rr.__typename === 'string' ? { isBot: rr.__typename === 'Bot' } : {}),
       };
     }
     return {
