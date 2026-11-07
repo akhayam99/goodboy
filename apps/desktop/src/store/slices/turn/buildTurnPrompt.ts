@@ -98,8 +98,9 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
       confinedRole: confinedRoleOf({
         input: ctx.input,
         agent: agentRowEarly,
-        views: get().autoTreeViews[sessionId] ?? [],
+        childTurn: ctx.childTurn,
       }),
+      childTurn: ctx.childTurn,
       slots: audience.slots,
     }),
     audience.items,

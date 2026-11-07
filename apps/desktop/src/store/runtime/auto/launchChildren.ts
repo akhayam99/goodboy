@@ -22,7 +22,7 @@ import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
-import { routedModelOf } from './routedModelOf';
+import { routedModelOf } from '../../slices/turn/childTurn/routedModelOf';
 import { readSnapshot } from './readSnapshot';
 import type { AgentVerbContext } from './verbContext';
 

@@ -1,6 +1,6 @@
 import type { AutoDelegation } from '@goodboy/db';
 import { PROVIDER_IDS } from '@goodboy/types';
-import type { StartChildTurnParams } from './ports';
+import type { StartChildTurnParams } from '../../../runtime/auto/ports';
 
 type Params = {
   readonly delegation: Pick<AutoDelegation, 'routing'>;

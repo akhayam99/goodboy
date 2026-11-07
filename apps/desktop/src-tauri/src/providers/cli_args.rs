@@ -1285,6 +1285,21 @@ mod tests {
     }
 
     #[test]
+    fn every_reading_role_keeps_codex_in_the_read_only_sandbox_in_every_mode() {
+        let roots = strings(&["/repo/.meta"]);
+        for role in ["scout", "planner", "investigator", "reviewer"] {
+            for mode in ["default", "plan", "acceptEdits", "bypassPermissions"] {
+                let args = spawn_args(mode, Some(role), &[], &[], &roots);
+                let argv = turn_args("codex", &args);
+                assert_eq!(value_after(&argv, "-s").as_deref(), Some("read-only"));
+                assert!(argv.iter().all(|arg| arg != "--add-dir"
+                    && !arg.starts_with("sandbox_workspace_write")
+                    && !arg.contains("dangerously")));
+            }
+        }
+    }
+
+    #[test]
     fn a_codex_writer_in_a_linked_worktree_gets_the_common_and_the_own_git_dir() {
         let roots = strings(&[
             "/repo/api/.git",

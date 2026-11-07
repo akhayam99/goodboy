@@ -83,7 +83,10 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     touchedMountsForTurn,
     recordTurnFiles,
     resolvedAsks,
+    childTurn,
   } = ctx;
+  const confinedRole = childTurn?.role ?? ctx.input.confinedRole;
+  const confinement = confinedRole === undefined ? {} : { confinedRole };
   const answersOfAsks = {
     resolvedAsks,
     ...(permissionOnceAllows !== undefined && { permissionOnceAllows }),
@@ -141,7 +144,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
     failed: { provider, model: spawnModel },
   });
-  const fallbackPlan =
+  const plannedFallback =
     cancelledBeforeFailure || isAlreadySent
       ? null
       : planTurnFallback({
@@ -164,6 +167,12 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
             },
           }),
         });
+  const fallbackPlan =
+    childTurn !== null &&
+    plannedFallback !== null &&
+    (plannedFallback.provider !== provider || plannedFallback.model !== spawnModel)
+      ? null
+      : plannedFallback;
   const message =
     maxModeFailure != null
       ? cursorMaxModeMessage(maxModeFailure)
@@ -220,6 +229,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         agentId: activeAgentId,
         content,
         ...answersOfAsks,
+        ...confinement,
         ...(attachments !== undefined && { attachments }),
         ...(override !== undefined && { override }),
         ...(force === true ? { force: true } : {}),
@@ -269,6 +279,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
             agentId: activeAgentId,
             content,
             ...answersOfAsks,
+            ...confinement,
             ...(override !== undefined && { override }),
             ...(force === true ? { force: true } : {}),
             ...(origin !== undefined && { origin }),

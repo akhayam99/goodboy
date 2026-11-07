@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   STORE_IMPORT_TIMEOUT_MS,
+  STORY_NOW,
   buildStoryProject,
   buildStoryWorkspace,
   importStore,
@@ -9,22 +10,37 @@ import {
   type StoryStore,
 } from './storyHarness';
 import type { AutoTreeView } from './slices/auto-view/state';
+import type { AutoDelegation } from '@goodboy/db';
 import {
   brandId,
   type Agent,
   type AgentId,
+  type AutoAttemptId,
+  type AutoBatchId,
+  type AutoDelegationId,
+  type AutoRequestId,
+  type AutoTreeId,
   type ProjectId,
+  type ProviderId,
+  type ProviderRunId,
   type SessionId,
   type TurnEvent,
   type WorkspaceId,
 } from '@goodboy/types';
+import { aView } from '../features/auto/testing/autoViewFixtures';
+import { deliverQueuedTurn } from './slices/agentQueue/deliverQueuedTurn';
+import { resumeAfterRestart } from './slices/turn/resumeAfterRestart';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('./storyHarness')).tauriEventModuleMock(),
 );
 vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibModuleMock());
-vi.mock('@goodboy/db', async () => (await import('./storyHarness')).dbModuleMock());
+vi.mock('@goodboy/db', async () =>
+  (await import('./storyHarness')).dbModuleMock({
+    replaceAgentQueuedMessages: vi.fn(async () => undefined),
+  }),
+);
 vi.mock('../features/chat/turn', async () => (await import('./storyHarness')).turnModuleMock());
 vi.mock('../features/permissions/permissions', async () =>
   (await import('./storyHarness')).permissionsModuleMock(),
@@ -53,12 +69,68 @@ const phaseRunListSpy = storySpies.invokeAgentList;
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
+async function* unreachableStream(): AsyncIterable<TurnEvent> {
+  yield* [];
+  throw new Error('connect ECONNREFUSED 127.0.0.1:443');
+}
+
+async function* rateLimitedStream(): AsyncIterable<TurnEvent> {
+  yield* [];
+  throw new Error('429 rate limit reached for this model');
+}
+
 const WS_ID = brandId<WorkspaceId>({ value: 'ws-1' });
 const GOAL = 'Settlement totals are off by a few cents per batch';
+const ROUTED_MODEL = 'claude-haiku-4-5';
+const OTHER_MODEL = 'claude-sonnet-4-6';
+
+type StoredDelegation = AutoDelegation | null | Error;
 
 let inserted: Agent[] = [];
+let stored: StoredDelegation = null;
 
-const wireDefaults = () => {
+type DelegationParams = Readonly<{
+  childAgentId: AgentId;
+  role: string;
+  provider?: ProviderId;
+  isAdopted?: boolean;
+}>;
+
+const delegationOf = ({
+  childAgentId,
+  role,
+  provider = 'anthropic',
+  isAdopted = false,
+}: DelegationParams): AutoDelegation => ({
+  id: brandId<AutoDelegationId>({ value: 'delegation-ledger-core' }),
+  treeId: brandId<AutoTreeId>({ value: 'tree-ledger-core' }),
+  generation: 1,
+  requestId: brandId<AutoRequestId>({ value: 'request-1' }),
+  requestHash: 'hash-1',
+  batchId: brandId<AutoBatchId>({ value: 'batch-1' }),
+  slot: 0,
+  childAgentId,
+  firstAttemptId: brandId<AutoAttemptId>({ value: 'attempt-1' }),
+  role,
+  request: { task: 'find where the rounding drifts in ledger-core' },
+  target: {},
+  routing: { provider, model: ROUTED_MODEL },
+  state: 'running',
+  outcome: null,
+  reason: null,
+  retryOf: null,
+  reviseOf: null,
+  baseRevision: null,
+  isAdopted,
+  isStopping: false,
+  questionCycles: 0,
+  deadlineAt: 0,
+  result: null,
+  createdAt: 0,
+  settledAt: null,
+});
+
+const wireDefaults = async () => {
   storySpies.getWorkspaceById.mockImplementation(async ({ id }) =>
     buildStoryWorkspace({ id, name: 'Harborline', slug: 'harborline' }),
   );
@@ -97,30 +169,43 @@ const wireDefaults = () => {
     return row;
   });
   phaseRunListSpy.mockImplementation(async () => inserted);
+  stored = null;
+  const dbMod = await import('@goodboy/db');
+  vi.mocked(dbMod.getLatestAutoDelegationOfChild).mockImplementation(async () => {
+    if (stored instanceof Error) {
+      throw stored;
+    }
+    return stored;
+  });
 };
 
-const routeTo = async () => {
+type RouterAnswer = Readonly<{
+  provider: ProviderId;
+  model: string;
+}>;
+
+const routerAnswers = async ({ provider, model }: RouterAnswer) => {
   const routingMod = await import('../features/providers/routing');
   vi.mocked(routingMod.resolveProviderForTurn).mockResolvedValue({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-haiku-5',
+    selectedProvider: provider,
+    selectedModel: model,
     reason: 'preferred',
     fallbackUsed: false,
   });
-  return routingMod.resolveProviderForTurn;
 };
 
-const lastRunArgs = () => runTurnSpy.mock.calls.at(-1)?.[0];
+const spawns = () => runTurnSpy.mock.calls.map((call) => call[0]);
 
-const viewWithChild = (params: {
-  rootAgentId: AgentId;
-  childAgentId: AgentId;
-  role: string;
-}): AutoTreeView =>
-  ({
-    tree: { rootAgentId: params.rootAgentId },
-    delegations: [{ childAgentId: params.childAgentId, role: params.role, isAdopted: false }],
-  }) as unknown as AutoTreeView;
+const lastSpawn = () => spawns().at(-1);
+
+type ErrorTextParams = Readonly<{
+  agentId: AgentId;
+}>;
+
+const errorTexts = ({ agentId }: ErrorTextParams): ReadonlyArray<string> =>
+  (useAppStore.getState().transcripts[agentId] ?? []).flatMap((event) =>
+    event.kind === 'error' ? [event.message] : [],
+  );
 
 let useAppStore: StoryStore;
 
@@ -128,13 +213,73 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
-const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 50));
+type ChildSessionParams = Readonly<{
+  kind: 'scout' | 'implementer';
+}>;
 
-describe('what a turn on an Auto child is confined to', () => {
-  beforeEach(() => {
+const childSession = async ({ kind }: ChildSessionParams) => {
+  await routerAnswers({ provider: 'anthropic', model: OTHER_MODEL });
+  useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
+  const { session } = await useAppStore.getState().createSession({
+    workspaceId: WS_ID,
+    goal: GOAL,
+    branchPrefix: 'nw',
+  });
+  const rootAgentId = await useAppStore
+    .getState()
+    .spawnAgent(session.id, { name: 'Auto', kindOverride: 'auto' });
+  const agentId = await useAppStore
+    .getState()
+    .spawnAgent(session.id, { name: 'Child', kindOverride: kind });
+  await vi.waitFor(() =>
+    expect(
+      (useAppStore.getState().sessionPhaseRuns[session.id] ?? []).map((agent) => agent.id),
+    ).toEqual(expect.arrayContaining([rootAgentId, agentId])),
+  );
+  runTurnSpy.mockClear();
+  return { sessionId: session.id, rootAgentId, agentId };
+};
+
+type StaleViewParams = Readonly<{
+  sessionId: SessionId;
+  rootAgentId: AgentId;
+  agentId: AgentId;
+}>;
+
+const holdStaleAdoptionView = ({ sessionId, rootAgentId, agentId }: StaleViewParams) => {
+  const base = aView({
+    delegations: [delegationOf({ childAgentId: agentId, role: 'scout', isAdopted: true })],
+  });
+  const view: AutoTreeView = { ...base, tree: { ...base.tree, rootAgentId, sessionId } };
+  useAppStore.setState((state) => ({
+    autoTreeViews: { ...state.autoTreeViews, [sessionId]: [view] },
+  }));
+};
+
+type OperatorTurnParams = Readonly<{
+  sessionId: SessionId;
+  agentId: AgentId;
+}>;
+
+const operatorTurn = ({ sessionId, agentId }: OperatorTurnParams) =>
+  useAppStore.getState().sendTurn({
+    sessionId,
+    agentId,
+    content: 'Also list the migrations.',
+    origin: 'operator',
+  });
+
+describe('every turn on an Auto child runs confined, from the stored delegation', () => {
+  beforeEach(async () => {
     resetStorySpies();
-    wireDefaults();
-    useAppStore.setState({ agentRunHistory: {}, transcripts: {}, agentHandoffs: {} });
+    await wireDefaults();
+    useAppStore.setState({
+      agentRunHistory: {},
+      transcripts: {},
+      agentHandoffs: {},
+      autoTreeViews: {},
+      providerCooldowns: {},
+    });
     runTurnSpy.mockImplementation(() => emptyStream());
   });
 
@@ -142,103 +287,223 @@ describe('what a turn on an Auto child is confined to', () => {
     vi.clearAllMocks();
   });
 
-  const childSession = async (params: { kind: 'scout' | 'implementer'; isAutoChild: boolean }) => {
-    const resolve = await routeTo();
-    useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
-    const { session } = await useAppStore.getState().createSession({
-      workspaceId: WS_ID,
-      goal: GOAL,
-      branchPrefix: 'nw',
+  it('confines a turn the person types on a Scout child while no tree view is loaded', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+
+    await operatorTurn({ sessionId, agentId });
+
+    expect(lastSpawn()).toMatchObject({
+      confinedRole: 'scout',
+      isAutoChild: true,
+      provider: 'anthropic',
+      model: ROUTED_MODEL,
     });
-    const rootAgentId = await useAppStore
-      .getState()
-      .spawnAgent(session.id, { name: 'Auto', kindOverride: 'auto' });
-    const agentId = await useAppStore
-      .getState()
-      .spawnAgent(session.id, { name: 'Child', kindOverride: params.kind });
-    await settle();
+  });
+
+  it('keeps the write role and the child marker of an Implementer child on a person turn', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'implementer' });
+    stored = delegationOf({ childAgentId: agentId, role: 'implementer' });
+
+    await operatorTurn({ sessionId, agentId });
+
+    expect(lastSpawn()).toMatchObject({ confinedRole: 'implementer', isAutoChild: true });
+  });
+
+  it('leaves a turn on an agent that is not an Auto child as it was', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+
+    await operatorTurn({ sessionId, agentId });
+
+    expect(lastSpawn()?.confinedRole).toBeUndefined();
+    expect(lastSpawn()?.isAutoChild).toBeUndefined();
+  });
+
+  it('refuses the turn, never starts it unconfined, when the delegation cannot be read', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = new Error('database is locked');
+
+    const result = await operatorTurn({ sessionId, agentId });
+
+    expect(spawns()).toEqual([]);
+    expect(result.autoChildRefusal).toBe('auto_child_unread');
+    expect(errorTexts({ agentId })).toContain(
+      "Couldn't read this agent's role in Auto, so the turn didn't start. Try again in a moment.",
+    );
+  });
+
+  it('confines an adopted agent while its adoption stands, even with no tree view loaded', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout', isAdopted: true });
+
+    await operatorTurn({ sessionId, agentId });
+
+    expect(lastSpawn()).toMatchObject({ confinedRole: 'scout', isAutoChild: true });
+  });
+
+  it('runs a detached agent normally even when this window still holds the adoption', async () => {
+    const { sessionId, rootAgentId, agentId } = await childSession({ kind: 'scout' });
+    holdStaleAdoptionView({ sessionId, rootAgentId, agentId });
+
+    await operatorTurn({ sessionId, agentId });
+
+    expect(lastSpawn()?.confinedRole).toBeUndefined();
+    expect(lastSpawn()?.isAutoChild).toBeUndefined();
+  });
+
+  it('confines a queued message delivered to a child', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+
+    await deliverQueuedTurn({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId,
+      turn: {
+        id: 'queued-1',
+        agentId,
+        content: 'Then check notify-relay.',
+        attachments: [],
+        override: undefined,
+        status: 'sending',
+        createdAt: STORY_NOW,
+      },
+    });
+
+    expect(lastSpawn()).toMatchObject({ confinedRole: 'scout', isAutoChild: true });
+  });
+
+  it('confines the turn that resumes a child after a restart', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
     useAppStore.setState((state) => ({
-      autoTreeViews: {
-        ...state.autoTreeViews,
-        [session.id]: params.isAutoChild
-          ? [viewWithChild({ rootAgentId, childAgentId: agentId, role: params.kind })]
-          : [],
+      transcripts: {
+        ...state.transcripts,
+        [agentId]: [
+          {
+            kind: 'user_text',
+            runId: brandId<ProviderRunId>({ value: 'run-before-restart' }),
+            text: 'Find where the rounding drifts.',
+            at: STORY_NOW,
+          },
+        ],
       },
     }));
-    runTurnSpy.mockClear();
-    return { sessionId: session.id, agentId, resolve };
-  };
 
-  it('confines a turn the person types on a Scout child to the Scout role', async () => {
-    const { sessionId, agentId } = await childSession({ kind: 'scout', isAutoChild: true });
+    const outcome = await resumeAfterRestart({
+      get: useAppStore.getState,
+      sessionId,
+      agentId,
+      reason: 'restart',
+    });
+
+    expect(outcome).toBe('resumed');
+    expect(lastSpawn()).toMatchObject({ confinedRole: 'scout', isAutoChild: true });
+  });
+
+  it('keeps the confinement on the automatic retry after the first spawn fails', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+    runTurnSpy.mockImplementationOnce(() => unreachableStream());
 
     await useAppStore.getState().sendTurn({
       sessionId,
       agentId,
-      content: 'Also list the migrations.',
-      origin: 'operator',
+      content: 'Find where the rounding drifts.',
+      origin: 'delegation',
+      confinedRole: 'scout',
+      override: { providerId: 'anthropic', model: ROUTED_MODEL, explicit: true },
     });
 
-    expect(lastRunArgs()?.confinedRole).toBe('scout');
+    expect(spawns()).toHaveLength(2);
+    expect(lastSpawn()).toMatchObject({
+      confinedRole: 'scout',
+      isAutoChild: true,
+      provider: 'anthropic',
+      model: ROUTED_MODEL,
+    });
   });
 
-  it('keeps the write role of an Implementer child on a turn the person types', async () => {
-    const { sessionId, agentId } = await childSession({ kind: 'implementer', isAutoChild: true });
+  it('drops a fallback that would leave the route and lets the turn fail for Auto', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+    runTurnSpy.mockImplementationOnce(() => rateLimitedStream());
+
+    await expect(operatorTurn({ sessionId, agentId })).rejects.toThrow('rate limit');
+
+    expect(spawns()).toHaveLength(1);
+  });
+
+  it('runs on the routed model whatever the composer default and the agent pins say', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'implementer' });
+    stored = delegationOf({ childAgentId: agentId, role: 'implementer' });
+    useAppStore.setState((state) => ({
+      agentProviderOverride: { ...state.agentProviderOverride, [agentId]: 'anthropic' },
+      agentModelOverride: { ...state.agentModelOverride, [agentId]: OTHER_MODEL },
+    }));
 
     await useAppStore.getState().sendTurn({
       sessionId,
       agentId,
       content: 'Also rename the helper.',
       origin: 'operator',
+      override: { providerId: 'anthropic', model: OTHER_MODEL },
     });
 
-    expect(lastRunArgs()?.confinedRole).toBe('implementer');
+    expect(lastSpawn()).toMatchObject({ provider: 'anthropic', model: ROUTED_MODEL });
   });
 
-  it('leaves a turn on an agent that is not an Auto child as it was', async () => {
-    const { sessionId, agentId } = await childSession({ kind: 'scout', isAutoChild: false });
+  it('refuses a model picked in the composer that is not the route', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'implementer' });
+    stored = delegationOf({ childAgentId: agentId, role: 'implementer' });
 
-    await useAppStore.getState().sendTurn({
+    const result = await useAppStore.getState().sendTurn({
       sessionId,
       agentId,
-      content: 'Also list the migrations.',
+      content: 'Also rename the helper.',
       origin: 'operator',
+      override: { providerId: 'anthropic', model: OTHER_MODEL, explicit: true },
     });
 
-    expect(lastRunArgs()?.confinedRole).toBeUndefined();
+    expect(spawns()).toEqual([]);
+    expect(result.autoChildRefusal).toBe('auto_child_off_route');
   });
 
-  it('runs the next delegated turn on the routed model after a composer model change', async () => {
-    const { sessionId, agentId, resolve } = await childSession({
-      kind: 'implementer',
-      isAutoChild: true,
-    });
-    useAppStore.setState((state) => ({
-      sessions: state.sessions.map((candidate) =>
-        candidate.id === sessionId
-          ? {
-              ...candidate,
-              providerPreference: { ...candidate.providerPreference, allowTurnOverride: false },
-            }
-          : candidate,
-      ),
-      agentProviderOverride: { ...state.agentProviderOverride, [agentId]: 'anthropic' },
-      agentModelOverride: { ...state.agentModelOverride, [agentId]: 'claude-sonnet-5' },
-    }));
+  it('refuses a retry aimed at another model than the route', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
 
-    await useAppStore.getState().sendTurn({
+    const result = await useAppStore.getState().sendTurn({
       sessionId,
       agentId,
-      content: 'Continue the implementer that stopped.',
-      origin: 'delegation',
-      confinedRole: 'implementer',
-      override: { providerId: 'anthropic', model: 'claude-haiku-5', explicit: true },
+      content: 'Find where the rounding drifts.',
+      origin: 'operator',
+      retry: { attempt: 1, provider: 'anthropic', model: OTHER_MODEL, attachmentRefs: [] },
     });
 
-    expect(resolve).toHaveBeenCalledWith(
-      expect.objectContaining({
-        turnOverride: expect.objectContaining({ model: 'claude-haiku-5' }),
-      }),
-    );
+    expect(spawns()).toEqual([]);
+    expect(result.autoChildRefusal).toBe('auto_child_off_route');
+  });
+
+  it('refuses the turn when cooldown or budget routing moves it off the routed provider', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+    await routerAnswers({ provider: 'codex', model: 'gpt-5.5' });
+
+    const result = await operatorTurn({ sessionId, agentId });
+
+    expect(spawns()).toEqual([]);
+    expect(result.autoChildRefusal).toBe('auto_child_off_route');
+  });
+
+  it('refuses a child routed to a provider whose confinement is not proven', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout', provider: 'opencode' });
+    await routerAnswers({ provider: 'opencode', model: ROUTED_MODEL });
+
+    const result = await operatorTurn({ sessionId, agentId });
+
+    expect(spawns()).toEqual([]);
+    expect(result.autoChildRefusal).toBe('auto_child_off_route');
   });
 });

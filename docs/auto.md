@@ -551,11 +551,22 @@ writing to it reopens it to **Deciding**.
   one, and a send or a Queue or Send now reaches the child (a stopped or done
   one takes the turn through the normal resume path). The store's selected
   agent of the session never decides the target. Every turn on a child runs
-  with its delegation role, whoever starts it: `confinedRoleOf` reads the role
-  from the tree view for a turn the person types, so a Scout child keeps Read,
-  Grep and Glob in plan mode and never gets a shell. A delegated turn also
-  carries the routed provider and model (`routedModelOf`, `routeTurn`), so a
-  model picked in the child's composer never decides the next `retryOf`.
+  with its delegation role and its route, whoever starts it (the person, the
+  queue, a retry, a resume after a restart, Auto): `routeTurn` reads the newest
+  stored delegation of the agent (`resolveChildTurn`, `getLatestAutoDelegationOfChild`)
+  before each spawn, never the tree view of the window, and carries that role
+  and route through the turn and its retries (`recoverTurnFailure`). An adopted
+  agent counts while its adoption row stands and runs normally once a detach
+  deleted it. When the delegation cannot be read the turn is refused
+  (`auto_child_unread`), never started without its role. The turn runs only on
+  the routed provider and model, and only on a provider in `AUTO_CHILD_PROVIDERS`:
+  a model picked in the child's composer or a retry aimed elsewhere is refused
+  (`auto_child_off_route`), agent pins are ignored, a provider fallback that
+  leaves the route is dropped so the failure reaches Auto, and a cooldown or
+  budget move off the route is refused. A reading role (Scout, Planner,
+  Investigator, Reviewer) cannot write: on Claude it keeps Read, Grep and Glob
+  in plan mode with no shell; on Codex it runs in the read-only sandbox, which
+  blocks writes but can still run read-only commands.
   The dock's **Continue** asks Auto to continue
   a stopped child, naming its delegation so Auto sends `retryOf` and the same
   agent goes on in its worktree; it never runs a plain turn on it
@@ -1033,8 +1044,10 @@ runs are not built: they have no tree, no reservation and no root grant.
 
 **Children never push.** Auto children run under one product rule: only Goodboy pushes, and only
 after its own steps. The boundary is the query bridge. `readTurnStream` marks the spawn of a child
-(`isAutoChildTurn`: origin `delegation` and a confined role other than `auto`, which is the root)
-with `isAutoChild`; `turn_spawn` records the pid of the process it starts (`spawn_turn` in
+(`isAutoChildTurn`: the agent has a stored delegation, whoever started the turn, or the turn is a
+delegation with a confined role other than `auto`, which is the root) with `isAutoChild`;
+`turn_spawn` refuses an `isAutoChild` spawn with no child role or on a CLI other than Claude or
+Codex (`ensure_auto_child`); `turn_spawn` records the pid of the process it starts (`spawn_turn` in
 `query_bridge/auto_child.rs`) until the process ends, and `dispatch` refuses, before any host call,
 every verb declared `Access::Publish` for a request whose socket peer descends from that pid. The bridge reads
 the peer pid from the socket, never a run id the request carries: GitHub `push`,
@@ -1266,9 +1279,10 @@ and deny the ask is unproven, so Auto is kept off it instead. Three layers hold 
 composer lists only `AUTO_OWN_PROVIDERS` and shows "Auto needs a connected provider" when nothing
 else is connected; `kindRouting` for Auto never resolves to the family (the role default, a stored
 role pick and the model of the chat are all skipped) and `spawnAgent` refuses an Auto agent on it;
-and `turn_spawn` refuses the role `auto` on an opencode binary (`ensure_confinement`). Its children run
-on Claude and Codex, never on Cursor, Gemini or Copilot, which cannot confine a role
-(`AUTO_CHILD_PROVIDERS`). The pool of a tree is the run
+and `turn_spawn` refuses `auto` and every reading role on an opencode binary (`ensure_confinement`).
+Its children run on Claude and Codex, never on Cursor, Gemini or Copilot, which cannot confine a role
+(`AUTO_CHILD_PROVIDERS`): `routeTurn` refuses a child turn whose final provider is outside the list,
+and `turn_spawn` refuses it again (`ensure_auto_child`). The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider
 (`autoChildPool`, `runProviderPool`).

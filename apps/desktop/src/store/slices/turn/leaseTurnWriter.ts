@@ -136,12 +136,13 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
   });
   const { isolatedCopyPath } = resolvedRoots;
   const isIsolatedTurn = isResolverTurn || rewriterCopy !== null || copyPath !== null;
+  const confinedRole = ctx.childTurn?.role ?? ctx.input.confinedRole;
   const isInPlaceWriter =
     !isIsolatedTurn &&
     inPlaceFolders.length > 0 &&
-    (ctx.input.confinedRole === undefined
+    (confinedRole === undefined
       ? kindWritesFiles({ kind: turnAgentKind })
-      : isConfinedWriterRole({ role: ctx.input.confinedRole }));
+      : isConfinedWriterRole({ role: confinedRole }));
   const writableRoots = isInPlaceWriter
     ? Array.from(
         new Set([
@@ -153,7 +154,7 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
       )
     : resolvedRoots.writableRoots;
   const isWriteSetTurn =
-    !isIsolatedTurn && (isConfinedWriterRole({ role: ctx.input.confinedRole }) || isInPlaceWriter);
+    !isIsolatedTurn && (isConfinedWriterRole({ role: confinedRole }) || isInPlaceWriter);
   let isReadOnlyAnswer = false;
   const turnBeforeLease = get().agentTurnState[activeAgentId];
   if (isWriteSetTurn) {

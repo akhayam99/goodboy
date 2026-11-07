@@ -21,11 +21,13 @@ import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRouting
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
 import { turnNodeRouting } from './turnNodeRouting';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-import type { GetFn, WithInput, TurnPhaseValue } from './types';
+import type { AutoChildRefusal, GetFn, WithInput, TurnPhaseValue } from './types';
 import { turnDone, turnReady } from './turnPhase';
 import { NOT_BLOCKED } from './notBlocked';
 import { turnRefusalMessage } from './refusal/turnRefusalMessage';
 import type { PreparedTurn } from './prepareTurn';
+import { resolveChildTurn } from './childTurn/resolveChildTurn';
+import { isOnChildRoute } from './childTurn/isOnChildRoute';
 
 type Params = Readonly<{
   get: GetFn;
@@ -35,9 +37,34 @@ type Params = Readonly<{
 
 const newRunId = (): ProviderRunId => crypto.randomUUID() as ProviderRunId;
 
+type RefuseChildParams = Readonly<{
+  get: GetFn;
+  ctx: Params['ctx'];
+  refusal: AutoChildRefusal;
+}>;
+
+const refuseChildTurn = ({ get, ctx, refusal }: RefuseChildParams) => {
+  get().appendTurnEvent(ctx.activeAgentId, ctx.input.sessionId, {
+    kind: 'error',
+    runId: newRunId(),
+    message: turnRefusalMessage({ refusal }),
+    at: ctx.now(),
+  });
+  return turnDone({ result: { blockedOverBudget: false, autoChildRefusal: refusal } });
+};
+
 export const routeTurn = async ({ get, ctx }: Params) => {
   const { sessionId, override, force, retry } = ctx.input;
   const { session, now, activeAgentId, activeAgent, phaseDefinition } = ctx;
+  const resolution = await resolveChildTurn({ agentId: activeAgentId });
+  if (resolution.kind === 'unresolved') {
+    return refuseChildTurn({ get, ctx, refusal: 'auto_child_unread' });
+  }
+  const childTurn = resolution.kind === 'child' ? resolution.child : null;
+  const childRoute: TurnProviderOverride | undefined =
+    childTurn === null
+      ? undefined
+      : { providerId: childTurn.route.provider, model: childTurn.route.model, explicit: true };
 
   const nodeRouting = turnNodeRouting({
     agent:
@@ -60,21 +87,33 @@ export const routeTurn = async ({ get, ctx }: Params) => {
           }),
         }
       : undefined;
-  const isRoutedDelegation = ctx.input.origin === 'delegation' && override != null;
-  const turnOverride =
-    (session.providerPreference.allowTurnOverride || isRoutedDelegation) && override != null
-      ? override
-      : undefined;
-  const agentProvider = get().agentProviderOverride[activeAgentId] ?? null;
-  const agentModelPin = get().agentModelOverride[activeAgentId] ?? null;
+  const askedOverride =
+    session.providerPreference.allowTurnOverride && override != null ? override : undefined;
+  const asked = [
+    ...(askedOverride?.explicit === true ? [askedOverride] : []),
+    ...(retry != null ? [{ providerId: retry.provider, model: retry.model }] : []),
+  ];
+  if (
+    childTurn !== null &&
+    asked.some((candidate) => !isOnChildRoute({ route: childTurn.route, override: candidate }))
+  ) {
+    return refuseChildTurn({ get, ctx, refusal: 'auto_child_off_route' });
+  }
+  const turnOverride = childRoute ?? askedOverride;
+  const agentProvider =
+    childTurn === null ? (get().agentProviderOverride[activeAgentId] ?? null) : null;
+  const agentModelPin =
+    childTurn === null ? (get().agentModelOverride[activeAgentId] ?? null) : null;
   const agentOverride: TurnProviderOverride | undefined = agentProvider
     ? { providerId: agentProvider, ...(agentModelPin != null && { model: agentModelPin }) }
     : undefined;
   const retryOverride: TurnProviderOverride | undefined =
-    retry != null ? { providerId: retry.provider, model: retry.model } : undefined;
+    retry != null && childTurn === null
+      ? { providerId: retry.provider, model: retry.model }
+      : undefined;
   const pickedOverride = turnOverride?.explicit === true ? turnOverride : undefined;
   const effectiveOverride =
-    retryOverride ?? pickedOverride ?? nodeOverride ?? turnOverride ?? agentOverride;
+    childRoute ?? retryOverride ?? pickedOverride ?? nodeOverride ?? turnOverride ?? agentOverride;
   const overrideScope: OverrideScope = overrideScopeOf({
     effective: effectiveOverride,
     node: nodeOverride,
@@ -90,7 +129,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   const routingPreference =
     (effectiveOverride === agentOverride && agentOverride !== undefined) ||
     (effectiveOverride === nodeOverride && nodeOverride !== undefined) ||
-    (isRoutedDelegation && effectiveOverride === turnOverride) ||
+    childRoute !== undefined ||
     retry != null
       ? { ...livePreference, allowTurnOverride: true }
       : livePreference;
@@ -113,6 +152,10 @@ export const routeTurn = async ({ get, ctx }: Params) => {
       at: now(),
     });
     return turnDone({ result: { blockedOverBudget: true } });
+  }
+
+  if (childTurn !== null && routingDecision.selectedProvider !== childTurn.route.provider) {
+    return refuseChildTurn({ get, ctx, refusal: 'auto_child_off_route' });
   }
 
   if (routingDecision.reason === 'override-off') {
@@ -173,7 +216,8 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   const modelSelection = resolveTurnModelSelection({
     provider,
     routingDecision,
-    retryModel: retry != null && retry.provider === provider ? retry.model : null,
+    retryModel:
+      retry != null && retry.provider === provider && childTurn === null ? retry.model : null,
     phaseModelOverride: nodeModel,
     phaseProviderOverride: nodeProvider,
     autoStepModel,
@@ -185,6 +229,15 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   const resolvedModel = resolveModelArgs({ provider, selection: modelSelection });
   const spawnModel = extractSpawnModel({ provider, args: resolvedModel.args });
   const model = spawnModel;
+  if (
+    childTurn !== null &&
+    !isOnChildRoute({
+      route: childTurn.route,
+      override: { providerId: provider, model: spawnModel },
+    })
+  ) {
+    return refuseChildTurn({ get, ctx, refusal: 'auto_child_off_route' });
+  }
   const picked = pickedTurnExecution({ override: pickedOverride });
   const ranAsPicked = picked.kind === 'unspecified' || picked.id === spawnModel;
   if (
@@ -247,6 +300,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
       effortFlag,
       apiKeyBinding,
       connectedProviders,
+      childTurn,
     },
   });
 };

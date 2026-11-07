@@ -486,8 +486,10 @@ continuation never resumes, because it runs in another directory.
   plan posture whatever the session permission mode says, so
   `bypassPermissions` never widens it: Claude gets `--tools Read,Grep,Glob`,
   `--allowedTools` with scoped `Read(...)` grants only (`is_scoped_read_grant`),
-  and a deny list with Bash, the edit tools and the native subagent tools; Codex runs `-s read-only` with no extra roots; Cursor,
-  Gemini, Copilot and opencode lose their bypass flags. For `implementer`, `tester` and
+  and a deny list with Bash, the edit tools and the native subagent tools; Codex runs `-s read-only` with no extra roots,
+  which blocks writes but still lets it run read-only commands; Cursor, Gemini and Copilot lose
+  their bypass flags; opencode keeps `--dangerously-skip-permissions`, so a reading role on an
+  opencode binary is refused before any probe runs (`ensure_confinement`). For `implementer`, `tester` and
   `docs` the session mode stays and Claude loses `Task` and `Agent`. An unknown
   role is read-only. Before the spawn, `providers/cli_probe.rs` reads
   `--version` and `--help` of the binary once per file (resolved path, size and
@@ -501,7 +503,7 @@ continuation never resumes, because it runs in another directory.
   as `scout`, `planner`, `investigator` and `reviewer`: Auto runs read-only like
   a scout on every provider, with the argv a scout gets (Claude `--tools
 Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor and Agy `--mode
-plan`, opencode `--agent plan`) and no Bash allow rule. It never calls Goodboy
+plan`; opencode is refused) and no Bash allow rule. It never calls Goodboy
   from inside its turn; its decision is the block it ends its reply with.
 - **stderr drains on its own thread.** A CLI that fills the stderr pipe
   mid-stream would otherwise block stdout and hang the turn.

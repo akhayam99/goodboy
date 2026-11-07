@@ -23,7 +23,7 @@ import {
 import {
   casAutoDelegationStateStatement,
   getAutoDelegation,
-  getOpenAutoDelegationOfChild,
+  getLatestAutoDelegationOfChild,
   insertAutoDelegationStatement,
   listAutoDelegations,
   listAutoDelegationsOfRequest,
@@ -176,11 +176,11 @@ describe('auto delegations', () => {
     expect((await listOpenAutoDelegations({ db, treeId })).map((item) => item.id)).toEqual([
       'delegation-2',
     ]);
-    const open = await getOpenAutoDelegationOfChild({
+    const latest = await getLatestAutoDelegationOfChild({
       db,
       childAgentId: brandId<AgentId>({ value: 'agent-scout' }),
     });
-    expect(open?.id).toBe('delegation-2');
+    expect(latest?.id).toBe('delegation-2');
     const settled = await getAutoDelegation({
       db,
       delegationId: brandId<AutoDelegationId>({ value: 'delegation-1' }),
@@ -297,5 +297,52 @@ describe('auto attempts', () => {
       outcome: null,
       questionId: 'question-1',
     });
+  });
+
+  it('reads the newest delegation of a child, a settled one included, and none for any other agent', async () => {
+    const db = await world();
+    const scout = brandId<AgentId>({ value: 'agent-scout' });
+    expect(await getLatestAutoDelegationOfChild({ db, childAgentId: scout })).toBeNull();
+    await run({
+      db,
+      statements: [
+        insertAutoDelegationStatement({ delegation: delegation({ id: 'delegation-1' }) }),
+        settleAutoDelegationStatement({
+          delegationId: brandId<AutoDelegationId>({ value: 'delegation-1' }),
+          generation: 1,
+          outcome: 'completed',
+          reason: null,
+          result: null,
+          nowMs: AUTO_SEED_NOW + 10,
+          abortCode: 'settle',
+        }),
+      ],
+    });
+    expect((await getLatestAutoDelegationOfChild({ db, childAgentId: scout }))?.id).toBe(
+      'delegation-1',
+    );
+    await run({
+      db,
+      statements: [
+        insertAutoDelegationStatement({
+          delegation: delegation({
+            id: 'delegation-2',
+            requestId: brandId<AutoRequestId>({ value: 'request-2' }),
+            role: 'reviewer',
+            nowMs: AUTO_SEED_NOW + 20,
+          }),
+        }),
+      ],
+    });
+    expect(await getLatestAutoDelegationOfChild({ db, childAgentId: scout })).toMatchObject({
+      id: 'delegation-2',
+      role: 'reviewer',
+    });
+    expect(
+      await getLatestAutoDelegationOfChild({
+        db,
+        childAgentId: brandId<AgentId>({ value: 'agent-impl' }),
+      }),
+    ).toBeNull();
   });
 });

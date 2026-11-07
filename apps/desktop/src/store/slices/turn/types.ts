@@ -21,9 +21,12 @@ export type SendTurnResult = Readonly<{
   isWriterLeaseDenied?: boolean;
   isLaneQueued?: boolean;
   isAlreadySent?: boolean;
+  autoChildRefusal?: AutoChildRefusal;
 }>;
 
-export type TurnRefusal = 'provider_limit' | 'folder_busy';
+export type AutoChildRefusal = 'auto_child_unread' | 'auto_child_off_route';
+
+export type TurnRefusal = 'provider_limit' | 'folder_busy' | AutoChildRefusal;
 
 type TurnSettledInfo = Readonly<{
   runId: ProviderRunId;

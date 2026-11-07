@@ -1,56 +1,46 @@
 import { describe, expect, it } from 'vitest';
-import { brandId, type AgentId } from '@goodboy/types';
-import type { AutoTreeView } from '../auto-view/state';
+import { brandId, type AutoDelegationId } from '@goodboy/types';
 import { confinedRoleOf } from './confinedRoleOf';
+import type { ChildTurn } from './childTurn/resolveChildTurn';
 
-const ROOT = brandId<AgentId>({ value: 'agent-root' });
-const CHILD = brandId<AgentId>({ value: 'agent-child' });
-
-const views = (params: { isAdopted: boolean }): ReadonlyArray<AutoTreeView> => [
-  {
-    tree: { rootAgentId: ROOT },
-    delegations: [{ childAgentId: CHILD, role: 'scout', isAdopted: params.isAdopted }],
-  } as unknown as AutoTreeView,
-];
+const SCOUT_CHILD: ChildTurn = {
+  delegationId: brandId<AutoDelegationId>({ value: 'delegation-scout' }),
+  role: 'scout',
+  route: { provider: 'anthropic', model: 'claude-haiku-5' },
+};
 
 describe('the role a turn is confined to', () => {
   it('keeps the role a delegation asked for', () => {
     expect(
       confinedRoleOf({
         input: { confinedRole: 'scout' },
-        agent: { id: ROOT, kind: 'auto' },
-        views: [],
+        agent: { kind: 'auto' },
+        childTurn: null,
       }),
     ).toBe('scout');
   });
 
   it('confines every turn of an Auto agent, the composer ones included', () => {
-    expect(confinedRoleOf({ input: {}, agent: { id: ROOT, kind: 'auto' }, views: [] })).toBe(
-      'auto',
-    );
+    expect(confinedRoleOf({ input: {}, agent: { kind: 'auto' }, childTurn: null })).toBe('auto');
   });
 
-  it('confines a turn the person types on an Auto child to its delegation role', () => {
+  it('confines a turn on an Auto child to its stored delegation role, whatever the agent kind', () => {
+    expect(
+      confinedRoleOf({ input: {}, agent: { kind: 'implementer' }, childTurn: SCOUT_CHILD }),
+    ).toBe('scout');
     expect(
       confinedRoleOf({
-        input: {},
-        agent: { id: CHILD, kind: 'implementer' },
-        views: views({ isAdopted: false }),
+        input: { confinedRole: 'implementer' },
+        agent: null,
+        childTurn: SCOUT_CHILD,
       }),
     ).toBe('scout');
   });
 
   it('leaves any other turn as it was', () => {
     expect(
-      confinedRoleOf({ input: {}, agent: { id: CHILD, kind: 'scout' }, views: [] }),
+      confinedRoleOf({ input: {}, agent: { kind: 'scout' }, childTurn: null }),
     ).toBeUndefined();
-    expect(
-      confinedRoleOf({
-        input: {},
-        agent: { id: CHILD, kind: 'scout' },
-        views: views({ isAdopted: true }),
-      }),
-    ).toBeUndefined();
-    expect(confinedRoleOf({ input: {}, agent: null, views: [] })).toBeUndefined();
+    expect(confinedRoleOf({ input: {}, agent: null, childTurn: null })).toBeUndefined();
   });
 });
