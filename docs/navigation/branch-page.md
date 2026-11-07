@@ -15,7 +15,7 @@ quoted headers, so a name with accents is its own file.
 **Frame.** The Branch page is the center of the Projects tree (Session
 rail): one detail with no rail of its own. Its sections are the tab strip under
 its title (`BranchTabStrip`); the page computes its counts once
-(`worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
+(`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
 one pill. A host with no session rail (a scene, a test) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next.
@@ -227,7 +227,7 @@ and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, 
 Closed show all five, `Pull request`, `Comments`, `Changes`, `Commits`, `Checks`. The first is
 labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
 Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
-request. A pick replaces the address. A tab badge means this many want you (`wantsYouFactsOf` over `worktreeEntryFactsOf`): `Comments` the ones that need you, `Checks` the failing ones, nothing else. The counts of files, commits and not pushed commits, the state of the request and the running checks stay in the tooltip of their tab, and the file count and the commit count are said in their page (the file rail, the line `N commits` above the list). Merged and
+request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you (`branchTabFactsOf`, one function for the tab and for the head of its page): `Pull request` the state word of a draft, merged or closed request, `Comments` the open ones (warning tone when some need you), `Changes` the files and `+added -removed`, `Commits` the count (`↑N` when only unpushed ones are known), `Checks` the passed count, or the failing (danger) or running (info) count. The Files toggle of the Changes toolbar reads the same fact (`filesFact`), so the tab and the head never drift. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
@@ -369,7 +369,7 @@ diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch 
 its commits over main, so it reads `↑3` too. `branchPushFactsOf` in `shared/lib/branchPushState.ts`
 is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action
 registry facts and the rail all read it, so a diverged branch never reads `Pushed`); Checks the failing or
-running count (`worktreeEntryFactsOf`; the comment
+running count (`branchTabFactsOf`; the comment
 source tabs drop a zero badge the same way). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Branch header on the Comments section, is the one fix launch.

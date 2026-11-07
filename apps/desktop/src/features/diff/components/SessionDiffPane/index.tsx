@@ -30,6 +30,8 @@ import { worktreeFileSides } from '../../../worktree/worktree';
 import type { PeekOpenParams } from '../IdentifierPeek/PeekHost';
 import { DiffView } from '../DiffView';
 import { DiffEmptyState } from './DiffEmptyState';
+import type { BranchTabFact } from '../../../branch/branchTabFactsOf';
+import { DiffStatText } from '../../../branch/components/DiffStatText';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -38,6 +40,7 @@ type Props = {
   readonly diff: SessionDiff;
   readonly isReadOnly?: boolean;
   readonly toolbarEnd?: ReactNode;
+  readonly filesFact?: BranchTabFact;
 };
 
 export const SessionDiffPane = ({
@@ -47,6 +50,7 @@ export const SessionDiffPane = ({
   diff,
   isReadOnly = false,
   toolbarEnd,
+  filesFact,
 }: Props) => {
   const review = useReviewState({ sessionId, worktreePath, diff });
   const baseBranch = useAppStore((s) =>
@@ -187,7 +191,12 @@ export const SessionDiffPane = ({
       <Button size="sm" variant="quiet" onClick={panel.focus}>
         <PanelRightOpen size={ICON_SIZE.row} aria-hidden />
         Files
-        <span className="tabular-nums text-faint-foreground">{review.allFiles.length}</span>
+        <span className="flex items-center gap-1 tabular-nums text-faint-foreground">
+          {filesFact === undefined ? review.allFiles.length : filesFact.text}
+          {filesFact?.diff === undefined || filesFact.diff === null ? null : (
+            <DiffStatText diff={filesFact.diff} />
+          )}
+        </span>
       </Button>
     );
   const selector = (

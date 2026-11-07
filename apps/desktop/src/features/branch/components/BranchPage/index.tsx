@@ -40,7 +40,7 @@ import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
-import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
+import { branchTabFactsOf } from '../../branchTabFactsOf';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -361,6 +361,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           diff={diff}
           hasPullRequest={pr !== null && pr.state === 'open'}
           isReadOnly={isReadOnly}
+          filesFact={entryFacts.files}
         />
       );
     }
@@ -414,9 +415,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           ? "Checks unknown: couldn't read them"
           : null;
   const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
-  const entryFacts = worktreeEntryFactsOf({
+  const threadCounts = reviewCounts({ threads: entries.map((e) => e.row.thread) });
+  const entryFacts = branchTabFactsOf({
     pullRequestState: scope.state,
-    commentsNeedYou: reviewCounts({ threads: entries.map((e) => e.row.thread) }).needYou,
+    commentsNeedYou: threadCounts.needYou,
+    commentsOpen: threadCounts.unresolved,
     files: mountStat?.files ?? filesCount,
     diff: mountStat,
     commits: start.step.ahead,

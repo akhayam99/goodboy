@@ -1,68 +1,110 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { BRANCH_TAB_REGISTRY } from '../../branchTabs';
-import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
+import type { PrCheckRun } from '@goodboy/types';
+import { branchTabFactsOf } from '../../branchTabFactsOf';
+import { BRANCH_TAB_REGISTRY, branchTabsOf } from '../../branchTabs';
 import { BranchTabStrip } from '.';
 
-const TABS = [BRANCH_TAB_REGISTRY.pr, BRANCH_TAB_REGISTRY.files, BRANCH_TAB_REGISTRY.commits];
+const TABS = branchTabsOf({ state: 'open', hasComments: true });
+
+const check = (conclusion: PrCheckRun['conclusion']): PrCheckRun => ({
+  name: `ledger-core ${conclusion}`,
+  conclusion,
+  detailsUrl: null,
+  durationMs: null,
+});
 
 type DrawParams = {
-  readonly notPushed: number;
+  readonly commentsNeedYou?: number;
+  readonly checks?: ReadonlyArray<PrCheckRun> | null;
+  readonly notPushed?: number;
 };
 
-const draw = ({ notPushed }: DrawParams) =>
+const factsOf = ({ commentsNeedYou = 0, checks = null, notPushed = 0 }: DrawParams) =>
+  branchTabFactsOf({
+    pullRequestState: 'open',
+    commentsNeedYou,
+    commentsOpen: 4,
+    files: 64,
+    diff: { additions: 1240, deletions: 318 },
+    commits: 11,
+    notPushed,
+    checks,
+    checksUnreadReason: null,
+  });
+
+const draw = (params: DrawParams) =>
   render(
-    <BranchTabStrip
-      tabs={TABS}
-      value="pr"
-      onSelect={() => undefined}
-      facts={worktreeEntryFactsOf({
-        pullRequestState: 'none',
-        commentsNeedYou: 0,
-        files: 64,
-        diff: { additions: 1240, deletions: 318 },
-        commits: 11,
-        notPushed,
-        checks: null,
-        checksUnreadReason: null,
-      })}
-    />,
+    <BranchTabStrip tabs={TABS} value="pr" onSelect={() => undefined} facts={factsOf(params)} />,
   );
+
+const countOf = (name: RegExp) =>
+  screen.getByRole('tab', { name }).querySelector('[data-tab-count]');
 
 describe('the facts on the branch tabs', () => {
   afterEach(cleanup);
 
-  it('draws no count on Changes, the file count lives in the page', () => {
-    draw({ notPushed: 0 });
+  it('draws the file count and the lines added and removed on Changes', () => {
+    draw({});
 
-    expect(screen.getByRole('tab', { name: /^Changes/ }).textContent).toBe('Changes');
+    const tab = screen.getByRole('tab', { name: /^Changes/ });
+    expect(tab.textContent).toContain('64');
+    expect(tab.textContent).toContain('+1240 -318');
   });
 
-  it('draws no count and no arrow on Commits, however many are not pushed', () => {
+  it('draws the commit count on Commits', () => {
     draw({ notPushed: 3 });
 
-    expect(screen.getByRole('tab', { name: /^Commits/ }).textContent).toBe('Commits');
+    expect(screen.getByRole('tab', { name: /^Commits/ }).textContent).toContain('11');
   });
 
-  it('draws a badge only on a page that wants you', () => {
+  it('draws the open comment count in faint ink when nothing needs you', () => {
+    draw({});
+
+    expect(countOf(/^Comments/)?.textContent).toBe('4');
+    expect(countOf(/^Comments/)?.className).toContain('text-faint-foreground');
+  });
+
+  it('tints the comment count only when something needs you', () => {
+    draw({ commentsNeedYou: 2 });
+
+    expect(countOf(/^Comments/)?.className).not.toContain('text-faint-foreground');
+  });
+
+  it('draws the passed checks faint', () => {
+    draw({ checks: [check('success'), check('success'), check('success')] });
+
+    expect(countOf(/^Checks/)?.textContent).toBe('3');
+    expect(countOf(/^Checks/)?.className).toContain('text-faint-foreground');
+  });
+
+  it('draws the failing checks in color', () => {
+    draw({ checks: [check('success'), check('failure')] });
+
+    expect(countOf(/^Checks/)?.textContent).toBe('1');
+    expect(countOf(/^Checks/)?.className).not.toContain('text-faint-foreground');
+  });
+
+  it('draws the state word on a merged pull request', () => {
     render(
       <BranchTabStrip
-        tabs={[BRANCH_TAB_REGISTRY.pr, BRANCH_TAB_REGISTRY.files]}
+        tabs={[BRANCH_TAB_REGISTRY.pr]}
         value="pr"
         onSelect={() => undefined}
-        facts={worktreeEntryFactsOf({
+        facts={branchTabFactsOf({
           pullRequestState: 'merged',
           commentsNeedYou: 0,
-          files: 64,
+          commentsOpen: 0,
+          files: null,
           diff: null,
-          commits: 11,
-          notPushed: 3,
+          commits: null,
+          notPushed: null,
           checks: null,
           checksUnreadReason: null,
         })}
       />,
     );
 
-    expect(document.querySelectorAll('[data-tab-count]')).toHaveLength(0);
+    expect(screen.getByRole('tab', { name: /^Pull request/ }).textContent).toContain('Merged');
   });
 });
