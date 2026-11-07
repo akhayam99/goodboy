@@ -5,6 +5,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { AppState } from '../../../../../../store/types';
+import type { OpenDrawer } from '../../../../../../store/slices/drawer/state';
+import { drawerKey } from '../../../../../../store/slices/drawer/drawerKey';
 import { captureLocation } from '../../../../../../store/slices/navigation/captureLocation';
 import { PROVIDER_LENS } from '../../../../../integrations/providerLens';
 
@@ -14,11 +16,34 @@ type Params = {
   readonly sessionId: SessionId;
   readonly provider: Exclude<SessionExternalTaskProvider, 'github' | 'sentry'>;
   readonly task: SessionExternalTask;
+  readonly drawer: OpenDrawer | null;
 };
 
-export const isTaskOnScreen = ({ state, workspaceId, sessionId, provider, task }: Params) => {
+type SameDrawerParams = {
+  readonly before: OpenDrawer | null;
+  readonly now: OpenDrawer | null;
+};
+
+const isSameDrawer = ({ before, now }: SameDrawerParams): boolean => {
+  if (before === null || now === null) {
+    return before === now;
+  }
+  return before.sessionId === now.sessionId && drawerKey(before) === drawerKey(now);
+};
+
+export const isTaskOnScreen = ({
+  state,
+  workspaceId,
+  sessionId,
+  provider,
+  task,
+  drawer,
+}: Params) => {
   const live = captureLocation({ state });
   if (live.workspaceId !== workspaceId || live.studio !== null || live.place.at !== 'session') {
+    return false;
+  }
+  if (!isSameDrawer({ before: drawer, now: live.focus.drawer })) {
     return false;
   }
   const { place } = live;
