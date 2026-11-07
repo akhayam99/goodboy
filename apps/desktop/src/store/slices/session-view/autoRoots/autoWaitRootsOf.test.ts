@@ -9,14 +9,14 @@ import {
   FIXTURE_NOW,
   FIXTURE_ROOT,
   FIXTURE_SESSION,
-} from '../../../features/auto/testing/autoViewFixtures';
-import type { AutoTreeView } from '../auto-view/state';
+} from '../../../../features/auto/testing/autoViewFixtures';
+import type { AutoTreeView } from '../../auto-view/state';
 import { autoWaitRootsOf } from './autoWaitRootsOf';
 
 const words = vi.hoisted(() => ({ isRenamed: false }));
 
-vi.mock('../../../features/auto/autoTreeWordOf', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../features/auto/autoTreeWordOf')>();
+vi.mock('../../../../features/auto/autoTreeWordOf', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../features/auto/autoTreeWordOf')>();
   return {
     ...actual,
     autoTreeWordOf: (params: Parameters<typeof actual.autoTreeWordOf>[0]) => {

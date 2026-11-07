@@ -84,7 +84,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - Resting on the bar shows the step, the workflow, the role, the model, the time in and what comes next. A click opens the step.
 - The run's next move is the run page's own button (**Start step 2**, **Review plan**, **Answer**). **Answer** opens the question in the side drawer and the page stays. That move is not repeated in **Needs you**.
 - The agents a run or an agent started hang under it on one thin line. Auto shows one row with a button such as **2 agents**, which opens its agents.
-- When an agent Auto started is stuck, the Auto row says **Needs you** in the Needs you card. One line under it offers **Answer** and **Stop**, also when the tree itself stopped replying and reads Failed. **Retry** is on the **Needs you** card, once. An Auto that a card already speaks for counts once, in the card header and in the glance sentence (`uncardedGroupsOf`), so one stuck child reads "1 needs you" and one failed Auto does not add "1 stopped".
+- When an agent Auto started is stuck, the Auto row says **Needs you** in the Needs you card. One line under it offers **Answer** and **Stop**, also when the tree itself stopped replying and reads Failed. **Retry** is on the **Needs you** card, once. An Auto that a card already speaks for counts once. One stuck child reads "1 needs you", and a failed Auto adds no "1 stopped".
 - **Retry** on the Fix row retries the stuck agent. When it fails, the card keeps the error. **Answer** opens the Auto chat.
 
 **Next**

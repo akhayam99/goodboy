@@ -19,12 +19,12 @@ import type { PlaceRequest } from '../../store/slices/navigation/types';
 import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { resolveAttentionOf } from '../../store/slices/resolve/resolveAttention';
-import { autoFailedRootsOf } from '../../store/slices/session-view/autoFailedRootsOf';
-import { autoLimitRootsOf } from '../../store/slices/session-view/autoLimitRootsOf';
+import { autoFailedRootsOf } from '../../store/slices/session-view/autoRoots/autoFailedRootsOf';
+import { autoLimitRootsOf } from '../../store/slices/session-view/autoRoots/autoLimitRootsOf';
 import {
   autoWaitRootsOf,
   type AutoWaitState,
-} from '../../store/slices/session-view/autoWaitRootsOf';
+} from '../../store/slices/session-view/autoRoots/autoWaitRootsOf';
 import {
   runWaitEntriesOf,
   type RunWaitEntry,

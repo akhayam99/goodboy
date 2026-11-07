@@ -1,8 +1,8 @@
 import type { Agent, Session } from '@goodboy/types';
-import { autoGroupOf } from '../../../features/auto/autoGroupOf';
-import { autoRootsOf } from '../../../features/auto/autoRootsOf';
-import { autoTreeWordOf, type AutoTreeState } from '../../../features/auto/autoTreeWordOf';
-import { liveAutoViewsOf } from '../../../features/auto/liveAutoViewsOf';
+import { autoGroupOf } from '../../../../features/auto/autoGroupOf';
+import { autoRootsOf } from '../../../../features/auto/autoRootsOf';
+import { autoTreeWordOf, type AutoTreeState } from '../../../../features/auto/autoTreeWordOf';
+import { liveAutoViewsOf } from '../../../../features/auto/liveAutoViewsOf';
 import type { AutoWaitState } from './autoWaitRootsOf';
 
 export type AutoTreeStateEntry = Readonly<{

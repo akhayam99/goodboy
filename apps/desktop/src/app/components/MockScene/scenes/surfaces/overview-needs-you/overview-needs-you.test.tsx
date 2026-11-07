@@ -78,10 +78,13 @@ describe('the u33 overview needs you scene', () => {
     );
     const cards = [...needsYou.querySelectorAll('[data-action-card]')];
     const live = [...needsYou.querySelectorAll('[data-needs-you-live] [data-live-row]')];
+    const autoRows = [
+      ...needsYou.querySelectorAll('[data-needs-you-live] [data-live-group="auto"]'),
+    ];
     expect(new Set(cards.map((card) => card.textContent)).size).toBe(cards.length);
     expect(container.querySelector('[data-live-section="needs-you"]')).toBeNull();
     const count = needsYou.querySelector('[data-overview-count]')?.textContent;
-    expect(count).toBe(String(cards.length + live.length));
+    expect(count).toBe(String(cards.length + live.length - autoRows.length));
   });
 
   it('holds one primary and gives the other rows no second verb and no overflow at rest', async () => {

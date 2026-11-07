@@ -216,10 +216,10 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
   });
 
-  it('Queued manual run: the list says it waits, its one header primary starts it', async () => {
+  it('Manual run: the tail says Ready to start, its one header primary starts it', async () => {
     await mount('c08-runs');
     await press(screen.getByRole('button', { name: /^Open Document the export batching/ }));
-    expect(tail().getByText('Queued')).toBeDefined();
+    expect(tail().getByText('Ready to start')).toBeDefined();
     expect(header().getByRole('button', { name: 'Start run' })).toBeDefined();
     expect(tail().queryByRole('button', { name: 'Start run' })).toBeNull();
   });

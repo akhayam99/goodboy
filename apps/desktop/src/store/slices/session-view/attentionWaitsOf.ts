@@ -1,8 +1,8 @@
 import type { Agent, Session } from '@goodboy/types';
 import type { AppState } from '../../types';
-import { autoFailedRootsOf } from './autoFailedRootsOf';
-import { autoLimitRootsOf } from './autoLimitRootsOf';
-import { autoWaitRootsOf, type AutoWaitState } from './autoWaitRootsOf';
+import { autoFailedRootsOf } from './autoRoots/autoFailedRootsOf';
+import { autoLimitRootsOf } from './autoRoots/autoLimitRootsOf';
+import { autoWaitRootsOf, type AutoWaitState } from './autoRoots/autoWaitRootsOf';
 import { runWaitEntriesOf, type RunWaitState } from './runWaitEntriesOf';
 
 type AttentionWaitsState = Pick<AppState, 'sessionPhaseRuns'> &

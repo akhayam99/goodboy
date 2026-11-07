@@ -1,6 +1,6 @@
 import type { Agent, Session } from '@goodboy/types';
-import type { AppState } from '../../types';
-import type { AutoViewState } from '../auto-view/state';
+import type { AppState } from '../../../types';
+import type { AutoViewState } from '../../auto-view/state';
 import { autoTreeStatesOf } from './autoTreeStatesOf';
 
 export type AutoWaitState = Pick<AppState, 'agentTurnState'> &
