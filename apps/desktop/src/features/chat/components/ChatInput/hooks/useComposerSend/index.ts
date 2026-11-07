@@ -110,6 +110,21 @@ export const useComposerSend = ({
       }
       const current = useAppStore.getState().agentDraft[selectedAgentId] ?? '';
       setValue(restoreDraftOnFailedSend({ sent: content, current }));
+      useAppStore.getState().setAgentAttachments(
+        selectedAgentId,
+        atts.flatMap((attachment) =>
+          attachment.relPath === null
+            ? []
+            : [
+                {
+                  id: attachment.id,
+                  fileName: attachment.fileName,
+                  mimeType: attachment.mimeType,
+                  relPath: attachment.relPath,
+                },
+              ],
+        ),
+      );
       setAttachments(atts);
     },
     [

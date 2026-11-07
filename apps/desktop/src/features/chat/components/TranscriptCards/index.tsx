@@ -19,8 +19,7 @@ import {
   PermissionRequestCard,
 } from '../../../permissions/permissionSurfaces';
 import { ToolCallCard } from '../ToolCallCard';
-import { TurnChangesCard } from '../TurnChangesCard';
-import { TurnFooter } from '../TurnFooter';
+import { TranscriptUsage } from './TranscriptUsage';
 import { AssistantText } from './AssistantText';
 import { AutoDeliveryResults } from './AutoDeliveryResults';
 import { AutoDeliveryRow } from './AutoDeliveryRow';
@@ -48,6 +47,7 @@ type TranscriptCardProps = {
   readonly turnStartedAt?: IsoDateTime | null;
   readonly previousRunId?: ProviderRunId | null;
   readonly isBrief?: boolean;
+  readonly isReadOnly?: boolean;
   readonly clampLines?: number;
 };
 
@@ -67,6 +67,7 @@ const TranscriptCardImpl = ({
   turnStartedAt,
   previousRunId = null,
   isBrief = false,
+  isReadOnly = false,
   clampLines,
   errorDock = null,
 }: TranscriptCardProps): ReactNode => {
@@ -148,22 +149,20 @@ const TranscriptCardImpl = ({
       );
     case 'usage':
       return (
-        <>
-          {sessionId === null ? null : <TurnChangesCard sessionId={sessionId} runId={item.runId} />}
-          <TurnFooter
-            item={item}
-            sessionId={sessionId}
-            agentId={agentId}
-            outcome={turnOutcome}
-            startedAt={turnStartedAt}
-            previousRunId={previousRunId}
-          />
-        </>
+        <TranscriptUsage
+          item={item}
+          sessionId={sessionId}
+          agentId={agentId}
+          outcome={turnOutcome}
+          startedAt={turnStartedAt}
+          previousRunId={previousRunId}
+        />
       );
     case 'error': {
       const errorRunId = item.runId;
       return (
         <TranscriptErrorRow
+          isReadOnly={isReadOnly}
           message={item.message}
           runId={errorRunId ?? null}
           sessionId={sessionId}
@@ -248,5 +247,6 @@ export const TranscriptCard = memo(
     prev.turnStartedAt === next.turnStartedAt &&
     prev.previousRunId === next.previousRunId &&
     prev.isBrief === next.isBrief &&
+    prev.isReadOnly === next.isReadOnly &&
     prev.clampLines === next.clampLines,
 );

@@ -20,6 +20,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { MOCK_SCENES } from '../..';
 import { U30_FAILURE_LINKS_SCENES } from './failure-links';
+import { C09_SESSION_ID } from '../u25/c09OrchestratedSeed';
 
 const WAIT = { timeout: 15_000 };
 const SETTLE_MS = 2_000;
@@ -55,7 +56,11 @@ afterEach(() => {
 
 type SceneName = keyof typeof U30_FAILURE_LINKS_SCENES;
 
-const mount = (name: SceneName): void => {
+type MountParams = {
+  readonly name: SceneName;
+};
+
+const mount = ({ name }: MountParams): void => {
   const Scene = U30_FAILURE_LINKS_SCENES[name];
   render(
     <ToastProvider>
@@ -72,7 +77,7 @@ describe('the u30 failure link scenes', () => {
   });
 
   it('u30-failure-reason keeps the whole blocked reason in the dock and offers the transcript', async () => {
-    mount('u30-failure-reason');
+    mount({ name: 'u30-failure-reason' });
 
     const tail = await waitFor(() => {
       const found = document.querySelector<HTMLElement>('[data-dock-line="failed"]');
@@ -88,7 +93,7 @@ describe('the u30 failure link scenes', () => {
 
   it('u30-human-call offers View transcript on a run that needs a human call', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
-    mount('u30-human-call');
+    mount({ name: 'u30-human-call' });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
@@ -98,8 +103,8 @@ describe('the u30 failure link scenes', () => {
       throw new Error('no tail');
     }
     fireEvent.click(within(tail).getByRole('button', { name: 'View transcript' }));
-    const drawer = useAppStore.getState().drawer;
-    expect(drawer?.kind).toBe('transcript');
+    expect(useAppStore.getState().activeLens[C09_SESSION_ID]).toBe('workflows');
+    expect(useAppStore.getState().drawer).toBeNull();
     expect(screen.queryByText('Something went wrong')).toBeNull();
   });
 });

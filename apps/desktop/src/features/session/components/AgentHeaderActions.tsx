@@ -46,6 +46,14 @@ export const AgentHeaderActions = ({
       return found === undefined ? [] : [found];
     })[0] ?? null;
 
+  const menuOmit = [...(omit ?? [])];
+  for (const redundantId of ['agent.copyReply', 'agent.changes']) {
+    if (actions.filter((action) => !menuOmit.includes(action.id)).length <= 5) {
+      break;
+    }
+    menuOmit.push(redundantId);
+  }
+
   return (
     <HeaderActions
       slotClassNames={{ button: '@max-[560px]:hidden' }}
@@ -69,7 +77,7 @@ export const AgentHeaderActions = ({
               anchorKey={`agent-header:${agent.id}`}
               viewing={viewing}
               size="control"
-              {...(omit !== undefined && { omit })}
+              omit={menuOmit}
               hideWhenEmpty
               onArm={({ action, run: runAction }) =>
                 setArmed({

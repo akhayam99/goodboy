@@ -10,6 +10,7 @@ import type { DockFailure } from './dockFailureOf';
 import { DockFailureLine } from './DockFailureLine';
 import { DockLiveLine } from './DockLiveLine';
 import { DockStoppedLine } from './DockStoppedLine';
+import { useAutoChildRecovery } from './useAutoChildRecovery';
 import { useDockAskFocus } from './useDockAskFocus';
 
 type Props = {
@@ -33,8 +34,9 @@ export const ConversationDock = ({
   live,
   stop,
   isStopArmed,
-  failure,
+  failure: givenFailure,
 }: Props) => {
+  const failure = useAutoChildRecovery({ sessionId: session.id, agentId, failure: givenFailure });
   const dockRef = useRef<HTMLDivElement>(null);
   const { permissions, questions } = useConversationAsks({ sessionId: session.id, agentId });
   const stopped = useStoppedAnswer({ agentId });

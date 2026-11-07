@@ -11,6 +11,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { brandId, type AgentId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { agentPlace } from '../../../../store/slices/navigation/place';
 import type { SendTurnResult } from '../../../../store/slices/turn/types';
@@ -220,6 +221,55 @@ describe('the child page composer names its agent', () => {
     await userEvent.click(await enabledSend());
 
     await screen.findByText(failure, undefined, WAIT);
+    expect((await childBox()).value).toBe(DRAFT);
+  });
+
+  it('restores attachments to the sending agent when persistence fails after switching pages', async () => {
+    const attachment = {
+      id: 'harborline-file',
+      fileName: 'ledger-core.txt',
+      mimeType: 'text/plain',
+      relPath: 'attachments/ledger-core.txt',
+    };
+    let rejectSave: (reason: Error) => void = () => undefined;
+    const save = vi.fn(
+      () =>
+        new Promise<never>((_resolve, reject) => {
+          rejectSave = reject;
+        }),
+    );
+    storySpies.tauriInvoke.mockImplementation((command, args) => {
+      if (command === 'attachment_read') {
+        return Promise.resolve('data:text/plain;base64,SGFyYm9ybGluZQ==');
+      }
+      if (
+        command === 'db_transaction' &&
+        isRecord(args) &&
+        JSON.stringify(args).includes('agent_queued_messages')
+      ) {
+        return save();
+      }
+      return queueOnlyInvoke({ command, args });
+    });
+    store.setState({ agentAttachments: { [IMPLEMENTER_ID]: [attachment] } });
+    await mountScene();
+    setChildTurn({ isRunning: false });
+    await screen.findByText('ledger-core.txt', undefined, WAIT);
+    await userEvent.click(await enabledSend());
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    openAgent({ agentId: TESTER_ID });
+    await boxOf({ placeholder: 'Message Tester' });
+
+    await act(async () => {
+      rejectSave(new Error('The message could not be saved.'));
+    });
+
+    await waitFor(() =>
+      expect(store.getState().agentAttachments[IMPLEMENTER_ID]).toEqual([attachment]),
+    );
+    expect(store.getState().agentAttachments[TESTER_ID] ?? []).toEqual([]);
+    openAgent({ agentId: IMPLEMENTER_ID });
+    await screen.findByText('ledger-core.txt', undefined, WAIT);
     expect((await childBox()).value).toBe(DRAFT);
   });
 

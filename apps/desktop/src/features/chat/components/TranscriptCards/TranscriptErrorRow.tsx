@@ -15,6 +15,7 @@ type Props = {
   readonly isRetrying?: boolean;
   readonly dockRunId?: ProviderRunId | null;
   readonly isRecordOnly?: boolean;
+  readonly isReadOnly?: boolean;
 };
 
 export const TranscriptErrorRow = ({
@@ -27,6 +28,7 @@ export const TranscriptErrorRow = ({
   isRetrying = false,
   dockRunId = null,
   isRecordOnly = false,
+  isReadOnly = false,
 }: Props) => {
   const { body, detail } = formatErrorForHumans({ message });
   const hasLimitStop = useAppStore(
@@ -50,7 +52,7 @@ export const TranscriptErrorRow = ({
     });
   };
 
-  if (isRecordOnly && (!hasLimitStop || runId === dockRunId)) {
+  if (!isReadOnly && isRecordOnly && (!hasLimitStop || runId === dockRunId)) {
     return (
       <Button
         variant="quiet"
@@ -74,6 +76,7 @@ export const TranscriptErrorRow = ({
       detail={detail}
       iconTestId="transcript-error-icon"
       actions={
+        !isReadOnly &&
         (onRetry !== undefined || hasLimitStop || canViewTranscript) && (
           <>
             {onRetry !== undefined && (

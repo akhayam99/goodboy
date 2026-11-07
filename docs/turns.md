@@ -421,6 +421,8 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   answer you gave leaves one quiet line (`PermissionRecordLine`). The task list a `TodoWrite`, `update_plan` or `write_todos` call
   writes is one checklist (`planChecklist`) in the turn that first wrote it.
   `mode="record"` (the transcript drawer) keeps today's full rows.
+  Steps keeps error explanations after a later reply succeeds, without recovery
+  buttons (`TranscriptRows`, `TranscriptErrorRow` `isReadOnly`).
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and
@@ -1442,7 +1444,9 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   (status `sending`, `isDirect`), then `deliverQueuedTurn` sends it with
   `queue:<id>`, so the dedup above covers it. A row that could not be saved
   is taken back and sends nothing: `isUnwritten` tells the composer and the
-  transcript drawer to keep the text in the box. A refusal, a cancelled writer
+  transcript drawer to keep the text in the box. `useComposerSend` also restores
+  saved attachments to the captured agent's store entry, even after its
+  composer unmounts (`ChatInput/childComposer.test.tsx`). A refusal, a cancelled writer
   wait or an error puts the row back as `queued` with `hold.reason`; the hold
   and `writtenTexts` are saved inside `override_json` under `queueState`, so a
   reload keeps them. The row owns Retry (`retryQueuedMessage`), and

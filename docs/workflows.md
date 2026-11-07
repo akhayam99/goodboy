@@ -427,7 +427,7 @@ read top to bottom at the conversation measure:
   **Stop step** the verb is **Continue and read 2 queued**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, **View transcript** on its tail (`orchestratedTailOf`, the
-  last step's agent, same as a failed decision) and **Add a hint and continue** at the dock
+  last step's page, same as a failed decision) and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
   the hint; a hint is marked read only once a step started with it, so a
   blocked decision, a step that was not created and a next step the routing
@@ -683,7 +683,7 @@ tooltip line.
 - **A step** (`RunStepPage`): the step's agent conversation, embedded
   (`AgentDetailPane` with a `runStep` frame), for a preset and an orchestrated
   run alike. The header reads "Step 2 · Implementer" with the provider mark, then
-  the step `⋯` (`RunStepActions`: View transcript, which opens the transcript of the agent on screen, a helper's own on a helper's page, and Skip step N, which skips the step the helper belongs to). The run's verbs
+  the step `⋯` (`RunStepActions`: View transcript, which opens the agent's page and closes the drawer, a helper's own on a helper's page, and Skip step N, which skips the step the helper belongs to). The run's verbs
   leave the head: its next move reads on the quiet line at the end, such as
   "Step 2 done" with **Start step 3**. The agent's own menu stays on the right
   click of the title. No next action card above the conversation and no Start

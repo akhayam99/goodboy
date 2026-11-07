@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-import { brandId, type ProviderRunId, type IsoDateTime } from '@goodboy/types';
+import { brandId, type ProviderRunId, type IsoDateTime, type TurnEvent } from '@goodboy/types';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
@@ -26,7 +26,7 @@ import { mapAgentAction } from '../../../../../features/notifications/components
 import { agentPlace } from '../../../../../store/slices/navigation/place';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { MOCK_SCENES } from '../..';
-import { AUTO_SESSION, IMPLEMENTER_ID } from '../u24/autoSceneSeed';
+import { AUTO_SESSION, AUTO_ROOT_ID, IMPLEMENTER_ID } from '../u24/autoSceneSeed';
 import { U36_P10_AGENT_PAGE_SCENES } from './p10-agent-page';
 
 const WAIT = { timeout: 15_000 };
@@ -165,65 +165,163 @@ describe('one agent, one page', () => {
     expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
   });
 
-  it('keeps exactly one Retry in the dock when an Auto child failed', async () => {
+  it.each(['process_error', 'no_closing_envelope'])(
+    'keeps one Auto recovery in the dock for %s',
+    async (reason) => {
+      mount({ id: 'u36-p10-child-page' });
+      await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
+      const runId = brandId<ProviderRunId>({ value: 'mock-child-failed-run' });
+      const at = brandId<IsoDateTime>({ value: '2026-10-13T12:10:00.000Z' });
+      const sendTurn = vi.fn<ReturnType<StoryStore['getState']>['sendTurn']>().mockResolvedValue({
+        blockedOverBudget: false,
+      });
+      act(() => {
+        useAppStore.setState((state) => ({
+          sendTurn,
+          sessionPhaseRuns: {
+            ...state.sessionPhaseRuns,
+            [AUTO_SESSION.id]: (state.sessionPhaseRuns[AUTO_SESSION.id] ?? []).map((agent) =>
+              agent.id === IMPLEMENTER_ID ? { ...agent, status: 'failed' } : agent,
+            ),
+          },
+          agentTurnState: { ...state.agentTurnState, [IMPLEMENTER_ID]: { kind: 'idle' } },
+          autoTreeViews: {
+            ...state.autoTreeViews,
+            [AUTO_SESSION.id]: (state.autoTreeViews[AUTO_SESSION.id] ?? []).map((view) => ({
+              ...view,
+              delegations: view.delegations.map((delegation) =>
+                delegation.childAgentId === IMPLEMENTER_ID
+                  ? { ...delegation, state: 'settled', outcome: 'failed', reason }
+                  : delegation,
+              ),
+            })),
+          },
+          transcripts: {
+            ...state.transcripts,
+            [IMPLEMENTER_ID]: [
+              {
+                kind: 'user_text',
+                runId,
+                text: 'Fix the retry in payments-api',
+                at,
+                deliveredBy: 'auto',
+              },
+              ...(reason === 'process_error'
+                ? [
+                    {
+                      kind: 'error',
+                      runId,
+                      message: reason,
+                      retryable: true,
+                      at,
+                    } satisfies TurnEvent,
+                  ]
+                : []),
+            ],
+          },
+        }));
+      });
+
+      const retries = await screen.findAllByRole('button', { name: /^Retry/ }, WAIT);
+      expect(retries).toHaveLength(1);
+      expect(retries[0]?.closest('[data-conversation-dock]')).not.toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      await vi.waitFor(() =>
+        expect(sendTurn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            sessionId: AUTO_SESSION.id,
+            agentId: AUTO_ROOT_ID,
+            content: expect.stringContaining('delegation '),
+          }),
+        ),
+      );
+    },
+  );
+
+  it('opens a historical failure explanation in Steps after a successful reply', async () => {
     mount({ id: 'u36-p10-child-page' });
     await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
-    const runId = brandId<ProviderRunId>({ value: 'mock-child-failed-run' });
+    const failedRun = brandId<ProviderRunId>({ value: 'harborline-failed-run' });
+    const successRun = brandId<ProviderRunId>({ value: 'harborline-success-run' });
     const at = brandId<IsoDateTime>({ value: '2026-10-13T12:10:00.000Z' });
-    const sendTurn = vi.fn<ReturnType<StoryStore['getState']>['sendTurn']>().mockResolvedValue({
-      blockedOverBudget: false,
-    });
     act(() => {
       useAppStore.setState((state) => ({
-        sendTurn,
+        agentTurnState: { ...state.agentTurnState, [IMPLEMENTER_ID]: { kind: 'idle' } },
         sessionPhaseRuns: {
           ...state.sessionPhaseRuns,
           [AUTO_SESSION.id]: (state.sessionPhaseRuns[AUTO_SESSION.id] ?? []).map((agent) =>
-            agent.id === IMPLEMENTER_ID ? { ...agent, status: 'failed' } : agent,
+            agent.id === IMPLEMENTER_ID ? { ...agent, status: 'completed' } : agent,
           ),
-        },
-        agentTurnState: { ...state.agentTurnState, [IMPLEMENTER_ID]: { kind: 'idle' } },
-        autoTreeViews: {
-          ...state.autoTreeViews,
-          [AUTO_SESSION.id]: (state.autoTreeViews[AUTO_SESSION.id] ?? []).map((view) => ({
-            ...view,
-            delegations: view.delegations.map((delegation) =>
-              delegation.childAgentId === IMPLEMENTER_ID
-                ? { ...delegation, state: 'settled', outcome: 'failed', reason: 'process_error' }
-                : delegation,
-            ),
-          })),
         },
         transcripts: {
           ...state.transcripts,
           [IMPLEMENTER_ID]: [
+            { kind: 'user_text', runId: failedRun, text: 'Check ledger-core', at },
             {
-              kind: 'user_text',
-              runId,
-              text: 'Fix the retry in payments-api',
+              kind: 'error',
+              runId: failedRun,
+              message: 'Harborline provider failed.',
+              retryable: true,
               at,
-              deliveredBy: 'auto',
             },
-            { kind: 'error', runId, message: 'process_error', retryable: true, at },
+            { kind: 'user_text', runId: successRun, text: 'Try ledger-core again', at },
+            {
+              kind: 'assistant_text',
+              runId: successRun,
+              delta: 'The ledger-core check passed.',
+              at,
+            },
+            { kind: 'done', runId: successRun, at },
           ],
         },
       }));
     });
+    fireEvent.click(await screen.findByRole('button', { name: 'Failed here' }, WAIT));
 
-    const retries = await screen.findAllByRole('button', { name: /^Retry/ }, WAIT);
-    expect(retries).toHaveLength(1);
-    expect(retries[0]?.closest('[data-conversation-dock]')).not.toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    await vi.waitFor(() =>
-      expect(sendTurn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sessionId: AUTO_SESSION.id,
-          agentId: IMPLEMENTER_ID,
-          content: 'Fix the retry in payments-api',
-        }),
-      ),
-    );
+    await screen.findByText('Harborline provider failed.', undefined, WAIT);
+    const drawer = document.querySelector('[data-drawer-card]');
+    if (!(drawer instanceof HTMLElement)) {
+      throw new Error('Steps did not open');
+    }
+    within(drawer).getByText('The turn failed');
+    expect(within(drawer).queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(within(drawer).queryByRole('textbox')).toBeNull();
   });
+
+  it.each(['completed', 'failed', 'stopped'])(
+    'keeps the %s child overflow within five rows and keeps Copy name',
+    async (status) => {
+      mount({ id: 'u36-p10-child-result' });
+      await screen.findByText('Returned to Auto', undefined, WAIT);
+      act(() => {
+        useAppStore.setState((state) => ({
+          sessionPhaseRuns: {
+            ...state.sessionPhaseRuns,
+            [AUTO_SESSION.id]: (state.sessionPhaseRuns[AUTO_SESSION.id] ?? []).map((agent) =>
+              agent.id === state.selectedAgentId[AUTO_SESSION.id]
+                ? {
+                    ...agent,
+                    status:
+                      status === 'failed'
+                        ? 'failed'
+                        : status === 'stopped'
+                          ? 'stopped'
+                          : 'completed',
+                    doneAt: undefined,
+                  }
+                : agent,
+            ),
+          },
+        }));
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+
+      const menu = await screen.findByRole('menu', undefined, WAIT);
+      expect(within(menu).getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
+      within(menu).getByRole('menuitem', { name: 'Copy name' });
+      expect(within(menu).queryByRole('menuitem', { name: 'Change model' })).toBeNull();
+    },
+  );
 
   it('keeps one box on the child page in both themes', async () => {
     mount({ id: 'u36-p10-child-composer-dark' });

@@ -13,9 +13,7 @@ import type { ConversationRow } from '../../utils/conversationRows';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { ReadingNotes } from '../../readingOrder/ReadingNotes';
 import { readingOrderOf } from '../../readingOrder/readingOrderOf';
-import { OperationsCluster } from '../OperationsCluster';
-import { PlanChecklist } from '../PlanChecklist';
-import { TurnSummaryLine } from '../TurnSummaryLine';
+import { TranscriptSteps } from './TranscriptSteps';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
@@ -226,7 +224,7 @@ export const TranscriptRows = ({
         return;
       }
     }
-    if (isStepsOnly && row.kind === 'item') {
+    if (isStepsOnly && row.kind === 'item' && row.item.kind !== 'error') {
       return;
     }
     if (row.kind === 'item' && isWorkflowRailRow({ row })) {
@@ -270,19 +268,12 @@ export const TranscriptRows = ({
             rowEstimatePx({ row, isClusterOpen: isStepsOnly }),
         })}
       >
-        {row.kind === 'summary' ? (
-          <TurnSummaryLine
-            steps={row.steps}
+        {row.kind !== 'item' ? (
+          <TranscriptSteps
+            row={row}
             turn={Math.max(0, turnIndex)}
-            {...(onOpenTranscript !== undefined && { onOpenTranscript })}
-          />
-        ) : row.kind === 'plan' ? (
-          <PlanChecklist checklist={row.checklist} isLive={activeRunId != null} />
-        ) : row.kind === 'operations' ? (
-          <OperationsCluster
-            items={row.items}
-            isInitiallyOpen={isStepsOnly}
-            hasAsks={!isStepsOnly}
+            onOpenTranscript={onOpenTranscript}
+            isStepsOnly={isStepsOnly}
             sessionId={sessionId}
             agentId={selectedAgentId}
             workingDir={workingDir}
@@ -299,6 +290,7 @@ export const TranscriptRows = ({
         ) : (
           <TranscriptCard
             {...(reading?.kind === 'answer' && { clampLines: reading.clampLines })}
+            isReadOnly={isStepsOnly}
             item={row.item}
             sessionId={sessionId}
             agentId={selectedAgentId}

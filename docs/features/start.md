@@ -196,6 +196,8 @@ A failed start keeps the goal and settings. Its cause appears above the form act
 
 ## Under the hood
 
+- Agent page menu: `agentHeaderOmitOf` omits Change model because `AgentRunSettings` supplies the model control. `AgentHeaderActions` also omits redundant reply-copy and changes rows when needed. `p10-agent-page.test.tsx` caps child menus at five rows and keeps Copy name.
+
 This part is for contributors and agents who change the feature.
 
 - Start form: `StartForm` draws the kinds, the fields, the settings row and the actions. `NewSessionStartForm` feeds it from the session draft and `RunsStartForm` from `useStartRun`. A kind declares the settings it uses in `START_KIND_SETTINGS`, and `startSettingsOf` keeps the order and drops a setting nothing supplies.

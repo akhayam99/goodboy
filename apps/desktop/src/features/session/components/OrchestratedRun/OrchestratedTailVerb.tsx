@@ -34,7 +34,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const recoverStuckStep = useAppStore((state) => state.recoverStuckStep);
   const readQueuedWorkflowHints = useAppStore((state) => state.readQueuedWorkflowHints);
-  const openDrawer = useAppStore((state) => state.openDrawer);
+  const closeDrawer = useAppStore((state) => state.closeDrawer);
   const navigate = useAppStore((state) => state.navigate);
   const askAgentToContinue = useAppStore((state) => state.askAgentToContinue);
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
@@ -123,9 +123,10 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
         <button
           type="button"
           className={QUIET_VERB}
-          onClick={() =>
-            openDrawer({ kind: 'transcript', sessionId, payload: { agentId: verb.agentId } })
-          }
+          onClick={() => {
+            closeDrawer();
+            navigate({ to: agentPlace({ sessionId, agentId: verb.agentId }) });
+          }}
         >
           View transcript
         </button>

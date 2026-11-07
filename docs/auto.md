@@ -531,7 +531,8 @@ writing to it reopens it to **Deciding**.
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
   conversation above), **Failed: ...** or **Returned to Auto**). A failed child's
   end line has no recovery action: the conversation dock owns **Retry**
-  (`AutoChildEnd`, `DockFailureLine`). A stopped child has no tail line:
+  through Auto, even without a closing result
+  (`AutoChildEnd`, `ConversationDock/useAutoChildRecovery`, `continueStoppedAgent`). A stopped child has no tail line:
   the dock owns **Continue**.
 - **Talking to a child.** The child page carries one composer,
   "Message Implementer". A message is a plain turn on the child (queued while its turn
