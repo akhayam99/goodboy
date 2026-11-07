@@ -180,10 +180,36 @@ describe('AgentHeaderActions', () => {
       expect(labels).toContain('Delete agent');
       expect(labels).not.toContain('Copy name');
       expect(labels).not.toContain('Show its changes');
-      expect(labels).not.toContain('Close');
       expect(labels).not.toContain('Change model');
       cleanup();
     }
+  });
+
+  it('keeps Close on an open agent and Reopen on a closed one, never both', () => {
+    const open = agentFixture({ status: 'failed', name: 'Harborline' });
+    const closed = agentFixture({
+      status: 'failed',
+      name: 'Harborline',
+      doneAt: FIXTURE_NOW,
+    });
+    const labelsOf = (agent: Agent) => {
+      seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
+      render(<AgentHeaderActions agent={agent} sessionId={SESSION} hasStateButton={false} />);
+      fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+      const labels = screen
+        .getAllByRole('menuitem')
+        .map((item) => item.getAttribute('data-menu-label'));
+      cleanup();
+      return labels;
+    };
+    const openLabels = labelsOf(open);
+    const closedLabels = labelsOf(closed);
+
+    expect(openLabels).toContain('Close');
+    expect(openLabels).not.toContain('Reopen');
+    expect(closedLabels).toContain('Reopen');
+    expect(closedLabels).not.toContain('Close');
+    expect(closedLabels.length).toBeLessThanOrEqual(5);
   });
 
   it.each(['plain', 'adopted', 'autoRoot'] as const)(

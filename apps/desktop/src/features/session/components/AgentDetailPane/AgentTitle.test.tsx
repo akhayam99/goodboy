@@ -182,6 +182,23 @@ describe('AgentTitle', () => {
     screen.getByRole('textbox', { name: 'Rename agent' });
   });
 
+  it('renames a brief titled agent after a real click then double click on the same line', () => {
+    render(
+      <AgentTitle
+        agent={{ ...agent, name: 'Implementer' }}
+        sessionId={sessionId}
+        brief={'Check ledger-core.\nKeep the second credit out of payments-api.'}
+      />,
+    );
+    const line = screen.getByText('Check ledger-core.');
+
+    fireEvent.click(line);
+
+    expect(line.isConnected).toBe(true);
+    fireEvent.doubleClick(line);
+    screen.getByRole('textbox', { name: 'Rename agent' });
+  });
+
   it('caps the opened brief in a scroll region, so a long one never squeezes the chat', () => {
     render(
       <AgentTitle

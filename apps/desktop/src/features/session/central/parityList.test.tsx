@@ -150,12 +150,10 @@ describe('the parity list of the Overview, walked on the cards', () => {
   it('1: a child row of the Auto block opens the agent page, never a panel', async () => {
     await show({ kind: 'stuck' });
 
-    const auto = within(cardOf({ name: 'Needs you' })).getByRole('region', {
-      name: /^Auto agent: Harden retries/,
-    });
-    fireEvent.click(within(auto).getByRole('button', { name: /agents?$/ }));
+    const needsYou = cardOf({ name: 'Needs you' });
+    fireEvent.click(within(needsYou).getByRole('button', { name: /^\d+ agents?$/ }));
     const before = useAppStore.getState().selectedAgentId[COLUMN_SESSION_ID] ?? null;
-    fireEvent.click(within(auto).getByRole('button', { name: /not started$/i }));
+    fireEvent.click(within(needsYou).getByRole('button', { name: /not started$/i }));
 
     expect(useAppStore.getState().selectedAgentId[COLUMN_SESSION_ID]).not.toBe(before);
     expect(useAppStore.getState().drawer).toBeNull();

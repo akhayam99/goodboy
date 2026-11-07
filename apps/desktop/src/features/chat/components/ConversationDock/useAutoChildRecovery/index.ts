@@ -4,6 +4,7 @@ import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
 import { autoTreeOfAgent } from '../../../../auto/autoTreeOfAgent';
 import { delegationReasonTextOf } from '../../../../auto/delegationReasonTextOf';
 import type { DockFailure } from '../dockFailureOf';
+import { isRepliedAfter } from './isRepliedAfter';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -27,6 +28,12 @@ export const useAutoChildRecovery = ({
   const rootTurn = useAppStore((state) =>
     tree === null ? null : (state.agentTurnState[tree.view.tree.rootAgentId] ?? null),
   );
+  const settledAt = tree?.kind === 'child' ? tree.delegation.settledAt : null;
+  const hasNewerReply = useAppStore((state) =>
+    agentId === null || settledAt === null
+      ? false
+      : isRepliedAfter({ events: state.transcripts[agentId] ?? EMPTY_ARRAY, since: settledAt }),
+  );
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const pending = usePendingAction({ sessionId });
   if (
@@ -34,7 +41,8 @@ export const useAutoChildRecovery = ({
     agentId === null ||
     agent?.status === 'stopped' ||
     turn?.kind === 'running' ||
-    turn?.kind === 'starting'
+    turn?.kind === 'starting' ||
+    hasNewerReply
   ) {
     return failure;
   }

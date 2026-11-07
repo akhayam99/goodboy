@@ -315,8 +315,10 @@ describe('Auto child recovery by outcome', () => {
   const renderChild = ({
     outcome,
     failure = null,
+    settledAt = null,
   }: {
     readonly outcome: 'failed' | 'blocked' | 'timed_out' | 'completed';
+    readonly settledAt?: number | null;
     readonly failure?: ComponentProps<typeof ConversationDock>['failure'];
   }) => {
     const continueStoppedAgent = vi.fn(async () => undefined);
@@ -332,7 +334,13 @@ describe('Auto child recovery by outcome', () => {
         [session.id]: [
           aView({
             delegations: [
-              aDelegation({ key: 'implementer', role: 'implementer', state: 'settled', outcome }),
+              aDelegation({
+                key: 'implementer',
+                role: 'implementer',
+                state: 'settled',
+                outcome,
+                settledAt,
+              }),
             ],
           }),
         ],
@@ -402,5 +410,38 @@ describe('Auto child recovery by outcome', () => {
     renderChild({ outcome: 'failed' });
 
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('stops offering the old failure once a later reply on the page went through', () => {
+    const settledAt = Date.parse(AT) - 60_000;
+    useAppStore.setState({
+      transcripts: {
+        [AGENT_ID]: [
+          {
+            kind: 'user_text',
+            runId: RUN_ID,
+            text: 'Try again with the retry cap lowered.',
+            at: AT,
+          },
+          { kind: 'assistant_text', runId: RUN_ID, delta: 'The retry cap is lowered.', at: AT },
+        ],
+      },
+    });
+    renderChild({ outcome: 'failed', settledAt });
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(screen.queryByText('The agent ended with an error.')).toBeNull();
+  });
+
+  it('keeps the old failure while the only message sent is older than the settlement', () => {
+    const settledAt = Date.parse(AT) + 60_000;
+    useAppStore.setState({
+      transcripts: {
+        [AGENT_ID]: [{ kind: 'user_text', runId: RUN_ID, text: 'Fix the retry cap.', at: AT }],
+      },
+    });
+    renderChild({ outcome: 'failed', settledAt });
+
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
   });
 });
