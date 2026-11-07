@@ -22,6 +22,7 @@ import { NotificationRow } from '../NotificationRow';
 import { NotificationFacetRail } from './NotificationFacetRail';
 import { NotificationsSkeleton } from './NotificationsSkeleton';
 import { NotificationsHeaderActions } from './NotificationsHeaderActions';
+import { revealNotificationGroup } from './revealNotificationGroup';
 import type { NotificationsFacts } from '../../../actions/kinds/notifications';
 
 type Props = {
@@ -102,11 +103,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
 
   const selectGroup = (key: string) => {
     setSelectedKey(key);
-    requestAnimationFrame(() => {
-      document
-        .querySelector(`[data-notification-key="${CSS.escape(key)}"]`)
-        ?.scrollIntoView({ block: 'nearest' });
-    });
+    revealNotificationGroup({ key });
   };
 
   useListKeys({

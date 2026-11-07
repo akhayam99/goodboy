@@ -20,13 +20,9 @@ import type { CommentKinds } from '../../lib/commentKinds';
 import type { DiffFileActions } from '../DiffView/types';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { rowHeightOf } from '../../lib/rowHeightOf';
-import {
-  WINDOW_MIN_ROWS,
-  layoutRows,
-  scrollTopToReveal,
-  windowOf,
-} from '../../../../shared/utils/windowRows';
+import { WINDOW_MIN_ROWS, layoutRows, windowOf } from '../../../../shared/utils/windowRows';
 import { FileRow } from './FileRow';
+import { revealTreeRow } from './revealTreeRow';
 import { FolderRow } from './FolderRow';
 import { TreeHead } from './TreeHead';
 import { TreeTitle } from './TreeTitle';
@@ -163,26 +159,8 @@ export const ChangeTree = ({
 
   const reveal = useCallback(
     (id: string) => {
-      const element = viewportRef.current;
-      if (!isWindowed || element === null) {
-        document.getElementById(domIdOf({ id }))?.scrollIntoView?.({ block: 'nearest' });
-        return;
-      }
-      const index = rows.findIndex((row) => row.id === id);
-      const row = rows[index];
-      if (row === undefined) {
-        return;
-      }
-      const next = scrollTopToReveal({
-        layout,
-        index,
-        rowPx: rowHeightOf(row),
-        scrollTop: element.scrollTop,
-        viewport: element.clientHeight,
-      });
-      if (next !== element.scrollTop) {
-        element.scrollTop = next;
-      }
+      const viewport = viewportRef.current;
+      revealTreeRow({ viewport, isWindowed, rows, layout, id, domId: domIdOf({ id }) });
     },
     [isWindowed, layout, rows],
   );

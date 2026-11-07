@@ -1,6 +1,7 @@
 import { replacedDecisionNumbersOf } from './replacedDecisionNumbersOf';
 import { isRemovedByYou } from './isRemovedByYou';
 import { matchesClosedSearch } from './matchesClosedSearch';
+import { revealDecisionRow } from './revealDecisionRow';
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
@@ -129,10 +130,7 @@ export const DecisionsSection = ({
     setHighlightMs(OPENED_HIGHLIGHT_MS);
     setHighlighted(wanted);
     const frame = window.requestAnimationFrame(() => {
-      const first = [...wanted]
-        .map((number) => rows.current.get(number))
-        .find((element) => element !== undefined);
-      first?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      revealDecisionRow({ rows: rows.current, numbers: wanted });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [highlight, hasLedger, closed]);
@@ -198,7 +196,7 @@ export const DecisionsSection = ({
       }
     }
     window.requestAnimationFrame(() => {
-      rows.current.get(number)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      revealDecisionRow({ rows: rows.current, numbers: [number] });
     });
     setHighlightMs(HIGHLIGHT_MS);
     setHighlighted(new Set([number]));
