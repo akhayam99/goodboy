@@ -1190,6 +1190,24 @@ mod tests {
     }
 
     #[test]
+    fn a_reading_role_turn_the_person_starts_never_carries_the_shell_tool() {
+        let allowed = strings(&["Bash", "Bash(ls:*)", "Read(src/**)"]);
+        for role in ["scout", "planner", "investigator", "reviewer"] {
+            let args = spawn_args("bypassPermissions", Some(role), &allowed, &[], &[]);
+            let argv = turn_args("claude", &args);
+            let tools = value_after(&argv, "--tools").expect("tool list");
+            assert!(!tools.split(',').any(|tool| tool.starts_with("Bash")));
+            assert!(argv
+                .iter()
+                .all(|arg| arg != "--dangerously-skip-permissions"));
+            assert_eq!(
+                value_after(&argv, "--permission-mode").as_deref(),
+                Some("plan")
+            );
+        }
+    }
+
+    #[test]
     fn a_writer_role_keeps_the_session_mode_and_loses_native_subagents() {
         let roots = strings(&["/repo/.meta"]);
         let args = spawn_args("acceptEdits", Some("implementer"), &[], &[], &roots);

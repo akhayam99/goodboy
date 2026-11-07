@@ -103,6 +103,13 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
           params.images.length > 0 && { storedAttachments: params.images }),
         origin: 'delegation',
         confinedRole: params.role,
+        ...(params.routedModel !== undefined && {
+          override: {
+            providerId: params.routedModel.provider,
+            model: params.routedModel.model,
+            explicit: true,
+          },
+        }),
         mountTarget: {
           mountId: brandId<MountId>({ value: params.mountTarget.mountId }),
           mountRevision: params.mountTarget.mountRevision,

@@ -550,7 +550,12 @@ writing to it reopens it to **Deciding**.
   child's draft never shows in the main Auto composer, two children never share
   one, and a send or a Queue or Send now reaches the child (a stopped or done
   one takes the turn through the normal resume path). The store's selected
-  agent of the session never decides the target.
+  agent of the session never decides the target. Every turn on a child runs
+  with its delegation role, whoever starts it: `confinedRoleOf` reads the role
+  from the tree view for a turn the person types, so a Scout child keeps Read,
+  Grep and Glob in plan mode and never gets a shell. A delegated turn also
+  carries the routed provider and model (`routedModelOf`, `routeTurn`), so a
+  model picked in the child's composer never decides the next `retryOf`.
   The dock's **Continue** asks Auto to continue
   a stopped child, naming its delegation so Auto sends `retryOf` and the same
   agent goes on in its worktree; it never runs a plain turn on it

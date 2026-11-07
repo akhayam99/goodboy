@@ -22,6 +22,7 @@ import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
+import { routedModelOf } from './routedModelOf';
 import { readSnapshot } from './readSnapshot';
 import type { AgentVerbContext } from './verbContext';
 
@@ -193,6 +194,7 @@ const startTurn = async ({
       childAgentId: delegation.childAgentId,
       sessionId: tree.sessionId,
       role,
+      ...routedModelOf({ delegation }),
       text: kickoffTextOf({ delegation, attempt }),
       images: await childImagesOf({ ctx, tree, delegation }),
       mountTarget: target,

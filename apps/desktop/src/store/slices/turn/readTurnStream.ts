@@ -67,7 +67,11 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
   const { filesTouchedThisTurn, editedPathsThisTurn } = progress;
   const confinedRole = ctx.isReadOnlyAnswer
     ? READ_ONLY_ANSWER_ROLE
-    : confinedRoleOf({ input: ctx.input, agent: agentRowEarly });
+    : confinedRoleOf({
+        input: ctx.input,
+        agent: agentRowEarly,
+        views: get().autoTreeViews[sessionId] ?? [],
+      });
   for await (const rawEvent of runTurn(
     {
       runId,

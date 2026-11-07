@@ -60,8 +60,11 @@ export const routeTurn = async ({ get, ctx }: Params) => {
           }),
         }
       : undefined;
+  const isRoutedDelegation = ctx.input.origin === 'delegation' && override != null;
   const turnOverride =
-    session.providerPreference.allowTurnOverride && override != null ? override : undefined;
+    (session.providerPreference.allowTurnOverride || isRoutedDelegation) && override != null
+      ? override
+      : undefined;
   const agentProvider = get().agentProviderOverride[activeAgentId] ?? null;
   const agentModelPin = get().agentModelOverride[activeAgentId] ?? null;
   const agentOverride: TurnProviderOverride | undefined = agentProvider
@@ -87,6 +90,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   const routingPreference =
     (effectiveOverride === agentOverride && agentOverride !== undefined) ||
     (effectiveOverride === nodeOverride && nodeOverride !== undefined) ||
+    (isRoutedDelegation && effectiveOverride === turnOverride) ||
     retry != null
       ? { ...livePreference, allowTurnOverride: true }
       : livePreference;
