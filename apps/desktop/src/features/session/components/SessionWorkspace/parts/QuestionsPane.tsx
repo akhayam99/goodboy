@@ -1,19 +1,34 @@
 import { useMemo } from 'react';
+import type { SessionMountView } from '@goodboy/types';
 import { EmptyState, PaneShell, Skeleton } from '@goodboy/ui';
-import type { AgentId, Session, SessionId } from '@goodboy/types';
+import type { AgentId, MountId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
+import { branchPlace } from '../../../../../store/slices/navigation/place';
+import { useGroupBy } from '../../../../../store/slices/session-grouping/hooks/useGroupBy';
+import { useMountRows } from '../../SessionOverviewPane/ProjectMountRows/useMountRows';
 import type { AgentKind } from '../../../agent-kind';
 import { useQuestionsLens } from '../../../hooks/useQuestionsLens';
 import { openQuestion } from '../../../openQuestion';
 import { ContextLoadFailure } from '../../ContextDrawer/ContextLoadFailure';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { QuestionsGrid } from './QuestionsGrid';
-import { questionGroupsOf, questionRowsOf } from './questionsLensModel';
+import {
+  questionBranchCountOf,
+  questionBranchGroupsOf,
+  questionGroupsOf,
+  questionRowsOf,
+} from './questionsLensModel';
 
 type QuestionsPaneProps = {
   readonly session: Session;
 };
+
+type OpenBranchParams = {
+  readonly mountId: MountId;
+};
+
+const NO_MOUNTS: ReadonlyArray<SessionMountView> = [];
 
 const NO_KIND_OVERRIDES: Readonly<Record<AgentId, AgentKind>> = {};
 
@@ -36,6 +51,28 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   });
   const groups = useMemo(() => questionGroupsOf({ model }), [model]);
   const rows = useMemo(() => questionRowsOf({ model }), [model]);
+  const navigate = useAppStore((s) => s.navigate);
+  const setGroupBy = useAppStore((s) => s.setGroupBy);
+  const sessionMounts = useAppStore((s) => s.sessionMounts[sessionId] ?? NO_MOUNTS);
+  const projects = useAppStore((s) => s.projects);
+  const mountGroups = useMountRows({ sessionId });
+  const mounts = useMemo(
+    () => mountGroups.flatMap((group) => [...group.rows, ...group.finishedRows]),
+    [mountGroups],
+  );
+  const branchGroups = useMemo(
+    () => questionBranchGroupsOf({ model, agents, sessionMounts, projects, mounts }),
+    [model, agents, sessionMounts, projects, mounts],
+  );
+  const branchCount = useMemo(
+    () => questionBranchCountOf({ groups: branchGroups }),
+    [branchGroups],
+  );
+  const groupBy = useGroupBy({ sessionId, branchCount });
+  const openBranch = ({ mountId }: OpenBranchParams) => {
+    const mount = mounts.find((candidate) => candidate.mountId === mountId);
+    navigate({ to: branchPlace({ sessionId, mountPath: mount?.worktreePath ?? null }) });
+  };
 
   if (!isLoaded && hasLoadError) {
     return (
@@ -78,9 +115,15 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
       <QuestionsGrid
         sessionId={sessionId}
         groups={groups}
+        branchGroups={branchGroups}
+        mounts={mounts}
+        groupBy={groupBy}
+        branchCount={branchCount}
         agents={agents}
         kindOverrides={kindOverrides}
         selectedId={openedId}
+        onOpenBranch={openBranch}
+        onGroupByChange={(next) => setGroupBy({ sessionId, groupBy: next.groupBy })}
         onOpen={({ questionId }) =>
           openQuestion({ state: useAppStore.getState(), sessionId, questionId })
         }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cn, ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
@@ -7,6 +8,8 @@ import { questionAnswerLine } from './questionAnswerLine';
 type Props = {
   readonly sessionId: SessionId;
   readonly row: QuestionRow;
+  readonly rowKey: string;
+  readonly titleSuffix?: ReactNode;
   readonly runLine: string;
   readonly age: string;
   readonly isSelected: boolean;
@@ -15,7 +18,16 @@ type Props = {
 
 const BLOCKING = 'Blocking';
 
-export const QuestionsGridRow = ({ sessionId, row, runLine, age, isSelected, onOpen }: Props) => {
+export const QuestionsGridRow = ({
+  sessionId,
+  row,
+  rowKey,
+  titleSuffix,
+  runLine,
+  age,
+  isSelected,
+  onOpen,
+}: Props) => {
   const menu = useObjectMenuTrigger({
     target: {
       kind: 'question',
@@ -23,39 +35,58 @@ export const QuestionsGridRow = ({ sessionId, row, runLine, age, isSelected, onO
       questionId: row.question.id,
       askerId: row.question.createdByAgentId ?? null,
     },
-    anchorKey: `question:${row.question.id}`,
+    anchorKey: `question:${rowKey}`,
   });
   const title = questionRowTitle({ row });
   const isSettled = row.kind !== 'waiting' && row.kind !== 'delegated';
   const isBlocking = row.kind === 'waiting' && row.question.isBlocking;
   const detail = [questionAnswerLine({ row }), runLine].filter((part) => part !== '').join(' · ');
-  const titleCell = (
+  const titleText = (
     <TruncatedText className={cn('min-w-0', isSettled && 'text-muted-foreground')}>
       {title}
     </TruncatedText>
   );
+  const detailText =
+    detail === '' ? null : (
+      <TruncatedText className="min-w-0 text-meta text-muted-foreground">{detail}</TruncatedText>
+    );
+  const plainCell =
+    detailText === null ? (
+      titleText
+    ) : (
+      <span className="flex min-w-0 flex-1 flex-col">
+        {titleText}
+        {detailText}
+      </span>
+    );
+  const suffixedCell =
+    titleSuffix === undefined ? null : (
+      <span
+        data-question-row-title=""
+        className="flex min-w-0 flex-1 cursor-pointer select-none flex-col"
+        onClick={onOpen}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          {titleText}
+          {titleSuffix}
+        </span>
+        {detailText}
+      </span>
+    );
 
   return (
     <ListGridRow
       ariaLabel={detail === '' ? title : `${title}, ${detail}`}
       isSelected={isSelected}
-      rowKey={row.question.id}
+      rowKey={rowKey}
       rowHeight={detail === '' ? 32 : 'stack'}
       onSelect={onOpen}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
+      overlays={suffixedCell === null ? undefined : [{ column: 'question', node: suffixedCell }]}
       cells={[
         isBlocking ? <StateDot state="needsYou" label={BLOCKING} /> : null,
-        detail === '' ? (
-          titleCell
-        ) : (
-          <span className="flex min-w-0 flex-1 flex-col">
-            {titleCell}
-            <TruncatedText className="min-w-0 text-meta text-muted-foreground">
-              {detail}
-            </TruncatedText>
-          </span>
-        ),
+        suffixedCell === null ? plainCell : '',
         age,
       ]}
     />

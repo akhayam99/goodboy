@@ -9,6 +9,7 @@ import {
   type BranchGroup,
   type BranchGroupHead,
 } from '../../../../branchGroupsOf';
+import { branchHeadLabelOf, branchHeadMarkOf } from '../../../../branchHeadOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import type { WorkBranch } from '../../../../workBranchesOf';
 import { RunAlsoOnChip } from './RunAlsoOnChip';
@@ -44,40 +45,6 @@ type Props = {
   readonly renderRow: (params: BranchRowParams) => ReactNode;
 };
 
-type GroupParams = {
-  readonly group: BranchGroup;
-};
-
-const groupLabelOf = ({ group }: GroupParams): string => {
-  switch (group.head.kind) {
-    case 'branch':
-      return group.head.branch.branch;
-    case 'series':
-      return group.head.name;
-    case 'none':
-      return 'No branch';
-    default: {
-      const unreachable: never = group.head;
-      return unreachable;
-    }
-  }
-};
-
-const groupMarkOf = ({ group }: GroupParams): string | null => {
-  switch (group.head.kind) {
-    case 'branch':
-      return group.head.branch.projectName;
-    case 'series':
-      return group.head.projectName;
-    case 'none':
-      return null;
-    default: {
-      const unreachable: never = group.head;
-      return unreachable;
-    }
-  }
-};
-
 type PartParams = {
   readonly run: SessionRun;
   readonly head: BranchGroupHead;
@@ -91,6 +58,10 @@ const partBranchesOf = ({ run, head }: PartParams): ReadonlyArray<WorkBranch> =>
     head.parts.some((part) => part.mountId === branch.mountId),
   );
   return touched.length === 1 ? touched : [];
+};
+
+type GroupParams = {
+  readonly group: BranchGroup;
 };
 
 const groupFactOf = ({ group }: GroupParams): string | null =>
@@ -117,14 +88,14 @@ export const RunsByBranch = ({
         ...(isFolded ? [] : finished),
         ...(isArchivedShown ? archived : []),
       ];
-      const mark = groupMarkOf({ group });
+      const mark = branchHeadMarkOf({ head: group.head });
       const summary = branchGroupSummaryOf({ counts: group.counts, fact: groupFactOf({ group }) });
       const head = group.head;
       return (
         <ListGridGroup
           key={group.key}
           headingLevel={2}
-          label={groupLabelOf({ group })}
+          label={branchHeadLabelOf({ head: group.head })}
           mark={mark === null ? undefined : <span>{mark}</span>}
           count={branchGroupShownCountOf({ group })}
           fold={

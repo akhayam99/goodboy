@@ -143,6 +143,14 @@ const seed = ({
     sessionOpenQuestions: loaded ? { [SESSION_ID]: open } : {},
     sessionAnsweredQuestions: loaded ? { [SESSION_ID]: answered } : {},
     sessionQuestionsLoadError: {},
+    groupBySession: {},
+    navigation: {},
+    setGroupBy: vi.fn(),
+    projects: [],
+    sessionMounts: {},
+    sessionProjectMounts: {},
+    mountBranchObservations: {},
+    prSeries: {},
   };
 };
 
