@@ -5172,11 +5172,6 @@
       "count": 4
     }
   },
-  "apps/desktop/src/features/session/components/AgentHeaderActions.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/AgentHeaderActions.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -5358,11 +5353,6 @@
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/AgentOverlay.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/AgentOverlay.tsx": {

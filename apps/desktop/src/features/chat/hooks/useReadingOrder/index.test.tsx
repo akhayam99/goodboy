@@ -55,7 +55,9 @@ describe('reading a live reply', () => {
     const { result, rerender, viewport, rectangles } = open({ isAbove: false });
     rerender({ activeRunId: null });
     rectangles.isAbove = true;
-    act(() => viewport.dispatchEvent(new Event('scroll')));
+    act(() => {
+      viewport.dispatchEvent(new Event('scroll'));
+    });
     expect(result.current.roles.get('text-0')).toMatchObject({ kind: 'notes' });
   });
   it('folds text already above the viewport when the live reply ends', () => {
