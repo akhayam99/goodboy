@@ -177,7 +177,7 @@ describe('the pull request page scenes', () => {
       [...activity.querySelectorAll('[data-activity]')].map((row) =>
         row.getAttribute('data-activity'),
       ),
-    ).toEqual(['bot', 'bot', 'comments']);
+    ).toEqual(['bot', 'bot']);
   });
 
   it('branch-pr-activity counts the open threads the same in the merge box and the activity', async () => {

@@ -34,11 +34,15 @@ type CommentsWordParams = {
   readonly item: Extract<ActivityItem, { kind: 'comments' }>;
 };
 
-const commentsWord = ({ item }: CommentsWordParams) => {
-  if (item.needYou > 0) {
-    return `${countNoun({ count: item.needYou, one: 'needs', many: 'need' })} you`;
+const commentsLine = ({ item }: CommentsWordParams): string => {
+  if (item.open === 0) {
+    return 'All threads on files resolved';
   }
-  return item.open > 0 ? `${item.open} open` : 'all resolved';
+  const open = `${countNoun({ count: item.open, one: 'open thread', many: 'open threads' })} on files`;
+  if (item.needYou === 0) {
+    return open;
+  }
+  return `${open}, ${countNoun({ count: item.needYou, one: 'needs', many: 'need' })} you`;
 };
 
 export const activityRowOf = ({
@@ -120,12 +124,7 @@ export const activityRowOf = ({
     case 'comments':
       return {
         glyph: <MessageSquare size={GLYPH_SIZE} aria-hidden />,
-        line: (
-          <>
-            {countNoun({ count: item.total, one: 'comment', many: 'comments' })} on files,{' '}
-            {commentsWord({ item })}
-          </>
-        ),
+        line: commentsLine({ item }),
         comments: [],
         open: { label: 'Open comments', run: onOpenComments },
       };

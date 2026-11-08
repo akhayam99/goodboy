@@ -55,7 +55,7 @@ const isInScope = ({ entry, scope }: InScopeParams): boolean => {
   return !((scope === 'notes' && !isNote) || (scope === 'comments' && isNote));
 };
 
-const entriesInScopeOf = <T extends CountableEntry>({
+export const entriesInScopeOf = <T extends CountableEntry>({
   entries,
   scope,
 }: ScopeParams<T>): ReadonlyArray<T> => entries.filter((entry) => isInScope({ entry, scope }));

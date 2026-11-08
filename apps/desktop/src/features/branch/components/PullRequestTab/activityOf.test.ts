@@ -201,7 +201,7 @@ describe('pullRequestActivityOf', () => {
       edits: [],
     });
 
-    expect(items.find((item) => item.kind === 'comments')).toMatchObject({ total: 1, open: 0 });
+    expect(items.find((item) => item.kind === 'comments')).toMatchObject({ open: 0 });
   });
 
   it('takes the open thread count from the threads it is given', () => {
@@ -222,7 +222,7 @@ describe('pullRequestActivityOf', () => {
     });
   });
 
-  it('marks the comments line for the bots lane when only an app left inline findings', () => {
+  it('keeps the comments line out of the people lane when only an app left inline findings', () => {
     const items = pullRequestActivityOf({
       view: VIEW,
       detail: detail({
@@ -234,13 +234,10 @@ describe('pullRequestActivityOf', () => {
       edits: [],
     });
 
-    expect(items.find((item) => item.kind === 'comments')).toMatchObject({
-      hasBots: true,
-      hasPeople: false,
-    });
+    expect(items.find((item) => item.kind === 'comments')).toMatchObject({ hasPeople: false });
   });
 
-  it('marks the comments line for both lanes when an app and a person commented', () => {
+  it('puts the comments line in the people lane when an app and a person commented', () => {
     const items = pullRequestActivityOf({
       view: VIEW,
       detail: detail({
@@ -255,10 +252,7 @@ describe('pullRequestActivityOf', () => {
       edits: [],
     });
 
-    expect(items.find((item) => item.kind === 'comments')).toMatchObject({
-      hasBots: true,
-      hasPeople: true,
-    });
+    expect(items.find((item) => item.kind === 'comments')).toMatchObject({ hasPeople: true });
   });
 
   it('lets the author type of a review decide the lane of that author comments', () => {
@@ -284,10 +278,7 @@ describe('pullRequestActivityOf', () => {
       edits: [],
     });
 
-    expect(items.find((item) => item.kind === 'comments')).toMatchObject({
-      hasBots: false,
-      hasPeople: true,
-    });
+    expect(items.find((item) => item.kind === 'comments')).toMatchObject({ hasPeople: true });
     expect(items.find((item) => item.kind === 'review')).toMatchObject({ isBot: false });
   });
 
@@ -426,7 +417,7 @@ describe('pullRequestActivityOf', () => {
     });
 
     const line = items.find((item) => item.kind === 'comments');
-    expect(line).toMatchObject({ total: 2, needYou: 1, open: 1 });
+    expect(line).toMatchObject({ needYou: 1, open: 1 });
   });
 
   it('has no comments line while nobody commented on a file', () => {

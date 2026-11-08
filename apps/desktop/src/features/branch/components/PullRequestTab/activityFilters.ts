@@ -37,10 +37,7 @@ const lanesOf = ({ item }: ItemParams): ReadonlyArray<ActivityLane> => {
           : 'people',
       ];
     case 'comments':
-      return [
-        ...(item.hasPeople ? (['people'] as const) : []),
-        ...(item.hasBots ? (['bots'] as const) : []),
-      ];
+      return item.hasPeople ? ['people'] : [];
     case 'push':
       return ['pushes'];
     case 'checks':

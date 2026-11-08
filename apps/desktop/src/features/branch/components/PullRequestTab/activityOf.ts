@@ -39,11 +39,9 @@ export type ActivityItem =
       readonly kind: 'comments';
       readonly key: string;
       readonly at: string;
-      readonly total: number;
       readonly needYou: number;
       readonly open: number;
       readonly hasPeople: boolean;
-      readonly hasBots: boolean;
     }
   | {
       readonly kind: 'checks';
@@ -167,8 +165,7 @@ const commentsOf = ({
   threads: counts,
 }: Pick<Params, 'detail' | 'threads'>): ReadonlyArray<ActivityItem> => {
   const comments = (detail?.comments ?? []).filter((comment) => comment.source === 'review');
-  const threads = new Set(comments.map((comment) => comment.threadId ?? comment.id));
-  if (threads.size === 0) {
+  if (comments.length === 0) {
     return [];
   }
   const latest = comments.reduce(
@@ -185,11 +182,9 @@ const commentsOf = ({
       kind: 'comments',
       key: 'comments',
       at: latest,
-      total: threads.size,
       needYou: counts.needYou,
       open: counts.open,
       hasPeople: comments.some((comment) => !isBotAuthor({ login: comment.author })),
-      hasBots: comments.some((comment) => isBotAuthor({ login: comment.author })),
     },
   ];
 };

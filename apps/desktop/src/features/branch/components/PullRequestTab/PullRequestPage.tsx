@@ -20,12 +20,12 @@ import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { usePullRequestPort } from '../../hooks/usePullRequestPort';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
+import { pullRequestThreadCountsOf } from '../../pullRequestThreadCountsOf';
 import { queueLineOf } from '../../queueLineOf';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import { pullRequestActivityOf } from './activityOf';
-import { hostThreadCountsOf } from './hostThreadCountsOf';
 import { MergeBox } from './MergeBox';
 import { mergeBoxOf, type PullRequestBranchFacts } from './MergeBox/mergeBoxOf';
 import { PullRequestActivity } from './PullRequestActivity';
@@ -84,7 +84,10 @@ export const PullRequestPage = ({
   const runs = pullRequestRunsOf({ pr, detail, view });
   const matched = detail !== null && detail.prNumber === pr.number ? detail : null;
   const comments = matched?.comments ?? null;
-  const hostCounts = useMemo(() => hostThreadCountsOf({ comments, entries }), [comments, entries]);
+  const hostCounts = useMemo(
+    () => pullRequestThreadCountsOf({ pr, detail, entries, isWithNotes: false }),
+    [detail, entries, pr],
+  );
   const threads = useMemo(
     () => ({
       unresolved: hostCounts.open,
