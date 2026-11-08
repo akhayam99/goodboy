@@ -215,6 +215,18 @@ describe('ChangesPane', () => {
     expect(screen.getByText('Saved versions use 18 MB of 1.0 GB')).toBeDefined();
   });
 
+  it('leaves the page scroller to the reading side, never the turn list', async () => {
+    render(<ChangesPane sessionId={sessionId} />);
+
+    const memo = await screen.findByRole('region', { name: 'launch-memo.md' });
+    await waitFor(() => expect(memo.textContent).toContain('Teams of 5 to 200 people'));
+
+    const turn = screen.getByRole('region', { name: 'Reply 2' });
+    expect(turn.closest('[data-page-scroller]')).toBeNull();
+    expect(memo.querySelector('[data-page-scroller]')).not.toBeNull();
+    expect(document.querySelectorAll('[data-page-scroller]')).toHaveLength(1);
+  });
+
   it('names the other agent that wrote the file since, in the question that asks', async () => {
     const auto = brandId<AgentId>({ value: 'agent-auto' });
     const scout = brandId<AgentId>({ value: 'agent-scout' });

@@ -160,7 +160,7 @@ export const ChangesPane = ({ sessionId }: Props) => {
           />
         )}
         <div className="flex min-h-0 flex-1 gap-6">
-          <ScrollFade className="w-72 shrink-0" fadeSize={24}>
+          <ScrollFade className="w-72 shrink-0" fadeSize={24} isPageScroller={false}>
             <div className="flex flex-col gap-6">
               {changeTurns.map((turn) => (
                 <TurnGroup

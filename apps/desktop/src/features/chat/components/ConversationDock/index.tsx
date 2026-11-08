@@ -54,7 +54,7 @@ export const ConversationDock = ({
     >
       <ScrollFade
         className="max-h-80"
-        canDriveHeader={false}
+        isPageScroller={false}
         fadeSize="h-6"
         viewportClassName="flex min-w-0 flex-col gap-2 px-3 pt-2 has-[[data-dock-row]:not(:empty)]:pb-2"
       >
