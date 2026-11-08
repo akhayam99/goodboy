@@ -34,6 +34,7 @@ import { remoteOf, snapshotOf } from './attemptBaseline';
 import { attemptEnvelope, delegationRoleOf, isArtifactRole } from './attemptEnvelope';
 import { landAttemptRevision, type RevisionLanding } from './landAttemptRevision';
 import { planPublish } from './planPublish';
+import { returnedRevise } from './reviseFailure/returnedRevise';
 import type { ChildTurnEnded } from './ports';
 import { pushSettledPublish } from './pushSettledPublish';
 import { readCommittedFilesOf } from './readCommittedFiles';
@@ -257,46 +258,6 @@ const askOf = async ({ ctx, delegation }: AskParams): Promise<string | null> => 
 
 type ReviseParams = Context & {
   readonly attribution: Attribution;
-};
-
-type ReturnedReviseParams = ReviseParams & {
-  readonly artifactId: string;
-  readonly envelope: DelegationResultV1;
-};
-
-const returnedRevise = async ({
-  ctx,
-  ended,
-  delegation,
-  attempt,
-  artifactId,
-  envelope,
-}: ReturnedReviseParams): Promise<FinishAttemptOutcome> => {
-  const result: DelegationResultV1 = { ...envelope, artifacts: [] };
-  const settled = await ctx.scheduler.settleAttempt({
-    attemptId: attempt.id,
-    generation: ended.generation,
-    ending: {
-      kind: 'ended',
-      outcome: 'blocked',
-      endReason: result.reason,
-      costUsd: ended.costUsd,
-      resultSnapshot: { envelope: result, landing: null },
-    },
-    revise: {
-      delegationId: delegation.id,
-      generation: ended.generation,
-      artifactId: brandId<ArtifactId>({ value: artifactId }),
-      outcome: 'blocked',
-      reason: 'returned',
-      ...(result.reason !== null && { failure: result.reason }),
-      result,
-    },
-  });
-  if (settled.kind === 'dropped') {
-    return { kind: 'dropped', reason: settled.reason };
-  }
-  return { kind: 'ended', outcome: 'blocked', landing: 'none' };
 };
 
 const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcome> => {
