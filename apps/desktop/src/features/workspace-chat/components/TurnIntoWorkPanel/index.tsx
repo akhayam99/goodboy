@@ -7,7 +7,6 @@ import {
   formatError,
   Input,
   Kbd,
-  Notice,
   SegmentedTabs,
   Skeleton,
 } from '@goodboy/ui';
@@ -39,6 +38,7 @@ import { BriefItems } from './BriefItems';
 import { DraftedBy } from './DraftedBy';
 import { ProjectPicker } from '../../../../shared/components/ProjectPicker';
 import { SessionField } from './SessionField';
+import { UnlinkedNotice } from './UnlinkedNotice';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
@@ -369,26 +369,9 @@ export const TurnIntoWorkPanel = ({
             </>
           )}
           {unlinked === null ? null : (
-            <Notice
-              tone="danger"
-              placement="inline"
-              role="alert"
-              title="Couldn't link the chat to the session"
-              body="The session is ready. The link between them was not saved."
-              actions={
-                <>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void linkThenFinish(unlinked)}
-                  >
-                    Retry
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => finish(unlinked)}>
-                    Open the session
-                  </Button>
-                </>
-              }
+            <UnlinkedNotice
+              onRetry={() => void linkThenFinish(unlinked)}
+              onOpen={() => finish(unlinked)}
             />
           )}
           <FormActions error={error}>
