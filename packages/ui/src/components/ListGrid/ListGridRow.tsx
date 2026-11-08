@@ -20,8 +20,12 @@ export type ListGridOverlay = {
   readonly node: ReactNode;
 };
 
+export type ListGridKeyedCells = {
+  readonly byKey: Readonly<Record<string, ReactNode>>;
+};
+
 export type ListGridRowProps = {
-  readonly cells: ReadonlyArray<ReactNode>;
+  readonly cells: ReadonlyArray<ReactNode> | ListGridKeyedCells;
   readonly onSelect?: () => void;
   readonly isSelected?: boolean;
   readonly ariaLabel?: string;
@@ -83,6 +87,18 @@ const filledHideableKeyOf = ({ cells, columns }: FilledParams): string =>
     )
     .join('\n');
 
+type CellListParams = {
+  readonly cells: ListGridRowProps['cells'];
+  readonly columns: ReadonlyArray<ListGridColumn>;
+};
+
+const cellListOf = ({ cells, columns }: CellListParams): ReadonlyArray<ReactNode> => {
+  if (!('byKey' in cells)) {
+    return cells;
+  }
+  return columns.map((column) => cells.byKey[column.key] ?? null);
+};
+
 type VisibleCell = {
   readonly cell: ReactNode;
   readonly column: ListGridColumn | undefined;
@@ -118,7 +134,7 @@ const spannedOf = ({ visible }: SpannedParams): ReadonlyArray<VisibleCell & { sp
 };
 
 export const ListGridRow = ({
-  cells,
+  cells: given,
   onSelect,
   isSelected = false,
   ariaLabel,
@@ -134,6 +150,7 @@ export const ListGridRow = ({
 }: ListGridRowProps) => {
   const { columns, hiddenKeys, hasHideable, reportFilled } = useContext(ListGridColumnsContext);
   const rowId = useId();
+  const cells = cellListOf({ cells: given, columns });
   const filledKey = hasHideable ? filledHideableKeyOf({ cells, columns }) : '';
   useLayoutEffect(() => {
     if (!hasHideable) {
