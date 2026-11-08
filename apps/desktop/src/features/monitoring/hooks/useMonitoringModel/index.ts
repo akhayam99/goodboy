@@ -7,6 +7,7 @@ import { selectOwnedMounts } from '../../../../store/slices/monitoring/selectOwn
 import { selectPortRows } from '../../../../store/slices/monitoring/selectPortRows';
 import { filterPortRows } from '../../filterPortRows';
 import { isOnTarget } from '../../isOnTarget';
+import type { LeftoverRow } from '../../leftoverRows';
 import type { MonitoringTarget } from '../../monitoringTarget';
 import { portMountOf } from '../../portMountOf';
 import { portSummary, type PortSummary } from '../../portSummary';
@@ -14,6 +15,7 @@ import { splitPortRows } from '../../splitPortRows';
 import { startedByGoodboy, type StartedRow } from '../../startedByGoodboy';
 import { unmatchedStarted } from '../../unmatchedStarted';
 import { workspacePortSet } from '../../workspacePortSet';
+import { useLeftoverRows } from '../useLeftoverRows';
 
 type MonitoringStatus = 'loading' | 'failed' | 'unsupported' | 'ready';
 
@@ -33,6 +35,7 @@ export type MonitoringModel = {
   readonly query: string;
   readonly target: MonitoringTarget | null;
   readonly workspaceId: string;
+  readonly leftovers: ReadonlyArray<LeftoverRow>;
   readonly isBranchEmpty: boolean;
 };
 
@@ -73,6 +76,8 @@ export const useMonitoringModel = (): MonitoringModel => {
     state.appStudio?.kind === 'monitoring' ? (state.appStudio.target ?? null) : null,
   );
 
+  const leftovers = useLeftoverRows({ target });
+
   return useMemo(() => {
     const split = splitPortRows({
       rows,
@@ -94,26 +99,14 @@ export const useMonitoringModel = (): MonitoringModel => {
       started: startedByGoodboy({ snapshot, ledger, projects, mounts }),
       rows,
     }).filter((row) => isOnTarget({ mount: row.mount, target }));
-    const pinnedRows = filterPortRows({
-      rows: split.pinned.filter((row) => isOnPage({ row })),
-      query,
-      projectNameOf,
-    });
-    const goodboyRows = filterPortRows({
-      rows: split.goodboy.filter((row) => isOnPage({ row })),
-      query,
-      projectNameOf,
-    });
-    const workspaceRows = filterPortRows({
-      rows: split.workspace.filter((row) => isOnPage({ row })),
-      query,
-      projectNameOf,
-    });
-    const listeningRows = filterPortRows({
-      rows: split.listening.filter((row) => isOnPage({ row })),
-      query,
-      projectNameOf,
-    });
+    const onPagePinned = split.pinned.filter((row) => isOnPage({ row }));
+    const onPageGoodboy = split.goodboy.filter((row) => isOnPage({ row }));
+    const onPageWorkspace = split.workspace.filter((row) => isOnPage({ row }));
+    const onPageListening = split.listening.filter((row) => isOnPage({ row }));
+    const pinnedRows = filterPortRows({ rows: onPagePinned, query, projectNameOf });
+    const goodboyRows = filterPortRows({ rows: onPageGoodboy, query, projectNameOf });
+    const workspaceRows = filterPortRows({ rows: onPageWorkspace, query, projectNameOf });
+    const listeningRows = filterPortRows({ rows: onPageListening, query, projectNameOf });
     return {
       status: statusOf({
         hasSnapshot: snapshot !== null,
@@ -134,11 +127,16 @@ export const useMonitoringModel = (): MonitoringModel => {
       query,
       target,
       workspaceId,
+      leftovers,
       isBranchEmpty:
         target !== null &&
-        pinnedRows.length + goodboyRows.length + workspaceRows.length + listeningRows.length ===
+        onPagePinned.length +
+          onPageGoodboy.length +
+          onPageWorkspace.length +
+          onPageListening.length ===
           0 &&
-        processRows.length === 0,
+        processRows.length === 0 &&
+        leftovers.length === 0,
     };
   }, [
     snapshot,
@@ -153,5 +151,6 @@ export const useMonitoringModel = (): MonitoringModel => {
     workspaceId,
     query,
     target,
+    leftovers,
   ]);
 };

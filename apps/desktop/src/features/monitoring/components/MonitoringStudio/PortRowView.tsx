@@ -87,7 +87,9 @@ export const PortRowView = ({
           <MetricCells process={process} now={now} />
         )}
         <PortRowActions target={target} hasStop={!isNested} hasMenu />
-        {command.isOpen && process !== null ? <CommandLine args={process.argsMasked} /> : null}
+        {command.isOpen && canOpen && process !== null ? (
+          <CommandLine args={process.argsMasked} />
+        ) : null}
       </div>
     </li>
   );

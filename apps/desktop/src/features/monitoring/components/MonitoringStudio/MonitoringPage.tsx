@@ -11,7 +11,6 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { useIdleCounts } from '../../hooks/useIdleCounts';
-import { useLeftoverRows } from '../../hooks/useLeftoverRows';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
 import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
 import { monitoringTargetKey } from '../../monitoringTarget';
@@ -46,18 +45,15 @@ const metaOf = ({ isReady, isEmpty, summary, takenAt, now }: MetaParams): string
   return summaryMeta({ summary, takenAt, now }) ?? undefined;
 };
 
-const NO_LEFTOVERS: ReturnType<typeof useLeftoverRows> = [];
-
 export const MonitoringPage = () => {
   useMonitorPolling();
   const model = useMonitoringModel();
   const setMonitoringQuery = useAppStore((state) => state.setMonitoringQuery);
   const now = useNow(5_000);
-  const allLeftovers = useLeftoverRows();
   const idleCounts = useIdleCounts();
   const sweptCount = useAppStore((state) => state.monitorSweptCount);
   const isReady = model.status === 'ready';
-  const leftovers = model.target === null ? allLeftovers : NO_LEFTOVERS;
+  const leftovers = model.leftovers;
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const onScroll = useScrollMemory({
     memoryKey: `monitoring:${model.workspaceId}:${monitoringTargetKey({ target: model.target })}`,

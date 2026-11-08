@@ -412,3 +412,177 @@ describe('a fold belongs to one run of a process', () => {
     expect(folds().some((key) => key.startsWith('proc:'))).toBe(false);
   });
 });
+
+describe('Monitoring on a branch with leftovers, a search miss and shared processes', () => {
+  const LEFTOVER_PGID = 4400;
+  const OTHER_PGID = 4500;
+  const NOTHING_RUNNING = 'Nothing running on this branch';
+
+  type OrphanParams = {
+    readonly pid: number;
+    readonly pgid: number;
+    readonly cwd: string;
+  };
+
+  const orphanOf = ({ pid, pgid, cwd }: OrphanParams) => ({
+    ...processAt({ pid, cwd, startedAt: TAKEN_AT - 5000 }),
+    pgid,
+  });
+
+  type LedgerParams = {
+    readonly spawnId: string;
+    readonly sessionId: SessionId;
+    readonly pgid: number;
+    readonly path: string;
+  };
+
+  const ledgerOf = ({ spawnId, sessionId, pgid, path }: LedgerParams) => ({
+    spawnId,
+    kind: 'turn' as const,
+    pid: pgid,
+    pgid,
+    sessionId,
+    mountPath: path,
+    cwd: path,
+    startedAt: TAKEN_AT - 9000,
+  });
+
+  type BranchParams = {
+    readonly snapshot: MonitorSnapshot;
+    readonly ledger: ReadonlyArray<ReturnType<typeof ledgerOf>>;
+  };
+
+  const openBranch = ({ snapshot, ledger }: BranchParams) => {
+    useAppStore.setState({
+      sessions: [
+        sessionOf({ id: SESSION_A, workspaceId: WORKSPACE_A }),
+        sessionOf({ id: SESSION_B, workspaceId: WORKSPACE_B }),
+      ],
+      sessionMounts: {},
+      sessionProjectMounts: {
+        [SESSION_A]: [
+          projectMountOf({ sessionId: SESSION_A, projectId: PROJECT_A, worktreePath: TREE_A }),
+        ],
+        [SESSION_B]: [
+          projectMountOf({ sessionId: SESSION_B, projectId: PROJECT_B, worktreePath: TREE_B }),
+        ],
+      },
+      monitorPinned: [],
+    });
+    stubStoryInvoke({
+      monitor_snapshot: snapshot,
+      process_ledger_list: ledger,
+      monitor_watched_ports: [],
+    });
+    useAppStore.getState().openStudio({
+      studio: {
+        kind: 'monitoring',
+        target: { workspaceId: WORKSPACE_A, projectId: PROJECT_A, branch: BRANCH },
+      },
+    });
+  };
+
+  it('keeps the leftovers of this branch and drops the ones of another', async () => {
+    openBranch({
+      snapshot: {
+        listeners: [],
+        processes: [
+          orphanOf({ pid: 4401, pgid: LEFTOVER_PGID, cwd: `${TREE_A}/src` }),
+          orphanOf({ pid: 4501, pgid: OTHER_PGID, cwd: `${TREE_B}/src` }),
+        ],
+        takenAt: TAKEN_AT,
+        isPlatformSupported: true,
+      },
+      ledger: [
+        ledgerOf({ spawnId: 'spawn-a', sessionId: SESSION_A, pgid: LEFTOVER_PGID, path: TREE_A }),
+        ledgerOf({ spawnId: 'spawn-b', sessionId: SESSION_B, pgid: OTHER_PGID, path: TREE_B }),
+      ],
+    });
+
+    renderPage();
+
+    await waitFor(() => expect(screen.queryByText('Stop leftovers')).not.toBeNull(), {
+      timeout: 4000,
+    });
+    expect(screen.queryByText(NOTHING_RUNNING)).toBeNull();
+    expect(document.querySelector('[data-leftover-row="spawn-a"]')).not.toBeNull();
+    expect(document.querySelector('[data-leftover-row="spawn-b"]')).toBeNull();
+  });
+
+  it('says nothing runs when only another branch has leftovers', async () => {
+    openBranch({
+      snapshot: {
+        listeners: [],
+        processes: [orphanOf({ pid: 4501, pgid: OTHER_PGID, cwd: `${TREE_B}/src` })],
+        takenAt: TAKEN_AT,
+        isPlatformSupported: true,
+      },
+      ledger: [
+        ledgerOf({ spawnId: 'spawn-b', sessionId: SESSION_B, pgid: OTHER_PGID, path: TREE_B }),
+      ],
+    });
+
+    renderPage();
+
+    await waitFor(() => expect(screen.queryByText(NOTHING_RUNNING)).not.toBeNull(), {
+      timeout: 4000,
+    });
+    expect(screen.queryByText('Stop leftovers')).toBeNull();
+  });
+
+  it('does not report an empty branch when a saved search matches none of its ports', async () => {
+    openBranch({ snapshot: TWO_WORKSPACES, ledger: [] });
+    useAppStore.setState({ monitorPinned: [{ port: 5005, description: 'Ledger web' }] });
+    useAppStore.getState().setMonitoringQuery({ workspaceId: WORKSPACE_A, query: '9999' });
+
+    renderPage();
+
+    await waitFor(() => expect(screen.queryByRole('searchbox')).not.toBeNull(), {
+      timeout: 4000,
+    });
+    expect(screen.queryByText(NOTHING_RUNNING)).toBeNull();
+  });
+
+  it('hides the saved command line once the port becomes a nested row', async () => {
+    useAppStore.setState({
+      monitorPinned: [
+        { port: 5005, description: 'Ledger web' },
+        { port: 5006, description: 'Ledger admin' },
+      ],
+    });
+    const single: MonitorSnapshot = {
+      ...SNAPSHOT,
+      processes: SNAPSHOT.processes.map((item) => ({ ...item, birthId: `${TAKEN_AT}.000100` })),
+    };
+    stubStoryInvoke({
+      monitor_snapshot: single,
+      process_ledger_list: [],
+      monitor_watched_ports: [],
+    });
+    act(() => useAppStore.setState({ monitorSnapshot: single }));
+    const first = await mountPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Show command line' }));
+    expect(screen.queryByText('node server.js')).not.toBeNull();
+    first.unmount();
+
+    const shared: MonitorSnapshot = {
+      ...single,
+      listeners: [
+        ...single.listeners,
+        { port: 5006, address: '127.0.0.1', protocol: 'tcp', pid: 4100 },
+      ],
+    };
+    stubStoryInvoke({
+      monitor_snapshot: shared,
+      process_ledger_list: [],
+      monitor_watched_ports: [],
+    });
+    act(() => useAppStore.setState({ monitorSnapshot: shared }));
+    renderPage();
+    const toggle = await screen.findByRole('button', { name: /^Show 2 ports of node/ });
+    fireEvent.click(toggle);
+
+    expect(document.querySelectorAll('[data-port-row]').length).toBe(2);
+    expect(screen.queryByText('node server.js')).toBeNull();
+  });
+});
