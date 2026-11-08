@@ -97,10 +97,10 @@ const Chat = () => (
       <ScrollFade className="min-h-0 flex-1">
         <p>Messages</p>
       </ScrollFade>
+      <ScrollFade className="max-h-80" isPageScroller={false}>
+        <p>Composer dock</p>
+      </ScrollFade>
     </RevealRegion>
-    <ScrollFade className="max-h-80" isPageScroller={false}>
-      <p>Composer dock</p>
-    </ScrollFade>
   </div>
 );
 

@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useMemo, useRef } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { PageColumn, ScrollFade, appScrollTo } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId, SessionId } from '@goodboy/types';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
@@ -60,6 +60,20 @@ export const ChatThread = ({
     }
     appScrollTo({ viewport, top: viewport.scrollHeight });
   }, [messages, sessions, drafts]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (viewport === null || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new ResizeObserver(() => {
+      if (isPinnedRef.current) {
+        appScrollTo({ viewport, top: viewport.scrollHeight });
+      }
+    });
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, []);
 
   const onScroll = (): void => {
     const viewport = viewportRef.current;
