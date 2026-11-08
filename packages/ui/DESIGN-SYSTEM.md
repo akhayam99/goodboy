@@ -358,7 +358,7 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 | `text-eyebrow`  | 12/16, 500, sentence case | a section label: `Eyebrow`, or direct in a sidebar group, `SettingChip`, `LevelCard`       |
 | `text-meta`     | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line |
 | `text-chip`     | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                  |
-| `text-rail`     | 9/12                      | the caption under every icon in the session tool rail                                      |
+| `text-rail`     | 9/12                      | the caption under every icon and over each group of the session tool rail                  |
 | `text-code`     | mono 12/18                | branch, path, command, inline code                                                         |
 | `text-code-row` | mono 13/20                | a branch row of the session rail, beside a level 4 name                                    |
 | `text-ui`       | 13/20                     | level 4: every line of a list surface that is not its title or prose                       |
