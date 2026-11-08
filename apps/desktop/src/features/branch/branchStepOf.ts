@@ -75,6 +75,56 @@ const isCheckAgentLive = ({ chain }: Pick<BranchCheckFacts, 'chain'>): boolean =
 
 type OpenParams = Omit<Params, 'state'>;
 
+export const OPEN_STEP_ORDER = [
+  'pushing',
+  'answer',
+  'working',
+  'apply',
+  'retryPush',
+  'fixComments',
+  'pushCheckFix',
+  'push',
+  'publish',
+  'rebase',
+  'fixChecks',
+] as const;
+
+export type OpenStepKey = (typeof OPEN_STEP_ORDER)[number];
+
+const OPEN_STEP_DUE: Readonly<Record<OpenStepKey, (params: OpenParams) => boolean>> = {
+  pushing: ({ push }) => push.isInFlight,
+  answer: ({ comments }) => comments.questionThreadId !== null,
+  working: ({ comments, checks }) => comments.isFixRunLive || isCheckAgentLive(checks),
+  apply: ({ comments }) => comments.waitingFixes > 0,
+  retryPush: ({ push }) => push.failed > 0,
+  fixComments: ({ comments }) => comments.fixable > 0,
+  pushCheckFix: ({ checks }) => checks.isFailing && checks.chain === 'fixed-local',
+  push: ({ push }) => push.canPush,
+  publish: ({ push }) => push.replies > 0,
+  rebase: ({ hasConflicts, lifecycle }) => hasConflicts && lifecycle === 'rebase',
+  fixChecks: ({ checks }) => checks.isFailing && !checks.isAwaitingRun,
+};
+
+const OPEN_STEP_OF: Readonly<Record<OpenStepKey, (params: OpenParams) => BranchStep>> = {
+  pushing: () => 'push',
+  answer: () => 'answer',
+  working: () => 'working',
+  apply: () => 'apply',
+  retryPush: () => 'retryPush',
+  fixComments: () => 'fixComments',
+  pushCheckFix: () => 'pushCheckFix',
+  push: () => 'push',
+  publish: () => 'publish',
+  rebase: () => 'rebase',
+  fixChecks: ({ checks }) => (checks.chain === 'proposal' ? 'startCheckFix' : 'fixChecks'),
+};
+
+type RankParams = {
+  readonly key: OpenStepKey;
+};
+
+export const openStepRankOf = ({ key }: RankParams): number => OPEN_STEP_ORDER.indexOf(key);
+
 const openStepOf = ({
   lifecycle,
   hasConflicts,
@@ -82,40 +132,9 @@ const openStepOf = ({
   checks,
   push,
 }: OpenParams): BranchStep => {
-  if (push.isInFlight) {
-    return 'push';
-  }
-  if (comments.questionThreadId !== null) {
-    return 'answer';
-  }
-  if (comments.isFixRunLive || isCheckAgentLive(checks)) {
-    return 'working';
-  }
-  if (comments.waitingFixes > 0) {
-    return 'apply';
-  }
-  if (push.failed > 0) {
-    return 'retryPush';
-  }
-  if (comments.fixable > 0) {
-    return 'fixComments';
-  }
-  if (checks.isFailing && checks.chain === 'fixed-local') {
-    return 'pushCheckFix';
-  }
-  if (push.canPush) {
-    return 'push';
-  }
-  if (push.replies > 0) {
-    return 'publish';
-  }
-  if (hasConflicts && lifecycle === 'rebase') {
-    return 'rebase';
-  }
-  if (checks.isFailing && !checks.isAwaitingRun) {
-    return checks.chain === 'proposal' ? 'startCheckFix' : 'fixChecks';
-  }
-  return lifecycle;
+  const facts = { lifecycle, hasConflicts, comments, checks, push };
+  const due = OPEN_STEP_ORDER.find((key) => OPEN_STEP_DUE[key](facts));
+  return due === undefined ? lifecycle : OPEN_STEP_OF[due](facts);
 };
 
 const startStepOf = ({ lifecycle, comments, checks }: OpenParams): BranchStep => {

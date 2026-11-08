@@ -273,8 +273,9 @@ from the same readiness result as the merge action (`evaluatePrMergeReadiness`):
 checks running or a required review are the sole blockers, a blocker readiness names (`Checks
 unknown.`) always outranks waiting, and the checks it knows (failing, running) stay visible while
 the runs load. A reviewer who is asked but not required, with no `review_required` decision from the
-host, shows as `Waiting on dana-r` with `Not required to merge` and never as the verdict. The verdict is: `Not ready to merge` with the next two steps (`Fix the failing check, then answer
-omar-t.`), `Waiting for checks`, `Waiting for a review`, `Checking`, `Ready to merge` with what the
+host, shows as `Waiting on dana-r` with `Not required to merge` and never as the verdict. The verdict is: `Not ready to merge` with the next two steps in the order the header takes them
+(`Answer omar-t, then fix the failing check.`: each step carries its key in `OPEN_STEP_ORDER` and
+sorts by `openStepRankOf`, the table `branchStepOf` walks), `Waiting for checks`, `Waiting for a review`, `Checking`, `Ready to merge` with what the
 header button does (`Squash and merge into main. Nothing is waiting.`), `Draft`, `Queued to merge`
 with the queue line, `Merged into main` or `Closed without merging`. Under it one row per thing
 that holds the merge, worst first (danger, warning, info, neutral): checks (`1 check failing` with

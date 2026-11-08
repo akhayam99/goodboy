@@ -5,6 +5,7 @@ import { countNoun } from '../../../../../shared/utils/countNoun';
 import { checksCountsOf, checksGroupsOf } from '../../../../integrations/github/checksRollup';
 import type { MergeReadinessFacts, PrMergeReadiness } from '../../../../review/prMergeReadiness';
 import { mergeIsClear } from '../../../../review/prMergeReadiness';
+import { openStepRankOf, type OpenStepKey } from '../../../branchStepOf';
 import { BRANCH_STATE_TONE } from '../../../../session/central/branches/branchStateTone';
 import { openThreadsLineOf } from '../openThreadsLineOf';
 import type { MergeBox, MergeBoxRow, MergeBoxVerdict } from './mergeBox';
@@ -39,9 +40,14 @@ type Params = {
   readonly canRequestReview: boolean;
 };
 
+type Step = {
+  readonly text: string;
+  readonly key: OpenStepKey;
+};
+
 type Ranked = {
   readonly row: MergeBoxRow;
-  readonly step: string | null;
+  readonly step: Step | null;
 };
 
 type Part = {
@@ -53,7 +59,7 @@ const NOTHING: Part = { ranked: [], passing: [] };
 
 type RowParams = {
   readonly row: MergeBoxRow;
-  readonly step?: string | null;
+  readonly step?: Step | null;
 };
 
 const rowOnly = ({ row, step = null }: RowParams): Part => ({
@@ -84,7 +90,10 @@ const failingPart = ({ count, names }: FailingParams): Part =>
       tone: BRANCH_STATE_TONE['checks-failing'],
       opens: 'checks',
     },
-    step: count === 1 ? 'fix the failing check' : 'fix the failing checks',
+    step: {
+      text: count === 1 ? 'fix the failing check' : 'fix the failing checks',
+      key: 'fixChecks',
+    },
   });
 
 type UnknownParams = {
@@ -198,7 +207,7 @@ const reviewPart = ({ state, pr, reviewers, threads, canRequestReview }: ReviewP
         tone: BRANCH_STATE_TONE['changes-requested'],
         opens: 'comments',
       },
-      step: by === null ? 'answer the review' : `answer ${by}`,
+      step: { text: by === null ? 'answer the review' : `answer ${by}`, key: 'answer' },
     });
   }
   const waiting = loginsIn({ reviewers, states: ['pending'] });
@@ -266,7 +275,7 @@ const commentsPart = ({ pr, threads }: CommentsParams): Part => {
         tone: 'warning',
         opens: 'comments',
       },
-      step: 'answer the comments',
+      step: { text: 'answer the comments', key: 'answer' },
     });
   }
   return rowOnly({
@@ -299,7 +308,7 @@ const conflictsPart = ({ pr, hasConflicts, branch }: ConflictsParams): Part => {
       tone: BRANCH_STATE_TONE.conflicts,
       opens: 'files',
     },
-    step: `resolve the conflicts with ${base}`,
+    step: { text: `resolve the conflicts with ${base}`, key: 'rebase' },
   });
 };
 
@@ -318,7 +327,7 @@ const unpushedPart = ({ unpushed }: Pick<Params, 'unpushed'>): Part =>
           tone: 'warning',
           opens: 'commits',
         },
-        step: 'push your commits',
+        step: { text: 'push your commits', key: 'push' },
       })
     : NOTHING;
 
@@ -336,7 +345,7 @@ const branchPart = ({ pr, branch, hasConflicts }: BranchParams): Part => {
         tone: 'warning',
         opens: 'commits',
       },
-      step: 'finish the rebase',
+      step: { text: 'finish the rebase', key: 'rebase' },
     });
   }
   if (branch.onlineAhead > 0) {
@@ -349,7 +358,7 @@ const branchPart = ({ pr, branch, hasConflicts }: BranchParams): Part => {
         tone: 'warning',
         opens: 'commits',
       },
-      step: 'bring in the online commits',
+      step: { text: 'bring in the online commits', key: 'rebase' },
     });
   }
   if (branch.behind === null || hasConflicts) {
@@ -391,8 +400,15 @@ type StepsParams = {
 const stepsLineOf = ({ ranked }: StepsParams): string | null => {
   const steps = ranked
     .map((entry) => entry.step)
-    .filter((step): step is string => step !== null)
-    .slice(0, 2);
+    .filter((step): step is Step => step !== null)
+    .map((step, index) => ({ step, index }))
+    .sort((left, right) => {
+      const byOrder =
+        openStepRankOf({ key: left.step.key }) - openStepRankOf({ key: right.step.key });
+      return byOrder === 0 ? left.index - right.index : byOrder;
+    })
+    .slice(0, 2)
+    .map(({ step }) => step.text);
   if (steps.length === 0) {
     return null;
   }

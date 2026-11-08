@@ -7,6 +7,7 @@ import {
   evaluatePrMergeReadiness,
   type MergeReadinessFacts,
 } from '../../../../review/prMergeReadiness';
+import { branchStepOf, NO_COMMENT_FACTS } from '../../../branchStepOf';
 import type { MergeBox } from './mergeBox';
 import { mergeBoxOf, type MergeBoxThreads } from './mergeBoxOf';
 
@@ -162,9 +163,38 @@ describe('mergeBoxOf', () => {
       kind: 'blocked',
       word: 'Not ready to merge',
       tone: 'danger',
-      line: 'Fix the failing check, then answer omar-t.',
+      line: 'Answer omar-t, then fix the failing check.',
     });
     expect(box.passing).toEqual(['No conflicts']);
+  });
+
+  it('names the next steps in the order the header takes them, not the order of the rows', () => {
+    const header = branchStepOf({
+      state: 'open',
+      lifecycle: null,
+      hasConflicts: false,
+      comments: { ...NO_COMMENT_FACTS, questionThreadId: 'thread-omar' },
+      checks: { isFailing: true, isAwaitingRun: false, chain: 'none' },
+      push: { isInFlight: false, failed: 0, canPush: true, replies: 0 },
+    });
+    const box = boxOf({
+      runs: FAILING,
+      reviewers: [reviewer({ login: 'omar-t', state: 'changes_requested' })],
+      facts: {
+        checks: 'failing',
+        failingChecks: ['e2e member flows'],
+        review: 'changes_requested',
+        changesRequestedBy: ['omar-t'],
+      },
+      unpushed: 2,
+    });
+
+    expect(header).toBe('answer');
+    expect(box.rows[0]?.id).toBe('checks');
+    expect(box.verdict.line).toBe('Answer omar-t, then push your commits.');
+    expect(boxOf({ runs: FAILING, facts: { checks: 'failing' }, unpushed: 2 }).verdict.line).toBe(
+      'Push your commits, then fix the failing check.',
+    );
   });
 
   it('draws conflicts amber, as the branch state map does, and drops the behind row', () => {
