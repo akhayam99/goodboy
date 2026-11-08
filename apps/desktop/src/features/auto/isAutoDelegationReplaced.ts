@@ -9,6 +9,21 @@ type Params = {
 const isRetried = ({ delegation, delegations }: Params): boolean =>
   delegations.some((later) => later.retryOf === delegation.id);
 
+type StartedParams = {
+  readonly delegation: AutoDelegation;
+};
+
+const hasStarted = ({ delegation }: StartedParams): boolean => {
+  if (delegation.state === 'awaiting_confirm') {
+    return false;
+  }
+  return !(
+    delegation.state === 'settled' &&
+    delegation.outcome === 'stopped' &&
+    delegation.reason === 'declined'
+  );
+};
+
 const isSuperseded = ({ delegation, delegations }: Params): boolean => {
   if (delegation.state !== 'settled' || delegation.outcome === 'completed') {
     return false;
@@ -23,6 +38,7 @@ const isSuperseded = ({ delegation, delegations }: Params): boolean => {
     (later) =>
       later.id !== delegation.id &&
       !later.isAdopted &&
+      hasStarted({ delegation: later }) &&
       (isAnyRole || later.role === delegation.role) &&
       later.createdAt > returnedAt &&
       delegationMountIdOf({ delegation: later }) === mountId,

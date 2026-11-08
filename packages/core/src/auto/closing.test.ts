@@ -75,6 +75,38 @@ describe('reading how a child closed its work', () => {
     expect(closing.returned?.request).toBe('Read two files.');
   });
 
+  it('never takes the body of a fenced block after the closing as the request', () => {
+    const closing = parseChildClosing({
+      text: `<<step-done id="${ID}" status="returned" needs="shell">>\n\`\`\`sh\ngit status\n\`\`\`\nRun it in ledger-core.`,
+      childAgentId: ID,
+    });
+    expect(closing.returned?.request).toBe('Run it in ledger-core.');
+  });
+
+  it('never takes the body of a fenced block before the closing as the request', () => {
+    const closing = parseChildClosing({
+      text: `I need the shell for this.\n~~~\ngit status\n~~~\n<<step-done id="${ID}" status="returned" needs="shell">>`,
+      childAgentId: ID,
+    });
+    expect(closing.returned?.request).toBe('I need the shell for this.');
+  });
+
+  it('closes a fence only with the same delimiter', () => {
+    const closing = parseChildClosing({
+      text: `<<step-done id="${ID}" status="returned" needs="shell">>\n\`\`\`\n~~~\ngit status\n\`\`\`\nRun it in payments-api.`,
+      childAgentId: ID,
+    });
+    expect(closing.returned?.request).toBe('Run it in payments-api.');
+  });
+
+  it('reads no request when only a fenced block surrounds the closing', () => {
+    const closing = parseChildClosing({
+      text: `<<step-done id="${ID}" status="returned" needs="shell">>\n\`\`\`\ngit status\n\`\`\``,
+      childAgentId: ID,
+    });
+    expect(closing.returned?.request).toBeNull();
+  });
+
   it('reads no return on a done closing', () => {
     const closing = parseChildClosing({
       text: `All good.\n<<step-done id="${ID}">>`,

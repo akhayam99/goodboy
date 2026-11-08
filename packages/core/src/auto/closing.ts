@@ -43,7 +43,7 @@ const PLAIN_NEEDS = ['shell', 'writer', 'decision', 'user'] as const;
 const ROLE_NEEDS_PREFIX = 'role:';
 const ARTIFACT_OPEN = '<<artifact';
 const ARTIFACT_CLOSE = '<</artifact>>';
-const FENCE_PREFIXES = ['```', '~~~'] as const;
+const FENCE_CHARS = ['`', '~'] as const;
 
 type ScanParams = {
   readonly raw: string;
@@ -139,11 +139,49 @@ type SliceParams = {
   readonly text: string;
 };
 
+type Fence = Readonly<{
+  char: string;
+  length: number;
+}>;
+
+type FenceLineParams = {
+  readonly trimmed: string;
+};
+
+const fenceOf = ({ trimmed }: FenceLineParams): Fence | null => {
+  const char = FENCE_CHARS.find((candidate) => trimmed.startsWith(candidate.repeat(3)));
+  if (char === undefined) {
+    return null;
+  }
+  let length = 0;
+  while (trimmed.charAt(length) === char) {
+    length += 1;
+  }
+  return { char, length };
+};
+
+type ClosesFenceParams = {
+  readonly open: Fence;
+  readonly trimmed: string;
+};
+
+const closesFence = ({ open, trimmed }: ClosesFenceParams): boolean => {
+  const line = fenceOf({ trimmed });
+  return line !== null && line.char === open.char && line.length >= open.length;
+};
+
 const proseLinesOf = ({ text }: SliceParams): ReadonlyArray<string> => {
   const lines: string[] = [];
   let isInBlock = false;
+  let openFence: Fence | null = null;
   for (const line of stripControlMarkers(text).split('\n')) {
     const trimmed = line.trim();
+    if (openFence !== null) {
+      if (closesFence({ open: openFence, trimmed })) {
+        openFence = null;
+      }
+      continue;
+    }
     if (trimmed.startsWith(ARTIFACT_OPEN)) {
       isInBlock = true;
       continue;
@@ -152,7 +190,12 @@ const proseLinesOf = ({ text }: SliceParams): ReadonlyArray<string> => {
       isInBlock = false;
       continue;
     }
-    if (!isInBlock && !FENCE_PREFIXES.some((fence) => trimmed.startsWith(fence))) {
+    const fence = fenceOf({ trimmed });
+    if (fence !== null) {
+      openFence = fence;
+      continue;
+    }
+    if (!isInBlock) {
       lines.push(line);
     }
   }
