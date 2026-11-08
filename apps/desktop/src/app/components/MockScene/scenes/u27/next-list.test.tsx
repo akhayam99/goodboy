@@ -141,7 +141,7 @@ describe('the u27 Next list scenes', () => {
     expect(texts.some((text) => text.includes('It was stopped.'))).toBe(false);
     expect(
       texts.filter((text) =>
-        text.startsWith('hl/feat-center-home-page · #9995harbor-portalThe implementer needs you'),
+        text.startsWith('hl/feat-center-home-page · #9995harbor-portalThe tester timed out'),
       ),
     ).toHaveLength(1);
     expect(texts.some((text) => text.startsWith('Auto needs you'))).toBe(false);

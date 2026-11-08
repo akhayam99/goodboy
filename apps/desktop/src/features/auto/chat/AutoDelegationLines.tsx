@@ -2,6 +2,7 @@ import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
+import { isAutoDelegationReplaced } from '../isAutoDelegationReplaced';
 import { AutoChildCard } from './AutoChildCard';
 import { cardTitleOf } from './cardTitleOf';
 import { delegationCardOf } from './delegationCardOf';
@@ -32,7 +33,11 @@ export const AutoDelegationLines = ({
     <ul aria-label="Delegations" className="flex min-w-0 flex-col gap-1">
       {delegations.map((delegation) => {
         const childAgent = agents.find((agent) => agent.id === delegation.childAgentId) ?? null;
-        const card = delegationCardOf({ delegation, childAgent });
+        const card = delegationCardOf({
+          delegation,
+          childAgent,
+          isReplaced: isAutoDelegationReplaced({ delegation, delegations: view.delegations }),
+        });
         const title = cardTitleOf({ card });
         const name = labels.get(card.childAgentId) ?? card.task ?? title;
         const revision = revisionWordOf({ card });

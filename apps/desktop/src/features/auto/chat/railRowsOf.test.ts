@@ -126,7 +126,7 @@ describe('railRowsOf nodes', () => {
       ['agent-completed', 'done'],
       ['agent-failed', 'failed'],
       ['agent-timed_out', 'failed'],
-      ['agent-blocked', 'alert'],
+      ['agent-blocked', 'skipped'],
       ['agent-stopped', 'stopped'],
     ]);
   });

@@ -6,6 +6,7 @@ import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type { AgentKind } from '../../session/agent-kind';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { autoTreeWordOf } from '../autoTreeWordOf';
+import { isAutoDelegationReplaced } from '../isAutoDelegationReplaced';
 import { delegationCardOf, type DelegationCardModel } from './delegationCardOf';
 
 export type RailRow = Readonly<{
@@ -54,6 +55,8 @@ const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
       return 'failed';
     case 'blocked':
       return 'alert';
+    case 'returned':
+      return 'skipped';
     case 'stopped':
       return 'stopped';
     case 'queued':
@@ -139,7 +142,14 @@ export const railRowsOf = ({
       ),
     );
     const childAgent = agents.find((agent) => agent.id === delegation.childAgentId) ?? null;
-    latestByChild.set(delegation.childAgentId, delegationCardOf({ delegation, childAgent }));
+    latestByChild.set(
+      delegation.childAgentId,
+      delegationCardOf({
+        delegation,
+        childAgent,
+        isReplaced: isAutoDelegationReplaced({ delegation, delegations: view.delegations }),
+      }),
+    );
     const link = substepLinkOf({ request: delegation.request });
     const parent =
       link === null ? undefined : view.delegations.find((d) => d.id === link.delegationId);

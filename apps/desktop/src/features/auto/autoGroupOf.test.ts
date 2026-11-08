@@ -213,8 +213,76 @@ describe('autoGroupOf', () => {
     expect(group?.children.map((child) => [child.state, child.mountId])).toEqual([
       ['retried', 'mount-home'],
       ['failed', 'mount-billing'],
-      ['blocked', 'mount-home'],
+      ['returned', 'mount-home'],
     ]);
+  });
+
+  it('reads a returned child as not stuck, so the group never reads Needs you for it', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+          reason: 'declared_blocked',
+          target: { mountId: 'mount-home' },
+        },
+      ],
+    });
+
+    const group = autoGroupOf({
+      view,
+      agents: [ROOT, anAgent({ id: childId('scout') })],
+      now: FIXTURE_NOW,
+    });
+
+    expect(group?.children.map((child) => child.state)).toEqual(['returned']);
+    expect(group?.isStuck).toBe(false);
+    expect(group?.word).toBe(autoRowFacts({ view })?.word);
+  });
+
+  it.each(['implementer', 'rewriter', 'scout'])(
+    'reads a returned child as done once a %s takes the same branch',
+    (role) => {
+      const returned = {
+        ...aDelegation({ key: 'scout-1', role: 'scout', state: 'settled', outcome: 'blocked' }),
+        reason: 'declared_blocked',
+        target: { mountId: 'mount-home' },
+      };
+      const next = {
+        ...aDelegation({ key: 'next', role, state: 'running' }),
+        target: { mountId: 'mount-home' },
+        slot: 1,
+        createdAt: FIXTURE_NOW + 1_000,
+      };
+      const group = autoGroupOf({
+        view: aView({ phase: 'waiting', delegations: [returned, next] }),
+        agents: [ROOT],
+        now: FIXTURE_NOW,
+      });
+
+      expect(group?.children.map((child) => child.state)).toEqual(['done', 'running']);
+      expect(group?.isStuck).toBe(false);
+    },
+  );
+
+  it('keeps a returned child idle while a later delegation sits on another branch', () => {
+    const returned = {
+      ...aDelegation({ key: 'scout-1', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      target: { mountId: 'mount-home' },
+    };
+    const elsewhere = {
+      ...aDelegation({ key: 'other', role: 'implementer', state: 'running' }),
+      target: { mountId: 'mount-billing' },
+      slot: 1,
+      createdAt: FIXTURE_NOW + 1_000,
+    };
+    const group = autoGroupOf({
+      view: aView({ phase: 'waiting', delegations: [returned, elsewhere] }),
+      agents: [ROOT],
+      now: FIXTURE_NOW,
+    });
+
+    expect(group?.children.map((child) => child.state)).toEqual(['returned', 'running']);
   });
 
   it('keeps a done child done when a later one takes the same role on its branch', () => {
@@ -259,7 +327,7 @@ describe('autoGroupOf', () => {
     expect(group?.children.map((child) => child.state)).toEqual([
       'neverStarted',
       'timedOut',
-      'blocked',
+      'returned',
     ]);
     expect(group?.children[1]?.reason).toBe('It ran out of time.');
   });
@@ -325,7 +393,7 @@ describe('autoGroupOf', () => {
       aView({
         phase: 'waiting',
         delegations: [
-          aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+          aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
         ],
       });
 

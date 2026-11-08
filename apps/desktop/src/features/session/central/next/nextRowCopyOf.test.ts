@@ -13,9 +13,9 @@ const BLOCKED: AutoActionTarget = {
   rootAgentId: brandId<AgentId>({ value: 'agent-auto-rollout' }),
   role: 'Build the hero',
   noun: 'Implementer',
-  kind: 'childBlocked',
+  kind: 'failed',
   reason: 'Non riesco a chiudere.',
-  reasonCode: 'declared_blocked',
+  reasonCode: 'process_error',
   mountId: HOME,
   plan: null,
   canRetry: true,
@@ -57,7 +57,7 @@ describe('nextRowCopyOf', () => {
 
     expect([row.title, row.detail]).toEqual([
       'hl/feat-center-home-page · #9995',
-      'The implementer needs you.',
+      'The implementer failed. The agent ended with an error.',
     ]);
   });
 

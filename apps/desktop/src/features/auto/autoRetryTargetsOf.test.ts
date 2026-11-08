@@ -112,7 +112,6 @@ describe('autoRetryTargetsOf', () => {
     expect(targets.map((target) => [target.kind, target.reason])).toEqual([
       ['failed', 'The agent ended with an error.'],
       ['timedOut', 'It ran out of time.'],
-      ['childBlocked', "It said it can't go on."],
     ]);
   });
 
@@ -261,10 +260,10 @@ describe('autoRetryTargetsOf', () => {
             key: 'fixer',
             role: 'implementer',
             state: 'settled',
-            outcome: 'blocked',
+            outcome: 'failed',
           }),
           target: { mountId: 'mount-home' },
-          reason: 'declared_blocked',
+          reason: 'process_error',
         },
       ],
     });
@@ -275,7 +274,27 @@ describe('autoRetryTargetsOf', () => {
         agents: [ROOT, childAgentOf({ key: 'fixer' })],
         now: FIXTURE_NOW,
       }).map((target) => [target.noun, target.mountId, target.reasonCode]),
-    ).toEqual([['Implementer', 'mount-home', 'declared_blocked']]);
+    ).toEqual([['Implementer', 'mount-home', 'process_error']]);
+  });
+
+  it('offers no card for a child that returned to Auto, whatever its reason', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+          reason: 'declared_blocked',
+        },
+      ],
+    });
+
+    expect(
+      autoRetryTargetsOf({
+        views: [view],
+        agents: [ROOT, childAgentOf({ key: 'scout' })],
+        now: FIXTURE_NOW,
+      }),
+    ).toEqual([]);
   });
 
   it('adds a blocked target for a blocked tree', () => {
@@ -335,7 +354,7 @@ describe('autoRetryTargetsOf', () => {
       const view = aView({
         phase: 'waiting',
         delegations: [
-          aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+          aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
         ],
       });
 
@@ -346,7 +365,7 @@ describe('autoRetryTargetsOf', () => {
           agents: [ROOT, childAgentOf({ key: 'scout' })],
           now: FIXTURE_NOW,
         }).map((target) => target.kind),
-      ).toEqual(['childBlocked']);
+      ).toEqual(['failed']);
     });
 
     it('keeps the card of a child whose agent could not be created, since it never existed', () => {

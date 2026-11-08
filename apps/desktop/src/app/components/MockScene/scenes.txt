@@ -50,6 +50,10 @@ auto-chat-queued
 auto-chat-refused
 auto-chat-revising
 auto-chat-working
+auto-child-returned
+auto-child-returned-asks
+auto-child-returned-decided
+auto-child-returned-today
 auto-move-moved
 auto-move-panel
 auto-overview-row

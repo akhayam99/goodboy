@@ -106,9 +106,22 @@ describe('delegationCardOf', () => {
     expect(wordOf('paused')).toBe('Needs you');
     expect(wordOf('settled', 'completed')).toBe('Done');
     expect(wordOf('settled', 'failed')).toBe('Failed');
-    expect(wordOf('settled', 'blocked')).toBe('Needs you');
+    expect(wordOf('settled', 'blocked')).toBe('Idle');
     expect(wordOf('settled', 'stopped')).toBe('Stopped');
     expect(wordOf('settled', 'timed_out')).toBe('Failed');
+  });
+
+  it('reads a returned child as Done once Auto replaced it, on the same word the group reads', () => {
+    const delegation = aDelegation({
+      key: 'x',
+      role: 'scout',
+      state: 'settled',
+      outcome: 'blocked',
+    });
+
+    expect(delegationCardOf({ delegation, childAgent: null, isReplaced: true }).status.word).toBe(
+      'Done',
+    );
   });
 
   it('reads the settled result: summary, files, checks with their source, artifacts, questions, cost', () => {

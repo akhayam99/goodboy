@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
+import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, Session } from '@goodboy/types';
 import { useTranscript } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import type { AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { delegationCardOf } from '../../chat/delegationCardOf';
 import { executedRoutingOf } from '../../executedRoutingOf';
+import { isAutoDelegationReplaced } from '../../isAutoDelegationReplaced';
 import { useExecutedRoutingOf } from '../../useExecutedRoutingOf';
 import { AutoChildBrief } from '../../child/AutoChildBrief';
 import { AutoChildEnd } from '../../child/AutoChildEnd';
@@ -22,6 +24,8 @@ export type AutoChildChat = Readonly<{
   task: string | null;
 }>;
 
+const NO_DELEGATIONS: ReadonlyArray<AutoDelegation> = [];
+
 const NOT_A_CHILD: AutoChildChat = {
   insertions: undefined,
   composerPlaceholder: undefined,
@@ -33,12 +37,14 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
   const images = useMemo(() => briefImagesOf({ events }), [events]);
   const executed = useExecutedRoutingOf({ agent });
   const delegation = tree?.kind === 'child' ? tree.delegation : null;
+  const delegations = tree?.view.delegations ?? NO_DELEGATIONS;
 
   return useMemo(() => {
     if (delegation === null) {
       return NOT_A_CHILD;
     }
-    const card = delegationCardOf({ delegation, childAgent: agent });
+    const isReplaced = isAutoDelegationReplaced({ delegation, delegations });
+    const card = delegationCardOf({ delegation, childAgent: agent, isReplaced });
     return {
       insertions: [
         {
@@ -57,13 +63,14 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
         },
         {
           key: `auto-child-end-${agent.id}`,
-          beforeMs: null,
+          beforeMs: delegation.state === 'settled' ? delegation.settledAt : null,
           node: (
             <AutoChildEnd
               sessionId={session.id}
               delegation={delegation}
               card={card}
               agent={agent}
+              isReplaced={isReplaced}
             />
           ),
         },
@@ -71,5 +78,5 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
       composerPlaceholder: `Message ${card.roleLabel}`,
       task: card.task,
     };
-  }, [agent, delegation, executed, images, session.id]);
+  }, [agent, delegation, delegations, executed, images, session.id]);
 };

@@ -67,18 +67,18 @@ describe('nextRowsOf', () => {
         owners: [],
         suggestions: [FIX_CHECKS],
         autoTargets: [
-          childOf({ key: 'tester', kind: 'timedOut', mountId: HOME }),
-          childOf({ key: 'implementer', kind: 'childBlocked', mountId: HOME }),
+          childOf({ key: 'tester', kind: 'failed', mountId: HOME }),
+          childOf({ key: 'implementer', kind: 'timedOut', mountId: HOME }),
         ],
       }),
     });
 
-    expect(rows.map((row) => row.id)).toEqual(['auto:agent-implementer:childBlocked']);
+    expect(rows.map((row) => row.id)).toEqual(['auto:agent-implementer:timedOut']);
     expect(rows[0]?.folded.map((card) => card.id)).toEqual([
-      'auto:agent-tester:timedOut',
+      'auto:agent-tester:failed',
       `suggestion:fix-checks:${HOME}`,
     ]);
-    expect(rows[0]?.detail).toBe('The tester needs you, and 2 more.');
+    expect(rows[0]?.detail).toBe('The tester timed out, and 2 more.');
   });
 
   it('folds the questions an Auto run asked into its plan row as questions, not more', () => {

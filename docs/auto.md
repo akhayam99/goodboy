@@ -401,19 +401,19 @@ writing to it reopens it to **Deciding**.
   that one function, so Auto and the screen say the same name. A stuck child is a Next card headed by its branch and
   pull request ("Auto needs you" only when its branch is unknown) whose
   sentence names the role, never the quoted ask: `The scout never started.` (or
-  `failed.`, `timed out.`, `is blocked.`, one verb per child state from
-  `autoStuckKindOf` and `autoStuckVerbOf`; a blocked child stays a
-  `childBlocked` target, never folded into failed), then the sentence its
-  reason code maps to (`delegationReasonTextOf`), never a blocked child's own
-  words, which can be in another language, until the agent text plan gives
+  `failed.`, `timed out.`, one verb per child state from
+  `autoStuckKindOf` and `autoStuckVerbOf`; a child that returned to Auto is
+  not stuck and has no card), then the sentence its reason code maps to
+  (`delegationReasonTextOf`), never a child's own words, which can be in
+  another language, until the agent text plan gives
   each child a one-line summary in your language. Its verb reads **Retry**
   with the accessible name `Retry "<name>"`.
 - **Why a child stopped, and what a done child said.** The second line of a
   stuck child on the rail and in the Running card is its reason in
-  words, never a code like `declared_blocked`: a blocked child's own summary
+  words, never a code like `declared_blocked`: a returned child's own summary
   from `delegation.result.declared.summary`, else the sentence the reason code
   maps to (`delegationReasonTextOf`, shared with the result card), else
-  nothing. A done child shows the result it declared in `delegation.result`,
+  nothing (`delegationSentenceOf`). A done child shows the result it declared in `delegation.result`,
   then the summary Auto accepted, never the working `outputSummary`, and no
   "Auto asked:" line (`autoGroupOf`, `autoChildCopyOf`). While a child is stuck
   and Auto is live, Auto sits in the Needs you card as one block: the sentence,
@@ -534,11 +534,13 @@ writing to it reopens it to **Deciding**.
   `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
   accepted it and not started it, its live line with **Stop agent**, **Waiting for
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
-  conversation above), **Failed: ...** or **Returned to Auto**). A failed child's
+  conversation above), **Failed: <sentence>** or **Returned to Auto**). A failed child's
   end line has no recovery action: the conversation dock owns **Retry**
   through Auto, even without a closing result
   (`AutoChildEnd`, `ConversationDock/useAutoChildRecovery`, `continueStoppedAgent`). A stopped child has no tail line:
-  the dock owns **Continue**.
+  the dock owns **Continue**. The end line sits under the attempt it belongs
+  to, at the delegation's `settledAt`, not after the last turn of the page, so
+  a plain turn written later reads below an older Failed (`useAutoChildChat`).
 - **Talking to a child.** The child page carries one composer,
   "Message Implementer". A message is a plain turn on the child (queued while its turn
   runs), and `noticeAutoOfChildTurn` (called by `sendTurn`) also hands Auto a
@@ -677,6 +679,17 @@ or a guard blocked it for the budget or the wall clock (`isAutoPausedAtLimit`, t
 function the word, the glance and the row facts read). Its row sits under Needs you
 with the word Paused, and it raises `run-paused-at-limit` (`autoLimitRootsOf`), not
 `auto-needs-you`. It has no Retry card: the limit is raised, not retried.
+
+A child that came back with outcome `blocked` (reasons `declared_blocked` and
+`missing_tool`) is not an error and not yours to move. It reads **Idle**, with
+"Returned to Auto: <its request>" on its tail, while Auto decides, and **Done**
+once Auto continued it (`retryOf`) or started any role on the same branch after
+it (`isAutoDelegationReplaced`). **Failed** is only for a real error (a process
+error, a lost report, no closing), always with a sentence from
+`delegationSentenceOf`, never a reason code. **Needs you** appears on Auto only,
+when Auto asks you. The outcome stays `blocked` in SQLite; `autoSettledStateOf`
+turns it into the word, and `autoChildWordOf` is the one function the tail, the
+Agents panel, the delegation card and the Overview read.
 
 A blocked tree writes nothing while it waits. It resumes by itself only after a
 budget block, once the limit is raised. Otherwise **Retry** on the tail

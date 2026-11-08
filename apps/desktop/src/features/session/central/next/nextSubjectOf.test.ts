@@ -13,9 +13,9 @@ const CHILD: AutoActionTarget = {
   rootAgentId: ROOT,
   role: 'Build the hero',
   noun: 'Implementer',
-  kind: 'childBlocked',
+  kind: 'failed',
   reason: null,
-  reasonCode: 'declared_blocked',
+  reasonCode: 'process_error',
   mountId: HOME,
   plan: null,
   canRetry: true,
@@ -102,7 +102,7 @@ describe('nextSubjectOf', () => {
     });
 
     expect(subjects.map((subject) => subject.key)).toEqual([
-      `own:auto:${CHILD.agentId}:childBlocked`,
+      `own:auto:${CHILD.agentId}:failed`,
       `own:suggestion:${REBASE.id}`,
     ]);
   });

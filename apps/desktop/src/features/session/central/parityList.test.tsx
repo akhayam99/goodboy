@@ -166,15 +166,11 @@ describe('the parity list of the Overview, walked on the cards', () => {
     expect(cardOf({ name: 'Needs you' }).textContent).not.toContain('Stuck');
   });
 
-  it('1: a child that declared itself blocked says Needs you on the Auto row', async () => {
+  it('1: a child that returned to Auto never asks in Needs you', async () => {
     await show({ kind: 'blocked' });
 
-    for (const toggle of within(cardOf({ name: 'Needs you' })).getAllByRole('button', {
-      name: /agents?$/,
-    })) {
-      fireEvent.click(toggle);
-    }
-    expect(cardOf({ name: 'Needs you' }).textContent).not.toContain('Blocked');
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
+    expect(document.body.textContent).not.toContain('Blocked');
   });
 
   it('2: the Needs you ask keeps its group, its sentence and the button that opens it', async () => {

@@ -56,7 +56,7 @@ const STUCK_CHILD: AutoActionTarget = {
   agentId: SCOUT.id,
   role: 'scout',
   noun: 'Scout',
-  kind: 'childBlocked',
+  kind: 'failed',
 };
 
 type GroupsParams = {
@@ -67,7 +67,7 @@ const groupsOf = ({ phase }: GroupsParams) => {
   const view = aView({
     phase,
     delegations: [
-      aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
     ],
   });
   return liveGroupsOf({

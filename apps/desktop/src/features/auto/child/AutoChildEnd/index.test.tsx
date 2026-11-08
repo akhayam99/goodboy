@@ -40,13 +40,20 @@ afterEach(() => {
 type ShowParams = {
   readonly delegation: AutoDelegation;
   readonly status?: Agent['status'];
+  readonly isReplaced?: boolean;
 };
 
-const show = ({ delegation, status = 'running' }: ShowParams) => {
+const show = ({ delegation, status = 'running', isReplaced = false }: ShowParams) => {
   const agent = anAgent({ id: delegation.childAgentId, status });
-  const card = delegationCardOf({ delegation, childAgent: agent });
+  const card = delegationCardOf({ delegation, childAgent: agent, isReplaced });
   render(
-    <AutoChildEnd sessionId={FIXTURE_SESSION} delegation={delegation} card={card} agent={agent} />,
+    <AutoChildEnd
+      sessionId={FIXTURE_SESSION}
+      delegation={delegation}
+      card={card}
+      agent={agent}
+      isReplaced={isReplaced}
+    />,
   );
 };
 
@@ -120,5 +127,50 @@ describe('the end of an Auto child page', () => {
 
     screen.getByText(/^Failed/);
     expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull();
+  });
+
+  it('reads a child that came back as Returned to Auto with its request, never Failed or Needs you', () => {
+    const delegation = {
+      ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      reason: 'declared_blocked',
+      result: { declared: { summary: 'Needs a shell to read commits in payments-api.' } },
+    };
+    show({ delegation, status: 'blocked' });
+
+    screen.getByText('Returned to Auto: Needs a shell to read commits in payments-api.');
+    expect(screen.queryByText(/Failed/)).toBeNull();
+    expect(screen.queryByText('Needs you')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull();
+    expect(document.body.textContent).not.toContain('declared_blocked');
+  });
+
+  it.each([
+    { reason: 'process_error', sentence: 'The agent ended with an error.' },
+    {
+      reason: 'no_closing_envelope',
+      sentence: 'It ended without saying whether the work was done.',
+    },
+    { reason: 'report_missing', sentence: 'It ended without writing its report.' },
+    { reason: null, sentence: 'The agent did not finish.' },
+  ])('says a real failure with a sentence, never the code ($reason)', ({ reason, sentence }) => {
+    const delegation = {
+      ...aDelegation({ key: 'impl', role: 'implementer', state: 'settled', outcome: 'failed' }),
+      reason,
+    };
+    show({ delegation, status: 'failed' });
+
+    screen.getByText(`Failed: ${sentence}`);
+    expect(document.body.textContent).not.toMatch(/_/);
+  });
+
+  it('draws no Failed or Needs you for a returned child that Auto handed on', () => {
+    const delegation = {
+      ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      reason: 'declared_blocked',
+    };
+    show({ delegation, status: 'completed', isReplaced: true });
+
+    expect(screen.queryByText(/Failed/)).toBeNull();
+    expect(screen.queryByText('Needs you')).toBeNull();
   });
 });

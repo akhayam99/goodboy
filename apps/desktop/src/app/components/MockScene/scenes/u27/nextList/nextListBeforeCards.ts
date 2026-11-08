@@ -9,7 +9,6 @@ const VERB_ON_0279: Readonly<Record<AutoStuckKind, string>> = {
   neverStarted: 'never started',
   failed: 'stopped',
   timedOut: 'timed out',
-  childBlocked: 'is blocked',
 };
 
 type CardParams = {
