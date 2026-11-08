@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';
-import { useHoldAppScroll } from '@goodboy/ui';
+import { revealSlideOf, useHoldAppScroll } from '@goodboy/ui';
 import { anchorShift } from './anchorShift';
 import { pickAnchor } from './pickAnchor';
 
@@ -66,10 +66,11 @@ export const useScrollAnchor = ({
     const observed = new Set<Element>();
 
     const viewportTop = () => viewport.getBoundingClientRect().top;
-    let savedTop = viewportTop();
+    const layoutTop = () => viewportTop() - revealSlideOf({ element: viewport });
+    let savedTop = layoutTop();
 
     const record = () => {
-      savedTop = viewportTop();
+      savedTop = layoutTop();
       const rows = viewport.querySelectorAll(rowSelector);
       const top = viewportTop();
       const index = pickAnchor({
@@ -85,7 +86,7 @@ export const useScrollAnchor = ({
 
     const topShift = () =>
       isTopTracked
-        ? anchorShift({ savedOffset: savedTop, currentOffset: viewportTop(), isHeld: isHeld() })
+        ? anchorShift({ savedOffset: savedTop, currentOffset: layoutTop(), isHeld: isHeld() })
         : 0;
 
     const compensate = () => {

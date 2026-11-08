@@ -323,6 +323,7 @@ export { useScrollMemory } from './useScrollMemory';
 export { useHoldAppScroll } from './useHoldAppScroll';
 export { appScrollIntoView } from './appScrollIntoView';
 export { appScrollTo } from './appScrollTo';
+export { revealSlideOf } from './revealSlideOf';
 export { forgetScrollMemory } from './forgetScrollMemory';
 export { PaneSwap } from './components/PaneSwap';
 export type { PaneLayer } from './components/PaneSwap';
