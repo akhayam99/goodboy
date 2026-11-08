@@ -312,7 +312,7 @@ for the checks that opens Checks, your edits of this session and the merge. A re
 row with its one-word verdict from `botWordOf`, `1 issue` or `3 resolved`, and its summaries
 fold behind `Show summary` (`groupBotActivity`); a bot's approval stays its own review row.
 `All`, `People`, `Bots`, `Pushes` and `Checks` in the Activity header filter the rows, each
-with the count `activityFilterOptionsOf` gives, and hide a filter with nothing in it; the comments line sits under `People` when a person left a finding and never under `Bots`, which lists and counts only the review apps' own rows. The choice belongs to the pull request: it survives a visit to Comments and a reload of the view, and another pull request starts on `All` (`activityFilter` on the `pullRequestViews` entry). The glyphs sit on a spine, a 1px line from
+with the count `activityFilterOptionsOf` gives, and hide a filter with nothing in it; the comments line sits under `People` when a person left a finding and never under `Bots`, which lists and counts only the review apps' own rows; with no pull request detail loaded, the line is built from the loaded host thread entries (`hostCommentsOf`) and sits under `People`. The choice belongs to the pull request: it survives a visit to Comments and a reload of the view, and another pull request starts on `All` (`activityFilter` on the `pullRequestViews` entry). The glyphs sit on a spine, a 1px line from
 one event to the next. Rows that open something carry `ROW_INTERACTIVE`. Reviewers draw a glyph and a word each (`+`
 opens the picker that searches the host's collaborators), Checks reads `4 passed · 1 failing`
 (`Checks unknown` when the read failed), Linked issues carry their relation (`Closes #412`;
