@@ -11,10 +11,15 @@ const COMMENT_OPEN = '<!--';
 const COMMENT_CLOSE = '-->';
 const FENCE_OPEN = /^ {0,3}(`{3,}|~{3,})/;
 const BLOCK_MARKER = /^(?:#{1,6}[ \t]+|>[ \t]?|[-*+][ \t]+|\d{1,9}\.[ \t]+)+/;
-const BOLD_RE = /(?<![\w/])\*\*([^*]+)\*\*(?![/]|\.\w)|(?<![\w/.-])__([^_]+)__(?![\w/]|\.\w)/g;
-const ITALIC_RE = /(?<![*\w/])\*([^*]+)\*(?![*/])|(?<![_\w/.-])_([^_]+)_(?![_\w/]|\.\w)/g;
-const LITERAL_UNDERSCORE = '';
-const LITERAL_STAR = '';
+const EMPHASIS_PAIRS = [
+  /(?<!\*)\*\*(?![\s*])([^*]+)(?<!\s)\*\*(?!\*)/g,
+  /(?<!\w)__(?!\s)([^_]+)(?<!\s)__(?!\w|\.\w)/g,
+  /(?<![*\w])\*(?![\s*])([^*]+)(?<!\s)\*(?![*\w])/g,
+  /(?<!\w)_(?![\s_])([^_]+)(?<!\s)_(?!\w|\.\w)/g,
+];
+const PATH_CHAR = /[\w./~-]/;
+const WHITESPACE = /\s/;
+const CODE_FILL = 'x';
 
 type ScanParams = {
   readonly line: string;
@@ -25,6 +30,7 @@ type ScanParams = {
 
 type ScanResult = {
   readonly text: string;
+  readonly shadow: string;
   readonly isCommentOpen: boolean;
 };
 
@@ -120,6 +126,7 @@ const linkEndsOf = ({ line, at, closes }: LinkParams): LinkEnds => {
 
 const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResult => {
   let out = '';
+  let shadow = '';
   let i = 0;
   let nextGt = -2;
   let linkFailures = 0;
@@ -137,14 +144,13 @@ const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResu
       if (close < 0) {
         failedRuns.add(run);
         out += delimiter;
+        shadow += delimiter;
         i += run;
         continue;
       }
-      out += line
-        .slice(i + run, close)
-        .trim()
-        .replaceAll('_', LITERAL_UNDERSCORE)
-        .replaceAll('*', LITERAL_STAR);
+      const literal = line.slice(i + run, close).trim();
+      out += literal;
+      shadow += CODE_FILL.repeat(literal.length);
       i = close + run;
       continue;
     }
@@ -154,7 +160,11 @@ const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResu
         i = close + COMMENT_CLOSE.length;
         continue;
       }
-      return { text: out, isCommentOpen: lastClose >= lineStart + i + COMMENT_OPEN.length };
+      return {
+        text: out,
+        shadow,
+        isCommentOpen: lastClose >= lineStart + i + COMMENT_OPEN.length,
+      };
     }
     if ((char === '!' && line[i + 1] === '[') || char === '[') {
       const isTried = depth < MAX_NESTING && linkFailures < MAX_LINK_FAILURES;
@@ -163,16 +173,19 @@ const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResu
       linkFailures += ends.isExpensiveMiss ? 1 : 0;
       if (ends.url < 0) {
         out += char;
+        shadow += char;
         i += 1;
         continue;
       }
       if (char === '[') {
-        out += scanInline({
+        const label = scanInline({
           line: line.slice(i + 1, ends.label),
           lineStart: 0,
           lastClose: -1,
           depth: depth + 1,
-        }).text;
+        });
+        out += label.text;
+        shadow += label.shadow;
       }
       i = ends.url + 1;
       continue;
@@ -186,14 +199,16 @@ const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResu
       }
       if (nextGt >= 0) {
         out += ' ';
+        shadow += ' ';
         i = nextGt + 1;
         continue;
       }
     }
     out += char;
+    shadow += char;
     i += 1;
   }
-  return { text: out, isCommentOpen: false };
+  return { text: out, shadow, isCommentOpen: false };
 };
 
 type EmitParams = {
@@ -201,30 +216,100 @@ type EmitParams = {
   readonly start: number;
 };
 
-type FlatParams = {
+type TextParams = {
   readonly text: string;
+};
+
+type MarkedText = TextParams & {
+  readonly shadow: string;
+};
+
+type FlatParams = MarkedText & {
   readonly shouldKeepMarkers: boolean;
 };
 
-const flatLineOf = ({ text, shouldKeepMarkers }: FlatParams): string => {
-  const spaced = text.replace(/\s+/g, ' ').trim();
-  const marker = BLOCK_MARKER.exec(spaced)?.[0] ?? '';
-  const body = emphasisFreeOf({ text: spaced.slice(marker.length) })
-    .replaceAll(LITERAL_UNDERSCORE, '_')
-    .replaceAll(LITERAL_STAR, '*')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return shouldKeepMarkers ? `${marker}${body}`.trim() : body;
+const collapsedOf = ({ text }: TextParams): string => text.replace(/\s+/g, ' ').trim();
+
+const pathTokenFlagsOf = ({ text }: TextParams): Uint8Array => {
+  const flags = new Uint8Array(text.length);
+  let tokenStart = 0;
+  let hasPath = false;
+  for (let i = 0; i <= text.length; i += 1) {
+    const char = text[i];
+    if (char === undefined || WHITESPACE.test(char)) {
+      if (hasPath) {
+        flags.fill(1, tokenStart, i);
+      }
+      tokenStart = i + 1;
+      hasPath = false;
+      continue;
+    }
+    if (char === '/' || char === '.') {
+      hasPath = true;
+    }
+  }
+  return flags;
 };
 
-type EmphasisParams = {
-  readonly text: string;
+type StripParams = MarkedText & {
+  readonly pattern: RegExp;
 };
 
-const emphasisFreeOf = ({ text }: EmphasisParams): string =>
-  text
-    .replace(BOLD_RE, (_match, a: string | undefined, b: string | undefined) => a ?? b ?? '')
-    .replace(ITALIC_RE, (_match, a: string | undefined, b: string | undefined) => a ?? b ?? '');
+const stripPairs = ({ text, shadow, pattern }: StripParams): MarkedText => {
+  const pathFlags = pathTokenFlagsOf({ text: shadow });
+  const removed = new Uint8Array(text.length);
+  let hasRemoval = false;
+  for (const match of shadow.matchAll(pattern)) {
+    const start = match.index;
+    const end = start + match[0].length;
+    const before = shadow[start - 1];
+    const after = shadow[end];
+    const isPathInternal =
+      before !== undefined &&
+      after !== undefined &&
+      PATH_CHAR.test(before) &&
+      PATH_CHAR.test(after) &&
+      pathFlags[start] === 1;
+    if (isPathInternal) {
+      continue;
+    }
+    const width = (match[0].length - (match[1] ?? '').length) / 2;
+    removed.fill(1, start, start + width);
+    removed.fill(1, end - width, end);
+    hasRemoval = true;
+  }
+  if (!hasRemoval) {
+    return { text, shadow };
+  }
+  let keptText = '';
+  let keptShadow = '';
+  for (let i = 0; i < text.length; i += 1) {
+    if (removed[i] === 0) {
+      keptText += text[i];
+      keptShadow += shadow[i];
+    }
+  }
+  return { text: keptText, shadow: keptShadow };
+};
+
+const emphasisFreeOf = ({ text, shadow }: MarkedText): string => {
+  let current: MarkedText = { text, shadow };
+  for (const pattern of EMPHASIS_PAIRS) {
+    current = stripPairs({ ...current, pattern });
+  }
+  return current.text;
+};
+
+const flatLineOf = ({ text, shadow, shouldKeepMarkers }: FlatParams): string => {
+  const lead = text.length - text.trimStart().length;
+  const end = text.trimEnd().length;
+  const marker = BLOCK_MARKER.exec(shadow.slice(lead, end))?.[0] ?? '';
+  const from = lead + marker.length;
+  const body = collapsedOf({
+    text: emphasisFreeOf({ text: text.slice(from, end), shadow: shadow.slice(from, end) }),
+  });
+  return shouldKeepMarkers ? `${collapsedOf({ text: marker })} ${body}`.trim() : body;
+};
 
 export const markdownPlainLinesOf = ({
   text,
@@ -244,7 +329,11 @@ export const markdownPlainLinesOf = ({
   const emit = ({ line, start }: EmitParams): void => {
     const scanned = scanInline({ line, lineStart: start, lastClose, depth: 0 });
     isInComment = scanned.isCommentOpen;
-    const flat = flatLineOf({ text: scanned.text, shouldKeepMarkers });
+    const flat = flatLineOf({
+      text: scanned.text,
+      shadow: scanned.shadow,
+      shouldKeepMarkers,
+    });
     if (flat.length > 0) {
       out.push(flat);
     }

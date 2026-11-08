@@ -66,6 +66,44 @@ describe('markdownPreview', () => {
     ).toEqual(['- Use Array<string> and bold.']);
   });
 
+  it('strips emphasis pairs that sit next to a slash', () => {
+    expect(markdownPreview({ text: 'Use **read**/**write** permissions.' })).toBe(
+      'Use read/write permissions.',
+    );
+    expect(markdownPreview({ text: '_read_/_write_' })).toBe('read/write');
+    expect(markdownPreview({ text: 'Only **cap** it.' })).toBe('Only cap it.');
+  });
+
+  it('keeps snake case words and bare paths with underscores literal', () => {
+    expect(markdownPreview({ text: 'Rename snake_case_name and my_var_ok.' })).toBe(
+      'Rename snake_case_name and my_var_ok.',
+    );
+    expect(markdownPreview({ text: 'Edit ledger-core/pkg/__init__.py and __init__.py.' })).toBe(
+      'Edit ledger-core/pkg/__init__.py and __init__.py.',
+    );
+    expect(markdownPreview({ text: 'See payments-api/src/__tests__/retry.test.ts now.' })).toBe(
+      'See payments-api/src/__tests__/retry.test.ts now.',
+    );
+    expect(markdownPreview({ text: 'Match src/**/*.ts and *.js files.' })).toBe(
+      'Match src/**/*.ts and *.js files.',
+    );
+  });
+
+  it('keeps code span contents literal and still strips emphasis around them', () => {
+    expect(markdownPreview({ text: 'Run `a_b_c` and `**x**` or `_y_`.' })).toBe(
+      'Run a_b_c and **x** or _y_.',
+    );
+    expect(markdownPreview({ text: '**Fix `foo_bar`** now' })).toBe('Fix foo_bar now');
+    expect(
+      markdownPreview({ text: 'Edit `notify-relay/src/__tests__/retry.test.ts` first.' }),
+    ).toBe('Edit notify-relay/src/__tests__/retry.test.ts first.');
+  });
+
+  it('leaves private use characters in the text untouched', () => {
+    const text = 'Keep  and  as written, _real_ **bold**.';
+    expect(markdownPreview({ text })).toBe('Keep  and  as written, real bold.');
+  });
+
   it('keeps a closed fence only when asked to, comments stay hidden', () => {
     const text = '```ts\nedit notify-relay/src/retry.ts\n```\n<!-- hidden -->';
     expect(markdownPlainLinesOf({ text })).toEqual([]);

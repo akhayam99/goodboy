@@ -112,6 +112,29 @@ describe('draftWorkBrief', () => {
     expect(brief.files).toEqual(['notify-relay/src/__tests__/retry.test.ts']);
   });
 
+  it('strips emphasis pairs around a slash and keeps private use characters', () => {
+    const answer = [
+      'Tighten permissions in notify-relay.',
+      '- Use **read**/**write** permissions.',
+      '- Use _read_/_write_ pairs, not snake_case_name.',
+      '- Keep  and  as written.',
+    ].join('\n');
+    const brief = draftWorkBrief({
+      title: 'Harborline retries?',
+      messages: [
+        messageOf({ role: 'user', content: 'What permissions?' }),
+        messageOf({ role: 'assistant', content: answer }),
+      ],
+      projectNames: ['notify-relay'],
+    });
+
+    expect(brief.know).toEqual([
+      'Use read/write permissions.',
+      'Use read/write pairs, not snake_case_name.',
+      'Keep  and  as written.',
+    ]);
+  });
+
   it('keeps a bare dunder path and still strips bold', () => {
     const brief = draftWorkBrief({
       title: 'Harborline retries?',
