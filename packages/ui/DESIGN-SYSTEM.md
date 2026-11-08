@@ -124,7 +124,9 @@ background, panel and floating.
 A sticky header is a surface, never a shadow. `sticky-surface` (and
 `sticky-surface-subtle` for a header on `subtle`) paints the role at 78% over a
 `backdrop-filter` of `blur(8px) saturate(1.2)`, so content that passes under it
-shows through frosted. Under `prefers-reduced-transparency: reduce` it is the
+shows through frosted. Page content scrolls under the pinned back row of a
+`PaneShell`, so the frosted row is what the reader sees there. Under
+`prefers-reduced-transparency: reduce` it is the
 opaque role and the blur is off. A sticky header draws no `shadow-*` and no
 gradient band; the only edge is the 1px `border-soft` hairline of
 `ScrollFade edge="line"`, lit once content is scrolled under it. Its block

@@ -29,6 +29,45 @@ describe('sticky page header surface', () => {
     expect(pinned?.className).not.toMatch(/shadow|gradient/);
   });
 
+  it('overlays the pinned back row on the top of the page scroller', () => {
+    const { container } = renderTrailPane();
+
+    const region = container.querySelector('[data-slot="reveal-region"]');
+    const overlay = container.querySelector('[data-slot="reveal-overlay"]');
+    const pinned = container.querySelector('[data-slot="reveal-pinned"]');
+    const scroller = container.querySelector('[data-page-scroller]');
+    expect(region?.contains(overlay ?? null)).toBe(true);
+    expect(overlay?.contains(pinned)).toBe(true);
+    expect(classesOf(overlay)).toEqual(
+      expect.arrayContaining(['absolute', 'inset-x-0', 'top-0', 'z-30']),
+    );
+    expect(scroller?.contains(pinned)).toBe(false);
+    expect(classesOf(scroller)).toEqual(
+      expect.arrayContaining([
+        'pt-[var(--reveal-inset,0px)]',
+        'scroll-pt-[var(--reveal-inset,0px)]',
+      ]),
+    );
+  });
+
+  it('draws the hairline at the bottom of the pinned row, only once scrolled', () => {
+    const { container } = renderTrailPane();
+
+    const edge = container.querySelector('[data-slot="scroll-edge"]');
+    expect(classesOf(edge)).toEqual(
+      expect.arrayContaining(['top-[var(--reveal-inset,0px)]', 'opacity-0']),
+    );
+    expect(container.querySelector('[data-scrolled="true"]')).toBeNull();
+  });
+
+  it('parks the sliding header under the pinned row', () => {
+    const { container } = renderTrailPane();
+
+    expect(classesOf(container.querySelector('[data-slot="reveal-header"]'))).toContain(
+      'top-[var(--reveal-top,0px)]',
+    );
+  });
+
   it('pads the pinned back row the same above and below', () => {
     const { container } = renderTrailPane();
 
@@ -45,7 +84,7 @@ describe('sticky page header surface', () => {
 
     const header = container.querySelector('[data-slot="pane-header"]');
     expect(classesOf(header)).not.toContain('pt-3');
-    expect(screen.getByRole('heading', { name: 'Report' })).toBeDefined();
+    screen.getByRole('heading', { name: 'Report' });
   });
 
   it('paints the sliding header with the same surface and no shadow', () => {

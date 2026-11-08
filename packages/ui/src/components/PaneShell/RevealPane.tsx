@@ -38,10 +38,7 @@ export const RevealPane = ({
     !hasTrail && lead == null ? null : (
       <div
         data-slot="reveal-pinned"
-        className={cn(
-          'sticky-surface relative z-30 shrink-0',
-          !hasTrail && 'has-[[data-slot=pane-lead]:empty]:hidden',
-        )}
+        className={cn('sticky-surface', !hasTrail && 'has-[[data-slot=pane-lead]:empty]:hidden')}
       >
         <PageColumn
           width={width}
@@ -68,9 +65,9 @@ export const RevealPane = ({
   return (
     <HeaderRevealContext.Provider value={null}>
       <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
-        {pinned}
         <RevealRegion
           resetKey={resetKey}
+          pinned={pinned}
           header={
             <PageColumn width={width}>
               <UnderTrailContext.Provider value={isOuterUnderTrail || hasTrail}>
@@ -83,13 +80,16 @@ export const RevealPane = ({
           }
         >
           {isSelfScroll ? (
-            <div data-slot="pane-body" className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <div
+              data-slot="pane-body"
+              className="flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-inset,0px)]"
+            >
               <div data-slot="pane-fill" className="flex min-h-0 min-w-0 flex-1 flex-col">
                 {children}
               </div>
             </div>
           ) : (
-            <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+            <ScrollFade className="min-h-0 flex-1" fadeSize={24} isUnderPinned>
               <PageColumn width={width} className="pb-5">
                 <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
                   {children}

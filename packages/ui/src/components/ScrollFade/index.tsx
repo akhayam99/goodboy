@@ -24,6 +24,7 @@ export type ScrollFadeProps = {
   readonly fadeEdges?: 'both' | 'end';
   readonly edge?: 'fade' | 'line';
   readonly isPageScroller?: boolean;
+  readonly isUnderPinned?: boolean;
 };
 
 const SPACING_CLASS_PATTERN = /^[wh]-(\d+(?:\.\d+)?)$/;
@@ -53,6 +54,7 @@ export const ScrollFade = ({
   fadeEdges = 'both',
   edge: edgeProp,
   isPageScroller: canBePageScroller = true,
+  isUnderPinned = false,
 }: ScrollFadeProps) => {
   const ownRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -145,6 +147,7 @@ export const ScrollFade = ({
           horizontal
             ? 'mask-fade-x h-full max-w-[inherit] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
             : 'mask-fade-y h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          isUnderPinned && 'pt-[var(--reveal-inset,0px)] scroll-pt-[var(--reveal-inset,0px)]',
           viewportClassName,
         )}
         data-page-scroller={isPageScroller ? '' : undefined}
@@ -158,7 +161,8 @@ export const ScrollFade = ({
           aria-hidden
           data-slot="scroll-edge"
           className={cn(
-            'pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-border-soft opacity-0',
+            'pointer-events-none absolute inset-x-0 z-10 h-px bg-border-soft opacity-0',
+            isUnderPinned ? 'top-[var(--reveal-inset,0px)]' : 'top-0',
             'motion-safe:transition-opacity motion-safe:duration-120 group-data-[scrolled=true]/edge:opacity-100',
           )}
         />

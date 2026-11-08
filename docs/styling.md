@@ -467,9 +467,15 @@ its tab, so a tab change brings the header back even when React keeps the
 scroller). When the header leaves, the whole body (a toolbar above the
 scroller included) moves up with it (`--reveal-shift`) and grows by the same
 height in step, so its bottom edge never moves: a composer at the foot of the
-body stays put, a chat pinned to its last line keeps it, and the scroller never
-sits under the header, so its thumb, hairline and sticky rows need nothing. The
-header's `top`, the body's `margin-top` and its `height` read the same var in
+body stays put and a chat pinned to its last line keeps it. The back row and
+the `lead` overlay the top of the region (`RevealRegion` `pinned`): the engine
+measures them on resize and paints `--reveal-inset`, and the header sits at that
+inset (`--reveal-top`, or its own height above the region when hidden, so it
+never shows through the frosted row). The `PaneShell` body scroller
+(`ScrollFade` `isUnderPinned`) runs from the top of the region with the inset as
+its top padding and `scroll-padding-top`, so text scrolls under the back row and
+an anchor lands below it. A self-scrolling body pads the inset instead and stays
+below the row. The header's `top`, the body's `top` and its `height` read the same var in
 one layout pass; never move one of them with `translate`, which runs on the
 compositor a frame apart and makes a pinned last line wobble. A page with less
 than 24px left to scroll once the header is gone never hides it, and a hidden
@@ -553,9 +559,11 @@ surface role at 78% with `blur(8px) saturate(1.2)`, opaque under
 `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
 `bg-background` on the header itself. Its block padding is even: the pinned back
 row is `py-3` (`PANE_RHYTHM.pinnedInset`), and the header under it adds no top
-inset of its own. The only edge is the `border-soft` hairline of
+inset of its own. Page content scrolls under the pinned back row, so the blur is
+what the reader sees there. The only edge is the `border-soft` hairline of
 `ScrollFade edge="line"`, which fades in over `--duration-quick` once the view is
-scrolled; the page scroller under a `RevealRegion` header takes it by default.
+scrolled; the page scroller under a `RevealRegion` header takes it by default,
+drawn at the bottom of the pinned row when the scroller runs under it.
 `fadeEdges="end"` keeps the top edge to the sticky rows, so no hairline fade is
 drawn there.
 
