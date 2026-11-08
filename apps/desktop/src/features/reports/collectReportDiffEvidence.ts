@@ -39,7 +39,7 @@ const diffOf = async ({ mount, projects }: DiffParams): Promise<ReportDiffMount>
   try {
     const [changed, commits] = await Promise.all([
       worktreeChangedFiles({ worktreePath: mount.worktreePath, baseBranch }),
-      listBranchCommits(mount.worktreePath).catch(() => []),
+      listBranchCommits(mount.worktreePath, baseBranch).catch(() => []),
     ]);
     return {
       mountId: mount.mountId,

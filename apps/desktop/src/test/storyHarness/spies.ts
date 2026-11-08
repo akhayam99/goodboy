@@ -487,7 +487,10 @@ export const storySpies = {
     numstat: '',
   })),
   listBranchCommits: vi.fn(
-    async (_worktreePath: string): Promise<ReadonlyArray<BranchCommit>> => [],
+    async (
+      _worktreePath: string,
+      _baseBranch?: string | null,
+    ): Promise<ReadonlyArray<BranchCommit>> => [],
   ),
   insertSession: vi.fn(async () => undefined),
   insertSessionEvent: vi.fn(

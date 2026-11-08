@@ -467,6 +467,24 @@ describe('live history recovery and metadata', () => {
     expect(store.getState().historyRuns[fixture.input.mountId]?.savedStash).toBeUndefined();
   });
 
+  it('lists the branch commits against the configured base of the mount', async () => {
+    const reads: unknown[] = [];
+    store.setState({
+      sessionProjectMounts: {
+        [fixture.input.sessionId]: [{ ...fixture.mount, baseBranch: 'stage' }],
+      },
+    });
+    stubStoryInvoke({
+      ...handlers,
+      worktree_commits: (args: unknown) => {
+        reads.push(args);
+        return LEDGER_COMMITS;
+      },
+    });
+    await store.getState().loadHistoryDraft(fixture.input);
+    expect(reads).toEqual([{ worktreePath: fixture.mount.worktreePath, baseBranch: 'stage' }]);
+  });
+
   it('keeps the latest branch read when an older loader responds last', async () => {
     let release: (commits: typeof LEDGER_COMMITS) => void = () => undefined;
     let hasRead = false;

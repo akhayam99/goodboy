@@ -135,7 +135,7 @@ export const loadHistoryDraft = (set: SetFn, get: GetFn) => {
         key: mountId,
         request: async () => {
           const [commits, graph] = await Promise.all([
-            listBranchCommits(target.worktreePath),
+            listBranchCommits(target.worktreePath, target.baseBranch),
             readHistoryGraph({
               worktreePath: target.worktreePath,
               baseBranch: target.baseBranch,
