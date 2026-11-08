@@ -1,5 +1,6 @@
 import type { AutoDelegation, AutoOutboxRow, AutoTree } from '@goodboy/db';
 import { isAutoReturnDecided } from '../../../../features/auto/isAutoReturnDecided';
+import { isLegacyBlock } from './isLegacyBlock';
 
 export type UnheardReturnParams = Readonly<{
   joined: AutoOutboxRow;
@@ -23,5 +24,6 @@ export const hasUnheardReturn = ({
       delegation.state === 'settled' &&
       delegation.outcome === 'blocked' &&
       !delivered.has(delegation.id) &&
+      !isLegacyBlock({ delegation }) &&
       !isAutoReturnDecided({ delegation, delegations }),
   );

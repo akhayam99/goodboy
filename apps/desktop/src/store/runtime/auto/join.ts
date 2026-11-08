@@ -20,6 +20,7 @@ import { attemptEnvelope } from './attemptEnvelope';
 import { envelopeOf } from './landAttemptRevision';
 import { isAutoReturnDecided } from '../../../features/auto/isAutoReturnDecided';
 import { hasUnheardReturn } from './returns/hasUnheardReturn';
+import { isLegacyBlock } from './returns/isLegacyBlock';
 import { returnCountOf } from './returns/returnCountOf';
 import { returnOfRow } from './returns/returnOfRow';
 import type { AgentVerbContext } from './verbContext';
@@ -292,6 +293,7 @@ export const joinReady = async ({ ctx, treeId }: JoinParams): Promise<JoinOutcom
       if (
         delivered.has(member.delegation.id) ||
         !isReturned({ member }) ||
+        isLegacyBlock({ delegation: member.delegation }) ||
         isAutoReturnDecided({ delegation: member.delegation, delegations: all })
       ) {
         continue;

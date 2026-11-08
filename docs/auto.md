@@ -1078,7 +1078,8 @@ return undecided copies it again, one row per return (`undecided:<generation>:<r
 block the tree with the no progress guard. A return saved before this rule sits inside its batch
 row with no `returnOf`: `returnIdsOfRow` reads the `blocked` results of such a row as returns, and when
 that batch was delivered by an earlier turn, `joinReady` writes the missing return row
-(`hasUnheardReturn`), so Auto is woken to decide about it.
+(`hasUnheardReturn`), so Auto is woken to decide about it. A blocked child with no `returned` in
+its result is never delivered again (`isLegacyBlock`): Auto already dropped that work.
 
 **The way back is an excerpt.** `parseChildClosing` keeps the answer of a child whole up to
 `STEP_OUTPUT_EXCERPT_CHARS` (4,000, the budget the Runs excerpt owns) and above it the same

@@ -489,6 +489,44 @@ describe('Auto must decide about every return', () => {
     expect((await treeOf({ world })).noProgressStreak).toBe(0);
   });
 
+  it('never redelivers a return from before the upgrade that nothing replaced', async () => {
+    const world = await startWith({ children: [LEDGER] });
+    const returned = await childReturns({ world, index: 0 });
+    const { db } = world.state.world;
+    const tree = await treeOf({ world });
+    await db.execute(
+      `UPDATE auto_delegations SET result_json = json_remove(result_json, '$.returned') WHERE id = ?`,
+      [returned],
+    );
+    const legacy = await delegationById({ world, id: returned });
+    await db.execute(`DELETE FROM auto_outbox WHERE tree_id = ? AND kind = 'results'`, [
+      world.treeId,
+    ]);
+    await insertAutoOutbox({
+      db,
+      outbox: {
+        id: brandId<AutoOutboxId>({ value: 'legacy-batch' }),
+        treeId: world.treeId,
+        generation: tree.generation,
+        kind: 'results',
+        joinKey: `join:${tree.generation}:${legacy.batchId}`,
+        payload: { kind: 'results', batchId: legacy.batchId, results: [legacy.result] },
+        nowMs: world.state.world.clock.now(),
+      },
+    });
+    await db.execute(
+      `UPDATE auto_outbox SET state = 'accepted', accepted_run_id = 'run-before-upgrade'
+        WHERE id = 'legacy-batch'`,
+    );
+
+    await autoTurnEnds({ world, text: 'Reading the results.' });
+    await joinReady({ ctx: world.runtime.ctx, treeId: world.treeId });
+
+    const rows = await listAutoOutbox({ db, treeId: world.treeId, kinds: ['results'] });
+    expect(rows.filter((row) => row.joinKey.startsWith('return:'))).toEqual([]);
+    expect(world.state.ports.autoTurns).toHaveLength(2);
+  });
+
   it('repeats a return whose proposal the user declined, so the tree never ends with it waiting', async () => {
     const world = await startWith({ children: [LEDGER] });
     const returned = await childReturns({ world, index: 0 });
