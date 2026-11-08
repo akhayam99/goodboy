@@ -5,10 +5,11 @@ import { countNoun } from '../../../../../shared/utils/countNoun';
 import { checksCountsOf, checksGroupsOf } from '../../../../integrations/github/checksRollup';
 import type { MergeReadinessFacts, PrMergeReadiness } from '../../../../review/prMergeReadiness';
 import { mergeIsClear } from '../../../../review/prMergeReadiness';
-import { openStepRankOf, type OpenStepKey } from '../../../branchStepOf';
+import type { BranchDueStep } from '../../../branchStepOf';
 import { BRANCH_STATE_TONE } from '../../../../session/central/branches/branchStateTone';
 import { openThreadsLineOf } from '../openThreadsLineOf';
 import type { MergeBox, MergeBoxRow, MergeBoxVerdict } from './mergeBox';
+import { verdictStepTextOf, type VerdictStepFacts } from './verdictStepTextOf';
 
 export type PullRequestBranchFacts = {
   readonly ahead: number;
@@ -35,43 +36,30 @@ type Params = {
   readonly mergeWord: string;
   readonly queueLine: string | null;
   readonly branch: PullRequestBranchFacts;
+  readonly steps: ReadonlyArray<BranchDueStep>;
   readonly threads: MergeBoxThreads;
   readonly unpushed: number;
   readonly canRequestReview: boolean;
 };
 
-type Step = {
-  readonly text: string;
-  readonly key: OpenStepKey;
-};
-
-type Ranked = {
-  readonly row: MergeBoxRow;
-  readonly step: Step | null;
-};
-
 type Part = {
-  readonly ranked: ReadonlyArray<Ranked>;
+  readonly rows: ReadonlyArray<MergeBoxRow>;
   readonly passing: ReadonlyArray<string>;
 };
 
-const NOTHING: Part = { ranked: [], passing: [] };
+const NOTHING: Part = { rows: [], passing: [] };
 
 type RowParams = {
   readonly row: MergeBoxRow;
-  readonly step?: Step | null;
 };
 
-const rowOnly = ({ row, step = null }: RowParams): Part => ({
-  ranked: [{ row, step }],
-  passing: [],
-});
+const rowOnly = ({ row }: RowParams): Part => ({ rows: [row], passing: [] });
 
 type PassParams = {
   readonly pass: string;
 };
 
-const passOnly = ({ pass }: PassParams): Part => ({ ranked: [], passing: [pass] });
+const passOnly = ({ pass }: PassParams): Part => ({ rows: [], passing: [pass] });
 
 type ChecksParams = Pick<Params, 'runs' | 'isChecksUnread' | 'checks'>;
 
@@ -89,10 +77,6 @@ const failingPart = ({ count, names }: FailingParams): Part =>
       detail: names.length === 0 ? null : names.join(', '),
       tone: BRANCH_STATE_TONE['checks-failing'],
       opens: 'checks',
-    },
-    step: {
-      text: count === 1 ? 'fix the failing check' : 'fix the failing checks',
-      key: 'fixChecks',
     },
   });
 
@@ -207,7 +191,6 @@ const reviewPart = ({ state, pr, reviewers, threads, canRequestReview }: ReviewP
         tone: BRANCH_STATE_TONE['changes-requested'],
         opens: 'comments',
       },
-      step: { text: by === null ? 'answer the review' : `answer ${by}`, key: 'answer' },
     });
   }
   const waiting = loginsIn({ reviewers, states: ['pending'] });
@@ -275,7 +258,6 @@ const commentsPart = ({ pr, threads }: CommentsParams): Part => {
         tone: 'warning',
         opens: 'comments',
       },
-      step: { text: 'answer the comments', key: 'answer' },
     });
   }
   return rowOnly({
@@ -308,7 +290,6 @@ const conflictsPart = ({ pr, hasConflicts, branch }: ConflictsParams): Part => {
       tone: BRANCH_STATE_TONE.conflicts,
       opens: 'files',
     },
-    step: { text: `resolve the conflicts with ${base}`, key: 'rebase' },
   });
 };
 
@@ -327,7 +308,6 @@ const unpushedPart = ({ unpushed }: Pick<Params, 'unpushed'>): Part =>
           tone: 'warning',
           opens: 'commits',
         },
-        step: { text: 'push your commits', key: 'push' },
       })
     : NOTHING;
 
@@ -345,7 +325,6 @@ const branchPart = ({ pr, branch, hasConflicts }: BranchParams): Part => {
         tone: 'warning',
         opens: 'commits',
       },
-      step: { text: 'finish the rebase', key: 'rebase' },
     });
   }
   if (branch.onlineAhead > 0) {
@@ -358,7 +337,6 @@ const branchPart = ({ pr, branch, hasConflicts }: BranchParams): Part => {
         tone: 'warning',
         opens: 'commits',
       },
-      step: { text: 'bring in the online commits', key: 'rebase' },
     });
   }
   if (branch.behind === null || hasConflicts) {
@@ -391,65 +369,68 @@ const TONE_RANK: Readonly<Record<Tone, number>> = {
   success: 4,
 };
 
-const isBlocking = ({ row }: Ranked): boolean => row.tone === 'danger' || row.tone === 'warning';
+type BlockingParams = Pick<MergeBoxRow, 'tone'>;
+
+const isBlocking = ({ tone }: BlockingParams): boolean => tone === 'danger' || tone === 'warning';
 
 type StepsParams = {
-  readonly ranked: ReadonlyArray<Ranked>;
+  readonly steps: ReadonlyArray<BranchDueStep>;
+  readonly facts: VerdictStepFacts;
 };
 
-const stepsLineOf = ({ ranked }: StepsParams): string | null => {
-  const steps = ranked
-    .map((entry) => entry.step)
-    .filter((step): step is Step => step !== null)
-    .map((step, index) => ({ step, index }))
-    .sort((left, right) => {
-      const byOrder =
-        openStepRankOf({ key: left.step.key }) - openStepRankOf({ key: right.step.key });
-      return byOrder === 0 ? left.index - right.index : byOrder;
-    })
-    .slice(0, 2)
-    .map(({ step }) => step.text);
-  if (steps.length === 0) {
+const stepsLineOf = ({ steps, facts }: StepsParams): string | null => {
+  const texts = steps.slice(0, 2).map((step) => verdictStepTextOf({ step, facts }));
+  if (texts.length === 0) {
     return null;
   }
-  const sentence = steps.join(', then ');
+  const sentence = texts.join(', then ');
   return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`;
 };
 
+type FailingCountParams = Pick<Params, 'runs' | 'checks'>;
+
+const failingCountOf = ({ runs, checks }: FailingCountParams): number => {
+  if (runs !== null && runs.length > 0) {
+    return checksCountsOf({ checks: runs }).failing;
+  }
+  return Math.max(checks.failingChecks.length, 1);
+};
+
 type OpenVerdictParams = Pick<Params, 'readiness' | 'mergeWord' | 'pr' | 'reviewers'> & {
-  readonly ranked: ReadonlyArray<Ranked>;
+  readonly rows: ReadonlyArray<MergeBoxRow>;
+  readonly stepsLine: string | null;
 };
 
 const openVerdictOf = ({
-  ranked,
+  rows,
+  stepsLine,
   readiness,
   mergeWord,
   pr,
   reviewers,
 }: OpenVerdictParams): MergeBoxVerdict => {
-  const blocking = ranked.filter(isBlocking);
-  const top = blocking[0];
+  const top = rows.find(isBlocking);
   if (top !== undefined) {
     return {
       kind: 'blocked',
       word: 'Not ready to merge',
-      line: stepsLineOf({ ranked: blocking }) ?? readiness.reason,
-      tone: top.row.tone,
+      line: stepsLine ?? readiness.reason,
+      tone: top.tone,
     };
   }
   if (readiness.status === 'unknown') {
     return { kind: 'checking', word: 'Checking', line: readiness.reason, tone: 'neutral' };
   }
-  const waiting = ranked.filter(
-    ({ row }) => row.tone === 'info' && (row.id === 'checks' || row.id === 'review'),
+  const waiting = rows.filter(
+    (row) => row.tone === 'info' && (row.id === 'checks' || row.id === 'review'),
   );
   const isOnlyWaiting =
     waiting.length > 0 &&
     readiness.status === 'blocked' &&
     waiting.length === readiness.blockers.length;
   if (isOnlyWaiting) {
-    const isOnChecks = waiting.some(({ row }) => row.id === 'checks');
-    const isOnReview = waiting.some(({ row }) => row.id === 'review');
+    const isOnChecks = waiting.some((row) => row.id === 'checks');
+    const isOnReview = waiting.some((row) => row.id === 'review');
     if (isOnChecks && isOnReview) {
       return {
         kind: 'waiting',
@@ -490,13 +471,16 @@ const openVerdictOf = ({
   return { kind: 'ready', word: 'Ready to merge', line: readiness.word, tone: 'warning' };
 };
 
-type SettledVerdictParams = Pick<Params, 'state' | 'pr' | 'queueLine' | 'readiness'>;
+type SettledVerdictParams = Pick<Params, 'state' | 'pr' | 'queueLine' | 'readiness'> & {
+  readonly draftLine: string | null;
+};
 
 const settledVerdictOf = ({
   state,
   pr,
   queueLine,
   readiness,
+  draftLine,
 }: SettledVerdictParams): MergeBoxVerdict | null => {
   switch (state) {
     case 'merged':
@@ -514,7 +498,7 @@ const settledVerdictOf = ({
       return {
         kind: 'draft',
         word: 'Draft',
-        line: "Reviewers aren't notified until you mark it ready.",
+        line: draftLine ?? "Reviewers aren't notified until you mark it ready.",
         tone: 'neutral',
       };
     case 'none':
@@ -540,11 +524,33 @@ export const mergeBoxOf = ({
   mergeWord,
   queueLine,
   branch,
+  steps,
   threads,
   unpushed,
   canRequestReview,
 }: Params): MergeBox => {
-  const settled = settledVerdictOf({ state, pr, queueLine, readiness });
+  const stepsLine = stepsLineOf({
+    steps,
+    facts: {
+      base: pr.baseBranch,
+      changesBy:
+        pr.reviewDecision === 'changes_requested'
+          ? loginsIn({ reviewers, states: ['changes_requested'] })
+          : null,
+      failing: failingCountOf({ runs, checks }),
+      hasConflicts,
+      isRebasing: branch.isRebasing,
+      mergeWord,
+    },
+  });
+  const isMarkReadyFirst = steps[0] === undefined || steps[0] === 'markReady';
+  const settled = settledVerdictOf({
+    state,
+    pr,
+    queueLine,
+    readiness,
+    draftLine: isMarkReadyFirst ? null : stepsLine,
+  });
   if (settled !== null && (settled.kind === 'merged' || settled.kind === 'closed')) {
     return { verdict: settled, rows: [], passing: [] };
   }
@@ -556,18 +562,15 @@ export const mergeBoxOf = ({
     commentsPart({ pr, threads }),
     branchPart({ pr, branch, hasConflicts }),
   ];
-  const ranked = parts
-    .flatMap((part) => part.ranked)
-    .map((entry, index) => ({ entry, index }))
+  const rows = parts
+    .flatMap((part) => part.rows)
+    .map((row, index) => ({ row, index }))
     .sort((left, right) => {
-      const byTone = TONE_RANK[left.entry.row.tone] - TONE_RANK[right.entry.row.tone];
+      const byTone = TONE_RANK[left.row.tone] - TONE_RANK[right.row.tone];
       return byTone === 0 ? left.index - right.index : byTone;
     })
-    .map(({ entry }) => entry);
-  const verdict = settled ?? openVerdictOf({ ranked, readiness, mergeWord, pr, reviewers });
-  return {
-    verdict,
-    rows: ranked.map((entry) => entry.row),
-    passing: parts.flatMap((part) => part.passing),
-  };
+    .map(({ row }) => row);
+  const verdict =
+    settled ?? openVerdictOf({ rows, stepsLine, readiness, mergeWord, pr, reviewers });
+  return { verdict, rows, passing: parts.flatMap((part) => part.passing) };
 };

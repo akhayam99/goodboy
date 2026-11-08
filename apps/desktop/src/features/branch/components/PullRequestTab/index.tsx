@@ -11,6 +11,7 @@ import type {
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { ThreadEntry } from '../../../resolve/commentGroupsView';
+import type { BranchDueStep } from '../../branchStepOf';
 import type { BranchStart } from '../../hooks/useBranchStart';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import type { PullRequestBranchFacts } from './MergeBox/mergeBoxOf';
@@ -37,6 +38,7 @@ type Props = {
   readonly mountId: MountId | null;
   readonly readiness: PullRequestReadiness;
   readonly branchFacts: PullRequestBranchFacts;
+  readonly steps: ReadonlyArray<BranchDueStep>;
   readonly mergeWord: string;
   readonly entries: ReadonlyArray<ThreadEntry>;
   readonly commits: ReadonlyArray<BranchCommit>;
@@ -68,6 +70,7 @@ export const PullRequestTab = ({
   mountId,
   readiness,
   branchFacts,
+  steps,
   mergeWord,
   entries,
   commits,
@@ -109,6 +112,7 @@ export const PullRequestTab = ({
       mountId={mountId}
       readiness={readiness}
       branch={branchFacts}
+      steps={steps}
       mergeWord={mergeWord}
       entries={entries}
       detail={detail}

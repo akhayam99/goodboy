@@ -7,9 +7,17 @@ import {
   evaluatePrMergeReadiness,
   type MergeReadinessFacts,
 } from '../../../../review/prMergeReadiness';
-import { branchStepOf, NO_COMMENT_FACTS } from '../../../branchStepOf';
+import {
+  branchStepOf,
+  branchStepsOf,
+  NO_COMMENT_FACTS,
+  type BranchDueStep,
+  type BranchStep,
+} from '../../../branchStepOf';
+import { pullRequestNextStepOf } from '../../../pullRequestNextStepOf';
 import type { MergeBox } from './mergeBox';
 import { mergeBoxOf, type MergeBoxThreads } from './mergeBoxOf';
+import { verdictStepTextOf } from './verdictStepTextOf';
 
 type RunParams = {
   readonly name: string;
@@ -69,9 +77,21 @@ type BoxParams = {
   readonly unpushed?: number;
   readonly canRequestReview?: boolean;
   readonly queueLine?: string | null;
+  readonly hasQuestion?: boolean;
+  readonly isPushing?: boolean;
 };
 
-const boxOf = ({
+type Header = {
+  readonly steps: ReadonlyArray<BranchDueStep>;
+  readonly step: BranchStep;
+};
+
+type Built = {
+  readonly box: MergeBox;
+  readonly header: Header;
+};
+
+const build = ({
   state = 'open',
   facts = {},
   runs = PASSING,
@@ -84,9 +104,28 @@ const boxOf = ({
   unpushed = 0,
   canRequestReview = true,
   queueLine = null,
-}: BoxParams): MergeBox => {
+  hasQuestion = false,
+  isPushing = false,
+}: BoxParams): Built => {
   const merged = { ...FACTS, ...facts };
-  return mergeBoxOf({
+  const readiness = evaluatePrMergeReadiness({ facts: merged });
+  const headerFacts = {
+    state,
+    lifecycle: pullRequestNextStepOf({
+      state,
+      facts: merged,
+      readiness,
+      hasReviewer: reviewers.length > 0,
+      behind: behind ?? 0,
+      isStopOpen: false,
+    }),
+    hasConflicts: merged.hasConflicts,
+    comments: { ...NO_COMMENT_FACTS, questionThreadId: hasQuestion ? 'thread-omar' : null },
+    checks: { isFailing: merged.checks === 'failing', isAwaitingRun: false, chain: 'none' },
+    push: { isInFlight: isPushing, failed: 0, canPush: unpushed > 0, replies: 0 },
+  } as const;
+  const header = { steps: branchStepsOf(headerFacts), step: branchStepOf(headerFacts) };
+  const box = mergeBoxOf({
     state,
     pr: {
       baseBranch: 'main',
@@ -101,16 +140,20 @@ const boxOf = ({
       runningChecks: merged.runningChecks,
     },
     reviewers,
-    readiness: evaluatePrMergeReadiness({ facts: merged }),
+    readiness,
     hasConflicts: merged.hasConflicts,
     mergeWord: 'Squash and merge',
     queueLine,
     branch: { ahead: 4, behind, onlineAhead, isRebasing },
+    steps: header.steps,
     threads,
     unpushed,
     canRequestReview,
   });
+  return { box, header };
 };
+
+const boxOf = ({ ...params }: BoxParams): MergeBox => build(params).box;
 
 type LinesParams = {
   readonly box: MergeBox;
@@ -149,6 +192,7 @@ describe('mergeBoxOf', () => {
       },
       threads: { unresolved: 2, needYou: 1, unread: 0 },
       behind: 3,
+      hasQuestion: true,
     });
 
     expect(linesOf({ box })).toEqual([
@@ -169,15 +213,7 @@ describe('mergeBoxOf', () => {
   });
 
   it('names the next steps in the order the header takes them, not the order of the rows', () => {
-    const header = branchStepOf({
-      state: 'open',
-      lifecycle: null,
-      hasConflicts: false,
-      comments: { ...NO_COMMENT_FACTS, questionThreadId: 'thread-omar' },
-      checks: { isFailing: true, isAwaitingRun: false, chain: 'none' },
-      push: { isInFlight: false, failed: 0, canPush: true, replies: 0 },
-    });
-    const box = boxOf({
+    const { box, header } = build({
       runs: FAILING,
       reviewers: [reviewer({ login: 'omar-t', state: 'changes_requested' })],
       facts: {
@@ -187,14 +223,92 @@ describe('mergeBoxOf', () => {
         changesRequestedBy: ['omar-t'],
       },
       unpushed: 2,
+      hasQuestion: true,
     });
 
-    expect(header).toBe('answer');
+    expect(header.step).toBe('answer');
     expect(box.rows[0]?.id).toBe('checks');
     expect(box.verdict.line).toBe('Answer omar-t, then push your commits.');
     expect(boxOf({ runs: FAILING, facts: { checks: 'failing' }, unpushed: 2 }).verdict.line).toBe(
       'Push your commits, then fix the failing check.',
     );
+  });
+
+  it('fixes the checks first when the branch only diverged online, as the header does', () => {
+    const { box, header } = build({
+      runs: FAILING,
+      facts: { checks: 'failing', failingChecks: ['e2e member flows'] },
+      onlineAhead: 2,
+    });
+
+    expect(header.step).toBe('fixChecks');
+    expect(box.verdict.line).toBe('Fix the failing check.');
+  });
+
+  it('keeps a push in flight ahead of a question, as the header does', () => {
+    const { box, header } = build({ unpushed: 2, isPushing: true, hasQuestion: true });
+
+    expect(header.step).toBe('push');
+    expect(box.verdict.line).toBe('Push your commits, then answer the comments.');
+  });
+
+  describe('agrees with the header for every mix of facts', () => {
+    type BitParams = {
+      readonly mask: number;
+      readonly bit: number;
+    };
+    const isOn = ({ mask, bit }: BitParams): boolean => (mask & (1 << bit)) !== 0;
+    const combos = Array.from({ length: 2 ** 8 }, (_, mask) => ({
+      hasQuestion: isOn({ mask, bit: 0 }),
+      isFailing: isOn({ mask, bit: 1 }),
+      isDiverged: isOn({ mask, bit: 2 }),
+      hasUnpushed: isOn({ mask, bit: 3 }),
+      isPushing: isOn({ mask, bit: 4 }),
+      hasConflicts: isOn({ mask, bit: 5 }),
+      isDraft: isOn({ mask, bit: 6 }),
+      isBehind: isOn({ mask, bit: 7 }),
+    }));
+
+    it.each(combos)('%o', (combo) => {
+      const { box, header } = build({
+        state: combo.isDraft ? 'draft' : 'open',
+        runs: combo.isFailing ? FAILING : PASSING,
+        facts: {
+          checks: combo.isFailing ? 'failing' : 'green',
+          failingChecks: combo.isFailing ? ['e2e member flows'] : [],
+          hasConflicts: combo.hasConflicts,
+          pr: { baseBranch: 'main', mergeable: !combo.hasConflicts },
+          unpushed: combo.hasUnpushed ? 2 : 0,
+        },
+        onlineAhead: combo.isDiverged ? 2 : 0,
+        unpushed: combo.hasUnpushed ? 2 : 0,
+        isPushing: combo.isPushing,
+        hasQuestion: combo.hasQuestion,
+        behind: combo.isBehind ? 3 : 0,
+      });
+      const named = header.steps.slice(0, 2).map((step) =>
+        verdictStepTextOf({
+          step,
+          facts: {
+            base: 'main',
+            changesBy: null,
+            failing: 1,
+            hasConflicts: combo.hasConflicts,
+            isRebasing: false,
+            mergeWord: 'Squash and merge',
+          },
+        }),
+      );
+      const sentence = named.join(', then ');
+      const expected = `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`;
+
+      const isNaming =
+        (box.verdict.kind === 'blocked' && header.step !== null) ||
+        (box.verdict.kind === 'draft' && header.step !== null && header.step !== 'markReady');
+
+      expect(header.steps[0] ?? null).toBe(header.step);
+      expect(isNaming ? box.verdict.line : expected).toBe(expected);
+    });
   });
 
   it('draws conflicts amber, as the branch state map does, and drops the behind row', () => {
@@ -209,7 +323,7 @@ describe('mergeBoxOf', () => {
       'Rebasing onto main (warning)',
     ]);
     expect(box.rows[0]).toMatchObject({ opens: 'files', detail: 'main moved 7 commits ahead' });
-    expect(box.verdict.line).toBe('Resolve the conflicts with main, then finish the rebase.');
+    expect(box.verdict.line).toBe('Resolve the conflicts with main.');
   });
 
   it('is ready with the merge method once approved and green, and repeats no button', () => {
@@ -265,6 +379,7 @@ describe('mergeBoxOf', () => {
     const box = boxOf({
       facts: { review: 'approved', commentsNeedYou: 2 },
       threads: { unresolved: 5, needYou: 2, unread: 1 },
+      hasQuestion: true,
     });
 
     expect(box.rows[0]).toMatchObject({
@@ -299,9 +414,20 @@ describe('mergeBoxOf', () => {
     expect(box.verdict).toMatchObject({
       kind: 'blocked',
       word: 'Not ready to merge',
-      line: 'Checks unknown.',
+      line: 'Ask for a review.',
     });
     expect(box.rows.map((row) => row.id)).toEqual(['checks', 'review']);
+  });
+
+  it('says what readiness names when the header has no step', () => {
+    const box = boxOf({
+      runs: null,
+      isChecksUnread: true,
+      facts: { checks: 'unknown' },
+      reviewers: [reviewer({ login: 'dana-r', state: 'pending' })],
+    });
+
+    expect(box.verdict).toMatchObject({ kind: 'blocked', line: 'Checks unknown.' });
   });
 
   it('keeps the checks it already knows failing while the runs load', () => {

@@ -66,6 +66,7 @@ const boxOf = ({ comments, entries }: BoxParams) => {
     mergeWord: 'Squash and merge',
     queueLine: null,
     branch: { ahead: 1, behind: 0, onlineAhead: 0, isRebasing: false },
+    steps: [],
     threads: { unresolved: counts.open, needYou: counts.needYou, unread: 0 },
     unpushed: 0,
     canRequestReview: true,
