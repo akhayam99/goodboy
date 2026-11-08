@@ -92,7 +92,7 @@ describe('BootSplash boot handoff', () => {
     const tile = container.querySelector<HTMLElement>('[data-brand-tile]');
     expect(tile?.style.width).toBe('84px');
     expect(screen.getByText('Goodboy')).toBeDefined();
-    expect(screen.queryByText(/agentic development environment/)).toBeNull();
+    expect(screen.queryByText(/agentic development environment/i)).toBeNull();
   });
 
   it('holds the tile above the window middle', () => {
