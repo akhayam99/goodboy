@@ -8,6 +8,7 @@ const HEAD_REF: &str = "ref: refs/heads/";
 const GITDIR_LINE: &str = "gitdir:";
 const RENAME_MESSAGE: &str = "Branch: renamed refs/heads/";
 const RENAME_TARGET: &str = " to refs/heads/";
+const MAX_RENAME_HOPS: usize = 8;
 const REFLOG_CHUNK: u64 = 8192;
 const MAX_CACHED_RENAMES: usize = 256;
 
@@ -270,6 +271,58 @@ fn ref_name_of(logs: &Path, file: &Path) -> Option<String> {
     Some(parts?.join("/"))
 }
 
+fn plain_renames_in(file: &Path, prefix: &str, since_ms: u64) -> Vec<String> {
+    let Ok(mut handle) = std::fs::File::open(file) else {
+        return Vec::new();
+    };
+    let is_recreated_later =
+        first_line_secs(&mut handle).is_some_and(|secs| secs.saturating_mul(1000) > since_ms);
+    if is_recreated_later {
+        return Vec::new();
+    }
+    lines_since(&mut handle, since_ms)
+        .into_iter()
+        .filter_map(|(_, message)| message.strip_prefix(prefix).map(str::to_string))
+        .filter(|target| is_plain_branch_name(target))
+        .collect()
+}
+
+fn plain_rename_targets(common_dir: &Path, from: &str, since_ms: u64) -> Vec<String> {
+    let prefix = format!("{RENAME_MESSAGE}{from}{RENAME_TARGET}");
+    let mut files = Vec::new();
+    reflog_files(&common_dir.join("logs/refs/heads"), since_ms, &mut files);
+    let mut targets: Vec<String> = files
+        .iter()
+        .flat_map(|file| plain_renames_in(file, &prefix, since_ms))
+        .collect();
+    targets.sort();
+    targets.dedup();
+    targets
+}
+
+fn follow_plain_renames(common_dir: &Path, name: &str, since_ms: u64) -> Option<String> {
+    let mut current = name.to_string();
+    for _ in 0..MAX_RENAME_HOPS {
+        let targets = plain_rename_targets(common_dir, &current, since_ms);
+        let [next] = targets.as_slice() else {
+            return None;
+        };
+        if has_ref(common_dir, next) {
+            return Some(next.clone());
+        }
+        current = next.clone();
+    }
+    None
+}
+
+fn holds_mark(file: &Path, mark: &ReflogMark) -> bool {
+    let Ok(mut handle) = std::fs::File::open(file) else {
+        return false;
+    };
+    let tail = tail_since(&mut handle, mark.secs.saturating_mul(1000));
+    nth_match(&tail, mark).is_some()
+}
+
 fn follow_renames(
     common_dir: &Path,
     name: &str,
@@ -279,6 +332,10 @@ fn follow_renames(
     let logs = common_dir.join("logs/refs/heads");
     let mut files = Vec::new();
     reflog_files(&logs, since_ms, &mut files);
+    let is_mark_gone = mark.is_some_and(|mark| !files.iter().any(|file| holds_mark(file, mark)));
+    if is_mark_gone {
+        return follow_plain_renames(common_dir, name, since_ms);
+    }
     let targets: Vec<String> = files
         .iter()
         .filter_map(|file| {
@@ -676,6 +733,83 @@ mod tests {
         assert_eq!(
             renamed_to(&root, "nw/credit", since, mark.as_ref()).as_deref(),
             Some("nw/credit-fix")
+        );
+    }
+
+    #[test]
+    fn a_pruned_spawn_mark_still_follows_the_rename_like_the_plain_lookup() {
+        let root = git_repo_on(&scratch("mark-pruned"), "nw/credit");
+        let since = millis_at(STARTED);
+        let file = root.join(".git/logs/refs/heads/nw/credit");
+        let head = std::fs::read_to_string(root.join(".git/refs/heads/nw/credit"))
+            .expect("ref")
+            .trim()
+            .to_string();
+        let reset = format!(
+            "{head} {head} Acme <dev@acme.test> {} +0000\treset: moving to HEAD\n",
+            EPOCH_SECS + 5
+        );
+        let mut text = std::fs::read_to_string(&file).expect("reflog");
+        text.push_str(&reset.repeat(2));
+        write(&file, &text);
+        let mark = reflog_mark(&root, "nw/credit").expect("mark");
+        assert_eq!(mark.occurrence, 2);
+        git_at(&root, STARTED, &["reflog", "delete", "nw/credit@{0}"]);
+        git_at(
+            &root,
+            STARTED + 10,
+            &["branch", "-m", "nw/credit", "nw/credit-fix"],
+        );
+        assert!(!holds_mark(
+            &root.join(".git/logs/refs/heads/nw/credit-fix"),
+            &mark
+        ));
+        assert_eq!(
+            renamed_to(&root, "nw/credit", since, Some(&mark)).as_deref(),
+            Some("nw/credit-fix")
+        );
+        assert_eq!(
+            renamed_to(&root, "nw/credit", since, Some(&mark)),
+            follow_plain_renames(&root.join(".git"), "nw/credit", since)
+        );
+    }
+
+    #[test]
+    fn a_rewritten_spawn_mark_still_follows_the_rename_like_the_plain_lookup() {
+        let root = git_repo_on(&scratch("mark-rewritten"), "nw/credit");
+        let since = millis_at(STARTED);
+        git_at(
+            &root,
+            EPOCH_SECS + 5,
+            &["commit", "-q", "--allow-empty", "-m", "ledger"],
+        );
+        git_at(
+            &root,
+            EPOCH_SECS + 6,
+            &["commit", "-q", "--allow-empty", "-m", "rounding"],
+        );
+        let mark = reflog_mark(&root, "nw/credit").expect("mark");
+        git_at(
+            &root,
+            STARTED,
+            &["reflog", "delete", "--rewrite", "nw/credit@{1}"],
+        );
+        git_at(
+            &root,
+            STARTED + 10,
+            &["branch", "-m", "nw/credit", "nw/credit-fix"],
+        );
+        assert!(!holds_mark(
+            &root.join(".git/logs/refs/heads/nw/credit-fix"),
+            &mark
+        ));
+        assert_eq!(
+            renamed_to(&root, "nw/credit", since, Some(&mark)).as_deref(),
+            Some("nw/credit-fix")
+        );
+        assert_eq!(
+            renamed_to(&root, "nw/credit", since, Some(&mark)),
+            follow_plain_renames(&root.join(".git"), "nw/credit", since)
         );
     }
 
