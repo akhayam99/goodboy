@@ -1,28 +1,19 @@
 import {
   AUTO_OWNER_GUARD_SQL,
   autoOwnerGuardParams,
-  finishAutoArtifactReviseStatement,
-  settleAutoDelegationStatement,
   type Database,
   type Statement,
 } from '@goodboy/db';
-import type { ArtifactId, AutoDelegationId, AutoTreeId } from '@goodboy/types';
+import type { AutoTreeId } from '@goodboy/types';
+import { reviseFailureStatements, type ReviseFailure } from './reviseFailureStatements';
 
-type ReviseFailureReason =
-  'no_new_version' | 'lost_structure' | 'stale_base' | 'stale_result' | 'kickoff_failed';
-
-export type FailReviseParams = Readonly<{
-  db: Database;
-  ownerId: string;
-  nowMs: number;
-  treeId: AutoTreeId;
-  delegationId: AutoDelegationId;
-  generation: number;
-  artifactId: ArtifactId;
-  reason: ReviseFailureReason;
-  failure?: string;
-  result: unknown;
-}>;
+export type FailReviseParams = ReviseFailure &
+  Readonly<{
+    db: Database;
+    ownerId: string;
+    nowMs: number;
+    treeId: AutoTreeId;
+  }>;
 
 export type FailReviseOutcome = Readonly<{ kind: 'failed' }> | Readonly<{ kind: 'dropped' }>;
 
@@ -35,56 +26,27 @@ export const failRevise = async ({
   ownerId,
   nowMs,
   treeId,
-  delegationId,
-  generation,
-  artifactId,
-  reason,
-  failure,
-  result,
+  ...failure
 }: FailReviseParams): Promise<FailReviseOutcome> => {
-  const finish = finishAutoArtifactReviseStatement({
-    artifactId,
-    delegationId,
-    abortCode: 'unused',
-  });
   const statements: Statement[] = [
     {
       sql: `SELECT 1 FROM auto_trees WHERE id = ? AND generation = ? AND ${AUTO_OWNER_GUARD_SQL}`,
-      params: [treeId, generation, ...autoOwnerGuardParams({ ownerId, nowMs })],
+      params: [treeId, failure.generation, ...autoOwnerGuardParams({ ownerId, nowMs })],
       abortWhen: 'noRows',
       abortCode: ABORT_TREE,
     },
     {
       sql: 'SELECT 1 FROM auto_delegations WHERE id = ? AND tree_id = ?',
-      params: [delegationId, treeId],
+      params: [failure.delegationId, treeId],
       abortWhen: 'noRows',
       abortCode: ABORT_DELEGATION,
     },
-    settleAutoDelegationStatement({
-      delegationId,
-      generation,
-      outcome: 'failed',
-      reason: failure ?? reason,
-      result,
-      nowMs,
-      abortCode: ABORT_SETTLE,
-    }),
-    { sql: finish.sql, params: finish.params },
-    {
-      sql: `UPDATE auto_reservations
-        SET state = 'released', released_reason = ?, updated_at = ?
-        WHERE tree_id = ? AND state = 'reserved' AND owner_kind = 'attempt'
-          AND (
-            owner_id IN (SELECT id FROM auto_attempts WHERE delegation_id = ?)
-            OR owner_id = (SELECT first_attempt_id FROM auto_delegations WHERE id = ?)
-          )`,
-      params: [reason, nowMs, treeId, delegationId, delegationId],
-    },
+    ...reviseFailureStatements({ ...failure, treeId, nowMs, abortCode: ABORT_SETTLE }),
     {
       sql: 'UPDATE auto_trees SET phase_rev = phase_rev + 1, updated_at = ? WHERE id = ?',
       params: [nowMs, treeId],
     },
   ];
-  const outcome = await db.transaction({ statements });
-  return outcome.status === 'committed' ? { kind: 'failed' } : { kind: 'dropped' };
+  const committed = await db.transaction({ statements });
+  return committed.status === 'committed' ? { kind: 'failed' } : { kind: 'dropped' };
 };

@@ -14,12 +14,73 @@ describe('reading how a child closed its work', () => {
     expect(closing.summary).not.toContain('step-done');
   });
 
-  it('reads a declared block', () => {
+  it('reads an old declared block as a return with no needs', () => {
     const closing = parseChildClosing({
       text: `Cannot build.\n<<step-done id="${ID}" status="blocked">>`,
       childAgentId: ID,
     });
     expect(closing.completion).toBe('blocked');
+    expect(closing.returned).toEqual({ needs: null, request: 'Cannot build.' });
+  });
+
+  it('reads every needs value of a return', () => {
+    const cases = [
+      ['shell', { kind: 'shell' }],
+      ['writer', { kind: 'writer' }],
+      ['role:planner', { kind: 'role', role: 'planner' }],
+      ['decision', { kind: 'decision' }],
+      ['user', { kind: 'user' }],
+    ] as const;
+    for (const [value, needs] of cases) {
+      const closing = parseChildClosing({
+        text: `Partial report.\n<<step-done id="${ID}" status="returned" needs="${value}">>\nWhat I need.`,
+        childAgentId: ID,
+      });
+      expect(closing.completion, value).toBe('blocked');
+      expect(closing.returned, value).toEqual({ needs, request: 'What I need.' });
+    }
+  });
+
+  it('reads a return with no needs as needs missing', () => {
+    const closing = parseChildClosing({
+      text: `Partial.\n<<step-done id="${ID}" status="returned">>\nA shell.`,
+      childAgentId: ID,
+    });
+    expect(closing.returned).toEqual({ needs: null, request: 'A shell.' });
+  });
+
+  it('reads an unknown needs value or role as needs user', () => {
+    for (const value of ['coffee', 'role:astronaut', 'role:']) {
+      const closing = parseChildClosing({
+        text: `<<step-done id="${ID}" status="returned" needs="${value}">>\nHelp.`,
+        childAgentId: ID,
+      });
+      expect(closing.returned?.needs, value).toEqual({ kind: 'user' });
+    }
+  });
+
+  it('takes the request from the line before the closing when none follows', () => {
+    const closing = parseChildClosing({
+      text: `Report body.\n\nI need the shell to list commits.\n<<step-done id="${ID}" status="returned" needs="shell">>\n`,
+      childAgentId: ID,
+    });
+    expect(closing.returned?.request).toBe('I need the shell to list commits.');
+  });
+
+  it('never takes a line of the report block as the request', () => {
+    const closing = parseChildClosing({
+      text: `Read two files.\n<<artifact v=1 kind=report>>\n{"title":"Callers","format":"markdown","content":"x"}\n<</artifact>>\n<<step-done id="${ID}" status="returned" needs="shell">>`,
+      childAgentId: ID,
+    });
+    expect(closing.returned?.request).toBe('Read two files.');
+  });
+
+  it('reads no return on a done closing', () => {
+    const closing = parseChildClosing({
+      text: `All good.\n<<step-done id="${ID}">>`,
+      childAgentId: ID,
+    });
+    expect(closing.returned).toBeNull();
   });
 
   it('reads a closing line whose id a model wrapped across lines', () => {
@@ -82,13 +143,50 @@ describe('reading how a child closed its work', () => {
     expect(closing.summary).toBe('Short report.');
   });
 
-  it('still reads a blocked status and a question from the dropped middle of a long reply', () => {
+  it('still reads a return and a question from the dropped middle of a long reply', () => {
     const filler = 'y'.repeat(3_000);
-    const text = `${filler}\n<<ctx-question blocking="true">>Which branch?<</ctx-question>>\n${filler}\n<<step-done id="${ID}" status="blocked">>`;
-    const closing = parseChildClosing({ text, childAgentId: ID });
-    expect(closing.completion).toBe('blocked');
-    expect(closing.question?.text).toBe('Which branch?');
-    expect(closing.summary).toContain('middle dropped');
+    const returned = parseChildClosing({
+      text: `${filler}\n<<step-done id="${ID}" status="returned" needs="shell">>\n${filler}`,
+      childAgentId: ID,
+    });
+    expect(returned.completion).toBe('blocked');
+    expect(returned.returned?.needs).toEqual({ kind: 'shell' });
+    expect(returned.summary).toContain('middle dropped');
+    const asked = parseChildClosing({
+      text: `${filler}\n<<ctx-question blocking="true">>Which branch?<</ctx-question>>\n${filler}\n<<step-done id="${ID}">>`,
+      childAgentId: ID,
+    });
+    expect(asked.question?.text).toBe('Which branch?');
+    expect(asked.summary).toContain('middle dropped');
+  });
+
+  it('lets the first closing line win over a later one', () => {
+    const doneFirst = parseChildClosing({
+      text: `All good.\n<<step-done id="${ID}">>\n<<step-done id="${ID}" status="returned" needs="shell">>\nA shell.`,
+      childAgentId: ID,
+    });
+    expect(doneFirst).toMatchObject({ completion: 'done', returned: null });
+    const returnFirst = parseChildClosing({
+      text: `Half done.\n<<step-done id="${ID}" status="returned" needs="writer">>\nChange the file.\n<<step-done id="${ID}">>`,
+      childAgentId: ID,
+    });
+    expect(returnFirst.completion).toBe('blocked');
+    expect(returnFirst.returned).toEqual({
+      needs: { kind: 'writer' },
+      request: 'Change the file.',
+    });
+  });
+
+  it('drops a blocking question from a reply that returns', () => {
+    const closing = parseChildClosing({
+      text: `<<ctx-question blocking="true">>Which branch?<</ctx-question>>\n<<step-done id="${ID}" status="returned" needs="decision">>\nPick the branch for ledger-core.`,
+      childAgentId: ID,
+    });
+    expect(closing.question).toBeNull();
+    expect(closing.returned).toEqual({
+      needs: { kind: 'decision' },
+      request: 'Pick the branch for ledger-core.',
+    });
   });
 
   it('reads a long run of dashes in a closing line', () => {

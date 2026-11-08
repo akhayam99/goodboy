@@ -259,6 +259,46 @@ type ReviseParams = Context & {
   readonly attribution: Attribution;
 };
 
+type ReturnedReviseParams = ReviseParams & {
+  readonly artifactId: string;
+  readonly envelope: DelegationResultV1;
+};
+
+const returnedRevise = async ({
+  ctx,
+  ended,
+  delegation,
+  attempt,
+  artifactId,
+  envelope,
+}: ReturnedReviseParams): Promise<FinishAttemptOutcome> => {
+  const result: DelegationResultV1 = { ...envelope, artifacts: [] };
+  const settled = await ctx.scheduler.settleAttempt({
+    attemptId: attempt.id,
+    generation: ended.generation,
+    ending: {
+      kind: 'ended',
+      outcome: 'blocked',
+      endReason: result.reason,
+      costUsd: ended.costUsd,
+      resultSnapshot: { envelope: result, landing: null },
+    },
+    revise: {
+      delegationId: delegation.id,
+      generation: ended.generation,
+      artifactId: brandId<ArtifactId>({ value: artifactId }),
+      outcome: 'blocked',
+      reason: 'returned',
+      ...(result.reason !== null && { failure: result.reason }),
+      result,
+    },
+  });
+  if (settled.kind === 'dropped') {
+    return { kind: 'dropped', reason: settled.reason };
+  }
+  return { kind: 'ended', outcome: 'blocked', landing: 'none' };
+};
+
 const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcome> => {
   const { ctx, ended, tree, delegation, attempt, closing, attribution } = params;
   const artifactId = delegation.reviseOf;
@@ -304,6 +344,9 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
     costUsd: ended.costUsd,
     durationMs: ended.durationMs,
   });
+  if (envelope.outcome === 'blocked') {
+    return returnedRevise({ ...params, artifactId, envelope });
+  }
   const landing: RevisionLanding | null =
     parsed.kind === 'ok'
       ? {
@@ -325,20 +368,21 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
       costUsd: ended.costUsd,
       resultSnapshot: { envelope, landing },
     },
+    ...(parsed.kind === 'failed' && {
+      revise: {
+        delegationId: delegation.id,
+        generation: ended.generation,
+        artifactId: brandId<ArtifactId>({ value: artifactId }),
+        reason: parsed.reason,
+        ...(failure !== undefined && { failure }),
+        result: { ...envelope, outcome: 'failed', reason: failure ?? parsed.reason },
+      },
+    }),
   });
   if (settled.kind === 'dropped') {
     return { kind: 'dropped', reason: settled.reason };
   }
   if (parsed.kind === 'failed') {
-    await ctx.scheduler.failRevise({
-      treeId: tree.id,
-      delegationId: delegation.id,
-      generation: ended.generation,
-      artifactId: brandId<ArtifactId>({ value: artifactId }),
-      reason: parsed.reason,
-      ...(failure !== undefined && { failure }),
-      result: { ...envelope, outcome: 'failed', reason: failure ?? parsed.reason },
-    });
     return { kind: 'ended', outcome: 'failed', landing: 'failed' };
   }
   const fresh = await getAutoAttempt({ db: ctx.db, attemptId: attempt.id });

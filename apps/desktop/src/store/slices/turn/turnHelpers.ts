@@ -12,6 +12,7 @@ import {
   SLOT_BUDGETS,
   type ExtractedHandoff,
 } from '@goodboy/core/context';
+import { parseChildClosing } from '@goodboy/core/auto';
 import { Summarizer } from '@goodboy/core/summarizer';
 import { captureArtifactFromTurnText } from '@goodboy/core/artifacts';
 import type { ArtifactCaptureError, ParsedArtifact } from '@goodboy/core/artifacts';
@@ -809,7 +810,10 @@ export const captureArtifactsFromTurn = async ({
   workflowRunId,
   captureMode,
 }: CaptureArtifactsParams): Promise<CapturedArtifacts> => {
-  if (hasBlockingQuestion({ assistantText }) || captureMode === 'revise') {
+  const isQuestionTurn =
+    hasBlockingQuestion({ assistantText }) &&
+    parseChildClosing({ text: assistantText, childAgentId: agentId }).completion !== 'blocked';
+  if (isQuestionTurn || captureMode === 'revise') {
     return NOTHING_CAPTURED;
   }
   await recordArtifactAssumptions({ agentId, assistantText });

@@ -114,21 +114,140 @@ describe('the outcome of a delegation', () => {
     ).toContain('it wrote no report');
   });
 
-  it('keeps a declared block as blocked when the role owes a report it did not write', () => {
-    const blocked = base({
+  it('fails a return as a lost report when the role owes a report it did not write', () => {
+    const returned = base({
       role: 'scout',
       isArtifactExpected: true,
       closing: closingOf(
-        `Cannot read the pull request.\n<<step-done id="${ID}" status="blocked">>`,
+        `Cannot read the pull request.\n<<step-done id="${ID}" status="returned" needs="shell">>\nA shell.`,
       ),
     });
-    expect(buildDelegationResult({ ...blocked, artifactPersistence: 'not_written' })).toMatchObject(
-      { outcome: 'blocked', reason: 'declared_blocked' },
-    );
-    expect(buildDelegationResult({ ...blocked, artifactPersistence: 'failed' })).toMatchObject({
-      outcome: 'blocked',
-      reason: 'declared_blocked',
+    expect(
+      buildDelegationResult({ ...returned, artifactPersistence: 'not_written' }),
+    ).toMatchObject({ outcome: 'failed', reason: 'report_missing' });
+    expect(buildDelegationResult({ ...returned, artifactPersistence: 'failed' })).toMatchObject({
+      outcome: 'failed',
+      reason: 'artifact_persistence_failed',
     });
+    expect(buildDelegationResult({ ...returned, artifactPersistence: 'ok' })).toMatchObject({
+      outcome: 'blocked',
+      reason: 'needs_shell',
+    });
+  });
+
+  it('reads the reason of a return from its needs attribute', () => {
+    const cases = [
+      ['shell', 'needs_shell'],
+      ['writer', 'needs_writer'],
+      ['role:investigator', 'needs_role'],
+      ['decision', 'needs_decision'],
+      ['user', 'needs_user'],
+    ] as const;
+    for (const [needs, reason] of cases) {
+      const result = buildDelegationResult(
+        base({
+          closing: closingOf(
+            `Half done.\n<<step-done id="${ID}" status="returned" needs="${needs}">>\nOne request.`,
+          ),
+        }),
+      );
+      expect(result, needs).toMatchObject({ outcome: 'blocked', reason });
+      expect(result.returned?.request, needs).toBe('One request.');
+    }
+  });
+
+  it('lets the attribute win over a closing written in another language', () => {
+    const result = buildDelegationResult(
+      base({
+        closing: closingOf(
+          `Non posso leggere i commit di payments-api.\n<<step-done id="${ID}" status="blocked" needs="shell">>\nServe una shell.`,
+        ),
+      }),
+    );
+    expect(result).toMatchObject({ outcome: 'blocked', reason: 'needs_shell' });
+    expect(renderDelegationResult({ result })).toContain('a role that can run commands');
+    expect(renderDelegationResult({ result })).toContain('it asks: Serve una shell.');
+  });
+
+  it('reads an old block with no needs as needs_user, and the shell text only without the attribute', () => {
+    expect(
+      buildDelegationResult(
+        base({
+          closing: closingOf(`The mount is gone.\n<<step-done id="${ID}" status="blocked">>`),
+        }),
+      ),
+    ).toMatchObject({ outcome: 'blocked', reason: 'needs_user' });
+    expect(
+      buildDelegationResult(
+        base({
+          closing: closingOf(`I have no shell here.\n<<step-done id="${ID}" status="blocked">>`),
+        }),
+      ),
+    ).toMatchObject({ reason: 'needs_shell' });
+    expect(
+      buildDelegationResult(
+        base({
+          closing: closingOf(
+            `I have no shell here.\n<<step-done id="${ID}" status="returned" needs="decision">>`,
+          ),
+        }),
+      ),
+    ).toMatchObject({ reason: 'needs_decision' });
+  });
+
+  it('adds the writer reroute line to a return that needs files changed', () => {
+    const result = buildDelegationResult(
+      base({
+        role: 'scout',
+        closing: closingOf(`Found it.\n<<step-done id="${ID}" status="returned" needs="writer">>`),
+      }),
+    );
+    expect(renderDelegationResult({ result })).toContain('a role that changes files');
+  });
+
+  it('keeps no return on a done result', () => {
+    expect(buildDelegationResult(base()).returned).toBeUndefined();
+  });
+
+  it('settles an old blocked closing with no report as blocked with the shell reroute', () => {
+    const result = buildDelegationResult(
+      base({
+        role: 'scout',
+        isArtifactExpected: true,
+        artifactPersistence: 'not_written',
+        closing: closingOf(`I have no shell here.\n<<step-done id="${ID}" status="blocked">>`),
+      }),
+    );
+    expect(result).toMatchObject({ outcome: 'blocked', reason: 'needs_shell' });
+    expect(renderDelegationResult({ result })).toContain('a role that can run commands');
+  });
+
+  it('fails a return with no needs and no report as a lost report', () => {
+    const returned = base({
+      role: 'scout',
+      isArtifactExpected: true,
+      closing: closingOf(`Partial.\n<<step-done id="${ID}" status="returned">>\nA shell.`),
+    });
+    expect(
+      buildDelegationResult({ ...returned, artifactPersistence: 'not_written' }),
+    ).toMatchObject({ outcome: 'failed', reason: 'report_missing' });
+    expect(buildDelegationResult({ ...returned, artifactPersistence: 'failed' })).toMatchObject({
+      outcome: 'failed',
+      reason: 'artifact_persistence_failed',
+    });
+  });
+
+  it('names the role a return asks for beside its request', () => {
+    const result = buildDelegationResult(
+      base({
+        closing: closingOf(
+          `Half done.\n<<step-done id="${ID}" status="returned" needs="role:planner">>\nPlease finish the next part.`,
+        ),
+      }),
+    );
+    const rendered = renderDelegationResult({ result });
+    expect(rendered).toContain('it asks for the planner role');
+    expect(rendered).toContain('it asks: Please finish the next part.');
   });
 
   it('reads a declared block as blocked, a cancelled process as stopped, a deadline as timed out', () => {

@@ -2,6 +2,7 @@ import { stripOutcomeLine } from '@goodboy/core/auto';
 import type { AutoDelegation } from '@goodboy/db';
 import { declaredSummaryOf } from './declaredSummaryOf';
 import { delegationReasonTextOf } from './delegationReasonTextOf';
+import { returnedRequestOf } from './returnedRequestOf';
 
 type Params = {
   readonly delegation: Pick<AutoDelegation, 'outcome' | 'reason' | 'result'>;
@@ -18,5 +19,8 @@ const declaredProseOf = ({ delegation }: Pick<Params, 'delegation'>): string | n
 
 export const delegationSentenceOf = ({ delegation }: Params): string | null => {
   const text = delegationReasonTextOf({ reason: delegation.reason });
-  return delegation.outcome === 'blocked' ? (declaredProseOf({ delegation }) ?? text) : text;
+  if (delegation.outcome !== 'blocked') {
+    return text;
+  }
+  return returnedRequestOf({ delegation }) ?? declaredProseOf({ delegation }) ?? text;
 };

@@ -94,6 +94,30 @@ describe('the kickoff of a delegated child', () => {
     expect(text).toContain('<<ctx-question blocking="true">>');
   });
 
+  it('tells a child that cannot finish to return its report and one request, never to block', () => {
+    const text = composeDelegationKickoff(base());
+    expect(text).toContain(
+      '<<step-done id="agent-implementer-1" status="returned" needs="shell">>` and one line after it: what you need.',
+    );
+    expect(text).toContain('do what you can, write your report');
+    for (const needs of ['`shell`', '`writer`', '`role:<role>`', '`decision`', '`user`']) {
+      expect(text).toContain(needs);
+    }
+    expect(text).not.toContain('status="blocked"');
+  });
+
+  it('tells a reading role to keep its report in the reply, and no writer', () => {
+    for (const role of AUTO_DELEGATION_ROLES) {
+      const text = composeDelegationKickoff(base({ role }));
+      expect(text.includes('write your report in this reply'), role).toBe(
+        !isAutoWriterRole({ role }),
+      );
+      expect(text.includes('Never write it to a plan file.'), role).toBe(
+        !isAutoWriterRole({ role }),
+      );
+    }
+  });
+
   it('tells a writer which mount it changes and a reader that it never changes a file', () => {
     expect(composeDelegationKickoff(base())).toContain('**Mount** mount-ledger-core');
     const reader = composeDelegationKickoff(base({ role: 'scout', mountLabel: null }));

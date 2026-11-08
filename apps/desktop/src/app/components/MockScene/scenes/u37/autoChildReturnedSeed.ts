@@ -61,8 +61,14 @@ const childOf = ({ template, state }: ChildParams): AutoDelegation => ({
   target: { mountName: 'payments-api', mountId: MOUNT_ID, branch: BRANCH },
   state: 'settled',
   outcome: state === 'today' ? 'failed' : 'blocked',
-  reason: state === 'today' ? 'process_error' : 'declared_blocked',
-  result: state === 'today' ? null : { declared: { summary: REQUEST } },
+  reason: state === 'today' ? 'process_error' : 'needs_shell',
+  result:
+    state === 'today'
+      ? null
+      : {
+          declared: { summary: `Ran the retry suite by reading it.\n${REQUEST}` },
+          returned: { needs: { kind: 'shell' }, request: REQUEST },
+        },
   settledAt: SETTLED_AT,
 });
 

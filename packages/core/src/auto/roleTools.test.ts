@@ -155,20 +155,28 @@ const blockedBy = (summary: string): BuildResultParams => ({
 });
 
 describe('a child blocked for a missing shell', () => {
-  it('ends blocked with missing_tool and tells Auto to reroute once', () => {
+  it('reads an old block that says it had no shell as needs_shell and tells Auto to reroute once', () => {
     const result = buildDelegationResult(
       blockedBy('Check incomplete: no shell tool in this session, so neither git command ran.'),
     );
     expect(result.outcome).toBe('blocked');
-    expect(result.reason).toBe('missing_tool');
+    expect(result.reason).toBe('needs_shell');
     const text = renderDelegationResult({ result });
     expect(text).toContain('hand the same task once to a role that can run commands');
     expect(text).not.toContain('investigator)');
   });
 
-  it('keeps declared_blocked and no hint for any other block', () => {
+  it('reads any other old block as needs_user with no hint', () => {
     const result = buildDelegationResult(blockedBy('The mount holds no ledger-core checkout.'));
-    expect(result.reason).toBe('declared_blocked');
+    expect(result.reason).toBe('needs_user');
     expect(renderDelegationResult({ result })).not.toContain('hand the same task once');
+  });
+
+  it('still reroutes a stored result from before the needs attribute', () => {
+    const result = {
+      ...buildDelegationResult(blockedBy('The mount holds no ledger-core checkout.')),
+      reason: 'missing_tool',
+    };
+    expect(renderDelegationResult({ result })).toContain('a role that can run commands');
   });
 });

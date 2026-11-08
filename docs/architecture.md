@@ -1063,6 +1063,9 @@ kept.
 - `settleAttempt` and `landRevision` apply a result only while the tree
   generation, the lease, the attempt and the delegation still match. Anything
   else is dropped and its reservation released.
+- A revise that fails or returns settles its attempt, its delegation and the
+  artifact lock in the one `settleAttempt` transaction
+  (`reviseFailureStatements`), so a crash never leaves the artifact revising.
 - `writeArtifactRevision` (`packages/db/src/queries/artifactRevision.ts`) is
   the one way to make revision N+1 of an artifact: a compare and swap on the
   base revision and the history row, in one transaction. The plan hand edit and
@@ -1115,7 +1118,7 @@ kept.
   snapshot of its mount (`worktree_snapshot`) and a turn with `origin: 'delegation'`,
   its `confinedRole`, the frozen mount target and its attempt id as delivery id.
   `finishAttempt.ts` reads the closing line (`core/auto/closing.ts`: the `step-done` line
-  of its own agent id, and a blocking question), registers the artifacts the child
+  of its own agent id, a return with its `needs` and request, and a blocking question), registers the artifacts the child
   wrote, attributes the changed files by comparing snapshots, and settles the attempt
   with a `DelegationResultV1`. A revise turn captures nothing in the old slot: the new
   version is parsed (`core/auto/revisionParse.ts`) and lands through `landRevision`.
