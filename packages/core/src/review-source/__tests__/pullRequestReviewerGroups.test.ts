@@ -56,9 +56,20 @@ describe('pullRequestReviewerGroupsOf', () => {
     expect(loginsOf({ list: groups.bots })).toEqual(['acme-review']);
   });
 
-  it('keeps the login suffix as the fallback when the host says a person', () => {
+  it('keeps a person the host typed as a user with the people, whatever the login ends with', () => {
+    const person: PullRequestReviewer = {
+      person: { login: 'northwind-bot', name: null, avatarUrl: null, isBot: false },
+      state: 'commented',
+    };
+    const groups = pullRequestReviewerGroupsOf({ reviewers: [person] });
+
+    expect(loginsOf({ list: groups.people })).toEqual(['northwind-bot']);
+    expect(groups.bots).toEqual([]);
+  });
+
+  it('falls back to the login suffix when the host gave no author type', () => {
     const machine: PullRequestReviewer = {
-      person: { login: 'cascadia-lint-bot', name: null, avatarUrl: null, isBot: false },
+      person: { login: 'cascadia-lint-bot', name: null, avatarUrl: null },
       state: 'commented',
     };
 

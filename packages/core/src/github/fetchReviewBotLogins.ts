@@ -4,7 +4,7 @@ import { GhCliError, GhJsonParseError, runJson } from './gh';
 const REVIEW_AUTHORS_QUERY = `query($owner:String!,$name:String!,$pr:Int!){
   repository(owner:$owner,name:$name){
     pullRequest(number:$pr){
-      reviews(last:100){
+      reviews(first:100){
         nodes{
           author{__typename login}
         }

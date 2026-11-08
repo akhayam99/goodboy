@@ -197,7 +197,7 @@ describe('fetchPrDetail', () => {
 
   it('marks a review app as a bot by its GraphQL author type, login suffix or not', async () => {
     const matchReviewAuthors = (a: ReadonlyArray<string>) =>
-      matchReviewThreads(a) && a.some((arg) => arg.includes('reviews(last:100)'));
+      matchReviewThreads(a) && a.some((arg) => arg.includes('reviews(first:100)'));
     type ReviewParams = { readonly id: number; readonly login: string };
     const review = ({ id, login }: ReviewParams) => ({
       id,
@@ -256,7 +256,7 @@ describe('fetchPrDetail', () => {
     const runner = makeMultiRunner([
       { match: matchIssueComments, result: jsonOk([]) },
       {
-        match: (a) => matchReviewThreads(a) && a.some((arg) => arg.includes('reviews(last:100)')),
+        match: (a) => matchReviewThreads(a) && a.some((arg) => arg.includes('reviews(first:100)')),
         result: jsonOk({ errors: [{ message: 'Field __typename is not available' }] }),
       },
       { match: matchReviewThreads, result: emptyReviewThreads },

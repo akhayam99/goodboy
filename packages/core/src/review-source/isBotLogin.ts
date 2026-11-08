@@ -6,8 +6,8 @@ type Params = {
 const BOT_SUFFIXES = ['[bot]', '-bot', '_bot'];
 
 export const isBotLogin = ({ login, isBot }: Params): boolean => {
-  if (isBot === true) {
-    return true;
+  if (isBot !== undefined) {
+    return isBot;
   }
   const lower = login.toLowerCase();
   return BOT_SUFFIXES.some((suffix) => lower.endsWith(suffix));
