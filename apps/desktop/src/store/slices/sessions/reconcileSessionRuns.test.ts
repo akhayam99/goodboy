@@ -138,6 +138,7 @@ describe('loaded run reconciliation', () => {
       runId: RUN_ID,
       launchId: 'launch-1',
       nowMs: expect.any(Number),
+      hasCancelledRun: true,
     });
     expect(reconciled.status).toBe('stopped');
     expect(reconciled.stoppedBy).toBe('app');

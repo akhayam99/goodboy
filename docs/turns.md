@@ -870,6 +870,12 @@ running agent with no live run and no cursor of its own.
   and the boot sweep (`stopGhostAgents`) skips it. The stop itself is one
   statement that also checks the run and the row, so a claim that lands
   between the read and the write wins.
+- **A stop never trusts an older live list.** The stop statement also asks
+  Rust, through the SQL function `turn_is_live` (`turn_live.rs`), whether
+  the run is spawning or live at that moment, and leaves the agent running
+  when it is. A run that spawned and released its row after a window read
+  `turn_list_live` is never marked stopped, adopted or claimed again. Only a
+  run the same window cancelled itself skips that check.
 - **An abandoned claim is cleared.** A row from an earlier launch (a crash
   before the spawn) is cleared at the next boot, and one older than the hold
   by whichever window reconciles next. When the launch cannot be read the age
@@ -879,7 +885,10 @@ running agent with no live run and no cursor of its own.
   hold, so expiry cannot clear it between that write and the spawn. A spawn
   from a claimed turn carries `hasAdmission`, and `turn_spawn` refuses it
   with `admission_lost` when the row is gone or names another run, so a turn
-  cleared by another window before the publish never starts. The publish
+  cleared by another window before the publish never starts. The check and
+  the mark that makes the run read as spawning happen under the database
+  lock, so a stop runs either before the check (and the spawn is refused) or
+  after it (and `turn_is_live` keeps the agent). The publish
   lives in TypeScript because `turn_admissions` belongs to `packages/db` in
   the writer map. An adoption or a detach is refused as a running turn
   (`turn_running`) while a held row stands.

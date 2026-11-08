@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import type { Database } from '../client';
-import { makeMigratedTestDatabase } from '../test-helpers/test-db';
+import { liveTestRuns, makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   TURN_ADMISSION_HOLD_MS,
   isTurnAdmissionHeld,
@@ -203,7 +203,13 @@ describe('turn admissions', () => {
     it('leaves an agent whose claim is held and stops it once the claim expired', async () => {
       await seedRunning('claimed', 'run-claimed');
       await claim({ agentId: 'claimed', runId: 'run-claimed', launch: LAUNCH, ageMs: 1_000 });
-      const params = { db, agentId: agent('claimed'), runId: run('run-claimed'), launchId: LAUNCH };
+      const params = {
+        db,
+        agentId: agent('claimed'),
+        runId: run('run-claimed'),
+        launchId: LAUNCH,
+        hasCancelledRun: false,
+      };
 
       expect(await isTurnAdmissionHeld({ ...params, nowMs: NOW_MS })).toBe(true);
       expect(await stopGhostAgent({ ...params, nowMs: NOW_MS })).toBe(false);
@@ -226,9 +232,37 @@ describe('turn admissions', () => {
           runId: run('run-old'),
           launchId: LAUNCH,
           nowMs: NOW_MS,
+          hasCancelledRun: false,
         }),
       ).toBe(false);
       expect(await statusOf('claimed')).toBe('running');
+    });
+  });
+
+  describe('a cleanup acting on an older live-run snapshot', () => {
+    afterEach(() => {
+      liveTestRuns.clear();
+    });
+
+    it('leaves a run that spawned and released its claim after the snapshot', async () => {
+      await seedRunning('spawned', 'run-spawned');
+      liveTestRuns.add('run-spawned');
+      const params = {
+        db,
+        agentId: agent('spawned'),
+        runId: run('run-spawned'),
+        launchId: LAUNCH,
+        nowMs: NOW_MS,
+      };
+
+      expect(await stopGhostAgents({ db, keepRunIds: [], launchId: LAUNCH, nowMs: NOW_MS })).toBe(
+        0,
+      );
+      expect(await stopGhostAgent({ ...params, hasCancelledRun: false })).toBe(false);
+      expect(await statusOf('spawned')).toBe('running');
+
+      expect(await stopGhostAgent({ ...params, hasCancelledRun: true })).toBe(true);
+      expect(await statusOf('spawned')).toBe('stopped');
     });
   });
 
@@ -249,7 +283,13 @@ describe('turn admissions', () => {
         ageMs: TURN_ADMISSION_HOLD_MS,
       });
       await publishSpawn('claimed');
-      const params = { db, agentId: agent('claimed'), runId: run('run-claimed'), launchId: LAUNCH };
+      const params = {
+        db,
+        agentId: agent('claimed'),
+        runId: run('run-claimed'),
+        launchId: LAUNCH,
+        hasCancelledRun: false,
+      };
 
       expect(await isTurnAdmissionHeld({ ...params, nowMs: NOW_MS })).toBe(true);
       expect(await stopGhostAgent({ ...params, nowMs: NOW_MS })).toBe(false);

@@ -73,9 +73,14 @@ const wrapDatabase = (db: Database.Database): DatabaseInterface => ({
   },
 });
 
+export const liveTestRuns = new Set<string>();
+
 const openDatabase = (source: string | Buffer): Database.Database => {
   const db = new Database(source);
   db.pragma('foreign_keys = ON');
+  db.function('turn_is_live', { deterministic: false }, (runId: unknown) =>
+    typeof runId === 'string' && liveTestRuns.has(runId) ? 1 : 0,
+  );
   return db;
 };
 

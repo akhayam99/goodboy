@@ -117,8 +117,9 @@ export const reconcileLoadedAgent = async ({
   if (isHeld) {
     return { agent, waiting: null };
   }
-  if (agent.runId != null && liveRunIds.has(agent.runId)) {
-    await cancelTurn(agent.runId).catch(() => undefined);
+  const cancelledRunId = agent.runId != null && liveRunIds.has(agent.runId) ? agent.runId : null;
+  if (cancelledRunId !== null) {
+    await cancelTurn(cancelledRunId).catch(() => undefined);
   }
   const waiting =
     agent.runId == null ? null : await waitingPermissionOf({ agent, runId: agent.runId });
@@ -126,7 +127,11 @@ export const reconcileLoadedAgent = async ({
     return { agent, waiting };
   }
   const nowMs = Date.now();
-  const isStopped = await stopGhostAgent({ ...admission, nowMs }).catch((error: unknown) => {
+  const isStopped = await stopGhostAgent({
+    ...admission,
+    nowMs,
+    hasCancelledRun: cancelledRunId !== null,
+  }).catch((error: unknown) => {
     console.error('stop the agent left running failed', error);
     return false;
   });

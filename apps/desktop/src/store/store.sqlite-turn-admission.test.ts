@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertWorkspace, listAgentsForSessions } from '@goodboy/db';
+import { liveTestRuns } from '@goodboy/db/test-helpers';
 import { nextWorkspaceId } from '@goodboy/types/testing';
 import { brandId, type AgentId, type ProviderRunId, type SessionId } from '@goodboy/types';
 import { claimTurnAdmission } from './slices/turn/childTurn/claimTurnAdmission';
@@ -167,6 +168,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  liveTestRuns.clear();
   await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
 });
 
@@ -273,6 +275,44 @@ describe('a turn admission outlives another window until the spawn', () => {
     expect(adopted).toMatchObject({ kind: 'refused', code: 'turn_running' });
     expect(heldRuns).toEqual([claimed.runId]);
     expect(storySpies.turnSpawn.mock.calls.at(-1)?.[0]).toMatchObject({ hasAdmission: true });
+  });
+
+  it('leaves a run that spawned after another window read the live runs', async () => {
+    const streaming = gate();
+    const release = gate();
+    storySpies.turnSpawn.mockImplementationOnce(async () => {
+      for (const runId of await admittedRuns()) {
+        liveTestRuns.add(runId);
+      }
+      return 'started';
+    });
+    storySpies.runTurn.mockImplementationOnce(async function* held() {
+      streaming.open();
+      await release.opened;
+      yield* emptyTurnStream();
+    });
+
+    const turn = useAppStore.getState().sendTurn({
+      sessionId: first.sessionId,
+      agentId: first.agentId,
+      content: 'Also list the migrations.',
+      origin: 'operator',
+    });
+    await streaming.opened;
+    await vi.waitFor(async () => expect(await admittedRuns()).toEqual([]));
+    const spawned = await storedAgent();
+    const booted = await reconcileGhostAgents();
+    const loaded = await reconcileLoadedAgent({ agent: spawned, liveRunIds: new Set() });
+    const adopted = await adoptInOtherWindow();
+    const afterCleanup = await storedAgent();
+    release.open();
+    await turn;
+
+    expect(booted).toBe(0);
+    expect(loaded.agent.status).toBe('running');
+    expect(afterCleanup.status).toBe('running');
+    expect(adopted).toMatchObject({ kind: 'refused', code: 'turn_running' });
+    expect(storySpies.turnSpawn).toHaveBeenCalledTimes(1);
   });
 
   it('gives the claim back when the turn fails before it spawns', async () => {

@@ -23,6 +23,8 @@ const HELD_FOR_AGENT_ROW = `EXISTS (
 
 const STOP_RUNNING = `UPDATE agents SET status = 'stopped', stopped_at = ?, stopped_by = 'app'`;
 
+const NOT_LIVE_NOW = 'NOT turn_is_live(provider_run_id)';
+
 type RowsAffectedParams = {
   readonly outcome: TransactionOutcome;
   readonly index: number;
@@ -78,13 +80,18 @@ export const releaseTurnAdmission = async ({
   await db.execute(sql, params);
 };
 
+type StopGhostAgentParams = AdmissionParams & {
+  readonly hasCancelledRun: boolean;
+};
+
 export const stopGhostAgent = async ({
   db,
   agentId,
   runId,
   launchId,
   nowMs,
-}: AdmissionParams): Promise<boolean> => {
+  hasCancelledRun,
+}: StopGhostAgentParams): Promise<boolean> => {
   const held = heldAdmissionParams({ launchId, nowMs });
   const outcome = await db.transaction({
     statements: [
@@ -95,8 +102,9 @@ export const stopGhostAgent = async ({
       {
         sql: `${STOP_RUNNING}
           WHERE id = ? AND status = 'running' AND provider_run_id IS ?
-            AND NOT ${HELD_FOR_AGENT_ROW}`,
-        params: [nowMs, agentId, runId, ...held],
+            AND NOT ${HELD_FOR_AGENT_ROW}
+            AND (? = 1 OR ${NOT_LIVE_NOW})`,
+        params: [nowMs, agentId, runId, ...held, hasCancelledRun ? 1 : 0],
       },
     ],
   });
@@ -125,6 +133,7 @@ export const stopGhostAgents = async ({
         sql: `${STOP_RUNNING}
           WHERE status = 'running' AND provider_run_id IS NOT NULL${keep}
             AND NOT ${HELD_FOR_AGENT_ROW}
+            AND ${NOT_LIVE_NOW}
             AND NOT EXISTS (
               SELECT 1 FROM turn_events ask
               WHERE ask.agent_id = agents.id
