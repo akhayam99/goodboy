@@ -1,5 +1,5 @@
 import { parseAutoDelegationRole } from '@goodboy/core/auto';
-import type { AutoDelegation } from '@goodboy/db';
+import type { AutoDelegation, AutoOutcome } from '@goodboy/db';
 import type { Agent, AgentId } from '@goodboy/types';
 import { modelLineOf, type ModelLine } from '../../providers/modelLine/modelLineOf';
 import { AGENT_KIND_META, kindForRole, type AgentKind } from '../../session/agent-kind';
@@ -49,6 +49,18 @@ const settledStatusOfDelegation = ({ delegation, isReplaced }: StatusParams): De
   return autoSettledStateOf({ outcome, isReplaced }) === 'done'
     ? settledStatusOf({ outcome: 'completed' })
     : RETURNED;
+};
+
+const resultOutcomeOf = ({
+  delegation,
+  isReplaced,
+}: StatusParams): AutoOutcome | null | undefined => {
+  if (delegation.outcome !== 'blocked') {
+    return undefined;
+  }
+  return autoSettledStateOf({ outcome: delegation.outcome, isReplaced }) === 'done'
+    ? 'completed'
+    : null;
 };
 
 const delegationStatusOf = ({ delegation, isReplaced }: StatusParams): DelegationStatus => {
@@ -145,6 +157,11 @@ export const delegationCardOf = ({
     reviseVersion: delegation.baseRevision === null ? null : delegation.baseRevision + 1,
     isOpen: delegation.state !== 'settled',
     result:
-      delegation.state === 'settled' ? delegationResultOf({ result: delegation.result }) : null,
+      delegation.state === 'settled'
+        ? delegationResultOf({
+            result: delegation.result,
+            outcome: resultOutcomeOf({ delegation, isReplaced }),
+          })
+        : null,
   };
 };

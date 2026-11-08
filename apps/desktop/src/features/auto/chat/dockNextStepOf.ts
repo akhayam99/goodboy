@@ -1,5 +1,6 @@
 import type { Agent } from '@goodboy/types';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { isAutoDelegationReplaced } from '../isAutoDelegationReplaced';
 import { delegationCardOf } from './delegationCardOf';
 import { nextActionOf, type NextAction } from './nextActionOf';
 
@@ -22,7 +23,11 @@ export const dockNextStepOf = ({ view, agents, untold }: Params): DockNextStep |
     return null;
   }
   const childAgent = agents.find((agent) => agent.id === delegation.childAgentId) ?? null;
-  const card = delegationCardOf({ delegation, childAgent });
+  const card = delegationCardOf({
+    delegation,
+    childAgent,
+    isReplaced: isAutoDelegationReplaced({ delegation, delegations: view.delegations }),
+  });
   return {
     action: nextActionOf({ view, delegation, card }),
     reviseOf: delegation.reviseOf,

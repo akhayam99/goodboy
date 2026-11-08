@@ -124,6 +124,23 @@ describe('delegationCardOf', () => {
     );
   });
 
+  it('reads a returned child result with no Blocked line, and Done once Auto replaced it', () => {
+    const delegation = {
+      ...aDelegation({ key: 'x', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      reason: 'declared_blocked',
+      result: { reason: 'declared_blocked', declared: { summary: 'Needs a shell.' } },
+    };
+
+    const returned = delegationCardOf({ delegation, childAgent: null }).result;
+    const replaced = delegationCardOf({ delegation, childAgent: null, isReplaced: true }).result;
+
+    expect(returned?.outcomeLine).toBeNull();
+    expect(returned?.reasonText).toBeNull();
+    expect(replaced?.outcomeLine?.text).toBe('Done');
+    expect(replaced?.reasonText).toBeNull();
+    expect(JSON.stringify([returned, replaced])).not.toMatch(/Blocked|declared_blocked/);
+  });
+
   it('reads the settled result: summary, files, checks with their source, artifacts, questions, cost', () => {
     const card = delegationCardOf({
       delegation: aDelegation({

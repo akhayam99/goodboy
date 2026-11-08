@@ -104,9 +104,11 @@ describe('the auto-child-returned scenes', () => {
   it('Decided: a returned child that another role took on its branch is not Idle', async () => {
     mount({ id: 'auto-child-returned-decided' });
 
-    await screen.findByText('Returned to Auto', undefined, WAIT);
+    await screen.findAllByText('Done', undefined, WAIT);
     expect(screen.queryByText(/Failed/)).toBeNull();
-    expect(screen.queryByText(`Returned to Auto: ${REQUEST}`)).toBeNull();
+    expect(screen.queryByText(/Blocked/)).toBeNull();
+    expect(screen.queryByText(/Returned to Auto/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
   it('Asks you: Needs you is on Auto, never on the returned child', async () => {

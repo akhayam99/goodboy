@@ -174,6 +174,22 @@ describe('the end of an Auto child page', () => {
     expect(screen.queryByText('Needs you')).toBeNull();
   });
 
+  it.each([false, true])(
+    'never draws Blocked or the reason sentence for a persisted blocked result (replaced: %s)',
+    (isReplaced) => {
+      const delegation = {
+        ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+        reason: 'declared_blocked',
+        result: { reason: 'declared_blocked', outcome: 'blocked' },
+      };
+      show({ delegation, status: 'blocked', isReplaced });
+
+      expect(screen.queryByText(/Blocked/)).toBeNull();
+      expect(screen.queryByText(/Failed/)).toBeNull();
+      expect(screen.queryAllByText(/can't go on/)).toHaveLength(isReplaced ? 0 : 1);
+    },
+  );
+
   it('does not read Idle or Returned to Auto for a returned child that Auto replaced', () => {
     const delegation = {
       ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),

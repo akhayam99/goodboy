@@ -691,7 +691,11 @@ error, a lost report, no closing), always with a sentence from
 `delegationSentenceOf`, never a reason code. **Needs you** appears on Auto only,
 when Auto asks you. The outcome stays `blocked` in SQLite; `autoSettledStateOf`
 turns it into the word, and `autoChildWordOf` is the one function the tail, the
-Agents panel, the delegation card and the Overview read.
+Agents panel, the delegation card and the Overview read. The dock draws no red
+recovery for a returned child, replaced or not (`useAutoChildRecovery` reads
+`autoSettledStateOf`), and the delegation card drops the **Blocked** outcome
+line and the reason sentence from a returned child's result: it reads no line
+while Auto decides and **Done** once Auto replaced it (`delegationCardOf`).
 
 A blocked tree writes nothing while it waits. It resumes by itself only after a
 budget block, once the limit is raised. Otherwise **Retry** on the tail
