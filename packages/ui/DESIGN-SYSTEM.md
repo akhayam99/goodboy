@@ -115,14 +115,22 @@ Three borders, each with one job:
 solid value, so it holds 3:1 on every step from `chrome` to `floating` and sits
 near 3.3:1 on the base sheet instead of 4.5:1.
 
-Four translucent tokens paint over whatever sits below them: `frame-edge`
+Three translucent tokens paint over whatever sits below them: `frame-edge`
 (white 8% in dark, black 8.5% in light) draws the content sheet and the right
-drawer container at 1.2:1 or more on chrome and background,
+drawer container at 1.2:1 or more on chrome and background, and
 `scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
-background, panel and floating, and `scroll-edge` (black 32% in dark, 7% in
-light) is the start of the 12px shade a `ScrollFade edge="shade"` draws where
-content goes under a header. It marks the edge and holds no contrast floor:
-it is tuned by capture on both themes, never by eye in one.
+background, panel and floating.
+
+A sticky header is a surface, never a shadow. `sticky-surface` (and
+`sticky-surface-subtle` for a header on `subtle`) paints the role at 78% over a
+`backdrop-filter` of `blur(8px) saturate(1.2)`, so content that passes under it
+shows through frosted. Under `prefers-reduced-transparency: reduce` it is the
+opaque role and the blur is off. A sticky header draws no `shadow-*` and no
+gradient band; the only edge is the 1px `border-soft` hairline of
+`ScrollFade edge="line"`, lit once content is scrolled under it. Its block
+padding is the same above and below, from the spacing scale (`PANE_RHYTHM.pinnedInset`
+is `py-3` for the pinned back row). Features use the two utilities and never
+write their own blur, alpha or shadow.
 
 A clickable card at rest carries two signals together (a fill one step above
 its parent plus the hairline). Its states clear 3:1: hover `border`, selection
@@ -519,10 +527,9 @@ inside a button holds no button) over `text-ui font-mono` code in a horizontal
 `ScrollFade`; code and tables are never clamped. Inline code is `text-ui`, never
 a fraction of the text size. A table (`renderTable`) has a `text-meta` header,
 one hairline between rows and `tabular-nums` on a number column.
-`ScrollFade` takes one of three top edges: `fade` (the default), `line` (a
-hairline once scrolled) or `shade` (the `scroll-edge` band once scrolled, for
-content that goes under a page header; the page scroller under a
-`RevealRegion` takes it by default; a side list that is not the reader passes
+`ScrollFade` takes one of two top edges: `fade` (the default) or `line` (a
+hairline once scrolled, for content that goes under a page header; the page
+scroller under a `RevealRegion` takes it by default; a side list that is not the reader passes
 `isPageScroller={false}` and never drives the header). Every `PaneShell` and
 every `DrawerFrame` reveals: it pins the back row (a drawer's title row with its
 close) and the `lead`, and lets the rest of the header step aside while you

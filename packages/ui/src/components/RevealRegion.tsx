@@ -13,8 +13,8 @@ type Props = {
 };
 
 const SURFACE_CLASS = {
-  background: 'bg-background',
-  subtle: 'bg-subtle',
+  background: 'sticky-surface',
+  subtle: 'sticky-surface-subtle',
 } as const satisfies Record<NonNullable<Props['surface']>, string>;
 
 export const RevealRegion = ({

@@ -38,13 +38,16 @@ export const RevealPane = ({
     !hasTrail && lead == null ? null : (
       <div
         data-slot="reveal-pinned"
-        className={cn('shrink-0', !hasTrail && 'has-[[data-slot=pane-lead]:empty]:hidden')}
+        className={cn(
+          'sticky-surface relative z-30 shrink-0',
+          !hasTrail && 'has-[[data-slot=pane-lead]:empty]:hidden',
+        )}
       >
         <PageColumn
           width={width}
           className={cn(
             'flex flex-col gap-3',
-            !isOuterUnderTrail && PANE_RHYTHM.headerInset,
+            !isOuterUnderTrail && (hasTrail ? PANE_RHYTHM.pinnedInset : PANE_RHYTHM.headerInset),
             animationClassName,
           )}
         >
@@ -70,7 +73,9 @@ export const RevealPane = ({
           resetKey={resetKey}
           header={
             <PageColumn width={width}>
-              {header}
+              <UnderTrailContext.Provider value={isOuterUnderTrail || hasTrail}>
+                {header}
+              </UnderTrailContext.Provider>
               {banner === null ? null : (
                 <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
               )}

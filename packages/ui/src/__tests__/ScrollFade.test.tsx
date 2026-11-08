@@ -402,43 +402,14 @@ describe('ScrollFade overlay thumb', () => {
     expect(thumb?.className).toContain('opacity-0');
   });
 
-  it('draws no shade under the default fade or when the sticky rows own the top edge', () => {
-    const { container, rerender } = render(
-      <ScrollFade className="h-40">
-        <p>content</p>
-      </ScrollFade>,
-    );
-    expect(container.querySelector('[data-slot="scroll-shade"]')).toBeNull();
-
-    rerender(
-      <ScrollFade className="h-40" edge="shade" fadeEdges="end">
-        <p>content</p>
-      </ScrollFade>,
-    );
-    expect(container.querySelector('[data-slot="scroll-shade"]')).toBeNull();
-  });
-
-  it('shades the top edge once scrolled and fades nothing there instead', () => {
-    runFrames();
+  it.each(['fade', 'line'] as const)('draws no shadow or gradient band with edge %s', (edge) => {
     const { container } = render(
-      <ScrollFade className="h-40" edge="shade" fadeSize={32}>
+      <ScrollFade className="h-40" edge={edge}>
         <p>content</p>
       </ScrollFade>,
     );
-    const root = htmlElementOf({ node: container.firstElementChild });
-    const viewport = viewportOf(container);
-    makeOverflow({ viewport });
-    expect(root.querySelector('[data-slot="scroll-shade"]')).not.toBeNull();
-    expect(root.querySelector('[data-slot="scroll-edge"]')).toBeNull();
-    expect(root.hasAttribute('data-scrolled')).toBe(false);
 
-    viewport.scrollTop = 150;
-    act(() => {
-      fireEvent.scroll(viewport);
-    });
-    expect(root.getAttribute('data-scrolled')).toBe('true');
-    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
-    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
-    vi.unstubAllGlobals();
+    expect(container.querySelector('[data-slot="scroll-shade"]')).toBeNull();
+    expect(container.innerHTML).not.toMatch(/shadow|gradient/);
   });
 });

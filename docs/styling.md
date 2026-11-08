@@ -468,7 +468,7 @@ scroller). When the header leaves, the whole body (a toolbar above the
 scroller included) moves up with it (`--reveal-shift`) and grows by the same
 height in step, so its bottom edge never moves: a composer at the foot of the
 body stays put, a chat pinned to its last line keeps it, and the scroller never
-sits under the header, so its thumb, shade and sticky rows need nothing. The
+sits under the header, so its thumb, hairline and sticky rows need nothing. The
 header's `top`, the body's `margin-top` and its `height` read the same var in
 one layout pass; never move one of them with `translate`, which runs on the
 compositor a frame apart and makes a pinned last line wobble. A page with less
@@ -546,12 +546,18 @@ headers belong to its body, such as the file headers of a diff, passes
 `fadeEdges="end"`: only its bottom edge fades, so the header on top stays
 sharp.
 
-**Content that goes under a fixed header gets a shade, not a fade.**
-`ScrollFade edge="shade"` draws, once the view is scrolled, a 12px band from
-the `scroll-edge` color token to transparent under its top edge, fading in over
-`--duration-quick`. No line, no blur; the bottom edge keeps its fade. The page
-scroller under a `RevealRegion` header takes the shade by default. `fadeEdges="end"` keeps the top
-edge to the sticky rows, so no shade is drawn there.
+**A sticky header blurs what passes under it; it never casts a shadow.** The
+pinned back row, the sliding header of a `RevealRegion` and the sticky rows of a
+list or a diff take `sticky-surface` (`sticky-surface-subtle` on `subtle`): the
+surface role at 78% with `blur(8px) saturate(1.2)`, opaque under
+`prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
+`bg-background` on the header itself. Its block padding is even: the pinned back
+row is `py-3` (`PANE_RHYTHM.pinnedInset`), and the header under it adds no top
+inset of its own. The only edge is the `border-soft` hairline of
+`ScrollFade edge="line"`, which fades in over `--duration-quick` once the view is
+scrolled; the page scroller under a `RevealRegion` header takes it by default.
+`fadeEdges="end"` keeps the top edge to the sticky rows, so no hairline fade is
+drawn there.
 
 ## Dividers separate chrome from content, never content from content
 

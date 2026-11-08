@@ -28,7 +28,7 @@ describe('PaneShell', () => {
   });
 
   it.each(['body', 'self'] as const)(
-    'draws no hairline under the header with scroll %s',
+    'lights no hairline under the header at rest with scroll %s',
     (scroll) => {
       const { container } = render(
         <PaneShell title="Notifications" scroll={scroll}>
@@ -36,7 +36,9 @@ describe('PaneShell', () => {
         </PaneShell>,
       );
 
-      expect(container.querySelector('[data-slot="scroll-edge"]')).toBeNull();
+      const edge = container.querySelector('[data-slot="scroll-edge"]');
+      expect(container.querySelector('[data-scrolled="true"]')).toBeNull();
+      expect(edge === null || edge.className.includes('opacity-0')).toBe(true);
     },
   );
 
