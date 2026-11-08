@@ -874,6 +874,10 @@ states and sit outside the meanings.
 `motion-registry.test.ts` fails on a `@keyframes` in `styles.css` that this
 section does not name, and on a name here that `styles.css` does not define.
 
+**HeightMotion.** A closed `HeightMotion` slot may cancel its parent's gap with
+an animated negative top margin equal to that gap (`parentGapRem`), so a
+collapsed slot takes no space. It is the only outer margin a primitive may carry.
+
 **Skeleton timing.** One hook, `useSkeletonGate`, and one swap component,
 `SkeletonSwap`, in the UI package hold the rule for every skeleton: nothing
 shows for the first 120 ms (`SKELETON_SHOW_AFTER_MS`), a skeleton that has

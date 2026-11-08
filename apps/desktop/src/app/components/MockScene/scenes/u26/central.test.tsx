@@ -106,6 +106,28 @@ describe('the central column scenes', () => {
     expect(document.body.textContent).not.toContain('declared_blocked');
   });
 
+  it('leaves no empty Needs you slot between the summary and the first card on the blocked scene', async () => {
+    await show({ name: 'u26-central-blocked-light' });
+
+    const column = document.querySelector('[data-central-column]');
+    const slots = Array.from(column?.querySelectorAll(':scope > [data-height-motion]') ?? []);
+    expect(slots.length).toBeGreaterThan(0);
+    for (const slot of slots) {
+      expect(slot.getAttribute('data-height-motion')).toBe('closed');
+      expect(slot.getAttribute('aria-hidden')).toBe('true');
+      expect(slot.getAttribute('style')).toContain('height: 0px');
+      expect(slot.getAttribute('style')).toContain('margin-top: -2rem');
+      expect(slot.textContent).toBe('');
+    }
+    const children = Array.from(column?.children ?? []);
+    const rendered = children.filter(
+      (child) => child.getAttribute('data-height-motion') !== 'closed' && child.textContent !== '',
+    );
+    const status = rendered.findIndex((child) => child.hasAttribute('data-overview-status'));
+    expect(status).toBeGreaterThanOrEqual(0);
+    expect(rendered[status + 1]?.getAttribute('data-overview-card')).toBe('running');
+  });
+
   it('settles when the stale branch detail read fails on the branches scene', async () => {
     const startedAt = Date.now();
     vi.useFakeTimers({ toFake: ['Date'] });

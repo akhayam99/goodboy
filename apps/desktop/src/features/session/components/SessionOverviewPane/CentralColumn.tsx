@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { HeightMotion, PANE_RHYTHM } from '@goodboy/ui';
+import { HeightMotion, PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
@@ -238,7 +238,9 @@ export const CentralColumn = ({ session }: Props) => {
       {shown.map((card) => (
         <Fragment key={card.id}>
           {card.id === 'needs-you' ? (
-            <HeightMotion>{cardViewOf({ card })}</HeightMotion>
+            <HeightMotion isOpen={card.count > 0} parentGapRem={PANE_GROUPS_GAP_REM}>
+              {cardViewOf({ card })}
+            </HeightMotion>
           ) : (
             cardViewOf({ card })
           )}

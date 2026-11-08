@@ -43,7 +43,9 @@ no outer margin on a primitive, and a block that can sit in any column (an
 image, a loading block) carries none, so a `gap-3` column gives it 12px and not 20. The `ui` rows of the sibling-margin ledger fall first. A one or two pixel
 margin that aligns an icon with its text line (`mt-0.5`, `-mt-px`) is not a
 spacer: `optical-nudge` counts it apart from `sibling-margin`, and it only
-falls too.
+falls too. One exception: a closed `HeightMotion` slot cancels its parent gap
+with an animated negative margin equal to that gap (`parentGapRem`), so a
+collapsed slot takes no space; nothing else may.
 
 The semantic scale picks which `gap` to use, not the component. The mapping
 lives in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md)'s gap table.

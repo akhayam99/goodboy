@@ -5,13 +5,36 @@ import { DURATION_BASE_MS } from '../motionTimings';
 type Props = {
   readonly children: ReactNode;
   readonly className?: string;
+  readonly isOpen?: boolean;
+  readonly parentGapRem?: number;
 };
 
-export const HeightMotion = ({ children, className }: Props) => {
+type MotionStateParams = {
+  readonly isMoving: boolean;
+  readonly isClosed: boolean;
+};
+
+const motionStateOf = ({ isMoving, isClosed }: MotionStateParams) => {
+  if (isMoving) {
+    return 'moving';
+  }
+  if (isClosed) {
+    return 'closed';
+  }
+  return 'rest';
+};
+
+export const HeightMotion = ({ children, className, isOpen = true, parentGapRem = 0 }: Props) => {
   const innerRef = useRef<HTMLDivElement | null>(null);
-  const lastHeightRef = useRef<number | null>(null);
-  const [height, setHeight] = useState<number | null>(null);
+  const lastHeightRef = useRef<number | null>(isOpen ? null : 0);
+  const [height, setHeight] = useState<number | null>(isOpen ? null : 0);
   const [isMoving, setIsMoving] = useState(false);
+  const [wasOpen, setWasOpen] = useState(isOpen);
+
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    setIsMoving(true);
+  }
 
   useLayoutEffect(() => {
     const inner = innerRef.current;
@@ -38,13 +61,21 @@ export const HeightMotion = ({ children, className }: Props) => {
     return () => window.clearTimeout(timer);
   }, [isMoving, height]);
 
+  const isClosed = !isOpen && !isMoving;
+  const shownHeight = isClosed ? 0 : height;
+
   return (
     <div
-      data-height-motion={isMoving ? 'moving' : 'rest'}
-      style={height === null ? undefined : { height }}
+      aria-hidden={isClosed ? true : undefined}
+      inert={isClosed}
+      data-height-motion={motionStateOf({ isMoving, isClosed })}
+      style={{
+        height: shownHeight ?? undefined,
+        marginTop: isOpen ? undefined : `${-parentGapRem}rem`,
+      }}
       className={cn(
-        'min-w-0 motion-safe:transition-[height] motion-safe:duration-200 motion-safe:ease-enter',
-        isMoving && 'overflow-hidden',
+        'min-w-0 motion-safe:transition-[height,margin] motion-safe:duration-200 motion-safe:ease-enter',
+        (isMoving || isClosed) && 'overflow-hidden',
       )}
     >
       <div ref={innerRef} className={className}>

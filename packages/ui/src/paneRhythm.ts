@@ -2,6 +2,8 @@ export const BOARD_LANE_MIN_REM = 12.25;
 
 export const BOARD_LANE_GAP_REM = 0.75;
 
+export const PANE_GROUPS_GAP_REM = 2;
+
 export const PANE_RHYTHM = {
   inset: 'px-6',
   headerInset: 'pt-3',
