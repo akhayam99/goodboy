@@ -12,7 +12,7 @@ afterEach(cleanup);
 const pageColumnOf = (node: HTMLElement) => node.closest('[data-page-column]');
 
 describe('PaneShell', () => {
-  it.each(['pane', 'body', 'self'] as const)('fills a flex row parent with scroll %s', (scroll) => {
+  it.each(['body', 'self'] as const)('fills a flex row parent with scroll %s', (scroll) => {
     const { container } = render(
       <div className="flex">
         <PaneShell title="Notifications" scroll={scroll}>
@@ -27,7 +27,7 @@ describe('PaneShell', () => {
     );
   });
 
-  it.each(['pane', 'body', 'self'] as const)(
+  it.each(['body', 'self'] as const)(
     'draws no hairline under the header with scroll %s',
     (scroll) => {
       const { container } = render(
@@ -66,7 +66,7 @@ describe('PaneShell', () => {
     expect(screen.getByText('Body copy')).toBeDefined();
   });
 
-  it('puts the header and the body in the same page column', () => {
+  it('puts the header and the body each on a page column', () => {
     render(
       <PaneShell title="Workflows">
         <p>Body copy</p>
@@ -75,7 +75,7 @@ describe('PaneShell', () => {
 
     const column = pageColumnOf(screen.getByRole('heading', { name: 'Workflows' }));
     expect(column).not.toBeNull();
-    expect(pageColumnOf(screen.getByText('Body copy'))).toBe(column);
+    expect(pageColumnOf(screen.getByText('Body copy'))).not.toBeNull();
   });
 
   it('sits the title right under the trail band, with no crumb row of its own', () => {
@@ -212,7 +212,7 @@ describe('PaneShell', () => {
     expect(container.querySelector('[data-slot="pane-banner"]')).toBeNull();
   });
 
-  it('puts a lead before a fill slot that takes the rest of a self-scrolling pane', () => {
+  it('pins a lead above the header and a fill slot that takes the rest of a self-scrolling pane', () => {
     const { container } = render(
       <PaneShell title="Agent" scroll="self" lead={<p>Stopped notice</p>}>
         <p>Chat body</p>
@@ -220,17 +220,19 @@ describe('PaneShell', () => {
     );
 
     const lead = container.querySelector('[data-slot="pane-lead"]') as HTMLElement;
+    const pinned = container.querySelector('[data-slot="reveal-pinned"]') as HTMLElement;
     const fill = container.querySelector('[data-slot="pane-fill"]') as HTMLElement;
-    const body = container.querySelector('[data-slot="pane-body"]') as HTMLElement;
+    const region = container.querySelector('[data-slot="reveal-region"]');
     expect(lead.contains(screen.getByText('Stopped notice'))).toBe(true);
     expect(fill.contains(screen.getByText('Chat body'))).toBe(true);
-    expect(lead.contains(fill)).toBe(false);
+    expect(pinned.contains(lead)).toBe(true);
+    expect(region?.contains(lead)).toBe(false);
+    expect(region?.contains(fill)).toBe(true);
     expect(lead.compareDocumentPosition(fill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(body.contains(lead)).toBe(true);
     expect(fill.className.split(' ')).toEqual(
       expect.arrayContaining(['min-h-0', 'min-w-0', 'flex-1', 'flex-col']),
     );
-    expect(lead.className.split(' ')).toContain('shrink-0');
+    expect(pinned.className.split(' ')).toContain('shrink-0');
   });
 
   it('wraps the children of a self-scrolling pane in the fill slot with no lead', () => {
@@ -253,8 +255,10 @@ describe('PaneShell', () => {
       </PaneShell>,
     );
 
-    const column = container.querySelector('[data-slot="pane-lead"] [data-page-column]');
-    expect(column?.className.split(' ')).toContain('empty:hidden');
-    expect(column?.childElementCount).toBe(0);
+    const lead = container.querySelector('[data-slot="pane-lead"]');
+    const pinned = container.querySelector('[data-slot="reveal-pinned"]');
+    expect(lead?.className.split(' ')).toContain('empty:hidden');
+    expect(lead?.childElementCount).toBe(0);
+    expect(pinned?.className).toContain('has-[[data-slot=pane-lead]:empty]:hidden');
   });
 });

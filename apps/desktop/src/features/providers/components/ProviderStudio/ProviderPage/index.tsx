@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, appScrollIntoView } from '@goodboy/ui';
 import type { ProviderDisplayInfo } from '../../../providers';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ProviderPageBody } from './ProviderPageBody';
@@ -29,7 +29,10 @@ export const ProviderPage = ({
     if (!isUsageFocused || info === null) {
       return;
     }
-    document.getElementById(USAGE_SECTION_ID)?.scrollIntoView?.({ block: 'start' });
+    appScrollIntoView({
+      element: document.getElementById(USAGE_SECTION_ID),
+      block: 'start',
+    });
   }, [info, isUsageFocused]);
   if (info === null) {
     return (

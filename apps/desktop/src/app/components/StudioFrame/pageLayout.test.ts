@@ -138,6 +138,16 @@ const HEADER_FILES: ReadonlyArray<string> = [
   'features/branch/components/BranchHeader/index.tsx',
 ];
 
+const REVEAL_ROOT_OF: Readonly<Partial<Record<FramePage, string>>> = {
+  board: 'features/workspace/components/StageBoard/SessionsHeader.tsx',
+  chat: 'features/workspace-chat/components/ChatRoom/ChatHeader.tsx',
+  terminal: 'features/terminal/components/TerminalStudio/TerminalRail.tsx',
+};
+
+const SIDE_SCROLLER_FILES: ReadonlyArray<string> = [
+  'features/chat/components/ConversationDock/index.tsx',
+];
+
 const PAGE_PRIMITIVE = /<(PaneShell|PageHeader)\b/;
 
 const HEADER_PADDING = /\b(pt|py|mt|my)-\d+\b|\bh-10\b/;
@@ -251,6 +261,43 @@ describe('one page layout', () => {
     expect(header).toContain('<PaneTitleRow');
     expect(shell).toContain('<PageHeader');
     expect(shell).not.toMatch(/'pt-\d+'/);
+  });
+});
+
+describe('every page steps its header aside while you read', () => {
+  it('mounts every page root on a shell whose header reveals, keeping the back row', () => {
+    const drifted = ALL_PAGES.flatMap((root) =>
+      root.files.flatMap((file) => {
+        if (/<PaneShell\b/.test(read(file))) {
+          return [];
+        }
+        const shell = REVEAL_ROOT_OF[root.page];
+        if (shell !== undefined && /<RevealRegion\b/.test(read(shell))) {
+          return [];
+        }
+        return [`${root.page}: ${file} draws a header that never steps aside`];
+      }),
+    );
+
+    expect(drifted).toEqual([]);
+  });
+
+  it('draws the shell and every drawer on the one reveal region', () => {
+    const shell = readFileSync(join(UI, 'components/PaneShell/RevealPane.tsx'), 'utf8');
+    const drawer = readFileSync(join(UI, 'components/DrawerFrame.tsx'), 'utf8');
+    const paneShell = readFileSync(join(UI, 'components/PaneShell/index.tsx'), 'utf8');
+
+    expect(shell).toContain('<RevealRegion');
+    expect(drawer).toContain('<RevealRegion');
+    expect(paneShell).not.toContain('headerMode');
+  });
+
+  it('keeps a side scroller of the body from moving the header', () => {
+    const drifted = SIDE_SCROLLER_FILES.filter(
+      (file) => !/<ScrollFade\b[^>]*isPageScroller=\{false\}/.test(read(file)),
+    );
+
+    expect(drifted).toEqual([]);
   });
 });
 

@@ -135,7 +135,6 @@ const Page = ({
     <PaneShell
       title="Stop retried webhooks posting a second credit"
       actions={<button type="button">Fix checks</button>}
-      headerMode="reveal"
       revealKey={tab}
       scroll="self"
       lead={<p>Push failed</p>}
@@ -237,7 +236,6 @@ describe('PaneShell header reveal', () => {
       scrollTo({ viewport, top: 24 });
       expect(headerState()).toBe('hidden');
       expect(region().style.getPropertyValue('--reveal-shift')).toBe(`${HEADER_PX}px`);
-      expect(region().style.getPropertyValue('--reveal-extend')).toBe(`${HEADER_PX}px`);
       scrollTo({ viewport, top: 600 });
       scrollTo({ viewport, top: 593 });
       expect(headerState()).toBe('hidden');
@@ -315,8 +313,17 @@ describe('PaneShell header reveal', () => {
     expect(headerState()).toBe('shown');
   });
 
+  it('keeps the header while a wheel runs to the end, so the body never pulls the page back', () => {
+    const viewport = mountPage();
+    scrollTo({ viewport, top: CONTENT_PX - VIEW_PX - 40 });
+
+    expect(headerState()).toBe('shown');
+    expect(region().style.getPropertyValue('--reveal-shift')).toBe('0px');
+  });
+
   it('keeps the header away when the bottom clamps as the body grows', () => {
     const viewport = mountPage();
+    scrollTo({ viewport, top: 400 });
     scrollTo({ viewport, top: CONTENT_PX - VIEW_PX });
     expect(headerState()).toBe('hidden');
 
@@ -353,7 +360,7 @@ describe('PaneShell header reveal', () => {
 
   it('keeps the header in place when nothing in the body scrolls', () => {
     render(
-      <PaneShell title="Comments" headerMode="reveal" scroll="self">
+      <PaneShell title="Comments" scroll="self">
         <p>No open comments</p>
       </PaneShell>,
     );

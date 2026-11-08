@@ -73,8 +73,7 @@ describe('PageHeader', () => {
     expect(header.closest('[data-page-column]')?.getAttribute('data-width')).toBe(
       PAGE_MEASURE.overview,
     );
-    expect(screen.getByText('Body copy').closest('[data-page-column]')).toBe(
-      header.closest('[data-page-column]'),
-    );
+    const body = screen.getByText('Body copy');
+    expect(body.closest('[data-page-column]')).not.toBeNull();
   });
 });

@@ -64,6 +64,14 @@ const revealHeader = (): HTMLElement => {
   return header;
 };
 
+const BRANCH_STILLS = ['u37-header-reveal', 'u37-header-reveal-reading', 'u37-header-reveal-back'];
+
+const PAGE_FAMILIES = Object.keys(U37_HEADER_REVEAL_SCENES).filter(
+  (id) => !BRANCH_STILLS.includes(id),
+);
+
+const SCENE_WAIT = { timeout: 5000 };
+
 describe('u37 header reveal scenes', () => {
   it('registers every scene', () => {
     Object.keys(U37_HEADER_REVEAL_SCENES).forEach((id) => {
@@ -71,7 +79,7 @@ describe('u37 header reveal scenes', () => {
     });
   });
 
-  it.each(Object.keys(U37_HEADER_REVEAL_SCENES))(
+  it.each(BRANCH_STILLS)(
     'draws %s with the back row pinned above the header that steps aside',
     async (id) => {
       mount({ id });
@@ -83,4 +91,13 @@ describe('u37 header reveal scenes', () => {
       await waitFor(() => expect(document.querySelector('[data-page-scroller]')).not.toBeNull());
     },
   );
+
+  it.each(PAGE_FAMILIES)('draws %s with its title in a header that steps aside', async (id) => {
+    mount({ id });
+
+    await waitFor(() => {
+      const titles = [...document.querySelectorAll('[data-slot="reveal-header"] :is(h1, h2)')];
+      expect(titles.length).toBeGreaterThan(0);
+    }, SCENE_WAIT);
+  });
 });

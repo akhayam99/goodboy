@@ -35,6 +35,7 @@ import { MarkContextRead } from './MarkContextRead';
 import { ContextSection } from './ContextSection';
 import { slotVisibility, youOnlyVisibility } from './roleVisibility';
 import { ExplanationsSection } from './ExplanationsSection';
+import { revealContextSection } from './revealContextSection';
 import { useLearningList } from '../../../../shared/hooks/useLearningList';
 
 const NO_PENDING_REMOVALS: ReadonlySet<number> = new Set();
@@ -135,13 +136,7 @@ export const ContextDrawer = ({
     if (view !== 'current') {
       return;
     }
-    const target = scrollRef.current?.querySelector<HTMLElement>(
-      `[data-context-section="${section}"]`,
-    );
-    if (target === null || target === undefined || typeof target.scrollIntoView !== 'function') {
-      return;
-    }
-    target.scrollIntoView({ block: 'start' });
+    revealContextSection({ scroller: scrollRef.current, section });
   }, [section, view]);
 
   const openQuestionTexts = useMemo(

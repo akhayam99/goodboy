@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { Button, cn, EmptyState, ScrollFade } from '@goodboy/ui';
+import { Button, cn, EmptyState, ScrollFade, appScrollIntoView } from '@goodboy/ui';
 import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
 import type { DiffCommentAnchor, DiffCommentSide, FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -157,7 +157,7 @@ const DiffFileView = ({
         }
         return;
       }
-      target.scrollIntoView?.({ block: 'center' });
+      appScrollIntoView({ element: target, block: 'center' });
       target.focus({ preventScroll: true });
       onThreadFocused();
     };

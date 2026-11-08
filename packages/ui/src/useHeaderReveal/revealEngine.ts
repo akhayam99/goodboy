@@ -1,9 +1,8 @@
 import type { RefObject } from 'react';
 import { isKeyboardFocus } from '../isKeyboardFocus';
-import { DURATION_BASE_MS } from '../motionTimings';
-import { prefersReducedMotion } from '../prefersReducedMotion';
 import type { HeaderReveal, PageScroller } from './headerRevealContext';
 import { headerRevealOf } from './headerRevealOf';
+import { REVEALS_BY_REGION } from './revealsByRegion';
 import type { HeaderRevealState } from './headerRevealState';
 import { scrollIntent } from './scrollIntent';
 
@@ -11,6 +10,7 @@ type Params = {
   readonly regionRef: RefObject<HTMLElement | null>;
   readonly headerRef: RefObject<HTMLElement | null>;
   readonly bodyRef: RefObject<HTMLElement | null>;
+  readonly hasLanes?: boolean;
 };
 
 export type RevealEngine = {
@@ -27,15 +27,13 @@ type EvaluateParams = ViewportParams & {
   readonly isUserScroll: boolean;
 };
 
+type ScrollerParams = {
+  readonly scroller: PageScroller;
+};
+
 type Drag = {
   readonly viewport: HTMLElement;
   readonly startTop: number;
-};
-
-type ExtendParams = {
-  readonly region: HTMLElement;
-  readonly shift: string;
-  readonly isShown: boolean;
 };
 
 const clampedTopOf = ({ viewport }: ViewportParams): number =>
@@ -46,10 +44,16 @@ const rangeOf = ({ viewport }: ViewportParams): number =>
 
 const NO_RELEASE = (): void => {};
 
-export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealEngine => {
+export const revealEngine = ({
+  regionRef,
+  headerRef,
+  bodyRef,
+  hasLanes = false,
+}: Params): RevealEngine => {
   const intent = scrollIntent();
   let state: HeaderRevealState = { isShown: true, anchor: 0 };
   let claim: PageScroller | null = null;
+  let claims: ReadonlyArray<PageScroller> = [];
   let lastTop = 0;
   let headerHeight = 0;
   let isSliding = false;
@@ -58,23 +62,6 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
   let settleGeneration = 0;
   let observer: ResizeObserver | null = null;
   let drag: Drag | null = null;
-  let extendTimer: ReturnType<typeof setTimeout> | null = null;
-
-  const paintExtend = ({ region, shift, isShown }: ExtendParams) => {
-    if (extendTimer !== null) {
-      clearTimeout(extendTimer);
-      extendTimer = null;
-    }
-    if (!isShown || prefersReducedMotion()) {
-      region.style.setProperty('--reveal-extend', shift);
-      return;
-    }
-    extendTimer = setTimeout(() => {
-      extendTimer = null;
-      region.style.setProperty('--reveal-extend', '0px');
-    }, DURATION_BASE_MS);
-  };
-
   const paint = () => {
     const region = regionRef.current;
     if (region === null) {
@@ -91,7 +78,6 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
       isShown ? 'var(--duration-base)' : 'var(--duration-quick)',
     );
     region.style.setProperty('--reveal-ease', isShown ? 'var(--ease-enter)' : 'var(--ease-exit)');
-    paintExtend({ region, shift, isShown });
   };
 
   const liveViewport = (): HTMLElement | null => {
@@ -117,6 +103,7 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
       scrollTop: clampedTopOf({ viewport }),
       range: rangeOf({ viewport }),
       headerHeight,
+      pending: isUserScroll ? intent.pendingDownOf({ viewport }) : 0,
       isUserScroll,
       isFocusHeld,
     });
@@ -170,10 +157,13 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
   };
 
   const onScroll = ({ viewport }: ViewportParams) => {
+    if (!isLive({ viewport })) {
+      return;
+    }
     const top = clampedTopOf({ viewport });
     const before = lastTop;
     lastTop = top;
-    if (!isSliding || !isLive({ viewport }) || drag !== null) {
+    if (!isSliding || drag !== null) {
       return;
     }
     const isUserScroll = intent.isUserScroll({ viewport, delta: top - before });
@@ -203,56 +193,109 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     evaluate({ viewport, isUserScroll: true });
   };
 
+  const take = ({ scroller }: ScrollerParams) => {
+    claim = scroller;
+    forget();
+    lastTop = scroller.viewport.scrollTop;
+    state = { isShown: true, anchor: scroller.viewport.scrollTop };
+  };
+
+  const lead = ({ scroller }: ScrollerParams) => {
+    if (claim === scroller) {
+      return;
+    }
+    claim = scroller;
+    forget();
+    const { viewport } = scroller;
+    lastTop = clampedTopOf({ viewport });
+    state = { isShown: state.isShown, anchor: lastTop };
+    if (isSliding && isLive({ viewport })) {
+      evaluate({ viewport, isUserScroll: false });
+    }
+  };
+
   const register = ({ root, viewport }: PageScroller): (() => void) => {
     const body = bodyRef.current;
-    if (claim !== null || (body !== null && !body.contains(root))) {
+    if ((claim !== null && !hasLanes) || (body !== null && !body.contains(root))) {
       return NO_RELEASE;
     }
-    claim = { root, viewport };
-    forget();
+    const scroller = { root, viewport };
+    claims = [...claims, scroller];
+    if (claim === null) {
+      take({ scroller });
+    }
     const controller = new AbortController();
     const { signal } = controller;
     const passive = { passive: true, signal };
     viewport.addEventListener('scroll', () => onScroll({ viewport }), passive);
-    root.addEventListener('wheel', (event) => intent.onWheel({ viewport, event }), passive);
+    root.addEventListener(
+      'wheel',
+      (event) => {
+        lead({ scroller });
+        intent.onWheel({ viewport, event });
+      },
+      passive,
+    );
     root.addEventListener(
       'touchstart',
-      (event) => intent.onTouchStart({ viewport, event }),
+      (event) => {
+        lead({ scroller });
+        intent.onTouchStart({ viewport, event });
+      },
       passive,
     );
     root.addEventListener('touchmove', (event) => intent.onTouchMove({ viewport, event }), passive);
     root.addEventListener('touchend', () => intent.onTouchEnd({ viewport }), passive);
-    root.addEventListener('keydown', (event) => intent.onKey({ viewport, event }), { signal });
+    root.addEventListener(
+      'keydown',
+      (event) => {
+        lead({ scroller });
+        intent.onKey({ viewport, event });
+      },
+      { signal },
+    );
     root.addEventListener(
       'pointerdown',
       (event) => {
         if (event.target instanceof Node && viewport.contains(event.target)) {
           return;
         }
+        lead({ scroller });
         drag = { viewport, startTop: clampedTopOf({ viewport }) };
       },
       { signal },
     );
-    lastTop = viewport.scrollTop;
-    state = { isShown: true, anchor: viewport.scrollTop };
     observer?.observe(root);
     if (observer !== null) {
       measure();
     }
     return () => {
       controller.abort();
-      claim = null;
-      forget();
+      claims = claims.filter((entry) => entry !== scroller);
       observer?.unobserve(root);
+      if (claim === scroller) {
+        claim = null;
+        forget();
+        const next = claims[0];
+        if (next !== undefined) {
+          take({ scroller: next });
+        }
+      }
       if (observer !== null) {
         measure();
       }
     };
   };
 
+  const reveal: HeaderReveal = { register, holdAppScroll: intent.hold };
+
   const attach = (): (() => void) => {
     const header = headerRef.current;
     const body = bodyRef.current;
+    const region = regionRef.current;
+    if (region !== null) {
+      REVEALS_BY_REGION.set(region, reveal);
+    }
     const controller = new AbortController();
     const { signal } = controller;
     window.addEventListener('pointerup', endDrag, { signal });
@@ -288,22 +331,21 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     if (body !== null) {
       resize.observe(body);
     }
-    if (claim !== null) {
-      resize.observe(claim.root);
+    for (const { root } of claims) {
+      resize.observe(root);
     }
     measure();
     return () => {
       controller.abort();
       resize.disconnect();
       observer = null;
-      if (extendTimer !== null) {
-        clearTimeout(extendTimer);
-        extendTimer = null;
+      if (region !== null) {
+        REVEALS_BY_REGION.delete(region);
       }
       forget();
       isFocusHeld = false;
     };
   };
 
-  return { reveal: { register, holdAppScroll: intent.hold }, attach, reset };
+  return { reveal, attach, reset };
 };

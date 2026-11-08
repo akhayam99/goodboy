@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
-import { ScrollFade, SelectableRow, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
+import {
+  ScrollFade,
+  SelectableRow,
+  StudioRailLayout,
+  useStudioRailFold,
+  appScrollIntoView,
+} from '@goodboy/ui';
 import { StudioDetail } from '../../../shared/components/StudioShell/StudioDetail';
 import { useAppStore } from '../../../store';
 import { SHORTCUT_GROUP_LABEL } from '../../../features/settings/components/SettingsStudio/shortcutGroupLabel';
@@ -34,9 +40,10 @@ export const ShortcutsTab = ({ header, results }: Props) => {
                     key={group}
                     selected={false}
                     onClick={() =>
-                      document
-                        .getElementById(`help-shortcuts-${group}`)
-                        ?.scrollIntoView({ block: 'start' })
+                      appScrollIntoView({
+                        element: document.getElementById(`help-shortcuts-${group}`),
+                        block: 'start',
+                      })
                     }
                     className="items-center px-2 py-1 text-ui"
                   >

@@ -254,6 +254,7 @@ export { PaneTitleRow } from './components/PaneShell/PaneTitleRow';
 export { PageHeader } from './components/PaneShell/PageHeader';
 export type { PageHeaderProps } from './components/PaneShell/PageHeader';
 export { PageSkeleton } from './components/PaneShell/PageSkeleton';
+export { RevealRegion } from './components/RevealRegion';
 export {
   PaneActionsContext,
   useInheritedPaneActions,
@@ -320,6 +321,9 @@ export { EntryWash } from './components/EntryWash';
 export { useEntryWash } from './useEntryWash';
 export { useScrollMemory } from './useScrollMemory';
 export { useHoldAppScroll } from './useHoldAppScroll';
+export { appScrollIntoView } from './appScrollIntoView';
+export { appScrollTo } from './appScrollTo';
+export { revealSlideOf } from './revealSlideOf';
 export { forgetScrollMemory } from './forgetScrollMemory';
 export { PaneSwap } from './components/PaneSwap';
 export type { PaneLayer } from './components/PaneSwap';

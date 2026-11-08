@@ -9,6 +9,7 @@ type Params = {
   readonly scrollTop: number;
   readonly range: number;
   readonly headerHeight: number;
+  readonly pending: number;
   readonly isUserScroll: boolean;
   readonly isFocusHeld: boolean;
 };
@@ -18,6 +19,7 @@ export const headerRevealOf = ({
   scrollTop,
   range,
   headerHeight,
+  pending,
   isUserScroll,
   isFocusHeld,
 }: Params): HeaderRevealState => {
@@ -31,7 +33,8 @@ export const headerRevealOf = ({
   }
   if (state.isShown) {
     const anchor = Math.min(state.anchor, top);
-    if (top - anchor >= HIDE_AFTER_PX) {
+    const landing = Math.min(range, top + pending);
+    if (top - anchor >= HIDE_AFTER_PX && range - landing >= headerHeight) {
       return { isShown: false, anchor: top };
     }
     return { isShown: true, anchor };

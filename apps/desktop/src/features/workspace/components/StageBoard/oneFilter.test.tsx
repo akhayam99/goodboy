@@ -45,6 +45,7 @@ const mountBoth = () =>
   render(
     <ToastProvider>
       <SessionsHeader
+        isShown
         workspaceId={harborline.id}
         filterSessions={[]}
         archivedCount={0}
@@ -52,7 +53,9 @@ const mountBoth = () =>
         hiddenCount={0}
         needsYouElsewhere={0}
         onClearFilters={() => undefined}
-      />
+      >
+        {null}
+      </SessionsHeader>
       <SidebarSessionsFilter workspaceId={harborline.id} />
     </ToastProvider>,
   );

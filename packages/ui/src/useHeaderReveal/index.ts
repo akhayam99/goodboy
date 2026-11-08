@@ -7,6 +7,7 @@ type Params = {
   readonly headerRef: RefObject<HTMLElement | null>;
   readonly bodyRef: RefObject<HTMLElement | null>;
   readonly resetKey: string | null;
+  readonly hasLanes?: boolean;
 };
 
 export const useHeaderReveal = ({
@@ -14,8 +15,9 @@ export const useHeaderReveal = ({
   headerRef,
   bodyRef,
   resetKey,
+  hasLanes = false,
 }: Params): HeaderReveal => {
-  const [engine] = useState(() => revealEngine({ regionRef, headerRef, bodyRef }));
+  const [engine] = useState(() => revealEngine({ regionRef, headerRef, bodyRef, hasLanes }));
   const seenKeyRef = useRef(resetKey);
 
   useLayoutEffect(() => engine.attach(), [engine]);

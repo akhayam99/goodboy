@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import { foldAncestorsOf } from '../foldAncestorsOf';
 import type { FoldedSpawnedRow } from '../foldSpawnedRowsOf';
@@ -45,7 +46,10 @@ export const useSpawnedReveal = ({
       return;
     }
     revealedRef.current = selectedAgentId;
-    element.scrollIntoView({ block: hasRevealedRef.current ? 'nearest' : 'center' });
+    appScrollIntoView({
+      element,
+      block: hasRevealedRef.current ? 'nearest' : 'center',
+    });
     hasRevealedRef.current = true;
   }, [rootRef, selectedAgentId, rows, shown, onExpand]);
 };

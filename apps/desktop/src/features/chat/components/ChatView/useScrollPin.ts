@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { appScrollTo } from '@goodboy/ui';
 
 const PIN_TOLERANCE_PX = 32;
 const SETTLE_FRAMES = 30;
@@ -171,7 +172,7 @@ export const useScrollPin = ({ deps, resetKey, anchorKey, onRevealOverflow }: Pa
     if (turn !== null) {
       const turnBottom = Math.max(0, el.scrollHeight - el.clientHeight);
       const turnTop = Math.max(0, turnTopOf({ scroller: el, turn }) - ANCHOR_TOP_PX);
-      el.scrollTop = Math.min(turnBottom, turnTop);
+      appScrollTo({ viewport: el, top: Math.min(turnBottom, turnTop) });
       ownTopRef.current = el.scrollTop;
       const turnKeys = overflowKeysOf({ scroller: el, answers });
       if (turnKeys.length > 0) {
@@ -186,12 +187,12 @@ export const useScrollPin = ({ deps, resetKey, anchorKey, onRevealOverflow }: Pa
         clearAnchor();
         return;
       }
-      el.scrollTop = el.scrollHeight;
+      appScrollTo({ viewport: el, top: el.scrollHeight });
       ownTopRef.current = el.scrollTop;
       return;
     }
     if (isLockedRef.current) {
-      el.scrollTop = el.scrollHeight;
+      appScrollTo({ viewport: el, top: el.scrollHeight });
       ownTopRef.current = el.scrollTop;
       return;
     }
@@ -199,7 +200,7 @@ export const useScrollPin = ({ deps, resetKey, anchorKey, onRevealOverflow }: Pa
     const anchorTop = Math.max(0, answerTopOf({ scroller: el, answer }) - ANSWER_TOP_GAP_PX);
     isTurnAnchorRef.current = false;
     isAnchoredRef.current = anchorTop < bottom;
-    el.scrollTop = Math.min(bottom, anchorTop);
+    appScrollTo({ viewport: el, top: Math.min(bottom, anchorTop) });
     ownTopRef.current = el.scrollTop;
     if (!isAnchoredRef.current) {
       return;
@@ -457,7 +458,7 @@ export const useScrollPin = ({ deps, resetKey, anchorKey, onRevealOverflow }: Pa
     ownTopRef.current = null;
     isSpacerOnRef.current = false;
     fitTail();
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    appScrollTo({ viewport: el, top: el.scrollHeight, behavior: 'smooth' });
   }, [clearAnchor, fitTail]);
 
   const isHolding = useCallback(() => pinnedRef.current || isAnchoredRef.current, []);

@@ -1,12 +1,15 @@
-import { PageColumn, ScrollFade } from '@goodboy/ui';
+import { PaneShell } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
+import { copyOf } from '../../../../shared/components/NewWorkspaceForm/newWorkspaceCopy';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly onClose: () => void;
 };
+
+const COPY = copyOf({ mode: 'new', targetName: '' });
 
 export const WorkspaceLinkStudio = ({ onClose }: Props) => {
   return (
@@ -17,11 +20,12 @@ export const WorkspaceLinkStudio = ({ onClose }: Props) => {
       onClose={onClose}
     >
       {(requestClose) => (
-        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-          <PageColumn className="flex flex-col gap-6 py-5">
-            <NewWorkspaceForm mode="new" titleRole="title" onCreated={() => requestClose()} />
-          </PageColumn>
-        </ScrollFade>
+        <PaneShell
+          title={COPY.title}
+          subheader={<p className="text-prose text-muted-foreground">{COPY.lede}</p>}
+        >
+          <NewWorkspaceForm mode="new" hasTitle={false} onCreated={() => requestClose()} />
+        </PaneShell>
       )}
     </StudioShell>
   );

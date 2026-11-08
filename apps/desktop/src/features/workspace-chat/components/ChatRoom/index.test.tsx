@@ -518,6 +518,22 @@ describe('ChatRoom', () => {
     expect(drafter.textContent).toContain('Medium');
   });
 
+  it('keeps the drawer title and close pinned and steps the drafter line aside', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(startWork());
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+
+    const drawer = screen.getByRole('region', { name: NAMES.startWorkFromChat });
+    const close = within(drawer).getByRole('button', { name: 'Close' });
+    const drafter = within(drawer).getByRole('button', { name: /^Drafted by: / });
+    const cancel = within(drawer).getByRole('button', { name: /Cancel/ });
+    expect(close.closest('[data-slot="reveal-region"]')).toBeNull();
+    expect(drafter.closest('[data-slot="reveal-header"]')).not.toBeNull();
+    expect(cancel.closest('[data-page-scroller]')).not.toBeNull();
+  });
+
   it('drafts with the model remembered for the workspace', async () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     store.settings = {

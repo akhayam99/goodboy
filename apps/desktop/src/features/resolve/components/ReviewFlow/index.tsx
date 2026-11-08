@@ -17,6 +17,7 @@ import {
   PageColumn,
   ScrollFade,
   formatError,
+  appScrollIntoView,
 } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type { MountId, Session, SessionId } from '@goodboy/types';
@@ -240,9 +241,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       return;
     }
     setLastThreadId(openThreadId);
-    listRef.current
-      ?.querySelector<HTMLElement>(`[data-thread-id="${CSS.escape(openThreadId)}"]`)
-      ?.scrollIntoView?.({ block: 'nearest' });
+    const row = listRef.current?.querySelector(`[data-thread-id="${CSS.escape(openThreadId)}"]`);
+    appScrollIntoView({ element: row, block: 'nearest' });
   }, [openThreadId]);
 
   const opened =

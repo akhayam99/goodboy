@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 
 type Params = {
   readonly endRef: RefObject<HTMLElement | null>;
@@ -38,13 +39,13 @@ export const useAskFollow = ({ endRef, isActive, contentLength, turnCount }: Par
   useEffect(() => {
     isPinnedRef.current = true;
     lastTopRef.current = 0;
-    endRef.current?.scrollIntoView?.({ block: 'end' });
+    appScrollIntoView({ element: endRef.current, block: 'end' });
   }, [endRef, turnCount]);
 
   useEffect(() => {
     if (!isPinnedRef.current) {
       return;
     }
-    endRef.current?.scrollIntoView?.({ block: 'end' });
+    appScrollIntoView({ element: endRef.current, block: 'end' });
   }, [endRef, contentLength]);
 };

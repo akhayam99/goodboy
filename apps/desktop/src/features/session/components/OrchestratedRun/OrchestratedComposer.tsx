@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
-import { Button } from '@goodboy/ui';
+import { Button, appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { OrchestratorHintComposer } from '../../../workflows/components/OrchestratorStrip/OrchestratorHintComposer';
 import { OrchestratorRoutingRow } from '../../../workflows/components/OrchestratorStrip/OrchestratorRoutingRow';
@@ -32,7 +32,10 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   const isStepRunning = agents.some((agent) => agent.status === 'running');
 
   const viewQueue = () => {
-    document.querySelector(`[data-hint-queue="${run.id}"]`)?.scrollIntoView({ block: 'nearest' });
+    appScrollIntoView({
+      element: document.querySelector(`[data-hint-queue="${run.id}"]`),
+      block: 'nearest',
+    });
   };
 
   return (

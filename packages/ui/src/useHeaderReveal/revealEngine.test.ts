@@ -163,3 +163,83 @@ describe('revealEngine', () => {
     expect(headerState({ region })).toBe('hidden');
   });
 });
+
+type Lanes = Page & {
+  readonly short: PageScroller;
+  readonly review: PageScroller;
+  readonly done: PageScroller;
+  readonly releases: ReadonlyArray<() => void>;
+};
+
+const lanesOf = (): Lanes => {
+  const region = document.createElement('div');
+  const header = document.createElement('div');
+  const body = document.createElement('div');
+  region.append(header, body);
+  document.body.append(region);
+  Object.defineProperty(header, 'offsetHeight', { value: HEADER_PX, configurable: true });
+  const engine = revealEngine({
+    regionRef: { current: region },
+    headerRef: { current: header },
+    bodyRef: { current: body },
+    hasLanes: true,
+  });
+  engine.attach();
+  const short = scrollerOf({ body });
+  Object.defineProperty(short.viewport, 'scrollHeight', { value: VIEW_PX, configurable: true });
+  const review = scrollerOf({ body });
+  const done = scrollerOf({ body });
+  const releases = [short, review, done].map((lane) => engine.reveal.register(lane));
+  return { region, body, engine, short, review, done, releases };
+};
+
+describe('revealEngine with lanes', () => {
+  it('hides on the lane the reader scrolls and shows on a scroll up in another lane', () => {
+    const { region, review, done } = lanesOf();
+    appScroll({ viewport: review.viewport, top: 600 });
+    expect(headerState({ region })).toBe('shown');
+
+    userScroll({ viewport: done.viewport, top: 900 });
+    flushFrames();
+    expect(headerState({ region })).toBe('hidden');
+
+    userScroll({ viewport: review.viewport, top: 590 });
+
+    expect(headerState({ region })).toBe('shown');
+  });
+
+  it('never strands the header hidden when the reader moves to a lane with no room', () => {
+    const { region, short, done } = lanesOf();
+    userScroll({ viewport: done.viewport, top: 900 });
+    flushFrames();
+    expect(headerState({ region })).toBe('hidden');
+
+    wheel({ viewport: short.viewport, top: 40 });
+
+    expect(headerState({ region })).toBe('shown');
+  });
+
+  it('ignores a scroll the app makes in a lane the reader is not in', () => {
+    const { region, review, done } = lanesOf();
+    userScroll({ viewport: done.viewport, top: 900 });
+    flushFrames();
+
+    appScroll({ viewport: review.viewport, top: 20 });
+    userScroll({ viewport: done.viewport, top: 1000 });
+
+    expect(headerState({ region })).toBe('hidden');
+  });
+
+  it('hands the header to a remaining lane when the leading lane leaves', () => {
+    const { region, done, review, releases } = lanesOf();
+    userScroll({ viewport: done.viewport, top: 900 });
+    flushFrames();
+    expect(headerState({ region })).toBe('hidden');
+
+    releases[2]?.();
+    done.root.remove();
+    userScroll({ viewport: review.viewport, top: 900 });
+
+    expect(headerState({ region })).toBe('hidden');
+  });
+});

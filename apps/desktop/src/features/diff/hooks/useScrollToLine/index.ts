@@ -1,4 +1,5 @@
 import { useEffect, type RefObject } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 
 type Params = {
   readonly containerRef: RefObject<HTMLElement | null>;
@@ -22,7 +23,7 @@ export const useScrollToLine = ({ containerRef, path, line }: Params) => {
       if (row == null) {
         return false;
       }
-      row.scrollIntoView?.({ block: 'center' });
+      appScrollIntoView({ element: row, block: 'center' });
       row.setAttribute(FLASH_ATTRIBUTE, '');
       flashed = row;
       timer = setTimeout(() => flashed?.removeAttribute(FLASH_ATTRIBUTE), FLASH_MS);

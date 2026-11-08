@@ -13,6 +13,7 @@ import {
   FieldRow,
   ICON_SIZE,
   PaneShell,
+  appScrollIntoView,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
@@ -71,9 +72,11 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
       return;
     }
     const selector = `[data-default-row="${focusSection}"]`;
-    (
-      runsRef.current?.querySelector(selector) ?? tasksRef.current?.querySelector(selector)
-    )?.scrollIntoView({ block: 'center' });
+    appScrollIntoView({
+      element:
+        runsRef.current?.querySelector(selector) ?? tasksRef.current?.querySelector(selector),
+      block: 'center',
+    });
   }, [focusSection]);
   const workspaceOverrides = useAppStore(
     (state) => state.workspaceOverrides?.[workspaceId] ?? null,

@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
-import { X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import {
   Button,
+  DrawerFrame,
   FormActions,
   formatError,
-  IconButton,
   Input,
   Kbd,
-  Notice,
-  ScrollFade,
   SegmentedTabs,
   Skeleton,
 } from '@goodboy/ui';
@@ -18,7 +15,6 @@ import {
   type ChatMessage,
   type ChatMessageId,
   type ChatSummary,
-  type ProjectId,
   type ProviderId,
   type SessionId,
 } from '@goodboy/types';
@@ -27,22 +23,22 @@ import { NAMES } from '../../../../shared/utils/names';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { useAppStore } from '../../../../store';
-import { activeChatBackend } from '../../activeChatBackend';
 import type { ChatHandoff } from '../../chatHandoff';
 import { startWorkFromChat } from '../../startWorkFromChat';
 import { openStartRun } from '../../../session/startRun/openStartRun';
-import { summarizeChatForWork } from '../../summarizeChatForWork';
-import type { WorkBrief } from '../../workBrief';
 import {
   parseWorkDrafter,
   serializeWorkDrafter,
   workDrafterSettingKey,
   type WorkDrafterChoice,
 } from '../../workDrafter';
+import type { WorkBriefDrafts } from '../../hooks/useWorkBriefDrafts';
+import { useWorkBrief } from './useWorkBrief';
 import { BriefItems } from './BriefItems';
 import { DraftedBy } from './DraftedBy';
 import { ProjectPicker } from '../../../../shared/components/ProjectPicker';
 import { SessionField } from './SessionField';
+import { UnlinkedNotice } from './UnlinkedNotice';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
@@ -52,6 +48,7 @@ type Props = {
   readonly chat: ChatSummary;
   readonly messages: ReadonlyArray<ChatMessage>;
   readonly anchorMessageId: ChatMessageId | null;
+  readonly drafts: WorkBriefDrafts;
   readonly onClose: () => void;
   readonly onDone: (handoff: ChatHandoff) => void;
 };
@@ -72,16 +69,6 @@ const MODE_COPY = {
   },
 } satisfies Record<Mode, { readonly action: string; readonly hint: string }>;
 
-type UpToParams = {
-  readonly messages: ReadonlyArray<ChatMessage>;
-  readonly anchorMessageId: ChatMessageId | null;
-};
-
-const upTo = ({ messages, anchorMessageId }: UpToParams): ReadonlyArray<ChatMessage> => {
-  const index = messages.findIndex((message) => message.id === anchorMessageId);
-  return index === -1 ? messages : messages.slice(0, index + 1);
-};
-
 export const TURN_INTO_WORK_LABEL = NAMES.startWorkFromChat;
 
 type Landed = {
@@ -91,7 +78,14 @@ type Landed = {
   readonly label: string;
 };
 
-export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, onDone }: Props) => {
+export const TurnIntoWorkPanel = ({
+  chat,
+  messages,
+  anchorMessageId,
+  drafts,
+  onClose,
+  onDone,
+}: Props) => {
   const allProjects = useAppStore((state) => state.projects);
   const allSessions = useAppStore((state) => state.sessions);
   const createSession = useAppStore((state) => state.createSession);
@@ -125,10 +119,8 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   const loadSetting = useAppStore((state) => state.loadSetting);
   const saveSetting = useAppStore((state) => state.saveSetting);
   const drafterKey = workDrafterSettingKey({ workspaceId: chat.workspaceId });
-  const [brief, setBrief] = useState<WorkBrief | null>(null);
   const [drafter, setDrafter] = useState<WorkDrafterChoice | null>(null);
   const [isDrafterPicked, setIsDrafterPicked] = useState(false);
-  const [pickedProjectIds, setProjectIds] = useState<ReadonlyArray<ProjectId> | null>(null);
   const [mode, setMode] = useState<Mode>('new');
   const [sessionId, setSessionId] = useState<SessionId | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -164,41 +156,20 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
     void saveSetting(drafterKey, serializeWorkDrafter({ choice: drafter })).catch(() => undefined);
   }, [drafter?.provider, drafter?.model, drafter?.effort, isDrafterPicked]);
 
-  useEffect(() => {
-    if (drafter === null) {
-      return undefined;
-    }
-    let isCurrent = true;
-    setBrief(null);
-    setProjectIds(null);
-    void summarizeChatForWork({
-      backend: activeChatBackend,
-      chat: {
-        title: chat.title,
-        provider: drafter.provider,
-        model: drafter.model,
-        ...(drafter.effort != null && { effort: drafter.effort }),
-      },
-      messages: upTo({ messages, anchorMessageId }),
-      projectNames: projects.map((project) => project.name),
-    }).then((next) => {
-      if (!isCurrent) {
-        return;
-      }
-      setBrief(next);
-    });
-    return () => {
-      isCurrent = false;
-    };
-  }, [chat.id, anchorMessageId, drafter?.provider, drafter?.model, drafter?.effort]);
+  const projectNames = useMemo(() => projects.map((project) => project.name), [projects]);
+  const { brief, pickedProjectIds, patch, setProjectIds, discard } = useWorkBrief({
+    chat,
+    messages,
+    anchorMessageId,
+    drafter,
+    projectNames,
+    drafts,
+  });
 
   const changeDrafter = (choice: WorkDrafterChoice): void => {
     setIsDrafterPicked(true);
     setDrafter(choice);
   };
-
-  const patch = (next: Partial<WorkBrief>): void =>
-    setBrief((current) => (current === null ? current : { ...current, ...next }));
 
   const projectIds = useMemo(
     () =>
@@ -215,7 +186,13 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
     !isStarting &&
     (mode === 'new' || target !== null);
 
+  const cancel = (): void => {
+    discard();
+    onClose();
+  };
+
   const finish = (landed: Landed): void => {
+    discard();
     setUnlinked(null);
     onDone({
       id: crypto.randomUUID(),
@@ -294,10 +271,10 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
-      <div className="flex shrink-0 items-start gap-2 px-4 pb-1 pt-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h3 className="text-heading text-foreground">{TURN_INTO_WORK_LABEL}</h3>
-          {drafter === null ? (
+      <DrawerFrame
+        title={TURN_INTO_WORK_LABEL}
+        toolbar={
+          drafter === null ? (
             <p className="text-meta text-faint-foreground">Drafting from this chat</p>
           ) : (
             <DraftedBy
@@ -305,12 +282,11 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               connectedProviders={drafterProviders}
               onChange={changeDrafter}
             />
-          )}
-        </div>
-        <IconButton icon={X} label="Close" variant="ghost" onClick={onClose} />
-      </div>
-      <ScrollFade className="flex-1">
-        <div className="flex flex-col gap-3 px-4 pb-3 pt-3">
+          )
+        }
+        onClose={onClose}
+      >
+        <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
             <span className="text-meta text-muted-foreground">Start as</span>
             <SegmentedTabs
@@ -344,7 +320,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                 <span className="text-meta text-muted-foreground">Title</span>
                 <Input
                   value={brief.title}
-                  onChange={(event) => patch({ title: event.target.value })}
+                  onChange={(event) => patch({ next: { title: event.target.value } })}
                 />
               </label>
               <div className="flex flex-col gap-2">
@@ -356,7 +332,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                   minRows={3}
                   maxRows={10}
                   value={brief.goal}
-                  onChange={(goal) => patch({ goal })}
+                  onChange={(goal) => patch({ next: { goal } })}
                 />
               </div>
               <BriefItems
@@ -364,7 +340,9 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                 items={brief.know}
                 emptyLabel="Nothing noted yet"
                 removeLabel={(item) => `Remove ${item}`}
-                onRemove={(item) => patch({ know: brief.know.filter((entry) => entry !== item) })}
+                onRemove={(item) =>
+                  patch({ next: { know: brief.know.filter((entry) => entry !== item) } })
+                }
               />
               <BriefItems
                 label="Files"
@@ -372,7 +350,9 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                 emptyLabel="No files yet"
                 isCode
                 removeLabel={(item) => `Remove ${item}`}
-                onRemove={(item) => patch({ files: brief.files.filter((entry) => entry !== item) })}
+                onRemove={(item) =>
+                  patch({ next: { files: brief.files.filter((entry) => entry !== item) } })
+                }
               />
               {mode === 'new' ? (
                 <>
@@ -389,30 +369,13 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
             </>
           )}
           {unlinked === null ? null : (
-            <Notice
-              tone="danger"
-              placement="inline"
-              role="alert"
-              title="Couldn't link the chat to the session"
-              body="The session is ready. The link between them was not saved."
-              actions={
-                <>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void linkThenFinish(unlinked)}
-                  >
-                    Retry
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => finish(unlinked)}>
-                    Open the session
-                  </Button>
-                </>
-              }
+            <UnlinkedNotice
+              onRetry={() => void linkThenFinish(unlinked)}
+              onOpen={() => finish(unlinked)}
             />
           )}
           <FormActions error={error}>
-            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onClose}>
+            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={cancel}>
               Cancel
             </Button>
             <Button size="sm" disabled={!canStart} isBusy={isStarting} onClick={() => void start()}>
@@ -423,7 +386,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
             </Button>
           </FormActions>
         </div>
-      </ScrollFade>
+      </DrawerFrame>
     </div>
   );
 };

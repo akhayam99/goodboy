@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { runGroupFocusOf } from '../../../store/slices/navigation/runGroupFocusOf';
 
@@ -59,7 +60,7 @@ export const useGroupArrival = ({ isActive, rowAttribute, groups, onArrive }: Pa
       return;
     }
     setRevealRowKey(null);
-    row.scrollIntoView?.({ block: 'center' });
+    appScrollIntoView({ element: row, block: 'center' });
     row.focus();
   }, [revealRowKey, rowAttribute]);
 

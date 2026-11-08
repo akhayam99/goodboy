@@ -184,59 +184,58 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         ref={frame.ref}
         className={cn('mx-auto flex h-full min-h-0 w-full flex-col', PANE_RHYTHM.board.maxWidth)}
       >
-        {pending || !empty || hasProjects ? (
-          <SessionsHeader
-            workspaceId={workspaceId}
-            filterSessions={filterSessions}
-            archivedCount={archived.length}
-            onArchivedShownChange={onArchivedShownChange}
-            hiddenCount={pending || empty ? 0 : hiddenCount}
-            needsYouElsewhere={pending || empty ? 0 : needsYouElsewhere}
-            onClearFilters={clearFilters}
-          />
-        ) : null}
+        <SessionsHeader
+          isShown={pending || !empty || hasProjects}
+          workspaceId={workspaceId}
+          filterSessions={filterSessions}
+          archivedCount={archived.length}
+          onArchivedShownChange={onArchivedShownChange}
+          hiddenCount={pending || empty ? 0 : hiddenCount}
+          needsYouElsewhere={pending || empty ? 0 : needsYouElsewhere}
+          onClearFilters={clearFilters}
+        >
+          {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
 
-        {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
+          {pending && <BoardSkeleton lanes={layout.lanes} />}
 
-        {pending && <BoardSkeleton lanes={layout.lanes} />}
+          {!pending && empty && !hasProjects && workspace !== null && (
+            <ScrollFade
+              className="min-h-0 flex-1"
+              viewportClassName="flex items-center justify-center"
+            >
+              <div className="w-full max-w-xl py-6">
+                <NewWorkspaceForm mode="add" workspaceId={workspace.id} />
+              </div>
+            </ScrollFade>
+          )}
 
-        {!pending && empty && !hasProjects && workspace !== null && (
-          <ScrollFade
-            className="min-h-0 flex-1"
-            viewportClassName="flex items-center justify-center"
-          >
-            <div className="w-full max-w-xl py-6">
-              <NewWorkspaceForm mode="add" workspaceId={workspace.id} />
-            </div>
-          </ScrollFade>
-        )}
+          {!pending && hasProjects && empty && hasUsableProject && <BoardEmpty />}
 
-        {!pending && hasProjects && empty && hasUsableProject && <BoardEmpty />}
-
-        {!pending && hasProjects && empty && !hasUsableProject && !statusesPending && (
-          <BlockedBoard
-            entries={projectGitStatuses}
-            title={blockedReason}
-            description={blockedDescription}
-          />
-        )}
-
-        {!pending && !empty && (
-          <BoardFactsFrame workspaceId={workspaceId}>
-            <BoardLanes
-              layout={layout}
-              byStage={byStage}
-              archived={projectArchived}
-              isArchivedLoading={archivedList === undefined}
-              nav={nav}
-              selection={selection}
-              onRestore={onRestore}
-              motionResetKey={motionResetKey}
-              onCardEnter={hover.enter}
-              onCardLeave={hover.leave}
+          {!pending && hasProjects && empty && !hasUsableProject && !statusesPending && (
+            <BlockedBoard
+              entries={projectGitStatuses}
+              title={blockedReason}
+              description={blockedDescription}
             />
-          </BoardFactsFrame>
-        )}
+          )}
+
+          {!pending && !empty && (
+            <BoardFactsFrame workspaceId={workspaceId}>
+              <BoardLanes
+                layout={layout}
+                byStage={byStage}
+                archived={projectArchived}
+                isArchivedLoading={archivedList === undefined}
+                nav={nav}
+                selection={selection}
+                onRestore={onRestore}
+                motionResetKey={motionResetKey}
+                onCardEnter={hover.enter}
+                onCardLeave={hover.leave}
+              />
+            </BoardFactsFrame>
+          )}
+        </SessionsHeader>
       </div>
 
       <SessionHoverCard

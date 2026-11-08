@@ -2,7 +2,7 @@ import { initialFilters } from './initialFilters';
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { inlineMarkdownText, useEscapeLayer, PaneShell } from '@goodboy/ui';
+import { inlineMarkdownText, useEscapeLayer, PaneShell, appScrollIntoView } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -318,9 +318,8 @@ export const InboxStudio = ({
 
   const scrollToKey = useCallback((key: string): void => {
     requestAnimationFrame(() => {
-      document
-        .querySelector(`[data-row-key="${CSS.escape(key)}"]`)
-        ?.scrollIntoView({ block: 'nearest' });
+      const row = document.querySelector(`[data-row-key="${CSS.escape(key)}"]`);
+      appScrollIntoView({ element: row, block: 'nearest' });
     });
   }, []);
 

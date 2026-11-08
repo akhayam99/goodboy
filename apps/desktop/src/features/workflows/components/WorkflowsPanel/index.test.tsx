@@ -248,6 +248,19 @@ describe('WorkflowsPanel editor', () => {
     expect(screen.getByRole('button', { name: 'Open Plan and build' })).toBeDefined();
   });
 
+  it('keeps the breadcrumb back pinned and steps the name aside while you read', () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    renderPanel();
+    openWorkflow('Plan and build');
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const name = screen.getByRole('textbox', { name: 'Workflow name' });
+    const step = screen.getByRole('button', { name: 'Step 1: Plan' });
+    expect(breadcrumb.closest('[data-slot="reveal-pinned"]')).not.toBeNull();
+    expect(name.closest('[data-slot="reveal-header"]')).not.toBeNull();
+    expect(step.closest('[data-page-scroller]')).not.toBeNull();
+  });
+
   it('opens the workflow a search hit points at, then forgets it', () => {
     state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
     state.workflowStudioFocus = 'wf-1';

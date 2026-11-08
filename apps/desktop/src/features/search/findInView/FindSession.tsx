@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
-import { FLOATING_SURFACE, IconButton, cn, useEscapeLayer } from '@goodboy/ui';
+import { FLOATING_SURFACE, IconButton, cn, useEscapeLayer, appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import type { ViewFind } from '../../../store/slices/search-index/state';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
@@ -38,10 +38,11 @@ type RangeParams = {
 
 const revealRange = ({ range }: RangeParams): void => {
   const element = range.startContainer.parentElement;
-  if (element === null || typeof element.scrollIntoView !== 'function') {
-    return;
-  }
-  element.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+  appScrollIntoView({
+    element,
+    block: 'center',
+    behavior: reducedMotion() ? 'auto' : 'smooth',
+  });
 };
 
 type WrapParams = {

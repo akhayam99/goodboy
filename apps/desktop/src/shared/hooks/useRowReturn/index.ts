@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { stackKey } from '../../../store/slices/navigation/currentStack';
 
@@ -59,7 +60,7 @@ export const useRowReturn = ({ listKey, rowIds, rowAttribute }: Params): RowRetu
       return;
     }
     hasReturned.current = true;
-    row.scrollIntoView?.({ block: 'center' });
+    appScrollIntoView({ element: row, block: 'center' });
   });
 
   const remember = useCallback(

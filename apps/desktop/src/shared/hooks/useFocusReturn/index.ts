@@ -1,4 +1,5 @@
 import { useEffect, useState, type RefObject } from 'react';
+import { appScrollIntoView } from '@goodboy/ui';
 
 const FALLBACK_SELECTOR = '[data-focus-return]';
 
@@ -21,7 +22,7 @@ export const useFocusReturn = ({ rootRef }: Params): void => {
 
   useEffect(() => {
     const root = rootRef.current;
-    root?.scrollIntoView?.({ block: 'nearest' });
+    appScrollIntoView({ element: root, block: 'nearest' });
     const fallback = root?.closest<HTMLElement>(FALLBACK_SELECTOR) ?? null;
     return () => {
       if (!isFocusLost()) {

@@ -1,5 +1,12 @@
 import { ArrowDown } from 'lucide-react';
-import { FLOATING_SURFACE, ICON_SIZE, StatusDot, cn, FOCUS_RING } from '@goodboy/ui';
+import {
+  FLOATING_SURFACE,
+  ICON_SIZE,
+  StatusDot,
+  cn,
+  FOCUS_RING,
+  appScrollIntoView,
+} from '@goodboy/ui';
 import type { OpenQuestionId } from '@goodboy/types';
 
 type Props = {
@@ -13,7 +20,7 @@ const waitingLabel = ({ count }: { readonly count: number }): string =>
 export const QuestionWaitingPill = ({ count, questionId }: Props) => {
   const jump = () => {
     const anchor = document.querySelector(`[data-oq-anchor="${questionId}"]`);
-    anchor?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    appScrollIntoView({ element: anchor, behavior: 'smooth', block: 'center' });
     const card = anchor?.querySelector<HTMLElement>('[data-question-card]');
     card?.focus({ preventScroll: true });
   };

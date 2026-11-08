@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Button, DrawerFrame, cn, PANE_RHYTHM } from '@goodboy/ui';
+import { Button, DrawerFrame, cn, PANE_RHYTHM, appScrollIntoView } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore, useTranscript } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -146,9 +146,11 @@ export const AgentTranscriptDrawer = ({
     if (turn === null) {
       return;
     }
-    bodyRef.current
-      ?.querySelector(`[data-turn-heading="${turn}"]`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    appScrollIntoView({
+      element: bodyRef.current?.querySelector(`[data-turn-heading="${turn}"]`),
+      behavior: 'smooth',
+      block: 'start',
+    });
   }, [turn, request]);
 
   const title = agent === null ? null : agentTranscriptTitle({ agent });

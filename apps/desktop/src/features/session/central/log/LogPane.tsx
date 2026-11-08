@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, ICON_SIZE, Input, tintClasses } from '@goodboy/ui';
+import { Button, ICON_SIZE, Input, tintClasses, appScrollIntoView } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
@@ -73,7 +73,7 @@ export const LogPane = ({ session, focusEntryId = null }: Props) => {
     const target = Array.from(
       listRef.current?.querySelectorAll<HTMLElement>('[data-row-id]') ?? [],
     ).find((element) => element.dataset.rowId === focusEntryId);
-    target?.scrollIntoView({ block: 'center' });
+    appScrollIntoView({ element: target, block: 'center' });
   }, [focusEntryId, hasLaidOutRows]);
 
   return (

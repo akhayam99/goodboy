@@ -132,7 +132,8 @@ own workflows now holds is left out. When an update brings a new built-in,
 every workspace gets it at the next launch, unless one of your workflows
 already has that name. A built-in you never had is not counted as deleted.
 A row opens the editor: the builder without its launch bar, with the same step
-tree, a breadcrumb back to the list, and autosave. **Draft steps** asks an
+tree, a breadcrumb back to the list, and autosave. The breadcrumb stays at the
+top; the name field steps aside while you read the steps. **Draft steps** asks an
 agent to write the steps from the goal. With steps already there it reads
 **Redraft steps**, starts at once, and offers an undo once the new steps land.
 **Delete** on a workflow, **Delete** on a preset in the launch picker and
@@ -315,8 +316,8 @@ read top to bottom at the conversation measure:
   the run**, **Restore**; a run the orchestrator stopped on a human call has no
   header button: its action is the field **Add a hint and continue**, docked in
   place of the composer), else **Pause run** or **Continue** as a quiet word
-  (`RunLiveVerbs`); then the run `⋯`. The header stays fixed above the
-  scroll, the composer docks below it. The right click on the title lists the
+  (`RunLiveVerbs`); then the run `⋯`. The header steps aside while you
+  read and returns on a small scroll up (the back row stays); the composer docks below the scroll. The right click on the title lists the
   same items. Asks you is not in this menu: its chip holds it. An archived run shows
   **Restore** and reads dimmed, with no composer.
 - **Goal** (`OrchestratedGoal`). The goal as prose, then one glance line (state

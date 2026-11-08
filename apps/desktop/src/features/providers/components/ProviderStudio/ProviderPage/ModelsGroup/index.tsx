@@ -7,7 +7,15 @@ import {
   type HiddenModels,
 } from '@goodboy/core/providers';
 import type { CatalogModel, ProviderId, WorkspaceId } from '@goodboy/types';
-import { BAND_ROW_CLASS, Band, Button, OptionalTooltip, Switch, cn } from '@goodboy/ui';
+import {
+  BAND_ROW_CLASS,
+  Band,
+  Button,
+  OptionalTooltip,
+  Switch,
+  cn,
+  appScrollIntoView,
+} from '@goodboy/ui';
 import { PickerChip } from '../../../../../../shared/components/RoutingPicker/PickerChip';
 import { useHiddenModels, useSaveHiddenModels } from '../../../../hooks/useHiddenModels';
 import { HIDDEN_MODELS_LINE } from './constants';
@@ -69,7 +77,7 @@ export const ModelsGroup = ({ providerId, workspaceId, isFocused }: Props) => {
     if (!isFocused) {
       return;
     }
-    sectionRef.current?.scrollIntoView?.({ block: 'start' });
+    appScrollIntoView({ element: sectionRef.current, block: 'start' });
   }, [isFocused]);
 
   const save = (next: HiddenModels) => {
