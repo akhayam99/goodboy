@@ -141,7 +141,7 @@ const HEADER_FILES: ReadonlyArray<string> = [
 const REVEAL_ROOT_OF: Readonly<Partial<Record<FramePage, string>>> = {
   board: 'features/workspace/components/StageBoard/SessionsHeader.tsx',
   chat: 'features/workspace-chat/components/ChatRoom/ChatHeader.tsx',
-  terminal: 'features/terminal/components/TerminalStudio/TerminalStudioBody.tsx',
+  terminal: 'features/terminal/components/TerminalStudio/TerminalRail.tsx',
 };
 
 const SIDE_SCROLLER_FILES: ReadonlyArray<string> = [
@@ -294,7 +294,7 @@ describe('every page steps its header aside while you read', () => {
 
   it('keeps a side scroller of the body from moving the header', () => {
     const drifted = SIDE_SCROLLER_FILES.filter(
-      (file) => !/<ScrollFade\b[^>]*canDriveHeader=\{false\}/.test(read(file)),
+      (file) => !/<ScrollFade\b[^>]*isPageScroller=\{false\}/.test(read(file)),
     );
 
     expect(drifted).toEqual([]);
