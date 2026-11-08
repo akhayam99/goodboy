@@ -559,6 +559,49 @@ describe('the Overview grid', () => {
     );
   });
 
+  it('keeps Nobody asked yet when only a commenting bot is on a review-required pull request', async () => {
+    await show();
+    act(() => {
+      useAppStore.setState((state) => {
+        const mountId = state.sessionProjectMounts[SESSION.id]?.[0]?.mountId;
+        const current = mountId === undefined ? undefined : state.mountGithub[mountId];
+        if (
+          mountId === undefined ||
+          current === undefined ||
+          current.pr === null ||
+          current.detail === null
+        ) {
+          return state;
+        }
+        const bot = {
+          id: 'review-bot',
+          author: 'acme-review',
+          authorAvatarUrl: null,
+          state: 'commented' as const,
+          submittedAt: '2026-10-01T10:00:00Z',
+          body: 'No issues in 4 areas.',
+          isAuthorBot: true,
+        };
+        return applyMountGithub({
+          state,
+          sessionId: SESSION.id,
+          mountId,
+          github: {
+            ...current,
+            pr: { ...current.pr, reviewDecision: 'review_required' },
+            detail: { ...current.detail, reviews: [bot], reviewRequests: [] },
+          },
+        });
+      });
+    });
+
+    await waitFor(() => {
+      const box = screen.getByRole('region', { name: 'Merge status' });
+      expect(box.textContent).toContain('No approval yet');
+      expect(box.textContent).toContain('Nobody asked yet');
+    });
+  });
+
   it('says the queue of a queued pull request in the merge box', async () => {
     await show();
     act(() => {

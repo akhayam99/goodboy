@@ -90,7 +90,7 @@ export const PullRequestPage = ({
       failingChecks: facts.failingChecks,
       runningChecks: facts.runningChecks,
     },
-    reviewers: [...reviewers.people, ...reviewers.bots],
+    reviewers: [...reviewers.people, ...reviewers.bots.filter((bot) => bot.state !== 'commented')],
     readiness,
     hasConflicts: facts.hasConflicts,
     mergeWord,
