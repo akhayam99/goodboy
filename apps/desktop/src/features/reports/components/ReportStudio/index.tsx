@@ -57,7 +57,7 @@ export const ReportStudio = ({ sessionId, artifact }: Props) => {
       {hasOutline && isOutlineAside ? (
         <aside
           data-testid="report-outline-rail"
-          className="sticky top-[var(--reveal-inset,0px)] flex max-h-[60vh] w-45 shrink-0 flex-col self-start"
+          className="sticky top-0 flex max-h-[60vh] w-45 shrink-0 flex-col self-start"
         >
           <ScrollFade className="min-h-0 flex-1">
             <ReportOutlineNav

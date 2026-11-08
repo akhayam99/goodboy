@@ -3,6 +3,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { PANE_RHYTHM } from '../../paneRhythm';
+import { ListGrid } from '../ListGrid/ListGrid';
+import { ListGridGroup } from '../ListGrid/ListGridGroup';
 import { RevealRegion } from '../RevealRegion';
 import { ScrollFade } from '../ScrollFade';
 import { PageTrailContext } from './pageTrailContext';
@@ -117,7 +119,28 @@ describe('sticky page header surface', () => {
     );
   });
 
-  it('lets a scroller nested under the pinned zone start its sticky rows at its own top', () => {
+  it('parks a sticky row at the padded scroller top, so the inset counts once', () => {
+    const { container } = render(
+      <PageTrailContext.Provider value={<span>Back to artifacts</span>}>
+        <PaneShell title="Report" isHeaderPinned>
+          <ListGrid label="Runs" columns={[]} isGrouped>
+            <ListGridGroup label="Harborline" isSticky>
+              <li>ledger-core</li>
+            </ListGridGroup>
+          </ListGrid>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+
+    const label = container.querySelector('[data-list-grid-group-label]');
+    const scroller = label?.closest('.overflow-y-auto') ?? null;
+    expect(scroller?.hasAttribute('data-page-scroller')).toBe(true);
+    expect(classesOf(scroller)).toContain('pt-[var(--reveal-inset,0px)]');
+    expect(classesOf(label)).toEqual(expect.arrayContaining(['sticky', 'top-0']));
+    expect(label?.className).not.toContain('--reveal-inset');
+  });
+
+  it('leaves a nested scroller unpadded, so its sticky rows start at its own top', () => {
     const { container } = render(
       <PageTrailContext.Provider value={<span>Back to artifacts</span>}>
         <PaneShell title="Report" isHeaderPinned>
@@ -130,7 +153,7 @@ describe('sticky page header surface', () => {
 
     const scrollers = [...container.querySelectorAll('.overflow-y-auto')];
     expect(scrollers).toHaveLength(2);
-    expect(classesOf(scrollers[1] ?? null)).toContain('[--reveal-inset:0px]');
+    expect(scrollers[1]?.className).not.toContain('--reveal-inset');
   });
 
   it('paints the sliding header with the same surface and no shadow', () => {

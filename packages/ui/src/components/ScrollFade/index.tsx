@@ -147,9 +147,7 @@ export const ScrollFade = ({
           horizontal
             ? 'mask-fade-x h-full max-w-[inherit] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
             : 'mask-fade-y h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-          isUnderPinned
-            ? 'pt-[var(--reveal-inset,0px)] scroll-pt-[var(--reveal-inset,0px)]'
-            : '[--reveal-inset:0px]',
+          isUnderPinned && 'pt-[var(--reveal-inset,0px)] scroll-pt-[var(--reveal-inset,0px)]',
           viewportClassName,
         )}
         data-page-scroller={isPageScroller ? '' : undefined}

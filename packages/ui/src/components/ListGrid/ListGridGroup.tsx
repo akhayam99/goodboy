@@ -53,7 +53,7 @@ export const ListGridGroup = ({
           className={cn(
             SUBGRID,
             'h-5 items-center',
-            isSticky && 'sticky-surface sticky top-[var(--reveal-inset,0px)] z-10',
+            isSticky && 'sticky-surface sticky top-0 z-10',
           )}
         >
           <div className="col-start-2 col-end-[-1] flex min-w-0 items-center gap-3">

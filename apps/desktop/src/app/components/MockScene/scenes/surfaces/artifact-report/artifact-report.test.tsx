@@ -102,4 +102,31 @@ describe('u37 artifact report scrolled', () => {
       expect(scroller === null ? true : overlay.contains(scroller)).toBe(false);
     },
   );
+
+  it.each(Object.keys(U37_ARTIFACT_REPORT_SCENES))(
+    'parks the %s outline on the scroller padded by the pinned height, with no second inset',
+    async (id) => {
+      const Scene = MOCK_SCENES[id];
+      if (Scene === undefined) {
+        throw new Error(`no scene ${id}`);
+      }
+      render(<Scene />);
+
+      const rail = await screen.findByTestId('report-outline-rail', {}, SCENE_WAIT);
+      await waitFor(() => expect(reportScroller()?.scrollTop).toBe(SCROLL_PX), SCENE_WAIT);
+      const region = closest({ node: rail, selector: '[data-slot="reveal-region"]' });
+      const overlay = region.querySelector<HTMLElement>('[data-slot="reveal-overlay"]');
+      if (overlay === null) {
+        throw new Error('no reveal overlay');
+      }
+      Object.defineProperty(overlay, 'offsetHeight', { configurable: true, value: PINNED_PX });
+      observers.resizeAll();
+
+      const scroller = rail.parentElement?.closest('.overflow-y-auto') ?? null;
+      expect(scroller).toBe(reportScroller());
+      expect(region.style.getPropertyValue('--reveal-inset')).toBe(`${PINNED_PX}px`);
+      expect(region.contains(rail)).toBe(true);
+      expect(overlay.contains(rail)).toBe(false);
+    },
+  );
 });

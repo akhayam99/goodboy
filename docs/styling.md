@@ -476,9 +476,9 @@ never shows through the frosted row). The `PaneShell` body scroller
 its top padding and `scroll-padding-top`, so text scrolls under the back row and
 an anchor lands below it. A self-scrolling body pads the inset instead and stays
 below the row. A sticky row inside the scroller (a list group label, a diff file
-header, the report outline) sits at `top: var(--reveal-inset)`, so it parks under
-the pinned zone, not behind it; every other `ScrollFade` resets the var to 0, so
-a nested scroller's sticky rows start at its own top. A page whose header is a
+header, the report outline) sits at `top: 0`: a sticky box parks at the
+scroller's padding edge, so the inset padding already puts it right under the
+pinned zone, and `top: var(--reveal-inset)` would count the inset twice. A page whose header is a
 status bar the reader keeps (the artifact page, `PaneShell` `isHeaderPinned`)
 puts it in the pinned zone with the back row instead: nothing steps aside, and
 the document scrolls under both. The header's `top`, the body's `top` and its `height` read the same var in
