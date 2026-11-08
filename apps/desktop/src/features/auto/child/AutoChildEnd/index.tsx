@@ -3,7 +3,7 @@ import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { TailLine } from '../../../live-state/TailLine';
 import { autoChildLive } from '../../../live-state/adapters/autoChildLive';
-import type { TailActionId } from '../../../live-state/tailFacts';
+import type { TailActionId, TailFacts } from '../../../live-state/tailFacts';
 import { DelegationResult } from '../../chat/DelegationResult';
 import { useChecksRerun } from '../../chat/useChecksRerun';
 import { useDelegationDecision } from '../../chat/useDelegationDecision';
@@ -23,6 +23,13 @@ type DecideParams = {
   readonly choice: DelegationDecision;
 };
 
+const RETURNED: TailFacts = {
+  state: 'idle',
+  phrase: 'Returned to Auto',
+  startedAt: null,
+  actions: [],
+};
+
 export const AutoChildEnd = ({ sessionId, delegation, card, agent, isReplaced }: Props) => {
   const turn = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const cancelCurrentTurn = useAppStore((state) => state.cancelCurrentTurn);
@@ -40,8 +47,14 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent, isReplaced }:
     lastTool: null,
     project: null,
   });
+  const isHandedOn = delegation.outcome === 'blocked' && isReplaced;
+  const settled = live ?? (delegation.state === 'settled' && !isHandedOn ? RETURNED : null);
   const facts =
-    agent.status === 'stopped' ? null : live?.state === 'failed' ? { ...live, actions: [] } : live;
+    agent.status === 'stopped'
+      ? null
+      : settled?.state === 'failed'
+        ? { ...settled, actions: [] }
+        : settled;
   const decide = ({ choice }: DecideParams): void => {
     if (decision.busyId === delegation.id) {
       return;

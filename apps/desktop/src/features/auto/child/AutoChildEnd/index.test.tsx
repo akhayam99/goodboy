@@ -144,6 +144,36 @@ describe('the end of an Auto child page', () => {
     expect(document.body.textContent).not.toContain('declared_blocked');
   });
 
+  it('keeps the outcome marker out of the Returned to Auto tail', () => {
+    const delegation = {
+      ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      reason: 'declared_blocked',
+      result: {
+        declared: {
+          summary:
+            'Needs a shell to read commits in payments-api.\n\n<<outcome>>Blocked: needs a shell<</outcome>>',
+        },
+      },
+    };
+    show({ delegation, status: 'blocked' });
+
+    screen.getByText('Returned to Auto: Needs a shell to read commits in payments-api.');
+    expect(document.body.textContent).not.toContain('<<outcome>>');
+    expect(document.body.textContent).not.toContain('needs a shell<');
+  });
+
+  it('keeps Returned to Auto at the end of a completed child', () => {
+    const delegation = aDelegation({
+      key: 'impl',
+      role: 'implementer',
+      state: 'settled',
+      outcome: 'completed',
+    });
+    show({ delegation, status: 'completed' });
+
+    screen.getByText('Returned to Auto');
+  });
+
   it.each([
     { reason: 'process_error', sentence: 'The agent ended with an error.' },
     {
