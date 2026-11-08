@@ -8,6 +8,7 @@ import {
   parseOutcomeLine,
   publishOfResult,
   publishTextOf,
+  stripOutcomeLine,
   type OutcomeLine,
   type PublishState,
 } from '@goodboy/core/auto';
@@ -116,6 +117,18 @@ const mapped = <Item>({ items, read }: MappedParams<Item>): ReadonlyArray<Item> 
     return one === null ? [] : [one];
   });
 
+type SummaryParams = {
+  readonly summary: string | null;
+};
+
+const proseSummaryOf = ({ summary }: SummaryParams): string | null => {
+  if (summary === null) {
+    return null;
+  }
+  const prose = stripOutcomeLine({ text: summary });
+  return prose === '' ? null : prose;
+};
+
 type Params = {
   readonly result: unknown;
   readonly outcome?: AutoOutcome | null;
@@ -138,11 +151,15 @@ export const delegationResultOf = ({
   const checks = mapped({ items: listField({ source: verified, key: 'checks' }), read: checkOf });
   const checksRun = checksRunOfResult({ result });
   const publish = publishOfResult({ result });
-  const summary = textField({ source: declared, key: 'summary' });
+  const declaredSummary = textField({ source: declared, key: 'summary' });
+  const summary = proseSummaryOf({ summary: declaredSummary });
   const reasonText = delegationReasonTextOf({ reason: reasonOf });
   return {
     outcomeLine: outcomeLineOf({
-      modelLine: summary === null || isOutcomeGiven ? null : parseOutcomeLine({ text: summary }),
+      modelLine:
+        declaredSummary === null || isOutcomeGiven
+          ? null
+          : parseOutcomeLine({ text: declaredSummary }),
       outcome,
       checksRun,
       checks: checks.map((check) => ({

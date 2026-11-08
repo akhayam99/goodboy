@@ -231,6 +231,31 @@ describe('DelegationResult reading order', () => {
     expect(view.outcomeLine?.tone).toBe('danger');
   });
 
+  it('drops the outcome marker from the summary of a returned child', () => {
+    const view = delegationResultOf({
+      result: rawResult({
+        summary: '<<outcome>>Blocked: needs a shell<</outcome>>',
+        verdict: 'green',
+      }),
+      outcome: 'blocked',
+    });
+
+    expect(view?.outcomeLine?.text).not.toContain('Blocked: needs a shell');
+    expect(view?.summary).toBeNull();
+  });
+
+  it('keeps the prose of a returned child without the marker', () => {
+    const view = delegationResultOf({
+      result: rawResult({
+        summary: '<<outcome>>Blocked: needs a shell<</outcome>>\nNo shell in this sandbox.',
+        verdict: 'green',
+      }),
+      outcome: 'blocked',
+    });
+
+    expect(view?.summary).toBe('No shell in this sandbox.');
+  });
+
   it('draws files, checks and the failing check as chips, not as a stack of rows', () => {
     const view = delegationResultOf({
       result: rawResult({ summary: 'Notes.', verdict: 'red' }),
