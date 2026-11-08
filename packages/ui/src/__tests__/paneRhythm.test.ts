@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PANE_RHYTHM } from '../paneRhythm';
+import { PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '../paneRhythm';
 import { COLLAPSED_RAIL_WIDTH } from '../components/AppShell';
 
 describe('PANE_RHYTHM', () => {
@@ -32,6 +32,10 @@ describe('PANE_RHYTHM', () => {
     const stackGap = PANE_RHYTHM.stack.split(' ').find((entry) => entry.startsWith('gap-'));
     expect(PANE_RHYTHM.below.section.replace('pb-', 'gap-')).toBe(stackGap);
     expect(PANE_RHYTHM.below.title).toBe('pb-4');
+  });
+
+  it('gives the groups gap in rem to a slot that cancels it while closed', () => {
+    expect(PANE_RHYTHM.groups).toContain(`gap-${PANE_GROUPS_GAP_REM * 4}`);
   });
 
   describe('the Sessions block in the column', () => {

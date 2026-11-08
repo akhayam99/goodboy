@@ -113,12 +113,15 @@ describe('the central column scenes', () => {
     const slots = Array.from(column?.querySelectorAll(':scope > [data-height-motion]') ?? []);
     expect(slots.length).toBeGreaterThan(0);
     for (const slot of slots) {
-      expect(slot.hasAttribute('hidden')).toBe(true);
+      expect(slot.getAttribute('data-height-motion')).toBe('closed');
+      expect(slot.getAttribute('aria-hidden')).toBe('true');
+      expect(slot.getAttribute('style')).toContain('height: 0px');
+      expect(slot.getAttribute('style')).toContain('margin-top: -2rem');
       expect(slot.textContent).toBe('');
     }
     const children = Array.from(column?.children ?? []);
     const rendered = children.filter(
-      (child) => !child.hasAttribute('hidden') && child.textContent !== '',
+      (child) => child.getAttribute('data-height-motion') !== 'closed' && child.textContent !== '',
     );
     const status = rendered.findIndex((child) => child.hasAttribute('data-overview-status'));
     expect(status).toBeGreaterThanOrEqual(0);
