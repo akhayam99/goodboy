@@ -8,7 +8,7 @@ const ROOTS: ReadonlyArray<string> = ['slices', 'runtime'];
 const MAX_FLAT_FILES = 60;
 
 const ALLOWED: Readonly<Record<string, number>> = {
-  'runtime/auto': 93,
+  'runtime/auto': 92,
   'slices/project-mounts': 70,
   'slices/resolve': 109,
   'slices/turn': 101,

@@ -18,7 +18,10 @@ import {
   type Statement,
 } from '@goodboy/db';
 import type { AutoAttemptId } from '@goodboy/types';
-import { reviseFailureStatements, type ReviseFailure } from './reviseFailureStatements';
+import {
+  reviseFailureStatements,
+  type ReviseFailure,
+} from './reviseFailure/reviseFailureStatements';
 
 type AttemptEnding =
   | Readonly<{

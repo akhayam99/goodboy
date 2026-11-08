@@ -139,7 +139,7 @@ type SliceParams = {
   readonly text: string;
 };
 
-const linesOf = ({ text }: SliceParams): ReadonlyArray<string> => {
+const proseLinesOf = ({ text }: SliceParams): ReadonlyArray<string> => {
   const lines: string[] = [];
   let isInBlock = false;
   for (const line of stripControlMarkers(text).split('\n')) {
@@ -159,7 +159,7 @@ const linesOf = ({ text }: SliceParams): ReadonlyArray<string> => {
   return lines;
 };
 
-const requestOf = ({ lines }: LinesParams): string | null => {
+const firstRequestLineOf = ({ lines }: LinesParams): string | null => {
   for (const line of lines) {
     const request = oneLine({ text: line, max: CHILD_REQUEST_MAX_CHARS });
     if (request !== '') {
@@ -212,8 +212,10 @@ const endingOf = ({ text: rawText, childAgentId }: CompletionParams): Ending => 
     returned: {
       needs: needsOf({ value: first.attrs['needs'] }),
       request:
-        requestOf({ lines: linesOf({ text: text.slice(first.end) }) }) ??
-        requestOf({ lines: [...linesOf({ text: text.slice(0, first.start) })].reverse() }),
+        firstRequestLineOf({ lines: proseLinesOf({ text: text.slice(first.end) }) }) ??
+        firstRequestLineOf({
+          lines: [...proseLinesOf({ text: text.slice(0, first.start) })].reverse(),
+        }),
     },
   };
 };

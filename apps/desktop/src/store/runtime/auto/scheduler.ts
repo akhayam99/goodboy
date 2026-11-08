@@ -14,7 +14,11 @@ import {
 } from '@goodboy/db';
 import type { AutoTreeId } from '@goodboy/types';
 import { admitBatch, type AdmitBatchParams, type AdmitOutcome } from './admit';
-import { failRevise, type FailReviseOutcome, type FailReviseParams } from './failRevise';
+import {
+  failRevise,
+  type FailReviseOutcome,
+  type FailReviseParams,
+} from './reviseFailure/failRevise';
 import { landRevision, type LandRevisionOutcome, type LandRevisionParams } from './landRevision';
 import { markAttemptRunning, type MarkAttemptRunningParams } from './markAttemptRunning';
 import {

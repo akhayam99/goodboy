@@ -5,7 +5,7 @@ import {
   type AutoDelegation,
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
-import type { FailReviseParams } from './failRevise';
+import type { FailReviseParams } from './reviseFailure/failRevise';
 import type { LandRevisionOutcome } from './landRevision';
 import type { AgentVerbContext } from './verbContext';
 import { isRecord } from '@goodboy/types/helpers';
