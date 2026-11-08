@@ -8,7 +8,7 @@ const worktreeStatus = vi.hoisted(() => vi.fn());
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus }));
 
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
-import { useWorktreeStatuses } from '.';
+import { useWorktreeStatusSnapshot, useWorktreeStatuses } from '.';
 
 afterEach(() => {
   resetWorktreeStatusCache();
@@ -50,6 +50,44 @@ describe('adding a worktree', () => {
     expect(seen.length).toBeGreaterThan(0);
     expect(seen.every((hasFirst) => hasFirst)).toBe(true);
     expect(view.result.current).toBe(settled);
+  });
+});
+
+describe('changing the base branch of a worktree already read', () => {
+  it('drops the distance read against the old base and holds the row until the new read lands', async () => {
+    worktreeStatus.mockResolvedValueOnce({ mainDistance: 1 });
+    const view = renderHook(
+      ({ targets }: { readonly targets: Targets }) => useWorktreeStatusSnapshot({ targets }),
+      { initialProps: { targets: [{ worktreePath: '/repo/first', baseBranch: 'main' }] } },
+    );
+    await waitFor(() => expect(view.result.current.statuses.has('/repo/first')).toBe(true));
+    let answer: (status: { readonly mainDistance: number }) => void = () => undefined;
+    worktreeStatus.mockReturnValueOnce(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+
+    view.rerender({ targets: [{ worktreePath: '/repo/first', baseBranch: 'develop' }] });
+
+    expect(view.result.current.statuses.has('/repo/first')).toBe(false);
+    expect(view.result.current.pending.has('/repo/first')).toBe(true);
+    await act(async () => {
+      await Array.from({ length: MICROTASK_TURNS }).reduce<Promise<void>>(
+        (previous) => previous.then(() => new Promise<void>((resolve) => queueMicrotask(resolve))),
+        Promise.resolve(),
+      );
+    });
+    expect(view.result.current.statuses.has('/repo/first')).toBe(false);
+
+    act(() => {
+      answer({ mainDistance: 4 });
+    });
+
+    await waitFor(() =>
+      expect(view.result.current.statuses.get('/repo/first')).toEqual({ mainDistance: 4 }),
+    );
+    expect(view.result.current.pending.size).toBe(0);
   });
 });
 

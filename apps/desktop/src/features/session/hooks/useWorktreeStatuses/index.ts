@@ -35,16 +35,60 @@ const sameStatuses = (
 const samePending = (current: ReadonlySet<string>, next: ReadonlySet<string>): boolean =>
   current.size === next.size && Array.from(next).every((path) => current.has(path));
 
+type SameKeysParams = {
+  readonly current: ReadonlyMap<string, string>;
+  readonly next: ReadonlyMap<string, string>;
+};
+
+const sameKeys = ({ current, next }: SameKeysParams): boolean =>
+  current.size === next.size &&
+  Array.from(next.entries()).every(([path, key]) => current.get(path) === key);
+
+type Published = Snapshot & {
+  readonly keys: ReadonlyMap<string, string>;
+};
+
+const EMPTY_KEYS: ReadonlyMap<string, string> = new Map();
+const EMPTY_PUBLISHED: Published = { ...EMPTY_SNAPSHOT, keys: EMPTY_KEYS };
+
+type ShownParams = {
+  readonly published: Published;
+  readonly currentKeys: ReadonlyMap<string, string>;
+};
+
+const shownOf = ({ published, currentKeys }: ShownParams): Snapshot => {
+  const movedPaths = Array.from(published.statuses.keys()).filter(
+    (path) => published.keys.get(path) !== currentKeys.get(path),
+  );
+  if (movedPaths.length === 0) {
+    return published;
+  }
+  const statuses = new Map(published.statuses);
+  const pending = new Set(published.pending);
+  movedPaths.forEach((path) => {
+    statuses.delete(path);
+    if (currentKeys.has(path)) {
+      pending.add(path);
+    }
+  });
+  return { statuses, pending };
+};
+
 export const useWorktreeStatusSnapshot = ({ targets }: Params): Snapshot => {
-  const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY_SNAPSHOT);
+  const [published, setPublished] = useState<Published>(EMPTY_PUBLISHED);
   const targetsKey = JSON.stringify(
     targets.map(({ worktreePath, baseBranch }) => [worktreePath, baseBranch ?? null]),
   );
   const stableTargets = useMemo(() => targets, [targetsKey]);
+  const currentKeys = useMemo(
+    () => new Map(stableTargets.map((target) => [target.worktreePath, worktreeStatusKey(target)])),
+    [stableTargets],
+  );
+  const snapshot = useMemo(() => shownOf({ published, currentKeys }), [published, currentKeys]);
 
   useEffect(() => {
     if (stableTargets.length === 0) {
-      setSnapshot(EMPTY_SNAPSHOT);
+      setPublished(EMPTY_PUBLISHED);
       return;
     }
     let isStale = false;
@@ -58,24 +102,33 @@ export const useWorktreeStatusSnapshot = ({ targets }: Params): Snapshot => {
         return;
       }
       const statuses = new Map<string, WorktreeStatus>();
+      const nextKeys = new Map<string, string>();
       const pending = new Set<string>();
       keyed.forEach(({ key, worktreePath }) => {
         const value = readWorktreeStatus(key);
         if (value) {
           statuses.set(worktreePath, value);
+          nextKeys.set(worktreePath, key);
         }
         if (!isWorktreeStatusSettled(key)) {
           pending.add(worktreePath);
         }
       });
       const isWholeSetRead = pending.size === 0;
-      setSnapshot((current) => {
-        const nextStatuses =
-          !isWholeSetRead || sameStatuses(current.statuses, statuses) ? current.statuses : statuses;
+      setPublished((current) => {
+        const isSameSet =
+          sameStatuses(current.statuses, statuses) &&
+          sameKeys({ current: current.keys, next: nextKeys });
+        const isKept = !isWholeSetRead || isSameSet;
+        const nextStatuses = isKept ? current.statuses : statuses;
         const nextPending = samePending(current.pending, pending) ? current.pending : pending;
         return nextStatuses === current.statuses && nextPending === current.pending
           ? current
-          : { statuses: nextStatuses, pending: nextPending };
+          : {
+              statuses: nextStatuses,
+              pending: nextPending,
+              keys: isKept ? current.keys : nextKeys,
+            };
       });
     };
     const unsubscribes = keyed.map(({ key, worktreePath, baseBranch }) => {
