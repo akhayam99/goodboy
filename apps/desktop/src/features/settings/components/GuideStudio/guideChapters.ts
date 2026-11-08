@@ -301,7 +301,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'The agent behind Start a run. It answers what it can, hands the rest to child agents of the roles it picks and goes on under a limit, listed under Runs.',
+        desc: 'The agent behind Start a run. It answers what it can, hands the rest to child agents of the roles it picks and goes on under a limit, listed under Runs. A returned child reads Idle.',
       },
       {
         term: 'Let Auto take it from here',
