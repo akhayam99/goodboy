@@ -992,19 +992,40 @@ the root's text into each child brief as a `**Guidance**` section before the
 `**Task**`. A run without guidance builds the same prompt and briefs as before.
 
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
-(`roleNeedsSection`, driver `auto`): per role a reason the root can see and a "do not add it when".
-The default is one implementer with nothing added, a "do not" beats a reason, and a force push
-always brings a reviewer. The rewriter, scribe and CI fixer rows exist for Auto only. The
+(`roleNeedsSection`, driver `auto`): per role a trigger the root can see and a "do not add it when".
+Auto picks the narrowest row whose trigger it sees in the goal or in a result: history words
+(regroup, squash, reword, split or tidy commits) for a Rewriter, a red check named anywhere for a
+CI fixer, a pull request title, body or opening for a Scribe, a behavior with no test or a
+regression for a Tester, README, docs or changelog for Docs. The Implementer row comes last: it only
+changes code and is the fallback, and it also takes a check that must run commands and changes
+nothing while no reading role has git. A "do not" beats a reason, and a force push
+always brings a reviewer. The rewriter, scribe, CI fixer and implementer rows exist for Auto only;
+the investigator row tells Auto that a red check goes to a CI fixer (`autoDoNot`). The
 delegation rules add "decide once before you fan out": when two or more writers would get the
 same task on different branches, one writer or a planner decides first and each writer gets the
-decision in its task. These are prompt rules, not enforcement: a test proves the prompt holds
-each row, not that the model follows it. The Orchestrated prompt renders the same table filtered
-to its roles ([workflows.md](./workflows.md) → Step sequencing).
+decision in its task. These are prompt rules: a test proves the prompt holds each row, not that
+the model follows it. The Orchestrated prompt renders the same table filtered to its roles
+([workflows.md](./workflows.md) → Step sequencing).
+
+**Role fit.** One row is enforced. `resolveDelegateChild` reads the title and task of a new
+Implementer child with `roleFitOf` (`packages/core/src/auto/roleFit.ts`), a linear word scan with
+no backtracking pattern. History words, a red or failing check and a pull request to write or
+open count anywhere in the task; tests and docs count only in the title or the first sentence, so a
+code task that ends with "add tests and update the docs" stays with the Implementer. A word after
+no, not, never or don't in the same clause does not count, except "no regression test". When a
+narrower role fits, the batch is refused with `role_narrower` and nothing is written: "This task
+asks for tests: a tester fits. Send it to a tester ("role":"tester"), or keep the implementer with
+"roleReason": one line on why the implementer fits better." A second send whose child carries
+`roleReason` passes; the admission stores `roleFit` and `roleReason` in `request_json`, and the
+child's page shows "Why not Tester: <reason>" under "Why Auto chose Implementer" (`roleKept` in
+`delegationCardOf`, `AutoChildBrief`). A retry, a continue and a revise keep their role and are
+never scanned. While Auto cannot start a Rewriter (`AUTO_CLOSED_ROLES` in `roles.ts`), history work
+fits the Implementer, so it is not refused.
 
 The system prompt (`packages/core/src/auto/prompt.ts`) carries the role list and a routing table,
 **WHICH ROLE FOR WHICH WORK**, generated from `AUTO_ROLE_WHEN` (one line per Auto role, so a role
 cannot join without one): diagnosing a failure goes to an Investigator, tests to a Tester, text
-about code to Docs, code changes and their commits to an Implementer, the pull request to a
+about code to Docs, code changes to an Implementer when no narrower role fits, the pull request to a
 Scribe, a failing check to a CI fixer, the commit history of the branch to a Rewriter. Scribe, CI
 fixer and Rewriter are writers (m232 widens the role CHECK of `auto_delegations`; Rust
 `WRITER_ROLES` holds them). A Rewriter child cannot start: its turn needs the copy the History flow
@@ -1028,8 +1049,10 @@ Only a writer role has a shell; Scout, Planner, Investigator and Reviewer run wi
 each role line of the prompt says whether the role has a shell, and the prompt rule says a task that
 runs a command goes only to a role that does. `resolveDelegateChild` enforces it: a read-only role
 whose task or done-when line names a command (`git log`, `git ls-remote`, `pnpm test`, "run the
-tests", or a commit range such as `a1b2c3d4e..HEAD`, which only git can list) is refused with
-`role_lacks_shell`, the message lists the roles that can run commands and quotes the phrase that
+tests", a commit range such as `a1b2c3d4e..HEAD`, or an output only git gives: the files of each
+commit, a trailer, whether the remote branch exists) is refused with
+`role_lacks_shell`, the message lists the roles Auto can start that run commands
+(`AUTO_COMMAND_ROLES`, never a closed role) and quotes the phrase that
 matched (`commandMentionOf`), and nothing is written, so Auto chooses again in its next turn. A
 command inside a prohibition does not count: no, never, not, don't, without, skip or avoid (and
 `non`, `senza`, `mai`) within six words before it, in the same clause, make "No yarn install" or

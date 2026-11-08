@@ -8,6 +8,8 @@ import {
   delegationDepthOf,
   commandMentionOf,
   roleCannotRunCommandsMessage,
+  roleFitOf,
+  roleNarrowerMessage,
   isAutoSubstepRole,
   isAutoWriterRole,
   substepLinkOf,
@@ -313,6 +315,28 @@ const briefVersionOf = ({ retry }: BriefVersionParams): number | null => {
 const isResolved = (value: ReviseTarget | ResolvedDelegateChild): value is ResolvedDelegateChild =>
   'kind' in value;
 
+type NarrowerFitParams = {
+  readonly role: AutoDelegationRole;
+  readonly child: DelegateChildSpec;
+  readonly revise: ReviseTarget | null;
+  readonly retry: AutoDelegation | null;
+  readonly continueWith: AutoContinue | null;
+};
+
+const narrowerFitOf = ({
+  role,
+  child,
+  revise,
+  retry,
+  continueWith,
+}: NarrowerFitParams): AutoDelegationRole | null => {
+  if (role !== 'implementer' || revise !== null || retry !== null || continueWith !== null) {
+    return null;
+  }
+  const fit = roleFitOf({ title: child.title, task: child.task });
+  return fit === role ? null : fit;
+};
+
 export const resolveDelegateChild = async ({
   ctx,
   grant,
@@ -389,6 +413,14 @@ export const resolveDelegateChild = async ({
       slot,
       code: 'spec_invalid',
       message: `"publish" is for an implementer or a CI fixer: they commit work that Goodboy can push. Drop "publish" from this ${role} child, or send it to an implementer. Nothing was started`,
+    });
+  }
+  const fit = narrowerFitOf({ role, child, revise, retry, continueWith });
+  if (fit !== null && child.roleReason === null) {
+    return refuse({
+      slot,
+      code: 'role_narrower',
+      message: roleNarrowerMessage({ fit, chosen: role }),
     });
   }
   const commandMention =
@@ -518,6 +550,8 @@ export const resolveDelegateChild = async ({
         ...(child.title !== null && { title: child.title }),
         task: child.task,
         reason: child.reason,
+        ...(fit !== null &&
+          child.roleReason !== null && { roleFit: fit, roleReason: child.roleReason }),
         ...(child.shouldConfirm && { confirm: true }),
         doneWhen: child.doneWhen,
         expected: child.expected,

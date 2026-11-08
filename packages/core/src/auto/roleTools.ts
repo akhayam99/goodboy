@@ -1,4 +1,9 @@
-import { AUTO_WRITER_ROLES, isAutoWriterRole, type AutoDelegationRole } from './roles';
+import {
+  AUTO_WRITER_ROLES,
+  isAutoRoleStartable,
+  isAutoWriterRole,
+  type AutoDelegationRole,
+} from './roles';
 
 const COMMAND_TOOL_RE =
   /\b(?:git|gh|npm|pnpm|yarn|cargo|make|docker|kubectl|curl)[ \t]+[a-z][a-z-]*/i;
@@ -6,6 +11,8 @@ const RUN_COMMAND_RE =
   /\b(?:run|execute|invoke)\b[^.\n]{0,40}\b(?:commands?|scripts?|tests?|build|lint|typecheck)\b/i;
 const LS_REMOTE_RE = /\bls-remote\b/i;
 const COMMIT_RANGE_RE = /\b(?=[0-9a-f]{0,39}\d)[0-9a-f]{7,40}\.{2,3}[\w/-]+|\.{2,3}HEAD\b/i;
+const GIT_OUTPUT_RE =
+  /\bfiles (?:of |in |per |changed by |touched by )?(?:each|every) commit\b|\btrailers?\b|\bremote branch (?:still )?exists?\b|\bwhether the remote branch\b/i;
 
 const MISSING_SHELL_RE =
   /\bno (?:shell|bash|terminal)\b|\b(?:shell|bash|terminal) tool\b|\bcannot run (?:commands?|shell)\b|\b(?:did not|didn't|does not|doesn't|do not|don't) have (?:a )?(?:shell|bash)\b/i;
@@ -20,7 +27,9 @@ type TextParams = {
 
 export const canAutoRoleRunCommands = ({ role }: RoleParams): boolean => isAutoWriterRole({ role });
 
-export const AUTO_COMMAND_ROLES: ReadonlyArray<AutoDelegationRole> = AUTO_WRITER_ROLES;
+export const AUTO_COMMAND_ROLES: ReadonlyArray<AutoDelegationRole> = AUTO_WRITER_ROLES.filter(
+  (role) => isAutoRoleStartable({ role }),
+);
 
 const NEGATION_WORDS: ReadonlySet<string> = new Set([
   'no',
@@ -81,7 +90,7 @@ type WordParams = {
   readonly word: string;
 };
 
-const isNegationWord = ({ word }: WordParams): boolean =>
+export const isNegationWord = ({ word }: WordParams): boolean =>
   NEGATION_WORDS.has(word) || word.endsWith(NEGATION_CONTRACTION_SUFFIX);
 
 const isNegatedMention = ({ text, at }: NegatedParams): boolean => {
@@ -112,6 +121,7 @@ const COMMAND_MENTION_PATTERNS: ReadonlyArray<RegExp> = [
   RUN_COMMAND_RE,
   LS_REMOTE_RE,
   COMMIT_RANGE_RE,
+  GIT_OUTPUT_RE,
 ];
 
 export const commandMentionOf = ({ text }: TextParams): string | null => {
