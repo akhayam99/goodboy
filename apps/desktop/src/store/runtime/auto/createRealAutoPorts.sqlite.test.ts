@@ -136,6 +136,34 @@ describe('the ports of Auto on the real store', () => {
     );
   });
 
+  it('forwards the routed model of a child as an explicit override with its role', async () => {
+    const { ports, sendTurn, deps } = await worldWithPorts();
+    vi.mocked(deps.lookupDeliveryRun).mockResolvedValue({ runId: 'run-impl-1', isLive: true });
+
+    await ports.startChildTurn(
+      childTurn(vi.fn(), {
+        role: 'investigator',
+        routedModel: { provider: 'codex', model: 'gpt-5.5' },
+      }),
+    );
+
+    expect(sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        confinedRole: 'investigator',
+        override: { providerId: 'codex', model: 'gpt-5.5', explicit: true },
+      }),
+    );
+  });
+
+  it('sends a child turn with no override when no route was resolved', async () => {
+    const { ports, sendTurn, deps } = await worldWithPorts();
+    vi.mocked(deps.lookupDeliveryRun).mockResolvedValue({ runId: 'run-impl-1', isLive: true });
+
+    await ports.startChildTurn(childTurn(vi.fn()));
+
+    expect(sendTurn.mock.calls[0]?.[0]?.override).toBeUndefined();
+  });
+
   it('reports the end of a child with its text, exit, cost and files', async () => {
     const onEnded = vi.fn();
     const { ports, sendTurn, deps } = await worldWithPorts();

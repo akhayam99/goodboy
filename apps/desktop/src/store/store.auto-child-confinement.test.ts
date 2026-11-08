@@ -10,7 +10,7 @@ import {
   type StoryStore,
 } from './storyHarness';
 import type { AutoTreeView } from './slices/auto-view/state';
-import type { AutoDelegation } from '@goodboy/db';
+import type { AutoDelegation, Database } from '@goodboy/db';
 import {
   brandId,
   type Agent,
@@ -20,7 +20,10 @@ import {
   type AutoDelegationId,
   type AutoRequestId,
   type AutoTreeId,
+  type IsoDateTime,
+  type MountId,
   type ProjectId,
+  type SessionMountView,
   type ProviderId,
   type ProviderRunId,
   type SessionId,
@@ -32,6 +35,9 @@ import { deliverQueuedTurn } from './slices/agentQueue/deliverQueuedTurn';
 import { resumeAfterRestart } from './slices/turn/resumeAfterRestart';
 import { turnRefusalMessage } from './slices/turn/refusal/turnRefusalMessage';
 import { startDeliveredTurn } from './runtime/auto/startDeliveredTurn';
+import { selectActiveMount } from './slices/project-mounts/selectors';
+import { createRealAutoPorts } from './runtime/auto/createRealAutoPorts';
+import type { StartChildTurnParams } from './runtime/auto/ports';
 import { registerAutoUserTurnPort } from '../features/auto/autoUserTurnPort';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -175,6 +181,7 @@ const wireDefaults = async () => {
   phaseRunListSpy.mockImplementation(async () => inserted);
   stored = null;
   const dbMod = await import('@goodboy/db');
+  vi.mocked(dbMod.readRunCostUsd).mockResolvedValue(null);
   vi.mocked(dbMod.getLatestAutoDelegationOfChild).mockImplementation(async () => {
     if (stored instanceof Error) {
       throw stored;
@@ -550,6 +557,161 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
         failure: turnRefusalMessage({ refusal: 'auto_child_unread' }),
       }),
     );
+  });
+
+  type RealPortsParams = Readonly<{
+    runId: ProviderRunId;
+  }>;
+
+  const realPorts = ({ runId }: RealPortsParams) => {
+    const db: Database = Object.create(null);
+    return createRealAutoPorts({
+      db,
+      getState: useAppStore.getState,
+      sendTurn: (input) => useAppStore.getState().sendTurn(input),
+      cancelTurnConfirmed: async () => ({ outcome: 'exited', exitedAt: null }),
+      loadSessionMounts: async () => [],
+      refreshAgents: async () => undefined,
+      refreshSessionArtifacts: async () => undefined,
+      lookupDeliveryRun: async () => ({ runId, isLive: true }),
+      worktreeSnapshot: async () => ({ head: 'abc123', entries: [], isPartial: false }),
+      worktreeDiffRange: async () => '',
+      worktreeCommitRange: async () => [],
+      worktreeStatus: async () => ({ branch: 'nw/settle' }),
+      worktreeRemoteHead: async () => 'remote111',
+      listLiveRunIds: async () => new Set<string>(),
+      isPlanApprovalRequired: () => true,
+      sleep: () => Promise.resolve(),
+      nowMs: () => 0,
+      newId: () => 'id-1',
+    });
+  };
+
+  type ChildStartParams = Readonly<{
+    sessionId: SessionId;
+    agentId: AgentId;
+    role: StartChildTurnParams['role'];
+    runId: string;
+  }>;
+
+  const childStart = ({
+    sessionId,
+    agentId,
+    role,
+    runId,
+  }: ChildStartParams): StartChildTurnParams => {
+    const at = brandId<IsoDateTime>({ value: new Date(STORY_NOW).toISOString() });
+    const view: SessionMountView = {
+      id: brandId<MountId>({ value: 'mount-ledger-core' }),
+      sessionId,
+      projectId: brandId<ProjectId>({ value: 'project-1' }),
+      worktreePath: '/tmp/wt',
+      lastWorktreePath: null,
+      branch: 'nw/settle',
+      baseBranch: 'main',
+      parallelIndex: 0,
+      mountName: 'ledger-core',
+      repoSlug: null,
+      isAttached: true,
+      diskState: 'present',
+      revision: 1,
+      createdAt: at,
+      updatedAt: at,
+      repoRoot: '/tmp/wt',
+    };
+    useAppStore.setState((state) => ({
+      sessionMounts: { ...state.sessionMounts, [sessionId]: [view] },
+    }));
+    const mount = selectActiveMount({ state: useAppStore.getState(), sessionId });
+    if (mount === null) {
+      throw new Error('the session has no active mount');
+    }
+    return {
+      treeId: brandId<AutoTreeId>({ value: 'tree-ledger-core' }),
+      generation: 1,
+      delegationId: brandId<AutoDelegationId>({ value: 'delegation-ledger-core' }),
+      attemptId: brandId<AutoAttemptId>({ value: 'attempt-ledger-core-1' }),
+      childAgentId: agentId,
+      sessionId,
+      role,
+      routedModel: { provider: 'anthropic', model: ROUTED_MODEL },
+      text: 'Find where the rounding drifts.',
+      mountTarget: {
+        mountId: mount.mountId,
+        mountRevision: mount.revision,
+        worktreePath: mount.worktreePath,
+      },
+      runId,
+      captureMode: 'new',
+      onEnded: vi.fn(),
+    };
+  };
+
+  it('spawns the child turn of the real Auto ports with the confined role, route and marker', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+    const runId = brandId<ProviderRunId>({ value: 'run-ports-1' });
+
+    const outcome = await realPorts({ runId }).startChildTurn(
+      childStart({ sessionId, agentId, role: 'scout', runId }),
+    );
+
+    expect(outcome).toEqual({ kind: 'started', runId });
+    await vi.waitFor(() => expect(spawns()).toHaveLength(1));
+    expect(lastSpawn()).toMatchObject({
+      confinedRole: 'scout',
+      isAutoChild: true,
+      provider: 'anthropic',
+      model: ROUTED_MODEL,
+    });
+  });
+
+  it('keeps the write role of an Implementer on the spawn of the real Auto ports', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'implementer' });
+    stored = delegationOf({ childAgentId: agentId, role: 'implementer' });
+    const runId = brandId<ProviderRunId>({ value: 'run-ports-2' });
+
+    await realPorts({ runId }).startChildTurn(
+      childStart({ sessionId, agentId, role: 'implementer', runId }),
+    );
+
+    await vi.waitFor(() => expect(spawns()).toHaveLength(1));
+    expect(lastSpawn()).toMatchObject({ confinedRole: 'implementer', isAutoChild: true });
+  });
+
+  it('keeps role, route and marker on the retry of a spawn started by the real Auto ports', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+    runTurnSpy.mockImplementationOnce(() => unreachableStream());
+    const runId = brandId<ProviderRunId>({ value: 'run-ports-3' });
+
+    await realPorts({ runId }).startChildTurn(
+      childStart({ sessionId, agentId, role: 'scout', runId }),
+    );
+
+    await vi.waitFor(() => expect(spawns()).toHaveLength(2));
+    expect(spawns()[0]).toMatchObject({ confinedRole: 'scout', isAutoChild: true });
+    expect(lastSpawn()).toMatchObject({
+      confinedRole: 'scout',
+      isAutoChild: true,
+      provider: 'anthropic',
+      model: ROUTED_MODEL,
+    });
+  });
+
+  it('refuses the spawn of the real Auto ports when the route is not the stored one', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'scout' });
+    stored = delegationOf({ childAgentId: agentId, role: 'scout' });
+    const runId = brandId<ProviderRunId>({ value: 'run-ports-4' });
+
+    const outcome = await realPorts({ runId }).startChildTurn({
+      ...childStart({ sessionId, agentId, role: 'scout', runId }),
+      routedModel: { provider: 'anthropic', model: OTHER_MODEL },
+    });
+
+    expect(outcome.kind).toBe('started');
+    await vi.waitFor(() => expect(errorTexts({ agentId })).not.toEqual([]));
+    expect(spawns()).toEqual([]);
   });
 
   type ContinuationParams = Readonly<{
