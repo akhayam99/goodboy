@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import type { NudgeEvent } from '@goodboy/db';
 
@@ -27,6 +27,8 @@ const sessionId = 'session-1' as SessionId;
 beforeEach(() => {
   vi.clearAllMocks();
 });
+
+afterEach(cleanup);
 
 describe('useNextStepOutcomes', () => {
   it('turns the loaded events into gate outcomes', async () => {
@@ -105,7 +107,7 @@ describe('useNextStepOutcomes', () => {
 
     const view = renderHook(() => useNextStepOutcomes({ sessionId }));
 
-    await waitFor(() => expect(listNudgeEvents).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(view.result.current.loadedFor).toBe(sessionId));
     expect(view.result.current.dismissedFingerprints.has('push-branch:mount-web:4')).toBe(false);
   });
 
@@ -127,9 +129,10 @@ describe('useNextStepOutcomes', () => {
 
   it('fetches every event for the session, no time window', async () => {
     listNudgeEvents.mockResolvedValue([]);
-    renderHook(() => useNextStepOutcomes({ sessionId }));
+    const view = renderHook(() => useNextStepOutcomes({ sessionId }));
 
-    await waitFor(() => expect(listNudgeEvents).toHaveBeenCalledOnce());
+    await waitFor(() => expect(view.result.current.loadedFor).toBe(sessionId));
+    expect(listNudgeEvents).toHaveBeenCalledOnce();
     expect(listNudgeEvents).toHaveBeenCalledWith({
       db: {},
       sessionId,
@@ -163,11 +166,12 @@ describe('useNextStepOutcomes', () => {
       ({ id }: { readonly id: SessionId }) => useNextStepOutcomes({ sessionId: id }),
       { initialProps: { id: sessionId } },
     );
-    await waitFor(() => expect(listNudgeEvents).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(view.result.current.loadedFor).toBe(sessionId));
 
     view.rerender({ id: 'session-2' as SessionId });
 
-    await waitFor(() => expect(listNudgeEvents).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(view.result.current.loadedFor).toBe('session-2'));
+    expect(listNudgeEvents).toHaveBeenCalledTimes(2);
   });
 
   it('drops the late answer of the session it left', async () => {
