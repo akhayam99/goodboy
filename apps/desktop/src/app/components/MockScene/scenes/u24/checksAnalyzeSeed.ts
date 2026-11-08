@@ -75,6 +75,7 @@ export const checksAnalyzeSeed = ({
     effort: 'medium',
     ordinal: 1,
     startedAt: now,
+    doneAt: phase === 'running' ? undefined : previous.doneAt,
   };
   const kickoff = buildAnalyzeChecksPrompt({
     pullRequest,

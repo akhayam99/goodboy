@@ -217,6 +217,22 @@ describe('agentStateOf', () => {
     expect(state.dot).toBe('stopped');
   });
 
+  it('never files a running agent as finished, whatever its done mark says', () => {
+    const fromStatus = agentStateOf({
+      agent: agentOf({ status: 'running', doneAt: AT }),
+      turn: null,
+      openQuestions: [],
+    });
+    const fromTurn = agentStateOf({
+      agent: agentOf({ status: 'stopped', doneAt: AT }),
+      turn: turnOf('running'),
+      openQuestions: [],
+    });
+
+    expect(fromStatus).toMatchObject({ isFinished: false, dot: 'running', word: 'Running' });
+    expect(fromTurn).toMatchObject({ isFinished: false, dot: 'running', word: 'Running' });
+  });
+
   it('keeps the permission wait free of any answer button', () => {
     const state = agentStateOf({
       agent: agentOf({ status: 'running' }),

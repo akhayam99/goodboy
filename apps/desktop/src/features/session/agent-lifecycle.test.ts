@@ -67,6 +67,9 @@ describe('isAgentClosedByUser', () => {
     );
     expect(isAgentClosedByUser({ agent: buildAgent({ doneAt: DONE_AT }) })).toBe(false);
     expect(isAgentClosedByUser({ agent: buildAgent({ status: 'failed' }) })).toBe(false);
+    expect(isAgentClosedByUser({ agent: buildAgent({ status: 'running', doneAt: DONE_AT }) })).toBe(
+      false,
+    );
   });
 });
 

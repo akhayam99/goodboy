@@ -105,6 +105,7 @@ const implementerOf = ({ base, id, name, ordinal, isDone }: AgentParams): Agent 
   status: isDone ? 'completed' : 'running',
   ordinal,
   startedAt: at({ time: isDone ? '12:00:00' : '14:32:00' }),
+  doneAt: isDone ? at({ time: '13:10:00' }) : undefined,
 });
 
 type Params = {
@@ -114,10 +115,11 @@ type Params = {
 export const seedBranchWork = ({ sessionId }: Params): void => {
   seedBranchLinks({ sessionId });
   const state = useAppStore.getState();
-  const base = state.sessionPhaseRuns[sessionId]?.[0];
-  if (base === undefined) {
+  const seededBase = state.sessionPhaseRuns[sessionId]?.[0];
+  if (seededBase === undefined) {
     return;
   }
+  const base: Agent = { ...seededBase, doneAt: undefined };
   const asker = implementerOf({
     base,
     id: 'credit',

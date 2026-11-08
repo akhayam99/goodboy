@@ -104,12 +104,12 @@ describe('the u36 work by branch scenes', () => {
     ).toHaveLength(2);
   });
 
-  it('u36-c19-branch-links counts the waiting questions on the Work tab, with no line under the tabs', async () => {
+  it('u36-c19-branch-links counts the run that holds the waiting questions once on the Work tab, with no line under the tabs', async () => {
     await mount('u36-c19-branch-links');
 
     expect(document.querySelector('[data-branch-runs-line]')).toBeNull();
     const strip = screen.getByRole('tablist', { name: 'Branch pages' });
     const work = within(strip).getByRole('tab', { name: /^Work/ });
-    expect(work.querySelector('[data-tab-count]')?.textContent).toBe('2');
+    expect(work.querySelector('[data-tab-count]')?.textContent).toBe('1');
   });
 });

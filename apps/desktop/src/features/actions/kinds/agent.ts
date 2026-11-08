@@ -18,6 +18,7 @@ import { agentPlace } from '../../../store/slices/navigation/place';
 import { SETTING_HIDDEN_MODELS } from '../../settings/settings';
 import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../auto/adopt/moveToAutoEvent';
 import { autoMembershipOf } from '../../auto/autoMembershipOf';
+import { effectiveAgentStatusOf } from '../../workTreeModel/agentStateOf';
 import { autoRestOf, type AutoRest } from '../../auto/autoRestOf';
 import { moveAutoRestingPhase } from '../../auto/moveAutoRestingPhase';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -92,6 +93,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
     });
     const kind = classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null });
     const isTurnLive = isTurnStateLive({ turnState });
+    const status = effectiveAgentStatusOf({ agent, turn: turnState });
     const hasOpenQuestion = (state.sessionOpenQuestions[target.sessionId] ?? []).some(
       (question) => question.status === 'open' && question.createdByAgentId === agent.id,
     );
@@ -99,12 +101,12 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       agent,
       sessionId: target.sessionId,
       name: agent.name,
-      status: agent.status,
+      status,
       isTurnLive,
       isTurnRunning: turnState?.kind === 'running',
       hasOpenQuestion,
       isClosable: isAgentClosable({ agent, hasOpenQuestion, isTurnLive }),
-      isClosedByUser: isAgentClosedByUser({ agent }),
+      isClosedByUser: isAgentClosedByUser({ agent: { ...agent, status } }),
       isWorkflowStep: agent.workflowRunId != null,
       hasMount: (state.sessionProjectMounts[target.sessionId] ?? []).length > 0,
       lastReply: lastReplyOf({ events: state.transcripts[agent.id] ?? [] }),
