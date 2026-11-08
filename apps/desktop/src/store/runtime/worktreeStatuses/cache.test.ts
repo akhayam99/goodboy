@@ -11,6 +11,7 @@ import {
   read,
   readWorktreeStatus,
   readWorktreeStatusNow,
+  refreshWorktreeStatuses,
   resetWorktreeStatusCache,
   subscribe,
   worktreeStatusKey,
@@ -162,6 +163,94 @@ describe('worktree status cache', () => {
     await ensure({ key: KEY, worktreePath: PATH, baseBranch: 'main', maxAgeMs: 0 });
 
     expect(listener).toHaveBeenCalled();
+  });
+
+  it('lands the reads asked together at once, never one by one', async () => {
+    const answers: Array<(status: { readonly branch: string }) => void> = [];
+    worktreeStatus.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answers.push(resolve);
+        }),
+    );
+    const otherPath = '/worktrees/web';
+    const otherKey = worktreeStatusKey({ worktreePath: otherPath, baseBranch: 'main' });
+    const both = Promise.all([
+      ensure({ key: KEY, worktreePath: PATH, baseBranch: 'main', maxAgeMs: 0 }),
+      ensure({ key: otherKey, worktreePath: otherPath, baseBranch: 'main', maxAgeMs: 0 }),
+    ]);
+    await vi.waitFor(() => expect(answers).toHaveLength(2));
+
+    answers[0]?.({ branch: 'ak/first' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(readWorktreeStatus(KEY)).toBeNull();
+    expect(read({ key: KEY, freshness: 'any' }).kind).toBe('unknown');
+
+    answers[1]?.({ branch: 'ak/second' });
+    await both;
+
+    expect(readWorktreeStatus(KEY)).toEqual({ branch: 'ak/first' });
+    expect(readWorktreeStatus(otherKey)).toEqual({ branch: 'ak/second' });
+  });
+
+  it('keeps the last read set until a refresh of the whole set has landed', async () => {
+    const otherPath = '/worktrees/web';
+    const otherKey = worktreeStatusKey({ worktreePath: otherPath, baseBranch: 'main' });
+    await Promise.all([
+      ensure({ key: KEY, worktreePath: PATH, baseBranch: 'main', maxAgeMs: 0 }),
+      ensure({ key: otherKey, worktreePath: otherPath, baseBranch: 'main', maxAgeMs: 0 }),
+    ]);
+    const answers: Array<(status: { readonly branch: string }) => void> = [];
+    worktreeStatus.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answers.push(resolve);
+        }),
+    );
+    const listener = vi.fn();
+    subscribe({ key: KEY, listener });
+
+    const refresh = refreshWorktreeStatuses({ worktreePaths: [PATH, otherPath] });
+    await vi.waitFor(() => expect(answers).toHaveLength(2));
+    answers[0]?.({ branch: 'ak/new-first' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(readWorktreeStatus(KEY)).toEqual({ branch: 'ak/feat' });
+    expect(readWorktreeStatus(otherKey)).toEqual({ branch: 'ak/feat' });
+    expect(listener).not.toHaveBeenCalled();
+
+    answers[1]?.({ branch: 'ak/new-second' });
+    await refresh;
+
+    expect(readWorktreeStatus(KEY)).toEqual({ branch: 'ak/new-first' });
+    expect(readWorktreeStatus(otherKey)).toEqual({ branch: 'ak/new-second' });
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops an answer that lands after a reset', async () => {
+    const answers: Array<(status: { readonly branch: string }) => void> = [];
+    worktreeStatus.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answers.push(resolve);
+        }),
+    );
+    const late = ensure({ key: KEY, worktreePath: PATH, baseBranch: 'main', maxAgeMs: 0 });
+    const listener = vi.fn();
+    subscribe({ key: KEY, listener });
+    await vi.waitFor(() => expect(answers).toHaveLength(1));
+
+    resetWorktreeStatusCache();
+    answers[0]?.({ branch: 'ak/old' });
+    await late;
+
+    expect(listener).not.toHaveBeenCalled();
+    expect(readWorktreeStatus(KEY)).toBeNull();
+    expect(read({ key: KEY, freshness: 'any' })).toEqual({
+      kind: 'unknown',
+      reason: 'never-read',
+    });
   });
 
   it('forgets everything on reset', async () => {

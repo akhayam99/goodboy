@@ -68,8 +68,10 @@ export const useWorktreeStatusSnapshot = ({ targets }: Params): Snapshot => {
           pending.add(worktreePath);
         }
       });
+      const isWholeSetRead = pending.size === 0;
       setSnapshot((current) => {
-        const nextStatuses = sameStatuses(current.statuses, statuses) ? current.statuses : statuses;
+        const nextStatuses =
+          !isWholeSetRead || sameStatuses(current.statuses, statuses) ? current.statuses : statuses;
         const nextPending = samePending(current.pending, pending) ? current.pending : pending;
         return nextStatuses === current.statuses && nextPending === current.pending
           ? current

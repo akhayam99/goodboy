@@ -165,7 +165,12 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   approved, open, draft, none, merged, closed), check counts and the one
   signal worst first: `n failing`, then `Conflict`, then `n behind` (`BranchRowChip`,
   `branchRowChipOf`); approved, queued, open, draft and running checks draw no
-  chip, the glyph color carries them. The check counts come from the runs read
+  chip, the glyph color carries them. Counts load first, then show: the git
+  status reads of the card's branches land in the cache as one set, so the
+  rows, the `n branches behind` line and the Next rebase row show no count
+  (the list is `aria-busy`) until every branch is read, and a refresh keeps
+  the last complete set until the new one has landed whole
+  (`loadThenShow.test.tsx`). The check counts come from the runs read
   for the request on any host, skipped kept apart from passed. The number, the
   state word and the branch are not on the line: they sit in the row's fact
   card (`branchRowCardOf`: the branch as title, `#318` beside it, the state,

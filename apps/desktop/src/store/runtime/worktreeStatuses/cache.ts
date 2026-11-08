@@ -95,26 +95,92 @@ const notify = (entry: CacheEntry) => {
   entry.listeners.forEach((listener) => listener());
 };
 
+type StagedRead = {
+  readonly entry: CacheEntry;
+  readonly value: WorktreeStatus | null;
+  readonly readAt: number;
+  readonly fetchedAt: number;
+};
+
+type Batch = {
+  isOpen: boolean;
+  unfinished: number;
+  readonly staged: Array<StagedRead>;
+  readonly landed: Promise<void>;
+  readonly land: () => void;
+};
+
+let generation = 0;
+let openBatch: Batch | null = null;
+
+const createBatch = (): Batch => {
+  let land = () => {};
+  const landed = new Promise<void>((resolve) => {
+    land = resolve;
+  });
+  return { isOpen: true, unfinished: 0, staged: [], landed, land };
+};
+
+const joinBatch = (): Batch => {
+  if (openBatch !== null && openBatch.isOpen) {
+    return openBatch;
+  }
+  openBatch = createBatch();
+  return openBatch;
+};
+
+type CommitParams = {
+  readonly batch: Batch;
+};
+
+const commit = ({ batch }: CommitParams) => {
+  batch.staged.forEach(({ entry, value, readAt, fetchedAt }) => {
+    entry.value = value;
+    entry.readAt = readAt;
+    entry.fetchedAt = fetchedAt;
+    entry.inflight = null;
+  });
+  batch.staged.forEach(({ entry }) => notify(entry));
+  batch.land();
+};
+
+type FinishParams = {
+  readonly batch: Batch;
+  readonly read: StagedRead;
+  readonly startedIn: number;
+};
+
+const finish = ({ batch, read, startedIn }: FinishParams) => {
+  if (startedIn !== generation) {
+    batch.land();
+    return;
+  }
+  batch.isOpen = false;
+  batch.staged.push(read);
+  batch.unfinished -= 1;
+  if (batch.unfinished === 0) {
+    commit({ batch });
+  }
+};
+
 const fetchInto = (entry: CacheEntry): Promise<void> => {
   if (entry.inflight) {
     return entry.inflight;
   }
   const requestedAt = Date.now();
+  const startedIn = generation;
+  const batch = joinBatch();
+  batch.unfinished += 1;
   const inflight = schedule(() =>
     worktreeStatus({ worktreePath: entry.worktreePath, baseBranch: entry.baseBranch }),
   )
-    .then((status) => {
-      entry.value = status;
-      entry.readAt = requestedAt;
-    })
-    .catch(() => {
-      entry.value = null;
-      entry.readAt = 0;
-    })
-    .finally(() => {
-      entry.fetchedAt = Date.now();
-      entry.inflight = null;
-      notify(entry);
+    .then(
+      (status) => ({ value: status, readAt: requestedAt }),
+      () => ({ value: null, readAt: 0 }),
+    )
+    .then(({ value, readAt }) => {
+      finish({ batch, read: { entry, value, readAt, fetchedAt: Date.now() }, startedIn });
+      return batch.landed;
     });
   entry.inflight = inflight;
   return inflight;
@@ -263,6 +329,8 @@ export const refreshWorktreeStatuses = async ({ worktreePaths }: RefreshParams):
 };
 
 export const resetWorktreeStatusCache = () => {
+  generation += 1;
+  openBatch = null;
   entries.clear();
   queue.length = 0;
   running = 0;
