@@ -44,6 +44,7 @@ export type DeliveredTurnDeps = Readonly<{
 type DeliveredTurnEnded = Readonly<{
   assistantText: string;
   exit: TurnExit;
+  failure: string | null;
   costUsd: number | null;
   filesTouched: ReadonlyArray<string>;
   durationMs: number;
@@ -117,9 +118,11 @@ export const startDeliveredTurn = async ({
     }
     isEndReported = true;
     const costUsd = runId === undefined ? null : await costOf({ deps, runId });
+    const failure = captured === null ? (sendFailure ?? held.refusal?.message ?? null) : null;
     onEnded({
       assistantText: captured?.assistantText ?? '',
-      exit: captured?.exit ?? (sendFailure === null ? 'ok' : 'error'),
+      exit: captured?.exit ?? (failure === null ? 'ok' : 'error'),
+      failure,
       costUsd,
       filesTouched: captured?.filesTouched ?? [],
       durationMs: Math.max(0, deps.nowMs() - startedAt),

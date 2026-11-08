@@ -15,6 +15,7 @@ import type {
   AutoDelegationId,
   AutoTreeId,
   MessageAttachment,
+  ProviderId,
   SessionId,
 } from '@goodboy/types';
 
@@ -132,6 +133,7 @@ export type ChildTurnEnded = Readonly<{
   sessionId: SessionId;
   assistantText: string;
   exit: TurnExit;
+  failure?: string;
   costUsd: number | null;
   filesTouched: ReadonlyArray<string>;
   durationMs: number;
@@ -145,6 +147,7 @@ export type StartChildTurnParams = Readonly<{
   childAgentId: AgentId;
   sessionId: SessionId;
   role: AutoDelegationRole;
+  routedModel?: Readonly<{ provider: ProviderId; model: string }>;
   text: string;
   images?: ReadonlyArray<MessageAttachment>;
   mountTarget: ChildMountTarget;

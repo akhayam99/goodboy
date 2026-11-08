@@ -544,6 +544,10 @@ fn spawn_turn(app: &AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
     let state = app.state::<TurnRegistry>();
     let leases = app.state::<crate::worktree_writer::WriterLeases>();
     let binary = args.binary.as_deref().unwrap_or("claude");
+    if args.is_auto_child {
+        crate::providers::cli_probe::ensure_auto_child(binary, args.confined_role.as_deref())
+            .map_err(TurnError::ConfinementUnproven)?;
+    }
     if let Some(role) = args.confined_role.as_deref() {
         crate::providers::cli_probe::ensure_confinement(binary, role)
             .map_err(TurnError::ConfinementUnproven)?;

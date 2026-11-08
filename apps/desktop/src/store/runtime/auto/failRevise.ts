@@ -20,6 +20,7 @@ export type FailReviseParams = Readonly<{
   generation: number;
   artifactId: ArtifactId;
   reason: ReviseFailureReason;
+  failure?: string;
   result: unknown;
 }>;
 
@@ -38,6 +39,7 @@ export const failRevise = async ({
   generation,
   artifactId,
   reason,
+  failure,
   result,
 }: FailReviseParams): Promise<FailReviseOutcome> => {
   const finish = finishAutoArtifactReviseStatement({
@@ -62,7 +64,7 @@ export const failRevise = async ({
       delegationId,
       generation,
       outcome: 'failed',
-      reason,
+      reason: failure ?? reason,
       result,
       nowMs,
       abortCode: ABORT_SETTLE,

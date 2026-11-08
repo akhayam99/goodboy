@@ -291,6 +291,7 @@ describe('a provider set to Off', () => {
       model: modelIdsOf({ provider: 'codex' })[0],
       turnAgentKind: 'scout',
       resolvedPrompt: 'Map the payout delay notice',
+      childTurn: null,
     } as TurnContext;
 
     const built = await buildTurnPrompt({ get: useAppStore.getState, ctx });

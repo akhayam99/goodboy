@@ -737,7 +737,7 @@ export {
   getAutoDelegation,
   getPausedAutoDelegationOfQuestion,
   isAutoChildAgent,
-  getOpenAutoDelegationOfChild,
+  getLatestAutoDelegationOfChild,
   insertAutoDelegationStatement,
   listAutoDelegations,
   listAutoDelegationsOfRequest,

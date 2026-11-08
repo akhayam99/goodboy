@@ -95,7 +95,12 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     sharedSlots,
     briefSlotsOf({
       input: ctx.input,
-      confinedRole: confinedRoleOf({ input: ctx.input, agent: agentRowEarly }),
+      confinedRole: confinedRoleOf({
+        input: ctx.input,
+        agent: agentRowEarly,
+        childTurn: ctx.childTurn,
+      }),
+      childTurn: ctx.childTurn,
       slots: audience.slots,
     }),
     audience.items,

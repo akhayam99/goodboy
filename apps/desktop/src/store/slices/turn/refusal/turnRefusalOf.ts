@@ -11,5 +11,5 @@ export const turnRefusalOf = ({ result }: Params): TurnRefusal | null => {
   if (result.isWriterLeaseDenied === true) {
     return 'folder_busy';
   }
-  return null;
+  return result.autoChildRefusal ?? null;
 };

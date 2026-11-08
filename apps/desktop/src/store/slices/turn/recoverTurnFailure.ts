@@ -61,6 +61,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     retry,
     onStarted,
     onWritingUserText,
+    onSettled,
     permissionOnceAllows,
   } = ctx.input;
   const {
@@ -83,7 +84,10 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     touchedMountsForTurn,
     recordTurnFiles,
     resolvedAsks,
+    childTurn,
   } = ctx;
+  const confinedRole = childTurn?.role ?? ctx.input.confinedRole;
+  const confinement = confinedRole === undefined ? {} : { confinedRole };
   const answersOfAsks = {
     resolvedAsks,
     ...(permissionOnceAllows !== undefined && { permissionOnceAllows }),
@@ -141,7 +145,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
     failed: { provider, model: spawnModel },
   });
-  const fallbackPlan =
+  const plannedFallback =
     cancelledBeforeFailure || isAlreadySent
       ? null
       : planTurnFallback({
@@ -164,6 +168,12 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
             },
           }),
         });
+  const fallbackPlan =
+    childTurn !== null &&
+    plannedFallback !== null &&
+    (plannedFallback.provider !== provider || plannedFallback.model !== spawnModel)
+      ? null
+      : plannedFallback;
   const message =
     maxModeFailure != null
       ? cursorMaxModeMessage(maxModeFailure)
@@ -220,6 +230,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         agentId: activeAgentId,
         content,
         ...answersOfAsks,
+        ...confinement,
         ...(attachments !== undefined && { attachments }),
         ...(override !== undefined && { override }),
         ...(force === true ? { force: true } : {}),
@@ -228,6 +239,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         ...(copyPath !== null && { resolveCopyPath: copyPath }),
         ...(onStarted !== undefined && !progress.hasSpawned && { onStarted }),
         ...(onWritingUserText !== undefined && !progress.hasSpawned && { onWritingUserText }),
+        ...(onSettled !== undefined && { onSettled }),
         retry: {
           attempt: (retry?.attempt ?? 0) + 1,
           provider: fallbackPlan.provider,
@@ -264,11 +276,15 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
           provider,
           resetAtMs: usageLimitResetAtMs,
           isScheduled: false,
+          ...(childTurn !== null && {
+            autoChild: { delegationId: childTurn.delegationId, treeId: childTurn.treeId },
+          }),
           input: {
             sessionId,
             agentId: activeAgentId,
             content,
             ...answersOfAsks,
+            ...confinement,
             ...(override !== undefined && { override }),
             ...(force === true ? { force: true } : {}),
             ...(origin !== undefined && { origin }),

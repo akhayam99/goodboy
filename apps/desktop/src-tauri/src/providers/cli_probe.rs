@@ -134,11 +134,10 @@ pub(crate) fn ensure_confinement(binary: &str, role: &str) -> Verdict {
     let access = role_access(role).ok_or_else(|| format!("role {role} is not a confined role"))?;
     let cli =
         Cli::of_binary(binary).ok_or_else(|| format!("{binary} is not a binary Goodboy drives"))?;
-    if role == AUTO_ROLE && cli == Cli::Opencode {
-        return Err(
-            "auto does not run on opencode: its plan agent still asks before a shell command and the run flag approves it"
-                .to_string(),
-        );
+    if access == RoleAccess::ReadOnly && cli == Cli::Opencode {
+        return Err(format!(
+            "A read-only {role} turn does not run on OpenCode, because OpenCode can still run shell commands there. Use Claude or Codex for it."
+        ));
     }
     let id = binary_id(binary);
     let label = access_label(access);
@@ -158,6 +157,20 @@ pub(crate) fn ensure_confinement(binary: &str, role: &str) -> Verdict {
         lock_or_recover(cache()).insert((id, label), verdict.clone());
     }
     verdict
+}
+
+pub(crate) fn ensure_auto_child(binary: &str, role: Option<&str>) -> Verdict {
+    let role = role
+        .filter(|role| *role != AUTO_ROLE)
+        .ok_or_else(|| {
+            "This agent works for Auto but the turn carried no role from Auto, so it did not start. Ask Auto to continue it.".to_string()
+        })?;
+    match Cli::of_binary(binary) {
+        Some(Cli::Claude) | Some(Cli::Codex) => Ok(()),
+        _ => Err(format!(
+            "An agent that works for Auto runs only on Claude or Codex, so this {role} turn on {binary} did not start. Ask Auto to continue it."
+        )),
+    }
 }
 
 fn lists_flag(binary: &str, flag: &'static str) -> bool {
@@ -279,17 +292,39 @@ mod tests {
     }
 
     #[test]
-    fn auto_is_refused_on_every_opencode_binary_before_any_probe_runs() {
+    fn every_reading_role_is_refused_on_every_opencode_binary_before_any_probe_runs() {
         for binary in ["opencode", "/nonexistent/opencode"] {
-            let refusal = ensure_confinement(binary, "auto").expect_err("refused");
+            for role in ["auto", "scout", "planner", "investigator", "reviewer"] {
+                let refusal = ensure_confinement(binary, role).expect_err("refused");
+                assert!(
+                    refusal.contains(&format!("A read-only {role} turn does not run on OpenCode")),
+                    "{refusal}"
+                );
+                assert!(!refusal.contains("did not start"), "{refusal}");
+            }
+        }
+        let implementer =
+            ensure_confinement("/nonexistent/opencode", "implementer").expect_err("refused");
+        assert!(implementer.contains("did not start"));
+    }
+
+    #[test]
+    fn an_auto_child_runs_only_on_claude_or_codex_and_only_with_its_role() {
+        for binary in ["claude", "/usr/local/bin/codex"] {
+            assert_eq!(ensure_auto_child(binary, Some("scout")), Ok(()));
+            assert_eq!(ensure_auto_child(binary, Some("implementer")), Ok(()));
+        }
+        for binary in ["opencode", "cursor-agent", "agy", "copilot", "openrouter"] {
+            let refusal = ensure_auto_child(binary, Some("scout")).expect_err("refused");
             assert!(
-                refusal.contains("auto does not run on opencode"),
+                refusal.contains("runs only on Claude or Codex"),
                 "{refusal}"
             );
-            assert!(!refusal.contains("did not start"), "{refusal}");
         }
-        let scout = ensure_confinement("/nonexistent/opencode", "scout").expect_err("refused");
-        assert!(scout.contains("did not start"));
+        for role in [None, Some("auto")] {
+            let refusal = ensure_auto_child("claude", role).expect_err("refused");
+            assert!(refusal.contains("carried no role from Auto"), "{refusal}");
+        }
     }
 
     #[test]

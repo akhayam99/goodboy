@@ -12,10 +12,16 @@ type Props = {
 
 const waitTint = tintClasses(CONCEPT_TONE.writerWait);
 
+const READ_ONLY_ANSWER_UNAVAILABLE =
+  'Answer without editing works only on Claude or Codex, so this agent waits for the folder.';
+
 export const WriterWaitBand = ({ sessionId, agentId }: Props) => {
   const view = useWriterWait({ sessionId, agentId });
   const answerWithoutEditing = useAppStore((state) => state.answerWithoutEditing);
   const cancelWriterWait = useAppStore((state) => state.cancelWriterWait);
+  const canAnswerReadOnly = useAppStore(
+    (state) => agentId === null || state.agentWriterWait[agentId]?.canAnswerReadOnly !== false,
+  );
   if (view === null || agentId === null) {
     return null;
   }
@@ -34,10 +40,17 @@ export const WriterWaitBand = ({ sessionId, agentId }: Props) => {
           <p>
             <strong className="text-foreground">{copy.title}</strong> {copy.body}
           </p>
+          {canAnswerReadOnly ? null : <p>{READ_ONLY_ANSWER_UNAVAILABLE}</p>}
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="xs" variant="secondary" onClick={() => answerWithoutEditing({ agentId })}>
-              Answer without editing
-            </Button>
+            {canAnswerReadOnly ? (
+              <Button
+                size="xs"
+                variant="secondary"
+                onClick={() => answerWithoutEditing({ agentId })}
+              >
+                Answer without editing
+              </Button>
+            ) : null}
             <Button size="xs" variant="ghost" onClick={() => cancelWriterWait({ agentId })}>
               Cancel
             </Button>

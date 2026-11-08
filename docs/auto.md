@@ -550,7 +550,43 @@ writing to it reopens it to **Deciding**.
   child's draft never shows in the main Auto composer, two children never share
   one, and a send or a Queue or Send now reaches the child (a stopped or done
   one takes the turn through the normal resume path). The store's selected
-  agent of the session never decides the target.
+  agent of the session never decides the target. Every turn on a child runs
+  with its delegation role and its route, whoever starts it (the person, the
+  queue, a retry, a resume after a restart, Auto): `routeTurn` reads the newest
+  stored delegation of the agent (`resolveChildTurn`, `getLatestAutoDelegationOfChild`)
+  before each spawn, never the tree view of the window, and carries that role
+  and route through the turn and its retries (`recoverTurnFailure`, which also
+  keeps the caller's `onSettled`). An adopted agent counts while its adoption
+  row stands and runs normally once a detach deleted it. What was read is
+  claimed in one transaction before the agent is marked running
+  (`claimTurnAdmission` in `startTurnRun`): the claim checks that the newest
+  delegation of the agent is still the one read and sets the agent running
+  on the turn's run id, so an adoption or a detach from another window either
+  lands first and refuses the turn, or comes after and is refused itself as a
+  running turn. A startup failure after the claim gives it back
+  (`revertAgentStart` on that run id), so the agent is never left running
+  without its turn. Still open for 0.31.14: another window that loads the
+  workspace between the claim and the spawn can stop the claimed agent
+  (`reconcileLoadedAgent`), which reopens adoption for that moment. The turn
+  runs only on the routed provider and model, and only on a provider in
+  `AUTO_CHILD_PROVIDERS`: a model picked in the child's composer or a retry
+  aimed elsewhere is refused, agent pins are ignored, a provider fallback that
+  leaves the route is dropped so the failure reaches Auto, and a cooldown or
+  budget move off the route is refused. Each refusal shows the person a plain
+  sentence (`turnRefusalMessage`): Goodboy could not check whether the agent
+  works for Auto, try again; the agent runs only on the model Auto chose, ask
+  Auto to continue it; the agent joined or left Auto while the turn started,
+  send it again. A refused or failed retry reaches Auto as a failed end that
+  carries the sentence (`startDeliveredTurn` `failure`, the attempt reason in
+  `finishAttempt`, a revise included), never as an empty success. A usage-limit
+  continuation of a child saves the delegation and tree it belongs to with its
+  stop; when it is refused it keeps the stop, so **Continue** stays, and Auto
+  gets a note with the sentence without reading the delegation again
+  (`continueAfterLimit`, `noticeAutoOfRefusedContinue`). A note Auto did not
+  take shows in the child's transcript. A reading role (Scout, Planner,
+  Investigator, Reviewer) cannot write: on Claude it keeps Read, Grep and Glob
+  in plan mode with no shell; on Codex it runs in the read-only sandbox, which
+  blocks writes but can still run read-only commands.
   The dock's **Continue** asks Auto to continue
   a stopped child, naming its delegation so Auto sends `retryOf` and the same
   agent goes on in its worktree; it never runs a plain turn on it
@@ -1028,8 +1064,10 @@ runs are not built: they have no tree, no reservation and no root grant.
 
 **Children never push.** Auto children run under one product rule: only Goodboy pushes, and only
 after its own steps. The boundary is the query bridge. `readTurnStream` marks the spawn of a child
-(`isAutoChildTurn`: origin `delegation` and a confined role other than `auto`, which is the root)
-with `isAutoChild`; `turn_spawn` records the pid of the process it starts (`spawn_turn` in
+(`isAutoChildTurn`: the agent has a stored delegation, whoever started the turn, or the turn is a
+delegation with a confined role other than `auto`, which is the root) with `isAutoChild`;
+`turn_spawn` refuses an `isAutoChild` spawn with no child role or on a CLI other than Claude or
+Codex (`ensure_auto_child`); `turn_spawn` records the pid of the process it starts (`spawn_turn` in
 `query_bridge/auto_child.rs`) until the process ends, and `dispatch` refuses, before any host call,
 every verb declared `Access::Publish` for a request whose socket peer descends from that pid. The bridge reads
 the peer pid from the socket, never a run id the request carries: GitHub `push`,
@@ -1261,9 +1299,10 @@ and deny the ask is unproven, so Auto is kept off it instead. Three layers hold 
 composer lists only `AUTO_OWN_PROVIDERS` and shows "Auto needs a connected provider" when nothing
 else is connected; `kindRouting` for Auto never resolves to the family (the role default, a stored
 role pick and the model of the chat are all skipped) and `spawnAgent` refuses an Auto agent on it;
-and `turn_spawn` refuses the role `auto` on an opencode binary (`ensure_confinement`). Its children run
-on Claude and Codex, never on Cursor, Gemini or Copilot, which cannot confine a role
-(`AUTO_CHILD_PROVIDERS`). The pool of a tree is the run
+and `turn_spawn` refuses `auto` and every reading role on an opencode binary (`ensure_confinement`).
+Its children run on Claude and Codex, never on Cursor, Gemini or Copilot, which cannot confine a role
+(`AUTO_CHILD_PROVIDERS`): `routeTurn` refuses a child turn whose final provider is outside the list,
+and `turn_spawn` refuses it again (`ensure_auto_child`). The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider
 (`autoChildPool`, `runProviderPool`).

@@ -19,6 +19,7 @@ type Params = Readonly<{
   agentId: AgentId;
   paths: ReadonlyArray<string>;
   lease: TurnLease;
+  canAnswerReadOnly: boolean;
 }>;
 
 type WaitParams = Readonly<{
@@ -26,9 +27,16 @@ type WaitParams = Readonly<{
   agentId: AgentId;
   sessionId: SessionId;
   blocked: WriteSetLease | null;
+  canAnswerReadOnly: boolean;
 }>;
 
-const putWriterWait = ({ set, agentId, sessionId, blocked }: WaitParams): void => {
+const putWriterWait = ({
+  set,
+  agentId,
+  sessionId,
+  blocked,
+  canAnswerReadOnly,
+}: WaitParams): void => {
   set((state) => {
     const rest = Object.fromEntries(
       Object.entries(state.agentWriterWait).filter(([id]) => id !== agentId),
@@ -43,6 +51,7 @@ const putWriterWait = ({ set, agentId, sessionId, blocked }: WaitParams): void =
           sessionId,
           blockedPath: blocked.blockedPath ?? '',
           blockedBy: blocked.blockedBy,
+          canAnswerReadOnly,
           since: state.agentWriterWait[agentId]?.since ?? nowIso({}),
         },
       },
@@ -57,6 +66,7 @@ export const acquireTurnWriteSet = async ({
   agentId,
   paths,
   lease,
+  canAnswerReadOnly,
 }: Params): Promise<WriteSetAcquisition> => {
   const hold = (granted: WriteSetLease): void => {
     lease.writeSet = granted.entries;
@@ -77,20 +87,20 @@ export const acquireTurnWriteSet = async ({
   applyAgentTurnState(set, sessionId, agentId, { kind: 'starting', startedAt }, startedAt);
   const deadline = Date.now() + WRITER_WAIT_LIMIT_MS;
   const leave = (): void => {
-    putWriterWait({ set, agentId, sessionId, blocked: null });
+    putWriterWait({ set, agentId, sessionId, blocked: null, canAnswerReadOnly });
     applyAgentTurnState(set, sessionId, agentId, previous, nowIso({}));
   };
   let current = first;
   try {
     while (!current.isGranted) {
-      putWriterWait({ set, agentId, sessionId, blocked: current });
+      putWriterWait({ set, agentId, sessionId, blocked: current, canAnswerReadOnly });
       await writerWaiters.wait({ ms: WRITER_POLL_MS });
       if (isTurnStartCancelled({ agentId })) {
         claimTurnStart({ agentId });
         leave();
         return 'cancelled';
       }
-      if (readOnlyAnswers.take({ agentId })) {
+      if (readOnlyAnswers.take({ agentId }) && canAnswerReadOnly) {
         leave();
         return 'read_only';
       }
@@ -104,7 +114,7 @@ export const acquireTurnWriteSet = async ({
     leave();
     throw error;
   }
-  putWriterWait({ set, agentId, sessionId, blocked: null });
+  putWriterWait({ set, agentId, sessionId, blocked: null, canAnswerReadOnly });
   hold(current);
   return 'granted';
 };

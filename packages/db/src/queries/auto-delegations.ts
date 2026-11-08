@@ -338,17 +338,17 @@ export const listAutoDelegationsOfRequest = async ({
   return rows.map((row) => toDelegation({ row }));
 };
 
-type GetOpenAutoDelegationOfChildParams = {
+type GetLatestAutoDelegationOfChildParams = {
   readonly db: Database;
   readonly childAgentId: AgentId;
 };
 
-export const getOpenAutoDelegationOfChild = async ({
+export const getLatestAutoDelegationOfChild = async ({
   db,
   childAgentId,
-}: GetOpenAutoDelegationOfChildParams): Promise<AutoDelegation | null> => {
+}: GetLatestAutoDelegationOfChildParams): Promise<AutoDelegation | null> => {
   const rows = await db.select<DelegationRow>(
-    `${DELEGATION_SELECT} WHERE child_agent_id = ? AND state <> 'settled'`,
+    `${DELEGATION_SELECT} WHERE child_agent_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1`,
     [childAgentId],
   );
   const row = rows[0];

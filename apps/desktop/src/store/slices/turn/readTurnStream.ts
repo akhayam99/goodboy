@@ -67,7 +67,7 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
   const { filesTouchedThisTurn, editedPathsThisTurn } = progress;
   const confinedRole = ctx.isReadOnlyAnswer
     ? READ_ONLY_ANSWER_ROLE
-    : confinedRoleOf({ input: ctx.input, agent: agentRowEarly });
+    : confinedRoleOf({ input: ctx.input, agent: agentRowEarly, childTurn: ctx.childTurn });
   for await (const rawEvent of runTurn(
     {
       runId,
@@ -89,7 +89,9 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
       ...(confinedRole !== undefined && { confinedRole }),
       ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
       ...((isolatedCopyPath !== null || isScribeTurn) && { blocksPush: true }),
-      ...(isAutoChildTurn({ input: ctx.input, confinedRole }) && { isAutoChild: true }),
+      ...(isAutoChildTurn({ input: ctx.input, confinedRole, childTurn: ctx.childTurn }) && {
+        isAutoChild: true,
+      }),
       ...(rewriterCopy !== null && { excludesTmp: true }),
       ...(apiKeyBinding ?? {}),
       ...claudeFlags,

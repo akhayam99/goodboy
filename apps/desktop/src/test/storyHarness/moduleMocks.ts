@@ -26,7 +26,11 @@ export const tauriCoreModuleMock = () => ({
 export const tauriEventModuleMock = () => ({ listen: vi.fn(async () => () => undefined) });
 
 export const dbLibModuleMock = () => ({
-  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
+  tauriDatabase: {
+    execute: vi.fn(),
+    select: vi.fn(),
+    transaction: vi.fn(async () => ({ status: 'committed', results: [] })),
+  },
 });
 
 export const dbBootModuleMock = () => ({

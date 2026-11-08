@@ -1190,6 +1190,24 @@ mod tests {
     }
 
     #[test]
+    fn a_reading_role_turn_the_person_starts_never_carries_the_shell_tool() {
+        let allowed = strings(&["Bash", "Bash(ls:*)", "Read(src/**)"]);
+        for role in ["scout", "planner", "investigator", "reviewer"] {
+            let args = spawn_args("bypassPermissions", Some(role), &allowed, &[], &[]);
+            let argv = turn_args("claude", &args);
+            let tools = value_after(&argv, "--tools").expect("tool list");
+            assert!(!tools.split(',').any(|tool| tool.starts_with("Bash")));
+            assert!(argv
+                .iter()
+                .all(|arg| arg != "--dangerously-skip-permissions"));
+            assert_eq!(
+                value_after(&argv, "--permission-mode").as_deref(),
+                Some("plan")
+            );
+        }
+    }
+
+    #[test]
     fn a_writer_role_keeps_the_session_mode_and_loses_native_subagents() {
         let roots = strings(&["/repo/.meta"]);
         let args = spawn_args("acceptEdits", Some("implementer"), &[], &[], &roots);
@@ -1264,6 +1282,21 @@ mod tests {
             value_after(&writer_argv, "--add-dir").as_deref(),
             Some("/repo/.meta")
         );
+    }
+
+    #[test]
+    fn every_reading_role_keeps_codex_in_the_read_only_sandbox_in_every_mode() {
+        let roots = strings(&["/repo/.meta"]);
+        for role in ["scout", "planner", "investigator", "reviewer"] {
+            for mode in ["default", "plan", "acceptEdits", "bypassPermissions"] {
+                let args = spawn_args(mode, Some(role), &[], &[], &roots);
+                let argv = turn_args("codex", &args);
+                assert_eq!(value_after(&argv, "-s").as_deref(), Some("read-only"));
+                assert!(argv.iter().all(|arg| arg != "--add-dir"
+                    && !arg.starts_with("sandbox_workspace_write")
+                    && !arg.contains("dangerously")));
+            }
+        }
     }
 
     #[test]
