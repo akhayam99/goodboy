@@ -4,9 +4,13 @@ import {
   listAgentQueuedMessages,
   listAutoDelegations,
   replaceAgentQueuedMessages,
+  setArtifactStatus,
 } from '@goodboy/db';
-import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
+import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
+import { brandId, type AgentId, type ArtifactId, type IsoDateTime } from '@goodboy/types';
 import { delegationContinueOf } from '../../../../features/auto/delegationContinueOf';
+import { writeAutoLevel } from '../level/writeAutoLevel';
+import { registerPlan } from '../testing/autoWorld';
 import {
   autoCommand,
   autoDelegates,
@@ -135,6 +139,52 @@ describe('Auto continues a child with new instructions', () => {
     expect(refused).toMatchObject({ isOk: false, code: 'task_rebrief_limit' });
   });
 
+  it('counts the continues of one delegate block together toward the re-brief cap', async () => {
+    const world = await settledScout();
+    const chain = [await onlyDelegation(world)];
+    for (let round = 0; round < AUTO_TREE_LIMITS.rebriefsPerTask - 1; round += 1) {
+      const latest = chain[chain.length - 1];
+      await userSays({ world, id: `outbox-user-round-${round}`, text: `and part ${round}?` });
+      await autoCommand({
+        world,
+        verb: 'delegate',
+        args: {
+          'request-id': `request-continue-${round}`,
+          spec: JSON.stringify({
+            children: [{ retryOf: latest?.id, task: `Read part ${round}.`, reason: 'More.' }],
+          }),
+        },
+      });
+      await autoTurnEnds({ world });
+      await childTurnEnds({ world, index: round + 1, text: doneText(`Read part ${round}.`) });
+      await autoTurnEnds({ world, text: `Part ${round} is read.` });
+      const next = (await delegationsOf(world)).find((row) => row.retryOf === latest?.id);
+      if (next === undefined) {
+        throw new Error('a continued delegation was expected');
+      }
+      chain.push(next);
+    }
+    await userSays({ world, id: 'outbox-user-both', text: 'two more parts?' });
+    const [, middle, last] = chain;
+
+    const refused = await autoCommand({
+      world,
+      verb: 'delegate',
+      args: {
+        'request-id': 'request-continue-both',
+        spec: JSON.stringify({
+          children: [
+            { retryOf: last?.id, task: 'Read part A.', reason: 'More.' },
+            { retryOf: middle?.id, task: 'Read part B.', reason: 'More.' },
+          ],
+        }),
+      },
+    });
+
+    expect(refused).toMatchObject({ isOk: false, code: 'task_rebrief_limit' });
+    expect(await delegationsOf(world)).toHaveLength(chain.length);
+  });
+
   it('still refuses a role on a continue', async () => {
     const world = await settledScout();
     const original = await onlyDelegation(world);
@@ -223,6 +273,95 @@ describe('a person writes to a child Auto started', () => {
     expect(world.state.ports.childTurns).toHaveLength(1);
   });
 
+  it('replays the continue of a queued message sent again, and runs it once', async () => {
+    const world = await settledScout();
+    const original = await onlyDelegation(world);
+    const send = () =>
+      world.runtime.continueChild({
+        childAgentId: original.childAgentId,
+        text: 'Why did you skip the tests folder?',
+        from: 'user',
+        deliveryId: 'queue:message-ledger',
+      });
+
+    const first = await send();
+    const again = await send();
+
+    expect(first).toMatchObject({ kind: 'continued' });
+    expect(again).toEqual(first);
+    expect(world.state.ports.childTurns).toHaveLength(2);
+    expect(await delegationsOf(world)).toHaveLength(2);
+  });
+
+  it('tells a person the agent is still working only while its tree is live', async () => {
+    const world = await settledScout();
+    const original = await onlyDelegation(world);
+    const send = () =>
+      world.runtime.continueChild({
+        childAgentId: original.childAgentId,
+        text: 'hello',
+        from: 'user',
+        isBusy: true,
+      });
+
+    expect(await send()).toMatchObject({ kind: 'working' });
+    await world.runtime.stop(world.treeId);
+    expect(await send()).toEqual({ kind: 'plain' });
+    expect(world.state.ports.childTurns).toHaveLength(1);
+  });
+
+  it("holds Auto's message for confirmation at Every step, and lets the person's go on", async () => {
+    const world = await settledScout();
+    const original = await onlyDelegation(world);
+    await writeAutoLevel({
+      db: world.state.world.db,
+      target: { sessionId: AUTO_SEED_SESSION },
+      level: 'step',
+    });
+
+    expect(
+      await world.runtime.continueChild({
+        childAgentId: original.childAgentId,
+        text: 'Skip the tests folder.',
+        from: 'auto-message',
+      }),
+    ).toMatchObject({ kind: 'continued' });
+    const held = (await delegationsOf(world)).find((row) => row.retryOf === original.id);
+    expect(held).toMatchObject({ state: 'awaiting_confirm' });
+    expect(world.state.ports.childTurns).toHaveLength(1);
+  });
+
+  it('refuses a continue whose plan was discarded, as admission does', async () => {
+    const world = await makeRuntimeWorld({
+      capUsd: 10,
+      agentIds: [SCOUT_AGENT, 'agent-planner'],
+      planIds: [{ id: 'plan-1', agentId: 'agent-planner' }],
+    });
+    const db = world.state.world.db;
+    await registerPlan({ world: world.state.world, id: 'plan-1', agentId: 'agent-planner' });
+    await userSays({ world, id: 'outbox-user-1', text: 'check the plan against ledger-core' });
+    await autoDelegates({ world, spec: { children: [{ ...SCOUT, artifacts: ['plan-1'] }] } });
+    await autoTurnEnds({ world });
+    await childTurnEnds({ world, index: 0, text: SCOUT_DONE });
+    await autoTurnEnds({ world, text: 'The scout read the plan.' });
+    const original = await onlyDelegation(world);
+    await setArtifactStatus({
+      db,
+      artifactId: brandId<ArtifactId>({ value: 'plan-1' }),
+      status: 'discarded',
+      kind: 'plan',
+    });
+
+    expect(
+      await world.runtime.continueChild({
+        childAgentId: original.childAgentId,
+        text: 'Read the plan again.',
+        from: 'user',
+      }),
+    ).toMatchObject({ kind: 'refused', code: 'artifact_discarded' });
+    expect(await delegationsOf(world)).toHaveLength(1);
+  });
+
   it('keeps the plain turn, files included, once the tree has stopped', async () => {
     const world = await settledScout();
     const original = await onlyDelegation(world);
@@ -299,6 +438,7 @@ describe('Auto messages a working child', () => {
         world,
         verb: 'message',
         args: { delegation: original.id, text: `note ${index}` },
+        runId: `run-note-${index}`,
       });
 
     for (const index of [1, 2, 3, 4]) {
@@ -342,6 +482,53 @@ describe('Auto messages a working child', () => {
     expect(otherWindow).toHaveLength(1);
     expect(otherWindow[0]?.content).toBe('Skip the tests folder.');
     expect(otherWindow[0]?.id.startsWith(`auto-message:${original.id}:`)).toBe(true);
+  });
+
+  it('replays the message of a recovered Auto turn without queueing or counting it again', async () => {
+    const world = await runningScout();
+    const original = await onlyDelegation(world);
+    const db = world.state.world.db;
+    world.state.ports.setChildMessageSink(async ({ agentId, messageId, text }) => {
+      await replaceAgentQueuedMessages(db, {
+        agentId,
+        messages: [
+          {
+            id: messageId,
+            agentId,
+            content: text,
+            attachments: [],
+            override: null,
+            createdAt: brandId<IsoDateTime>({ value: '2026-11-08T10:00:00.000Z' }),
+          },
+        ],
+      });
+    });
+    const send = () =>
+      autoCommand({
+        world,
+        verb: 'message',
+        args: { delegation: original.id, text: 'Skip the tests folder.' },
+        runId: 'run-auto-message',
+      });
+
+    expect(await send()).toMatchObject({ isOk: true, data: { sent: 1 } });
+    expect(await send()).toMatchObject({ isOk: true, data: { replayed: true, sent: 1 } });
+    expect(world.state.ports.childMessages).toHaveLength(1);
+
+    const messageId = world.state.ports.childMessages[0]?.messageId ?? '';
+    await replaceAgentQueuedMessages(db, { agentId: original.childAgentId, messages: [] });
+    await childTurnEnds({ world, index: 0, text: SCOUT_DONE });
+    expect(
+      await world.runtime.continueChild({
+        childAgentId: original.childAgentId,
+        text: 'Skip the tests folder.',
+        from: 'auto-message',
+        deliveryId: `queue:${messageId}`,
+      }),
+    ).toMatchObject({ kind: 'continued' });
+
+    expect(await send()).toMatchObject({ isOk: true, data: { replayed: true } });
+    expect(world.state.ports.childMessages).toHaveLength(1);
   });
 
   it('refuses a message to a child that already ended', async () => {
@@ -436,6 +623,47 @@ describe('Auto stops a child', () => {
     expect(world.state.ports.childTurns).toHaveLength(1);
     expect(await delegationsOf(world)).toHaveLength(1);
     expect(await onlyDelegation(world)).toMatchObject({ state: 'settled', outcome: 'stopped' });
+  });
+
+  it('refuses the stop and changes nothing when the cancel fails', async () => {
+    const world = await runningScout();
+    const original = await onlyDelegation(world);
+    world.state.ports.setCancelOutcome({ outcome: 'failed' });
+
+    expect(
+      await autoCommand({
+        world,
+        verb: 'stop',
+        args: { delegation: original.id, reason: 'The user no longer needs it.' },
+      }),
+    ).toMatchObject({ isOk: false, code: 'tree_busy' });
+    expect(await onlyDelegation(world)).toMatchObject({
+      state: 'running',
+      isStopping: false,
+      reason: null,
+    });
+  });
+
+  it("keeps Auto's reason when the child's end wins the race with the stop", async () => {
+    const world = await runningScout();
+    const original = await onlyDelegation(world);
+    world.state.ports.setCancelSink(async () => {
+      await childTurnEnds({ world, index: 0, text: 'Half way.', overrides: { exit: 'cancelled' } });
+    });
+
+    await autoCommand({
+      world,
+      verb: 'stop',
+      args: { delegation: original.id, reason: 'The user no longer needs it.' },
+    });
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+
+    expect(await onlyDelegation(world)).toMatchObject({
+      state: 'settled',
+      outcome: 'stopped',
+      reason: 'Stopped by Auto: The user no longer needs it.',
+    });
   });
 
   it('answers a stop on a child that already ended without stopping anything', async () => {

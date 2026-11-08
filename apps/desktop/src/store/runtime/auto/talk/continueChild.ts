@@ -1,14 +1,18 @@
 import {
   AUTO_MAX_OPEN_CHILDREN,
+  admissionChildRefusals,
   autoRefusalUserReason,
+  type AdmissionChild,
   type DelegateChildSpec,
 } from '@goodboy/core/auto';
 import {
+  autoAdmissionArtifactAbort,
   autoContinueTreeStatement,
   getAutoTree,
   getLatestAutoDelegationOfChild,
   insertAutoDelegationStatement,
   insertAutoReservationStatement,
+  listAutoDelegations,
   type AutoDelegation,
   type AutoTree,
 } from '@goodboy/db';
@@ -23,10 +27,14 @@ import {
 } from '@goodboy/types';
 import type { AutoContinueSource } from '../../../../features/auto/delegationContinueOf';
 import { textFieldOf } from '../../../../shared/utils/textFieldOf';
+import { admissionStateOf } from '../admission/admissionStateOf';
+import { inputArtifactStatementsOf } from '../admission/inputArtifactStatementsOf';
+import { readAdmissionSnapshot } from '../admission/readAdmissionSnapshot';
 import { prepareRetry } from '../prepareRetry';
 import { resolveDelegateChild } from '../resolveDelegateChild';
 import type { SleepParams } from '../startDeliveredTurn';
 import type { AgentVerbContext } from '../verbContext';
+import { delegationDeliveryIdOf } from './delegationDeliveryIdOf';
 
 export type ContinueChildParams = Readonly<{
   ctx: AgentVerbContext;
@@ -35,6 +43,8 @@ export type ContinueChildParams = Readonly<{
   from: AutoContinueSource;
   sleep: (params: SleepParams) => Promise<void>;
   hasFiles?: boolean;
+  isBusy?: boolean;
+  deliveryId?: string;
   settleWaitMs?: number;
 }>;
 
@@ -47,6 +57,7 @@ export type ContinueChildOutcome =
 const SETTLE_WAIT_MS = 30_000;
 const SETTLE_POLL_MS = 250;
 const ABORT_DELEGATION = 'continue_delegation';
+const ABORT_ARTIFACT = autoAdmissionArtifactAbort({ slot: 0 });
 
 const PLAIN: ContinueChildOutcome = { kind: 'plain' };
 
@@ -117,6 +128,31 @@ const settledDelegationOf = async ({
   return latest;
 };
 
+type DeliveredParams = {
+  readonly ctx: AgentVerbContext;
+  readonly childAgentId: AgentId;
+  readonly deliveryId: string;
+};
+
+const deliveredDelegationOf = async ({
+  ctx,
+  childAgentId,
+  deliveryId,
+}: DeliveredParams): Promise<AutoDelegation | null> => {
+  const latest = await getLatestAutoDelegationOfChild({ db: ctx.db, childAgentId });
+  if (latest === null) {
+    return null;
+  }
+  const rows = await listAutoDelegations({ db: ctx.db, treeId: latest.treeId });
+  return (
+    rows.find(
+      (row) =>
+        row.childAgentId === childAgentId &&
+        delegationDeliveryIdOf({ delegation: row }) === deliveryId,
+    ) ?? null
+  );
+};
+
 type ChildSpecParams = {
   readonly delegation: AutoDelegation;
   readonly text: string;
@@ -155,9 +191,22 @@ export const continueChild = async ({
   from,
   sleep,
   hasFiles = false,
+  isBusy = false,
+  deliveryId,
   settleWaitMs = SETTLE_WAIT_MS,
 }: ContinueChildParams): Promise<ContinueChildOutcome> => {
-  const delegation = await settledDelegationOf({ ctx, childAgentId, sleep, waitMs: settleWaitMs });
+  if (deliveryId !== undefined) {
+    const delivered = await deliveredDelegationOf({ ctx, childAgentId, deliveryId });
+    if (delivered !== null) {
+      return { kind: 'continued', treeId: delivered.treeId, delegationId: delivered.id };
+    }
+  }
+  const delegation = await settledDelegationOf({
+    ctx,
+    childAgentId,
+    sleep,
+    waitMs: isBusy ? 0 : settleWaitMs,
+  });
   if (delegation === null) {
     return PLAIN;
   }
@@ -182,7 +231,7 @@ export const continueChild = async ({
   if (delegation.state === 'paused') {
     return continueRefused({ code: 'not_running', message: PAUSED_MESSAGE });
   }
-  if (delegation.state !== 'settled') {
+  if (delegation.state !== 'settled' || isBusy) {
     return { kind: 'working', delegationId: delegation.id };
   }
   if (delegation.reviseOf !== null) {
@@ -201,6 +250,7 @@ export const continueChild = async ({
     child: childSpecOf({ delegation, text, from }),
     slot: 0,
     batchRetries: new Set(),
+    batchRebriefs: [],
     isConfirmGated: false,
     from,
   });
@@ -233,6 +283,31 @@ export const continueChild = async ({
     });
   }
   const input = resolved.input;
+  const admission: AdmissionChild = {
+    childAgentId: input.childAgentId,
+    role: input.role,
+    reviseOf: null,
+    inputArtifacts: input.inputArtifacts,
+    substep: null,
+  };
+  const snapshot = await readAdmissionSnapshot({
+    db: ctx.db,
+    treeId: tree.id,
+    ownerId: ctx.scheduler.ownerId,
+    nowMs: ctx.now(),
+    callerAgentId: tree.rootAgentId,
+    expectedGeneration: tree.generation,
+    expectedRunId: tree.activeRunId ?? '',
+    children: [admission],
+    isPlanApprovalRequired: ctx.ports.isPlanApprovalRequired(),
+  });
+  const artifactRefusal = admissionChildRefusals({ snapshot, tree, children: [admission] })[0];
+  if (artifactRefusal !== undefined) {
+    return continueRefused({
+      code: artifactRefusal.code,
+      message: autoRefusalUserReason({ code: artifactRefusal.code }),
+    });
+  }
   const nowMs = ctx.now();
   const treeStatement = autoContinueTreeStatement({
     treeId: tree.id,
@@ -255,6 +330,14 @@ export const continueChild = async ({
         abortWhen: 'noRows',
         abortCode: ABORT_DELEGATION,
       },
+      ...inputArtifactStatementsOf({
+        treeId: tree.id,
+        slot: 0,
+        role: input.role,
+        inputArtifacts: input.inputArtifacts,
+        snapshot,
+        nowMs,
+      }),
       insertAutoDelegationStatement({
         delegation: {
           id: input.delegationId,
@@ -269,6 +352,7 @@ export const continueChild = async ({
           role: input.role,
           request: {
             ...input.request,
+            ...(deliveryId !== undefined && { deliveryId }),
             capture: { mode: 'new' },
             inputArtifacts: input.inputArtifacts.map((ref) => ({
               artifactId: ref.artifactId,
@@ -278,7 +362,10 @@ export const continueChild = async ({
           },
           target: input.target,
           routing: input.routing,
-          state: 'accepted',
+          state:
+            from === 'user'
+              ? 'accepted'
+              : admissionStateOf({ snapshot, isConfirmForced: input.isConfirmForced }),
           retryOf: delegation.id,
           reviseOf: null,
           baseRevision: null,
@@ -303,6 +390,12 @@ export const continueChild = async ({
     }
     if (outcome.abortCode === ABORT_DELEGATION) {
       return { kind: 'working', delegationId: delegation.id };
+    }
+    if (outcome.abortCode === ABORT_ARTIFACT) {
+      return continueRefused({
+        code: 'artifact_busy',
+        message: autoRefusalUserReason({ code: 'artifact_busy' }),
+      });
     }
     throw new Error(`Auto continue aborted on ${outcome.abortCode}`);
   }

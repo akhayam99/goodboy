@@ -188,6 +188,96 @@ describe('revising an artifact the tree already has', () => {
     expect(world.errors).toEqual([]);
   });
 
+  it('holds a return for a decision that brings no whole plan, and keeps its request', async () => {
+    const world = await revisingWorld();
+
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: 'Step one stays, step two needs an owner first.\n<<step-done id="agent-planner" status="returned" needs="decision">>\nPick the step two owner.',
+    });
+
+    expect(await planOf(world)).toMatchObject({ revision: 1 });
+    expect(await getAutoArtifact({ db: world.state.world.db, artifactId: PLAN_ID })).toMatchObject({
+      openReviseDelegationId: null,
+    });
+    const delegation = (
+      await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId })
+    ).find((row) => row.reviseOf === 'plan-1');
+    expect(delegation).toMatchObject({
+      state: 'settled',
+      outcome: 'blocked',
+      reason: 'needs_decision',
+    });
+    expect(world.state.ports.autoTurns[1]?.text ?? '').toContain(
+      'it asks: Pick the step two owner.',
+    );
+  });
+
+  it('frees the artifact when Auto stops the revise', async () => {
+    const world = await revisingWorld();
+    const revise = (
+      await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId })
+    ).find((row) => row.reviseOf === 'plan-1');
+    if (revise === undefined) {
+      throw new Error('a revise was expected');
+    }
+
+    expect(
+      await autoCommand({
+        world,
+        verb: 'stop',
+        args: { delegation: revise.id, reason: 'The user changed their mind.' },
+      }),
+    ).toMatchObject({ isOk: true, data: { stopped: true } });
+    await childTurnEnds({ world, index: 0, text: 'Half way.', overrides: { exit: 'cancelled' } });
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+
+    expect(await getAutoArtifact({ db: world.state.world.db, artifactId: PLAN_ID })).toMatchObject({
+      openReviseDelegationId: null,
+    });
+    expect(
+      await getAutoDelegation({ db: world.state.world.db, delegationId: revise.id }),
+    ).toMatchObject({
+      state: 'settled',
+      outcome: 'stopped',
+      reason: 'Stopped by Auto: The user changed their mind.',
+    });
+    expect(await planOf(world)).toMatchObject({ revision: 1 });
+  });
+
+  it('frees the artifact and keeps the reason when a revise ends after a slow stop', async () => {
+    const world = await revisingWorld();
+    const revise = (
+      await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId })
+    ).find((row) => row.reviseOf === 'plan-1');
+    if (revise === undefined) {
+      throw new Error('a revise was expected');
+    }
+    world.state.ports.setCancelOutcome({ outcome: 'still_running' });
+
+    await autoCommand({
+      world,
+      verb: 'stop',
+      args: { delegation: revise.id, reason: 'The user changed their mind.' },
+    });
+    await childTurnEnds({ world, index: 0, text: 'Half way.', overrides: { exit: 'cancelled' } });
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+
+    expect(await getAutoArtifact({ db: world.state.world.db, artifactId: PLAN_ID })).toMatchObject({
+      openReviseDelegationId: null,
+    });
+    expect(
+      await getAutoDelegation({ db: world.state.world.db, delegationId: revise.id }),
+    ).toMatchObject({
+      state: 'settled',
+      outcome: 'stopped',
+      reason: 'Stopped by Auto: The user changed their mind.',
+    });
+  });
+
   it('keeps the sentence of a refused retry as the reason of the failed revise', async () => {
     const world = await revisingWorld();
     const refusal =
@@ -559,6 +649,7 @@ describe('retrying a revise', () => {
       },
       slot: 0,
       batchRetries: new Set(),
+      batchRebriefs: [],
       isConfirmGated: false,
     });
     expect(early).toMatchObject({ kind: 'refused', refusal: { code: 'retry_unavailable' } });

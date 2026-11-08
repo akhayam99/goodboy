@@ -207,7 +207,15 @@ export const createAutoRuntime = ({
       await drive(treeId);
       return outcome;
     },
-    continueChild: async ({ childAgentId, text, from, hasFiles, settleWaitMs }) => {
+    continueChild: async ({
+      childAgentId,
+      text,
+      from,
+      hasFiles,
+      isBusy,
+      deliveryId,
+      settleWaitMs,
+    }) => {
       const outcome = await continueChild({
         ctx,
         sleep,
@@ -215,6 +223,8 @@ export const createAutoRuntime = ({
         text,
         from,
         ...(hasFiles === undefined ? {} : { hasFiles }),
+        ...(isBusy === undefined ? {} : { isBusy }),
+        ...(deliveryId === undefined ? {} : { deliveryId }),
         ...(settleWaitMs === undefined ? {} : { settleWaitMs }),
       });
       if (outcome.kind === 'continued') {

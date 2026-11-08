@@ -17,7 +17,7 @@ import {
 import { brandId, type ArtifactId, type AutoDelegationId } from '@goodboy/types';
 import type { AutoContinue, AutoContinueSource } from '../../../features/auto/delegationContinueOf';
 import type { ChildRefusal } from './resolveDelegateChild';
-import { rebriefCountOf } from './returns/rebriefCountOf';
+import { rebriefCountOf, type RebriefLink } from './returns/rebriefCountOf';
 import { returnCountOf } from './returns/returnCountOf';
 import { targetRefusalOf } from './returns/targetRefusalOf';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
@@ -46,6 +46,7 @@ export type PrepareRetryParams = Readonly<{
   child: DelegateChildSpec;
   slot: number;
   batchRetries: ReadonlySet<string>;
+  batchRebriefs: ReadonlyArray<RebriefLink>;
   isConfirmGated: boolean;
   from?: AutoContinueSource;
 }>;
@@ -109,6 +110,7 @@ export const prepareRetry = async ({
   child,
   slot,
   batchRetries,
+  batchRebriefs,
   isConfirmGated,
   from = 'auto',
 }: PrepareRetryParams): Promise<PreparedRetry> => {
@@ -163,7 +165,7 @@ export const prepareRetry = async ({
   if (
     !isConfirmGated &&
     continueWith?.from === 'auto' &&
-    rebriefCountOf({ delegation: original, delegations: siblings }) + 1 >
+    rebriefCountOf({ delegation: original, delegations: [...siblings, ...batchRebriefs] }) + 1 >
       AUTO_TREE_LIMITS.rebriefsPerTask
   ) {
     return refuse({

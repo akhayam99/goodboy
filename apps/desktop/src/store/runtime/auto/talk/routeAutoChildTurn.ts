@@ -16,6 +16,7 @@ import {
   type AutoChildTurnPort,
   type AutoChildTurnResult,
 } from '../../../../features/auto/autoChildTurnPort';
+import { QUEUE_DELIVERY_PREFIX } from '../../../slices/agentQueue/QUEUE_DELIVERY_PREFIX';
 import type { ReportErrorParams } from '../../../slices/notifications/reportError';
 import { ReportedError } from '../../../slices/notifications/reportedError';
 import { AUTO_CONFINED_ROLE } from '../../../slices/turn/confinedRoleOf';
@@ -34,8 +35,6 @@ export type RouteAutoChildTurnParams = Readonly<{
   get: () => ChildTurnState;
   input: SendTurnInput;
 }>;
-
-const QUEUE_DELIVERY_PREFIX = 'queue:';
 
 const BUSY_TURN_KINDS: ReadonlySet<string> = new Set(['starting', 'running']);
 
@@ -110,9 +109,6 @@ export const routeAutoChildTurn = async ({
   const from = deliveryId.startsWith(`${QUEUE_DELIVERY_PREFIX}${AUTO_MESSAGE_QUEUE_PREFIX}`)
     ? 'auto-message'
     : 'user';
-  if (BUSY_TURN_KINDS.has(state.agentTurnState[agentId]?.kind ?? 'idle')) {
-    return refuseChildTurn({ ...refusal, message: WORKING_MESSAGE });
-  }
   const result = await askAuto({
     ...refusal,
     port,
@@ -122,6 +118,8 @@ export const routeAutoChildTurn = async ({
       text: input.content,
       from,
       hasFiles: (input.attachments ?? []).length > 0,
+      isBusy: BUSY_TURN_KINDS.has(state.agentTurnState[agentId]?.kind ?? 'idle'),
+      deliveryId: input.deliveryId ?? null,
     },
   });
   if (result.kind === 'plain') {

@@ -1,11 +1,17 @@
 import { parseDelegateSpec, parseProposeSpec } from '@goodboy/core/auto';
 import { getAutoTree, recordAutoRefusal } from '@goodboy/db';
-import { brandId, type AutoBatchId, type AutoRequestId } from '@goodboy/types';
+import {
+  brandId,
+  type AutoBatchId,
+  type AutoDelegationId,
+  type AutoRequestId,
+} from '@goodboy/types';
 import { textOf } from '@goodboy/types/helpers';
 import { replayAdmission, type AdmitChildInput, type AdmitOutcome } from './admit';
 import { delegationReceipt } from './delegationReceipt';
 import type { AgentCommand, BridgeOutcome } from './ports';
 import { prepareReplace } from './returns/prepareReplace';
+import type { RebriefLink } from './returns/rebriefCountOf';
 import { prepareRetry, type RecoveredRevise } from './prepareRetry';
 import { refuseOutcome } from './refuseOutcome';
 import { resolveDelegateChild } from './resolveDelegateChild';
@@ -162,7 +168,7 @@ export const delegate = async ({
   const inputs: AdmitChildInput[] = [];
   const refusals = [];
   const recoveries: RecoveredRevise[] = [];
-  const batchReplaces: string[] = [];
+  const batchRebriefs: RebriefLink[] = [];
   const batchRetries = new Set<string>();
   for (const [slot, child] of parsed.children.entries()) {
     const replaceRefusal = await prepareReplace({
@@ -170,7 +176,7 @@ export const delegate = async ({
       tree,
       child,
       slot,
-      batchReplaces,
+      batchRebriefs,
       isConfirmGated: isProposal,
     });
     if (replaceRefusal !== null) {
@@ -178,7 +184,11 @@ export const delegate = async ({
       continue;
     }
     if (child.replaces !== null) {
-      batchReplaces.push(child.replaces);
+      batchRebriefs.push({
+        id: brandId<AutoDelegationId>({ value: `batch-replace-${String(slot)}` }),
+        retryOf: null,
+        request: { replaces: child.replaces },
+      });
     }
     const prepared =
       child.retryOf === null
@@ -189,6 +199,7 @@ export const delegate = async ({
             child,
             slot,
             batchRetries,
+            batchRebriefs,
             isConfirmGated: isProposal,
           });
     if (prepared !== null && prepared.kind === 'refused') {
@@ -197,6 +208,13 @@ export const delegate = async ({
     }
     if (child.retryOf !== null) {
       batchRetries.add(child.retryOf);
+    }
+    if (prepared?.kind === 'resolve' && prepared.continueWith !== null) {
+      batchRebriefs.push({
+        id: brandId<AutoDelegationId>({ value: `batch-retry-${String(slot)}` }),
+        retryOf: prepared.original.id,
+        request: { continueWith: prepared.continueWith },
+      });
     }
     if (prepared !== null && prepared.kind === 'recovered') {
       recoveries.push(prepared.recovery);

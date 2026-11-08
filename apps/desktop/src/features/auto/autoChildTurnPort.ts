@@ -7,6 +7,8 @@ export type AutoChildTurnParams = Readonly<{
   text: string;
   from: 'user' | 'auto-message';
   hasFiles: boolean;
+  isBusy: boolean;
+  deliveryId: string | null;
 }>;
 
 export type AutoChildTurnResult =

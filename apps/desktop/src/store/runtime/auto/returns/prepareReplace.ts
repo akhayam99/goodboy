@@ -1,7 +1,7 @@
 import { AUTO_REFUSAL_TEXT, AUTO_TREE_LIMITS, type DelegateChildSpec } from '@goodboy/core/auto';
 import { listAutoDelegations, type AutoTree } from '@goodboy/db';
-import { brandId, type AutoDelegationId } from '@goodboy/types';
-import { rebriefCountOf } from './rebriefCountOf';
+import { delegationReplacesOf } from '../../../../features/auto/delegationReplacesOf';
+import { rebriefCountOf, type RebriefLink } from './rebriefCountOf';
 import { targetRefusalOf } from './targetRefusalOf';
 import type { ChildRefusal } from '../resolveDelegateChild';
 import type { AgentVerbContext } from '../verbContext';
@@ -11,7 +11,7 @@ export type PrepareReplaceParams = Readonly<{
   tree: AutoTree;
   child: DelegateChildSpec;
   slot: number;
-  batchReplaces: ReadonlyArray<string>;
+  batchRebriefs: ReadonlyArray<RebriefLink>;
   isConfirmGated: boolean;
 }>;
 
@@ -20,7 +20,7 @@ export const prepareReplace = async ({
   tree,
   child,
   slot,
-  batchReplaces,
+  batchRebriefs,
   isConfirmGated,
 }: PrepareReplaceParams): Promise<ChildRefusal | null> => {
   if (child.replaces === null) {
@@ -46,16 +46,14 @@ export const prepareReplace = async ({
   if (targetRefusal !== null) {
     return targetRefusal;
   }
-  if (isConfirmGated || batchReplaces.includes(replaced.id)) {
+  const isReplacedInBatch = batchRebriefs.some(
+    (row) => delegationReplacesOf({ delegation: row }) === replaced.id,
+  );
+  if (isConfirmGated || isReplacedInBatch) {
     return null;
   }
-  const prepared = batchReplaces.map((replaces, index) => ({
-    id: brandId<AutoDelegationId>({ value: `batch-replace-${String(index)}` }),
-    retryOf: null,
-    request: { replaces },
-  }));
   if (
-    rebriefCountOf({ delegation: replaced, delegations: [...delegations, ...prepared] }) + 1 >
+    rebriefCountOf({ delegation: replaced, delegations: [...delegations, ...batchRebriefs] }) + 1 >
     AUTO_TREE_LIMITS.rebriefsPerTask
   ) {
     return { slot, code: 'task_rebrief_limit', message: AUTO_REFUSAL_TEXT.task_rebrief_limit };

@@ -14,6 +14,9 @@ export type StopChildParams = Readonly<{
 
 const WORKING_STATES: ReadonlyArray<string> = ['starting', 'running'];
 
+const CANCEL_FAILED =
+  'Goodboy could not stop that agent, so it keeps working. Try the stop again, or wait for its result.';
+
 const ALREADY_ENDED =
   'That agent had already ended, so nothing was stopped. Its result is in your messages.';
 
@@ -60,16 +63,24 @@ export const stopChild = async ({ ctx, command }: StopChildParams): Promise<Brid
     return refuseOutcome({ code: 'not_running' });
   }
   const sentence = stoppedPhraseOf({ by: 'auto', reason });
+  await ctx.db.execute(
+    `UPDATE auto_delegations SET is_stopping = 1, reason = ? WHERE id = ? AND state <> 'settled'`,
+    [sentence, delegation.id],
+  );
   const cancelled = await ctx.ports.cancelRun({
     sessionId: tree.sessionId,
     agentId: delegation.childAgentId,
     by: 'auto',
   });
-  if (cancelled.outcome !== 'exited') {
+  if (cancelled.outcome === 'failed') {
     await ctx.db.execute(
-      `UPDATE auto_delegations SET is_stopping = 1, reason = ? WHERE id = ? AND state <> 'settled'`,
-      [sentence, delegation.id],
+      `UPDATE auto_delegations SET is_stopping = ?, reason = ?
+        WHERE id = ? AND state <> 'settled' AND reason = ?`,
+      [delegation.isStopping ? 1 : 0, delegation.reason, delegation.id, sentence],
     );
+    return refuseOutcome({ code: 'tree_busy', message: CANCEL_FAILED });
+  }
+  if (cancelled.outcome === 'still_running') {
     return {
       isOk: true,
       data: {

@@ -73,6 +73,11 @@ export {
 } from './admission';
 
 export {
+  admissionChildRefusals,
+  type AdmissionChildRefusalsParams,
+} from './admissionChildRefusals';
+
+export {
   AUTO_LIMIT_REFUSAL_CODES,
   AUTO_MOUNTED_CODE,
   AUTO_REFUSAL_CODES,

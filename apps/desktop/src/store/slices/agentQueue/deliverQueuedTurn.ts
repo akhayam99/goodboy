@@ -9,6 +9,7 @@ import { ReportedError, isReportedError } from '../notifications/reportedError';
 import { turnRefusalMessage } from '../turn/refusal/turnRefusalMessage';
 import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
+import { QUEUE_DELIVERY_PREFIX } from './QUEUE_DELIVERY_PREFIX';
 import type { AgentQueueHold, AgentQueuedTurn, GetFn, QueuedTurnDelivery, SetFn } from './types';
 
 type Params = Readonly<{
@@ -93,7 +94,7 @@ export const deliverQueuedTurn = async ({
     void get().reportError({ recovery: CHECK_STATE, title, error, sessionId });
     return { isDelivered: false, failure: null };
   };
-  const deliveryId = `queue:${turn.id}`;
+  const deliveryId = `${QUEUE_DELIVERY_PREFIX}${turn.id}`;
   let isAccepted = false;
   try {
     const delivered = await countUserTextEvents({ db: tauriDatabase, agentId, deliveryId });

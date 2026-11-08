@@ -108,6 +108,8 @@ describe('a message typed to a child Auto started', () => {
       text: 'Also read the notify-relay callers',
       from: 'user',
       hasFiles: false,
+      isBusy: false,
+      deliveryId: null,
     });
     expect(onStarted).toHaveBeenCalledOnce();
     expect(appendTurnEvent).toHaveBeenCalledWith(
@@ -134,7 +136,12 @@ describe('a message typed to a child Auto started', () => {
       }),
     });
 
-    expect(port).toHaveBeenCalledWith(expect.objectContaining({ from: 'auto-message' }));
+    expect(port).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: 'auto-message',
+        deliveryId: 'queue:auto-message:delegation-scout:id-1',
+      }),
+    );
     expect(appendTurnEvent).not.toHaveBeenCalled();
   });
 
@@ -196,8 +203,8 @@ describe('a message typed to a child Auto started', () => {
     ).rejects.toThrow('not files yet');
   });
 
-  it('never injects a message into a running child turn', async () => {
-    const port = vi.fn<AutoChildTurnPort>(async () => ({ kind: 'continued' }));
+  it('never injects a message into a running child turn of a live tree', async () => {
+    const port = vi.fn<AutoChildTurnPort>(async () => ({ kind: 'working' }));
     registerAutoChildTurnPort({ port });
     const { get, reportError } = harness({ isChildRunning: true });
 
@@ -205,10 +212,18 @@ describe('a message typed to a child Auto started', () => {
       routeAutoChildTurn({ get, input: inputOf({ agentId: CHILD_AGENT }) }),
     ).rejects.toThrow('still working for Auto');
 
-    expect(port).not.toHaveBeenCalled();
+    expect(port).toHaveBeenCalledWith(expect.objectContaining({ isBusy: true }));
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Your message did not reach Scout' }),
     );
+  });
+
+  it('keeps the plain path for a running child once its tree is over', async () => {
+    registerAutoChildTurnPort({ port: async () => ({ kind: 'plain' }) });
+    const { get, reportError } = harness({ isChildRunning: true });
+
+    expect(await routeAutoChildTurn({ get, input: inputOf({ agentId: CHILD_AGENT }) })).toBeNull();
+    expect(reportError).not.toHaveBeenCalled();
   });
 
   it('shows the refusal Auto gives and sends nothing', async () => {

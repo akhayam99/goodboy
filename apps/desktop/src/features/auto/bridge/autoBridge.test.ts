@@ -149,6 +149,8 @@ describe('Auto in a window without the runtime', () => {
       text: 'Also read notify-relay',
       from: 'user' as const,
       hasFiles: true,
+      isBusy: false,
+      deliveryId: 'queue:message-ledger',
     };
 
     expect(await client.ports.childTurn(turn)).toEqual({ kind: 'continued' });

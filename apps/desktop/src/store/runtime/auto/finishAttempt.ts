@@ -20,7 +20,6 @@ import {
   getArtifact,
   getAutoAttempt,
   getAutoDelegation,
-  getAutoOutbox,
   getAutoTree,
   listArtifactsOfRun,
   registerAutoArtifact,
@@ -35,10 +34,12 @@ import { attemptEnvelope, delegationRoleOf, isArtifactRole } from './attemptEnve
 import { landAttemptRevision, type RevisionLanding } from './landAttemptRevision';
 import { planPublish } from './planPublish';
 import { returnedRevise } from './reviseFailure/returnedRevise';
+import { stoppedRevise } from './reviseFailure/stoppedRevise';
 import type { ChildTurnEnded } from './ports';
 import { pushSettledPublish } from './pushSettledPublish';
 import { readCommittedFilesOf } from './readCommittedFiles';
 import { readSnapshot } from './readSnapshot';
+import { reviseAskOf } from './reviseAskOf';
 import type { SettleAttemptOutcome } from './settleAttempt';
 import type { AgentVerbContext } from './verbContext';
 import { verifyAttempt } from './verifyAttempt';
@@ -221,41 +222,6 @@ const attributionOf = async ({
   };
 };
 
-type AskParams = {
-  readonly ctx: AgentVerbContext;
-  readonly delegation: AutoDelegation;
-};
-
-const askOf = async ({ ctx, delegation }: AskParams): Promise<string | null> => {
-  const rowIds = delegation.request['changeFrom'];
-  const texts: string[] = [];
-  if (Array.isArray(rowIds)) {
-    for (const rowId of rowIds) {
-      if (typeof rowId !== 'string') {
-        continue;
-      }
-      const row = await getAutoOutbox({
-        db: ctx.db,
-        outboxId: brandId<AutoOutboxId>({ value: rowId }),
-      });
-      const payload = row?.payload;
-      if (
-        typeof payload === 'object' &&
-        payload !== null &&
-        'text' in payload &&
-        typeof payload.text === 'string'
-      ) {
-        texts.push(payload.text);
-      }
-    }
-  }
-  if (texts.length > 0) {
-    return texts.join('\n');
-  }
-  const task = delegation.request['task'];
-  return typeof task === 'string' && task !== '' ? task : null;
-};
-
 type ReviseParams = Context & {
   readonly attribution: Attribution;
 };
@@ -266,6 +232,9 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
   const baseRevision = delegation.baseRevision;
   if (artifactId === null || baseRevision === null) {
     return { kind: 'dropped', reason: 'not_a_revise' };
+  }
+  if (ended.exit === 'cancelled') {
+    return stoppedRevise({ ctx, ended, delegation, attempt });
   }
   const base = await getArtifact({
     db: ctx.db,
@@ -280,6 +249,8 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
           baseClusterCount: baseClusters,
         })
       : ({ kind: 'failed', reason: 'no_new_version' } as const);
+  const isReturned =
+    ended.exit === 'ok' && closing.completion === 'blocked' && closing.returned?.needs != null;
   const artifacts: ReadonlyArray<ResultArtifact> =
     parsed.kind === 'ok' && base !== null
       ? [
@@ -301,7 +272,7 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
     closing,
     changedFiles: attribution.changedFiles,
     artifacts,
-    artifactPersistence: parsed.kind === 'ok' ? 'ok' : 'failed',
+    artifactPersistence: parsed.kind === 'ok' || isReturned ? 'ok' : 'failed',
     costUsd: ended.costUsd,
     durationMs: ended.durationMs,
   });
@@ -314,7 +285,7 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
           title: parsed.title,
           sourceText: parsed.sourceText,
           metadata: parsed.metadata,
-          ask: await askOf({ ctx, delegation }),
+          ask: await reviseAskOf({ ctx, delegation }),
           sourceTurnId: ended.runId,
         }
       : null;

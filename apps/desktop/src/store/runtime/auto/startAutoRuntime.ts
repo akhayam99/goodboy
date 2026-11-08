@@ -72,8 +72,16 @@ const REGISTERED_PORTS: AutoBridgePorts = {
   sendNow: ({ treeId, rowId }) => requirePort({ port: currentSendNowPort() })({ treeId, rowId }),
   withdraw: ({ treeId, rowId }) => requirePort({ port: currentWithdrawPort() })({ treeId, rowId }),
   userTurn: (params) => requirePort({ port: currentAutoUserTurnPort() })(params),
-  childTurn: ({ agentId, sessionId, text, from, hasFiles }) =>
-    requirePort({ port: currentAutoChildTurnPort() })({ agentId, sessionId, text, from, hasFiles }),
+  childTurn: ({ agentId, sessionId, text, from, hasFiles, isBusy, deliveryId }) =>
+    requirePort({ port: currentAutoChildTurnPort() })({
+      agentId,
+      sessionId,
+      text,
+      from,
+      hasFiles,
+      isBusy,
+      deliveryId,
+    }),
   decision: (params) => requirePort({ port: currentDelegationDecisionPort() })(params),
   rerunChecks: (params) => requirePort({ port: currentChecksRerunPort() })(params),
   publish: (params) => requirePort({ port: currentPublishPort() })(params),
@@ -271,8 +279,15 @@ export const startAutoRuntime = async ({
   };
   registerAutoDrivePort({ port: ({ treeId }) => runtime.drive(treeId) });
   registerAutoChildTurnPort({
-    port: async ({ agentId, text, from, hasFiles }) => {
-      const outcome = await runtime.continueChild({ childAgentId: agentId, text, from, hasFiles });
+    port: async ({ agentId, text, from, hasFiles, isBusy, deliveryId }) => {
+      const outcome = await runtime.continueChild({
+        childAgentId: agentId,
+        text,
+        from,
+        hasFiles,
+        isBusy,
+        ...(deliveryId !== null && { deliveryId }),
+      });
       if (outcome.kind === 'refused') {
         return { kind: 'refused', message: outcome.message };
       }

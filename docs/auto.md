@@ -551,8 +551,14 @@ writing to it reopens it to **Deciding**.
   like any attempt and shows in Auto's next delivery, so Auto may answer before the child
   does. On a working child the message waits in the agent queue (`agentQueue`, a DB row each
   window reads) and runs as that continue when the turn ends; a send that reaches a working
-  child is refused with "still working for Auto", never injected in the turn. Auto's own
-  `message` takes the same queue, with an `auto-message:` id. The chat keeps the person's words
+  child of a live tree is refused with "still working for Auto", never injected in the turn
+  (`routeAutoChildTurn` passes `isBusy`, and `continueChild` answers it after the plain checks).
+  A continue passes the admission's artifact checks (`admissionChildRefusals`, fenced in its
+  transaction by `inputArtifactStatementsOf`), and Auto's queued message waits as
+  `awaiting_confirm` at Every step or on a forced confirm (`admissionStateOf`); the person's own
+  message goes on. The queue delivery id rides the port (`deliveryId`, kept in the continue's
+  request), so a queued message sent again replays its delegation instead of running twice.
+  Auto's own `message` takes the same queue, with an `auto-message:` id. The chat keeps the person's words
   where they were written. A child that asked a question waits for Auto's answer, a child that
   rewrites an artifact goes through Auto, and files are refused: each with a sentence. A child
   of a finished, stopped or detached tree, or of an older generation, keeps the plain confined
@@ -754,7 +760,8 @@ stops it is a guard that protects the user:
   third return closes the child, a `retryOf` of it or of any agent in its lineage is refused with
   `return_limit` and the delivery tells Auto to hand the task to another role or ask the user.
   `rebriefsPerTask` (3, the agents replaced and Auto's continues with a `task` in the `retryOf`
-  and `replaces` lineage, `rebriefCountOf`): the fourth is refused with `task_rebrief_limit` and
+  and `replaces` lineage, `rebriefCountOf`, counted with the other children of the same block):
+  the fourth is refused with `task_rebrief_limit` and
   the delivery tells Auto to ask with a propose block. `messagesPerDelegation` (4 per child,
   `autoMessageCountOf`, Auto's messages only: the queued ones and the ones already run): the
   fifth is refused with `message_limit`, so Auto stops or continues it instead. The person is not
@@ -849,16 +856,20 @@ It decides by ending its final reply with at most one block:
 - `message` tells a working child something (`delegation`, `text` of at most 2,000 characters,
   `AUTO_CHILD_MESSAGE_CHARS`). It is queued for the child and reaches it as its next turn when
   the current one ends, never in the middle of one (`messageChild`); a child that is not working
-  is refused with `not_running`.
+  is refused with `not_running`. Its queue id is the delegation and Auto's turn, so a recovered
+  turn that applies the block again replays the saved or delivered message without queueing or
+  counting it twice.
 - `stop` stops a working child (`delegation`, `reason`) with the same cancel as the dock Stop
   (`stopChild`, the `cancelRun` port with `by: 'auto'`). The agent is marked stopped by `auto`,
   so the dock, the glance and the child row read **Stopped by Auto** (`stoppedPhraseOf`, the one
   owner of every "Stopped by" label). It settles `stopped` with the reason "Stopped by Auto:
   ..." and its work stays. The agent is marked stopped by `auto` as soon as the cancel answers,
   whatever it answers, and its queued `auto-message:` items are dropped (`cancelTurnConfirmed`,
-  `dropAutoMessages`), so its parked queue never reopens it. A child slow to exit keeps that
-  reason on the delegation with `is_stopping`, and the run end settles with it
-  (`settleAttempt`). The deadline and idle cancel of `enforceDeadlines` stops with `by: 'auto'`
+  `dropAutoMessages`), so its parked queue never reopens it. The reason is saved on the
+  delegation with `is_stopping` before the cancel, so a run end that wins the race, or comes
+  late, settles with it (`settleAttempt`). A cancel that fails is refused with `tree_busy` and
+  the delegation goes back as it was. A stopped revise frees its artifact in the same
+  transaction (`failAttempt`, `stoppedRevise`). The deadline and idle cancel of `enforceDeadlines` stops with `by: 'auto'`
   too. A stop on a child that already ended changes nothing and answers `alreadyEnded`, never a
   refusal.
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
@@ -1086,7 +1097,8 @@ request. An old `status="blocked"` closing with no needs (`ChildClosing.isLegacy
 blocked before the report check, and the shell text may refine its reason to `needs_shell`; a
 `status="returned"` closing with no needs still fails as a lost report. A revise child that returns
 lands nothing: the artifact keeps its version and the delegation settles `blocked` with the needs
-reason (`returnedRevise` in `finishAttempt.ts`). A return is not a question: the substep roles of a blocking question stay scout and
+reason (`returnedRevise` in `finishAttempt.ts`), whether or not its reply holds a whole new
+version, so a partial plan that returns with needs keeps its request. A return is not a question: the substep roles of a blocking question stay scout and
 investigator, and a reply that returns drops its blocking question, so the attempt settles instead of pausing.
 
 **Auto is woken at once and must decide.** A return never waits for its batch. `joinReady`

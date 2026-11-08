@@ -204,9 +204,12 @@ export const createAutoBridgeClient = async ({
         call: { kind: 'decision', delegationId, decision, ...(hint === undefined ? {} : { hint }) },
         isResult: isDecisionResult,
       }),
-    childTurn: ({ agentId, sessionId, text, from, hasFiles }) =>
+    childTurn: ({ agentId, sessionId, text, from, hasFiles, isBusy, deliveryId }) =>
       ask({
-        call: { kind: 'childTurn', turn: { agentId, sessionId, text, from, hasFiles } },
+        call: {
+          kind: 'childTurn',
+          turn: { agentId, sessionId, text, from, hasFiles, isBusy, deliveryId },
+        },
         isResult: isChildTurnResult,
         waitMs: longTimeoutMs,
       }),

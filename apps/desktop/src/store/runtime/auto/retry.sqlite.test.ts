@@ -220,6 +220,7 @@ describe('refusing a retry that cannot repeat the work', () => {
       child: bareRetry((await firstDelegation(world)).id),
       slot: 0,
       batchRetries: new Set(),
+      batchRebriefs: [],
       isConfirmGated: false,
     });
 
@@ -259,6 +260,7 @@ describe('refusing a retry that cannot repeat the work', () => {
       child: bareRetry(original.id),
       slot: 0,
       batchRetries: new Set(),
+      batchRebriefs: [],
       isConfirmGated: false,
     });
 

@@ -49,7 +49,9 @@ const isCall = (value: unknown): value is AutoBridgeCall => {
       isText(turn['sessionId']) &&
       isText(turn['text']) &&
       (turn['from'] === 'user' || turn['from'] === 'auto-message') &&
-      typeof turn['hasFiles'] === 'boolean'
+      typeof turn['hasFiles'] === 'boolean' &&
+      typeof turn['isBusy'] === 'boolean' &&
+      (turn['deliveryId'] === null || isText(turn['deliveryId']))
     );
   }
   if (kind === 'decision') {

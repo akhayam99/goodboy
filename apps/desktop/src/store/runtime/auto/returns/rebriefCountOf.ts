@@ -3,11 +3,11 @@ import { delegationContinueOf } from '../../../../features/auto/delegationContin
 import { delegationReplacesOf } from '../../../../features/auto/delegationReplacesOf';
 import { lineageOf } from './lineageOf';
 
-type Link = Pick<AutoDelegation, 'id' | 'retryOf' | 'request'>;
+export type RebriefLink = Pick<AutoDelegation, 'id' | 'retryOf' | 'request'>;
 
 export type RebriefCountParams = Readonly<{
-  delegation: Link;
-  delegations: ReadonlyArray<Link>;
+  delegation: RebriefLink;
+  delegations: ReadonlyArray<RebriefLink>;
 }>;
 
 export const rebriefCountOf = ({ delegation, delegations }: RebriefCountParams): number =>
