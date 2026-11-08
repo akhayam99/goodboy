@@ -6,6 +6,8 @@ export type PullRequestEdit = Readonly<{
   at: IsoDateTime;
 }>;
 
+export type PullRequestActivityFilter = 'all' | 'people' | 'bots' | 'pushes' | 'checks';
+
 export type PullRequestViewEntry = Readonly<{
   prNumber: number;
   mountId: MountId | null;
@@ -15,6 +17,7 @@ export type PullRequestViewEntry = Readonly<{
   errorKind?: PullRequestFailureKind | null;
   fetchedAt: IsoDateTime | null;
   edits: ReadonlyArray<PullRequestEdit>;
+  activityFilter?: PullRequestActivityFilter;
 }>;
 
 export type PullRequestViewState = {

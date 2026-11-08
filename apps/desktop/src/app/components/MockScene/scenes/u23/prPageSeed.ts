@@ -2,6 +2,7 @@ import { brandId } from '@goodboy/types';
 import type {
   MountId,
   PrCheckRun,
+  PrComment,
   PrDetail,
   PrReview,
   PrReviewRequest,
@@ -9,6 +10,7 @@ import type {
   ProjectId,
   PullRequestState,
   PullRequestView,
+  ResolveQueueItemWithThread,
   SessionProjectMount,
   WorktreeStatus,
 } from '@goodboy/types';
@@ -22,14 +24,18 @@ import { mockSceneIpc } from '../mockSceneIpc';
 import type { IpcHandler } from '../sceneIpcAnswer';
 import {
   NOW_ISO,
+  QUEUE_ITEMS,
   RESOLVE_SCENE_PR,
   SESSION_ID,
   WORKSPACE_ID,
+  buildItem,
+  buildThread,
   isoAgo,
   seedResolveScene,
 } from '../resolveSeed';
 
 export type PrPageVariant =
+  | 'activity'
   | 'github'
   | 'draft'
   | 'editing'
@@ -170,6 +176,81 @@ const REVIEWS_BLOCKING: ReadonlyArray<PrReview> = [
   },
 ];
 
+const REVIEWS_ACTIVITY: ReadonlyArray<PrReview> = [
+  reviewOf({
+    id: 'review-kenji',
+    author: 'kenji-w',
+    state: 'approved',
+    minutes: 2 * DAY,
+    body: 'The event id is the right key.',
+  }),
+  {
+    ...reviewOf({
+      id: 'review-cascadia',
+      author: 'cascadia-lint[bot]',
+      state: 'commented',
+      minutes: 200,
+      body: 'One finding on the retry cap.',
+    }),
+    isAuthorBot: true,
+  },
+  {
+    ...reviewOf({
+      id: 'review-acme',
+      author: 'acme-review',
+      state: 'commented',
+      minutes: 180,
+      body: 'File structure, error handling, naming and queries: no issues in 4 areas.',
+    }),
+    isAuthorBot: true,
+  },
+];
+
+const BOT_THREAD_ID = 'PRT_cascadia_1';
+
+const BOT_FINDING: PrComment = {
+  id: 'review-cascadia-finding',
+  author: 'cascadia-lint[bot]',
+  authorAvatarUrl: null,
+  body: 'The retry cap check misses the 429 path.',
+  createdAt: isoAgo({ minutes: 200 }),
+  url: `${PR_URL}#discussion_r9001`,
+  source: 'review',
+  threadId: BOT_THREAD_ID,
+  resolved: false,
+  path: 'src/webhooks/retryPolicy.ts',
+  line: 42,
+};
+
+const BOT_FINDING_QUEUED: ResolveQueueItemWithThread = {
+  item: buildItem({
+    id: `mock-resolve-item-${BOT_THREAD_ID}`,
+    threadId: BOT_THREAD_ID,
+    approvalState: 'none',
+    approvedRevision: null,
+    deferredAt: null,
+    deliveredAt: null,
+    candidateRevision: 1,
+    createdMinutesAgo: 200,
+  }),
+  thread: buildThread({
+    threadId: BOT_THREAD_ID,
+    state: 'open',
+    stage: 'new',
+    revision: 1,
+    activeAttemptId: null,
+    disposition: null,
+    replyDraft: null,
+    question: null,
+    createdMinutesAgo: 200,
+  }),
+};
+
+const ACTIVITY_QUEUE: ReadonlyArray<ResolveQueueItemWithThread> = [
+  ...QUEUE_ITEMS,
+  BOT_FINDING_QUEUED,
+];
+
 const REVIEWS_APPROVED: ReadonlyArray<PrReview> = [
   reviewOf({
     id: 'review-kenji',
@@ -204,6 +285,7 @@ const COMMITS = [
 type Shape = {
   readonly pr: PullRequestState | null;
   readonly reviews: ReadonlyArray<PrReview>;
+  readonly extraComments?: ReadonlyArray<PrComment>;
   readonly requests: ReadonlyArray<PrReviewRequest>;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly behind: number;
@@ -240,6 +322,23 @@ const shapeOf = ({ variant }: { readonly variant: PrPageVariant }): Shape => {
         reviews: [],
         requests: [],
         checks: [],
+        behind: 0,
+        mergeable: true,
+        isMerged: false,
+      };
+    case 'activity':
+      return {
+        pr: {
+          ...BASE_PR,
+          state: 'approved',
+          mergeable: true,
+          reviewDecision: 'approved',
+          checks: 'failure',
+        },
+        reviews: REVIEWS_ACTIVITY,
+        extraComments: [BOT_FINDING],
+        requests: [],
+        checks: FAILING,
         behind: 0,
         mergeable: true,
         isMerged: false,
@@ -383,7 +482,7 @@ const detailOf = ({
   }
   return {
     prNumber: pr.number,
-    comments: base?.comments ?? [],
+    comments: [...(base?.comments ?? []), ...(shape.extraComments ?? [])],
     reviews: shape.reviews,
     reviewRequests: shape.requests,
     checks: shape.checks,
@@ -669,7 +768,10 @@ export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }
               },
             },
           },
-    sessionResolveQueueItems: { [SESSION_ID]: [] },
+    ...(variant === 'activity'
+      ? { sessionResolveThreads: { [SESSION_ID]: ACTIVITY_QUEUE.map((entry) => entry.thread) } }
+      : {}),
+    sessionResolveQueueItems: { [SESSION_ID]: variant === 'activity' ? ACTIVITY_QUEUE : [] },
     sessionResolveAttempts: { [SESSION_ID]: [] },
     loadPullRequestView: noop,
     refreshSessionPr: noop,

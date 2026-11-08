@@ -472,7 +472,7 @@ describe('the Overview grid', () => {
     expect(within(properties).queryByRole('button', { name: /Rebase/ })).toBeNull();
   });
 
-  it('folds the bots that commented in a row into one activity event on the spine', async () => {
+  it('gives each bot one activity row on the spine and filters the activity by who acted', async () => {
     await show();
     act(() => {
       useAppStore.setState((state) => {
@@ -509,12 +509,99 @@ describe('the Overview grid', () => {
     });
 
     const activity = screen.getByRole('region', { name: 'Activity' });
-    const group = await within(activity).findByText('2 bots commented');
-    const row = group.closest('[data-activity]');
-    expect(row?.getAttribute('data-activity')).toBe('bots');
-    expect(row?.textContent).toContain('portal-preview[bot]');
+    await waitFor(() => expect(activity.querySelectorAll('[data-activity="bot"]')).toHaveLength(3));
+    const botRows = [...activity.querySelectorAll('[data-activity="bot"]')];
+    expect(botRows[0]?.textContent).toContain('portal-preview[bot]');
+    expect(botRows[1]?.textContent).toContain('size-watch[bot]');
+    expect(botRows[2]?.textContent).toContain('acme-review');
+    expect(within(activity).queryByText(/bots commented/)).toBeNull();
     const rows = activity.querySelectorAll('[data-activity]');
     expect(activity.querySelectorAll('[data-slot="activity-spine"]')).toHaveLength(rows.length - 1);
+
+    const filter = within(activity).getByRole('tablist', { name: 'Activity filter' });
+    within(filter).getByRole('tab', { name: /Bots/ });
+    fireEvent.click(within(filter).getByRole('tab', { name: /Bots/ }));
+    const kinds = [...activity.querySelectorAll('[data-activity]')].map((row) =>
+      row.getAttribute('data-activity'),
+    );
+    expect(kinds).toEqual(['bot', 'bot', 'bot']);
+    fireEvent.click(within(filter).getByRole('tab', { name: /All/ }));
+    expect(activity.querySelectorAll('[data-activity]').length).toBeGreaterThan(3);
+  });
+
+  it('keeps the activity filter of a pull request across a visit to Comments', async () => {
+    await show();
+
+    const chooseBots = (): void => {
+      const activity = screen.getByRole('region', { name: 'Activity' });
+      const filter = within(activity).getByRole('tablist', { name: 'Activity filter' });
+      fireEvent.click(within(filter).getByRole('tab', { name: /Bots/ }));
+    };
+    const selectedFilterOf = (): string | undefined => {
+      const activity = screen.getByRole('region', { name: 'Activity' });
+      const filter = within(activity).getByRole('tablist', { name: 'Activity filter' });
+      return (
+        within(filter)
+          .getAllByRole('tab')
+          .find((tab) => tab.getAttribute('aria-selected') === 'true')?.textContent ?? undefined
+      );
+    };
+    chooseBots();
+    expect(selectedFilterOf()).toMatch(/Bots/);
+
+    act(() => {
+      useAppStore.setState((state) => ({
+        branchTab: { ...state.branchTab, [SESSION.id]: 'comments' },
+      }));
+    });
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull());
+    act(() => {
+      useAppStore.setState((state) => ({
+        branchTab: { ...state.branchTab, [SESSION.id]: 'pr' },
+      }));
+    });
+
+    await screen.findByRole('region', { name: 'Activity' });
+    expect(selectedFilterOf()).toMatch(/Bots/);
+  });
+
+  it('folds a bot summary behind Show summary', async () => {
+    await show();
+    act(() => {
+      useAppStore.setState((state) => {
+        const mountId = state.sessionProjectMounts[SESSION.id]?.[0]?.mountId;
+        const current = mountId === undefined ? undefined : state.mountGithub[mountId];
+        if (mountId === undefined || current === undefined || current.detail === null) {
+          return state;
+        }
+        const botReview = {
+          id: 'review-northwind-scan',
+          author: 'northwind-scan',
+          authorAvatarUrl: null,
+          isAuthorBot: true,
+          state: 'commented' as const,
+          submittedAt: '2026-09-27T10:01:00Z',
+          body: 'Dependency audit clean across 9 packages.',
+        };
+        return applyMountGithub({
+          state,
+          sessionId: SESSION.id,
+          mountId,
+          github: {
+            ...current,
+            detail: { ...current.detail, reviews: [...current.detail.reviews, botReview] },
+          },
+        });
+      });
+    });
+
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    const who = await within(activity).findByText('northwind-scan');
+    const row = within(who.closest<HTMLElement>('[data-activity]') ?? activity);
+    expect(row.queryByText(/Dependency audit clean/)).toBeNull();
+    fireEvent.click(row.getByRole('button', { name: 'Show summary' }));
+    row.getByText(/Dependency audit clean/);
+    row.getByRole('button', { name: 'Hide summary' });
   });
 
   it('puts the asked reviewer first with the verdict beside the name, and the bots apart', async () => {

@@ -18,7 +18,7 @@ import {
 import { findSectionRow, sectionNames } from '../../../../../test/branchRail';
 import { U23_PR_PAGE_SCENES } from './pr-page';
 import { PrPageScene } from './PrPageScene';
-import { SESSION_ID } from '../resolveSeed';
+import { QUEUE_ITEMS, SESSION_ID } from '../resolveSeed';
 import { prPageGhStdout, prPageHandlers, prPageUnpushedOf } from './prPageSeed';
 
 let store: StoryStore;
@@ -76,8 +76,9 @@ const verdictText = (): string =>
 const boxText = (): string => document.querySelector('[data-merge-box]')?.textContent ?? '';
 
 describe('the pull request page scenes', () => {
-  it('registers the nine scenes of the plan', () => {
+  it('registers the ten scenes of the plan', () => {
     expect(Object.keys(U23_PR_PAGE_SCENES).sort()).toEqual([
+      'branch-pr-activity',
       'branch-pr-draft',
       'branch-pr-editing',
       'branch-pr-github',
@@ -155,6 +156,69 @@ describe('the pull request page scenes', () => {
     expect(within(activity).getByText(/omar-t/)).toBeDefined();
     expect(within(activity).getByText(/requested changes/)).toBeDefined();
     expect(within(activity).getByRole('button', { name: /Open checks/ })).toBeDefined();
+  });
+
+  it('branch-pr-activity gives each review app one row with its verdict, filtered under Bots', async () => {
+    draw({ name: 'branch-pr-activity' });
+
+    const activity = await screen.findByRole('region', { name: 'Activity' });
+    await waitFor(() => expect(activity.querySelectorAll('[data-activity="bot"]')).toHaveLength(2));
+    const [lint, review] = [...activity.querySelectorAll('[data-activity="bot"]')];
+    expect(lint?.textContent).toContain('cascadia-lint[bot]');
+    expect(lint?.textContent).toContain('1 issue');
+    expect(review?.textContent).toContain('acme-review');
+    expect(within(activity).queryByText(/acme-review commented/)).toBeNull();
+    expect(activity.querySelectorAll('[data-activity="review"]')).toHaveLength(1);
+
+    const filter = within(activity).getByRole('tablist', { name: 'Activity filter' });
+    expect(within(filter).getByRole('tab', { name: /Pushes/ })).toBeDefined();
+    fireEvent.click(within(filter).getByRole('tab', { name: /Bots/ }));
+    expect(
+      [...activity.querySelectorAll('[data-activity]')].map((row) =>
+        row.getAttribute('data-activity'),
+      ),
+    ).toEqual(['bot', 'bot', 'comments']);
+  });
+
+  it('branch-pr-activity counts the open threads the same in the merge box and the activity', async () => {
+    draw({ name: 'branch-pr-activity' });
+
+    const activity = await screen.findByRole('region', { name: 'Activity' });
+    await waitFor(() => expect(rowText({ id: 'comments' })).not.toBe(''));
+    const boxWords = rowText({ id: 'comments' });
+    const line = activity.querySelector('[data-activity="comments"]')?.textContent ?? '';
+    const tab = await findSectionRow(/^Comments/);
+
+    expect(/(\d+) threads? needs? you/.exec(boxWords)?.[1]).toBe(
+      /(\d+) needs? you/.exec(line)?.[1],
+    );
+    expect(/(\d+) open threads?/.exec(boxWords)?.[1]).toBe(
+      /(\d+)$/.exec(tab.textContent ?? '')?.[1],
+    );
+  });
+
+  it('branch-pr-activity counts one thread left open as 1 on the Comments tab, the activity and the merge box', async () => {
+    draw({ name: 'branch-pr-activity' });
+    await screen.findByRole('region', { name: 'Activity' });
+    const [first] = QUEUE_ITEMS;
+    if (first === undefined) {
+      throw new Error('the resolve seed has queue items');
+    }
+    const leftOpen = { item: first.item, thread: { ...first.thread, stage: 'parked' as const } };
+
+    act(() => {
+      store.setState({
+        sessionResolveQueueItems: { [SESSION_ID]: [leftOpen] },
+        sessionResolveThreads: { [SESSION_ID]: [leftOpen.thread] },
+      });
+    });
+
+    await waitFor(() => expect(rowText({ id: 'comments' })).toContain('1 open thread'));
+    expect(rowText({ id: 'comments' })).not.toContain('need you');
+    expect(document.querySelector('[data-activity="comments"]')?.textContent ?? '').toContain(
+      '1 open',
+    );
+    expect((await findSectionRow(/^Comments/)).textContent).toMatch(/Comments1$/);
   });
 
   it('branch-pr-draft says the draft is not open for review yet', async () => {

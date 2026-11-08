@@ -123,6 +123,15 @@ describe('commentsCountOf', () => {
     expect(count.fixable).toBe(tally.fixable);
     expect(count.unresolved).toBe(7);
   });
+
+  it('counts a thread left open on the host as unresolved', () => {
+    const rows = [
+      queueRowAt({ stage: 'parked', threadId: 'PRRT_parked' }),
+      queueRowAt({ stage: 'resolved', deliveredAt: 5, threadId: 'PRRT_done' }),
+    ];
+
+    expect(commentsCountOf({ threads: rows.map((row) => row.thread) }).unresolved).toBe(1);
+  });
 });
 
 describe('fixableThreadIdsOf', () => {

@@ -1,15 +1,17 @@
 import { Bot } from 'lucide-react';
 import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
 import type { PrComment, PullRequestReviewer } from '@goodboy/types';
+import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import { botWordOf } from './botWordOf';
 import { PropertyField } from './PropertyField';
 
 type Props = {
   readonly bots: ReadonlyArray<PullRequestReviewer>;
   readonly comments: ReadonlyArray<PrComment> | null;
+  readonly entries: ReadonlyArray<ThreadEntry>;
 };
 
-export const BotsProperty = ({ bots, comments }: Props) => {
+export const BotsProperty = ({ bots, comments, entries }: Props) => {
   if (bots.length === 0) {
     return null;
   }
@@ -17,7 +19,7 @@ export const BotsProperty = ({ bots, comments }: Props) => {
     <PropertyField label="Bots">
       <ul className="flex min-w-0 flex-col">
         {bots.map((bot) => {
-          const said = botWordOf({ bot, comments });
+          const said = botWordOf({ bot, comments, entries });
           return (
             <li
               key={bot.person.login}

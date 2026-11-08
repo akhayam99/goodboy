@@ -47,14 +47,15 @@ const showTab = async (tab: 'files' | 'comments'): Promise<void> => {
 };
 
 describe('the unread threads scenes', () => {
-  it('reads six open threads, one that needs you and two unread on the pull request page', async () => {
+  it('reads seven open threads, four that need you and two unread on the pull request page', async () => {
     renderScene('pr');
 
     const line = await screen.findByTestId('merge-row-comments');
 
-    expect(line.textContent).toContain('6 open threads');
+    expect(line.textContent).toContain('7 open threads');
     expect(line.textContent).toContain('4 threads need you');
     expect(line.textContent).toContain('2 unread');
+    expect(screen.getByRole('tab', { name: /^Comments/ }).textContent).toBe('Comments7');
   });
 
   it('marks the two unread threads in the Comments tab and keeps the marks for the visit', async () => {

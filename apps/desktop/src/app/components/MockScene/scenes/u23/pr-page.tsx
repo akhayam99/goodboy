@@ -1,6 +1,7 @@
 import { PrPageScene } from './PrPageScene';
 
 export const U23_PR_PAGE_SCENES = {
+  'branch-pr-activity': () => <PrPageScene variant="activity" />,
   'branch-pr-github': () => <PrPageScene variant="github" />,
   'branch-pr-draft': () => <PrPageScene variant="draft" />,
   'branch-pr-editing': () => <PrPageScene variant="editing" />,

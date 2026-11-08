@@ -17,7 +17,7 @@ const NEEDS_YOU: ReadonlySet<ResolveStage> = new Set<ResolveStage>([
   'failed',
 ]);
 
-const SETTLED: ReadonlySet<ResolveStage> = new Set<ResolveStage>(['resolved', 'parked']);
+const SETTLED: ReadonlySet<ResolveStage> = new Set<ResolveStage>(['resolved']);
 
 export const commentsCountOf = ({ threads }: Params): CommentsCount => ({
   unresolved: threads.filter((thread) => !SETTLED.has(thread.stage)).length,

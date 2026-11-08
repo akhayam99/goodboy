@@ -25,6 +25,10 @@ export type CountableEntry = {
   };
 };
 
+export type ThreadEntry = CountableEntry & {
+  readonly threadId: string;
+};
+
 type EntriesParams<T extends CountableEntry> = {
   readonly entries: ReadonlyArray<T>;
 };

@@ -10,6 +10,7 @@ import type {
 } from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
+import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import type { BranchStart } from '../../hooks/useBranchStart';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import type { PullRequestBranchFacts } from './MergeBox/mergeBoxOf';
@@ -37,6 +38,7 @@ type Props = {
   readonly readiness: PullRequestReadiness;
   readonly branchFacts: PullRequestBranchFacts;
   readonly mergeWord: string;
+  readonly entries: ReadonlyArray<ThreadEntry>;
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
@@ -67,6 +69,7 @@ export const PullRequestTab = ({
   readiness,
   branchFacts,
   mergeWord,
+  entries,
   commits,
   canEdit,
   request,
@@ -107,6 +110,7 @@ export const PullRequestTab = ({
       readiness={readiness}
       branch={branchFacts}
       mergeWord={mergeWord}
+      entries={entries}
       detail={detail}
       view={view}
       edits={edits}

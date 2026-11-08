@@ -253,6 +253,54 @@ describe('the pull request view slice', () => {
     expect(entryOf()?.view?.number).toBe(318);
   });
 
+  it('keeps the activity filter of a pull request through a read and an edit', async () => {
+    await load();
+    useAppStore.getState().setPullRequestActivityFilter({
+      sessionId: SESSION_ID,
+      prNumber: 318,
+      mountId: MOUNT_ID,
+      filter: 'bots',
+    });
+
+    await load(true);
+    useAppStore.getState().notePullRequestEdit({
+      sessionId: SESSION_ID,
+      prNumber: 318,
+      what: 'title',
+    });
+
+    expect(entryOf()?.activityFilter).toBe('bots');
+  });
+
+  it('does not carry the activity filter to another pull request', async () => {
+    await load();
+    useAppStore.getState().setPullRequestActivityFilter({
+      sessionId: SESSION_ID,
+      prNumber: 318,
+      mountId: MOUNT_ID,
+      filter: 'bots',
+    });
+
+    useAppStore.setState({
+      sessionGithub: { [SESSION_ID]: { ...GITHUB, pr: { ...PR, number: 319 } } },
+    });
+    await load();
+
+    expect(entryOf()?.prNumber).toBe(319);
+    expect(entryOf()?.activityFilter).toBeUndefined();
+  });
+
+  it('ignores an activity filter for a pull request with no entry', () => {
+    useAppStore.getState().setPullRequestActivityFilter({
+      sessionId: SESSION_ID,
+      prNumber: 999,
+      mountId: MOUNT_ID,
+      filter: 'bots',
+    });
+
+    expect(entryOf()).toBeUndefined();
+  });
+
   it('drops a late answer for a pull request the session has moved off', async () => {
     let open: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => {

@@ -24,6 +24,7 @@ export const notePullRequestEdit = ({ set, sessionId, prNumber, mountId, what }:
           error: same?.error ?? null,
           fetchedAt: same?.fetchedAt ?? null,
           edits: [...(same?.edits ?? []), edit],
+          ...(same?.activityFilter === undefined ? {} : { activityFilter: same.activityFilter }),
         },
       }),
     };
