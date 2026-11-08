@@ -119,6 +119,22 @@ describe('the u37 branch work scene', () => {
     within(sectionOf('Artifacts')).getByText('Duplicate credit audit');
   });
 
+  it('shows the same Work count on every tab of the branch, the run and its question as one', async () => {
+    await mount();
+    const strip = screen.getByRole('tablist', { name: 'Branch pages' });
+    const countOfWork = () =>
+      within(strip).getByRole('tab', { name: /^Work/ }).querySelector('[data-tab-count]')
+        ?.textContent;
+
+    for (const tab of within(strip).getAllByRole('tab')) {
+      fireEvent.click(tab);
+      await settle();
+      expect(countOfWork()).toBe('1');
+    }
+    expect(within(sectionOf('Runs')).getAllByText('Needs you')).toHaveLength(1);
+    within(sectionOf('Questions')).getByText('Should the limit apply per endpoint or per event?');
+  });
+
   it('reads one run state in the Runs header and in its rows', async () => {
     await mount();
 

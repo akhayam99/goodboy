@@ -33,6 +33,7 @@ export const branchWorkCountsOf = ({ runs, questions, artifacts }: Params): Bran
     const askerId = item.row.question.createdByAgentId;
     return askerId === undefined || !heldByRuns.has(askerId);
   });
+  const waitingCount = questions?.waiting.length ?? 0;
   const held = new Set<AgentId>([
     ...heldByRuns,
     ...(questions?.waiting ?? []).flatMap((item) => {
@@ -49,6 +50,7 @@ export const branchWorkCountsOf = ({ runs, questions, artifacts }: Params): Bran
     running: runs === null ? 0 : runs.counts.running,
     questions: questions === null ? 0 : questionGroupCountOf({ group: questions }),
     waiting: waiting.length,
+    held: waitingCount - waiting.length,
     artifacts: artifacts.count,
     artifactsNeedYou: artifactsNeedYou.length,
   };

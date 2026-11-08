@@ -67,6 +67,7 @@ describe('the Work fact', () => {
     running: 2,
     questions: 0,
     waiting: 0,
+    held: 0,
     artifacts: 0,
     artifactsNeedYou: 0,
   } as const;
@@ -77,6 +78,24 @@ describe('the Work fact', () => {
     expect(fact.text).toBe('1');
     expect(fact.tone).toBe('warning');
     expect(fact.tooltip).toBe('1 run needs you · 2 runs working · 3 runs');
+  });
+
+  it('counts a run and the question it waits on as one, and names the question', () => {
+    const fact = branchTabFactsOf({
+      ...BASE,
+      work: { ...WORK, runsNeedYou: 1, questions: 1, held: 1 },
+    }).work;
+
+    expect(fact.text).toBe('1');
+    expect(fact.tooltip).toBe(
+      '1 run needs you with 1 question · 2 runs working · 3 runs, 1 question',
+    );
+  });
+
+  it('hides a zero count and shows any other', () => {
+    const empty = { ...WORK, runs: 0, running: 0 };
+    expect(branchTabFactsOf({ ...BASE, work: empty }).work.text).toBeNull();
+    expect(branchTabFactsOf({ ...BASE, work: { ...empty, artifacts: 1 } }).work.text).toBe('1');
   });
 
   it('reads the runs working in info, else a faint total', () => {
