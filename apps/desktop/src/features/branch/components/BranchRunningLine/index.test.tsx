@@ -135,7 +135,9 @@ afterEach(() => {
 describe('BranchRunningLine', () => {
   it('is hidden when nothing runs on the branch', async () => {
     seed({ snapshot: IDLE, ledger: [] });
-    const { container } = render(<BranchRunningLine workspaceId={WORKSPACE_ID} mount={MOUNT} />);
+    const { container } = render(
+      <BranchRunningLine session={{ workspaceId: WORKSPACE_ID }} mount={MOUNT} />,
+    );
     await act(async () => undefined);
 
     expect(container.querySelector('[data-branch-running-line]')).toBeNull();
@@ -144,7 +146,7 @@ describe('BranchRunningLine', () => {
 
   it('is hidden when a port runs on another branch', async () => {
     seed({ snapshot: RUNNING, ledger: [{ ...LEDGER[0]!, branch: 'nw/ledger-rounding' }] });
-    render(<BranchRunningLine workspaceId={WORKSPACE_ID} mount={MOUNT} />);
+    render(<BranchRunningLine session={{ workspaceId: WORKSPACE_ID }} mount={MOUNT} />);
     await act(async () => undefined);
 
     expect(screen.queryByText('Running here')).toBeNull();
@@ -155,7 +157,9 @@ describe('BranchRunningLine', () => {
     const refreshMonitorSnapshot = vi.fn(async () => undefined);
     const loadWatchedPorts = vi.fn(async () => undefined);
     act(() => useAppStore.setState({ refreshMonitorSnapshot, loadWatchedPorts }));
-    render(<BranchRunningLine workspaceId={WORKSPACE_ID} mount={MOUNT} isActive={false} />);
+    render(
+      <BranchRunningLine session={{ workspaceId: WORKSPACE_ID }} mount={MOUNT} isActive={false} />,
+    );
     await act(async () => undefined);
 
     expect(loadWatchedPorts).not.toHaveBeenCalled();
@@ -166,7 +170,7 @@ describe('BranchRunningLine', () => {
     seed({ snapshot: RUNNING, ledger: LEDGER });
     const openStudio = vi.fn();
     act(() => useAppStore.setState({ openStudio }));
-    render(<BranchRunningLine workspaceId={WORKSPACE_ID} mount={MOUNT} />);
+    render(<BranchRunningLine session={{ workspaceId: WORKSPACE_ID }} mount={MOUNT} />);
 
     const name = 'Open :5173 node in Monitoring';
     await waitFor(() => expect(screen.queryByRole('button', { name })).not.toBeNull());

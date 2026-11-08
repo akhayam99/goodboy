@@ -1,20 +1,20 @@
 import { Button, Chip, StateDot } from '@goodboy/ui';
-import type { SessionProjectMount, WorkspaceId } from '@goodboy/types';
+import type { Session, SessionProjectMount } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useRunningHere } from '../../hooks/useRunningHere';
 
 const SHOWN = 3;
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
+  readonly session: Pick<Session, 'workspaceId'>;
   readonly mount: Pick<SessionProjectMount, 'projectId' | 'branch'> | null;
   readonly isActive?: boolean;
 };
 
-export const BranchRunningLine = ({ workspaceId, mount, isActive = true }: Props) => {
+export const BranchRunningLine = ({ session, mount, isActive = true }: Props) => {
   const openStudio = useAppStore((state) => state.openStudio);
   const { target, items } = useRunningHere({
-    workspaceId,
+    workspaceId: session.workspaceId,
     projectId: mount?.projectId ?? null,
     branch: mount?.branch ?? null,
     isActive,
