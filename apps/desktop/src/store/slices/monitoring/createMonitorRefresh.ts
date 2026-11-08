@@ -8,6 +8,7 @@ import { formatError } from '@goodboy/ui';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
+import { pruneProcessFolds } from '../monitoring-view/pruneProcessFolds';
 import { learnedPortsKey } from './settingKeys';
 import { mergePortSnapshot } from './mergePortSnapshot';
 import { selectPortRows } from './selectPortRows';
@@ -79,14 +80,17 @@ export const createMonitorRefresh = ({ set, get }: SliceDeps) => {
           if (known !== null && snapshot.takenAt < known.takenAt) {
             return;
           }
-          set({
+          set((state) => ({
             monitorSnapshot:
               ports === undefined
                 ? snapshot
                 : mergePortSnapshot({ known, narrow: snapshot, ports }),
             monitorLedger: ledger,
             monitorError: null,
-          });
+            ...(ports === undefined && {
+              monitoringViews: pruneProcessFolds({ views: state.monitoringViews, snapshot }),
+            }),
+          }));
         },
       });
       if (ports !== undefined) {

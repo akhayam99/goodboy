@@ -1,8 +1,9 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { SectionHeader } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { groupPortRows } from '../../groupPortRows';
+import { useMonitoringFold } from '../../hooks/useMonitoringFold';
 import { PortGroupList } from './PortGroupList';
 import { PortGroupMeta } from './PortGroupMeta';
 
@@ -36,15 +37,9 @@ export const PortListSection = ({
   before,
   after,
 }: Props) => {
-  const [isFreeOpen, setIsFreeOpen] = useState(false);
+  const fold = useMonitoringFold({ foldKey: `free:${layer}` });
   const grouped = groupPortRows({ rows });
-  const freeCount = grouped.free.length;
-
-  useEffect(() => {
-    if (freeCount === 0) {
-      setIsFreeOpen(false);
-    }
-  }, [freeCount]);
+  const isFreeOpen = fold.isOpen && grouped.free.length > 0;
 
   return (
     <section aria-label={label} className="flex flex-col gap-2">
@@ -56,7 +51,7 @@ export const PortListSection = ({
             count={grouped.inUse.length + extraCount}
             freePorts={grouped.free.map((row) => row.port)}
             isFreeOpen={isFreeOpen}
-            onToggleFree={() => setIsFreeOpen((wasOpen) => !wasOpen)}
+            onToggleFree={fold.toggle}
           />
         }
       />

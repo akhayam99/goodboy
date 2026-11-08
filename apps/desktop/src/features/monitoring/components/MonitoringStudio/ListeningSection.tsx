@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { groupPortRows } from '../../groupPortRows';
+import { useMonitoringFold } from '../../hooks/useMonitoringFold';
 import { shownRowCount } from '../../shownRowCount';
 import { PortGroupList } from './PortGroupList';
 import { PortRowItem } from './PortRowItem';
@@ -15,15 +15,15 @@ type Props = {
 };
 
 export const ListeningSection = ({ rows, processOf, now, isForcedOpen }: Props) => {
-  const [isToggledOpen, setIsToggledOpen] = useState(false);
-  const isOpen = isToggledOpen || isForcedOpen;
+  const fold = useMonitoringFold({ foldKey: 'listening' });
+  const isOpen = fold.isOpen || isForcedOpen;
 
   return (
     <section aria-label="Listening on this Mac" className="flex flex-col gap-2">
       <button
         type="button"
         aria-expanded={isOpen}
-        onClick={() => setIsToggledOpen((wasOpen) => !wasOpen)}
+        onClick={fold.toggle}
         className={cn(
           'flex items-center gap-2 rounded-md px-2 py-1 text-left text-meta text-muted-foreground',
           ROW_INTERACTIVE,

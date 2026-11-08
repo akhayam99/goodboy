@@ -1,11 +1,14 @@
 import type { LedgerKind, LedgerRow, Leftover } from '@goodboy/core/monitoring';
 import type { Session } from '@goodboy/types';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
+import { mountContaining } from './mountContaining';
+import type { OwnedMount } from './ownedMountsOf';
 
 type Params = {
   readonly leftovers: ReadonlyArray<Leftover>;
   readonly ledger: ReadonlyArray<LedgerRow>;
   readonly sessions: ReadonlyArray<Session>;
+  readonly mounts: ReadonlyArray<OwnedMount>;
 };
 
 export type LeftoverRow = {
@@ -14,6 +17,7 @@ export type LeftoverRow = {
   readonly startedBy: string;
   readonly startedAt: number;
   readonly pids: ReadonlyArray<number>;
+  readonly mount: OwnedMount | null;
 };
 
 const STARTER_PHRASE: Readonly<Record<LedgerKind, string>> = {
@@ -26,7 +30,12 @@ const STARTER_PHRASE: Readonly<Record<LedgerKind, string>> = {
   probe: 'a probe',
 };
 
-export const leftoverRows = ({ leftovers, ledger, sessions }: Params): ReadonlyArray<LeftoverRow> =>
+export const leftoverRows = ({
+  leftovers,
+  ledger,
+  sessions,
+  mounts,
+}: Params): ReadonlyArray<LeftoverRow> =>
   leftovers.map((leftover) => {
     const entry = ledger.find((row) => row.spawnId === leftover.spawnId);
     const session =
@@ -39,5 +48,10 @@ export const leftoverRows = ({ leftovers, ledger, sessions }: Params): ReadonlyA
       startedBy: session === undefined ? starter : `${starter} in ${session.goal}`,
       startedAt: entry?.startedAt ?? oldest,
       pids: leftover.processes.map((process) => process.pid),
+      mount: mountContaining({
+        mounts,
+        sessionId: leftover.sessionId ?? entry?.sessionId ?? null,
+        path: leftover.mountPath ?? entry?.mountPath ?? entry?.cwd ?? null,
+      }),
     };
   });

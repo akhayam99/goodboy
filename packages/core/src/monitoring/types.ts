@@ -12,6 +12,7 @@ export type MonitorProcess = {
   readonly name: string;
   readonly cwd: string | null;
   readonly startedAt: number;
+  readonly birthId?: string | null;
   readonly cpuPercent: number;
   readonly rssBytes: number;
   readonly uid: number;

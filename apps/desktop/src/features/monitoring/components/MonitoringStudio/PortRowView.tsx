@@ -1,9 +1,11 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ROW_HOVER, StatusDot, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { portAnchorKey } from '../../../actions/portAnchorKey';
+import { processFoldKey } from '../../../../store/slices/monitoring-view/processFoldKey';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { useMonitoringFold } from '../../hooks/useMonitoringFold';
 import { usePortTarget } from '../../hooks/usePortTarget';
 import { CommandLine } from './CommandLine';
 import { MetricCells } from './MetricCells';
@@ -31,7 +33,9 @@ export const PortRowView = ({
   nameSlot,
   isNested = false,
 }: Props) => {
-  const [isCommandOpen, setIsCommandOpen] = useState(false);
+  const command = useMonitoringFold({
+    foldKey: processFoldKey({ process, rest: `command:${row.key}` }),
+  });
   const target = usePortTarget({ row, layer });
   const menu = useObjectMenuTrigger({ target, anchorKey: portAnchorKey({ target }) });
   const hasCollision = row.collision !== undefined;
@@ -67,10 +71,10 @@ export const PortRowView = ({
             name={row.processName}
             pid={row.pid}
             toggleLabel={
-              canOpen ? (isCommandOpen ? 'Hide command line' : 'Show command line') : undefined
+              canOpen ? (command.isOpen ? 'Hide command line' : 'Show command line') : undefined
             }
-            isOpen={isCommandOpen}
-            onToggle={canOpen ? () => setIsCommandOpen((wasOpen) => !wasOpen) : undefined}
+            isOpen={command.isOpen}
+            onToggle={canOpen ? command.toggle : undefined}
           />
         )}
         {isNested ? (
@@ -83,7 +87,9 @@ export const PortRowView = ({
           <MetricCells process={process} now={now} />
         )}
         <PortRowActions target={target} hasStop={!isNested} hasMenu />
-        {isCommandOpen && process !== null ? <CommandLine args={process.argsMasked} /> : null}
+        {command.isOpen && canOpen && process !== null ? (
+          <CommandLine args={process.argsMasked} />
+        ) : null}
       </div>
     </li>
   );

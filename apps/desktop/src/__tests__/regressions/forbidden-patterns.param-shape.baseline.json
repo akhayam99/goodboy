@@ -1395,7 +1395,7 @@
     "apps/desktop/src/store/slices/monitoring/parsePortList.ts": 1,
     "apps/desktop/src/store/slices/monitoring/recordOrphansSwept.ts": 1,
     "apps/desktop/src/store/slices/monitoring/selectLeftovers.ts": 1,
-    "apps/desktop/src/store/slices/monitoring/selectPortRows.ts": 5,
+    "apps/desktop/src/store/slices/monitoring/selectPortRows.ts": 4,
     "apps/desktop/src/store/slices/monitoring/stopGoodboyRow.ts": 1,
     "apps/desktop/src/store/slices/monitoring/stopLeftovers.ts": 1,
     "apps/desktop/src/store/slices/monitoring/stopProcess.ts": 1,

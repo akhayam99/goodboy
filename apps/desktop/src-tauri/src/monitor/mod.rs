@@ -38,6 +38,7 @@ pub(crate) struct ProcessInfo {
     pub(crate) name: String,
     pub(crate) cwd: Option<String>,
     pub(crate) started_at: u64,
+    pub(crate) birth_id: Option<String>,
     pub(crate) cpu_percent: f64,
     pub(crate) rss_bytes: u64,
     pub(crate) uid: u32,
@@ -75,6 +76,23 @@ fn is_in_scope(scope: &Scope, row: &parse::RawProcess) -> bool {
     scope.pids.contains(&row.pid) || scope.pgids.contains(&row.pgid)
 }
 
+fn started_at_of(row: &parse::RawProcess, now: u64) -> u64 {
+    if row.born_secs > 0 {
+        return row.born_secs.saturating_mul(1000);
+    }
+    now.saturating_sub(row.elapsed_secs.saturating_mul(1000))
+}
+
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
+fn micro_birth_id(secs: u64, micros: u64) -> String {
+    format!("{secs}.{micros:06}")
+}
+
+#[cfg_attr(not(any(target_os = "linux", test)), allow(dead_code))]
+fn tick_birth_id(boot_secs: u64, start_ticks: u64) -> String {
+    format!("{boot_secs}-{start_ticks}")
+}
+
 fn assemble(
     rows: Vec<parse::RawProcess>,
     mut cwds: HashMap<u32, String>,
@@ -82,17 +100,21 @@ fn assemble(
     now: u64,
 ) -> Vec<ProcessInfo> {
     rows.into_iter()
-        .map(|row| ProcessInfo {
-            pid: row.pid,
-            ppid: row.ppid,
-            pgid: row.pgid,
-            name: row.name,
-            cwd: cwds.remove(&row.pid),
-            started_at: now.saturating_sub(row.elapsed_secs.saturating_mul(1000)),
-            cpu_percent: row.cpu_percent,
-            rss_bytes: row.rss_kib.saturating_mul(1024),
-            uid: row.uid,
-            args_masked: mask::mask_args(&args.remove(&row.pid).unwrap_or_default()),
+        .map(|row| {
+            let started_at = started_at_of(&row, now);
+            ProcessInfo {
+                pid: row.pid,
+                ppid: row.ppid,
+                pgid: row.pgid,
+                name: row.name,
+                cwd: cwds.remove(&row.pid),
+                started_at,
+                birth_id: row.birth_id,
+                cpu_percent: row.cpu_percent,
+                rss_bytes: row.rss_kib.saturating_mul(1024),
+                uid: row.uid,
+                args_masked: mask::mask_args(&args.remove(&row.pid).unwrap_or_default()),
+            }
         })
         .collect()
 }
@@ -165,6 +187,14 @@ fn collect(ledger: &[LedgerEntry], ports: &[u16]) -> Result<MonitorSnapshot, Str
     let rows: Vec<parse::RawProcess> = parse::parse_ps_rows(&table)
         .into_iter()
         .filter(|row| is_in_scope(&scope, row))
+        .map(|row| match crate::proc::signal::process_birth_of(row.pid) {
+            Some((secs, micros)) => parse::RawProcess {
+                born_secs: secs,
+                birth_id: Some(micro_birth_id(secs, micros)),
+                ..row
+            },
+            None => row,
+        })
         .collect();
     let list = csv(rows.iter().map(|row| row.pid));
     let (cwds, args) = details(&list)?;
@@ -252,7 +282,7 @@ mod linux {
     use std::collections::HashMap;
     use std::fs;
 
-    use super::parse;
+    use super::{parse, tick_birth_id};
 
     pub(super) fn listening_sockets() -> Vec<(String, u16, u64)> {
         ["/proc/net/tcp", "/proc/net/tcp6"]
@@ -365,6 +395,8 @@ mod linux {
             pgid: fields.get(2)?.parse().ok()?,
             uid,
             elapsed_secs,
+            born_secs: started_secs,
+            birth_id: Some(tick_birth_id(boot_secs()?, start_ticks)),
             cpu_percent,
             rss_kib: rss_pages * page_size() / 1024,
             name,
@@ -469,6 +501,8 @@ mod tests {
             pgid: 5,
             uid: 501,
             elapsed_secs: 10,
+            born_secs: 0,
+            birth_id: None,
             cpu_percent: 1.5,
             rss_kib: 2,
             name: "node".to_string(),
@@ -479,6 +513,64 @@ mod tests {
         assert_eq!(out[0].rss_bytes, 2048);
         assert_eq!(out[0].args_masked, "node --token=***");
         assert_eq!(out[0].cwd, None);
+    }
+
+    #[test]
+    fn started_at_uses_the_os_birth_time_and_ignores_drift() {
+        let row = parse::RawProcess {
+            pid: 5,
+            ppid: 1,
+            pgid: 5,
+            uid: 501,
+            elapsed_secs: 10,
+            born_secs: 1_700,
+            birth_id: None,
+            cpu_percent: 0.0,
+            rss_kib: 0,
+            name: "node".to_string(),
+        };
+        assert_eq!(started_at_of(&row, 100_000), 1_700_000);
+        let drifted = parse::RawProcess {
+            elapsed_secs: 15,
+            ..row.clone()
+        };
+        assert_eq!(started_at_of(&drifted, 105_000), 1_700_000);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn birth_of_this_process_is_stable_and_in_the_past() {
+        let pid = std::process::id();
+        let first = crate::proc::signal::process_birth_of(pid).expect("own process is readable");
+        assert!(first.0 > 0);
+        assert_eq!(Some(first), crate::proc::signal::process_birth_of(pid));
+        assert!(first.0 * 1000 <= crate::util::now_millis_u64());
+    }
+
+    #[test]
+    fn birth_ids_keep_native_precision_within_one_second() {
+        assert_ne!(micro_birth_id(1_700, 10), micro_birth_id(1_700, 90_000));
+        assert_eq!(micro_birth_id(1_700, 42), "1700.000042");
+        assert_ne!(tick_birth_id(1_000, 10_010), tick_birth_id(1_000, 10_090));
+        assert_eq!(tick_birth_id(1_000, 10_010), "1000-10010");
+    }
+
+    #[test]
+    fn assemble_carries_a_missing_birth_id_as_none() {
+        let row = parse::RawProcess {
+            pid: 5,
+            ppid: 1,
+            pgid: 5,
+            uid: 1,
+            elapsed_secs: 10,
+            born_secs: 0,
+            birth_id: None,
+            cpu_percent: 0.0,
+            rss_kib: 0,
+            name: "node".to_string(),
+        };
+        let out = assemble(vec![row], HashMap::new(), HashMap::new(), 100_000);
+        assert_eq!(out[0].birth_id, None);
     }
 
     #[test]
@@ -500,6 +592,8 @@ mod tests {
             pgid,
             uid: 0,
             elapsed_secs: 0,
+            born_secs: 0,
+            birth_id: None,
             cpu_percent: 0.0,
             rss_kib: 0,
             name: "x".to_string(),
