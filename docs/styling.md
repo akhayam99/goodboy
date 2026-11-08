@@ -563,7 +563,7 @@ sharp.
 pinned back row, the artifact page's pinned zone (back row and status bar
 together), the sliding header of a `RevealRegion` and the sticky rows of a
 list or a diff take `sticky-surface` (`sticky-surface-subtle` on `subtle`): the
-surface role at 78% with `blur(8px) saturate(1.2)`, opaque under
+surface role at 88% with `blur(8px) saturate(1.2)`, opaque under
 `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
 `bg-background` on the header itself. Its block padding reads even: the pinned zone
 is `pt-3 pb-4` (`PANE_RHYTHM.pinnedInset`), because the back row's 24px line
