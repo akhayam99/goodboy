@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
-import { X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import {
   Button,
+  DrawerFrame,
   FormActions,
   formatError,
-  IconButton,
   Input,
   Kbd,
   Notice,
-  ScrollFade,
   SegmentedTabs,
   Skeleton,
 } from '@goodboy/ui';
@@ -294,10 +292,10 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
-      <div className="flex shrink-0 items-start gap-2 px-4 pb-1 pt-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h3 className="text-heading text-foreground">{TURN_INTO_WORK_LABEL}</h3>
-          {drafter === null ? (
+      <DrawerFrame
+        title={TURN_INTO_WORK_LABEL}
+        toolbar={
+          drafter === null ? (
             <p className="text-meta text-faint-foreground">Drafting from this chat</p>
           ) : (
             <DraftedBy
@@ -305,12 +303,11 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               connectedProviders={drafterProviders}
               onChange={changeDrafter}
             />
-          )}
-        </div>
-        <IconButton icon={X} label="Close" variant="ghost" onClick={onClose} />
-      </div>
-      <ScrollFade className="flex-1">
-        <div className="flex flex-col gap-3 px-4 pb-3 pt-3">
+          )
+        }
+        onClose={onClose}
+      >
+        <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
             <span className="text-meta text-muted-foreground">Start as</span>
             <SegmentedTabs
@@ -423,7 +420,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
             </Button>
           </FormActions>
         </div>
-      </ScrollFade>
+      </DrawerFrame>
     </div>
   );
 };
