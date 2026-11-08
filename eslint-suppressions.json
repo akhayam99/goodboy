@@ -6772,12 +6772,17 @@
   },
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/index.tsx": {
     "react-hooks/exhaustive-deps": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/sessionPickerOptions.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 8
+    }
+  },
+  "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/useWorkBrief/index.ts": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
     }
   },
   "apps/desktop/src/features/workspace-chat/hooks/useChatActivity/index.test.ts": {

@@ -20,6 +20,11 @@ type UpToParams = {
   readonly anchorMessageId: ChatMessageId | null;
 };
 
+type BriefOwner = {
+  readonly anchorMessageId: ChatMessageId | null;
+  readonly drafts: WorkBriefDrafts;
+};
+
 type PatchParams = {
   readonly next: Partial<WorkBrief>;
 };
@@ -48,6 +53,7 @@ export const useWorkBrief = ({
   const [brief, setBrief] = useState<WorkBrief | null>(null);
   const [pickedProjectIds, setProjectIds] = useState<ReadonlyArray<ProjectId> | null>(null);
   const isRestorable = useRef(true);
+  const briefOwner = useRef<BriefOwner | null>(null);
 
   useEffect(() => {
     if (drafter === null) {
@@ -57,10 +63,12 @@ export const useWorkBrief = ({
     const saved = isRestorable.current ? drafts.read({ anchorMessageId }) : null;
     isRestorable.current = false;
     if (saved !== null) {
+      briefOwner.current = { anchorMessageId, drafts };
       setBrief(saved.brief);
       setProjectIds(saved.projectIds);
       return undefined;
     }
+    briefOwner.current = null;
     setBrief(null);
     setProjectIds(null);
     void summarizeChatForWork({
@@ -77,6 +85,7 @@ export const useWorkBrief = ({
       if (!isCurrent) {
         return;
       }
+      briefOwner.current = { anchorMessageId, drafts };
       setBrief(next);
     });
     return () => {
@@ -85,11 +94,15 @@ export const useWorkBrief = ({
   }, [chat.id, anchorMessageId, drafter?.provider, drafter?.model, drafter?.effort]);
 
   useEffect(() => {
-    if (brief === null) {
+    const owner = briefOwner.current;
+    if (brief === null || owner === null) {
+      return;
+    }
+    if (owner.anchorMessageId !== anchorMessageId || owner.drafts !== drafts) {
       return;
     }
     drafts.write({ draft: { anchorMessageId, brief, projectIds: pickedProjectIds } });
-  }, [brief, pickedProjectIds]);
+  }, [brief, pickedProjectIds, anchorMessageId, drafts]);
 
   const patch = ({ next }: PatchParams): void =>
     setBrief((current) => (current === null ? current : { ...current, ...next }));
