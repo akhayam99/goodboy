@@ -10,16 +10,15 @@ import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pu
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { DiffRailContext, type DiffRailHost } from '../../../diff/diffRailHost';
-import { JobBanner } from '../../../history/JobBanner';
 import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
-import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
+import { BranchLead } from './BranchLead';
 import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFlowVisit';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { useBranchReview } from '../../../resolve/hooks/useBranchReview';
-import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
+import { usePushRequest } from '../../hooks/usePushRequest';
 import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { useBitbucketRemote } from '../../hooks/useBitbucketRemote';
@@ -43,7 +42,6 @@ import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
 import { branchTabFactsOf } from '../../branchTabFactsOf';
 import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
-import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -235,20 +233,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     [sessionId, setPullRequestMode],
   );
 
-  useEffect(() => {
-    const onRequest = (event: Event): void => {
-      if (!isReviewRequest(event) || event.defaultPrevented) {
-        return;
-      }
-      if (event.detail.sessionId !== sessionId || event.detail.request.kind !== 'push') {
-        return;
-      }
-      event.preventDefault();
-      void push.press({ isRetry: hasPushFailure });
-    };
-    window.addEventListener(REVIEW_REQUEST_EVENT, onRequest);
-    return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
-  }, [hasPushFailure, push, sessionId]);
+  usePushRequest({ sessionId, push, hasPushFailure });
 
   const pullRequestView = usePullRequestView({
     sessionId,
@@ -432,10 +417,12 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         revealKey={tab}
         headerRhythm="section"
         lead={
-          <>
-            <PushBanner sessionId={sessionId} mountId={historyMountId} push={push} />
-            <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
-          </>
+          <BranchLead
+            sessionId={sessionId}
+            mountId={historyMountId}
+            worktreePath={identity.mountPath}
+            push={push}
+          />
         }
         header={
           <div className="flex min-w-0 flex-col gap-3">
