@@ -290,6 +290,126 @@ describe('worktree status cache', () => {
     });
   });
 
+  describe('a batch is bounded', () => {
+    type Answer = (status: { readonly branch: string }) => void;
+
+    const BOUND_MS = 1500;
+    const slowPath = '/worktrees/slow';
+    const slowKey = worktreeStatusKey({ worktreePath: slowPath, baseBranch: 'main' });
+    const fastPath = '/worktrees/fast';
+    const fastKey = worktreeStatusKey({ worktreePath: fastPath, baseBranch: 'main' });
+
+    const holdAnswers = () => {
+      const answers = new Map<string, Answer>();
+      worktreeStatus.mockImplementation(
+        ({ worktreePath }: { readonly worktreePath: string }) =>
+          new Promise((resolve) => {
+            answers.set(worktreePath, resolve);
+          }),
+      );
+      return answers;
+    };
+
+    const ask = (worktreePath: string) =>
+      ensure({
+        key: worktreeStatusKey({ worktreePath, baseBranch: 'main' }),
+        worktreePath,
+        baseBranch: 'main',
+        maxAgeMs: 0,
+      });
+
+    it('commits what is staged when one read never resolves', async () => {
+      vi.useFakeTimers();
+      const answers = holdAnswers();
+      void ask(slowPath);
+      void ask(fastPath);
+      await vi.advanceTimersByTimeAsync(0);
+      answers.get(fastPath)?.({ branch: 'ak/fast' });
+      await vi.advanceTimersByTimeAsync(BOUND_MS - 1);
+
+      expect(readWorktreeStatus(fastKey)).toBeNull();
+
+      await vi.advanceTimersByTimeAsync(1);
+
+      expect(readWorktreeStatus(fastKey)).toEqual({ branch: 'ak/fast' });
+      expect(readWorktreeStatus(slowKey)).toBeNull();
+    });
+
+    it('is not postponed by reads that keep joining it', async () => {
+      vi.useFakeTimers();
+      const answers = holdAnswers();
+      void ask(slowPath);
+      void ask(fastPath);
+      await vi.advanceTimersByTimeAsync(0);
+      answers.get(fastPath)?.({ branch: 'ak/fast' });
+      for (let index = 0; index < 5; index += 1) {
+        await vi.advanceTimersByTimeAsync(BOUND_MS / 5);
+        void ask(`/worktrees/joiner-${index}`);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(readWorktreeStatus(fastKey)).toEqual({ branch: 'ak/fast' });
+    });
+
+    it('lands a late read alone and notifies its row', async () => {
+      vi.useFakeTimers();
+      const answers = holdAnswers();
+      const slow = ask(slowPath);
+      void ask(fastPath);
+      const slowListener = vi.fn();
+      const fastListener = vi.fn();
+      subscribe({ key: slowKey, listener: slowListener });
+      subscribe({ key: fastKey, listener: fastListener });
+      await vi.advanceTimersByTimeAsync(0);
+      answers.get(fastPath)?.({ branch: 'ak/fast' });
+      await vi.advanceTimersByTimeAsync(BOUND_MS);
+
+      expect(fastListener).toHaveBeenCalledTimes(1);
+      expect(slowListener).not.toHaveBeenCalled();
+
+      answers.get(slowPath)?.({ branch: 'ak/slow' });
+      await slow;
+
+      expect(readWorktreeStatus(slowKey)).toEqual({ branch: 'ak/slow' });
+      expect(slowListener).toHaveBeenCalledTimes(1);
+      expect(fastListener).toHaveBeenCalledTimes(1);
+      expect(read({ key: slowKey, freshness: 'any' }).kind).toBe('known');
+    });
+
+    it('opens a new batch for reads asked after the bound', async () => {
+      vi.useFakeTimers();
+      const answers = holdAnswers();
+      void ask(slowPath);
+      await vi.advanceTimersByTimeAsync(BOUND_MS);
+      void ask(fastPath);
+      await vi.advanceTimersByTimeAsync(0);
+      answers.get(fastPath)?.({ branch: 'ak/fast' });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(readWorktreeStatus(fastKey)).toEqual({ branch: 'ak/fast' });
+    });
+
+    it('still drops a late answer after a reset', async () => {
+      vi.useFakeTimers();
+      const answers = holdAnswers();
+      const slow = ask(slowPath);
+      void ask(fastPath);
+      const listener = vi.fn();
+      subscribe({ key: slowKey, listener });
+      await vi.advanceTimersByTimeAsync(0);
+      answers.get(fastPath)?.({ branch: 'ak/fast' });
+      await vi.advanceTimersByTimeAsync(BOUND_MS);
+
+      resetWorktreeStatusCache();
+      answers.get(slowPath)?.({ branch: 'ak/slow' });
+      await slow;
+
+      expect(listener).not.toHaveBeenCalled();
+      expect(readWorktreeStatus(slowKey)).toBeNull();
+      expect(readWorktreeStatus(fastKey)).toBeNull();
+    });
+  });
+
   it('forgets everything on reset', async () => {
     await ensure({ key: KEY, worktreePath: PATH, baseBranch: 'main', maxAgeMs: 30_000 });
     expect(readWorktreeStatus(KEY)).toEqual({ branch: 'ak/feat' });

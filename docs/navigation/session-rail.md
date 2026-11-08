@@ -166,7 +166,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   signal worst first: `n failing`, then `Conflict`, then `n behind` (`BranchRowChip`,
   `branchRowChipOf`); approved, queued, open, draft and running checks draw no
   chip, the glyph color carries them. Counts load first, then show: the git
-  status reads of the card's branches land in the cache as one set, so the
+  status reads of the card's branches land in the cache as one set, held at
+  most 1.5 s so one slow read never freezes the rest and then lands alone, so the
   rows, the `n branches behind` line and the Next rebase row show no count
   (the list is `aria-busy`) until every branch is read, and a refresh keeps
   the last complete set until the new one has landed whole; a branch whose

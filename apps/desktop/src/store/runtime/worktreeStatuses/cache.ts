@@ -28,6 +28,8 @@ const REFRESH_MS = 30_000;
 
 const MAX_CONCURRENT = 4;
 
+const BATCH_BOUND_MS = 1500;
+
 const entries = new Map<string, CacheEntry>();
 
 let running = 0;
@@ -108,25 +110,21 @@ type Batch = {
   readonly staged: Array<StagedRead>;
   readonly landed: Promise<void>;
   readonly land: () => void;
+  timer: ReturnType<typeof setTimeout> | null;
 };
 
 let generation = 0;
 let openBatch: Batch | null = null;
 
-const createBatch = (): Batch => {
-  let land = () => {};
-  const landed = new Promise<void>((resolve) => {
-    land = resolve;
-  });
-  return { isOpen: true, unfinished: 0, staged: [], landed, land };
+type ApplyParams = {
+  readonly read: StagedRead;
 };
 
-const joinBatch = (): Batch => {
-  if (openBatch !== null && openBatch.isOpen) {
-    return openBatch;
-  }
-  openBatch = createBatch();
-  return openBatch;
+const apply = ({ read: { entry, value, readAt, fetchedAt } }: ApplyParams) => {
+  entry.value = value;
+  entry.readAt = readAt;
+  entry.fetchedAt = fetchedAt;
+  entry.inflight = null;
 };
 
 type CommitParams = {
@@ -135,14 +133,33 @@ type CommitParams = {
 
 const commit = ({ batch }: CommitParams) => {
   batch.isOpen = false;
-  batch.staged.forEach(({ entry, value, readAt, fetchedAt }) => {
-    entry.value = value;
-    entry.readAt = readAt;
-    entry.fetchedAt = fetchedAt;
-    entry.inflight = null;
-  });
+  if (batch.timer !== null) {
+    clearTimeout(batch.timer);
+    batch.timer = null;
+  }
+  batch.staged.forEach((read) => apply({ read }));
   batch.staged.forEach(({ entry }) => notify(entry));
   batch.land();
+};
+
+const createBatch = (): Batch => {
+  let land = () => {};
+  const landed = new Promise<void>((resolve) => {
+    land = resolve;
+  });
+  const batch: Batch = { isOpen: true, unfinished: 0, staged: [], landed, land, timer: null };
+  batch.timer = setTimeout(() => {
+    commit({ batch });
+  }, BATCH_BOUND_MS);
+  return batch;
+};
+
+const joinBatch = (): Batch => {
+  if (openBatch !== null && openBatch.isOpen) {
+    return openBatch;
+  }
+  openBatch = createBatch();
+  return openBatch;
 };
 
 type FinishParams = {
@@ -154,6 +171,11 @@ type FinishParams = {
 const finish = ({ batch, read, startedIn }: FinishParams) => {
   if (startedIn !== generation) {
     batch.land();
+    return;
+  }
+  if (!batch.isOpen) {
+    apply({ read });
+    notify(read.entry);
     return;
   }
   batch.staged.push(read);
@@ -337,6 +359,10 @@ export const refreshWorktreeStatuses = async ({ worktreePaths }: RefreshParams):
 
 export const resetWorktreeStatusCache = () => {
   generation += 1;
+  if (openBatch !== null && openBatch.timer !== null) {
+    clearTimeout(openBatch.timer);
+    openBatch.timer = null;
+  }
   openBatch = null;
   entries.clear();
   queue.length = 0;
