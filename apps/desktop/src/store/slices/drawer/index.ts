@@ -1,3 +1,4 @@
+import { clearDrawer } from './clearDrawer';
 import { closeDrawer } from './closeDrawer';
 import { openDrawer } from './openDrawer';
 import { toggleDrawer } from './toggleDrawer';
@@ -7,6 +8,7 @@ export const createDrawerSlice = ({ set, get }: SliceDeps) => {
   return {
     openDrawer: openDrawer(set),
     closeDrawer: closeDrawer(set),
+    clearDrawer: clearDrawer({ set }),
     toggleDrawer: toggleDrawer(get),
   };
 };

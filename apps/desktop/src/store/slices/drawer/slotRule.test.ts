@@ -43,7 +43,7 @@ beforeAll(async () => {
   store = await importStore();
 });
 
-const slot = () => selectSlotKinds(store.getState());
+const slot = () => selectSlotKinds({ state: store.getState() });
 
 describe('the side slot', () => {
   beforeEach(async () => {
@@ -80,6 +80,25 @@ describe('the side slot', () => {
 
     store.getState().closeDrawer();
     expect(slot()).toEqual({ top: null, back: null });
+  });
+
+  it('empties the slot and its chip in one step when the work moved elsewhere', () => {
+    store.getState().openDrawer(TERMINAL);
+    store.getState().openDrawer(PLAN);
+
+    store.getState().clearDrawer();
+
+    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().drawerBack).toBeNull();
+  });
+
+  it('leaves an empty slot as it is when cleared', () => {
+    const before = store.getState().drawer;
+
+    store.getState().clearDrawer();
+
+    expect(store.getState().drawer).toBe(before);
+    expect(store.getState().drawerBack).toBeNull();
   });
 
   it('drops the oldest on a third open', () => {

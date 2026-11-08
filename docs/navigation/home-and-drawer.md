@@ -212,9 +212,11 @@ drawer in the slot, an artifact on another tab included (`slotKey`), keeps the
 chip; a drawer of another session clears it. `closeDrawer` brings `drawerBack`
 back and empties it, so Escape, the X, the trigger pressed again
 (`toggleDrawer`), a crashed drawer's leave and ⌘⇧W all walk the same two steps.
+`clearDrawer` empties both at once, for a caller whose work moved elsewhere (a
+terminal opened on its page, a plan approved onto the run page, View transcript,
+Write title and goal from linked work); the chip does not come back after it.
 A tool keeps its state while it waits: Terminal keeps its shell, Explore its
-open folders. `selectSlotKinds` names the kind in the slot and the kind in the
-chip, for the right rail. A second window has its own store, so its own slot.
+open folders. A second window has its own store, so its own slot.
 **The open drawer is part of the
 history entry's focus; the chip is not.** A forward move (crumb, sidebar, palette, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
