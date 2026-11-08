@@ -238,7 +238,7 @@ export const CentralColumn = ({ session }: Props) => {
       {shown.map((card) => (
         <Fragment key={card.id}>
           {card.id === 'needs-you' ? (
-            <HeightMotion>{cardViewOf({ card })}</HeightMotion>
+            <HeightMotion isOpen={card.count > 0}>{cardViewOf({ card })}</HeightMotion>
           ) : (
             cardViewOf({ card })
           )}

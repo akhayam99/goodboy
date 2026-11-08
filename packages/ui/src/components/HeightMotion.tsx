@@ -5,9 +5,10 @@ import { DURATION_BASE_MS } from '../motionTimings';
 type Props = {
   readonly children: ReactNode;
   readonly className?: string;
+  readonly isOpen?: boolean;
 };
 
-export const HeightMotion = ({ children, className }: Props) => {
+export const HeightMotion = ({ children, className, isOpen = true }: Props) => {
   const innerRef = useRef<HTMLDivElement | null>(null);
   const lastHeightRef = useRef<number | null>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -38,8 +39,11 @@ export const HeightMotion = ({ children, className }: Props) => {
     return () => window.clearTimeout(timer);
   }, [isMoving, height]);
 
+  const isHidden = !isOpen && !isMoving;
+
   return (
     <div
+      hidden={isHidden}
       data-height-motion={isMoving ? 'moving' : 'rest'}
       style={height === null ? undefined : { height }}
       className={cn(
