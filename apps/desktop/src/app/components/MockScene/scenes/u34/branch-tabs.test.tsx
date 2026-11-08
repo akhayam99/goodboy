@@ -34,7 +34,7 @@ beforeEach(async () => {
 });
 afterEach(cleanup);
 
-it('u34-u32-branch-tabs draws the Branch pages strip with five tabs on the page', async () => {
+it('u34-u32-branch-tabs draws the Branch pages strip with six tabs on the page', async () => {
   const Scene = U34_BRANCH_TABS_SCENES['u34-u32-branch-tabs'];
   render(
     <ToastProvider>
@@ -43,5 +43,5 @@ it('u34-u32-branch-tabs draws the Branch pages strip with five tabs on the page'
   );
 
   const strip = await screen.findByRole('tablist', { name: 'Branch pages' });
-  expect(within(strip).getAllByRole('tab')).toHaveLength(5);
+  expect(within(strip).getAllByRole('tab')).toHaveLength(6);
 });

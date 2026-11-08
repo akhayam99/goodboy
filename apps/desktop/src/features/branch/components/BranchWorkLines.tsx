@@ -4,7 +4,6 @@ import type { FixRun } from '../../resolve/fixRun';
 import type { LaneStatus } from '../../resolve/laneStatus';
 import type { BranchCheckWork } from '../hooks/useBranchCheckStep';
 import { BranchCheckWorkLine } from './BranchCheckWorkLine';
-import { BranchRunsLine } from './BranchRunsLine';
 
 type Props = {
   readonly session: Session;
@@ -24,7 +23,6 @@ export const BranchWorkLines = ({
   onOpenComments,
 }: Props) => (
   <>
-    <BranchRunsLine session={session} />
     {checkWork.agentId === null ? null : (
       <BranchCheckWorkLine
         sessionId={session.id}

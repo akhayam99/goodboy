@@ -23,6 +23,7 @@ type Props = {
   readonly onToggleEarlier: () => void;
   readonly onToggleArchived: () => void;
   readonly onOpenBranch: (params: OpenParams) => void;
+  readonly canOpenBranch: (params: OpenParams) => boolean;
   readonly renderRow: (params: StateRowParams) => ReactNode;
 };
 
@@ -33,6 +34,7 @@ export const RunsByState = ({
   onToggleEarlier,
   onToggleArchived,
   onOpenBranch,
+  canOpenBranch,
   renderRow,
 }: Props) => (
   <>
@@ -80,7 +82,11 @@ export const RunsByState = ({
                   run,
                   rowKey: run.id,
                   titleSuffix: (
-                    <RunBranchChip branches={run.branches} onOpenBranch={onOpenBranch} />
+                    <RunBranchChip
+                      branches={run.branches}
+                      onOpenBranch={onOpenBranch}
+                      canOpenBranch={canOpenBranch}
+                    />
                   ),
                 }),
               )}

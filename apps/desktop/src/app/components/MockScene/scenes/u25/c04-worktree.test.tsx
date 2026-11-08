@@ -108,7 +108,14 @@ describe('the c04 worktree level scenes', () => {
     expect(level.getByRole('button', { name: /^payments-api, / })).toBeDefined();
     expect(level.queryByRole('status')).toBeNull();
     expect(level.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
-    expect(stripNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
+    expect(stripNames()).toEqual([
+      'Pull request',
+      'Comments',
+      'Changes',
+      'Commits',
+      'Checks',
+      'Work',
+    ]);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Merge status' }).textContent).toContain(
       '6 commits behind main',

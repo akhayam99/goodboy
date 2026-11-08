@@ -64,8 +64,8 @@ pub(super) fn branch_integration(
     }
 }
 
-pub(super) fn resolve_branch_range(cwd: &Path) -> String {
-    resolve_base(cwd, None)
+pub(super) fn resolve_branch_range(cwd: &Path, base_branch: Option<&str>) -> String {
+    resolve_base(cwd, normalized_base(base_branch))
         .map(|(_, merge_base)| format!("{merge_base}..HEAD"))
         .unwrap_or_else(|| "HEAD".to_string())
 }

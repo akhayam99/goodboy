@@ -272,17 +272,24 @@ const aNote = (): DiffComment => ({
 });
 
 describe('Branch page header and sections', () => {
-  it('names the pull request and lists Overview, Comments, Changes, Commits and Checks in the rail', async () => {
+  it('names the pull request and lists Overview, Comments, Changes, Commits, Checks and Work in the rail', async () => {
     await mount();
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       useAppStore.getState().sessionGithub[SESSION.id]?.pr?.title,
     );
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
+    expect(sectionNames()).toEqual([
+      'Pull request',
+      'Comments',
+      'Changes',
+      'Commits',
+      'Checks',
+      'Work',
+    ]);
     expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('draws the five sections as a tab strip under the title, each count the one the rail row reads', async () => {
+  it('draws the six sections as a tab strip under the title, each count the one the rail row reads', async () => {
     await mount();
 
     const strip = screen.getByRole('tablist', { name: 'Branch pages' });
@@ -293,6 +300,7 @@ describe('Branch page header and sections', () => {
       'Changes',
       'Commits',
       'Checks',
+      'Work',
     ]);
     expect(
       within(strip)
@@ -332,12 +340,12 @@ describe('Branch page header and sections', () => {
 });
 
 describe('Branch page sections by state', () => {
-  it('keeps Overview, Changes and Commits with no pull request and no comment, and no Checks', async () => {
+  it('keeps Overview, Changes, Commits and Work with no pull request and no comment, and no Checks', async () => {
     await mount();
     dropRequest();
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Changes', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Changes', 'Commits', 'Work']);
   });
 
   it('adds Comments to a branch with no pull request once one local note exists', async () => {
@@ -348,18 +356,25 @@ describe('Branch page sections by state', () => {
     });
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Work']);
     expect(railRow(/^Comments/).textContent).toBe('Comments');
   });
 
   it.each(['draft', 'open', 'merged', 'closed', 'queued'] as const)(
-    'lists all five sections for a %s pull request',
+    'lists all six sections for a %s pull request',
     async (state) => {
       await mount();
       patchRequest({ state, isDraft: state === 'draft' });
       await settle();
 
-      expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
+      expect(sectionNames()).toEqual([
+        'Pull request',
+        'Comments',
+        'Changes',
+        'Commits',
+        'Checks',
+        'Work',
+      ]);
     },
   );
 

@@ -15,7 +15,7 @@
     "branch -> integrations": 1,
     "branch -> resolve": 6,
     "branch -> review": 2,
-    "branch -> session": 2,
+    "branch -> session": 1,
     "budget -> providers": 2,
     "changelog -> updater": 1,
     "chat -> attachments": 1,

@@ -4,11 +4,12 @@ import { EmptyState, PaneShell, Skeleton } from '@goodboy/ui';
 import type { AgentId, MountId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
-import { branchPlace } from '../../../../../store/slices/navigation/place';
 import { useGroupBy } from '../../../../../store/slices/session-grouping/hooks/useGroupBy';
 import { useMountRows } from '../../../../../shared/hooks/useMountRows';
 import type { AgentKind } from '../../../agent-kind';
+import { useCanOpenBranchWork } from '../../../hooks/useCanOpenBranchWork';
 import { useQuestionsLens } from '../../../hooks/useQuestionsLens';
+import { openBranchWorkTab } from '../../../openBranchWorkTab';
 import { openQuestion } from '../../../openQuestion';
 import { ContextLoadFailure } from '../../ContextDrawer/ContextLoadFailure';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -51,11 +52,11 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   });
   const groups = useMemo(() => questionGroupsOf({ model }), [model]);
   const rows = useMemo(() => questionRowsOf({ model }), [model]);
-  const navigate = useAppStore((s) => s.navigate);
   const setGroupBy = useAppStore((s) => s.setGroupBy);
   const sessionMounts = useAppStore((s) => s.sessionMounts[sessionId] ?? NO_MOUNTS);
   const projects = useAppStore((s) => s.projects);
   const mountGroups = useMountRows({ sessionId });
+  const canOpenBranch = useCanOpenBranchWork({ sessionId });
   const mounts = useMemo(
     () => mountGroups.flatMap((group) => [...group.rows, ...group.finishedRows]),
     [mountGroups],
@@ -70,8 +71,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   );
   const groupBy = useGroupBy({ sessionId, branchCount });
   const openBranch = ({ mountId }: OpenBranchParams) => {
-    const mount = mounts.find((candidate) => candidate.mountId === mountId);
-    navigate({ to: branchPlace({ sessionId, mountPath: mount?.worktreePath ?? null }) });
+    openBranchWorkTab({ sessionId, mountId });
   };
 
   if (!isLoaded && hasLoadError) {
@@ -123,6 +123,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         kindOverrides={kindOverrides}
         selectedId={openedId}
         onOpenBranch={openBranch}
+        canOpenBranch={canOpenBranch}
         onGroupByChange={(next) => setGroupBy({ sessionId, groupBy: next.groupBy })}
         onOpen={({ questionId }) =>
           openQuestion({ state: useAppStore.getState(), sessionId, questionId })

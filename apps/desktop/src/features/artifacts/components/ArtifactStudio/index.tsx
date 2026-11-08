@@ -9,7 +9,6 @@ import {
   agentPlace,
 } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
-import { branchPlace } from '../../../../store/slices/navigation/place';
 import { useGroupBy } from '../../../../store/slices/session-grouping/hooks/useGroupBy';
 import type { GroupBy } from '../../../../store/slices/session-grouping/state';
 import { ArtifactList } from '../ArtifactList';
@@ -30,6 +29,8 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { GoneObject } from '../../../../shared/components/GoneObject';
 import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { openArtifactPage } from '../../openArtifactPage';
+import { branchPageMountOf } from '../../../session/branchPageMountOf';
+import { openBranchWorkTab } from '../../../session/openBranchWorkTab';
 import { useRowReturn } from '../../../../shared/hooks/useRowReturn';
 import { useArtifactGenerations } from './useArtifactGenerations';
 
@@ -163,10 +164,15 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   );
   const openBranch = useCallback(
     ({ mountId }: OpenBranchParams) => {
-      const mount = branchItems.mounts.find((candidate) => candidate.mountId === mountId);
-      navigate({ to: branchPlace({ sessionId, mountPath: mount?.worktreePath ?? null }) });
+      openBranchWorkTab({ sessionId, mountId });
     },
-    [branchItems.mounts, navigate, sessionId],
+    [sessionId],
+  );
+  const projectMounts = useAppStore((s) => s.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY);
+  const canOpenBranch = useCallback(
+    ({ mountId }: OpenBranchParams) =>
+      branchPageMountOf({ mounts: projectMounts, mountId }) !== null,
+    [projectMounts],
   );
   const openRow = useCallback(
     ({ row, rowKey }: ArtifactOpenParams) => {
@@ -222,8 +228,10 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
         mounts: branchItems.mounts,
         groupBy,
         branchCount: branchItems.branchCount,
+        isSettled: branchItems.isSettled,
         onGroupByChange: changeGroupBy,
         onOpenBranch: openBranch,
+        canOpenBranch,
       }}
       onImported={(artifactId) => openArtifactPage({ sessionId, artifactId })}
     />

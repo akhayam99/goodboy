@@ -12,14 +12,20 @@ const COMMIT_LIMIT: usize = 100;
 const COMMIT_FORMAT: &str = "%H%x1f%h%x1f%s%x1f%an%x1f%at%x1f%P";
 
 #[tauri::command]
-pub async fn worktree_commits(worktree_path: String) -> Result<Vec<BranchCommit>, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || worktree_commits_blocking(worktree_path))
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+pub async fn worktree_commits(
+    worktree_path: String,
+    base_branch: Option<String>,
+) -> Result<Vec<BranchCommit>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_commits_blocking(worktree_path, base_branch)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 pub(super) fn worktree_commits_blocking(
     worktree_path: String,
+    base_branch: Option<String>,
 ) -> Result<Vec<BranchCommit>, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
@@ -49,7 +55,7 @@ pub(super) fn worktree_commits_blocking(
             .collect()
     };
 
-    let branch_range = resolve_branch_range(p);
+    let branch_range = resolve_branch_range(p, base_branch.as_deref());
     let log_args: Vec<String> = vec![
         "log".to_string(),
         format!("-n{COMMIT_LIMIT}"),

@@ -87,7 +87,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('comments'),
   },
   {
-    name: 'a pull request address lands on the Overview, first of the five sections',
+    name: 'a pull request address lands on the Overview, first of the six sections',
     covers: ['navigate', 'tab:pr'],
     open: async (ctx) => {
       useAppStore.getState().navigate({ to: branchPlace({ sessionId: ctx.sessionId, tab: 'pr' }) });

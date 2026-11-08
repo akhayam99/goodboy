@@ -144,5 +144,6 @@ export const worktreeEntryFactsOf = ({
     files: filesFactOf({ files, diff }),
     commits: commitsFactOf({ commits, notPushed }),
     checks: checksFactOf({ checks, checksUnreadReason }),
+    work: EMPTY,
   };
 };

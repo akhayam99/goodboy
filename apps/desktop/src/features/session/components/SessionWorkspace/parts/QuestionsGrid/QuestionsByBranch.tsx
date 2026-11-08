@@ -5,8 +5,13 @@ import type { MountRowView } from '../../../../../../store/slices/project-mounts
 import { alsoOnBranchesOf } from '../../../../branchGroupsOf';
 import { branchHeadLabelOf, branchHeadMarkOf } from '../../../../branchHeadOf';
 import { AlsoOnChip } from '../../../../../../shared/components/AlsoOnChip';
+import type { BranchWorkHeading } from '../../../../branchWorkHeading';
 import type { QuestionBranchGroup, QuestionBranchRow } from '../questionsLensModel';
-import { questionBranchRowKeyOf, questionGroupSummaryOf } from './questionRowKeys';
+import {
+  questionBranchRowKeyOf,
+  questionGroupCountOf,
+  questionGroupSummaryOf,
+} from './questionRowKeys';
 
 type OpenBranchParams = {
   readonly mountId: MountId;
@@ -34,8 +39,10 @@ type Props = {
   readonly openGroups: ReadonlySet<string>;
   readonly onToggleGroup: (params: ToggleParams) => void;
   readonly onOpenBranch: (params: OpenBranchParams) => void;
+  readonly canOpenBranch: (params: OpenBranchParams) => boolean;
   readonly onRevealQuestion: (params: RevealParams) => void;
   readonly renderRow: (params: QuestionBranchRowParams) => ReactNode;
+  readonly heading?: BranchWorkHeading;
 };
 
 const NO_BRANCH_NOTE = 'asked before any branch existed';
@@ -45,11 +52,13 @@ type ChipParams = {
   readonly groupKey: string;
   readonly mounts: ReadonlyArray<MountRowView>;
   readonly onReveal: (params: RevealParams) => void;
+  readonly canReveal: (params: OpenBranchParams) => boolean;
 };
 
-const alsoOnChipOf = ({ item, groupKey, mounts, onReveal }: ChipParams): ReactNode => {
+const alsoOnChipOf = ({ item, groupKey, mounts, onReveal, canReveal }: ChipParams): ReactNode => {
   const branches = alsoOnBranchesOf({ branches: item.branches, groupKey, mounts });
-  if (branches.length === 0) {
+  const [first] = branches;
+  if (first === undefined || !canReveal({ mountId: first.mountId })) {
     return undefined;
   }
   return (
@@ -67,8 +76,10 @@ export const QuestionsByBranch = ({
   openGroups,
   onToggleGroup,
   onOpenBranch,
+  canOpenBranch,
   onRevealQuestion,
   renderRow,
+  heading,
 }: Props) => (
   <>
     {groups.map((group) => {
@@ -84,15 +95,15 @@ export const QuestionsByBranch = ({
       const mark = branchHeadMarkOf({ head });
       const summary = questionGroupSummaryOf({
         waiting: group.waiting.length,
-        fact: head.kind === 'branch' ? head.fact : null,
+        fact: heading === undefined && head.kind === 'branch' ? head.fact : null,
       });
       return (
         <ListGridGroup
           key={group.key}
           headingLevel={2}
-          label={branchHeadLabelOf({ head })}
-          mark={mark === null ? undefined : <span>{mark}</span>}
-          count={group.waiting.length + group.answered.length}
+          label={heading?.label ?? branchHeadLabelOf({ head })}
+          mark={heading?.mark ?? (mark === null ? undefined : <span>{mark}</span>)}
+          count={questionGroupCountOf({ group })}
           fold={
             isFoldable
               ? {
@@ -103,9 +114,12 @@ export const QuestionsByBranch = ({
           }
           action={
             <>
-              {head.kind === 'none' ? <span>{NO_BRANCH_NOTE}</span> : null}
+              {heading === undefined && head.kind === 'none' ? <span>{NO_BRANCH_NOTE}</span> : null}
               {summary === '' ? null : <span>{summary}</span>}
-              {head.kind === 'branch' ? (
+              {heading !== undefined ? heading.action : null}
+              {heading === undefined &&
+              head.kind === 'branch' &&
+              canOpenBranch({ mountId: head.branch.mountId }) ? (
                 <Button
                   variant="quiet"
                   size="xs"
@@ -129,6 +143,7 @@ export const QuestionsByBranch = ({
                 groupKey: group.key,
                 mounts,
                 onReveal: onRevealQuestion,
+                canReveal: ({ mountId }) => heading === undefined || canOpenBranch({ mountId }),
               }),
             }),
           )}

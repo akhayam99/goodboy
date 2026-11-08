@@ -4,12 +4,26 @@ import { agentHomeFor } from './agentHomeFor';
 import { branchPlace, sessionPlace } from './place';
 import { placeBeforeDraft } from './placeBeforeDraft';
 import { runGroupFocusOf } from './runGroupFocusOf';
-import type { Place } from './types';
+import type { LensKind } from '../session-view/types';
+import type { Place, SessionView } from './types';
 
 type Params = {
   readonly state: AppState;
   readonly place: Place;
 };
+
+const BRANCH_WORK_LENSES: ReadonlySet<LensKind | null> = new Set<LensKind | null>([
+  'workflows',
+  'questions',
+  'plans',
+]);
+
+type ItemParams = {
+  readonly view: SessionView;
+};
+
+const isBranchWorkItem = ({ view }: ItemParams): boolean =>
+  view.agentId !== null || view.target?.kind === 'run' || view.target?.kind === 'artifact';
 
 export const parentPlace = ({ state, place }: Params): Place | null => {
   if (place.at === 'board') {
@@ -40,6 +54,10 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
       };
     }
     return sessionPlace({ sessionId });
+  }
+  const fromBranch = runGroupFocusOf({ state });
+  if (fromBranch !== null && isBranchWorkItem({ view })) {
+    return branchPlace({ sessionId, mountPath: fromBranch.mountPath, tab: 'work' });
   }
   if (view.agentId !== null && view.target?.kind === 'thread' && view.lens === 'review') {
     return sessionPlace({ sessionId, lens: 'review' });
@@ -82,11 +100,8 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   if (view.target !== null && view.target.kind !== 'diff' && view.target.kind !== 'thread') {
     return { ...place, view: { ...view, target: null } };
   }
-  if ((view.lens === 'workflows' || view.lens === 'questions') && view.target === null) {
-    const runGroup = runGroupFocusOf({ state });
-    if (runGroup !== null) {
-      return branchPlace({ sessionId, mountPath: runGroup.mountPath });
-    }
+  if (BRANCH_WORK_LENSES.has(view.lens) && view.target === null && fromBranch !== null) {
+    return branchPlace({ sessionId, mountPath: fromBranch.mountPath, tab: 'work' });
   }
   if (view.lens !== null) {
     return sessionPlace({ sessionId });

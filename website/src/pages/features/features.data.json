@@ -661,7 +661,7 @@
     {
       "id": "review",
       "title": "Review and branches",
-      "lead": "One Branch page for Pull request, Comments, Files, Commits and Checks: reshape history, turn comments into commits, push once.",
+      "lead": "One Branch page for Pull request, Comments, Files, Commits, Checks and Work: reshape history, turn comments into commits, push once.",
       "groups": ["Commits and history", "Review and resolve on the Branch page"],
       "mocks": ["diff"],
       "guides": [
@@ -832,6 +832,12 @@
           "text": "See in plain words whether a pull request can merge, with its checks. It is the Pull request tab of the Branch page on GitHub, GitLab and Bitbucket. Edit it in place and merge the ways the host allows. A pull request held for a merge reads Queued.",
           "group": "Review and resolve on the Branch page",
           "also": "pull request page"
+        },
+        {
+          "title": "Work behind a branch",
+          "text": "See what Goodboy did on a branch: its runs, its questions, and its plans and reports. They are the same rows as the session pages, so the counts always match.",
+          "group": "Review and resolve on the Branch page",
+          "also": "branch work"
         },
         {
           "title": "One trail to the Branch page",

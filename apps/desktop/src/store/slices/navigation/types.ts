@@ -5,7 +5,7 @@ import type { StudioPlace } from './studio';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type BranchTab = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
+export type BranchTab = 'pr' | 'comments' | 'files' | 'commits' | 'checks' | 'work';
 
 export type SessionTarget =
   | { readonly kind: 'artifact'; readonly artifactId: ArtifactId }

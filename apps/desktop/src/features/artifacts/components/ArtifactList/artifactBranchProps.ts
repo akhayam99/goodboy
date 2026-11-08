@@ -16,8 +16,10 @@ export type ArtifactBranchProps = Readonly<{
   mounts: ReadonlyArray<MountRowView>;
   groupBy: GroupBy;
   branchCount: number;
+  isSettled: boolean;
   onGroupByChange: (params: GroupByParams) => void;
   onOpenBranch: (params: OpenBranchParams) => void;
+  canOpenBranch: (params: OpenBranchParams) => boolean;
 }>;
 
 export type ArtifactOpenParams = Readonly<{

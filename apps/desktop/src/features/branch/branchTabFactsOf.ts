@@ -3,6 +3,7 @@ import type { PullRequestPresentationState } from '../../shared/utils/pullReques
 import type { BranchTab } from '../../store/slices/navigation/types';
 import { countNoun } from '../../shared/utils/countNoun';
 import { countSlotText } from '../../shared/utils/countSlotText';
+import { joinFacts } from '../../shared/utils/joinFacts';
 import { checksCountsOf } from '../integrations/github/checksRollup';
 import {
   worktreeEntryFactsOf,
@@ -20,6 +21,16 @@ export type BranchTabFact = {
 
 export type BranchTabFacts = Readonly<Record<BranchTab, BranchTabFact>>;
 
+export type BranchWorkCounts = {
+  readonly runs: number;
+  readonly runsNeedYou: number;
+  readonly running: number;
+  readonly questions: number;
+  readonly waiting: number;
+  readonly artifacts: number;
+  readonly artifactsNeedYou: number;
+};
+
 type Params = {
   readonly pullRequestState: PullRequestPresentationState;
   readonly commentsNeedYou: number;
@@ -30,6 +41,7 @@ type Params = {
   readonly notPushed: number | null;
   readonly checks: ReadonlyArray<PrCheckRun> | null;
   readonly checksUnreadReason: string | null;
+  readonly work?: BranchWorkCounts | null;
 };
 
 type EntryParams = {
@@ -77,6 +89,53 @@ const commentsFactOf = ({ commentsNeedYou, commentsOpen }: CommentsParams): Bran
   };
 };
 
+const NO_FACT: BranchTabFact = { text: null, tone: null, tooltip: null, diff: null, count: null };
+
+type WorkParams = {
+  readonly work: BranchWorkCounts | null;
+};
+
+type TotalParams = {
+  readonly work: BranchWorkCounts;
+};
+
+const workTotalOf = ({ work }: TotalParams): string =>
+  [
+    work.runs > 0 && countNoun({ count: work.runs, one: 'run' }),
+    work.questions > 0 && countNoun({ count: work.questions, one: 'question' }),
+    work.artifacts > 0 && countNoun({ count: work.artifacts, one: 'artifact' }),
+  ]
+    .filter((part) => typeof part === 'string')
+    .join(', ');
+
+const workFactOf = ({ work }: WorkParams): BranchTabFact => {
+  if (work === null) {
+    return NO_FACT;
+  }
+  const total = work.runs + work.questions + work.artifacts;
+  const wantsYou = work.runsNeedYou + work.waiting + work.artifactsNeedYou;
+  const tooltip = joinFacts({
+    facts: [
+      work.runsNeedYou > 0 &&
+        `${countNoun({ count: work.runsNeedYou, one: 'run' })} ${work.runsNeedYou === 1 ? 'needs' : 'need'} you`,
+      work.waiting > 0 &&
+        `${countNoun({ count: work.waiting, one: 'question' })} ${work.waiting === 1 ? 'waits' : 'wait'} for you`,
+      work.artifactsNeedYou > 0 &&
+        `${countNoun({ count: work.artifactsNeedYou, one: 'artifact' })} ${work.artifactsNeedYou === 1 ? 'needs' : 'need'} you`,
+      work.running > 0 && `${countNoun({ count: work.running, one: 'run' })} working`,
+      workTotalOf({ work }),
+    ],
+  });
+  const base = { tooltip: tooltip === '' ? null : tooltip, diff: null, count: total };
+  if (wantsYou > 0) {
+    return { ...base, text: countSlotText({ count: wantsYou }), tone: 'warning' };
+  }
+  if (work.running > 0) {
+    return { ...base, text: countSlotText({ count: work.running }), tone: 'info' };
+  }
+  return { ...base, text: countSlotText({ count: total }), tone: null };
+};
+
 export const branchTabFactsOf = ({
   pullRequestState,
   commentsNeedYou,
@@ -87,6 +146,7 @@ export const branchTabFactsOf = ({
   notPushed,
   checks,
   checksUnreadReason,
+  work = null,
 }: Params): BranchTabFacts => {
   const entries = worktreeEntryFactsOf({
     pullRequestState,
@@ -104,6 +164,7 @@ export const branchTabFactsOf = ({
     files: tabFactOf({ entry: entries.files, count: files }),
     commits: tabFactOf({ entry: entries.commits, count: commits }),
     checks: checksFactOf({ checks, entry: entries.checks }),
+    work: workFactOf({ work }),
   };
 };
 

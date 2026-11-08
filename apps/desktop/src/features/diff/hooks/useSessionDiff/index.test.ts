@@ -13,7 +13,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
-import type { MountId, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
+import type { BranchCommit, MountId, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -142,6 +142,32 @@ describe('useSessionDiff base branch', () => {
 
     await waitFor(() =>
       expect(result.current.files.map((file) => file.path)).toEqual(['against-release-9.txt']),
+    );
+  });
+
+  it('lists the commits against the same base as the status count', async () => {
+    const commitOf = (subject: string): BranchCommit => ({
+      sha: subject,
+      shortSha: subject,
+      subject,
+      author: 'Northwind',
+      timestamp: 0,
+      pushed: false,
+      parentSha: null,
+    });
+    stubStoryInvoke({
+      worktree_diff_files: [],
+      worktree_diff: ({ baseBranch }: BaseArgs) => patchFor(baseBranch),
+      worktree_status: ({ baseBranch }: BaseArgs) => statusFor(baseBranch),
+      worktree_commits: ({ baseBranch }: BaseArgs) =>
+        baseBranch === 'develop'
+          ? [commitOf('against develop')]
+          : [commitOf('against main'), commitOf('against develop')],
+    });
+    const { result } = openWith({ mountBase: null, projectBase: 'develop' });
+
+    await waitFor(() =>
+      expect(result.current.commits.map((commit) => commit.subject)).toEqual(['against develop']),
     );
   });
 

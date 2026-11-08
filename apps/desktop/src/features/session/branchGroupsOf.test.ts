@@ -5,9 +5,9 @@ import type { MountRowView } from '../../store/slices/project-mounts/mountRowMod
 import { aMountRow, aRequest } from './central/branches/testing/aMountRow';
 import {
   alsoOnOf,
-  branchGroupKeysOf,
   branchGroupShownCountOf,
   branchGroupsOf,
+  branchKeysOf,
   namedBranchGroupCountOf,
   NO_BRANCH_KEY,
 } from './branchGroupsOf';
@@ -167,7 +167,7 @@ describe('branchGroupsOf', () => {
     });
     const run = aSessionRun({ id: 'orphan', branches });
 
-    expect(branchGroupKeysOf({ run, mounts: MOUNTS })).toEqual([NO_BRANCH_KEY]);
+    expect(branchKeysOf({ branches: run.branches, mounts: MOUNTS })).toEqual([NO_BRANCH_KEY]);
   });
 
   it('counts the runs a group shows and leaves archived ones out', () => {

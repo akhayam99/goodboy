@@ -13,8 +13,18 @@ type SummaryParams = {
   readonly fact: string | null;
 };
 
+type NeedsParams = {
+  readonly rows: ReadonlyArray<ArtifactListRow>;
+};
+
+export const artifactNeedsYouRowsOf = ({ rows }: NeedsParams): ReadonlyArray<ArtifactListRow> =>
+  rows.filter((row) => row.group === 'needs');
+
+export const artifactBranchNeedsYouOf = ({ rows }: NeedsParams): number =>
+  artifactNeedsYouRowsOf({ rows }).length;
+
 export const artifactBranchSummaryOf = ({ rows, fact }: SummaryParams): string => {
-  const needing = rows.filter((row) => row.group === 'needs').length;
+  const needing = artifactBranchNeedsYouOf({ rows });
   return [fact, needing === 0 ? null : `${needing} ${needing === 1 ? 'needs' : 'need'} you`]
     .filter((part) => part !== null)
     .join(', ');

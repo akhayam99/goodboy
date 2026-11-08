@@ -643,9 +643,9 @@ export const worktreeTurnFiles = async ({
 
 export const listBranchCommits = async (
   worktreePath: string,
-): Promise<ReadonlyArray<BranchCommit>> => {
-  return invokeCommand<ReadonlyArray<BranchCommit>>('worktree_commits', { worktreePath });
-};
+  baseBranch: string | null = null,
+): Promise<ReadonlyArray<BranchCommit>> =>
+  invokeCommand('worktree_commits', { worktreePath, baseBranch });
 
 export type IsAncestorParams = {
   readonly worktreePath: string;

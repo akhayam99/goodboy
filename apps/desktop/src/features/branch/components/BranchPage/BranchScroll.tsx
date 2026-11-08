@@ -7,14 +7,15 @@ type Props = {
   readonly sessionId: SessionId;
   readonly tab: BranchTab;
   readonly view: PullRequestView | null;
+  readonly isLoaded?: boolean;
   readonly children: ReactNode;
 };
 
-export const BranchScroll = ({ sessionId, tab, view, children }: Props) => {
+export const BranchScroll = ({ sessionId, tab, view, isLoaded = true, children }: Props) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const onScroll = useScrollMemory({
     memoryKey: `${sessionId}|branch:${tab}`,
-    isLoaded: tab !== 'pr' || view !== null,
+    isLoaded: isLoaded && (tab !== 'pr' || view !== null),
     viewportRef,
   });
   return (

@@ -232,7 +232,10 @@ export const useSessionDiff = ({
     }
     let cancelled = false;
     const key = metaKeyOf({ worktreePath, baseBranch });
-    Promise.all([listBranchCommits(worktreePath), worktreeStatus({ worktreePath, baseBranch })])
+    Promise.all([
+      listBranchCommits(worktreePath, baseBranch ?? null),
+      worktreeStatus({ worktreePath, baseBranch }),
+    ])
       .then(([nextCommits, nextStatus]) => {
         if (cancelled) {
           return;

@@ -59,3 +59,30 @@ describe('filesHeadFactOf', () => {
     expect(fact.diff).toBeNull();
   });
 });
+
+describe('the Work fact', () => {
+  const WORK = {
+    runs: 3,
+    runsNeedYou: 0,
+    running: 2,
+    questions: 0,
+    waiting: 0,
+    artifacts: 0,
+    artifactsNeedYou: 0,
+  } as const;
+
+  it('wants you for a run that needs you, ahead of the runs working', () => {
+    const fact = branchTabFactsOf({ ...BASE, work: { ...WORK, runsNeedYou: 1 } }).work;
+
+    expect(fact.text).toBe('1');
+    expect(fact.tone).toBe('warning');
+    expect(fact.tooltip).toBe('1 run needs you · 2 runs working · 3 runs');
+  });
+
+  it('reads the runs working in info, else a faint total', () => {
+    expect(branchTabFactsOf({ ...BASE, work: WORK }).work.tone).toBe('info');
+    const idle = branchTabFactsOf({ ...BASE, work: { ...WORK, running: 0 } }).work;
+    expect(idle.text).toBe('3');
+    expect(idle.tone).toBeNull();
+  });
+});

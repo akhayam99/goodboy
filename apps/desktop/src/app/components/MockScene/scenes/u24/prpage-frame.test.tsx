@@ -87,7 +87,7 @@ describe('the u24 prpage frame scenes', () => {
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Changes', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Changes', 'Commits', 'Work']);
     expect(sectionRow(/^Pull request/).textContent).toBe('Pull request');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
   });
@@ -97,7 +97,7 @@ describe('the u24 prpage frame scenes', () => {
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Work']);
     expect(
       within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', {
         name: /^Comments/,
@@ -105,12 +105,19 @@ describe('the u24 prpage frame scenes', () => {
     ).toBe('Comments');
   });
 
-  it('draws all five sections with Mark ready for review as the one primary of a draft', async () => {
+  it('draws all six sections with Mark ready for review as the one primary of a draft', async () => {
     renderScene({ name: 'branch-draft' });
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
+    expect(sectionNames()).toEqual([
+      'Pull request',
+      'Comments',
+      'Changes',
+      'Commits',
+      'Checks',
+      'Work',
+    ]);
     expect(chip().getAttribute('aria-label')).toBe('Draft');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
     expect(screen.getByRole('button', { name: /Mark ready for review/ })).toBeDefined();

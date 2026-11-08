@@ -79,14 +79,6 @@ export const namedBranchGroupCountOf = ({ branchLists, mounts }: CountKeysParams
     ),
   ).size;
 
-type RunKeysParams = {
-  readonly run: SessionRun;
-  readonly mounts: ReadonlyArray<MountRowView>;
-};
-
-export const branchGroupKeysOf = ({ run, mounts }: RunKeysParams): ReadonlyArray<string> =>
-  branchKeysOf({ branches: run.branches, mounts });
-
 type FactParams = {
   readonly row: MountRowView | undefined;
 };
