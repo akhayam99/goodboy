@@ -455,7 +455,10 @@ is not the reader (the Changes file tree in `ChangeTree`, a side list) passes
 mounts in, and the scrollers inside it stay out too. The role frees only when that
 scroller unmounts, and the next claim starts clean: no wheel, touch or thumb
 drag from before counts, and a settle still waiting for its frames is dropped
-(`revealEngine.ts`). One pure function,
+(`revealEngine.ts`). A region of sibling lanes (the Board, `hasLanes` on
+`RevealRegion`) lets every lane claim: the lane the reader last wheeled, touched,
+keyed or dragged in leads the shared header, a lane at its top or with no room
+brings it back, and an app scroll in another lane never counts. One pure function,
 `headerRevealOf`, decides, with the same numbers on every page whatever the
 header height or what sits above the scroller: 24px of deliberate scroll down
 hides the header, 8px up brings it back, and so do the top of the page,
@@ -489,7 +492,8 @@ around what they scroll, so code that sits above its own shell (a studio, a
 drawer, a find bar) holds the right one. Follow and autoscroll (the agent
 conversation, Chat, a script log, the Ask panel), scroll anchoring and keyboard
 moves always go through one of them, so new messages never hide or show the
-header; a jump a click makes reads as the app's even without one, since no
+header. The slide is not a layout move: `useScrollAnchor` reads its tracked top
+without it (`revealSlideOf`), so the transcript never scrolls the reader back; a jump a click makes reads as the app's even without one, since no
 scroll input comes before it.
 Holds are versioned, so an older one never ends a newer one. A side scroller
 that sits beside the reading scroller in the body (the conversation dock above

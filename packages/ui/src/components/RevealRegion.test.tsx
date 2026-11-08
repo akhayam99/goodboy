@@ -135,6 +135,50 @@ describe('RevealRegion', () => {
   });
 });
 
+describe('RevealRegion with lanes', () => {
+  const Board = () => (
+    <div className="flex h-full flex-col">
+      <RevealRegion hasLanes header={<h1>Sessions</h1>}>
+        <ScrollFade orientation="horizontal" className="min-h-0 flex-1">
+          {['Queued', 'Review', 'Done'].map((lane) => (
+            <ScrollFade key={lane} className="min-h-0 flex-1">
+              <p>{lane}</p>
+            </ScrollFade>
+          ))}
+        </ScrollFade>
+      </RevealRegion>
+    </div>
+  );
+
+  it('follows the lane the reader scrolls, whichever lane mounted first', () => {
+    render(<Board />);
+    const header = nodeOf({ selector: '[data-slot="reveal-header"]' });
+    Object.defineProperty(header, 'offsetHeight', { value: HEADER_PX, configurable: true });
+    const [queued, review, done] = [
+      ...document.querySelectorAll<HTMLElement>('[data-page-scroller]'),
+    ];
+    if (queued === undefined || review === undefined || done === undefined) {
+      throw new Error('three lanes');
+    }
+    Object.defineProperty(queued, 'scrollHeight', { value: VIEW_PX, configurable: true });
+    [queued, review, done].forEach((lane) => {
+      Object.defineProperty(lane, 'clientHeight', { value: VIEW_PX, configurable: true });
+    });
+    [review, done].forEach((lane) => {
+      Object.defineProperty(lane, 'scrollHeight', { value: CONTENT_PX, configurable: true });
+    });
+    resizeAll();
+    review.scrollTop = 600;
+    fireEvent.scroll(review);
+
+    wheelTo({ viewport: done, top: 400 });
+    expect(headerState()).toBe('hidden');
+    wheelTo({ viewport: review, top: 590 });
+
+    expect(headerState()).toBe('shown');
+  });
+});
+
 describe('DrawerFrame header reveal', () => {
   const Drawer = () => (
     <div className="flex h-full flex-col">

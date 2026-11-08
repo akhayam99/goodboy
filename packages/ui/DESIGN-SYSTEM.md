@@ -521,7 +521,8 @@ content that goes under a page header; the page scroller under a
 `isPageScroller={false}` and never drives the header). Every `PaneShell` and
 every `DrawerFrame` reveals: it pins the back row (a drawer's title row with its
 close) and the `lead`, and lets the rest of the header step aside while you
-read; a page that draws its own `PageHeader` wraps it in `RevealRegion`, except
+read; a page that draws its own `PageHeader` wraps it in `RevealRegion` (with
+`hasLanes` when sibling lanes share one header, as on the Board), except
 the Terminal, whose output must never resize, so only its rail reveals
 ([styling.md](../../docs/styling.md#a-header-that-steps-aside-while-you-read)).
 `ScrollFade` paints its fade with the `mask-fade-x` and `mask-fade-y` utilities

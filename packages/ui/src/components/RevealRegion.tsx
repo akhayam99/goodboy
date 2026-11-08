@@ -8,6 +8,7 @@ type Props = {
   readonly header: ReactNode;
   readonly resetKey?: string | null;
   readonly surface?: 'background' | 'subtle';
+  readonly hasLanes?: boolean;
   readonly children: ReactNode;
 };
 
@@ -20,12 +21,13 @@ export const RevealRegion = ({
   header,
   resetKey = null,
   surface = 'background',
+  hasLanes = false,
   children,
 }: Props) => {
   const regionRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const reveal = useHeaderReveal({ regionRef, headerRef, bodyRef, resetKey });
+  const reveal = useHeaderReveal({ regionRef, headerRef, bodyRef, resetKey, hasLanes });
 
   return (
     <div

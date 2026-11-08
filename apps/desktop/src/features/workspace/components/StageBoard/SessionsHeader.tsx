@@ -29,6 +29,7 @@ export const SessionsHeader = ({
   children,
 }: Props) => (
   <RevealRegion
+    hasLanes
     header={
       isShown ? (
         <PageHeader
