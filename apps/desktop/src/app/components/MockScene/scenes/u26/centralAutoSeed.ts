@@ -146,9 +146,10 @@ const FIXER_BY_VARIANT: Readonly<Record<CentralAutoVariant, AutoDelegation>> = {
   }),
   blocked: fixerOf({
     state: 'settled',
-    outcome: 'failed',
+    outcome: 'blocked',
     settledAt: '10:22:30',
-    reason: 'process_error',
+    reason: 'declared_blocked',
+    result: { declared: { summary: 'The ledger-core docs folder is not in this checkout.' } },
   }),
   done: fixerOf({ state: 'settled', outcome: 'completed', settledAt: '10:23:00' }),
 };

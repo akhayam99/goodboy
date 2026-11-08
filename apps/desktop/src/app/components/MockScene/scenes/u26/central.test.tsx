@@ -98,22 +98,12 @@ describe('the central column scenes', () => {
     expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
   });
 
-  it('draws the stuck Auto as one block on the blocked scene, Needs you said once', async () => {
+  it('keeps a child that returned to Auto out of Needs you on the blocked scene', async () => {
     await show({ name: 'u26-central-blocked-light' });
 
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    expect(needsYou.querySelector('[data-now-sentence]')).toBeNull();
-    expect(needsYou.querySelector('[data-live-group="auto"]')).toBeNull();
-    expect(needsYou.querySelector('[data-now-actions]')).toBeNull();
-    expect(needsYou.textContent).not.toContain('Stuck');
-    expect(needsYou.textContent).not.toContain('Deciding');
-    expect(needsYou.textContent).not.toContain('declared_blocked');
-    expect(screen.queryByRole('region', { name: 'Running' })).toBeNull();
-    const inCard = within(needsYou);
-    inCard.getByRole('button', { name: 'Open Auto' });
-    expect(inCard.queryByRole('button', { name: 'Answer Auto in its chat' })).toBeNull();
-    inCard.getByRole('button', { name: 'Stop Auto and its agents' });
-    inCard.getByRole('button', { name: 'Retry "Fix the two doc mismatches in ledger-core"' });
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
+    expect(document.body.textContent).not.toContain('Stuck');
+    expect(document.body.textContent).not.toContain('declared_blocked');
   });
 
   it('settles when the stale branch detail read fails on the branches scene', async () => {
