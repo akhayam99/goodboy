@@ -119,6 +119,23 @@ describe('the u37 branch work scene', () => {
     within(sectionOf('Artifacts')).getByText('Duplicate credit audit');
   });
 
+  it('reads one run state in the Runs header and in its rows', async () => {
+    await mount();
+
+    const runs = sectionOf('Runs');
+    expect(within(runs).getAllByText('Running')).toHaveLength(1);
+    expect(within(runs).getAllByText('Needs you')).toHaveLength(1);
+    expect(within(runs).queryByText('Done')).toBeNull();
+    const fold = within(runs).getByRole('button', { name: '1 finished' });
+
+    fireEvent.click(fold);
+
+    expect(within(runs).getAllByText('Running')).toHaveLength(1);
+    expect(within(runs).getAllByText('Needs you')).toHaveLength(1);
+    expect(within(runs).getAllByText('Done')).toHaveLength(1);
+    within(runs).getByRole('button', { name: 'Hide finished' });
+  });
+
   it('goes Back from a run opened on Work to the Work tab', async () => {
     await mount();
     arriveOnWork();
