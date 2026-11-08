@@ -131,9 +131,10 @@ export const agentStateOf = ({
   isMissingArtifact = false,
 }: Params): AgentState => {
   const status = effectiveAgentStatusOf({ agent, turn });
-  const isClosed = isAgentClosedByUser({ agent });
+  const liveAgent = status === agent.status ? agent : { ...agent, status };
+  const isClosed = isAgentClosedByUser({ agent: liveAgent });
   const resolved = resolveAgentRowState({
-    agent: status === agent.status ? agent : { ...agent, status },
+    agent: liveAgent,
     isAsking: openQuestions.length > 0,
     question: oldestOf({ questions: openQuestions }),
     isReadyStep,

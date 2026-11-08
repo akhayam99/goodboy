@@ -28,7 +28,10 @@ export const isTurnStatePermissionBlocked = ({ turnState }: BlockedParams): bool
   turnState?.kind === 'blocked';
 
 export const isAgentClosedByUser = ({ agent }: AgentParams): boolean =>
-  agent.doneAt != null && agent.status !== 'completed' && agent.status !== 'skipped';
+  agent.doneAt != null &&
+  agent.status !== 'completed' &&
+  agent.status !== 'skipped' &&
+  agent.status !== 'running';
 
 export const isAgentClosable = ({
   agent,

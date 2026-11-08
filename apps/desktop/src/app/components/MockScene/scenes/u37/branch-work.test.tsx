@@ -126,6 +126,7 @@ describe('the u37 branch work scene', () => {
     expect(within(runs).getAllByText('Running')).toHaveLength(1);
     expect(within(runs).getAllByText('Needs you')).toHaveLength(1);
     expect(within(runs).queryByText('Done')).toBeNull();
+    expect(runs.textContent).toMatch(/1 needs you, 1 running, 1 finished/);
     const fold = within(runs).getByRole('button', { name: '1 finished' });
 
     fireEvent.click(fold);
