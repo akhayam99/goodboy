@@ -108,8 +108,7 @@ export const ChangeTree = ({
     () => [...states.values()].filter((state) => state === 'viewed').length,
     [states],
   );
-  const total = allFiles.length;
-  const unviewedCount = total - viewedCount;
+  const unviewedCount = allFiles.length - viewedCount;
   const commentedCount = useMemo(
     () => allFiles.filter((file) => commentCountOf(file.path) > 0).length,
     [allFiles, commentCountOf],
