@@ -2,14 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseHiddenModels } from '@goodboy/core/providers';
 import { useShallow } from 'zustand/react/shallow';
 import { DrawerColumn, PageColumn } from '@goodboy/ui';
-import type {
-  ChatId,
-  ChatMessage,
-  ChatMessageId,
-  ChatSummary,
-  SessionId,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { ChatId, ChatMessage, ChatSummary, SessionId, WorkspaceId } from '@goodboy/types';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { useChatSessions } from '../../hooks/useChatSessions';
 import { chatSuggestions } from '../../chatSuggestions';
@@ -17,12 +10,13 @@ import type { ChatRouting } from '../../../conversation/chatRouting';
 import { defaultChatRouting } from '../../defaultChatRouting';
 import { useChatDefaultModel } from '../../../../shared/hooks/useChatDefaultModel';
 import { ChatComposer, type ChatComposerMessage } from '../ChatComposer';
-import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
+import { TURN_INTO_WORK_LABEL } from '../TurnIntoWorkPanel';
 import { ChatArchivedBanner } from './ChatArchivedBanner';
 import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
 import { ChatThread } from './ChatThread';
 import { useChatDrafts } from '../../hooks/useChatDrafts';
+import { useChatWork } from '../../hooks/useChatWork';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
@@ -32,11 +26,6 @@ type Props = {
   readonly chat: ChatSummary | null;
   readonly onCreated: (chatId: ChatId) => void;
   readonly onRemoved: () => void;
-};
-
-type WorkRequest = {
-  readonly anchorMessageId: ChatMessageId | null;
-  readonly key: number;
 };
 
 const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
@@ -83,7 +72,6 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
   const openStudio = useAppStore((state) => state.openStudio);
   const wasEmptyRef = useRef(false);
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
-  const [work, setWork] = useState<WorkRequest | null>(null);
   const linked = useChatSessions({ chatId });
   const drafts = useChatDrafts({ chatId });
   const { saved: savedDefault, read: readSavedDefault } = useChatDefaultModel({ workspaceId });
@@ -156,8 +144,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
   };
 
   const shown = messages ?? NO_MESSAGES;
-  const openWork = (anchorMessageId: ChatMessageId | null): void =>
-    setWork((current) => ({ anchorMessageId, key: (current?.key ?? 0) + 1 }));
+  const { drawerNode, drawerKey, openWork } = useChatWork({ chat, messages: shown });
   const openSession = (sessionId: SessionId): void => navigate({ to: sessionPlace({ sessionId }) });
 
   const isEmpty = shown.length === 0;
@@ -222,7 +209,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
             <ChatThread
               messages={shown}
               workspaceName={workspaceName}
-              onStartWork={openWork}
+              onStartWork={(messageId) => openWork({ anchorMessageId: messageId })}
               sessions={linked.entries}
               onOpenSession={openSession}
               drafts={drafts}
@@ -238,17 +225,6 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
     </section>
   );
 
-  const drawerNode =
-    work === null || chat === null ? null : (
-      <TurnIntoWorkPanel
-        chat={chat}
-        messages={shown}
-        anchorMessageId={work.anchorMessageId}
-        onClose={() => setWork(null)}
-        onDone={() => setWork(null)}
-      />
-    );
-  const drawerKey = String(work?.key ?? 0);
   const isHosted = useStudioDrawer({
     node: drawerNode,
     drawerKey,
