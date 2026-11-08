@@ -465,6 +465,15 @@ describe('the form and the row', () => {
 
 describe('the Branch page', () => {
   it('counts the runs on this branch on the Work tab, with no line under the tabs', async () => {
+    storySpies.tauriInvoke.mockImplementation((command, args) => {
+      if (command === 'db_select') {
+        return Promise.resolve([]);
+      }
+      if (typeof command !== 'string') {
+        throw new Error('The scene command must be a string.');
+      }
+      return sceneInvoke({ command, args });
+    });
     await mount('u36-f3-branch-runs');
 
     expect(document.querySelector('[data-branch-runs-line]')).toBeNull();
