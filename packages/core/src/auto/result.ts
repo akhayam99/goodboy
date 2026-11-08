@@ -1,7 +1,7 @@
 import type { AutoOutcome } from '@goodboy/db';
 import { isRecord } from '@goodboy/types/helpers';
 import { oneLine } from './oneLine';
-import type { ChildClosing, ChildCompletion } from './closing';
+import type { ChildClosing, ChildCompletion, ChildReturn } from './closing';
 import { checksTextOf } from './checks';
 import { publishTextOf, type ResultPublish } from './publish';
 import { STEP_OUTPUT_EXCERPT_CHARS } from '../summarizer/step-output';
@@ -74,6 +74,7 @@ export type DelegationResultV1 = Readonly<{
     summary: string;
     summarySource: 'child' | 'summarizer' | 'none';
   }>;
+  returned?: ChildReturn;
   verified: Readonly<{
     changedFiles: ReadonlyArray<ResultChangedFile>;
     checks: ReadonlyArray<ResultCheck>;
@@ -102,6 +103,24 @@ export type ResolvedOutcome = Readonly<{
   reason: string | null;
 }>;
 
+type ReturnReasonParams = {
+  readonly closing: ChildClosing | null;
+};
+
+const returnReasonOf = ({ closing }: ReturnReasonParams): string => {
+  const needs = closing?.returned?.needs ?? null;
+  if (needs !== null) {
+    return `needs_${needs.kind}`;
+  }
+  return isMissingShellText({ text: closing?.summary ?? '' }) ? 'needs_shell' : 'needs_user';
+};
+
+const REROUTE_NEED: ReadonlyMap<string, 'shell' | 'writer'> = new Map([
+  ['missing_tool', 'shell'],
+  ['needs_shell', 'shell'],
+  ['needs_writer', 'writer'],
+]);
+
 export const resolveDelegationOutcome = ({
   exit,
   isTimedOut,
@@ -120,9 +139,8 @@ export const resolveDelegationOutcome = ({
     return { outcome: 'failed', reason: 'process_error' };
   }
   const completion = closing?.completion ?? 'none';
-  if (completion === 'blocked') {
-    const isShellMissing = isMissingShellText({ text: closing?.summary ?? '' });
-    return { outcome: 'blocked', reason: isShellMissing ? 'missing_tool' : 'declared_blocked' };
+  if (closing?.isLegacyBlock === true && closing.returned?.needs == null) {
+    return { outcome: 'blocked', reason: returnReasonOf({ closing }) };
   }
   if (isArtifactExpected && artifactPersistence === 'failed') {
     return { outcome: 'failed', reason: 'artifact_persistence_failed' };
@@ -130,8 +148,11 @@ export const resolveDelegationOutcome = ({
   if (isArtifactExpected && artifactPersistence === 'not_written') {
     return {
       outcome: 'failed',
-      reason: completion === 'done' ? 'report_missing' : 'no_closing_envelope',
+      reason: completion === 'none' ? 'no_closing_envelope' : 'report_missing',
     };
+  }
+  if (completion === 'blocked') {
+    return { outcome: 'blocked', reason: returnReasonOf({ closing }) };
   }
   if (completion === 'done') {
     return { outcome: 'completed', reason: null };
@@ -199,6 +220,8 @@ export const buildDelegationResult = (params: BuildResultParams): DelegationResu
       summary,
       summarySource: summary === '' ? 'none' : params.summarySource,
     },
+    ...(resolved.outcome === 'blocked' &&
+      params.closing?.returned != null && { returned: params.closing.returned }),
     verified: {
       changedFiles: params.changedFiles,
       checks: params.checks,
@@ -261,6 +284,12 @@ const isDeclared = ({ value }: StoredResultParams): boolean =>
   typeof value['summary'] === 'string' &&
   typeof value['completion'] === 'string';
 
+const isReturned = ({ value }: StoredResultParams): boolean =>
+  value === undefined ||
+  (isRecord(value) &&
+    (value['request'] === null || typeof value['request'] === 'string') &&
+    (value['needs'] === null || isRecord(value['needs'])));
+
 type EveryParams = StoredResultParams & {
   readonly check: (params: StoredResultParams) => boolean;
 };
@@ -278,6 +307,7 @@ const hasResultShape = ({ value }: StoredResultParams): boolean =>
   isRouting({ value: value['routing'] }) &&
   isProcess({ value: value['process'] }) &&
   isDeclared({ value: value['declared'] }) &&
+  isReturned({ value: value['returned'] }) &&
   isCost({ value: value['cost'] }) &&
   isRecord(value['verified']) &&
   isListOf({ value: value['verified']['changedFiles'], check: isFileEntry }) &&
@@ -341,8 +371,17 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
   if (result.declared.summary !== '') {
     lines.push(`  it said: ${oneLine({ text: result.declared.summary })}`);
   }
-  if (result.reason === 'missing_tool') {
-    lines.push(rerouteHintOf({ role: result.role }));
+  const needs = result.returned?.needs ?? null;
+  if (needs !== null && needs.kind === 'role') {
+    lines.push(`  it asks for the ${needs.role} role`);
+  }
+  const request = result.returned?.request ?? null;
+  if (request !== null) {
+    lines.push(`  it asks: ${oneLine({ text: request })}`);
+  }
+  const need = result.reason === null ? undefined : REROUTE_NEED.get(result.reason);
+  if (need !== undefined) {
+    lines.push(rerouteHintOf({ role: result.role, need }));
   }
   if (result.declared.completion === 'none') {
     lines.push('  it did not close its work with the closing line');

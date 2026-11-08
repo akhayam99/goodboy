@@ -15,6 +15,20 @@ describe('delegationReasonTextOf', () => {
     );
   });
 
+  it('words every need of a returned child without showing a code', () => {
+    for (const reason of [
+      'needs_shell',
+      'needs_writer',
+      'needs_role',
+      'needs_decision',
+      'needs_user',
+    ]) {
+      const text = delegationReasonTextOf({ reason });
+      expect(text, reason).toMatch(/^It needs /);
+      expect(text, reason).not.toContain('_');
+    }
+  });
+
   it('shows a sentence the failure already wrote for the person', () => {
     const reason =
       "Couldn't open the pull request: the branch isn't on GitHub yet. Push it and retry.";

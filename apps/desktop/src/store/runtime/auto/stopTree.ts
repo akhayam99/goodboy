@@ -130,6 +130,8 @@ const closeStatements = ({ ctx, tree }: CloseStatementsParams): ReadonlyArray<St
         SET state = 'settled', outcome = 'stopped', reason = 'stopped', is_stopping = 0,
             settled_at = ?,
             result_json = json_object('schemaVersion', 1, 'delegationId', id,
+              'attemptId', (SELECT a.id FROM auto_attempts a WHERE a.delegation_id = auto_delegations.id
+                ORDER BY a.ordinal DESC LIMIT 1),
               'outcome', 'stopped', 'reason', 'stopped')
         WHERE tree_id = ? AND state <> 'settled'`,
       params: [nowMs, tree.id],

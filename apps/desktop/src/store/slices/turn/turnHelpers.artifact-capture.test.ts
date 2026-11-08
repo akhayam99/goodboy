@@ -453,6 +453,26 @@ describe('captureArtifactsFromTurn blocking gate', () => {
     expect(upsertPlan).not.toHaveBeenCalled();
   });
 
+  it('keeps the report of a child that returned, even beside a blocking question', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const { result } = await run(
+      `${BLOCKING_QUESTION}\n${REPORT_TURN('## Outcome')}\n<<step-done id="${AGENT_ID}" status="returned" needs="shell">>\nNeeds a shell to read the commits of payments-api.`,
+    );
+
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+    expect(result.artifact).not.toBeNull();
+  });
+
+  it('still holds the report when the return names another agent', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const { result } = await run(
+      `${BLOCKING_QUESTION}\n${REPORT_TURN('## Outcome')}\n<<step-done id="agent-other" status="returned">>`,
+    );
+
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(result.artifact).toBeNull();
+  });
+
   it('stores the report when every question is non blocking', async () => {
     loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
     const { result } = await run(`${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);

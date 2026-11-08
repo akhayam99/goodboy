@@ -170,7 +170,9 @@ export {
   parseChildClosing,
   type ChildClosing,
   type ChildCompletion,
+  type ChildNeeds,
   type ChildQuestion,
+  type ChildReturn,
 } from './closing';
 
 export {

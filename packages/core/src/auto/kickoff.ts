@@ -150,6 +150,7 @@ const reviseSection = ({ revise }: ReviseSectionParams): string => {
 };
 
 type ReturnContractParams = {
+  readonly role: AutoDelegationRole;
   readonly childAgentId: string;
   readonly isSubstep: boolean;
 };
@@ -157,9 +158,17 @@ type ReturnContractParams = {
 const NEEDS_RULE =
   'When you cannot finish without a scout or an investigator, add `needs="scout"` or `needs="investigator"` to that question block: Auto may start one and answers you with its report.';
 
-const returnContract = ({ childAgentId, isSubstep }: ReturnContractParams): string =>
+const RETURN_NEEDS_RULE =
+  '`needs` is one of: `shell` (a command must run), `writer` (files must change), `role:<role>` (another role must do a part, for example `role:planner`), `decision` (Auto must choose between options) or `user` (only the user can give it).';
+
+const READING_REPORT_RULE =
+  'You read only: write your report in this reply, as the expected output above, also when you return. Never write it to a plan file.';
+
+const returnContract = ({ role, childAgentId, isSubstep }: ReturnContractParams): string =>
   [
-    `**Return** When the work is done, end your last message with \`<<step-done id="${childAgentId}">>\` on its own line. If you cannot go on and nothing can be asked, say why and end with \`<<step-done id="${childAgentId}" status="blocked">>\`.`,
+    `**Return** When the work is done, end your last message with \`<<step-done id="${childAgentId}">>\` on its own line. If you cannot finish, do what you can, write your report, then end with \`<<step-done id="${childAgentId}" status="returned" needs="shell">>\` and one line after it: what you need. Goodboy keeps your work and your report.`,
+    RETURN_NEEDS_RULE,
+    ...(isAutoWriterRole({ role }) ? [] : [READING_REPORT_RULE]),
     `When only the user or Auto can decide something, ask it in one \`<<ctx-question blocking="true">>the question<</ctx-question>>\` block and stop. ${DECISION_FIRST_RULE}`,
     ...(isSubstep ? [] : [NEEDS_RULE]),
     'Do not hand the work to another agent, do not split it into several agents, and do not start subagents. If the result needs more work, say so and Auto decides.',
@@ -239,6 +248,6 @@ export const composeDelegationKickoff = ({
   if (inputs.length > 0) {
     sections.push(inputsSection({ inputs }));
   }
-  sections.push(returnContract({ childAgentId, isSubstep }));
+  sections.push(returnContract({ role, childAgentId, isSubstep }));
   return sections.join('\n\n');
 };

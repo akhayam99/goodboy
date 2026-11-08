@@ -6,7 +6,6 @@ import {
   extractHandoff,
   extractMaterializeRequests,
   extractScoutDomains,
-  hasBlockingQuestion,
   isLedgerOverBudget,
   loadDecisionLedger,
   SLOT_BUDGETS,
@@ -50,6 +49,7 @@ import type {
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { recordNudgeShown } from '../nudges/recordNudgeShown';
+import { isQuestionTurn } from './childTurn/isQuestionTurn';
 import {
   appendArtifactProvenanceOmission,
   completeArtifactRun,
@@ -809,7 +809,7 @@ export const captureArtifactsFromTurn = async ({
   workflowRunId,
   captureMode,
 }: CaptureArtifactsParams): Promise<CapturedArtifacts> => {
-  if (hasBlockingQuestion({ assistantText }) || captureMode === 'revise') {
+  if (isQuestionTurn({ assistantText, agentId }) || captureMode === 'revise') {
     return NOTHING_CAPTURED;
   }
   await recordArtifactAssumptions({ agentId, assistantText });

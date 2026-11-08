@@ -34,6 +34,7 @@ import { remoteOf, snapshotOf } from './attemptBaseline';
 import { attemptEnvelope, delegationRoleOf, isArtifactRole } from './attemptEnvelope';
 import { landAttemptRevision, type RevisionLanding } from './landAttemptRevision';
 import { planPublish } from './planPublish';
+import { returnedRevise } from './reviseFailure/returnedRevise';
 import type { ChildTurnEnded } from './ports';
 import { pushSettledPublish } from './pushSettledPublish';
 import { readCommittedFilesOf } from './readCommittedFiles';
@@ -304,6 +305,9 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
     costUsd: ended.costUsd,
     durationMs: ended.durationMs,
   });
+  if (envelope.outcome === 'blocked') {
+    return returnedRevise({ ...params, artifactId, envelope });
+  }
   const landing: RevisionLanding | null =
     parsed.kind === 'ok'
       ? {
@@ -325,20 +329,21 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
       costUsd: ended.costUsd,
       resultSnapshot: { envelope, landing },
     },
+    ...(parsed.kind === 'failed' && {
+      revise: {
+        delegationId: delegation.id,
+        generation: ended.generation,
+        artifactId: brandId<ArtifactId>({ value: artifactId }),
+        reason: parsed.reason,
+        ...(failure !== undefined && { failure }),
+        result: { ...envelope, outcome: 'failed', reason: failure ?? parsed.reason },
+      },
+    }),
   });
   if (settled.kind === 'dropped') {
     return { kind: 'dropped', reason: settled.reason };
   }
   if (parsed.kind === 'failed') {
-    await ctx.scheduler.failRevise({
-      treeId: tree.id,
-      delegationId: delegation.id,
-      generation: ended.generation,
-      artifactId: brandId<ArtifactId>({ value: artifactId }),
-      reason: parsed.reason,
-      ...(failure !== undefined && { failure }),
-      result: { ...envelope, outcome: 'failed', reason: failure ?? parsed.reason },
-    });
     return { kind: 'ended', outcome: 'failed', landing: 'failed' };
   }
   const fresh = await getAutoAttempt({ db: ctx.db, attemptId: attempt.id });

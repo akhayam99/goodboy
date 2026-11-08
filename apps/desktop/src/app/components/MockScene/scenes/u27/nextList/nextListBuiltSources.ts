@@ -189,7 +189,7 @@ const LEFT_CHILDREN: ReadonlyArray<AutoDelegation> = [
     minute: 9,
     state: 'settled',
     outcome: 'blocked',
-    reason: 'declared_blocked',
+    reason: 'needs_user',
   }),
 ];
 

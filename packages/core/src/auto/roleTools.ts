@@ -152,5 +152,14 @@ export const roleCannotRunCommandsMessage = ({
 }: CommandMessageParams): string =>
   `${role} has no shell, so it cannot run commands such as git or tests. A task that runs commands goes to a role that can: ${AUTO_COMMAND_ROLES.join(', ')}. Say in the task that the check is read only. A task that only reads files can stay with ${role}: write it without command lines. Commits, pull request, review thread and check facts of a branch are not commands: a scout with "facts" naming the mounts gets them read by Goodboy.${matchSentenceOf({ match })}`;
 
-export const rerouteHintOf = ({ role }: RoleParams): string =>
-  `  it had no shell tool, so the work did not run. This is not the answer for the user: hand the same task once to a role that can run commands (${AUTO_COMMAND_ROLES.filter((candidate) => candidate !== role).join(', ')}), and say the check is read only. Pull request and branch facts go to a scout whose "facts" names the mounts, not to a writer.`;
+type RerouteParams = RoleParams & {
+  readonly need?: 'shell' | 'writer';
+};
+
+export const rerouteHintOf = ({ role, need = 'shell' }: RerouteParams): string => {
+  const roles = AUTO_COMMAND_ROLES.filter((candidate) => candidate !== role).join(', ');
+  if (need === 'writer') {
+    return `  it reads only and the task needs files changed. This is not the answer for the user: hand the same task once to a role that changes files (${roles}), with its report as input.`;
+  }
+  return `  it had no shell tool, so the work did not run. This is not the answer for the user: hand the same task once to a role that can run commands (${roles}), and say the check is read only. Pull request and branch facts go to a scout whose "facts" names the mounts, not to a writer.`;
+};

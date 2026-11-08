@@ -154,6 +154,40 @@ describe('revising an artifact the tree already has', () => {
     expect(world.state.ports.autoTurns[1]?.text).toContain('no_new_version');
   });
 
+  it('holds a revision that returns for a decision and leaves the artifact at its version', async () => {
+    const world = await revisingWorld();
+
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: newPlan('# Plan v2\n\n- step one\n').replace(
+        '<<step-done id="agent-planner">>',
+        '<<step-done id="agent-planner" status="returned" needs="decision">>\nPick the step two owner.',
+      ),
+    });
+
+    expect(await planOf(world)).toMatchObject({ revision: 1 });
+    expect(await getAutoArtifact({ db: world.state.world.db, artifactId: PLAN_ID })).toMatchObject({
+      openReviseDelegationId: null,
+    });
+    expect(
+      await listAutoArtifactVersions({ db: world.state.world.db, artifactId: PLAN_ID }),
+    ).toEqual([]);
+    const delegation = (
+      await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId })
+    ).find((row) => row.reviseOf === 'plan-1');
+    expect(delegation).toMatchObject({
+      state: 'settled',
+      outcome: 'blocked',
+      reason: 'needs_decision',
+    });
+    const text = world.state.ports.autoTurns[1]?.text ?? '';
+    expect(text).toContain('needs_decision');
+    expect(text).toContain('it asks: Pick the step two owner.');
+    expect(text).not.toContain('version 2 from version 1');
+    expect(world.errors).toEqual([]);
+  });
+
   it('keeps the sentence of a refused retry as the reason of the failed revise', async () => {
     const world = await revisingWorld();
     const refusal =
@@ -306,6 +340,53 @@ describe('revising an artifact the tree already has', () => {
         sourceText: '# Plan edited by hand\n',
       });
       expect(restarted.state.ports.autoTurns[0]?.text).toContain('stale_base');
+    });
+
+    it('frees the artifact in the same write that holds a returned revision', async () => {
+      const world = await revisingWorld();
+      const turn = world.state.ports.childTurns[0];
+      if (turn === undefined) {
+        throw new Error('a child was expected');
+      }
+      const scheduler = {
+        ...world.state.ctx.scheduler,
+        failRevise: async (): Promise<never> => {
+          throw new Error('the window died');
+        },
+      };
+
+      await finishAttempt({
+        ctx: { ...world.state.ctx, scheduler },
+        ended: {
+          treeId: turn.treeId,
+          generation: turn.generation,
+          delegationId: turn.delegationId,
+          attemptId: turn.attemptId,
+          runId: turn.runId,
+          childAgentId: turn.childAgentId,
+          sessionId: turn.sessionId,
+          assistantText: newPlan('# Plan v2\n\n- step one\n').replace(
+            '<<step-done id="agent-planner">>',
+            '<<step-done id="agent-planner" status="returned" needs="decision">>\nPick the step two owner.',
+          ),
+          exit: 'ok',
+          costUsd: 0.2,
+          filesTouched: [],
+          durationMs: 10,
+        },
+      });
+      const restarted = restartedWorld({ world });
+      await restarted.runtime.recover(world.treeId);
+      await restarted.runtime.settled();
+
+      expect(
+        await getAutoArtifact({ db: world.state.world.db, artifactId: PLAN_ID }),
+      ).toMatchObject({
+        openReviseDelegationId: null,
+      });
+      expect(
+        await getAutoDelegation({ db: world.state.world.db, delegationId: turn.delegationId }),
+      ).toMatchObject({ state: 'settled', outcome: 'blocked', reason: 'needs_decision' });
     });
 
     it('does not apply the same version twice when it recovers a second time', async () => {

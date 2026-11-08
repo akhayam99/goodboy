@@ -680,9 +680,11 @@ function the word, the glance and the row facts read). Its row sits under Needs 
 with the word Paused, and it raises `run-paused-at-limit` (`autoLimitRootsOf`), not
 `auto-needs-you`. It has no Retry card: the limit is raised, not retried.
 
-A child that came back with outcome `blocked` (reasons `declared_blocked` and
-`missing_tool`) is not an error and not yours to move. It reads **Idle**, with
-"Returned to Auto: <its request>" on its tail, while Auto decides, and **Done**
+A child that returned (outcome `blocked`, reasons `needs_shell`, `needs_writer`,
+`needs_role`, `needs_decision` and `needs_user`, or `declared_blocked` and
+`missing_tool` on rows from before the return) is not an error and not yours to
+move. It reads **Idle**, with "Returned to Auto: <its request>" on its tail (the
+one line it wrote, `returnedRequestOf`, else its summary), while Auto decides, and **Done**
 once Auto continued it (`retryOf`) or started any role on the same branch after
 it returned (`isAutoDelegationReplaced`, compared to `settledAt`, so parallel work
 that started before the return does not count). A **Done** child has no tail line
@@ -963,9 +965,11 @@ line, "but", "then" or "instead", and at a comma followed by "run" or "execute",
 log, run pnpm test" still counts `pnpm test`. The scan is a linear walk, no backtracking pattern.
 There is no read-only shell role yet:
 a read-only check goes to a writer role with "read only, change nothing" in the task. A child that
-ends blocked and says it had no shell tool gets the reason `missing_tool` (not `declared_blocked`),
-and its result carries the line that tells Auto to hand the same task once to a role that can run
-commands instead of reporting the block as the answer. The reroute is Auto's own next hand over,
+returns with `needs="shell"` gets the reason `needs_shell`, and one with `needs="writer"` gets
+`needs_writer`; the result of either carries the line that tells Auto to hand the same task once to
+a role that can run commands (or change files) instead of reporting the return as the answer. A
+closing with no `needs` (an old CLI) that says it had no shell tool in English is read as
+`needs_shell` too (`isMissingShellText`, only when the attribute is absent). The reroute is Auto's own next hand over,
 checked by the same refusal, not a second child started by the harness.
 
 **Branch facts for a scout.** A scout cannot run `git log` or `gh pr view`, and giving a read-only
@@ -1009,12 +1013,30 @@ moment. A retry or a resume keeps the version of its delegation: a delegation ma
 upgrade has no `briefVersion`, so its retries and answers keep the full slots. The Context
 drawer says "Auto children read only their brief".
 
+**The child returns, never blocks.** The kickoff's Return section (`returnContract` in
+`core/auto/kickoff.ts`) has a child end done, or do what it can, write its report and end with
+`<<step-done id=".." status="returned" needs="shell">>` and one line after it: what it needs.
+`needs` is `shell`, `writer`, `role:<role>`, `decision` or `user`; a reading role is told to keep
+its report in the reply, never in a plan file. `parseChildClosing` reads the return into
+`ChildClosing.returned` (the needs, and the request: the first line after the closing, else the
+last line before it). An old `status="blocked"` closing is a return with no needs; an unknown value
+or role reads `user`. The first closing line of the agent wins, a done or a return alike. The outcome row stays
+`blocked` (no migration), the reason is `needs_<kind>` (`needs_role` for any role, the role is in
+the result and `renderDelegationResult` names it to Auto), with `needs_user` for no needs, and `result_json.returned` keeps the needs and the
+request. An old `status="blocked"` closing with no needs (`ChildClosing.isLegacyBlock`) settles as
+blocked before the report check, and the shell text may refine its reason to `needs_shell`; a
+`status="returned"` closing with no needs still fails as a lost report. A revise child that returns
+lands nothing: the artifact keeps its version and the delegation settles `blocked` with the needs
+reason (`returnedRevise` in `finishAttempt.ts`). A return is not a question: the substep roles of a blocking question stay scout and
+investigator, and a reply that returns drops its blocking question, so the attempt settles instead of pausing.
+
 **The way back is an excerpt.** `parseChildClosing` keeps the answer of a child whole up to
 `STEP_OUTPUT_EXCERPT_CHARS` (4,000, the budget the Runs excerpt owns) and above it the same
 head and tail cut Runs use (`excerptStepOutput` in `summarizer/step-output.ts`, no model call),
 with the line "[middle dropped, the full text is in the step transcript]" between; the last line
-survives. The blocked status and the blocking question are read from the whole answer before the
-cut, so a dropped middle never hides them. `DELEGATION_SUMMARY_CHARS` is the same number. A writer
+survives. The return, its `needs`, its request and the blocking question are read from the whole
+answer before the cut, so a dropped middle never hides them. The summary is never the only copy of
+a returned child's work: its report artifact is captured as on a done. `DELEGATION_SUMMARY_CHARS` is the same number. A writer
 (implementer, tester, docs, ci-fixer) may attach its long report as a `report` artifact: the kickoff
 expected text says so, `finishedPlain` registers what the child wrote, and a writer that wrote none
 is not failed (`artifactPersistence` is `not_applicable`).
@@ -1024,9 +1046,10 @@ three endings apart through `artifactPersistence`. A report the harness register
 no artifact block at all is `not_written`: the delegation fails `report_missing` when the child closed
 with the closing line ("It ended without writing its report.") and `no_closing_envelope` when it did
 not. A turn that holds a block the harness could not store is `failed`, reason
-`artifact_persistence_failed`. A child that declares `status="blocked"` is `blocked` in all three cases,
-never failed for a missing report. An artifact block written beside a blocking question is not
-captured (`captureArtifactsFromTurn` skips a turn with a question), so a scout that Auto releases with
+`artifact_persistence_failed`. A child that returns with `needs` owes its report the same way: a return with no
+report fails `report_missing`, not as a return. An artifact block written beside a blocking question
+is not captured (`captureArtifactsFromTurn` skips a turn with a question unless the same turn
+returns), so a scout that Auto releases with
 its answer ("no longer needed, stop") and that then writes no report ends `report_missing`. The closing
 line matches the id of the child ignoring whitespace inside it, so an id a model wrapped across lines
 still closes.

@@ -179,7 +179,7 @@ describe('the whole round trip of a delegation', () => {
     await childTurnEnds({ world, index: 1, text: 'I think that is done, trust me.' });
 
     const text = world.state.ports.autoTurns[1]?.text ?? '';
-    expect(text).toContain(': blocked, declared_blocked');
+    expect(text).toContain(': blocked, needs_user');
     expect(text).toContain(': failed, no_closing_envelope');
     expect(text).toContain('it did not close its work with the closing line');
     const delegations = await listAutoDelegations({

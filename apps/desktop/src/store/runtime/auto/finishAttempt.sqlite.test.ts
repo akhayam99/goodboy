@@ -219,7 +219,37 @@ describe('closing the work of one child', () => {
     expect((await delegationOf(world)).reason).toBe('artifact_persistence_failed');
   });
 
-  it('keeps a scout that stopped blocked without a report as blocked', async () => {
+  it('keeps the report and the request of a scout that returned', async () => {
+    const world = await startWith(SCOUT);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+    await captureReport(world, turn.runId);
+
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: `${closing(turn.childAgentId, ' status="returned" needs="shell"')}\nNeeds a shell to list the commits of payments-api.`,
+    });
+
+    const delegation = await delegationOf(world);
+    expect(delegation.outcome).toBe('blocked');
+    expect(delegation.reason).toBe('needs_shell');
+    expect(delegation.result).toMatchObject({
+      returned: {
+        needs: { kind: 'shell' },
+        request: 'Needs a shell to list the commits of payments-api.',
+      },
+      artifacts: [{ id: 'report-1', kind: 'report' }],
+    });
+    const told = world.state.ports.autoTurns[1]?.text ?? '';
+    expect(told).toContain('artifact report-1 (report)');
+    expect(told).toContain('it asks: Needs a shell to list the commits of payments-api.');
+    expect(told).toContain('a role that can run commands');
+  });
+
+  it('fails a scout that returned without a report as a lost report', async () => {
     const world = await startWith(SCOUT);
     const turn = world.state.ports.childTurns[0];
     if (turn === undefined) {
@@ -229,12 +259,12 @@ describe('closing the work of one child', () => {
     await childTurnEnds({
       world,
       index: 0,
-      text: closing(turn.childAgentId, ' status="blocked"'),
+      text: closing(turn.childAgentId, ' status="returned" needs="shell"'),
     });
 
     const delegation = await delegationOf(world);
-    expect(delegation.outcome).toBe('blocked');
-    expect(delegation.reason).toBe('declared_blocked');
+    expect(delegation.outcome).toBe('failed');
+    expect(delegation.reason).toBe('report_missing');
   });
 
   it('opens the pull request a Scribe wrote once and returns its link to Auto', async () => {

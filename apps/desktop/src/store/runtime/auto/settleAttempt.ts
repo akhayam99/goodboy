@@ -18,6 +18,10 @@ import {
   type Statement,
 } from '@goodboy/db';
 import type { AutoAttemptId } from '@goodboy/types';
+import {
+  reviseFailureStatements,
+  type ReviseFailure,
+} from './reviseFailure/reviseFailureStatements';
 
 type AttemptEnding =
   | Readonly<{
@@ -42,6 +46,7 @@ export type SettleAttemptParams = Readonly<{
   generation: number;
   ending: AttemptEnding;
   outbox?: ReadonlyArray<NewAutoOutbox>;
+  revise?: ReviseFailure;
 }>;
 
 type SettleDropReason = 'unknown_attempt' | 'generation' | 'attempt_state' | 'not_owner';
@@ -54,6 +59,7 @@ const ABORT_FENCE_TREE = 'fence_tree';
 const ABORT_FENCE_ATTEMPT = 'fence_attempt';
 const ABORT_FENCE_RESERVATION = 'fence_reservation';
 const ABORT_FENCE_DELEGATION = 'fence_delegation';
+const ABORT_FENCE_REVISE = 'fence_revise';
 
 type DiagnoseDropParams = {
   readonly params: SettleAttemptParams;
@@ -183,8 +189,6 @@ const buildStatements = ({ params, attempt, ending }: BuildParams): ReadonlyArra
       abortCode: ABORT_FENCE_TREE,
     },
     ...endingStatements({ params, attempt, ending }),
-  ];
-  statements.push(
     reconcileAutoReservationStatement({
       treeId: attempt.treeId,
       ownerKind: 'attempt',
@@ -193,11 +197,21 @@ const buildStatements = ({ params, attempt, ending }: BuildParams): ReadonlyArra
       nowMs: params.nowMs,
       abortCode: ABORT_FENCE_RESERVATION,
     }),
-    {
-      sql: 'UPDATE auto_trees SET phase_rev = phase_rev + 1, updated_at = ? WHERE id = ?',
-      params: [params.nowMs, attempt.treeId],
-    },
-  );
+  ];
+  if (params.revise !== undefined) {
+    statements.push(
+      ...reviseFailureStatements({
+        ...params.revise,
+        treeId: attempt.treeId,
+        nowMs: params.nowMs,
+        abortCode: ABORT_FENCE_REVISE,
+      }),
+    );
+  }
+  statements.push({
+    sql: 'UPDATE auto_trees SET phase_rev = phase_rev + 1, updated_at = ? WHERE id = ?',
+    params: [params.nowMs, attempt.treeId],
+  });
   for (const outbox of params.outbox ?? []) {
     statements.push(insertAutoOutboxStatement({ outbox }));
   }
