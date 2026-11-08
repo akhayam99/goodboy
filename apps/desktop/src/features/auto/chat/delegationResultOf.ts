@@ -142,7 +142,7 @@ export const delegationResultOf = ({
   const reasonText = delegationReasonTextOf({ reason: reasonOf });
   return {
     outcomeLine: outcomeLineOf({
-      modelLine: summary === null ? null : parseOutcomeLine({ text: summary }),
+      modelLine: summary === null || isOutcomeGiven ? null : parseOutcomeLine({ text: summary }),
       outcome,
       checksRun,
       checks: checks.map((check) => ({

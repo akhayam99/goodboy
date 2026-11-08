@@ -141,6 +141,25 @@ describe('delegationCardOf', () => {
     expect(JSON.stringify([returned, replaced])).not.toMatch(/Blocked|declared_blocked/);
   });
 
+  it('keeps a model outcome line from overriding the returned word', () => {
+    const delegation = {
+      ...aDelegation({ key: 'x', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      reason: 'declared_blocked',
+      result: {
+        reason: 'declared_blocked',
+        declared: { summary: '<<outcome>>Blocked: needs a shell<</outcome>>' },
+      },
+    };
+
+    const returned = delegationCardOf({ delegation, childAgent: null });
+    const replaced = delegationCardOf({ delegation, childAgent: null, isReplaced: true });
+
+    expect(returned.status.word).toBe('Idle');
+    expect(returned.result?.outcomeLine).toBeNull();
+    expect(replaced.status.word).toBe('Done');
+    expect(replaced.result?.outcomeLine).toMatchObject({ text: 'Done', tone: 'success' });
+  });
+
   it('reads the settled result: summary, files, checks with their source, artifacts, questions, cost', () => {
     const card = delegationCardOf({
       delegation: aDelegation({
