@@ -186,7 +186,7 @@ describe('the c04 worktree level scenes', () => {
     await mount('c04-worktree-comments');
     const comments = stripTab({ name: /^Comments/ });
     expect(comments.getAttribute('aria-selected')).toBe('true');
-    expect(comments.textContent).toBe('Comments');
+    expect(comments.querySelector('[data-tab-count]')?.textContent).toBe('9');
     expect(screen.queryByRole('tablist', { name: 'Comment source' })).toBeNull();
     cleanup();
 
