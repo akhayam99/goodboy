@@ -269,7 +269,11 @@ has more than one.
 reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
 below an 880px page container the side column moves above the reading column as one wrapping
 row. The merge box (`MergeBox`, every word and count from `mergeBoxOf`) answers "can this merge?"
-in a verdict: `Not ready to merge` with the next two steps (`Fix the failing check, then answer
+from the same readiness result as the merge action (`evaluatePrMergeReadiness`): it waits only when
+checks running or a required review are the sole blockers, a blocker readiness names (`Checks
+unknown.`) always outranks waiting, and the checks it knows (failing, running) stay visible while
+the runs load. A reviewer who is asked but not required, with no `review_required` decision from the
+host, shows as `Waiting on dana-r` with `Not required to merge` and never as the verdict. The verdict is: `Not ready to merge` with the next two steps (`Fix the failing check, then answer
 omar-t.`), `Waiting for checks`, `Waiting for a review`, `Checking`, `Ready to merge` with what the
 header button does (`Squash and merge into main. Nothing is waiting.`), `Draft`, `Queued to merge`
 with the queue line, `Merged into main` or `Closed without merging`. Under it one row per thing
@@ -288,8 +292,9 @@ the asked ones first, each verdict right after the name: `Asked`, `Changes`, `Ap
 requests another; a short skeleton until the reviewers are read, never `Nobody asked yet` before), `Bots` (every bot apart, whatever its verdict,
 `pullRequestReviewerGroupsOf` in core, each with one word from `botWordOf`: `1 issue` for the open
 threads it started, `2 resolved`, or its review state), `Linked issues` and `Author`, all read from the branch on
-screen. A bot is known by the host's author type (`isBotLogin`, see [hosts.md](../hosts.md)), with the
-`[bot]`, `-bot` or `_bot` login suffix as the fallback. There is no Rebase in it. The description renders as markdown with `Edit` beside its heading
+screen. A bot is known by the host's author type (`isBotLogin`, see [hosts.md](../hosts.md)); the
+`[bot]`, `-bot` or `_bot` login suffix applies only when the host gave no type, so a GitHub user
+named `northwind-bot` stays a reviewer. There is no Rebase in it. The description renders as markdown with `Edit` beside its heading
 and folds after five lines of prose behind `Show all` (`DescriptionFold`);
 the body's own headings read as bold lead-ins and a first heading that repeats `Description` is
 dropped (`demoteBodyHeadings`; a code fence closes only on the same character, at least as

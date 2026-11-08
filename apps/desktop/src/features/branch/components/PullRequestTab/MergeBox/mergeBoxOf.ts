@@ -3,7 +3,7 @@ import type { Tone } from '@goodboy/ui';
 import type { PullRequestPresentationState } from '../../../../../shared/utils/pullRequestPresentation';
 import { countNoun } from '../../../../../shared/utils/countNoun';
 import { checksCountsOf, checksGroupsOf } from '../../../../integrations/github/checksRollup';
-import type { PrMergeReadiness } from '../../../../review/prMergeReadiness';
+import type { MergeReadinessFacts, PrMergeReadiness } from '../../../../review/prMergeReadiness';
 import { mergeIsClear } from '../../../../review/prMergeReadiness';
 import { BRANCH_STATE_TONE } from '../../../../session/central/branches/branchStateTone';
 import { openThreadsLineOf } from '../openThreadsLineOf';
@@ -27,6 +27,7 @@ type Params = {
   readonly pr: Pick<PullRequestState, 'baseBranch' | 'reviewDecision' | 'mergeable'>;
   readonly runs: ReadonlyArray<PrCheckRun> | null;
   readonly isChecksUnread: boolean;
+  readonly checks: Pick<MergeReadinessFacts, 'checks' | 'failingChecks' | 'runningChecks'>;
   readonly reviewers: ReadonlyArray<PullRequestReviewer>;
   readonly readiness: PrMergeReadiness;
   readonly hasConflicts: boolean;
@@ -66,37 +67,77 @@ type PassParams = {
 
 const passOnly = ({ pass }: PassParams): Part => ({ ranked: [], passing: [pass] });
 
-type ChecksParams = Pick<Params, 'runs' | 'isChecksUnread'>;
+type ChecksParams = Pick<Params, 'runs' | 'isChecksUnread' | 'checks'>;
 
-const checksPart = ({ runs, isChecksUnread }: ChecksParams): Part => {
-  if (runs === null || runs.length === 0) {
-    if (!isChecksUnread) {
-      return NOTHING;
-    }
+type FailingParams = {
+  readonly count: number;
+  readonly names: ReadonlyArray<string>;
+};
+
+const failingPart = ({ count, names }: FailingParams): Part =>
+  rowOnly({
+    row: {
+      id: 'checks',
+      glyph: 'failing',
+      title: countNoun({ count, one: 'check failing', many: 'checks failing' }),
+      detail: names.length === 0 ? null : names.join(', '),
+      tone: BRANCH_STATE_TONE['checks-failing'],
+      opens: 'checks',
+    },
+    step: count === 1 ? 'fix the failing check' : 'fix the failing checks',
+  });
+
+type UnknownParams = {
+  readonly isBlocker: boolean;
+};
+
+const unknownPart = ({ isBlocker }: UnknownParams): Part =>
+  rowOnly({
+    row: {
+      id: 'checks',
+      glyph: 'unknown',
+      title: 'Checks unknown',
+      detail: "Couldn't read them",
+      tone: isBlocker ? 'warning' : 'neutral',
+      opens: 'checks',
+    },
+  });
+
+const checksFromFactsPart = ({ checks, isChecksUnread }: Omit<ChecksParams, 'runs'>): Part => {
+  if (checks.checks === 'failing') {
+    return failingPart({
+      count: Math.max(checks.failingChecks.length, 1),
+      names: checks.failingChecks,
+    });
+  }
+  if (checks.checks === 'pending') {
     return rowOnly({
       row: {
         id: 'checks',
-        glyph: 'unknown',
-        title: 'Checks unknown',
-        detail: "Couldn't read them",
-        tone: 'neutral',
+        glyph: 'running',
+        title: 'Checks running',
+        detail: null,
+        tone: BRANCH_STATE_TONE['checks-running'],
         opens: 'checks',
       },
     });
   }
+  if (checks.checks === 'unknown' || isChecksUnread) {
+    return unknownPart({ isBlocker: checks.checks === 'unknown' });
+  }
+  return NOTHING;
+};
+
+const checksPart = ({ runs, isChecksUnread, checks }: ChecksParams): Part => {
+  if (runs === null || runs.length === 0) {
+    return checksFromFactsPart({ checks, isChecksUnread });
+  }
   const counts = checksCountsOf({ checks: runs });
   if (counts.failing > 0) {
     const failing = checksGroupsOf({ checks: runs }).find((group) => group.group === 'failing');
-    return rowOnly({
-      row: {
-        id: 'checks',
-        glyph: 'failing',
-        title: countNoun({ count: counts.failing, one: 'check failing', many: 'checks failing' }),
-        detail: failing?.runs.map((run) => run.name).join(', ') ?? null,
-        tone: BRANCH_STATE_TONE['checks-failing'],
-        opens: 'checks',
-      },
-      step: counts.failing === 1 ? 'fix the failing check' : 'fix the failing checks',
+    return failingPart({
+      count: counts.failing,
+      names: failing?.runs.map((run) => run.name) ?? [],
     });
   }
   if (counts.running > 0) {
@@ -161,14 +202,15 @@ const reviewPart = ({ state, pr, reviewers, threads, canRequestReview }: ReviewP
     });
   }
   const waiting = loginsIn({ reviewers, states: ['pending'] });
+  const isRequired = pr.reviewDecision === 'review_required';
   if (waiting !== null) {
     return rowOnly({
       row: {
         id: 'review',
         glyph: 'waiting',
         title: `Waiting on ${waiting}`,
-        detail: null,
-        tone: BRANCH_STATE_TONE['in-review'],
+        detail: isRequired ? null : 'Not required to merge',
+        tone: isRequired ? BRANCH_STATE_TONE['in-review'] : 'neutral',
         opens: 'comments',
       },
     });
@@ -385,7 +427,11 @@ const openVerdictOf = ({
   const waiting = ranked.filter(
     ({ row }) => row.tone === 'info' && (row.id === 'checks' || row.id === 'review'),
   );
-  if (waiting.length > 0) {
+  const isOnlyWaiting =
+    waiting.length > 0 &&
+    readiness.status === 'blocked' &&
+    waiting.length === readiness.blockers.length;
+  if (isOnlyWaiting) {
     const isOnChecks = waiting.some(({ row }) => row.id === 'checks');
     const isOnReview = waiting.some(({ row }) => row.id === 'review');
     if (isOnChecks && isOnReview) {
@@ -414,6 +460,9 @@ const openVerdictOf = ({
       tone: 'info',
     };
   }
+  if (readiness.status === 'blocked') {
+    return { kind: 'blocked', word: 'Not ready to merge', line: readiness.reason, tone: 'neutral' };
+  }
   if (mergeIsClear({ readiness })) {
     return {
       kind: 'ready',
@@ -422,10 +471,7 @@ const openVerdictOf = ({
       tone: BRANCH_STATE_TONE.ready,
     };
   }
-  if (readiness.status === 'ready') {
-    return { kind: 'ready', word: 'Ready to merge', line: readiness.word, tone: 'warning' };
-  }
-  return { kind: 'blocked', word: 'Not ready to merge', line: readiness.reason, tone: 'neutral' };
+  return { kind: 'ready', word: 'Ready to merge', line: readiness.word, tone: 'warning' };
 };
 
 type SettledVerdictParams = Pick<Params, 'state' | 'pr' | 'queueLine' | 'readiness'>;
@@ -471,6 +517,7 @@ export const mergeBoxOf = ({
   pr,
   runs,
   isChecksUnread,
+  checks,
   reviewers,
   readiness,
   hasConflicts,
@@ -486,7 +533,7 @@ export const mergeBoxOf = ({
     return { verdict: settled, rows: [], passing: [] };
   }
   const parts = [
-    checksPart({ runs, isChecksUnread }),
+    checksPart({ runs, isChecksUnread, checks }),
     conflictsPart({ pr, hasConflicts, branch }),
     unpushedPart({ unpushed }),
     reviewPart({ state, pr, reviewers, threads, canRequestReview }),

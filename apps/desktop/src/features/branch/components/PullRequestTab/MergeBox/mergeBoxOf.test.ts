@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrCheckRun, PullRequestReviewer } from '@goodboy/types';
+import { bitbucketReviewDecisionOf, gitlabReviewDecisionOf } from '@goodboy/core/review-source';
 import type { PullRequestPresentationState } from '../../../../../shared/utils/pullRequestPresentation';
 import { checksCountsOf } from '../../../../integrations/github/checksRollup';
 import {
@@ -93,6 +94,11 @@ const boxOf = ({
     },
     runs,
     isChecksUnread,
+    checks: {
+      checks: merged.checks,
+      failingChecks: merged.failingChecks,
+      runningChecks: merged.runningChecks,
+    },
     reviewers,
     readiness: evaluatePrMergeReadiness({ facts: merged }),
     hasConflicts: merged.hasConflicts,
@@ -252,9 +258,107 @@ describe('mergeBoxOf', () => {
 
     expect(box.rows.find((row) => row.id === 'checks')).toMatchObject({
       title: 'Checks unknown',
-      tone: 'neutral',
+      tone: 'warning',
     });
     expect(box.passing).not.toContain('No checks');
+  });
+
+  it('ranks unknown checks above a pending review, as readiness does', () => {
+    const box = boxOf({ runs: null, isChecksUnread: true, facts: { checks: 'unknown' } });
+
+    expect(box.verdict).toMatchObject({
+      kind: 'blocked',
+      word: 'Not ready to merge',
+      line: 'Checks unknown.',
+    });
+    expect(box.rows.map((row) => row.id)).toEqual(['checks', 'review']);
+  });
+
+  it('keeps the checks it already knows failing while the runs load', () => {
+    const box = boxOf({
+      runs: null,
+      facts: { checks: 'failing', failingChecks: ['e2e member flows'], review: 'approved' },
+    });
+
+    expect(box.rows[0]).toMatchObject({
+      title: '1 check failing',
+      detail: 'e2e member flows',
+      tone: 'danger',
+    });
+    expect(box.verdict).toMatchObject({ kind: 'blocked', line: 'Fix the failing check.' });
+  });
+
+  it('keeps running checks visible while the runs load', () => {
+    const box = boxOf({
+      runs: null,
+      facts: { checks: 'pending', runningChecks: 2, review: 'approved' },
+    });
+
+    expect(box.rows[0]).toMatchObject({ title: 'Checks running', detail: null });
+    expect(box.verdict).toMatchObject({ kind: 'waiting', word: 'Waiting for checks' });
+  });
+
+  it('never waits when readiness holds the merge for another reason', () => {
+    const box = boxOf({ facts: { writeInFlight: 'Merging' } });
+
+    expect(box.verdict).toMatchObject({ kind: 'blocked', line: 'Merging.' });
+  });
+
+  describe('an optional reviewer', () => {
+    const asked = [reviewer({ login: 'dana-r', state: 'pending' })];
+
+    it('does not hold a ready GitHub pull request', () => {
+      const box = boxOf({ reviewers: asked, facts: { review: null } });
+
+      expect(box.verdict).toMatchObject({ kind: 'ready', word: 'Ready to merge' });
+      expect(box.rows[0]).toMatchObject({
+        title: 'Waiting on dana-r',
+        detail: 'Not required to merge',
+        tone: 'neutral',
+      });
+    });
+
+    it('does not hold a GitLab request that needs no approval', () => {
+      const review = gitlabReviewDecisionOf({ approvals: { approvalsLeft: 0, approvedBy: [] } });
+      const box = boxOf({ reviewers: asked, facts: { review, host: 'gitlab' } });
+
+      expect(review).toBeNull();
+      expect(box.verdict).toMatchObject({ kind: 'ready' });
+    });
+
+    it('holds a GitLab request that still needs approvals', () => {
+      const review = gitlabReviewDecisionOf({ approvals: { approvalsLeft: 1, approvedBy: [] } });
+      const box = boxOf({ reviewers: asked, facts: { review, host: 'gitlab' } });
+
+      expect(box.verdict).toMatchObject({ kind: 'waiting', word: 'Waiting for a review' });
+      expect(box.rows[0]).toMatchObject({ title: 'Waiting on dana-r', tone: 'info' });
+    });
+
+    it('does not hold a Bitbucket request once one reviewer approved', () => {
+      const review = bitbucketReviewDecisionOf({
+        participants: [
+          { user: null, role: 'REVIEWER', approved: true, state: 'approved' },
+          { user: null, role: 'REVIEWER', approved: false, state: null },
+        ],
+      });
+      const box = boxOf({
+        reviewers: [...asked, reviewer({ login: 'kenji-w', state: 'approved' })],
+        facts: { review, host: 'bitbucket' },
+      });
+
+      expect(review).toBe('approved');
+      expect(box.verdict).toMatchObject({ kind: 'ready' });
+    });
+
+    it('holds a Bitbucket request nobody approved', () => {
+      const review = bitbucketReviewDecisionOf({
+        participants: [{ user: null, role: 'REVIEWER', approved: false, state: null }],
+      });
+      const box = boxOf({ reviewers: asked, facts: { review, host: 'bitbucket' } });
+
+      expect(review).toBe('review_required');
+      expect(box.verdict).toMatchObject({ kind: 'waiting', word: 'Waiting for a review' });
+    });
   });
 
   it('says a merged or closed request in one line, with nothing to fix', () => {

@@ -85,6 +85,11 @@ export const PullRequestPage = ({
       pr.checksUnknown === true ||
       (matched?.checksRead ?? 'ok') !== 'ok' ||
       (view !== null && view.checks.read !== 'ok'),
+    checks: {
+      checks: facts.checks,
+      failingChecks: facts.failingChecks,
+      runningChecks: facts.runningChecks,
+    },
     reviewers: [...reviewers.people, ...reviewers.bots],
     readiness,
     hasConflicts: facts.hasConflicts,

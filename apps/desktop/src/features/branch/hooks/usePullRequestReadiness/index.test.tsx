@@ -310,6 +310,11 @@ describe('usePullRequestReadiness and the action kind read one source of checks'
       pr: { baseBranch: 'main', reviewDecision: null, mergeable: true },
       runs: null,
       isChecksUnread: true,
+      checks: {
+        checks: facts.checks,
+        failingChecks: facts.failingChecks,
+        runningChecks: facts.runningChecks,
+      },
       reviewers: [],
       readiness,
       hasConflicts: false,
