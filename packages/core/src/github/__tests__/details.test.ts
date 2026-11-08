@@ -195,6 +195,96 @@ describe('fetchPrDetail', () => {
     expect(detail.reviewRequests[0]!.kind).toBe('user');
   });
 
+  it('marks a review app as a bot by its GraphQL author type, login suffix or not', async () => {
+    const matchReviewAuthors = (a: ReadonlyArray<string>) =>
+      matchReviewThreads(a) && a.some((arg) => arg.includes('reviews(first:100)'));
+    type ReviewParams = { readonly id: number; readonly login: string };
+    const review = ({ id, login }: ReviewParams) => ({
+      id,
+      author: { login },
+      authorAssociation: 'NONE',
+      body: 'note',
+      state: 'COMMENTED',
+      submittedAt: '2026-01-03T10:00:00Z',
+    });
+    const runner = makeMultiRunner([
+      { match: matchIssueComments, result: jsonOk([]) },
+      {
+        match: matchReviewAuthors,
+        result: jsonOk({
+          data: {
+            repository: {
+              pullRequest: {
+                reviews: {
+                  nodes: [
+                    { author: { __typename: 'Bot', login: 'acme-review' } },
+                    { author: { __typename: 'User', login: 'omar-t' } },
+                  ],
+                },
+              },
+            },
+          },
+        }),
+      },
+      { match: matchReviewThreads, result: emptyReviewThreads },
+      {
+        match: (a) => a[0] === 'pr' && a[1] === 'view',
+        result: jsonOk({
+          reviews: [review({ id: 1, login: 'acme-review' }), review({ id: 2, login: 'omar-t' })],
+          reviewRequests: [
+            { __typename: 'Bot', login: 'cascadia-lint' },
+            { __typename: 'User', login: 'kenji-w' },
+          ],
+          statusCheckRollup: [],
+        }),
+      },
+    ]);
+
+    const detail = await fetchPrDetail(runner, 'org/repo', 1);
+
+    expect(detail.reviews.map((r) => [r.author, r.isAuthorBot])).toEqual([
+      ['acme-review', true],
+      ['omar-t', false],
+    ]);
+    expect(detail.reviewRequests.map((r) => [r.login, r.isBot])).toEqual([
+      ['cascadia-lint', true],
+      ['kenji-w', false],
+    ]);
+  });
+
+  it('leaves the bot type unknown when the author type read fails', async () => {
+    const runner = makeMultiRunner([
+      { match: matchIssueComments, result: jsonOk([]) },
+      {
+        match: (a) => matchReviewThreads(a) && a.some((arg) => arg.includes('reviews(first:100)')),
+        result: jsonOk({ errors: [{ message: 'Field __typename is not available' }] }),
+      },
+      { match: matchReviewThreads, result: emptyReviewThreads },
+      {
+        match: (a) => a[0] === 'pr' && a[1] === 'view',
+        result: jsonOk({
+          reviews: [
+            {
+              id: 1,
+              author: { login: 'acme-review' },
+              authorAssociation: 'NONE',
+              body: 'note',
+              state: 'COMMENTED',
+              submittedAt: '2026-01-03T10:00:00Z',
+            },
+          ],
+          reviewRequests: [],
+          statusCheckRollup: [],
+        }),
+      },
+    ]);
+
+    const detail = await fetchPrDetail(runner, 'org/repo', 1);
+
+    expect(detail.reviewsRead).toBe('ok');
+    expect(detail.reviews[0]?.isAuthorBot).toBeUndefined();
+  });
+
   it('derives check conclusions including pending and failure', async () => {
     const runner = makeMultiRunner([
       { match: matchIssueComments, result: jsonOk([]) },

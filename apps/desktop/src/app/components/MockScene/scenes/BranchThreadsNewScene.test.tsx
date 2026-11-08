@@ -50,9 +50,11 @@ describe('the unread threads scenes', () => {
   it('reads six open threads, one that needs you and two unread on the pull request page', async () => {
     renderScene('pr');
 
-    const line = await screen.findByTestId('open-threads');
+    const line = await screen.findByTestId('merge-row-comments');
 
-    expect(line.textContent).toBe('6 open threads · 4 need you · 2 unread');
+    expect(line.textContent).toContain('6 open threads');
+    expect(line.textContent).toContain('4 threads need you');
+    expect(line.textContent).toContain('2 unread');
   });
 
   it('marks the two unread threads in the Comments tab and keeps the marks for the visit', async () => {
@@ -105,7 +107,7 @@ describe('the unread threads scenes', () => {
     cleanup();
 
     const page = renderScene('pr');
-    await screen.findByTestId('open-threads');
+    await screen.findByTestId('merge-row-comments');
 
     expect(page.container.querySelector('[data-shot]')).toBeNull();
   });

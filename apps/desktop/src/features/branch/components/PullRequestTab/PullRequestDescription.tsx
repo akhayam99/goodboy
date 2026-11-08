@@ -17,6 +17,7 @@ import { isInteractiveClick } from '../../../../shared/utils/isInteractiveClick'
 import { useAppStore } from '../../../../store';
 import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';
 import { embedImageUrl } from './embedImageUrl';
+import { DescriptionFold } from './DescriptionFold';
 import { RenderedBody } from './RenderedBody';
 
 const DESCRIPTION = 'Description';
@@ -220,13 +221,15 @@ export const PullRequestDescription = ({
           </div>
         </div>
       ) : hasBody ? (
-        <div
-          onClick={onBodyClick}
-          className={canEdit ? 'cursor-text rounded-md' : undefined}
-          data-testid="pull-request-description"
-        >
-          <RenderedBody text={pr.body} workspaceId={workspaceId} demoteUnder={DESCRIPTION} />
-        </div>
+        <DescriptionFold>
+          <div
+            onClick={onBodyClick}
+            className={canEdit ? 'cursor-text rounded-md' : undefined}
+            data-testid="pull-request-description"
+          >
+            <RenderedBody text={pr.body} workspaceId={workspaceId} demoteUnder={DESCRIPTION} />
+          </div>
+        </DescriptionFold>
       ) : (
         <EmptyLine
           action={

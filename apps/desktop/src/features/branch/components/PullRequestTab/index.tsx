@@ -12,7 +12,7 @@ import type { PullRequestEdit } from '../../../../store/slices/pull-request-view
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchStart } from '../../hooks/useBranchStart';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
-import type { PullRequestBranchFacts } from './pullRequestCellsOf';
+import type { PullRequestBranchFacts } from './MergeBox/mergeBoxOf';
 import { BitbucketNoPullRequest } from './BitbucketNoPullRequest';
 import { BranchStartPage } from './BranchStartPage';
 import { PullRequestPage } from './PullRequestPage';
@@ -46,7 +46,6 @@ type Props = {
   readonly onConnected: () => void;
   readonly onReload: () => void;
   readonly onSelectTab: (tab: BranchTab) => void;
-  readonly onMerge: () => void;
 };
 
 export const PullRequestTab = ({
@@ -77,7 +76,6 @@ export const PullRequestTab = ({
   onConnected,
   onReload,
   onSelectTab,
-  onMerge,
 }: Props) => {
   if (pr === null) {
     return (
@@ -119,7 +117,6 @@ export const PullRequestTab = ({
       onMutated={onMutated}
       onReload={onReload}
       onSelectTab={onSelectTab}
-      onMerge={onMerge}
     />
   );
 };

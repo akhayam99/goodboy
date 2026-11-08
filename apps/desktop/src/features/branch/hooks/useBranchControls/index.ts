@@ -81,7 +81,6 @@ export type BranchControls = {
   readonly secondary: BranchPrimary | null;
   readonly press: (action: BranchPrimary) => void;
   readonly pushFromMenu: () => void;
-  readonly merge: () => void;
   readonly controlsOf: (action: BranchPrimary) => ActionControls | null;
   readonly hasOpenRebaseStop: boolean;
   readonly isChangingBase: boolean;
@@ -374,16 +373,10 @@ export const useBranchControls = ({
     diffControls.trigger({ actionId: 'diff.push' });
   }, [diffControls, hasPullRequest, review, sessionId, state]);
 
-  const merge = useCallback(
-    () => pullRequestControls.trigger({ actionId: 'pullRequest.merge' }),
-    [pullRequestControls],
-  );
-
   return {
     diffControls,
     pullRequestControls,
     sessionControls,
-    merge,
     step,
     checkWork: checkStep.work,
     primary,

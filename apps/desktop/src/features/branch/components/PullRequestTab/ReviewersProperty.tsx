@@ -1,16 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { PullRequestPort } from '@goodboy/core/review-source';
-import { Avatar, EmptyLine, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
-import type {
-  MountId,
-  PullRequestReviewer,
-  PullRequestReviewerState,
-  SessionId,
-} from '@goodboy/types';
+import { Avatar, EmptyLine, formatError, ICON_SIZE, IconButton, Skeleton } from '@goodboy/ui';
+import type { MountId, PullRequestReviewer, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 import { ReviewerPicker } from '../../../../shared/components/ReviewerPicker';
+import { REVIEWER_STATE_WORD } from './reviewerStateWord';
 import { ReviewStateIcon } from './ReviewStateIcon';
 import { PropertyField } from './PropertyField';
 
@@ -25,17 +21,10 @@ type Props = {
   readonly prNumber: number;
   readonly people: ReadonlyArray<PullRequestReviewer>;
   readonly bots: ReadonlyArray<PullRequestReviewer>;
+  readonly isLoaded: boolean;
   readonly port: PullRequestPort | null;
   readonly request: ReviewerRequest;
   readonly onMutated: () => void;
-};
-
-const STATE_WORD: Readonly<Record<PullRequestReviewerState, string>> = {
-  approved: 'Approved',
-  changes_requested: 'Changes',
-  commented: 'Commented',
-  pending: 'Asked',
-  dismissed: 'Dismissed',
 };
 
 export const ReviewersProperty = ({
@@ -44,6 +33,7 @@ export const ReviewersProperty = ({
   prNumber,
   people,
   bots,
+  isLoaded,
   port,
   request,
   onMutated,
@@ -88,7 +78,11 @@ export const ReviewersProperty = ({
 
   return (
     <PropertyField label="Reviewers" labelAction={action}>
-      {people.length === 0 ? (
+      {!isLoaded ? (
+        <span aria-hidden className="flex min-h-7 items-center">
+          <Skeleton className="h-3 w-24 rounded-sm" />
+        </span>
+      ) : people.length === 0 ? (
         <EmptyLine>Nobody asked yet</EmptyLine>
       ) : (
         <ul className="flex min-w-0 flex-col">
@@ -102,7 +96,7 @@ export const ReviewersProperty = ({
               <span className="min-w-0 truncate text-foreground">{reviewer.person.login}</span>
               <span className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
                 <ReviewStateIcon state={reviewer.state} size={ICON_SIZE.row} />
-                {STATE_WORD[reviewer.state]}
+                {REVIEWER_STATE_WORD[reviewer.state]}
               </span>
             </li>
           ))}

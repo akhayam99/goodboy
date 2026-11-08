@@ -20,14 +20,14 @@ import { usePullRequestPort } from '../../hooks/usePullRequestPort';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { queueLineOf } from '../../queueLineOf';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
+import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 import { pullRequestActivityOf } from './activityOf';
-import { OpenThreadsLink } from './OpenThreadsLink';
+import { MergeBox } from './MergeBox';
+import { mergeBoxOf, type PullRequestBranchFacts } from './MergeBox/mergeBoxOf';
 import { PullRequestActivity } from './PullRequestActivity';
 import { PullRequestActivitySkeleton } from './PullRequestActivitySkeleton';
 import { PullRequestDescription } from './PullRequestDescription';
 import { PullRequestProperties } from './PullRequestProperties';
-import { PullRequestStatusStrip } from './PullRequestStatusStrip';
-import { pullRequestCellsOf, type PullRequestBranchFacts } from './pullRequestCellsOf';
 import type { ReviewerRequest } from './ReviewersProperty';
 import { ViewErrorNotice } from './ViewErrorNotice';
 
@@ -49,7 +49,6 @@ export type PullRequestPageProps = {
   readonly onMutated: () => void;
   readonly onReload: () => void;
   readonly onSelectTab: (tab: BranchTab) => void;
-  readonly onMerge: () => void;
 };
 
 const ACTIVITY_LOADING = 'Reading the activity';
@@ -72,14 +71,13 @@ export const PullRequestPage = ({
   onMutated,
   onReload,
   onSelectTab,
-  onMerge,
 }: PullRequestPageProps) => {
   const sessionId = session.id;
   const port = usePullRequestPort({ sessionId, mountId });
   const { readiness, commentsNeedYou, commentsUnread, facts, reviewers } = prReadiness;
   const runs = pullRequestRunsOf({ pr, detail, view });
   const matched = detail !== null && detail.prNumber === pr.number ? detail : null;
-  const cells = pullRequestCellsOf({
+  const box = mergeBoxOf({
     state: pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
     pr,
     runs,
@@ -87,13 +85,26 @@ export const PullRequestPage = ({
       pr.checksUnknown === true ||
       (matched?.checksRead ?? 'ok') !== 'ok' ||
       (view !== null && view.checks.read !== 'ok'),
-    people: reviewers.people,
+    checks: {
+      checks: facts.checks,
+      failingChecks: facts.failingChecks,
+      runningChecks: facts.runningChecks,
+    },
+    reviewers: [...reviewers.people, ...reviewers.bots.filter((bot) => bot.state !== 'commented')],
     readiness,
     hasConflicts: facts.hasConflicts,
     mergeWord,
     queueLine: queueLineOf({ pr }),
     branch,
+    threads: {
+      unresolved: facts.commentsUnresolved,
+      needYou: commentsNeedYou,
+      unread: commentsUnread,
+    },
+    unpushed: facts.unpushed,
+    canRequestReview: request.kind === 'allowed',
   });
+
   const items = useMemo(
     () =>
       view === null
@@ -111,15 +122,17 @@ export const PullRequestPage = ({
 
   return (
     <div data-slot="overview-grid" className="@container flex min-w-0 flex-col gap-6">
-      <PullRequestStatusStrip
-        cells={cells}
-        onOpen={(target) => (target === 'merge' ? onMerge() : onSelectTab(target))}
-      />
-      <OpenThreadsLink
-        unresolved={facts.commentsUnresolved}
-        unreadCount={commentsUnread}
-        needYou={commentsNeedYou}
-        onOpen={() => onSelectTab('comments')}
+      <MergeBox
+        box={box}
+        onOpen={(target) => {
+          if (target === 'reviewers') {
+            window.dispatchEvent(
+              new Event(pullRequestEventName({ name: PR_REQUEST_REVIEW_EVENT, sessionId })),
+            );
+            return;
+          }
+          onSelectTab(target);
+        }}
       />
       <div
         data-slot="page-columns"
@@ -134,6 +147,8 @@ export const PullRequestPage = ({
             port={port}
             request={request}
             reviewers={reviewers}
+            comments={matched?.comments ?? null}
+            isLoaded={matched !== null || view !== null}
             canEdit={canEdit}
             onMutated={onMutated}
           />

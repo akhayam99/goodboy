@@ -127,11 +127,13 @@ describe('the Bitbucket scenes', () => {
     );
   });
 
-  it('reads the merge state in the strip and the reviewers in the property block', async () => {
+  it('reads the merge state in the merge box and the reviewers in the property block', async () => {
     await show();
     const side = within(properties());
 
-    expect(document.querySelector('[data-cell="merge"]')?.textContent ?? '').not.toBe('');
+    expect(document.querySelector('[data-merge-box] [data-verdict]')?.textContent ?? '').not.toBe(
+      '',
+    );
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.getByText('Approved')).toBeDefined();
     expect(side.getByText('Changes')).toBeDefined();

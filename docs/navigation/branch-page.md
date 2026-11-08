@@ -82,8 +82,8 @@ in the line under the title. A selection of comments takes the one fill and the 
 down to secondary until the selection is cleared. A closed
 request has no push, and `Force push` never sits there: while origin moved it waits
 in `⋯` behind its confirm. Commits not on origin block the merge (`unpushed` in
-`MergeReadinessFacts`, read from the same status as the push): the Merge cell reads
-`Blocked: 3 commits not pushed` and `⋯` shows the reason. `useSessionDiff` follows the status cache
+`MergeReadinessFacts`, read from the same status as the push): the merge box reads
+`3 commits not pushed` under `Not ready to merge` and `⋯` shows the reason. `useSessionDiff` follows the status cache
 (`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same
 count. The pull request's own step (`pullRequestNextStepOf`) is `Mark ready for review` on a draft,
 `Request review` while nobody was asked or once changes were requested and nothing is left to fix,
@@ -105,8 +105,8 @@ primary. A step whose action is blocked draws no primary: a blocked `Merge`, `Ma
 `Reopen` waits in `⋯`, disabled with its reason, and runs through the header's own confirm and
 failure line from there; the header never repeats its primary in `⋯`. A stopped rebase shows no
 primary, with `Abort rebase` in the rebase banner only. While the branch is behind and another step
-leads (`Fix checks`, say), `Rebase on main` waits in `⋯`, its one home. The Merge
-cell of the status strip says the blocker once (`Blocked by checks`).
+leads (`Fix checks`, say), `Rebase on main` waits in `⋯`, its one home. The merge
+box says the blocker once (`Not ready to merge`, then the failing check as its first row).
 One rule decides all three (`evaluatePrMergeReadiness`, `features/review`): its
 blockers are a merged, closed, queued or draft pull request, conflicts, checks
 unknown, failing or running, changes requested, a review required and a write
@@ -265,22 +265,37 @@ Back and a reload leave it where it was, and the push confirm names the reposito
 has more than one.
 
 **Pull request.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`): the status strip first, then `N open threads · M need you` when review threads are
-open (`OpenThreadsLink`, counted by `commentsCountOf` through the readiness facts, a click opens Comments), then two columns, the
+(`features/branch/components/PullRequestTab`): the merge box first, then two columns, the
 reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
 below an 880px page container the side column moves above the reading column as one wrapping
-row. The strip (`PullRequestStatusStrip`, cells from
-`pullRequestCellsOf`) has four fixed cells, each a label, a word with a `StatusDot` and one faint
-detail: Checks (`2 passed`, `1 failing` with the failing names, `Running, 2 of 3`, counted by
-`checksCountsOf` as the rail is), Review (`No approval yet`,
-`Waiting on dana-r`, `Changes requested`, `Approved by dana-r`), Merge (`Blocked by checks`,
-`Conflicts` in amber as in the branch state map, `Ready` with the merge method, `Queued` with the
-queue line, `Merged`) and Branch (`Up to date`, `7 behind main`, `Rebasing`, `Diverged` when
-someone pushed online). Every cell opens something: Checks opens Checks, Review opens Comments, Branch opens Commits, and Merge opens its confirm once it reads `Ready` (Checks while checks hold it, Comments while review does, Files on conflicts, Commits once merged, closed, queued or draft). The strip is a fixed four-column grid, so a cell never changes width when its word changes. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
+row. The merge box (`MergeBox`, every word and count from `mergeBoxOf`) answers "can this merge?"
+from the same readiness result as the merge action (`evaluatePrMergeReadiness`): it waits only when
+checks running or a required review are the sole blockers, a blocker readiness names (`Checks
+unknown.`) always outranks waiting, and the checks it knows (failing, running) stay visible while
+the runs load. A reviewer who is asked but not required, with no `review_required` decision from the
+host, shows as `Waiting on dana-r` with `Not required to merge` and never as the verdict. The verdict is: `Not ready to merge` with the next two steps (`Fix the failing check, then answer
+omar-t.`), `Waiting for checks`, `Waiting for a review`, `Checking`, `Ready to merge` with what the
+header button does (`Squash and merge into main. Nothing is waiting.`), `Draft`, `Queued to merge`
+with the queue line, `Merged into main` or `Closed without merging`. Under it one row per thing
+that holds the merge, worst first (danger, warning, info, neutral): checks (`1 check failing` with
+the failing names, `Checks running, 2 of 3 done`, counted by `checksCountsOf` as the rail is,
+`Checks unknown`), conflicts with the base, commits not pushed, the review (`Changes requested by
+omar-t` with the threads line from `openThreadsLineOf`, `Waiting on dana-r`, `No approval yet`),
+the threads that need you (`2 threads need you`, then `5 open threads · 1 unread`), and the branch
+(`Rebasing onto main`, `Diverged from the online branch`, `3 commits behind main`). Each row opens
+where it is fixed: Checks, Comments, Changes on conflicts, Commits for the branch and the push, and
+the reviewer picker when nobody was asked and the host can ask. The box never holds a button that
+acts; the header keeps the page's one primary. Everything that passes (`7 checks passed`, `No
+conflicts`, `Approved by kenji-w`, `Up to date with main`) folds into one quiet line that opens in
+place. A merged or closed pull request keeps the verdict alone. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
 the asked ones first, each verdict right after the name: `Asked`, `Changes`, `Approved`; `+`
-requests another), `Bots that commented` (bots whose only review is a comment, with no verdict,
-`pullRequestReviewerGroupsOf` in core), `Author` and `Linked issues`, all read from the branch on
-screen. There is no Rebase in it. The description renders as markdown with `Edit` beside its heading;
+requests another; a short skeleton until the reviewers are read, never `Nobody asked yet` before), `Bots` (every bot apart, whatever its verdict,
+`pullRequestReviewerGroupsOf` in core, each with one word from `botWordOf`: `1 issue` for the open
+threads it started, `2 resolved`, or its review state), `Linked issues` and `Author`, all read from the branch on
+screen. A bot is known by the host's author type (`isBotLogin`, see [hosts.md](../hosts.md)); the
+`[bot]`, `-bot` or `_bot` login suffix applies only when the host gave no type, so a GitHub user
+named `northwind-bot` stays a reviewer. There is no Rebase in it. The description renders as markdown with `Edit` beside its heading
+and folds after five lines of prose behind `Show all` (`DescriptionFold`; focus on a link under the fold opens it);
 the body's own headings read as bold lead-ins and a first heading that repeats `Description` is
 dropped (`demoteBodyHeadings`; a code fence closes only on the same character, at least as
 long and with nothing after it, as CommonMark says, and an unclosed fence runs to the end, so
@@ -289,7 +304,7 @@ a heading inside code stays literal), while the edit preview keeps them as writt
 Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
 Retry; an empty description reads `No description yet` with `Add description`)
 and the Activity, oldest first: who opened it, the pushes grouped by day, the
-reviews, one line `4 comments on files, 2 need you` that opens Comments (the line above the columns reads `6 open threads · 1 needs you · 2 unread`, each part after the first hidden at 0, from `openThreadsLineOf`; the unread part comes from `unreadThreadsOf` over the threads of the selected source, the ones not yet seen in Comments, and stays hidden until the reads and your name on the host are loaded), one line
+reviews, one line `4 comments on files, 2 need you` that opens Comments (the merge box row reads `6 open threads · 1 needs you · 2 unread` under a review that asked for changes, each part after the first hidden at 0, from `openThreadsLineOf`; the unread part comes from `unreadThreadsOf` over the threads of the selected source, the ones not yet seen in Comments, and stays hidden until the reads and your name on the host are loaded), one line
 for the checks that opens Checks, your edits of this session and the merge. Bot comments
 in a row fold into one event, `4 bots commented`, each comment clamped to two lines; a person
 in between splits the group (`groupBotActivity`). The glyphs sit on a spine, a 1px line from
@@ -297,7 +312,7 @@ one event to the next. Rows that open something carry `ROW_INTERACTIVE`. Reviewe
 opens the picker that searches the host's collaborators), Checks reads `4 passed · 1 failing`
 (`Checks unknown` when the read failed), Linked issues carry their relation (`Closes #412`;
 `Link issue` opens the popover). Without a pull request the section is the branch
-page (`BranchStartPage`): no status strip and no summary, since the header and the tabs already say all of it. The line under the title (`branchStartLineOf`) names the branch with `3 not pushed`, `Up to date with origin`,
+page (`BranchStartPage`): no merge box and no summary, since the header and the tabs already say all of it. The line under the title (`branchStartLineOf`) names the branch with `3 not pushed`, `Up to date with origin`,
 `Diverged` (warning, when origin also has commits the branch lacks) or `Rebasing`, adds `3 behind main` only when the base moved, and adds what the pre-push hook answered, `Pre-push hook passed` or `Pre-push hook declined` with its age, once this machine pushed, a pass only while nothing waits to be pushed, since it does not cover those commits: read from the push
 result since the repo's pre-push hook is the one local gate, kept in memory per mount
 (`local-checks` slice, `mountLocalChecks`), so after a restart the line says nothing until the

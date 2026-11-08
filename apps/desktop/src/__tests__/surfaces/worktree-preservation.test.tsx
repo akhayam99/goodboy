@@ -121,10 +121,12 @@ describe('Branch page capabilities from the branch tree', () => {
     expect(document.querySelector('[data-branch-primary="pullRequest.markReady"]')).toBeNull();
   });
 
-  it('merge readiness reads in words in the Merge cell of the status strip', async () => {
+  it('merge readiness reads in words in the verdict of the merge box', async () => {
     await mount('c04-worktree-pr-behind');
 
-    expect(document.querySelector('[data-cell="merge"]')?.textContent).toMatch(/[A-Za-z]/);
+    expect(document.querySelector('[data-merge-box] [data-verdict]')?.textContent).toMatch(
+      /[A-Za-z]/,
+    );
   });
 
   it('the Branch actions menu keeps Close pull request, the worktree menu the branch actions', async () => {

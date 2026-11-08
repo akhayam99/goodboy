@@ -1,10 +1,14 @@
 type Params = {
   readonly login: string;
+  readonly isBot?: boolean;
 };
 
 const BOT_SUFFIXES = ['[bot]', '-bot', '_bot'];
 
-export const isBotLogin = ({ login }: Params): boolean => {
+export const isBotLogin = ({ login, isBot }: Params): boolean => {
+  if (isBot !== undefined) {
+    return isBot;
+  }
   const lower = login.toLowerCase();
   return BOT_SUFFIXES.some((suffix) => lower.endsWith(suffix));
 };

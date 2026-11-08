@@ -156,6 +156,7 @@ export type PrReview = {
   id: string;
   author: string;
   authorAvatarUrl: string | null;
+  isAuthorBot?: boolean;
   state: PrReviewState;
   submittedAt: string | null;
   body: string;
@@ -165,6 +166,7 @@ export type PrReviewRequest = {
   login: string;
   avatarUrl: string | null;
   kind: 'user' | 'team';
+  isBot?: boolean;
 };
 
 export type PrDetailRead = 'ok' | 'denied' | 'failed';
