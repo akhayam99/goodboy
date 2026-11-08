@@ -3,7 +3,7 @@ import type { DiffFocus, GetFn, LensKind, OpenMountCommitsInput, SetFn } from '.
 import { sentryRecordKey } from '../../../features/inbox/adapters/sentry';
 import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { workSurfaceFocus } from './workSurfaceFocus';
-import { drawerAfterArtifactFocus } from '../drawer/drawerAfterArtifactFocus';
+import { slotAfterArtifactFocus } from '../drawer/slotAfterArtifactFocus';
 import { branchPlace, sessionPlace } from '../navigation/place';
 import { openSessionTerminal } from '../../../features/terminal/openSessionTerminal';
 import { sessionById } from '../sessions/sessionIndex';
@@ -111,7 +111,7 @@ export const setFocusedArtifactId = (set: SetFn) => {
   return (sessionId: SessionId, artifactId: ArtifactId | null): void => {
     set((s) => ({
       focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: artifactId },
-      drawer: drawerAfterArtifactFocus({ drawer: s.drawer, artifactId }),
+      ...slotAfterArtifactFocus({ drawer: s.drawer, back: s.drawerBack, artifactId }),
     }));
   };
 };

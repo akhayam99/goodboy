@@ -13,10 +13,9 @@ export const closeQuestion = ({ set, get }: SliceDeps) => {
     if (stack.entries[stack.index - 1] !== undefined && goHistory({ set, get, delta: -1 })) {
       return;
     }
+    state.closeDrawer();
     if (drawer.payload.from === 'ask') {
       state.openAsk({ sessionId: drawer.sessionId });
-      return;
     }
-    state.closeDrawer();
   };
 };
