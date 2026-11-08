@@ -2,7 +2,7 @@
   "name": "goodboy",
   "version": "0.31.12",
   "private": true,
-  "description": "AI workspace orchestrator. Local-first, provider-agnostic.",
+  "description": "Agentic development environment for your coding agents, built in public",
   "license": "FSL-1.1-MIT",
   "author": "Amin Khayam <amin@khayam.dev>",
   "repository": {

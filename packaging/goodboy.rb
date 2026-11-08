@@ -6,7 +6,7 @@ cask "goodboy" do
 
   url "https://github.com/akhayam99/goodboy/releases/download/v#{version}/Goodboy_#{version}_universal.dmg"
   name "Goodboy"
-  desc "AI workspace orchestrator, local-first and provider-agnostic"
+  desc "Agentic development environment for your coding agents, built in public"
   homepage "https://github.com/akhayam99/goodboy"
 
   auto_updates true

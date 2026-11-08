@@ -6,9 +6,9 @@ const HOME = { name: 'Home', path: '/' };
 export const STATIC_PAGES = {
   home: {
     path: '/',
-    title: 'Goodboy: AI coding agent orchestrator for Claude Code, Codex and Cursor',
+    title: 'Goodboy: the agentic development environment for your coding agents',
     description:
-      'Goodboy is a free desktop app that runs Claude Code, Codex, Cursor, Gemini and Copilot on one task, with git worktrees, shared context and review. macOS and Linux.',
+      'Goodboy is a free agentic development environment (ADE) for Claude Code, Codex, Cursor, Gemini and Copilot: git worktrees, shared context and review. macOS, Linux.',
     ogType: 'website',
     kind: 'home',
     crumbs: [HOME],
