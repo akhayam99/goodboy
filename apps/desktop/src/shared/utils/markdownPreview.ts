@@ -1,6 +1,7 @@
 type Params = {
   readonly text: string | null | undefined;
   readonly shouldKeepOpenFence?: boolean;
+  readonly shouldKeepMarkers?: boolean;
 };
 
 const MAX_LINK_FAILURES = 8;
@@ -65,12 +66,36 @@ const pairCloseOf = ({ line, from, open, close }: PairParams): number => {
 const balancedCloseOf = ({ line, from }: CloseParams): number =>
   pairCloseOf({ line, from, open: '(', close: ')' });
 
-const bracketCloseOf = ({ line, from }: CloseParams): number =>
-  pairCloseOf({ line, from, open: '[', close: ']' });
+type LineParams = {
+  readonly line: string;
+};
+
+const bracketClosesOf = ({ line }: LineParams): Int32Array => {
+  const closes = new Int32Array(line.length).fill(-1);
+  const opens: Array<number> = [];
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '\\') {
+      i += 1;
+      continue;
+    }
+    if (char === '[') {
+      opens.push(i);
+    }
+    if (char === ']') {
+      const open = opens.pop();
+      if (open !== undefined) {
+        closes[open] = i;
+      }
+    }
+  }
+  return closes;
+};
 
 type LinkParams = {
   readonly line: string;
   readonly at: number;
+  readonly closes: Int32Array;
 };
 
 type LinkEnds = {
@@ -81,13 +106,9 @@ type LinkEnds = {
 
 const NO_LINK: LinkEnds = { label: -1, url: -1, isExpensiveMiss: false };
 
-const linkEndsOf = ({ line, at }: LinkParams): LinkEnds => {
-  const start = line[at] === '!' ? at + 2 : at + 1;
-  const label = bracketCloseOf({ line, from: start });
-  if (label < 0) {
-    return { label, url: -1, isExpensiveMiss: true };
-  }
-  if (line[label + 1] !== '(') {
+const linkEndsOf = ({ line, at, closes }: LinkParams): LinkEnds => {
+  const label = closes[line[at] === '!' ? at + 1 : at] ?? -1;
+  if (label < 0 || line[label + 1] !== '(') {
     return NO_LINK;
   }
   const url = balancedCloseOf({ line, from: label + 2 });
@@ -100,6 +121,7 @@ const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResu
   let nextGt = -2;
   let linkFailures = 0;
   const failedRuns = new Set<number>();
+  let closes: Int32Array | null = null;
   while (i < line.length) {
     const char = line[i];
     if (char === '`') {
@@ -129,7 +151,8 @@ const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResu
     }
     if ((char === '!' && line[i + 1] === '[') || char === '[') {
       const isTried = depth < MAX_NESTING && linkFailures < MAX_LINK_FAILURES;
-      const ends = isTried ? linkEndsOf({ line, at: i }) : NO_LINK;
+      closes ??= bracketClosesOf({ line });
+      const ends = isTried ? linkEndsOf({ line, at: i, closes }) : NO_LINK;
       linkFailures += ends.isExpensiveMiss ? 1 : 0;
       if (ends.url < 0) {
         out += char;
@@ -173,9 +196,13 @@ type EmitParams = {
 
 type FlatParams = {
   readonly text: string;
+  readonly shouldKeepMarkers: boolean;
 };
 
-const flatLineOf = ({ text }: FlatParams): string => {
+const flatLineOf = ({ text, shouldKeepMarkers }: FlatParams): string => {
+  if (shouldKeepMarkers) {
+    return text.replace(/\s+/g, ' ').trim();
+  }
   const unmarked = text.replace(/\s+/g, ' ').trim().replace(BLOCK_MARKER, '');
   return emphasisFreeOf({ text: unmarked }).replace(/\s+/g, ' ').trim();
 };
@@ -192,6 +219,7 @@ const emphasisFreeOf = ({ text }: EmphasisParams): string =>
 export const markdownPlainLinesOf = ({
   text,
   shouldKeepOpenFence = true,
+  shouldKeepMarkers = false,
 }: Params): ReadonlyArray<string> => {
   if (text == null) {
     return [];
@@ -205,7 +233,7 @@ export const markdownPlainLinesOf = ({
   const emit = ({ line, start }: EmitParams): void => {
     const scanned = scanInline({ line, lineStart: start, lastClose, depth: 0 });
     isInComment = scanned.isCommentOpen;
-    const flat = flatLineOf({ text: scanned.text });
+    const flat = flatLineOf({ text: scanned.text, shouldKeepMarkers });
     if (flat.length > 0) {
       out.push(flat);
     }

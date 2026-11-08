@@ -1,5 +1,5 @@
 import type { ChatMessage } from '@goodboy/types';
-import { markdownPreview } from '../../shared/utils/markdownPreview';
+import { markdownPlainLinesOf, markdownPreview } from '../../shared/utils/markdownPreview';
 
 export type WorkBrief = {
   readonly title: string;
@@ -53,17 +53,17 @@ export const draftWorkBrief = ({ title, messages, projectNames }: DraftParams): 
   const answer = [...messages].reverse().find((message) => message.role === 'assistant');
   const answerText = answer?.content ?? '';
   const lead = firstSentence({ text: answerText });
-  const items = answerText
-    .split('\n')
+  const visibleLines = markdownPlainLinesOf({ text: answerText, shouldKeepMarkers: true });
+  const items = visibleLines
     .flatMap((line) => {
       const match = LIST_ITEM.exec(line);
       return match?.[1] === undefined ? [] : [markdownPreview({ text: match[1] })];
     })
     .filter((item) => item !== '');
-  const files = unique([...pathsIn({ text: answerText }), ...(answer?.reads ?? [])]).slice(
-    0,
-    FILE_LIMIT,
-  );
+  const files = unique([
+    ...pathsIn({ text: visibleLines.join('\n') }),
+    ...(answer?.reads ?? []),
+  ]).slice(0, FILE_LIMIT);
   return {
     title: title.replace(/\?$/, '').slice(0, TITLE_LIMIT),
     goal: lead === '' ? question : `Follow up on "${question}". ${lead}`,

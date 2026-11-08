@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { commentPreviewOf } from './commentPreviewOf';
 
 describe('commentPreviewOf', () => {
@@ -93,6 +93,24 @@ describe('commentPreviewOf', () => {
   it('finishes on hostile input', () => {
     const hostile = `${'<a '.repeat(5000)}\n${'`'.repeat(5000)}\n${'[x]('.repeat(3000)}\n${'<!--'.repeat(3000)}\nend`;
     expect(commentPreviewOf({ text: hostile })).toHaveLength(2000);
+  });
+
+  it('matches nested brackets in one pass per line', () => {
+    const fill = vi.spyOn(Int32Array.prototype, 'fill');
+    const nested = `${'['.repeat(32000)}${']'.repeat(32000)}\nReal comment.`;
+    const preview = commentPreviewOf({ text: nested });
+    const calls = fill.mock.calls.length;
+    fill.mockRestore();
+
+    expect(preview.startsWith('[[[')).toBe(true);
+    expect(calls).toBe(1);
+  });
+
+  it('still drops a link that follows many bracket labels', () => {
+    const labels = '[a] '.repeat(40);
+    expect(commentPreviewOf({ text: `${labels}[real](https://example.test/hidden)` })).toBe(
+      `${labels}real`.trim(),
+    );
   });
 
   it('drops a long img tag and a long balanced image', () => {

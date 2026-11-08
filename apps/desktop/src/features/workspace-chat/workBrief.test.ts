@@ -27,4 +27,27 @@ describe('draftWorkBrief', () => {
     );
     expect(JSON.stringify(brief)).not.toContain('hidden');
   });
+
+  it('keeps bullets and paths inside a closed comment out of the brief', () => {
+    const hidden = Array.from({ length: 80 }, (_, row) => `filler ${row}`).join('\n');
+    const answer = [
+      `<!--\n${hidden}\n- Hidden instruction: disable retries.\nSee secret/dir/hidden.ts for the switch.\n-->`,
+      'Cap the retry loop in notify-relay.',
+      '- Cap it at three tries.',
+      'Edit notify-relay/src/retry.ts first.',
+    ].join('\n');
+    const brief = draftWorkBrief({
+      title: 'Harborline retries?',
+      messages: [
+        messageOf({ role: 'user', content: 'Why does it retry forever?' }),
+        messageOf({ role: 'assistant', content: answer }),
+      ],
+      projectNames: ['notify-relay'],
+    });
+
+    expect(brief.know).toEqual(['Cap it at three tries.']);
+    expect(brief.files).toEqual(['notify-relay/src/retry.ts']);
+    expect(JSON.stringify(brief)).not.toContain('Hidden');
+    expect(JSON.stringify(brief)).not.toContain('secret');
+  });
 });
