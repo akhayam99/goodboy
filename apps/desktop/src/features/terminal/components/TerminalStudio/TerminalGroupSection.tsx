@@ -1,5 +1,7 @@
 import { ListGridGroup } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import type { TerminalTab } from '../../../../shared/types/terminal';
+import { terminalActivityOf, type TerminalExit } from '../../terminalActivityOf';
 import {
   ARCHIVED_GROUP_KEY,
   type TerminalGroup,
@@ -13,15 +15,41 @@ type Props = {
   readonly group: TerminalGroup;
   readonly selectedKey: string | null;
   readonly busyIds: ReadonlySet<string>;
+  readonly exits?: ReadonlyMap<string, TerminalExit>;
+  readonly commandOf?: (tab: TerminalTab) => string | null;
   readonly portsByTerminal: ReadonlyMap<string, ReadonlyArray<number>>;
   readonly onSelect: (worktree: TerminalWorktree) => void;
   readonly onCloseAll: (group: TerminalGroup) => void;
 };
 
+const NO_EXITS: ReadonlyMap<string, TerminalExit> = new Map();
+
+type ActivityParams = {
+  readonly worktree: TerminalWorktree;
+  readonly busyIds: ReadonlySet<string>;
+  readonly exits: ReadonlyMap<string, TerminalExit>;
+  readonly commandOf: ((tab: TerminalTab) => string | null) | undefined;
+};
+
+const activityOf = ({ worktree, busyIds, exits, commandOf }: ActivityParams) =>
+  terminalActivityOf({
+    tabIds: worktree.tabs.map((tab) => tab.id),
+    busyIds,
+    exits,
+    commands: new Map(
+      worktree.tabs.flatMap((tab) => {
+        const command = busyIds.has(tab.id) ? (commandOf?.(tab) ?? null) : null;
+        return command === null ? [] : [[tab.id, command] as const];
+      }),
+    ),
+  });
+
 export const TerminalGroupSection = ({
   group,
   selectedKey,
   busyIds,
+  exits = NO_EXITS,
+  commandOf,
   portsByTerminal,
   onSelect,
   onCloseAll,
@@ -53,6 +81,7 @@ export const TerminalGroupSection = ({
               worktree={worktree}
               isSelected={worktree.key === selectedKey}
               isBusy={worktree.tabs.some((tab) => busyIds.has(tab.id))}
+              activity={activityOf({ worktree, busyIds, exits, commandOf })}
               ports={worktreePorts({ tabs: worktree.tabs, portsByTerminal })}
               onSelect={() => onSelect(worktree)}
             />

@@ -1311,6 +1311,8 @@ u37-header-reveal-overview
 u37-header-reveal-reading
 u37-header-reveal-runs
 u37-monitoring-branch
+u37-running-here
+u37-running-here-idle
 update-card
 update-card-long-version
 update-card-narrow

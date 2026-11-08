@@ -25,6 +25,9 @@ const loadOne = async ({ projectId, rootPath }: ProjectTarget): Promise<Loaded> 
     invokeCommand<ReadonlyArray<WatchedPort>>('monitor_watched_ports', { projectRoot: rootPath }),
     getSetting(tauriDatabase, learnedPortsKey({ projectId })),
   ]);
+  if (!Array.isArray(scanned)) {
+    throw new Error(`monitor_watched_ports answered a non-list for ${projectId}`);
+  }
   return {
     projectId,
     scanned,

@@ -115,7 +115,7 @@ export const useMonitoringModel = (): MonitoringModel => {
       }),
       error,
       takenAt: snapshot?.takenAt ?? null,
-      summary: portSummary({ ports: tracked }),
+      summary: portSummary({ ports: [...onPagePinned, ...onPageGoodboy, ...onPageWorkspace] }),
       pinned: pinnedRows,
       goodboy: goodboyRows,
       workspace: workspaceRows,

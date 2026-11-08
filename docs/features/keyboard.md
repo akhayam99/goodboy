@@ -20,6 +20,9 @@ Open a real login shell in the workspace folder or any linked worktree.
 - It says **No terminal yet** until you open one.
 - It groups terminals by session. Each group shows its row count from two.
 - One line per worktree shows the project, the branch and a dot while a shell runs a process.
+- The line names the command that runs. When it ends, the line says it passed, or that it failed with its exit code.
+- The exit status and the command it belongs to come from a small hook a zsh terminal adds when it starts. Your own shell files and hooks are never changed. Other shells show no status.
+- **Settings › General › Built-in terminal** turns the hook off for the terminals you open next.
 - Each worktree shows its terminals as tabs with a **+** to add one. A tab selects on a click anywhere on its body.
 - Issue chips and the diff stay on the session, not here.
 - The folder path line shows only for a plain folder, never for a worktree.
@@ -59,7 +62,7 @@ The strip ends with the same controls on every scope.
 
 **Dot on Terminal**
 
-When a command that ran for more than ten seconds ends while the terminal drawer is closed, **Terminal** in the tools column gets a dot ("pnpm test finished after 42s"). It does not say whether the command passed, because a shell gives no exit status.
+When a command that ran for more than ten seconds ends while the terminal drawer is closed, **Terminal** in the tools column gets a dot ("pnpm test finished after 42s"). The dot does not say whether the command passed; the Terminal page line does.
 
 **File paths in output**
 
@@ -183,6 +186,7 @@ This part is for contributors and agents who change the feature.
 
 - Archived sessions group: `terminalGroups` and `CloseGroupButton` build the group and its **Close all**.
 - Process on a tab: `terminal_list_live` returns `foregroundCommand`, shaped by `foregroundLabelOf`. `terminalCommandOf` is the fallback.
+- Exit status: `terminal_shell_hook.rs` writes zsh startup files under the app data `shell-integration/zsh` and points `ZDOTDIR` there. They source the user's own files. The hook runs under `emulate -L zsh`, appends to `precmd_functions` and `preexec_functions` and survives `setopt nounset`. Preexec keeps the command line, precmd prints `ESC ] 633;D;<code>;<command> BEL`. `terminal_exit_mark.rs` reads the mark, `terminal_list_live` returns `lastExitCode` and `lastExitCommand`, `terminalActivityOf` words the row from them and never from typed keys. The setting is `terminal.exitStatus`, read by Rust when a terminal opens; only `false` turns it off.
 - Linux chords: a registry test fails any ⌘⌥ entry without its Ctrl+Shift+Alt chord.
 - Changed shortcuts: the local setting `shortcuts.overrides`, by registry id.
 - One spelling per key: hints read the shortcut registry through the `shortcut` prop or `shortcutGlyphs`.

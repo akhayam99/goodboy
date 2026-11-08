@@ -10,6 +10,7 @@ export const SETTING_UPDATER_SNOOZED_VERSION = 'updater.snoozedVersion';
 export const SETTING_UPDATER_SNOOZED_AT = 'updater.snoozedAt';
 export const SETTING_BROWSER_APP = 'browser.app';
 export const SETTING_TERMINAL_APP = 'terminal.app';
+export const SETTING_TERMINAL_EXIT_STATUS = 'terminal.exitStatus';
 export const DEFAULT_EDITOR_BINARY = 'code';
 export const DEFAULT_BROWSER_APP = 'system';
 export const DEFAULT_TERMINAL_APP = 'terminal';

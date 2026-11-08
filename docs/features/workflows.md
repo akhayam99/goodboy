@@ -96,7 +96,7 @@ The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived
 
 With two or more branches a switch groups the page **By branch** or **By state**, one choice per session. **By branch** has a group per branch or pull request series, and **No branch** comes last. Groups that need you come first, finished runs fold, and archived runs fold apart, last. The choice stays after a reload. A run on several branches stands in each, with **Also on feat/retry-budget**. With one branch the page is the same list.
 
-A row's branch chip opens the Branch page, **Also on** shows the same run in its other group, and a title click opens the run at once. Right click a row and pick **Rename** to edit its title. The Branch page has a **Work** tab with the runs, questions and artifacts of that branch, the same rows as these pages. **All runs** opens this page with the group of the branch open, in the grouping you chose. **Open branch** on a group opens that Work tab, and Back from a run returns to it.
+A row's branch chip opens the Branch page, **Also on** shows the same run in its other group, and a title click opens the run at once. Right click a row and pick **Rename** to edit its title. The Branch page has a **Work** tab with the runs, questions and artifacts of that branch, the same rows as these pages. **All runs** opens this page with the group of the branch open, in the grouping you chose. **Open branch** on a group opens that Work tab, and Back from a run returns to it. When something listens on a port on this branch, a **Running here** line lists the ports and what opened them, and opens Monitoring on this branch. Nothing runs, no line.
 
 ### Hints to the orchestrator
 

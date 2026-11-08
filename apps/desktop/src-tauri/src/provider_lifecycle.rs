@@ -557,7 +557,8 @@ mod tests {
             crate::proc::signal::session_of(descendant as u32),
             Some(leader)
         );
-        assert!(crate::proc::ledger::process_ledger_list()
+        assert!(crate::proc::ledger::global()
+            .list()
             .iter()
             .any(|row| row.pid == leader && row.kind == "terminal"));
 
@@ -568,7 +569,8 @@ mod tests {
             "the login's background process outlived Cancel"
         );
         assert!(wait_until(10, || runs.lock().unwrap().is_empty()));
-        assert!(!crate::proc::ledger::process_ledger_list()
+        assert!(!crate::proc::ledger::global()
+            .list()
             .iter()
             .any(|row| row.pid == leader));
         let _ = std::fs::remove_dir_all(&dir);

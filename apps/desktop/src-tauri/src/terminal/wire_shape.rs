@@ -35,13 +35,17 @@ fn wire_shape_live_terminal() {
             pid: Some(10),
             foreground_pid: Some(11),
             foreground_command: Some("pnpm test".to_string()),
+            last_exit_code: Some(1),
+            last_exit_command: Some("pnpm test".to_string()),
         },
         json!({
             "id": "t1",
             "cwd": "/w",
             "pid": 10,
             "foregroundPid": 11,
-            "foregroundCommand": "pnpm test"
+            "foregroundCommand": "pnpm test",
+            "lastExitCode": 1,
+            "lastExitCommand": "pnpm test"
         }),
     );
 }

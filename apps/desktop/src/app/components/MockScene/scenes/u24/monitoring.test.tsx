@@ -54,20 +54,28 @@ const hasPortRow = (port: number): boolean =>
   document.querySelector(`[data-port-row="${port}"]`) !== null;
 
 describe('the monitoring scenes', () => {
-  it('names the worktree that holds :5005 and links the chip to its session', async () => {
+  it('names the worktree that holds :5005 and links its session and its branch', async () => {
     renderScene('monitoring-ports');
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
     const row = portRow(5005);
 
-    const chip = within(row).getByRole('button', {
-      name: 'Open session: payments-api · hl/fix-duplicate-credit',
+    const branch = within(row).getByRole('button', {
+      name: 'Open branch: payments-api · hl/fix-duplicate-credit',
     });
+    const session = within(row).getByRole('button', { name: /^Open session: / });
     const navigate = vi.fn();
     act(() => store.setState({ navigate }));
-    fireEvent.click(chip);
-
-    expect(navigate).toHaveBeenCalledWith({
+    fireEvent.click(session);
+    expect(navigate).toHaveBeenLastCalledWith({
       to: expect.objectContaining({ at: 'session', sessionId: 'mock-u24-session-credit' }),
+    });
+    fireEvent.click(branch);
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: expect.objectContaining({
+        at: 'session',
+        sessionId: 'mock-u24-session-credit',
+        view: expect.objectContaining({ lens: 'branch' }),
+      }),
     });
     expect(within(row).getByText('web')).toBeDefined();
   });

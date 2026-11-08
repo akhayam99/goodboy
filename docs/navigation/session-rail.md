@@ -799,7 +799,7 @@ Folding the rail leaves the column in place.
   ten seconds ended while the drawer was closed (`useTerminalFinishSignal`, a
   3 second poll of `terminal_list_live` kept to the latest answer, state in
   `terminalFinishes`, cleared when the drawer opens). It says "finished", never
-  "failed": the shell gives no exit status. A script that ends while its session
+  "failed": the dot does not read the exit status the Terminal page shows. A script that ends while its session
   is not on screen raises one toast, `<script> failed in <project>` (or
   `finished`), with `Open output`, from `ScriptEndToastBridge` over the
   `goodboy:script-ended` event; a script you stopped, and a run that ended while

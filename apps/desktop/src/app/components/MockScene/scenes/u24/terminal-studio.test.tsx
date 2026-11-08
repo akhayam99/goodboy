@@ -216,7 +216,7 @@ describe('the terminal studio scenes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close dev server' }));
 
     expect(await screen.findByText('dev server is running. Close it?')).toBeDefined();
-    expect(screen.getAllByText('pnpm dev')).toHaveLength(2);
+    expect(screen.getAllByText('pnpm dev')).toHaveLength(3);
     fireEvent.click(screen.getByRole('button', { name: 'Keep' }));
     await settle();
     expect(screen.queryByText('dev server is running. Close it?')).toBeNull();

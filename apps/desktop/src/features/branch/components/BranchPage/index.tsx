@@ -43,6 +43,7 @@ import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
 import { BranchHeader } from '../BranchHeader';
+import { BranchRunningLine } from '../BranchRunningLine';
 import { BranchStartLine } from '../BranchStartLine';
 import { BranchTabStrip } from '../BranchTabStrip';
 import { BranchWorkLines } from '../BranchWorkLines';
@@ -435,6 +436,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               isActive={isActive}
               canEditTitle={canEditTitle}
               onMutated={onMutated}
+            />
+            <BranchRunningLine
+              workspaceId={session.workspaceId}
+              mount={identity.mount}
+              isActive={isActive}
             />
             <BranchTabStrip tabs={tabs} facts={entryFacts} value={tab} onSelect={selectTab} />
             <BranchWorkLines

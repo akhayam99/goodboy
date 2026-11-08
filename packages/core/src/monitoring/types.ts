@@ -37,6 +37,11 @@ export type LedgerRow = {
   readonly mountPath: string | null;
   readonly cwd: string | null;
   readonly startedAt: number;
+  readonly agentId?: string | null;
+  readonly runId?: string | null;
+  readonly mountId?: string | null;
+  readonly branch?: string | null;
+  readonly branchPath?: string | null;
 };
 
 export type WatchedSource = 'script' | 'env' | 'vite' | 'compose' | 'user' | 'learned';
@@ -71,6 +76,8 @@ export type PortOwner =
       readonly sessionId: string | null;
       readonly worktreePath: string | null;
       readonly projectId: string | null;
+      readonly agentId?: string;
+      readonly runId?: string;
     }
   | {
       readonly kind: 'worktree';

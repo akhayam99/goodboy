@@ -107,6 +107,8 @@ fn run_scenario(binary: &str, scenario: &Scenario) -> (Run, Vec<String>) {
         workspace_id: None,
         session_id: None,
         mount_id: None,
+        agent_id: None,
+        workflow_run_id: None,
         cursor_max_mode: false,
         writer_lease: None,
         write_set_lease: None,

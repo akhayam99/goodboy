@@ -6,6 +6,7 @@ import { createLatestOnly } from '../../../../store/runtime/state-writes/latestO
 import { foregroundLabelOf } from '../../foregroundLabelOf';
 import { isBusyTerminal } from '../../isBusyTerminal';
 import { invokeTerminalListLive } from '../../terminal';
+import type { TerminalExit } from '../../terminalActivityOf';
 
 const POLL_MS = 2000;
 const LEDGER_KEY = 'terminal-ledger';
@@ -17,9 +18,10 @@ type Params = {
 export type TerminalLedger = {
   readonly busy: ReadonlySet<string>;
   readonly commands: ReadonlyMap<string, string>;
+  readonly exits: ReadonlyMap<string, TerminalExit>;
 };
 
-const NO_LEDGER: TerminalLedger = { busy: new Set(), commands: new Map() };
+const NO_LEDGER: TerminalLedger = { busy: new Set(), commands: new Map(), exits: new Map() };
 
 export const useTerminalLedger = ({ isEnabled }: Params): TerminalLedger => {
   const [ledger, setLedger] = useState<TerminalLedger>(NO_LEDGER);
@@ -41,6 +43,18 @@ export const useTerminalLedger = ({ isEnabled }: Params): TerminalLedger => {
                 const label = foregroundLabelOf({ command: terminal.foregroundCommand ?? '' });
                 return label === '' ? [] : [[terminal.id, label] as const];
               }),
+            ),
+            exits: new Map(
+              live.flatMap((terminal) =>
+                terminal.lastExitCode == null || isBusyTerminal({ terminal })
+                  ? []
+                  : [
+                      [
+                        terminal.id,
+                        { code: terminal.lastExitCode, command: terminal.lastExitCommand ?? null },
+                      ] as const,
+                    ],
+              ),
             ),
           });
         },
