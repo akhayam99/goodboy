@@ -48,6 +48,7 @@ type TreeFilter = {
 type Props = {
   readonly tree: ChangeTreeModel;
   readonly allFiles: ReadonlyArray<FileDiff>;
+  readonly total?: number;
   readonly filter: TreeFilter;
   readonly filterRef: RefObject<HTMLInputElement | null>;
   readonly activePath: string | null;
@@ -87,6 +88,7 @@ const domIdOf = ({ id }: RowIdParams): string => `change-tree-row:${id}`;
 export const ChangeTree = ({
   tree,
   allFiles,
+  total = allFiles.length,
   filter,
   filterRef,
   activePath,
@@ -278,14 +280,9 @@ export const ChangeTree = ({
       aria-label="Changed files"
       className="flex min-h-0 w-full min-w-0 flex-col"
     >
-      <TreeTitle
-        viewedCount={viewedCount}
-        total={allFiles.length}
-        onNext={onNextUnviewed}
-        onFold={onFold}
-      />
+      <TreeTitle viewedCount={viewedCount} total={total} onNext={onNextUnviewed} onFold={onFold} />
       <TreeHead
-        total={allFiles.length}
+        total={total}
         unviewed={unviewedCount}
         commented={commentedCount}
         query={filter.query}

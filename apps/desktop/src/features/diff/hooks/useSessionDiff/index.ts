@@ -34,6 +34,26 @@ import {
 import type { DiffBodies, DiffViewed } from '../../components/DiffView/types';
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
+const NO_COMMITS: ReadonlyArray<BranchCommit> = [];
+
+type MetaRead = {
+  readonly key: string;
+  readonly commits: ReadonlyArray<BranchCommit>;
+  readonly status: WorktreeStatus | null;
+};
+
+type MetaFailure = {
+  readonly key: string;
+  readonly message: string;
+};
+
+type MetaKeyParams = {
+  readonly worktreePath: string | null;
+  readonly baseBranch: string | null;
+};
+
+const metaKeyOf = ({ worktreePath, baseBranch }: MetaKeyParams): string =>
+  JSON.stringify([worktreePath, baseBranch]);
 
 type LoadDiffParams = {
   readonly worktreePath: string;
@@ -136,9 +156,9 @@ export const useSessionDiff = ({
   const [view, setViewState] = useState<DiffView>(DEFAULT_VIEW);
   const [alternate, setAlternate] = useState<DiffAlternate | null>(null);
   const hasPickedView = useRef(false);
-  const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>([]);
-  const [status, setStatus] = useState<WorktreeStatus | null>(null);
-  const [metaError, setMetaError] = useState<string | null>(null);
+  const [meta, setMeta] = useState<MetaRead | null>(null);
+  const [metaFailure, setMetaFailure] = useState<MetaFailure | null>(null);
+  const [loadedPath, setLoadedPath] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [focusPath, setFocusPath] = useState<string | null>(null);
   const [focusThreadId, setFocusThreadId] = useState<string | null>(null);
@@ -157,6 +177,13 @@ export const useSessionDiff = ({
   const baseBranch = useAppStore((s) =>
     sessionId === null ? null : selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
+
+  const metaKey = metaKeyOf({ worktreePath, baseBranch });
+  const isMetaCurrent = meta !== null && meta.key === metaKey;
+  const commits = isMetaCurrent ? meta.commits : NO_COMMITS;
+  const status = isMetaCurrent ? meta.status : null;
+  const metaError =
+    metaFailure !== null && metaFailure.key === metaKey ? metaFailure.message : null;
 
   const refresh = useCallback(() => setRefreshTick((tick) => tick + 1), []);
   const setView = useCallback((next: DiffView) => {
@@ -204,18 +231,18 @@ export const useSessionDiff = ({
       return;
     }
     let cancelled = false;
+    const key = metaKeyOf({ worktreePath, baseBranch });
     Promise.all([listBranchCommits(worktreePath), worktreeStatus({ worktreePath, baseBranch })])
       .then(([nextCommits, nextStatus]) => {
         if (cancelled) {
           return;
         }
-        setCommits(nextCommits);
-        setStatus(nextStatus);
-        setMetaError(null);
+        setMeta({ key, commits: nextCommits, status: nextStatus });
+        setMetaFailure(null);
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setMetaError(formatError(err));
+          setMetaFailure({ key, message: formatError(err) });
         }
       });
     return () => {
@@ -233,7 +260,13 @@ export const useSessionDiff = ({
       listener: () => {
         const next = readWorktreeStatus(key);
         if (next !== null) {
-          setStatus(next);
+          const metaTarget = metaKeyOf({ worktreePath, baseBranch });
+          setMeta((previous) => ({
+            key: metaTarget,
+            commits:
+              previous !== null && previous.key === metaTarget ? previous.commits : NO_COMMITS,
+            status: next,
+          }));
         }
       },
     });
@@ -271,6 +304,7 @@ export const useSessionDiff = ({
           loadedSource.current = source;
           setEntryFiles(orderLikeTree({ files: entries.map((entry) => fileOfEntry({ entry })) }));
           setIsLazy(true);
+          setLoadedPath(worktreePath);
           setLoading(false);
           setIsRefreshing(false);
         })
@@ -295,6 +329,7 @@ export const useSessionDiff = ({
           }
           setIsLazy(false);
           setParsedFiles(orderLikeTree({ files: parsed }));
+          setLoadedPath(worktreePath);
           setLoading(false);
           setIsRefreshing(false);
         });
@@ -308,6 +343,7 @@ export const useSessionDiff = ({
           return;
         }
         setError(formatError(err));
+        setLoadedPath(worktreePath);
         setLoading(false);
         setIsRefreshing(false);
       });
@@ -388,7 +424,7 @@ export const useSessionDiff = ({
   return {
     files,
     patch,
-    loading,
+    loading: loading || (worktreePath !== null && loadedPath !== worktreePath),
     isRefreshing,
     bodies,
     error,

@@ -146,27 +146,3 @@ export const worktreeEntryFactsOf = ({
     checks: checksFactOf({ checks, checksUnreadReason }),
   };
 };
-
-type QuietParams = {
-  readonly facts: WorktreeEntryFacts;
-};
-
-type TooltipParams = {
-  readonly tooltip: string | null;
-};
-
-const quietOf = ({ tooltip }: TooltipParams): WorktreeEntryFact => ({
-  ...EMPTY,
-  tooltip: tooltip === null || tooltip === '' ? null : tooltip,
-});
-
-export const wantsYouFactsOf = ({ facts }: QuietParams): WorktreeEntryFacts => ({
-  pr: quietOf({ tooltip: facts.pr.text }),
-  comments: facts.comments,
-  files: quietOf({ tooltip: facts.files.tooltip ?? facts.files.countWord ?? null }),
-  commits: quietOf({
-    tooltip: joinFacts({ facts: [facts.commits.countWord ?? null, facts.commits.tooltip] }),
-  }),
-  checks:
-    facts.checks.tone === 'danger' ? facts.checks : quietOf({ tooltip: facts.checks.tooltip }),
-});

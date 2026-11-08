@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import type { ReactNode } from 'react';
 import type { FileDiff, MountId, SessionId } from '@goodboy/types';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
+import type { FilesFact } from '../../filesFact';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 
 const h = vi.hoisted(() => ({
@@ -140,10 +141,12 @@ const renderPane = ({
   diff = diffOf(),
   isReadOnly = false,
   pageWidth = null,
+  filesFact,
 }: {
   readonly diff?: SessionDiff;
   readonly isReadOnly?: boolean;
   readonly pageWidth?: number | null;
+  readonly filesFact?: FilesFact;
 }) => {
   const observers = pageWidth === null ? null : installFakeResizeObserver();
   if (pageWidth !== null) {
@@ -158,6 +161,7 @@ const renderPane = ({
       worktreePath={MOUNT.worktreePath}
       diff={diff}
       isReadOnly={isReadOnly}
+      filesFact={filesFact}
       toolbarEnd={<button type="button">Fix comments 2</button>}
     />,
   );
@@ -426,6 +430,32 @@ describe('SessionDiffPane with the file rail folded', () => {
         .getByRole('separator', { name: 'Resize the file list' })
         .getAttribute('aria-valuenow'),
     ).toBe('328');
+  });
+});
+
+const BRANCH_FACT: FilesFact = {
+  text: '2',
+  diff: { additions: 6, deletions: 2 },
+  count: 2,
+};
+
+describe('SessionDiffPane files fact', () => {
+  it('shows the fact it is given, with its line totals', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 700, filesFact: BRANCH_FACT });
+
+    expect(toolbarFiles()?.textContent).toBe('Files2+6 -2');
+  });
+
+  it('gives the rail the same total as the toolbar', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 1400, filesFact: BRANCH_FACT });
+
+    within(railOf()).getByText(/Viewed 0 of 2/);
+  });
+
+  it('counts the files it shows when it is given no fact', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 700 });
+
+    expect(toolbarFiles()?.textContent).toBe('Files2');
   });
 });
 

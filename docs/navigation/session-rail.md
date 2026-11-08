@@ -243,7 +243,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   Branch page; Rebase all stays on the Projects header. A branch is one row
   and has no rows under it: its five pages (Pull request, or Merge request on
   GitLab, Comments, Changes, Commits, Checks) are the tab strip under the title
-  of the Branch page, each tab with its count from `worktreeEntryFactsOf`. The
+  of the Branch page, each tab with its count from `branchTabFactsOf`. The
   row carries the one pill, and the failing count in it is the number the
   Checks tab shows (`checksCountsOf`). Changes opens the diff in the center,
   whose changed file list sits in its own rail on the right of that page,

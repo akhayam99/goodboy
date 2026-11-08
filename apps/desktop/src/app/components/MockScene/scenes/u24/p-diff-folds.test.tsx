@@ -52,7 +52,7 @@ describe('the u24 diff folds scene', () => {
 
     const rail = await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     const files = within(rail).getByRole('tab', { name: /^Changes/ });
-    expect(files.textContent).toBe('Changes');
+    expect(files.textContent).toBe('Changes39');
     expect(
       within(fileRail()).getAllByRole('treeitem', { name: /roundHalfEven\.ts/ }).length,
     ).toBeGreaterThan(0);

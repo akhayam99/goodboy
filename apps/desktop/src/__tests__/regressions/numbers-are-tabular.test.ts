@@ -24,6 +24,7 @@ const COUNT_FACT_FILES: ReadonlyArray<string> = [
   'apps/desktop/src/shared/utils/countSlotText.ts',
   'apps/desktop/src/features/session/pageSlot.ts',
   'apps/desktop/src/features/branch/worktreeEntryFacts.ts',
+  'apps/desktop/src/features/branch/branchTabFactsOf.ts',
   'apps/desktop/src/features/branch/branchRowFactsOf.ts',
 ];
 

@@ -40,7 +40,9 @@ import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
-import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
+import { branchTabFactsOf } from '../../branchTabFactsOf';
+import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
+import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -298,7 +300,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     : requestReason === null
       ? { kind: 'allowed' }
       : { kind: 'disabled', reason: requestReason };
-  const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
 
   const body = () => {
     if ((tab === 'pr' || tab === 'comments') && sources.length === 0 && repo === null) {
@@ -361,6 +362,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           diff={diff}
           hasPullRequest={pr !== null && pr.state === 'open'}
           isReadOnly={isReadOnly}
+          commitTotal={entryFacts.commits.count}
         />
       );
     }
@@ -398,26 +400,21 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       />
     ) : null;
 
-  const matchedDetail =
-    pr !== null && github?.detail?.prNumber === pr.number ? github.detail : null;
   const checksRuns = pullRequestRunsOf({
     pr,
     detail: github?.detail ?? null,
     view: pullRequestView.view,
   });
-  const checksUnreadReason =
-    pr === null
-      ? null
-      : pr.checksUnknown === true || matchedDetail?.checksRead === 'denied'
-        ? 'Checks unknown: this token cannot read them'
-        : matchedDetail?.checksRead === 'failed'
-          ? "Checks unknown: couldn't read them"
-          : null;
+  const checksUnreadReason = checksUnreadReasonOf({ pr, detail: github?.detail ?? null });
   const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
-  const entryFacts = worktreeEntryFactsOf({
+  const threadCounts = reviewCounts({
+    threads: branchReview.branchEntries.map((e) => e.row.thread),
+  });
+  const entryFacts = branchTabFactsOf({
     pullRequestState: scope.state,
-    commentsNeedYou: reviewCounts({ threads: entries.map((e) => e.row.thread) }).needYou,
-    files: mountStat?.files ?? filesCount,
+    commentsNeedYou: threadCounts.needYou,
+    commentsOpen: threadCounts.unresolved,
+    files: mountStat?.files ?? loadedBranchFilesOf({ diff: { ...diff, isLoading: diff.loading } }),
     diff: mountStat,
     commits: start.step.ahead,
     notPushed: pushCount,

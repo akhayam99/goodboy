@@ -38,6 +38,10 @@ import {
   SESSION,
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import {
+  NOTE_IDS,
+  resolveNotesFor,
+} from '../../../../app/components/MockScene/scenes/resolveNotesSeed';
 import { railOf, sectionNames } from '../../../../test/branchRail';
 import { BranchPage } from './index';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
@@ -538,7 +542,7 @@ describe('Branch page counts', () => {
     }
   });
 
-  it('badges the comments that need you and leaves the file and commit counts to their pages', async () => {
+  it('draws the file, commit and comment counts on their tabs', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     withCommits({ remoteSha: 'c'.repeat(40) });
@@ -549,8 +553,8 @@ describe('Branch page counts', () => {
     );
     await settle();
 
-    expect(countOf(/^Changes/)).toBe('');
-    expect(countOf(/^Commits/)).toBe('');
+    expect(Number(countOf(/^Changes/).split(/\s/)[0])).toBeGreaterThan(0);
+    expect(countOf(/^Commits/)).not.toBe('');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
 });
@@ -559,7 +563,7 @@ describe('Branch page counts before any visit', () => {
   const countOf = (name: RegExp): string =>
     railRow(name).textContent?.replace(/^[A-Za-z]+/, '') ?? '';
 
-  it('loads the commit history once when the page opens, and badges only the comments without a visit', async () => {
+  it('loads the commit history once when the page opens, and counts every tab without a visit', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     const loadHistoryDraft = vi.fn(async () => {
@@ -576,8 +580,8 @@ describe('Branch page counts before any visit', () => {
     expect(loadHistoryDraft).toHaveBeenCalledTimes(1);
     expect(loadHistoryDraft).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_ID });
     expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
-    expect(countOf(/^Changes/)).toBe('');
-    expect(countOf(/^Commits/)).toBe('');
+    expect(Number(countOf(/^Changes/).split(/\s/)[0])).toBeGreaterThan(0);
+    expect(countOf(/^Commits/)).not.toBe('');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
 
@@ -595,7 +599,7 @@ describe('Branch page counts before any visit', () => {
     await settle();
 
     expect(loadHistoryDraft).not.toHaveBeenCalled();
-    expect(countOf(/^Commits/)).toBe('');
+    expect(countOf(/^Commits/)).not.toBe('');
   });
 });
 
@@ -747,13 +751,13 @@ describe('Branch page entries in the sidebar', () => {
   const fileRail = (): HTMLElement | null =>
     document.querySelector<HTMLElement>('[data-slot="diff-file-rail"] aside[aria-label="Files"]');
 
-  it('keeps Changes a plain entry with no count and puts the file list on the right of the page', async () => {
+  it('counts Changes on its tab and puts the file list on the right of the page', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedShownPullRequest();
     await mountFiles();
     expect(fileRail()).toBeNull();
     expect(railRow(/^Changes/).hasAttribute('aria-expanded')).toBe(false);
-    expect(railRow(/^Changes/).textContent).toBe('Changes');
+    expect(railRow(/^Changes/).textContent).toMatch(/^Changes\d/);
 
     await visit(/^Changes/);
     const rail = fileRail();
@@ -793,5 +797,257 @@ describe('Branch page entries in the sidebar', () => {
     await settle();
 
     expect(screen.getAllByText(/credit\.ts/).length).toBeGreaterThan(0);
+  });
+});
+
+const seedWorktreeRecord = (): void => {
+  useAppStore.setState({
+    sessionWorktreeRecords: {
+      [SESSION.id]: [
+        {
+          id: 'worktree-payments-api',
+          sessionId: SESSION.id,
+          worktreePath: WORKTREE,
+          branch: MOUNT.branch,
+          parallelIndex: 0,
+          projectId: PROJECT_ID,
+          mountName: 'payments-api',
+          repoSlug: 'harborline/payments-api',
+          createdAt: 1,
+        },
+      ],
+    },
+  });
+};
+
+const stripTab = (name: RegExp): HTMLElement =>
+  within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', { name });
+
+const stripCount = (name: RegExp): string =>
+  (stripTab(name).textContent ?? '').replace(/^[A-Za-z ]+/, '').trim();
+
+const NOTE_PLACE = { filePath: 'src/credit.ts', line: 1 };
+const NOTE_PLACES = {
+  open: NOTE_PLACE,
+  openSecond: NOTE_PLACE,
+  working: NOTE_PLACE,
+  needs: NOTE_PLACE,
+  ready: NOTE_PLACE,
+  failed: NOTE_PLACE,
+  done: NOTE_PLACE,
+};
+const OPEN_NOTE_IDS = [NOTE_IDS.open, NOTE_IDS.openSecond, NOTE_IDS.working];
+
+const seedOpenNotes = ({ isKeepingThreads }: { readonly isKeepingThreads: boolean }): void => {
+  const seeded = resolveNotesFor({ sessionId: SESSION.id, places: NOTE_PLACES });
+  const wanted = new Set(OPEN_NOTE_IDS);
+  const notes = seeded.notes
+    .filter((note) => wanted.has(note.id))
+    .map((note) => ({ ...note, projectId: PROJECT_ID, branch: MOUNT.branch }));
+  const entries = seeded.entries.filter((entry) => wanted.has(entry.thread.diffCommentId ?? ''));
+  const attempts = seeded.attempts.filter((attempt) =>
+    attempt.threadIds.some((threadId) =>
+      entries.some((entry) => entry.thread.threadId === threadId),
+    ),
+  );
+  act(() => {
+    useAppStore.setState((state) => ({
+      diffComments: { [SESSION.id]: notes },
+      sessionResolveQueueItems: {
+        ...state.sessionResolveQueueItems,
+        [SESSION.id]: [
+          ...(isKeepingThreads ? (state.sessionResolveQueueItems[SESSION.id] ?? []) : []),
+          ...entries,
+        ],
+      },
+      sessionResolveAttempts: { ...state.sessionResolveAttempts, [SESSION.id]: attempts },
+    }));
+  });
+};
+
+describe('Branch page Comments count', () => {
+  it('counts the local notes the Comments page lists when there is no pull request', async () => {
+    await mount();
+    dropRequest();
+    seedOpenNotes({ isKeepingThreads: false });
+    await settle();
+
+    expect(stripCount(/^Comments/)).toBe('3');
+  });
+
+  it('counts host threads and local notes together', async () => {
+    await mount();
+    const hostOnly = Number(stripCount(/^Comments/));
+    seedWorktree({ isDiffLoaded: false });
+    seedOpenNotes({ isKeepingThreads: true });
+    await settle();
+
+    expect(hostOnly).toBeGreaterThan(0);
+    expect(Number(stripCount(/^Comments/))).toBe(hostOnly + 3);
+  });
+});
+
+describe('Branch page tab and head facts', () => {
+  const STATUS = {
+    branch: MOUNT.branch,
+    head: COMMITS[0]?.sha ?? null,
+    headSubject: 'Commit 1',
+    upstreamDistance: { kind: 'known', ahead: 3, behind: 0 },
+    mainDistance: { kind: 'known', ahead: 3, behind: 0 },
+    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+    upstream: 'origin/hl/fix-duplicate-credit',
+    inProgress: null,
+  };
+
+  const holdReads = ({ summaryFiles = 2 }: { readonly summaryFiles?: number } = {}) => {
+    const held: { release: () => void } = { release: () => undefined };
+    const gate = new Promise<void>((resolve) => {
+      held.release = resolve;
+    });
+    vi.mocked(invoke).mockImplementation(async (command: string) => {
+      if (command === 'worktree_diff') {
+        await gate;
+        return PATCH;
+      }
+      if (command === 'worktree_status') {
+        await gate;
+        return STATUS;
+      }
+      if (command === 'worktree_commits') {
+        await gate;
+        return COMMITS;
+      }
+      if (command === 'worktree_diff_files') {
+        return [];
+      }
+      if (command === 'worktree_changed_files') {
+        await gate;
+        return {
+          paths: Array.from({ length: summaryFiles }, (_, index) => `src/file${index}.ts`),
+          entries: [],
+          additions: summaryFiles,
+          deletions: 0,
+          numstat: '',
+        };
+      }
+      return new Promise<never>(() => undefined);
+    });
+    return held;
+  };
+
+  it('shows the same files and commits on the tab and in the Changes head, before and after loading', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedShownPullRequest();
+    seedWorktree({ isDiffLoaded: false });
+    seedWorktreeRecord();
+    const held = holdReads();
+    observers = installFakeResizeObserver();
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(stripCount(/^Changes/)).toBe('');
+    expect(stripCount(/^Commits/)).toBe('');
+
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 1400, 600),
+    );
+    act(() => observers?.resizeAll());
+    held.release();
+    await settle();
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId: SESSION.id, tab: 'files' }) });
+    });
+    await settle();
+
+    expect(stripCount(/^Changes/)).toBe('2+2 -0');
+    expect(stripCount(/^Commits/)).toBe('3');
+
+    const rail = document.querySelector<HTMLElement>(
+      '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
+    );
+    expect(rail).not.toBeNull();
+    within(rail!).getByText(/Viewed 0 of 2/);
+    screen.getByText('· All 3 commits');
+    expect(stripCount(/^Changes/)).toBe('2+2 -0');
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 700, 600),
+    );
+    act(() => observers?.resizeAll());
+    await settle();
+    const toggle = screen.getByRole('button', { name: /^Files/ });
+    expect((toggle.textContent ?? '').replace(/^Files/, '')).toBe(stripCount(/^Changes/));
+  });
+
+  it('keeps the rail on the loaded diff when the polled summary disagrees', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedShownPullRequest();
+    seedWorktree({ isDiffLoaded: false });
+    seedWorktreeRecord();
+    const held = holdReads({ summaryFiles: 5 });
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    held.release();
+    await settle();
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId: SESSION.id, tab: 'files' }) });
+    });
+    await settle();
+
+    expect(stripCount(/^Changes/)).toBe('5+5 -0');
+    const rail = document.querySelector<HTMLElement>(
+      '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
+    );
+    within(rail!).getByText(/Viewed 0 of 2/);
+  });
+
+  it('keeps the Changes tab on the branch when the summary fails and the scope changes', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedShownPullRequest();
+    seedWorktree({ isDiffLoaded: false });
+    seedWorktreeRecord();
+    const held = holdReads();
+    const base = vi.mocked(invoke).getMockImplementation();
+    vi.mocked(invoke).mockImplementation(
+      async (command: string, args?: Parameters<typeof invoke>[1]) => {
+        if (command === 'worktree_changed_files') {
+          throw new Error('summary failed');
+        }
+        if (command === 'worktree_diff_working' || command === 'worktree_diff_commit') {
+          return PATCH.split('diff --git a/src/webhook.ts')[0] ?? '';
+        }
+        return base?.(command, args);
+      },
+    );
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    held.release();
+    await settle();
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId: SESSION.id, tab: 'files' }) });
+    });
+    await settle();
+    expect(stripCount(/^Changes/)).toBe('2');
+
+    const pick = async (label: string): Promise<void> => {
+      fireEvent.click(screen.getByRole('button', { name: /^(Compared with|Working tree|Commit)/ }));
+      fireEvent.click(screen.getByText(label));
+      await settle();
+    };
+    await pick('Commit 1');
+    expect(stripCount(/^Changes/)).toBe('');
+    await pick('working tree');
+    expect(stripCount(/^Changes/)).toBe('');
+    await pick('branch vs main');
+    expect(stripCount(/^Changes/)).toBe('2');
   });
 });
