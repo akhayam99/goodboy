@@ -113,7 +113,7 @@ Export a wireframe as a folder of pages, or redraw it at the other fidelity.
 
 This part is for contributors and agents who change the feature.
 
-- Branch Work tab: `branchWorkArtifactsRegistration` gives the Branch page the artifacts of one branch. `useArtifactBranchGroup` reads the same `groupArtifactRowsByBranch` group as this list. `ArtifactBranchWork` draws it through `ArtifactBranchSection` with a `heading`. **Open branch** here lands on that tab (`openBranchWorkTab`).
+- Branch Work tab: `branchWorkArtifactsRegistration` gives the Branch page the artifacts of one branch. `useArtifactBranchGroup` reads the same `groupArtifactRowsByBranch` group as this list. `ArtifactBranchWork` draws it as `ArtifactWorkGroup`, a group of the tab's one grid. Its `ArtifactWorkRow` rows fill the runs' columns: state dot, kind glyph, title, state word, time and action. A plan opens its parts from **N parts** after the title. Both row shapes read `useArtifactRowModel`. **Open branch** here lands on that tab (`openBranchWorkTab`).
 - Fact card on a row: `artifactStateCardOf` builds the card that opens on the state of a row.
 - A plan's Needs you: `artifactStateOf` reads only `plannerQuestionCount`, the open questions of the plan's own planner (`plannerQuestionsOf`). The list rows, the reader and the plan model pass the same count, so a question from another agent leaves every plan where it was.
 

@@ -135,6 +135,33 @@ describe('the u37 branch work scene', () => {
     within(sectionOf('Questions')).getByText('Should the limit apply per endpoint or per event?');
   });
 
+  it('lines runs, questions and artifacts up in one grid: marks, titles, state words and times', async () => {
+    await mount();
+
+    const grid = screen.getByRole('list', { name: 'Work on this branch' });
+    for (const name of ['Runs', 'Questions', 'Artifacts']) {
+      expect(sectionOf(name).closest('[data-list-grid]')).toBe(grid);
+      expect(sectionOf(name).querySelector('[data-list-grid-group-mark]')).not.toBeNull();
+    }
+    const cellOf = (row: Element | null, key: string) =>
+      row?.querySelector(`[data-list-grid-cell="${key}"]`) ?? null;
+    const runRow = within(sectionOf('Runs')).getByRole('button', {
+      name: /^Open Fix duplicate credit/,
+    });
+    const questionRow = within(sectionOf('Questions')).getByRole('button', {
+      name: /^Should the limit apply/,
+    });
+    const artifactRow = within(sectionOf('Artifacts')).getByRole('button', {
+      name: /^Report Duplicate credit audit/,
+    });
+    for (const row of [runRow, questionRow, artifactRow]) {
+      expect(cellOf(row, 'title')).not.toBeNull();
+      expect(cellOf(row, 'age')).not.toBeNull();
+    }
+    expect(cellOf(runRow, 'word')?.textContent).toBe('Needs you');
+    expect(cellOf(artifactRow, 'word')?.textContent).not.toBe('');
+  });
+
   it('reads one run state in the Runs header and in its rows', async () => {
     await mount();
 
@@ -142,7 +169,8 @@ describe('the u37 branch work scene', () => {
     expect(within(runs).getAllByText('Running')).toHaveLength(1);
     expect(within(runs).getAllByText('Needs you')).toHaveLength(1);
     expect(within(runs).queryByText('Done')).toBeNull();
-    expect(runs.textContent).toMatch(/1 needs you, 1 running, 1 finished/);
+    expect(runs.textContent).toMatch(/1 needs you, 1 running/);
+    expect(within(runs).getAllByText(/finished/)).toHaveLength(1);
     const fold = within(runs).getByRole('button', { name: '1 finished' });
 
     fireEvent.click(fold);

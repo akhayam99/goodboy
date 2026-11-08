@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Agent, AgentId, MountId, OpenQuestionId, SessionId } from '@goodboy/types';
-import { Button, ICON_SIZE, ListGrid } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
@@ -24,7 +24,6 @@ import {
   questionBranchRowKeyOf,
   selectedQuestionRowKeyOf,
 } from '../SessionWorkspace/parts/QuestionsGrid/questionRowKeys';
-import { QUESTIONS_GRID_COLUMNS } from '../SessionWorkspace/parts/QuestionsGrid/questionsGridColumns';
 import { questionMetaOf } from '../SessionWorkspace/parts/questionMetaOf';
 import type { QuestionBranchGroup } from '../SessionWorkspace/parts/questionsLensModel';
 
@@ -148,33 +147,31 @@ export const BranchWorkQuestions = ({ sessionId, group, mounts, agents, mountPat
   };
 
   return (
-    <ListGrid label={NAMES.questions} columns={QUESTIONS_GRID_COLUMNS} isGrouped>
-      <QuestionsByBranch
-        groups={[group]}
-        mounts={mounts}
-        selectedRowKey={selectedRowKey}
-        openGroups={openGroups}
-        onToggleGroup={toggle}
-        onOpenBranch={openBranch}
-        canOpenBranch={canOpenBranch}
-        onRevealQuestion={reveal}
-        renderRow={renderRow}
-        heading={{
-          label: NAMES.questions,
-          mark: <Icon size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />,
-          action: (
-            <Button
-              variant="quiet"
-              size="xs"
-              onClick={() =>
-                openBranchWork({ sessionId, lens: 'questions', groupKey: group.key, mountPath })
-              }
-            >
-              All questions
-            </Button>
-          ),
-        }}
-      />
-    </ListGrid>
+    <QuestionsByBranch
+      groups={[group]}
+      mounts={mounts}
+      selectedRowKey={selectedRowKey}
+      openGroups={openGroups}
+      onToggleGroup={toggle}
+      onOpenBranch={openBranch}
+      canOpenBranch={canOpenBranch}
+      onRevealQuestion={reveal}
+      renderRow={renderRow}
+      heading={{
+        label: NAMES.questions,
+        mark: <Icon size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />,
+        action: (
+          <Button
+            variant="quiet"
+            size="xs"
+            onClick={() =>
+              openBranchWork({ sessionId, lens: 'questions', groupKey: group.key, mountPath })
+            }
+          >
+            All questions
+          </Button>
+        ),
+      }}
+    />
   );
 };

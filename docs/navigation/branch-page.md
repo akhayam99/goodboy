@@ -533,9 +533,14 @@ not show that host's checks yet (`checksViewOf`).
 
 **Work.** The last tab holds what Goodboy did on the branch: `Runs`, `Questions` and `Artifacts`,
 each the branch group the session page draws for this mount (`branchGroupKeyOfMount`), with the same
-rows, folds (`N finished`, `N answered`, `N used`) and counts, so the two can never disagree. Each
-section reuses the session page's group (`RunsByBranch`, `QuestionsByBranch`,
-`ArtifactBranchSection`) with a `heading` in place of the branch name: its icon, its name and
+rows, folds (`N finished`, `N answered`, `N used`) and counts, so the two can never disagree. A fold
+owns its count: while a group folds, its header summary leaves the finished out, so `1 finished`
+reads once. The three sections are groups of one `ListGrid` with the runs' columns
+(`RUNS_GRID_COLUMNS`): question rows and artifact rows (`ArtifactWorkRow`, `ArtifactWorkGroup`)
+fill the same keys through `cells.byKey`, so the section icons, the row titles, the state words
+(`Needs you`, `Ready`) and the times share one x and the gaps between sections are the grid's
+`gap-y-8`. Runs and questions reuse the session page's group (`RunsByBranch`,
+`QuestionsByBranch`), all three with a `heading` in place of the branch name: its icon, its name and
 `All runs`, `All questions` or `All artifacts`, which open the session page on that group without
 touching its By branch or By state switch (`openBranchWork`). A section with nothing for the branch
 is left out; with nothing at all the tab says so. The tab body comes from one registration module of the session feature,

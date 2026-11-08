@@ -101,7 +101,7 @@ describe('the u31 lists scenes', () => {
     const rows = screen.getAllByRole('button', { name: /, (You|Agent): / });
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      const stack = row.querySelector('[data-list-grid-cell="question"]')?.firstElementChild;
+      const stack = row.querySelector('[data-list-grid-cell="title"]')?.firstElementChild;
       expect(stack?.children).toHaveLength(2);
       expect(stack?.children[1]?.textContent).toMatch(/^(You|Agent): /);
     }

@@ -326,7 +326,7 @@ describe('QuestionsPane', () => {
     const cells = Array.from(answered.querySelectorAll<HTMLElement>('[data-list-grid-cell]'));
     expect(cells.map((cell) => cell.getAttribute('data-list-grid-cell'))).toEqual([
       'state',
-      'question',
+      'title',
       'age',
     ]);
     const lines = Array.from(cells[1]?.querySelectorAll<HTMLElement>('.truncate') ?? []).map(

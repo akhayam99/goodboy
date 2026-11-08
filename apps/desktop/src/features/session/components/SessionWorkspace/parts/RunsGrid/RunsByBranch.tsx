@@ -114,7 +114,7 @@ export const RunsByBranch = ({
       ];
       const mark = branchHeadMarkOf({ head: group.head });
       const summary = branchGroupSummaryOf({
-        counts: group.counts,
+        counts: isFoldable ? { ...group.counts, finished: 0 } : group.counts,
         fact: groupFactOf({ group, heading }),
       });
       const head = group.head;
