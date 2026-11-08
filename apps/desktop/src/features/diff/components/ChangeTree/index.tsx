@@ -7,7 +7,7 @@ import {
   type KeyboardEvent,
   type RefObject,
 } from 'react';
-import { EmptyLine, Button, ScrollFade, treeIndentPx, useEscapeLayer } from '@goodboy/ui';
+import { EmptyLine, Button, ScrollFade, useEscapeLayer } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import {
@@ -30,6 +30,7 @@ import { FileRow } from './FileRow';
 import { FolderRow } from './FolderRow';
 import { TreeHead } from './TreeHead';
 import { TreeTitle } from './TreeTitle';
+import { nameLengthOf } from './nameLengthOf';
 import { treeKeyAction } from './treeKeys';
 
 type TreeFilter = {
@@ -67,20 +68,9 @@ type Props = {
 };
 
 const DELTA_MIN_RAIL_PX = 300;
-const CHAR_PX = 6.8;
-const TOGGLE_SLOT_PX = 22;
-const STATUS_PX = 20;
-const CHIP_PX = 36;
-const DELTA_PX = 88;
-const GUTTER_PX = 24;
 
 type RowIdParams = {
   readonly id: string;
-};
-
-type NameLengthParams = {
-  readonly depth: number;
-  readonly count: number;
 };
 
 const domIdOf = ({ id }: RowIdParams): string => `change-tree-row:${id}`;
@@ -151,23 +141,6 @@ export const ChangeTree = ({
     trackedId !== null && rows.some((row) => row.id === trackedId)
       ? trackedId
       : (rows[0]?.id ?? null);
-
-  const nameLengthFor = useCallback(
-    ({ depth, count }: NameLengthParams): number | null => {
-      if (railWidth === 0) {
-        return null;
-      }
-      const fixed =
-        treeIndentPx({ depth }) +
-        TOGGLE_SLOT_PX +
-        STATUS_PX +
-        GUTTER_PX +
-        (count > 0 ? CHIP_PX : 0) +
-        (hasDelta ? DELTA_PX : 0);
-      return Math.max(10, Math.floor((railWidth - fixed) / CHAR_PX));
-    },
-    [hasDelta, railWidth],
-  );
 
   useEffect(() => {
     const element = viewportRef.current;
@@ -361,9 +334,11 @@ export const ChangeTree = ({
                 isTreeFocused={isTreeFocused}
                 state={states.get(row.id) ?? 'none'}
                 kinds={kinds}
-                nameLength={nameLengthFor({
+                nameLength={nameLengthOf({
                   depth: row.depth,
                   count: kinds.notes + kinds.host,
+                  railWidth,
+                  hasDelta,
                 })}
                 hasDelta={hasDelta}
                 fileActions={fileActions}
