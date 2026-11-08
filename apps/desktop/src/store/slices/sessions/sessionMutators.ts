@@ -1,6 +1,7 @@
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
 import type { SessionLoadingFlags } from './state';
 import type { SetFn } from '../../slice-types';
+import type { AppStore } from '../../store';
 
 export const EMPTY_LOADING: SessionLoadingFlags = {
   agents: false,
@@ -33,6 +34,36 @@ export const deriveSessionState = (
   return { kind: 'idle', lastActivityAt: now };
 };
 
+type PlanAgentTurnStateParams = Readonly<{
+  store: Pick<AppStore, 'agentTurnState' | 'sessionPhaseRuns'>;
+  sessionId: SessionId;
+  agentId: AgentId;
+  agentState: TurnState;
+  now: IsoDateTime;
+}>;
+
+type PlannedAgentTurnState = Readonly<{
+  nextAgentTurn: Record<AgentId, TurnState>;
+  derived: TurnState;
+}>;
+
+export const planAgentTurnState = ({
+  store,
+  sessionId,
+  agentId,
+  agentState,
+  now,
+}: PlanAgentTurnStateParams): PlannedAgentTurnState => {
+  const nextAgentTurn: Record<AgentId, TurnState> = {
+    ...store.agentTurnState,
+    [agentId]: agentState,
+  };
+  const sessionAgentIds = (store.sessionPhaseRuns[sessionId] ?? []).map((a) => a.id);
+  const ids = sessionAgentIds.includes(agentId) ? sessionAgentIds : [...sessionAgentIds, agentId];
+  const states = ids.map((id) => nextAgentTurn[id]).filter((s): s is TurnState => s !== undefined);
+  return { nextAgentTurn, derived: deriveSessionState(states, now) };
+};
+
 export const applyAgentTurnState = (
   set: SetFn,
   sessionId: SessionId,
@@ -42,16 +73,9 @@ export const applyAgentTurnState = (
 ): TurnState => {
   let derived: TurnState = agentState;
   set((store) => {
-    const nextAgentTurn: Record<AgentId, TurnState> = {
-      ...store.agentTurnState,
-      [agentId]: agentState,
-    };
-    const sessionAgentIds = (store.sessionPhaseRuns[sessionId] ?? []).map((a) => a.id);
-    const ids = sessionAgentIds.includes(agentId) ? sessionAgentIds : [...sessionAgentIds, agentId];
-    const states = ids
-      .map((id) => nextAgentTurn[id])
-      .filter((s): s is TurnState => s !== undefined);
-    derived = deriveSessionState(states, now);
+    const planned = planAgentTurnState({ store, sessionId, agentId, agentState, now });
+    const nextAgentTurn = planned.nextAgentTurn;
+    derived = planned.derived;
     return {
       sessions: store.sessions.map((s) =>
         s.id === sessionId ? { ...s, state: derived, updatedAt: now } : s,

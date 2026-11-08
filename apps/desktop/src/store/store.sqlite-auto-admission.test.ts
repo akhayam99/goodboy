@@ -239,4 +239,42 @@ describe('a turn and an adoption from another window never cross', () => {
     expect(rows[0]?.status).not.toBe('running');
     expect((await adoptInOtherWindow(first)).kind).toBe('adopted');
   });
+
+  it('leaves the session idle and drains the queue when the session state write fails', async () => {
+    injectDbFault({ match: /UPDATE sessions SET state_kind = \?/ });
+    await useAppStore.getState().enqueueAgentMessage({
+      turn: {
+        id: 'queued-1',
+        agentId: first.agentId,
+        content: 'Then compare it with Northwind',
+        attachments: [],
+        override: undefined,
+      },
+    });
+
+    await expect(
+      useAppStore.getState().sendTurn({
+        sessionId: first.sessionId,
+        agentId: first.agentId,
+        content: 'Also list the migrations.',
+        origin: 'operator',
+      }),
+    ).rejects.toThrow('injected db fault');
+
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() =>
+      expect(useAppStore.getState().agentQueue[first.agentId] ?? []).toEqual([]),
+    );
+    await vi.waitFor(() =>
+      expect(useAppStore.getState().agentTurnState[first.agentId]?.kind).toBe('idle'),
+    );
+    const rows = await storySqlite().select<{ readonly status: string }>(
+      'SELECT status FROM agents WHERE id = ?',
+      [first.agentId],
+    );
+    expect(rows[0]?.status).not.toBe('running');
+    expect(
+      useAppStore.getState().sessions.find((session) => session.id === first.sessionId)?.state.kind,
+    ).toBe('idle');
+  });
 });

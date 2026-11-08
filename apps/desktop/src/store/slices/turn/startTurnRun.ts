@@ -26,7 +26,7 @@ import { heldOnceAllowsOf } from '../permissions/heldOnceAllowsOf';
 import { NO_RESOLVED_ASKS } from '../permissions/noResolvedAsks';
 import { resolvedAsksAtWrite } from '../permissions/resolvedAsksAtWrite';
 import { withHeldAnswers } from '../permissions/withHeldAnswers';
-import { applyAgentTurnState } from '../sessions/sessionMutators';
+import { applyAgentTurnState, planAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart, isTurnStartCancelled } from './turnStartWindow';
 import { claimTurnAdmission } from './childTurn/claimTurnAdmission';
 import { turnRefusalMessage } from './refusal/turnRefusalMessage';
@@ -278,8 +278,16 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
     }
     nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
-    const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
-    await updateSessionState(tauriDatabase, sessionId, derived, now());
+    const at = now();
+    const planned = planAgentTurnState({
+      store: get(),
+      sessionId,
+      agentId: activeAgentId,
+      agentState: nextAgentState,
+      now: at,
+    });
+    await updateSessionState(tauriDatabase, sessionId, planned.derived, at);
+    applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, at);
   } catch (error) {
     if (isClaimed) {
       await releaseClaim();
