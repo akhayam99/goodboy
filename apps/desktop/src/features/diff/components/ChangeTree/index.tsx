@@ -108,7 +108,8 @@ export const ChangeTree = ({
     () => [...states.values()].filter((state) => state === 'viewed').length,
     [states],
   );
-  const unviewedCount = allFiles.length - viewedCount;
+  const total = allFiles.length;
+  const unviewedCount = total - viewedCount;
   const commentedCount = useMemo(
     () => allFiles.filter((file) => commentCountOf(file.path) > 0).length,
     [allFiles, commentCountOf],
@@ -159,8 +160,7 @@ export const ChangeTree = ({
 
   const reveal = useCallback(
     (id: string) => {
-      const viewport = viewportRef.current;
-      revealTreeRow({ viewport, isWindowed, rows, layout, id, domId: domIdOf({ id }) });
+      revealTreeRow({ viewportRef, isWindowed, rows, layout, id, domId: domIdOf({ id }) });
     },
     [isWindowed, layout, rows],
   );

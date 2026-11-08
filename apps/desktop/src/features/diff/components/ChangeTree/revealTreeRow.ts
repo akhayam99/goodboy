@@ -1,10 +1,11 @@
+import type { RefObject } from 'react';
 import { appScrollIntoView, appScrollTo } from '@goodboy/ui';
 import type { TreeRow } from '../../lib/changeTree';
 import { rowHeightOf } from '../../lib/rowHeightOf';
 import { scrollTopToReveal, type RowLayout } from '../../../../shared/utils/windowRows';
 
 type Params = {
-  readonly viewport: HTMLElement | null;
+  readonly viewportRef: RefObject<HTMLElement | null>;
   readonly isWindowed: boolean;
   readonly rows: ReadonlyArray<TreeRow>;
   readonly layout: RowLayout;
@@ -12,7 +13,15 @@ type Params = {
   readonly domId: string;
 };
 
-export const revealTreeRow = ({ viewport, isWindowed, rows, layout, id, domId }: Params): void => {
+export const revealTreeRow = ({
+  viewportRef,
+  isWindowed,
+  rows,
+  layout,
+  id,
+  domId,
+}: Params): void => {
+  const viewport = viewportRef.current;
   if (!isWindowed || viewport === null) {
     appScrollIntoView({ element: document.getElementById(domId), block: 'nearest' });
     return;
