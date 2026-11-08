@@ -4,6 +4,7 @@ export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export { DrawerBackChipContext } from './drawerBackChipContext';
+export type { DrawerChip } from './drawerBackChipContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { DISABLED } from './disabledStyle';
 export { FOCUS_RING } from './focusRing';
@@ -64,7 +65,6 @@ export {
 export type { DrawerMode, DrawerPlacement, DrawerSizing, PageTier } from './drawerGeometry';
 export { DrawerFrame } from './components/DrawerFrame';
 export { DrawerBackLink } from './components/DrawerBackLink';
-export { DrawerBackChip } from './components/DrawerBackChip';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';
 export type {

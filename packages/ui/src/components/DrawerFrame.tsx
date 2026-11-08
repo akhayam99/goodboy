@@ -6,6 +6,7 @@ import { ArrowUpRight, X } from 'lucide-react';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
+import { DrawerBackChip } from './DrawerBackChip';
 import { DrawerBackLink } from './DrawerBackLink';
 import { DrawerHeaderMore } from './DrawerHeaderMore';
 import { IconButton } from './IconButton';
@@ -102,7 +103,7 @@ export const DrawerFrame = ({
   const hasToolbar = toolbar != null;
   const drawerContent = useContext(DrawerContentContext);
   const backChip = useContext(DrawerBackChipContext);
-  const hasBackChip = backChip != null && !isHeaderless;
+  const hasBackChip = backChip !== null && !isHeaderless;
 
   useEscapeLayer(() => {
     const active = document.activeElement;
@@ -135,7 +136,7 @@ export const DrawerFrame = ({
 
   const titleRow = (
     <>
-      {hasBackChip ? backChip : null}
+      {hasBackChip ? <DrawerBackChip chip={backChip} /> : null}
       <div className={cn('flex min-w-0 flex-1 gap-2', hasToolbar ? 'items-start' : 'items-center')}>
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">

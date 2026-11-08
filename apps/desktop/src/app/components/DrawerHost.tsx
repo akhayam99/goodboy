@@ -3,7 +3,7 @@ import { DrawerBackChipContext } from '@goodboy/ui';
 import { useAppStore } from '../../store';
 import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
-import { SlotBackChip } from './SlotBackChip';
+import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
 import { ExplorePane } from '../../features/explore/components/ExplorePane';
@@ -211,7 +211,7 @@ const renderDrawer = ({
 
 export const DrawerHost = () => {
   const drawer = useAppStore(selectDrawerPanel);
-  const back = useAppStore(selectSlotBack);
+  const backChip = useSlotBackChip({ back: useAppStore(selectSlotBack) });
   const closeDrawer = useAppStore((s) => s.closeDrawer);
   const closeQuestion = useAppStore((s) => s.closeQuestion);
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -232,7 +232,7 @@ export const DrawerHost = () => {
   }
   return (
     <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
-      <DrawerBackChipContext.Provider value={back === null ? null : <SlotBackChip back={back} />}>
+      <DrawerBackChipContext.Provider value={backChip}>
         {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
       </DrawerBackChipContext.Provider>
     </PanelBoundary>

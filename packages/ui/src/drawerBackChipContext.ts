@@ -1,3 +1,9 @@
-import { createContext, type ReactNode } from 'react';
+import { createContext } from 'react';
 
-export const DrawerBackChipContext = createContext<ReactNode>(null);
+export type DrawerChip = {
+  readonly kind: string;
+  readonly title: string | null;
+  readonly onBack: () => void;
+};
+
+export const DrawerBackChipContext = createContext<DrawerChip | null>(null);

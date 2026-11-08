@@ -191,11 +191,11 @@ stands, without playing the entry again.
 
 **A drawer's up is its back chip, never a trail.** A drawer is page state, not
 an address, so it draws no breadcrumb. The drawer that the open one replaced
-waits in a back chip that leads the header row (`DrawerBackChip` from
-`@goodboy/ui`, handed to `DrawerFrame` by `DrawerHost` through
+waits in a back chip that leads the header row (`DrawerFrame` draws
+`DrawerBackChip` from what `DrawerHost` hands it through
 `DrawerBackChipContext`): an arrow, the kind and the title, such as
 **Plan · Add tax to the checkout total** or **Terminal**, at most half the
-header wide, the title truncating first (`app/components/SlotBackChip`,
+header wide, the title truncating first (`app/hooks/useSlotBackChip`,
 `slotChipLabelOf`). A click opens it and puts the current one in the chip.
 While the chip shows, the head draws no back row; without one, a drawer opened
 from another drawer keeps its quiet back row (`DrawerBackLink`, the row

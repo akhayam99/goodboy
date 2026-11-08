@@ -1,32 +1,28 @@
 import { ArrowLeft } from 'lucide-react';
-import { cn } from '../cn';
+import type { DrawerChip } from '../drawerBackChipContext';
 import { ICON_SIZE } from '../iconSize';
-import { buttonClasses } from './Button';
+import { Button } from './Button';
 
 type Props = {
-  readonly kind: string;
-  readonly title: string | null;
-  readonly onBack: () => void;
+  readonly chip: DrawerChip;
 };
 
-export const DrawerBackChip = ({ kind, title, onBack }: Props) => {
-  const label = title === null ? kind : `${kind} · ${title}`;
+export const DrawerBackChip = ({ chip }: Props) => {
+  const label = chip.title === null ? chip.kind : `${chip.kind} · ${chip.title}`;
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="xs"
       data-drawer-back-chip=""
       aria-label={`Back to ${label}`}
-      className={cn(
-        buttonClasses({ variant: 'secondary', size: 'xs' }),
-        'min-w-0 max-w-1/2 shrink justify-start',
-      )}
-      onClick={onBack}
+      className="min-w-0 max-w-1/2 shrink justify-start"
+      onClick={chip.onBack}
     >
       <ArrowLeft size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-      <span className="shrink-0">{kind}</span>
-      {title === null ? null : (
-        <span className="min-w-0 truncate text-muted-foreground">· {title}</span>
+      <span className="shrink-0">{chip.kind}</span>
+      {chip.title === null ? null : (
+        <span className="min-w-0 truncate text-muted-foreground">· {chip.title}</span>
       )}
-    </button>
+    </Button>
   );
 };

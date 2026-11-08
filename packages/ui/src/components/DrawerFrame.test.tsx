@@ -4,7 +4,6 @@ import { Plus } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DrawerBackChipContext } from '../drawerBackChipContext';
-import { DrawerBackChip } from './DrawerBackChip';
 import { DrawerFrame } from './DrawerFrame';
 import { IconButton } from './IconButton';
 
@@ -64,7 +63,7 @@ describe('DrawerFrame head', () => {
     const onBack = vi.fn();
     render(
       <DrawerBackChipContext.Provider
-        value={<DrawerBackChip kind="Plan" title="Add tax to the checkout total" onBack={onBack} />}
+        value={{ kind: 'Plan', title: 'Add tax to the checkout total', onBack }}
       >
         <DrawerFrame
           title="Terminal"
