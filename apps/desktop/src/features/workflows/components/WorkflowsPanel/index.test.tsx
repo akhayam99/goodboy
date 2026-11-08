@@ -255,11 +255,10 @@ describe('WorkflowsPanel editor', () => {
 
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
     const name = screen.getByRole('textbox', { name: 'Workflow name' });
+    const step = screen.getByRole('button', { name: 'Step 1: Plan' });
     expect(breadcrumb.closest('[data-slot="reveal-pinned"]')).not.toBeNull();
     expect(name.closest('[data-slot="reveal-header"]')).not.toBeNull();
-    expect(
-      screen.getByRole('button', { name: 'Step 1: Plan' }).closest('[data-page-scroller]'),
-    ).not.toBeNull();
+    expect(step.closest('[data-page-scroller]')).not.toBeNull();
   });
 
   it('opens the workflow a search hit points at, then forgets it', () => {

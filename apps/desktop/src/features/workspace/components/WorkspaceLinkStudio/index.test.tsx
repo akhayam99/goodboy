@@ -158,10 +158,9 @@ describe('WorkspaceLinkStudio', () => {
     render(<WorkspaceLinkStudio onClose={vi.fn()} />);
 
     const title = screen.getByRole('heading', { name: 'New workspace' });
+    const choose = screen.getByRole('button', { name: /choose folder/i });
     expect(title.closest('[data-slot="reveal-header"]')).not.toBeNull();
-    expect(
-      screen.getByRole('button', { name: /choose folder/i }).closest('[data-page-scroller]'),
-    ).not.toBeNull();
+    expect(choose.closest('[data-page-scroller]')).not.toBeNull();
   });
 
   it('sits between the bars like every studio inside the shell', () => {

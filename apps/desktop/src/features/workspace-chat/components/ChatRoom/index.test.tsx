@@ -528,13 +528,10 @@ describe('ChatRoom', () => {
     const drawer = screen.getByRole('region', { name: NAMES.startWorkFromChat });
     const close = within(drawer).getByRole('button', { name: 'Close' });
     const drafter = within(drawer).getByRole('button', { name: /^Drafted by: / });
+    const cancel = within(drawer).getByRole('button', { name: /Cancel/ });
     expect(close.closest('[data-slot="reveal-region"]')).toBeNull();
     expect(drafter.closest('[data-slot="reveal-header"]')).not.toBeNull();
-    expect(
-      within(drawer)
-        .getByRole('button', { name: /Cancel/ })
-        .closest('[data-page-scroller]'),
-    ).not.toBeNull();
+    expect(cancel.closest('[data-page-scroller]')).not.toBeNull();
   });
 
   it('drafts with the model remembered for the workspace', async () => {

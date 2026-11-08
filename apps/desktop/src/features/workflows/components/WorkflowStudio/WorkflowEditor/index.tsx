@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
 import { Button, ICON_SIZE, Notice, PaneShell } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
 import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { AnchoredConfirm } from '../../../../../shared/components/AnchoredConfirm';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { ROLE_LABEL, classifyStep } from '../../../../session/agent-kind';
 import { BuilderTitleField } from './BuilderTitleField';
@@ -28,7 +26,7 @@ import { stepPolishFields } from '../../../stepPolishFields';
 import { polishWorkflowGoalText } from '../../../workflows';
 import { DragGhost } from '../DragGhost';
 import { roleSetLine } from '../../../roleSetLine';
-import { EditorTrail } from './EditorTrail';
+import { EditorLead } from './EditorLead';
 import { NoProvidersNotice } from './NoProvidersNotice';
 
 type Props = {
@@ -43,7 +41,6 @@ const IDENTITY_INDEX = 0;
 export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, editor }: Props) => {
   const overrides = useAppStore((state) => state.workspaceOverrides?.[workspaceId] ?? null);
   const roleModels = overrides?.roleModels ?? null;
-  const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
   const { form, setForm, expandedKey, setExpandedKey } = editor;
   const steps = form.steps;
   const polishDeps = useProsePolishDeps({ workspaceId, workingDir });
@@ -138,45 +135,10 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
 
   const error = editor.formError ?? editor.generationError ?? polishError ?? saveError;
 
-  const trail = (
-    <div className="relative flex flex-col gap-3">
-      <EditorTrail
-        name={form.name}
-        saveStatus={editor.saveStatus}
-        isSavedWorkflow={editor.isSavedWorkflow}
-        isDirty={editor.isDirty}
-        disabled={blocked}
-        onBack={editor.close}
-        onDuplicate={() => void editor.duplicate()}
-        onUndo={editor.undoSinceOpened}
-        onDelete={() => {
-          if (editor.isSavedWorkflow) {
-            void editor.remove();
-            return;
-          }
-          setIsConfirmingDiscard(true);
-        }}
-      />
-      <AnchoredConfirm
-        role="danger"
-        icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-        title="Discard this workflow?"
-        description="Nothing is saved yet. The draft is lost."
-        confirmLabel="Discard"
-        isOpen={isConfirmingDiscard}
-        onConfirm={async () => {
-          await editor.remove();
-          setIsConfirmingDiscard(false);
-        }}
-        onCancel={() => setIsConfirmingDiscard(false)}
-      />
-    </div>
-  );
-
   return (
     <PaneShell
       page="workflows"
-      lead={trail}
+      lead={<EditorLead editor={editor} isDisabled={blocked} />}
       header={
         <BuilderTitleField
           value={form.name}
