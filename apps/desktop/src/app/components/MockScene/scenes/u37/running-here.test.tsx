@@ -85,6 +85,7 @@ describe('the u37 running here scenes', () => {
     const line = runningLine();
     expect(line?.textContent).toContain(':5173');
     expect(line?.textContent).toContain(':4310');
+    expect(line?.textContent).not.toContain(':4310:4310');
     expect(line?.textContent).toContain('Terminal');
     expect(line?.textContent).toContain('Agent');
   });

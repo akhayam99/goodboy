@@ -51,7 +51,7 @@ export const runningHereOf = ({
     items.push({
       key: row.key,
       port: row.port,
-      label: row.label ?? row.processName ?? 'process',
+      label: (row.label === `:${row.port}` ? null : row.label) ?? row.processName ?? 'process',
       word: ownerWordOf({ row }),
     });
   }
