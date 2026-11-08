@@ -13,6 +13,7 @@ type BaseProps = {
   readonly page?: FramePage;
   readonly width?: PageColumnWidth;
   readonly isOnColumn?: boolean;
+  readonly isTrailPinned?: boolean;
   readonly rhythm?: 'title' | 'section';
   readonly tabs?: ReactNode;
   readonly animationClassName?: string;
@@ -41,12 +42,14 @@ export const PageHeader = (props: PageHeaderProps) => {
     page,
     width,
     isOnColumn = false,
+    isTrailPinned = false,
     rhythm = 'title',
     tabs,
     animationClassName = 'motion-safe:animate-studio-in',
   } = props;
   const isUnderTrail = useContext(UnderTrailContext);
   const trail = useContext(PageTrailContext);
+  const isTrailInline = trail != null && !isTrailPinned;
   const inheritedActions = useInheritedPaneActions();
   const titleActions =
     inheritedActions == null ? (
@@ -71,11 +74,11 @@ export const PageHeader = (props: PageHeaderProps) => {
       )}
     >
       <div className={cn('flex min-w-0 flex-col gap-2', animationClassName)}>
-        {trail == null ? null : (
+        {isTrailInline ? (
           <div data-slot="page-trail" className="flex h-6 min-w-0 items-center">
             {trail}
           </div>
-        )}
+        ) : null}
         {props.row !== undefined ? (
           props.row
         ) : (

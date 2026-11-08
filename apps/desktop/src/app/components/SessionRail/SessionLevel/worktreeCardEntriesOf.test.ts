@@ -180,7 +180,7 @@ describe('the check counts of a branch row on every host', () => {
     it(`says why there is no count when the ${provider} token cannot read the checks`, () => {
       const entry = checksEntryOf({ provider, view: viewOf({ read: 'denied', runs: [] }) });
       expect(entry?.fact.text).toBeNull();
-      expect(entry?.fact.tooltip).toBe('Checks unknown: this token cannot read them');
+      expect(entry?.fact.tooltip).toBe("Checks unknown: this token can't read them");
     });
 
     it(`draws nothing while the ${provider} view is not loaded`, () => {

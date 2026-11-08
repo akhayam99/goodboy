@@ -13102,11 +13102,6 @@
       "count": 2
     }
   },
-  "packages/ui/src/__tests__/ScrollFade.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
   "packages/ui/src/__tests__/StatCard.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

@@ -9,6 +9,7 @@ import {
   type RefCallback,
 } from 'react';
 import { PageColumn, ScrollFade, Skeleton } from '@goodboy/ui';
+import { useSnapToTop } from '../../hooks/useSnapToTop';
 import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
 import type { FileDiff } from '@goodboy/types';
 import { useDiffLayoutMode } from '../../hooks/useDiffLayoutMode';
@@ -66,9 +67,6 @@ const matchPath = (files: ReadonlyArray<FileDiff>, path: string): string | null 
 
 const offsetFromTop = (element: HTMLElement, viewport: HTMLElement | null): number =>
   element.getBoundingClientRect().top - (viewport?.getBoundingClientRect().top ?? 0);
-
-const snapToTop = (element: HTMLElement) =>
-  element.scrollIntoView?.({ block: 'start', behavior: 'instant' });
 
 export const DiffView = ({
   files,
@@ -171,6 +169,7 @@ export const DiffView = ({
     }
   }, [activePath]);
 
+  const snapToTop = useSnapToTop();
   const cancelSettle = useCallback(() => {
     if (settleFrame.current !== null) {
       cancelAnimationFrame(settleFrame.current);
@@ -341,7 +340,7 @@ export const DiffView = ({
       cancelSettle();
       lockedPath.current = path;
       setActivePath(path);
-      snapToTop(element);
+      snapToTop({ element });
       let last = offsetFromTop(element, viewportRef.current);
       let frames = 0;
       let stable = 0;
@@ -356,7 +355,7 @@ export const DiffView = ({
           viewportRef.current === null ? Math.abs(offset - last) <= 1 : Math.abs(offset) <= 1;
         stable = settled ? stable + 1 : 0;
         if (!settled) {
-          snapToTop(current);
+          snapToTop({ element: current });
         }
         last = offsetFromTop(current, viewportRef.current);
         frames += 1;
@@ -368,7 +367,7 @@ export const DiffView = ({
       };
       settleFrame.current = requestAnimationFrame(tick);
     },
-    [cancelSettle],
+    [cancelSettle, snapToTop],
   );
 
   const scrollToFile = useCallback(

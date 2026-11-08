@@ -10,16 +10,15 @@ import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pu
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { DiffRailContext, type DiffRailHost } from '../../../diff/diffRailHost';
-import { JobBanner } from '../../../history/JobBanner';
 import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
-import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
+import { BranchLead } from './BranchLead';
 import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFlowVisit';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { useBranchReview } from '../../../resolve/hooks/useBranchReview';
-import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
+import { usePushRequest } from '../../hooks/usePushRequest';
 import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { useBitbucketRemote } from '../../hooks/useBitbucketRemote';
@@ -38,11 +37,11 @@ import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTa
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
+import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
 import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
 import { branchTabFactsOf } from '../../branchTabFactsOf';
 import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
-import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -234,20 +233,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     [sessionId, setPullRequestMode],
   );
 
-  useEffect(() => {
-    const onRequest = (event: Event): void => {
-      if (!isReviewRequest(event) || event.defaultPrevented) {
-        return;
-      }
-      if (event.detail.sessionId !== sessionId || event.detail.request.kind !== 'push') {
-        return;
-      }
-      event.preventDefault();
-      void push.press({ isRetry: hasPushFailure });
-    };
-    window.addEventListener(REVIEW_REQUEST_EVENT, onRequest);
-    return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
-  }, [hasPushFailure, push, sessionId]);
+  usePushRequest({ sessionId, push, hasPushFailure });
 
   const pullRequestView = usePullRequestView({
     sessionId,
@@ -317,7 +303,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     }
     if (tab === 'pr') {
       return (
-        <BranchScroll sessionId={sessionId} tab={tab} view={pullRequestView.view}>
+        <BranchScroll key={tab} sessionId={sessionId} tab={tab} view={pullRequestView.view}>
           <PageColumn width="column" className="flex min-w-0 flex-col pb-5">
             <PullRequestTab
               session={session}
@@ -377,7 +363,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     }
     if (tab === 'checks') {
       return (
-        <BranchScroll sessionId={sessionId} tab={tab} view={pullRequestView.view}>
+        <BranchScroll key={tab} sessionId={sessionId} tab={tab} view={pullRequestView.view}>
           <BranchChecks sessionId={sessionId} mountId={historyMountId} />
         </BranchScroll>
       );
@@ -405,7 +391,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     detail: github?.detail ?? null,
     view: pullRequestView.view,
   });
-  const checksUnreadReason = checksUnreadReasonOf({ pr, detail: github?.detail ?? null });
   const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
   const threadCounts = reviewCounts({
     threads: branchReview.branchEntries.map((e) => e.row.thread),
@@ -419,7 +404,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     commits: start.step.ahead,
     notPushed: pushCount,
     checks: checksRuns,
-    checksUnreadReason,
+    checksUnreadReason: checksUnreadReasonOf({ pr, detail: github?.detail ?? null }),
   });
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
@@ -428,6 +413,17 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       <PaneShell
         page="branch"
         scroll="self"
+        headerMode="reveal"
+        revealKey={tab}
+        headerRhythm="section"
+        lead={
+          <BranchLead
+            sessionId={sessionId}
+            mountId={historyMountId}
+            worktreePath={identity.mountPath}
+            push={push}
+          />
+        }
         header={
           <div className="flex min-w-0 flex-col gap-3">
             <BranchHeader
@@ -460,11 +456,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
               onOpenComments={() => selectTab('comments')}
             />
-            <PushBanner sessionId={sessionId} mountId={historyMountId} push={push} />
             {baseRow}
-            <div data-rebase-flow-hook="" className="flex min-w-0 flex-col empty:hidden">
-              <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
-            </div>
             <div
               ref={setTabActionsSlot}
               data-slot="branch-tab-actions"
@@ -473,7 +465,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           </div>
         }
       >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3">{body()}</div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{body()}</div>
       </PaneShell>
     </BranchDetail>
   );

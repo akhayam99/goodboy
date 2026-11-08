@@ -418,7 +418,8 @@ region scrolls. The pane itself never scrolls.
 </div>
 ```
 
-The header zone (`shrink-0`) never scrolls away. The body (`flex-1 min-h-0`) is
+The header zone (`shrink-0`) never scrolls away, except on a page that asks for
+`headerMode="reveal"` (below). The body (`flex-1 min-h-0`) is
 the only scroll region. `min-h-0` is what makes the overflow happen there
 instead of on the pane. A sub-section with its own header repeats the same
 split. Each view owns its own `ScrollFade`. Never wrap the whole pane in one
@@ -433,6 +434,48 @@ clips the bottom edge (the message box ends up half under the window).
 body: the lead is `shrink-0` and the children sit in a `min-h-0 flex-1` fill
 slot. The `fill-child-uses-min-h-0` ratchet counts the remaining `flex h-full
 flex-col` roots and only ever falls.
+
+### A header that steps aside while you read
+
+`PaneShell` with `headerMode="reveal"` keeps the back row (the page trail) and
+the `lead` pinned at the top; the rest of the header sits above the body and
+steps aside while you read. The first vertical `ScrollFade` of the body to
+mount is the page scroller: it finds the header through `HeaderRevealContext`
+(`packages/ui/src/useHeaderReveal`) and claims the role, so a nested scroller or
+a later sibling never drives the header and a page adds nothing. A scroller that
+is not the reader (the Changes file tree in `ChangeTree`, a side list) passes
+`isPageScroller={false}`: it never claims the role, whatever order the body
+mounts in, and the scrollers inside it stay out too. The role frees only when that
+scroller unmounts, and the next claim starts clean: no wheel, touch or thumb
+drag from before counts, and a settle still waiting for its frames is dropped
+(`revealEngine.ts`). One pure function,
+`headerRevealOf`, decides, with the same numbers on every page whatever the
+header height or what sits above the scroller: 24px of deliberate scroll down
+hides the header, 8px up brings it back, and so do the top of the page,
+keyboard focus inside the header and a new `revealKey` (the Branch page passes
+its tab, so a tab change brings the header back even when React keeps the
+scroller). When the header leaves, the whole body (a toolbar above the
+scroller included) moves up with it (`--reveal-shift`) and grows by the same
+height at the bottom (`--reveal-extend`, kept until the header is back in), so
+the scroller never sits under the header and its thumb, shade and sticky rows
+need nothing. A page with less than 24px left to scroll once the header is gone
+never hides it, and a hidden page that runs out of room brings it back, so a
+short diff never strands the header. Only the reader moves the header
+(`scrollIntent.ts`): a scroll counts when it follows a wheel, a scroll key on
+the content (never one typed into a field), a touch move or a track press on
+that same viewport, in that direction and no larger than the input asked for;
+real movement spends that budget, so a later app move is not counted. A thumb
+drag holds the header and the layout still until the pointer lifts, then
+settles once on the whole move, so the drag never reverses. Code that scrolls
+on purpose holds the header first with `useHoldAppScroll` (`useScrollMemory`,
+the diff file jump in `useSnapToTop` and `useScrollAnchor` do); holds are
+versioned, so an older one never ends a newer one.
+The slide uses `--duration-base` and `--ease-enter` to arrive,
+`--duration-quick` and `--ease-exit` to leave, and is off under reduced motion.
+A body with no scroller keeps the header in place. The terminal output (xterm)
+owns its own viewport, not a `ScrollFade`, and never drives the header. A
+failure banner never goes in the header: it is the page's `lead`, pinned under
+the back row (rule 13).
 
 ## Scroll edges fade, never hard-cut
 
@@ -468,6 +511,13 @@ structure. Titles, breadcrumbs, toolbars and error banners live in a
 headers belong to its body, such as the file headers of a diff, passes
 `fadeEdges="end"`: only its bottom edge fades, so the header on top stays
 sharp.
+
+**Content that goes under a fixed header gets a shade, not a fade.**
+`ScrollFade edge="shade"` draws, once the view is scrolled, a 12px band from
+the `scroll-edge` color token to transparent under its top edge, fading in over
+`--duration-quick`. No line, no blur; the bottom edge keeps its fade. The page
+scroller under a `headerMode="reveal"` header takes the shade by default. `fadeEdges="end"` keeps the top
+edge to the sticky rows, so no shade is drawn there.
 
 ## Dividers separate chrome from content, never content from content
 

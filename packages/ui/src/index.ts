@@ -319,6 +319,7 @@ export { HeightMotion } from './components/HeightMotion';
 export { EntryWash } from './components/EntryWash';
 export { useEntryWash } from './useEntryWash';
 export { useScrollMemory } from './useScrollMemory';
+export { useHoldAppScroll } from './useHoldAppScroll';
 export { forgetScrollMemory } from './forgetScrollMemory';
 export { PaneSwap } from './components/PaneSwap';
 export type { PaneLayer } from './components/PaneSwap';

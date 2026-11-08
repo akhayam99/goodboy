@@ -115,11 +115,14 @@ Three borders, each with one job:
 solid value, so it holds 3:1 on every step from `chrome` to `floating` and sits
 near 3.3:1 on the base sheet instead of 4.5:1.
 
-Three translucent tokens paint over whatever sits below them: `frame-edge`
+Four translucent tokens paint over whatever sits below them: `frame-edge`
 (white 8% in dark, black 8.5% in light) draws the content sheet and the right
-drawer container at 1.2:1 or more on chrome and background, and
+drawer container at 1.2:1 or more on chrome and background,
 `scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
-background, panel and floating.
+background, panel and floating, and `scroll-edge` (black 32% in dark, 7% in
+light) is the start of the 12px shade a `ScrollFade edge="shade"` draws where
+content goes under a header. It marks the edge and holds no contrast floor:
+it is tuned by capture on both themes, never by eye in one.
 
 A clickable card at rest carries two signals together (a fill one step above
 its parent plus the hairline). Its states clear 3:1: hover `border`, selection
@@ -511,6 +514,14 @@ inside a button holds no button) over `text-ui font-mono` code in a horizontal
 `ScrollFade`; code and tables are never clamped. Inline code is `text-ui`, never
 a fraction of the text size. A table (`renderTable`) has a `text-meta` header,
 one hairline between rows and `tabular-nums` on a number column.
+`ScrollFade` takes one of three top edges: `fade` (the default), `line` (a
+hairline once scrolled) or `shade` (the `scroll-edge` band once scrolled, for
+content that goes under a page header; the page scroller under a
+`PaneShell headerMode="reveal"` takes it by default; a side list that is not the
+reader passes `isPageScroller={false}` and never drives the header). `PaneShell` has two
+header modes: `static` (the default) and `reveal`, which pins the back row and
+the `lead` and lets the rest of the header step aside while you read
+([styling.md](../../docs/styling.md#a-header-that-steps-aside-while-you-read)).
 `ScrollFade` paints its fade with the `mask-fade-x` and `mask-fade-y` utilities
 and writes its fade sizes only while the content overflows, so a static artifact
 page carries no inline style. The utilities reset both sizes to `0px`, so a

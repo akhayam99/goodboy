@@ -1,5 +1,14 @@
-import { useCallback, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react';
+import {
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { cn } from '../../cn';
+import { ClaimedScrollerContext } from '../../useHeaderReveal/claimedScrollerContext';
+import { HeaderRevealContext } from '../../useHeaderReveal/headerRevealContext';
 import { OverlayThumb } from './OverlayThumb';
 
 export type ScrollFadeProps = {
@@ -13,7 +22,8 @@ export type ScrollFadeProps = {
   readonly onViewportScroll?: () => void;
   readonly scrollbar?: 'overlay' | 'none';
   readonly fadeEdges?: 'both' | 'end';
-  readonly edge?: 'fade' | 'line';
+  readonly edge?: 'fade' | 'line' | 'shade';
+  readonly isPageScroller?: boolean;
 };
 
 const SPACING_CLASS_PATTERN = /^[wh]-(\d+(?:\.\d+)?)$/;
@@ -41,13 +51,20 @@ export const ScrollFade = ({
   onViewportScroll,
   scrollbar = 'overlay',
   fadeEdges = 'both',
-  edge = 'fade',
+  edge: edgeProp,
+  isPageScroller: canBePageScroller = true,
 }: ScrollFadeProps) => {
   const ownRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const ref = viewportRef ?? ownRef;
-  const isLineEdge = edge === 'line';
   const horizontal = orientation === 'horizontal';
+  const reveal = useContext(HeaderRevealContext);
+  const isClaimed = useContext(ClaimedScrollerContext);
+  const isPageScroller = canBePageScroller && reveal !== null && !isClaimed && !horizontal;
+  const edge = edgeProp ?? (isPageScroller ? 'shade' : 'fade');
+  const isLineEdge = edge === 'line';
+  const isShadeEdge = edge === 'shade';
+  const hasEdgeMark = edge !== 'fade';
   const fadePx = fadeSizeToPx(fadeSize);
   const frameRef = useRef<number | null>(null);
 
@@ -61,7 +78,7 @@ export const ScrollFade = ({
     const scrollSize = horizontal ? el.scrollWidth : el.scrollHeight;
     const maxScroll = Math.max(0, scrollSize - clientSize);
     const topFade = isLineEdge ? LINE_EDGE_FADE_PX : fadePx;
-    const top = fadeEdges === 'end' ? 0 : Math.min(topFade, scrollPos);
+    const top = fadeEdges === 'end' || isShadeEdge ? 0 : Math.min(topFade, scrollPos);
     const bottom = Math.min(fadePx, Math.max(0, maxScroll - scrollPos));
     const hasFade = top > 0 || bottom > 0 || el.style.getPropertyValue('--fade-top') !== '';
     if (hasFade) {
@@ -69,7 +86,7 @@ export const ScrollFade = ({
       el.style.setProperty('--fade-bottom', `${bottom}px`);
     }
     const root = rootRef.current;
-    if (!isLineEdge || root === null) {
+    if (!hasEdgeMark || root === null) {
       return;
     }
     if (scrollPos > 0) {
@@ -77,7 +94,7 @@ export const ScrollFade = ({
       return;
     }
     root.removeAttribute('data-scrolled');
-  }, [fadeEdges, fadePx, horizontal, isLineEdge, ref]);
+  }, [fadeEdges, fadePx, hasEdgeMark, horizontal, isLineEdge, isShadeEdge, ref]);
 
   const scheduleFade = useCallback(() => {
     if (frameRef.current !== null) {
@@ -109,8 +126,17 @@ export const ScrollFade = ({
     };
   }, [applyFade, scheduleFade, ref]);
 
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    const viewport = ref.current;
+    if (!isPageScroller || reveal === null || root === null || viewport === null) {
+      return;
+    }
+    return reveal.register({ root, viewport });
+  }, [isPageScroller, reveal, ref]);
+
   return (
-    <div ref={rootRef} className={cn('relative min-h-0', isLineEdge && 'group/edge', className)}>
+    <div ref={rootRef} className={cn('relative min-h-0', hasEdgeMark && 'group/edge', className)}>
       <div
         ref={ref}
         onScroll={() => {
@@ -123,8 +149,11 @@ export const ScrollFade = ({
             : 'mask-fade-y h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           viewportClassName,
         )}
+        data-page-scroller={isPageScroller ? '' : undefined}
       >
-        {children}
+        <ClaimedScrollerContext.Provider value={isClaimed || isPageScroller || !canBePageScroller}>
+          {children}
+        </ClaimedScrollerContext.Provider>
       </div>
       {isLineEdge && !horizontal ? (
         <span
@@ -132,6 +161,16 @@ export const ScrollFade = ({
           data-slot="scroll-edge"
           className={cn(
             'pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-border-soft opacity-0',
+            'motion-safe:transition-opacity motion-safe:duration-120 group-data-[scrolled=true]/edge:opacity-100',
+          )}
+        />
+      ) : null}
+      {isShadeEdge && !horizontal && fadeEdges !== 'end' ? (
+        <span
+          aria-hidden
+          data-slot="scroll-shade"
+          className={cn(
+            'pointer-events-none absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b from-scroll-edge to-transparent opacity-0',
             'motion-safe:transition-opacity motion-safe:duration-120 group-data-[scrolled=true]/edge:opacity-100',
           )}
         />

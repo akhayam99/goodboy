@@ -39,7 +39,7 @@ type Params = {
   readonly hasRemoteHead: boolean;
 };
 
-const UNREAD_CHECKS = 'Checks unknown: this token cannot read them';
+const UNREAD_CHECKS = "Checks unknown: this token can't read them";
 
 type RunsParams = Pick<Params, 'github' | 'view'> & {
   readonly pr: PullRequestState | null;
