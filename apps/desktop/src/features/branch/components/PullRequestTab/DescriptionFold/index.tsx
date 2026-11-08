@@ -32,6 +32,7 @@ export const DescriptionFold = ({ children }: Props) => {
       <div
         ref={bodyRef}
         data-folded={canFold && !isOpen ? 'true' : undefined}
+        onFocus={() => setIsOpen(true)}
         className={cn(
           'min-w-0',
           !isOpen && 'max-h-30 overflow-hidden',

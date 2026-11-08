@@ -295,7 +295,7 @@ threads it started, `2 resolved`, or its review state), `Linked issues` and `Aut
 screen. A bot is known by the host's author type (`isBotLogin`, see [hosts.md](../hosts.md)); the
 `[bot]`, `-bot` or `_bot` login suffix applies only when the host gave no type, so a GitHub user
 named `northwind-bot` stays a reviewer. There is no Rebase in it. The description renders as markdown with `Edit` beside its heading
-and folds after five lines of prose behind `Show all` (`DescriptionFold`);
+and folds after five lines of prose behind `Show all` (`DescriptionFold`; focus on a link under the fold opens it);
 the body's own headings read as bold lead-ins and a first heading that repeats `Description` is
 dropped (`demoteBodyHeadings`; a code fence closes only on the same character, at least as
 long and with nothing after it, as CommonMark says, and an unclosed fence runs to the end, so
