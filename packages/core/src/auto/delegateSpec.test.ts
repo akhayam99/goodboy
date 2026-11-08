@@ -182,8 +182,29 @@ describe('parsing the spec of an agent delegate call', () => {
     });
   });
 
+  it('reads the delegation a child replaces and keeps it in the request identity', () => {
+    const child = { role: 'planner', task: 'choose the export shape', reason: 'a choice first' };
+    const plain = parseDelegateSpec({ text: spec([child]) });
+    const replacing = parseDelegateSpec({
+      text: spec([{ ...child, replaces: 'delegation-acme-1' }]),
+    });
+    expect(replacing).toMatchObject({
+      kind: 'ok',
+      children: [{ role: 'planner', replaces: 'delegation-acme-1' }],
+    });
+    expect(plain).toMatchObject({ kind: 'ok', children: [{ replaces: null }] });
+    expect(plain.kind === 'ok' && replacing.kind === 'ok' && plain.hash !== replacing.hash).toBe(
+      true,
+    );
+  });
+
   it('refuses a retry that also sets what the earlier work already fixed', () => {
-    for (const extra of [{ role: 'scout' }, { task: 'new task' }, { mount: 'mount-harborline' }]) {
+    for (const extra of [
+      { role: 'scout' },
+      { task: 'new task' },
+      { mount: 'mount-harborline' },
+      { replaces: 'delegation-acme-1' },
+    ]) {
       const outcome = parseDelegateSpec({
         text: spec([{ retryOf: 'delegation-scout-1', reason: 'again', ...extra }]),
       });

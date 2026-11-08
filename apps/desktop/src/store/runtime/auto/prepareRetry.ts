@@ -1,4 +1,6 @@
 import {
+  AUTO_REFUSAL_TEXT,
+  AUTO_TREE_LIMITS,
   parseAutoDelegationRole,
   publishOfRequest,
   type DelegateChildSpec,
@@ -14,6 +16,8 @@ import {
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoDelegationId } from '@goodboy/types';
 import type { ChildRefusal } from './resolveDelegateChild';
+import { returnCountOf } from './returns/returnCountOf';
+import { targetRefusalOf } from './returns/targetRefusalOf';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -34,6 +38,8 @@ export type PrepareRetryParams = Readonly<{
   tree: AutoTree;
   child: DelegateChildSpec;
   slot: number;
+  batchRetries: ReadonlySet<string>;
+  isConfirmGated: boolean;
 }>;
 
 type TextParams = {
@@ -94,6 +100,8 @@ export const prepareRetry = async ({
   tree,
   child,
   slot,
+  batchRetries,
+  isConfirmGated,
 }: PrepareRetryParams): Promise<PreparedRetry> => {
   if (child.retryOf === null) {
     return refuse({ slot, code: 'spec_invalid', message: 'a retry names no earlier agent' });
@@ -117,12 +125,26 @@ export const prepareRetry = async ({
     });
   }
   const siblings = await listAutoDelegations({ db: ctx.db, treeId: tree.id });
-  if (siblings.some((other) => other.retryOf === original.id && other.state !== 'settled')) {
+  if (
+    batchRetries.has(original.id) ||
+    siblings.some((other) => other.retryOf === original.id && other.state !== 'settled')
+  ) {
     return refuse({
       slot,
       code: 'retry_unavailable',
       message: 'that agent is already being retried',
     });
+  }
+  const targetRefusal = targetRefusalOf({ target: original, delegations: siblings, slot });
+  if (targetRefusal !== null) {
+    return { kind: 'refused', refusal: targetRefusal };
+  }
+  if (
+    !isConfirmGated &&
+    returnCountOf({ delegation: original, delegations: siblings }) >
+      AUTO_TREE_LIMITS.returnsPerDelegation
+  ) {
+    return refuse({ slot, code: 'return_limit', message: AUTO_REFUSAL_TEXT.return_limit });
   }
   const artifactId =
     original.reviseOf === null ? null : brandId<ArtifactId>({ value: original.reviseOf });
@@ -173,6 +195,7 @@ export const prepareRetry = async ({
     decisions: listOf({ source: original.request, key: 'decisions' }),
     forQuestion: null,
     retryOf: original.id,
+    replaces: null,
     shouldConfirm: child.shouldConfirm || original.request['confirm'] === true,
   };
   return { kind: 'resolve', child: synthetic, original };

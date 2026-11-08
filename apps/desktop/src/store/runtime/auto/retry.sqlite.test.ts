@@ -74,6 +74,7 @@ const bareRetry = (retryOf: string) => ({
   decisions: [],
   forQuestion: null,
   retryOf,
+  replaces: null,
   shouldConfirm: false,
 });
 
@@ -218,6 +219,8 @@ describe('refusing a retry that cannot repeat the work', () => {
       tree,
       child: bareRetry((await firstDelegation(world)).id),
       slot: 0,
+      batchRetries: new Set(),
+      isConfirmGated: false,
     });
 
     expect(outcome).toMatchObject({ kind: 'refused', refusal: { code: 'retry_unavailable' } });
@@ -255,6 +258,8 @@ describe('refusing a retry that cannot repeat the work', () => {
       tree,
       child: bareRetry(original.id),
       slot: 0,
+      batchRetries: new Set(),
+      isConfirmGated: false,
     });
 
     expect(outcome).toMatchObject({

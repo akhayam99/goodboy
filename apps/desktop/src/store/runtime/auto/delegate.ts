@@ -5,6 +5,7 @@ import { textOf } from '@goodboy/types/helpers';
 import { replayAdmission, type AdmitChildInput, type AdmitOutcome } from './admit';
 import { delegationReceipt } from './delegationReceipt';
 import type { AgentCommand, BridgeOutcome } from './ports';
+import { prepareReplace } from './returns/prepareReplace';
 import { prepareRetry, type RecoveredRevise } from './prepareRetry';
 import { refuseOutcome } from './refuseOutcome';
 import { resolveDelegateChild } from './resolveDelegateChild';
@@ -161,11 +162,41 @@ export const delegate = async ({
   const inputs: AdmitChildInput[] = [];
   const refusals = [];
   const recoveries: RecoveredRevise[] = [];
+  const batchReplaces: string[] = [];
+  const batchRetries = new Set<string>();
   for (const [slot, child] of parsed.children.entries()) {
-    const prepared = child.retryOf === null ? null : await prepareRetry({ ctx, tree, child, slot });
+    const replaceRefusal = await prepareReplace({
+      ctx,
+      tree,
+      child,
+      slot,
+      batchReplaces,
+      isConfirmGated: isProposal,
+    });
+    if (replaceRefusal !== null) {
+      refusals.push(replaceRefusal);
+      continue;
+    }
+    if (child.replaces !== null) {
+      batchReplaces.push(child.replaces);
+    }
+    const prepared =
+      child.retryOf === null
+        ? null
+        : await prepareRetry({
+            ctx,
+            tree,
+            child,
+            slot,
+            batchRetries,
+            isConfirmGated: isProposal,
+          });
     if (prepared !== null && prepared.kind === 'refused') {
       refusals.push(prepared.refusal);
       continue;
+    }
+    if (child.retryOf !== null) {
+      batchRetries.add(child.retryOf);
     }
     if (prepared !== null && prepared.kind === 'recovered') {
       recoveries.push(prepared.recovery);
@@ -186,6 +217,7 @@ export const delegate = async ({
         request: {
           ...resolved.input.request,
           ...('alternatives' in parsed && { alternatives: parsed.alternatives }),
+          ...(child.replaces !== null && { replaces: child.replaces }),
         },
       });
       continue;

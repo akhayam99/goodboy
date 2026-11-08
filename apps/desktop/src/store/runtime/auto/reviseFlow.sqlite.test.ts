@@ -554,9 +554,12 @@ describe('retrying a revise', () => {
         decisions: [],
         forQuestion: null,
         retryOf: (await reviseDelegation(world)).id,
+        replaces: null,
         shouldConfirm: false,
       },
       slot: 0,
+      batchRetries: new Set(),
+      isConfirmGated: false,
     });
     expect(early).toMatchObject({ kind: 'refused', refusal: { code: 'retry_unavailable' } });
 

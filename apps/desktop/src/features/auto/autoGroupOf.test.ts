@@ -241,15 +241,50 @@ describe('autoGroupOf', () => {
   });
 
   it.each(['implementer', 'rewriter', 'scout'])(
-    'reads a returned child as done once a %s takes the same branch',
+    'keeps a returned child waiting when a %s takes the same branch without naming it',
+    (role) => {
+      const returned = {
+        ...aDelegation({
+          key: 'scout-1',
+          role: 'scout',
+          state: 'settled',
+          outcome: 'blocked',
+          result: {
+            outcome: 'blocked',
+            returned: { request: 'Should archived rows be exported?' },
+          },
+        }),
+        reason: 'needs_decision',
+        target: { mountId: 'mount-home' },
+      };
+      const next = {
+        ...aDelegation({ key: 'next', role, state: 'running' }),
+        target: { mountId: 'mount-home' },
+        slot: 1,
+        createdAt: FIXTURE_NOW + 1_000,
+      };
+      const group = autoGroupOf({
+        view: aView({ phase: 'waiting', delegations: [returned, next] }),
+        agents: [ROOT],
+        now: FIXTURE_NOW,
+      });
+
+      expect(group?.children.map((child) => child.state)).toEqual(['returned', 'running']);
+    },
+  );
+
+  it.each(['implementer', 'rewriter', 'scout'])(
+    'reads a returned child as done once a %s names it in replaces',
     (role) => {
       const returned = {
         ...aDelegation({ key: 'scout-1', role: 'scout', state: 'settled', outcome: 'blocked' }),
         reason: 'declared_blocked',
         target: { mountId: 'mount-home' },
       };
+      const base = aDelegation({ key: 'next', role, state: 'running' });
       const next = {
-        ...aDelegation({ key: 'next', role, state: 'running' }),
+        ...base,
+        request: { ...base.request, replaces: returned.id },
         target: { mountId: 'mount-home' },
         slot: 1,
         createdAt: FIXTURE_NOW + 1_000,

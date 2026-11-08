@@ -7,6 +7,7 @@ import {
   AUTO_ANSWER_EXAMPLE,
   AUTO_DELEGATE_EXAMPLE,
   AUTO_FINISH_EXAMPLE,
+  AUTO_RELEASE_EXAMPLE,
   AUTO_SYSTEM_PROMPT,
   autoRoleCatalog,
   autoRoutingTable,
@@ -64,6 +65,7 @@ describe('the block examples', () => {
     expect(parseDelegateSpec({ text: delegate.block.spec }).kind).toBe('ok');
     expect(parseAutoBlock({ text: AUTO_ANSWER_EXAMPLE }).kind).toBe('block');
     expect(parseAutoBlock({ text: AUTO_FINISH_EXAMPLE }).kind).toBe('block');
+    expect(parseAutoBlock({ text: AUTO_RELEASE_EXAMPLE }).kind).toBe('block');
   });
 });
 
@@ -89,6 +91,8 @@ describe('buildAutoSystemPrompt', () => {
     expect(prompt).toContain(AUTO_DELEGATE_EXAMPLE);
     expect(prompt).toContain(AUTO_ANSWER_EXAMPLE);
     expect(prompt).toContain(AUTO_FINISH_EXAMPLE);
+    expect(prompt).toContain(AUTO_RELEASE_EXAMPLE);
+    expect(prompt).toContain('WAITING FOR YOUR DECISION');
     expect(prompt).toContain(`one to ${AUTO_BATCH_MAX_CHILDREN} children`);
     expect(prompt).not.toContain('not available yet');
   });

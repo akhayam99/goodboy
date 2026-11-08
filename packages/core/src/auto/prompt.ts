@@ -1,7 +1,7 @@
 import { sessionLanguageTurnRule } from '../language/sessionLanguage';
 import { ROLE_REGISTRY } from '../roles';
 import { roleNeedsSection } from '../roleNeeds';
-import { AUTO_BATCH_MAX_CHILDREN, AUTO_GATES } from './limits';
+import { AUTO_BATCH_MAX_CHILDREN, AUTO_GATES, AUTO_TREE_LIMITS } from './limits';
 import { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
 import { canAutoRoleRunCommands } from './roleTools';
 import { READING_ORDER_RULE } from './readingOrderRule';
@@ -56,6 +56,9 @@ export const AUTO_MOUNT_EXAMPLE =
 export const AUTO_ANSWER_EXAMPLE =
   '<<auto>>{"action":"answer","delegation":"<delegation id>","question":"<question id>","text":"Use the existing cache."}<</auto>>';
 
+export const AUTO_RELEASE_EXAMPLE =
+  '<<auto>>{"action":"release","delegation":"<delegation id>","reason":"The implementer already covered this."}<</auto>>';
+
 export const AUTO_FINISH_EXAMPLE =
   '<<auto>>{"action":"finish","summary":"What was done and what the user should know."}<</auto>>';
 
@@ -70,6 +73,8 @@ const delegationRules = (): string =>
     `  ${AUTO_MOUNT_EXAMPLE}`,
     '- Answer: answer a question an agent asked, using the delegation id and the question id given with it.',
     `  ${AUTO_ANSWER_EXAMPLE}`,
+    '- Release: an agent came back and its work is no longer needed. Name its delegation id and say why in one line. Goodboy marks it done with that reason.',
+    `  ${AUTO_RELEASE_EXAMPLE}`,
     '- Finish: only when the user asked to close this conversation, no agent is working and nothing waits for you. It closes nothing: the conversation rests until the user marks it finished.',
     `  ${AUTO_FINISH_EXAMPLE}`,
     '- With no block your reply is a plain answer to the user.',
@@ -88,6 +93,7 @@ const delegationRules = (): string =>
     '- Decide once before you fan out. When two or more writers would get the same task on different branches, send one writer or a planner first to decide it, then give each writer the decision written in its task.',
     '- An agent never hands work to another agent. If a result needs more work, you decide the next step. The one exception is a substep: an agent that waits on a blocking question and says it needs a scout or an investigator. Add that child to your next delegate block with `"forQuestion":"<question id>"`. When it settles, answer the waiting agent with an answer block and add `"artifact":"<artifact id>"` to hand over its report. A substep costs one delegation and two attempts, a waiting agent has two substeps at most, and a substep has none of its own.',
     '- An agent that ended stopped, timed out, failed or blocked keeps its work: its commits and changed files stay in its worktree. To go on with that work, add `{"retryOf":"<delegation id>","reason":"..."}` to your next delegate block: the same agent continues in the same worktree from where it stopped. Never start a new agent for that task, it would start from zero.',
+    `- An agent that came back is listed under WAITING FOR YOUR DECISION with what it asks and its report. Decide about every one in this turn: continue it with "retryOf", hand its task to another role with a child that has \`"replaces":"<delegation id>"\` (to split it, give several children of one block the same "replaces": that block counts as one hand-off), release it with a release block, or ask the user with a propose block whose child names it with "retryOf" or "replaces"; a proposal that names neither leaves it undecided. One you leave comes back next turn and counts as a turn without progress. An agent that came back ${AUTO_TREE_LIMITS.returnsPerDelegation + 1} times cannot be continued, and a task handed to a new agent ${AUTO_TREE_LIMITS.rebriefsPerTask} times goes to the user with such a propose block.`,
     '- The MOUNTS line lists the folders agents can work in, each by its id. Put that id in the `mount` field of a child. A role that changes files needs a mount; a read only role works in the main mount when you leave it out. When more than one mount fits and the request does not say which, ask the user. When the line says none is attached, delegate the writer anyway and name the project in the task: Goodboy attaches it or asks the user.',
   ].join('\n');
 

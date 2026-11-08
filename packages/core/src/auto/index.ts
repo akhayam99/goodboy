@@ -20,6 +20,7 @@ export {
   AUTO_MAX_OPEN_CHILDREN,
   AUTO_OUTBOX_CLAIM_MS,
   AUTO_OWNER_LEASE_MS,
+  AUTO_RETURNS_WINDOW_MS,
   AUTO_REVISE_ASK_CHARS,
   AUTO_SUBSTEP_PARENT_SLACK_MS,
   AUTO_SUBSTEPS_PER_PARENT,
@@ -267,7 +268,12 @@ export {
 
 export { parseProposeSpec } from './proposeSpec';
 
-export { buildDeliveryText, type BuildDeliveryParams, type DeliveryRow } from './delivery';
+export {
+  buildDeliveryText,
+  type BuildDeliveryParams,
+  type DeliveryRow,
+  type WaitingReturn,
+} from './delivery';
 
 export {
   describeMounts,

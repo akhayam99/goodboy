@@ -12,7 +12,8 @@ import { sceneClock } from '../../sceneClock';
 import { seedC07 } from '../u25/c07/c07AutoSeed';
 import { AUTO_SESSION, TESTER_ID } from '../u24/autoSceneSeed';
 
-export type AutoChildReturnedState = 'today' | 'returned' | 'decided' | 'asks';
+export type AutoChildReturnedState =
+  'today' | 'returned' | 'decided' | 'asks' | 'released' | 'proposed';
 
 const clock = sceneClock({ anchor: '2026-10-13T12:21:00.000Z' });
 
@@ -27,6 +28,10 @@ const BRANCH = 'feature/ledger-drawers';
 const REQUEST = 'Needs a shell to run the retry tests of payments-api on feature/ledger-drawers.';
 
 const SETTLED_AT = clock.ms({ at: '2026-10-13T12:13:52.000Z' });
+
+const RETURNED_ID = 'mock-auto-delegation-returned';
+
+const RELEASE_REASON = 'The Implementer already runs the retry tests with a shell.';
 
 const PLAIN_TURN: ReadonlyArray<TurnEvent> = [
   {
@@ -50,13 +55,14 @@ type ChildParams = {
 
 const childOf = ({ template, state }: ChildParams): AutoDelegation => ({
   ...template,
-  id: brandId<AutoDelegationId>({ value: 'mock-auto-delegation-returned' }),
+  id: brandId<AutoDelegationId>({ value: RETURNED_ID }),
   childAgentId: TESTER_ID,
   role: 'tester',
   slot: 0,
   request: {
     task: 'Run the retry tests of payments-api.',
     reason: 'Checks the credit retry path from the plan.',
+    ...(state === 'released' && { released: { reason: RELEASE_REASON, at: SETTLED_AT + 2_000 } }),
   },
   target: { mountName: 'payments-api', mountId: MOUNT_ID, branch: BRANCH },
   state: 'settled',
@@ -72,7 +78,7 @@ const childOf = ({ template, state }: ChildParams): AutoDelegation => ({
   settledAt: SETTLED_AT,
 });
 
-const nextOf = ({ template }: Pick<ChildParams, 'template'>): AutoDelegation => ({
+const nextOf = ({ template, state }: ChildParams): AutoDelegation => ({
   ...template,
   id: brandId<AutoDelegationId>({ value: 'mock-auto-delegation-rewriter-returned' }),
   childAgentId: REWRITER_ID,
@@ -81,9 +87,10 @@ const nextOf = ({ template }: Pick<ChildParams, 'template'>): AutoDelegation => 
   request: {
     task: 'Run the retry tests of payments-api with a shell.',
     reason: 'The Tester asked for a shell.',
+    replaces: RETURNED_ID,
   },
   target: { mountName: 'payments-api', mountId: MOUNT_ID, branch: BRANCH },
-  state: 'running',
+  state: state === 'proposed' ? 'awaiting_confirm' : 'running',
   outcome: null,
   reason: null,
   result: null,
@@ -121,10 +128,10 @@ export const seedAutoChildReturned = ({ state }: SeedParams): void => {
   const isAsks = state === 'asks';
   seedC07({
     state: isAsks ? 'plan' : 'done',
-    place: isAsks ? 'auto' : 'child',
+    place: isAsks || state === 'proposed' ? 'auto' : 'child',
     pane: 'tester',
   });
-  const isDecided = state === 'decided' || isAsks;
+  const isDecided = state === 'decided' || isAsks || state === 'proposed';
   useAppStore.setState((current) => {
     const views = current.autoTreeViews[AUTO_SESSION.id] ?? [];
     const runs = current.sessionPhaseRuns[AUTO_SESSION.id] ?? [];
@@ -144,7 +151,7 @@ export const seedAutoChildReturned = ({ state }: SeedParams): void => {
             delegations: [
               ...kept,
               childOf({ template, state }),
-              ...(isDecided ? [nextOf({ template })] : []),
+              ...(isDecided ? [nextOf({ template, state })] : []),
             ],
           };
         }),

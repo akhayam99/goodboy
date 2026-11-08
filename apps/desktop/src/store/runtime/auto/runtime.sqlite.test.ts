@@ -176,10 +176,12 @@ describe('the whole round trip of a delegation', () => {
       index: 0,
       text: `Cannot build.\n<<step-done id="${first.childAgentId}" status="blocked">>`,
     });
+    expect(world.state.ports.autoTurns[1]?.text).toContain(': blocked, needs_user');
     await childTurnEnds({ world, index: 1, text: 'I think that is done, trust me.' });
+    await autoTurnEnds({ world });
 
-    const text = world.state.ports.autoTurns[1]?.text ?? '';
-    expect(text).toContain(': blocked, needs_user');
+    const text = world.state.ports.autoTurns[2]?.text ?? '';
+    expect(text).toContain('WAITING FOR YOUR DECISION');
     expect(text).toContain(': failed, no_closing_envelope');
     expect(text).toContain('it did not close its work with the closing line');
     const delegations = await listAutoDelegations({

@@ -26,7 +26,12 @@ export const AUTO_TREE_LIMITS = {
   questionCyclesPerDelegation: 3,
   noProgressStreak: 3,
   wallClockHours: 24,
+  returnsPerDelegation: 2,
+  rebriefsPerTask: 3,
+  returnsPerTreeWindow: 6,
 } as const;
+
+export const AUTO_RETURNS_WINDOW_MS = 30 * 60_000;
 
 export const AUTO_MAX_OPEN_CHILDREN = AUTO_BATCH_MAX_CHILDREN;
 

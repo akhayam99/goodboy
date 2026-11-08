@@ -8,6 +8,7 @@ import {
   AUTO_LEDGER_CHAR_BUDGET,
   AUTO_LEDGER_MAX_ARTIFACTS,
   AUTO_MAX_OPEN_CHILDREN,
+  AUTO_RETURNS_WINDOW_MS,
   AUTO_SUBSTEPS_PER_PARENT,
   AUTO_TREE_DEPTH,
   AUTO_TREE_LIMITS,
@@ -25,7 +26,11 @@ describe('Auto limits', () => {
       questionCyclesPerDelegation: 3,
       noProgressStreak: 3,
       wallClockHours: 24,
+      returnsPerDelegation: 2,
+      rebriefsPerTask: 3,
+      returnsPerTreeWindow: 6,
     });
+    expect(AUTO_RETURNS_WINDOW_MS).toBe(30 * 60_000);
   });
 
   it('batches one to four children, one level deep, like the fan-out cap', () => {

@@ -7,6 +7,7 @@ import {
   autoRemainingForGates,
   isAutoMountedCode,
   isRefusalPayload,
+  isResultsPayload,
   storedDeliveryOf,
   turnGate,
   type AutoBlockReason,
@@ -309,6 +310,9 @@ export const deliverNext = async ({
   });
   if (gate !== null) {
     return blockTree({ ctx, tree, reason: blockReasonOf({ gate, primary }) });
+  }
+  if (rows.some((row) => isResultsPayload(row.payload) && row.payload.isOverWindow === true)) {
+    return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT.limit_returns });
   }
   if (tree.phase === 'blocked' && tree.blockedReason !== AUTO_BLOCK_TEXT.budget) {
     return { kind: 'idle', reason: 'blocked' };

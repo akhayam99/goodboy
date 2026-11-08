@@ -7,7 +7,9 @@ import {
   type AutoPhase,
 } from '@goodboy/db';
 import { applyAutoBlock } from './applyAutoBlock';
+import { repeatReturnStatements } from './returns/repeatReturnStatements';
 import { requeueStatements } from './requeueStatements';
+import { undecidedReturnsOf } from './returns/undecidedReturnsOf';
 import type { AutoTurnEnded } from './ports';
 import type { AgentVerbContext } from './verbContext';
 
@@ -88,12 +90,18 @@ const settleOnce = async ({
     await listAutoOutbox({ db: ctx.db, treeId: tree.id, states: ['accepted'] })
   ).filter((row) => row.acceptedRunId === ended.runId);
   const hasFailed = ended.exit === 'error' && !isYield;
+  const all = await listAutoDelegations({ db: ctx.db, treeId: tree.id });
+  const undecided = hasFailed ? [] : undecidedReturnsOf({ rows: accepted, delegations: all });
   if (hasFailed) {
     await ctx.db.transaction({ statements: requeueStatements({ ctx, tree, rows: accepted }) });
   }
+  if (undecided.length > 0) {
+    await ctx.db.transaction({
+      statements: repeatReturnStatements({ ctx, tree, returns: undecided }),
+    });
+  }
   const pending = await listAutoOutbox({ db: ctx.db, treeId: tree.id, states: ['pending'] });
   const open = await listOpenAutoDelegations({ db: ctx.db, treeId: tree.id });
-  const all = await listAutoDelegations({ db: ctx.db, treeId: tree.id });
   const phase = isYield
     ? ('delegating' as const)
     : nextPhaseOf({
@@ -102,7 +110,8 @@ const settleOnce = async ({
         hasDelegations: all.length > 0,
       });
   const hasProgress =
-    isYield || (ended.exit === 'ok' && !isRefused && ended.assistantText.trim() !== '');
+    undecided.length === 0 &&
+    (isYield || (ended.exit === 'ok' && !isRefused && ended.assistantText.trim() !== ''));
   const applied = await ctx.scheduler.transition({
     treeId: tree.id,
     expect: { phaseRev: tree.phaseRev, generation: tree.generation, from: [tree.phase] },

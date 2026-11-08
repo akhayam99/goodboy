@@ -1,3 +1,4 @@
+import { AUTO_RETURNS_WINDOW_MS, AUTO_TREE_LIMITS } from '@goodboy/core/auto';
 import {
   AUTO_OWNER_GUARD_SQL,
   autoOwnerGuardParams,
@@ -6,6 +7,7 @@ import {
   insertAutoOutboxStatement,
   listAutoAttemptsOfDelegation,
   listAutoDelegations,
+  listAutoOutbox,
   settleAutoDelegationStatement,
   type AutoAttempt,
   type AutoDelegation,
@@ -16,6 +18,11 @@ import {
 import { brandId, type AutoBatchId, type AutoOutboxId } from '@goodboy/types';
 import { attemptEnvelope } from './attemptEnvelope';
 import { envelopeOf } from './landAttemptRevision';
+import { isAutoReturnDecided } from '../../../features/auto/isAutoReturnDecided';
+import { hasUnheardReturn } from './returns/hasUnheardReturn';
+import { isLegacyBlock } from './returns/isLegacyBlock';
+import { returnCountOf } from './returns/returnCountOf';
+import { returnOfRow } from './returns/returnOfRow';
 import type { AgentVerbContext } from './verbContext';
 
 export type JoinParams = Readonly<{
@@ -28,6 +35,7 @@ export type JoinOutcome =
 
 const ABORT_TREE = 'join_tree';
 const ABORT_SETTLE = 'join_settle';
+const RETURN_JOIN_PREFIX = 'return:';
 
 type Member = Readonly<{
   delegation: AutoDelegation;
@@ -149,19 +157,123 @@ const batchStatements = ({
   return statements;
 };
 
+const isReturned = ({ member }: IsReadyParams): boolean => {
+  const { delegation, latest } = member;
+  if (delegation.state === 'settled') {
+    return delegation.outcome === 'blocked';
+  }
+  return isReady({ member }) && latest?.outcome === 'blocked';
+};
+
+type ReturnStatementsParams = {
+  readonly ctx: AgentVerbContext;
+  readonly tree: AutoTree;
+  readonly batchId: string;
+  readonly member: Member;
+  readonly returns: number;
+  readonly isOverWindow: boolean;
+};
+
+const returnStatements = ({
+  ctx,
+  tree,
+  batchId,
+  member,
+  returns,
+  isOverWindow,
+}: ReturnStatementsParams): ReadonlyArray<Statement> => {
+  const nowMs = ctx.now();
+  const { delegation, latest } = member;
+  const envelope = envelopeFor({ member, generation: tree.generation });
+  const settle =
+    delegation.state === 'settled' || latest === null || latest.outcome === null
+      ? []
+      : [
+          settleAutoDelegationStatement({
+            delegationId: delegation.id,
+            generation: tree.generation,
+            outcome: latest.outcome satisfies AutoOutcome,
+            reason: latest.endReason,
+            result: envelope,
+            nowMs,
+            abortCode: `${ABORT_SETTLE}:${delegation.id}`,
+          }),
+        ];
+  return [
+    {
+      sql: `SELECT 1 FROM auto_trees WHERE id = ? AND generation = ? AND ${AUTO_OWNER_GUARD_SQL}`,
+      params: [
+        tree.id,
+        tree.generation,
+        ...autoOwnerGuardParams({ ownerId: ctx.scheduler.ownerId, nowMs }),
+      ],
+      abortWhen: 'noRows',
+      abortCode: ABORT_TREE,
+    },
+    ...settle,
+    insertAutoOutboxStatement({
+      outbox: {
+        id: brandId<AutoOutboxId>({ value: ctx.ports.newId() }),
+        treeId: tree.id,
+        generation: tree.generation,
+        kind: 'results',
+        joinKey: `${RETURN_JOIN_PREFIX}${tree.generation}:${delegation.id}`,
+        payload: {
+          kind: 'results',
+          batchId,
+          results: [envelope],
+          returnOf: delegation.id,
+          returns,
+          ...(isOverWindow && { isOverWindow: true }),
+        },
+        nowMs,
+      },
+    }),
+  ];
+};
+
+type MembersParams = {
+  readonly ctx: AgentVerbContext;
+  readonly batch: ReadonlyArray<AutoDelegation>;
+};
+
+const membersOf = async ({ ctx, batch }: MembersParams): Promise<ReadonlyArray<Member>> => {
+  const members: Member[] = [];
+  for (const delegation of batch) {
+    const attempts = await listAutoAttemptsOfDelegation({
+      db: ctx.db,
+      delegationId: delegation.id,
+    });
+    members.push({ delegation, latest: attempts[attempts.length - 1] ?? null });
+  }
+  return members;
+};
+
 export const joinReady = async ({ ctx, treeId }: JoinParams): Promise<JoinOutcome> => {
   const isOwner = await ctx.scheduler.claim({ treeId });
   const tree = isOwner ? await getAutoTree({ db: ctx.db, treeId }) : null;
   if (tree === null || tree.stopState !== 'none') {
     return { kind: 'idle' };
   }
-  const delegations = (await listAutoDelegations({ db: ctx.db, treeId })).filter(
-    (delegation) => delegation.generation === tree.generation,
-  );
+  const all = await listAutoDelegations({ db: ctx.db, treeId });
+  const delegations = all.filter((delegation) => delegation.generation === tree.generation);
   const batches = new Map<AutoBatchId, AutoDelegation[]>();
   for (const delegation of delegations) {
     batches.set(delegation.batchId, [...(batches.get(delegation.batchId) ?? []), delegation]);
   }
+  const rows = await listAutoOutbox({ db: ctx.db, treeId, kinds: ['results'] });
+  const delivered = new Set(
+    rows
+      .filter((row) => row.generation === tree.generation)
+      .flatMap((row) => {
+        const returnOf = returnOfRow({ row });
+        return returnOf === null ? [] : [returnOf];
+      }),
+  );
+  const windowStart = ctx.now() - AUTO_RETURNS_WINDOW_MS;
+  let recentReturns = rows.filter(
+    (row) => row.createdAt >= windowStart && row.joinKey.startsWith(RETURN_JOIN_PREFIX),
+  ).length;
   const joined: string[] = [];
   for (const [batchId, batch] of batches) {
     const existing = await getAutoOutboxByJoinKey({
@@ -169,22 +281,55 @@ export const joinReady = async ({ ctx, treeId }: JoinParams): Promise<JoinOutcom
       treeId,
       joinKey: `join:${tree.generation}:${batchId}`,
     });
-    if (existing !== null) {
+    if (
+      existing !== null &&
+      !hasUnheardReturn({ joined: existing, tree, batch, delivered, delegations: all })
+    ) {
       continue;
     }
-    const members: Member[] = [];
-    for (const delegation of batch) {
-      const attempts = await listAutoAttemptsOfDelegation({
-        db: ctx.db,
-        delegationId: delegation.id,
+    const members = await membersOf({ ctx, batch });
+    let isHeld = false;
+    for (const member of members) {
+      if (
+        delivered.has(member.delegation.id) ||
+        !isReturned({ member }) ||
+        isLegacyBlock({ delegation: member.delegation }) ||
+        isAutoReturnDecided({ delegation: member.delegation, delegations: all })
+      ) {
+        continue;
+      }
+      const outcome = await ctx.db.transaction({
+        statements: returnStatements({
+          ctx,
+          tree,
+          batchId,
+          member,
+          returns: returnCountOf({
+            delegation: { ...member.delegation, state: 'settled', outcome: 'blocked' },
+            delegations: all,
+          }),
+          isOverWindow: recentReturns + 1 > AUTO_TREE_LIMITS.returnsPerTreeWindow,
+        }),
       });
-      members.push({ delegation, latest: attempts[attempts.length - 1] ?? null });
+      if (outcome.status !== 'committed') {
+        isHeld = true;
+        continue;
+      }
+      delivered.add(member.delegation.id);
+      recentReturns += 1;
+      joined.push(member.delegation.id);
     }
-    if (!members.every((member) => isReady({ member }))) {
+    const rest = members.filter((member) => !delivered.has(member.delegation.id));
+    if (
+      existing !== null ||
+      isHeld ||
+      rest.length === 0 ||
+      !rest.every((member) => isReady({ member }))
+    ) {
       continue;
     }
     const outcome = await ctx.db.transaction({
-      statements: batchStatements({ ctx, tree, batchId, members }),
+      statements: batchStatements({ ctx, tree, batchId, members: rest }),
     });
     if (outcome.status === 'committed') {
       joined.push(batchId);

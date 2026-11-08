@@ -661,7 +661,7 @@ carries it).
 ## Blocked and Retry
 
 A tree is blocked when a guard stops the next delivery (three answers in a
-row with no progress, the time limit, the budget), when the provider refuses to
+row with no progress, the time limit, the budget, more than six returns in 30 minutes), when the provider refuses to
 start Auto's turn, or when Auto stopped answering: a tree still deciding 10 minutes
 after its delivery (`AUTO_STALE_DECIDE_MS`) with no live root run settles from what
 the run left behind, or, with nothing stored, blocks with "Auto stopped answering
@@ -685,9 +685,13 @@ A child that returned (outcome `blocked`, reasons `needs_shell`, `needs_writer`,
 `missing_tool` on rows from before the return) is not an error and not yours to
 move. It reads **Idle**, with "Returned to Auto: <its request>" on its tail (the
 one line it wrote, `returnedRequestOf`, else its summary), while Auto decides, and **Done**
-once Auto continued it (`retryOf`) or started any role on the same branch after
-it returned (`isAutoDelegationReplaced`, compared to `settledAt`, so parallel work
-that started before the return does not count). A **Done** child has no tail line
+only once Auto decided about it: continued it (`retryOf`), replaced it (`replaces`) or released it
+with a reason (`isAutoDelegationReplaced`, which reads `isAutoReturnDecided` for a returned child). A
+later agent on the same branch that names it in neither field is not a decision, and neither is a
+proposal you declined: the turn that reads the decline repeats the return like any undecided one
+(`declinedTargetsOfRow`). A returned row from before the structured return (no `returned` in its
+result) keeps the older rule: any role that started later on its branch decides it, so it is
+neither **Idle** forever nor delivered again (`isAutoReturnDecided`). A **Done** child has no tail line
 on its page: `AutoChildEnd` draws only what `autoChildLive` returns. **Failed** is only for a real error (a process
 error, a lost report, no closing), always with a sentence from
 `delegationSentenceOf`, never a reason code. **Needs you** appears on Auto only,
@@ -725,6 +729,20 @@ stops it is a guard that protects the user:
   holding nothing;
 - `AUTO_TREE_LIMITS`: delegate calls per turn, refused hand overs, question cycles
   per delegation, the no progress streak and the wall clock hours;
+- the caps on returns, in the same table. Both count the whole lineage, from the root of the chain
+  down every branch (`lineageOf`). A `retryOf` or `replaces` may name only a return no one decided
+  yet (`targetRefusalOf`, refused with `retry_unavailable`): the latest agent of the
+  task, never an earlier one already continued or replaced. Several children of one block may share
+  a `replaces` to split the task, and count as one hand over; two `retryOf` of one agent in a block
+  are refused as already retried. A propose block waits for you, so the two
+  caps below do not refuse it; its child still names the return. `returnsPerDelegation` (2, the returns in the `retryOf` lineage, `returnCountOf`): the
+  third return closes the child, a `retryOf` of it or of any agent in its lineage is refused with
+  `return_limit` and the delivery tells Auto to hand the task to another role or ask the user.
+  `rebriefsPerTask` (3, the agents replaced in the `retryOf` and `replaces` lineage,
+  `rebriefCountOf`): the fourth is refused with `task_rebrief_limit` and the delivery tells Auto
+  to ask with a propose block. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes): the seventh return row
+  carries `isOverWindow`, `deliverNext` blocks the tree with that reason (`AUTO_BLOCK_TEXT.limit_returns`)
+  and **Retry** clears the mark and delivers it;
 - four open children and four per batch.
 
 Deleting the root agent of a tree first runs the stop protocol on the tree (`stopAutoTreeForDelete`,
@@ -802,6 +820,9 @@ It decides by ending its final reply with at most one block:
   alternatives carry no brief and consume no budget.
 - `answer` answers the question of a child (`delegation`, `question`, `text`, and an optional
   `artifact` id whose text Goodboy puts into the resume, see Substeps).
+- `release` says a child that came back is no longer needed (`delegation`, `reason`). It is
+  one of the decisions Auto owes every return; a child spec decides one too with `retryOf` or
+  `replaces` (see The child returns, never blocks).
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
   waits. It stores nothing: the tree still rests as Idle until the user marks it finished. The
   prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to
@@ -1029,6 +1050,36 @@ blocked before the report check, and the shell text may refine its reason to `ne
 lands nothing: the artifact keeps its version and the delegation settles `blocked` with the needs
 reason (`returnedRevise` in `finishAttempt.ts`). A return is not a question: the substep roles of a blocking question stay scout and
 investigator, and a reply that returns drops its blocking question, so the attempt settles instead of pausing.
+
+**Auto is woken at once and must decide.** A return never waits for its batch. `joinReady`
+settles the returned delegation and writes its own `results` row, keyed `return:<generation>:<delegation>`
+with `returnOf` in the payload, in one transaction with the owner and generation guard; the batch
+row later leaves that child out. A pending results row moves a waiting tree to merging, so Auto gets
+the return while its siblings run; returns that land during Auto's turn wait and reach it together
+in the next delivery. A return for an old generation is dropped (`finishAttempt` and the join both
+read only the current one). A return while the tree is stopped, paused or finished stays pending and
+is delivered on resume; nothing reopens the tree. Stop moves the generation on, so in the same
+transaction it copies every undecided return row of the old generation into the new one
+(`stopTree`, the same copy as a repeat) before the old rows drop; the message that resumes the tree
+brings it back under WAITING FOR YOUR DECISION.
+
+Every delivery opens with **WAITING FOR YOUR DECISION** (`waitingReturnsOf` in
+`store/runtime/auto/returns/`, rendered by `buildDeliveryText`): each return with no decision, its
+request, its needs and its report. A return is decided once a later delegation names it with
+`retryOf` (continue) or with `"replaces":"<delegation id>"` (another role, stored in
+`request_json.replaces`), a propose block included as long as you do not decline it, or once Auto sent `{"action":"release","delegation":"..","reason":".."}`
+(`releaseDelegation`, which stores `request_json.released` with the reason and the run, guarded by
+owner, the current generation of the tree and an undecided `blocked` row of that generation or an
+older one). A release replayed by the same run with the same reason, as recovery does after a crash
+between the release and the turn settle, is applied again without a write, never refused. `isAutoReturnDecided` is the one check: the delivery,
+the turn settle and the Done word (`isAutoDelegationReplaced`) read it. A turn that leaves a delivered
+return undecided copies it again, one row per return (`undecided:<generation>:<row>:<delegation>`,
+`isRepeat`, kept out of the results block), and counts as a turn without progress, so three such turns
+block the tree with the no progress guard. A return saved before this rule sits inside its batch
+row with no `returnOf`: `returnIdsOfRow` reads the `blocked` results of such a row as returns, and when
+that batch was delivered by an earlier turn, `joinReady` writes the missing return row
+(`hasUnheardReturn`), so Auto is woken to decide about it. A blocked child with no `returned` in
+its result is never delivered again (`isLegacyBlock`): Auto already dropped that work.
 
 **The way back is an excerpt.** `parseChildClosing` keeps the answer of a child whole up to
 `STEP_OUTPUT_EXCERPT_CHARS` (4,000, the budget the Runs excerpt owns) and above it the same

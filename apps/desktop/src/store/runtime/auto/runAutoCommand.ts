@@ -2,6 +2,7 @@ import { answerQuestion } from './answerQuestion';
 import { delegate } from './delegate';
 import { finishTree } from './finishTree';
 import type { AgentCommand, BridgeOutcome } from './ports';
+import { releaseDelegation } from './returns/releaseDelegation';
 import type { AgentVerbContext } from './verbContext';
 
 export type RunAutoCommandParams = Readonly<{
@@ -20,6 +21,8 @@ export const runAutoCommand = async ({
       return delegate({ ctx, command, isProposal: true });
     case 'answer':
       return answerQuestion({ ctx, command });
+    case 'release':
+      return releaseDelegation({ ctx, command });
     case 'finish':
       return finishTree({ ctx, command });
     default:
