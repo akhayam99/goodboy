@@ -22,7 +22,7 @@ import {
 import { MOCK_SCENES } from '../../..';
 import { U37_ARTIFACT_REPORT_SCENES } from './artifact-report';
 
-const SCROLL_PX = 560;
+const SCROLL_PX = 432;
 const PINNED_PX = 104;
 const SCENE_WAIT = { timeout: 5000 };
 

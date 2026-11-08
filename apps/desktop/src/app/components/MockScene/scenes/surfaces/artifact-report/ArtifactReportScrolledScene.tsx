@@ -13,7 +13,7 @@ type Props = {
   readonly theme: Theme;
 };
 
-const SCROLL_PX = 560;
+const SCROLL_PX = 432;
 
 const SETTLE_MS = 600;
 
