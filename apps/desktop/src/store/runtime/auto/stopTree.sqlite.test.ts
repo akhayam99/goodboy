@@ -79,6 +79,11 @@ describe('stopping a tree', () => {
       ['settled', 'stopped'],
       ['settled', 'stopped'],
     ]);
+    expect(delegations.map((delegation) => delegation.result)).toEqual(
+      delegations.map((delegation) =>
+        expect.objectContaining({ attemptId: delegation.firstAttemptId }),
+      ),
+    );
     const outbox = await listAutoOutbox({ db: world.state.world.db, treeId: world.treeId });
     expect(outbox.find((row) => row.id === 'outbox-late')?.state).toBe('dropped');
     const reservations = await listAutoReservations({

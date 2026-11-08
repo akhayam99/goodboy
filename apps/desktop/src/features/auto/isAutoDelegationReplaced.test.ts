@@ -11,6 +11,7 @@ type StartedParams = {
   readonly outcome?: AutoDelegation['outcome'];
   readonly settledAt?: number | null;
   readonly endReason?: string | null;
+  readonly result?: unknown;
 };
 
 const startedOnBranch = ({
@@ -21,8 +22,9 @@ const startedOnBranch = ({
   outcome = null,
   settledAt = null,
   endReason = null,
+  result = null,
 }: StartedParams): AutoDelegation => ({
-  ...aDelegation({ key, role, state, outcome, settledAt }),
+  ...aDelegation({ key, role, state, outcome, settledAt, result }),
   target: { mountId: 'mount-ledger-drawers' },
   reason: endReason,
   createdAt,
@@ -120,6 +122,65 @@ describe('isAutoDelegationReplaced', () => {
       outcome: 'stopped',
       settledAt: FIXTURE_NOW + 5_000,
       endReason: 'user_stop',
+      result: { attemptId: 'attempt-reviewer', outcome: 'stopped', reason: 'user_stop' },
+    });
+
+    expect(isAutoDelegationReplaced({ delegation: scout, delegations: [scout, reviewer] })).toBe(
+      true,
+    );
+  });
+
+  it('does not count a successor tree-stopped while accepted, before any attempt', () => {
+    const scout = returnedScout();
+    const reviewer = startedOnBranch({
+      key: 'reviewer',
+      role: 'reviewer',
+      createdAt: FIXTURE_NOW + 4_000,
+      state: 'settled',
+      outcome: 'stopped',
+      settledAt: FIXTURE_NOW + 5_000,
+      endReason: 'stopped',
+      result: { schemaVersion: 1, attemptId: null, outcome: 'stopped', reason: 'stopped' },
+    });
+
+    expect(isAutoDelegationReplaced({ delegation: scout, delegations: [scout, reviewer] })).toBe(
+      false,
+    );
+  });
+
+  it('does not count a successor stopped by a revise before it started', () => {
+    const scout = returnedScout();
+    const reviewer = startedOnBranch({
+      key: 'reviewer',
+      role: 'reviewer',
+      createdAt: FIXTURE_NOW + 4_000,
+      state: 'settled',
+      outcome: 'stopped',
+      settledAt: FIXTURE_NOW + 5_000,
+      endReason: 'revise_started',
+    });
+
+    expect(isAutoDelegationReplaced({ delegation: scout, delegations: [scout, reviewer] })).toBe(
+      false,
+    );
+  });
+
+  it('counts a successor tree-stopped after its attempt began', () => {
+    const scout = returnedScout();
+    const reviewer = startedOnBranch({
+      key: 'reviewer',
+      role: 'reviewer',
+      createdAt: FIXTURE_NOW + 4_000,
+      state: 'settled',
+      outcome: 'stopped',
+      settledAt: FIXTURE_NOW + 5_000,
+      endReason: 'stopped',
+      result: {
+        schemaVersion: 1,
+        attemptId: 'attempt-reviewer',
+        outcome: 'stopped',
+        reason: 'stopped',
+      },
     });
 
     expect(isAutoDelegationReplaced({ delegation: scout, delegations: [scout, reviewer] })).toBe(

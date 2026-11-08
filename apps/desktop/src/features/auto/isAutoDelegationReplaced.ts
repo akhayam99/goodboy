@@ -1,4 +1,5 @@
 import type { AutoDelegation } from '@goodboy/db';
+import { textField } from './chat/readJson';
 import { delegationMountIdOf } from './delegationMountIdOf';
 
 type Params = {
@@ -17,11 +18,13 @@ const hasStarted = ({ delegation }: StartedParams): boolean => {
   if (delegation.state === 'awaiting_confirm') {
     return false;
   }
-  return !(
-    delegation.state === 'settled' &&
-    delegation.outcome === 'stopped' &&
-    delegation.reason === 'declined'
-  );
+  if (delegation.state !== 'settled' || delegation.outcome !== 'stopped') {
+    return true;
+  }
+  if (delegation.reason === 'declined') {
+    return false;
+  }
+  return textField({ source: delegation.result, key: 'attemptId' }) !== null;
 };
 
 const isSuperseded = ({ delegation, delegations }: Params): boolean => {
