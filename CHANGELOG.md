@@ -12,6 +12,41 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.14
+
+Auto decides on every child that comes back, continues, messages or stops its children, and you can message an Auto child.
+
+### New
+
+#### Auto children return a report and one request
+<!-- gb area=agents pr=2146,2148 -->
+
+A child of Auto that can't finish does what it can and returns its report with one request: a shell, a writer, another role, a decision or you. It no longer ends blocked with no shape.
+
+Auto gets the return at once, while the other children keep running, and decides on each one: continue it, replace it with another child, or release it. Repeated returns are capped and hand the tree back to you.
+
+#### Auto continues, messages and stops its children
+<!-- gb area=agents pr=2149 -->
+
+Auto can continue a child with new instructions, send it a message that runs as its next turn, or stop it. A stopped child keeps its work.
+
+A message you type on an Auto child continues its work inside the tree, in its role and on the model Auto picked, so the answer reaches Auto in its next delivery. A child of a finished tree keeps a plain turn.
+
+### Improved
+
+#### A returned Auto child reads Idle
+<!-- gb area=agents image=child-returned pr=2145,2148 -->
+
+A child that came back with a request reads Idle with "Returned to Auto" and its request while Auto decides, then Done once Auto continued, replaced or released it. It no longer reads Blocked, Failed and Needs you at once.
+
+Failed is kept for a real error and always comes with a sentence instead of a code.
+
+### Fixed
+
+- History drafts and report evidence list commits against the branch's configured base, so the commits and the count beside them agree. <!-- gb area=sessions pr=2142 -->
+- On GitLab and Bitbucket, the pull request activity shows the comments line even when the pull request detail doesn't load. <!-- gb area=review pr=2143 -->
+- A running process follows a branch renamed more than once to the right branch, even when an old name is recreated. <!-- gb area=scripts pr=2144 -->
+
 ## Goodboy v0.31.13
 
 The Branch page ranks what blocks the merge and gathers its runs, questions and artifacts, and every process names the branch it runs on.
