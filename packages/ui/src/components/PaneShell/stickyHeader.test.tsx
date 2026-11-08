@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { PANE_RHYTHM } from '../../paneRhythm';
 import { RevealRegion } from '../RevealRegion';
+import { ScrollFade } from '../ScrollFade';
 import { PageTrailContext } from './pageTrailContext';
 import { PaneShell } from '.';
 
@@ -85,6 +86,51 @@ describe('sticky page header surface', () => {
     const header = container.querySelector('[data-slot="pane-header"]');
     expect(classesOf(header)).not.toContain('pt-3');
     screen.getByRole('heading', { name: 'Report' });
+  });
+
+  it.each([
+    ['under a back row', <span key="trail">Back to artifacts</span>],
+    ['with no back row', null],
+  ])('pins a pinned header into one even, frosted zone %s', (_, trail) => {
+    const { container } = render(
+      <PageTrailContext.Provider value={trail}>
+        <PaneShell title="Report the session outcome" isHeaderPinned>
+          <p>Body copy</p>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+
+    const pinned = container.querySelector('[data-slot="reveal-pinned"]');
+    const header = container.querySelector('[data-slot="pane-header"]');
+    expect(pinned?.contains(header ?? null)).toBe(true);
+    expect(classesOf(pinned)).toContain('sticky-surface');
+    expect(pinned?.innerHTML).not.toMatch(/shadow|gradient/);
+    expect(classesOf(pinned?.querySelector('[data-page-column]') ?? null)).toContain('py-3');
+    expect(classesOf(header)).not.toContain('pt-3');
+    expect(classesOf(header)).not.toContain('pb-4');
+    expect(container.querySelector('[data-slot="reveal-header"]')?.childElementCount).toBe(0);
+    expect(classesOf(container.querySelector('[data-page-scroller]'))).toEqual(
+      expect.arrayContaining([
+        'pt-[var(--reveal-inset,0px)]',
+        'scroll-pt-[var(--reveal-inset,0px)]',
+      ]),
+    );
+  });
+
+  it('lets a scroller nested under the pinned zone start its sticky rows at its own top', () => {
+    const { container } = render(
+      <PageTrailContext.Provider value={<span>Back to artifacts</span>}>
+        <PaneShell title="Report" isHeaderPinned>
+          <ScrollFade isPageScroller={false}>
+            <p>Nested</p>
+          </ScrollFade>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+
+    const scrollers = [...container.querySelectorAll('.overflow-y-auto')];
+    expect(scrollers).toHaveLength(2);
+    expect(classesOf(scrollers[1] ?? null)).toContain('[--reveal-inset:0px]');
   });
 
   it('paints the sliding header with the same surface and no shadow', () => {

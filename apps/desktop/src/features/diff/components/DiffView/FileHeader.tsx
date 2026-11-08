@@ -63,7 +63,7 @@ export const FileHeader = ({
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       className={cn(
-        'sticky-surface-subtle sticky top-0 z-10 flex min-w-0 items-center gap-2 pl-1 pr-2 font-sans',
+        'sticky-surface-subtle sticky top-[var(--reveal-inset,0px)] z-10 flex min-w-0 items-center gap-2 pl-1 pr-2 font-sans',
         isCollapsed ? 'rounded-lg' : 'rounded-t-lg',
       )}
       style={{ height: FILE_HEADER_PX }}

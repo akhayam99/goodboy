@@ -13,6 +13,7 @@ type Props = {
   readonly header: ReactNode;
   readonly banner: ReactNode;
   readonly lead: ReactNode;
+  readonly isHeaderPinned: boolean;
   readonly dockBlock: ReactNode;
   readonly isSelfScroll: boolean;
   readonly resetKey: string | null;
@@ -25,6 +26,7 @@ export const RevealPane = ({
   header,
   banner,
   lead,
+  isHeaderPinned,
   dockBlock,
   isSelfScroll,
   resetKey,
@@ -34,17 +36,22 @@ export const RevealPane = ({
   const trail = useContext(PageTrailContext);
   const isOuterUnderTrail = useContext(UnderTrailContext);
   const hasTrail = trail != null;
+  const isUnderTrail = isOuterUnderTrail || hasTrail;
+  const isEvenInset = hasTrail || isHeaderPinned;
+  const headerBlock = (
+    <UnderTrailContext.Provider value={isUnderTrail}>{header}</UnderTrailContext.Provider>
+  );
   const pinned =
-    !hasTrail && lead == null ? null : (
+    !isEvenInset && lead == null ? null : (
       <div
         data-slot="reveal-pinned"
-        className={cn('sticky-surface', !hasTrail && 'has-[[data-slot=pane-lead]:empty]:hidden')}
+        className={cn('sticky-surface', !isEvenInset && 'has-[[data-slot=pane-lead]:empty]:hidden')}
       >
         <PageColumn
           width={width}
           className={cn(
             'flex flex-col gap-3',
-            !isOuterUnderTrail && (hasTrail ? PANE_RHYTHM.pinnedInset : PANE_RHYTHM.headerInset),
+            !isOuterUnderTrail && (isEvenInset ? PANE_RHYTHM.pinnedInset : PANE_RHYTHM.headerInset),
             animationClassName,
           )}
         >
@@ -58,6 +65,10 @@ export const RevealPane = ({
               {lead}
             </div>
           )}
+          {isHeaderPinned ? headerBlock : null}
+          {isHeaderPinned && banner !== null ? (
+            <div className="has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
+          ) : null}
         </PageColumn>
       </div>
     );
@@ -69,14 +80,14 @@ export const RevealPane = ({
           resetKey={resetKey}
           pinned={pinned}
           header={
-            <PageColumn width={width}>
-              <UnderTrailContext.Provider value={isOuterUnderTrail || hasTrail}>
-                {header}
-              </UnderTrailContext.Provider>
-              {banner === null ? null : (
-                <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
-              )}
-            </PageColumn>
+            isHeaderPinned ? null : (
+              <PageColumn width={width}>
+                {headerBlock}
+                {banner === null ? null : (
+                  <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
+                )}
+              </PageColumn>
+            )
           }
         >
           {isSelfScroll ? (

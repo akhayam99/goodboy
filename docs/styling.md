@@ -475,7 +475,13 @@ never shows through the frosted row). The `PaneShell` body scroller
 (`ScrollFade` `isUnderPinned`) runs from the top of the region with the inset as
 its top padding and `scroll-padding-top`, so text scrolls under the back row and
 an anchor lands below it. A self-scrolling body pads the inset instead and stays
-below the row. The header's `top`, the body's `top` and its `height` read the same var in
+below the row. A sticky row inside the scroller (a list group label, a diff file
+header, the report outline) sits at `top: var(--reveal-inset)`, so it parks under
+the pinned zone, not behind it; every other `ScrollFade` resets the var to 0, so
+a nested scroller's sticky rows start at its own top. A page whose header is a
+status bar the reader keeps (the artifact page, `PaneShell` `isHeaderPinned`)
+puts it in the pinned zone with the back row instead: nothing steps aside, and
+the document scrolls under both. The header's `top`, the body's `top` and its `height` read the same var in
 one layout pass; never move one of them with `translate`, which runs on the
 compositor a frame apart and makes a pinned last line wobble. A page with less
 than 24px left to scroll once the header is gone never hides it, and a hidden
@@ -553,14 +559,17 @@ headers belong to its body, such as the file headers of a diff, passes
 sharp.
 
 **A sticky header blurs what passes under it; it never casts a shadow.** The
-pinned back row, the sliding header of a `RevealRegion` and the sticky rows of a
+pinned back row, the artifact page's pinned zone (back row and status bar
+together), the sliding header of a `RevealRegion` and the sticky rows of a
 list or a diff take `sticky-surface` (`sticky-surface-subtle` on `subtle`): the
 surface role at 78% with `blur(8px) saturate(1.2)`, opaque under
 `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
-`bg-background` on the header itself. Its block padding is even: the pinned back
-row is `py-3` (`PANE_RHYTHM.pinnedInset`), and the header under it adds no top
-inset of its own. Page content scrolls under the pinned back row, so the blur is
-what the reader sees there. The only edge is the `border-soft` hairline of
+`bg-background` on the header itself. Its block padding is even: the pinned zone
+is `py-3` (`PANE_RHYTHM.pinnedInset`), and a header under or inside it adds no
+inset of its own. Page content scrolls under the pinned zone, so the blur is
+what the reader sees there, and the scroller's top fade is off under it. A
+drawer's back link sits in the frame above its scroller, so nothing passes
+under it and it needs no surface. The only edge is the `border-soft` hairline of
 `ScrollFade edge="line"`, which fades in over `--duration-quick` once the view is
 scrolled; the page scroller under a `RevealRegion` header takes it by default,
 drawn at the bottom of the pinned row when the scroller runs under it.

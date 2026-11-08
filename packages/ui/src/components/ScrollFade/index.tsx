@@ -78,7 +78,7 @@ export const ScrollFade = ({
     const scrollSize = horizontal ? el.scrollWidth : el.scrollHeight;
     const maxScroll = Math.max(0, scrollSize - clientSize);
     const topFade = isLineEdge ? LINE_EDGE_FADE_PX : fadePx;
-    const top = fadeEdges === 'end' ? 0 : Math.min(topFade, scrollPos);
+    const top = fadeEdges === 'end' || isUnderPinned ? 0 : Math.min(topFade, scrollPos);
     const bottom = Math.min(fadePx, Math.max(0, maxScroll - scrollPos));
     const hasFade = top > 0 || bottom > 0 || el.style.getPropertyValue('--fade-top') !== '';
     if (hasFade) {
@@ -94,7 +94,7 @@ export const ScrollFade = ({
       return;
     }
     root.removeAttribute('data-scrolled');
-  }, [fadeEdges, fadePx, horizontal, isLineEdge, ref]);
+  }, [fadeEdges, fadePx, horizontal, isLineEdge, isUnderPinned, ref]);
 
   const scheduleFade = useCallback(() => {
     if (frameRef.current !== null) {
@@ -147,7 +147,9 @@ export const ScrollFade = ({
           horizontal
             ? 'mask-fade-x h-full max-w-[inherit] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
             : 'mask-fade-y h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-          isUnderPinned && 'pt-[var(--reveal-inset,0px)] scroll-pt-[var(--reveal-inset,0px)]',
+          isUnderPinned
+            ? 'pt-[var(--reveal-inset,0px)] scroll-pt-[var(--reveal-inset,0px)]'
+            : '[--reveal-inset:0px]',
           viewportClassName,
         )}
         data-page-scroller={isPageScroller ? '' : undefined}
