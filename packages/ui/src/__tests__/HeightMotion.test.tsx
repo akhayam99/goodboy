@@ -104,6 +104,7 @@ describe('HeightMotion', () => {
     view.rerender(slot({ isOpen: false }));
 
     expect(wrapper().dataset.heightMotion).toBe('moving');
+    expect(wrapper().style.height).toBe(`${ROW_PX}px`);
     expect(wrapper().style.marginTop).toBe('-2rem');
     expect(wrapper().hasAttribute('aria-hidden')).toBe(false);
 
