@@ -59,7 +59,11 @@ const chatOf = ({ state }: ChatParams) => {
   return result.current.insertions ?? [];
 };
 
-const dueKeysOf = ({ state, atMs }: ChatParams & { readonly atMs: number }) =>
+type DueKeysParams = ChatParams & {
+  readonly atMs: number;
+};
+
+const dueKeysOf = ({ state, atMs }: DueKeysParams) =>
   dueInsertionsOf({
     insertions: chatOf({ state }),
     placed: new Set<string>(),

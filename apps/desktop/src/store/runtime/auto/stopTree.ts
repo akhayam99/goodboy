@@ -13,7 +13,7 @@ import {
 } from '@goodboy/db';
 import type { CancelRunOutcome } from './ports';
 import { repeatReturnStatements } from './returns/repeatReturnStatements';
-import { undecidedReturnRowsOf } from './returns/undecidedReturnRowsOf';
+import { undecidedReturnsOf } from './returns/undecidedReturnsOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type StopTreeParams = Readonly<{
@@ -71,7 +71,7 @@ const carriedReturnStatements = async ({ ctx, tree }: RequestParams): Promise<Ca
     carry: repeatReturnStatements({
       ctx,
       tree: { id: tree.id, generation: tree.generation + 1 },
-      rows: undecidedReturnRowsOf({ rows: current, delegations }),
+      returns: undecidedReturnsOf({ rows: current, delegations }),
     }),
   };
 };

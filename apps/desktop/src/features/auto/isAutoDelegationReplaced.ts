@@ -33,18 +33,24 @@ const isSuperseded = ({ delegation, delegations }: Params): boolean => {
   if (mountId === null) {
     return false;
   }
-  const isAnyRole = delegation.outcome === 'blocked';
-  const returnedAt = delegation.settledAt ?? delegation.createdAt;
+  const endedAt = delegation.settledAt ?? delegation.createdAt;
   return delegations.some(
     (later) =>
       later.id !== delegation.id &&
       !later.isAdopted &&
       hasStarted({ delegation: later }) &&
-      (isAnyRole || later.role === delegation.role) &&
-      later.createdAt > returnedAt &&
+      later.role === delegation.role &&
+      later.createdAt > endedAt &&
       delegationMountIdOf({ delegation: later }) === mountId,
   );
 };
 
-export const isAutoDelegationReplaced = ({ delegation, delegations }: Params): boolean =>
-  isAutoReturnDecided({ delegation, delegations }) || isSuperseded({ delegation, delegations });
+export const isAutoDelegationReplaced = ({ delegation, delegations }: Params): boolean => {
+  if (isAutoReturnDecided({ delegation, delegations })) {
+    return true;
+  }
+  if (delegation.outcome === 'blocked') {
+    return false;
+  }
+  return isSuperseded({ delegation, delegations });
+};

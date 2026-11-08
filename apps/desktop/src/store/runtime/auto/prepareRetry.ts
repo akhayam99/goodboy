@@ -17,6 +17,7 @@ import {
 import { brandId, type ArtifactId, type AutoDelegationId } from '@goodboy/types';
 import type { ChildRefusal } from './resolveDelegateChild';
 import { returnCountOf } from './returns/returnCountOf';
+import { targetRefusalOf } from './returns/targetRefusalOf';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -37,6 +38,8 @@ export type PrepareRetryParams = Readonly<{
   tree: AutoTree;
   child: DelegateChildSpec;
   slot: number;
+  batchTargets: ReadonlySet<string>;
+  isConfirmGated: boolean;
 }>;
 
 type TextParams = {
@@ -97,6 +100,8 @@ export const prepareRetry = async ({
   tree,
   child,
   slot,
+  batchTargets,
+  isConfirmGated,
 }: PrepareRetryParams): Promise<PreparedRetry> => {
   if (child.retryOf === null) {
     return refuse({ slot, code: 'spec_invalid', message: 'a retry names no earlier agent' });
@@ -127,9 +132,19 @@ export const prepareRetry = async ({
       message: 'that agent is already being retried',
     });
   }
+  const targetRefusal = targetRefusalOf({
+    target: original,
+    delegations: siblings,
+    batchTargets,
+    slot,
+  });
+  if (targetRefusal !== null) {
+    return { kind: 'refused', refusal: targetRefusal };
+  }
   if (
+    !isConfirmGated &&
     returnCountOf({ delegation: original, delegations: siblings }) >
-    AUTO_TREE_LIMITS.returnsPerDelegation
+      AUTO_TREE_LIMITS.returnsPerDelegation
   ) {
     return refuse({ slot, code: 'return_limit', message: AUTO_REFUSAL_TEXT.return_limit });
   }

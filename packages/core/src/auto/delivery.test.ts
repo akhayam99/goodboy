@@ -273,7 +273,11 @@ describe('the WAITING FOR YOUR DECISION block', () => {
     costUsd: 0.4,
   });
 
-  const build = (waiting: ReadonlyArray<WaitingReturn>) =>
+  type BuildParams = {
+    readonly waiting: ReadonlyArray<WaitingReturn>;
+  };
+
+  const build = ({ waiting }: BuildParams) =>
     buildDeliveryText({
       ledgerBlock: 'LEDGER',
       budgetLine: '',
@@ -287,10 +291,13 @@ describe('the WAITING FOR YOUR DECISION block', () => {
     });
 
   it('opens the delivery with each return, its request and its report', () => {
-    expect(build([{ result: returned, returns: 1, isClosed: false, isRebriefClosed: false }]))
-      .toMatchInlineSnapshot(`
+    expect(
+      build({
+        waiting: [{ result: returned, returns: 1, isClosed: false, isRebriefClosed: false }],
+      }),
+    ).toMatchInlineSnapshot(`
       "WAITING FOR YOUR DECISION
-      Each agent below came back to you and waits for your decision. Decide about each one: continue it with "retryOf", hand its task to another role with "replaces", release it with a release block, or ask the user with a propose block. One you leave without a decision comes back next turn and counts as a turn without progress.
+      Each agent below came back to you and waits for your decision. Decide about each one: continue it with "retryOf", hand its task to another role with "replaces", release it with a release block, or ask the user with a propose block whose child names it with "retryOf" or "replaces". One you leave without a decision comes back next turn and counts as a turn without progress.
       - Harborline export (implementer agent-implementer-2), delegation delegation-5, came back once:
         it asks: Should archived rows of ledger-core be exported?
         it needs: a decision from you
@@ -301,10 +308,13 @@ describe('the WAITING FOR YOUR DECISION block', () => {
   });
 
   it('says when a return can no longer be continued or re-briefed', () => {
-    const text = build([{ result: returned, returns: 3, isClosed: true, isRebriefClosed: true }]);
+    const text = build({
+      waiting: [{ result: returned, returns: 3, isClosed: true, isRebriefClosed: true }],
+    });
     expect(text).toContain('came back 3 times');
     expect(text).toContain('so it cannot be continued');
     expect(text).toContain('handed to a new agent 3 times already');
+    expect(text).toContain('a propose block whose child names it with "retryOf" or "replaces"');
   });
 
   it('leaves a repeated return out of the results block', () => {
@@ -335,6 +345,6 @@ describe('the WAITING FOR YOUR DECISION block', () => {
   });
 
   it('adds nothing when no return waits', () => {
-    expect(build([])).toBe('LEDGER');
+    expect(build({ waiting: [] })).toBe('LEDGER');
   });
 });

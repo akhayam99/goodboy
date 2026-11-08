@@ -219,6 +219,8 @@ describe('refusing a retry that cannot repeat the work', () => {
       tree,
       child: bareRetry((await firstDelegation(world)).id),
       slot: 0,
+      batchTargets: new Set(),
+      isConfirmGated: false,
     });
 
     expect(outcome).toMatchObject({ kind: 'refused', refusal: { code: 'retry_unavailable' } });
@@ -256,6 +258,8 @@ describe('refusing a retry that cannot repeat the work', () => {
       tree,
       child: bareRetry(original.id),
       slot: 0,
+      batchTargets: new Set(),
+      isConfirmGated: false,
     });
 
     expect(outcome).toMatchObject({

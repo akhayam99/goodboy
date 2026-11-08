@@ -90,12 +90,12 @@ const waitingLinesOf = ({ entry, childLabels }: WaitingLinesParams): ReadonlyArr
     `  its report: ${report === '' ? 'none' : oneLine({ text: report })}`,
     ...(entry.isClosed
       ? [
-          `  it came back more than ${AUTO_TREE_LIMITS.returnsPerDelegation} times, so it cannot be continued: hand the task to another role with "replaces" or ask the user with a propose block`,
+          `  it came back more than ${AUTO_TREE_LIMITS.returnsPerDelegation} times, so it cannot be continued: hand the task to another role with "replaces" or ask the user with a propose block whose child names it with "retryOf" or "replaces"`,
         ]
       : []),
     ...(entry.isRebriefClosed
       ? [
-          `  its task was handed to a new agent ${AUTO_TREE_LIMITS.rebriefsPerTask} times already: ask the user with a propose block`,
+          `  its task was handed to a new agent ${AUTO_TREE_LIMITS.rebriefsPerTask} times already: ask the user with a propose block whose child names it with "retryOf" or "replaces"`,
         ]
       : []),
   ];
@@ -107,7 +107,7 @@ const waitingBlock = ({ waiting, childLabels }: WaitingBlockParams): string | nu
   }
   return [
     'WAITING FOR YOUR DECISION',
-    'Each agent below came back to you and waits for your decision. Decide about each one: continue it with "retryOf", hand its task to another role with "replaces", release it with a release block, or ask the user with a propose block. One you leave without a decision comes back next turn and counts as a turn without progress.',
+    'Each agent below came back to you and waits for your decision. Decide about each one: continue it with "retryOf", hand its task to another role with "replaces", release it with a release block, or ask the user with a propose block whose child names it with "retryOf" or "replaces". One you leave without a decision comes back next turn and counts as a turn without progress.',
     ...waiting.flatMap((entry) => waitingLinesOf({ entry, childLabels })),
   ].join('\n');
 };

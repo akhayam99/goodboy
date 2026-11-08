@@ -685,9 +685,10 @@ A child that returned (outcome `blocked`, reasons `needs_shell`, `needs_writer`,
 `missing_tool` on rows from before the return) is not an error and not yours to
 move. It reads **Idle**, with "Returned to Auto: <its request>" on its tail (the
 one line it wrote, `returnedRequestOf`, else its summary), while Auto decides, and **Done**
-once Auto continued it (`retryOf`), replaced it (`replaces`), released it with a reason, or
-started any role on the same branch after it returned (`isAutoDelegationReplaced`, compared to `settledAt`, so parallel work
-that started before the return does not count). A **Done** child has no tail line
+only once Auto decided about it: continued it (`retryOf`), replaced it (`replaces`) or released it
+with a reason (`isAutoDelegationReplaced`, which reads `isAutoReturnDecided` for a returned child). A
+later agent on the same branch that names it in neither field is not a decision, and neither is a
+proposal you declined. A **Done** child has no tail line
 on its page: `AutoChildEnd` draws only what `autoChildLive` returns. **Failed** is only for a real error (a process
 error, a lost report, no closing), always with a sentence from
 `delegationSentenceOf`, never a reason code. **Needs you** appears on Auto only,
@@ -726,8 +727,10 @@ stops it is a guard that protects the user:
 - `AUTO_TREE_LIMITS`: delegate calls per turn, refused hand overs, question cycles
   per delegation, the no progress streak and the wall clock hours;
 - the caps on returns, in the same table. Both count the whole lineage, from the root of the chain
-  down every branch (`lineageOf`), so naming an earlier, already decided agent again never resets a
-  count. `returnsPerDelegation` (2, the returns in the `retryOf` lineage, `returnCountOf`): the
+  down every branch (`lineageOf`). A `retryOf` or `replaces` may name only a return no one decided
+  yet, once per block (`targetRefusalOf`, refused with `retry_unavailable`): the latest agent of the
+  task, never an earlier one already continued or replaced. A propose block waits for you, so the two
+  caps below do not refuse it; its child still names the return. `returnsPerDelegation` (2, the returns in the `retryOf` lineage, `returnCountOf`): the
   third return closes the child, a `retryOf` of it or of any agent in its lineage is refused with
   `return_limit` and the delivery tells Auto to hand the task to another role or ask the user.
   `rebriefsPerTask` (3, the `replaces` links in the `retryOf` and `replaces` lineage,
@@ -1059,14 +1062,18 @@ Every delivery opens with **WAITING FOR YOUR DECISION** (`waitingReturnsOf` in
 `store/runtime/auto/returns/`, rendered by `buildDeliveryText`): each return with no decision, its
 request, its needs and its report. A return is decided once a later delegation names it with
 `retryOf` (continue) or with `"replaces":"<delegation id>"` (another role, stored in
-`request_json.replaces`), or once Auto sent `{"action":"release","delegation":"..","reason":".."}`
+`request_json.replaces`), a propose block included as long as you do not decline it, or once Auto sent `{"action":"release","delegation":"..","reason":".."}`
 (`releaseDelegation`, which stores `request_json.released` with the reason and the run, guarded by
 owner, the current generation of the tree and an undecided `blocked` row of that generation or an
 older one). A release replayed by the same run with the same reason, as recovery does after a crash
 between the release and the turn settle, is applied again without a write, never refused. `isAutoReturnDecided` is the one check: the delivery,
 the turn settle and the Done word (`isAutoDelegationReplaced`) read it. A turn that leaves a delivered
-return undecided copies its row again (`undecided:<generation>:<row>`, `isRepeat`, kept out of the results block)
-and counts as a turn without progress, so three such turns block the tree with the no progress guard.
+return undecided copies it again, one row per return (`undecided:<generation>:<row>:<delegation>`,
+`isRepeat`, kept out of the results block), and counts as a turn without progress, so three such turns
+block the tree with the no progress guard. A return saved before this rule sits inside its batch
+row with no `returnOf`: `returnIdsOfRow` reads the `blocked` results of such a row as returns, and when
+that batch was delivered by an earlier turn, `joinReady` writes the missing return row
+(`hasUnheardReturn`), so Auto is woken to decide about it.
 
 **The way back is an excerpt.** `parseChildClosing` keeps the answer of a child whole up to
 `STEP_OUTPUT_EXCERPT_CHARS` (4,000, the budget the Runs excerpt owns) and above it the same

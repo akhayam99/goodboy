@@ -18,6 +18,8 @@ import {
 import { brandId, type AutoBatchId, type AutoOutboxId } from '@goodboy/types';
 import { attemptEnvelope } from './attemptEnvelope';
 import { envelopeOf } from './landAttemptRevision';
+import { isAutoReturnDecided } from '../../../features/auto/isAutoReturnDecided';
+import { hasUnheardReturn } from './returns/hasUnheardReturn';
 import { returnCountOf } from './returns/returnCountOf';
 import { returnOfRow } from './returns/returnOfRow';
 import type { AgentVerbContext } from './verbContext';
@@ -278,13 +280,20 @@ export const joinReady = async ({ ctx, treeId }: JoinParams): Promise<JoinOutcom
       treeId,
       joinKey: `join:${tree.generation}:${batchId}`,
     });
-    if (existing !== null) {
+    if (
+      existing !== null &&
+      !hasUnheardReturn({ joined: existing, tree, batch, delivered, delegations: all })
+    ) {
       continue;
     }
     const members = await membersOf({ ctx, batch });
     let isHeld = false;
     for (const member of members) {
-      if (delivered.has(member.delegation.id) || !isReturned({ member })) {
+      if (
+        delivered.has(member.delegation.id) ||
+        !isReturned({ member }) ||
+        isAutoReturnDecided({ delegation: member.delegation, delegations: all })
+      ) {
         continue;
       }
       const outcome = await ctx.db.transaction({
@@ -309,7 +318,12 @@ export const joinReady = async ({ ctx, treeId }: JoinParams): Promise<JoinOutcom
       joined.push(member.delegation.id);
     }
     const rest = members.filter((member) => !delivered.has(member.delegation.id));
-    if (isHeld || rest.length === 0 || !rest.every((member) => isReady({ member }))) {
+    if (
+      existing !== null ||
+      isHeld ||
+      rest.length === 0 ||
+      !rest.every((member) => isReady({ member }))
+    ) {
       continue;
     }
     const outcome = await ctx.db.transaction({

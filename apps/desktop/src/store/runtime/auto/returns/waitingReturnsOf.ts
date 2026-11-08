@@ -3,7 +3,7 @@ import { listAutoDelegations, listAutoOutbox, type AutoTree, type Database } fro
 import { isAutoReturnDecided } from '../../../../features/auto/isAutoReturnDecided';
 import { rebriefCountOf } from './rebriefCountOf';
 import { returnCountOf } from './returnCountOf';
-import { returnOfRow } from './returnOfRow';
+import { returnIdsOfRow } from './returnIdsOfRow';
 
 export type WaitingReturnsParams = Readonly<{
   db: Database;
@@ -18,10 +18,7 @@ export const waitingReturnsOf = async ({
   const returned = new Set(
     rows
       .filter((row) => row.generation === tree.generation && row.state !== 'dropped')
-      .flatMap((row) => {
-        const returnOf = returnOfRow({ row });
-        return returnOf === null ? [] : [returnOf];
-      }),
+      .flatMap((row) => returnIdsOfRow({ row })),
   );
   if (returned.size === 0) {
     return [];

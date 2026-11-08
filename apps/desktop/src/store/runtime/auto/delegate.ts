@@ -163,19 +163,42 @@ export const delegate = async ({
   const refusals = [];
   const recoveries: RecoveredRevise[] = [];
   const batchReplaces: string[] = [];
+  const batchTargets = new Set<string>();
   for (const [slot, child] of parsed.children.entries()) {
-    const replaceRefusal = await prepareReplace({ ctx, tree, child, slot, batchReplaces });
+    const replaceRefusal = await prepareReplace({
+      ctx,
+      tree,
+      child,
+      slot,
+      batchReplaces,
+      batchTargets,
+      isConfirmGated: isProposal,
+    });
     if (replaceRefusal !== null) {
       refusals.push(replaceRefusal);
       continue;
     }
     if (child.replaces !== null) {
       batchReplaces.push(child.replaces);
+      batchTargets.add(child.replaces);
     }
-    const prepared = child.retryOf === null ? null : await prepareRetry({ ctx, tree, child, slot });
+    const prepared =
+      child.retryOf === null
+        ? null
+        : await prepareRetry({
+            ctx,
+            tree,
+            child,
+            slot,
+            batchTargets,
+            isConfirmGated: isProposal,
+          });
     if (prepared !== null && prepared.kind === 'refused') {
       refusals.push(prepared.refusal);
       continue;
+    }
+    if (child.retryOf !== null) {
+      batchTargets.add(child.retryOf);
     }
     if (prepared !== null && prepared.kind === 'recovered') {
       recoveries.push(prepared.recovery);
