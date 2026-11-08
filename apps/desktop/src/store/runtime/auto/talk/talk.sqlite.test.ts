@@ -362,6 +362,45 @@ describe('a person writes to a child Auto started', () => {
     expect(await delegationsOf(world)).toHaveLength(1);
   });
 
+  it('lets the person write to a child while Auto revises its plan, and holds Auto back', async () => {
+    const world = await makeRuntimeWorld({
+      capUsd: 10,
+      agentIds: [SCOUT_AGENT, 'agent-planner'],
+      planIds: [{ id: 'plan-1', agentId: 'agent-planner' }],
+    });
+    const db = world.state.world.db;
+    await registerPlan({ world: world.state.world, id: 'plan-1', agentId: 'agent-planner' });
+    await userSays({ world, id: 'outbox-user-1', text: 'check the plan against ledger-core' });
+    await autoDelegates({ world, spec: { children: [{ ...SCOUT, artifacts: ['plan-1'] }] } });
+    await autoTurnEnds({ world });
+    await childTurnEnds({ world, index: 0, text: SCOUT_DONE });
+    await autoTurnEnds({ world, text: 'The scout read the plan.' });
+    const original = await onlyDelegation(world);
+    await db.execute(
+      `UPDATE auto_artifacts SET approval_state = 'revising', open_revise_delegation_id = ?
+        WHERE artifact_id = ?`,
+      ['delegation-revise', 'plan-1'],
+    );
+
+    expect(
+      await world.runtime.continueChild({
+        childAgentId: original.childAgentId,
+        text: 'Skip the tests folder.',
+        from: 'auto-message',
+      }),
+    ).toMatchObject({ kind: 'refused', code: 'artifact_revising' });
+    expect(
+      await world.runtime.continueChild({
+        childAgentId: original.childAgentId,
+        text: 'Also fix lint.',
+        from: 'user',
+      }),
+    ).toMatchObject({ kind: 'continued' });
+    expect(world.state.ports.childTurns.at(-1)?.text).toContain(
+      '**New instructions** Also fix lint.',
+    );
+  });
+
   it('keeps the plain turn, files included, once the tree has stopped', async () => {
     const world = await settledScout();
     const original = await onlyDelegation(world);
@@ -529,6 +568,44 @@ describe('Auto messages a working child', () => {
 
     expect(await send()).toMatchObject({ isOk: true, data: { replayed: true } });
     expect(world.state.ports.childMessages).toHaveLength(1);
+  });
+
+  it('queues two messages of one Auto turn, and replays each once', async () => {
+    const world = await runningScout();
+    const original = await onlyDelegation(world);
+    const db = world.state.world.db;
+    const kept: Array<{ id: string; content: string }> = [];
+    world.state.ports.setChildMessageSink(async ({ agentId, messageId, text }) => {
+      kept.push({ id: messageId, content: text });
+      await replaceAgentQueuedMessages(db, {
+        agentId,
+        messages: kept.map((row) => ({
+          ...row,
+          agentId,
+          attachments: [],
+          override: null,
+          createdAt: brandId<IsoDateTime>({ value: '2026-11-08T10:00:00.000Z' }),
+        })),
+      });
+    });
+    const send = (text: string) =>
+      autoCommand({
+        world,
+        verb: 'message',
+        args: { delegation: original.id, text },
+        runId: 'run-auto-two',
+      });
+
+    expect(await send('Skip tests/.')).toMatchObject({ isOk: true, data: { sent: 1 } });
+    const second = await send('Also skip docs/.');
+    expect(second).toMatchObject({ isOk: true, data: { sent: 2 } });
+    expect(second.data).not.toHaveProperty('replayed');
+    expect(await send('Skip tests/.')).toMatchObject({ isOk: true, data: { replayed: true } });
+    expect(await send('Also skip docs/.')).toMatchObject({ isOk: true, data: { replayed: true } });
+
+    const otherWindow = await listAgentQueuedMessages(db, [original.childAgentId]);
+    expect(otherWindow.map((row) => row.content)).toEqual(['Skip tests/.', 'Also skip docs/.']);
+    expect(new Set(otherWindow.map((row) => row.id)).size).toBe(2);
   });
 
   it('refuses a message to a child that already ended', async () => {

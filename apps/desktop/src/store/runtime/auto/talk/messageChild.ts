@@ -8,6 +8,7 @@ import {
 import { brandId, type AutoDelegationId } from '@goodboy/types';
 import { textOf } from '@goodboy/types/helpers';
 import { AUTO_MESSAGE_QUEUE_PREFIX } from '../../../../features/auto/AUTO_MESSAGE_QUEUE_PREFIX';
+import { delegationContinueOf } from '../../../../features/auto/delegationContinueOf';
 import type { AgentCommand, BridgeOutcome } from '../ports';
 import { refuseOutcome } from '../refuseOutcome';
 import type { AgentVerbContext } from '../verbContext';
@@ -28,18 +29,30 @@ const NEXT =
 type SavedParams = {
   readonly ctx: AgentVerbContext;
   readonly delegation: AutoDelegation;
-  readonly messageId: string;
+  readonly runPrefix: string;
 };
 
-const isMessageSaved = async ({ ctx, delegation, messageId }: SavedParams): Promise<boolean> => {
+const savedMessagesOf = async ({
+  ctx,
+  delegation,
+  runPrefix,
+}: SavedParams): Promise<ReadonlyMap<string, string>> => {
+  const saved = new Map<string, string>();
   const queued = await listAgentQueuedMessages(ctx.db, [delegation.childAgentId]);
-  if (queued.some((row) => row.id === messageId)) {
-    return true;
+  for (const row of queued) {
+    if (row.id.startsWith(runPrefix)) {
+      saved.set(row.id, row.content);
+    }
   }
   const rows = await listAutoDelegations({ db: ctx.db, treeId: delegation.treeId });
-  return rows.some(
-    (row) => delegationDeliveryIdOf({ delegation: row }) === `${QUEUE_DELIVERY_PREFIX}${messageId}`,
-  );
+  for (const row of rows) {
+    const deliveryId = delegationDeliveryIdOf({ delegation: row });
+    const given = delegationContinueOf({ delegation: row });
+    if (deliveryId?.startsWith(`${QUEUE_DELIVERY_PREFIX}${runPrefix}`) === true && given !== null) {
+      saved.set(deliveryId.slice(QUEUE_DELIVERY_PREFIX.length), given.text);
+    }
+  }
+  return saved;
 };
 
 export const messageChild = async ({
@@ -67,21 +80,24 @@ export const messageChild = async ({
   if (delegation.generation !== grant.generation) {
     return refuseOutcome({ code: 'generation_changed' });
   }
-  const messageId = `${AUTO_MESSAGE_QUEUE_PREFIX}${delegation.id}:${grant.runId}`;
+  const runPrefix = `${AUTO_MESSAGE_QUEUE_PREFIX}${delegation.id}:${grant.runId}:`;
   const sent = await autoMessageCountOf({ ctx, delegation });
-  if (await isMessageSaved({ ctx, delegation, messageId })) {
+  const saved = await savedMessagesOf({ ctx, delegation, runPrefix });
+  const replayedId = [...saved].find(([, savedText]) => savedText === text)?.[0];
+  if (replayedId !== undefined) {
     return {
       isOk: true,
       data: {
         queued: true,
         replayed: true,
         delegationId: delegation.id,
-        messageId,
+        messageId: replayedId,
         sent,
         next: NEXT,
       },
     };
   }
+  const messageId = `${runPrefix}${saved.size}`;
   if (!WORKING_STATES.includes(delegation.state)) {
     return refuseOutcome({ code: 'not_running' });
   }

@@ -3,6 +3,8 @@ import {
   admissionChildRefusals,
   autoRefusalUserReason,
   type AdmissionChild,
+  type AdmissionSnapshot,
+  type AutoRefusalCode,
   type DelegateChildSpec,
 } from '@goodboy/core/auto';
 import {
@@ -153,6 +155,23 @@ const deliveredDelegationOf = async ({
   );
 };
 
+type PersonArtifactParams = {
+  readonly snapshot: AdmissionSnapshot;
+  readonly admission: AdmissionChild;
+};
+
+const personArtifactRefusalOf = ({
+  snapshot,
+  admission,
+}: PersonArtifactParams): Readonly<{ code: AutoRefusalCode }> | undefined => {
+  const isDiscarded = admission.inputArtifacts.some(
+    (ref) =>
+      snapshot.artifacts.find((facts) => facts.artifactId === ref.artifactId)?.live?.status ===
+      'discarded',
+  );
+  return isDiscarded ? { code: 'artifact_discarded' } : undefined;
+};
+
 type ChildSpecParams = {
   readonly delegation: AutoDelegation;
   readonly text: string;
@@ -301,7 +320,10 @@ export const continueChild = async ({
     children: [admission],
     isPlanApprovalRequired: ctx.ports.isPlanApprovalRequired(),
   });
-  const artifactRefusal = admissionChildRefusals({ snapshot, tree, children: [admission] })[0];
+  const artifactRefusal =
+    from === 'user'
+      ? personArtifactRefusalOf({ snapshot, admission })
+      : admissionChildRefusals({ snapshot, tree, children: [admission] })[0];
   if (artifactRefusal !== undefined) {
     return continueRefused({
       code: artifactRefusal.code,
@@ -330,14 +352,16 @@ export const continueChild = async ({
         abortWhen: 'noRows',
         abortCode: ABORT_DELEGATION,
       },
-      ...inputArtifactStatementsOf({
-        treeId: tree.id,
-        slot: 0,
-        role: input.role,
-        inputArtifacts: input.inputArtifacts,
-        snapshot,
-        nowMs,
-      }),
+      ...(from === 'user'
+        ? []
+        : inputArtifactStatementsOf({
+            treeId: tree.id,
+            slot: 0,
+            role: input.role,
+            inputArtifacts: input.inputArtifacts,
+            snapshot,
+            nowMs,
+          })),
       insertAutoDelegationStatement({
         delegation: {
           id: input.delegationId,

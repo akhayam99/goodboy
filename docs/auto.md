@@ -553,12 +553,15 @@ writing to it reopens it to **Deciding**.
   window reads) and runs as that continue when the turn ends; a send that reaches a working
   child of a live tree is refused with "still working for Auto", never injected in the turn
   (`routeAutoChildTurn` passes `isBusy`, and `continueChild` answers it after the plain checks).
-  A continue passes the admission's artifact checks (`admissionChildRefusals`, fenced in its
+  Auto's continue passes the admission's artifact checks (`admissionChildRefusals`, fenced in its
   transaction by `inputArtifactStatementsOf`), and Auto's queued message waits as
-  `awaiting_confirm` at Every step or on a forced confirm (`admissionStateOf`); the person's own
-  message goes on. The queue delivery id rides the port (`deliveryId`, kept in the continue's
+  `awaiting_confirm` at Every step or on a forced confirm (`admissionStateOf`). The person's own
+  message goes on whatever the plan's state, and is refused only when an input artifact was
+  discarded. The queue delivery id rides the port (`deliveryId`, kept in the continue's
   request), so a queued message sent again replays its delegation instead of running twice.
-  Auto's own `message` takes the same queue, with an `auto-message:` id. The chat keeps the person's words
+  Auto's own `message` takes the same queue, with an `auto-message:` id keyed on the delegation,
+  Auto's run and the message's position in that run; a message whose text that run already
+  saved replays instead of queueing again (`messageChild`). The chat keeps the person's words
   where they were written. A child that asked a question waits for Auto's answer, a child that
   rewrites an artifact goes through Auto, and files are refused: each with a sentence. A child
   of a finished, stopped or detached tree, or of an older generation, keeps the plain confined
