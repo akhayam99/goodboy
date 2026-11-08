@@ -196,7 +196,8 @@ export const worktreeModuleMock = () => ({
   worktreeFolderFacts: vi.fn(async () => []),
   diskFree: vi.fn(async () => ({ freeBytes: null, totalBytes: null })),
   removeWorktreeFolder: storySpies.removeWorktreeFolder,
-  listBranchCommits: (worktreePath: string) => storySpies.listBranchCommits(worktreePath),
+  listBranchCommits: (...args: Parameters<typeof storySpies.listBranchCommits>) =>
+    storySpies.listBranchCommits(...args),
   listBranchNames: vi.fn(async () => [] as ReadonlyArray<string>),
   worktreeBranchHolder: ({ repoPath, branch }: BranchHolderArgs) =>
     storySpies.worktreeBranchHolder({ repoPath, branch }),

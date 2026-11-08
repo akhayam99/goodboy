@@ -10,8 +10,9 @@ const worktree = vi.hoisted(() => ({
       return { paths: ['ledger.ts'], additions: 4, deletions: 1, numstat: '4\t1\tledger.ts' };
     },
   ),
-  listBranchCommits: vi.fn(async (worktreePath: string) => {
+  listBranchCommits: vi.fn(async (worktreePath: string, baseBranch: string | null) => {
     void worktreePath;
+    void baseBranch;
     return [{ sha: 'abc1234567', shortSha: 'abc1234', subject: 'Round postings' }];
   }),
 }));
@@ -62,6 +63,7 @@ const collect = (state: CollectState) =>
 
 beforeEach(() => {
   worktree.worktreeChangedFiles.mockClear();
+  worktree.listBranchCommits.mockClear();
 });
 
 describe('collectReportDiffEvidence base branch', () => {
@@ -73,6 +75,24 @@ describe('collectReportDiffEvidence base branch', () => {
       baseBranch: 'develop',
     });
     expect(collected.evidence?.baseBranch).toBe('develop');
+  });
+
+  it('lists the commits against the same base as the changed files', async () => {
+    await collect(stateWith({ mountBase: 'develop', projectBase: 'main' }));
+
+    expect(worktree.listBranchCommits).toHaveBeenCalledWith('/w/ledger', 'develop');
+  });
+
+  it('lists the commits against the project base when the mount has none', async () => {
+    await collect(stateWith({ mountBase: null, projectBase: 'develop' }));
+
+    expect(worktree.listBranchCommits).toHaveBeenCalledWith('/w/ledger', 'develop');
+  });
+
+  it('lists the commits with no base when nothing names one', async () => {
+    await collect(stateWith({ mountBase: null, projectBase: null }));
+
+    expect(worktree.listBranchCommits).toHaveBeenCalledWith('/w/ledger', null);
   });
 
   it('falls back to the project base when the mount has none', async () => {
