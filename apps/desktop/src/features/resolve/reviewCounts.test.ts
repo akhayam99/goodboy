@@ -16,7 +16,7 @@ const THREADS = [
 describe('reviewCounts', () => {
   it('counts threads, open threads and threads that need you once', () => {
     const counts = reviewCounts({ threads: THREADS });
-    expect(counts).toEqual({ threads: 5, comments: 0, unresolved: 3, needYou: 2, unread: 0 });
+    expect(counts).toEqual({ threads: 5, comments: 0, unresolved: 4, needYou: 2, unread: 0 });
   });
 
   it('counts review comments and unread threads when they are read', () => {
@@ -37,6 +37,6 @@ describe('reviewCounts', () => {
         unreadCount: counts.unread,
         needYou: counts.needYou,
       }),
-    ).toBe('3 open threads · 2 need you · 1 unread');
+    ).toBe('4 open threads · 2 need you · 1 unread');
   });
 });

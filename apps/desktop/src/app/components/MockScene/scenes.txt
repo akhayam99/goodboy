@@ -99,6 +99,7 @@ branch-narrow
 branch-nopr
 branch-nopr-notes
 branch-open
+branch-pr-activity
 branch-pr-bitbucket
 branch-pr-bitbucket-denied
 branch-pr-bitbucket-merge

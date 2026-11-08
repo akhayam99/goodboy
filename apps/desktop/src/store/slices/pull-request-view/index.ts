@@ -1,5 +1,6 @@
 import { loadPullRequestView } from './loadPullRequestView';
 import { notePullRequestEdit } from './notePullRequestEdit';
+import { setPullRequestActivityFilter } from './setPullRequestActivityFilter';
 import { pullRequestViewInitialState } from './state';
 import type {
   LoadPullRequestViewParams,
@@ -14,4 +15,5 @@ export const createPullRequestViewSlice = ({ set, get }: SliceDeps): PullRequest
     loadPullRequestView({ set, get, ...params }),
   notePullRequestEdit: (params: NotePullRequestEditParams) =>
     notePullRequestEdit({ set, ...params }),
+  setPullRequestActivityFilter: setPullRequestActivityFilter({ set }),
 });

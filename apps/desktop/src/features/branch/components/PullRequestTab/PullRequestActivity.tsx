@@ -1,13 +1,11 @@
-import { countNoun } from '../../../../shared/utils/countNoun';
-import type { ReactNode } from 'react';
-import { CircleAlert, Bot, Check, MessageSquare, Pencil, CircleX } from 'lucide-react';
-import { ClampedProse, ICON_SIZE, SectionHeader, SelectableRow } from '@goodboy/ui';
+import { ClampedProse, SectionHeader, SegmentedTabs, SelectableRow } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { ActivityBotNotes } from './ActivityBotNotes';
+import { activityFilterOptionsOf, activityItemsFor, type ActivityFilter } from './activityFilters';
 import type { ActivityItem } from './activityOf';
-import { ActivityWho as Who } from './ActivityWho';
+import { activityRowOf } from './activityRowOf';
 
 type Props = {
   readonly items: ReadonlyArray<ActivityItem>;
@@ -15,178 +13,47 @@ type Props = {
   readonly baseBranch: string;
   readonly onOpenComments: () => void;
   readonly onOpenChecks: () => void;
-};
-
-type RowComment = {
-  readonly who: string | null;
-  readonly text: string;
-};
-
-type Row = {
-  readonly glyph: ReactNode;
-  readonly line: ReactNode;
-  readonly comments: ReadonlyArray<RowComment>;
-  readonly open: { readonly label: string; readonly run: () => void } | null;
-};
-
-const GLYPH_SIZE = ICON_SIZE.row;
-
-const commentsWord = ({ item }: { readonly item: Extract<ActivityItem, { kind: 'comments' }> }) => {
-  if (item.needYou > 0) {
-    return `${countNoun({ count: item.needYou, one: 'needs', many: 'need' })} you`;
-  }
-  return item.open > 0 ? `${item.open} open` : 'all resolved';
-};
-
-const rowOf = ({
-  item,
-  nouns,
-  baseBranch,
-  onOpenComments,
-  onOpenChecks,
-}: Omit<Props, 'items'> & { readonly item: ActivityItem }): Row => {
-  switch (item.kind) {
-    case 'opened':
-      return {
-        glyph: <CONCEPT_ICONS.pr size={GLYPH_SIZE} aria-hidden />,
-        line: (
-          <>
-            <Who name={item.who} /> opened this {item.isDraft ? 'draft ' : ''}
-            {nouns.long}
-          </>
-        ),
-        comments: [],
-        open: null,
-      };
-    case 'push':
-      return {
-        glyph: <CONCEPT_ICONS.commits size={GLYPH_SIZE} aria-hidden />,
-        line: (
-          <>
-            <Who name={item.who} /> pushed{' '}
-            {countNoun({ count: item.count, one: 'commit', many: 'commits' })}{' '}
-            <span className="text-code">{item.sha}</span>
-          </>
-        ),
-        comments: [],
-        open: null,
-      };
-    case 'review':
-      return {
-        glyph:
-          item.verdict === 'approved' ? (
-            <Check size={GLYPH_SIZE} aria-hidden className="text-success" />
-          ) : item.verdict === 'changes_requested' ? (
-            <CircleAlert size={GLYPH_SIZE} aria-hidden className="text-danger" />
-          ) : (
-            <MessageSquare size={GLYPH_SIZE} aria-hidden />
-          ),
-        line: (
-          <>
-            <Who name={item.who} />{' '}
-            {item.verdict === 'approved'
-              ? 'approved'
-              : item.verdict === 'changes_requested'
-                ? 'requested changes'
-                : 'commented'}
-          </>
-        ),
-        comments: item.text === '' ? [] : [{ who: null, text: item.text }],
-        open: null,
-      };
-    case 'bots':
-      return {
-        glyph: <Bot size={GLYPH_SIZE} aria-hidden />,
-        line:
-          item.comments.length === 1 ? (
-            <>
-              <Who name={item.comments[0]?.who ?? null} /> commented
-            </>
-          ) : (
-            <>{countNoun({ count: item.comments.length, one: 'bot', many: 'bots' })} commented</>
-          ),
-        comments:
-          item.comments.length === 1
-            ? item.comments.map((comment) => ({ who: null, text: comment.text }))
-            : item.comments,
-        open: null,
-      };
-    case 'comments':
-      return {
-        glyph: <MessageSquare size={GLYPH_SIZE} aria-hidden />,
-        line: (
-          <>
-            {countNoun({ count: item.total, one: 'comment', many: 'comments' })} on files,{' '}
-            {commentsWord({ item })}
-          </>
-        ),
-        comments: [],
-        open: { label: 'Open comments', run: onOpenComments },
-      };
-    case 'checks':
-      return {
-        glyph: item.isFailing ? (
-          <CircleX size={GLYPH_SIZE} aria-hidden className="text-danger" />
-        ) : item.isRunning ? (
-          <CONCEPT_ICONS.checks size={GLYPH_SIZE} aria-hidden className="text-info" />
-        ) : (
-          <Check size={GLYPH_SIZE} aria-hidden className="text-success" />
-        ),
-        line: <>{item.text}</>,
-        comments: [],
-        open: { label: 'Open checks', run: onOpenChecks },
-      };
-    case 'edit':
-      return {
-        glyph: <Pencil size={GLYPH_SIZE} aria-hidden />,
-        line: (
-          <>
-            <Who name="You" /> edited the {item.what}
-          </>
-        ),
-        comments: [],
-        open: null,
-      };
-    case 'merged':
-      return {
-        glyph: <CONCEPT_ICONS.merge size={GLYPH_SIZE} aria-hidden className="text-merged" />,
-        line: (
-          <>
-            <Who name={item.who} /> merged this {nouns.long} into{' '}
-            <span className="text-code">{baseBranch}</span>
-          </>
-        ),
-        comments: [],
-        open: null,
-      };
-    case 'closed':
-      return {
-        glyph: <CircleX size={GLYPH_SIZE} aria-hidden />,
-        line: <>This {nouns.long} was closed</>,
-        comments: [],
-        open: null,
-      };
-    default: {
-      const unreachable: never = item;
-      return unreachable;
-    }
-  }
+  readonly chosen: ActivityFilter;
+  readonly onChoose: (filter: ActivityFilter) => void;
 };
 
 export const PullRequestActivity = ({
-  items,
+  items: allItems,
   nouns,
   baseBranch,
   onOpenComments,
   onOpenChecks,
+  chosen,
+  onChoose,
 }: Props) => {
   const now = useNow(60_000);
+  const options = activityFilterOptionsOf({ items: allItems });
+  const filter = options.some((option) => option.value === chosen) ? chosen : 'all';
+  const items = activityItemsFor({ items: allItems, filter });
   return (
     <section aria-label="Activity" className="flex min-w-0 flex-col gap-3">
-      <SectionHeader label="Activity" headingLevel={2} />
+      <SectionHeader
+        label="Activity"
+        headingLevel={2}
+        action={
+          options.length > 2 ? (
+            <SegmentedTabs
+              size="xs"
+              ariaLabel="Activity filter"
+              value={filter}
+              onChange={onChoose}
+              options={options.map((option) => ({
+                value: option.value,
+                label: option.label,
+                badge: option.count,
+              }))}
+            />
+          ) : null
+        }
+      />
       <ol className="flex min-w-0 flex-col">
         {items.map((item, index) => {
-          const row = rowOf({ item, nouns, baseBranch, onOpenComments, onOpenChecks });
+          const row = activityRowOf({ item, nouns, baseBranch, onOpenComments, onOpenChecks });
           const age = formatAge({ from: item.at, now });
           const content = (
             <>
@@ -210,6 +77,7 @@ export const PullRequestActivity = ({
                     </time>
                   )}
                 </span>
+                {row.notes === undefined ? null : <ActivityBotNotes notes={row.notes} />}
                 {row.comments.length === 0 ? null : (
                   <ul className="flex min-w-0 flex-col gap-2">
                     {row.comments.map((comment, position) => (

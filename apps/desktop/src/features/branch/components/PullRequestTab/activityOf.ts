@@ -1,7 +1,11 @@
+import { isBotLogin } from '@goodboy/core/review-source';
 import type { PrCheckRun, PrDetail, PullRequestView } from '@goodboy/types';
+import type { Tone } from '@goodboy/ui';
 import { checksCountsOf, checksWordOf } from '../../../integrations/github/checksRollup';
-import { openReviewThreadIds } from '../../../../store/slices/resolve/openReviewThreadIds';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
+import type { ThreadEntry } from '../../../resolve/commentGroupsView';
+import type { MergeBoxThreads } from './MergeBox/mergeBoxOf';
+import { foldPushes } from './foldPushes';
 import { groupBotActivity } from './groupBotActivity';
 
 type ReviewVerdict = 'approved' | 'changes_requested' | 'commented';
@@ -29,6 +33,7 @@ export type ActivityItem =
       readonly who: string;
       readonly verdict: ReviewVerdict;
       readonly text: string;
+      readonly isBot?: boolean;
     }
   | {
       readonly kind: 'comments';
@@ -37,6 +42,8 @@ export type ActivityItem =
       readonly total: number;
       readonly needYou: number;
       readonly open: number;
+      readonly hasPeople: boolean;
+      readonly hasBots: boolean;
     }
   | {
       readonly kind: 'checks';
@@ -47,10 +54,13 @@ export type ActivityItem =
       readonly isFailing: boolean;
     }
   | {
-      readonly kind: 'bots';
+      readonly kind: 'bot';
       readonly key: string;
       readonly at: string;
-      readonly comments: ReadonlyArray<{ readonly who: string; readonly text: string }>;
+      readonly who: string;
+      readonly word: string;
+      readonly tone: Tone;
+      readonly notes: ReadonlyArray<string>;
     }
   | { readonly kind: 'edit'; readonly key: string; readonly at: string; readonly what: string }
   | {
@@ -65,7 +75,8 @@ type Params = {
   readonly view: PullRequestView;
   readonly detail: PrDetail | null;
   readonly runs: ReadonlyArray<PrCheckRun> | null;
-  readonly needYou: number;
+  readonly threads: Pick<MergeBoxThreads, 'needYou'> & { readonly open: number };
+  readonly entries: ReadonlyArray<ThreadEntry>;
   readonly edits: ReadonlyArray<PullRequestEdit>;
 };
 
@@ -117,8 +128,20 @@ const pushesOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<A
   }));
 };
 
-const reviewsOf = ({ detail }: { readonly detail: PrDetail | null }): ReadonlyArray<ActivityItem> =>
-  (detail?.reviews ?? []).flatMap((review): ReadonlyArray<ActivityItem> => {
+type DetailParams = {
+  readonly detail: PrDetail | null;
+};
+
+const botFlagsOf = ({ detail }: DetailParams): ReadonlyMap<string, boolean> =>
+  new Map(
+    (detail?.reviews ?? []).flatMap((review): ReadonlyArray<[string, boolean]> =>
+      review.isAuthorBot === undefined ? [] : [[review.author, review.isAuthorBot]],
+    ),
+  );
+
+const reviewsOf = ({ detail }: DetailParams): ReadonlyArray<ActivityItem> => {
+  const flags = botFlagsOf({ detail });
+  return (detail?.reviews ?? []).flatMap((review): ReadonlyArray<ActivityItem> => {
     if (review.submittedAt === null || review.state === 'pending' || review.state === 'dismissed') {
       return [];
     }
@@ -133,17 +156,16 @@ const reviewsOf = ({ detail }: { readonly detail: PrDetail | null }): ReadonlyAr
         who: review.author,
         verdict: review.state,
         text: review.body.trim(),
+        ...(flags.has(review.author) ? { isBot: flags.get(review.author) === true } : {}),
       },
     ];
   });
+};
 
 const commentsOf = ({
   detail,
-  needYou,
-}: {
-  readonly detail: PrDetail | null;
-  readonly needYou: number;
-}): ReadonlyArray<ActivityItem> => {
+  threads: counts,
+}: Pick<Params, 'detail' | 'threads'>): ReadonlyArray<ActivityItem> => {
   const comments = (detail?.comments ?? []).filter((comment) => comment.source === 'review');
   const threads = new Set(comments.map((comment) => comment.threadId ?? comment.id));
   if (threads.size === 0) {
@@ -153,14 +175,21 @@ const commentsOf = ({
     (at, comment) => (comment.createdAt > at ? comment.createdAt : at),
     '',
   );
+  const flags = botFlagsOf({ detail });
+  const isBotAuthor = ({ login }: { readonly login: string }): boolean => {
+    const isBot = flags.get(login);
+    return isBotLogin({ login, ...(isBot === undefined ? {} : { isBot }) });
+  };
   return [
     {
       kind: 'comments',
       key: 'comments',
       at: latest,
       total: threads.size,
-      needYou,
-      open: openReviewThreadIds({ comments }).length,
+      needYou: counts.needYou,
+      open: counts.open,
+      hasPeople: comments.some((comment) => !isBotAuthor({ login: comment.author })),
+      hasBots: comments.some((comment) => isBotAuthor({ login: comment.author })),
     },
   ];
 };
@@ -203,7 +232,8 @@ export const pullRequestActivityOf = ({
   view,
   detail,
   runs,
-  needYou,
+  threads,
+  entries,
   edits,
 }: Params): ReadonlyArray<ActivityItem> => {
   const items: ReadonlyArray<ActivityItem> = [
@@ -216,7 +246,7 @@ export const pullRequestActivityOf = ({
     },
     ...pushesOf({ view }),
     ...reviewsOf({ detail }),
-    ...commentsOf({ detail, needYou }),
+    ...commentsOf({ detail, threads }),
     ...checksOf({ view, runs }),
     ...edits.map((edit, index): ActivityItem => ({
       kind: 'edit',
@@ -227,9 +257,13 @@ export const pullRequestActivityOf = ({
     ...endOf({ view }),
   ];
   return groupBotActivity({
-    items: items
-      .map((item, index) => ({ item, index }))
-      .sort((a, b) => a.item.at.localeCompare(b.item.at) || a.index - b.index)
-      .map(({ item }) => item),
+    items: foldPushes({
+      items: items
+        .map((item, index) => ({ item, index }))
+        .sort((a, b) => a.item.at.localeCompare(b.item.at) || a.index - b.index)
+        .map(({ item }) => item),
+    }),
+    comments: detail?.comments ?? null,
+    entries,
   });
 };

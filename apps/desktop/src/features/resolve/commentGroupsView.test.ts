@@ -72,6 +72,44 @@ describe('commentStateCountsOf', () => {
     expect(commentStateCountsOf({ entries: MIXED })).toEqual({ open: 2, resolved: 3, needYou: 1 });
   });
 
+  it('counts a thread left open on the host as open', () => {
+    const leftOpen: CountableEntry = {
+      resolveWord: 'left_open',
+      row: {
+        thread: { stage: 'parked', state: 'open', stateReason: null, originKind: 'review_comment' },
+      },
+    };
+    expect(stateCountsInScopeOf({ entries: [leftOpen], scope: 'comments' })).toEqual({
+      open: 1,
+      resolved: 0,
+      needYou: 0,
+    });
+  });
+
+  it('keeps the open local notes out of the host count', () => {
+    const thread = { state: 'open', stateReason: null } as const;
+    const entries: ReadonlyArray<CountableEntry> = [
+      {
+        resolveWord: 'done',
+        row: { thread: { ...thread, stage: 'resolved', originKind: 'review_comment' } },
+      },
+      {
+        resolveWord: 'open',
+        row: { thread: { ...thread, stage: 'new', originKind: 'diff_comment' } },
+      },
+      {
+        resolveWord: 'open',
+        row: { thread: { ...thread, stage: 'new', originKind: 'diff_comment' } },
+      },
+    ];
+    expect(commentStateCountsOf({ entries }).open).toBe(2);
+    expect(stateCountsInScopeOf({ entries, scope: 'comments' })).toEqual({
+      open: 0,
+      resolved: 1,
+      needYou: 0,
+    });
+  });
+
   it('counts only the entries of the chosen source', () => {
     expect(stateCountsInScopeOf({ entries: MIXED, scope: 'notes' })).toEqual({
       open: 1,

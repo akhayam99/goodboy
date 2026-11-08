@@ -1,39 +1,63 @@
 import { isBotLogin } from '@goodboy/core/review-source';
+import type { PrComment } from '@goodboy/types';
+import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import type { ActivityItem } from './activityOf';
+import { botKeyOf } from './botKeyOf';
+import { botWordOf } from './botWordOf';
 
 type Params = {
   readonly items: ReadonlyArray<ActivityItem>;
-};
-
-type BotComment = {
-  readonly who: string;
-  readonly text: string;
+  readonly comments: ReadonlyArray<PrComment> | null;
+  readonly entries: ReadonlyArray<ThreadEntry>;
 };
 
 type ItemParams = {
   readonly item: ActivityItem;
 };
 
-const botCommentOf = ({ item }: ItemParams): BotComment | null =>
-  item.kind === 'review' && item.verdict === 'commented' && isBotLogin({ login: item.who })
-    ? { who: item.who, text: item.text }
+const botKeyOfItem = ({ item }: ItemParams): string | null =>
+  item.kind === 'review' &&
+  item.verdict === 'commented' &&
+  isBotLogin({ login: item.who, ...(item.isBot === undefined ? {} : { isBot: item.isBot }) })
+    ? botKeyOf({ login: item.who })
     : null;
 
-export const groupBotActivity = ({ items }: Params): ReadonlyArray<ActivityItem> =>
-  items.reduce<ReadonlyArray<ActivityItem>>((grouped, item) => {
-    const comment = botCommentOf({ item });
-    if (comment === null) {
-      return [...grouped, item];
+export const groupBotActivity = ({
+  items,
+  comments,
+  entries,
+}: Params): ReadonlyArray<ActivityItem> => {
+  const keys = items.map((item) => botKeyOfItem({ item }));
+  return items.flatMap((item, index): ReadonlyArray<ActivityItem> => {
+    const key = keys[index] ?? null;
+    if (key === null || item.kind !== 'review') {
+      return [item];
     }
-    const last = grouped[grouped.length - 1];
-    if (last !== undefined && last.kind === 'bots') {
-      return [
-        ...grouped.slice(0, -1),
-        { ...last, at: item.at, comments: [...last.comments, comment] },
-      ];
+    if (keys.lastIndexOf(key) !== index) {
+      return [];
     }
+    const said = botWordOf({
+      bot: {
+        person: { login: item.who, name: null, avatarUrl: null, isBot: true },
+        state: 'commented',
+      },
+      comments,
+      entries,
+    });
     return [
-      ...grouped,
-      { kind: 'bots', key: `bots:${item.key}`, at: item.at, comments: [comment] },
+      {
+        kind: 'bot',
+        key: `bot:${key}`,
+        at: item.at,
+        who: item.who,
+        word: said.word,
+        tone: said.tone,
+        notes: items.flatMap((other, position) =>
+          keys[position] === key && other.kind === 'review' && other.text !== ''
+            ? [other.text]
+            : [],
+        ),
+      },
     ];
-  }, []);
+  });
+};

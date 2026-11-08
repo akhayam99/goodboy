@@ -6,6 +6,7 @@ import type {
   PullRequestView,
   SessionId,
 } from '@goodboy/types';
+import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import { BotsProperty } from './BotsProperty';
 import { PROPERTY_ROW as ROW } from './propertyRow';
 import { PropertyField } from './PropertyField';
@@ -21,6 +22,7 @@ type Props = {
   readonly request: ReviewerRequest;
   readonly reviewers: PullRequestReviewerGroups;
   readonly comments: ReadonlyArray<PrComment> | null;
+  readonly entries: ReadonlyArray<ThreadEntry>;
   readonly isLoaded: boolean;
   readonly canEdit: boolean;
   readonly onMutated: () => void;
@@ -35,6 +37,7 @@ export const PullRequestProperties = ({
   request,
   reviewers,
   comments,
+  entries,
   isLoaded,
   canEdit,
   onMutated,
@@ -56,7 +59,7 @@ export const PullRequestProperties = ({
       request={request}
       onMutated={onMutated}
     />
-    <BotsProperty bots={reviewers.bots} comments={comments} />
+    <BotsProperty bots={reviewers.bots} comments={comments} entries={entries} />
     <ResolvesProperty
       sessionId={sessionId}
       mountId={mountId}

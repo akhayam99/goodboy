@@ -106,7 +106,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     mountId: historyMountId,
   });
   const branchReview = useBranchReview({ sessionId, mountId: historyMountId });
-  const { entries, push } = branchReview;
   const diff = useSessionDiff({
     sessionId,
     worktreePath: identity.mountPath,
@@ -137,8 +136,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const tab = resolveBranchTab({ tab: storedTab, scope });
   const isReadOnly = isBranchReadOnly(scope);
   const { hasPushFailure, isPushBusy, pushCount, review } = useBranchReviewState({
-    entries,
-    phaseKind: push.phase.kind,
+    entries: branchReview.entries,
+    phaseKind: branchReview.push.phase.kind,
     status: diff.status,
     commits: historyCommits,
     hasRemoteHead,
@@ -230,7 +229,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     [sessionId, setPullRequestMode],
   );
 
-  usePushRequest({ sessionId, push, hasPushFailure });
+  usePushRequest({ sessionId, push: branchReview.push, hasPushFailure });
 
   const pullRequestView = usePullRequestView({
     sessionId,
@@ -266,7 +265,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     (sources.length > 0 || repo !== null);
   const isPrimaryYielding =
     isFormLeading ||
-    pushPhaseYieldsOf({ kind: push.phase.kind }) ||
+    pushPhaseYieldsOf({ kind: branchReview.push.phase.kind }) ||
     (tab === 'comments' && branchReview.isSelecting);
 
   const hasEditAction = controls.pullRequestControls.actions.some(
@@ -321,6 +320,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               readiness={prReadiness}
               branchFacts={branchFacts}
               mergeWord={mergeWord}
+              entries={branchReview.branchEntries}
               commits={diff.commits}
               canEdit={canEditBody}
               request={request}
@@ -369,7 +369,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     }
     const visit = {
       mountId: historyMountId,
-      push,
+      push: branchReview.push,
       isVisible: isActive,
     };
     return <ReviewFlowVisit session={session} {...visit} />;
@@ -410,7 +410,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             sessionId={sessionId}
             mountId={historyMountId}
             worktreePath={identity.mountPath}
-            push={push}
+            push={branchReview.push}
           />
         }
         header={

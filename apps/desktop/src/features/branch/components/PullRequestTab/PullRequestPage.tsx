@@ -13,6 +13,8 @@ import type {
   PullRequestView,
   Session,
 } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pullRequestViewOf';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
@@ -21,7 +23,9 @@ import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { queueLineOf } from '../../queueLineOf';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
+import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import { pullRequestActivityOf } from './activityOf';
+import { hostThreadCountsOf } from './hostThreadCountsOf';
 import { MergeBox } from './MergeBox';
 import { mergeBoxOf, type PullRequestBranchFacts } from './MergeBox/mergeBoxOf';
 import { PullRequestActivity } from './PullRequestActivity';
@@ -39,6 +43,7 @@ export type PullRequestPageProps = {
   readonly readiness: PullRequestReadiness;
   readonly branch: PullRequestBranchFacts;
   readonly mergeWord: string;
+  readonly entries: ReadonlyArray<ThreadEntry>;
   readonly detail: PrDetail | null;
   readonly view: PullRequestView | null;
   readonly edits: ReadonlyArray<PullRequestEdit>;
@@ -61,6 +66,7 @@ export const PullRequestPage = ({
   readiness: prReadiness,
   branch,
   mergeWord,
+  entries,
   detail,
   view,
   edits,
@@ -74,9 +80,19 @@ export const PullRequestPage = ({
 }: PullRequestPageProps) => {
   const sessionId = session.id;
   const port = usePullRequestPort({ sessionId, mountId });
-  const { readiness, commentsNeedYou, commentsUnread, facts, reviewers } = prReadiness;
+  const { readiness, commentsUnread, facts, reviewers } = prReadiness;
   const runs = pullRequestRunsOf({ pr, detail, view });
   const matched = detail !== null && detail.prNumber === pr.number ? detail : null;
+  const comments = matched?.comments ?? null;
+  const hostCounts = useMemo(() => hostThreadCountsOf({ comments, entries }), [comments, entries]);
+  const threads = useMemo(
+    () => ({
+      unresolved: hostCounts.open,
+      needYou: hostCounts.needYou,
+      unread: commentsUnread,
+    }),
+    [commentsUnread, hostCounts],
+  );
   const box = mergeBoxOf({
     state: pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
     pr,
@@ -96,11 +112,7 @@ export const PullRequestPage = ({
     mergeWord,
     queueLine: queueLineOf({ pr }),
     branch,
-    threads: {
-      unresolved: facts.commentsUnresolved,
-      needYou: commentsNeedYou,
-      unread: commentsUnread,
-    },
+    threads,
     unpushed: facts.unpushed,
     canRequestReview: request.kind === 'allowed',
   });
@@ -113,11 +125,16 @@ export const PullRequestPage = ({
             view,
             detail,
             runs,
-            needYou: commentsNeedYou,
+            threads: { open: hostCounts.open, needYou: hostCounts.needYou },
+            entries,
             edits,
           }),
-    [commentsNeedYou, detail, edits, runs, view],
+    [detail, edits, entries, hostCounts, runs, view],
   );
+  const viewEntry = useAppStore((state) =>
+    pullRequestViewOf({ state, sessionId, mountId, prNumber: pr.number }),
+  );
+  const setActivityFilter = useAppStore((state) => state.setPullRequestActivityFilter);
   const nouns = port?.nouns ?? PULL_REQUEST_NOUNS[host];
 
   return (
@@ -147,7 +164,8 @@ export const PullRequestPage = ({
             port={port}
             request={request}
             reviewers={reviewers}
-            comments={matched?.comments ?? null}
+            comments={comments}
+            entries={entries}
             isLoaded={matched !== null || view !== null}
             canEdit={canEdit}
             onMutated={onMutated}
@@ -185,6 +203,15 @@ export const PullRequestPage = ({
                   baseBranch={pr.baseBranch}
                   onOpenComments={() => onSelectTab('comments')}
                   onOpenChecks={() => onSelectTab('checks')}
+                  chosen={viewEntry?.activityFilter ?? 'all'}
+                  onChoose={(next) =>
+                    setActivityFilter({
+                      sessionId,
+                      prNumber: pr.number,
+                      mountId: viewEntry?.mountId ?? null,
+                      filter: next,
+                    })
+                  }
                 />
               )}
             </SkeletonSwap>

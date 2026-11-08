@@ -1,11 +1,15 @@
 import type { PrComment, PullRequestReviewer } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { countNoun } from '../../../../shared/utils/countNoun';
+import { commentStateCountsOf, type ThreadEntry } from '../../../resolve/commentGroupsView';
+import { botKeyOf } from './botKeyOf';
+import { reviewHeadsOf } from './reviewHeadsOf';
 import { REVIEWER_STATE_WORD } from './reviewerStateWord';
 
 type Params = {
   readonly bot: PullRequestReviewer;
   readonly comments: ReadonlyArray<PrComment> | null;
+  readonly entries: ReadonlyArray<ThreadEntry>;
 };
 
 export type BotWord = {
@@ -13,31 +17,32 @@ export type BotWord = {
   readonly tone: Tone;
 };
 
-const BOT_SUFFIX = '[bot]';
-
-type LoginParams = {
-  readonly login: string;
+type BotTally = {
+  readonly open: number;
+  readonly raised: number;
 };
 
-const botKeyOf = ({ login }: LoginParams): string => {
-  const lower = login.toLowerCase();
-  return lower.endsWith(BOT_SUFFIX) ? lower.slice(0, -BOT_SUFFIX.length) : lower;
-};
-
-export const botWordOf = ({ bot, comments }: Params): BotWord => {
+const botTallyOf = ({ bot, comments, entries }: Params): BotTally => {
   const key = botKeyOf({ login: bot.person.login });
-  const heads = (comments ?? []).filter(
-    (comment) =>
-      comment.source === 'review' &&
-      comment.inReplyToId === undefined &&
-      botKeyOf({ login: comment.author }) === key,
-  );
-  const open = heads.filter((head) => head.resolved !== true).length;
+  const heads = reviewHeadsOf({ comments, botKey: key });
+  if (entries.length === 0) {
+    return {
+      open: heads.filter((head) => head.resolved !== true).length,
+      raised: heads.length,
+    };
+  }
+  const byThread = new Map(entries.map((entry) => [entry.threadId, entry]));
+  const tracked = heads.flatMap((head) => byThread.get(head.threadId ?? head.id) ?? []);
+  return { open: commentStateCountsOf({ entries: tracked }).open, raised: tracked.length };
+};
+
+export const botWordOf = ({ bot, comments, entries }: Params): BotWord => {
+  const { open, raised } = botTallyOf({ bot, comments, entries });
   if (open > 0) {
     return { word: countNoun({ count: open, one: 'issue' }), tone: 'warning' };
   }
-  if (heads.length > 0) {
-    return { word: `${heads.length} resolved`, tone: 'neutral' };
+  if (raised > 0) {
+    return { word: `${raised} resolved`, tone: 'neutral' };
   }
   return { word: REVIEWER_STATE_WORD[bot.state], tone: 'neutral' };
 };
