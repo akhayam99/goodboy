@@ -78,7 +78,7 @@ type CountTextParams = {
   readonly count: number;
 };
 
-const countTextOf = ({ count }: CountTextParams): string =>
+export const countTextOf = ({ count }: CountTextParams): string =>
   count > DOOR_COUNT_CAP ? `${DOOR_COUNT_CAP}+` : String(count);
 
 type FactParams = {

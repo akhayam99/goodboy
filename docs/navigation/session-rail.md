@@ -763,7 +763,7 @@ Folding the rail leaves the column in place.
 
 - **Outside a session there is no tools group.** The workspace pages (the
   board, the studios) already hold the two tools that make sense there as
-  column doors: **Terminal** (with New terminal on its plus) and **Chat**
+  column: the **Terminal** tile and the **Chat** door
   (with New chat), the workspace conversation that answers what Ask answers
   for one session. Ask, Explore, Context and Scripts read one session, so they
   exist only inside one, and ⌘L is bound only while a session is visible.

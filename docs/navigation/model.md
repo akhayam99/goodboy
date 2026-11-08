@@ -85,8 +85,8 @@
   Impact's Spend tab, and the Usage chips open the Providers menu. The bar
   never edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
-  Tasks, Chat, Workflows, Terminal, Impact and Monitoring; Chat and Terminal each end in a plus
-  (New chat, New terminal) that is always visible. No separator: the Pinned and
+  Tasks, Chat, Workflows and Impact as rows, then Terminal and Monitoring as one row of tiles; Chat ends in a plus
+  (New chat) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
   door's trailing slot is a 6px dot (running, unread, warning); the count is in
   its tooltip and accessible name, never a colored number. Sessions is the one

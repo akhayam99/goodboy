@@ -240,10 +240,15 @@ that opened it.
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 the doors Board
-(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (row icon and word in
+(⌘⇧H), Tasks, Chat, Workflows and Impact as one 28px row each (row icon and word in
 `text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
-new chat, never the last one) and Terminal in a plus (New terminal in the workspace folder),
-both always visible; one separator
+new chat, never the last one), always visible. The tools, Terminal (⌃`) and Monitoring, are
+not rows: they share one row of 48px tiles under the doors (`ColumnToolTiles`), the icon with its
+word under it, each tile as wide as the others so a third tool joins the same row. A tile opens the
+tool's page, is pressed on that page, takes the same focus ring as a row and carries the count
+at its top right (`text-chip`, tabular, `9+` past nine) or the warning dot. New terminal lives on
+the Terminal page, in the palette and in the menu, not on the tile. Tools are tiles and doors are
+rows. Then one separator
 (`h-px bg-border-soft`) with the same gap above and below; the Sessions list
 (`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
 session row, selected while the draft is open, a primary dot and `Draft in progress` while a
@@ -251,13 +256,14 @@ draft waits) and whose group headers carry no top margin: the list's one gap (`l
 doors' gap) spaces the groups; then at the foot Settings (⌘,) and the Goodboy row.
 Every door row has one trailing grid
 (`ColumnDoorRow`): a 20px signal slot right aligned, then a 24px action slot reserved on every
-row (the plus sits in it on Chat and Terminal). A running door draws no dot: what runs is in its
+row (the plus sits in it on Chat). A running door draws no dot: what runs is in its
 tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
 dot means attention without a number. Chat with none running shows a primary dot for a new reply.
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
 Terminal counts the terminal tabs still alive, all owners, and Monitoring counts the pinned ports
-and the ports Goodboy started that are in use; a pinned port that is down swaps Monitoring's count
-for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
+and the ports Goodboy started that are in use; both numbers come from `doorSignalOf`, which the
+rows, the tiles and the folded rail all read. A pinned port that is down swaps Monitoring's count
+for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's and the tile's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
 `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
