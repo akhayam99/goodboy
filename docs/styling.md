@@ -564,8 +564,9 @@ together), the sliding header of a `RevealRegion` and the sticky rows of a
 list or a diff take `sticky-surface` (`sticky-surface-subtle` on `subtle`): the
 surface role at 78% with `blur(8px) saturate(1.2)`, opaque under
 `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
-`bg-background` on the header itself. Its block padding is even: the pinned zone
-is `py-3` (`PANE_RHYTHM.pinnedInset`), and a header under or inside it adds no
+`bg-background` on the header itself. Its block padding reads even: the pinned zone
+is `pt-3 pb-4` (`PANE_RHYTHM.pinnedInset`), because the back row's 24px line
+already holds 4px above its text, and a header under or inside it adds no
 inset of its own. Page content scrolls under the pinned zone, so the blur is
 what the reader sees there, and the scroller's top fade is off under it. A
 drawer's back link sits in the frame above its scroller, so nothing passes

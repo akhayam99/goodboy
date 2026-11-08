@@ -130,8 +130,8 @@ shows through frosted. Page content scrolls under the pinned back row of a
 opaque role and the blur is off. A sticky header draws no `shadow-*` and no
 gradient band; the only edge is the 1px `border-soft` hairline of
 `ScrollFade edge="line"`, lit once content is scrolled under it. Its block
-padding is the same above and below, from the spacing scale (`PANE_RHYTHM.pinnedInset`
-is `py-3` for the pinned back row). Features use the two utilities and never
+padding reads the same above and below, from the spacing scale (`PANE_RHYTHM.pinnedInset`
+is `pt-3 pb-4` for the pinned back row, whose 24px line holds 4px above its text). Features use the two utilities and never
 write their own blur, alpha or shadow.
 
 A clickable card at rest carries two signals together (a fill one step above
