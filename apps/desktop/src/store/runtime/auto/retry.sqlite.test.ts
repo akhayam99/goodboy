@@ -74,6 +74,7 @@ const bareRetry = (retryOf: string) => ({
   decisions: [],
   forQuestion: null,
   retryOf,
+  replaces: null,
   shouldConfirm: false,
 });
 

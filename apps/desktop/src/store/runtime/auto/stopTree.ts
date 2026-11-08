@@ -6,11 +6,14 @@ import {
   dropAutoOutboxOfOldGenerationsStatement,
   getAutoTree,
   listAutoDelegations,
+  listAutoOutbox,
   listLiveAutoAttempts,
   type AutoTree,
   type Statement,
 } from '@goodboy/db';
 import type { CancelRunOutcome } from './ports';
+import { repeatReturnStatements } from './returns/repeatReturnStatements';
+import { undecidedReturnRowsOf } from './returns/undecidedReturnRowsOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type StopTreeParams = Readonly<{
@@ -31,15 +34,54 @@ export type StopTreeOutcome =
 const MAX_REQUEST_ATTEMPTS = 3;
 const ABORT_REQUEST = 'stop_request';
 const ABORT_CONFIRM = 'stop_confirm';
+const ABORT_RETURNS = 'stop_returns';
 
 type RequestParams = StopTreeParams & {
   readonly tree: AutoTree;
 };
 
+type CarriedReturns = Readonly<{
+  unchanged: Statement;
+  carry: ReadonlyArray<Statement>;
+}>;
+
+const carriedReturnStatements = async ({ ctx, tree }: RequestParams): Promise<CarriedReturns> => {
+  const rows = await listAutoOutbox({
+    db: ctx.db,
+    treeId: tree.id,
+    kinds: ['results'],
+    states: ['pending', 'claimed', 'accepted'],
+  });
+  const current = rows.filter((row) => row.generation === tree.generation);
+  const unchanged: Statement = {
+    sql: `SELECT 1 FROM auto_outbox
+      WHERE tree_id = ? AND generation = ? AND kind = 'results'
+        AND state IN ('pending', 'claimed', 'accepted')
+        AND id NOT IN (SELECT value FROM json_each(?))`,
+    params: [tree.id, tree.generation, JSON.stringify(current.map((row) => row.id))],
+    abortWhen: 'rows',
+    abortCode: ABORT_RETURNS,
+  };
+  if (current.length === 0) {
+    return { unchanged, carry: [] };
+  }
+  const delegations = await listAutoDelegations({ db: ctx.db, treeId: tree.id });
+  return {
+    unchanged,
+    carry: repeatReturnStatements({
+      ctx,
+      tree: { id: tree.id, generation: tree.generation + 1 },
+      rows: undecidedReturnRowsOf({ rows: current, delegations }),
+    }),
+  };
+};
+
 const requestStop = async ({ ctx, treeId, tree }: RequestParams): Promise<boolean> => {
+  const carried = await carriedReturnStatements({ ctx, treeId, tree });
   const nowMs = ctx.now();
   const outcome = await ctx.db.transaction({
     statements: [
+      carried.unchanged,
       autoTreePhaseStatement({
         treeId,
         ownerId: ctx.scheduler.ownerId,
@@ -54,6 +96,7 @@ const requestStop = async ({ ctx, treeId, tree }: RequestParams): Promise<boolea
         currentGeneration: tree.generation + 1,
         reason: 'stopped',
       }),
+      ...carried.carry,
     ],
   });
   return outcome.status === 'committed';

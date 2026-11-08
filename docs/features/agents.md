@@ -149,6 +149,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
 - Auto's reply adds only what the reports mean together. The plan waits in the dock joined to the message field with **Approve and start Build**, **Ask for changes** and **Open plan**.
 - Auto's state shows once, in the dock, as in **Implementer running, Tester queued**.
+- An agent that cannot finish comes back to Auto at once, while the others keep working. Auto must decide about it: go on with it, give the task to another role, let it go with a reason, or ask you with a **Next step** card. An agent comes back twice at most, and a task is handed over three times at most before Auto asks you.
 
 **Limit and control**
 

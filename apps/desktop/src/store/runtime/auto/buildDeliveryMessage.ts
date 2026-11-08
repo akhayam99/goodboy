@@ -26,6 +26,7 @@ import {
 import { autoChildLabelsOf } from '../../../features/auto/autoChildLabelsOf';
 import { treeArtifacts } from './treeArtifacts';
 import { treeBudget } from './treeBudget';
+import { waitingReturnsOf } from './returns/waitingReturnsOf';
 
 export type BuildDeliveryMessageParams = Readonly<{
   db: Database;
@@ -176,7 +177,9 @@ export const buildDeliveryMessage = async ({
   const delegations = await listAutoDelegations({ db, treeId: tree.id });
   const digest = await digestDelegations({ db, delegations, nowMs });
   const bodies = await artifactBodies({ db, tree, rows });
+  const waiting = await waitingReturnsOf({ db, tree });
   return buildDeliveryText({
+    waiting,
     ledgerBlock: buildArtifactLedgerBlock({ entries, nowMs, generation: tree.generation }),
     budgetLine: budget === null ? '' : budget.promptLine,
     mountsLine: buildMountsLine({ mounts }),

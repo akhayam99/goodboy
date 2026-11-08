@@ -37,6 +37,7 @@ export type DelegateChildSpec = Readonly<{
   decisions: ReadonlyArray<string>;
   forQuestion: string | null;
   retryOf: string | null;
+  replaces: string | null;
   shouldConfirm: boolean;
 }>;
 
@@ -136,6 +137,7 @@ const RETRY_EXCLUSIVE_KEYS = [
   'forQuestion',
   'taskType',
   'difficulty',
+  'replaces',
 ] as const;
 
 type RetryChildParams = {
@@ -187,6 +189,7 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
       decisions: [],
       forQuestion: null,
       retryOf,
+      replaces: null,
       shouldConfirm: raw['confirm'] === true,
     },
   };
@@ -271,6 +274,7 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
       decisions: listOf({ value: raw['decisions'] }),
       forQuestion: clippedTextOf({ value: raw['forQuestion'], max: DELEGATE_FIELD_CHARS }),
       retryOf: null,
+      replaces: clippedTextOf({ value: raw['replaces'], max: DELEGATE_FIELD_CHARS }),
       shouldConfirm: raw['confirm'] === true,
     },
   };
@@ -328,6 +332,7 @@ export const hashDelegateChildren = ({ children }: HashParams): string =>
         ...(child.decisions.length > 0 ? [child.decisions] : []),
         ...(child.forQuestion === null ? [] : [['forQuestion', child.forQuestion]]),
         ...(child.title === null ? [] : [['title', child.title]]),
+        ...(child.replaces === null ? [] : [['replaces', child.replaces]]),
         ...(child.shouldConfirm ? [['confirm', true]] : []),
       ]),
     ),

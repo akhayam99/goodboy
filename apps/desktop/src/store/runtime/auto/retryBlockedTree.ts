@@ -86,6 +86,12 @@ export const retryBlockedTree = async ({
       abortCode: ABORT_PHASE,
     }),
     pausedDeadlineStatement({ treeId, nowMs }),
+    {
+      sql: `UPDATE auto_outbox SET payload_json = json_remove(payload_json, '$.isOverWindow')
+        WHERE tree_id = ? AND state = 'pending'
+          AND json_extract(payload_json, '$.isOverWindow') IS NOT NULL`,
+      params: [treeId],
+    },
   ];
   const result = await ctx.db.transaction({ statements });
   if (result.status !== 'committed') {

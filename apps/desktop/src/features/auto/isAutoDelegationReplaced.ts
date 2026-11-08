@@ -1,14 +1,12 @@
 import type { AutoDelegation } from '@goodboy/db';
 import { textField } from './chat/readJson';
 import { delegationMountIdOf } from './delegationMountIdOf';
+import { isAutoReturnDecided } from './isAutoReturnDecided';
 
 type Params = {
   readonly delegation: AutoDelegation;
   readonly delegations: ReadonlyArray<AutoDelegation>;
 };
-
-const isRetried = ({ delegation, delegations }: Params): boolean =>
-  delegations.some((later) => later.retryOf === delegation.id);
 
 type StartedParams = {
   readonly delegation: AutoDelegation;
@@ -49,4 +47,4 @@ const isSuperseded = ({ delegation, delegations }: Params): boolean => {
 };
 
 export const isAutoDelegationReplaced = ({ delegation, delegations }: Params): boolean =>
-  isRetried({ delegation, delegations }) || isSuperseded({ delegation, delegations });
+  isAutoReturnDecided({ delegation, delegations }) || isSuperseded({ delegation, delegations });

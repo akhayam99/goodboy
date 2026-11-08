@@ -6,7 +6,14 @@ import { clippedTextOf, isRecord } from '@goodboy/types/helpers';
 export const AUTO_BLOCK_OPEN = '<<auto>>';
 export const AUTO_BLOCK_CLOSE = '<</auto>>';
 
-export const AUTO_BLOCK_ACTIONS = ['delegate', 'propose', 'mount', 'answer', 'finish'] as const;
+export const AUTO_BLOCK_ACTIONS = [
+  'delegate',
+  'propose',
+  'mount',
+  'answer',
+  'release',
+  'finish',
+] as const;
 
 const FIELD_CHARS = 1_000;
 const ANSWER_CHARS = 8_000;
@@ -23,6 +30,7 @@ export type AutoBlock =
       text: string;
       artifact: string | null;
     }>
+  | Readonly<{ action: 'release'; delegation: string; reason: string }>
   | Readonly<{ action: 'finish'; summary: string }>;
 
 export type AutoBlockOutcome =
@@ -170,6 +178,15 @@ const answerOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   return { kind: 'block', block: { action: 'answer', delegation, question, text, artifact } };
 };
 
+const releaseOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const delegation = clippedTextOf({ value: fields['delegation'], max: FIELD_CHARS });
+  const reason = clippedTextOf({ value: fields['reason'], max: FIELD_CHARS });
+  if (delegation === null || reason === null) {
+    return invalid({ reason: 'a release block needs "delegation" and "reason"' });
+  }
+  return { kind: 'block', block: { action: 'release', delegation, reason } };
+};
+
 const finishOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   const summary = clippedTextOf({ value: fields['summary'], max: SUMMARY_CHARS });
   if (summary === null) {
@@ -198,6 +215,8 @@ export const parseAutoBlock = ({ text }: ParseAutoBlockParams): AutoBlockOutcome
       return mountOf({ fields: parsed });
     case 'answer':
       return answerOf({ fields: parsed });
+    case 'release':
+      return releaseOf({ fields: parsed });
     case 'finish':
       return finishOf({ fields: parsed });
     default:

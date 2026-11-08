@@ -1,4 +1,7 @@
+import type { ChildNeeds } from './closing';
 import { substepNeedsLine } from './digest';
+import { AUTO_TREE_LIMITS } from './limits';
+import { oneLine } from './oneLine';
 import {
   isQuestionPayload,
   isRefusalPayload,
@@ -11,11 +14,23 @@ import {
   type UserPayload,
 } from './outboxPayload';
 import { isAutoMountedCode } from './refusals';
-import { renderDelegationResult, renderPartialResult, storedResultOf } from './result';
+import {
+  renderDelegationResult,
+  renderPartialResult,
+  storedResultOf,
+  type DelegationResultV1,
+} from './result';
 
 export type DeliveryRow = Readonly<{
   id: string;
   payload: unknown;
+}>;
+
+export type WaitingReturn = Readonly<{
+  result: DelegationResultV1;
+  returns: number;
+  isClosed: boolean;
+  isRebriefClosed: boolean;
 }>;
 
 export type BuildDeliveryParams = Readonly<{
@@ -27,10 +42,75 @@ export type BuildDeliveryParams = Readonly<{
   rows: ReadonlyArray<DeliveryRow>;
   childLabels: ReadonlyMap<string, string>;
   isRestart: boolean;
+  waiting?: ReadonlyArray<WaitingReturn>;
 }>;
 
 export const AUTO_RESTART_NOTICE =
   'Goodboy restarted while you were answering. Your last answer was cut short. Read the results below again and continue from them.';
+
+const NEEDS_TEXT = {
+  shell: 'an agent that can run commands',
+  writer: 'an agent that can change files',
+  decision: 'a decision from you',
+  user: 'an answer from the user',
+} as const satisfies Readonly<Record<Exclude<ChildNeeds['kind'], 'role'>, string>>;
+
+type NeedsTextParams = {
+  readonly needs: ChildNeeds;
+};
+
+const needsTextOf = ({ needs }: NeedsTextParams): string =>
+  needs.kind === 'role' ? `the ${needs.role} role` : NEEDS_TEXT[needs.kind];
+
+type WaitingBlockParams = {
+  readonly waiting: ReadonlyArray<WaitingReturn>;
+  readonly childLabels: ReadonlyMap<string, string>;
+};
+
+type WaitingLinesParams = {
+  readonly entry: WaitingReturn;
+  readonly childLabels: ReadonlyMap<string, string>;
+};
+
+const waitingLinesOf = ({ entry, childLabels }: WaitingLinesParams): ReadonlyArray<string> => {
+  const { result } = entry;
+  const label = childLabels.get(result.childAgentId);
+  const who =
+    label === undefined
+      ? `${result.role} ${result.childAgentId}`
+      : `${label} (${result.role} ${result.childAgentId})`;
+  const needs = result.returned?.needs ?? null;
+  const request = result.returned?.request ?? null;
+  const report = result.declared.summary;
+  const times = entry.returns === 1 ? 'once' : `${entry.returns} times`;
+  return [
+    `- ${who}, delegation ${result.delegationId}, came back ${times}:`,
+    ...(request === null ? [] : [`  it asks: ${oneLine({ text: request })}`]),
+    ...(needs === null ? [] : [`  it needs: ${needsTextOf({ needs })}`]),
+    `  its report: ${report === '' ? 'none' : oneLine({ text: report })}`,
+    ...(entry.isClosed
+      ? [
+          `  it came back more than ${AUTO_TREE_LIMITS.returnsPerDelegation} times, so it cannot be continued: hand the task to another role with "replaces" or ask the user with a propose block`,
+        ]
+      : []),
+    ...(entry.isRebriefClosed
+      ? [
+          `  its task was handed to a new agent ${AUTO_TREE_LIMITS.rebriefsPerTask} times already: ask the user with a propose block`,
+        ]
+      : []),
+  ];
+};
+
+const waitingBlock = ({ waiting, childLabels }: WaitingBlockParams): string | null => {
+  if (waiting.length === 0) {
+    return null;
+  }
+  return [
+    'WAITING FOR YOUR DECISION',
+    'Each agent below came back to you and waits for your decision. Decide about each one: continue it with "retryOf", hand its task to another role with "replaces", release it with a release block, or ask the user with a propose block. One you leave without a decision comes back next turn and counts as a turn without progress.',
+    ...waiting.flatMap((entry) => waitingLinesOf({ entry, childLabels })),
+  ].join('\n');
+};
 
 type ResultsBlockParams = {
   readonly payloads: ReadonlyArray<ResultsPayload>;
@@ -170,6 +250,7 @@ export const buildDeliveryText = ({
   rows,
   childLabels,
   isRestart,
+  waiting = [],
 }: BuildDeliveryParams): string => {
   const results: ResultsPayload[] = [];
   const questions: QuestionPayload[] = [];
@@ -178,7 +259,9 @@ export const buildDeliveryText = ({
   for (const row of rows) {
     const value = row.payload;
     if (isResultsPayload(value)) {
-      results.push(value);
+      if (value.isRepeat !== true) {
+        results.push(value);
+      }
       continue;
     }
     if (isQuestionPayload(value)) {
@@ -195,6 +278,7 @@ export const buildDeliveryText = ({
   }
   const blocks = [
     isRestart ? AUTO_RESTART_NOTICE : null,
+    waitingBlock({ waiting, childLabels }),
     ledgerBlock,
     budgetLine,
     mountsLine,

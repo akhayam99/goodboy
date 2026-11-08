@@ -64,8 +64,10 @@ const mount = ({ id }: MountParams) => {
 };
 
 describe('the auto-child-returned scenes', () => {
-  it('registers the four states for the capture', () => {
+  it('registers every state for the capture', () => {
     expect(Object.keys(U37_AUTO_CHILD_RETURNED_SCENES).sort()).toEqual([
+      'auto-asks-you',
+      'auto-child-decided',
       'auto-child-returned',
       'auto-child-returned-asks',
       'auto-child-returned-decided',
@@ -109,6 +111,22 @@ describe('the auto-child-returned scenes', () => {
     expect(screen.queryByText(/Blocked/)).toBeNull();
     expect(screen.queryByText(/Returned to Auto/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('Released: Auto released the return, so the child is no longer Idle or Failed', async () => {
+    mount({ id: 'auto-child-decided' });
+
+    await screen.findAllByText('Done', undefined, WAIT);
+    expect(screen.queryByText(/Failed/)).toBeNull();
+    expect(screen.queryByText(/Returned to Auto/)).toBeNull();
+  });
+
+  it('Auto asks you: the proposal that replaces the return waits for you, the child does not', async () => {
+    mount({ id: 'auto-asks-you' });
+
+    await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
+    expect(screen.queryByText(/Failed/)).toBeNull();
+    expect(screen.queryByText(`Returned to Auto: ${REQUEST}`)).toBeNull();
   });
 
   it('Asks you: Needs you is on Auto, never on the returned child', async () => {

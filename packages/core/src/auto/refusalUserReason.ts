@@ -37,6 +37,9 @@ export const AUTO_REFUSAL_USER_REASON = {
   no_run: 'that agent has no run to continue',
   retry_unavailable: 'that work cannot be retried',
   role_lacks_shell: 'the role it chose cannot run commands',
+  return_limit: 'that agent came back too many times to continue it',
+  task_rebrief_limit: 'that task was handed over too many times',
+  not_returned: 'it released an agent that was not waiting for it',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;
 
 type UserReasonParams = {

@@ -74,6 +74,20 @@ describe('parseAutoBlock', () => {
     });
   });
 
+  it('reads a release block and needs its delegation and reason', () => {
+    expect(
+      parseAutoBlock({
+        text: block({ action: 'release', delegation: 'd1', reason: 'Covered by the planner.' }),
+      }),
+    ).toEqual({
+      kind: 'block',
+      block: { action: 'release', delegation: 'd1', reason: 'Covered by the planner.' },
+    });
+    expect(parseAutoBlock({ text: block({ action: 'release', delegation: 'd1' }) }).kind).toBe(
+      'invalid',
+    );
+  });
+
   it('is invalid for an unknown action, a missing field and a non-object', () => {
     expect(parseAutoBlock({ text: block({ action: 'status' }) }).kind).toBe('invalid');
     expect(parseAutoBlock({ text: block({ action: 'delegate' }) }).kind).toBe('invalid');

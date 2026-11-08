@@ -1,4 +1,6 @@
 import {
+  AUTO_REFUSAL_TEXT,
+  AUTO_TREE_LIMITS,
   parseAutoDelegationRole,
   publishOfRequest,
   type DelegateChildSpec,
@@ -14,6 +16,7 @@ import {
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoDelegationId } from '@goodboy/types';
 import type { ChildRefusal } from './resolveDelegateChild';
+import { returnCountOf } from './returns/returnCountOf';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -124,6 +127,12 @@ export const prepareRetry = async ({
       message: 'that agent is already being retried',
     });
   }
+  if (
+    returnCountOf({ delegation: original, delegations: siblings }) >
+    AUTO_TREE_LIMITS.returnsPerDelegation
+  ) {
+    return refuse({ slot, code: 'return_limit', message: AUTO_REFUSAL_TEXT.return_limit });
+  }
   const artifactId =
     original.reviseOf === null ? null : brandId<ArtifactId>({ value: original.reviseOf });
   if (artifactId !== null) {
@@ -173,6 +182,7 @@ export const prepareRetry = async ({
     decisions: listOf({ source: original.request, key: 'decisions' }),
     forQuestion: null,
     retryOf: original.id,
+    replaces: null,
     shouldConfirm: child.shouldConfirm || original.request['confirm'] === true,
   };
   return { kind: 'resolve', child: synthetic, original };

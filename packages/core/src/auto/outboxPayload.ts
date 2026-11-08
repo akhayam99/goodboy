@@ -19,6 +19,9 @@ export type ResultsPayload = Readonly<{
   kind: 'results';
   batchId: string;
   results: ReadonlyArray<unknown>;
+  returnOf?: string;
+  isRepeat?: boolean;
+  isOverWindow?: boolean;
 }>;
 
 export type QuestionPayload = Readonly<{

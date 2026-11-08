@@ -41,6 +41,9 @@ export const AUTO_REFUSAL_TEXT = {
   no_run: 'There is no turn to attach this to.',
   retry_unavailable: 'That agent cannot be retried right now.',
   role_lacks_shell: 'That role has no shell, so it cannot run the commands of the task.',
+  return_limit: `That agent came back ${AUTO_TREE_LIMITS.returnsPerDelegation + 1} times, so it cannot be continued. Hand the task to another role with "replaces", or ask the user with a propose block.`,
+  task_rebrief_limit: `That task was handed to a new agent ${AUTO_TREE_LIMITS.rebriefsPerTask} times already. Ask the user with a propose block.`,
+  not_returned: 'That agent did not come back to you, or you already decided about it.',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;
 
 export type RefusalChild = Readonly<{

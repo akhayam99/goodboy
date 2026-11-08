@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseChildClosing } from './closing';
-import { AUTO_RESTART_NOTICE, buildDeliveryText } from './delivery';
+import { AUTO_RESTART_NOTICE, buildDeliveryText, type WaitingReturn } from './delivery';
 import { EMPTY_USER_FACTS, storedDeliveryOf } from './outboxPayload';
 import { buildDelegationResult } from './result';
 
@@ -242,5 +242,99 @@ describe('refusals and the state digest in a delivery', () => {
     });
     expect(text).toContain('- delegation delegation-3: stopped, declined');
     expect(text).toContain('- the result of one agent could not be read');
+  });
+});
+
+describe('the WAITING FOR YOUR DECISION block', () => {
+  const returned = buildDelegationResult({
+    delegationId: 'delegation-5',
+    attemptId: 'attempt-5',
+    treeId: 'tree-1',
+    generation: 1,
+    childAgentId: 'agent-implementer-2',
+    role: 'implementer',
+    routing: { provider: 'anthropic', model: 'sonnet', effort: 'medium', reason: 'a code change' },
+    exit: 'ok',
+    isTimedOut: false,
+    turns: 3,
+    durationMs: 60_000,
+    closing: parseChildClosing({
+      text: 'Added the payments-api export without archived rows.\n<<step-done id="agent-implementer-2" status="returned" needs="decision">>\nShould archived rows of ledger-core be exported?',
+      childAgentId: 'agent-implementer-2',
+    }),
+    summary: null,
+    summarySource: 'child',
+    changedFiles: [],
+    checks: [],
+    artifacts: [],
+    artifactPersistence: 'not_applicable',
+    isArtifactExpected: false,
+    openQuestions: [],
+    costUsd: 0.4,
+  });
+
+  const build = (waiting: ReadonlyArray<WaitingReturn>) =>
+    buildDeliveryText({
+      ledgerBlock: 'LEDGER',
+      budgetLine: '',
+      mountsLine: '',
+      digestBlock: '',
+      artifactsBlock: '',
+      childLabels: new Map([['agent-implementer-2', 'Harborline export']]),
+      isRestart: false,
+      rows: [],
+      waiting,
+    });
+
+  it('opens the delivery with each return, its request and its report', () => {
+    expect(build([{ result: returned, returns: 1, isClosed: false, isRebriefClosed: false }]))
+      .toMatchInlineSnapshot(`
+      "WAITING FOR YOUR DECISION
+      Each agent below came back to you and waits for your decision. Decide about each one: continue it with "retryOf", hand its task to another role with "replaces", release it with a release block, or ask the user with a propose block. One you leave without a decision comes back next turn and counts as a turn without progress.
+      - Harborline export (implementer agent-implementer-2), delegation delegation-5, came back once:
+        it asks: Should archived rows of ledger-core be exported?
+        it needs: a decision from you
+        its report: Added the payments-api export without archived rows. Should archived rows of ledger-core be exported?
+
+      LEDGER"
+    `);
+  });
+
+  it('says when a return can no longer be continued or re-briefed', () => {
+    const text = build([{ result: returned, returns: 3, isClosed: true, isRebriefClosed: true }]);
+    expect(text).toContain('came back 3 times');
+    expect(text).toContain('so it cannot be continued');
+    expect(text).toContain('handed to a new agent 3 times already');
+  });
+
+  it('leaves a repeated return out of the results block', () => {
+    const text = buildDeliveryText({
+      ledgerBlock: '',
+      budgetLine: '',
+      mountsLine: '',
+      digestBlock: '',
+      artifactsBlock: '',
+      childLabels: new Map(),
+      isRestart: false,
+      rows: [
+        {
+          id: 'outbox-repeat',
+          payload: {
+            kind: 'results',
+            batchId: 'batch-5',
+            results: [returned],
+            returnOf: 'delegation-5',
+            isRepeat: true,
+          },
+        },
+      ],
+      waiting: [{ result: returned, returns: 1, isClosed: false, isRebriefClosed: false }],
+    });
+    expect(text).not.toContain('RESULTS FROM YOUR AGENTS');
+    expect(text).toContain('WAITING FOR YOUR DECISION');
+  });
+
+  it('adds nothing when no return waits', () => {
+    expect(build([])).toBe('LEDGER');
   });
 });

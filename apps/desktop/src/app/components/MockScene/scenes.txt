@@ -37,6 +37,7 @@ artifacts-loading
 artifacts-no-match
 artifacts-rows
 ask-reset
+auto-asks-you
 auto-chat-answering
 auto-chat-child
 auto-chat-confirm
@@ -50,6 +51,7 @@ auto-chat-queued
 auto-chat-refused
 auto-chat-revising
 auto-chat-working
+auto-child-decided
 auto-child-returned
 auto-child-returned-asks
 auto-child-returned-decided
