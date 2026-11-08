@@ -608,6 +608,52 @@ describe('Auto messages a working child', () => {
     expect(new Set(otherWindow.map((row) => row.id)).size).toBe(2);
   });
 
+  it('never reuses an id of its run once the person removes a row from the middle', async () => {
+    const world = await runningScout();
+    const original = await onlyDelegation(world);
+    const db = world.state.world.db;
+    let kept: Array<{ id: string; content: string }> = [];
+    world.state.ports.setChildMessageSink(async ({ agentId, messageId, text }) => {
+      kept.push({ id: messageId, content: text });
+      await replaceAgentQueuedMessages(db, {
+        agentId,
+        messages: kept.map((row) => ({
+          ...row,
+          agentId,
+          attachments: [],
+          override: null,
+          createdAt: brandId<IsoDateTime>({ value: '2026-11-08T10:00:00.000Z' }),
+        })),
+      });
+    });
+    const send = (text: string) =>
+      autoCommand({
+        world,
+        verb: 'message',
+        args: { delegation: original.id, text },
+        runId: 'run-auto-middle',
+      });
+
+    await send('Skip tests/.');
+    await send('Skip docs/.');
+    kept = kept.filter((row) => row.content !== 'Skip tests/.');
+    await replaceAgentQueuedMessages(db, {
+      agentId: original.childAgentId,
+      messages: kept.map((row) => ({
+        ...row,
+        agentId: original.childAgentId,
+        attachments: [],
+        override: null,
+        createdAt: brandId<IsoDateTime>({ value: '2026-11-08T10:00:00.000Z' }),
+      })),
+    });
+    expect(await send('Fix lint.')).toMatchObject({ isOk: true, data: { queued: true } });
+
+    const otherWindow = await listAgentQueuedMessages(db, [original.childAgentId]);
+    expect(otherWindow.map((row) => row.content)).toEqual(['Skip docs/.', 'Fix lint.']);
+    expect(new Set(otherWindow.map((row) => row.id)).size).toBe(2);
+  });
+
   it('refuses a message to a child that already ended', async () => {
     const world = await settledScout();
     const original = await onlyDelegation(world);

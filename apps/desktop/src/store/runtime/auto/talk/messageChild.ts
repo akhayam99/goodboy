@@ -55,6 +55,22 @@ const savedMessagesOf = async ({
   return saved;
 };
 
+type NextIndexParams = {
+  readonly saved: ReadonlyMap<string, string>;
+  readonly runPrefix: string;
+};
+
+const nextIndexOf = ({ saved, runPrefix }: NextIndexParams): number => {
+  let next = 0;
+  for (const id of saved.keys()) {
+    const used = Number(id.slice(runPrefix.length));
+    if (Number.isInteger(used) && used >= next) {
+      next = used + 1;
+    }
+  }
+  return next;
+};
+
 export const messageChild = async ({
   ctx,
   command,
@@ -97,7 +113,7 @@ export const messageChild = async ({
       },
     };
   }
-  const messageId = `${runPrefix}${saved.size}`;
+  const messageId = `${runPrefix}${nextIndexOf({ saved, runPrefix })}`;
   if (!WORKING_STATES.includes(delegation.state)) {
     return refuseOutcome({ code: 'not_running' });
   }
