@@ -3,7 +3,11 @@ import type { AppStore } from '../../store/store';
 import { distanceBehind } from '../../shared/lib/gitStatus';
 import { isMountRequestMerged } from '../../store/slices/project-mounts/mountRowModel';
 import { resolveMountBaseBranch } from '../../store/slices/project-mounts/selectors';
-import { readWorktreeStatus, worktreeStatusKey } from '../../store/runtime/worktreeStatuses/cache';
+import {
+  isWorktreeStatusSetSettled,
+  readWorktreeStatus,
+  worktreeStatusKey,
+} from '../../store/runtime/worktreeStatuses/cache';
 
 export const REBASE_ALL_MIN_BRANCHES = 2;
 
@@ -51,11 +55,15 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-export const behindBranchesOf = ({ state, sessionId }: Params): ReadonlyArray<BehindBranch> =>
-  rebaseStatusTargetsOf({
+export const behindBranchesOf = ({ state, sessionId }: Params): ReadonlyArray<BehindBranch> => {
+  const targets = rebaseStatusTargetsOf({
     mounts: state.sessionProjectMounts[sessionId] ?? [],
     projects: state.projects,
-  }).flatMap((target): ReadonlyArray<BehindBranch> => {
+  });
+  if (!isWorktreeStatusSetSettled({ keys: targets.map((target) => target.key) })) {
+    return [];
+  }
+  return targets.flatMap((target): ReadonlyArray<BehindBranch> => {
     if (isMountRequestMerged({ state, mountId: target.mountId })) {
       return [];
     }
@@ -65,3 +73,4 @@ export const behindBranchesOf = ({ state, sessionId }: Params): ReadonlyArray<Be
       ? [{ mountId: target.mountId, behind }]
       : [];
   });
+};

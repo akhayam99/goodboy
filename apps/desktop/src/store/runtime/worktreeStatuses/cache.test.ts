@@ -228,6 +228,43 @@ describe('worktree status cache', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
+  it('commits a request set only when every read asked for it has answered', async () => {
+    vi.useFakeTimers();
+    const answers = new Map<string, (status: { readonly branch: string }) => void>();
+    worktreeStatus.mockImplementation(
+      ({ worktreePath }: { readonly worktreePath: string }) =>
+        new Promise((resolve) => {
+          answers.set(worktreePath, resolve);
+        }),
+    );
+    const pathA = '/worktrees/a';
+    const pathB = '/worktrees/b';
+    const pathX = '/worktrees/x';
+    const keyOf = (worktreePath: string) => worktreeStatusKey({ worktreePath, baseBranch: 'main' });
+    const ask = (worktreePath: string) =>
+      ensure({ key: keyOf(worktreePath), worktreePath, baseBranch: 'main', maxAgeMs: 30_000 });
+    const first = Promise.all([ask(pathA), ask(pathX)]);
+    await vi.advanceTimersByTimeAsync(0);
+    answers.get(pathX)?.({ branch: 'ak/x' });
+    await vi.advanceTimersByTimeAsync(0);
+
+    const second = Promise.all([ask(pathA), ask(pathB)]);
+    await vi.advanceTimersByTimeAsync(0);
+    answers.get(pathA)?.({ branch: 'ak/a' });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(readWorktreeStatus(keyOf(pathA))).toBeNull();
+    expect(readWorktreeStatus(keyOf(pathB))).toBeNull();
+    expect(readWorktreeStatus(keyOf(pathX))).toBeNull();
+
+    answers.get(pathB)?.({ branch: 'ak/b' });
+    await Promise.all([first, second]);
+
+    expect(readWorktreeStatus(keyOf(pathA))).toEqual({ branch: 'ak/a' });
+    expect(readWorktreeStatus(keyOf(pathB))).toEqual({ branch: 'ak/b' });
+    expect(readWorktreeStatus(keyOf(pathX))).toEqual({ branch: 'ak/x' });
+  });
+
   it('drops an answer that lands after a reset', async () => {
     const answers: Array<(status: { readonly branch: string }) => void> = [];
     worktreeStatus.mockImplementation(

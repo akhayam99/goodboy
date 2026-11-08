@@ -134,6 +134,7 @@ type CommitParams = {
 };
 
 const commit = ({ batch }: CommitParams) => {
+  batch.isOpen = false;
   batch.staged.forEach(({ entry, value, readAt, fetchedAt }) => {
     entry.value = value;
     entry.readAt = readAt;
@@ -155,7 +156,6 @@ const finish = ({ batch, read, startedIn }: FinishParams) => {
     batch.land();
     return;
   }
-  batch.isOpen = false;
   batch.staged.push(read);
   batch.unfinished -= 1;
   if (batch.unfinished === 0) {
@@ -276,6 +276,13 @@ export const read = ({ key, freshness }: ReadByKeyParams): StatusRead => {
 
 export const isWorktreeStatusSettled = (key: string): boolean =>
   (entries.get(key)?.fetchedAt ?? 0) > 0;
+
+type SetSettledParams = {
+  readonly keys: ReadonlyArray<string>;
+};
+
+export const isWorktreeStatusSetSettled = ({ keys }: SetSettledParams): boolean =>
+  keys.every((key) => isWorktreeStatusSettled(key));
 
 export const ensure = async ({
   key,

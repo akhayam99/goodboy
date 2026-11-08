@@ -169,8 +169,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   status reads of the card's branches land in the cache as one set, so the
   rows, the `n branches behind` line and the Next rebase row show no count
   (the list is `aria-busy`) until every branch is read, and a refresh keeps
-  the last complete set until the new one has landed whole
-  (`loadThenShow.test.tsx`). The check counts come from the runs read
+  the last complete set until the new one has landed whole; a branch whose
+  base changed shows no count until its new read lands (`loadThenShow.test.tsx`). The check counts come from the runs read
   for the request on any host, skipped kept apart from passed. The number, the
   state word and the branch are not on the line: they sit in the row's fact
   card (`branchRowCardOf`: the branch as title, `#318` beside it, the state,
