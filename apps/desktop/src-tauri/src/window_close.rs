@@ -56,7 +56,7 @@ pub fn arm(app: &AppHandle, label: &str) {
         if !claims.is_unclaimed(&label, at) {
             return;
         }
-        let Some(window) = app.get_webview_window(&label) else {
+        let Some(window) = app.get_window(&label) else {
             return;
         };
         log::warn!("[window] close_fallback label={label}");
@@ -68,7 +68,7 @@ pub fn arm(app: &AppHandle, label: &str) {
 
 #[cfg(target_os = "macos")]
 pub fn reveal_main(app: &AppHandle) {
-    let Some(window) = app.get_webview_window("main") else {
+    let Some(window) = app.get_window("main") else {
         return;
     };
     if let Err(error) = window.show() {
