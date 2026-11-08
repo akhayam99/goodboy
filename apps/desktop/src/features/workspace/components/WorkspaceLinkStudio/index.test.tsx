@@ -149,10 +149,19 @@ describe('WorkspaceLinkStudio', () => {
   it('mounts the one form on a page surface titled New workspace, never a dialog', () => {
     const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} />);
 
-    expect(screen.getByRole('banner', { name: 'New workspace' })).toBeDefined();
-    expect(screen.getByRole('heading', { name: 'New workspace' })).toBeDefined();
+    expect(screen.getAllByRole('heading', { name: 'New workspace' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: /choose folder/i })).toBeDefined();
     expect(container.querySelector('dialog')).toBeNull();
+  });
+
+  it('steps its title aside while the form scrolls', () => {
+    render(<WorkspaceLinkStudio onClose={vi.fn()} />);
+
+    const title = screen.getByRole('heading', { name: 'New workspace' });
+    expect(title.closest('[data-slot="reveal-header"]')).not.toBeNull();
+    expect(
+      screen.getByRole('button', { name: /choose folder/i }).closest('[data-page-scroller]'),
+    ).not.toBeNull();
   });
 
   it('sits between the bars like every studio inside the shell', () => {

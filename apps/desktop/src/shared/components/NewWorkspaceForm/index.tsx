@@ -29,6 +29,7 @@ type Props = {
   readonly workspaceId?: WorkspaceId;
   readonly start?: DraftStart;
   readonly titleRole?: NewWorkspaceTitleRole;
+  readonly hasTitle?: boolean;
   readonly onCreated?: (params: CreatedParams) => void;
   readonly onCancel?: () => void;
   readonly backLabel?: string;
@@ -57,6 +58,7 @@ export const NewWorkspaceForm = ({
   workspaceId,
   start = 'folder',
   titleRole,
+  hasTitle = true,
   onCreated,
   onCancel,
   backLabel = 'Back',
@@ -152,16 +154,18 @@ export const NewWorkspaceForm = ({
       onKeyDown={onKeyDown}
       className="flex w-full flex-col gap-6 text-left"
     >
-      <div className="flex flex-col gap-2">
-        <h2
-          tabIndex={-1}
-          data-step-title
-          className={`${TITLE_CLASS[titleRole ?? DEFAULT_ROLE[mode]]} text-foreground outline-none`}
-        >
-          {copy.title}
-        </h2>
-        <p className="text-prose text-muted-foreground">{copy.lede}</p>
-      </div>
+      {hasTitle ? (
+        <div className="flex flex-col gap-2">
+          <h2
+            tabIndex={-1}
+            data-step-title
+            className={`${TITLE_CLASS[titleRole ?? DEFAULT_ROLE[mode]]} text-foreground outline-none`}
+          >
+            {copy.title}
+          </h2>
+          <p className="text-prose text-muted-foreground">{copy.lede}</p>
+        </div>
+      ) : null}
 
       {draft.stage === 'empty' ? (
         <div className="flex flex-col gap-3">
