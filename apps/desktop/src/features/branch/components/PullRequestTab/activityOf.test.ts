@@ -7,6 +7,7 @@ import {
   type CountableEntry,
   type ThreadEntry,
 } from '../../../resolve/commentGroupsView';
+import { activityItemsFor } from './activityFilters';
 import { pullRequestActivityOf } from './activityOf';
 
 const VIEW: PullRequestView = {
@@ -538,6 +539,41 @@ describe('pullRequestActivityOf', () => {
       });
     },
   );
+
+  it('keeps github without a comments line and the People lane unchanged while the detail is missing', () => {
+    const entries: ReadonlyArray<ThreadEntry> = [
+      {
+        threadId: 'thread-bot',
+        resolveWord: 'open',
+        row: {
+          thread: {
+            stage: 'new',
+            state: 'open',
+            stateReason: null,
+            originKind: 'review_comment',
+          },
+        },
+      },
+    ];
+    const counts = commentStateCountsOf({ entries });
+    const base = {
+      view: VIEW,
+      detail: null,
+      runs: null,
+      edits: [],
+    };
+    const withThreads = pullRequestActivityOf({
+      ...base,
+      threads: { open: counts.open, needYou: counts.needYou },
+      entries,
+    });
+    const withoutThreads = pullRequestActivityOf({ ...base, threads: NO_THREADS, entries: [] });
+
+    expect(kinds(withThreads)).not.toContain('comments');
+    expect(activityItemsFor({ items: withThreads, filter: 'people' })).toHaveLength(
+      activityItemsFor({ items: withoutThreads, filter: 'people' }).length,
+    );
+  });
 
   it.each(HOSTS)(
     'shows no comments line on %s when the detail is missing and no thread loaded',

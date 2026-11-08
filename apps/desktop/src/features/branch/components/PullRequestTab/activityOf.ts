@@ -185,6 +185,9 @@ const commentsOf = ({
   entries,
 }: Pick<Params, 'view' | 'detail' | 'threads' | 'entries'>): ReadonlyArray<ActivityItem> => {
   if (detail === null) {
+    if (view.host === 'github') {
+      return [];
+    }
     return hostCommentsOf({ view, threads: counts, entries });
   }
   const comments = detail.comments.filter((comment) => comment.source === 'review');
