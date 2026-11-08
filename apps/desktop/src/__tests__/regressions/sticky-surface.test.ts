@@ -20,7 +20,7 @@ describe.each(['sticky-surface', 'sticky-surface-subtle'])('%s', (name) => {
     expect(body).toMatch(
       /background-color: color-mix\(in oklab, var\(--color-\w+\) \d+%, transparent\)/,
     );
-    expect(body).toMatch(/backdrop-filter: blur\(([89]|1[0-2])px\)/);
+    expect(body).toMatch(/backdrop-filter: blur\([2-4]px\)/);
     expect(body).not.toMatch(/shadow|gradient/);
   });
 
