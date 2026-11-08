@@ -1,20 +1,25 @@
 import type { AutoDelegation } from '@goodboy/db';
+import { recordField } from './chat/readJson';
 import { delegationReleaseOf } from './delegationReleaseOf';
 import { delegationReplacesOf } from './delegationReplacesOf';
-
-type Later = Pick<AutoDelegation, 'id' | 'retryOf' | 'request' | 'state' | 'outcome' | 'reason'>;
+import { isAutoDelegationSuperseded } from './isAutoDelegationSuperseded';
 
 type Params = {
-  readonly delegation: Pick<AutoDelegation, 'id' | 'request'>;
-  readonly delegations: ReadonlyArray<Later>;
+  readonly delegation: AutoDelegation;
+  readonly delegations: ReadonlyArray<AutoDelegation>;
 };
 
 type DeclinedParams = {
-  readonly later: Later;
+  readonly later: AutoDelegation;
 };
 
 const isDeclined = ({ later }: DeclinedParams): boolean =>
   later.state === 'settled' && later.outcome === 'stopped' && later.reason === 'declined';
+
+const isLegacyReturnSuperseded = ({ delegation, delegations }: Params): boolean =>
+  delegation.outcome === 'blocked' &&
+  recordField({ source: delegation.result, key: 'returned' }) === null &&
+  isAutoDelegationSuperseded({ delegation, delegations, isAnyRole: true });
 
 export const isAutoReturnDecided = ({ delegation, delegations }: Params): boolean =>
   delegationReleaseOf({ delegation }) !== null ||
@@ -24,4 +29,5 @@ export const isAutoReturnDecided = ({ delegation, delegations }: Params): boolea
       !isDeclined({ later }) &&
       (later.retryOf === delegation.id ||
         delegationReplacesOf({ delegation: later }) === delegation.id),
-  );
+  ) ||
+  isLegacyReturnSuperseded({ delegation, delegations });

@@ -26,6 +26,7 @@ import {
   userSays,
   type RuntimeWorld,
 } from '../testing/runtimeWorld';
+import { rebriefCountOf } from './rebriefCountOf';
 import { waitingReturnsOf } from './waitingReturnsOf';
 
 const LEDGER = {
@@ -437,6 +438,91 @@ describe('Auto must decide about every return', () => {
       rows.filter((row) => row.joinKey === `return:${tree.generation}:${returned}`),
     ).toHaveLength(1);
   });
+
+  it('keeps a return from before the upgrade decided once any role started on its branch', async () => {
+    const world = await startWith({ children: [LEDGER] });
+    const returned = await childReturns({ world, index: 0 });
+    world.state.world.clock.advance({ ms: 1_000 });
+    await autoTurnEndsWithBlock({
+      world,
+      block: {
+        action: 'delegate',
+        children: [{ ...LEDGER, role: 'planner', reason: 'plan the export first' }],
+      },
+    });
+    const { db } = world.state.world;
+    const tree = await treeOf({ world });
+    await db.execute(
+      `UPDATE auto_delegations SET result_json = json_remove(result_json, '$.returned') WHERE id = ?`,
+      [returned],
+    );
+    const legacy = await delegationById({ world, id: returned });
+    await db.execute(`DELETE FROM auto_outbox WHERE tree_id = ? AND kind = 'results'`, [
+      world.treeId,
+    ]);
+    await insertAutoOutbox({
+      db,
+      outbox: {
+        id: brandId<AutoOutboxId>({ value: 'legacy-batch' }),
+        treeId: world.treeId,
+        generation: tree.generation,
+        kind: 'results',
+        joinKey: `join:${tree.generation}:${legacy.batchId}`,
+        payload: { kind: 'results', batchId: legacy.batchId, results: [legacy.result] },
+        nowMs: world.state.world.clock.now(),
+      },
+    });
+    await db.execute(
+      `UPDATE auto_outbox SET state = 'accepted', accepted_run_id = 'run-before-upgrade'
+        WHERE id = 'legacy-batch'`,
+    );
+
+    await autoTurnEnds({ world, text: 'Planning the export.' });
+    await joinReady({ ctx: world.runtime.ctx, treeId: world.treeId });
+
+    expect(
+      isAutoDelegationReplaced({ delegation: legacy, delegations: await delegationsOf({ world }) }),
+    ).toBe(true);
+    expect(await waitingReturnsOf({ db, tree })).toEqual([]);
+    const rows = await listAutoOutbox({ db, treeId: world.treeId, kinds: ['results'] });
+    expect(rows.filter((row) => row.joinKey.includes(returned))).toEqual([]);
+    expect((await treeOf({ world })).noProgressStreak).toBe(0);
+  });
+
+  it('repeats a return whose proposal the user declined, so the tree never ends with it waiting', async () => {
+    const world = await startWith({ children: [LEDGER] });
+    const returned = await childReturns({ world, index: 0 });
+    const proposed = await autoCommand({
+      world,
+      verb: 'propose',
+      args: {
+        'request-id': 'ask-before-continuing',
+        spec: JSON.stringify({ primary: { retryOf: returned, reason: 'the user picks' } }),
+      },
+    });
+    expect(proposed).toMatchObject({ isOk: true });
+    await autoTurnEnds({ world, text: 'Asked the user.' });
+    const proposal = (await delegationsOf({ world })).find((row) => row.retryOf === returned);
+    if (proposal === undefined) {
+      throw new Error('a proposal was expected');
+    }
+
+    expect(await world.runtime.confirm({ delegationId: proposal.id, decision: 'decline' })).toBe(
+      'declined',
+    );
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+    const turns = world.state.ports.autoTurns.length;
+    expect(lastAutoText({ world })).toContain(`delegation ${returned}, came back once`);
+
+    await autoTurnEnds({ world, text: 'Noted.' });
+
+    const tree = await treeOf({ world });
+    expect(tree.phase).not.toBe('done');
+    expect(tree.noProgressStreak).toBe(1);
+    expect(world.state.ports.autoTurns).toHaveLength(turns + 1);
+    expect(lastAutoText({ world })).toContain(`delegation ${returned}, came back once`);
+  });
 });
 
 describe('the caps on returns', () => {
@@ -495,40 +581,53 @@ describe('the caps on returns', () => {
     expect(refused).toMatchObject({ isOk: false, code: 'task_rebrief_limit' });
   });
 
-  it('refuses two children of one block that name the same return', async () => {
+  it('splits a return between two children of one block and counts it as one re-brief', async () => {
     const world = await startWith({ children: [LEDGER, NOTIFY] });
     const returned = await childReturns({ world, index: 0 });
-    const before = (await delegationsOf({ world })).length;
 
-    const twoReplaces = await autoCommand({
+    const split = await autoCommand({
       world,
       verb: 'delegate',
       args: {
-        'request-id': 'replace-batch-twice',
+        'request-id': 'replace-split',
         spec: JSON.stringify({
           children: [
-            { ...LEDGER, replaces: returned, reason: 'first' },
-            { ...LEDGER, replaces: returned, reason: 'second' },
+            { ...LEDGER, replaces: returned, reason: 'the export' },
+            { ...LEDGER, role: 'planner', replaces: returned, reason: 'the archive choice' },
           ],
         }),
       },
     });
-    const replaceAndContinue = await autoCommand({
+
+    expect(split).toMatchObject({ isOk: true });
+    const delegations = await delegationsOf({ world });
+    const halves = delegations.filter((row) => row.request['replaces'] === returned);
+    expect(halves).toHaveLength(2);
+    expect(
+      rebriefCountOf({ delegation: await delegationById({ world, id: returned }), delegations }),
+    ).toBe(1);
+  });
+
+  it('refuses two children of one block that continue the same return', async () => {
+    const world = await startWith({ children: [LEDGER, NOTIFY] });
+    const returned = await childReturns({ world, index: 0 });
+    const before = (await delegationsOf({ world })).length;
+
+    const twice = await autoCommand({
       world,
       verb: 'delegate',
       args: {
-        'request-id': 'replace-and-continue',
+        'request-id': 'continue-twice',
         spec: JSON.stringify({
           children: [
-            { ...LEDGER, replaces: returned, reason: 'first' },
+            { retryOf: returned, reason: 'first' },
             { retryOf: returned, reason: 'second' },
           ],
         }),
       },
     });
 
-    expect(twoReplaces).toMatchObject({ isOk: false, code: 'retry_unavailable' });
-    expect(replaceAndContinue).toMatchObject({ isOk: false, code: 'retry_unavailable' });
+    expect(twice).toMatchObject({ isOk: false, code: 'retry_unavailable' });
     expect(await delegationsOf({ world })).toHaveLength(before);
   });
 

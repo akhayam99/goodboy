@@ -57,6 +57,19 @@ const returnedScout = (): AutoDelegation =>
     state: 'settled',
     outcome: 'blocked',
     settledAt: FIXTURE_NOW + 3_000,
+    result: { outcome: 'blocked', returned: { request: 'Should archived rows be exported?' } },
+  });
+
+const legacyReturnedScout = (): AutoDelegation =>
+  startedOnBranch({
+    key: 'scout',
+    role: 'scout',
+    createdAt: FIXTURE_NOW,
+    state: 'settled',
+    outcome: 'blocked',
+    settledAt: FIXTURE_NOW + 3_000,
+    endReason: 'declared_blocked',
+    result: { outcome: 'blocked', reason: 'declared_blocked' },
   });
 
 describe('isAutoDelegationReplaced', () => {
@@ -236,6 +249,38 @@ describe('isAutoDelegationReplaced', () => {
     expect(isAutoDelegationReplaced({ delegation: scout, delegations: [scout, declined] })).toBe(
       false,
     );
+  });
+
+  it('counts any role started later on the branch as a decision about a return from before the upgrade', () => {
+    const scout = legacyReturnedScout();
+    const reviewer = startedOnBranch({
+      key: 'reviewer',
+      role: 'reviewer',
+      createdAt: FIXTURE_NOW + 4_000,
+    });
+
+    expect(isAutoDelegationReplaced({ delegation: scout, delegations: [scout, reviewer] })).toBe(
+      true,
+    );
+  });
+
+  it('keeps a return from before the upgrade waiting while later work has not started', () => {
+    const scout = legacyReturnedScout();
+    const parallel = startedOnBranch({
+      key: 'reviewer',
+      role: 'reviewer',
+      createdAt: FIXTURE_NOW + 1_000,
+    });
+    const proposed = startedOnBranch({
+      key: 'scout-2',
+      role: 'scout',
+      createdAt: FIXTURE_NOW + 4_000,
+      state: 'awaiting_confirm',
+    });
+
+    expect(
+      isAutoDelegationReplaced({ delegation: scout, delegations: [scout, parallel, proposed] }),
+    ).toBe(false);
   });
 
   it('counts a returned child that Auto released', () => {

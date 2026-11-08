@@ -10,6 +10,9 @@ export type RebriefCountParams = Readonly<{
 }>;
 
 export const rebriefCountOf = ({ delegation, delegations }: RebriefCountParams): number =>
-  lineageOf({ delegation, delegations, shouldFollowReplaces: true }).filter(
-    (row) => delegationReplacesOf({ delegation: row }) !== null,
-  ).length;
+  new Set(
+    lineageOf({ delegation, delegations, shouldFollowReplaces: true }).flatMap((row) => {
+      const replaces = delegationReplacesOf({ delegation: row });
+      return replaces === null ? [] : [replaces];
+    }),
+  ).size;

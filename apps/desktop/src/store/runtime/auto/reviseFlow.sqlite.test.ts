@@ -558,7 +558,7 @@ describe('retrying a revise', () => {
         shouldConfirm: false,
       },
       slot: 0,
-      batchTargets: new Set(),
+      batchRetries: new Set(),
       isConfirmGated: false,
     });
     expect(early).toMatchObject({ kind: 'refused', refusal: { code: 'retry_unavailable' } });

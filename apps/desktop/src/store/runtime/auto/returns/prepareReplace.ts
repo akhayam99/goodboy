@@ -12,7 +12,6 @@ export type PrepareReplaceParams = Readonly<{
   child: DelegateChildSpec;
   slot: number;
   batchReplaces: ReadonlyArray<string>;
-  batchTargets: ReadonlySet<string>;
   isConfirmGated: boolean;
 }>;
 
@@ -22,7 +21,6 @@ export const prepareReplace = async ({
   child,
   slot,
   batchReplaces,
-  batchTargets,
   isConfirmGated,
 }: PrepareReplaceParams): Promise<ChildRefusal | null> => {
   if (child.replaces === null) {
@@ -44,11 +42,11 @@ export const prepareReplace = async ({
       message: 'the agent named in "replaces" has not finished, so it cannot be replaced yet',
     };
   }
-  const targetRefusal = targetRefusalOf({ target: replaced, delegations, batchTargets, slot });
+  const targetRefusal = targetRefusalOf({ target: replaced, delegations, slot });
   if (targetRefusal !== null) {
     return targetRefusal;
   }
-  if (isConfirmGated) {
+  if (isConfirmGated || batchReplaces.includes(replaced.id)) {
     return null;
   }
   const prepared = batchReplaces.map((replaces, index) => ({

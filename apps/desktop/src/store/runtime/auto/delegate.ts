@@ -163,7 +163,7 @@ export const delegate = async ({
   const refusals = [];
   const recoveries: RecoveredRevise[] = [];
   const batchReplaces: string[] = [];
-  const batchTargets = new Set<string>();
+  const batchRetries = new Set<string>();
   for (const [slot, child] of parsed.children.entries()) {
     const replaceRefusal = await prepareReplace({
       ctx,
@@ -171,7 +171,6 @@ export const delegate = async ({
       child,
       slot,
       batchReplaces,
-      batchTargets,
       isConfirmGated: isProposal,
     });
     if (replaceRefusal !== null) {
@@ -180,7 +179,6 @@ export const delegate = async ({
     }
     if (child.replaces !== null) {
       batchReplaces.push(child.replaces);
-      batchTargets.add(child.replaces);
     }
     const prepared =
       child.retryOf === null
@@ -190,7 +188,7 @@ export const delegate = async ({
             tree,
             child,
             slot,
-            batchTargets,
+            batchRetries,
             isConfirmGated: isProposal,
           });
     if (prepared !== null && prepared.kind === 'refused') {
@@ -198,7 +196,7 @@ export const delegate = async ({
       continue;
     }
     if (child.retryOf !== null) {
-      batchTargets.add(child.retryOf);
+      batchRetries.add(child.retryOf);
     }
     if (prepared !== null && prepared.kind === 'recovered') {
       recoveries.push(prepared.recovery);

@@ -38,7 +38,7 @@ export type PrepareRetryParams = Readonly<{
   tree: AutoTree;
   child: DelegateChildSpec;
   slot: number;
-  batchTargets: ReadonlySet<string>;
+  batchRetries: ReadonlySet<string>;
   isConfirmGated: boolean;
 }>;
 
@@ -100,7 +100,7 @@ export const prepareRetry = async ({
   tree,
   child,
   slot,
-  batchTargets,
+  batchRetries,
   isConfirmGated,
 }: PrepareRetryParams): Promise<PreparedRetry> => {
   if (child.retryOf === null) {
@@ -125,19 +125,17 @@ export const prepareRetry = async ({
     });
   }
   const siblings = await listAutoDelegations({ db: ctx.db, treeId: tree.id });
-  if (siblings.some((other) => other.retryOf === original.id && other.state !== 'settled')) {
+  if (
+    batchRetries.has(original.id) ||
+    siblings.some((other) => other.retryOf === original.id && other.state !== 'settled')
+  ) {
     return refuse({
       slot,
       code: 'retry_unavailable',
       message: 'that agent is already being retried',
     });
   }
-  const targetRefusal = targetRefusalOf({
-    target: original,
-    delegations: siblings,
-    batchTargets,
-    slot,
-  });
+  const targetRefusal = targetRefusalOf({ target: original, delegations: siblings, slot });
   if (targetRefusal !== null) {
     return { kind: 'refused', refusal: targetRefusal };
   }

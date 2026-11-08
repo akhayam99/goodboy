@@ -16,14 +16,16 @@ const repeatPayloadOf = ({ row, delegation }: UndecidedReturn): unknown => {
   if (!isResultsPayload(payload)) {
     return payload;
   }
+  const own =
+    typeof payload.returnOf === 'string'
+      ? payload.results
+      : payload.results.filter(
+          (entry) => isRecord(entry) && entry['delegationId'] === delegation.id,
+        );
   return {
     ...payload,
-    results:
-      typeof payload.returnOf === 'string'
-        ? payload.results
-        : payload.results.filter(
-            (entry) => isRecord(entry) && entry['delegationId'] === delegation.id,
-          ),
+    batchId: delegation.batchId,
+    results: own.length > 0 ? own : [delegation.result],
     returnOf: delegation.id,
     delivery: undefined,
     isOverWindow: undefined,

@@ -244,8 +244,17 @@ describe('autoGroupOf', () => {
     'keeps a returned child waiting when a %s takes the same branch without naming it',
     (role) => {
       const returned = {
-        ...aDelegation({ key: 'scout-1', role: 'scout', state: 'settled', outcome: 'blocked' }),
-        reason: 'declared_blocked',
+        ...aDelegation({
+          key: 'scout-1',
+          role: 'scout',
+          state: 'settled',
+          outcome: 'blocked',
+          result: {
+            outcome: 'blocked',
+            returned: { request: 'Should archived rows be exported?' },
+          },
+        }),
+        reason: 'needs_decision',
         target: { mountId: 'mount-home' },
       };
       const next = {

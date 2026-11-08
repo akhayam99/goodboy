@@ -688,7 +688,10 @@ one line it wrote, `returnedRequestOf`, else its summary), while Auto decides, a
 only once Auto decided about it: continued it (`retryOf`), replaced it (`replaces`) or released it
 with a reason (`isAutoDelegationReplaced`, which reads `isAutoReturnDecided` for a returned child). A
 later agent on the same branch that names it in neither field is not a decision, and neither is a
-proposal you declined. A **Done** child has no tail line
+proposal you declined: the turn that reads the decline repeats the return like any undecided one
+(`declinedTargetsOfRow`). A returned row from before the structured return (no `returned` in its
+result) keeps the older rule: any role that started later on its branch decides it, so it is
+neither **Idle** forever nor delivered again (`isAutoReturnDecided`). A **Done** child has no tail line
 on its page: `AutoChildEnd` draws only what `autoChildLive` returns. **Failed** is only for a real error (a process
 error, a lost report, no closing), always with a sentence from
 `delegationSentenceOf`, never a reason code. **Needs you** appears on Auto only,
@@ -728,12 +731,14 @@ stops it is a guard that protects the user:
   per delegation, the no progress streak and the wall clock hours;
 - the caps on returns, in the same table. Both count the whole lineage, from the root of the chain
   down every branch (`lineageOf`). A `retryOf` or `replaces` may name only a return no one decided
-  yet, once per block (`targetRefusalOf`, refused with `retry_unavailable`): the latest agent of the
-  task, never an earlier one already continued or replaced. A propose block waits for you, so the two
+  yet (`targetRefusalOf`, refused with `retry_unavailable`): the latest agent of the
+  task, never an earlier one already continued or replaced. Several children of one block may share
+  a `replaces` to split the task, and count as one hand over; two `retryOf` of one agent in a block
+  are refused as already retried. A propose block waits for you, so the two
   caps below do not refuse it; its child still names the return. `returnsPerDelegation` (2, the returns in the `retryOf` lineage, `returnCountOf`): the
   third return closes the child, a `retryOf` of it or of any agent in its lineage is refused with
   `return_limit` and the delivery tells Auto to hand the task to another role or ask the user.
-  `rebriefsPerTask` (3, the `replaces` links in the `retryOf` and `replaces` lineage,
+  `rebriefsPerTask` (3, the agents replaced in the `retryOf` and `replaces` lineage,
   `rebriefCountOf`): the fourth is refused with `task_rebrief_limit` and the delivery tells Auto
   to ask with a propose block. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes): the seventh return row
   carries `isOverWindow`, `deliverNext` blocks the tree with that reason (`AUTO_BLOCK_TEXT.limit_returns`)
