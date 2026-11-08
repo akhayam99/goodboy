@@ -202,6 +202,7 @@ struct ScriptSpawnRequest<R: Runtime> {
     body: String,
     run_id: String,
     session_id: String,
+    mount_id: Option<String>,
     cwd: String,
     cols: u16,
     rows: u16,
@@ -287,6 +288,10 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
             crate::proc::ledger::LedgerContext {
                 session_id: Some(request.session_id.clone()),
                 cwd: Some(request.cwd.clone()),
+                owner: crate::proc::ledger::LedgerOwner {
+                    mount_id: request.mount_id.clone(),
+                    ..Default::default()
+                },
                 ..Default::default()
             },
         );
@@ -424,6 +429,7 @@ pub async fn workspace_script_run(
         let conn = state.0.lock().map_err(|_| ScriptError::Poisoned)?;
         load_enabled_script(&conn, &script_id)?
     };
+    let mount_id = crate::proc::ledger::mount_id_in(&state, &session_id, Some(&cwd));
     spawn_script_blocking(ScriptSpawnRequest {
         app,
         registry: Arc::clone(&registry.0),
@@ -433,6 +439,7 @@ pub async fn workspace_script_run(
         body,
         run_id,
         session_id,
+        mount_id,
         cwd,
         cols,
         rows,
@@ -444,6 +451,7 @@ pub async fn workspace_script_run(
 #[allow(clippy::too_many_arguments)]
 pub async fn workspace_script_run_adhoc(
     app: AppHandle,
+    state: State<'_, Db>,
     registry: State<'_, ScriptRegistry>,
     script_id: String,
     name: String,
@@ -455,6 +463,7 @@ pub async fn workspace_script_run_adhoc(
     rows: u16,
 ) -> Result<String, ScriptError> {
     let run_id = run_id.unwrap_or_else(|| format!("adhoc-{:032x}", rand::random::<u128>()));
+    let mount_id = crate::proc::ledger::mount_id_in(&state, &session_id, Some(&cwd));
     spawn_script_blocking(ScriptSpawnRequest {
         app,
         registry: Arc::clone(&registry.0),
@@ -464,6 +473,7 @@ pub async fn workspace_script_run_adhoc(
         body,
         run_id: run_id.clone(),
         session_id,
+        mount_id,
         cwd,
         cols,
         rows,
@@ -764,6 +774,7 @@ mod tests {
             body: body.to_string(),
             run_id: "run-exit".to_string(),
             session_id: "session-1".to_string(),
+            mount_id: None,
             cwd: dir.to_string_lossy().into_owned(),
             cols: 80,
             rows: 24,
@@ -798,6 +809,7 @@ mod tests {
                 .to_string(),
             run_id: "run-snapshot".to_string(),
             session_id: "session-1".to_string(),
+            mount_id: None,
             cwd: dir.to_string_lossy().into_owned(),
             cols: 80,
             rows: 24,
@@ -871,6 +883,7 @@ mod tests {
             body,
             run_id: "run-ledger".to_string(),
             session_id: "session-3".to_string(),
+            mount_id: Some("mount-credit".to_string()),
             cwd: cwd.clone(),
             cols: 80,
             rows: 24,
@@ -880,6 +893,7 @@ mod tests {
         let row = crate::proc::ledger::test_support::wait_for_row(&cwd);
         assert_eq!(row.kind, "script");
         assert_eq!(row.session_id.as_deref(), Some("session-3"));
+        assert_eq!(row.mount_id.as_deref(), Some("mount-credit"));
         assert!(row.pid > 0);
         let live = registry.list_live().expect("list");
         assert_eq!(live.len(), 1);
@@ -908,6 +922,7 @@ mod tests {
             body: body.to_string(),
             run_id: run_id.to_string(),
             session_id: "session-5".to_string(),
+            mount_id: None,
             cwd: cwd.to_string(),
             cols: 80,
             rows: 24,

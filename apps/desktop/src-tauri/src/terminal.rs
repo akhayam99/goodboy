@@ -15,6 +15,7 @@ use crate::pty_ring::{
     empty_snapshot, new_shared_ring, push_shared, snapshot_of, ExitedStore, OutputSnapshot,
     SharedRing,
 };
+use crate::terminal_exit_mark::ExitMark;
 use crate::terminal_scrollback;
 
 struct TerminalSession {
@@ -46,6 +47,7 @@ struct TerminalEntry {
     cwd: String,
     pid: Option<u32>,
     ring: SharedRing,
+    last_exit: Arc<Mutex<Option<ExitMark>>>,
 }
 
 #[derive(Default)]
@@ -60,12 +62,21 @@ impl TerminalRegistry {
         let map = self.0.lock().map_err(|_| TerminalError::Poisoned)?;
         Ok(map
             .iter()
-            .map(|(id, entry)| LiveTerminal {
-                id: id.clone(),
-                cwd: entry.cwd.clone(),
-                pid: entry.pid,
-                foreground_pid: foreground_leader(&entry.slot),
-                foreground_command: None,
+            .map(|(id, entry)| {
+                let last_exit = entry
+                    .last_exit
+                    .lock()
+                    .map(|mark| mark.clone())
+                    .unwrap_or(None);
+                LiveTerminal {
+                    id: id.clone(),
+                    cwd: entry.cwd.clone(),
+                    pid: entry.pid,
+                    foreground_pid: foreground_leader(&entry.slot),
+                    foreground_command: None,
+                    last_exit_code: last_exit.as_ref().map(|mark| mark.code),
+                    last_exit_command: last_exit.and_then(|mark| mark.command),
+                }
             })
             .collect())
     }
@@ -121,6 +132,8 @@ pub struct LiveTerminal {
     pid: Option<u32>,
     foreground_pid: Option<u32>,
     foreground_command: Option<String>,
+    last_exit_code: Option<i32>,
+    last_exit_command: Option<String>,
 }
 
 /// Drains every live terminal, killing the whole pty session behind each
@@ -192,6 +205,7 @@ fn login_shell() -> String {
 #[tauri::command]
 pub async fn terminal_open(
     app: AppHandle,
+    db: State<'_, crate::db::Db>,
     registry: State<'_, TerminalRegistry>,
     session_id: String,
     cwd: Option<String>,
@@ -208,12 +222,17 @@ pub async fn terminal_open(
         }
     }
 
+    let mount_id = session_id
+        .rsplit_once("::")
+        .and_then(|(owner, _)| crate::proc::ledger::mount_id_in(&db, owner, cwd.as_deref()));
     let request = TerminalSpawnRequest {
         scrollback_dir: scrollback_dir_of(&app),
+        hook_dir: shell_hook_dir_of(&app),
         app,
         registry: Arc::clone(&registry.0),
         exited: Arc::clone(&registry.1),
         session_id,
+        mount_id,
         cwd,
         cols,
         rows,
@@ -230,12 +249,27 @@ pub(crate) fn scrollback_dir_of<R: Runtime>(app: &AppHandle<R>) -> Option<PathBu
         .map(|dir| terminal_scrollback::dir_in(&dir))
 }
 
+const EXIT_STATUS_SETTING: &str = "terminal.exitStatus";
+
+fn shell_hook_dir_of(app: &AppHandle) -> Option<PathBuf> {
+    let setting = crate::editor::read_text_setting(app, EXIT_STATUS_SETTING);
+    if !crate::terminal_shell_hook::is_on(setting.as_deref()) {
+        return None;
+    }
+    app.path()
+        .app_data_dir()
+        .ok()
+        .map(|dir| dir.join("shell-integration"))
+}
+
 struct TerminalSpawnRequest<R: Runtime> {
     scrollback_dir: Option<PathBuf>,
+    hook_dir: Option<PathBuf>,
     app: AppHandle<R>,
     registry: Arc<Mutex<HashMap<String, TerminalEntry>>>,
     exited: Arc<ExitedStore>,
     session_id: String,
+    mount_id: Option<String>,
     cwd: Option<String>,
     cols: u16,
     rows: u16,
@@ -244,10 +278,12 @@ struct TerminalSpawnRequest<R: Runtime> {
 fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), TerminalError> {
     let TerminalSpawnRequest {
         scrollback_dir,
+        hook_dir,
         app,
         registry: registry_arc,
         exited,
         session_id: session_id_clone,
+        mount_id,
         cwd,
         cols,
         rows,
@@ -285,6 +321,17 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
     cmd.env("SHELL", &shell);
+    let hook_env = hook_dir.as_deref().and_then(|dir| {
+        crate::terminal_shell_hook::hook_env(
+            &shell,
+            dir,
+            std::env::var("ZDOTDIR").ok(),
+            std::env::var("HOME").ok(),
+        )
+    });
+    for (key, value) in hook_env.unwrap_or_default() {
+        cmd.env(key, value);
+    }
     let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Terminal);
 
     let child = pair
@@ -312,6 +359,10 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
                     .rsplit_once("::")
                     .map(|(owner, _)| owner.to_string()),
                 cwd: Some(effective_cwd.clone()),
+                owner: crate::proc::ledger::LedgerOwner {
+                    mount_id,
+                    ..Default::default()
+                },
                 ..Default::default()
             },
         );
@@ -326,6 +377,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     })));
 
     let ring = new_shared_ring();
+    let last_exit: Arc<Mutex<Option<ExitMark>>> = Arc::new(Mutex::new(None));
     if let Some(saved) = scrollback_dir
         .as_deref()
         .and_then(|dir| terminal_scrollback::take(dir, &session_id_clone))
@@ -344,6 +396,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
                 cwd: effective_cwd,
                 pid,
                 ring: Arc::clone(&ring),
+                last_exit: Arc::clone(&last_exit),
             },
         );
 
@@ -354,10 +407,16 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     thread::spawn(move || {
         let mut reader = reader;
         let mut buf = vec![0u8; 65536];
+        let mut marks = crate::terminal_exit_mark::ExitMarks::default();
         loop {
             match reader.read(&mut buf) {
                 Ok(0) | Err(_) => break,
                 Ok(n) => {
+                    if let Some(mark) = marks.feed(&buf[..n]) {
+                        if let Ok(mut slot) = last_exit.lock() {
+                            *slot = Some(mark);
+                        }
+                    }
                     let offset = push_shared(&ring, &buf[..n]);
                     let encoded = STANDARD.encode(&buf[..n]);
                     let _ = app_r.emit(
@@ -588,6 +647,7 @@ mod tests {
                 cwd: "/worktrees/api".to_string(),
                 pid: Some(4321),
                 ring: new_shared_ring(),
+                last_exit: Arc::new(Mutex::new(None)),
             },
         );
 
@@ -599,6 +659,8 @@ mod tests {
                 pid: Some(4321),
                 foreground_pid: None,
                 foreground_command: None,
+                last_exit_code: None,
+                last_exit_command: None,
             }]
         );
     }
@@ -707,6 +769,7 @@ mod tests {
                 cwd: "/".to_string(),
                 pid: None,
                 ring: new_shared_ring(),
+                last_exit: Arc::new(Mutex::new(None)),
             },
         );
 
@@ -737,10 +800,12 @@ mod tests {
 
         spawn_terminal(TerminalSpawnRequest {
             scrollback_dir: None,
+            hook_dir: None,
             app: app.handle().clone(),
             registry: Arc::clone(&registry.0),
             exited: Arc::clone(&registry.1),
             session_id: "session-7::t1".to_string(),
+            mount_id: Some("mount-credit".to_string()),
             cwd: Some(cwd.clone()),
             cols: 80,
             rows: 24,
@@ -750,6 +815,7 @@ mod tests {
         let row = crate::proc::ledger::test_support::wait_for_row(&cwd);
         assert_eq!(row.kind, "terminal");
         assert_eq!(row.session_id.as_deref(), Some("session-7"));
+        assert_eq!(row.mount_id.as_deref(), Some("mount-credit"));
         assert!(row.pid > 0);
         let live = registry.list_live().expect("list");
         assert_eq!(live.len(), 1);
@@ -773,10 +839,12 @@ mod tests {
         let registry = TerminalRegistry::new();
         spawn_terminal(TerminalSpawnRequest {
             scrollback_dir: None,
+            hook_dir: None,
             app: app.handle().clone(),
             registry: Arc::clone(&registry.0),
             exited: Arc::clone(&registry.1),
             session_id: "session-9::t1".to_string(),
+            mount_id: None,
             cwd: Some(cwd),
             cols: 80,
             rows: 24,
@@ -812,10 +880,12 @@ mod tests {
 
         spawn_terminal(TerminalSpawnRequest {
             scrollback_dir: Some(saved.clone()),
+            hook_dir: None,
             app: app.handle().clone(),
             registry: Arc::clone(&registry.0),
             exited: Arc::clone(&registry.1),
             session_id: "session-11::t1".to_string(),
+            mount_id: None,
             cwd: Some(cwd),
             cols: 80,
             rows: 24,
@@ -838,10 +908,12 @@ mod tests {
 
         let result = spawn_terminal(TerminalSpawnRequest {
             scrollback_dir: None,
+            hook_dir: None,
             app: app.handle().clone(),
             registry: Arc::clone(&registry.0),
             exited: Arc::clone(&registry.1),
             session_id: "session-12::t1".to_string(),
+            mount_id: None,
             cwd: Some("/mock/harborline/payments-api/gone".to_string()),
             cols: 80,
             rows: 24,
@@ -885,6 +957,7 @@ mod tests {
                 cwd: "/".to_string(),
                 pid,
                 ring: new_shared_ring(),
+                last_exit: Arc::new(Mutex::new(None)),
             },
         );
     }
@@ -907,6 +980,7 @@ mod tests {
                 cwd: "/".to_string(),
                 pid: None,
                 ring: new_shared_ring(),
+                last_exit: Arc::new(Mutex::new(None)),
             },
         );
         let mut closed = false;

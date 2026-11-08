@@ -1,10 +1,9 @@
-import type { SessionId } from '@goodboy/types';
 import { agentDisplayName } from '../../../shared/utils/agentDisplayName';
 import { LENS_LABEL } from '../../../features/session/lens-labels';
 import { NAMES } from '../../../shared/utils/names';
 import type { AppState } from '../../types';
 import type { LensKind } from '../session-view/types';
-import { sessionById } from '../sessions/sessionIndex';
+import { runTitleOf } from './runTitleOf';
 import type { Place } from './types';
 
 export type PlaceTitle = {
@@ -15,12 +14,6 @@ export type PlaceTitle = {
 type Params = {
   readonly state: AppState;
   readonly place: Place;
-};
-
-type RunParams = {
-  readonly state: AppState;
-  readonly sessionId: SessionId;
-  readonly runId: string;
 };
 
 const PROVIDER_LENSES: ReadonlySet<LensKind> = new Set<LensKind>([
@@ -38,22 +31,6 @@ type TitleParams = {
 const word = ({ title }: TitleParams): PlaceTitle => ({ title, isName: false });
 
 const name = ({ title }: TitleParams): PlaceTitle => ({ title, isName: true });
-
-const runTitleOf = ({ state, sessionId, runId }: RunParams): string | null => {
-  const session = sessionById(state.sessions, sessionId) ?? null;
-  const run = session?.workflowRuns.find((candidate) => candidate.id === runId) ?? null;
-  if (run === null) {
-    return null;
-  }
-  if (run.title != null && run.title.trim() !== '') {
-    return run.title;
-  }
-  const workflows = [
-    ...(state.sessionWorkflows[sessionId] ?? []),
-    ...(session === null ? [] : (state.phaseTemplates[session.workspaceId] ?? [])),
-  ];
-  return workflows.find((workflow) => workflow.id === run.workflowId)?.name ?? null;
-};
 
 export const placeTitleOf = ({ state, place }: Params): PlaceTitle => {
   if (place.at === 'board') {

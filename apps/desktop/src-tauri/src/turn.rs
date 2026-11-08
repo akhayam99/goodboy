@@ -123,6 +123,10 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub mount_id: Option<String>,
     #[serde(default)]
+    pub agent_id: Option<String>,
+    #[serde(default)]
+    pub workflow_run_id: Option<String>,
+    #[serde(default)]
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
@@ -210,6 +214,8 @@ pub(crate) struct SpawnOneArgs<'a> {
     pub workspace_id: Option<&'a str>,
     pub session_id: Option<&'a str>,
     pub mount_id: Option<&'a str>,
+    pub agent_id: Option<&'a str>,
+    pub workflow_run_id: Option<&'a str>,
     pub cursor_max_mode: bool,
     pub writer_lease: Option<&'a WriterLeaseBinding>,
     pub write_set_lease: Option<&'a crate::worktree_writer::WriteSetBinding>,
@@ -427,6 +433,11 @@ fn spawn_one<E: TurnEmitter>(
             prompt,
             session_id: args.session_id.map(str::to_string),
             mount_path: args.writer_lease.map(|binding| binding.path.clone()),
+            owner: crate::proc::ledger::LedgerOwner {
+                agent_id: args.agent_id.map(str::to_string),
+                run_id: args.workflow_run_id.map(str::to_string),
+                mount_id: args.mount_id.map(str::to_string),
+            },
         },
         |command, stdin| {
             let (child, guards, turn) = spawn_leased_child(
@@ -587,6 +598,8 @@ fn spawn_turn(app: &AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
             workspace_id: args.workspace_id.as_deref(),
             session_id: args.session_id.as_deref(),
             mount_id: args.mount_id.as_deref(),
+            agent_id: args.agent_id.as_deref(),
+            workflow_run_id: args.workflow_run_id.as_deref(),
             cursor_max_mode: args.cursor_max_mode,
             writer_lease: args.writer_lease.as_ref(),
             write_set_lease: args.write_set_lease.as_ref(),
@@ -1095,6 +1108,8 @@ mod tests {
             workspace_id: None,
             session_id: None,
             mount_id: None,
+            agent_id: None,
+            workflow_run_id: None,
             cursor_max_mode: false,
             writer_lease: None,
             write_set_lease: None,
@@ -1132,6 +1147,8 @@ mod tests {
             workspace_id: None,
             session_id: None,
             mount_id: None,
+            agent_id: None,
+            workflow_run_id: None,
             cursor_max_mode: false,
             writer_lease: None,
             write_set_lease: None,

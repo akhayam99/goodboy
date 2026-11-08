@@ -23,6 +23,8 @@ export type LiveTerminal = {
   readonly pid: number | null;
   readonly foregroundPid: number | null;
   readonly foregroundCommand?: string | null;
+  readonly lastExitCode?: number | null;
+  readonly lastExitCommand?: string | null;
 };
 
 export const invokeTerminalListLive = (): Promise<ReadonlyArray<LiveTerminal>> => {

@@ -92,4 +92,46 @@ describe('useMonitorPolling', () => {
 
     expect(refresh).not.toHaveBeenCalled();
   });
+
+  it('starts one interval however many surfaces ask for the snapshot', async () => {
+    renderHook(() => useMonitorPolling());
+    renderHook(() => useMonitorPolling());
+    await advance(0);
+    refresh.mockClear();
+
+    await advance(5000);
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps polling for the surface that stays when the other one unmounts', async () => {
+    const first = renderHook(() => useMonitorPolling());
+    renderHook(() => useMonitorPolling());
+    await advance(0);
+    first.unmount();
+    refresh.mockClear();
+
+    await advance(5000);
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not poll or load while the surface is not on screen', async () => {
+    const view = renderHook(({ isEnabled }) => useMonitorPolling({ isEnabled }), {
+      initialProps: { isEnabled: false },
+    });
+    await advance(20000);
+
+    expect(load).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+
+    view.rerender({ isEnabled: true });
+    await advance(0);
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    view.rerender({ isEnabled: false });
+    refresh.mockClear();
+    await advance(20000);
+    expect(refresh).not.toHaveBeenCalled();
+  });
 });

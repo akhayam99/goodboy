@@ -98,6 +98,8 @@ With two or more branches a switch groups the page **By branch** or **By state**
 
 A row's branch chip opens the Branch page, **Also on** shows the same run in its other group, and a title click opens the run at once. Right click a row and pick **Rename** to edit its title. The Branch page has a **Work** tab with the runs, questions and artifacts of that branch, the same rows as these pages. **All runs** opens this page with the group of the branch open, in the grouping you chose. **Open branch** on a group opens that Work tab, and Back from a run returns to it.
 
+When something listens on a port on this branch, a **Running here** line lists the ports and what opened them, and opens Monitoring on this branch. Nothing runs, no line.
+
 ### Hints to the orchestrator
 
 Every hint is a round node on the run's line, like a step, and the line runs through it without a break. It runs on through several hints that come after the last step. Queued hints sit on that line under the steps, under the heading **Queued, read at the next decision**. A queued hint has a dashed node. Its text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it. Its images are small thumbnails at the end of the same line, and a click opens them in the viewer.

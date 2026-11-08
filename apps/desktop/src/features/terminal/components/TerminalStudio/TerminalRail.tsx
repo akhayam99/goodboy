@@ -33,6 +33,8 @@ export const TerminalRail = ({ model }: Props) => {
                 group={group}
                 selectedKey={selectedKey}
                 busyIds={model.busyIds}
+                exits={model.exits}
+                commandOf={model.commandOf}
                 portsByTerminal={portsByTerminal}
                 onSelect={model.selectWorktree}
                 onCloseAll={model.closeGroup}

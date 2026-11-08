@@ -6,7 +6,7 @@ use std::sync::mpsc::{channel, RecvTimeoutError};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
-use crate::proc::ledger::{self, LedgerContext};
+use crate::proc::ledger::{self, LedgerContext, LedgerOwner};
 use crate::proc::reap::{reap, tree_cpu, ReapParams, StoppedProcess};
 use crate::proc::spawn::{spawn_command, take_pipes, StdinMode};
 use crate::util::lock_or_recover;
@@ -161,6 +161,7 @@ pub struct SpawnTaggedParams<'a> {
     pub prompt: Option<String>,
     pub session_id: Option<String>,
     pub mount_path: Option<String>,
+    pub owner: LedgerOwner,
 }
 
 pub fn spawn_tagged(params: SpawnTaggedParams<'_>) -> std::io::Result<Spawned> {
@@ -177,6 +178,7 @@ pub fn spawn_tagged_with<X, E, L>(
         prompt,
         session_id,
         mount_path,
+        owner,
     }: SpawnTaggedParams<'_>,
     launch: L,
 ) -> Result<(Spawned, X), E>
@@ -196,6 +198,7 @@ where
         LedgerContext {
             session_id,
             mount_path,
+            owner,
             ..LedgerContext::from_command(command)
         },
     );
@@ -263,6 +266,7 @@ pub fn run_side_job(
         prompt,
         session_id: None,
         mount_path: None,
+        owner: LedgerOwner::default(),
     })?;
 
     let key = run_id
@@ -768,7 +772,7 @@ mod tests {
     #[test]
     fn a_tagged_child_is_in_the_ledger_until_it_is_reaped() {
         use crate::aux_spawn::{tag_spawn, SpawnKind};
-        use crate::proc::ledger::{process_ledger_list, test_support::scratch_dir};
+        use crate::proc::ledger::{global, test_support::scratch_dir};
         let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
         let dir = scratch_dir("turn");
         let mut command = std::process::Command::new("sleep");
@@ -787,7 +791,8 @@ mod tests {
         );
         register(&registry, "turn-1", &live);
 
-        let rows: Vec<_> = process_ledger_list()
+        let rows: Vec<_> = global()
+            .list()
             .into_iter()
             .filter(|row| row.spawn_id == tag.id)
             .collect();
@@ -803,9 +808,7 @@ mod tests {
         assert!(kill_one(&registry, "turn-1"));
         assert_waiter_returns(waiter, Duration::from_secs(3), "the turn outlived the kill");
 
-        assert!(!process_ledger_list()
-            .iter()
-            .any(|row| row.spawn_id == tag.id));
+        assert!(!global().list().iter().any(|row| row.spawn_id == tag.id));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1003,6 +1006,7 @@ mod tests {
             prompt: None,
             session_id: None,
             mount_path: None,
+            owner: LedgerOwner::default(),
         })
         .expect("spawn the probe");
         let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));

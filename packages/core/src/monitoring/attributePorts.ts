@@ -99,6 +99,8 @@ const ownerFor = (
       sessionId: entry.sessionId ?? location.sessionId,
       worktreePath: location.worktreePath,
       projectId: location.projectId,
+      ...(entry.agentId != null && { agentId: entry.agentId }),
+      ...(entry.runId != null && { runId: entry.runId }),
     };
   }
   if (location.sessionId !== null && location.worktreePath !== null) {

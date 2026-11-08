@@ -7,7 +7,7 @@ import type {
 import type { Project } from '@goodboy/types';
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { ledgerKindWord } from './ledgerKindWord';
-import { mountContaining } from './mountContaining';
+import { ledgerMountOf } from './ledgerMountOf';
 import type { OwnedMount } from './ownedMountsOf';
 
 type Params = {
@@ -61,7 +61,8 @@ export const startedByGoodboy = ({
     .filter((entry) => entry.kind !== 'probe' && processes.has(entry.pid))
     .map((entry) => {
       const process = processes.get(entry.pid);
-      const mount = mountContaining({
+      const mount = ledgerMountOf({
+        entry,
         mounts,
         sessionId: entry.sessionId,
         path: entry.mountPath ?? entry.cwd,

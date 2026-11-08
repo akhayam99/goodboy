@@ -1,7 +1,9 @@
-import { Tooltip, TruncatedText, cn, FOCUS_RING } from '@goodboy/ui';
+import { Fragment } from 'react';
+import { ChevronRight } from 'lucide-react';
+import { Tooltip, TruncatedText, cn, FOCUS_RING, ICON_SIZE } from '@goodboy/ui';
 import type { PortRow } from '@goodboy/core/monitoring';
-import { sessionPlace, useAppStore } from '../../../../store';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { useAppStore } from '../../../../store';
+import { usePortOwnerChain } from '../../hooks/usePortOwnerChain';
 import { portOwnerPresentation } from '../../portOwnerPresentation';
 
 type Props = {
@@ -20,37 +22,53 @@ export const OwnerCell = ({ row }: Props) => {
   const sessionMounts = useAppStore((state) => state.sessionMounts);
   const navigate = useAppStore((state) => state.navigate);
   const presentation = portOwnerPresentation({ row, projects, sessionMounts });
-  const session = useAppStore((state) =>
-    presentation?.sessionId === undefined || presentation.sessionId === null
-      ? undefined
-      : sessionById(state.sessions, presentation.sessionId),
-  );
-
-  const text = presentation === null ? null : <TruncatedText>{presentation.label}</TruncatedText>;
+  const chain = usePortOwnerChain({ row });
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      {presentation === null || text === null ? null : session === undefined ? (
+      {chain.length > 0 ? (
+        <span className="flex min-w-0 max-w-full items-center gap-1 text-muted-foreground">
+          {chain.map(({ kind, word, label, to }, index) => (
+            <Fragment key={kind}>
+              {index === 0 ? null : (
+                <ChevronRight
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className="shrink-0 text-faint-foreground"
+                />
+              )}
+              {word === null ? null : (
+                <span className="shrink-0 text-faint-foreground">{word}</span>
+              )}
+              {to === null ? (
+                <span className="flex min-w-0">
+                  <TruncatedText>{label}</TruncatedText>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  aria-label={`Open ${kind}: ${label}`}
+                  className={cn(
+                    'relative z-10 flex min-w-0 text-left text-muted-foreground underline-offset-2 hover:text-foreground hover:underline',
+                    FOCUS_RING,
+                  )}
+                  onClick={() => navigate({ to })}
+                >
+                  <TruncatedText>{label}</TruncatedText>
+                </button>
+              )}
+            </Fragment>
+          ))}
+        </span>
+      ) : presentation === null ? null : (
         <span
           className={cn(
             'flex min-w-0 max-w-full',
             presentation.isGoodboy ? 'text-muted-foreground' : 'text-faint-foreground',
           )}
         >
-          {text}
+          <TruncatedText>{presentation.label}</TruncatedText>
         </span>
-      ) : (
-        <button
-          type="button"
-          aria-label={`Open session: ${presentation.label}`}
-          className={cn(
-            'relative z-10 flex min-w-0 max-w-full text-left text-muted-foreground hover:text-foreground',
-            FOCUS_RING,
-          )}
-          onClick={() => navigate({ to: sessionPlace({ sessionId: session.id }) })}
-        >
-          {text}
-        </button>
       )}
       {row.collision === undefined ? null : (
         <Tooltip content={otherWorktrees({ others: row.collision.others })}>

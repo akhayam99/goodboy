@@ -152,16 +152,14 @@ describe('the four layers', () => {
   it('shows the whole owner text in a tooltip when the chip truncates it', async () => {
     await ready();
     const chip = within(layer({ name: 'Run by Goodboy' })).getByText(
-      'Script · payments-api · hl/fix-duplicate-credit',
+      'payments-api · hl/fix-duplicate-credit',
     );
 
     fireEvent.mouseEnter(asCutText({ element: chip }));
     await waitFor(
       () =>
         expect(
-          within(screen.getByRole('tooltip')).getByText(
-            'Script · payments-api · hl/fix-duplicate-credit',
-          ),
+          within(screen.getByRole('tooltip')).getByText('payments-api · hl/fix-duplicate-credit'),
         ).toBeDefined(),
       { timeout: 2000 },
     );

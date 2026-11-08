@@ -80,6 +80,8 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
       workspaceId: session.workspaceId,
       sessionId,
       ...(turnMountId !== null && copyPath === null && { mountId: turnMountId }),
+      agentId: turnSpanBase.agentId,
+      ...(turnSpanBase.workflowRunId !== null && { workflowRunId: turnSpanBase.workflowRunId }),
       ...(resumeSessionId !== undefined && { resumeSessionId }),
       systemPrompt: fullSystemPrompt,
       ...(effortFlag !== undefined && { effort: effortFlag }),

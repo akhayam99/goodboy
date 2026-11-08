@@ -29,6 +29,7 @@ import {
 import { terminalWorktreeKeyIn } from '../../../../store/slices/terminal/terminalWorktree';
 import { changeDirectoryInput } from '../../changeDirectoryInput';
 import { forgetTerminalCommand, lastCommandOf } from '../../commandTracker';
+import type { TerminalExit } from '../../terminalActivityOf';
 import { terminalCommandOf } from '../../terminalCommandOf';
 import { restartPrefillOf } from '../../restartPrefillOf';
 import { invokeTerminalWrite } from '../../terminal';
@@ -75,6 +76,7 @@ export type TerminalStudioModel = {
   readonly folder: string | null;
   readonly home: string | null;
   readonly busyIds: ReadonlySet<string>;
+  readonly exits: ReadonlyMap<string, TerminalExit>;
   readonly selectWorktree: (worktree: TerminalWorktree) => void;
   readonly selectTab: (tab: TerminalTab) => void;
   readonly newTab: () => void;
@@ -188,7 +190,11 @@ export const useTerminalStudioModel = ({
     () => allWorktrees({ groups }).flatMap((candidate) => candidate.tabs),
     [groups],
   );
-  const { busy: busyIds, commands: foregroundCommands } = useTerminalLedger({
+  const {
+    busy: busyIds,
+    commands: foregroundCommands,
+    exits,
+  } = useTerminalLedger({
     isEnabled: allTabs.length > 0,
   });
 
@@ -463,6 +469,7 @@ export const useTerminalStudioModel = ({
     folder,
     home,
     busyIds,
+    exits,
     selectWorktree,
     selectTab,
     newTab: openDefault,

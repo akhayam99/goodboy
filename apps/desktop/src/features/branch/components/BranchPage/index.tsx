@@ -43,6 +43,7 @@ import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
 import { BranchHeader } from '../BranchHeader';
+import { BranchRunningLine } from '../BranchRunningLine';
 import { BranchStartLine } from '../BranchStartLine';
 import { BranchTabStrip } from '../BranchTabStrip';
 import { BranchWorkLines } from '../BranchWorkLines';
@@ -101,10 +102,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     repoRoot: repo?.repoRoot ?? null,
   });
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
-  const { entries: sources, source: activeSource } = useActiveReviewSource({
-    sessionId,
-    mountId: historyMountId,
-  });
+  const sources = useActiveReviewSource({ sessionId, mountId: historyMountId });
   const branchReview = useBranchReview({ sessionId, mountId: historyMountId });
   const diff = useSessionDiff({
     sessionId,
@@ -256,13 +254,13 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   }, [onMutated, sessionId, setPullRequestMode]);
 
   const isGithubConnected = !githubConnection.isResolved || githubConnection.isAuthenticated;
-  const capabilities = activeSource?.capabilities ?? REVIEW_SOURCE_CAPABILITIES[host];
+  const capabilities = sources.source?.capabilities ?? REVIEW_SOURCE_CAPABILITIES[host];
   const isFormLeading =
     isBranchStart &&
     tab === 'pr' &&
     start.step.state === 'unpushed' &&
     !bitbucketRemote.isBitbucket &&
-    (sources.length > 0 || repo !== null);
+    (sources.entries.length > 0 || repo !== null);
   const isPrimaryYielding =
     isFormLeading ||
     pushPhaseYieldsOf({ kind: branchReview.push.phase.kind }) ||
@@ -284,7 +282,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       : { kind: 'disabled', reason: requestReason };
 
   const body = () => {
-    if ((tab === 'pr' || tab === 'comments') && sources.length === 0 && repo === null) {
+    if ((tab === 'pr' || tab === 'comments') && sources.entries.length === 0 && repo === null) {
       return (
         <NoPullRequest
           session={session}
@@ -436,6 +434,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               canEditTitle={canEditTitle}
               onMutated={onMutated}
             />
+            <BranchRunningLine session={session} mount={identity.mount} isActive={isActive} />
             <BranchTabStrip tabs={tabs} facts={entryFacts} value={tab} onSelect={selectTab} />
             <BranchWorkLines
               session={session}

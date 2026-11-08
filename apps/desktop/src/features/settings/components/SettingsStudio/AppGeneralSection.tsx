@@ -5,6 +5,7 @@ import { OpenWithBand } from './OpenWithBand';
 import { SearchIndexBand } from './SearchIndexBand';
 import { RepoCheckBand } from './RepoCheckBand';
 import { AwayAlertsBand } from './AwayAlertsBand';
+import { TerminalExitStatusBand } from './TerminalExitStatusBand';
 
 export const AppGeneralSection = () => (
   <div className="flex flex-col gap-6">
@@ -18,6 +19,8 @@ export const AppGeneralSection = () => (
     <AwayAlertsBand />
 
     <OpenWithBand />
+
+    <TerminalExitStatusBand />
 
     <RepoCheckBand />
 
