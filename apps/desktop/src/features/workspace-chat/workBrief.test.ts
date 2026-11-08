@@ -95,4 +95,37 @@ describe('draftWorkBrief', () => {
     expect(brief.projects).toEqual(['notify-relay']);
     expect(brief.know).toEqual(['Cap the retry loop in notify-relay.']);
   });
+
+  it('keeps underscores in a path inside inline code', () => {
+    const brief = draftWorkBrief({
+      title: 'Harborline retries?',
+      messages: [
+        messageOf({ role: 'user', content: 'What next?' }),
+        messageOf({
+          role: 'assistant',
+          content: 'Edit `notify-relay/src/__tests__/retry.test.ts` first.',
+        }),
+      ],
+      projectNames: ['notify-relay'],
+    });
+
+    expect(brief.files).toEqual(['notify-relay/src/__tests__/retry.test.ts']);
+  });
+
+  it('keeps a bare dunder path and still strips bold', () => {
+    const brief = draftWorkBrief({
+      title: 'Harborline retries?',
+      messages: [
+        messageOf({ role: 'user', content: 'What next?' }),
+        messageOf({
+          role: 'assistant',
+          content: 'Edit ledger-core/pkg/__init__.py and **cap** the loop.',
+        }),
+      ],
+      projectNames: ['ledger-core'],
+    });
+
+    expect(brief.files).toEqual(['ledger-core/pkg/__init__.py']);
+    expect(brief.know).toEqual(['Edit ledger-core/pkg/__init__.py and cap the loop.']);
+  });
 });

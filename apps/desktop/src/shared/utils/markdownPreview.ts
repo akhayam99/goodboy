@@ -11,8 +11,10 @@ const COMMENT_OPEN = '<!--';
 const COMMENT_CLOSE = '-->';
 const FENCE_OPEN = /^ {0,3}(`{3,}|~{3,})/;
 const BLOCK_MARKER = /^(?:#{1,6}[ \t]+|>[ \t]?|[-*+][ \t]+|\d{1,9}\.[ \t]+)+/;
-const BOLD_RE = /\*\*([^*]+)\*\*|__([^_]+)__/g;
-const ITALIC_RE = /(?<![*\w])\*([^*]+)\*(?!\*)|(?<![_\w])_([^_]+)_(?!_)/g;
+const BOLD_RE = /(?<![\w/])\*\*([^*]+)\*\*(?![/]|\.\w)|(?<![\w/.-])__([^_]+)__(?![\w/]|\.\w)/g;
+const ITALIC_RE = /(?<![*\w/])\*([^*]+)\*(?![*/])|(?<![_\w/.-])_([^_]+)_(?![_\w/]|\.\w)/g;
+const LITERAL_UNDERSCORE = '';
+const LITERAL_STAR = '';
 
 type ScanParams = {
   readonly line: string;
@@ -138,7 +140,11 @@ const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResu
         i += run;
         continue;
       }
-      out += line.slice(i + run, close).trim();
+      out += line
+        .slice(i + run, close)
+        .trim()
+        .replaceAll('_', LITERAL_UNDERSCORE)
+        .replaceAll('*', LITERAL_STAR);
       i = close + run;
       continue;
     }
@@ -204,6 +210,8 @@ const flatLineOf = ({ text, shouldKeepMarkers }: FlatParams): string => {
   const spaced = text.replace(/\s+/g, ' ').trim();
   const marker = BLOCK_MARKER.exec(spaced)?.[0] ?? '';
   const body = emphasisFreeOf({ text: spaced.slice(marker.length) })
+    .replaceAll(LITERAL_UNDERSCORE, '_')
+    .replaceAll(LITERAL_STAR, '*')
     .replace(/\s+/g, ' ')
     .trim();
   return shouldKeepMarkers ? `${marker}${body}`.trim() : body;
