@@ -1,14 +1,20 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+
 use tauri::ipc::{CallbackFn, InvokeBody};
 use tauri::test::{
     get_ipc_response, mock_app, mock_builder, mock_context, noop_assets, MockRuntime, INVOKE_KEY,
 };
 use tauri::webview::InvokeRequest;
-use tauri::{App, Manager, Url, Webview, WebviewUrl, WebviewWindowBuilder, Window};
+use tauri::{App, Listener, Manager, Url, Webview, WebviewUrl, WebviewWindowBuilder, Window};
 
-use super::commands::owned_tab;
+use super::commands::{close_session, list_session, owned_tab};
 use super::guard::label_of;
-use super::host::{close_session, close_tab, open_tab, OpenTab, TabBounds};
-use super::reason::{BROWSER_CALLER, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_GONE};
+use super::host::{
+    close_each, close_tab, fill_popup, open_tab, reserve_popup, OpenTab, SessionClosed, TabBounds,
+    MAX_HIDDEN_POPUPS, TAB_OPENED_EVENT,
+};
+use super::reason::{BROWSER_CALLER, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_GONE, TOO_MANY_POPUPS};
 use super::{forget_window, refuse_browser_pages, BrowserRegistry};
 use crate::util::source_scan::production_hits;
 use crate::util::MessageError;
@@ -61,7 +67,7 @@ fn opens_a_tab_as_a_child_of_the_window_that_asked() {
     let id = open(&app, "main", "harborline");
     let webview = app.get_webview(&label_of(&id)).expect("child webview");
     assert_eq!(webview.window().label(), "main");
-    let facts = app.state::<BrowserRegistry>().list("harborline");
+    let facts = app.state::<BrowserRegistry>().list("harborline", "main");
     assert_eq!(facts.len(), 1);
     assert_eq!(facts[0].url, "http://localhost:5173/");
     assert!(facts[0].is_shown);
@@ -176,21 +182,150 @@ fn refuses_every_app_command_to_a_browser_page_even_from_a_local_address() {
     assert_eq!(refused["message"], BROWSER_CALLER);
 }
 
+fn webview(app: &App<MockRuntime>, label: &str) -> Webview<MockRuntime> {
+    app.get_webview(label).expect("webview exists")
+}
+
 #[test]
-fn closes_every_tab_of_an_archived_session_and_no_other() {
+fn closes_the_session_tabs_of_the_calling_window_and_no_other() {
     let app = app_with_windows(&["main", "win-2"]);
     let first = open(&app, "main", "harborline");
-    let second = open(&app, "win-2", "harborline");
+    let second = open(&app, "main", "harborline");
+    let elsewhere = open(&app, "win-2", "harborline");
     let kept = open(&app, "main", "northwind");
+    let closed = close_session(&webview(&app, "main"), "harborline").expect("closes");
     assert_eq!(
-        close_session(app.handle(), "harborline").expect("closes"),
-        2
+        closed,
+        SessionClosed {
+            closed: 2,
+            failed: vec![]
+        }
     );
     let registry = app.state::<BrowserRegistry>();
-    assert!(registry.list("harborline").is_empty());
-    assert_eq!(registry.ids_of_session("northwind"), vec![kept]);
     assert!(registry.facts(&first).is_none());
     assert!(registry.facts(&second).is_none());
+    assert_eq!(registry.ids_of_session("northwind", "main"), vec![kept]);
+    assert_eq!(
+        registry.ids_of_session("harborline", "win-2"),
+        vec![elsewhere]
+    );
+    assert!(app.get_webview(&label_of(&first)).is_none());
+}
+
+#[test]
+fn lists_only_the_session_tabs_of_the_calling_window() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let mine = open(&app, "main", "harborline");
+    let theirs = open(&app, "win-2", "harborline");
+    let ids = |label: &str| -> Vec<String> {
+        list_session(&webview(&app, label), "harborline")
+            .expect("lists")
+            .into_iter()
+            .map(|facts| facts.id)
+            .collect()
+    };
+    assert_eq!(ids("main"), vec![mine.clone()]);
+    assert_eq!(ids("win-2"), vec![theirs]);
+    let page = webview(&app, &label_of(&mine));
+    assert!(matches!(
+        list_session(&page, "harborline"),
+        Err(MessageError::Refused(code)) if code == BROWSER_CALLER
+    ));
+    assert!(matches!(
+        close_session(&page, "harborline"),
+        Err(MessageError::Refused(code)) if code == BROWSER_CALLER
+    ));
+}
+
+#[test]
+fn closes_the_rest_of_a_session_on_retry_after_a_partial_failure() {
+    let app = app_with_windows(&["main"]);
+    let first = open(&app, "main", "harborline");
+    let stuck = open(&app, "main", "harborline");
+    let last = open(&app, "main", "harborline");
+    let ids = app
+        .state::<BrowserRegistry>()
+        .ids_of_session("harborline", "main");
+    let partial = close_each(&ids, |id| match id == stuck {
+        true => Err(MessageError::Failed("webview-busy".to_string())),
+        false => close_tab(app.handle(), id),
+    });
+    assert_eq!(partial.closed, 2);
+    assert_eq!(partial.failed.len(), 1);
+    assert_eq!(partial.failed[0].tab_id, stuck);
+    assert_eq!(partial.failed[0].reason, "webview-busy");
+    let registry = app.state::<BrowserRegistry>();
+    assert!(registry.facts(&first).is_none());
+    assert!(registry.facts(&last).is_none());
+    assert_eq!(
+        registry.ids_of_session("harborline", "main"),
+        vec![stuck.clone()]
+    );
+
+    let retried = close_session(&webview(&app, "main"), "harborline").expect("closes");
+    assert_eq!(
+        retried,
+        SessionClosed {
+            closed: 1,
+            failed: vec![]
+        }
+    );
+    assert!(registry.is_empty());
+    assert!(app.get_webview(&label_of(&stuck)).is_none());
+}
+
+#[test]
+fn opens_popups_hidden_beside_the_opener_up_to_the_cap_and_tells_the_window() {
+    let app = app_with_windows(&["main"]);
+    let opener = open(&app, "main", "harborline");
+    let heard = Arc::new(AtomicUsize::new(0));
+    let counter = Arc::clone(&heard);
+    app.listen_any(TAB_OPENED_EVENT, move |_event| {
+        counter.fetch_add(1, Ordering::SeqCst);
+    });
+    for _ in 0..MAX_HIDDEN_POPUPS {
+        let seat = reserve_popup(app.handle(), &opener).expect("seat");
+        let facts = fill_popup(app.handle(), &seat, url("https://example.com/")).expect("opens");
+        assert!(!facts.is_shown);
+        assert_eq!(facts.session_id, "harborline");
+        assert_eq!(facts.opener_id.as_deref(), Some(opener.as_str()));
+        assert_eq!(webview(&app, &label_of(&facts.id)).window().label(), "main");
+    }
+    assert!(matches!(
+        reserve_popup(app.handle(), &opener),
+        Err(MessageError::Refused(code)) if code == TOO_MANY_POPUPS
+    ));
+    assert_eq!(heard.load(Ordering::SeqCst), MAX_HIDDEN_POPUPS);
+    assert_eq!(
+        app.state::<BrowserRegistry>()
+            .ids_of_session("harborline", "main")
+            .len(),
+        MAX_HIDDEN_POPUPS + 1
+    );
+}
+
+#[test]
+fn frees_a_popup_seat_when_the_user_shows_the_popup() {
+    let app = app_with_windows(&["main"]);
+    let opener = open(&app, "main", "harborline");
+    let mut opened = vec![];
+    for _ in 0..MAX_HIDDEN_POPUPS {
+        let seat = reserve_popup(app.handle(), &opener).expect("seat");
+        opened.push(fill_popup(app.handle(), &seat, url("https://example.com/")).expect("opens"));
+    }
+    assert!(reserve_popup(app.handle(), &opener).is_err());
+    app.state::<BrowserRegistry>()
+        .set_shown(&opened[0].id, true, 5_000);
+    assert!(reserve_popup(app.handle(), &opener).is_ok());
+}
+
+#[test]
+fn refuses_a_popup_seat_for_a_gone_opener() {
+    let app = app_with_windows(&["main"]);
+    assert!(matches!(
+        reserve_popup(app.handle(), "gone"),
+        Err(MessageError::Failed(code)) if code == TAB_GONE
+    ));
 }
 
 #[test]
@@ -220,7 +355,8 @@ fn forgets_the_tabs_of_a_destroyed_window() {
     let kept = open(&app, "main", "harborline");
     forget_window(app.handle(), "win-2");
     assert_eq!(
-        app.state::<BrowserRegistry>().ids_of_session("harborline"),
+        app.state::<BrowserRegistry>()
+            .ids_of_session("harborline", "main"),
         vec![kept]
     );
 }

@@ -27,23 +27,30 @@ address.
 
 - Only `http` and `https` load. `javascript:`, `data:`, `blob:`, `file:` and
   every other scheme are refused.
-- `about:blank` loads only as a tab's first page.
+- `about:blank` and `about:srcdoc` pass at any time. Such a page or frame
+  takes its creator's origin, so it can never make a tab local. A new tab may
+  start on `about:blank`, never on `about:srcdoc`.
 - The app's own origins are refused even on `http`: `tauri://localhost`,
   `http://tauri.localhost` and `https://tauri.localhost` (Windows), every
   scheme Goodboy or Tauri registers (`tauri`, `ipc`, `asset`, `gbframe`) and
   its `<scheme>.localhost` form, and in a development build the `devUrl`
-  origin. A release build may open a server on that port, because there it
-  is not the app.
+  origin. When the `devUrl` host is a loopback name, every loopback host on
+  its port counts as that origin: `localhost`, any `*.localhost`,
+  `127.0.0.0/8`, `[::1]`, `0.0.0.0` and `[::]`. A release build may open a
+  server on that port, because there it is not the app.
 - A page that sends itself to one of those addresses stays where it was. A
   server redirect, a form post, a meta refresh and a `location` change each
-  reach `on_navigation` as a new address and meet the same rule; only a
-  tab's very first navigation may be `about:blank`, refused or not.
+  reach `on_navigation` as a new address and meet the same rule.
 - On macOS a frame's load reaches `on_navigation` too. On Windows WebView2
   reports only the top page, so a frame is not checked there; the app's own
   policy carries `frame-ancestors 'none'`, so no page can frame the app.
 - A popup (`window.open`, a link with a target) never becomes a window. When
   its address passes the rule it opens as a new hidden tab in the opener's
-  session and window; otherwise nothing opens.
+  session and window, and that window hears `browser://tab-opened` with the
+  tab's facts (`openerId` names the tab that opened it). A session holds at
+  most four hidden popups, those still opening included; past that a popup
+  is refused with `too-many-popups` in the log. Showing or closing one frees
+  its seat. Otherwise nothing opens.
 - Every download is refused. The ask lands with the pane, which is the first
   part that can listen for it.
 
@@ -56,9 +63,12 @@ commands, and got all six once it navigated itself to the dev origin or to
 - A tab's webview is a child of the window that asked for it, labelled
   `browse-<id>`. It is created when the tab opens, never at boot.
 - Only the owning window may drive a tab, and a `browse-` webview may drive
-  none.
+  none. Listing a session's tabs and closing them reach only the calling
+  window's tabs.
 - Closing a session's tabs is one command, `browser_session_close`, for the
-  store to call when a session is archived.
+  store to call when a session is archived. It tries every tab and answers
+  `{ closed, failed }`; a tab that failed to close stays listed, so calling
+  again closes the rest.
 - A destroyed window's tabs leave the registry with it.
 - The registry stamps when a tab was hidden. The sleep and close policy reads
   that stamp; it is not built yet.
@@ -75,28 +85,47 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 `browser::refuse_browser_pages`, which answers every app command from a
 `browse-` webview with the `browser-caller` code before it runs.
 
+## Known limits
+
+- Tauri gives a tab the same initialization scripts as a window, and 2.12
+  has no option to leave them out of a child webview. Every page in a tab
+  sees `__TAURI_INTERNALS__` with the invoke key and the window and webview
+  labels, and runs under the `freezePrototype` script from `tauri.conf.json`
+  (not yet checked in a real tab). A site that assigns `toString` or
+  `constructor` on a plain object throws in strict mode there. The command
+  wall is the guarantee, not the missing script (`docs/traps.md`).
+- Back and forward are native on macOS: the host steps the WebKit view's own
+  history, so a page cannot trap them. Tauri 2.12 exposes no
+  native step, so on Windows and Linux they still run `history.back()` and
+  `history.forward()` inside the page, which the page can redefine.
+
 ## Errors
 
 A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
-`window-gone`, `other-window`), never a sentence. The pane owns the words.
+`window-gone`, `other-window`, `too-many-popups`), never a sentence. The pane
+owns the words.
 
 ## Under the hood
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  eleven `browser_*` commands; `registry.rs` holds the tabs.
-- `guard::tests` pins every refused origin, `http` and `https` pages,
-  `javascript:`, `data:`, `file:`, `about:blank` and a page that sends itself
-  to the app, and walks `NavigationGate` through redirect, form post, blank
-  first page and script sequences. It also fails when `lib.rs` registers a
-  scheme the rule does not refuse. The rule is a pure function because no
-  test can load a page headless.
+  eleven `browser_*` commands; `registry.rs` holds the tabs and the popup
+  seats (`MAX_HIDDEN_POPUPS`). The native back and forward step lives in
+  `src-tauri/src/platform/web_history.rs`, the only `unsafe` the host needs.
+- `guard::tests` pins every refused origin, the loopback aliases of the dev
+  origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
+  `about:blank` and `about:srcdoc` frames and a page that sends itself to the
+  app, and walks redirect, form post, blank page and script sequences. It
+  also fails when `lib.rs` registers a scheme the rule does not refuse. The
+  rule is a pure function because no test can load a page headless.
 - `browser::tests` opens tabs on Tauri's mock runtime: the owning window, the
   refusals and their codes, an app command a `browse-` webview calls from a
-  local address, closing a session's tabs, a destroyed window, and that no
-  production code looks a window up through `webview_windows` or
-  `get_webview_window`.
+  local address, the popup cap and its `browser://tab-opened` event, listing
+  and closing only the calling window's tabs, a retry after a partial
+  session close, a destroyed window, and that no production code looks a
+  window up through `webview_windows` or `get_webview_window`. The native
+  back step cannot run headless.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants
   a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.

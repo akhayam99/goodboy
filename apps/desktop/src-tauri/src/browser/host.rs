@@ -1,16 +1,25 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::webview::{NewWindowResponse, PageLoadEvent};
 use tauri::{
-    AppHandle, LogicalPosition, LogicalSize, Manager, Position, Rect, Runtime, Size, Url, Webview,
-    WebviewBuilder, WebviewUrl, Window,
+    AppHandle, Emitter, EventTarget, LogicalPosition, LogicalSize, Manager, Position, Rect,
+    Runtime, Size, Url, Webview, WebviewBuilder, WebviewUrl, Window,
 };
 
-use super::guard::{self, AppOrigins, NavigationGate};
-use super::reason::{self, NOT_WEB_ADDRESS, TAB_GONE, WINDOW_GONE};
-use super::registry::{BrowserRegistry, NewTab, TabFacts};
+use super::guard::{self, AppOrigins};
+use super::reason::{self, NOT_WEB_ADDRESS, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE};
+use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts};
+use crate::platform::web_history::HistoryStep;
 use crate::util::{now_ms, uuid_v4, MessageError};
 
 const MIN_SIDE: f64 = 1.0;
+
+pub(crate) const MAX_HIDDEN_POPUPS: usize = 4;
+pub(crate) const TAB_OPENED_EVENT: &str = "browser://tab-opened";
+
+#[cfg(not(target_os = "macos"))]
+const BACK_SCRIPT: &str = "history.back()";
+#[cfg(not(target_os = "macos"))]
+const FORWARD_SCRIPT: &str = "history.forward()";
 
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,6 +53,7 @@ pub(crate) struct OpenTab<'a> {
     pub(crate) position: Position,
     pub(crate) size: Size,
     pub(crate) is_shown: bool,
+    pub(crate) opener_id: Option<&'a str>,
 }
 
 impl<'a> OpenTab<'a> {
@@ -54,8 +64,23 @@ impl<'a> OpenTab<'a> {
             position: bounds.position(),
             size: bounds.size(),
             is_shown,
+            opener_id: None,
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TabCloseFailure {
+    pub(crate) tab_id: String,
+    pub(crate) reason: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SessionClosed {
+    pub(crate) closed: usize,
+    pub(crate) failed: Vec<TabCloseFailure>,
 }
 
 fn failed(error: tauri::Error) -> MessageError {
@@ -88,6 +113,7 @@ pub(crate) fn open_tab<R: Runtime>(
         window_label: window.label(),
         url: tab.url.as_str(),
         is_shown: tab.is_shown,
+        opener_id: tab.opener_id,
         now_ms: now_ms(),
     }))
 }
@@ -98,13 +124,13 @@ fn builder_for<R: Runtime>(
     url: &Url,
     origins: AppOrigins,
 ) -> WebviewBuilder<R> {
-    let gate = NavigationGate::new(origins.clone());
+    let navigation_origins = origins.clone();
     let popup_app = app.clone();
     let popup_opener = id.to_string();
     let load_tab = id.to_string();
     let title_tab = id.to_string();
     WebviewBuilder::new(guard::label_of(id), WebviewUrl::External(url.clone()))
-        .on_navigation(move |target| gate.allows(target))
+        .on_navigation(move |target| guard::may_navigate(target, &navigation_origins))
         .on_new_window(move |target, _features| {
             if let Some(target) = guard::popup_target(&target, &origins) {
                 open_popup(&popup_app, &popup_opener, target);
@@ -126,39 +152,67 @@ fn builder_for<R: Runtime>(
 }
 
 fn open_popup<R: Runtime>(app: &AppHandle<R>, opener_id: &str, url: Url) {
+    let seat = match reserve_popup(app, opener_id) {
+        Ok(seat) => seat,
+        Err(error) => {
+            log::warn!("[browser] popup_refused reason={error}");
+            return;
+        }
+    };
     let app = app.clone();
-    let opener_id = opener_id.to_string();
     tauri::async_runtime::spawn(async move {
-        if let Err(error) = open_beside(&app, &opener_id, url) {
+        if let Err(error) = fill_popup(&app, &seat, url) {
             log::warn!("[browser] popup_open_failed reason={error}");
         }
     });
 }
 
-fn open_beside<R: Runtime>(
+pub(crate) fn reserve_popup<R: Runtime>(
     app: &AppHandle<R>,
     opener_id: &str,
+) -> Result<PopupSeat, MessageError> {
+    app.state::<BrowserRegistry>()
+        .reserve_popup(opener_id, MAX_HIDDEN_POPUPS)
+        .map_err(|refusal| match refusal {
+            SeatRefusal::OpenerGone => reason::failed(TAB_GONE),
+            SeatRefusal::Full => reason::refused(TOO_MANY_POPUPS),
+        })
+}
+
+pub(crate) fn fill_popup<R: Runtime>(
+    app: &AppHandle<R>,
+    seat: &PopupSeat,
     url: Url,
 ) -> Result<TabFacts, MessageError> {
-    let registry = app.state::<BrowserRegistry>();
-    let opener = registry
-        .facts(opener_id)
-        .ok_or_else(|| reason::failed(TAB_GONE))?;
-    let window_label = registry
-        .window_of(opener_id)
-        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    let opened = open_beside(app, seat, url);
+    app.state::<BrowserRegistry>().release_popup(seat);
+    let facts = opened?;
+    let _ = app.emit_to(
+        EventTarget::webview_window(&seat.window_label),
+        TAB_OPENED_EVENT,
+        &facts,
+    );
+    Ok(facts)
+}
+
+fn open_beside<R: Runtime>(
+    app: &AppHandle<R>,
+    seat: &PopupSeat,
+    url: Url,
+) -> Result<TabFacts, MessageError> {
     let window = app
-        .get_window(&window_label)
+        .get_window(&seat.window_label)
         .ok_or_else(|| reason::failed(WINDOW_GONE))?;
-    let bounds = webview_of(app, opener_id)?.bounds().map_err(failed)?;
+    let bounds = webview_of(app, &seat.opener_id)?.bounds().map_err(failed)?;
     open_tab(
         &window,
         OpenTab {
-            session_id: &opener.session_id,
+            session_id: &seat.session_id,
             url,
             position: bounds.position,
             size: bounds.size,
             is_shown: false,
+            opener_id: Some(&seat.opener_id),
         },
     )
 }
@@ -171,6 +225,30 @@ pub(crate) fn webview_of<R: Runtime>(
         .ok_or_else(|| reason::failed(TAB_GONE))
 }
 
+#[cfg(target_os = "macos")]
+pub(crate) fn step_history<R: Runtime>(
+    webview: &Webview<R>,
+    step: HistoryStep,
+) -> Result<(), MessageError> {
+    webview
+        .with_webview(move |platform| {
+            crate::platform::web_history::step_live_wk_web_view(platform, step)
+        })
+        .map_err(failed)
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn step_history<R: Runtime>(
+    webview: &Webview<R>,
+    step: HistoryStep,
+) -> Result<(), MessageError> {
+    let script = match step {
+        HistoryStep::Back => BACK_SCRIPT,
+        HistoryStep::Forward => FORWARD_SCRIPT,
+    };
+    webview.eval(script).map_err(failed)
+}
+
 pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<(), MessageError> {
     if let Some(webview) = app.get_webview(&guard::label_of(tab_id)) {
         webview.close().map_err(failed)?;
@@ -179,13 +257,55 @@ pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<
     Ok(())
 }
 
+pub(crate) fn close_each(
+    ids: &[String],
+    mut close: impl FnMut(&str) -> Result<(), MessageError>,
+) -> SessionClosed {
+    let mut result = SessionClosed::default();
+    for id in ids {
+        match close(id) {
+            Ok(()) => result.closed += 1,
+            Err(error) => result.failed.push(TabCloseFailure {
+                tab_id: id.clone(),
+                reason: error.to_string(),
+            }),
+        }
+    }
+    result
+}
+
 pub(crate) fn close_session<R: Runtime>(
     app: &AppHandle<R>,
     session_id: &str,
-) -> Result<usize, MessageError> {
-    let ids = app.state::<BrowserRegistry>().ids_of_session(session_id);
-    for id in &ids {
-        close_tab(app, id)?;
+    window_label: &str,
+) -> SessionClosed {
+    let ids = app
+        .state::<BrowserRegistry>()
+        .ids_of_session(session_id, window_label);
+    close_each(&ids, |id| close_tab(app, id))
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+    use crate::util::wire_shape::assert_wire_value;
+
+    #[test]
+    fn wire_shape_session_closed() {
+        assert_wire_value(
+            &SessionClosed {
+                closed: 2,
+                failed: vec![TabCloseFailure {
+                    tab_id: "0f1e".to_string(),
+                    reason: "tab-gone".to_string(),
+                }],
+            },
+            json!({
+                "closed": 2,
+                "failed": [{ "tabId": "0f1e", "reason": "tab-gone" }],
+            }),
+        );
     }
-    Ok(ids.len())
 }

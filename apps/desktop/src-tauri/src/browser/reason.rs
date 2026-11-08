@@ -6,6 +6,7 @@ pub(crate) const INVALID_ADDRESS: &str = "invalid-address";
 pub(crate) const TAB_GONE: &str = "tab-gone";
 pub(crate) const WINDOW_GONE: &str = "window-gone";
 pub(crate) const OTHER_WINDOW: &str = "other-window";
+pub(crate) const TOO_MANY_POPUPS: &str = "too-many-popups";
 
 pub(crate) fn refused(code: &str) -> MessageError {
     MessageError::Refused(code.to_string())

@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::net::IpAddr;
 
 use tauri::{AppHandle, Runtime, Url};
 
@@ -8,7 +8,10 @@ pub(crate) const LABEL_PREFIX: &str = "browse-";
 
 const WEB_SCHEMES: &[&str] = &["http", "https"];
 const APP_SCHEMES: &[&str] = &["tauri", "ipc", "asset", FRAME_SCHEME];
-const BLANK_PAGE: &str = "about:blank";
+const ABOUT_SCHEME: &str = "about";
+const BLANK_PAGE: &str = "blank";
+const FRAME_PAGES: &[&str] = &[BLANK_PAGE, "srcdoc"];
+const LOOPBACK_NAME: &str = "localhost";
 
 #[derive(Clone, Debug, Default)]
 pub(crate) struct AppOrigins {
@@ -32,7 +35,13 @@ impl AppOrigins {
         let Some(dev) = &self.dev_origin else {
             return false;
         };
-        host_of(url) == host_of(dev) && url.port_or_known_default() == dev.port_or_known_default()
+        if url.port_or_known_default() != dev.port_or_known_default() {
+            return false;
+        }
+        if is_loopback(dev) {
+            return is_loopback(url);
+        }
+        host_of(url) == host_of(dev)
     }
 
     fn is_app_origin(&self, url: &Url) -> bool {
@@ -54,6 +63,15 @@ fn host_of(url: &Url) -> String {
         .to_ascii_lowercase()
 }
 
+fn is_loopback(url: &Url) -> bool {
+    let host = host_of(url);
+    let bare = host.trim_start_matches('[').trim_end_matches(']');
+    if let Ok(ip) = bare.parse::<IpAddr>() {
+        return ip.is_loopback() || ip.is_unspecified();
+    }
+    host == LOOPBACK_NAME || host.ends_with(&format!(".{LOOPBACK_NAME}"))
+}
+
 pub(crate) fn is_browser_label(label: &str) -> bool {
     label.starts_with(LABEL_PREFIX)
 }
@@ -66,38 +84,16 @@ pub(crate) fn is_web_address(url: &Url, origins: &AppOrigins) -> bool {
     WEB_SCHEMES.contains(&url.scheme()) && !origins.is_app_origin(url)
 }
 
-fn is_blank_page(url: &Url) -> bool {
-    url.as_str() == BLANK_PAGE
+fn is_about_page(url: &Url, pages: &[&str]) -> bool {
+    url.scheme() == ABOUT_SCHEME && pages.contains(&url.path())
 }
 
 pub(crate) fn may_open(url: &Url, origins: &AppOrigins) -> bool {
-    is_web_address(url, origins) || is_blank_page(url)
+    is_web_address(url, origins) || is_about_page(url, &[BLANK_PAGE])
 }
 
-fn may_navigate(url: &Url, origins: &AppOrigins, is_initial: bool) -> bool {
-    if is_initial && is_blank_page(url) {
-        return true;
-    }
-    is_web_address(url, origins)
-}
-
-pub(crate) struct NavigationGate {
-    origins: AppOrigins,
-    is_initial: AtomicBool,
-}
-
-impl NavigationGate {
-    pub(crate) fn new(origins: AppOrigins) -> Self {
-        Self {
-            origins,
-            is_initial: AtomicBool::new(true),
-        }
-    }
-
-    pub(crate) fn allows(&self, target: &Url) -> bool {
-        let was_initial = self.is_initial.swap(false, Ordering::SeqCst);
-        may_navigate(target, &self.origins, was_initial)
-    }
+pub(crate) fn may_navigate(url: &Url, origins: &AppOrigins) -> bool {
+    is_web_address(url, origins) || is_about_page(url, FRAME_PAGES)
 }
 
 pub(crate) fn popup_target(url: &Url, origins: &AppOrigins) -> Option<Url> {
@@ -143,6 +139,15 @@ mod tests {
         "http://localhost:1421/spike-probe.html",
         "https://localhost:1421/",
         "http://localhost.:1421/",
+        "http://LOCALHOST:1421/",
+        "http://127.0.0.1:1421/",
+        "http://127.0.0.2:1421/",
+        "http://0x7f.1:1421/",
+        "http://0.0.0.0:1421/",
+        "http://[::1]:1421/",
+        "http://[::]:1421/",
+        "http://x.localhost:1421/",
+        "http://acme.LOCALHOST.:1421/",
     ];
 
     #[test]
@@ -150,33 +155,72 @@ mod tests {
         let allowed: Vec<&str> = APP_ORIGINS
             .iter()
             .copied()
-            .filter(|address| may_navigate(&url(address), &dev(), false))
+            .filter(|address| may_navigate(&url(address), &dev()))
             .collect();
         assert!(allowed.is_empty(), "allowed app origins: {allowed:?}");
     }
 
     #[test]
-    fn refuses_every_app_origin_as_the_first_page_and_as_a_popup() {
+    fn refuses_every_app_origin_as_a_new_tab_and_as_a_popup() {
         for address in APP_ORIGINS {
-            assert!(!may_navigate(&url(address), &dev(), true), "{address}");
             assert!(!may_open(&url(address), &dev()), "{address}");
             assert_eq!(popup_target(&url(address), &dev()), None, "{address}");
         }
     }
 
     #[test]
-    fn lets_a_release_build_preview_a_server_on_the_dev_port() {
+    fn treats_every_loopback_host_on_the_dev_port_as_the_dev_origin() {
+        let loopback_dev = [
+            "http://localhost:1421",
+            "http://127.0.0.1:1421",
+            "http://[::1]:1421",
+        ];
+        for dev_url in loopback_dev {
+            let origins = AppOrigins::with_dev_origin(Some(url(dev_url)));
+            for address in [
+                "http://localhost:1421/",
+                "http://127.0.0.1:1421/",
+                "http://[::1]:1421/",
+                "http://ledger-core.localhost:1421/",
+            ] {
+                assert!(
+                    !may_navigate(&url(address), &origins),
+                    "{dev_url} {address}"
+                );
+            }
+            for address in [
+                "http://127.0.0.1:5173/",
+                "http://localhost:1422/",
+                "http://notlocalhost:1421/",
+                "http://localhost.example:1421/",
+            ] {
+                assert!(may_navigate(&url(address), &origins), "{dev_url} {address}");
+            }
+        }
+    }
+
+    #[test]
+    fn compares_a_dev_host_that_is_not_loopback_by_name() {
+        let origins = AppOrigins::with_dev_origin(Some(url("http://acme.example:1421")));
+        assert!(!may_navigate(&url("http://ACME.example:1421/"), &origins));
+        assert!(may_navigate(&url("http://127.0.0.1:1421/"), &origins));
         assert!(may_navigate(
-            &url("http://localhost:1421/"),
-            &release(),
-            false
+            &url("http://northwind.example:1421/"),
+            &origins
         ));
-        assert!(!may_navigate(
-            &url("http://tauri.localhost/"),
-            &release(),
-            false
-        ));
-        assert!(!may_navigate(&url("tauri://localhost/"), &release(), false));
+    }
+
+    #[test]
+    fn lets_a_release_build_preview_a_server_on_the_dev_port() {
+        for address in [
+            "http://localhost:1421/",
+            "http://127.0.0.1:1421/",
+            "http://[::1]:1421/",
+        ] {
+            assert!(may_navigate(&url(address), &release()), "{address}");
+        }
+        assert!(!may_navigate(&url("http://tauri.localhost/"), &release()));
+        assert!(!may_navigate(&url("tauri://localhost/"), &release()));
     }
 
     #[test]
@@ -187,7 +231,7 @@ mod tests {
             "https://example.com/",
             "https://acme.example/ledger-core?tab=1#top",
         ] {
-            assert!(may_navigate(&url(address), &dev(), false), "{address}");
+            assert!(may_navigate(&url(address), &dev()), "{address}");
             assert!(may_open(&url(address), &dev()), "{address}");
             assert_eq!(popup_target(&url(address), &dev()), Some(url(address)));
         }
@@ -201,47 +245,45 @@ mod tests {
             "file:///etc/passwd",
             "blob:https://example.com/0f1e",
             "ftp://example.com/",
-            "about:srcdoc",
+            "about:settings",
+            "about:blankx",
             "chrome://settings",
         ] {
-            assert!(!may_navigate(&url(address), &dev(), false), "{address}");
-            assert!(!may_navigate(&url(address), &dev(), true), "{address}");
+            assert!(!may_navigate(&url(address), &dev()), "{address}");
             assert!(!may_open(&url(address), &dev()), "{address}");
             assert_eq!(popup_target(&url(address), &dev()), None, "{address}");
         }
     }
 
     #[test]
-    fn allows_about_blank_only_as_the_first_page() {
-        let blank = url("about:blank");
-        assert!(may_navigate(&blank, &dev(), true));
-        assert!(!may_navigate(&blank, &dev(), false));
-        assert!(may_open(&blank, &dev()));
-        assert_eq!(popup_target(&blank, &dev()), None);
-    }
-
-    #[test]
-    fn refuses_a_page_that_sends_itself_to_the_app_origin() {
-        let page = url("https://example.com/");
-        assert!(may_navigate(&page, &dev(), true));
-        for target in ["http://localhost:1421/", "tauri://localhost/"] {
-            assert!(!may_navigate(&url(target), &dev(), false), "{target}");
+    fn allows_a_blank_or_srcdoc_frame_at_any_time() {
+        for address in ["about:blank", "about:blank#top", "about:srcdoc"] {
+            assert!(may_navigate(&url(address), &dev()), "{address}");
+            assert!(may_navigate(&url(address), &release()), "{address}");
+            assert_eq!(popup_target(&url(address), &dev()), None, "{address}");
         }
+        assert!(may_open(&url("about:blank"), &dev()));
+        assert!(!may_open(&url("about:srcdoc"), &dev()));
     }
 
-    fn walk(gate: &NavigationGate, steps: &[(&str, bool)]) {
+    fn walk(origins: &AppOrigins, steps: &[(&str, bool)]) {
         for (address, is_allowed) in steps {
-            assert_eq!(gate.allows(&url(address)), *is_allowed, "{address}");
+            assert_eq!(
+                may_navigate(&url(address), origins),
+                *is_allowed,
+                "{address}"
+            );
         }
     }
 
     #[test]
     fn refuses_a_redirect_to_the_app_after_a_web_page_loaded() {
         walk(
-            &NavigationGate::new(dev()),
+            &dev(),
             &[
                 ("https://example.com/login", true),
                 ("http://localhost:1421/", false),
+                ("http://127.0.0.1:1421/", false),
                 ("tauri://localhost/", false),
                 ("http://tauri.localhost/?next=1", false),
                 ("https://example.com/login", true),
@@ -250,13 +292,13 @@ mod tests {
     }
 
     #[test]
-    fn refuses_a_blank_first_page_that_moves_itself_to_the_app() {
+    fn refuses_a_blank_page_that_moves_itself_to_the_app() {
         walk(
-            &NavigationGate::new(dev()),
+            &dev(),
             &[
                 ("about:blank", true),
                 ("tauri://localhost/index.html", false),
-                ("about:blank", false),
+                ("about:blank", true),
                 ("ipc://localhost/detect_editors", false),
             ],
         );
@@ -265,7 +307,7 @@ mod tests {
     #[test]
     fn refuses_a_form_post_or_meta_refresh_that_targets_the_app() {
         walk(
-            &NavigationGate::new(release()),
+            &release(),
             &[
                 ("http://127.0.0.1:5173/checkout", true),
                 ("http://ipc.localhost/plugin%3Aapp%7Cversion", false),
@@ -279,7 +321,7 @@ mod tests {
     #[test]
     fn refuses_script_data_blob_and_file_once_a_page_loaded() {
         walk(
-            &NavigationGate::new(dev()),
+            &dev(),
             &[
                 ("https://example.com/", true),
                 ("javascript:location='tauri://localhost/'", false),
@@ -287,14 +329,6 @@ mod tests {
                 ("blob:https://example.com/0f1e", false),
                 ("file:///etc/hosts", false),
             ],
-        );
-    }
-
-    #[test]
-    fn spends_the_first_page_allowance_even_on_a_refused_first_page() {
-        walk(
-            &NavigationGate::new(dev()),
-            &[("tauri://localhost/", false), ("about:blank", false)],
         );
     }
 

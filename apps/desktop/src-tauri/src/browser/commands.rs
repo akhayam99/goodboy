@@ -2,15 +2,13 @@ use serde::Deserialize;
 use tauri::{Manager, Runtime, Webview};
 
 use super::guard::{self, AppOrigins};
-use super::host::{self, OpenTab, TabBounds};
+use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::reason::{
     self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts};
+use crate::platform::web_history::HistoryStep;
 use crate::util::{now_ms, MessageError};
-
-const BACK_SCRIPT: &str = "history.back()";
-const FORWARD_SCRIPT: &str = "history.forward()";
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -136,16 +134,12 @@ pub async fn browser_tab_reload(webview: Webview, args: TabArgs) -> Result<(), M
 
 #[tauri::command]
 pub async fn browser_tab_back(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
-    owned_tab(&webview, &args.tab_id)?
-        .eval(BACK_SCRIPT)
-        .map_err(failed)
+    host::step_history(&owned_tab(&webview, &args.tab_id)?, HistoryStep::Back)
 }
 
 #[tauri::command]
 pub async fn browser_tab_forward(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
-    owned_tab(&webview, &args.tab_id)?
-        .eval(FORWARD_SCRIPT)
-        .map_err(failed)
+    host::step_history(&owned_tab(&webview, &args.tab_id)?, HistoryStep::Forward)
 }
 
 #[tauri::command]
@@ -159,17 +153,37 @@ pub async fn browser_tab_list(
     webview: Webview,
     args: SessionArgs,
 ) -> Result<Vec<TabFacts>, MessageError> {
-    refuse_browser_caller(&webview)?;
-    Ok(webview.state::<BrowserRegistry>().list(&args.session_id))
+    list_session(&webview, &args.session_id)
 }
 
 #[tauri::command]
 pub async fn browser_session_close(
     webview: Webview,
     args: SessionArgs,
-) -> Result<usize, MessageError> {
-    refuse_browser_caller(&webview)?;
-    host::close_session(webview.app_handle(), &args.session_id)
+) -> Result<SessionClosed, MessageError> {
+    close_session(&webview, &args.session_id)
+}
+
+pub(super) fn list_session<R: Runtime>(
+    caller: &Webview<R>,
+    session_id: &str,
+) -> Result<Vec<TabFacts>, MessageError> {
+    refuse_browser_caller(caller)?;
+    Ok(caller
+        .state::<BrowserRegistry>()
+        .list(session_id, caller.window().label()))
+}
+
+pub(super) fn close_session<R: Runtime>(
+    caller: &Webview<R>,
+    session_id: &str,
+) -> Result<SessionClosed, MessageError> {
+    refuse_browser_caller(caller)?;
+    Ok(host::close_session(
+        caller.app_handle(),
+        session_id,
+        caller.window().label(),
+    ))
 }
 
 #[cfg(test)]

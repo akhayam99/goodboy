@@ -99,7 +99,7 @@ Terminal, script and provider lifecycle output follow the same rule: `terminal-o
 
 ## Events from Rust
 
-Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compiles and then fails silently in the webview, so `scripts/check-event-names.mjs` (part of `pnpm check:doc-refs`) compares them: every name below must be emitted in `src-tauri/src`, named by a frontend file, and listed here, and every name the frontend listens to must be emitted by Rust or by the frontend. The wire names keep three styles for now (`snake_case`, `kebab-case`, `scheme://path`); a new event uses `kebab-case`, and a rename lands in Rust and in the frontend in one commit so the check stays green.
+Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compiles and then fails silently in the webview, so `scripts/check-event-names.mjs` (part of `pnpm check:doc-refs`) compares them: every name below must be emitted in `src-tauri/src`, named by a frontend file, and listed here, and every name the frontend listens to must be emitted by Rust or by the frontend. An event whose listener lands in a later pull request goes in `UNHEARD_REASON_BY_EVENT` with a reason, and the check fails once the frontend names it, so the entry leaves with the listener. The wire names keep three styles for now (`snake_case`, `kebab-case`, `scheme://path`); a new event uses `kebab-case`, and a rename lands in Rust and in the frontend in one commit so the check stays green.
 
 | Event                                                  | Payload                                                    | Emitted by              | Listened in                             |
 | ------------------------------------------------------ | ---------------------------------------------------------- | ----------------------- | --------------------------------------- |
@@ -115,6 +115,7 @@ Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compile
 | `query-bridge://mount-command`                         | `{ id, ... }`, answered by `mount_command_result`          | query_bridge/mount.rs   | session/mountQueryBridge                |
 | `query-bridge://project-materialize`                   | `{ id, runId, sessionId, projectId, projectName, reason }` | query_bridge/project.rs | session/projectMaterializeBridge.ts     |
 | `bridge://command`                                     | a phone command to run (the phone work is paused)          | bridge/server.rs        | companion/commandExecutor.ts            |
+| `browser://tab-opened`                                 | the facts of a popup tab, to the opener's window only      | browser/host.rs         | the browser pane, once it lands         |
 
 ## Git and request state is not on the bus
 

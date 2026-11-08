@@ -14,6 +14,7 @@ pub(crate) struct TabFacts {
     pub(crate) title: String,
     pub(crate) is_shown: bool,
     pub(crate) hidden_since_ms: Option<i64>,
+    pub(crate) opener_id: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -23,10 +24,19 @@ struct Tab {
     opened: u64,
 }
 
+impl Tab {
+    fn is_hidden_popup_of(&self, session_id: &str) -> bool {
+        self.facts.session_id == session_id
+            && self.facts.opener_id.is_some()
+            && !self.facts.is_shown
+    }
+}
+
 #[derive(Default)]
 struct Tabs {
     by_id: HashMap<String, Tab>,
     next_opened: u64,
+    pending_popups: HashMap<String, usize>,
 }
 
 #[derive(Default)]
@@ -40,10 +50,63 @@ pub(crate) struct NewTab<'a> {
     pub(crate) window_label: &'a str,
     pub(crate) url: &'a str,
     pub(crate) is_shown: bool,
+    pub(crate) opener_id: Option<&'a str>,
     pub(crate) now_ms: i64,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct PopupSeat {
+    pub(crate) opener_id: String,
+    pub(crate) session_id: String,
+    pub(crate) window_label: String,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum SeatRefusal {
+    OpenerGone,
+    Full,
+}
+
 impl BrowserRegistry {
+    pub(crate) fn reserve_popup(
+        &self,
+        opener_id: &str,
+        limit: usize,
+    ) -> Result<PopupSeat, SeatRefusal> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let opener = tabs.by_id.get(opener_id).ok_or(SeatRefusal::OpenerGone)?;
+        let seat = PopupSeat {
+            opener_id: opener_id.to_string(),
+            session_id: opener.facts.session_id.clone(),
+            window_label: opener.window_label.clone(),
+        };
+        let hidden = tabs
+            .by_id
+            .values()
+            .filter(|tab| tab.is_hidden_popup_of(&seat.session_id))
+            .count();
+        let pending = tabs
+            .pending_popups
+            .entry(seat.session_id.clone())
+            .or_default();
+        if hidden + *pending >= limit {
+            return Err(SeatRefusal::Full);
+        }
+        *pending += 1;
+        Ok(seat)
+    }
+
+    pub(crate) fn release_popup(&self, seat: &PopupSeat) {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let Some(pending) = tabs.pending_popups.get_mut(&seat.session_id) else {
+            return;
+        };
+        *pending = pending.saturating_sub(1);
+        if *pending == 0 {
+            tabs.pending_popups.remove(&seat.session_id);
+        }
+    }
+
     pub(crate) fn insert(&self, tab: NewTab<'_>) -> TabFacts {
         let mut tabs = lock_or_recover(&self.tabs);
         let opened = tabs.next_opened;
@@ -55,6 +118,7 @@ impl BrowserRegistry {
             title: String::new(),
             is_shown: tab.is_shown,
             hidden_since_ms: hidden_since(tab.is_shown, tab.now_ms),
+            opener_id: tab.opener_id.map(str::to_string),
         };
         tabs.by_id.insert(
             tab.id.to_string(),
@@ -67,6 +131,7 @@ impl BrowserRegistry {
         facts
     }
 
+    #[cfg(test)]
     pub(crate) fn facts(&self, id: &str) -> Option<TabFacts> {
         lock_or_recover(&self.tabs)
             .by_id
@@ -88,12 +153,12 @@ impl BrowserRegistry {
             .map(|tab| tab.facts)
     }
 
-    pub(crate) fn list(&self, session_id: &str) -> Vec<TabFacts> {
+    pub(crate) fn list(&self, session_id: &str, window_label: &str) -> Vec<TabFacts> {
         let tabs = lock_or_recover(&self.tabs);
         let mut found: Vec<&Tab> = tabs
             .by_id
             .values()
-            .filter(|tab| tab.facts.session_id == session_id)
+            .filter(|tab| tab.facts.session_id == session_id && tab.window_label == window_label)
             .collect();
         found.sort_by_key(|tab| tab.opened);
         found.into_iter().map(|tab| tab.facts.clone()).collect()
@@ -106,8 +171,8 @@ impl BrowserRegistry {
         before - tabs.by_id.len()
     }
 
-    pub(crate) fn ids_of_session(&self, session_id: &str) -> Vec<String> {
-        self.list(session_id)
+    pub(crate) fn ids_of_session(&self, session_id: &str, window_label: &str) -> Vec<String> {
+        self.list(session_id, window_label)
             .into_iter()
             .map(|facts| facts.id)
             .collect()
@@ -165,8 +230,35 @@ mod tests {
             window_label: "main",
             url: "http://localhost:5173/",
             is_shown,
+            opener_id: None,
             now_ms: 1_000,
         })
+    }
+
+    fn open_in(registry: &BrowserRegistry, id: &str, window_label: &str) -> TabFacts {
+        registry.insert(NewTab {
+            id,
+            session_id: "harborline",
+            window_label,
+            url: "about:blank",
+            is_shown: true,
+            opener_id: None,
+            now_ms: 0,
+        })
+    }
+
+    fn popup(registry: &BrowserRegistry, id: &str, seat: &PopupSeat) -> TabFacts {
+        let facts = registry.insert(NewTab {
+            id,
+            session_id: &seat.session_id,
+            window_label: &seat.window_label,
+            url: "https://example.com/",
+            is_shown: false,
+            opener_id: Some(&seat.opener_id),
+            now_ms: 2_000,
+        });
+        registry.release_popup(seat);
+        facts
     }
 
     #[test]
@@ -181,22 +273,80 @@ mod tests {
         open(&registry, "a", "harborline", false);
         open(&registry, "b", "northwind", true);
         open(&registry, "d", "harborline", false);
-        assert_eq!(registry.ids_of_session("harborline"), vec!["c", "a", "d"]);
-        assert_eq!(registry.ids_of_session("northwind"), vec!["b"]);
-        assert!(registry.ids_of_session("cascadia").is_empty());
+        assert_eq!(
+            registry.ids_of_session("harborline", "main"),
+            vec!["c", "a", "d"]
+        );
+        assert_eq!(registry.ids_of_session("northwind", "main"), vec!["b"]);
+        assert!(registry.ids_of_session("cascadia", "main").is_empty());
+    }
+
+    #[test]
+    fn lists_only_the_tabs_of_the_window_that_asks() {
+        let registry = BrowserRegistry::default();
+        open_in(&registry, "a", "main");
+        open_in(&registry, "b", "win-2");
+        assert_eq!(registry.ids_of_session("harborline", "main"), vec!["a"]);
+        assert_eq!(registry.ids_of_session("harborline", "win-2"), vec!["b"]);
+        assert!(registry.list("harborline", "win-3").is_empty());
+    }
+
+    #[test]
+    fn seats_popups_up_to_the_limit_and_counts_seats_still_opening() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "opener", "harborline", true);
+        let first = registry.reserve_popup("opener", 2).expect("first seat");
+        assert_eq!(first.session_id, "harborline");
+        assert_eq!(first.window_label, "main");
+        let second = registry.reserve_popup("opener", 2).expect("second seat");
+        assert_eq!(registry.reserve_popup("opener", 2), Err(SeatRefusal::Full));
+        popup(&registry, "p1", &first);
+        popup(&registry, "p2", &second);
+        assert_eq!(registry.reserve_popup("opener", 2), Err(SeatRefusal::Full));
+        assert_eq!(
+            registry.facts("p1").and_then(|facts| facts.opener_id),
+            Some("opener".to_string())
+        );
+    }
+
+    #[test]
+    fn frees_a_seat_when_a_popup_is_shown_closed_or_never_opened() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "opener", "harborline", true);
+        let seat = registry.reserve_popup("opener", 1).expect("seat");
+        registry.release_popup(&seat);
+        let seat = registry
+            .reserve_popup("opener", 1)
+            .expect("seat after a failed open");
+        popup(&registry, "p1", &seat);
+        assert_eq!(registry.reserve_popup("opener", 1), Err(SeatRefusal::Full));
+        registry.set_shown("p1", true, 3_000);
+        let seat = registry
+            .reserve_popup("opener", 1)
+            .expect("seat after show");
+        popup(&registry, "p2", &seat);
+        registry.remove("p2");
+        assert!(registry.reserve_popup("opener", 1).is_ok());
+    }
+
+    #[test]
+    fn counts_popups_per_session_and_refuses_a_gone_opener() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "opener", "harborline", true);
+        open(&registry, "other", "northwind", true);
+        let seat = registry.reserve_popup("opener", 1).expect("seat");
+        popup(&registry, "p1", &seat);
+        assert!(registry.reserve_popup("other", 1).is_ok());
+        assert_eq!(
+            registry.reserve_popup("gone", 1),
+            Err(SeatRefusal::OpenerGone)
+        );
     }
 
     #[test]
     fn remembers_the_window_that_owns_a_tab() {
         let registry = BrowserRegistry::default();
-        registry.insert(NewTab {
-            id: "a",
-            session_id: "harborline",
-            window_label: "win-2",
-            url: "about:blank",
-            is_shown: true,
-            now_ms: 0,
-        });
+        open_in(&registry, "a", "win-2");
         assert_eq!(registry.window_of("a").as_deref(), Some("win-2"));
         assert_eq!(registry.window_of("gone"), None);
     }
@@ -244,16 +394,10 @@ mod tests {
     fn forgets_the_tabs_of_a_closed_window_only() {
         let registry = BrowserRegistry::default();
         open(&registry, "a", "harborline", true);
-        registry.insert(NewTab {
-            id: "b",
-            session_id: "harborline",
-            window_label: "win-2",
-            url: "about:blank",
-            is_shown: true,
-            now_ms: 0,
-        });
+        open_in(&registry, "b", "win-2");
         assert_eq!(registry.remove_window("win-2"), 1);
-        assert_eq!(registry.ids_of_session("harborline"), vec!["a"]);
+        assert_eq!(registry.ids_of_session("harborline", "main"), vec!["a"]);
+        assert!(registry.ids_of_session("harborline", "win-2").is_empty());
     }
 
     #[test]
@@ -266,6 +410,7 @@ mod tests {
                 title: "Example Domain".to_string(),
                 is_shown: false,
                 hidden_since_ms: Some(3_000),
+                opener_id: Some("b".to_string()),
             },
             json!({
                 "id": "a",
@@ -274,6 +419,7 @@ mod tests {
                 "title": "Example Domain",
                 "isShown": false,
                 "hiddenSinceMs": 3000,
+                "openerId": "b",
             }),
         );
     }
