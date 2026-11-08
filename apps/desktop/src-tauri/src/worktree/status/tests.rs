@@ -450,7 +450,7 @@ fn eight_pushed_commits_read_as_on_origin_with_nothing_to_push() {
             behind: 0
         }
     );
-    let commits = worktree_commits_blocking(created.worktree_path.clone()).unwrap();
+    let commits = worktree_commits_blocking(created.worktree_path.clone(), None).unwrap();
     let unpushed: Vec<&str> = commits
         .iter()
         .filter(|commit| !commit.pushed)

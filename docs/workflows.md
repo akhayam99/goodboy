@@ -564,19 +564,22 @@ title and the chips are siblings of the row button (`ListGridRow` `overlays`),
 so a row never nests a button. A click on the title opens the run immediately.
 **Rename** in the row's right click menu edits the title in place (leaving the
 box on the same text writes nothing, `useInlineRename`). The menu is the run's own (the `runRow` kind, five rows at most),
-never the session's. On the Branch page the line **On this branch** with **3 runs**
-(`branchRunLinkOf`, `BranchRunsLine`) lands on Runs, By branch, with that group
-open, or reveals its runs under By state with fewer than two branches
-(`useRunsFolds` unfolds finished and archived rows before scrolling and focusing
-the first matching row); Back returns to the branch (`Focus.runGroup` on the history entry) and to the
-row you left, not to the top of the group. The link counts what the group header
+never the session's. The Branch page draws the same group on its **Work** tab
+(`RunsByBranch` with a `heading`, see [branch-page.md](navigation/branch-page.md)), and
+its **All runs** lands on Runs with that group open in the grouping you chose, or
+reveals its runs under By state (`openBranchWork`, which never calls `setGroupBy`;
+`useRunsFolds` unfolds finished and archived rows before scrolling and focusing
+the first matching row); Back returns to the Work tab (`Focus.runGroup` on the history entry) and to the
+row you left, not to the top of the group. The tab counts what the group header
 counts (`branchGroupShownCountOf`: archived runs are left out, a series group counts
-the runs of all its parts) and is absent at zero. The page
+the runs of all its parts). **Open branch** on a group lands on that Work tab
+(`openBranchWorkTab`). The page
 count stays one per run. Questions and Artifacts group by the same function
 (`branchKeyedGroupsOf` in `branchGroupsOf.ts`, which `branchGroupsOf` also uses) and
 read the same switch (`useGroupBy`, `GroupBySwitch`) and the same address
 (`Focus.runGroup`, read by `useGroupArrival`, which opens the group and focuses
-its first row). A question finds its branches through its asker and the asker's
+its first row; under By state the Artifacts list reads it too and focuses the first
+artifact of that branch, leaving the switch alone). A question finds its branches through its asker and the asker's
 descendants, else its run (`questionBranchesOf`); `questionBranchGroupsOf` sits
 next to `questionGroupsOf` and draws the one question model twice, so a staged,
 answered or dismissed question moves in every group. An artifact finds its
@@ -585,11 +588,11 @@ agent, else the run (`artifactBranchesOf`); `groupArtifactRowsByBranch` runs
 after `filterArtifactRows`, keeps the trash apart and leaves the state groups
 untouched. A replicated row has one key per group (`artifactBranchRowKeyOf`,
 `questionBranchRowKeyOf`) and the open question is marked only in its first
-group. The Branch page line holds a link per kind (`branchWorkLinkOf`,
-`useBranchWorkLinks`, `openBranchWork`), counted by the group functions, and Back
-from Questions or Artifacts returns to the branch (`parentPlace`). The Artifacts
-link is not there yet: it needs an artifacts hook on the Branch page, which the
-cross feature ratchets do not allow to grow. In the Agents panel an agent row
+group. The Work tab draws the question and artifact groups of the branch the same way
+(`questionGroupCountOf`, `artifactBranchCountOf`), its **All questions** and **All artifacts**
+go through `openBranchWork`, and Back from Questions or Artifacts returns to Work
+(`parentPlace`). The artifacts section is registered by the artifacts feature
+(`branchWorkArtifactsRegistration`), so no cross feature import grows. In the Agents panel an agent row
 names its branch only when its run touches two or more (`agentBranchLabelsOf`).
 Words say state and verbs are verbs: an agent you
 stopped reads **Stopped** and a run that has not started reads **Ready**, and

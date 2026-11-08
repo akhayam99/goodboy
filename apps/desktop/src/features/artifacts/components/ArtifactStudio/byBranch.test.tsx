@@ -100,6 +100,7 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { aMountView } from '../../../session/testing/aMountView';
+import { aProjectMountOf } from '../../../session/testing/aProjectMountOf';
 import { ArtifactStudio } from './index';
 
 type ProvenanceParams = {
@@ -211,6 +212,9 @@ beforeEach(async () => {
     currentSessionId: SESSION_ID,
     projects: [PAYMENTS, NOTIFY],
     sessionMounts: { [SESSION_ID]: [DUP, RETRY] },
+    sessionProjectMounts: {
+      [SESSION_ID]: [DUP, RETRY].map((view) => aProjectMountOf({ view })),
+    },
     sessionPhaseRuns: { [SESSION_ID]: [ON_DUP, ON_RETRY, WRITER] },
     sessionArtifacts: { [SESSION_ID]: [PLAIN, SHARED] },
     sessionPlans: { [SESSION_ID]: [] },
@@ -355,6 +359,62 @@ describe('Artifacts by branch', () => {
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
     await screen.findByText('Old credit notes');
+  });
+
+  it('reveals an artifact of the arrived branch while grouped by state, and keeps the grouping', async () => {
+    useAppStore.setState({ groupBySession: { [SESSION_ID]: 'state' } });
+    act(() => {
+      useAppStore
+        .getState()
+        .navigate({ to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }) });
+      useAppStore.getState().amendFocus({
+        patch: { runGroup: { groupKey: `mount:${RETRY.id}`, mountPath: RETRY.worktreePath } },
+      });
+    });
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <ArtifactStudio sessionId={SESSION_ID} />
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+
+    await waitFor(() =>
+      expect(document.activeElement?.getAttribute('data-artifact-row')).toBe(
+        `artifact:${SHARED.id}`,
+      ),
+    );
+    expect(screen.queryAllByTestId(/^artifact-branch-group-/)).toHaveLength(0);
+    expect(useAppStore.getState().groupBySession[SESSION_ID]).toBe('state');
+  });
+
+  it('does not reveal a cached row of the arrived branch when its provenance names another', async () => {
+    provenance.mountIds.set(ON_DUP.id, [RETRY.id]);
+    useAppStore.setState({
+      groupBySession: { [SESSION_ID]: 'state' },
+      sessionArtifacts: { [SESSION_ID]: [PLAIN] },
+    });
+    act(() => {
+      useAppStore
+        .getState()
+        .navigate({ to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }) });
+      useAppStore.getState().amendFocus({
+        patch: { runGroup: { groupKey: `mount:${DUP.id}`, mountPath: DUP.worktreePath } },
+      });
+    });
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <ArtifactStudio sessionId={SESSION_ID} />
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+
+    await screen.findByText('Credits explained');
+    await act(async () => undefined);
+    await act(async () => undefined);
+
+    expect(document.activeElement?.getAttribute('data-artifact-row') ?? null).toBeNull();
   });
 
   it('restores a used row in its branch after opening it and going Back', async () => {

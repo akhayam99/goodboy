@@ -40,6 +40,9 @@ beforeEach(async () => {
     if (typeof command !== 'string') {
       throw new Error('The scene command must be a string.');
     }
+    if (command === 'db_select') {
+      return Promise.resolve([]);
+    }
     return sceneInvoke({ command, args });
   });
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
@@ -101,13 +104,12 @@ describe('the u36 work by branch scenes', () => {
     ).toHaveLength(2);
   });
 
-  it('u36-c19-branch-links names the questions on this branch', async () => {
+  it('u36-c19-branch-links counts the waiting questions on the Work tab, with no line under the tabs', async () => {
     await mount('u36-c19-branch-links');
 
-    const line = document.querySelector<HTMLElement>('[data-branch-runs-line]');
-    if (line === null) {
-      throw new Error('missing the work line');
-    }
-    within(line).getByRole('button', { name: '2 questions' });
+    expect(document.querySelector('[data-branch-runs-line]')).toBeNull();
+    const strip = screen.getByRole('tablist', { name: 'Branch pages' });
+    const work = within(strip).getByRole('tab', { name: /^Work/ });
+    expect(work.querySelector('[data-tab-count]')?.textContent).toBe('2');
   });
 });

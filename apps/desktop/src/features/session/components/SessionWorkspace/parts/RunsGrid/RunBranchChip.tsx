@@ -10,11 +10,12 @@ type OpenParams = {
 type Props = {
   readonly branches: ReadonlyArray<WorkBranch>;
   readonly onOpenBranch: (params: OpenParams) => void;
+  readonly canOpenBranch: (params: OpenParams) => boolean;
 };
 
 const CHIP = 'rounded-sm bg-hover px-1 text-chip text-faint-foreground';
 
-export const RunBranchChip = ({ branches, onOpenBranch }: Props) => {
+export const RunBranchChip = ({ branches, onOpenBranch, canOpenBranch }: Props) => {
   const [first, ...rest] = branches;
   if (first === undefined) {
     return null;
@@ -22,18 +23,24 @@ export const RunBranchChip = ({ branches, onOpenBranch }: Props) => {
   return (
     <>
       <OptionalTooltip content={branchListLabelOf({ branches: [first] })}>
-        <Chip
-          as="button"
-          tone="neutral"
-          kind="id"
-          bordered={false}
-          emphasis="subtle"
-          testId="run-branch"
-          ariaLabel={`Open branch ${first.branch}`}
-          label={<span className="truncate">{first.branch}</span>}
-          className="min-w-0 shrink-[8]"
-          onClick={() => onOpenBranch({ mountId: first.mountId })}
-        />
+        {!canOpenBranch({ mountId: first.mountId }) ? (
+          <span data-testid="run-branch" className={cn(CHIP, 'min-w-0 shrink-[8] truncate')}>
+            {first.branch}
+          </span>
+        ) : (
+          <Chip
+            as="button"
+            tone="neutral"
+            kind="id"
+            bordered={false}
+            emphasis="subtle"
+            testId="run-branch"
+            ariaLabel={`Open branch ${first.branch}`}
+            label={<span className="truncate">{first.branch}</span>}
+            className="min-w-0 shrink-[8]"
+            onClick={() => onOpenBranch({ mountId: first.mountId })}
+          />
+        )}
       </OptionalTooltip>
       {rest.length === 0 ? null : (
         <OptionalTooltip content={branchListLabelOf({ branches: rest })}>

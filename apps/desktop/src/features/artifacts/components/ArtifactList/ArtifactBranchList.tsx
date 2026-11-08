@@ -35,6 +35,7 @@ type Props = {
   readonly onTogglePartsOf: (rowId: string) => void;
   readonly onOpenRow: (params: ArtifactOpenParams) => void;
   readonly onOpenBranch: (params: OpenBranchParams) => void;
+  readonly canOpenBranch: (params: OpenBranchParams) => boolean;
 };
 
 export const ArtifactBranchList = ({
@@ -47,6 +48,7 @@ export const ArtifactBranchList = ({
   onTogglePartsOf,
   onOpenRow,
   onOpenBranch,
+  canOpenBranch,
 }: Props) => {
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(
     () =>
@@ -124,6 +126,7 @@ export const ArtifactBranchList = ({
           onTogglePartsOf={onTogglePartsOf}
           onOpenRow={onOpenRow}
           onOpenBranch={onOpenBranch}
+          canOpenBranch={canOpenBranch}
         />
       ))}
       {view.deleted.length === 0 ? null : (

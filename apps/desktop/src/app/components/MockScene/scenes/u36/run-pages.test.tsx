@@ -464,9 +464,20 @@ describe('the form and the row', () => {
 });
 
 describe('the Branch page', () => {
-  it('names the runs on this branch', async () => {
+  it('counts the runs on this branch on the Work tab, with no line under the tabs', async () => {
+    storySpies.tauriInvoke.mockImplementation((command, args) => {
+      if (command === 'db_select') {
+        return Promise.resolve([]);
+      }
+      if (typeof command !== 'string') {
+        throw new Error('The scene command must be a string.');
+      }
+      return sceneInvoke({ command, args });
+    });
     await mount('u36-f3-branch-runs');
 
-    within(nodeOf('[data-branch-runs-line]')).getByRole('button', { name: /^1 run$/ });
+    expect(document.querySelector('[data-branch-runs-line]')).toBeNull();
+    const strip = screen.getByRole('tablist', { name: 'Branch pages' });
+    expect(within(strip).getByRole('tab', { name: /^Work/ }).textContent).toMatch(/^Work1$/);
   });
 });

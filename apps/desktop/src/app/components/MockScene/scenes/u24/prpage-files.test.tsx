@@ -133,7 +133,7 @@ describe('the u24 prpage files scenes', () => {
     await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Work']);
     expect(screen.queryAllByRole('article', { name: /^On GitHub/ })).toHaveLength(0);
     expect(screen.queryByRole('button', { name: /^Fix \d+ threads?$/ })).toBeNull();
   });

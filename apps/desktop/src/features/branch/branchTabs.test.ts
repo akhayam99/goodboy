@@ -61,7 +61,7 @@ const PR_STATES: ReadonlyArray<PullRequestStateKind> = [
   'closed',
 ];
 
-const ALL_FIVE: ReadonlyArray<BranchTab> = ['pr', 'comments', 'files', 'commits', 'checks'];
+const ALL_SIX: ReadonlyArray<BranchTab> = ['pr', 'comments', 'files', 'commits', 'checks', 'work'];
 
 const tabIds = (state: PullRequestPresentationState, hasComments: boolean) =>
   branchTabsOf({ state, hasComments }).map((tab) => tab.id);
@@ -128,17 +128,17 @@ beforeEach(() => {
 });
 
 describe('the Branch sections by state', () => {
-  it('gives Overview, Files and Commits with no pull request and no comment', () => {
-    expect(tabIds('none', false)).toEqual(['pr', 'files', 'commits']);
+  it('gives Overview, Files, Commits and Work with no pull request and no comment', () => {
+    expect(tabIds('none', false)).toEqual(['pr', 'files', 'commits', 'work']);
   });
 
   it('adds Comments with no pull request once one local note exists', () => {
-    expect(tabIds('none', true)).toEqual(['pr', 'comments', 'files', 'commits']);
+    expect(tabIds('none', true)).toEqual(['pr', 'comments', 'files', 'commits', 'work']);
   });
 
-  it.each(PR_STATES)('gives all five sections in the %s state', (state) => {
-    expect(tabIds(state, false)).toEqual(ALL_FIVE);
-    expect(tabIds(state, true)).toEqual(ALL_FIVE);
+  it.each(PR_STATES)('gives all six sections in the %s state', (state) => {
+    expect(tabIds(state, false)).toEqual(ALL_SIX);
+    expect(tabIds(state, true)).toEqual(ALL_SIX);
   });
 
   it('never shows Checks without a pull request', () => {
@@ -164,7 +164,7 @@ describe('the Branch sections by state', () => {
   it('leaves the pull request section out of a registry that holds it back', () => {
     expect(
       branchTabsOf({ state: 'open', hasComments: false }, withoutPr).map((tab) => tab.id),
-    ).toEqual(['comments', 'files', 'commits', 'checks']);
+    ).toEqual(['comments', 'files', 'commits', 'checks', 'work']);
   });
 
   it('names each section by the label of its shortcut, Overview aside', () => {
@@ -192,6 +192,7 @@ describe('the door resolver', () => {
     files: { 'none-plain': 'files', 'none-note': 'files', pr: 'files' },
     commits: { 'none-plain': 'commits', 'none-note': 'commits', pr: 'commits' },
     checks: { 'none-plain': 'pr', 'none-note': 'pr', pr: 'checks' },
+    work: { 'none-plain': 'work', 'none-note': 'work', pr: 'work' },
   };
 
   const keyOf = ({ pr, hasNote }: Case): string => {
@@ -201,7 +202,7 @@ describe('the door resolver', () => {
     return hasNote ? 'none-note' : 'none-plain';
   };
 
-  it.each(ALL_FIVE)('lands a %s door where the table says, in every state', (tab) => {
+  it.each(ALL_SIX)('lands a %s door where the table says, in every state', (tab) => {
     for (const scope of CASES) {
       const landing = landed({ ...scope, request: branchPlace({ sessionId: SESSION, tab }) });
       expect(landing, `${tab} with ${JSON.stringify(scope)}`).toBe(EXPECTED[tab][keyOf(scope)]);

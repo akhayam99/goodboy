@@ -42,6 +42,7 @@ const TARGET_WORD: Readonly<Record<MergeBoxTarget, string>> = {
   files: 'Changes',
   commits: 'Commits',
   checks: 'Checks',
+  work: 'Work',
   reviewers: 'Ask for review',
 };
 

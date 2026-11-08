@@ -2,8 +2,9 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { sessionPlace } from '../../store/slices/navigation/place';
 import type { LensKind } from '../../store/slices/session-view/types';
+import { markBranchWorkReturn } from './markBranchWorkReturn';
 
-export type BranchWorkLens = Extract<LensKind, 'workflows' | 'questions'>;
+export type BranchWorkLens = Extract<LensKind, 'workflows' | 'questions' | 'plans'>;
 
 type Params = {
   readonly sessionId: SessionId;
@@ -14,7 +15,9 @@ type Params = {
 
 export const openBranchWork = ({ sessionId, lens, groupKey, mountPath }: Params): void => {
   const state = useAppStore.getState();
-  state.setGroupBy({ sessionId, groupBy: 'branch' });
+  if (lens === 'plans') {
+    state.setArtifactFilter({ sessionId, filter: 'all' });
+  }
   state.navigate({ to: sessionPlace({ sessionId, lens }) });
-  useAppStore.getState().amendFocus({ patch: { runGroup: { groupKey, mountPath } } });
+  markBranchWorkReturn({ groupKey, mountPath });
 };

@@ -28,6 +28,7 @@ export type ArtifactBranchItems = Readonly<{
   items: ReadonlyArray<ArtifactBranchItem>;
   mounts: ReadonlyArray<MountRowView>;
   branchCount: number;
+  isSettled: boolean;
 }>;
 
 const NO_MOUNTS: ReadonlyArray<SessionMountView> = [];
@@ -91,7 +92,7 @@ export const useArtifactBranchItems = ({
         .map((item) => item.branches),
       mounts,
     });
-    return { items, mounts, branchCount };
+    return { items, mounts, branchCount, isSettled };
   }, [
     rows,
     plans,

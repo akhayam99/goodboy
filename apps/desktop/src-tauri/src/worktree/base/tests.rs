@@ -2,6 +2,7 @@ use super::{
     branch_integration, default_base_name, resolve_base, resolve_base_ref, resolve_branch_range,
 };
 use crate::worktree::changed_files::worktree_changed_files_blocking;
+use crate::worktree::commits::worktree_commits_blocking;
 use crate::worktree::create::worktree_create_blocking;
 use crate::worktree::diff::worktree_diff_blocking;
 use crate::worktree::git::git;
@@ -121,6 +122,35 @@ fn a_custom_default_branch_resolves_through_the_main_checkout_of_a_linked_mount(
     let (base_ref, _) = resolve_base(&path, None).expect("release resolves");
 
     assert_eq!(base_ref, "release");
+    cleanup(root);
+}
+
+#[test]
+fn the_commit_list_follows_the_configured_base_like_the_status_count() {
+    let root = repo_on("commits-configured", "main");
+    git_ok(&root, &["checkout", "-b", "stage"]);
+    commit(&root, "stage.txt", "stage\n", "stage work");
+    git_ok(&root, &["checkout", "main"]);
+    let path = mount(&root, "cfg-commits");
+    git_ok(&path, &["merge", "--ff-only", "stage"]);
+    commit(&path, "feature.txt", "a\n", "feature");
+    let worktree = path.to_string_lossy().into_owned();
+
+    let against_default = worktree_commits_blocking(worktree.clone(), None).unwrap();
+    let against_stage =
+        worktree_commits_blocking(worktree.clone(), Some("stage".to_string())).unwrap();
+    let status = worktree_status_blocking(worktree, Some("stage".to_string())).unwrap();
+
+    assert_eq!(against_default.len(), 2);
+    assert_eq!(against_stage.len(), 1);
+    assert_eq!(against_stage[0].subject, "feature");
+    assert_eq!(
+        status.main_distance,
+        GitDistance::Known {
+            ahead: 1,
+            behind: 0
+        }
+    );
     cleanup(root);
 }
 
@@ -298,7 +328,7 @@ fn an_adopted_branch_whose_upstream_equals_head_still_counts_its_work_against_or
     assert_eq!(
         git_ok(
             &path,
-            &["rev-list", "--count", &resolve_branch_range(&path)]
+            &["rev-list", "--count", &resolve_branch_range(&path, None)]
         ),
         "2"
     );

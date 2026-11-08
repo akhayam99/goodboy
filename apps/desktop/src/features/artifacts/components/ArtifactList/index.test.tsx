@@ -12,6 +12,8 @@ const { state, picker } = vi.hoisted(() => ({
     importWireframe: vi.fn(async (_params: Record<string, unknown>) => ({ id: 'wireframe-9' })),
     sessions: [] as ReadonlyArray<Record<string, unknown>>,
     workspaces: [] as ReadonlyArray<Record<string, unknown>>,
+    navigation: {},
+    currentWorkspaceId: null,
   },
   picker: { next: null as unknown },
 }));

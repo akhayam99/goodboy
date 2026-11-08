@@ -25,11 +25,12 @@ import {
 } from '../../../../../../store/storyHarness';
 import { aNowAgent, NOW_SESSION } from '../../../../central/now/testing/nowModelOf';
 import { aMountView } from '../../../../testing/aMountView';
+import { aProjectMountOf } from '../../../../testing/aProjectMountOf';
 import { sessionRunsOf, type SessionRun } from '../../../../sessionRunsOf';
 import { sessionPlace } from '../../../../../../store/slices/navigation/place';
 import { backOf } from '../../../../../../store/slices/navigation/backOf';
 import { captureLocation } from '../../../../../../store/slices/navigation/captureLocation';
-import { openBranchRuns } from '../../../../openBranchRuns';
+import { openBranchWork } from '../../../../openBranchWork';
 import { RENAME_REQUEST_EVENT } from '../../../../../../shared/utils/renameRequest';
 import { ObjectMenuProvider } from '../../../../../actions/components/ObjectMenuProvider';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
@@ -100,6 +101,7 @@ const renderWorld = ({ agents }: { readonly agents: ReadonlyArray<Agent> }) => {
   useAppStore.setState({
     sessionPhaseRuns: { [NOW_SESSION]: agents },
     sessionMounts: { [NOW_SESSION]: [...MOUNTS] },
+    sessionProjectMounts: { [NOW_SESSION]: MOUNTS.map((view) => aProjectMountOf({ view })) },
     projects: [PAYMENTS, NOTIFY],
   });
   return render(
@@ -142,6 +144,31 @@ describe('run row controls', () => {
     expect(navigate.mock.calls[0]?.[0]).toMatchObject({
       to: { view: { target: { kind: 'branch', mountPath: DUP.worktreePath } } },
     });
+  });
+
+  it('hides Open branch for a branch the Branch page does not know, and keeps its chip as text', () => {
+    renderWorld({ agents: twoBranchRun() });
+    act(() =>
+      useAppStore.setState({
+        sessionProjectMounts: { [NOW_SESSION]: [aProjectMountOf({ view: DUP })] },
+      }),
+    );
+
+    const groupOf = (name: string): HTMLElement => {
+      const group = screen.getByRole('heading', { level: 2, name }).closest('li');
+      if (group === null) {
+        throw new Error(`no group ${name}`);
+      }
+      return group;
+    };
+    within(groupOf('fix/duplicate-credit')).getByRole('button', { name: 'Open branch' });
+    expect(
+      within(groupOf('feat/retry-budget')).queryByRole('button', { name: 'Open branch' }),
+    ).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'By state' }));
+    expect(screen.queryByRole('button', { name: `Open branch ${RETRY.branch}` })).toBeNull();
+    screen.getAllByRole('button', { name: `Open branch ${DUP.branch}` });
   });
 
   it('reveals the same run in the other group from Also on and focuses it', () => {
@@ -216,7 +243,7 @@ describe('run row controls', () => {
 });
 
 describe('from a branch to its runs', () => {
-  it('lands on By branch, opens the group, and Back returns to the branch', () => {
+  it('opens the group, keeps the grouping, and Back returns to the branch', () => {
     const place = sessionPlace({ sessionId: NOW_SESSION });
     useAppStore.getState().navigate({ to: place });
     const finished: Agent = {
@@ -225,7 +252,12 @@ describe('from a branch to its runs', () => {
     };
     const groupKey = `mount:${DUP.id}`;
 
-    openBranchRuns({ sessionId: NOW_SESSION, groupKey, mountPath: DUP.worktreePath });
+    openBranchWork({
+      sessionId: NOW_SESSION,
+      lens: 'workflows',
+      groupKey,
+      mountPath: DUP.worktreePath,
+    });
     renderWorld({
       agents: [
         onMount({ key: 'block', name: 'Block double credits', mount: DUP }),
@@ -234,7 +266,7 @@ describe('from a branch to its runs', () => {
       ],
     });
 
-    expect(useAppStore.getState().groupBySession[NOW_SESSION]).toBe('branch');
+    expect(useAppStore.getState().groupBySession[NOW_SESSION]).toBeUndefined();
     screen.getByRole('button', { name: /^Open Older pass/ });
     const state = useAppStore.getState();
     const here = captureLocation({ state }).place;
@@ -269,7 +301,14 @@ describe('from a branch to its runs', () => {
     );
     expect(screen.queryByRole('button', { name: /^Open ledger-core/ })).toBeNull();
 
-    act(() => openBranchRuns({ sessionId: NOW_SESSION, groupKey, mountPath: DUP.worktreePath }));
+    act(() =>
+      openBranchWork({
+        sessionId: NOW_SESSION,
+        lens: 'workflows',
+        groupKey,
+        mountPath: DUP.worktreePath,
+      }),
+    );
 
     expect(screen.queryByRole('tab', { name: 'By branch' })).toBeNull();
     const row = screen.getByRole('button', { name: /^Open ledger-core/ });
@@ -306,8 +345,9 @@ describe('from a branch to its runs', () => {
     expect(screen.queryByRole('button', { name: /^Open ledger-core/ })).toBeNull();
 
     act(() =>
-      openBranchRuns({
+      openBranchWork({
         sessionId: NOW_SESSION,
+        lens: 'workflows',
         groupKey: `mount:${DUP.id}`,
         mountPath: DUP.worktreePath,
       }),
@@ -335,7 +375,12 @@ describe('from a branch to its runs', () => {
       throw new Error('no run');
     }
     const rowKey = `${groupKey}/${fifth.id}`;
-    openBranchRuns({ sessionId: NOW_SESSION, groupKey, mountPath: DUP.worktreePath });
+    openBranchWork({
+      sessionId: NOW_SESSION,
+      lens: 'workflows',
+      groupKey,
+      mountPath: DUP.worktreePath,
+    });
     useAppStore.getState().amendFocus({
       patch: { scroll: { runs: runs.indexOf(fifth) }, returnRows: { runs: rowKey } },
     });

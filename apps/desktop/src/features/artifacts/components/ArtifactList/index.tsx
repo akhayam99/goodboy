@@ -1,9 +1,10 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button, EmptyLine, EmptyState, PaneShell, Notice } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
 import { useFileDropTarget } from '../../../../shared/hooks/useFileDropTarget';
+import { useGroupArrival } from '../../../../shared/hooks/useGroupArrival';
 import { useAppStore } from '../../../../store';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import type { ArtifactFilter } from '../../artifactCollection';
@@ -33,6 +34,8 @@ type Props = {
   readonly branch?: ArtifactBranchProps;
   readonly onImported: (artifactId: ArtifactId) => void;
 };
+
+const keepGrouping = (): void => undefined;
 
 const NO_MATCH_LINE: Record<ArtifactFilter, string> = {
   all: 'No artifacts match this filter.',
@@ -80,6 +83,27 @@ export const ArtifactList = ({
   });
   const { openPartsIds, toggleParts } = useArtifactParts();
   const groups = useMemo(() => groupArtifactRows({ rows }), [rows]);
+  const [openedGroupBy] = useState(branch?.groupBy);
+  const arrivalGroups = useMemo(
+    () =>
+      (branch?.view.groups ?? []).map((group) => ({
+        key: group.key,
+        firstRowKey: group.items.find((item) => item.row.group !== 'deleted')?.row.id ?? null,
+      })),
+    [branch?.view.groups],
+  );
+  useGroupArrival({
+    isActive:
+      openedGroupBy !== undefined &&
+      openedGroupBy !== 'branch' &&
+      branch?.isSettled === true &&
+      loadState !== 'loading' &&
+      loadState !== 'error' &&
+      rows.length > 0,
+    rowAttribute: 'data-artifact-row',
+    groups: arrivalGroups,
+    onArrive: keepGrouping,
+  });
   const hasActionColumn = rows.some(
     (row) => row.group === 'needs' || row.group === 'deleted' || row.target.kind === 'generation',
   );
@@ -174,6 +198,7 @@ export const ArtifactList = ({
                 onTogglePartsOf={toggleParts}
                 onOpenRow={onOpen}
                 onOpenBranch={branch.onOpenBranch}
+                canOpenBranch={branch.canOpenBranch}
               />
             ) : (
               groups.map((entry) => (

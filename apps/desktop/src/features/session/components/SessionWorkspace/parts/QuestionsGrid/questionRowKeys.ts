@@ -54,3 +54,10 @@ type SummaryParams = {
 
 export const questionGroupSummaryOf = ({ waiting, fact }: SummaryParams): string =>
   [fact, waiting === 0 ? null : `${waiting} waiting`].filter((part) => part !== null).join(', ');
+
+type CountParams = {
+  readonly group: QuestionBranchGroup;
+};
+
+export const questionGroupCountOf = ({ group }: CountParams): number =>
+  group.waiting.length + group.answered.length;

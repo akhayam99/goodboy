@@ -1,27 +1,23 @@
-import { useMemo, type ReactNode } from 'react';
-import type { Agent, AgentId, MountId, Session } from '@goodboy/types';
+import { useMemo } from 'react';
+import type { MountId, Session } from '@goodboy/types';
 import { ListGrid } from '@goodboy/ui';
-import { agentPlace, useAppStore } from '../../../../../../store';
-import { useNow } from '../../../../../../shared/hooks/useNow';
+import { useAppStore } from '../../../../../../store';
 import { GroupBySwitch } from '../../../../../../shared/components/GroupBySwitch';
-import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentReveal';
-import { branchPlace } from '../../../../../../store/slices/navigation/place';
 import { useGroupBy } from '../../../../../../store/slices/session-grouping/hooks/useGroupBy';
-import { runPlace } from '../../../../../workflows/runPlace';
-import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { branchGroupsOf, namedBranchGroupCountOf } from '../../../../branchGroupsOf';
+import { openBranchWorkTab } from '../../../../openBranchWorkTab';
 import { runGroupsOf } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import { useMountRows } from '../../../../../../shared/hooks/useMountRows';
+import { useCanOpenBranchWork } from '../../../../hooks/useCanOpenBranchWork';
 import { ContinueAllAction } from './ContinueAllAction';
 import { RunsByBranch } from './RunsByBranch';
 import { RunsByState } from './RunsByState';
-import { RunsGridAgentRow } from './RunsGridAgentRow';
-import { RunsGridRow } from './RunsGridRow';
 import { StopAllAction } from './StopAllAction';
+import { openSessionRun } from './openSessionRun';
 import { RUNS_GRID_COLUMNS } from './runsGridColumns';
-import { useRunVerbPress } from './useRunVerbPress';
+import { useRunRowRender } from './useRunRowRender';
 import { useRunsFolds } from './useRunsFolds';
 
 type Props = {
@@ -34,33 +30,15 @@ type RowParams = {
   readonly rowKey: string;
 };
 
-type RenderParams = RowParams & {
-  readonly titleSuffix: ReactNode;
-};
-
 type MountParams = {
   readonly mountId: MountId;
 };
 
-type AgentParams = {
-  readonly agents: ReadonlyArray<Agent>;
-  readonly agentId: AgentId;
-};
-
-const NO_AGENTS: ReadonlyArray<Agent> = [];
-
-const agentOf = ({ agents, agentId }: AgentParams): Agent | null =>
-  agents.find((candidate) => candidate.id === agentId) ?? null;
-
 export const RunsGrid = ({ session, runs }: Props) => {
   const sessionId = session.id;
-  const now = useNow(30_000);
-  const navigate = useAppStore((state) => state.navigate);
   const setGroupBy = useAppStore((state) => state.setGroupBy);
-  const verbPress = useRunVerbPress({ sessionId });
-  const { aggregatesByAgentId } = useAgentMetrics({ sessionId });
-  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const mountGroups = useMountRows({ sessionId });
+  const canOpenBranch = useCanOpenBranchWork({ sessionId });
   const mounts = useMemo(
     () => mountGroups.flatMap((group) => [...group.rows, ...group.finishedRows]),
     [mountGroups],
@@ -76,73 +54,15 @@ export const RunsGrid = ({ session, runs }: Props) => {
   const { rowReturn, revealRun } = folds;
 
   const openBranch = ({ mountId }: MountParams) => {
-    const mount = mounts.find((candidate) => candidate.mountId === mountId);
-    navigate({ to: branchPlace({ sessionId, mountPath: mount?.worktreePath ?? null }) });
+    openBranchWorkTab({ sessionId, mountId });
   };
 
   const open = ({ run, rowKey }: RowParams) => {
     rowReturn.remember({ rowId: rowKey });
-    switch (run.open.kind) {
-      case 'run':
-        navigate({ to: runPlace({ sessionId, runId: run.open.runId }) });
-        return;
-      case 'auto':
-        navigate({ to: agentPlace({ sessionId, agentId: run.open.agentId }) });
-        return;
-      case 'agent':
-        navigate({ to: agentPlace({ sessionId, agentId: run.open.agentId }) });
-        window.dispatchEvent(openAgentRevealEvent());
-        return;
-      default: {
-        const unreachable: never = run.open;
-        return unreachable;
-      }
-    }
+    openSessionRun({ sessionId, run });
   };
 
-  const renderRow = ({ run, rowKey, titleSuffix }: RenderParams) => {
-    const aggregates = run.agentIds.map((agentId) => aggregatesByAgentId.get(agentId));
-    const isCostTracked = aggregates.some((aggregate) => (aggregate?.turns ?? 0) > 0);
-    const agent =
-      run.shape === 'lead' && run.open.kind !== 'run'
-        ? agentOf({ agents, agentId: run.open.agentId })
-        : null;
-    const costUsd = isCostTracked
-      ? aggregates.reduce((total, aggregate) => total + (aggregate?.estimatedCostUsd ?? 0), 0)
-      : null;
-    if (agent === null) {
-      return (
-        <RunsGridRow
-          key={rowKey}
-          session={session}
-          run={run}
-          rowKey={rowKey}
-          modelLine={null}
-          costUsd={costUsd}
-          titleSuffix={titleSuffix}
-          now={now}
-          isVerbBusy={verbPress.isBusy({ run })}
-          onOpen={() => open({ run, rowKey })}
-          onVerb={() => verbPress.press({ run })}
-        />
-      );
-    }
-    return (
-      <RunsGridAgentRow
-        key={rowKey}
-        session={session}
-        run={run}
-        rowKey={rowKey}
-        agent={agent}
-        costUsd={costUsd}
-        titleSuffix={titleSuffix}
-        now={now}
-        isVerbBusy={verbPress.isBusy({ run })}
-        onOpen={() => open({ run, rowKey })}
-        onVerb={() => verbPress.press({ run })}
-      />
-    );
-  };
+  const renderRow = useRunRowRender({ session, onOpen: open });
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -164,6 +84,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
             openGroups={folds.openGroups}
             onToggleGroup={folds.toggleGroup}
             onOpenBranch={openBranch}
+            canOpenBranch={canOpenBranch}
             onRevealRun={revealRun}
             renderRow={renderRow}
           />
@@ -175,6 +96,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
             onToggleEarlier={folds.toggleEarlier}
             onToggleArchived={folds.toggleArchived}
             onOpenBranch={openBranch}
+            canOpenBranch={canOpenBranch}
             renderRow={renderRow}
           />
         )}

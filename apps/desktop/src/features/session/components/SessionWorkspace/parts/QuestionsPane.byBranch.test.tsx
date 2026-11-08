@@ -270,6 +270,21 @@ describe('Questions by branch', () => {
     expect(useAppStore.getState().groupBySession[SESSION.id]).toBe('branch');
   });
 
+  it('keeps the grouping you chose when a branch sends you here', () => {
+    useAppStore.setState({ groupBySession: { [SESSION.id]: 'state' } });
+
+    act(() =>
+      openBranchWork({
+        sessionId: SESSION.id,
+        lens: 'questions',
+        groupKey: `mount:${DUP.id}`,
+        mountPath: DUP.worktreePath,
+      }),
+    );
+
+    expect(useAppStore.getState().groupBySession[SESSION.id]).toBe('state');
+  });
+
   it('reveals another branch from Also on without opening the question drawer', async () => {
     render(<QuestionsPane session={SESSION} />);
     const chips = await screen.findAllByTestId('run-also-on');

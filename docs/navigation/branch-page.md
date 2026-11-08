@@ -230,9 +230,9 @@ Copy patch, and Rebase and Request review have their own place on Commits and Ov
 
 **Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
-pull request and no comment `Pull request`, `Changes`, `Commits`; with a local note or a thread
+pull request and no comment `Pull request`, `Changes`, `Commits`, `Work`; with a local note or a thread
 and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, Merged and
-Closed show all five, `Pull request`, `Comments`, `Changes`, `Commits`, `Checks`. The first is
+Closed show all six, `Pull request`, `Comments`, `Changes`, `Commits`, `Checks`, `Work`. The first is
 labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
 Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
 request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you; the counts and their scope are written once, under the entry slots below. Merged and
@@ -383,7 +383,7 @@ Every Branch section sits on the 960px column (`PaneShell width="column"`, bodie
 moves from one section to the next, except that Changes gives up the width of its file rail
 on the right and the column re-centres in what is left. The Comments section is one full-width
 list at every pane width, with no back link; the open comment is the drawer, and the last row
-opened stays marked after the drawer closes. The entry slots read nothing until the data for the current branch arrives and nothing at zero (`branchTabFactsOf`, one function for the tab and the head of its page). After a branch or mount switch a count read for the previous target is never shown: `useSessionDiff` keys its commits and status by worktree path and base, so the count stays unknown, and a failed read shows the error with no count. Pull request: `Draft`, `Merged` or `Closed`. Comments: the open ones of the branch scope, the same entries the Comments page lists (host threads and local notes, `useBranchReview().branchEntries`), in warning tone when some need you. Changes: the file count and `+added -removed` of the branch; inside Changes the Files toggle and the file rail count the files and lines of the loaded diff (`filesHeadFactOf`), the same snapshot as the listed files, while the tab keeps the polled branch summary. Commits: the branch's commit total (the ahead count), `↑N` (tooltip `N not pushed`) only when no total is known and some are unpushed; the diff selector says `All N commits` with the same total, `All commits` when a capped list has no total, and the picker lists `Showing latest 100` whenever the list is capped (`branchCommitsLabel`). The unpushed count is `branchPushFactsOf(...).toPush`: the history draft's unpushed commits once the branch has an upstream, else the status: the upstream's ahead count, a diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed its commits over main. `branchPushFactsOf` in `shared/lib/branchPushState.ts` is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action registry facts and the rail all read it, so a diverged branch never reads `Pushed`. Checks: the failing (danger) or running (info) count, else the passed count. All three arrive without a visit: `BranchPage` loads
+opened stays marked after the drawer closes. The entry slots read nothing until the data for the current branch arrives and nothing at zero (`branchTabFactsOf`, one function for the tab and the head of its page). After a branch or mount switch a count read for the previous target is never shown: `useSessionDiff` keys its commits and status by worktree path and base, so the count stays unknown, and a failed read shows the error with no count. Pull request: `Draft`, `Merged` or `Closed`. Comments: the open ones of the branch scope, the same entries the Comments page lists (host threads and local notes, `useBranchReview().branchEntries`), in warning tone when some need you. Changes: the file count and `+added -removed` of the branch; inside Changes the Files toggle and the file rail count the files and lines of the loaded diff (`filesHeadFactOf`), the same snapshot as the listed files, while the tab keeps the polled branch summary. Commits: the branch's commit total (the ahead count), `↑N` (tooltip `N not pushed`) only when no total is known and some are unpushed; the diff selector says `All N commits` with the same total, and its list is cut against the same base as that total (`listBranchCommits` passes the mount's `baseBranch` to `worktree_commits`), `All commits` when a capped list has no total, and the picker lists `Showing latest 100` whenever the list is capped (`branchCommitsLabel`). The unpushed count is `branchPushFactsOf(...).toPush`: the history draft's unpushed commits once the branch has an upstream, else the status: the upstream's ahead count, a diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed its commits over main. `branchPushFactsOf` in `shared/lib/branchPushState.ts` is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action registry facts and the rail all read it, so a diverged branch never reads `Pushed`. Checks: the failing (danger) or running (info) count, else the passed count. Work: the runs that need you, the questions that wait for you and the artifacts that need you, each wait counted once (a question or artifact whose agent belongs to a run that needs you, or whose asker already counts, is the same wait), in warning, else the runs working (info), else the runs, questions and artifacts of the branch together, all from the session pages' branch group of the mount (`branchWorkCountsOf`, read once the questions and artifacts loaded, so the badge never climbs while they arrive). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Branch header on the Comments section, is the one fix launch.
 
@@ -526,6 +526,37 @@ session reads them through the same five states once its host's
 fail counts as skipped; Bitbucket: its commit statuses; a token that cannot read pipelines gets the denied
 notice with `Open GitLab settings`); while it is off the tab says Goodboy does
 not show that host's checks yet (`checksViewOf`).
+
+**Work.** The last tab holds what Goodboy did on the branch: `Runs`, `Questions` and `Artifacts`,
+each the branch group the session page draws for this mount (`branchGroupKeyOfMount`), with the same
+rows, folds (`N finished`, `N answered`, `N used`) and counts, so the two can never disagree. Each
+section reuses the session page's group (`RunsByBranch`, `QuestionsByBranch`,
+`ArtifactBranchSection`) with a `heading` in place of the branch name: its icon, its name and
+`All runs`, `All questions` or `All artifacts`, which open the session page on that group without
+touching its By branch or By state switch (`openBranchWork`). A section with nothing for the branch
+is left out; with nothing at all the tab says so. The tab body comes from one registration module of the session feature,
+`branchWorkTabRegistration` (`useWork` and `render`, typed by `BranchWorkTabRegistration` in
+`features/branch/branchWorkTab.ts`), which `useBranchTabFacts` and `BranchWorkBody` import
+directly; the artifacts section comes the same way from `branchWorkArtifactsRegistration`. The tab is
+always available: a missing registration is a build error, not a state the page handles. Past that
+module the Work tab adds no import of the session feature's components or hooks.
+`useBranchTabFacts` reads it once per page for the badge and the body; until the questions and the
+artifacts are read the body is a skeleton, and for artifacts also until every provenance read has
+answered (`useArtifactBranchItems` `isSettled`). A run, an agent or an artifact opened from Work, by a
+row or by a row menu action, marks the new history entry with `Focus.runGroup`
+(`useMarkBranchWorkLeave`, written on the entry as it lands, not through `amendFocus`, which would
+sync that entry to the page still showing), so its `Back to` leads to this tab (`parentPlace`) even
+after Back from a child agent, and under By state the Artifacts page reveals the arrived branch only
+once every provenance read has answered (`useGroupArrival` waits for `isSettled`). A
+question opens its drawer over the Questions page, whose `Close` goes back here. Back also reopens the
+fold that held the row you left and scrolls to it (`useRowReturn`: `N finished`, `N archived`,
+`N answered`, `N used`). `Also on` on a row
+opens the Work tab of the other branch. `Open branch` on Runs, Questions and Artifacts, and a run's
+branch chip, land on Work (`openBranchWorkTab`), on the path the Branch page knows for that mount id
+(`sessionProjectMounts`), so a row with no worktree path never opens the fallback branch; a group, chip or series
+row whose mount the page does not know draws no `Open branch` (`useCanOpenBranchWork`, `branchPageMountOf`). The Projects tree draws no Work mark yet (`worktreeEntryFactsOf`
+gives Work no fact): the tree reads no runs or questions per row. The Monitoring entry for the branch has no slot yet:
+it joins as a fourth section once Monitoring takes a branch target.
 
 The Branch page shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. Every rewrite takes the shown

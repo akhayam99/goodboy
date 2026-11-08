@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import { PageColumn, PaneShell } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
-import { useAppStore, useMountDiffStats } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
@@ -30,17 +30,14 @@ import { pushPhaseYieldsOf } from '../../pushPhaseYieldsOf';
 import { hasOpenRebaseStopOf } from '../../hasOpenRebaseStopOf';
 import { MERGE_METHOD_LABEL } from '../../../actions/kinds/pullRequest';
 import { useBranchTab } from '../../hooks/useBranchTab';
+import { useBranchTabFacts } from '../../hooks/useBranchTabFacts';
 import { usePullRequestView } from '../../hooks/usePullRequestView';
 import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
 import { useBranchReviewState } from '../../hooks/useBranchReviewState';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
-import { pullRequestRunsOf } from '../../pullRequestRunsOf';
-import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
-import { commentStateCountsOf } from '../../../resolve/commentGroupsView';
 import { requestNounLabel } from '../../requestNounLabel';
-import { branchTabFactsOf } from '../../branchTabFactsOf';
 import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
@@ -55,6 +52,7 @@ import { PullRequestHeaderLine } from '../PullRequestTab/PullRequestHeaderLine';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
 import { BranchDetail } from './BranchDetail';
 import { BranchScroll } from './BranchScroll';
+import { BranchWorkBody } from './BranchWorkBody';
 import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
 
 const NO_PREFILL = { title: '', body: '' };
@@ -117,7 +115,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   });
 
   const { pr } = identity;
-  const mountDiffStats = useMountDiffStats(sessionId);
   const remoteKind = useMountRemoteHostKind({
     sessionId,
     repoRoot: identity.mount?.repoRoot ?? null,
@@ -360,6 +357,9 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         />
       );
     }
+    if (tab === 'work') {
+      return <BranchWorkBody session={session} work={work} />;
+    }
     if (tab === 'checks') {
       return (
         <BranchScroll key={tab} sessionId={sessionId} tab={tab} view={pullRequestView.view}>
@@ -385,23 +385,16 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       />
     ) : null;
 
-  const checksRuns = pullRequestRunsOf({
-    pr,
+  const { facts: entryFacts, work } = useBranchTabFacts({
+    session,
+    identity,
+    state: scope.state,
     detail: github?.detail ?? null,
     view: pullRequestView.view,
-  });
-  const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
-  const commentStateCounts = commentStateCountsOf({ entries: branchReview.branchEntries });
-  const entryFacts = branchTabFactsOf({
-    pullRequestState: scope.state,
-    commentsNeedYou: commentStateCounts.needYou,
-    commentsOpen: commentStateCounts.open,
-    files: mountStat?.files ?? loadedBranchFilesOf({ diff: { ...diff, isLoading: diff.loading } }),
-    diff: mountStat,
-    commits: start.step.ahead,
+    entries: branchReview.branchEntries,
+    loadedFiles: loadedBranchFilesOf({ diff: { ...diff, isLoading: diff.loading } }),
+    ahead: start.step.ahead,
     notPushed: pushCount,
-    checks: checksRuns,
-    checksUnreadReason: checksUnreadReasonOf({ pr, detail: github?.detail ?? null }),
   });
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 

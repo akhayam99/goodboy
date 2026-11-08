@@ -40,6 +40,7 @@ type Props = {
   readonly selectedId: OpenQuestionId | null;
   readonly onOpen: (params: OpenQuestionParams) => void;
   readonly onOpenBranch: (params: OpenBranchParams) => void;
+  readonly canOpenBranch: (params: OpenBranchParams) => boolean;
   readonly onGroupByChange: (params: GroupByParams) => void;
 };
 
@@ -75,6 +76,7 @@ export const QuestionsGrid = ({
   selectedId,
   onOpen,
   onOpenBranch,
+  canOpenBranch,
   onGroupByChange,
 }: Props) => {
   const now = useNow(30_000);
@@ -226,6 +228,7 @@ export const QuestionsGrid = ({
             openGroups={openGroups}
             onToggleGroup={toggleGroup}
             onOpenBranch={onOpenBranch}
+            canOpenBranch={canOpenBranch}
             onRevealQuestion={revealQuestion}
             renderRow={({ item, rowKey, titleSuffix }) =>
               renderRow({

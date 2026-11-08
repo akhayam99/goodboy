@@ -54,9 +54,23 @@ export const BRANCH_TAB_REGISTRY: BranchTabRegistry = {
     shortcut: null,
     isAvailable: true,
   },
+  work: {
+    id: 'work',
+    label: 'Work',
+    address: 'work',
+    shortcut: null,
+    isAvailable: true,
+  },
 };
 
-const BRANCH_TAB_ORDER: ReadonlyArray<BranchTab> = ['pr', 'comments', 'files', 'commits', 'checks'];
+const BRANCH_TAB_ORDER: ReadonlyArray<BranchTab> = [
+  'pr',
+  'comments',
+  'files',
+  'commits',
+  'checks',
+  'work',
+];
 
 type ShownParams = {
   readonly tab: BranchTab;

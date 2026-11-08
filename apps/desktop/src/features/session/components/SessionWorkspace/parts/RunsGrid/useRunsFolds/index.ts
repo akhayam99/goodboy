@@ -8,6 +8,7 @@ import type { BranchGroup } from '../../../../../branchGroupsOf';
 import { VISIBLE_FINISHED_COUNT } from '../../../../../finishedRunsCap';
 import type { SessionRun } from '../../../../../sessionRunsOf';
 import { archivedFoldKeyOf } from '../branchGroupRunsOf';
+import { returnFoldKeyOf } from '../returnFoldKeyOf';
 
 type Params = {
   readonly groupBy: GroupBy;
@@ -22,33 +23,6 @@ type GroupParams = {
 type RevealParams = {
   readonly run: SessionRun;
   readonly fromGroupKey: string;
-};
-
-type ReturnFoldParams = {
-  readonly groupBy: GroupBy;
-  readonly returnRowId: string | null;
-  readonly branchGroups: ReadonlyArray<BranchGroup>;
-};
-
-const foldKeyOfReturnRow = ({
-  groupBy,
-  returnRowId,
-  branchGroups,
-}: ReturnFoldParams): string | undefined => {
-  if (groupBy !== 'branch' || returnRowId === null) {
-    return undefined;
-  }
-  for (const group of branchGroups) {
-    const run = group.runs.find((candidate) => `${group.key}/${candidate.id}` === returnRowId);
-    if (run === undefined) {
-      continue;
-    }
-    if (run.isArchived) {
-      return archivedFoldKeyOf({ groupKey: group.key });
-    }
-    return run.isFinished ? group.key : undefined;
-  }
-  return undefined;
 };
 
 export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
@@ -73,7 +47,10 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
     finished.slice(VISIBLE_FINISHED_COUNT).some((run) => run.id === returnRowId);
   const isReturnArchived =
     groupBy === 'state' && returnRowId !== null && archived.some((run) => run.id === returnRowId);
-  const foldKeyOfReturn = foldKeyOfReturnRow({ groupBy, returnRowId, branchGroups });
+  const foldKeyOfReturn = returnFoldKeyOf({
+    returnRowId: groupBy === 'branch' ? returnRowId : null,
+    branchGroups,
+  });
   const unfoldedFor = useRef<string | null>(null);
   const arrivedGroupKey = useAppStore((state) => runGroupFocusOf({ state })?.groupKey ?? null);
   const revealedArrival = useRef<string | null>(null);

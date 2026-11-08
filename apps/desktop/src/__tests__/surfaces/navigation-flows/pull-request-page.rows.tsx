@@ -86,7 +86,7 @@ const activity = (): Promise<HTMLElement> =>
 
 export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'pull request page: a branch with a pull request lands on the Overview, first of the five sections',
+    name: 'pull request page: a branch with a pull request lands on the Overview, first of the six sections',
     covers: ['tab:pr'],
     open: async () => {
       stopSyncs();
@@ -97,7 +97,7 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
       () => heading(/Stop retried webhooks/),
       async () => {
         expect(sectionLabels()[0]).toBe('Pull request');
-        expect(sectionLabels()).toHaveLength(5);
+        expect(sectionLabels()).toHaveLength(6);
       },
     ),
   },
