@@ -31,6 +31,7 @@ const TABS: readonly Tab[] = [
     ),
   },
   { label: 'Checks' },
+  { label: 'Work' },
 ];
 
 export const DiffReviewTabs = () => (

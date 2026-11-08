@@ -434,15 +434,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'review',
     group: 'daily',
     title: 'Review and the Branch page',
-    lead: 'One page per branch: its pull request, comments, changes, commits and checks, so you read the code, fix review comments and merge without leaving the app.',
+    lead: 'One page per branch, so you read the code, fix review comments and merge without leaving the app.',
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Changes, Commits and Checks. Rebase sits on its row. The palette, a notification or the board open the same page.',
+        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Changes, Commits, Checks and Work. Rebase sits on its row, and Running here opens Monitoring on the branch. The palette, a notification or the board open the same page.',
       },
       {
         term: 'Pull request',
-        desc: 'State, base, checks and whether it can merge, in plain words. Add reviewers or merge it the ways the host allows; with none yet, a create form offers Write with Scribe.',
+        desc: 'One merge box says whether it can merge, then what holds it, worst first. Add reviewers or merge the ways the host allows; with none yet, a create form offers Write with Scribe.',
+      },
+      {
+        term: 'Work',
+        desc: 'Runs, questions and artifacts of the branch, with a count of what waits for you.',
       },
       {
         term: 'Comments',
@@ -450,7 +454,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Fix comments',
-        desc: 'In the Branch header, it runs one agent through the comments you check, in its own copy of the branch. Each ends in a fix, a reply or a question, and nothing leaves until you push.',
+        desc: 'In the Branch header, it runs one agent through the comments you check, in its own copy of the branch. Each ends in a fix, a reply or a question, and nothing leaves until Push, which previews first when something needs a decision.',
       },
       {
         term: 'Changes',
@@ -458,11 +462,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'CI runs grouped as Failing, Running, Passed and Skipped. Analyze on a failing one starts the Debugger, which reads the log and proposes a fix, with Start fix and Push in its drawer.',
-      },
-      {
-        term: 'Push',
-        desc: 'One Push in the Branch header covers every ready comment, with a preview first when something needs a decision.',
+        desc: 'CI runs grouped as Failing, Running, Passed and Skipped. Analyze on a failing one starts the Debugger, which proposes a fix, with Start fix and Push in its drawer.',
       },
     ],
     links: [
@@ -595,11 +595,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'monitoring',
     group: 'daily',
     title: 'Monitoring',
-    lead: 'The ports in use on this Mac, who opened them and how to stop them, on macOS and Linux.',
+    lead: 'The ports in use, who opened them down to the session, run and branch, and how to stop them, on macOS and Linux.',
     points: [
       {
         term: 'Four groups',
-        desc: 'Pinned holds the ports you add with Pin a port, each with your own description. Run by Goodboy, From workspace and Listening on this Mac follow, and a port shows in one only.',
+        desc: 'Pinned holds ports you add with Pin a port, with your description. Run by Goodboy, From workspace and Listening on this Mac follow; a port shows in one only.',
       },
       {
         term: 'A pinned port down',
@@ -607,11 +607,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rows',
-        desc: 'Stop and the ⋯ menu fill one cell when you rest on a row, and a right click opens the same menu: Open in browser, Pin, Hide and Copy address.',
+        desc: 'Resting on a row shows Stop and the ⋯ menu; a right click opens the same menu: Open in browser, Pin, Hide and Copy address.',
       },
       {
         term: 'Stop',
-        desc: 'Asks first and names who loses the port. A process that does not exit in time offers Force stop, and a refused stop keeps the row with the reason.',
+        desc: 'Asks first and names who loses the port. A process that does not exit offers Force stop; a refused stop keeps the row with its reason.',
       },
       {
         term: 'Leftovers',
@@ -769,7 +769,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Terminal',
-        desc: `Control and backtick open Terminal, every terminal of the workspace in one list. ${shortcutGlyphs('terminal.newTab')} adds a tab while one has focus, and shells survive a reload.`,
+        desc: `Control and backtick open Terminal, every terminal of the workspace in one list. ${shortcutGlyphs('terminal.newTab')} adds a tab while one has focus, and shells survive a reload. A zsh row shows its last command.`,
       },
       {
         term: 'Right click',

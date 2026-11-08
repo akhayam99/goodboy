@@ -12,6 +12,78 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.13
+
+The Branch page ranks what blocks the merge and gathers its runs, questions and artifacts, and every process names the branch it runs on.
+
+### New
+
+#### A Work tab on the Branch page
+<!-- gb area=review image=work-tab pr=2132,2141 -->
+
+The Branch page has a sixth tab, Work: the runs, questions and artifacts of that branch in one place, with or without a pull request. The three sections line up in one grid, answered questions fold with their answer, and the tab count shows what waits for you, a run and the question it waits on counted once.
+
+Open branch on Runs, Questions and Artifacts lands on Work, and Back from a run or an artifact opened there returns to Work.
+
+#### Processes know their branch
+<!-- gb area=scripts pr=2136,2127 -->
+
+Shells, scripts and agent processes remember the session, agent, run and branch they started on, and keep that branch when the worktree switches. In Monitoring, Opened by is a chain of links back to each of them.
+
+The Branch page shows Running here, the ports open on that branch with what opened them. All ports of this branch opens Monitoring filtered to it.
+
+#### Terminal rows show the last command
+<!-- gb area=scripts pr=2136 -->
+
+A zsh terminal row reads the command that is running, or how the last one ended, such as pnpm test failed, exit 1. Your own shell files stay untouched, and Settings, General, Built-in terminal turns it off.
+
+### Improved
+
+#### A merge box that ranks what blocks the merge
+<!-- gb area=review image=merge-box pr=2133,2141 -->
+
+The Pull request tab opens on one merge box. A verdict answers whether it can merge, with the next steps under it in the order the branch header takes them, then one row per thing that holds the merge, worst first, each opening where it gets fixed. What passes folds into one quiet line.
+
+The side column lists reviewers, then review apps under Bots with one word each, linked issues and the author. A long description folds after five lines.
+
+#### Activity filters and one row per review app
+<!-- gb area=review pr=2135 -->
+
+Activity filters by All, People, Bots, Pushes and Checks, each with its count, and a filter with nothing in it is not offered. Pushes in a row by one author fold into one row.
+
+Each review app gets one row with its verdict, such as 1 issue, and its summary folds behind Show summary.
+
+#### Counts on every branch tab
+<!-- gb area=review image=branch-counts pr=2126,2130,2139 -->
+
+Every branch tab shows its count again in faint ink, with color only for what needs you: open comments, changed files with lines added and removed, commits and checks. The Files toggle on Changes reads the same number.
+
+On Comments, Open and Resolved sit side by side with their counts, and bot comments preview as plain text.
+
+#### Headers step aside while you read
+<!-- gb area=app pr=2129,2134 -->
+
+Scroll down a page and its header slides away, then comes back on a small scroll up, at the top, or when you change tab. The back row stays pinned, and a soft shade marks where content passes under it.
+
+Every page and drawer with a scroller works this way. The composer stays where it is, and new messages never move the header.
+
+#### Monitoring and Terminal keep their place
+<!-- gb area=scripts pr=2127 -->
+
+Monitoring keeps its search, its open folds and its scroll position when you leave and come back, and Terminal keeps its Archived fold. Monitoring can show one branch, with a chip that clears it.
+
+### Fixed
+
+- A message you type to an Auto helper keeps that helper's role and tools, and runs on the model Auto picked for it. <!-- gb area=agents pr=2128 -->
+- A running agent never reads as finished, so the Runs header and its rows agree. <!-- gb area=workflows pr=2137 -->
+- A review app on GitHub is listed under Bots instead of among the reviewers. <!-- gb area=review pr=2133 -->
+- The Comments tab, the merge box and the activity show the same number of open threads. <!-- gb area=review pr=2135,2139 -->
+- The Bots filter in the activity counts the review app rows it lists. <!-- gb area=review pr=2139 -->
+- Reviewers show a short placeholder while they load instead of Nobody asked yet. <!-- gb area=review pr=2133 -->
+- Opening a branch keeps the grouping you chose on Runs, Questions and Artifacts. <!-- gb area=workflows pr=2132 -->
+- Plans that fail to load on Artifacts show Retry instead of loading forever. <!-- gb area=artifacts pr=2132 -->
+- A relative time such as 40m ago stays on one line. <!-- gb area=app pr=2141 -->
+
 ## Goodboy v0.31.12
 
 Every session page, run and agent reads the same way: one page, one dock, one word per state, and an error that says what to do next.
