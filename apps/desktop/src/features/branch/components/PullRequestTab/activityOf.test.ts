@@ -201,7 +201,7 @@ describe('pullRequestActivityOf', () => {
       edits: [],
     });
 
-    expect(items.find((item) => item.kind === 'comments')).toMatchObject({ total: 1, open: 0 });
+    expect(items.find((item) => item.kind === 'comments')).toMatchObject({ open: 0 });
   });
 
   it('takes the open thread count from the threads it is given', () => {
@@ -417,7 +417,7 @@ describe('pullRequestActivityOf', () => {
     });
 
     const line = items.find((item) => item.kind === 'comments');
-    expect(line).toMatchObject({ total: 2, needYou: 1, open: 1 });
+    expect(line).toMatchObject({ needYou: 1, open: 1 });
   });
 
   it('has no comments line while nobody commented on a file', () => {

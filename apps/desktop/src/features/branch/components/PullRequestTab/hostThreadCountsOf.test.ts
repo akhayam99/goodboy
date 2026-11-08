@@ -81,6 +81,21 @@ describe('hostThreadCountsOf', () => {
     });
   });
 
+  it('keeps the host heads while only a local note has loaded', () => {
+    const note: ThreadEntry = {
+      threadId: 'note-a',
+      resolveWord: 'open',
+      row: {
+        thread: { stage: 'new', state: 'open', stateReason: null, originKind: 'diff_comment' },
+      },
+    };
+    expect(hostThreadCountsOf({ comments: [BOT_THREAD], entries: [note] })).toEqual({
+      open: 1,
+      resolved: 0,
+      needYou: 1,
+    });
+  });
+
   it('reads the same numbers once the entries load', () => {
     const comments = [BOT_THREAD, RESOLVED_THREAD];
 

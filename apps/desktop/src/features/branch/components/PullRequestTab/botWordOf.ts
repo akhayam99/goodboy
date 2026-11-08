@@ -1,7 +1,11 @@
 import type { PrComment, PullRequestReviewer } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { countNoun } from '../../../../shared/utils/countNoun';
-import { commentStateCountsOf, type ThreadEntry } from '../../../resolve/commentGroupsView';
+import {
+  commentStateCountsOf,
+  entriesInScopeOf,
+  type ThreadEntry,
+} from '../../../resolve/commentGroupsView';
 import { botKeyOf } from './botKeyOf';
 import { reviewHeadsOf } from './reviewHeadsOf';
 import { REVIEWER_STATE_WORD } from './reviewerStateWord';
@@ -25,13 +29,14 @@ type BotTally = {
 const botTallyOf = ({ bot, comments, entries }: Params): BotTally => {
   const key = botKeyOf({ login: bot.person.login });
   const heads = reviewHeadsOf({ comments, botKey: key });
-  if (entries.length === 0) {
+  const hostEntries = entriesInScopeOf({ entries, scope: 'comments' });
+  if (hostEntries.length === 0) {
     return {
       open: heads.filter((head) => head.resolved !== true).length,
       raised: heads.length,
     };
   }
-  const byThread = new Map(entries.map((entry) => [entry.threadId, entry]));
+  const byThread = new Map(hostEntries.map((entry) => [entry.threadId, entry]));
   const tracked = heads.flatMap((head) => byThread.get(head.threadId ?? head.id) ?? []);
   return { open: commentStateCountsOf({ entries: tracked }).open, raised: tracked.length };
 };

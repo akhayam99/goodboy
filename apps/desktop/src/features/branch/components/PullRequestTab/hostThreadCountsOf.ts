@@ -1,6 +1,7 @@
 import type { PrComment } from '@goodboy/types';
 import {
-  stateCountsInScopeOf,
+  commentStateCountsOf,
+  entriesInScopeOf,
   type CommentStateCounts,
   type ThreadEntry,
 } from '../../../resolve/commentGroupsView';
@@ -12,8 +13,9 @@ type Params = {
 };
 
 export const hostThreadCountsOf = ({ comments, entries }: Params): CommentStateCounts => {
-  if (entries.length > 0) {
-    return stateCountsInScopeOf({ entries, scope: 'comments' });
+  const hostEntries = entriesInScopeOf({ entries, scope: 'comments' });
+  if (hostEntries.length > 0) {
+    return commentStateCountsOf({ entries: hostEntries });
   }
   const waiting = reviewHeadsOf({ comments, botKey: null }).filter(
     (head) => head.resolved !== true,

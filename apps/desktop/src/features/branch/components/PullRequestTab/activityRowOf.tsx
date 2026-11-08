@@ -36,7 +36,7 @@ type CommentsWordParams = {
 
 const commentsLine = ({ item }: CommentsWordParams): string => {
   if (item.open === 0) {
-    return `${countNoun({ count: item.total, one: 'thread', many: 'threads' })} on files, all resolved`;
+    return 'All threads on files resolved';
   }
   const open = `${countNoun({ count: item.open, one: 'open thread', many: 'open threads' })} on files`;
   if (item.needYou === 0) {
