@@ -321,7 +321,7 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
+        .invoke_handler(browser::refuse_browser_pages(tauri::generate_handler![
             secrets::secret_set,
             secrets::secret_delete,
             editor::detect_editors,
@@ -751,7 +751,7 @@ pub fn run() {
             browser::commands::browser_tab_close,
             browser::commands::browser_tab_list,
             browser::commands::browser_session_close,
-        ])
+        ]))
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {

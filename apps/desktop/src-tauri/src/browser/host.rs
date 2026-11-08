@@ -1,6 +1,3 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-
 use serde::Deserialize;
 use tauri::webview::{NewWindowResponse, PageLoadEvent};
 use tauri::{
@@ -8,7 +5,8 @@ use tauri::{
     WebviewBuilder, WebviewUrl, Window,
 };
 
-use super::guard::{self, AppOrigins};
+use super::guard::{self, AppOrigins, NavigationGate};
+use super::reason::{self, NOT_WEB_ADDRESS, TAB_GONE, WINDOW_GONE};
 use super::registry::{BrowserRegistry, NewTab, TabFacts};
 use crate::util::{now_ms, uuid_v4, MessageError};
 
@@ -71,9 +69,7 @@ pub(crate) fn open_tab<R: Runtime>(
     let app = window.app_handle().clone();
     let origins = AppOrigins::of_app(&app);
     if !guard::may_open(&tab.url, &origins) {
-        return Err(MessageError::Refused(
-            "the browser opens only http and https addresses".to_string(),
-        ));
+        return Err(reason::refused(NOT_WEB_ADDRESS));
     }
     let id = uuid_v4();
     let builder = builder_for(&app, &id, &tab.url, origins);
@@ -102,17 +98,13 @@ fn builder_for<R: Runtime>(
     url: &Url,
     origins: AppOrigins,
 ) -> WebviewBuilder<R> {
-    let is_initial = Arc::new(AtomicBool::new(true));
-    let navigation_origins = origins.clone();
+    let gate = NavigationGate::new(origins.clone());
     let popup_app = app.clone();
     let popup_opener = id.to_string();
     let load_tab = id.to_string();
     let title_tab = id.to_string();
     WebviewBuilder::new(guard::label_of(id), WebviewUrl::External(url.clone()))
-        .on_navigation(move |target| {
-            let was_initial = is_initial.swap(false, Ordering::SeqCst);
-            guard::may_navigate(target, &navigation_origins, was_initial)
-        })
+        .on_navigation(move |target| gate.allows(target))
         .on_new_window(move |target, _features| {
             if let Some(target) = guard::popup_target(&target, &origins) {
                 open_popup(&popup_app, &popup_opener, target);
@@ -138,7 +130,7 @@ fn open_popup<R: Runtime>(app: &AppHandle<R>, opener_id: &str, url: Url) {
     let opener_id = opener_id.to_string();
     tauri::async_runtime::spawn(async move {
         if let Err(error) = open_beside(&app, &opener_id, url) {
-            log::warn!("[browser] a popup could not open as a tab: {error}");
+            log::warn!("[browser] popup_open_failed reason={error}");
         }
     });
 }
@@ -151,13 +143,13 @@ fn open_beside<R: Runtime>(
     let registry = app.state::<BrowserRegistry>();
     let opener = registry
         .facts(opener_id)
-        .ok_or_else(|| MessageError::Failed("the opening tab is gone".to_string()))?;
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
     let window_label = registry
         .window_of(opener_id)
-        .ok_or_else(|| MessageError::Failed("the opening tab is gone".to_string()))?;
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
     let window = app
         .get_window(&window_label)
-        .ok_or_else(|| MessageError::Failed("the opening window is gone".to_string()))?;
+        .ok_or_else(|| reason::failed(WINDOW_GONE))?;
     let bounds = webview_of(app, opener_id)?.bounds().map_err(failed)?;
     open_tab(
         &window,
@@ -176,7 +168,7 @@ pub(crate) fn webview_of<R: Runtime>(
     tab_id: &str,
 ) -> Result<Webview<R>, MessageError> {
     app.get_webview(&guard::label_of(tab_id))
-        .ok_or_else(|| MessageError::Failed("the tab is gone".to_string()))
+        .ok_or_else(|| reason::failed(TAB_GONE))
 }
 
 pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<(), MessageError> {

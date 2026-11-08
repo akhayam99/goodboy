@@ -52,6 +52,10 @@ describe('the app content security policy', () => {
     expect(readConfig().app.security.freezePrototype).toBe(true);
   });
 
+  it('lets no page frame the app, so a browser tab cannot embed it', () => {
+    expect(directive({ csp: readCsp(), name: 'frame-ancestors' })).toEqual(["'none'"]);
+  });
+
   it('never admits a data url or a blob url as a frame source', () => {
     expect(directive({ csp: readCsp(), name: 'frame-src' })).not.toContain('data:');
     expect(directive({ csp: readCsp(), name: 'frame-src' })).not.toContain('blob:');

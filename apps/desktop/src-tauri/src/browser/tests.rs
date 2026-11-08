@@ -1,10 +1,15 @@
-use tauri::test::{mock_app, MockRuntime};
-use tauri::{App, Manager, Url, WebviewUrl, WebviewWindowBuilder, Window};
+use tauri::ipc::{CallbackFn, InvokeBody};
+use tauri::test::{
+    get_ipc_response, mock_app, mock_builder, mock_context, noop_assets, MockRuntime, INVOKE_KEY,
+};
+use tauri::webview::InvokeRequest;
+use tauri::{App, Manager, Url, Webview, WebviewUrl, WebviewWindowBuilder, Window};
 
 use super::commands::owned_tab;
 use super::guard::label_of;
 use super::host::{close_session, close_tab, open_tab, OpenTab, TabBounds};
-use super::{forget_window, BrowserRegistry};
+use super::reason::{BROWSER_CALLER, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_GONE};
+use super::{forget_window, refuse_browser_pages, BrowserRegistry};
 use crate::util::source_scan::production_hits;
 use crate::util::MessageError;
 
@@ -86,7 +91,10 @@ fn refuses_to_open_an_app_or_script_address() {
             &window(&app, "main"),
             OpenTab::at("harborline", url(address), PANE, true),
         );
-        assert!(matches!(result, Err(MessageError::Refused(_))), "{address}");
+        assert!(
+            matches!(result, Err(MessageError::Refused(ref code)) if code == NOT_WEB_ADDRESS),
+            "{address}"
+        );
     }
     assert!(app.state::<BrowserRegistry>().is_empty());
     assert_eq!(app.webviews().len(), 1);
@@ -101,7 +109,11 @@ fn lets_only_the_owning_window_drive_a_tab() {
     assert!(owned_tab(&main, &id).is_ok());
     assert!(matches!(
         owned_tab(&other, &id),
-        Err(MessageError::Refused(_))
+        Err(MessageError::Refused(code)) if code == OTHER_WINDOW
+    ));
+    assert!(matches!(
+        owned_tab(&main, "gone"),
+        Err(MessageError::Failed(code)) if code == TAB_GONE
     ));
 }
 
@@ -112,8 +124,56 @@ fn refuses_a_browser_page_that_tries_to_drive_a_tab() {
     let page = app.get_webview(&label_of(&id)).expect("child webview");
     assert!(matches!(
         owned_tab(&page, &id),
-        Err(MessageError::Refused(_))
+        Err(MessageError::Refused(code)) if code == BROWSER_CALLER
     ));
+}
+
+#[tauri::command]
+async fn probe() -> String {
+    "answered".to_string()
+}
+
+struct Caller(Webview<MockRuntime>);
+
+impl AsRef<Webview<MockRuntime>> for Caller {
+    fn as_ref(&self) -> &Webview<MockRuntime> {
+        &self.0
+    }
+}
+
+fn local_request(cmd: &str) -> InvokeRequest {
+    InvokeRequest {
+        cmd: cmd.into(),
+        callback: CallbackFn(0),
+        error: CallbackFn(1),
+        url: url("tauri://localhost"),
+        body: InvokeBody::default(),
+        headers: Default::default(),
+        invoke_key: INVOKE_KEY.to_string(),
+    }
+}
+
+#[test]
+fn refuses_every_app_command_to_a_browser_page_even_from_a_local_address() {
+    let app = mock_builder()
+        .invoke_handler(refuse_browser_pages(tauri::generate_handler![probe]))
+        .build(mock_context(noop_assets()))
+        .expect("app builds");
+    app.manage(BrowserRegistry::default());
+    WebviewWindowBuilder::new(&app, "main", WebviewUrl::default())
+        .build()
+        .expect("window builds");
+    let id = open(&app, "main", "harborline");
+    let main = Caller(app.get_webview("main").expect("main webview"));
+    let page = Caller(app.get_webview(&label_of(&id)).expect("child webview"));
+
+    let answered = get_ipc_response(&main, local_request("probe"))
+        .map(|body| body.deserialize::<String>().expect("string"));
+    assert_eq!(answered, Ok("answered".to_string()));
+
+    let refused = get_ipc_response(&page, local_request("probe")).expect_err("refused");
+    assert_eq!(refused["kind"], "refused");
+    assert_eq!(refused["message"], BROWSER_CALLER);
 }
 
 #[test]

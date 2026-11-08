@@ -3,6 +3,9 @@ use tauri::{Manager, Runtime, Webview};
 
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, TabBounds};
+use super::reason::{
+    self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_GONE,
+};
 use super::registry::{BrowserRegistry, TabFacts};
 use crate::util::{now_ms, MessageError};
 
@@ -46,9 +49,7 @@ pub(crate) struct SessionArgs {
 
 fn refuse_browser_caller<R: Runtime>(caller: &Webview<R>) -> Result<(), MessageError> {
     if guard::is_browser_label(caller.label()) {
-        return Err(MessageError::Refused(
-            "a browser page cannot drive the browser".to_string(),
-        ));
+        return Err(reason::refused(BROWSER_CALLER));
     }
     Ok(())
 }
@@ -62,11 +63,9 @@ pub(super) fn owned_tab<R: Runtime>(
     let owner = app
         .state::<BrowserRegistry>()
         .window_of(tab_id)
-        .ok_or_else(|| MessageError::Failed("the tab is gone".to_string()))?;
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
     if owner != caller.window().label() {
-        return Err(MessageError::Refused(
-            "the tab belongs to another window".to_string(),
-        ));
+        return Err(reason::refused(OTHER_WINDOW));
     }
     host::webview_of(app, tab_id)
 }
@@ -75,9 +74,7 @@ fn web_address<R: Runtime>(caller: &Webview<R>, address: &str) -> Result<tauri::
     let origins = AppOrigins::of_app(caller.app_handle());
     guard::parse_address(address)
         .filter(|url| guard::is_web_address(url, &origins))
-        .ok_or_else(|| {
-            MessageError::Refused("the browser opens only http and https addresses".to_string())
-        })
+        .ok_or_else(|| reason::refused(NOT_WEB_ADDRESS))
 }
 
 fn failed(error: tauri::Error) -> MessageError {
@@ -90,8 +87,7 @@ pub async fn browser_tab_open(
     args: TabOpenArgs,
 ) -> Result<TabFacts, MessageError> {
     refuse_browser_caller(&webview)?;
-    let url = guard::parse_address(&args.url)
-        .ok_or_else(|| MessageError::Refused("the address is not valid".to_string()))?;
+    let url = guard::parse_address(&args.url).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
     host::open_tab(
         &webview.window(),
         OpenTab::at(&args.session_id, url, args.bounds, args.is_shown),
@@ -111,7 +107,7 @@ pub async fn browser_tab_show(webview: Webview, args: TabArgs) -> Result<TabFact
     webview
         .state::<BrowserRegistry>()
         .set_shown(&args.tab_id, true, now_ms())
-        .ok_or_else(|| MessageError::Failed("the tab is gone".to_string()))
+        .ok_or_else(|| reason::failed(TAB_GONE))
 }
 
 #[tauri::command]
@@ -120,7 +116,7 @@ pub async fn browser_tab_hide(webview: Webview, args: TabArgs) -> Result<TabFact
     webview
         .state::<BrowserRegistry>()
         .set_shown(&args.tab_id, false, now_ms())
-        .ok_or_else(|| MessageError::Failed("the tab is gone".to_string()))
+        .ok_or_else(|| reason::failed(TAB_GONE))
 }
 
 #[tauri::command]

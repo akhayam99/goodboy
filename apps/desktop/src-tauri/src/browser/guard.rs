@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use tauri::{AppHandle, Runtime, Url};
 
 use crate::frame_protocol::FRAME_SCHEME;
@@ -72,11 +74,30 @@ pub(crate) fn may_open(url: &Url, origins: &AppOrigins) -> bool {
     is_web_address(url, origins) || is_blank_page(url)
 }
 
-pub(crate) fn may_navigate(url: &Url, origins: &AppOrigins, is_initial: bool) -> bool {
+fn may_navigate(url: &Url, origins: &AppOrigins, is_initial: bool) -> bool {
     if is_initial && is_blank_page(url) {
         return true;
     }
     is_web_address(url, origins)
+}
+
+pub(crate) struct NavigationGate {
+    origins: AppOrigins,
+    is_initial: AtomicBool,
+}
+
+impl NavigationGate {
+    pub(crate) fn new(origins: AppOrigins) -> Self {
+        Self {
+            origins,
+            is_initial: AtomicBool::new(true),
+        }
+    }
+
+    pub(crate) fn allows(&self, target: &Url) -> bool {
+        let was_initial = self.is_initial.swap(false, Ordering::SeqCst);
+        may_navigate(target, &self.origins, was_initial)
+    }
 }
 
 pub(crate) fn popup_target(url: &Url, origins: &AppOrigins) -> Option<Url> {
@@ -206,6 +227,90 @@ mod tests {
         for target in ["http://localhost:1421/", "tauri://localhost/"] {
             assert!(!may_navigate(&url(target), &dev(), false), "{target}");
         }
+    }
+
+    fn walk(gate: &NavigationGate, steps: &[(&str, bool)]) {
+        for (address, is_allowed) in steps {
+            assert_eq!(gate.allows(&url(address)), *is_allowed, "{address}");
+        }
+    }
+
+    #[test]
+    fn refuses_a_redirect_to_the_app_after_a_web_page_loaded() {
+        walk(
+            &NavigationGate::new(dev()),
+            &[
+                ("https://example.com/login", true),
+                ("http://localhost:1421/", false),
+                ("tauri://localhost/", false),
+                ("http://tauri.localhost/?next=1", false),
+                ("https://example.com/login", true),
+            ],
+        );
+    }
+
+    #[test]
+    fn refuses_a_blank_first_page_that_moves_itself_to_the_app() {
+        walk(
+            &NavigationGate::new(dev()),
+            &[
+                ("about:blank", true),
+                ("tauri://localhost/index.html", false),
+                ("about:blank", false),
+                ("ipc://localhost/detect_editors", false),
+            ],
+        );
+    }
+
+    #[test]
+    fn refuses_a_form_post_or_meta_refresh_that_targets_the_app() {
+        walk(
+            &NavigationGate::new(release()),
+            &[
+                ("http://127.0.0.1:5173/checkout", true),
+                ("http://ipc.localhost/plugin%3Aapp%7Cversion", false),
+                ("http://gbframe.localhost/stage", false),
+                ("https://asset.localhost/etc/hosts", false),
+                ("http://127.0.0.1:5173/checkout", true),
+            ],
+        );
+    }
+
+    #[test]
+    fn refuses_script_data_blob_and_file_once_a_page_loaded() {
+        walk(
+            &NavigationGate::new(dev()),
+            &[
+                ("https://example.com/", true),
+                ("javascript:location='tauri://localhost/'", false),
+                ("data:text/html,<script>top</script>", false),
+                ("blob:https://example.com/0f1e", false),
+                ("file:///etc/hosts", false),
+            ],
+        );
+    }
+
+    #[test]
+    fn spends_the_first_page_allowance_even_on_a_refused_first_page() {
+        walk(
+            &NavigationGate::new(dev()),
+            &[("tauri://localhost/", false), ("about:blank", false)],
+        );
+    }
+
+    #[test]
+    fn refuses_every_scheme_the_app_registers() {
+        let registered: Vec<&str> = include_str!("../lib.rs")
+            .split("uri_scheme_protocol(")
+            .skip(1)
+            .filter_map(|rest| rest.split(',').next())
+            .map(str::trim)
+            .collect();
+        assert_eq!(registered, vec!["frame_protocol::FRAME_SCHEME"]);
+        assert!(APP_SCHEMES.contains(&FRAME_SCHEME));
+        let elsewhere =
+            crate::util::source_scan::production_hits(&["uri_scheme_protocol("], &["lib.rs"]);
+        assert!(elsewhere.is_empty(), "{elsewhere:?}");
     }
 
     #[test]

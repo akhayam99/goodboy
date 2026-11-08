@@ -16,7 +16,8 @@ shows, hides, navigates and closes that id.
 may call a command by its address, not by the webview's name: a page on the
 app's own origin is local, and a local page may call every command. So the
 host refuses every navigation that would make a tab local. That refusal is
-the wall; everything else here is a second one.
+the first wall. The label is the second: no capability grants a `browse-`
+webview, and no app command runs for one (see Capabilities).
 
 ## The navigation rule
 
@@ -33,7 +34,13 @@ address.
   its `<scheme>.localhost` form, and in a development build the `devUrl`
   origin. A release build may open a server on that port, because there it
   is not the app.
-- A page that sends itself to one of those addresses stays where it was.
+- A page that sends itself to one of those addresses stays where it was. A
+  server redirect, a form post, a meta refresh and a `location` change each
+  reach `on_navigation` as a new address and meet the same rule; only a
+  tab's very first navigation may be `about:blank`, refused or not.
+- On macOS a frame's load reaches `on_navigation` too. On Windows WebView2
+  reports only the top page, so a frame is not checked there; the app's own
+  policy carries `frame-ancestors 'none'`, so no page can frame the app.
 - A popup (`window.open`, a link with a target) never becomes a window. When
   its address passes the rule it opens as a new hidden tab in the opener's
   session and window; otherwise nothing opens.
@@ -58,11 +65,21 @@ commands, and got all six once it navigated itself to the dev origin or to
 
 ## Capabilities
 
-`capabilities/default.json` grants by window (`main`, `win-*`), and no
-capability names a `browse-` label or grants a remote address. A tab is a
-child of `main` or a `win-*` window, so the window grant does reach it, and
-Tauri then allows only local addresses. That is why the navigation rule, not
-the label, is what keeps a page out.
+`capabilities/default.json` grants by webview label (`webviews`: `main`,
+`win-*`), never by window. A grant by window reaches every webview inside
+that window, a tab included; a grant by webview reaches only the window's own
+page. No capability names a `browse-` label or grants a remote address.
+
+Capabilities gate plugin commands only. An app command runs for any local
+page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
+`browser::refuse_browser_pages`, which answers every app command from a
+`browse-` webview with the `browser-caller` code before it runs.
+
+## Errors
+
+A `browser_*` command fails with a reason code from `browser/reason.rs`
+(`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
+`window-gone`, `other-window`), never a sentence. The pane owns the words.
 
 ## Under the hood
 
@@ -71,14 +88,18 @@ the label, is what keeps a page out.
   eleven `browser_*` commands; `registry.rs` holds the tabs.
 - `guard::tests` pins every refused origin, `http` and `https` pages,
   `javascript:`, `data:`, `file:`, `about:blank` and a page that sends itself
-  to the app. The rule is a pure function because no test can load a page
-  headless.
+  to the app, and walks `NavigationGate` through redirect, form post, blank
+  first page and script sequences. It also fails when `lib.rs` registers a
+  scheme the rule does not refuse. The rule is a pure function because no
+  test can load a page headless.
 - `browser::tests` opens tabs on Tauri's mock runtime: the owning window, the
-  refusals, closing a session's tabs, a destroyed window, and that no
+  refusals and their codes, an app command a `browse-` webview calls from a
+  local address, closing a session's tabs, a destroyed window, and that no
   production code looks a window up through `webview_windows` or
   `get_webview_window`.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
-  when a capability could match a `browse-` label or grants a remote address.
+  when a capability could match a `browse-` label, grants by window or grants
+  a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.
 - `add_child` needs the `unstable` feature of `tauri`, so `Cargo.toml` pins
   the minor (`~2.12`). A Tauri bump is its own pull request, with the spikes
   run again.

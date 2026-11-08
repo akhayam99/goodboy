@@ -84,6 +84,13 @@ describe('the browser webviews get no capability', () => {
     expect(unreadable).toEqual([]);
   });
 
+  it('grants by webview label and never by window, so a tab inside a window gets nothing', () => {
+    const byWindow = readCapabilities()
+      .filter((capability) => (capability.windows ?? []).length > 0)
+      .map((capability) => capability.file);
+    expect(byWindow).toEqual([]);
+  });
+
   it('grants no remote address in any capability file', () => {
     const remote = readCapabilities()
       .filter((capability) => capability.remote !== undefined)
