@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ProviderId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
-import { DrawerColumn, PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
+import { DrawerColumn, PaneShell } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
@@ -184,16 +184,12 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         {list}
       </PaneShell>
     ) : (
-      <ScrollFade className="min-h-0 w-full flex-1">
-        <PageColumn className="flex flex-col py-5">
-          <WorkflowEditor
-            workspaceId={workspaceId}
-            workingDir={workingDir}
-            connectedProviders={connectedProviders}
-            editor={editor}
-          />
-        </PageColumn>
-      </ScrollFade>
+      <WorkflowEditor
+        workspaceId={workspaceId}
+        workingDir={workingDir}
+        connectedProviders={connectedProviders}
+        editor={editor}
+      />
     );
 
   if (isPaneHosted) {

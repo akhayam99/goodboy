@@ -132,7 +132,8 @@ own workflows now holds is left out. When an update brings a new built-in,
 every workspace gets it at the next launch, unless one of your workflows
 already has that name. A built-in you never had is not counted as deleted.
 A row opens the editor: the builder without its launch bar, with the same step
-tree, a breadcrumb back to the list, and autosave. **Draft steps** asks an
+tree, a breadcrumb back to the list, and autosave. The breadcrumb stays at the
+top; the name field steps aside while you read the steps. **Draft steps** asks an
 agent to write the steps from the goal. With steps already there it reads
 **Redraft steps**, starts at once, and offers an undo once the new steps land.
 **Delete** on a workflow, **Delete** on a preset in the launch picker and

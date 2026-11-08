@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
+import { Button, ICON_SIZE, Notice, PaneShell } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
 import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
@@ -138,41 +138,46 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
 
   const error = editor.formError ?? editor.generationError ?? polishError ?? saveError;
 
+  const trail = (
+    <div className="relative flex flex-col gap-3">
+      <EditorTrail
+        name={form.name}
+        saveStatus={editor.saveStatus}
+        isSavedWorkflow={editor.isSavedWorkflow}
+        isDirty={editor.isDirty}
+        disabled={blocked}
+        onBack={editor.close}
+        onDuplicate={() => void editor.duplicate()}
+        onUndo={editor.undoSinceOpened}
+        onDelete={() => {
+          if (editor.isSavedWorkflow) {
+            void editor.remove();
+            return;
+          }
+          setIsConfirmingDiscard(true);
+        }}
+      />
+      <AnchoredConfirm
+        role="danger"
+        icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+        title="Discard this workflow?"
+        description="Nothing is saved yet. The draft is lost."
+        confirmLabel="Discard"
+        isOpen={isConfirmingDiscard}
+        onConfirm={async () => {
+          await editor.remove();
+          setIsConfirmingDiscard(false);
+        }}
+        onCancel={() => setIsConfirmingDiscard(false)}
+      />
+    </div>
+  );
+
   return (
-    <div className="flex min-w-0 flex-col gap-6">
-      <div className="relative flex flex-col gap-3">
-        <EditorTrail
-          name={form.name}
-          saveStatus={editor.saveStatus}
-          isSavedWorkflow={editor.isSavedWorkflow}
-          isDirty={editor.isDirty}
-          disabled={blocked}
-          onBack={editor.close}
-          onDuplicate={() => void editor.duplicate()}
-          onUndo={editor.undoSinceOpened}
-          onDelete={() => {
-            if (editor.isSavedWorkflow) {
-              void editor.remove();
-              return;
-            }
-            setIsConfirmingDiscard(true);
-          }}
-        />
-        <AnchoredConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title="Discard this workflow?"
-          description="Nothing is saved yet. The draft is lost."
-          confirmLabel="Discard"
-          isOpen={isConfirmingDiscard}
-          onConfirm={async () => {
-            await editor.remove();
-            setIsConfirmingDiscard(false);
-          }}
-          onCancel={() => setIsConfirmingDiscard(false)}
-        />
-      </div>
-      <div className="flex flex-col gap-3">
+    <PaneShell
+      page="workflows"
+      lead={trail}
+      header={
         <BuilderTitleField
           value={form.name}
           placeholder="Untitled workflow"
@@ -181,29 +186,30 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
           onChange={(name) => setForm((current) => ({ ...current, name }))}
           onAcceptSuggestion={() => {}}
         />
-        <GoalField
-          value={form.goal}
-          placeholder="what should this workflow accomplish? Draft steps writes the plan from it…"
-          hasSessionGoal={false}
-          isSessionGoal={false}
-          canUndo={polish.canUndo({ id: 'goal', current: form.goal })}
-          isPolishing={polish.polishingId === 'goal'}
-          disabled={blocked}
-          onChange={setGoal}
-          onBlur={() => {}}
-          onUseSessionGoal={() => {}}
-          onUndo={() => polish.undo({ id: 'goal', current: form.goal, apply: setGoal })}
-          onPolish={() =>
-            void polish.run({
-              id: 'goal',
-              current: form.goal,
-              keptMessage: "Kept your wording. The goal couldn't be polished.",
-              polish: () => polishWorkflowGoalText({ deps: polishDeps, goal: form.goal }),
-              apply: setGoal,
-            })
-          }
-        />
-      </div>
+      }
+    >
+      <GoalField
+        value={form.goal}
+        placeholder="what should this workflow accomplish? Draft steps writes the plan from it…"
+        hasSessionGoal={false}
+        isSessionGoal={false}
+        canUndo={polish.canUndo({ id: 'goal', current: form.goal })}
+        isPolishing={polish.polishingId === 'goal'}
+        disabled={blocked}
+        onChange={setGoal}
+        onBlur={() => {}}
+        onUseSessionGoal={() => {}}
+        onUndo={() => polish.undo({ id: 'goal', current: form.goal, apply: setGoal })}
+        onPolish={() =>
+          void polish.run({
+            id: 'goal',
+            current: form.goal,
+            keptMessage: "Kept your wording. The goal couldn't be polished.",
+            polish: () => polishWorkflowGoalText({ deps: polishDeps, goal: form.goal }),
+            apply: setGoal,
+          })
+        }
+      />
       {hasProviders ? null : <NoProvidersNotice />}
       {error === null ? null : (
         <Notice tone="danger" placement="inline" role="alert" title={error} />
@@ -295,6 +301,6 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
         }}
       />
       <DragGhost ghost={ghost} />
-    </div>
+    </PaneShell>
   );
 };
