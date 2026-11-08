@@ -12,6 +12,7 @@ mod bootstrap;
 mod branch_cleanup;
 mod branch_remote;
 mod bridge;
+mod browser;
 mod budget;
 mod changelog_images;
 mod chat;
@@ -216,9 +217,10 @@ pub fn run() {
                 .app_handle()
                 .state::<window_close::CloseClaims>()
                 .forget(window.label());
+            browser::forget_window(window.app_handle(), window.label());
             let app = window.app_handle();
             let survivors = app
-                .webview_windows()
+                .windows()
                 .keys()
                 .filter(|label| label.as_str() != window.label())
                 .count();
@@ -260,6 +262,7 @@ pub fn run() {
         .manage(dropped_paths::DroppedPaths::default())
         .manage(window_close::CloseClaims::default())
         .manage(window_heartbeat::Heartbeats::default())
+        .manage(browser::BrowserRegistry::default())
         .setup(move |app| {
             use tauri::Manager;
             logging::init(app.handle());
@@ -737,6 +740,17 @@ pub fn run() {
             slack::slack_post_reply,
             slack::slack_add_reaction,
             qa_preview::qa_deciding_workflow_runs,
+            browser::commands::browser_tab_open,
+            browser::commands::browser_tab_place,
+            browser::commands::browser_tab_show,
+            browser::commands::browser_tab_hide,
+            browser::commands::browser_tab_navigate,
+            browser::commands::browser_tab_reload,
+            browser::commands::browser_tab_back,
+            browser::commands::browser_tab_forward,
+            browser::commands::browser_tab_close,
+            browser::commands::browser_tab_list,
+            browser::commands::browser_session_close,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
