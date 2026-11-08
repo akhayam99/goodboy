@@ -144,12 +144,16 @@ export const prepareRetry = async ({
       message: 'that agent is already being retried',
     });
   }
-  const targetRefusal = targetRefusalOf({ target: original, delegations: siblings, slot });
+  const isPerson = from === 'user';
+  const targetRefusal = isPerson
+    ? null
+    : targetRefusalOf({ target: original, delegations: siblings, slot });
   if (targetRefusal !== null) {
     return { kind: 'refused', refusal: targetRefusal };
   }
   if (
     !isConfirmGated &&
+    !isPerson &&
     returnCountOf({ delegation: original, delegations: siblings }) >
       AUTO_TREE_LIMITS.returnsPerDelegation
   ) {

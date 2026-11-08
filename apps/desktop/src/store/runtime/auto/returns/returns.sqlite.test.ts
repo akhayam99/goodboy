@@ -592,6 +592,53 @@ describe('the caps on returns', () => {
     expect(refused).toMatchObject({ isOk: false, code: 'return_limit' });
   });
 
+  it('still takes a person message as a continue on a return Auto released', async () => {
+    const world = await startWith({ children: [LEDGER, NOTIFY] });
+    const returned = await childReturns({ world, index: 0 });
+    await autoTurnEndsWithBlock({
+      world,
+      block: { action: 'release', delegation: returned, reason: 'the notify hook covers it' },
+    });
+    const original = await delegationById({ world, id: returned });
+
+    const outcome = await world.runtime.continueChild({
+      childAgentId: original.childAgentId,
+      text: 'Export the archived rows too.',
+      from: 'user',
+    });
+
+    expect(outcome).toMatchObject({ kind: 'continued' });
+    const continued = (await delegationsOf({ world })).find((row) => row.retryOf === returned);
+    expect(continued).toMatchObject({ childAgentId: original.childAgentId });
+  });
+
+  it('still takes a person message as a continue on a return capped at three', async () => {
+    const world = await startWith({ children: [LEDGER, NOTIFY] });
+    let returned = await childReturns({ world, index: 0 });
+    for (let round = 0; round < AUTO_TREE_LIMITS.returnsPerDelegation; round += 1) {
+      await autoTurnEndsWithBlock({
+        world,
+        block: {
+          action: 'delegate',
+          requestId: `continue-${round}`,
+          children: [{ retryOf: returned, reason: 'go on' }],
+        },
+      });
+      returned = await childReturns({ world });
+    }
+    const original = await delegationById({ world, id: returned });
+
+    const outcome = await world.runtime.continueChild({
+      childAgentId: original.childAgentId,
+      text: 'Export the archived rows too.',
+      from: 'user',
+    });
+
+    expect(outcome).toMatchObject({ kind: 'continued' });
+    const continued = (await delegationsOf({ world })).find((row) => row.retryOf === returned);
+    expect(continued).toMatchObject({ childAgentId: original.childAgentId });
+  });
+
   it('refuses the fourth re-brief along the replaces chain with task_rebrief_limit', async () => {
     const world = await startWith({ children: [LEDGER, NOTIFY] });
     let returned = await childReturns({ world, index: 0 });
