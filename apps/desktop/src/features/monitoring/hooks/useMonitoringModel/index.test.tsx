@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
-import type { WorkspaceId } from '@goodboy/types';
+import { brandId, type WorkspaceId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -34,7 +34,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   useAppStore.setState({
-    currentWorkspaceId: 'w-harborline' as WorkspaceId,
+    currentWorkspaceId: brandId<WorkspaceId>({ value: 'w-harborline' }),
     monitorPinned: [
       { port: 5005, description: 'ledger-core' },
       { port: 5006, description: 'notify-relay' },

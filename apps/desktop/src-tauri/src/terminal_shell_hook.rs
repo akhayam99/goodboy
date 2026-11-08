@@ -162,12 +162,20 @@ mod tests {
         hook_env("/bin/zsh", &base, None, Some("/mock/home/acme".to_string())).expect("first");
         let before: Vec<u64> = STARTUP_FILES
             .iter()
-            .map(|name| std::fs::metadata(base.join("zsh").join(name)).expect("meta").ino())
+            .map(|name| {
+                std::fs::metadata(base.join("zsh").join(name))
+                    .expect("meta")
+                    .ino()
+            })
             .collect();
         hook_env("/bin/zsh", &base, None, Some("/mock/home/acme".to_string())).expect("second");
         let after: Vec<u64> = STARTUP_FILES
             .iter()
-            .map(|name| std::fs::metadata(base.join("zsh").join(name)).expect("meta").ino())
+            .map(|name| {
+                std::fs::metadata(base.join("zsh").join(name))
+                    .expect("meta")
+                    .ino()
+            })
             .collect();
         assert_eq!(before, after);
     }
@@ -183,7 +191,13 @@ mod tests {
         assert_eq!(rc, startup_file(".zshrc"));
         let names: Vec<String> = std::fs::read_dir(&dir)
             .expect("read dir")
-            .map(|entry| entry.expect("entry").file_name().to_string_lossy().into_owned())
+            .map(|entry| {
+                entry
+                    .expect("entry")
+                    .file_name()
+                    .to_string_lossy()
+                    .into_owned()
+            })
             .collect();
         assert_eq!(names.len(), STARTUP_FILES.len(), "got {names:?}");
     }
