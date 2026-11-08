@@ -472,8 +472,9 @@ the `lead` overlay the top of the region (`RevealRegion` `pinned`): the engine
 measures them on resize and paints `--reveal-inset`, and the header sits at that
 inset (`--reveal-top`, or its own height above the region when hidden, so it
 never shows through the frosted row). The `PaneShell` body scroller
-(`ScrollFade` `isUnderPinned`) runs from the top of the region with the inset as
-its top padding and `scroll-padding-top`, so text scrolls under the back row and
+(`ScrollFade` `isUnderPinned`) runs from the bottom of the shown header, or
+from the top of the region once the header steps aside or is pinned, with the
+inset as its top padding and `scroll-padding-top`, so text scrolls under the back row and
 an anchor lands below it. A self-scrolling body pads the inset instead and stays
 below the row. A sticky row inside the scroller (a list group label, a diff file
 header, the report outline) sits at `top: 0`: a sticky box parks at the
@@ -481,8 +482,8 @@ scroller's padding edge, so the inset padding already puts it right under the
 pinned zone, and `top: var(--reveal-inset)` would count the inset twice. A page whose header is a
 status bar the reader keeps (the artifact page, `PaneShell` `isHeaderPinned`)
 puts it in the pinned zone with the back row instead: nothing steps aside, and
-the document scrolls under both. The header's `top`, the body's `top` and its `height` read the same var in
-one layout pass; never move one of them with `translate`, which runs on the
+the document scrolls under both. The header's `top` (`--reveal-top`) and the body's `top` and `height`
+(`--reveal-shift`) read vars painted in the same `paint()` pass; never move one of them with `translate`, which runs on the
 compositor a frame apart and makes a pinned last line wobble. A page with less
 than 24px left to scroll once the header is gone never hides it, and a hidden
 page that runs out of room brings it back, so a short diff never strands the
