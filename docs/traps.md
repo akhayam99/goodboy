@@ -347,8 +347,8 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
 - A commit list and the count beside it share one base. `worktree_status`
   (`mainDistance`) and `worktree_commits` both take the mount's resolved base
   branch, and a caller that holds it passes it to `listBranchCommits`
-  (`useSessionDiff`, `loadHistoryDraft`, `collectReportDiffEvidence`). Without
-  it Rust uses the repository default base and the two numbers disagree.
+  (`useSessionDiff`, `loadHistoryDraft`, `collectReportDiffEvidence`). Without the
+  resolved base Rust uses the repository default base and the two numbers disagree.
 
 - Rewrite history and the issue chip drag with pointer events on one shared
   engine (`usePointerDrag`: 5 px threshold, window listeners that are removed
