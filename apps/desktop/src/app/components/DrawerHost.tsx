@@ -211,7 +211,7 @@ const renderDrawer = ({
 
 export const DrawerHost = () => {
   const drawer = useAppStore(selectDrawerPanel);
-  const backChip = useSlotBackChip({ back: useAppStore(selectSlotBack) });
+  const backChip = useSlotBackChip({ back: useAppStore((state) => selectSlotBack({ state })) });
   const closeDrawer = useAppStore((s) => s.closeDrawer);
   const closeQuestion = useAppStore((s) => s.closeQuestion);
   const openDrawer = useAppStore((s) => s.openDrawer);

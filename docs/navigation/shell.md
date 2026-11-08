@@ -246,7 +246,7 @@ the slot. Esc in the session is one ladder: an open menu, popover or field
 takes it first, then the top of the slot closes, then the drawer from the
 chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS, File > Close the Drawer)
 closes the top of the slot from anywhere, a focused terminal or web page
-included. The rules, the store and the navigation cases are in
+included; an open menu or dialog takes it first. The rules, the store and the navigation cases are in
 [home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
 
 **The column** (`app/components/SideColumn/`) is on every screen with a

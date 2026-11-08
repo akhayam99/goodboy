@@ -9,7 +9,7 @@ export type SlotKinds = {
 
 type Params = Parameters<typeof selectSlotBack>[0];
 
-export const selectSlotKinds = ({ ...state }: Params): SlotKinds => ({
+export const selectSlotKinds = ({ state }: Params): SlotKinds => ({
   top: selectOpenDrawer(state)?.kind ?? null,
-  back: selectSlotBack(state)?.kind ?? null,
+  back: selectSlotBack({ state })?.kind ?? null,
 });
