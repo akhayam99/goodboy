@@ -18,12 +18,13 @@ const isSuperseded = ({ delegation, delegations }: Params): boolean => {
     return false;
   }
   const isAnyRole = delegation.outcome === 'blocked';
+  const returnedAt = delegation.settledAt ?? delegation.createdAt;
   return delegations.some(
     (later) =>
       later.id !== delegation.id &&
       !later.isAdopted &&
       (isAnyRole || later.role === delegation.role) &&
-      later.createdAt > delegation.createdAt &&
+      later.createdAt > returnedAt &&
       delegationMountIdOf({ delegation: later }) === mountId,
   );
 };

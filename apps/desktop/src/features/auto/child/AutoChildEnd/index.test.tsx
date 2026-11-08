@@ -173,4 +173,15 @@ describe('the end of an Auto child page', () => {
     expect(screen.queryByText(/Failed/)).toBeNull();
     expect(screen.queryByText('Needs you')).toBeNull();
   });
+
+  it('does not read Idle or Returned to Auto for a returned child that Auto replaced', () => {
+    const delegation = {
+      ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      reason: 'declared_blocked',
+    };
+    show({ delegation, status: 'blocked', isReplaced: true });
+
+    expect(screen.queryByText(/Returned to Auto/)).toBeNull();
+    expect(screen.queryByText('Idle')).toBeNull();
+  });
 });

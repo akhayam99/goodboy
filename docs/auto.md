@@ -684,7 +684,9 @@ A child that came back with outcome `blocked` (reasons `declared_blocked` and
 `missing_tool`) is not an error and not yours to move. It reads **Idle**, with
 "Returned to Auto: <its request>" on its tail, while Auto decides, and **Done**
 once Auto continued it (`retryOf`) or started any role on the same branch after
-it (`isAutoDelegationReplaced`). **Failed** is only for a real error (a process
+it returned (`isAutoDelegationReplaced`, compared to `settledAt`, so parallel work
+that started before the return does not count). A **Done** child has no tail line
+on its page: `AutoChildEnd` draws only what `autoChildLive` returns. **Failed** is only for a real error (a process
 error, a lost report, no closing), always with a sentence from
 `delegationSentenceOf`, never a reason code. **Needs you** appears on Auto only,
 when Auto asks you. The outcome stays `blocked` in SQLite; `autoSettledStateOf`
