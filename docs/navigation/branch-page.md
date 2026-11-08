@@ -351,11 +351,10 @@ reopen controls are left out. `E` edits the title in scope
 `pullRequest`, live only on this section.
 
 **Comments.** The section header holds a segmented control `All 9 · Notes 3 · On GitHub 6`
-(only while both notes and host threads exist) and `Open · Resolved` (only while there are
-comments), with `Fix N comments` at its right, the one fix action. The list (`Needs you`,
+(only while both notes and host threads exist) and `Open 5 · Resolved 12` (from the first thread on, the Open count warm while a thread needs you), with `Fix N comments` at its right, the one fix action. The list (`Needs you`,
 `Working`, `Ready to push`, `Open`, `Left open on GitHub`; `Done` shows under
 `Resolved`) lists your notes and the pull request threads together, each row with
-the author and its age, its `path:line`, the first line of the body and a `Note` chip only
+the author and its age, its `path:line`, the first line of the body (`commentPreviewOf` drops headings' hashes, HTML comments, severity badges, images and bot boilerplate) and a `Note` chip only
 while the list mixes sources. A note keeps `Post to GitHub` (it moves the note into
 the pull request's review draft and closes it) and `Delete` under its thread, and a
 note shows even while the host is still loading or failed to load. The open thread has the code
@@ -695,4 +694,4 @@ the branch has no pull request, its thread in Comments when it has one (`openRev
 `notes` destination, `reviewRequest` for a compose request, `Open in Changes` from a thread).
 Opening the run transcript of a note keeps its drawer beside Changes.
 
-The numbers on the Comments surfaces each count one thing, and each comes from one function. `commentsCountOf` counts the threads of a pull request: `open threads` is every thread that is not resolved and not left open on the host, `need you` is the asking, proposed, failed and fixable ones. The Comments tab count is the same `need you` over every thread on the branch, notes included. While a fix run works, `Fixing 1 of 4 threads` (`fixingCountText`, used by the header button and by `fixRunTitle`) says how many of the run are still being fixed out of all its threads, and reads `Fixing 4 threads` when all of them are. The drawer position reads `1 of 8 comments`: the length of the list being walked, which includes the comment left open on the host that `open threads` leaves out.
+The numbers on the Comments surfaces each count one thing, and each comes from one function. `commentsCountOf` counts the threads of a pull request: `open threads` is every thread that is not resolved and not left open on the host, `need you` is the asking, proposed, failed and fixable ones. The Comments tab count is the same `need you` over every thread on the branch, notes included, and its open count is the `Open` count of the switch on the Comments page (`commentStateCountsOf`), so the tab and the switch agree under `All`; under `Notes` or `On GitHub` the switch counts only that source while the tab keeps every branch thread. While a fix run works, `Fixing 1 of 4 threads` (`fixingCountText`, used by the header button and by `fixRunTitle`) says how many of the run are still being fixed out of all its threads, and reads `Fixing 4 threads` when all of them are. The drawer position reads `1 of 8 comments`: the length of the list being walked, which includes the comment left open on the host that `open threads` leaves out.

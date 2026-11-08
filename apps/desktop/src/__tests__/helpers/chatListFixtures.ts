@@ -28,6 +28,7 @@ export type ChatSeed = {
   readonly ageMs: number;
   readonly isPinned?: boolean;
   readonly isArchived?: boolean;
+  readonly answer?: string;
   readonly provider?: ProviderId;
   readonly model?: string;
   readonly effort?: EffortLevel | null;
@@ -97,7 +98,7 @@ export const seedChats = async ({
         ...base,
         id: `${chatId}-a${index}` as ChatMessageId,
         role: 'assistant',
-        content: `**Answer for ${seed.title}**`,
+        content: seed.answer ?? `**Answer for ${seed.title}**`,
         status: 'done',
         provider: entry.provider,
         model: entry.model,

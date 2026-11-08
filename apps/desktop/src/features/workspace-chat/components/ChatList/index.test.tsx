@@ -375,6 +375,21 @@ describe('ChatList', () => {
       );
     });
 
+    it('keeps the code of an answer cut inside a fence in the archived snippet and search', async () => {
+      const cut = ['```ts', 'const retryLimit = 3;'.padEnd(300, ' ')].join('\n').slice(0, 240);
+      await renderList([
+        { key: 'cut', title: 'Harborline retries', ageMs: 1000, isArchived: true, answer: cut },
+      ]);
+
+      fireEvent.click(await screen.findByRole('button', { name: /Archived · 1/ }));
+      expect(screen.queryByText('No answer yet')).toBeNull();
+      expect(screen.getByText(/const retryLimit = 3;/)).toBeDefined();
+      fireEvent.change(screen.getByRole('textbox', { name: 'Search archived' }), {
+        target: { value: 'retrylimit' },
+      });
+      expect(screen.getByText(/const retryLimit = 3;/)).toBeDefined();
+    });
+
     it('searches the archived chats', async () => {
       await renderList(ARCHIVED);
 
@@ -385,6 +400,16 @@ describe('ChatList', () => {
 
       expect(screen.queryByRole('button', { name: 'Northwind invoice export format' })).toBeNull();
       expect(screen.getByRole('button', { name: 'Acme webhook signing' })).toBeDefined();
+    });
+  });
+
+  describe('truncated fence', () => {
+    it('shows the code of an answer cut inside a fence instead of No answer yet', async () => {
+      const cut = ['```ts', 'const retryLimit = 3;'.padEnd(300, ' ')].join('\n').slice(0, 240);
+      await renderList([{ key: 'cut', title: 'Harborline retries', ageMs: 1000, answer: cut }]);
+
+      expect(screen.queryByText('No answer yet')).toBeNull();
+      expect(screen.getByText(/const retryLimit = 3;/)).toBeDefined();
     });
   });
 

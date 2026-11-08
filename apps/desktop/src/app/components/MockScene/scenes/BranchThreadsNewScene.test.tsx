@@ -70,9 +70,9 @@ describe('the unread threads scenes', () => {
     renderScene('comments');
     expect(await screen.findAllByRole('img', { name: 'Unread' })).toHaveLength(2);
 
-    fireEvent.click(screen.getByRole('button', { name: /Resolved/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Resolved/ }));
     await waitFor(() => expect(screen.queryAllByRole('img', { name: 'Unread' })).toHaveLength(0));
-    fireEvent.click(screen.getByRole('button', { name: 'Open', pressed: false }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Open/, selected: false }));
 
     expect(await screen.findAllByRole('img', { name: 'Unread' })).toHaveLength(2);
   });
@@ -101,7 +101,7 @@ describe('the unread threads scenes', () => {
     expect(frame?.style.width).toBe('680px');
     expect(frame?.style.height).toBe('440px');
     expect(inFrame.getAllByRole('img', { name: 'Unread' })).toHaveLength(2);
-    expect(inFrame.queryByRole('button', { name: /Resolved/ })).not.toBeNull();
+    expect(inFrame.queryByRole('tab', { name: /^Resolved/ })).not.toBeNull();
     cleanup();
 
     const page = renderScene('pr');
