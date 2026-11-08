@@ -23,7 +23,7 @@ pub(crate) struct LedgerEntry {
     pub(crate) branch: Option<String>,
     pub(crate) branch_path: Option<String>,
     #[serde(skip)]
-    pub(crate) reflog_mark: Option<String>,
+    pub(crate) reflog_mark: Option<git_head::ReflogMark>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -81,7 +81,7 @@ fn placement_of(entry: &LedgerEntry, mounts: &MountPlaces) -> Option<Placement> 
                 &place,
                 &recorded,
                 entry.started_at,
-                entry.reflog_mark.as_deref(),
+                entry.reflog_mark.as_ref(),
             )
         });
     let Some(branch) = confirmed else {
