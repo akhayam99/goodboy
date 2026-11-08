@@ -255,6 +255,8 @@ describe('store contract', () => {
       expect(vi.mocked(stopGhostAgents)).toHaveBeenCalledWith({
         db: expect.anything(),
         keepRunIds: ['run-live'],
+        launchId: 'launch-story',
+        nowMs: expect.any(Number),
       });
     });
 

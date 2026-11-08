@@ -197,6 +197,7 @@ const storyInvokeHandlers = {
   workspace_script_snapshot: { data: '', offset: 0, exitCode: null },
   terminal_snapshot: { data: '', offset: 0, exitCode: null },
   turn_list_live: [],
+  turn_launch_id: 'launch-story',
   worktree_list_registered: ({ worktreePaths }: ListRegisteredArgs) =>
     worktreePaths.map((path) => ({
       kind: 'registered',

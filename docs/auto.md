@@ -565,9 +565,11 @@ writing to it reopens it to **Deciding**.
   lands first and refuses the turn, or comes after and is refused itself as a
   running turn. A startup failure after the claim gives it back
   (`revertAgentStart` on that run id), so the agent is never left running
-  without its turn. Still open for 0.31.14: another window that loads the
-  workspace between the claim and the spawn can stop the claimed agent
-  (`reconcileLoadedAgent`), which reopens adoption for that moment. The turn
+  without its turn. The same transaction writes an admission row
+  (`turn_admissions`, m240) that lives until the spawn, so another window
+  that loads the workspace or boots in between leaves the claimed agent
+  running and an adoption or detach is still refused as a running turn
+  ([turns.md](turns.md#turn-admission)). The turn
   runs only on the routed provider and model, and only on a provider in
   `AUTO_CHILD_PROVIDERS`: a model picked in the child's composer or a retry
   aimed elsewhere is refused, agent pins are ignored, a provider fallback that

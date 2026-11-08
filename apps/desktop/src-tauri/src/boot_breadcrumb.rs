@@ -105,7 +105,7 @@ fn unix_millis() -> u128 {
     u128::from(crate::util::now_millis_u64())
 }
 
-fn launch_id() -> &'static str {
+pub(crate) fn launch_id() -> &'static str {
     LAUNCH_ID
         .get_or_init(|| format!("{}-{}", unix_millis(), std::process::id()))
         .as_str()

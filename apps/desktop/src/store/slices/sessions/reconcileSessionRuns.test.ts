@@ -4,8 +4,9 @@ import type { Agent, IsoDateTime, ProviderRunId, Session } from '@goodboy/types'
 const {
   cancelTurn,
   findUndecidedPermissionAsk,
+  isTurnAdmissionHeld,
   isTurnStreamActive,
-  recordAgentStatus,
+  stopGhostAgent,
   updateSessionState,
 } = vi.hoisted(() => ({
   isTurnStreamActive: vi.fn((_params: { readonly runId: string }) => false),
@@ -17,19 +18,22 @@ const {
     }): ReturnType<typeof import('@goodboy/db').findUndecidedPermissionAsk> =>
       Promise.resolve(null),
   ),
-  recordAgentStatus: vi.fn(async () => undefined),
+  isTurnAdmissionHeld: vi.fn(async (_params: object) => false),
+  stopGhostAgent: vi.fn(async (_params: object) => true),
   updateSessionState: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     findUndecidedPermissionAsk,
-    recordAgentStatus,
+    isTurnAdmissionHeld,
+    stopGhostAgent,
     updateSessionState,
   }),
 );
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn, isTurnStreamActive }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+vi.mock('../../../shared/lib/readLaunchId', () => ({ readLaunchId: async () => 'launch-1' }));
 
 import { writeTurnCursor, type TurnOwner } from '../../../features/chat/turnCursor';
 import {
@@ -128,13 +132,35 @@ describe('loaded run reconciliation', () => {
     });
 
     expect(cancelTurn).toHaveBeenCalledWith(RUN_ID);
-    expect(recordAgentStatus).toHaveBeenCalledWith({}, agent.id, {
-      status: 'stopped',
-      stoppedAt: expect.any(String),
-      stoppedBy: 'app',
+    expect(stopGhostAgent).toHaveBeenCalledWith({
+      db: {},
+      agentId: agent.id,
+      runId: RUN_ID,
+      launchId: 'launch-1',
+      nowMs: expect.any(Number),
     });
     expect(reconciled.status).toBe('stopped');
     expect(reconciled.stoppedBy).toBe('app');
+  });
+
+  it('leaves an agent whose turn another window claimed and has not spawned yet', async () => {
+    const agent = buildAgent({ status: 'running' });
+    isTurnAdmissionHeld.mockResolvedValueOnce(true);
+
+    const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) });
+
+    expect(reconciled).toEqual({ agent, waiting: null });
+    expect(cancelTurn).not.toHaveBeenCalled();
+    expect(stopGhostAgent).not.toHaveBeenCalled();
+  });
+
+  it('keeps the agent running when a newer claim won the row before the stop', async () => {
+    const agent = buildAgent({ status: 'running' });
+    stopGhostAgent.mockResolvedValueOnce(false);
+
+    const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set() });
+
+    expect(reconciled).toEqual({ agent, waiting: null });
   });
 
   it('keeps an agent whose saved ask has no answer waiting for you, never stopped', async () => {
@@ -156,7 +182,7 @@ describe('loaded run reconciliation', () => {
       agent,
       waiting: { kind: 'blocked', runId: RUN_ID, blockedAt: NOW },
     });
-    expect(recordAgentStatus).not.toHaveBeenCalled();
+    expect(stopGhostAgent).not.toHaveBeenCalled();
   });
 
   it('stops an agent whose ask was decided, as a restart did', async () => {
@@ -199,7 +225,7 @@ describe('loaded run reconciliation', () => {
     expect(reconciled).toBe(agent);
     expect(session?.state.kind).toBe('running');
     expect(cancelTurn).not.toHaveBeenCalled();
-    expect(recordAgentStatus).not.toHaveBeenCalled();
+    expect(stopGhostAgent).not.toHaveBeenCalled();
     expect(reattachableTurn({ agent })).toEqual({
       runId: RUN_ID,
       cursor: { seq: 3, index: 0, owner: OWNER },
@@ -237,6 +263,6 @@ describe('loaded run reconciliation', () => {
     expect(reconciledSession).toBe(session);
     expect(reconciledAgent).toBe(agent);
     expect(updateSessionState).not.toHaveBeenCalled();
-    expect(recordAgentStatus).not.toHaveBeenCalled();
+    expect(stopGhostAgent).not.toHaveBeenCalled();
   });
 });

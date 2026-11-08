@@ -297,6 +297,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
   return turnReady({
     value: {
       runId,
+      hasAdmission: isClaimed,
       isFirstTurn,
       isHandoffTurn,
       resolvedAgentId,

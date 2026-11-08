@@ -198,7 +198,7 @@ describe('store on sqlite: ghost running agents at boot', () => {
     stubStoryInvoke({ turn_list_live: () => [] });
     injectDbFault({ match: /permission_request/ });
 
-    await expect(reconcileGhostAgents()).rejects.toThrow('injected db fault');
+    await expect(reconcileGhostAgents()).rejects.toThrow('story_fault_no_such_table');
     expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-ghost': 'running' });
   });
 

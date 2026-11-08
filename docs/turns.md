@@ -847,6 +847,33 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   `cli_too_old` item, even when the turn state was left `running` without a
   `done` (`isTurnThinking`).
 
+### Turn admission
+
+A turn marks its agent running before it spawns, and the prompt build sits in
+between. Another window that loads the workspace or boots in that gap sees a
+running agent with no live run and no cursor of its own.
+
+- **The claim leaves a row until the spawn.** `claimTurnAdmission` writes
+  `turn_admissions` (agent, run, the app launch from `turn_launch_id`, the
+  claim time) in the transaction that marks the agent running. `sendTurn`
+  deletes it once `turn_spawn` resolved, or when the turn ends without a
+  spawn; `revertAgentStart` deletes it with the claim it gives back.
+- **A held claim is left alone.** A row is held while it is younger than
+  120 s (`TURN_ADMISSION_HOLD_MS`) and comes from this launch.
+  `reconcileLoadedAgent` neither cancels nor stops an agent with a held row,
+  and the boot sweep (`stopGhostAgents`) skips it. The stop itself is one
+  statement that also checks the run and the row, so a claim that lands
+  between the read and the write wins.
+- **An abandoned claim is cleared.** A row from an earlier launch (a crash
+  before the spawn) is cleared at the next boot, and one older than the hold
+  by whichever window reconciles next. When the launch cannot be read the age
+  alone decides.
+- **The spawn checks it.** A spawn from a claimed turn carries
+  `hasAdmission`, and `turn_spawn` refuses it with `admission_lost` when the
+  row is gone or names another run, so a turn cleared by another window never
+  starts. An adoption or a detach is refused as a running turn
+  (`turn_running`) while a held row stands.
+
 ## Live state at the tail
 
 The live state of an operation is said once, as the last line of the content

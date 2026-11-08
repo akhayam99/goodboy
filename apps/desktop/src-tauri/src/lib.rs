@@ -498,6 +498,7 @@ pub fn run() {
             restart_marker::restart_prepare,
             restart_marker::restart_abort,
             turn::turn_list_live,
+            turn::turn_launch_id,
             turn::turn_quiet,
             window_close::window_close_claim,
             window_heartbeat::window_heartbeat,

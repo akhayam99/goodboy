@@ -1,7 +1,8 @@
 import type { Agent, IsoDateTime, ProviderRunId, Session, TurnState } from '@goodboy/types';
 import {
   findUndecidedPermissionAsk,
-  recordAgentStatus,
+  isTurnAdmissionHeld,
+  stopGhostAgent,
   stopGhostAgents,
   updateSessionState,
 } from '@goodboy/db';
@@ -14,6 +15,7 @@ import {
 } from '../../../features/chat/turnCursor';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { readLaunchId } from '../../../shared/lib/readLaunchId';
 
 type ReconcileLoadedSessionsParams = Readonly<{
   sessions: ReadonlyArray<Session>;
@@ -104,6 +106,17 @@ export const reconcileLoadedAgent = async ({
   if (isOwnedHere) {
     return { agent, waiting: null };
   }
+  const launchId = await readLaunchId();
+  const admission = { db: tauriDatabase, agentId: agent.id, runId: agent.runId ?? null, launchId };
+  const isHeld = await isTurnAdmissionHeld({ ...admission, nowMs: Date.now() }).catch(
+    (error: unknown) => {
+      console.error('read the turn admission failed', error);
+      return true;
+    },
+  );
+  if (isHeld) {
+    return { agent, waiting: null };
+  }
   if (agent.runId != null && liveRunIds.has(agent.runId)) {
     await cancelTurn(agent.runId).catch(() => undefined);
   }
@@ -112,12 +125,15 @@ export const reconcileLoadedAgent = async ({
   if (waiting !== null) {
     return { agent, waiting };
   }
-  const stoppedAt = new Date().toISOString() as IsoDateTime;
-  await recordAgentStatus(tauriDatabase, agent.id, {
-    status: 'stopped',
-    stoppedAt,
-    stoppedBy: 'app',
-  }).catch(() => undefined);
+  const nowMs = Date.now();
+  const isStopped = await stopGhostAgent({ ...admission, nowMs }).catch((error: unknown) => {
+    console.error('stop the agent left running failed', error);
+    return false;
+  });
+  if (!isStopped) {
+    return { agent, waiting: null };
+  }
+  const stoppedAt = new Date(nowMs).toISOString() as IsoDateTime;
   return { agent: { ...agent, status: 'stopped', stoppedAt, stoppedBy: 'app' }, waiting: null };
 };
 
@@ -137,5 +153,7 @@ export const reconcileGhostAgents = async (): Promise<number> => {
   return stopGhostAgents({
     db: tauriDatabase,
     keepRunIds: [...liveRunIds, ...listTurnCursorRunIds()],
+    launchId: await readLaunchId(),
+    nowMs: Date.now(),
   });
 };

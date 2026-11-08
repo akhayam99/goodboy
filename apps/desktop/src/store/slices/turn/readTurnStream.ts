@@ -90,6 +90,7 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
       ...(writeSetLease !== undefined && { writeSetLease }),
       ...(confinedRole !== undefined && { confinedRole }),
       ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
+      ...(ctx.hasAdmission && { hasAdmission: true }),
       ...((isolatedCopyPath !== null || isScribeTurn) && { blocksPush: true }),
       ...(isAutoChildTurn({ input: ctx.input, confinedRole, childTurn: ctx.childTurn }) && {
         isAutoChild: true,
