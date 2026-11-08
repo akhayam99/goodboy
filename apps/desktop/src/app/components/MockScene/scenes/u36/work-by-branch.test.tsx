@@ -40,6 +40,9 @@ beforeEach(async () => {
     if (typeof command !== 'string') {
       throw new Error('The scene command must be a string.');
     }
+    if (command === 'db_select') {
+      return Promise.resolve([]);
+    }
     return sceneInvoke({ command, args });
   });
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
