@@ -77,9 +77,9 @@ The templates hold no title or social tags. `pageHead` in `website/src/prerender
 writes them at each template's `<!--app-head-->` mark from the page's meta (the
 home and features meta live in `website/src/prerender/STATIC_PAGES.ts`): title, description,
 canonical, Open Graph and X card, all from one title and one description. A
-title names what the page is for in the words people search, such as AI coding
-agent orchestrator, Claude Code, Codex, Cursor or git worktrees, in about 70
-characters; a description stays under 160.
+title names what the page is for in the words people search, such as agentic
+development environment, Claude Code, Codex, Cursor or git worktrees, in 30 to 72
+characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
 
 ## Search and sharing
 
