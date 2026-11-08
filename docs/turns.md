@@ -858,8 +858,14 @@ running agent with no live run and no cursor of its own.
   claim time) in the transaction that marks the agent running. `sendTurn`
   deletes it once `turn_spawn` resolved, or when the turn ends without a
   spawn; `revertAgentStart` deletes it with the claim it gives back.
-- **A held claim is left alone.** A row is held while it is younger than
-  120 s (`TURN_ADMISSION_HOLD_MS`) and comes from this launch.
+- **One claim at a time.** The claim transaction refuses with `turn_running`
+  when the agent is running on a run that is still pending or streaming,
+  which covers a held row (its claim marked the agent running on its own
+  streaming run). A second window never replaces a live claim, so two
+  processes never run for one agent.
+- **A held claim is left alone.** A row is held while its newer of
+  `spawned_at` and `claimed_at` is younger than 120 s
+  (`TURN_ADMISSION_HOLD_MS`) and it comes from this launch.
   `reconcileLoadedAgent` neither cancels nor stops an agent with a held row,
   and the boot sweep (`stopGhostAgents`) skips it. The stop itself is one
   statement that also checks the run and the row, so a claim that lands
@@ -868,10 +874,14 @@ running agent with no live run and no cursor of its own.
   before the spawn) is cleared at the next boot, and one older than the hold
   by whichever window reconciles next. When the launch cannot be read the age
   alone decides.
-- **The spawn checks it.** A spawn from a claimed turn carries
-  `hasAdmission`, and `turn_spawn` refuses it with `admission_lost` when the
-  row is gone or names another run, so a turn cleared by another window never
-  starts. An adoption or a detach is refused as a running turn
+- **The spawn checks it.** Right before `turn_spawn`, `readTurnStream`
+  publishes `spawned_at` on the row (`publishTurnSpawn`), which renews the
+  hold, so expiry cannot clear it between that write and the spawn. A spawn
+  from a claimed turn carries `hasAdmission`, and `turn_spawn` refuses it
+  with `admission_lost` when the row is gone or names another run, so a turn
+  cleared by another window before the publish never starts. The publish
+  lives in TypeScript because `turn_admissions` belongs to `packages/db` in
+  the writer map. An adoption or a detach is refused as a running turn
   (`turn_running`) while a held row stands.
 
 ## Live state at the tail

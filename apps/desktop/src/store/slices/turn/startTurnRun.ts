@@ -231,13 +231,13 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
   let isClaimed = false;
   try {
     if (!phaseDefinition) {
-      const isAdmitted = await claimTurnAdmission({
+      const admission = await claimTurnAdmission({
         agentId: activeAgentId,
         delegationId: ctx.childTurn?.delegationId ?? null,
         runId,
       });
-      if (!isAdmitted) {
-        const message = turnRefusalMessage({ refusal: 'auto_child_changed' });
+      if (admission !== 'admitted') {
+        const message = turnRefusalMessage({ refusal: admission });
         releaseUnstartedTurn({ set, get, sessionId, agentId: activeAgentId });
         await updateProviderRunStatus(tauriDatabase, runId, {
           kind: 'failed',
@@ -250,9 +250,10 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
           message,
           at: now(),
         });
-        return turnDone({
-          result: { blockedOverBudget: false, autoChildRefusal: 'auto_child_changed' },
-        });
+        if (admission === 'turn_running') {
+          return turnDone({ result: { blockedOverBudget: false, isTurnRunning: true } });
+        }
+        return turnDone({ result: { blockedOverBudget: false, autoChildRefusal: admission } });
       }
       isClaimed = true;
       await invokeAgentUpdateStatus(activeAgentId, {

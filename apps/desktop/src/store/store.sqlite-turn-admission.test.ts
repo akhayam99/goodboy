@@ -1,7 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertWorkspace, listAgentsForSessions } from '@goodboy/db';
 import { nextWorkspaceId } from '@goodboy/types/testing';
-import type { AgentId, SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type ProviderRunId, type SessionId } from '@goodboy/types';
+import { claimTurnAdmission } from './slices/turn/childTurn/claimTurnAdmission';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import { adoptAgent } from './runtime/auto/adoptAgent';
 import { reconcileGhostAgents, reconcileLoadedAgent } from './slices/sessions/reconcileSessionRuns';
@@ -49,6 +50,7 @@ const workspace = buildStoryWorkspace({
   slug: 'harborline',
 });
 const SCRATCH = '/tmp/goodboy-root/scratch/harborline';
+const HOLD_MS = 120_000;
 const ROUTED = {
   selectedProvider: 'anthropic',
   selectedModel: 'claude-sonnet-4-5',
@@ -199,6 +201,78 @@ describe('a turn admission outlives another window until the spawn', () => {
     expect(storySpies.turnSpawn.mock.calls.at(-1)?.[0]).toMatchObject({ hasAdmission: true });
     expect(storySpies.turnSpawn.mock.calls.at(-1)?.[0]).not.toHaveProperty('isAutoChild');
     await vi.waitFor(async () => expect(await admittedRuns()).toEqual([]));
+  });
+
+  it('refuses a second window that claims the agent while the first claim waits to spawn', async () => {
+    const reached = gate();
+    const release = gate();
+    storySpies.turnSpawn.mockImplementationOnce(async () => {
+      reached.open();
+      await release.opened;
+    });
+
+    const turn = useAppStore.getState().sendTurn({
+      sessionId: first.sessionId,
+      agentId: first.agentId,
+      content: 'Also list the migrations.',
+      origin: 'operator',
+    });
+    await reached.opened;
+    const claimed = await storedAgent();
+    const competing = await claimTurnAdmission({
+      agentId: first.agentId,
+      delegationId: null,
+      runId: brandId<ProviderRunId>({ value: 'run-other-window' }),
+    });
+    const afterCompeting = await storedAgent();
+    const heldRuns = await admittedRuns();
+    release.open();
+    await turn;
+    const afterTurn = await claimTurnAdmission({
+      agentId: first.agentId,
+      delegationId: null,
+      runId: brandId<ProviderRunId>({ value: 'run-after-the-turn' }),
+    });
+
+    expect(competing).toBe('turn_running');
+    expect(afterCompeting.runId).toBe(claimed.runId);
+    expect(heldRuns).toEqual([claimed.runId]);
+    expect(storySpies.turnSpawn).toHaveBeenCalledTimes(1);
+    expect(afterTurn).toBe('admitted');
+  });
+
+  it('keeps a spawn published at the hold boundary from another window reconciling', async () => {
+    const reached = gate();
+    const release = gate();
+    storySpies.turnSpawn.mockImplementationOnce(async () => {
+      await storySqlite().execute('UPDATE turn_admissions SET claimed_at = ? WHERE agent_id = ?', [
+        Date.now() - HOLD_MS,
+        first.agentId,
+      ]);
+      reached.open();
+      await release.opened;
+    });
+
+    const turn = useAppStore.getState().sendTurn({
+      sessionId: first.sessionId,
+      agentId: first.agentId,
+      content: 'Also list the migrations.',
+      origin: 'operator',
+    });
+    await reached.opened;
+    const claimed = await storedAgent();
+    const booted = await reconcileGhostAgents();
+    const loaded = await reconcileLoadedAgent({ agent: claimed, liveRunIds: new Set() });
+    const adopted = await adoptInOtherWindow();
+    const heldRuns = await admittedRuns();
+    release.open();
+    await turn;
+
+    expect(booted).toBe(0);
+    expect(loaded.agent.status).toBe('running');
+    expect(adopted).toMatchObject({ kind: 'refused', code: 'turn_running' });
+    expect(heldRuns).toEqual([claimed.runId]);
+    expect(storySpies.turnSpawn.mock.calls.at(-1)?.[0]).toMatchObject({ hasAdmission: true });
   });
 
   it('gives the claim back when the turn fails before it spawns', async () => {

@@ -232,6 +232,35 @@ describe('turn admissions', () => {
     });
   });
 
+  describe('a spawn published at the hold boundary', () => {
+    const publishSpawn = async (agentId: string): Promise<void> => {
+      await db.execute('UPDATE turn_admissions SET spawned_at = ? WHERE agent_id = ?', [
+        NOW_MS,
+        agentId,
+      ]);
+    };
+
+    it('keeps the agent running while the claim alone has expired', async () => {
+      await seedRunning('claimed', 'run-claimed');
+      await claim({
+        agentId: 'claimed',
+        runId: 'run-claimed',
+        launch: LAUNCH,
+        ageMs: TURN_ADMISSION_HOLD_MS,
+      });
+      await publishSpawn('claimed');
+      const params = { db, agentId: agent('claimed'), runId: run('run-claimed'), launchId: LAUNCH };
+
+      expect(await isTurnAdmissionHeld({ ...params, nowMs: NOW_MS })).toBe(true);
+      expect(await stopGhostAgent({ ...params, nowMs: NOW_MS })).toBe(false);
+      expect(await stopGhostAgents({ db, keepRunIds: [], launchId: LAUNCH, nowMs: NOW_MS })).toBe(
+        0,
+      );
+      expect(await statusOf('claimed')).toBe('running');
+      expect(await admittedRuns()).toEqual(['run-claimed']);
+    });
+  });
+
   it('releases only the admission of its own run', async () => {
     await seedRunning('claimed', 'run-claimed');
     await claim({ agentId: 'claimed', runId: 'run-claimed', launch: LAUNCH, ageMs: 0 });

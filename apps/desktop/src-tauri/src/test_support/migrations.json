@@ -957,6 +957,6 @@
   },
   {
     "version": 240,
-    "sql": "\nCREATE TABLE turn_admissions (\n  id TEXT PRIMARY KEY,\n  agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,\n  run_id TEXT NOT NULL,\n  owner_launch TEXT,\n  claimed_at INTEGER NOT NULL,\n  created_at INTEGER NOT NULL,\n  updated_at INTEGER NOT NULL,\n  UNIQUE (agent_id)\n);\n"
+    "sql": "\nCREATE TABLE turn_admissions (\n  id TEXT PRIMARY KEY,\n  agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,\n  run_id TEXT NOT NULL,\n  owner_launch TEXT,\n  claimed_at INTEGER NOT NULL,\n  spawned_at INTEGER,\n  created_at INTEGER NOT NULL,\n  updated_at INTEGER NOT NULL,\n  UNIQUE (agent_id)\n);\n"
   }
 ]

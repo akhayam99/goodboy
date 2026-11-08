@@ -45,6 +45,7 @@ describe('m240 turn admissions', () => {
       'run_id',
       'owner_launch',
       'claimed_at',
+      'spawned_at',
       'created_at',
       'updated_at',
     ]);

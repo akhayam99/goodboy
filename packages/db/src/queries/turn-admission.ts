@@ -3,7 +3,7 @@ import type { Database, PlainStatement, TransactionOutcome } from '../client';
 
 export const TURN_ADMISSION_HOLD_MS = 120_000;
 
-export const HELD_ADMISSION_SQL = `claimed_at > ? AND (owner_launch IS NULL OR ? IS NULL OR owner_launch = ?)`;
+export const HELD_ADMISSION_SQL = `COALESCE(spawned_at, claimed_at) > ? AND (owner_launch IS NULL OR ? IS NULL OR owner_launch = ?)`;
 
 type HeldParams = {
   readonly launchId: string | null;
