@@ -43,7 +43,6 @@ export type ActivityItem =
       readonly needYou: number;
       readonly open: number;
       readonly hasPeople: boolean;
-      readonly hasBots: boolean;
     }
   | {
       readonly kind: 'checks';
@@ -189,7 +188,6 @@ const commentsOf = ({
       needYou: counts.needYou,
       open: counts.open,
       hasPeople: comments.some((comment) => !isBotAuthor({ login: comment.author })),
-      hasBots: comments.some((comment) => isBotAuthor({ login: comment.author })),
     },
   ];
 };

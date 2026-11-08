@@ -111,14 +111,8 @@ describe('activityItemsFor', () => {
     expect(activityItemsFor({ items, filter: 'bots' })).toEqual([]);
   });
 
-  it('shows the comments line under Bots when an app left inline findings', () => {
-    const line = ({
-      hasPeople,
-      hasBots,
-    }: {
-      readonly hasPeople: boolean;
-      readonly hasBots: boolean;
-    }): ActivityItem => ({
+  it('keeps the comments line out of Bots and under People only when a person commented', () => {
+    const line = ({ hasPeople }: { readonly hasPeople: boolean }): ActivityItem => ({
       kind: 'comments',
       key: 'comments',
       at: AT,
@@ -126,24 +120,42 @@ describe('activityItemsFor', () => {
       needYou: 0,
       open: 2,
       hasPeople,
-      hasBots,
     });
 
+    expect(activityItemsFor({ items: [line({ hasPeople: false })], filter: 'bots' })).toHaveLength(
+      0,
+    );
     expect(
-      activityItemsFor({ items: [line({ hasPeople: false, hasBots: true })], filter: 'bots' }),
-    ).toHaveLength(1);
-    expect(
-      activityItemsFor({ items: [line({ hasPeople: false, hasBots: true })], filter: 'people' }),
+      activityItemsFor({ items: [line({ hasPeople: false })], filter: 'people' }),
     ).toHaveLength(0);
-    expect(
-      activityItemsFor({ items: [line({ hasPeople: true, hasBots: true })], filter: 'bots' }),
-    ).toHaveLength(1);
-    expect(
-      activityItemsFor({ items: [line({ hasPeople: true, hasBots: true })], filter: 'people' }),
-    ).toHaveLength(1);
-    expect(
-      activityItemsFor({ items: [line({ hasPeople: true, hasBots: false })], filter: 'bots' }),
-    ).toHaveLength(0);
+    expect(activityItemsFor({ items: [line({ hasPeople: true })], filter: 'bots' })).toHaveLength(
+      0,
+    );
+    expect(activityItemsFor({ items: [line({ hasPeople: true })], filter: 'people' })).toHaveLength(
+      1,
+    );
+  });
+
+  it('counts on Bots the bot rows the list shows, a finding comment line left out', () => {
+    const items: ReadonlyArray<ActivityItem> = [
+      ...ITEMS,
+      {
+        kind: 'comments',
+        key: 'comments',
+        at: AT,
+        total: 1,
+        needYou: 0,
+        open: 1,
+        hasPeople: false,
+      },
+    ];
+    const bots = activityFilterOptionsOf({ items }).find((option) => option.value === 'bots');
+
+    expect(bots?.count).toBe(2);
+    expect(activityItemsFor({ items, filter: 'bots' }).map((item) => item.kind)).toEqual([
+      'review',
+      'bot',
+    ]);
   });
 
   it('keeps the pushes and the checks apart', () => {

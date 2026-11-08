@@ -1,11 +1,12 @@
 import type { PrDetail, PullRequestView, Session } from '@goodboy/types';
 import { useMountDiffStats } from '../../../../store';
 import type { PullRequestPresentationState } from '../../../../shared/utils/pullRequestPresentation';
-import { commentStateCountsOf } from '../../../resolve/commentGroupsView';
+import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import { branchWorkTabRegistration } from '../../../session/branchWorkTabRegistration';
 import { branchTabFactsOf } from '../../branchTabFactsOf';
 import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
+import { pullRequestThreadCountsOf } from '../../pullRequestThreadCountsOf';
 import type { BranchIdentity } from '../useBranchIdentity';
 
 type Params = {
@@ -14,7 +15,7 @@ type Params = {
   readonly state: PullRequestPresentationState;
   readonly detail: PrDetail | null;
   readonly view: PullRequestView | null;
-  readonly entries: Parameters<typeof commentStateCountsOf>[0]['entries'];
+  readonly entries: ReadonlyArray<ThreadEntry>;
   readonly loadedFiles: number | null;
   readonly ahead: number | null;
   readonly notPushed: number | null;
@@ -39,7 +40,7 @@ export const useBranchTabFacts = ({
   });
   const { pr } = identity;
   const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
-  const counts = commentStateCountsOf({ entries });
+  const counts = pullRequestThreadCountsOf({ pr, detail, entries, isWithNotes: true });
   const facts = branchTabFactsOf({
     pullRequestState: state,
     commentsNeedYou: counts.needYou,
