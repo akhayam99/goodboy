@@ -203,5 +203,3 @@ export const branchStepsOf = ({
     }
   }
 };
-
-export const branchStepOf = ({ ...facts }: Params): BranchStep => branchStepsOf(facts)[0] ?? null;

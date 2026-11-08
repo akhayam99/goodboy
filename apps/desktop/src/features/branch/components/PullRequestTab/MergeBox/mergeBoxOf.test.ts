@@ -8,7 +8,6 @@ import {
   type MergeReadinessFacts,
 } from '../../../../review/prMergeReadiness';
 import {
-  branchStepOf,
   branchStepsOf,
   NO_COMMENT_FACTS,
   type BranchDueStep,
@@ -124,7 +123,7 @@ const build = ({
     checks: { isFailing: merged.checks === 'failing', isAwaitingRun: false, chain: 'none' },
     push: { isInFlight: isPushing, failed: 0, canPush: unpushed > 0, replies: 0 },
   } as const;
-  const header = { steps: branchStepsOf(headerFacts), step: branchStepOf(headerFacts) };
+  const header = { steps: branchStepsOf(headerFacts), step: branchStepsOf(headerFacts)[0] ?? null };
   const box = mergeBoxOf({
     state,
     pr: {
