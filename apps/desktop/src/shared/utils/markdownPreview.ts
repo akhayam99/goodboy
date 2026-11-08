@@ -2,6 +2,7 @@ type Params = {
   readonly text: string | null | undefined;
   readonly shouldKeepOpenFence?: boolean;
   readonly shouldKeepMarkers?: boolean;
+  readonly shouldKeepClosedFences?: boolean;
 };
 
 const MAX_LINK_FAILURES = 8;
@@ -200,11 +201,12 @@ type FlatParams = {
 };
 
 const flatLineOf = ({ text, shouldKeepMarkers }: FlatParams): string => {
-  if (shouldKeepMarkers) {
-    return text.replace(/\s+/g, ' ').trim();
-  }
-  const unmarked = text.replace(/\s+/g, ' ').trim().replace(BLOCK_MARKER, '');
-  return emphasisFreeOf({ text: unmarked }).replace(/\s+/g, ' ').trim();
+  const spaced = text.replace(/\s+/g, ' ').trim();
+  const marker = BLOCK_MARKER.exec(spaced)?.[0] ?? '';
+  const body = emphasisFreeOf({ text: spaced.slice(marker.length) })
+    .replace(/\s+/g, ' ')
+    .trim();
+  return shouldKeepMarkers ? `${marker}${body}`.trim() : body;
 };
 
 type EmphasisParams = {
@@ -220,6 +222,7 @@ export const markdownPlainLinesOf = ({
   text,
   shouldKeepOpenFence = true,
   shouldKeepMarkers = false,
+  shouldKeepClosedFences = false,
 }: Params): ReadonlyArray<string> => {
   if (text == null) {
     return [];
@@ -269,6 +272,14 @@ export const markdownPlainLinesOf = ({
       line.trim() === marker;
     if (isClose) {
       fence = null;
+      if (shouldKeepClosedFences) {
+        fenceLines.forEach((entry) => {
+          const literal = entry.line.replace(/\s+/g, ' ').trim();
+          if (literal.length > 0) {
+            out.push(literal);
+          }
+        });
+      }
       continue;
     }
     fenceLines.push({ line, start });

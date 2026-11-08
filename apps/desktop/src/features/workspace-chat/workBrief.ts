@@ -57,11 +57,12 @@ export const draftWorkBrief = ({ title, messages, projectNames }: DraftParams): 
   const items = visibleLines
     .flatMap((line) => {
       const match = LIST_ITEM.exec(line);
-      return match?.[1] === undefined ? [] : [markdownPreview({ text: match[1] })];
+      return match?.[1] === undefined ? [] : [match[1].trim()];
     })
     .filter((item) => item !== '');
+  const pathLines = markdownPlainLinesOf({ text: answerText, shouldKeepClosedFences: true });
   const files = unique([
-    ...pathsIn({ text: visibleLines.join('\n') }),
+    ...pathsIn({ text: pathLines.join('\n') }),
     ...(answer?.reads ?? []),
   ]).slice(0, FILE_LIMIT);
   return {

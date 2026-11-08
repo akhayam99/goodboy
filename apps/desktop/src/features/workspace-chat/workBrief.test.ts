@@ -50,4 +50,49 @@ describe('draftWorkBrief', () => {
     expect(JSON.stringify(brief)).not.toContain('Hidden');
     expect(JSON.stringify(brief)).not.toContain('secret');
   });
+
+  it('keeps code span contents literal in the notes', () => {
+    const answer = [
+      'Tighten the retry types in notify-relay.',
+      '- Use `Array<string>` for the result.',
+      '- Write `<!--` to open a comment.',
+      '- Keep **bold** words plain.',
+    ].join('\n');
+    const brief = draftWorkBrief({
+      title: 'Harborline retries?',
+      messages: [
+        messageOf({ role: 'user', content: 'How do we type it?' }),
+        messageOf({ role: 'assistant', content: answer }),
+      ],
+      projectNames: ['notify-relay'],
+    });
+
+    expect(brief.know).toEqual([
+      'Use Array<string> for the result.',
+      'Write <!-- to open a comment.',
+      'Keep bold words plain.',
+    ]);
+  });
+
+  it('takes paths named only inside a closed code fence', () => {
+    const answer = [
+      'Cap the retry loop in notify-relay.',
+      '```ts',
+      '// edit notify-relay/src/retry.ts',
+      '```',
+      '<!-- see secret/dir/hidden.ts -->',
+    ].join('\n');
+    const brief = draftWorkBrief({
+      title: 'Harborline retries?',
+      messages: [
+        messageOf({ role: 'user', content: 'Where is the loop?' }),
+        messageOf({ role: 'assistant', content: answer }),
+      ],
+      projectNames: ['notify-relay'],
+    });
+
+    expect(brief.files).toEqual(['notify-relay/src/retry.ts']);
+    expect(brief.projects).toEqual(['notify-relay']);
+    expect(brief.know).toEqual(['Cap the retry loop in notify-relay.']);
+  });
 });

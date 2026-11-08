@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { markdownPreview } from './markdownPreview';
+import { markdownPlainLinesOf, markdownPreview } from './markdownPreview';
 
 describe('markdownPreview', () => {
   it('drops a fenced suggestion block entirely, including its content', () => {
@@ -55,5 +55,22 @@ describe('markdownPreview', () => {
   it('removes long tags and images whole', () => {
     const img = `<img src="https://example.test/${'a'.repeat(5000)}.png"> kept`;
     expect(markdownPreview({ text: img })).toBe('kept');
+  });
+
+  it('keeps list markers and drops emphasis when asked to keep markers', () => {
+    expect(
+      markdownPlainLinesOf({
+        text: '- Use `Array<string>` and **bold**.',
+        shouldKeepMarkers: true,
+      }),
+    ).toEqual(['- Use Array<string> and bold.']);
+  });
+
+  it('keeps a closed fence only when asked to, comments stay hidden', () => {
+    const text = '```ts\nedit notify-relay/src/retry.ts\n```\n<!-- hidden -->';
+    expect(markdownPlainLinesOf({ text })).toEqual([]);
+    expect(markdownPlainLinesOf({ text, shouldKeepClosedFences: true })).toEqual([
+      'edit notify-relay/src/retry.ts',
+    ]);
   });
 });
