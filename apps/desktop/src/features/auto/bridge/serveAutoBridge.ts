@@ -84,6 +84,8 @@ const runCall = async ({ ports, turns, call }: CallParams): Promise<unknown> => 
       return ports.publish({ act: call.act, delegationIds: call.delegationIds });
     case 'userTurn':
       return runTurnOnce({ ports, turns, messageId: call.messageId, turn: call.turn });
+    case 'childTurn':
+      return ports.childTurn(call.turn);
     case 'decision':
       return ports.decision({
         delegationId: call.delegationId,

@@ -835,9 +835,9 @@ export {
   autoAdmissionArtifactAbort,
   autoAdmissionSubstepAbort,
   autoAdmissionTreeStatement,
+  autoContinueTreeStatement,
   autoSubstepStatements,
   autoResumeTreeStatement,
   autoInputArtifactStatements,
   autoReviseArtifactStatements,
-  type AutoAdmissionLimits,
 } from './queries/auto-admission';

@@ -116,6 +116,18 @@ describe('agent queue', () => {
     );
   });
 
+  it('refuses a message whose id is already queued and keeps the first one', async () => {
+    const { slice, queue } = harness();
+    await slice.enqueueAgentMessage({ turn: input('a') });
+
+    const isSaved = await slice.enqueueAgentMessage({
+      turn: { ...input('a'), content: 'another text' },
+    });
+
+    expect(isSaved).toBe(false);
+    expect(queue().map((item) => item.content)).toEqual(['message a']);
+  });
+
   it('does not drain while the turn runs', async () => {
     const { slice, sent } = harness();
     await slice.enqueueAgentMessage({ turn: input('a') });

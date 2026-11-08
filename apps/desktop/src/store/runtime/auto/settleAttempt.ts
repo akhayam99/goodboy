@@ -18,6 +18,7 @@ import {
   type Statement,
 } from '@goodboy/db';
 import type { AutoAttemptId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import {
   reviseFailureStatements,
   type ReviseFailure,
@@ -107,15 +108,40 @@ type EffectiveEndingParams = {
   readonly ending: AttemptEnding;
 };
 
+type EndedAttempt = Extract<AttemptEnding, { kind: 'ended' }>;
+
+type StopReasonParams = {
+  readonly ending: EndedAttempt;
+  readonly reason: string;
+};
+
+const withStopReason = ({ ending, reason }: StopReasonParams): EndedAttempt => {
+  const snapshot = ending.resultSnapshot;
+  const envelope = isRecord(snapshot) ? snapshot['envelope'] : null;
+  if (!isRecord(snapshot) || !isRecord(envelope)) {
+    return { ...ending, endReason: reason };
+  }
+  return {
+    ...ending,
+    endReason: reason,
+    resultSnapshot: { ...snapshot, envelope: { ...envelope, reason } },
+  };
+};
+
 const effectiveEnding = async ({
   db,
   attempt,
   ending,
 }: EffectiveEndingParams): Promise<AttemptEnding> => {
-  if (ending.kind === 'ended') {
+  if (ending.kind === 'ended' && ending.outcome !== 'stopped') {
     return ending;
   }
   const delegation = await getAutoDelegation({ db, delegationId: attempt.delegationId });
+  if (ending.kind === 'ended') {
+    return delegation?.isStopping === true && delegation.reason !== null
+      ? withStopReason({ ending, reason: delegation.reason })
+      : ending;
+  }
   const cycles = delegation?.questionCycles ?? 0;
   if (cycles + 1 > AUTO_TREE_LIMITS.questionCyclesPerDelegation) {
     return {

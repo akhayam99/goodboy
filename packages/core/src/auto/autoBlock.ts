@@ -1,4 +1,5 @@
 import { escapeControlCharsInStrings } from '../providers/shared/escapeControlCharsInStrings';
+import { AUTO_CHILD_MESSAGE_CHARS } from './limits';
 import { parseMountSpec } from './mountSpec';
 import { parseProposeSpec } from './proposeSpec';
 import { clippedTextOf, isRecord } from '@goodboy/types/helpers';
@@ -12,6 +13,8 @@ export const AUTO_BLOCK_ACTIONS = [
   'mount',
   'answer',
   'release',
+  'message',
+  'stop',
   'finish',
 ] as const;
 
@@ -31,6 +34,8 @@ export type AutoBlock =
       artifact: string | null;
     }>
   | Readonly<{ action: 'release'; delegation: string; reason: string }>
+  | Readonly<{ action: 'message'; delegation: string; text: string }>
+  | Readonly<{ action: 'stop'; delegation: string; reason: string }>
   | Readonly<{ action: 'finish'; summary: string }>;
 
 export type AutoBlockOutcome =
@@ -187,6 +192,30 @@ const releaseOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   return { kind: 'block', block: { action: 'release', delegation, reason } };
 };
 
+const childMessageOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const delegation = clippedTextOf({ value: fields['delegation'], max: FIELD_CHARS });
+  const raw = fields['text'];
+  const text = typeof raw === 'string' ? raw.trim() : '';
+  if (delegation === null || text === '') {
+    return invalid({ reason: 'a message block needs "delegation" and "text"' });
+  }
+  if (text.length > AUTO_CHILD_MESSAGE_CHARS) {
+    return invalid({
+      reason: `a message holds at most ${AUTO_CHILD_MESSAGE_CHARS.toLocaleString('en-US')} characters. Shorten it, or continue the agent with "retryOf" and a "task" once it is done`,
+    });
+  }
+  return { kind: 'block', block: { action: 'message', delegation, text } };
+};
+
+const stopOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const delegation = clippedTextOf({ value: fields['delegation'], max: FIELD_CHARS });
+  const reason = clippedTextOf({ value: fields['reason'], max: FIELD_CHARS });
+  if (delegation === null || reason === null) {
+    return invalid({ reason: 'a stop block needs "delegation" and "reason"' });
+  }
+  return { kind: 'block', block: { action: 'stop', delegation, reason } };
+};
+
 const finishOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   const summary = clippedTextOf({ value: fields['summary'], max: SUMMARY_CHARS });
   if (summary === null) {
@@ -217,6 +246,10 @@ export const parseAutoBlock = ({ text }: ParseAutoBlockParams): AutoBlockOutcome
       return answerOf({ fields: parsed });
     case 'release':
       return releaseOf({ fields: parsed });
+    case 'message':
+      return childMessageOf({ fields: parsed });
+    case 'stop':
+      return stopOf({ fields: parsed });
     case 'finish':
       return finishOf({ fields: parsed });
     default:

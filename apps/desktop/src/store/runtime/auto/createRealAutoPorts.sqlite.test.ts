@@ -234,6 +234,22 @@ describe('the ports of Auto on the real store', () => {
     });
   });
 
+  it('names Auto as the one who stopped a run Auto stops', async () => {
+    const { ports, deps } = await worldWithPorts();
+
+    await ports.cancelRun({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: brandId<AgentId>({ value: 'agent-implementer' }),
+      by: 'auto',
+    });
+
+    expect(deps.cancelTurnConfirmed).toHaveBeenCalledWith({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: 'agent-implementer',
+      reason: 'auto',
+    });
+  });
+
   it('knows a live run from a finished one', async () => {
     const { ports, deps } = await worldWithPorts();
 

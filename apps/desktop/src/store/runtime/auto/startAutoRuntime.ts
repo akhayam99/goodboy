@@ -4,6 +4,10 @@ import { listAutoTreesToRecover, type Database } from '@goodboy/db';
 import { brandId, type AutoDelegationId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
 import { registerAutoDrivePort } from '../../../features/auto/autoDrivePort';
 import {
+  currentAutoChildTurnPort,
+  registerAutoChildTurnPort,
+} from '../../../features/auto/autoChildTurnPort';
+import {
   currentAutoUserTurnPort,
   registerAutoUserTurnPort,
 } from '../../../features/auto/autoUserTurnPort';
@@ -68,6 +72,16 @@ const REGISTERED_PORTS: AutoBridgePorts = {
   sendNow: ({ treeId, rowId }) => requirePort({ port: currentSendNowPort() })({ treeId, rowId }),
   withdraw: ({ treeId, rowId }) => requirePort({ port: currentWithdrawPort() })({ treeId, rowId }),
   userTurn: (params) => requirePort({ port: currentAutoUserTurnPort() })(params),
+  childTurn: ({ agentId, sessionId, text, from, hasFiles, isBusy, deliveryId }) =>
+    requirePort({ port: currentAutoChildTurnPort() })({
+      agentId,
+      sessionId,
+      text,
+      from,
+      hasFiles,
+      isBusy,
+      deliveryId,
+    }),
   decision: (params) => requirePort({ port: currentDelegationDecisionPort() })(params),
   rerunChecks: (params) => requirePort({ port: currentChecksRerunPort() })(params),
   publish: (params) => requirePort({ port: currentPublishPort() })(params),
@@ -87,6 +101,7 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
   registerPublishPort({ port: client.ports.publish });
   registerDelegationDecisionPort({ port: client.ports.decision });
   registerAutoUserTurnPort({ port: client.ports.userTurn });
+  registerAutoChildTurnPort({ port: client.ports.childTurn });
   const unfollow = await followArtifactAnnouncements({
     bus,
     get: useAppStore.getState,
@@ -103,6 +118,7 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
     registerPublishPort({ port: null });
     registerDelegationDecisionPort({ port: null });
     registerAutoUserTurnPort({ port: null });
+    registerAutoChildTurnPort({ port: null });
   };
 };
 
@@ -240,6 +256,7 @@ export const startAutoRuntime = async ({
     registerSendNowPort({ port: null });
     registerWithdrawPort({ port: null });
     registerAutoUserTurnPort({ port: null });
+    registerAutoChildTurnPort({ port: null });
     registerAutoDrivePort({ port: null });
     registerDelegationDecisionPort({ port: null });
     registerTreeStopPort({ port: null });
@@ -261,6 +278,22 @@ export const startAutoRuntime = async ({
       ),
   };
   registerAutoDrivePort({ port: ({ treeId }) => runtime.drive(treeId) });
+  registerAutoChildTurnPort({
+    port: async ({ agentId, text, from, hasFiles, isBusy, deliveryId }) => {
+      const outcome = await runtime.continueChild({
+        childAgentId: agentId,
+        text,
+        from,
+        hasFiles,
+        isBusy,
+        ...(deliveryId !== null && { deliveryId }),
+      });
+      if (outcome.kind === 'refused') {
+        return { kind: 'refused', message: outcome.message };
+      }
+      return { kind: outcome.kind };
+    },
+  });
   registerAutoUserTurnPort({
     port: async ({
       agentId,

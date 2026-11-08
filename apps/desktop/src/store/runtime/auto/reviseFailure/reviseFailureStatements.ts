@@ -11,13 +11,14 @@ type ReviseFailureReason =
   | 'stale_base'
   | 'stale_result'
   | 'kickoff_failed'
-  | 'returned';
+  | 'returned'
+  | 'ended';
 
 export type ReviseFailure = Readonly<{
   delegationId: AutoDelegationId;
   generation: number;
   artifactId: ArtifactId;
-  outcome?: 'failed' | 'blocked';
+  outcome?: 'failed' | 'blocked' | 'stopped' | 'timed_out';
   reason: ReviseFailureReason;
   failure?: string;
   result: unknown;

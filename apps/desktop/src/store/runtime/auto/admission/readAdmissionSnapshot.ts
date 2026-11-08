@@ -19,9 +19,9 @@ import {
   type Database,
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoTreeId } from '@goodboy/types';
-import { isAutoPlanApprovalRequired } from '../../../features/auto/isAutoPlanApprovalRequired';
-import { SETTING_AUTO_PLAN_APPROVAL } from '../../../features/settings/settings';
-import { readAutoLevel } from './level/readAutoLevel';
+import { isAutoPlanApprovalRequired } from '../../../../features/auto/isAutoPlanApprovalRequired';
+import { SETTING_AUTO_PLAN_APPROVAL } from '../../../../features/settings/settings';
+import { readAutoLevel } from '../level/readAutoLevel';
 
 export type ReadAdmissionSnapshotParams = {
   readonly db: Database;

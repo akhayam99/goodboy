@@ -41,7 +41,7 @@ export type AgentRole =
 export type AgentStatus =
   'pending' | 'running' | 'completed' | 'failed' | 'blocked' | 'skipped' | 'stopped';
 
-const AGENT_STOPPED_BY = ['you', 'app'] as const;
+const AGENT_STOPPED_BY = ['you', 'app', 'auto'] as const;
 
 export type AgentStoppedBy = (typeof AGENT_STOPPED_BY)[number];
 

@@ -21,6 +21,7 @@ export {
   AUTO_OUTBOX_CLAIM_MS,
   AUTO_OWNER_LEASE_MS,
   AUTO_RETURNS_WINDOW_MS,
+  AUTO_CHILD_MESSAGE_CHARS,
   AUTO_REVISE_ASK_CHARS,
   AUTO_SUBSTEP_PARENT_SLACK_MS,
   AUTO_SUBSTEPS_PER_PARENT,
@@ -70,6 +71,11 @@ export {
   type AdmissionSnapshot,
   type AdmissionVerdict,
 } from './admission';
+
+export {
+  admissionChildRefusals,
+  type AdmissionChildRefusalsParams,
+} from './admissionChildRefusals';
 
 export {
   AUTO_LIMIT_REFUSAL_CODES,

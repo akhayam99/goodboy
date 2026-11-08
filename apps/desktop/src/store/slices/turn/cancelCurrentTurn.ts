@@ -7,7 +7,7 @@ import { cancelTurnConfirmed } from './cancelTurnConfirmed';
 import { cancelTurnStartWindow } from './turnStartWindow';
 import type { GetFn, SetFn } from './types';
 
-export type CancelTurnReason = 'user' | 'leave' | 'handoff' | 'teardown';
+export type CancelTurnReason = 'user' | 'leave' | 'handoff' | 'teardown' | 'auto';
 
 export const cancelCurrentTurn = (set: SetFn, get: GetFn) => {
   return async (

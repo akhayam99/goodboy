@@ -124,7 +124,6 @@ const refuse = ({ slot, code, message }: DelegateChildRefusal): ChildOutcome => 
 const RETRY_EXCLUSIVE_KEYS = [
   'role',
   'title',
-  'task',
   'doneWhen',
   'expected',
   'artifacts',
@@ -155,9 +154,10 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
     return refuse({
       slot,
       code: 'spec_invalid',
-      message: `child ${slot + 1}: a retry repeats the earlier work as it was, so ${clash} cannot be set. Drop "${clash}" or drop "retryOf"`,
+      message: `child ${slot + 1}: a retry continues the same agent in its role and worktree, so ${clash} cannot be set. Put new instructions in "task", drop "${clash}", or drop "retryOf"`,
     });
   }
+  const task = clippedTextOf({ value: raw['task'], max: DELEGATE_TASK_CHARS });
   const reason = clippedTextOf({ value: raw['reason'], max: DELEGATE_REASON_CHARS });
   if (reason === null) {
     return refuse({
@@ -171,7 +171,7 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
     child: {
       role: null,
       title: null,
-      task: '',
+      task: task ?? '',
       reason,
       provider: clippedTextOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
       model: clippedTextOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),

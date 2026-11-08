@@ -44,6 +44,9 @@ export const AUTO_REFUSAL_TEXT = {
   return_limit: `That agent came back ${AUTO_TREE_LIMITS.returnsPerDelegation + 1} times, so it cannot be continued. Hand the task to another role with "replaces", or ask the user with a propose block whose child names it with "retryOf" or "replaces".`,
   task_rebrief_limit: `That task was handed to a new agent ${AUTO_TREE_LIMITS.rebriefsPerTask} times already. Ask the user with a propose block whose child names it with "retryOf" or "replaces".`,
   not_returned: 'That agent did not come back to you, or you already decided about it.',
+  message_limit: `You already sent that agent ${AUTO_TREE_LIMITS.messagesPerDelegation} messages. Stop it with a stop block, or continue it with "retryOf" and a "task" once it is done.`,
+  not_running:
+    'That agent is not working right now. Continue a finished agent with "retryOf" and a "task", and answer a waiting one with an answer block.',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;
 
 export type RefusalChild = Readonly<{

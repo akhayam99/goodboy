@@ -609,6 +609,13 @@ fails silently at runtime.
   turn answers, and an `<<auto>>` block in its reply is never applied: only `settleAutoTurn`
   applies a block. Never send an Auto root a turn by hand with
   `origin: 'operator'` expecting the plain path; a delivery uses `origin: 'delegation'`.
+- An operator message to a child of a live Auto tree never runs as a plain turn either:
+  `routeAutoChildTurn` hands it to the main window, which admits a continue of the child's
+  delegation (`continueChild`). That continue is admitted outside Auto's turn, so its tree guard
+  (`autoContinueTreeStatement`) repeats the open, time and money caps of the admission; a new cap
+  goes into both. A queued Auto message is told apart only by its queue id prefix
+  (`AUTO_MESSAGE_QUEUE_PREFIX`, read from the `queue:` delivery id): renaming either breaks the
+  `messagesPerDelegation` count.
 - `auto_*` money columns are REAL dollars. Compare them through
   `autoRemainingUsdSql` and `AUTO_USD_EPSILON`, not with `===`.
 - m232 rebuilds `auto_delegations` with `PRAGMA foreign_keys = OFF` around the

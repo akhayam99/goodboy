@@ -6,9 +6,10 @@ import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
 import { awaitRunStopped } from '../agents/awaitRunStopped';
+import { dropAutoMessages } from '../agentQueue/dropAutoMessages';
 import type { CancelTurnReason } from './cancelCurrentTurn';
 import { nowIso } from '../project-mounts/nowIso';
-import { markStoppedByUser } from './markStoppedByUser';
+import { markStoppedBy } from './markStoppedBy';
 import { clearAgentStopping, markAgentStopping } from './stoppingAgents';
 import { stopRequests } from './stopRequests';
 import { cancelTurnStartWindow } from './turnStartWindow';
@@ -34,6 +35,8 @@ type ReasonParams = Readonly<{
 }>;
 
 const isStopByYou = ({ reason }: ReasonParams): boolean => reason === 'user' || reason === 'leave';
+
+const isStop = ({ reason }: ReasonParams): boolean => reason === 'auto' || isStopByYou({ reason });
 
 export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
   const stop = async ({ sessionId, agentId, reason }: Params): Promise<CancelOutcome> => {
@@ -113,7 +116,7 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       });
     }
     if (isReported) {
-      await markStoppedByUser({ set, get, sessionId, agentId, at: exitedAt });
+      await markStoppedBy({ set, get, sessionId, agentId, at: exitedAt, by: 'you' });
     }
     if (reason === 'user') {
       void get().joinFanOutParent({ sessionId, agentId });
@@ -126,9 +129,22 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
     markAgentStopping({ agentId });
     let outcome: CancelOutcome = FAILED;
     try {
+      if (isStop({ reason })) {
+        await dropAutoMessages({ set, get, agentId });
+      }
       outcome = await stop(params);
       return outcome;
     } finally {
+      if (reason === 'auto') {
+        await markStoppedBy({
+          set,
+          get,
+          sessionId,
+          agentId,
+          at: outcome.exitedAt ?? now(),
+          by: 'auto',
+        });
+      }
       clearAgentStopping({ agentId });
       if (outcome.outcome !== 'exited' && reason !== 'leave') {
         void get().drainAgentQueue({ sessionId, agentId });

@@ -17,6 +17,9 @@ export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
       ...(isDirect && { isDirect: true }),
     };
     const current = readAgentQueue({ get, agentId: turn.agentId });
+    if (current.some((item) => item.id === turn.id)) {
+      return false;
+    }
     const sending = current.filter((item) => item.status === 'sending');
     const waiting = current.filter((item) => item.status !== 'sending');
     writeAgentQueue({

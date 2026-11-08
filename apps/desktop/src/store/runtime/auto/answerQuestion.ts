@@ -29,7 +29,7 @@ import {
 import { resumeOf } from './attemptBaseline';
 import { delegationRoleOf } from './attemptEnvelope';
 import type { AgentCommand, BridgeOutcome } from './ports';
-import { readAdmissionSnapshot } from './readAdmissionSnapshot';
+import { readAdmissionSnapshot } from './admission/readAdmissionSnapshot';
 import { refuseOutcome } from './refuseOutcome';
 import type { AgentVerbContext } from './verbContext';
 import { clippedTextOf, isRecord } from '@goodboy/types/helpers';

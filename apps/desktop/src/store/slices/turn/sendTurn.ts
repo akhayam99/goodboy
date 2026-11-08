@@ -25,7 +25,7 @@ import { settleTurn } from './settleTurn';
 import { continueOnRequestedMount } from './continueOnRequestedMount';
 import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
 import { announceAgentTurn } from '../permissions/announceAgentTurn';
-import { noticeAutoOfChildTurn } from '../../runtime/auto/noticeAutoOfChildTurn';
+import { routeAutoChildTurn } from '../../runtime/auto/talk/routeAutoChildTurn';
 import { routeAutoUserTurn } from '../../runtime/auto/routeAutoUserTurn';
 import { cancelTurn, lookupDeliveryRun } from '../../../features/chat/turn';
 import { stopLingeringTurn } from '../../../features/chat/stopLingeringTurn';
@@ -153,7 +153,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (autoResult !== null) {
       return autoResult;
     }
-    await noticeAutoOfChildTurn({ get, input });
+    const childResult = await routeAutoChildTurn({ get, input });
+    if (childResult !== null) {
+      return childResult;
+    }
     if (input.origin === 'operator' && input.agentId !== undefined) {
       await stopLingeringTurn({ agentId: input.agentId });
       await waitTurnSettledFor({ agentId: input.agentId, ms: OPERATOR_SETTLE_WAIT_MS });

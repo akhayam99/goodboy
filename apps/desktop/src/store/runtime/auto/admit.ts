@@ -4,7 +4,6 @@ import {
   AUTO_SUBSTEPS_PER_PARENT,
   AUTO_TREE_LIMITS,
   diagnoseAdmission,
-  isAutoWriterRole,
   type AdmissionChild,
   type AdmissionChildRefusal,
   type AdmissionSnapshot,
@@ -18,7 +17,6 @@ import {
   autoAdmissionArtifactAbort,
   autoAdmissionSubstepAbort,
   autoAdmissionTreeStatement,
-  autoInputArtifactStatements,
   autoReviseArtifactStatements,
   autoSubstepStatements,
   insertAutoDelegationStatement,
@@ -41,7 +39,9 @@ import {
   type AutoRequestId,
   type AutoTreeId,
 } from '@goodboy/types';
-import { readAdmissionSnapshot } from './readAdmissionSnapshot';
+import { admissionStateOf } from './admission/admissionStateOf';
+import { inputArtifactStatementsOf } from './admission/inputArtifactStatementsOf';
+import { readAdmissionSnapshot } from './admission/readAdmissionSnapshot';
 
 const MAX_RACE_RETRIES = 3;
 
@@ -207,23 +207,16 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
         }),
       );
     }
-    for (const ref of child.inputArtifacts) {
-      const registered = snapshot.artifacts.find((facts) => facts.artifactId === ref.artifactId);
-      const isPlan = registered?.registered?.kind === 'plan';
-      const isWriter = isAutoWriterRole({ role: child.role });
-      statements.push(
-        ...autoInputArtifactStatements({
-          treeId: params.treeId,
-          slot,
-          artifactId: ref.artifactId,
-          revision: ref.revision,
-          isApprovalRequired:
-            snapshot.isPlanApprovalRequired && snapshot.level !== 'run' && isPlan && isWriter,
-          isConsumed: isPlan && isWriter,
-          nowMs: params.nowMs,
-        }),
-      );
-    }
+    statements.push(
+      ...inputArtifactStatementsOf({
+        treeId: params.treeId,
+        slot,
+        role: child.role,
+        inputArtifacts: child.inputArtifacts,
+        snapshot,
+        nowMs: params.nowMs,
+      }),
+    );
   }
   for (const [slot, child] of params.children.entries()) {
     const revise = child.reviseOf;
@@ -259,8 +252,7 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
           },
           target: child.target,
           routing: child.routing,
-          state:
-            snapshot.level === 'step' || child.isConfirmForced ? 'awaiting_confirm' : 'accepted',
+          state: admissionStateOf({ snapshot, isConfirmForced: child.isConfirmForced }),
           retryOf: child.retryOf ?? null,
           reviseOf: revise === null ? null : revise.artifactId,
           baseRevision: revise === null ? null : revise.expectedRevision,
@@ -372,10 +364,7 @@ export const admitBatch = async (params: AdmitBatchParams): Promise<AdmitOutcome
         childAgentId: child.childAgentId,
         attemptId: child.attemptId,
         role: child.role,
-        state:
-          snapshot.level === 'step' || child.isConfirmForced
-            ? ('awaiting_confirm' as const)
-            : ('accepted' as const),
+        state: admissionStateOf({ snapshot, isConfirmForced: child.isConfirmForced }),
       }));
       return {
         kind: 'accepted',

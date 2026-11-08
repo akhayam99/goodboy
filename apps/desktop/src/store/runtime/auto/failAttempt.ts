@@ -1,4 +1,5 @@
 import type { AutoAttempt, AutoDelegation } from '@goodboy/db';
+import { brandId, type ArtifactId } from '@goodboy/types';
 import { attemptEnvelope } from './attemptEnvelope';
 import type { SettleAttemptOutcome } from './settleAttempt';
 import type { AgentVerbContext } from './verbContext';
@@ -35,6 +36,7 @@ export const failAttempt = ({
     outcome,
     reason,
   };
+  const artifactId = delegation.reviseOf;
   return ctx.scheduler.settleAttempt({
     attemptId: attempt.id,
     generation,
@@ -45,5 +47,16 @@ export const failAttempt = ({
       costUsd,
       resultSnapshot: { envelope },
     },
+    ...(artifactId !== null && {
+      revise: {
+        delegationId: delegation.id,
+        generation,
+        artifactId: brandId<ArtifactId>({ value: artifactId }),
+        outcome,
+        reason: 'ended',
+        failure: reason,
+        result: envelope,
+      },
+    }),
   });
 };

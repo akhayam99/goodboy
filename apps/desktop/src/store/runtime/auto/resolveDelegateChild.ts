@@ -43,6 +43,7 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { readRunGuidance } from '../runGuidance/readRunGuidance';
+import type { AutoContinue } from '../../../features/auto/delegationContinueOf';
 import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
 import { refusalMountNote } from './mount/refusalMountNote';
@@ -71,6 +72,7 @@ export type ResolveDelegateChildParams = Readonly<{
   slot: number;
   mounts: ReadonlyArray<PickableMount>;
   retry?: AutoDelegation | null;
+  continueWith?: AutoContinue | null;
 }>;
 
 type RefuseParams = {
@@ -274,15 +276,27 @@ const reviseTargetOf = async ({
 
 type RetryNoteParams = {
   readonly retry: AutoDelegation;
+  readonly hasInstructions: boolean;
 };
 
-const retryNoteOf = ({ retry }: RetryNoteParams): string => {
+const retryNoteOf = ({ retry, hasInstructions }: RetryNoteParams): string => {
   const ended = `The earlier attempt ended ${retry.outcome ?? 'without a result'} (${retry.reason ?? 'no reason recorded'}).`;
+  if (hasInstructions) {
+    return `${ended} Its work is still in this worktree: the commits, the changed files and your earlier report stay. Keep what is already done and follow the new instructions below on top of it. Do not start over.`;
+  }
   if (retry.outcome === 'completed') {
     return `${ended} Do the work again from the start of the task below.`;
   }
   return `${ended} Its work is still in this worktree: the commits and the changed files stay. Look at what is already done, keep it, and continue from where it stopped until the task below is done. Do not start over.`;
 };
+
+type AutoWordsParams = {
+  readonly child: DelegateChildSpec;
+  readonly continueWith: AutoContinue | null;
+};
+
+const autoWordsOf = ({ child, continueWith }: AutoWordsParams): string =>
+  continueWith === null || continueWith.from === 'user' ? child.task : continueWith.text;
 
 type BriefVersionParams = {
   readonly retry: AutoDelegation | null;
@@ -307,6 +321,7 @@ export const resolveDelegateChild = async ({
   slot,
   mounts,
   retry = null,
+  continueWith = null,
 }: ResolveDelegateChildParams): Promise<ResolvedDelegateChild> => {
   const revise = child.revises === null ? null : await reviseTargetOf({ ctx, tree, child, slot });
   if (revise !== null && isResolved(revise)) {
@@ -378,7 +393,9 @@ export const resolveDelegateChild = async ({
   }
   const commandMention =
     revise === null && !canAutoRoleRunCommands({ role })
-      ? commandMentionOf({ text: [child.task, child.doneWhen ?? ''].join('\n') })
+      ? commandMentionOf({
+          text: [autoWordsOf({ child, continueWith }), child.doneWhen ?? ''].join('\n'),
+        })
       : null;
   if (commandMention !== null) {
     return refuse({
@@ -482,7 +499,9 @@ export const resolveDelegateChild = async ({
     mountLabel: mountLabelOf({ mount }),
     facts: gathered === null ? null : composeBranchFacts({ facts: gathered.facts }),
     decisions,
-    retryNote: retry === null ? null : retryNoteOf({ retry }),
+    retryNote:
+      retry === null ? null : retryNoteOf({ retry, hasInstructions: continueWith !== null }),
+    instructions: continueWith?.text ?? null,
     guidance,
     isSubstep:
       substep !== null || (retry !== null && substepLinkOf({ request: retry.request }) !== null),
@@ -520,6 +539,7 @@ export const resolveDelegateChild = async ({
             },
           }),
         ...(child.publish !== null && { publish: child.publish }),
+        ...(continueWith !== null && { continueWith }),
       },
       target: {
         mountId: mount.id,

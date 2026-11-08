@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 
 const {
@@ -8,16 +8,21 @@ const {
   invokeAgentUpdateStatus,
   applyAgentTurnState,
   updateSessionState,
+  replaceAgentQueuedMessages,
 } = vi.hoisted(() => ({
   cancelTurn: vi.fn(async (_runId: string): Promise<void> => undefined),
   listLiveRunIds: vi.fn(async (): Promise<ReadonlySet<string>> => new Set<string>()),
   invokeAgentUpdateStatus: vi.fn(),
   applyAgentTurnState: vi.fn(() => 'idle'),
   updateSessionState: vi.fn(async () => undefined),
+  replaceAgentQueuedMessages: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../test/dbMock')).createDbMock({ updateSessionState }),
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionState,
+    replaceAgentQueuedMessages,
+  }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn, listLiveRunIds }));
@@ -28,6 +33,7 @@ vi.mock('../sessions/sessionMutators', () => ({
 }));
 
 import { cancelCurrentTurn, type CancelTurnReason } from './cancelCurrentTurn';
+import { cancelTurnConfirmed } from './cancelTurnConfirmed';
 import { stopRequests } from './stopRequests';
 import type { GetFn, SetFn } from './types';
 
@@ -36,16 +42,25 @@ const AGENT_ID = 'agent-1' as AgentId;
 
 type Harness = {
   readonly state: Record<string, unknown>;
+  readonly drainAgentQueue: Mock<(params: unknown) => Promise<undefined>>;
   readonly cancel: ReturnType<typeof cancelCurrentTurn>;
+  readonly confirmed: ReturnType<typeof cancelTurnConfirmed>;
 };
 
 const reportError = vi.fn(async (_params: unknown) => undefined);
 
 const harness = (): Harness => {
+  const drainAgentQueue = vi.fn(async (_params: unknown) => undefined);
   const state: Record<string, unknown> = {
     reportError,
     joinFanOutParent: vi.fn(async () => undefined),
-    drainAgentQueue: vi.fn(async () => undefined),
+    drainAgentQueue,
+    agentQueue: {
+      [AGENT_ID]: [
+        { id: 'auto-message:delegation-scout:id-1', agentId: AGENT_ID, status: 'queued' },
+        { id: 'queued-by-you', agentId: AGENT_ID, status: 'queued' },
+      ],
+    },
     selectedAgentId: {},
     agentTurnState: { [AGENT_ID]: { kind: 'running', runId: 'run-1' } },
     sessionPhaseRuns: { [SESSION_ID]: [{ id: AGENT_ID, status: 'running' }] },
@@ -54,12 +69,18 @@ const harness = (): Harness => {
     Object.assign(state, update(state));
   }) as unknown as SetFn;
   const get = (() => state) as unknown as GetFn;
-  return { state, cancel: cancelCurrentTurn(set, get) };
+  return {
+    state,
+    drainAgentQueue,
+    cancel: cancelCurrentTurn(set, get),
+    confirmed: cancelTurnConfirmed(set, get),
+  };
 };
 
 describe('cancelCurrentTurn', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listLiveRunIds.mockResolvedValue(new Set<string>());
     invokeAgentUpdateStatus.mockImplementation(async (id: AgentId, fields: Partial<Agent>) => ({
       id,
       ...fields,
@@ -81,6 +102,71 @@ describe('cancelCurrentTurn', () => {
     );
     const runs = (state.sessionPhaseRuns as Record<string, ReadonlyArray<Agent>>)[SESSION_ID];
     expect(runs?.[0]?.status).toBe('stopped');
+  });
+
+  it('marks the agent stopped by Auto when Auto stops it, and leaves the toast to Auto', async () => {
+    const { state, confirmed } = harness();
+
+    await confirmed({ sessionId: SESSION_ID, agentId: AGENT_ID, reason: 'auto' });
+
+    expect(invokeAgentUpdateStatus).toHaveBeenCalledWith(AGENT_ID, {
+      status: 'stopped',
+      stoppedAt: expect.any(String),
+      stoppedBy: 'auto',
+    });
+    expect(state.sessionPhaseRuns).toEqual({
+      [SESSION_ID]: [expect.objectContaining({ stoppedBy: 'auto' })],
+    });
+    expect(state.joinFanOutParent).not.toHaveBeenCalled();
+  });
+
+  it('marks the agent stopped by Auto at once when the process exits late, before the queue drains', async () => {
+    listLiveRunIds.mockResolvedValue(new Set(['run-1']));
+    vi.useFakeTimers();
+    const { state, confirmed, drainAgentQueue } = harness();
+
+    const pending = confirmed({ sessionId: SESSION_ID, agentId: AGENT_ID, reason: 'auto' });
+    await vi.runAllTimersAsync();
+    const outcome = await pending;
+    vi.useRealTimers();
+
+    expect(outcome.outcome).toBe('still_running');
+    expect(state.sessionPhaseRuns).toEqual({
+      [SESSION_ID]: [expect.objectContaining({ status: 'stopped', stoppedBy: 'auto' })],
+    });
+    expect(invokeAgentUpdateStatus.mock.invocationCallOrder[0] ?? 0).toBeLessThan(
+      drainAgentQueue.mock.invocationCallOrder[0] ?? 0,
+    );
+    expect(reportError).not.toHaveBeenCalled();
+    stopRequests.settle({ agentId: AGENT_ID });
+  });
+
+  it.each<CancelTurnReason>(['auto', 'user'])(
+    'drops the queued Auto messages on a stop by %s and keeps the rest',
+    async (reason) => {
+      const { state, confirmed } = harness();
+
+      await confirmed({ sessionId: SESSION_ID, agentId: AGENT_ID, reason });
+
+      expect(state.agentQueue).toEqual({
+        [AGENT_ID]: [expect.objectContaining({ id: 'queued-by-you' })],
+      });
+      expect(replaceAgentQueuedMessages).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('keeps the queued Auto messages through a handoff', async () => {
+    const { state, confirmed } = harness();
+
+    await confirmed({ sessionId: SESSION_ID, agentId: AGENT_ID, reason: 'handoff' });
+
+    expect(state.agentQueue).toEqual({
+      [AGENT_ID]: [
+        expect.objectContaining({ id: 'auto-message:delegation-scout:id-1' }),
+        expect.objectContaining({ id: 'queued-by-you' }),
+      ],
+    });
+    expect(replaceAgentQueuedMessages).not.toHaveBeenCalled();
   });
 
   it('logs a stop the process refused', async () => {

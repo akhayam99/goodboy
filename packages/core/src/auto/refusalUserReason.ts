@@ -40,6 +40,8 @@ export const AUTO_REFUSAL_USER_REASON = {
   return_limit: 'that agent came back too many times to continue it',
   task_rebrief_limit: 'that task was handed over too many times',
   not_returned: 'it released an agent that was not waiting for it',
+  message_limit: 'it sent that agent too many messages',
+  not_running: 'it wrote to an agent that was not working',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;
 
 type UserReasonParams = {

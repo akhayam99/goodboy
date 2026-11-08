@@ -29,7 +29,10 @@ export const AUTO_TREE_LIMITS = {
   returnsPerDelegation: 2,
   rebriefsPerTask: 3,
   returnsPerTreeWindow: 6,
+  messagesPerDelegation: 4,
 } as const;
+
+export const AUTO_CHILD_MESSAGE_CHARS = 2_000;
 
 export const AUTO_RETURNS_WINDOW_MS = 30 * 60_000;
 

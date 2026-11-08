@@ -11,6 +11,7 @@ import type { WorkflowRoutingWireFields } from '@goodboy/core/orchestrator';
 import type { AutoDelegation } from '@goodboy/db';
 import type {
   AgentId,
+  AgentStoppedBy,
   AutoAttemptId,
   AutoDelegationId,
   AutoTreeId,
@@ -212,6 +213,7 @@ export type RunCheckParams = Readonly<{
 export type CancelRunParams = Readonly<{
   sessionId: SessionId;
   agentId: AgentId;
+  by?: Extract<AgentStoppedBy, 'you' | 'auto'>;
 }>;
 
 export type CancelRunOutcome = Readonly<{
@@ -308,6 +310,13 @@ export type MountProjectOutcome =
   | Readonly<{ kind: 'unknown' }>
   | Readonly<{ kind: 'ambiguous' }>;
 
+export type QueueChildMessageParams = Readonly<{
+  sessionId: SessionId;
+  agentId: AgentId;
+  messageId: string;
+  text: string;
+}>;
+
 export type AutoPorts = Readonly<{
   newId: () => string;
   refreshSessionArtifacts: (params: RefreshSessionArtifactsParams) => Promise<void>;
@@ -327,6 +336,7 @@ export type AutoPorts = Readonly<{
   listChecks: (params: ListChecksParams) => Promise<AutoCheckList>;
   runCheck: (params: RunCheckParams) => Promise<CheckReport['status']>;
   cancelRun: (params: CancelRunParams) => Promise<CancelRunOutcome>;
+  queueChildMessage: (params: QueueChildMessageParams) => Promise<boolean>;
   isRunLive: (params: IsRunLiveParams) => Promise<boolean>;
   readRunOutcome: (params: ReadRunOutcomeParams) => Promise<RunOutcome | null>;
   publishScribePullRequest: (params: PublishScribeParams) => Promise<ScribePublication>;

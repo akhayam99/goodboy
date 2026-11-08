@@ -1,5 +1,5 @@
 import { CHECK_STATE } from '../notifications/errorRecovery';
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, AgentStoppedBy, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
 
@@ -9,21 +9,23 @@ type Params = Readonly<{
   sessionId: SessionId;
   agentId: AgentId;
   at: IsoDateTime;
+  by: AgentStoppedBy;
 }>;
 
-export const markStoppedByUser = async ({
+export const markStoppedBy = async ({
   set,
   get,
   sessionId,
   agentId,
   at,
+  by,
 }: Params): Promise<Agent | null> => {
   let stopped: Agent;
   try {
     stopped = await invokeAgentUpdateStatus(agentId, {
       status: 'stopped',
       stoppedAt: at,
-      stoppedBy: 'you',
+      stoppedBy: by,
     });
   } catch (error) {
     void get().reportError({

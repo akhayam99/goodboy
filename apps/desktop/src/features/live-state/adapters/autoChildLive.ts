@@ -6,6 +6,7 @@ import { delegationSentenceOf } from '../../auto/delegationSentenceOf';
 import { TAIL_ACTION } from '../tailAction';
 import type { TailFacts } from '../tailFacts';
 import type { LastTool } from '../workingPhraseOf';
+import { stoppedPhraseOf } from '../stoppedPhraseOf';
 import { agentTurnLive } from './agentTurnLive';
 
 export type AutoChildLiveParams = Readonly<{
@@ -40,6 +41,18 @@ const returnedFactsOf = ({ delegation }: ReturnedParams): TailFacts => {
     startedAt: null,
     actions: [],
   };
+};
+
+const STOPPED_BY_AUTO = stoppedPhraseOf({ by: 'auto' });
+
+type StoppedChildParams = {
+  readonly delegation: Pick<AutoDelegation, 'reason'>;
+  readonly agent: Pick<Agent, 'stoppedBy'>;
+};
+
+const stoppedChildPhraseOf = ({ delegation, agent }: StoppedChildParams): string => {
+  const reason = delegation.reason ?? '';
+  return reason.startsWith(STOPPED_BY_AUTO) ? reason : stoppedPhraseOf({ by: agent.stoppedBy });
 };
 
 const QUEUED: TailFacts = {
@@ -80,7 +93,12 @@ export const autoChildLive = ({
 }: AutoChildLiveParams): TailFacts | null => {
   if (delegation.state === 'settled') {
     if (delegation.outcome === 'stopped') {
-      return { state: 'stopped', phrase: 'Stopped', startedAt: null, actions: CONTINUE };
+      return {
+        state: 'stopped',
+        phrase: stoppedChildPhraseOf({ delegation, agent }),
+        startedAt: null,
+        actions: CONTINUE,
+      };
     }
     if (delegation.outcome === 'completed' || delegation.outcome === null) {
       return null;
