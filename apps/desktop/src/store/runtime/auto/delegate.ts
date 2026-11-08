@@ -210,6 +210,7 @@ export const delegate = async ({
       slot,
       mounts,
       retry: prepared === null ? null : prepared.original,
+      continueWith: prepared === null ? null : prepared.continueWith,
     });
     if (resolved.kind === 'ok') {
       inputs.push({

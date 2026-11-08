@@ -3,6 +3,7 @@ import type { Tone, WorkNodeState } from '@goodboy/ui';
 import { NAMES } from '../../shared/utils/names';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../workflows/orchestratorCopy';
 import { REVIEW_COMMENT_NODE, REVIEW_COMMENT_TONE } from '../resolve/reviewCommentState';
+import { stoppedPhraseOf } from '../live-state/stoppedPhraseOf';
 import type { RowPhase, RowState, RowStateReason } from './rowState';
 
 export type RowNodeState = Exclude<WorkNodeState, 'marker' | 'mixed' | 'finished' | 'merging'>;
@@ -81,7 +82,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       if (reason.isCutStep === true) {
         return NOT_FINISHED;
       }
-      return reason.by === 'app' ? 'Stopped by restart' : 'Stopped by you';
+      return stoppedPhraseOf({ by: reason.by });
     case 'stepStopped':
       return reason.stepLabel == null
         ? 'A step was stopped'

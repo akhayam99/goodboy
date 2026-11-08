@@ -1,5 +1,4 @@
 {
-  "apps/desktop/src/store/runtime/auto/noticeAutoOfChildTurn.ts": 1,
   "apps/desktop/src/store/runtime/auto/routeAutoUserTurn.ts": 1,
   "apps/desktop/src/store/runtime/models/selectModelContext.ts": 2,
   "apps/desktop/src/store/slices/agents/omitDeletedAgents.ts": 3,

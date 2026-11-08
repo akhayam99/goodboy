@@ -450,8 +450,11 @@ continuation never resumes, because it runs in another directory.
 - **Stop is confirmed.** A user Stop goes through `cancelTurnConfirmed`
   (`store/slices/turn/`), which answers `exited`, `still_running` or `failed`.
   The turn goes idle only on `exited`, after the run left `turn_list_live`, and
-  only then is the agent marked `stopped` (`markStoppedByUser`), so a fan-out
-  parent never joins while a stopped child is still alive. Until the exit is
+  only then is the agent marked `stopped` (`markStoppedBy`), so a fan-out
+  parent never joins while a stopped child is still alive. A stop by Auto
+  (`reason: 'auto'`) marks the agent stopped by `auto` whatever the cancel
+  answers, before the queue drains, so its parked queue cannot reopen it. A stop
+  by you or by Auto drops the agent's queued `auto-message:` items. Until the exit is
   confirmed the agent reads running, and `drainAgentQueue` skips it
   (`stoppingAgents.ts`). When the kill is refused and the process lives, or the
   live list cannot be read, the turn and the agent stay running with nothing
@@ -840,7 +843,11 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   Implementer that stopped (delegation <id>) from where it left off: <task>"
   so the tree continues the same agent with `retryOf` and reads its result. `resumeStoppedAgents` skips Auto children: the tree recovers its
   own work after a restart. The child is found from the tree view, or from its
-  parent being the Auto root when the view has not loaded.
+  parent being the Auto root when the view has not loaded. A message you type on
+  such a child is not a plain turn: `sendTurn` hands it to `routeAutoChildTurn`,
+  which continues the child's delegation through Auto (docs/auto.md, Talking to a
+  child) and returns before any spawn. Only a child of a finished, stopped or
+  detached tree keeps the plain confined turn.
 - **The thinking line counts from the turn start and ends with the turn.** Its
   clock reads `startedAt` of the running turn state, never the moment it
   mounted, and it never shows after an `error`, `auth_required` or

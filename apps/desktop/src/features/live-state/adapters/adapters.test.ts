@@ -13,6 +13,7 @@ const RUNNING: TurnState = { kind: 'running', runId: RUN, startedAt: STARTED };
 const BLOCKED: TurnState = { kind: 'blocked', runId: RUN, blockedAt: STARTED };
 const IDLE_AGENT = { status: 'running', stoppedBy: undefined, stoppedAt: undefined } as const;
 const STOPPED_AGENT = { status: 'stopped', stoppedBy: 'you', stoppedAt: undefined } as const;
+const STOPPED_BY_AUTO = { status: 'stopped', stoppedBy: 'auto', stoppedAt: undefined } as const;
 const BASH = { name: 'Bash', command: 'CI=1 pnpm test --filter ledger-core', path: null };
 
 const idsOf = (facts: TailFacts | null) => facts?.actions.map((action) => action.id);
@@ -73,6 +74,17 @@ describe('agentTurnLive', () => {
     });
     expect(facts?.phrase).toBe('Stopped by you');
     expect(idsOf(facts)).toEqual(['continue']);
+  });
+
+  it('says Stopped by Auto for an agent Auto stopped', () => {
+    const facts = agentTurnLive({
+      turn: null,
+      agent: STOPPED_BY_AUTO,
+      lastTool: null,
+      project: null,
+      hasQueuedMessage: false,
+    });
+    expect(facts?.phrase).toBe('Stopped by Auto');
   });
 
   it('draws nothing for an idle agent: a finished turn is read from its summary', () => {
@@ -271,17 +283,34 @@ describe('autoTreeLive', () => {
 });
 
 describe('autoChildLive', () => {
-  it('reads Stopped with Continue through Auto for a stopped child, never Retry', () => {
+  it('reads who stopped a stopped child with Continue through Auto, never Retry', () => {
     const facts = autoChildLive({
-      delegation: { state: 'settled', outcome: 'stopped', reason: null, result: null },
+      delegation: { state: 'settled', outcome: 'stopped', reason: 'stopped', result: null },
       isReplaced: false,
       turn: RUNNING,
-      agent: IDLE_AGENT,
+      agent: STOPPED_AGENT,
       lastTool: null,
       project: null,
     });
-    expect(facts?.phrase).toBe('Stopped');
+    expect(facts?.phrase).toBe('Stopped by you');
     expect(idsOf(facts)).toEqual(['retryThroughAuto']);
+  });
+
+  it("reads Stopped by Auto with Auto's reason when Auto stopped the child", () => {
+    const facts = autoChildLive({
+      delegation: {
+        state: 'settled',
+        outcome: 'stopped',
+        reason: 'Stopped by Auto: The user no longer needs it.',
+        result: null,
+      },
+      isReplaced: false,
+      turn: null,
+      agent: STOPPED_BY_AUTO,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts?.phrase).toBe('Stopped by Auto: The user no longer needs it.');
   });
 
   it('stops a running child with Stop agent', () => {

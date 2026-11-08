@@ -18,6 +18,11 @@ import { rerunChecks, type RerunChecksOutcome } from './rerunChecks';
 import { retryBlockedTree, type RetryBlockedTreeOutcome } from './retryBlockedTree';
 import { settleAutoTurn } from './settleAutoTurn';
 import type { SleepParams } from './startDeliveredTurn';
+import {
+  continueChild,
+  type ContinueChildOutcome,
+  type ContinueChildParams,
+} from './talk/continueChild';
 import { stopTree, type StopTreeOutcome } from './stopTree';
 import {
   submitUserMessage,
@@ -60,6 +65,9 @@ export type AutoRuntime = Readonly<{
   publish: (params: Omit<PublishActParams, 'ctx'>) => ReturnType<typeof publishAct>;
   say: (params: Omit<SubmitUserMessageParams, 'ctx'>) => Promise<SubmitUserMessageOutcome>;
   sendNow: (params: SendNowRuntimeParams) => Promise<DeliverOutcome>;
+  continueChild: (
+    params: Omit<ContinueChildParams, 'ctx' | 'sleep'>,
+  ) => Promise<ContinueChildOutcome>;
   withdraw: (params: SendNowRuntimeParams) => Promise<WithdrawMessageOutcome>;
   recover: (treeId: AutoTree['id']) => Promise<boolean>;
   recoverAll: () => Promise<void>;
@@ -197,6 +205,21 @@ export const createAutoRuntime = ({
           }),
       });
       await drive(treeId);
+      return outcome;
+    },
+    continueChild: async ({ childAgentId, text, from, hasFiles, settleWaitMs }) => {
+      const outcome = await continueChild({
+        ctx,
+        sleep,
+        childAgentId,
+        text,
+        from,
+        ...(hasFiles === undefined ? {} : { hasFiles }),
+        ...(settleWaitMs === undefined ? {} : { settleWaitMs }),
+      });
+      if (outcome.kind === 'continued') {
+        await drive(outcome.treeId);
+      }
       return outcome;
     },
     withdraw: ({ treeId, rowId }) =>

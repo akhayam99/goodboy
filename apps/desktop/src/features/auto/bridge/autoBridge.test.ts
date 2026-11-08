@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { brandId, type AgentId, type SessionId } from '@goodboy/types';
+import type { AutoChildTurnPort } from '../autoChildTurnPort';
 import type { AutoUserTurnPort } from '../autoUserTurnPort';
 import type { ChecksRerunPort } from '../checksRerunPort';
 import type { PublishPort } from '../publishPort';
@@ -77,17 +78,30 @@ const mainPorts = () => {
   }));
   const sendNow = vi.fn<SendNowPort>(async () => ({ kind: 'retried' }));
   const withdraw = vi.fn<WithdrawPort>(async () => ({ kind: 'withdrawn' }));
+  const childTurn = vi.fn<AutoChildTurnPort>(async () => ({ kind: 'continued' }));
   const ports: AutoBridgePorts = {
     stop,
     retry,
     sendNow,
     withdraw,
     userTurn,
+    childTurn,
     decision,
     rerunChecks,
     publish,
   };
-  return { ports, stop, retry, sendNow, withdraw, userTurn, decision, rerunChecks, publish };
+  return {
+    ports,
+    stop,
+    retry,
+    sendNow,
+    withdraw,
+    userTurn,
+    childTurn,
+    decision,
+    rerunChecks,
+    publish,
+  };
 };
 
 const cleanups: Array<() => void> = [];
@@ -124,6 +138,21 @@ describe('Auto in a window without the runtime', () => {
 
     expect(await client.ports.stop({ treeId: 'tree-harborline' })).toBe('stopped');
     expect(main.stop).toHaveBeenCalledWith({ treeId: 'tree-harborline' });
+  });
+
+  it('hands a message to a child Auto started to the main window, which continues it', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+    const turn = {
+      agentId: brandId<AgentId>({ value: 'agent-scout' }),
+      sessionId: brandId<SessionId>({ value: 'session-harborline' }),
+      text: 'Also read notify-relay',
+      from: 'user' as const,
+      hasFiles: true,
+    };
+
+    expect(await client.ports.childTurn(turn)).toEqual({ kind: 'continued' });
+    expect(main.childTurn).toHaveBeenCalledWith(turn);
   });
 
   it('hands a message to the main window, which queues it for Auto', async () => {

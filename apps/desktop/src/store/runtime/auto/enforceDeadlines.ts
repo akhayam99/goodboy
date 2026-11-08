@@ -77,6 +77,7 @@ const expireRunning = async ({
   const cancelled = await ctx.ports.cancelRun({
     sessionId: tree.sessionId,
     agentId: delegation.childAgentId,
+    by: 'auto',
   });
   if (cancelled.outcome !== 'exited') {
     await ctx.db.execute(

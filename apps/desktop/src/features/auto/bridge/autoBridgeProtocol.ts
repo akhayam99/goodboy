@@ -1,3 +1,4 @@
+import type { AutoChildTurnParams, AutoChildTurnPort } from '../autoChildTurnPort';
 import type { AutoUserTurnParams, AutoUserTurnPort } from '../autoUserTurnPort';
 import type { DelegationDecision, DelegationDecisionPort } from '../delegationDecisionPort';
 import type { ChecksRerunPort } from '../checksRerunPort';
@@ -25,6 +26,7 @@ export type AutoBridgeCall =
   | Readonly<{ kind: 'rerunChecks'; delegationId: string }>
   | Readonly<{ kind: 'publish'; act: PublishAct; delegationIds: ReadonlyArray<string> }>
   | Readonly<{ kind: 'userTurn'; messageId: string; turn: AutoUserTurnParams }>
+  | Readonly<{ kind: 'childTurn'; turn: AutoChildTurnParams }>
   | Readonly<{
       kind: 'decision';
       delegationId: string;
@@ -64,5 +66,6 @@ export type AutoBridgePorts = Readonly<{
   rerunChecks: ChecksRerunPort;
   publish: PublishPort;
   userTurn: AutoUserTurnPort;
+  childTurn: AutoChildTurnPort;
   decision: DelegationDecisionPort;
 }>;

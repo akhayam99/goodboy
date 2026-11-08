@@ -15,7 +15,9 @@ import {
   type AutoTree,
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoDelegationId } from '@goodboy/types';
+import type { AutoContinue, AutoContinueSource } from '../../../features/auto/delegationContinueOf';
 import type { ChildRefusal } from './resolveDelegateChild';
+import { rebriefCountOf } from './returns/rebriefCountOf';
 import { returnCountOf } from './returns/returnCountOf';
 import { targetRefusalOf } from './returns/targetRefusalOf';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
@@ -29,7 +31,12 @@ export type RecoveredRevise = Readonly<{
 }>;
 
 export type PreparedRetry =
-  | Readonly<{ kind: 'resolve'; child: DelegateChildSpec; original: AutoDelegation }>
+  | Readonly<{
+      kind: 'resolve';
+      child: DelegateChildSpec;
+      original: AutoDelegation;
+      continueWith: AutoContinue | null;
+    }>
   | Readonly<{ kind: 'recovered'; recovery: RecoveredRevise }>
   | Readonly<{ kind: 'refused'; refusal: ChildRefusal }>;
 
@@ -40,6 +47,7 @@ export type PrepareRetryParams = Readonly<{
   slot: number;
   batchRetries: ReadonlySet<string>;
   isConfirmGated: boolean;
+  from?: AutoContinueSource;
 }>;
 
 type TextParams = {
@@ -102,6 +110,7 @@ export const prepareRetry = async ({
   slot,
   batchRetries,
   isConfirmGated,
+  from = 'auto',
 }: PrepareRetryParams): Promise<PreparedRetry> => {
   if (child.retryOf === null) {
     return refuse({ slot, code: 'spec_invalid', message: 'a retry names no earlier agent' });
@@ -145,6 +154,19 @@ export const prepareRetry = async ({
       AUTO_TREE_LIMITS.returnsPerDelegation
   ) {
     return refuse({ slot, code: 'return_limit', message: AUTO_REFUSAL_TEXT.return_limit });
+  }
+  const continueWith: AutoContinue | null = child.task === '' ? null : { from, text: child.task };
+  if (
+    !isConfirmGated &&
+    continueWith?.from === 'auto' &&
+    rebriefCountOf({ delegation: original, delegations: siblings }) + 1 >
+      AUTO_TREE_LIMITS.rebriefsPerTask
+  ) {
+    return refuse({
+      slot,
+      code: 'task_rebrief_limit',
+      message: AUTO_REFUSAL_TEXT.task_rebrief_limit,
+    });
   }
   const artifactId =
     original.reviseOf === null ? null : brandId<ArtifactId>({ value: original.reviseOf });
@@ -198,5 +220,5 @@ export const prepareRetry = async ({
     replaces: null,
     shouldConfirm: child.shouldConfirm || original.request['confirm'] === true,
   };
-  return { kind: 'resolve', child: synthetic, original };
+  return { kind: 'resolve', child: synthetic, original, continueWith };
 };

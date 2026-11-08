@@ -3,7 +3,7 @@ import type { GuardedStatement, PlainStatement } from '../client';
 import { autoBudgetLeftSql } from './auto-reservations';
 import { AUTO_OWNER_GUARD_SQL, autoOwnerGuardParams } from './auto-trees';
 
-export type AutoAdmissionLimits = Readonly<{
+type AutoAdmissionLimits = Readonly<{
   maxCallsPerTurn: number;
   maxRefusals: number;
   maxOpenChildren: number;
@@ -261,4 +261,44 @@ export const autoResumeTreeStatement = ({
   ],
   abortWhen: 'noChanges',
   abortCode: AUTO_RESUME_TREE_ABORT,
+});
+
+type ContinueTreeStatementParams = {
+  readonly treeId: AutoTreeId;
+  readonly ownerId: string;
+  readonly nowMs: number;
+  readonly generation: number;
+  readonly maxOpenChildren: number;
+};
+
+const AUTO_CONTINUE_TREE_ABORT = 'continue_tree';
+
+export const autoContinueTreeStatement = ({
+  treeId,
+  ownerId,
+  nowMs,
+  generation,
+  maxOpenChildren,
+}: ContinueTreeStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_trees
+    SET phase = CASE WHEN phase IN ('done', 'answering') THEN 'waiting' ELSE phase END,
+        phase_rev = phase_rev + CASE WHEN phase IN ('done', 'answering') THEN 1 ELSE 0 END,
+        updated_at = ?, delegations_used = delegations_used + 1, attempts_used = attempts_used + 1
+    WHERE id = ? AND generation = ? AND stop_state = 'none'
+      AND phase NOT IN ('finished', 'blocked', 'stopping', 'stopped')
+      AND ${AUTO_OWNER_GUARD_SQL}
+      AND ? < hard_deadline_at
+      AND (SELECT COUNT(*) FROM auto_delegations
+            WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + 1 <= ?
+      AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
+  params: [
+    nowMs,
+    treeId,
+    generation,
+    ...autoOwnerGuardParams({ ownerId, nowMs }),
+    nowMs,
+    maxOpenChildren,
+  ],
+  abortWhen: 'noChanges',
+  abortCode: AUTO_CONTINUE_TREE_ABORT,
 });

@@ -542,11 +542,26 @@ writing to it reopens it to **Deciding**.
   to, at the delegation's `settledAt`, not after the last turn of the page, so
   a plain turn written later reads below an older Failed (`useAutoChildChat`).
 - **Talking to a child.** The child page carries one composer,
-  "Message Implementer". A message is a plain turn on the child (queued while its turn
-  runs), and `noticeAutoOfChildTurn` (called by `sendTurn`) also hands Auto a
-  note through the user turn port: "I wrote to the Implementer you started:
-  ...", read with Auto's next delivery. A lost note is reported and the
-  message still goes to the child. The page composer names its agent: `ChatView`
+  "Message Implementer". A message to a child of a live tree is an attempt of its
+  delegation, never a plain turn (`routeAutoChildTurn`, called by `sendTurn`, through the
+  child turn port to the main window's `continueChild`). On a child that ended it starts a
+  continue of the child's newest delegation at once: the same agent, its role, its worktree
+  and its routed model, the words briefed as **New instructions**, outside Auto's turn
+  (`autoContinueTreeStatement` holds the open, time and money caps). Its end settles to Auto
+  like any attempt and shows in Auto's next delivery, so Auto may answer before the child
+  does. On a working child the message waits in the agent queue (`agentQueue`, a DB row each
+  window reads) and runs as that continue when the turn ends; a send that reaches a working
+  child is refused with "still working for Auto", never injected in the turn. Auto's own
+  `message` takes the same queue, with an `auto-message:` id. The chat keeps the person's words
+  where they were written. A child that asked a question waits for Auto's answer, a child that
+  rewrites an artifact goes through Auto, and files are refused: each with a sentence. A child
+  of a finished, stopped or detached tree, or of an older generation, keeps the plain confined
+  turn, files included: `routeAutoChildTurn` passes `hasFiles` and `continueChild` refuses
+  files only after that plain answer. A queued Auto message never takes that plain turn: when
+  `continueChild` answers plain, or the delegation it was sent for was stopped or timed out,
+  `routeAutoChildTurn` drops it from the queue, so stale Auto text never runs as the person's.
+  Any stop (yours or Auto's) drops the agent's queued Auto messages; the person's stay. The
+  page composer names its agent: `ChatView`
   hands its `agentId` to `ChatInput`, which keys the draft, the queue, the
   attachments, the routing and the send by that id and remounts per agent, so a
   child's draft never shows in the main Auto composer, two children never share
@@ -738,9 +753,12 @@ stops it is a guard that protects the user:
   caps below do not refuse it; its child still names the return. `returnsPerDelegation` (2, the returns in the `retryOf` lineage, `returnCountOf`): the
   third return closes the child, a `retryOf` of it or of any agent in its lineage is refused with
   `return_limit` and the delivery tells Auto to hand the task to another role or ask the user.
-  `rebriefsPerTask` (3, the agents replaced in the `retryOf` and `replaces` lineage,
-  `rebriefCountOf`): the fourth is refused with `task_rebrief_limit` and the delivery tells Auto
-  to ask with a propose block. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes): the seventh return row
+  `rebriefsPerTask` (3, the agents replaced and Auto's continues with a `task` in the `retryOf`
+  and `replaces` lineage, `rebriefCountOf`): the fourth is refused with `task_rebrief_limit` and
+  the delivery tells Auto to ask with a propose block. `messagesPerDelegation` (4 per child,
+  `autoMessageCountOf`, Auto's messages only: the queued ones and the ones already run): the
+  fifth is refused with `message_limit`, so Auto stops or continues it instead. The person is not
+  capped. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes): the seventh return row
   carries `isOverWindow`, `deliverNext` blocks the tree with that reason (`AUTO_BLOCK_TEXT.limit_returns`)
   and **Retry** clears the mark and delivers it;
 - four open children and four per batch.
@@ -777,7 +795,8 @@ its partial output. Auto's prompt tells it to continue such a child with
 the work so far is in the worktree and to continue, not start over
 (`retryNoteOf`), and its first attempt carries the baseline of the stopped one
 (`carriedSnapshot`), so its result counts the commits made before the stop. Only a
-retry of a completed child starts the task again from the start.
+retry of a completed child with no `task` starts the task again from the start; with a
+`task` it keeps the work and follows the new instructions.
 
 Time never cuts a child that works. A running child has no wall clock deadline: it
 is stopped only when its agent shows no output and no tool activity for
@@ -823,6 +842,25 @@ It decides by ending its final reply with at most one block:
 - `release` says a child that came back is no longer needed (`delegation`, `reason`). It is
   one of the decisions Auto owes every return; a child spec decides one too with `retryOf` or
   `replaces` (see The child returns, never blocks).
+- A child spec with `retryOf` continues an agent that ended. With a `task` it continues with new
+  instructions on top of the work so far: the same agent, its role and its worktree, the task
+  briefed as **New instructions** (`prepareRetry`, `resolveDelegateChild`). A role, a title or a
+  mount on a retry is still refused (`spec_invalid`).
+- `message` tells a working child something (`delegation`, `text` of at most 2,000 characters,
+  `AUTO_CHILD_MESSAGE_CHARS`). It is queued for the child and reaches it as its next turn when
+  the current one ends, never in the middle of one (`messageChild`); a child that is not working
+  is refused with `not_running`.
+- `stop` stops a working child (`delegation`, `reason`) with the same cancel as the dock Stop
+  (`stopChild`, the `cancelRun` port with `by: 'auto'`). The agent is marked stopped by `auto`,
+  so the dock, the glance and the child row read **Stopped by Auto** (`stoppedPhraseOf`, the one
+  owner of every "Stopped by" label). It settles `stopped` with the reason "Stopped by Auto:
+  ..." and its work stays. The agent is marked stopped by `auto` as soon as the cancel answers,
+  whatever it answers, and its queued `auto-message:` items are dropped (`cancelTurnConfirmed`,
+  `dropAutoMessages`), so its parked queue never reopens it. A child slow to exit keeps that
+  reason on the delegation with `is_stopping`, and the run end settles with it
+  (`settleAttempt`). The deadline and idle cancel of `enforceDeadlines` stops with `by: 'auto'`
+  too. A stop on a child that already ended changes nothing and answers `alreadyEnded`, never a
+  refusal.
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
   waits. It stores nothing: the tree still rests as Idle until the user marks it finished. The
   prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to

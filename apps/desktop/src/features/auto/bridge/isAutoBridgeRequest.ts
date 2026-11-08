@@ -41,6 +41,17 @@ const isCall = (value: unknown): value is AutoBridgeCall => {
   if (kind === 'userTurn') {
     return isText(value['messageId']) && isTurn(value['turn']);
   }
+  if (kind === 'childTurn') {
+    const turn = value['turn'];
+    return (
+      isRecord(turn) &&
+      isText(turn['agentId']) &&
+      isText(turn['sessionId']) &&
+      isText(turn['text']) &&
+      (turn['from'] === 'user' || turn['from'] === 'auto-message') &&
+      typeof turn['hasFiles'] === 'boolean'
+    );
+  }
   if (kind === 'decision') {
     return (
       isText(value['delegationId']) &&

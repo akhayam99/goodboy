@@ -98,8 +98,14 @@ describe('agentGlanceOf', () => {
       turnState: null,
     });
 
+    const byAuto = agentGlanceOf({
+      agent: anAgent({ id: AGENT, status: 'stopped', stoppedBy: 'auto' }),
+      turnState: null,
+    });
+
     expect(byRestart.sentence).toBe('Stopped by a restart of the app. What it wrote is kept.');
     expect(byYou.sentence).toBe('Stopped by you. What it wrote is kept.');
+    expect(byAuto.sentence).toBe('Stopped by Auto. What it wrote is kept.');
   });
 
   it('carries the error message as the sentence', () => {

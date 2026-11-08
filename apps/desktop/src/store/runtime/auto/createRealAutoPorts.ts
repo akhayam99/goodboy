@@ -49,7 +49,7 @@ export type RealAutoPortsDeps = Readonly<{
   cancelTurnConfirmed: (params: {
     readonly sessionId: SessionId;
     readonly agentId: CancelRunParams['agentId'];
-    readonly reason: 'user';
+    readonly reason: 'user' | 'auto';
   }) => Promise<CancelOutcome>;
   loadSessionMounts: (params: {
     readonly sessionId: SessionId;
@@ -187,9 +187,18 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
       }),
     listChecks: (params) => listAutoChecks({ getState: deps.getState, params }),
     runCheck: (params) => runAutoCheckScript({ getState: deps.getState, params }),
-    cancelRun: async ({ sessionId, agentId }) => {
-      const cancelled = await deps.cancelTurnConfirmed({ sessionId, agentId, reason: 'user' });
+    cancelRun: async ({ sessionId, agentId, by = 'you' }) => {
+      const reason = by === 'auto' ? 'auto' : 'user';
+      const cancelled = await deps.cancelTurnConfirmed({ sessionId, agentId, reason });
       return { outcome: cancelled.outcome };
+    },
+    queueChildMessage: async ({ sessionId, agentId, messageId, text }) => {
+      const state = deps.getState();
+      const isSaved = await state.enqueueAgentMessage({
+        turn: { id: messageId, agentId, content: text, attachments: [], override: undefined },
+      });
+      void deps.getState().drainAgentQueue({ sessionId, agentId });
+      return isSaved;
     },
     isRunLive: async ({ runId }) => (await deps.listLiveRunIds()).has(runId),
     readRunOutcome: ({ runId, agentId }) => readRunLedgerOutcome({ db: deps.db, runId, agentId }),

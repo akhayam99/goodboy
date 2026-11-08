@@ -1,3 +1,4 @@
+import type { AutoChildTurnResult } from '../autoChildTurnPort';
 import type { AutoUserTurnParams, AutoUserTurnResult } from '../autoUserTurnPort';
 import type { ChecksRerunResult } from '../checksRerunPort';
 import type { DelegationDecisionResult } from '../delegationDecisionPort';
@@ -49,6 +50,10 @@ const resultOfKinds =
 const isRetryResult = resultOfKinds<TreeRetryResult>({ kinds: ['retried'] });
 
 const isWithdrawResult = resultOfKinds<WithdrawResult>({ kinds: ['withdrawn', 'delivered'] });
+
+const isChildTurnResult = resultOfKinds<AutoChildTurnResult>({
+  kinds: ['continued', 'working', 'plain'],
+});
 
 const isRerunResult = (value: unknown): value is ChecksRerunResult =>
   isRecord(value) &&
@@ -198,6 +203,12 @@ export const createAutoBridgeClient = async ({
       ask({
         call: { kind: 'decision', delegationId, decision, ...(hint === undefined ? {} : { hint }) },
         isResult: isDecisionResult,
+      }),
+    childTurn: ({ agentId, sessionId, text, from, hasFiles }) =>
+      ask({
+        call: { kind: 'childTurn', turn: { agentId, sessionId, text, from, hasFiles } },
+        isResult: isChildTurnResult,
+        waitMs: longTimeoutMs,
       }),
     userTurn: async (turn) => {
       const key = turnKeyOf({ turn });

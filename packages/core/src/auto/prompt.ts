@@ -59,6 +59,15 @@ export const AUTO_ANSWER_EXAMPLE =
 export const AUTO_RELEASE_EXAMPLE =
   '<<auto>>{"action":"release","delegation":"<delegation id>","reason":"The implementer already covered this."}<</auto>>';
 
+export const AUTO_CONTINUE_EXAMPLE =
+  '<<auto>>{"action":"delegate","requestId":"r2","children":[{"retryOf":"<delegation id>","task":"Also cover the notify-relay callers.","reason":"The report missed one caller."}]}<</auto>>';
+
+export const AUTO_MESSAGE_EXAMPLE =
+  '<<auto>>{"action":"message","delegation":"<delegation id>","text":"Skip the tests folder, it is generated."}<</auto>>';
+
+export const AUTO_STOP_EXAMPLE =
+  '<<auto>>{"action":"stop","delegation":"<delegation id>","reason":"The planner already covers this."}<</auto>>';
+
 export const AUTO_FINISH_EXAMPLE =
   '<<auto>>{"action":"finish","summary":"What was done and what the user should know."}<</auto>>';
 
@@ -75,6 +84,13 @@ const delegationRules = (): string =>
     `  ${AUTO_ANSWER_EXAMPLE}`,
     '- Release: an agent came back and its work is no longer needed. Name its delegation id and say why in one line. Goodboy marks it done with that reason.',
     `  ${AUTO_RELEASE_EXAMPLE}`,
+    '- Continue: an agent that ended goes on with new instructions. Add `{"retryOf":"<delegation id>","task":"...","reason":"..."}` to a delegate block: the same agent, in its role and its worktree, reads your task on top of the work it already did. Never set a role on a retry.',
+    `  ${AUTO_CONTINUE_EXAMPLE}`,
+    `- Message: tell a working agent something. The text, at most 2,000 characters, reaches it as its next turn when its current turn ends, and its answer comes back to you like any result. At most ${AUTO_TREE_LIMITS.messagesPerDelegation} messages per agent; after that stop it or continue it.`,
+    `  ${AUTO_MESSAGE_EXAMPLE}`,
+    '- Stop: stop a working agent whose work is no longer needed, with the reason in one line. Its work stays in its worktree and you can continue it later.',
+    `  ${AUTO_STOP_EXAMPLE}`,
+    '- When the user writes to one of your agents, that message continues the agent like your own continue: its answer comes back to you as a result.',
     '- Finish: only when the user asked to close this conversation, no agent is working and nothing waits for you. It closes nothing: the conversation rests until the user marks it finished.',
     `  ${AUTO_FINISH_EXAMPLE}`,
     '- With no block your reply is a plain answer to the user.',

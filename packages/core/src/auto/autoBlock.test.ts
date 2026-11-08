@@ -88,6 +88,37 @@ describe('parseAutoBlock', () => {
     );
   });
 
+  it('reads a message block and refuses one over 2,000 characters', () => {
+    expect(
+      parseAutoBlock({
+        text: block({ action: 'message', delegation: 'd1', text: 'Also read notify-relay.' }),
+      }),
+    ).toEqual({
+      kind: 'block',
+      block: { action: 'message', delegation: 'd1', text: 'Also read notify-relay.' },
+    });
+    expect(
+      parseAutoBlock({
+        text: block({ action: 'message', delegation: 'd1', text: 'x'.repeat(2_001) }),
+      }).kind,
+    ).toBe('invalid');
+    expect(parseAutoBlock({ text: block({ action: 'message', text: 'hi' }) }).kind).toBe('invalid');
+  });
+
+  it('reads a stop block and needs its delegation and reason', () => {
+    expect(
+      parseAutoBlock({
+        text: block({ action: 'stop', delegation: 'd1', reason: 'The planner already covers it.' }),
+      }),
+    ).toEqual({
+      kind: 'block',
+      block: { action: 'stop', delegation: 'd1', reason: 'The planner already covers it.' },
+    });
+    expect(parseAutoBlock({ text: block({ action: 'stop', delegation: 'd1' }) }).kind).toBe(
+      'invalid',
+    );
+  });
+
   it('is invalid for an unknown action, a missing field and a non-object', () => {
     expect(parseAutoBlock({ text: block({ action: 'status' }) }).kind).toBe('invalid');
     expect(parseAutoBlock({ text: block({ action: 'delegate' }) }).kind).toBe('invalid');

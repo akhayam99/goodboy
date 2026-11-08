@@ -29,6 +29,7 @@ describe('Auto limits', () => {
       returnsPerDelegation: 2,
       rebriefsPerTask: 3,
       returnsPerTreeWindow: 6,
+      messagesPerDelegation: 4,
     });
     expect(AUTO_RETURNS_WINDOW_MS).toBe(30 * 60_000);
   });

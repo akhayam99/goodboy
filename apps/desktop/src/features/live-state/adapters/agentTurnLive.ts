@@ -5,6 +5,7 @@ import { TAIL_ACTION } from '../tailAction';
 import type { TailAction, TailFacts } from '../tailFacts';
 import { workingPhraseOf, type LastTool } from '../workingPhraseOf';
 import { humanTurnErrorOf } from '../../chat/humanTurnErrorOf';
+import { stoppedPhraseOf } from '../stoppedPhraseOf';
 
 export type AgentTurnLiveParams = Readonly<{
   turn: TurnState | null;
@@ -22,9 +23,9 @@ type StoppedParams = {
   readonly agent: AgentTurnLiveParams['agent'];
 };
 
-const stoppedPhraseOf = ({ agent }: StoppedParams): string => {
+const stoppedTailOf = ({ agent }: StoppedParams): string => {
   const when = agent.stoppedAt == null ? '' : ` at ${formatClock({ at: agent.stoppedAt })}`;
-  return agent.stoppedBy === 'app' ? `Stopped by restart${when}` : `Stopped by you${when}`;
+  return `${stoppedPhraseOf({ by: agent.stoppedBy })}${when}`;
 };
 
 export const agentTurnLive = ({
@@ -70,7 +71,7 @@ export const agentTurnLive = ({
   if (agent.status === 'stopped') {
     return {
       state: 'stopped',
-      phrase: stoppedPhraseOf({ agent }),
+      phrase: stoppedTailOf({ agent }),
       startedAt: null,
       actions: [TAIL_ACTION.continue],
     };

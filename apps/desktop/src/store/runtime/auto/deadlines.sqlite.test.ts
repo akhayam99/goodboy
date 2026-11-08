@@ -134,6 +134,7 @@ describe('a running delegation', () => {
     await silentFor31Minutes({ world });
 
     expect(world.state.ports.cancels).toHaveLength(1);
+    expect(world.state.ports.cancels[0]?.by).toBe('auto');
     expect(await onlyDelegation({ world })).toMatchObject({
       state: 'settled',
       outcome: 'timed_out',

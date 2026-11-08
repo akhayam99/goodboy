@@ -201,7 +201,6 @@ describe('parsing the spec of an agent delegate call', () => {
   it('refuses a retry that also sets what the earlier work already fixed', () => {
     for (const extra of [
       { role: 'scout' },
-      { task: 'new task' },
       { mount: 'mount-harborline' },
       { replaces: 'delegation-acme-1' },
     ]) {
@@ -210,6 +209,26 @@ describe('parsing the spec of an agent delegate call', () => {
       });
       expect(outcome).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
     }
+  });
+
+  it('reads new instructions on a retry as its task and hashes them apart', () => {
+    const plain = parseDelegateSpec({
+      text: spec([{ retryOf: 'delegation-scout-1', reason: 'go on' }]),
+    });
+    const told = parseDelegateSpec({
+      text: spec([
+        { retryOf: 'delegation-scout-1', reason: 'go on', task: 'Also read notify-relay.' },
+      ]),
+    });
+    expect(told).toMatchObject({
+      kind: 'ok',
+      children: [{ retryOf: 'delegation-scout-1', role: null, task: 'Also read notify-relay.' }],
+    });
+    expect(plain.kind === 'ok' && told.kind === 'ok' && plain.hash !== told.hash).toBe(true);
+    const withRole = parseDelegateSpec({
+      text: spec([{ retryOf: 'delegation-scout-1', reason: 'go on', task: 'x', role: 'scout' }]),
+    });
+    expect(withRole).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
   });
 
   it('needs a reason on a retry and hashes it apart from the work it repeats', () => {

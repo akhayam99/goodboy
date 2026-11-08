@@ -38,6 +38,8 @@ export const AUTO_REFUSAL_CODES = [
   'return_limit',
   'task_rebrief_limit',
   'not_returned',
+  'message_limit',
+  'not_running',
 ] as const;
 
 export type AutoRefusalCode = (typeof AUTO_REFUSAL_CODES)[number];

@@ -6,6 +6,7 @@ import type {
   AutoPorts,
   CancelRunOutcome,
   CancelRunParams,
+  QueueChildMessageParams,
   ChildStartOutcome,
   DeliveryRun,
   EnsureChildAgentParams,
@@ -131,6 +132,10 @@ export type FakePorts = AutoPorts &
     mountProjectCalls: Array<MountProjectParams>;
     setMountProjectOutcome: (outcome: MountProjectOutcome) => void;
     cancels: Array<CancelRunParams>;
+    childMessages: Array<QueueChildMessageParams>;
+    setChildMessageSink: (
+      sink: ((params: QueueChildMessageParams) => Promise<void>) | null,
+    ) => void;
     liveRuns: Set<string>;
     runOutcomes: Map<string, RunOutcome>;
     deliveries: Map<string, DeliveryRun>;
@@ -216,6 +221,8 @@ export const makeFakePorts = ({
   const ensuredChildren: Array<EnsureChildAgentParams> = [];
   const refreshes: Array<RefreshSessionArtifactsParams> = [];
   const cancels: Array<CancelRunParams> = [];
+  const childMessages: Array<QueueChildMessageParams> = [];
+  let childMessageSink: ((params: QueueChildMessageParams) => Promise<void>) | null = null;
   const publications: Array<PublishScribeParams> = [];
   const publicationQueue: Array<ScribePublication> = [];
   const pushes: Array<PushBranchParams> = [];
@@ -231,6 +238,10 @@ export const makeFakePorts = ({
     refreshes,
     mountProjectCalls,
     cancels,
+    childMessages,
+    setChildMessageSink: (next) => {
+      childMessageSink = next;
+    },
     liveRuns,
     runOutcomes,
     deliveries,
@@ -412,6 +423,13 @@ export const makeFakePorts = ({
     cancelRun: async (params) => {
       cancels.push(params);
       return cancelOutcomes.get(params.agentId) ?? cancelOutcome;
+    },
+    queueChildMessage: async (params) => {
+      childMessages.push(params);
+      if (childMessageSink !== null) {
+        await childMessageSink(params);
+      }
+      return true;
     },
     isRunLive: async ({ runId }) => liveRuns.has(runId),
     readRunOutcome: async ({ runId }) => runOutcomes.get(runId) ?? null,
