@@ -589,6 +589,7 @@ mod tests {
             mount_id: None,
             branch: None,
             branch_path: None,
+            reflog_mark: None,
         };
         let scope = ledger_scope(&[entry], &[]);
         let row = |pid, pgid| parse::RawProcess {

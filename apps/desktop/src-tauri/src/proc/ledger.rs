@@ -22,6 +22,8 @@ pub(crate) struct LedgerEntry {
     pub(crate) mount_id: Option<String>,
     pub(crate) branch: Option<String>,
     pub(crate) branch_path: Option<String>,
+    #[serde(skip)]
+    pub(crate) reflog_mark: Option<git_head::ReflogMark>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -74,7 +76,14 @@ fn placement_of(entry: &LedgerEntry, mounts: &MountPlaces) -> Option<Placement> 
     };
     let confirmed = Some(recorded.clone())
         .filter(|name| git_head::has_branch(&place, name))
-        .or_else(|| git_head::renamed_to(&place, &recorded, entry.started_at));
+        .or_else(|| {
+            git_head::renamed_to(
+                &place,
+                &recorded,
+                entry.started_at,
+                entry.reflog_mark.as_ref(),
+            )
+        });
     let Some(branch) = confirmed else {
         return Some(unconfirmed);
     };
@@ -175,6 +184,10 @@ pub(crate) fn global() -> &'static ProcessLedger {
 pub(crate) fn entry_for(tag: &SpawnTag, pid: u32, context: LedgerContext) -> LedgerEntry {
     let place = place_of(context.mount_path.as_deref(), context.cwd.as_deref());
     let branch = place.as_deref().and_then(git_head::branch_at);
+    let reflog_mark = place
+        .as_deref()
+        .zip(branch.as_deref())
+        .and_then(|(place, name)| git_head::reflog_mark(place, name));
     let branch_path = branch
         .as_ref()
         .and(place)
@@ -193,6 +206,7 @@ pub(crate) fn entry_for(tag: &SpawnTag, pid: u32, context: LedgerContext) -> Led
         mount_id: context.owner.mount_id,
         branch,
         branch_path,
+        reflog_mark,
     }
 }
 
@@ -330,6 +344,7 @@ mod tests {
             mount_id: None,
             branch: None,
             branch_path: None,
+            reflog_mark: None,
         }
     }
 
