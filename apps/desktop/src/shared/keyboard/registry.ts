@@ -883,6 +883,13 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'window',
   },
+  'slot.close': {
+    combo: 'cmd+shift+KeyW',
+    offMacCombo: 'ctrl+F4',
+    label: 'Close the drawer',
+    plane: 'session',
+    group: 'window',
+  },
   'terminal.closeTab': {
     combo: 'cmd+KeyW',
     offMacCombo: 'ctrl+shift+KeyW',

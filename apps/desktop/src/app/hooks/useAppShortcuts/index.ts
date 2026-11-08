@@ -31,6 +31,7 @@ import { providerOfListLens } from '../../../store/slices/navigation/providerOfL
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useMenuCommands } from '../useMenuCommands';
 import { closeCurrentLevel } from './closeCurrentLevel';
+import { closeSlot } from './closeSlot';
 import { goUp } from './goUp';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
@@ -246,6 +247,7 @@ export const useAppShortcuts = ({
   useShortcut('session.board', goToBoard);
   useShortcut('terminal.studio', openTerminalStudio);
   useShortcut('app.close', () => closeCurrentLevel({}));
+  useShortcut('slot.close', () => closeSlot({}));
   useMenuCommands();
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
