@@ -318,7 +318,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     }
     if (tab === 'pr') {
       return (
-        <BranchScroll sessionId={sessionId} tab={tab} view={pullRequestView.view}>
+        <BranchScroll key={tab} sessionId={sessionId} tab={tab} view={pullRequestView.view}>
           <PageColumn width="column" className="flex min-w-0 flex-col pb-5">
             <PullRequestTab
               session={session}
@@ -378,7 +378,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     }
     if (tab === 'checks') {
       return (
-        <BranchScroll sessionId={sessionId} tab={tab} view={pullRequestView.view}>
+        <BranchScroll key={tab} sessionId={sessionId} tab={tab} view={pullRequestView.view}>
           <BranchChecks sessionId={sessionId} mountId={historyMountId} />
         </BranchScroll>
       );

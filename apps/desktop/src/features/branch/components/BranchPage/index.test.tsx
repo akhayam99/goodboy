@@ -711,6 +711,46 @@ describe('Branch page Checks and Changes', () => {
     expect(screen.getByRole('region', { name: 'Checks' })).toBeDefined();
   });
 
+  it('starts Checks with the header shown and its own scroll after the header hid on Pull request', async () => {
+    const resize = installFakeResizeObserver();
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    });
+    await mount();
+    await visit(/^Pull request/);
+    const regionNode = (): HTMLElement => {
+      const node = document.querySelector<HTMLElement>('[data-slot="reveal-region"]');
+      if (node === null) {
+        throw new Error('no reveal region');
+      }
+      return node;
+    };
+    const scroller = (): HTMLElement => {
+      const node = document.querySelector<HTMLElement>('[data-page-scroller]');
+      if (node === null) {
+        throw new Error('no page scroller');
+      }
+      return node;
+    };
+    const header = document.querySelector<HTMLElement>('[data-slot="reveal-header"]');
+    Object.defineProperty(header, 'offsetHeight', { value: 160, configurable: true });
+    act(() => resize.resizeAll());
+    const first = scroller();
+    Object.defineProperty(first, 'scrollHeight', { value: 4000, configurable: true });
+    Object.defineProperty(first, 'clientHeight', { value: 600, configurable: true });
+    fireEvent.wheel(first, { deltaY: 400 });
+    first.scrollTop = 400;
+    fireEvent.scroll(first);
+    expect(regionNode().getAttribute('data-reveal-header')).toBe('hidden');
+
+    await visit(/^Checks/);
+
+    expect(scroller()).not.toBe(first);
+    expect(scroller().scrollTop).toBe(0);
+    expect(regionNode().getAttribute('data-reveal-header')).toBe('shown');
+  });
+
   it('offers the new pull request form on Overview and lets the other sections render', async () => {
     await mount();
     dropRequest();
