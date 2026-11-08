@@ -237,6 +237,18 @@ the detail as a page rail. The right drawer is context, never navigation. The
 right drawer holds reference material beside the page and closes with the pane
 that opened it.
 
+**The right drawer is one slot, and the latest open wins.** What it replaced
+waits in a back chip at the left of the drawer head, one level deep, so a
+third open drops the oldest. The chip reads the kind and the title
+(`Plan · Add tax to the checkout total`, `Terminal`); a click swaps the two.
+Closing the drawer brings back what the chip holds, and closing that empties
+the slot. Esc in the session is one ladder: an open menu, popover or field
+takes it first, then the top of the slot closes, then the drawer from the
+chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS, File > Close the Drawer)
+closes the top of the slot from anywhere, a focused terminal or web page
+included. The rules, the store and the navigation cases are in
+[home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
+
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 the doors Board
