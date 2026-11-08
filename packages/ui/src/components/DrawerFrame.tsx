@@ -1,4 +1,5 @@
 import { DrawerContentContext } from '../drawerContentContext';
+import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { ArrowUpRight, X } from 'lucide-react';
@@ -100,6 +101,8 @@ export const DrawerFrame = ({
   const dockRef = useRef<HTMLDivElement | null>(null);
   const hasToolbar = toolbar != null;
   const drawerContent = useContext(DrawerContentContext);
+  const backChip = useContext(DrawerBackChipContext);
+  const hasBackChip = backChip != null && !isHeaderless;
 
   useEscapeLayer(() => {
     const active = document.activeElement;
@@ -132,6 +135,7 @@ export const DrawerFrame = ({
 
   const titleRow = (
     <>
+      {hasBackChip ? backChip : null}
       <div className={cn('flex min-w-0 flex-1 gap-2', hasToolbar ? 'items-start' : 'items-center')}>
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">
@@ -182,13 +186,17 @@ export const DrawerFrame = ({
 
   const isOverlay = drawerContent?.mode === 'overlay';
   const hasStepAside = !isHeaderless && (isOverlay || meta != null || hasToolbar);
-  const backLink = back === undefined || isHeaderless ? null : <DrawerBackLink back={back} />;
+  const backLink =
+    back === undefined || isHeaderless || hasBackChip ? null : <DrawerBackLink back={back} />;
+  const content = (
+    <DrawerBackChipContext.Provider value={null}>{children}</DrawerBackChipContext.Provider>
+  );
   const body =
     scroll === 'self' || isHeaderless ? (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{content}</div>
     ) : (
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
-        {children}
+        {content}
       </ScrollFade>
     );
 
