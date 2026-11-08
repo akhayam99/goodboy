@@ -234,7 +234,6 @@
     "apps/desktop/src/features/artifacts/components/ArtifactDocument/PrintContents.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactDocumentDrawer/PlanDrawerFrame.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactDocumentDrawer/usePlanVersionNote/index.ts": 1,
-    "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.tsx": 3,
     "apps/desktop/src/features/artifacts/components/ArtifactList/index.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx": 3,
     "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactExportStatus.tsx": 1,

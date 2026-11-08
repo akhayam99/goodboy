@@ -18,6 +18,7 @@ import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pu
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
+import type { BranchDueStep } from '../../branchStepOf';
 import { usePullRequestPort } from '../../hooks/usePullRequestPort';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { pullRequestThreadCountsOf } from '../../pullRequestThreadCountsOf';
@@ -42,6 +43,7 @@ export type PullRequestPageProps = {
   readonly mountId: MountId | null;
   readonly readiness: PullRequestReadiness;
   readonly branch: PullRequestBranchFacts;
+  readonly steps: ReadonlyArray<BranchDueStep>;
   readonly mergeWord: string;
   readonly entries: ReadonlyArray<ThreadEntry>;
   readonly detail: PrDetail | null;
@@ -65,6 +67,7 @@ export const PullRequestPage = ({
   mountId,
   readiness: prReadiness,
   branch,
+  steps,
   mergeWord,
   entries,
   detail,
@@ -115,6 +118,7 @@ export const PullRequestPage = ({
     mergeWord,
     queueLine: queueLineOf({ pr }),
     branch,
+    steps,
     threads,
     unpushed: facts.unpushed,
     canRequestReview: request.kind === 'allowed',

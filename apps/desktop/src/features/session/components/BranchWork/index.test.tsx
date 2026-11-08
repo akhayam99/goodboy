@@ -273,7 +273,7 @@ describe('the Work tab of a branch', () => {
     const badge = screen.getByRole('status');
     expect(badge.getAttribute('data-work-badge')).toBe('warning');
     expect(badge.textContent).toBe('1');
-    expect(badge.getAttribute('title')).toMatch(/^1 run needs you · /);
+    expect(badge.getAttribute('title')).toMatch(/^1 run needs you with 1 question · /);
     expect(badge.getAttribute('title')).not.toMatch(/waits? for you/);
   });
 

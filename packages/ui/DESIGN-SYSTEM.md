@@ -232,6 +232,11 @@ state is a `StateDot` or a glyph in a 16px column.
   pixels, so the title keeps room and no row runs past the list edge. Runs hides
   the model below 920 and the origin below 928, both inside the 960 page column.
   `validate-scenes` checks in a browser that no list row ends past its list.
+- `cells` on `ListGridRow` is a list in column order, or `{ byKey }` keyed by
+  column key, so one row can sit in any grid that names those keys and a key the
+  grid lacks is dropped. The Branch page Work tab draws runs, questions and
+  artifacts in one grid with the runs' columns this way, so their marks, titles,
+  state words and times share one x.
 - `overlays` on `ListGridRow` draws controls as siblings of the row button, each
   in its named column over the row, so a row never nests a button. Only the
   controls take the pointer; the rest of the cell still lands on the row, and the

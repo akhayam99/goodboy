@@ -29,7 +29,12 @@ import {
   type BranchNextStep,
   type BranchReviewCounts,
 } from '../../branchPrimary';
-import { NO_COMMENT_FACTS, type BranchStep, type BranchStepComments } from '../../branchStepOf';
+import {
+  NO_COMMENT_FACTS,
+  type BranchDueStep,
+  type BranchStep,
+  type BranchStepComments,
+} from '../../branchStepOf';
 import { hasRemovedMergedMountOf } from '../../hasRemovedMergedMountOf';
 import type { PullRequestPresentationState } from '../../../../shared/utils/pullRequestPresentation';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
@@ -75,6 +80,7 @@ export type BranchControls = {
   readonly diffControls: ActionControls;
   readonly pullRequestControls: ActionControls;
   readonly sessionControls: ActionControls;
+  readonly steps: ReadonlyArray<BranchDueStep>;
   readonly step: BranchStep;
   readonly checkWork: BranchCheckWork;
   readonly primary: BranchPrimary | null;
@@ -243,7 +249,7 @@ export const useBranchControls = ({
     actions.primary !== null && actions.primary.actionId === busyStepId
       ? { ...actions.primary, isBusy: true }
       : actions.primary;
-  const { secondary, step } = actions;
+  const { secondary, step, steps } = actions;
 
   const controlsOf = useCallback(
     (action: BranchPrimary): ActionControls | null => {
@@ -377,6 +383,7 @@ export const useBranchControls = ({
     diffControls,
     pullRequestControls,
     sessionControls,
+    steps,
     step,
     checkWork: checkStep.work,
     primary,

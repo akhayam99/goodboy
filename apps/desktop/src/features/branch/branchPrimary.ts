@@ -19,10 +19,11 @@ import type { PullRequestPresentationState } from '../../shared/utils/pullReques
 import type { ResolvedAction } from '../actions/types';
 import { applyFixesLabel } from '../resolve/commentProjection';
 import {
-  branchStepOf,
+  branchStepsOf,
   type BranchCheckFacts,
   type BranchClosingFacts,
   type BranchCommentFacts,
+  type BranchDueStep,
   type BranchLifecycleStep,
   type BranchStep,
 } from './branchStepOf';
@@ -72,6 +73,7 @@ type Params = {
 };
 
 export type BranchActions = {
+  readonly steps: ReadonlyArray<BranchDueStep>;
   readonly step: BranchStep;
   readonly primary: BranchPrimary | null;
   readonly secondary: BranchPrimary | null;
@@ -346,7 +348,7 @@ const closingOf = ({ diff, session }: Pick<Params, 'diff' | 'session'>): BranchC
     find({ actions: diff, id: 'diff.archiveSession' }) !== null || isWorktreeGone({ session }),
 });
 
-const stepFor = ({
+const stepsFor = ({
   diff,
   session,
   review,
@@ -357,9 +359,9 @@ const stepFor = ({
   nextStep,
   hasConflicts,
   hasOpenRebaseStop,
-}: Params): BranchStep => {
+}: Params): ReadonlyArray<BranchDueStep> => {
   const isPullRequestPush = hasPullRequestPush({ hasPullRequest, state });
-  return branchStepOf({
+  return branchStepsOf({
     state: isWorktreeGone({ session }) || !(hasPullRequest || state === 'none') ? 'merged' : state,
     lifecycle: nextStep,
     hasConflicts,
@@ -377,27 +379,28 @@ const stepFor = ({
 };
 
 export const branchActionsOf = ({ ...facts }: Params): BranchActions => {
-  const step = stepFor(facts);
+  const steps = stepsFor(facts);
+  const step = steps[0] ?? null;
   if (step === null || step === 'working') {
-    return { step, primary: null, secondary: null };
+    return { steps, step, primary: null, secondary: null };
   }
   const primary = stepPrimaryOf({ ...facts, step });
   if (primary === null) {
-    return { step, primary: null, secondary: null };
+    return { steps, step, primary: null, secondary: null };
   }
   if (step === 'removeWorktree' && primary.blockedReason !== null) {
-    return { step, primary: null, secondary: primary };
+    return { steps, step, primary: null, secondary: primary };
   }
   const isPushStep = step === 'push' || (step === 'retryPush' && facts.state === 'queued');
   if (isPushStep && hasPullRequestPush(facts)) {
     return primary.blockedReason !== null || facts.hasOpenRebaseStop || facts.state === 'queued'
-      ? { step, primary: null, secondary: primary }
-      : { step, primary, secondary: null };
+      ? { steps, step, primary: null, secondary: primary }
+      : { steps, step, primary, secondary: null };
   }
   if (isRebaseStopped(facts) || primary.blockedReason !== null) {
-    return { step, primary: null, secondary: null };
+    return { steps, step, primary: null, secondary: null };
   }
-  return { step, primary, secondary: null };
+  return { steps, step, primary, secondary: null };
 };
 
 export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [

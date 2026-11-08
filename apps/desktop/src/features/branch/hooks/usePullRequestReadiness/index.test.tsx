@@ -321,6 +321,7 @@ describe('usePullRequestReadiness and the action kind read one source of checks'
       mergeWord: 'Merge commit',
       queueLine: null,
       branch: { ahead: 0, behind: 0, onlineAhead: 0, isRebasing: false },
+      steps: [],
       threads: { unresolved: 0, needYou: 0, unread: 0 },
       unpushed: 0,
       canRequestReview: false,

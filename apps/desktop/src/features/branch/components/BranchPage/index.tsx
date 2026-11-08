@@ -167,15 +167,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       })?.view?.mergeMethods[0],
   );
   const mergeWord = MERGE_METHOD_LABEL[mergeMethod ?? 'squash'];
-  const onlineAhead = start.step.originOnly ?? 0;
   const branchFacts = useMemo(
     () => ({
       ahead: start.step.ahead ?? 0,
       behind: start.step.behind,
-      onlineAhead,
+      onlineAhead: start.step.originOnly ?? 0,
       isRebasing: start.step.state === 'conflict',
     }),
-    [onlineAhead, start.step.ahead, start.step.behind, start.step.state],
+    [start.step.originOnly, start.step.ahead, start.step.behind, start.step.state],
   );
   const nextStep = isBranchStart
     ? start.step.header
@@ -317,6 +316,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               mountId={historyMountId}
               readiness={prReadiness}
               branchFacts={branchFacts}
+              steps={controls.steps}
               mergeWord={mergeWord}
               entries={branchReview.branchEntries}
               commits={diff.commits}

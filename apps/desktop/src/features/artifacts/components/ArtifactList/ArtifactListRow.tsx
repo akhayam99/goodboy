@@ -1,23 +1,18 @@
-import { memo, useMemo, type ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, cn, ICON_SIZE, InteractiveRow, Tooltip, TruncatedText } from '@goodboy/ui';
+import { cn, ICON_SIZE, InteractiveRow, Tooltip, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
-import type { ArtifactState } from '../../artifactStateOf';
-import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
-import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
 
-import type { ActionControls } from '../../../actions/useActionControls';
-import { useActionControls } from '../../../actions/useActionControls';
-import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 import { ArtifactKindGlyph } from './ArtifactKindGlyph';
 import type { ArtifactOpenParams } from './artifactBranchProps';
+import { ArtifactRowActions } from './ArtifactRowActions';
 import { ArtifactRowConfirm } from './ArtifactRowConfirm';
 import { ARTIFACT_ROW_GRID } from './artifactRowGrid';
 import { ArtifactRowParts } from './ArtifactRowParts';
 import { ArtifactStateBadge } from './ArtifactStateBadge';
+import { useArtifactRowModel } from './useArtifactRowModel';
 
 type Props = {
   readonly row: Row;
@@ -31,71 +26,6 @@ type Props = {
   readonly hasActionColumn: boolean;
 };
 
-const PRIMARY_FALLBACK_IDS = ['artifact.stop', 'artifact.retry'] as const;
-
-const findAction = ({
-  actions,
-  id,
-}: {
-  readonly actions: ReadonlyArray<ResolvedAction>;
-  readonly id: string;
-}): ResolvedAction | null => actions.find((action) => action.id === id) ?? null;
-
-const primaryOf = ({
-  row,
-  controls,
-}: {
-  readonly row: Row;
-  readonly controls: ActionControls;
-}): ResolvedAction | null => {
-  const primary = controls.inSlot({ slot: 'primary' })[0] ?? null;
-  if (primary !== null) {
-    return primary;
-  }
-  for (const id of PRIMARY_FALLBACK_IDS) {
-    const action = findAction({ actions: controls.actions, id });
-    if (action !== null && row.target.kind === 'generation') {
-      return action;
-    }
-  }
-  return null;
-};
-
-const targetOf = ({
-  row,
-  sessionId,
-}: {
-  readonly row: Row;
-  readonly sessionId: SessionId;
-}): ArtifactActionTarget => ({
-  kind: 'artifact',
-  sessionId,
-  subject:
-    row.target.kind === 'generation'
-      ? { kind: 'generation', generation: row.target.generation }
-      : { kind: 'stored', artifactId: row.target.artifactId, isPlanRunning: row.isPlanRunning },
-});
-
-const GROUP_SAYS_IT: ReadonlySet<ArtifactState['key']> = new Set([
-  'needs',
-  'running',
-  'available',
-  'ran',
-  'deleted',
-]);
-
-type ShownStateParams = {
-  readonly row: Row;
-  readonly isStateShown: boolean;
-};
-
-const shownStateOf = ({ row, isStateShown }: ShownStateParams): ArtifactState | null => {
-  if (row.state === null || (!isStateShown && GROUP_SAYS_IT.has(row.state.key))) {
-    return null;
-  }
-  return row.state;
-};
-
 const RowComponent = ({
   row,
   rowKey = row.id,
@@ -107,25 +37,8 @@ const RowComponent = ({
   onOpenRow,
   hasActionColumn,
 }: Props) => {
-  const target = useMemo(() => targetOf({ row, sessionId }), [row, sessionId]);
-  const anchorKey = `artifact-row:${rowKey}`;
-  const menu = useObjectMenuTrigger({ target, anchorKey });
-  const controls = useActionControls({ target, anchorKey });
-  const isDeleted = row.group === 'deleted';
-  const hasParts = row.kind === 'plan' && row.partCount > 0 && !isDeleted;
-  const rowLabel = `${ARTIFACT_KIND_MARKER_LABEL[row.kind]} ${row.title}${row.state === null ? '' : `, ${row.state.label}`}`;
-  const restoreAction = isDeleted
-    ? findAction({ actions: controls.actions, id: 'artifact.restore' })
-    : null;
-  const hasOwnVerb = row.group === 'needs' || row.target.kind === 'generation';
-  const primary = hasOwnVerb ? primaryOf({ row, controls }) : null;
-  const isFilled = primary !== null && primary.slot === 'primary' && primary.isSecondary !== true;
-  const state = shownStateOf({ row, isStateShown });
-  const at = row.deletedAt ?? row.at;
-  const atTitle =
-    at === null
-      ? undefined
-      : `${isDeleted ? 'Deleted ' : ''}${formatDateTime({ at, hasYear: true })}`;
+  const model = useArtifactRowModel({ row, rowKey, sessionId, isStateShown });
+  const { menu, controls, hasParts, state, at, atTitle } = model;
 
   const title = (
     <TruncatedText
@@ -143,7 +56,7 @@ const RowComponent = ({
     <div className="@container relative flex min-w-0 flex-col" data-testid="artifact-row-frame">
       <InteractiveRow
         menu={menu}
-        label={rowLabel}
+        label={model.label}
         isSelected={false}
         onOpen={() => onOpenRow({ row, rowKey })}
         dataAttributes={{ 'data-artifact-row': rowKey }}
@@ -193,29 +106,7 @@ const RowComponent = ({
         </span>
         {hasActionColumn ? (
           <span data-testid="artifact-row-action" className={ARTIFACT_ROW_GRID.action}>
-            {restoreAction === null ? null : (
-              <Button
-                size="sm"
-                variant="secondary"
-                isBusy={controls.pendingId === restoreAction.id}
-                onClick={() => controls.trigger({ actionId: restoreAction.id })}
-              >
-                Restore
-              </Button>
-            )}
-            {primary === null ? null : (
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={primary.blockedReason !== null}
-                isBusy={controls.pendingId === primary.id}
-                title={primary.blockedReason ?? primary.description ?? undefined}
-                data-filled={isFilled ? 'true' : 'false'}
-                onClick={() => controls.trigger({ actionId: primary.id })}
-              >
-                {primary.shortLabel}
-              </Button>
-            )}
+            <ArtifactRowActions model={model} />
           </span>
         ) : null}
       </InteractiveRow>

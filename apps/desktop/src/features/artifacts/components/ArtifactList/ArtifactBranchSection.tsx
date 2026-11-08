@@ -4,7 +4,6 @@ import { Button } from '@goodboy/ui';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { alsoOnBranchesOf } from '../../../session/branchGroupsOf';
 import { branchHeadLabelOf, branchHeadMarkOf } from '../../../session/branchHeadOf';
-import type { BranchWorkHeading } from '../../../session/branchWorkHeading';
 import { AlsoOnChip } from '../../../../shared/components/AlsoOnChip';
 import {
   artifactBranchCountOf,
@@ -41,7 +40,6 @@ type Props = {
   readonly onOpenRow: (params: ArtifactOpenParams) => void;
   readonly onOpenBranch?: (params: OpenBranchParams) => void;
   readonly canOpenBranch?: (params: OpenBranchParams) => boolean;
-  readonly heading?: BranchWorkHeading;
 };
 
 const NO_BRANCH_NOTE = 'not tied to a branch';
@@ -51,13 +49,11 @@ type ChipParams = {
   readonly groupKey: string;
   readonly mounts: ReadonlyArray<MountRowView>;
   readonly onReveal: (params: RevealParams) => void;
-  readonly canReveal: (params: OpenBranchParams) => boolean;
 };
 
-const branchChipOf = ({ item, groupKey, mounts, onReveal, canReveal }: ChipParams): ReactNode => {
+const branchChipOf = ({ item, groupKey, mounts, onReveal }: ChipParams): ReactNode => {
   const branches = alsoOnBranchesOf({ branches: item.branches, groupKey, mounts });
-  const [first] = branches;
-  if (first === undefined || !canReveal({ mountId: first.mountId })) {
+  if (branches.length === 0) {
     return undefined;
   }
   return (
@@ -83,7 +79,6 @@ export const ArtifactBranchSection = ({
   onOpenRow,
   onOpenBranch,
   canOpenBranch,
-  heading,
 }: Props) => {
   const headingId = useId();
   const { head } = group;
@@ -98,9 +93,8 @@ export const ArtifactBranchSection = ({
   const count = artifactBranchCountOf({ rows });
   const summary = artifactBranchSummaryOf({
     rows,
-    fact: heading === undefined && head.kind === 'branch' ? head.fact : null,
+    fact: head.kind === 'branch' ? head.fact : null,
   });
-  const markShown = heading?.mark ?? mark;
   return (
     <section
       data-testid={`artifact-branch-group-${group.key}`}
@@ -109,16 +103,14 @@ export const ArtifactBranchSection = ({
     >
       <div className="flex h-5 min-w-0 items-center gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          {markShown === null ? null : (
-            <span className="flex shrink-0 items-center text-ui text-faint-foreground">
-              {markShown}
-            </span>
+          {mark === null ? null : (
+            <span className="flex shrink-0 items-center text-ui text-faint-foreground">{mark}</span>
           )}
           <h2
             id={headingId}
             className="flex min-w-0 items-center gap-2 text-heading text-foreground"
           >
-            <span className="truncate">{heading?.label ?? branchHeadLabelOf({ head })}</span>
+            <span className="truncate">{branchHeadLabelOf({ head })}</span>
             {count > 1 ? (
               <span className="text-ui tabular-nums text-faint-foreground">{count}</span>
             ) : null}
@@ -130,11 +122,9 @@ export const ArtifactBranchSection = ({
           ) : null}
         </div>
         <span className="flex shrink-0 items-center gap-2 text-ui text-faint-foreground">
-          {heading === undefined && head.kind === 'none' ? <span>{NO_BRANCH_NOTE}</span> : null}
+          {head.kind === 'none' ? <span>{NO_BRANCH_NOTE}</span> : null}
           {summary === '' ? null : <span>{summary}</span>}
-          {heading === undefined ? null : heading.action}
-          {heading === undefined &&
-          onOpenBranch !== undefined &&
+          {onOpenBranch !== undefined &&
           head.kind === 'branch' &&
           canOpenBranch?.({ mountId: head.branch.mountId }) === true ? (
             <Button
@@ -161,8 +151,6 @@ export const ArtifactBranchSection = ({
                   groupKey: group.key,
                   mounts,
                   onReveal,
-                  canReveal: ({ mountId }) =>
-                    heading === undefined || canOpenBranch?.({ mountId }) === true,
                 })}
                 sessionId={sessionId}
                 isPartsOpen={openPartsIds.has(rowKey)}

@@ -9,7 +9,7 @@ import { artifactBranchRowKeyOf } from '../../artifactBranchRowKeys';
 import type { ArtifactBranchWork as Work } from '../../hooks/useArtifactBranchGroup';
 import { openArtifactPage } from '../../openArtifactPage';
 import type { ArtifactOpenParams } from './artifactBranchProps';
-import { ArtifactBranchSection } from './ArtifactBranchSection';
+import { ArtifactWorkGroup } from './ArtifactWorkGroup';
 import { useArtifactParts } from './useArtifactParts';
 
 type Props = {
@@ -48,7 +48,7 @@ export const ArtifactBranchWork = ({ sessionId, work, heading, onLeave }: Props)
   const { remember, returnRowId } = useRowReturn({
     listKey: 'branch-work-artifacts',
     rowIds,
-    rowAttribute: 'data-artifact-row',
+    rowAttribute: 'data-row-key',
   });
   const isReturnUsed =
     group !== null &&
@@ -68,9 +68,6 @@ export const ArtifactBranchWork = ({ sessionId, work, heading, onLeave }: Props)
   if (group === null) {
     return null;
   }
-  const hasActionColumn = group.items.some(
-    (item) => item.row.group === 'needs' || item.row.target.kind === 'generation',
-  );
 
   const openRow = ({ row, rowKey }: ArtifactOpenParams) => {
     remember({ rowId: rowKey });
@@ -96,13 +93,12 @@ export const ArtifactBranchWork = ({ sessionId, work, heading, onLeave }: Props)
   };
 
   return (
-    <ArtifactBranchSection
+    <ArtifactWorkGroup
       group={group}
       mounts={mounts}
       sessionId={sessionId}
       isOpen={isOpen}
       openPartsIds={openPartsIds}
-      hasActionColumn={hasActionColumn}
       heading={heading}
       onToggle={() => setIsOpen((wasOpen) => !wasOpen)}
       onReveal={reveal}

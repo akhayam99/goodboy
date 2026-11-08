@@ -88,12 +88,14 @@ export const QuestionsGridRow = ({
       onSelect={onOpen}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
-      overlays={suffixedCell === null ? undefined : [{ column: 'question', node: suffixedCell }]}
-      cells={[
-        isBlocking ? <StateDot state="needsYou" label={BLOCKING} /> : null,
-        suffixedCell === null ? plainCell : '',
-        age,
-      ]}
+      overlays={suffixedCell === null ? undefined : [{ column: 'title', node: suffixedCell }]}
+      cells={{
+        byKey: {
+          state: isBlocking ? <StateDot state="needsYou" label={BLOCKING} /> : null,
+          title: suffixedCell === null ? plainCell : '',
+          age,
+        },
+      }}
     />
   );
 };

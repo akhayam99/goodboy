@@ -27,6 +27,7 @@ export type BranchWorkCounts = {
   readonly running: number;
   readonly questions: number;
   readonly waiting: number;
+  readonly held: number;
   readonly artifacts: number;
   readonly artifactsNeedYou: number;
 };
@@ -117,7 +118,7 @@ const workFactOf = ({ work }: WorkParams): BranchTabFact => {
   const tooltip = joinFacts({
     facts: [
       work.runsNeedYou > 0 &&
-        `${countNoun({ count: work.runsNeedYou, one: 'run' })} ${work.runsNeedYou === 1 ? 'needs' : 'need'} you`,
+        `${countNoun({ count: work.runsNeedYou, one: 'run' })} ${work.runsNeedYou === 1 ? 'needs' : 'need'} you${work.held > 0 ? ` with ${countNoun({ count: work.held, one: 'question' })}` : ''}`,
       work.waiting > 0 &&
         `${countNoun({ count: work.waiting, one: 'question' })} ${work.waiting === 1 ? 'waits' : 'wait'} for you`,
       work.artifactsNeedYou > 0 &&

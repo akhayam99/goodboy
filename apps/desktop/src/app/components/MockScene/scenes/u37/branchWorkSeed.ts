@@ -48,7 +48,7 @@ const questionOf = ({
   userAnswer: answer ?? null,
   status: answer === undefined ? 'open' : 'answered',
   createdAt: at({ time: `14:${minute}:00` }),
-  ...(answer === undefined ? {} : { answeredAt: at({ time: `15:${minute}:00` }) }),
+  ...(answer === undefined ? {} : { answeredAt: at({ time: `14:${minute}:50` }) }),
 });
 
 type ArtifactParams = {

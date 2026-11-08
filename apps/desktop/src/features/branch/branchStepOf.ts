@@ -20,6 +20,8 @@ export type BranchStepKind =
 
 export type BranchStep = BranchStepKind | 'working' | null;
 
+export type BranchDueStep = Exclude<BranchStep, null>;
+
 export type BranchCommentFacts = {
   readonly questionThreadId: string | null;
   readonly waitingFixes: number;
@@ -75,87 +77,105 @@ const isCheckAgentLive = ({ chain }: Pick<BranchCheckFacts, 'chain'>): boolean =
 
 type OpenParams = Omit<Params, 'state'>;
 
-const openStepOf = ({
+const OPEN_STEP_ORDER = [
+  'pushing',
+  'answer',
+  'working',
+  'apply',
+  'retryPush',
+  'fixComments',
+  'pushCheckFix',
+  'push',
+  'publish',
+  'rebase',
+  'fixChecks',
+] as const;
+
+type OpenStepKey = (typeof OPEN_STEP_ORDER)[number];
+
+const OPEN_STEP_DUE: Readonly<Record<OpenStepKey, (params: OpenParams) => boolean>> = {
+  pushing: ({ push }) => push.isInFlight,
+  answer: ({ comments }) => comments.questionThreadId !== null,
+  working: ({ comments, checks }) => comments.isFixRunLive || isCheckAgentLive(checks),
+  apply: ({ comments }) => comments.waitingFixes > 0,
+  retryPush: ({ push }) => push.failed > 0,
+  fixComments: ({ comments }) => comments.fixable > 0,
+  pushCheckFix: ({ checks }) => checks.isFailing && checks.chain === 'fixed-local',
+  push: ({ push }) => push.canPush,
+  publish: ({ push }) => push.replies > 0,
+  rebase: ({ hasConflicts, lifecycle }) => hasConflicts && lifecycle === 'rebase',
+  fixChecks: ({ checks }) => checks.isFailing && !checks.isAwaitingRun,
+};
+
+const OPEN_STEP_OF: Readonly<Record<OpenStepKey, (params: OpenParams) => BranchStep>> = {
+  pushing: () => 'push',
+  answer: () => 'answer',
+  working: () => 'working',
+  apply: () => 'apply',
+  retryPush: () => 'retryPush',
+  fixComments: () => 'fixComments',
+  pushCheckFix: () => 'pushCheckFix',
+  push: () => 'push',
+  publish: () => 'publish',
+  rebase: () => 'rebase',
+  fixChecks: ({ checks }) => (checks.chain === 'proposal' ? 'startCheckFix' : 'fixChecks'),
+};
+
+type ListParams = {
+  readonly steps: ReadonlyArray<BranchStep>;
+};
+
+const dueStepsOf = ({ steps }: ListParams): ReadonlyArray<BranchDueStep> =>
+  steps.filter(
+    (step, index): step is BranchDueStep => step !== null && steps.indexOf(step) === index,
+  );
+
+const openStepsOf = ({
   lifecycle,
   hasConflicts,
   comments,
   checks,
   push,
-}: OpenParams): BranchStep => {
-  if (push.isInFlight) {
-    return 'push';
-  }
-  if (comments.questionThreadId !== null) {
-    return 'answer';
-  }
-  if (comments.isFixRunLive || isCheckAgentLive(checks)) {
-    return 'working';
-  }
-  if (comments.waitingFixes > 0) {
-    return 'apply';
-  }
-  if (push.failed > 0) {
-    return 'retryPush';
-  }
-  if (comments.fixable > 0) {
-    return 'fixComments';
-  }
-  if (checks.isFailing && checks.chain === 'fixed-local') {
-    return 'pushCheckFix';
-  }
-  if (push.canPush) {
-    return 'push';
-  }
-  if (push.replies > 0) {
-    return 'publish';
-  }
-  if (hasConflicts && lifecycle === 'rebase') {
-    return 'rebase';
-  }
-  if (checks.isFailing && !checks.isAwaitingRun) {
-    return checks.chain === 'proposal' ? 'startCheckFix' : 'fixChecks';
-  }
-  return lifecycle;
+}: OpenParams): ReadonlyArray<BranchDueStep> => {
+  const facts = { lifecycle, hasConflicts, comments, checks, push };
+  const due = OPEN_STEP_ORDER.filter((key) => OPEN_STEP_DUE[key](facts));
+  return dueStepsOf({ steps: [...due.map((key) => OPEN_STEP_OF[key](facts)), lifecycle] });
 };
 
-const startStepOf = ({ lifecycle, comments, checks }: OpenParams): BranchStep => {
-  if (comments.questionThreadId !== null) {
-    return 'answer';
-  }
-  if (comments.isFixRunLive || isCheckAgentLive(checks)) {
-    return 'working';
-  }
-  if (comments.waitingFixes > 0) {
-    return 'apply';
-  }
-  return comments.fixable > 0 ? 'fixComments' : lifecycle;
-};
+const startStepsOf = ({ lifecycle, comments, checks }: OpenParams): ReadonlyArray<BranchDueStep> =>
+  dueStepsOf({
+    steps: [
+      comments.questionThreadId !== null ? 'answer' : null,
+      comments.isFixRunLive || isCheckAgentLive(checks) ? 'working' : null,
+      comments.waitingFixes > 0 ? 'apply' : null,
+      comments.fixable > 0 ? 'fixComments' : null,
+      lifecycle,
+    ],
+  });
 
-const queuedStepOf = ({ push }: Pick<OpenParams, 'push'>): BranchStep => {
-  if (push.isInFlight) {
-    return 'push';
-  }
-  if (push.failed > 0) {
-    return 'retryPush';
-  }
-  if (push.canPush) {
-    return 'push';
-  }
-  return push.replies > 0 ? 'publish' : null;
-};
+const queuedStepsOf = ({ push }: Pick<OpenParams, 'push'>): ReadonlyArray<BranchDueStep> =>
+  dueStepsOf({
+    steps: [
+      push.isInFlight ? 'push' : null,
+      push.failed > 0 ? 'retryPush' : null,
+      push.canPush ? 'push' : null,
+      push.replies > 0 ? 'publish' : null,
+    ],
+  });
 
 type MergedParams = {
   readonly closing: BranchClosingFacts;
 };
 
-const mergedStepOf = ({ closing }: MergedParams): BranchStep => {
-  if (closing.canRemove) {
-    return 'removeWorktree';
-  }
-  return closing.canArchive ? 'archiveSession' : null;
-};
+const mergedStepsOf = ({ closing }: MergedParams): ReadonlyArray<BranchDueStep> =>
+  dueStepsOf({
+    steps: [
+      closing.canRemove ? 'removeWorktree' : null,
+      closing.canArchive ? 'archiveSession' : null,
+    ],
+  });
 
-export const branchStepOf = ({
+export const branchStepsOf = ({
   state,
   lifecycle,
   hasConflicts,
@@ -163,20 +183,20 @@ export const branchStepOf = ({
   checks,
   push,
   closing = NO_CLOSING_FACTS,
-}: Params): BranchStep => {
+}: Params): ReadonlyArray<BranchDueStep> => {
   switch (state) {
     case 'none':
-      return startStepOf({ lifecycle, hasConflicts, comments, checks, push });
+      return startStepsOf({ lifecycle, hasConflicts, comments, checks, push });
     case 'merged':
-      return mergedStepOf({ closing });
+      return mergedStepsOf({ closing });
     case 'queued':
-      return queuedStepOf({ push });
+      return queuedStepsOf({ push });
     case 'closed':
-      return lifecycle;
+      return dueStepsOf({ steps: [lifecycle] });
     case 'draft':
     case 'open':
     case 'approved':
-      return openStepOf({ lifecycle, hasConflicts, comments, checks, push });
+      return openStepsOf({ lifecycle, hasConflicts, comments, checks, push });
     default: {
       const unexpected: never = state;
       return unexpected;

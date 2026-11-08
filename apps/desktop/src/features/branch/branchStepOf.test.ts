@@ -1,15 +1,19 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
-  branchStepOf,
   NO_CLOSING_FACTS,
   NO_COMMENT_FACTS,
+  branchStepsOf,
   type BranchCheckFacts,
   type BranchClosingFacts,
   type BranchCommentFacts,
   type BranchLifecycleStep,
   type BranchPushFacts,
 } from './branchStepOf';
+
+type StepParams = Parameters<typeof branchStepsOf>[0];
+
+const branchStepOf = ({ ...facts }: StepParams) => branchStepsOf(facts)[0] ?? null;
 
 const NO_PUSH: BranchPushFacts = { isInFlight: false, failed: 0, canPush: false, replies: 0 };
 

@@ -11,7 +11,7 @@ const BLOCKED: MergeBoxModel = {
   verdict: {
     kind: 'blocked',
     word: 'Not ready to merge',
-    line: 'Fix the failing check, then answer omar-t.',
+    line: 'Answer omar-t, then fix the failing check.',
     tone: 'danger',
   },
   rows: [
@@ -41,7 +41,7 @@ describe('MergeBox', () => {
 
     const box = screen.getByRole('region', { name: 'Merge status' });
     expect(box.querySelector('[data-verdict]')?.textContent).toBe(
-      'Not ready to mergeFix the failing check, then answer omar-t.',
+      'Not ready to mergeAnswer omar-t, then fix the failing check.',
     );
     const rows = within(screen.getByRole('list', { name: 'What holds the merge' })).getAllByRole(
       'listitem',

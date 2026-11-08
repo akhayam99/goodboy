@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { MountId, Session } from '@goodboy/types';
-import { Button, ICON_SIZE, ListGrid } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { useRowReturn } from '../../../../../shared/hooks/useRowReturn';
@@ -13,7 +13,6 @@ import type { SessionRun } from '../../../sessionRunsOf';
 import { RunsByBranch } from '../../SessionWorkspace/parts/RunsGrid/RunsByBranch';
 import { openSessionRun } from '../../SessionWorkspace/parts/RunsGrid/openSessionRun';
 import { returnFoldKeyOf } from '../../SessionWorkspace/parts/RunsGrid/returnFoldKeyOf';
-import { RUNS_GRID_COLUMNS } from '../../SessionWorkspace/parts/RunsGrid/runsGridColumns';
 import { useRunRowRender } from '../../SessionWorkspace/parts/RunsGrid/useRunRowRender';
 
 type Props = {
@@ -97,32 +96,30 @@ export const BranchWorkRuns = ({ session, group, mounts, mountPath, onLeave }: P
   };
 
   return (
-    <ListGrid label={NAMES.runs} columns={RUNS_GRID_COLUMNS} isGrouped>
-      <RunsByBranch
-        groups={[group]}
-        mounts={mounts}
-        openGroups={openGroups}
-        onToggleGroup={toggle}
-        onOpenBranch={openBranch}
-        canOpenBranch={canOpenBranch}
-        onRevealRun={reveal}
-        renderRow={renderRow}
-        heading={{
-          label: NAMES.runs,
-          mark: <Icon size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />,
-          action: (
-            <Button
-              variant="quiet"
-              size="xs"
-              onClick={() =>
-                openBranchWork({ sessionId, lens: 'workflows', groupKey: group.key, mountPath })
-              }
-            >
-              All runs
-            </Button>
-          ),
-        }}
-      />
-    </ListGrid>
+    <RunsByBranch
+      groups={[group]}
+      mounts={mounts}
+      openGroups={openGroups}
+      onToggleGroup={toggle}
+      onOpenBranch={openBranch}
+      canOpenBranch={canOpenBranch}
+      onRevealRun={reveal}
+      renderRow={renderRow}
+      heading={{
+        label: NAMES.runs,
+        mark: <Icon size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />,
+        action: (
+          <Button
+            variant="quiet"
+            size="xs"
+            onClick={() =>
+              openBranchWork({ sessionId, lens: 'workflows', groupKey: group.key, mountPath })
+            }
+          >
+            All runs
+          </Button>
+        ),
+      }}
+    />
   );
 };
