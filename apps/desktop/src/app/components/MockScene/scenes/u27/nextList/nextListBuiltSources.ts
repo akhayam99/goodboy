@@ -36,9 +36,6 @@ const MINUTE_MS = 60_000;
 const ROLLOUT_AUTO = brandId<AgentId>({ value: 'mock-next-auto-rollout' });
 const PROFILE_AUTO = brandId<AgentId>({ value: 'mock-next-auto-profile' });
 
-const BLOCKED_IN_ITALIAN =
-  'Non riesco a chiudere: lo snapshot della home fallisce perché manca la fixture dei dati di esempio per la sezione statistiche.';
-
 type TreeParams = {
   readonly key: string;
   readonly rootAgentId: AgentId;
@@ -113,9 +110,8 @@ const ROLLOUT_CHILDREN: ReadonlyArray<AutoDelegation> = [
     mount: home,
     minute: 2,
     state: 'settled',
-    outcome: 'blocked',
-    reason: 'declared_blocked',
-    result: { declared: { summary: BLOCKED_IN_ITALIAN } },
+    outcome: 'failed',
+    reason: 'process_error',
   }),
   childOf({
     key: 'home-tester',

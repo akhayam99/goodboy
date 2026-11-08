@@ -197,29 +197,29 @@ describe('actionCardsOf', () => {
     expect(cards).toHaveLength(3);
   });
 
-  it('says a blocked child by its role, never its ask quoted or its own words in another language', () => {
-    const blocked = {
+  it('says a stuck child by its role, never its ask quoted or its own words in another language', () => {
+    const failed = {
       ...NEVER_STARTED,
       agentId: brandId<AgentId>({ value: 'agent-scout' }),
       role: 'Map the center page routes',
       noun: 'Scout',
-      kind: 'childBlocked',
+      kind: 'failed',
       reason: 'Non riesco a chiudere: manca la fixture dei dati di esempio.',
-      reasonCode: 'declared_blocked',
+      reasonCode: 'process_error',
     } satisfies AutoActionTarget;
     const cards = actionCardsOf({
       ...NONE,
       autoTargets: [
-        blocked,
+        failed,
         {
-          ...blocked,
+          ...failed,
           agentId: brandId<AgentId>({ value: 'agent-tester' }),
           noun: 'Tester',
           kind: 'timedOut',
           reasonCode: 'deadline_passed',
         },
         {
-          ...blocked,
+          ...failed,
           agentId: brandId<AgentId>({ value: 'agent-docs' }),
           noun: 'Docs writer',
           kind: 'failed',
@@ -230,7 +230,7 @@ describe('actionCardsOf', () => {
 
     expect(cards.map((card) => [card.kind, card.title, card.detail])).toEqual([
       ['failed', 'Auto needs you', 'The docs writer failed.'],
-      ['childBlocked', 'Auto needs you', 'The scout needs you.'],
+      ['failed', 'Auto needs you', 'The scout failed. The agent ended with an error.'],
       ['timedOut', 'Auto needs you', 'The tester timed out. It ran out of time.'],
     ]);
     expect(cards.every((card) => !(card.detail ?? '').includes('"'))).toBe(true);

@@ -1,7 +1,9 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
+import { autoSettledStateOf } from '../../../../auto/autoSettledStateOf';
 import { autoTreeOfAgent } from '../../../../auto/autoTreeOfAgent';
+import { isAutoDelegationReplaced } from '../../../../auto/isAutoDelegationReplaced';
 import { delegationReasonTextOf } from '../../../../auto/delegationReasonTextOf';
 import type { DockFailure } from '../dockFailureOf';
 import { isRepliedAfter } from './isRepliedAfter';
@@ -47,12 +49,14 @@ export const useAutoChildRecovery = ({
     return failure;
   }
   const delegation = tree.delegation;
-  if (
-    delegation.state !== 'settled' ||
-    (delegation.outcome !== 'failed' &&
-      delegation.outcome !== 'blocked' &&
-      delegation.outcome !== 'timed_out')
-  ) {
+  if (delegation.state !== 'settled' || delegation.outcome === null) {
+    return failure;
+  }
+  const word = autoSettledStateOf({
+    outcome: delegation.outcome,
+    isReplaced: isAutoDelegationReplaced({ delegation, delegations: tree.view.delegations }),
+  });
+  if (word !== 'failed' && word !== 'timedOut') {
     return failure;
   }
   const isRootLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';

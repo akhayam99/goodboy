@@ -12,6 +12,7 @@ export type DelegationState =
   | 'done'
   | 'failed'
   | 'blocked'
+  | 'returned'
   | 'stopped'
   | 'timedOut';
 

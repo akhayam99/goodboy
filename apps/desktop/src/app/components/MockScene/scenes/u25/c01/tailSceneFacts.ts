@@ -95,7 +95,8 @@ const FACTS: Record<TailSceneState, () => TailFacts | null> = {
   }),
   childstopped: () =>
     autoChildLive({
-      delegation: { state: 'settled', outcome: 'stopped', reason: null },
+      delegation: { state: 'settled', outcome: 'stopped', reason: null, result: null },
+      isReplaced: false,
       turn: null,
       agent: { status: 'stopped', stoppedBy: 'app', stoppedAt: undefined },
       lastTool: null,
@@ -103,7 +104,8 @@ const FACTS: Record<TailSceneState, () => TailFacts | null> = {
     }),
   childconfirm: () =>
     autoChildLive({
-      delegation: { state: 'awaiting_confirm', outcome: null, reason: null },
+      delegation: { state: 'awaiting_confirm', outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn: null,
       agent: AGENT,
       lastTool: null,
@@ -111,7 +113,8 @@ const FACTS: Record<TailSceneState, () => TailFacts | null> = {
     }),
   childasked: () =>
     autoChildLive({
-      delegation: { state: 'paused', outcome: null, reason: null },
+      delegation: { state: 'paused', outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn: { kind: 'blocked', runId: RUN, blockedAt: STARTED },
       agent: AGENT,
       lastTool: null,

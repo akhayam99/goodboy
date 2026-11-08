@@ -16,6 +16,7 @@ type Props = {
   readonly delegation: AutoDelegation;
   readonly card: DelegationCardModel;
   readonly agent: Agent;
+  readonly isReplaced: boolean;
 };
 
 type DecideParams = {
@@ -29,7 +30,7 @@ const RETURNED: TailFacts = {
   actions: [],
 };
 
-export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
+export const AutoChildEnd = ({ sessionId, delegation, card, agent, isReplaced }: Props) => {
   const turn = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const cancelCurrentTurn = useAppStore((state) => state.cancelCurrentTurn);
   const { runningId, rerun } = useChecksRerun();
@@ -38,8 +39,16 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
   if (turn?.kind === 'running' || turn?.kind === 'starting') {
     return null;
   }
-  const live = autoChildLive({ delegation, turn, agent, lastTool: null, project: null });
-  const settled = live ?? (delegation.state === 'settled' ? RETURNED : null);
+  const live = autoChildLive({
+    delegation,
+    isReplaced,
+    turn,
+    agent,
+    lastTool: null,
+    project: null,
+  });
+  const isHandedOn = delegation.outcome === 'blocked' && isReplaced;
+  const settled = live ?? (delegation.state === 'settled' && !isHandedOn ? RETURNED : null);
   const facts =
     agent.status === 'stopped'
       ? null

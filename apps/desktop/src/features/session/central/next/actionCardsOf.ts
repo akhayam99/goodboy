@@ -99,14 +99,11 @@ const suggestionMountIdOf = ({ suggestion }: SuggestionParams): string | null =>
 
 const AUTO_STUCK = 'Auto needs you';
 
-const DECLARED_BLOCKED = 'declared_blocked';
-
 const autoTitleOf = ({ target }: AutoParams): string => {
   switch (target.kind) {
     case 'neverStarted':
     case 'failed':
     case 'timedOut':
-    case 'childBlocked':
       return AUTO_STUCK;
     case 'approve':
       return target.plan?.name ?? 'Auto needs approval';
@@ -135,10 +132,7 @@ const autoDetailOf = ({ target }: AutoParams): string | null => {
 
 const humanReasonOf = ({ target }: AutoParams): string | null => {
   if (target.reasonCode === null) {
-    return target.kind === 'childBlocked' ? null : target.reason;
-  }
-  if (target.reasonCode === DECLARED_BLOCKED) {
-    return null;
+    return target.reason;
   }
   return delegationReasonTextOf({ reason: target.reasonCode });
 };

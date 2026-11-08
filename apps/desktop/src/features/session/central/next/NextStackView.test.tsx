@@ -28,7 +28,7 @@ const STUCK: AutoActionTarget = {
   rootAgentId: brandId<AgentId>({ value: 'agent-auto' }),
   role: 'Build the hero',
   noun: 'Implementer',
-  kind: 'childBlocked',
+  kind: 'failed',
   reason: null,
   reasonCode: null,
   mountId: HOME,

@@ -1,8 +1,10 @@
 import { parseAutoDelegationRole } from '@goodboy/core/auto';
-import type { AutoDelegation } from '@goodboy/db';
+import type { AutoDelegation, AutoOutcome } from '@goodboy/db';
 import type { Agent, AgentId } from '@goodboy/types';
 import { modelLineOf, type ModelLine } from '../../providers/modelLine/modelLineOf';
 import { AGENT_KIND_META, kindForRole, type AgentKind } from '../../session/agent-kind';
+import { autoChildWordOf } from '../autoChildWordOf';
+import { autoSettledStateOf } from '../autoSettledStateOf';
 import { delegationResultOf, type DelegationResultView } from './delegationResultOf';
 import { recordField, textField } from './readJson';
 import { settledStatusOf, type DelegationStatus } from './settledStatusOf';
@@ -28,9 +30,40 @@ export type DelegationCardModel = Readonly<{
 
 type StatusParams = {
   readonly delegation: AutoDelegation;
+  readonly isReplaced: boolean;
 };
 
-const delegationStatusOf = ({ delegation }: StatusParams): DelegationStatus => {
+const RETURNED: DelegationStatus = {
+  state: 'returned',
+  word: autoChildWordOf({ state: 'returned' }),
+  tone: 'neutral',
+  isLive: false,
+  node: 'skipped',
+};
+
+const settledStatusOfDelegation = ({ delegation, isReplaced }: StatusParams): DelegationStatus => {
+  const outcome = delegation.outcome ?? 'failed';
+  if (outcome !== 'blocked') {
+    return settledStatusOf({ outcome });
+  }
+  return autoSettledStateOf({ outcome, isReplaced }) === 'done'
+    ? settledStatusOf({ outcome: 'completed' })
+    : RETURNED;
+};
+
+const resultOutcomeOf = ({
+  delegation,
+  isReplaced,
+}: StatusParams): AutoOutcome | null | undefined => {
+  if (delegation.outcome !== 'blocked') {
+    return undefined;
+  }
+  return autoSettledStateOf({ outcome: delegation.outcome, isReplaced }) === 'done'
+    ? 'completed'
+    : null;
+};
+
+const delegationStatusOf = ({ delegation, isReplaced }: StatusParams): DelegationStatus => {
   if (delegation.isStopping && delegation.state !== 'settled') {
     return { state: 'stopping', word: 'Stopping', tone: 'neutral', isLive: true };
   }
@@ -58,7 +91,7 @@ const delegationStatusOf = ({ delegation }: StatusParams): DelegationStatus => {
         node: 'question',
       };
     case 'settled':
-      return settledStatusOf({ outcome: delegation.outcome ?? 'failed' });
+      return settledStatusOfDelegation({ delegation, isReplaced });
     default: {
       const exhaustive: never = delegation.state;
       return exhaustive;
@@ -92,16 +125,21 @@ const routingNoteOf = ({ routing, modelLine }: NoteParams): string | null => {
 type Params = {
   readonly delegation: AutoDelegation;
   readonly childAgent: Agent | null;
+  readonly isReplaced?: boolean;
 };
 
-export const delegationCardOf = ({ delegation, childAgent }: Params): DelegationCardModel => {
+export const delegationCardOf = ({
+  delegation,
+  childAgent,
+  isReplaced = false,
+}: Params): DelegationCardModel => {
   const role = parseAutoDelegationRole({ role: delegation.role });
   const kind: AgentKind = role === null ? 'generic' : kindForRole({ role });
   const provider = textField({ source: delegation.routing, key: 'provider' });
   const model = textField({ source: delegation.routing, key: 'model' });
   const effort = textField({ source: delegation.routing, key: 'effort' });
   const modelLine = modelLineOf({ provider, model, effort });
-  const status = delegationStatusOf({ delegation });
+  const status = delegationStatusOf({ delegation, isReplaced });
   return {
     delegationId: delegation.id,
     childAgentId: delegation.childAgentId,
@@ -119,6 +157,11 @@ export const delegationCardOf = ({ delegation, childAgent }: Params): Delegation
     reviseVersion: delegation.baseRevision === null ? null : delegation.baseRevision + 1,
     isOpen: delegation.state !== 'settled',
     result:
-      delegation.state === 'settled' ? delegationResultOf({ result: delegation.result }) : null,
+      delegation.state === 'settled'
+        ? delegationResultOf({
+            result: delegation.result,
+            outcome: resultOutcomeOf({ delegation, isReplaced }),
+          })
+        : null,
   };
 };

@@ -109,7 +109,7 @@ describe('nextGroupsOf', () => {
     );
     const after = cardsOf({
       autoTargets: [
-        childOf({ page: 'about', kind: 'childBlocked' }),
+        childOf({ page: 'about', kind: 'failed' }),
         childOf({ page: 'billing', kind: 'timedOut' }),
         childOf({ page: 'search', kind: 'neverStarted' }),
       ],
@@ -124,7 +124,7 @@ describe('nextGroupsOf', () => {
         [
           'auto:agent-billing:timedOut',
           'auto:agent-search:neverStarted',
-          'auto:agent-about:childBlocked',
+          'auto:agent-about:failed',
         ],
       ],
     ]);

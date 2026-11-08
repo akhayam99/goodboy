@@ -67,7 +67,7 @@ const AUTO_TARGETS: ReadonlyArray<AutoActionTarget> = [
   childOf({
     id: '3f9c1a52-home-implementer',
     role: 'Build the hero and stats strip of hl/feat-center-home-page',
-    kind: 'childBlocked',
+    kind: 'failed',
     reason: BLOCKED_IN_ITALIAN,
   }),
   childOf({

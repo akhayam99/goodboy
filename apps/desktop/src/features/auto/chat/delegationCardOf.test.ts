@@ -106,9 +106,58 @@ describe('delegationCardOf', () => {
     expect(wordOf('paused')).toBe('Needs you');
     expect(wordOf('settled', 'completed')).toBe('Done');
     expect(wordOf('settled', 'failed')).toBe('Failed');
-    expect(wordOf('settled', 'blocked')).toBe('Needs you');
+    expect(wordOf('settled', 'blocked')).toBe('Idle');
     expect(wordOf('settled', 'stopped')).toBe('Stopped');
     expect(wordOf('settled', 'timed_out')).toBe('Failed');
+  });
+
+  it('reads a returned child as Done once Auto replaced it, on the same word the group reads', () => {
+    const delegation = aDelegation({
+      key: 'x',
+      role: 'scout',
+      state: 'settled',
+      outcome: 'blocked',
+    });
+
+    expect(delegationCardOf({ delegation, childAgent: null, isReplaced: true }).status.word).toBe(
+      'Done',
+    );
+  });
+
+  it('reads a returned child result with no Blocked line, and Done once Auto replaced it', () => {
+    const delegation = {
+      ...aDelegation({ key: 'x', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      reason: 'declared_blocked',
+      result: { reason: 'declared_blocked', declared: { summary: 'Needs a shell.' } },
+    };
+
+    const returned = delegationCardOf({ delegation, childAgent: null }).result;
+    const replaced = delegationCardOf({ delegation, childAgent: null, isReplaced: true }).result;
+
+    expect(returned?.outcomeLine).toBeNull();
+    expect(returned?.reasonText).toBeNull();
+    expect(replaced?.outcomeLine?.text).toBe('Done');
+    expect(replaced?.reasonText).toBeNull();
+    expect(JSON.stringify([returned, replaced])).not.toMatch(/Blocked|declared_blocked/);
+  });
+
+  it('keeps a model outcome line from overriding the returned word', () => {
+    const delegation = {
+      ...aDelegation({ key: 'x', role: 'scout', state: 'settled', outcome: 'blocked' }),
+      reason: 'declared_blocked',
+      result: {
+        reason: 'declared_blocked',
+        declared: { summary: '<<outcome>>Blocked: needs a shell<</outcome>>' },
+      },
+    };
+
+    const returned = delegationCardOf({ delegation, childAgent: null });
+    const replaced = delegationCardOf({ delegation, childAgent: null, isReplaced: true });
+
+    expect(returned.status.word).toBe('Idle');
+    expect(returned.result?.outcomeLine).toBeNull();
+    expect(replaced.status.word).toBe('Done');
+    expect(replaced.result?.outcomeLine).toMatchObject({ text: 'Done', tone: 'success' });
   });
 
   it('reads the settled result: summary, files, checks with their source, artifacts, questions, cost', () => {

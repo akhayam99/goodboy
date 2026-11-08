@@ -320,11 +320,28 @@ describe('Auto child recovery by outcome', () => {
     outcome,
     failure = null,
     settledAt = null,
+    isReplaced = false,
   }: {
     readonly outcome: 'failed' | 'blocked' | 'timed_out' | 'completed';
     readonly settledAt?: number | null;
+    readonly isReplaced?: boolean;
     readonly failure?: ComponentProps<typeof ConversationDock>['failure'];
   }) => {
+    const returned = {
+      ...aDelegation({
+        key: 'implementer',
+        role: 'implementer',
+        state: 'settled',
+        outcome,
+        settledAt,
+      }),
+      target: { mountId: 'mount-ledger-drawers' },
+    };
+    const next = {
+      ...aDelegation({ key: 'reviewer', role: 'reviewer', state: 'running' }),
+      target: { mountId: 'mount-ledger-drawers' },
+      createdAt: returned.createdAt + 1_000,
+    };
     const continueStoppedAgent = vi.fn(async () => undefined);
     useAppStore.setState({
       continueStoppedAgent,
@@ -335,19 +352,7 @@ describe('Auto child recovery by outcome', () => {
         ],
       },
       autoTreeViews: {
-        [session.id]: [
-          aView({
-            delegations: [
-              aDelegation({
-                key: 'implementer',
-                role: 'implementer',
-                state: 'settled',
-                outcome,
-                settledAt,
-              }),
-            ],
-          }),
-        ],
+        [session.id]: [aView({ delegations: isReplaced ? [returned, next] : [returned] })],
       },
     });
     render(
@@ -367,7 +372,18 @@ describe('Auto child recovery by outcome', () => {
     return continueStoppedAgent;
   };
 
-  it.each(['failed', 'blocked', 'timed_out'] as const)(
+  it.each([false, true])(
+    'draws no red recovery for a child that came back, replaced or not (replaced: %s)',
+    (isReplaced) => {
+      renderChild({ outcome: 'blocked', isReplaced });
+
+      expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+      expect(screen.queryByText('The agent ended with an error.')).toBeNull();
+      expect(screen.queryByText(/can't go on/)).toBeNull();
+    },
+  );
+
+  it.each(['failed', 'timed_out'] as const)(
     'gives a child that ended %s one Retry through Auto',
     async (outcome) => {
       const continueStoppedAgent = renderChild({ outcome });

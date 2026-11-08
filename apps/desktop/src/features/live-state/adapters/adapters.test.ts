@@ -273,7 +273,8 @@ describe('autoTreeLive', () => {
 describe('autoChildLive', () => {
   it('reads Stopped with Continue through Auto for a stopped child, never Retry', () => {
     const facts = autoChildLive({
-      delegation: { state: 'settled', outcome: 'stopped', reason: null },
+      delegation: { state: 'settled', outcome: 'stopped', reason: null, result: null },
+      isReplaced: false,
       turn: RUNNING,
       agent: IDLE_AGENT,
       lastTool: null,
@@ -285,7 +286,8 @@ describe('autoChildLive', () => {
 
   it('stops a running child with Stop agent', () => {
     const facts = autoChildLive({
-      delegation: { state: 'running', outcome: null, reason: null },
+      delegation: { state: 'running', outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn: RUNNING,
       agent: IDLE_AGENT,
       lastTool: null,
@@ -296,7 +298,8 @@ describe('autoChildLive', () => {
 
   it('reads Queued only for a child Auto accepted and has not started', () => {
     const facts = autoChildLive({
-      delegation: { state: 'accepted', outcome: null, reason: null },
+      delegation: { state: 'accepted', outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn: null,
       agent: IDLE_AGENT,
       lastTool: null,
@@ -308,7 +311,8 @@ describe('autoChildLive', () => {
 
   it('reads a child that waits for your OK as needing you, with Confirm and Decline and no Stop', () => {
     const facts = autoChildLive({
-      delegation: { state: 'awaiting_confirm', outcome: null, reason: null },
+      delegation: { state: 'awaiting_confirm', outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn: null,
       agent: IDLE_AGENT,
       lastTool: null,
@@ -324,7 +328,8 @@ describe('autoChildLive', () => {
     { name: 'running with its turn blocked', state: 'running', turn: BLOCKED },
   ] as const)('reads a child that asked a question as needing you: $name', ({ state, turn }) => {
     const facts = autoChildLive({
-      delegation: { state, outcome: null, reason: null },
+      delegation: { state, outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn,
       agent: IDLE_AGENT,
       lastTool: null,
@@ -336,7 +341,8 @@ describe('autoChildLive', () => {
 
   it('reads a child whose turn ended in an error as failed, not Queued, with Retry through Auto', () => {
     const facts = autoChildLive({
-      delegation: { state: 'running', outcome: null, reason: null },
+      delegation: { state: 'running', outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn: { kind: 'error', message: 'the provider exited.', failedAt: STARTED },
       agent: IDLE_AGENT,
       lastTool: null,
@@ -348,7 +354,8 @@ describe('autoChildLive', () => {
 
   it('reads a started child with no turn read yet as working, with Stop agent', () => {
     const facts = autoChildLive({
-      delegation: { state: 'starting', outcome: null, reason: null },
+      delegation: { state: 'starting', outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn: null,
       agent: IDLE_AGENT,
       lastTool: null,
@@ -360,7 +367,8 @@ describe('autoChildLive', () => {
 
   it('reads a child stopped before Auto settled it as stopped, with Continue through Auto', () => {
     const facts = autoChildLive({
-      delegation: { state: 'running', outcome: null, reason: null },
+      delegation: { state: 'running', outcome: null, reason: null, result: null },
+      isReplaced: false,
       turn: null,
       agent: STOPPED_AGENT,
       lastTool: null,
@@ -373,13 +381,108 @@ describe('autoChildLive', () => {
   it('draws nothing for a completed child', () => {
     expect(
       autoChildLive({
-        delegation: { state: 'settled', outcome: 'completed', reason: null },
+        delegation: { state: 'settled', outcome: 'completed', reason: null, result: null },
+        isReplaced: false,
         turn: null,
         agent: IDLE_AGENT,
         lastTool: null,
         project: null,
       }),
     ).toBeNull();
+  });
+
+  it('reads a returned child as Idle with the request it declared, never Failed, with no Retry', () => {
+    const facts = autoChildLive({
+      delegation: {
+        state: 'settled',
+        outcome: 'blocked',
+        reason: 'declared_blocked',
+        result: { declared: { summary: 'Needs a shell to read the commits of payments-api.' } },
+      },
+      isReplaced: false,
+      turn: null,
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts).toMatchObject({
+      state: 'idle',
+      phrase: 'Returned to Auto: Needs a shell to read the commits of payments-api.',
+    });
+    expect(idsOf(facts)).toEqual([]);
+  });
+
+  it.each(['declared_blocked', 'missing_tool'])(
+    'gives a returned child with reason %s a sentence, not the code',
+    (reason) => {
+      const facts = autoChildLive({
+        delegation: { state: 'settled', outcome: 'blocked', reason, result: null },
+        isReplaced: false,
+        turn: null,
+        agent: IDLE_AGENT,
+        lastTool: null,
+        project: null,
+      });
+      expect(facts?.state).toBe('idle');
+      expect(facts?.phrase.startsWith('Returned to Auto: ')).toBe(true);
+      expect(facts?.phrase).not.toContain('_');
+    },
+  );
+
+  it('reads a returned child with no sentence as plain Returned to Auto', () => {
+    const facts = autoChildLive({
+      delegation: { state: 'settled', outcome: 'blocked', reason: null, result: null },
+      isReplaced: false,
+      turn: null,
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts).toMatchObject({ state: 'idle', phrase: 'Returned to Auto' });
+  });
+
+  it('draws no tail for a returned child that Auto replaced, it reads Done', () => {
+    expect(
+      autoChildLive({
+        delegation: {
+          state: 'settled',
+          outcome: 'blocked',
+          reason: 'declared_blocked',
+          result: null,
+        },
+        isReplaced: true,
+        turn: null,
+        agent: IDLE_AGENT,
+        lastTool: null,
+        project: null,
+      }),
+    ).toBeNull();
+  });
+
+  it.each([
+    {
+      outcome: 'failed',
+      reason: 'process_error',
+      phrase: 'Failed: The agent ended with an error.',
+    },
+    {
+      outcome: 'failed',
+      reason: 'agent_not_created:x',
+      phrase: 'Failed: The agent did not finish.',
+    },
+    { outcome: 'failed', reason: null, phrase: 'Failed: The agent did not finish.' },
+    { outcome: 'timed_out', reason: null, phrase: 'Failed: The agent ran out of time.' },
+  ] as const)('reads $outcome with reason $reason as a sentence', ({ outcome, reason, phrase }) => {
+    const facts = autoChildLive({
+      delegation: { state: 'settled', outcome, reason, result: null },
+      isReplaced: false,
+      turn: null,
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts).toMatchObject({ state: 'failed', phrase });
+    expect(facts?.phrase).not.toContain('_');
   });
 });
 

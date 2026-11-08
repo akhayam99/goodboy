@@ -8,6 +8,7 @@ import {
   parseOutcomeLine,
   publishOfResult,
   publishTextOf,
+  stripOutcomeLine,
   type OutcomeLine,
   type PublishState,
 } from '@goodboy/core/auto';
@@ -116,26 +117,50 @@ const mapped = <Item>({ items, read }: MappedParams<Item>): ReadonlyArray<Item> 
     return one === null ? [] : [one];
   });
 
-type Params = {
-  readonly result: unknown;
+type SummaryParams = {
+  readonly summary: string | null;
 };
 
-export const delegationResultOf = ({ result }: Params): DelegationResultView | null => {
+const proseSummaryOf = ({ summary }: SummaryParams): string | null => {
+  if (summary === null) {
+    return null;
+  }
+  const prose = stripOutcomeLine({ text: summary });
+  return prose === '' ? null : prose;
+};
+
+type Params = {
+  readonly result: unknown;
+  readonly outcome?: AutoOutcome | null;
+};
+
+export const delegationResultOf = ({
+  result,
+  outcome: givenOutcome,
+}: Params): DelegationResultView | null => {
   if (!isJsonRecord(result)) {
     return null;
   }
   const declared = recordField({ source: result, key: 'declared' });
   const verified = recordField({ source: result, key: 'verified' });
-  const reasonOf = textField({ source: result, key: 'reason' });
+  const isOutcomeGiven = givenOutcome !== undefined;
+  const outcome = isOutcomeGiven
+    ? givenOutcome
+    : autoOutcomeOf({ value: textField({ source: result, key: 'outcome' }) });
+  const reasonOf = isOutcomeGiven ? null : textField({ source: result, key: 'reason' });
   const checks = mapped({ items: listField({ source: verified, key: 'checks' }), read: checkOf });
   const checksRun = checksRunOfResult({ result });
   const publish = publishOfResult({ result });
-  const summary = textField({ source: declared, key: 'summary' });
+  const declaredSummary = textField({ source: declared, key: 'summary' });
+  const summary = proseSummaryOf({ summary: declaredSummary });
   const reasonText = delegationReasonTextOf({ reason: reasonOf });
   return {
     outcomeLine: outcomeLineOf({
-      modelLine: summary === null ? null : parseOutcomeLine({ text: summary }),
-      outcome: autoOutcomeOf({ value: textField({ source: result, key: 'outcome' }) }),
+      modelLine:
+        declaredSummary === null || isOutcomeGiven
+          ? null
+          : parseOutcomeLine({ text: declaredSummary }),
+      outcome,
       checksRun,
       checks: checks.map((check) => ({
         name: check.name,

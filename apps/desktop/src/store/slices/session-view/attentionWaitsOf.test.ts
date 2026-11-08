@@ -257,7 +257,7 @@ describe('attentionWaitsOf and Auto', () => {
       aView({
         phase: 'waiting',
         delegations: [
-          aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+          aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
         ],
       });
 
