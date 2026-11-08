@@ -12,12 +12,14 @@ const COMMENT_CLOSE = '-->';
 const FENCE_OPEN = /^ {0,3}(`{3,}|~{3,})/;
 const BLOCK_MARKER = /^(?:#{1,6}[ \t]+|>[ \t]?|[-*+][ \t]+|\d{1,9}\.[ \t]+)+/;
 const EMPHASIS_PAIRS = [
+  /(?<!\*)\*\*\*(?![\s*])([^*]+)(?<!\s)\*\*\*(?!\*)/g,
   /(?<!\*)\*\*(?![\s*])([^*]+)(?<!\s)\*\*(?!\*)/g,
-  /(?<!\w)__(?!\s)([^_]+)(?<!\s)__(?!\w|\.\w)/g,
+  /(?<!\w)__(?!\s)([^_]+)(?<!\s)__(?!\w|\.\w|\/[^\W_])/g,
   /(?<![*\w])\*(?![\s*])([^*]+)(?<!\s)\*(?![*\w])/g,
-  /(?<!\w)_(?![\s_])([^_]+)(?<!\s)_(?!\w|\.\w)/g,
+  /(?<!\w)_(?![\s_])([^_]+)(?<!\s)_(?!\w|\.\w|\/[^\W_])/g,
 ];
 const PATH_CHAR = /[\w./~-]/;
+const WORD_CHAR = /\w/;
 const WHITESPACE = /\s/;
 const CODE_FILL = 'x';
 
@@ -244,7 +246,7 @@ const pathTokenFlagsOf = ({ text }: TextParams): Uint8Array => {
       hasPath = false;
       continue;
     }
-    if (char === '/' || char === '.') {
+    if (char === '/' || (char === '.' && WORD_CHAR.test(text[i + 1] ?? ''))) {
       hasPath = true;
     }
   }
@@ -267,8 +269,10 @@ const stripPairs = ({ text, shadow, pattern }: StripParams): MarkedText => {
     const isPathInternal =
       before !== undefined &&
       after !== undefined &&
+      before !== '.' &&
       PATH_CHAR.test(before) &&
       PATH_CHAR.test(after) &&
+      (after !== '.' || WORD_CHAR.test(shadow[end + 1] ?? '')) &&
       pathFlags[start] === 1;
     if (isPathInternal) {
       continue;

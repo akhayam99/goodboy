@@ -74,6 +74,24 @@ describe('markdownPreview', () => {
     expect(markdownPreview({ text: 'Only **cap** it.' })).toBe('Only cap it.');
   });
 
+  it('strips a pair after a slash at the end of a sentence', () => {
+    expect(markdownPreview({ text: 'Grant **read**/**write**.' })).toBe('Grant read/write.');
+    expect(markdownPreview({ text: 'Use _read_/_write_.' })).toBe('Use read/write.');
+    expect(markdownPreview({ text: 'Methods **GET**/**POST**.' })).toBe('Methods GET/POST.');
+  });
+
+  it('keeps a bare dunder folder path literal', () => {
+    expect(markdownPreview({ text: 'see src/__tests__/a.ts and __tests__/b.ts' })).toBe(
+      'see src/__tests__/a.ts and __tests__/b.ts',
+    );
+    expect(markdownPreview({ text: 'drop __pycache__/x.pyc' })).toBe('drop __pycache__/x.pyc');
+  });
+
+  it('strips bold italic', () => {
+    expect(markdownPreview({ text: '***important*** note' })).toBe('important note');
+    expect(markdownPreview({ text: 'a ***x*** and **y** and *z*' })).toBe('a x and y and z');
+  });
+
   it('keeps snake case words and bare paths with underscores literal', () => {
     expect(markdownPreview({ text: 'Rename snake_case_name and my_var_ok.' })).toBe(
       'Rename snake_case_name and my_var_ok.',

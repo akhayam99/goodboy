@@ -151,4 +151,24 @@ describe('draftWorkBrief', () => {
     expect(brief.files).toEqual(['ledger-core/pkg/__init__.py']);
     expect(brief.know).toEqual(['Edit ledger-core/pkg/__init__.py and cap the loop.']);
   });
+
+  it('keeps a bare dunder folder path whole in the file list', () => {
+    const brief = draftWorkBrief({
+      title: 'Harborline retries?',
+      messages: [
+        messageOf({ role: 'user', content: 'What next?' }),
+        messageOf({
+          role: 'assistant',
+          content: 'See src/__tests__/a.ts and __tests__/retry.test.ts and __pycache__/x.pyc.',
+        }),
+      ],
+      projectNames: ['payments-api'],
+    });
+
+    expect(brief.files).toEqual([
+      'src/__tests__/a.ts',
+      '__tests__/retry.test.ts',
+      '__pycache__/x.pyc',
+    ]);
+  });
 });
