@@ -3,7 +3,7 @@ import type { PrCheckRun, PrDetail, PullRequestView } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { checksCountsOf, checksWordOf } from '../../../integrations/github/checksRollup';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
-import type { ThreadEntry } from '../../../resolve/commentGroupsView';
+import { entriesInScopeOf, type ThreadEntry } from '../../../resolve/commentGroupsView';
 import type { MergeBoxThreads } from './MergeBox/mergeBoxOf';
 import { foldPushes } from './foldPushes';
 import { groupBotActivity } from './groupBotActivity';
@@ -160,11 +160,37 @@ const reviewsOf = ({ detail }: DetailParams): ReadonlyArray<ActivityItem> => {
   });
 };
 
+const hostCommentsOf = ({
+  view,
+  threads: counts,
+  entries,
+}: Pick<Params, 'view' | 'threads' | 'entries'>): ReadonlyArray<ActivityItem> =>
+  entriesInScopeOf({ entries, scope: 'comments' }).length === 0
+    ? []
+    : [
+        {
+          kind: 'comments',
+          key: 'comments',
+          at: view.updatedAt,
+          needYou: counts.needYou,
+          open: counts.open,
+          hasPeople: true,
+        },
+      ];
+
 const commentsOf = ({
+  view,
   detail,
   threads: counts,
-}: Pick<Params, 'detail' | 'threads'>): ReadonlyArray<ActivityItem> => {
-  const comments = (detail?.comments ?? []).filter((comment) => comment.source === 'review');
+  entries,
+}: Pick<Params, 'view' | 'detail' | 'threads' | 'entries'>): ReadonlyArray<ActivityItem> => {
+  if (detail === null) {
+    if (view.host === 'github') {
+      return [];
+    }
+    return hostCommentsOf({ view, threads: counts, entries });
+  }
+  const comments = detail.comments.filter((comment) => comment.source === 'review');
   if (comments.length === 0) {
     return [];
   }
@@ -241,7 +267,7 @@ export const pullRequestActivityOf = ({
     },
     ...pushesOf({ view }),
     ...reviewsOf({ detail }),
-    ...commentsOf({ detail, threads }),
+    ...commentsOf({ view, detail, threads, entries }),
     ...checksOf({ view, runs }),
     ...edits.map((edit, index): ActivityItem => ({
       kind: 'edit',

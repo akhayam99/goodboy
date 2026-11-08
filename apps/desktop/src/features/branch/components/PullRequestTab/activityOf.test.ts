@@ -5,7 +5,9 @@ import {
   commentStateCountsOf,
   stateCountsInScopeOf,
   type CountableEntry,
+  type ThreadEntry,
 } from '../../../resolve/commentGroupsView';
+import { activityItemsFor } from './activityFilters';
 import { pullRequestActivityOf } from './activityOf';
 
 const VIEW: PullRequestView = {
@@ -76,6 +78,8 @@ const detail = (patch: Partial<PrDetail>): PrDetail => ({
 });
 
 const NO_THREADS = { open: 0, needYou: 0 };
+
+const HOSTS: ReadonlyArray<PullRequestView['host']> = ['gitlab', 'bitbucket'];
 
 const kinds = (items: ReadonlyArray<{ readonly kind: string }>): ReadonlyArray<string> =>
   items.map((item) => item.kind);
@@ -488,4 +492,102 @@ describe('pullRequestActivityOf', () => {
 
     expect(items[items.length - 1]).toMatchObject({ kind: 'closed' });
   });
+
+  it.each(HOSTS)(
+    'keeps the comments line from the %s thread entries when the detail is missing',
+    (host) => {
+      const entries: ReadonlyArray<ThreadEntry> = [
+        {
+          threadId: 'thread-a',
+          resolveWord: 'open',
+          row: {
+            thread: {
+              stage: 'new',
+              state: 'open',
+              stateReason: null,
+              originKind: 'review_comment',
+            },
+          },
+        },
+        {
+          threadId: 'thread-b',
+          resolveWord: 'done',
+          row: {
+            thread: {
+              stage: 'resolved',
+              state: 'closed',
+              stateReason: null,
+              originKind: 'review_comment',
+            },
+          },
+        },
+      ];
+      const counts = commentStateCountsOf({ entries });
+      const items = pullRequestActivityOf({
+        view: { ...VIEW, host },
+        detail: null,
+        runs: null,
+        threads: { open: counts.open, needYou: counts.needYou },
+        entries,
+        edits: [],
+      });
+
+      expect(items.find((item) => item.kind === 'comments')).toMatchObject({
+        at: VIEW.updatedAt,
+        open: 1,
+        needYou: 1,
+      });
+    },
+  );
+
+  it('keeps github without a comments line and the People lane unchanged while the detail is missing', () => {
+    const entries: ReadonlyArray<ThreadEntry> = [
+      {
+        threadId: 'thread-bot',
+        resolveWord: 'open',
+        row: {
+          thread: {
+            stage: 'new',
+            state: 'open',
+            stateReason: null,
+            originKind: 'review_comment',
+          },
+        },
+      },
+    ];
+    const counts = commentStateCountsOf({ entries });
+    const base = {
+      view: VIEW,
+      detail: null,
+      runs: null,
+      edits: [],
+    };
+    const withThreads = pullRequestActivityOf({
+      ...base,
+      threads: { open: counts.open, needYou: counts.needYou },
+      entries,
+    });
+    const withoutThreads = pullRequestActivityOf({ ...base, threads: NO_THREADS, entries: [] });
+
+    expect(kinds(withThreads)).not.toContain('comments');
+    expect(activityItemsFor({ items: withThreads, filter: 'people' })).toHaveLength(
+      activityItemsFor({ items: withoutThreads, filter: 'people' }).length,
+    );
+  });
+
+  it.each(HOSTS)(
+    'shows no comments line on %s when the detail is missing and no thread loaded',
+    (host) => {
+      const items = pullRequestActivityOf({
+        view: { ...VIEW, host },
+        detail: null,
+        runs: null,
+        threads: NO_THREADS,
+        entries: [],
+        edits: [],
+      });
+
+      expect(kinds(items)).not.toContain('comments');
+    },
+  );
 });
