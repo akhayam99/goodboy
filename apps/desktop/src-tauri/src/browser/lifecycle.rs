@@ -5,7 +5,8 @@ use tauri::{AppHandle, Emitter, EventTarget, Manager, Rect, Runtime, Url, Window
 
 use super::guard::{self, AppOrigins};
 use super::host::{spawn_webview, webview_of};
-use super::reason::{self, INVALID_ADDRESS, NOT_WEB_ADDRESS, TAB_GONE};
+use super::profile;
+use super::reason::{self, INVALID_ADDRESS, NOT_WEB_ADDRESS, PROFILE_BUSY, TAB_GONE};
 use super::registry::{BrowserRegistry, TabFacts, TabState};
 use crate::util::{now_ms, MessageError};
 
@@ -61,7 +62,57 @@ fn close_webviews<R: Runtime>(app: &AppHandle<R>, ids: &[String], _gate: &Gate<'
             registry.reopen_asleep(id);
             continue;
         }
-        announce(app, &facts);
+        announce(app, &registry.facts(id).unwrap_or(facts));
+    }
+}
+
+pub(crate) fn close_for_switch<R: Runtime>(
+    app: &AppHandle<R>,
+    ids: &[String],
+    _gate: &Gate<'_>,
+) -> Result<(), MessageError> {
+    let registry = app.state::<BrowserRegistry>();
+    close_switched(
+        &registry,
+        ids,
+        |id| {
+            let webview = app.get_webview(&guard::label_of(id));
+            if let Some(live) = webview.as_ref().and_then(|webview| webview.url().ok()) {
+                registry.set_url(id, live.as_str());
+            }
+            match webview {
+                Some(webview) => webview.close().map_err(failed),
+                None => Ok(()),
+            }
+        },
+        |facts| announce(app, facts),
+    )
+}
+
+pub(crate) fn close_switched(
+    registry: &BrowserRegistry,
+    ids: &[String],
+    mut close: impl FnMut(&str) -> Result<(), MessageError>,
+    mut tell: impl FnMut(&TabFacts),
+) -> Result<(), MessageError> {
+    let mut stuck = false;
+    for id in ids {
+        let Some(before) = registry.mark_switched(id, now_ms()) else {
+            continue;
+        };
+        if let Err(error) = close(id) {
+            log::warn!("[browser] profile_switch_close_failed reason={error}");
+            registry.restore(before);
+            stuck = true;
+            continue;
+        }
+        if let Some(facts) = registry.facts(id) {
+            tell(&facts);
+        }
+    }
+    match stuck {
+        true => Err(reason::failed(PROFILE_BUSY)),
+        false => Ok(()),
     }
 }
 
@@ -88,7 +139,7 @@ pub(crate) fn show_tab<R: Runtime>(
         .state_of(tab_id)
         .ok_or_else(|| reason::failed(TAB_GONE))?;
     let facts = match before {
-        TabState::Closed => recreate(window, tab_id, now_ms)?,
+        TabState::Closed => recreate(window, tab_id, now_ms, &gate)?,
         TabState::Live | TabState::Asleep => {
             webview_of(app, tab_id)?.show().map_err(failed)?;
             registry
@@ -107,9 +158,13 @@ fn recreate<R: Runtime>(
     window: &Window<R>,
     tab_id: &str,
     now_ms: i64,
+    gate: &Gate<'_>,
 ) -> Result<TabFacts, MessageError> {
     let app = window.app_handle();
     let registry = app.state::<BrowserRegistry>();
+    let tab_profile = registry
+        .profile_of(tab_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
     let last = registry
         .facts(tab_id)
         .ok_or_else(|| reason::failed(TAB_GONE))?;
@@ -120,7 +175,9 @@ fn recreate<R: Runtime>(
     if !guard::may_open(&url, &AppOrigins::of_app(app)) {
         return Err(reason::refused(NOT_WEB_ADDRESS));
     }
-    let webview = spawn_webview(window, tab_id, &url, rect, true)?;
+    profile::prepare(app, &tab_profile)?;
+    profile::activate(app, &tab_profile, gate)?;
+    let webview = spawn_webview(window, tab_id, &tab_profile, &url, rect, true)?;
     registry.revive(tab_id, true, now_ms).ok_or_else(|| {
         let _ = webview.close();
         reason::failed(TAB_GONE)

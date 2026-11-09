@@ -1,8 +1,5 @@
-import {
-  SHORTCUTS,
-  SHORTCUT_FAMILY_LABEL,
-  SHORTCUT_SCOPE_LABEL,
-} from '../../../../shared/keyboard/registry';
+import { SHORTCUTS, SHORTCUT_FAMILY_LABEL } from '../../../../shared/keyboard/registry';
+import { SHORTCUT_SCOPE_LABEL } from '../../../../shared/keyboard/shortcutScopeLabel';
 import type {
   ShortcutEntry,
   ShortcutFamily,

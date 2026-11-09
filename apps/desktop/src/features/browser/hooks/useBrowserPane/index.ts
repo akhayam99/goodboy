@@ -67,6 +67,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     projectId === null ? NO_TABS : (state.browserProjectPins[projectId] ?? NO_TABS),
   );
   const live = useAppStore((state) => state.browserLiveTabs[sessionId]);
+  const draftEnds = useAppStore((state) => state.browserDraftEnds[sessionId] ?? 0);
   const [error, setError] = useState<string | null>(null);
   const { facts, refresh } = useLiveTabFacts({
     sessionId,
@@ -89,6 +90,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       browserPaneRequests.opens.cancel({ key: browserPaneRequests.openKey({ sessionId }) });
     };
   }, [sessionId]);
+
+  useEffect(() => {
+    setIsDrafting(false);
+  }, [activeId, pinId, draftEnds]);
 
   useEffect(() => {
     if (projectId === null) {

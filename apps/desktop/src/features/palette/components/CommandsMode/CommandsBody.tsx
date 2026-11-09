@@ -20,11 +20,10 @@ import {
   type CommandRow,
 } from '../../commandList';
 import { ASK_KEYS, askEntries } from '../../sources/askEntries';
-import { askAboutSession } from '../../../session/ask/askAboutSession';
 import { choiceEntries } from '../../sources/choiceEntries';
-import { askInChat } from '../../../workspace-chat/askInChat';
 import { useAppStore } from '../../../../store';
 import { readFrecency, recordPaletteUse } from '../../frecencyStorage';
+import { useBrowserEntries } from '../../hooks/useBrowserEntries';
 import { useCommandEntries } from '../../hooks/useCommandEntries';
 import { useListboxCursor } from '../../../../shared/hooks/useListboxCursor';
 import { useNeedsYouEntries } from '../../hooks/useNeedsYouEntries';
@@ -118,6 +117,13 @@ export const CommandsBody = ({
   const levelActions = useObjectActions({ target: level?.target ?? null, env });
   const entries = useCommandEntries();
   const needsYou = useNeedsYouEntries();
+  const askSessionId =
+    scopeTarget?.kind === 'session'
+      ? scopeTarget.sessionId
+      : parentTarget?.kind === 'session'
+        ? parentTarget.sessionId
+        : null;
+  const browser = useBrowserEntries({ query, scopeSessionId: askSessionId });
   const hasWorkspace = useAppStore((state) => state.currentWorkspaceId !== null);
   const isScopeLoaded = useIsScopeLoaded({ scopeSessionId });
   const activePalette = scopeSessionId === null ? null : palette;
@@ -322,7 +328,7 @@ export const CommandsBody = ({
     const runsKeys = new Set(runs.map((entry) => entry.key));
     const verbLabels = new Set([...sessionList, ...parentList].map((entry) => entry.label));
     const isSessionScope = scopeTarget?.kind === 'session' || parentTarget !== null;
-    return entries.filter(
+    return [...entries, ...browser.tabs].filter(
       (entry) =>
         !runsKeys.has(entry.key) &&
         !(
@@ -331,25 +337,14 @@ export const CommandsBody = ({
         ) &&
         !(isSessionScope && REGISTRY_LENS_KEYS.has(entry.key)),
     );
-  }, [entries, runs, sessionList, parentList, scopeTarget, parentTarget]);
+  }, [entries, browser.tabs, runs, sessionList, parentList, scopeTarget, parentTarget]);
 
-  const askSessionId =
-    scopeTarget?.kind === 'session'
-      ? scopeTarget.sessionId
-      : parentTarget?.kind === 'session'
-        ? parentTarget.sessionId
-        : null;
   const asks = useMemo(
     () =>
-      hasWorkspace && query.trim() !== '' && parseQuery(query).prefix === null
-        ? askEntries({
-            query,
-            sessionId: askSessionId,
-            askSession: askAboutSession,
-            askChat: (question) => void askInChat({ question }),
-          })
+      query.trim() !== '' && parseQuery(query).prefix === null
+        ? askEntries({ query, sessionId: askSessionId, leading: browser.opens, hasWorkspace })
         : NO_ASKS,
-    [askSessionId, hasWorkspace, query],
+    [askSessionId, browser.opens, hasWorkspace, query],
   );
 
   const builtSections = useMemo(

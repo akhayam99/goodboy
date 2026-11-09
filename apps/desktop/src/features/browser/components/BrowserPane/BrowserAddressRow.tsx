@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Maximize2, PanelLeft, Pin, RotateCw, X } from 'lucide-react';
 import { IconButton, Input, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import type { BrowserPaneModel } from '../../types';
 
 const DANGER_BORDER = tintClasses('danger').border;
 
 type Props = {
   readonly model: BrowserPaneModel;
+  readonly isAddressShortcutOn: boolean;
   readonly isListOpen?: boolean;
   readonly onToggleList?: () => void;
   readonly onOpenAsPage?: () => void;
@@ -16,6 +18,7 @@ type Props = {
 
 export const BrowserAddressRow = ({
   model,
+  isAddressShortcutOn,
   isListOpen = false,
   onToggleList,
   onOpenAsPage,
@@ -27,6 +30,12 @@ export const BrowserAddressRow = ({
   const canStep = model.shown !== null;
   const value = draft ?? model.address;
   const shownId = model.shown?.tab.id ?? null;
+
+  useShortcut(
+    'browser.address',
+    () => fieldRef.current?.focus({ preventScroll: true }),
+    isAddressShortcutOn,
+  );
 
   useEffect(() => {
     setDraft(null);

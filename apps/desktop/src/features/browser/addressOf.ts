@@ -1,3 +1,4 @@
+import { isLoopbackHost } from './isLoopbackHost';
 import type { BrowserAddress } from './types';
 
 type Params = {
@@ -23,15 +24,8 @@ const hasWebScheme = ({ text }: Params): boolean => {
   return WEB_PREFIXES.some((prefix) => lower.startsWith(prefix));
 };
 
-const isLoopback = ({ host }: HostParams): boolean =>
-  host === 'localhost' ||
-  host.endsWith('.localhost') ||
-  (IPV4.test(host) && host.startsWith('127.')) ||
-  host === '[::1]' ||
-  host === '0.0.0.0';
-
 const isHostName = ({ host }: HostParams): boolean => {
-  if (host === '' || isLoopback({ host }) || IPV4.test(host) || host.startsWith('[')) {
+  if (host === '' || isLoopbackHost({ host }) || IPV4.test(host) || host.startsWith('[')) {
     return host !== '';
   }
   const labels = host.split('.');
@@ -62,7 +56,7 @@ export const addressOf = ({ text }: Params): BrowserAddress => {
   if (url === null || !isHostName({ host: url.hostname })) {
     return { kind: 'refused', reason: NOT_AN_ADDRESS };
   }
-  if (!hasScheme && isLoopback({ host: url.hostname })) {
+  if (!hasScheme && isLoopbackHost({ host: url.hostname })) {
     url.protocol = 'http:';
   }
   return { kind: 'ok', url: url.href };

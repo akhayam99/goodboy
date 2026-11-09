@@ -141,6 +141,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           onRename={model.renameTab}
           onNew={model.newTab}
           onCloseLastIdle={onClose}
+          sessionId={sessionId}
           actions={
             <TerminalStripActions
               worktree={worktree}

@@ -70,6 +70,8 @@ describe('the browser pane scenes', () => {
       'browser-pane-dark',
       'browser-pane-tabs',
       'browser-pane-tabs-dark',
+      'browser-peek',
+      'browser-peek-dark',
     ]);
     for (const [id, Scene] of Object.entries(BROWSER_PANE_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
@@ -117,6 +119,17 @@ describe('the browser pane scenes', () => {
       'value',
       'http://localhost:5173/checkout',
     );
+  });
+
+  it('peeks a localhost link in a decision with the title of its open tab', async () => {
+    mount({ id: 'browser-peek' });
+
+    await screen.findByRole('link', { name: 'localhost:5173/checkout' }, WAIT);
+    const card = await screen.findByTestId('browser-link-peek', undefined, WAIT);
+    expect(card.textContent).toContain('Checkout');
+    expect(card.textContent).toContain('http://localhost:5173/checkout');
+    expect(card.textContent).toContain('Shows its tab beside the session.');
+    expect(screen.queryByRole('region', { name: 'Browser' })).toBeNull();
   });
 
   it('lists the session tabs and the project pins beside the page', async () => {
