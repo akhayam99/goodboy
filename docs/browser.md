@@ -185,15 +185,21 @@ own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
   session and the same placement loop and overlay rule. The pane of that
   session stays mounted under the page and is covered by it, so its view hides.
 - **One view, one place**: a placement owns the live ids it showed, and hides
-  only a view it still owns. The pane's late hide cannot take the view off the
-  page, and the pane shows it again once the page lets it go.
+  only a view it still owns, a hide tried again after a failure included. The
+  pane's late hide cannot take the view off the page. A pane that still holds
+  the view waits while the page owns it, and shows it again once the page
+  lets it go.
 - **The route** names the session and the tab. Picking a row amends it, and a
   close or a new tab moves it to the tab now shown. A reload or ⌘R reads the
-  route back, so the page comes back on the same tab, not the first one.
+  route back, so the page comes back on the same tab, not the first one. A
+  route with no session opens on the first session holding a tab, at its
+  first tab, and names that session.
 - **Back to the session**: the band's trail names the picked session, and
   pressing it opens that session.
-- **The count** on the tile is the number of live webviews in this window,
-  every session (`liveBrowserTabCount`), named `Browser, 3 open`.
+- **The count** on the tile is the number of rows the page lists: the tabs of
+  the workspace's sessions plus the pins of their projects, named
+  `Browser, 3 tabs`. A tab counts whether or not its page is open. A
+  session's rows load when its pane or the page opens.
 
 ## Capabilities
 
@@ -251,9 +257,12 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
   back step cannot run headless.
 - The page lives in `features/browser/components/BrowserStudio/`, its groups in
   `browserPageGroups.ts`, the route sync in `hooks/useBrowserStudioTab`.
-  `BrowserStudio/index.test.tsx` pins the grouping, a tab of another session,
-  the reload back to the named tab and the overlay hide;
-  `createNativePlacement.test.ts` pins the owner rule;
+  The sessions come from `browserScopeSessions`, the count from
+  `browserTabCount`. `BrowserStudio/index.test.tsx` pins the grouping, a tab
+  of another session, the reload back to the named tab, a route with no
+  session, the overlay hide, and that only the workspace's sessions load and
+  the count matches the rows; `createNativePlacement.test.ts` pins the owner
+  rule both ways and a failed hide retried after the page took the view;
   `restoreLocation.test.ts` pins the route across a reload; the scenes are
   `browser-page` and `browser-page-dark`.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails

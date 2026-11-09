@@ -16,6 +16,7 @@ import {
 import { mountFixture } from '../../../../__tests__/helpers/actionFixtures';
 import type { BrowserTab, TabOwner } from '../../../../store/slices/browser/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { browserTabCount } from '../../browserTabCount';
 import type { BrowserTabFacts } from '../../types';
 import { BrowserStudio } from './index';
 
@@ -55,7 +56,7 @@ type OwnerArgs = { readonly args: { readonly owner: TabOwner } };
 type RectParams = { readonly element: Element; readonly rect: typeof VIEW_RECT };
 type CommandParams = { readonly command: string };
 type PayloadParams = { readonly payload: unknown };
-type StudioParams = { readonly tabId: string | null };
+type StudioParams = { readonly tabId: string | null; readonly sessionId?: SessionId | null };
 
 let store: StoryStore;
 let rows: BrowserTab[];
@@ -144,10 +145,8 @@ const RoutedBrowser = () => {
   );
 };
 
-const openPage = ({ tabId }: StudioParams) => {
-  store
-    .getState()
-    .switchStudio({ studio: { kind: 'browser', sessionId: CHECKOUT_SESSION, tabId } });
+const openPage = ({ tabId, sessionId = CHECKOUT_SESSION }: StudioParams) => {
+  store.getState().switchStudio({ studio: { kind: 'browser', sessionId, tabId } });
   return render(
     <ToastProvider>
       <RoutedBrowser />
@@ -326,6 +325,60 @@ describe('the browser page', () => {
 
     menu.remove();
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
+  });
+
+  it('lists and loads only the sessions of the open workspace, and the tile counts the same rows', async () => {
+    const elsewhere = nextSessionId();
+    rows = [
+      ...rows,
+      rowOf({
+        id: 'tab-cascadia',
+        owner: { kind: 'session', sessionId: elsewhere },
+        url: 'https://status.cascadia.dev',
+        title: 'Status',
+        position: 0,
+      }),
+    ];
+    store.setState({
+      sessions: [
+        ...store.getState().sessions,
+        buildStorySession({
+          id: elsewhere,
+          workspaceId: nextWorkspaceId(),
+          goal: 'Watch the notify-relay queue',
+        }),
+      ],
+    });
+    openPage({ tabId: null });
+
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole('button', {
+          name: /^(Checkout|Tax rates|PR #318|API guides, pinned)$/,
+        }),
+      ).toHaveLength(4),
+    );
+    expect(groupLabels()).not.toContain('Watch the notify-relay queue');
+    expect(
+      callsOf({ command: 'browser_tab_rows_list' }).map((args) => args.owner),
+    ).not.toContainEqual({ kind: 'session', sessionId: elsewhere });
+    expect(browserTabCount({ state: store.getState() })).toBe(4);
+  });
+
+  it('opens on the first session holding a tab when the route names no session', async () => {
+    openPage({ tabId: 'tab-pr', sessionId: null });
+    await placeView();
+
+    await waitFor(() =>
+      expect(store.getState().appStudio).toEqual({
+        kind: 'browser',
+        sessionId: CHECKOUT_SESSION,
+        tabId: 'tab-checkout',
+      }),
+    );
+    expect(screen.getByRole('button', { name: 'Checkout' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
   });
 
   it('says there is nothing yet when no session has a tab', async () => {

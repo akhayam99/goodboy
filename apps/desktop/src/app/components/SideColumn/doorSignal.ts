@@ -140,7 +140,12 @@ export const doorSignalOf = ({
     if (count === 0) {
       return undefined;
     }
-    return { count, isWarning: false, isUnread: false, fact: `${count} open` };
+    return {
+      count,
+      isWarning: false,
+      isUnread: false,
+      fact: count === 1 ? '1 tab' : `${count} tabs`,
+    };
   }
   if (kind === 'inbox') {
     if (count === 0) {

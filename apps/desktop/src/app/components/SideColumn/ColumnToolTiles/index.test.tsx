@@ -10,8 +10,8 @@ vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { aWorkspace } from '@goodboy/types/testing';
-import type { SessionId } from '@goodboy/types';
+import { aSession, aWorkspace } from '@goodboy/types/testing';
+import type { BrowserTab } from '../../../../store/slices/browser/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -26,6 +26,24 @@ import type { ColumnActions } from '../columnDoors';
 import type { ColumnPlace } from '../columnPlace';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
+const CHECKOUT = aSession({ workspaceId: WORKSPACE.id, goal: 'Show tax in the checkout total' });
+const ROUNDING = aSession({ workspaceId: WORKSPACE.id, goal: 'Fix the rounding drift' });
+const ELSEWHERE = aSession({ goal: 'Watch the notify-relay queue' });
+
+type TabParams = {
+  readonly id: string;
+};
+
+const tabOf = ({ id }: TabParams): BrowserTab => ({
+  id,
+  sessionId: null,
+  projectId: null,
+  url: `https://${id}.harborline.dev`,
+  title: id,
+  position: 0,
+  createdAt: 1,
+  updatedAt: 1,
+});
 
 let useAppStore: StoryStore;
 
@@ -128,21 +146,23 @@ describe('the tool tiles', () => {
     expect(tileOf({ id: 'browser' }).querySelector('svg')).not.toBeNull();
   });
 
-  it('counts the live browser tabs of every session on the Browser tile, and nothing when none is live', () => {
+  it('counts the browser tabs of the workspace sessions on the Browser tile, and nothing when none is listed', () => {
     mountColumn();
     expect(tileOf({ id: 'browser' }).getAttribute('aria-label')).toBe('Browser');
     expect(tileOf({ id: 'browser' }).querySelector('[data-tile-count]')).toBeNull();
     cleanup();
 
     useAppStore.setState({
-      browserLiveTabs: {
-        [brandedId<SessionId>({ value: 'session-a' })]: { 'tab-1': 'live-1', 'tab-2': 'live-2' },
-        [brandedId<SessionId>({ value: 'session-b' })]: { 'tab-3': 'live-3' },
+      sessions: [CHECKOUT, ROUNDING, ELSEWHERE],
+      browserSessionTabs: {
+        [CHECKOUT.id]: [tabOf({ id: 'tab-1' }), tabOf({ id: 'tab-2' })],
+        [ROUNDING.id]: [tabOf({ id: 'tab-3' })],
+        [ELSEWHERE.id]: [tabOf({ id: 'tab-4' })],
       },
     });
     mountColumn();
 
-    expect(tileOf({ id: 'browser' }).getAttribute('aria-label')).toBe('Browser, 3 open');
+    expect(tileOf({ id: 'browser' }).getAttribute('aria-label')).toBe('Browser, 3 tabs');
     expect(tileOf({ id: 'browser' }).querySelector('[data-tile-count]')?.textContent).toBe('3');
   });
 
@@ -246,7 +266,8 @@ describe('the tool tiles', () => {
   it('keeps the doors as icons with the same names on the folded column', () => {
     useAppStore.setState({
       terminalTabs: { [WORKSPACE.id]: [aliveTerminal({ id: 'tab-1' })] },
-      browserLiveTabs: { [brandedId<SessionId>({ value: 'session-a' })]: { 'tab-1': 'live-1' } },
+      sessions: [CHECKOUT],
+      browserSessionTabs: { [CHECKOUT.id]: [tabOf({ id: 'tab-1' })] },
     });
     render(
       <ColumnRail
@@ -259,7 +280,7 @@ describe('the tool tiles', () => {
 
     expect(document.querySelector('[data-column-tiles]')).toBeNull();
     expect(screen.getByRole('button', { name: 'Terminal, 1 running' }).textContent).toBe('');
-    const browser = screen.getByRole('button', { name: 'Browser, 1 open' });
+    const browser = screen.getByRole('button', { name: 'Browser, 1 tab' });
     expect(browser.textContent).toBe('');
     expect(browser.querySelector('svg')).not.toBeNull();
     expect(browser.getAttribute('aria-current')).toBe('page');
