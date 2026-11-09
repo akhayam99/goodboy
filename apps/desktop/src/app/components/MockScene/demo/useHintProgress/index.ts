@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
+import { DEMO_CHAPTERS } from '../demoChapters';
 import type { ChapterHintProgress, HintProgress } from '../hints/hintProgressTypes';
 import { readHintProgress } from '../hints/readHintProgress';
+import { settledProgressOf } from '../hints/settledProgressOf';
 import { writeHintProgress } from '../hints/writeHintProgress';
 
 type MarkParams = {
@@ -55,7 +57,14 @@ const withoutAnyProgress = ({ progress }: ChangeParams): HintProgress =>
     ]),
   );
 
-const initial = (): HintProgress => readHintProgress({ fallback: {} });
+const initial = (): HintProgress => {
+  const stored = readHintProgress({ fallback: {} });
+  const settled = settledProgressOf({ chapters: DEMO_CHAPTERS, progress: stored });
+  if (settled !== stored) {
+    writeHintProgress({ progress: settled });
+  }
+  return settled;
+};
 
 export const useHintProgress = (): HintProgressControls => {
   const [progress, setProgress] = useState<HintProgress>(initial);

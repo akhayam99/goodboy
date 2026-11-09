@@ -193,6 +193,7 @@ describe('demo playground chrome', () => {
   });
 
   it('opens in the theme named in the url, which beats the stored one, then drops it from the url', () => {
+    seedDone({ ids: ['bring'] });
     window.localStorage.setItem(DEMO_THEME_KEY, 'dark');
     window.history.replaceState(null, '', '/?scene=demo&theme=light#direction');
     render(<DemoPlayground />);

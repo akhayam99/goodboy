@@ -277,10 +277,12 @@ describe('demo playground', () => {
     window.history.replaceState(null, '', '/?scene=demo#ship');
     render(<DemoPlayground />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(window.location.hash).toBe('#bring');
     window.history.replaceState(null, '', '/?scene=demo#get');
     cleanup();
     render(<DemoPlayground />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(window.location.hash).toBe('#bring');
   });
 
   it('shows every group title with its count kept quiet', () => {
@@ -495,17 +497,14 @@ describe('demo playground', () => {
   it('says the group is done only after the last result has been on screen', () => {
     seedProgress({ ids: ['bring'] });
     const { hints } = chapterOf({ id: 'direction' });
-    window.sessionStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({
-        bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
-        direction: { tried: hints.slice(0, -1).map((entry) => entry.id), epoch: 0 },
-      }),
-    );
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
+    for (const entry of hints.slice(0, -1)) {
+      tried({ frame, hintId: entry.id });
+    }
+    elapse({ ms: RESULT_DWELL_MS });
     const last = hints.at(-1);
     hint({ frame, hintId: last?.id ?? '' });
     tried({ frame, hintId: last?.id ?? '' });
@@ -858,16 +857,46 @@ describe('demo playground', () => {
     expect(stepStates().filter((state) => state === 'done')).toHaveLength(1);
   });
 
-  it('starts with the stored progress and resets only this group on replay', () => {
+  it('keeps a finished group and drops the progress of an unfinished one on load', () => {
     window.sessionStorage.setItem(
       HINT_PROGRESS_KEY,
       JSON.stringify({
-        direction: { tried: idsOf({ id: 'direction' }).slice(0, 2), epoch: 0 },
+        direction: { tried: idsOf({ id: 'direction' }).slice(0, 2), epoch: 3 },
         bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
       }),
     );
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+    expect(rowOf({ title: 'Bring your repositories' }).textContent).toContain(
+      `${chapterOf({ id: 'bring' }).hints.length} of ${chapterOf({ id: 'bring' }).hints.length}`,
+    );
+    expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
+      direction: { tried: [], epoch: 3 },
+      bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
+    });
+  });
+
+  it('drops the progress of the first group when the page reloads in the middle of it', () => {
+    const { hints } = chapterOf({ id: 'bring' });
+    window.sessionStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({ bring: { tried: [hints[0]?.id], epoch: 0 } }),
+    );
+    render(<DemoPlayground />);
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+    expect(stepStates()[0]).toBe('current');
+  });
+
+  it('resets only this group on replay', () => {
+    seedProgress({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    for (const entry of chapterOf({ id: 'direction' }).hints.slice(0, 2)) {
+      tried({ frame, hintId: entry.id });
+    }
     expect(stepStates().filter((state) => state === 'done')).toHaveLength(2);
     fireEvent.keyDown(playgroundRoot(), { key: 'r' });
     expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
