@@ -521,7 +521,9 @@ composer after Add comment) also holds its reveal and done checks on the store,
 so a visitor who went ahead with Hide hints on, or answered another way, still
 gets it credited. When the plan drawer is closed in Guide the work, the steps
 after opening the plan light the plan row again (and let it be pressed) until
-the work they wait for has started.
+the work they wait for has started. A step that names its own control (`press`)
+counts only a press of that control, so reopening the plan from the row never
+shows the step's progress line.
 Reports carry the frame's generation and the stage drops any from an older
 generation or another frame. A frame that reports `ready` again (it reloaded)
 loses its note, and the stage sends it `play` and `hints` again. The stage

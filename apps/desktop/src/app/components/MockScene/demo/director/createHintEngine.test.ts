@@ -291,6 +291,27 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  it('does not count a click on a way back as the press of the step', () => {
+    document.body.innerHTML = BUTTONS;
+    const { engine, reports } = engineFor({
+      hints: [
+        step({
+          id: 'keep',
+          anchor: ({ root }) => (root.querySelector('#keep') === null ? '#open' : '#keep'),
+          press: '#keep',
+          doneWhen: () => false,
+        }),
+      ],
+    });
+    document.querySelector('#keep')?.remove();
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    vi.advanceTimersByTime(20);
+    click({ selector: '#open' });
+    vi.advanceTimersByTime(20);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isClicked: false });
+    engine.dispose();
+  });
+
   it('reports the press even when the control is removed by the click itself', () => {
     document.body.innerHTML = BUTTONS;
     document.querySelector('#open')?.addEventListener('click', () => {

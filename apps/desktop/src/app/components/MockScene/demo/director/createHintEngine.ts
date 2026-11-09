@@ -507,6 +507,10 @@ export const createHintEngine = ({
         schedule();
         return;
       }
+      if (hint.press !== undefined && !anchor.matches(hint.press)) {
+        schedule();
+        return;
+      }
       clicked.add(hint.id);
       clickedElements.set(hint.id, anchor);
       flush();

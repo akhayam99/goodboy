@@ -104,6 +104,7 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
     beat: 0,
     isDimmed: false,
     isBlocked: isOtherThanPlanRow,
+    press: ADD_COMMENT,
     anchor: ({ root }) => anchorOrRecovery({ root, own: ADD_COMMENT }),
     side: 'left',
     isSideLocked: true,
@@ -123,6 +124,7 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
     dwellMs: 4500,
     isDimmed: false,
     isBlocked: isOtherThanPlanRow,
+    press: SEND,
     anchor: ({ root, state }) =>
       draftsOf({ state }) > 0 ? anchorOrRecovery({ root, own: SEND }) : SEND,
     side: 'left',
@@ -145,6 +147,7 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
     dwellMs: 4500,
     isDimmed: false,
     isBlocked: isOtherThanPlanRow,
+    press: APPROVE,
     anchor: ({ root, state }) =>
       approvalsOf({ state }) === 0 ? anchorOrRecovery({ root, own: APPROVE }) : APPROVE,
     side: 'bottom',

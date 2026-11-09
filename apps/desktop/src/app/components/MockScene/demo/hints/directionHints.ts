@@ -78,7 +78,7 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Choose the recommended answer',
     instruction:
       'Select **Return the original credit** so a retry succeeds without another credit.',
-    result: 'You picked it: a repeated webhook returns the original credit.',
+    result: 'Your answer is picked. The planner waits until you send it.',
     beat: 0,
     isDimmed: false,
     isBlocked: isOtherControl,

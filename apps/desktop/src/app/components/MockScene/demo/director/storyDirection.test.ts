@@ -101,8 +101,8 @@ describe('answering the planner question', () => {
 
   it.each([
     ['Return the original credit', 'A repeated webhook returns the original credit'],
-    ['Reject it with a 409', 'A repeated webhook is rejected with a 409'],
-    ['Return 200 and log a warning', 'A repeated webhook returns 200 and logs a warning'],
+    ['Reject it with a 409', 'a repeated webhook that is rejected with a 409'],
+    ['Return 200 and log a warning', 'a repeated webhook that returns 200 and logs a warning'],
   ])('has the planner speak about the option %s', async (choice, sentence) => {
     await answer({ choice });
     vi.advanceTimersByTime(15000);
