@@ -752,6 +752,13 @@ pub fn run() {
             browser::commands::browser_tab_close,
             browser::commands::browser_tab_list,
             browser::commands::browser_session_close,
+            browser::tab_rows::browser_tab_rows_list,
+            browser::tab_rows::browser_tab_row_save,
+            browser::tab_rows::browser_tab_rows_reorder,
+            browser::tab_rows::browser_tab_row_delete,
+            browser::tab_rows::browser_session_tab_rows_delete,
+            browser::tab_rows::browser_tab_row_pin,
+            browser::tab_rows::browser_tab_row_unpin,
         ]))
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
