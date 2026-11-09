@@ -229,7 +229,9 @@ export const DrawerHost = () => {
   }
   return (
     <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
-      {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
+      <div className="contents" data-browser-session={drawer.sessionId}>
+        {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
+      </div>
     </PanelBoundary>
   );
 };

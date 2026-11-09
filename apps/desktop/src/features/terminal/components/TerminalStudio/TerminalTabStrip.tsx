@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
+import type { SessionId } from '@goodboy/types';
 import { IconButton, ScrollFade } from '@goodboy/ui';
 import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
 import type { TerminalTab } from '../../../../shared/types/terminal';
@@ -30,6 +31,7 @@ type Props = {
   readonly isShortcutEnabled?: boolean;
   readonly folderAction?: ReactNode;
   readonly actions?: ReactNode;
+  readonly sessionId?: SessionId | null;
 };
 
 const NO_PORTS: ReadonlyArray<number> = [];
@@ -49,6 +51,7 @@ export const TerminalTabStrip = ({
   isShortcutEnabled = true,
   folderAction = null,
   actions = null,
+  sessionId = null,
 }: Props) => {
   const portsByTerminal = useTerminalPorts();
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -160,7 +163,7 @@ export const TerminalTabStrip = ({
       <div className="flex shrink-0 items-center gap-1">
         {folderAction}
         {selectedPorts.map((port) => (
-          <PortChip key={port} port={port} />
+          <PortChip key={port} port={port} sessionId={sessionId} />
         ))}
         {actions}
       </div>

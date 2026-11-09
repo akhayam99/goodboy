@@ -90,6 +90,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   }, [sessionId]);
 
   useEffect(() => {
+    setIsDrafting(false);
+  }, [activeId, pinId]);
+
+  useEffect(() => {
     if (projectId === null) {
       return;
     }
