@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { Scrim, cn } from '@goodboy/ui';
 import { useStageBox } from './useStageBox';
 import { stageFitOf } from './stageFitOf';
 import { isHoleTooBig } from './hints/isHoleTooBig';
@@ -470,11 +470,7 @@ export const DemoStage = ({
           ) : null}
           {done === undefined ? null : (
             <>
-              <div
-                data-testid="demo-stage-scrim"
-                aria-hidden
-                className="absolute inset-0 z-30 bg-background/50"
-              />
+              <Scrim testId="demo-stage-scrim" className="z-30" />
               <DemoChapterDone
                 done={done}
                 nextRef={doneNextRef}

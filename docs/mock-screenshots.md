@@ -387,7 +387,7 @@ the first open group. Get Goodboy is locked until every group is done.
 
 A group ends on the stage, never only on the rail. The moment its last step is
 credited (`isDone` of `stepsOf`, the same tick as the last result line), the
-stage lays a `bg-background/50` scrim over the frame, makes the frame `inert`
+stage lays the `Scrim` primitive over the frame, makes the frame `inert`
 and shows `DemoChapterDone` at the bottom center: a done node, "<group> is
 done", the group's `outro` (`demoGroups.ts`), a ghost Replay this chapter
 (resets that group only) and the primary Next: <next group> with its `→` key,
