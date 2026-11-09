@@ -59,6 +59,7 @@ type MoveArgs = {
 };
 type RectParams = { readonly element: Element; readonly rect: typeof VIEW_RECT };
 type CommandParams = { readonly command: string };
+type PayloadParams = { readonly payload: unknown };
 type TypeParams = { readonly text: string };
 type FailParams = { readonly command: string; readonly reason: string };
 
@@ -112,7 +113,10 @@ const stubHost = () => {
     },
     browser_tab_row_pin: ({ args }: MoveArgs) => {
       const row = rows.find((candidate) => candidate.id === args.id);
-      const moved = { ...row, sessionId: null, projectId: args.projectId } as BrowserTab;
+      if (row === undefined) {
+        throw { kind: 'failed', message: 'tab-row-gone' };
+      }
+      const moved: BrowserTab = { ...row, sessionId: null, projectId: args.projectId };
       rows = rows.map((candidate) => (candidate.id === args.id ? moved : candidate));
       return moved;
     },
@@ -145,10 +149,16 @@ const failCommand = ({ command, reason }: FailParams) => {
   });
 };
 
+const argsOf = ({ payload }: PayloadParams): Readonly<Record<string, unknown>> => {
+  const args: unknown =
+    typeof payload === 'object' && payload !== null ? Reflect.get(payload, 'args') : null;
+  return typeof args === 'object' && args !== null ? Object.fromEntries(Object.entries(args)) : {};
+};
+
 const callsOf = ({ command }: CommandParams) =>
   storySpies.tauriInvoke.mock.calls
     .filter(([name]) => name === command)
-    .map(([, payload]) => (payload as { readonly args: Record<string, unknown> }).args);
+    .map(([, payload]) => argsOf({ payload }));
 
 const giveRect = ({ element, rect }: RectParams) => {
   Object.defineProperty(element, 'getBoundingClientRect', {
@@ -161,8 +171,10 @@ const giveRect = ({ element, rect }: RectParams) => {
 const placeView = async () => {
   const view = await waitFor(() => {
     const found = document.querySelector('[data-browser-view]');
-    expect(found).not.toBeNull();
-    return found as Element;
+    if (found === null) {
+      throw new Error('The pane draws no view placeholder yet.');
+    }
+    return found;
   });
   giveRect({ element: view, rect: VIEW_RECT });
 };
@@ -177,8 +189,12 @@ const renderPane = () =>
 const typeAddress = async ({ text }: TypeParams) => {
   const field = screen.getByRole('textbox', { name: 'Address' });
   fireEvent.change(field, { target: { value: text } });
+  const form = field.closest('form');
+  if (form === null) {
+    throw new Error('The address field sits in no form.');
+  }
   await act(async () => {
-    fireEvent.submit(field.closest('form') as HTMLFormElement);
+    fireEvent.submit(form);
   });
 };
 
@@ -216,7 +232,7 @@ afterEach(() => {
 describe('the browser pane', () => {
   it('opens a typed address in a new tab and shows its view where the placeholder is', async () => {
     renderPane();
-    expect(screen.getByText('Open a page beside the session')).toBeDefined();
+    screen.getByText('Open a page beside the session');
 
     await typeAddress({ text: 'localhost:5173/checkout' });
     await placeView();
@@ -346,7 +362,10 @@ describe('the browser pane', () => {
     const handler = storySpies.tauriInvoke.getMockImplementation();
     storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
       if (name === 'browser_tab_open' && opened === 0) {
-        const facts = factsOf(args as OpenArgs);
+        const url = argsOf({ payload: args })['url'];
+        const facts = factsOf({
+          args: { sessionId: SESSION_ID, url: typeof url === 'string' ? url : '' },
+        });
         await new Promise<void>((resolve) => {
           releaseFirst = resolve;
         });
