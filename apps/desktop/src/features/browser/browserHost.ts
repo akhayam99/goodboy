@@ -21,10 +21,6 @@ type NavigateParams = TabParams & {
   readonly url: string;
 };
 
-type MoveParams = PlaceParams & {
-  readonly windowLabel: string;
-};
-
 type SessionParams = {
   readonly sessionId: SessionId;
 };
@@ -47,8 +43,6 @@ export const browserHost = {
   forward: ({ tabId }: TabParams) =>
     invokeCommand<null>('browser_tab_forward', { args: { tabId } }),
   close: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_close', { args: { tabId } }),
-  move: ({ tabId, windowLabel, bounds }: MoveParams) =>
-    invokeCommand<BrowserTabFacts>('browser_tab_move', { args: { tabId, windowLabel, bounds } }),
   list: ({ sessionId }: SessionParams) =>
     invokeCommand<ReadonlyArray<BrowserTabFacts>>('browser_tab_list', { args: { sessionId } }),
 };

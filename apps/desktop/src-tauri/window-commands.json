@@ -58,7 +58,6 @@
     "browser_tab_forward",
     "browser_tab_hide",
     "browser_tab_list",
-    "browser_tab_move",
     "browser_tab_navigate",
     "browser_tab_open",
     "browser_tab_place",

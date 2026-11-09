@@ -49,7 +49,7 @@ address.
   its address passes the rule it opens as a new hidden tab in the opener's
   session and window, and that window hears `browser://tab-opened` with the
   tab's facts (`openerId` names the tab that opened it). A session holds at
-  most four hidden popups in each window, those still opening included; past that a popup
+  most four hidden popups, those still opening included; past that a popup
   is refused with `too-many-popups` in the log. Showing or closing one frees
   its seat. Otherwise nothing opens.
 - Every download is refused. Asking before a download is not built yet.
@@ -74,7 +74,6 @@ commands, and got all six once it navigated itself to the dev origin or to
 - A tab's address in a listing is read from the live webview, so a page that
   moves with `history.pushState` or a fragment shows its new address.
 - A destroyed window's tabs leave the registry with it.
-- `browser_tab_move` moves a live tab into another Goodboy window (see Moves).
 - The registry stamps when a tab was hidden. The sleep and close policy reads
   that stamp; it is not built yet.
 
@@ -226,14 +225,7 @@ new bounds or a new window. A form half typed and the scroll stay.
   address row, and the view stays with the pane, which shows it again on
   Back beside the session. A page show that answers after the tab went back
   is hidden again, and the pane takes the view.
-- **Another window**: `browser_tab_move` reparents the tab's webview into
-  another Goodboy window (`Webview::reparent`). Only the owning window may
-  move a tab. The tab keeps its id and address, arrives hidden at the bounds
-  the caller gave, and the registry lists it under the new window, so only
-  that window drives it from then on. Its hidden popup seat counts in the new
-  window. A target that is not a Goodboy window, or is gone, is refused with
-  `window-gone` and the tab stays where it was. No screen offers this move
-  yet: a window shows one workspace, and a tab belongs to a session of it.
+- **Another window**: moving a tab to another window comes later.
 
 ## Capabilities
 
@@ -273,9 +265,8 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  twelve `browser_*` commands; `registry.rs` holds the tabs and the popup
-  seats (`MAX_HIDDEN_POPUPS`), counted per session and window. `host::move_tab`
-  is the reparent behind `browser_tab_move`. The native back and forward step lives in
+  eleven `browser_*` commands; `registry.rs` holds the tabs and the popup
+  seats (`MAX_HIDDEN_POPUPS`). The native back and forward step lives in
   `src-tauri/src/platform/web_history.rs`, the only `unsafe` the host needs.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
@@ -287,10 +278,7 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
   refusals and their codes, an app command a `browse-` webview calls from a
   local address, the popup cap and its `browser://tab-opened` event, listing
   and closing only the calling window's tabs, a retry after a partial
-  session close, a destroyed window, a move to another window (same id and
-  address, the new window lists and drives it, the popup cap recounts) and a
-  move refused for a gone window or by a window that does not own the tab,
-  and that no production code looks a
+  session close, a destroyed window, and that no production code looks a
   window up through `webview_windows` or `get_webview_window`. The native
   back step cannot run headless.
 - The page lives in `features/browser/components/BrowserStudio/`, its groups in

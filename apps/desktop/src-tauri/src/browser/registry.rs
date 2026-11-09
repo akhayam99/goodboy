@@ -25,9 +25,8 @@ struct Tab {
 }
 
 impl Tab {
-    fn is_hidden_popup_of(&self, session_id: &str, window_label: &str) -> bool {
+    fn is_hidden_popup_of(&self, session_id: &str) -> bool {
         self.facts.session_id == session_id
-            && self.window_label == window_label
             && self.facts.opener_id.is_some()
             && !self.facts.is_shown
     }
@@ -37,7 +36,7 @@ impl Tab {
 struct Tabs {
     by_id: HashMap<String, Tab>,
     next_opened: u64,
-    pending_popups: HashMap<(String, String), usize>,
+    pending_popups: HashMap<String, usize>,
     closings: HashMap<(String, String), u64>,
 }
 
@@ -96,9 +95,12 @@ impl BrowserRegistry {
         let hidden = tabs
             .by_id
             .values()
-            .filter(|tab| tab.is_hidden_popup_of(&seat.session_id, &seat.window_label))
+            .filter(|tab| tab.is_hidden_popup_of(&seat.session_id))
             .count();
-        let pending = tabs.pending_popups.entry(seat_key(&seat)).or_default();
+        let pending = tabs
+            .pending_popups
+            .entry(seat.session_id.clone())
+            .or_default();
         if hidden + *pending >= limit {
             return Err(SeatRefusal::Full);
         }
@@ -108,13 +110,12 @@ impl BrowserRegistry {
 
     pub(crate) fn release_popup(&self, seat: &PopupSeat) {
         let mut tabs = lock_or_recover(&self.tabs);
-        let key = seat_key(seat);
-        let Some(pending) = tabs.pending_popups.get_mut(&key) else {
+        let Some(pending) = tabs.pending_popups.get_mut(&seat.session_id) else {
             return;
         };
         *pending = pending.saturating_sub(1);
         if *pending == 0 {
-            tabs.pending_popups.remove(&key);
+            tabs.pending_popups.remove(&seat.session_id);
         }
     }
 
@@ -187,22 +188,6 @@ impl BrowserRegistry {
             .map(|tab| tab.window_label.clone())
     }
 
-    pub(crate) fn move_to_window(
-        &self,
-        id: &str,
-        window_label: &str,
-        now_ms: i64,
-    ) -> Option<TabFacts> {
-        let mut tabs = lock_or_recover(&self.tabs);
-        let tab = tabs.by_id.get_mut(id)?;
-        tab.window_label = window_label.to_string();
-        if tab.facts.is_shown {
-            tab.facts.is_shown = false;
-            tab.facts.hidden_since_ms = hidden_since(false, now_ms);
-        }
-        Some(tab.facts.clone())
-    }
-
     pub(crate) fn remove(&self, id: &str) -> Option<TabFacts> {
         lock_or_recover(&self.tabs)
             .by_id
@@ -266,10 +251,6 @@ impl BrowserRegistry {
         change(&mut tab.facts);
         Some(tab.facts.clone())
     }
-}
-
-fn seat_key(seat: &PopupSeat) -> (String, String) {
-    (seat.session_id.clone(), seat.window_label.clone())
 }
 
 fn hidden_since(is_shown: bool, now_ms: i64) -> Option<i64> {
@@ -412,36 +393,6 @@ mod tests {
         open_in(&registry, "a", "win-2");
         assert_eq!(registry.window_of("a").as_deref(), Some("win-2"));
         assert_eq!(registry.window_of("gone"), None);
-    }
-
-    #[test]
-    fn moves_a_tab_to_another_window_hidden_with_its_id_and_address() {
-        let registry = BrowserRegistry::default();
-        open(&registry, "a", "harborline", true);
-        let moved = registry
-            .move_to_window("a", "win-2", 4_000)
-            .expect("tab exists");
-        assert_eq!(moved.id, "a");
-        assert_eq!(moved.url, "http://localhost:5173/");
-        assert!(!moved.is_shown);
-        assert_eq!(moved.hidden_since_ms, Some(4_000));
-        assert_eq!(registry.window_of("a").as_deref(), Some("win-2"));
-        assert!(registry.ids_of_session("harborline", "main").is_empty());
-        assert_eq!(registry.ids_of_session("harborline", "win-2"), vec!["a"]);
-        assert_eq!(registry.move_to_window("gone", "win-2", 4_000), None);
-    }
-
-    #[test]
-    fn counts_hidden_popups_in_the_window_that_holds_them() {
-        let registry = BrowserRegistry::default();
-        open(&registry, "opener", "harborline", true);
-        let seat = registry.reserve_popup("opener", 1).expect("seat");
-        popup(&registry, "p1", &seat);
-        assert_eq!(registry.reserve_popup("opener", 1), Err(SeatRefusal::Full));
-        registry.move_to_window("p1", "win-2", 5_000);
-        assert!(registry.reserve_popup("opener", 1).is_ok());
-        open_in(&registry, "other", "win-2");
-        assert_eq!(registry.reserve_popup("other", 1), Err(SeatRefusal::Full));
     }
 
     #[test]
