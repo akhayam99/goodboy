@@ -342,6 +342,22 @@ describe('the browser pane', () => {
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
   });
 
+  it('hides the view while a studio page covers the session', async () => {
+    await openFirstPage();
+    const studio = document.createElement('div');
+    studio.setAttribute('data-studio-slot', 'content');
+    giveRect({ element: studio, rect: { x: 248, y: 40, width: 1192, height: 860 } });
+
+    act(() => {
+      document.body.append(studio);
+    });
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_hide' })).toEqual([{ tabId: 'live-1' }]),
+    );
+    studio.remove();
+  });
+
   it('leaves the view shown for an overlay elsewhere in the window', async () => {
     await openFirstPage();
     const menu = document.createElement('div');

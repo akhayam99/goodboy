@@ -1,5 +1,7 @@
 import { OVERLAY_SELECTOR } from '../../shared/keyboard/overlaySelector';
 
+const COVER_SELECTOR = `${OVERLAY_SELECTOR}, [data-studio-slot]`;
+
 type CoversParams = {
   readonly view: HTMLElement;
   readonly rect: DOMRect;
@@ -26,13 +28,13 @@ export const createOverlayWatch = () => {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['role', 'data-dropdown-portal', 'aria-multiselectable'],
+    attributeFilter: ['role', 'data-dropdown-portal', 'aria-multiselectable', 'data-studio-slot'],
   });
 
   return {
     covers: ({ view, rect }: CoversParams): boolean => {
       if (isDirty || observer === null) {
-        overlays = Array.from(document.querySelectorAll(OVERLAY_SELECTOR));
+        overlays = Array.from(document.querySelectorAll(COVER_SELECTOR));
         isDirty = false;
       }
       return overlays.some(

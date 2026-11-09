@@ -147,9 +147,10 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   one, and drops a live id the host answers `tab-gone` for, so the next frame
   reopens the row. Closing the pane hides the view.
 - **Overlays**: a menu, a popover, a dialog or the palette is any element that
-  matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). While one
-  intersects the placeholder, the view is hidden; an overlay elsewhere in the
-  window leaves it shown. Toasts keep left of the pane, even when it lies over
+  matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`), and a
+  studio page counts too (`[data-studio-slot]`), because it sits over the
+  session without unmounting the pane. While one intersects the placeholder,
+  the view is hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), so they never sit under the view.
 - **Writes** name the session and the tab. A state change waits for the host:
   open saves the row after `browser_tab_open` answered, close calls
