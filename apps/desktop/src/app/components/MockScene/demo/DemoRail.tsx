@@ -41,6 +41,7 @@ type Props = {
   readonly onSelect: (params: SelectParams) => void;
   readonly onIntent: (params: SelectParams) => void;
   readonly upNextId: string | undefined;
+  readonly isClosingVisited: boolean;
   readonly isQuiet: boolean;
 };
 
@@ -59,6 +60,7 @@ export const DemoRail = ({
   onSelect,
   onIntent,
   upNextId,
+  isClosingVisited,
   isQuiet,
 }: Props) => {
   const active = chapters.find((chapter) => chapter.id === activeId);
@@ -139,7 +141,7 @@ export const DemoRail = ({
                 }}
                 rail={closingRail}
                 railWidth={rail.width}
-                access={access.closing}
+                access={access.closing === 'open' && isClosingVisited ? 'done' : access.closing}
                 isActive={activeId === CLOSING_ID}
                 isUpNext={upNextId === CLOSING_ID}
                 onSelect={() => onSelect({ id: CLOSING_ID })}

@@ -387,7 +387,11 @@ screen (`DemoClosing`) and follows the visitor's system (`currentPlatform`,
 `closingCopyOf`): Download for macOS, Download for Linux, or on Windows a note
 that Windows is on the way and no button. Its link carries the current
 `?theme=` (`downloadHrefOf.ts`), and a ghost Star on GitHub link, the one the
-phone page uses, sits beside it. A hint the visitor dismissed shows a Show hint
+phone page uses, sits beside it, with a ghost Replay the demo that restarts
+from Bring your repositories. Above them the screen recaps the four groups, one
+done `WorkNode` and the group's `outro` (`demoGroups.ts`) per row. While Get
+Goodboy is open the top bar drops Hide hints and Show hint, and its rail node
+turns done once visited (until Restart). A hint the visitor dismissed shows a Show hint
 button in the top bar. The stage keeps the frames it preloads `inert`, and
 takes the focus back if one gets it, so the wrapper keys work on a fresh load.
 A group the visitor leaves and opens again keeps its frame, and the stage sends

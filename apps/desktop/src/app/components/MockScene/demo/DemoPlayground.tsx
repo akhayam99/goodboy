@@ -74,6 +74,10 @@ export const DemoPlayground = () => {
   }, [isRequestedLocked, selectChapter]);
 
   const isClosing = chapterId === CLOSING_ID;
+  const [hasVisitedClosing, setHasVisitedClosing] = useState(false);
+  if (isClosing && !hasVisitedClosing) {
+    setHasVisitedClosing(true);
+  }
   const chapterIndex = isClosing
     ? DEMO_CHAPTERS.length - 1
     : Math.max(
@@ -154,6 +158,7 @@ export const DemoPlayground = () => {
   const firstChapter = DEMO_CHAPTERS[0];
   const onRestart = useCallback(() => {
     restartHints();
+    setHasVisitedClosing(false);
     if (chapterId === firstChapter.id) {
       replay();
       focusFrame();
@@ -202,6 +207,7 @@ export const DemoPlayground = () => {
       <DemoTopBar
         theme={theme}
         isQuiet={isSpotlit}
+        isClosing={isClosing}
         isHintsEnabled={!hints.isHidden}
         isHintDismissed={hints.isDismissed}
         onShowHint={onShowHint}
@@ -219,6 +225,7 @@ export const DemoPlayground = () => {
           onSelect={goToChapter}
           onIntent={onIntent}
           upNextId={upNextId}
+          isClosingVisited={hasVisitedClosing}
           isQuiet={isSpotlit}
         />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-5 pt-4 xl:pl-2 xl:pr-5">
@@ -236,7 +243,12 @@ export const DemoPlayground = () => {
             }
           />
           {isClosing ? (
-            <DemoClosing copy={closingCopy} theme={theme} />
+            <DemoClosing
+              copy={closingCopy}
+              theme={theme}
+              groups={DEMO_CHAPTERS}
+              onRestart={onRestart}
+            />
           ) : (
             <DemoStage
               theme={theme}

@@ -131,14 +131,19 @@ describe('demo playground chrome', () => {
     expect(document.querySelector('header')?.querySelector('a[target="_blank"]')).toBeNull();
   });
 
-  it('closes on a calm Get Goodboy screen with one line, the download and the GitHub star', () => {
+  it('closes on a Get Goodboy screen with a recap of the four groups, the download, the star and a replay', () => {
     seedDone({ ids: ALL_IDS });
     visitOn({ userAgent: MAC_AGENT });
     window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get Goodboy');
     const closing = screen.getByTestId('demo-closing');
-    expect(closing.querySelectorAll('p')).toHaveLength(1);
+    const recap = within(closing).getByRole('list', { name: 'What you did' });
+    expect(Array.from(recap.querySelectorAll('li')).map((row) => row.textContent)).toEqual(
+      DEMO_CHAPTERS.map((chapter) => chapter.outro),
+    );
+    expect(recap.querySelectorAll('[data-node-state="done"]')).toHaveLength(DEMO_CHAPTERS.length);
+    within(closing).getByRole('button', { name: 'Replay the demo' });
     expect(
       within(closing)
         .getByRole('link', { name: /Download for macOS/ })
@@ -151,6 +156,54 @@ describe('demo playground chrome', () => {
     expect(within(closing).queryAllByRole('heading')).toHaveLength(0);
     expect(screen.getAllByRole('heading', { name: 'Get Goodboy' })).toHaveLength(1);
     expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('drops the hint controls on the Get Goodboy screen', () => {
+    seedDone({ ids: ALL_IDS });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    const header = document.querySelector('header');
+    if (header === null) {
+      throw new Error('no top bar');
+    }
+    expect(within(header).queryByRole('button', { name: /hint/i })).toBeNull();
+    within(header).getByRole('button', { name: 'Restart' });
+  });
+
+  it('replays the whole demo from the Get Goodboy screen', () => {
+    seedDone({ ids: ALL_IDS });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    fireEvent.click(screen.getByRole('button', { name: 'Replay the demo' }));
+    expect(window.location.hash).toBe('#bring');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    const rail = screen.getByRole('navigation', { name: 'Playground groups' });
+    const rows = Array.from(rail.querySelectorAll('button[data-access]'));
+    expect(rows.map((row) => row.getAttribute('data-access'))).toEqual([
+      'open',
+      'locked',
+      'locked',
+      'locked',
+      'locked',
+    ]);
+  });
+
+  it('checks the Get Goodboy node on the rail once the visitor has opened it', () => {
+    seedDone({ ids: ALL_IDS });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    render(<DemoPlayground />);
+    const closingRow = () =>
+      Array.from(
+        screen
+          .getByRole('navigation', { name: 'Playground groups' })
+          .querySelectorAll('button[data-access]'),
+      ).at(-1);
+    expect(closingRow()?.getAttribute('data-access')).toBe('open');
+    fireEvent.click(closingRow() ?? document.body);
+    expect(closingRow()?.getAttribute('data-access')).toBe('done');
+    fireEvent.keyDown(rootOf(), { key: 'ArrowLeft', code: 'ArrowLeft' });
+    expect(window.location.hash).toBe('#ship');
+    expect(closingRow()?.getAttribute('data-access')).toBe('done');
   });
 
   it('offers the Linux download to a Linux visitor', () => {
