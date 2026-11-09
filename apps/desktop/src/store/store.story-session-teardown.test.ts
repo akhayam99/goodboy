@@ -135,6 +135,8 @@ vi.mock('../features/file-versions/fileVersions', () => ({
   fileVersionsDelete: vi.fn(async () => undefined),
 }));
 
+vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
+
 vi.mock('../features/chat/turn', () => ({
   cancelTurn: vi.fn(async () => undefined),
   listLiveRunIds: vi.fn(async () => new Set<string>()),
@@ -146,6 +148,7 @@ vi.mock('../features/integrations/github/github', () => ({
   tauriGhRunner,
 }));
 
+import { storySpies, stubStoryInvoke } from './storyHarness';
 import { useAppStore, type AppStore } from './store';
 import { archiveTask } from './slices/sessions/archiveTask';
 import { changeSessionBranch } from './slices/worktrees/changeSessionBranch';
@@ -415,6 +418,8 @@ const twoProjectStore = (activeProjectId?: ProjectId) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  storySpies.tauriInvoke.mockReset();
+  stubStoryInvoke({});
   listWorktreesForSession.mockReset();
   listSessionMounts.mockResolvedValue([]);
   removeWorktreeChecked.mockImplementation(async ({ worktreePath }: { worktreePath: string }) => ({

@@ -189,6 +189,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Browser** in the session tools opens the page beside the work. The session rail folds to icons while it is open.
 - **Browser** in the sidebar opens the Browser page. It lists every tab, grouped by session, then the pins of each project. The tile counts the open tabs.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
+- **Open as page** moves the shown tab from beside the session to the Browser page. **Back beside the session** moves it back. The page never reloads, so a half-typed form stays.
 - Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
 - A port chip, a running Service's port and a link in a conversation, a decision or an artifact open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
 - Rest on a localhost link to see its page title and address before you open it.
@@ -209,7 +210,7 @@ This part is for contributors and agents who change the feature.
 - One spelling per key: hints read the shortcut registry through the `shortcut` prop or `shortcutGlyphs`.
 - Stop the running agent: the registry id is `agent.stop`.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
-- Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule.
+- Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
 

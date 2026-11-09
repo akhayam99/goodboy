@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { browserTabListPref } from '../../browserTabListPref';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
+import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
 import { BrowserTabList } from './BrowserTabList';
 import { BrowserTabStrip } from './BrowserTabStrip';
@@ -44,6 +45,12 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
           onToggleList={() => {
             browserTabListPref.write(!isListOpen);
             setIsListOpen(!isListOpen);
+          }}
+          onOpenAsPage={() => {
+            if (shownTab === null) {
+              return;
+            }
+            promoteBrowserTab({ sessionId, tabId: shownTab.id });
           }}
           onClose={onClose}
         />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Maximize2, PanelLeft, Pin, RotateCw, X } from 'lucide-react';
 import { IconButton, Input, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
@@ -12,6 +12,7 @@ type Props = {
   readonly isAddressShortcutOn: boolean;
   readonly isListOpen?: boolean;
   readonly onToggleList?: () => void;
+  readonly onOpenAsPage?: () => void;
   readonly onClose?: () => void;
 };
 
@@ -20,6 +21,7 @@ export const BrowserAddressRow = ({
   isAddressShortcutOn,
   isListOpen = false,
   onToggleList,
+  onOpenAsPage,
   onClose,
 }: Props) => {
   const [draft, setDraft] = useState<string | null>(null);
@@ -132,6 +134,15 @@ export const BrowserAddressRow = ({
         disabled={model.address === ''}
         onClick={model.openOutside}
       />
+      {onOpenAsPage === undefined || model.shown === null ? null : (
+        <IconButton
+          icon={Maximize2}
+          label="Open as page"
+          variant="ghost"
+          tooltipSide="top"
+          onClick={onOpenAsPage}
+        />
+      )}
       {onClose === undefined ? null : (
         <IconButton icon={X} label="Close" variant="ghost" tooltipSide="top" onClick={onClose} />
       )}

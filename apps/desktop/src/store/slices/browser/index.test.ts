@@ -558,6 +558,25 @@ describe('a late answer is dropped', () => {
 
     expect(tabIds()).toEqual(['tab-c', 'tab-b', 'tab-a']);
   });
+
+  it('an address save queued behind a close does not bring the row back', async () => {
+    await openThree();
+
+    const closed = useAppStore
+      .getState()
+      .closeBrowserTab({ sessionId: SESSION_ID, tabId: 'tab-b' });
+    const saved = useAppStore.getState().updateBrowserTab({
+      sessionId: SESSION_ID,
+      tabId: 'tab-b',
+      url: ACME_URL,
+      title: 'Acme',
+    });
+    await Promise.all([closed, saved]);
+
+    expect(await saved).toBe(false);
+    expect(tabIds()).toEqual(['tab-a', 'tab-c']);
+    expect(hostRows.map((row) => row.id)).toEqual(['tab-a', 'tab-c']);
+  });
 });
 
 describe('a second window sees the same rows', () => {

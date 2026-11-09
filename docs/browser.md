@@ -241,8 +241,8 @@ so the session rail folds to icons while it is open. Pressing the tool again,
 the X or Esc on the pane closes it; Esc inside the page goes to the page.
 
 - **The address row** holds Back, Forward and Reload, the address, Pin to the
-  session's project (Unpin when a pin is shown), Open in your browser and
-  Close. The first button toggles the tab list, and the pane remembers the
+  session's project (Unpin when a pin is shown), Open in your browser, Open as
+  page (see Moves) and Close. The first button toggles the tab list, and the pane remembers the
   choice (`goodboy:browser-tab-list:v1`).
 - **The address rule** (`addressOf`): a full `http` or `https` address loads
   as typed; a bare host loads on `https`, and on `http` when it is
@@ -322,11 +322,31 @@ own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
   route with no session opens on the first session holding a tab, at its
   first tab, and names that session.
 - **Back to the session**: the band's trail names the picked session, and
-  pressing it opens that session.
+  pressing it opens that session. Back beside the session, in the header,
+  also opens its pane on the tab (see Moves).
 - **The count** on the tile is the number of rows the page lists: the tabs of
   the workspace's sessions plus the pins of their projects, named
   `Browser, 3 tabs`. A tab counts whether or not its page is open. A
   session's rows load when its pane or the page opens.
+
+## Moves
+
+A move never reloads the page: the same live webview, with the same id, gets
+new bounds or a new window. A form half typed and the scroll stay.
+
+- **Open as page** in the pane's address row opens the Browser page on the
+  session and the shown tab (`promoteBrowserTab`). The page's placement takes
+  the view through the owner rule above and places it at the page's rect; the
+  pane, now covered, lets it go.
+- **Back beside the session** in the page's header opens the session with its
+  browser pane (`demoteBrowserTab`). The page's placement hides the view and
+  lets it go, and the pane shows it at the pane's rect. The pane shows the tab
+  the page showed, because both read the session's shown tab in this window.
+- A host failure while the page places the view shows under the page's
+  address row, and the view stays with the pane, which shows it again on
+  Back beside the session. A page show that answers after the tab went back
+  is hidden again, and the pane takes the view.
+- **Another window**: moving a tab to another window comes later.
 
 ## Doors
 
@@ -480,8 +500,11 @@ words (`features/browser/browserFailureText.ts`).
   The sessions come from `browserScopeSessions`, the count from
   `browserTabCount`. `BrowserStudio/index.test.tsx` pins the grouping, a tab
   of another session, the reload back to the named tab, a route with no
-  session, the overlay hide, and that only the workspace's sessions load and
-  the count matches the rows; `createNativePlacement.test.ts` pins the owner
+  session, the overlay hide, that only the workspace's sessions load and
+  the count matches the rows, and the moves: Open as page and Back beside the
+  session keep one live id with no open, navigate or reload, a failed place
+  on the page shows its words and leaves the view to the pane, and a late page
+  show is hidden again; `createNativePlacement.test.ts` pins the owner
   rule both ways and a failed hide retried after the page took the view;
   `restoreLocation.test.ts` pins the route across a reload; the scenes are
   `browser-page` and `browser-page-dark`.

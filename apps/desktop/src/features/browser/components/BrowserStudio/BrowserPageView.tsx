@@ -1,8 +1,9 @@
 import { useRef } from 'react';
-import { StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
+import { Button, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
+import { demoteBrowserTab } from '../../demoteBrowserTab';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
@@ -58,7 +59,13 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <BrowserPageTrail sessionId={sessionId} />
-      <BrowserPageHeader />
+      <BrowserPageHeader
+        actions={
+          <Button variant="secondary" size="sm" onClick={() => demoteBrowserTab({ sessionId })}>
+            Back beside the session
+          </Button>
+        }
+      />
       <StudioRailLayout
         railLabel="Tabs by session"
         railWidth="standard"
