@@ -90,4 +90,39 @@ describe('callout placement', () => {
     expect(placement.y).toBeGreaterThanOrEqual(16);
     expect(placement.x + CALLOUT.width).toBeLessThanOrEqual(BOUNDS.width - 16);
   });
+
+  it('keeps the side it already had while that side still fits, even if another has more room', () => {
+    const target = { x: 300, y: 150, width: 422, height: 292 };
+    const base = {
+      target,
+      avoid: [],
+      lit: null,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: undefined,
+      gap: 12,
+      margin: 16,
+    };
+    expect(placeCallout(base).side).toBe('bottom');
+    expect(placeCallout({ ...base, previousSide: 'right' }).side).toBe('right');
+  });
+
+  it('leaves the side it had once that side has no room or covers an opened panel', () => {
+    const target = { x: 300, y: 150, width: 422, height: 292 };
+    const base = {
+      target,
+      lit: null,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: undefined,
+      gap: 12,
+      margin: 16,
+    };
+    const opened = { x: 740, y: 200, width: 200, height: 200 };
+    expect(placeCallout({ ...base, avoid: [opened], previousSide: 'right' }).side).toBe('bottom');
+    const wide = { ...target, width: 440 };
+    expect(placeCallout({ ...base, target: wide, avoid: [], previousSide: 'right' }).side).toBe(
+      'bottom',
+    );
+  });
 });
