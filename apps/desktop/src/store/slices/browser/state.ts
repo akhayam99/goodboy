@@ -5,10 +5,14 @@ export type BrowserState = {
   readonly browserSessionTabs: Readonly<Record<SessionId, ReadonlyArray<BrowserTab>>>;
   readonly browserProjectPins: Readonly<Record<ProjectId, ReadonlyArray<BrowserTab>>>;
   readonly browserActiveTab: Readonly<Record<SessionId, string | null>>;
+  readonly browserShownPin: Readonly<Record<SessionId, string | null>>;
+  readonly browserLiveTabs: Readonly<Record<SessionId, Readonly<Record<string, string>>>>;
 };
 
 export const browserInitialState: BrowserState = {
   browserSessionTabs: {},
   browserProjectPins: {},
   browserActiveTab: {},
+  browserShownPin: {},
+  browserLiveTabs: {},
 };

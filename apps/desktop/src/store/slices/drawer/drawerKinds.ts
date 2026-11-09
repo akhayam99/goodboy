@@ -26,6 +26,7 @@ export const DRAWER_KINDS = {
   scripts: { ...TOOL, pane: 'scripts' },
   spawned: { ...TOOL, pane: 'spawned' },
   terminal: { ...TOOL, pane: 'terminal' },
+  browser: { ...TOOL, sizing: 'reader', pane: 'browser' },
   'explore-file': { ...WIDE_READER, surface: 'tool', openerPane: 'explore' },
   scriptRun: { ...READER, surface: 'tool', openerPane: 'scripts' },
   question: { ...READER, surface: 'item', openerPane: 'ask' },

@@ -14,23 +14,15 @@ const FRONTEND_SOURCE_DIRECTORIES = [
   resolve(ROOT_DIRECTORY, 'apps/desktop/src'),
   resolve(ROOT_DIRECTORY, 'packages'),
 ];
-const BROWSER_PANE_REASON = 'the browser pane calls it once it lands, docs/browser.md';
 const ALLOWLIST_REASON_BY_COMMAND = new Map([
   [
     'browser_profile_clear',
     'the browser pane calls it to clear a workspace browser data, docs/browser.md',
   ],
-  ['browser_profile_isolation', BROWSER_PANE_REASON],
-  ['browser_tab_back', BROWSER_PANE_REASON],
-  ['browser_tab_close', BROWSER_PANE_REASON],
-  ['browser_tab_forward', BROWSER_PANE_REASON],
-  ['browser_tab_hide', BROWSER_PANE_REASON],
-  ['browser_tab_list', BROWSER_PANE_REASON],
-  ['browser_tab_navigate', BROWSER_PANE_REASON],
-  ['browser_tab_open', BROWSER_PANE_REASON],
-  ['browser_tab_place', BROWSER_PANE_REASON],
-  ['browser_tab_reload', BROWSER_PANE_REASON],
-  ['browser_tab_show', BROWSER_PANE_REASON],
+  [
+    'browser_profile_isolation',
+    'the browser pane calls it to warn about a shared profile, docs/browser.md',
+  ],
 ]);
 const WINDOW_COMMANDS_PATH = resolve(ROOT_DIRECTORY, 'apps/desktop/src-tauri/window-commands.json');
 const RETIRED_COMMAND_PATTERN = /^skill_/;

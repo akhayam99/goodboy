@@ -346,7 +346,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   still in the session but whose steps did not load says "This run couldn't be
   read" with Retry (`RunMetadataMissing`), never that it is gone.
 
-The tools (Explore, Context, Ask, Agents, Scripts, Terminal) are panes, not pages:
+The tools (Explore, Context, Ask, Agents, Scripts, Terminal, Browser) are panes, not pages:
 they open from the session tools column at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -676,11 +676,11 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 ## The session tools
 
 One 44px column at the right edge of the session content holds Explore,
-Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore, Context and
-Ask form the reading group; one separator leads to the other tools. Two
-captions, Read and Work (`ToolGroupCaption`), sit over the two groups in the
-same `text-rail` role.
-Each tool keeps its pane id and shortcut. `SessionToolButton` names every
+Context, Ask, Agents, Scripts, Terminal and Browser (`SESSION_TOOLS`). Explore,
+Context and Ask form the reading group; one separator leads to the other tools.
+Two captions, Read and Work (`ToolGroupCaption`), sit over the two groups in
+the same `text-rail` role.
+Each tool keeps its pane id and shortcut; Browser has no shortcut yet. `SessionToolButton` names every
 tool below its icon in the 9px `text-rail` role: faint when closed, muted when
 open. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
@@ -804,6 +804,11 @@ Folding the rail leaves the column in place.
   Explore or Scripts lens: the palette's Open Explore and Open Scripts, toasts
   and stored notifications (`open-lens` scripts) open the pane through
   `openToolPane`, which first goes to the session when another one is shown.
+- **Browser opens a page beside the work** (drawer kind `browser`,
+  `features/browser/`): the session's tabs and the project pins in a reader
+  tier pane, so the session rail folds to icons while it is open.
+  [browser.md](../browser.md#the-pane) owns its address row, its tabs and the
+  rules for the native view.
 - **Context signals ride on Context.** A 6px dot in the Context tool's right
   slot (on the folded icon, its corner) marks decisions changed since the last
   look (info), a running summary (info, pulsing) or a failed summary (danger)

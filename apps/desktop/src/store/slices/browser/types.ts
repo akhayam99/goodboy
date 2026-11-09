@@ -32,6 +32,10 @@ export type SessionTabParams = {
   readonly tabId: string;
 };
 
+export type LiveTabParams = SessionTabParams & {
+  readonly liveId: string;
+};
+
 export type OpenTabParams = SessionTabParams & {
   readonly url: string;
   readonly title: string;

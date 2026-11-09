@@ -14,7 +14,6 @@ const IGNORED_WINDOW_EVENTS = new Set([
   'goodboy:goal-hint-dismissed',
 ]);
 const UNHEARD_REASON_BY_EVENT = new Map([
-  ['browser://tab-opened', 'the browser pane listens once it lands, docs/browser.md'],
   ['browser://tab-state', 'the browser pane listens once it lands, docs/browser.md'],
 ]);
 
