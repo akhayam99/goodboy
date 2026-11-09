@@ -49,7 +49,7 @@ address.
   its address passes the rule it opens as a new hidden tab in the opener's
   session and window, and that window hears `browser://tab-opened` with the
   tab's facts (`openerId` names the tab that opened it). A session holds at
-  most four hidden popups, those still opening included; past that a popup
+  most four hidden popups in each window, those still opening included; past that a popup
   is refused with `too-many-popups` in the log. Showing or closing one frees
   its seat. Otherwise nothing opens.
 - Every download is refused. Asking before a download is not built yet.
@@ -74,6 +74,7 @@ commands, and got all six once it navigated itself to the dev origin or to
 - A tab's address in a listing is read from the live webview, so a page that
   moves with `history.pushState` or a fragment shows its new address.
 - A destroyed window's tabs leave the registry with it.
+- `browser_tab_move` moves a live tab into another Goodboy window (see Moves).
 - The registry stamps when a tab was hidden. The sleep and close policy reads
   that stamp; it is not built yet.
 
@@ -120,8 +121,8 @@ so the session rail folds to icons while it is open. Pressing the tool again,
 the X or Esc on the pane closes it; Esc inside the page goes to the page.
 
 - **The address row** holds Back, Forward and Reload, the address, Pin to the
-  session's project (Unpin when a pin is shown), Open in your browser and
-  Close. The first button toggles the tab list, and the pane remembers the
+  session's project (Unpin when a pin is shown), Open in your browser, Open as
+  page (see Moves) and Close. The first button toggles the tab list, and the pane remembers the
   choice (`goodboy:browser-tab-list:v1`).
 - **The address rule** (`addressOf`): a full `http` or `https` address loads
   as typed; a bare host loads on `https`, and on `http` when it is
@@ -201,11 +202,38 @@ own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
   route with no session opens on the first session holding a tab, at its
   first tab, and names that session.
 - **Back to the session**: the band's trail names the picked session, and
-  pressing it opens that session.
+  pressing it opens that session. Back beside the session, in the header,
+  also opens its pane on the tab (see Moves).
 - **The count** on the tile is the number of rows the page lists: the tabs of
   the workspace's sessions plus the pins of their projects, named
   `Browser, 3 tabs`. A tab counts whether or not its page is open. A
   session's rows load when its pane or the page opens.
+
+## Moves
+
+A move never reloads the page: the same live webview, with the same id, gets
+new bounds or a new window. A form half typed and the scroll stay.
+
+- **Open as page** in the pane's address row opens the Browser page on the
+  session and the shown tab (`promoteBrowserTab`). The page's placement takes
+  the view through the owner rule above and places it at the page's rect; the
+  pane, now covered, lets it go.
+- **Back beside the session** in the page's header opens the session with its
+  browser pane (`demoteBrowserTab`). The page's placement hides the view and
+  lets it go, and the pane shows it at the pane's rect. The pane shows the tab
+  the page showed, because both read the session's shown tab in this window.
+- A host failure while the page places the view shows under the page's
+  address row, and the view stays with the pane, which shows it again on
+  Back beside the session. A page show that answers after the tab went back
+  is hidden again, and the pane takes the view.
+- **Another window**: `browser_tab_move` reparents the tab's webview into
+  another Goodboy window (`Webview::reparent`). Only the owning window may
+  move a tab. The tab keeps its id and address, arrives hidden at the bounds
+  the caller gave, and the registry lists it under the new window, so only
+  that window drives it from then on. Its hidden popup seat counts in the new
+  window. A target that is not a Goodboy window, or is gone, is refused with
+  `window-gone` and the tab stays where it was. No screen offers this move
+  yet: a window shows one workspace, and a tab belongs to a session of it.
 
 ## Capabilities
 
@@ -245,8 +273,9 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  eleven `browser_*` commands; `registry.rs` holds the tabs and the popup
-  seats (`MAX_HIDDEN_POPUPS`). The native back and forward step lives in
+  twelve `browser_*` commands; `registry.rs` holds the tabs and the popup
+  seats (`MAX_HIDDEN_POPUPS`), counted per session and window. `host::move_tab`
+  is the reparent behind `browser_tab_move`. The native back and forward step lives in
   `src-tauri/src/platform/web_history.rs`, the only `unsafe` the host needs.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
@@ -258,7 +287,10 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
   refusals and their codes, an app command a `browse-` webview calls from a
   local address, the popup cap and its `browser://tab-opened` event, listing
   and closing only the calling window's tabs, a retry after a partial
-  session close, a destroyed window, and that no production code looks a
+  session close, a destroyed window, a move to another window (same id and
+  address, the new window lists and drives it, the popup cap recounts) and a
+  move refused for a gone window or by a window that does not own the tab,
+  and that no production code looks a
   window up through `webview_windows` or `get_webview_window`. The native
   back step cannot run headless.
 - The page lives in `features/browser/components/BrowserStudio/`, its groups in
@@ -266,8 +298,11 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
   The sessions come from `browserScopeSessions`, the count from
   `browserTabCount`. `BrowserStudio/index.test.tsx` pins the grouping, a tab
   of another session, the reload back to the named tab, a route with no
-  session, the overlay hide, and that only the workspace's sessions load and
-  the count matches the rows; `createNativePlacement.test.ts` pins the owner
+  session, the overlay hide, that only the workspace's sessions load and
+  the count matches the rows, and the moves: Open as page and Back beside the
+  session keep one live id with no open, navigate or reload, a failed place
+  on the page shows its words and leaves the view to the pane, and a late page
+  show is hidden again; `createNativePlacement.test.ts` pins the owner
   rule both ways and a failed hide retried after the page took the view;
   `restoreLocation.test.ts` pins the route across a reload; the scenes are
   `browser-page` and `browser-page-dark`.
