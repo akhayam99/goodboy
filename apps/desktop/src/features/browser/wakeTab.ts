@@ -3,6 +3,7 @@ import { useAppStore } from '../../store';
 import type { BrowserTab } from '../../store/slices/browser/types';
 import { browserHost } from './browserHost';
 import { browserPaneRequests } from './browserPaneRequests';
+import { browserWorkspaceOf } from './browserWorkspaceOf';
 import { closeOrphanTab } from './closeOrphanTab';
 import { isTabKnown } from './isTabKnown';
 import type { BrowserBounds } from './types';
@@ -14,7 +15,17 @@ type Params = {
 };
 
 const openLive = async ({ sessionId, tab, bounds }: Params): Promise<string | null> => {
-  const facts = await browserHost.open({ sessionId, url: tab.url, bounds, isShown: false });
+  const workspaceId = browserWorkspaceOf({ sessionId });
+  if (workspaceId === null) {
+    return null;
+  }
+  const facts = await browserHost.open({
+    sessionId,
+    workspaceId,
+    url: tab.url,
+    bounds,
+    isShown: false,
+  });
   if (!isTabKnown({ state: useAppStore.getState(), sessionId, tabId: tab.id })) {
     await closeOrphanTab({ sessionId, liveId: facts.id });
     return null;
