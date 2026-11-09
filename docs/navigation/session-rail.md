@@ -682,7 +682,9 @@ stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask u
 A tool has three states (`toolStateOf`): at rest, pressed when it holds the
 slot, and waiting when it is the tool in the slot's back chip. Waiting draws a
 small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
-`Terminal, waiting`; pressing it brings the tool back through the slot rule.
+`Terminal, waiting`; pressing it opens the saved request of the chip again
+(`togglePane`), so Context comes back on the same section and view, and the
+tool it replaces moves into the chip.
 `waitingPaneOf` reads the same `selectSlotBack` the drawer head's back chip
 reads, so the two never disagree: a reader or form in the chip rings nothing,
 and a tool that is pressed never rings. The signal dot keeps its meaning and

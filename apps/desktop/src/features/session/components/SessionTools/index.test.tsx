@@ -493,6 +493,52 @@ describe('SessionTools', () => {
     expect(toggle('ask').getAttribute('aria-label')).toBe('Ask this session');
   });
 
+  it('swaps the ring and the pressed tool when the waiting tool is clicked', () => {
+    renderCluster();
+    act(() => {
+      useAppStore.setState({
+        drawer: { kind: 'scripts', sessionId: SESSION_ID, payload: null },
+        drawerBack: { kind: 'ask', sessionId: SESSION_ID, payload: null },
+      });
+    });
+    const stateOf = (name: 'scripts' | 'ask') =>
+      toggle(name).closest('[data-slot="session-tool"]')?.getAttribute('data-state');
+
+    fireEvent.click(toggle('ask'));
+
+    expect(stateOf('ask')).toBe('pressed');
+    expect(stateOf('scripts')).toBe('waiting');
+    expect(screen.getAllByTestId('tool-waiting')).toHaveLength(1);
+    expect(toggle('ask').getAttribute('aria-pressed')).toBe('true');
+    expect(toggle('scripts').getAttribute('aria-label')).toBe('Scripts, waiting');
+
+    fireEvent.click(toggle('scripts'));
+
+    expect(stateOf('scripts')).toBe('pressed');
+    expect(stateOf('ask')).toBe('waiting');
+  });
+
+  it('brings the waiting drawer back with its own payload when its tool is clicked', () => {
+    const versions: OpenDrawer = {
+      kind: 'context',
+      sessionId: SESSION_ID,
+      payload: { section: 'summary', view: 'versions' },
+    };
+    renderCluster();
+    act(() => {
+      useAppStore.setState({
+        drawer: { kind: 'scripts', sessionId: SESSION_ID, payload: null },
+        drawerBack: versions,
+      });
+    });
+
+    fireEvent.click(toggle('context'));
+
+    expect(useAppStore.getState().drawer).toEqual(versions);
+    expect(drawerKind()).toBe('context');
+    expect(useAppStore.getState().drawerBack?.kind).toBe('scripts');
+  });
+
   it('keeps the signal dot beside the ring on a waiting tool', () => {
     renderCluster();
     act(() => {

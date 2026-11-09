@@ -1,4 +1,4 @@
-export type ToolState = 'rest' | 'pressed' | 'waiting';
+type ToolState = 'rest' | 'pressed' | 'waiting';
 
 type Params = {
   readonly isOpen: boolean;

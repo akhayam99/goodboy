@@ -27,13 +27,14 @@ export const SessionToolButton = ({
   onToggle,
 }: Props) => {
   const name = tool.fullLabel ?? tool.label;
-  const stateName = isWaiting && !isOpen ? `${name}, waiting` : name;
+  const state = toolStateOf({ isOpen, isWaiting });
+  const stateName = state === 'waiting' ? `${name}, waiting` : name;
   const label = signal === null ? stateName : `${stateName}, ${signal.note}`;
   const tone = navEntryToneOf({ icon: tool.icon });
   return (
     <span
       data-slot="session-tool"
-      data-state={toolStateOf({ isOpen, isWaiting })}
+      data-state={state}
       className="relative flex min-w-0 flex-col items-center gap-0.5"
     >
       <IconButton
@@ -62,7 +63,7 @@ export const SessionToolButton = ({
       >
         {tool.label}
       </span>
-      {isWaiting && !isOpen ? <ToolWaitingRing /> : null}
+      {state === 'waiting' ? <ToolWaitingRing /> : null}
       {signal === null ? null : <ToolSignalDot signal={signal} />}
     </span>
   );
