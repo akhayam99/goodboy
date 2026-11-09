@@ -9,7 +9,7 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
-- **The Sessions page frame.** The header is one 44px row, no band above it,
+- **The Board frame.** The header is one 44px row, no band above it,
   with the pane title grade (`Sessions` alone, no total: each lane carries its
   own count), then on the right: "N hidden · Clear" while a filter hides
   sessions (`HiddenByFilters`), and **Filter sessions**
@@ -109,17 +109,25 @@
   content (see Studios).
 - **One list names every destination.** `DESTINATIONS`
   (`shared/navigation/destinations.ts`) owns the name, the glyph, the shortcut,
-  the Go menu id, the former names and the home of Board, Tasks, Workflows,
-  Chat, Impact, Terminal, Browser, Monitoring and Notifications, in one order.
-  The column rows and tiles, the folded rail, the Go menu, the palette's Go to
-  rows and the shortcut sheet's Navigate group all read it, so a destination
-  has one word and one glyph in every place. `openDestination` is the one way
-  to open one: it replaces the open page and pushes only from a place, whichever
-  channel asked, so Back lands where you were before the first page. A name
-  changes in `NAMES` and the table moves with it; the Rust Go menu is checked
-  against the table by `menuBar.parity.test.ts`. Board answers to Sessions in
-  the palette. Moving a destination to another home is a change of its `home`
-  and its row in the table, nothing else.
+  the menu id, the former names, the scope (`app` or `workspace`) and the home
+  (`column`, `tile`, `topBar` or `foot`) of Board, Tasks, Workflows, Chat,
+  Impact, Terminal, Browser, Monitoring, Notifications, Settings, Guide and
+  What's new, in one order. The column rows and tiles, the folded rail, the foot
+  of the column and the Goodboy menu, the Go menu, the palette rows and the
+  shortcut sheet all read it, so a destination has one word and one glyph in
+  every place. Settings, Guide and What's new have the `foot` home and the `app`
+  scope; the nine others are `workspace` pages. `openDestination` is the one way
+  to open one, Board included: it replaces the open page and pushes only from a
+  place, whichever channel asked, so Back lands where you were before the first
+  page. A name changes in `NAMES` and the table moves with it; the Rust menu is
+  checked against the table by `menuBar.parity.test.ts`, and the Go menu keeps
+  a separator after Impact between the pages and the tools. The shortcut sheet
+  keeps its registry order, and `destinations.test.ts` checks that the keyed
+  destinations in its Navigate group follow the order of the list. Board answers
+  to Sessions in the palette and its page is titled Board. Each session page has
+  its own glyph: Runs draws `CONCEPT_ICONS.runs`, not the Workflows door glyph,
+  and Artifacts draws `CONCEPT_ICONS.artifacts`. Moving a destination to another
+  home is a change of its `home` and its row in the table, nothing else.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar, followed by the Repositories
@@ -240,9 +248,10 @@ drawer instead of the Terminal page.
      with `~` and the preset name.
   4. **Recent**, agents of this session first; then four fixed groups, each
      entry in the one its `kind` names (`EMPTY_SECTION_KINDS` in
-     `commandList.ts`): **Go to** (`goto`: one row per destination of
+     `commandList.ts`): **Go to** (`goto`: one row per page destination of
      `DESTINATIONS`, in its order, Board, Tasks, Workflows, Chat, Impact, Terminal, Browser, Monitoring and Notifications,
-     then the Impact Spend and Run defaults pages; Board answers to its former name Sessions), **Create**
+     then the Run defaults and Impact Spend pages, and Settings, whose row
+     is also a `goto` entry; Board answers to its former name Sessions), **Create**
      (`create`: New session, New chat, New terminal, New workspace), **App**
      (`action`: Resume setup while setup is unfinished in the main window,
      Theme: dark, Theme: light and Theme: system, Check for updates, Connect a provider, New question, the column

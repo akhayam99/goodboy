@@ -526,7 +526,7 @@ only drop under zoom.
   (`theme-switch-is-one-paint`). No shortcut is bound to it.
 - The top bar never edits. Reporting a bug, the update
   and the version are about Goodboy itself, so they live at the foot of the
-  column: the Goodboy row. The setup checklist is a card on the Sessions page.
+  column: the Goodboy row. The setup checklist is a card on the Board.
 
 ## The column foot
 
@@ -742,7 +742,7 @@ draft (`startSessionFromDraft`); setup is done only once that resolves, and a
 failure keeps the prompt and reads Retry. With a task source connected, Pick up
 an issue lists assigned issues and Draft the brief opens the session draft with
 that issue picked. The draft carries the first folder, so the session lands in
-it. The setup card on the Sessions page (`features/onboarding/SetupCard`, drawn on the
+it. The setup card on the Board (`features/onboarding/SetupCard`, drawn on the
 board and the empty board until setup is finished or hidden) has the stepper's three
 rows, counted by `setupProgress()` in `features/onboarding/setupProgress.ts`, the one
 function the card reads ("Setup · 2 of 3"). About you is not counted: it is suggested under Next

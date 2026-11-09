@@ -1,6 +1,6 @@
 # The board
 
-The Sessions page shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. The list of sessions lives in the sidebar, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
+The Board shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. The list of sessions lives in the sidebar, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
 
 ### Stage board
 

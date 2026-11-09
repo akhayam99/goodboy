@@ -74,10 +74,10 @@ file names it. Size is `control` in the lens switcher. `lensDestinations` in
 | Lens (`LENS_LABEL`)         | Concept        | Glyph                   | Tone    | Listed                                     |
 | --------------------------- | -------------- | ----------------------- | ------- | ------------------------------------------ |
 | Context                     | `context`      | `Library`               | info    | always                                     |
-| Workflows                   | `workflows`    | `Waypoints`             | primary | always                                     |
+| Runs                        | `runs`         | `Route`                 | primary | always                                     |
 | Agents                      | `agents`       | `Bot`                   | primary | always                                     |
 | Questions                   | `questions`    | `CircleHelp`            | warning | always                                     |
-| Artifacts                   | `plans`        | `ClipboardList`         | draft   | always                                     |
+| Artifacts                   | `artifacts`    | `Shapes`                | draft   | always                                     |
 | Review                      | `review`       | `MessageSquareQuote`    | primary | with a branch                              |
 | Diff                        | `diff`         | `FileDiff`              | info    | with a branch                              |
 | Explore                     | `explore`      | `FolderSearch`          | info    | always                                     |
@@ -162,7 +162,7 @@ A kind always renders through `AgentKindChip`
   glyph: a guessed Generalist is worse than none.
 
 A workflow row in the feed carries the same circle in a neutral tint with the
-glyph the New menu and the Workflows lens use: `workflows` (`Waypoints`) for a
+glyph the New menu uses: `workflows` (`Waypoints`) for a
 preset or custom run, `orchestrator` (`Network`) for an orchestrated one, and
 never the word Workflow. The origin (Preset run, Custom run) is the tooltip and
 the accessible name.
