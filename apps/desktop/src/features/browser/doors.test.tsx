@@ -213,7 +213,10 @@ beforeEach(async () => {
     currentWorkspaceId: WORKSPACE_ID,
     currentSessionId: SESSION_ID,
     projects: [PAYMENTS_API],
-    sessions: [buildStorySession({ id: SESSION_ID, workspaceId: WORKSPACE_ID })],
+    sessions: [
+      buildStorySession({ id: SESSION_ID, workspaceId: WORKSPACE_ID }),
+      buildStorySession({ id: OTHER_SESSION_ID, workspaceId: WORKSPACE_ID }),
+    ],
     sessionProjectMounts: {
       [SESSION_ID]: [mountFixture({ sessionId: SESSION_ID, projectId: PAYMENTS_API.id })],
     },
