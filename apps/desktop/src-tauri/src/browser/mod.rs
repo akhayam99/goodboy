@@ -3,6 +3,7 @@ mod guard;
 mod host;
 mod reason;
 mod registry;
+pub(crate) mod tab_rows;
 
 use tauri::ipc::Invoke;
 use tauri::{AppHandle, Manager, Runtime};

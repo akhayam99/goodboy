@@ -8,6 +8,10 @@ pub(crate) const WINDOW_GONE: &str = "window-gone";
 pub(crate) const OTHER_WINDOW: &str = "other-window";
 pub(crate) const TOO_MANY_POPUPS: &str = "too-many-popups";
 pub(crate) const SESSION_CLOSING: &str = "session-closing";
+pub(crate) const TAB_ROW_GONE: &str = "tab-row-gone";
+pub(crate) const TAB_ROW_OWNER: &str = "tab-row-owner";
+pub(crate) const TAB_ROWS_CHANGED: &str = "tab-rows-changed";
+pub(crate) const TAB_ROWS_FAILED: &str = "tab-rows-failed";
 
 pub(crate) fn refused(code: &str) -> MessageError {
     MessageError::Refused(code.to_string())

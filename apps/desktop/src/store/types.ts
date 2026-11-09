@@ -35,6 +35,7 @@ import type {
 } from '@goodboy/types';
 import type { SlackThreadsSliceState } from './slices/slack-threads/state';
 import type { BudgetSliceState } from './slices/budget/state';
+import type { BrowserState } from './slices/browser/state';
 import type { MonitoringSliceState } from './slices/monitoring/state';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { OrchestratorHintDraftsState } from './slices/orchestratorHintDrafts/state';
@@ -134,6 +135,7 @@ type AppSliceState = ArtifactsState &
   BootstrapState &
   FolderPurposeState &
   BudgetSliceState &
+  BrowserState &
   MonitoringSliceState &
   ResolveState &
   ReviewNavigationState &
