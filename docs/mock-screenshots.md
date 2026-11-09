@@ -448,7 +448,16 @@ painted frames, then builds the scene's timeline from the seeded store
 (`demo/director/demoTimelines.ts`: `story-direction`, `story-plan`,
 `story-review` and `demo-storage`; any other scene gets an empty one). A timeline rewinds the
 seeded state in `prepare` and replays it as cues `{ atMs, apply }` against the
-real `useAppStore`, on a playback clock that leaves pauses out. Assistant text
+real `useAppStore`, on a playback clock that leaves pauses out. Every scripted
+agent wait ends within 5.5 seconds of the visitor's click
+(`demo/director/cueClock.test.ts`): assistant text streams a sentence every
+600ms (`TEXT_SENTENCE_MS` in `director/textCuesEndMs.ts`), the Claude to Codex
+hand-off (`director/limitsHandoffCues.ts`) shows the limit notice at 900ms, runs
+its tool from 1500 to 2400ms and starts the reply at 3000ms, the review fix
+(`director/resolveFixCues.ts`) ends at 4500ms, and the Auto run
+(`director/storyWorkCues.ts`) writes its closing summary in one cue and ends the
+root turn 300ms after it, within a second of both agents reading Done, so the
+approve step is credited about 5 seconds after the click. Assistant text
 marks the live text registry first, so it streams through the product's own
 reveal. The frame and the playground talk over `postMessage` on channel
 `goodboy-demo`, version 1, both sides checking origin and the exact source
@@ -543,7 +552,12 @@ resize in one animation frame, and every 250 ms in case a layout shift or a
 stalled frame hid the change, and works on one step only, the first one not yet
 done, in the authored order: it reports `anchor` (that step, with its rect, or
 `isOffscreen` when a scroll container or the viewport hides it) and `tried`
-(its done check held after its reveal check did). A later step is never lit,
+(its done check held after its reveal check did). A new step, a step whose
+control goes from no rect to a rect, or a step that switches between its own
+control and its way back is reported only once the same rect was measured on two
+animation frames in a row (`STABLE_FRAMES` in `director/createHintEngine.ts`),
+so a hint appears once, in its final place; a step already shown follows its
+control on the next frame, so the ring tracks a scroll. A later step is never lit,
 never armed and never credited early, and a press on a later control counts for
 nothing. The done check compares against the store as it was when the reveal
 check first held, so data a scene seeds after the engine starts never counts as
@@ -551,9 +565,16 @@ the visitor's action; a reveal check therefore waits for its control to render.
 A step whose control is gone once it is passed (the question after Answer, the
 composer after Add comment) also holds its reveal and done checks on the store,
 so a visitor who went ahead with Hide hints on, or answered another way, still
-gets it credited. When the plan drawer is closed in Guide the work, the steps
-after opening the plan light the plan row again (and let it be pressed) until
-the work they wait for has started. A step that names its own control (`press`)
+gets it credited. A hint may name a way back, `recoveryAnchor` and `recovery`
+(`copy`, `instruction`, optional `side`, in `hints/demoHintTypes.ts`): the engine
+tries the step's own anchor, then the way back, and reports `isRecovering` on
+the anchor report when it used the second; a press on the way back never counts
+as the step's press. While recovering, `useDemoHints` shows `recovery.copy` in
+the coach and the header shows `recovery.instruction`. In Guide the work the
+steps after opening the plan use the plan row as their way back ("Reopen the
+plan", "Press the plan's title to open it again and go on."), and Add comment
+is done on its own press, a sent comment, or a kept draft once the plan is open
+again, so closing the drawer with the composer open credits nothing. A step that names its own control (`press`)
 counts only a press of that control, so reopening the plan from the row never
 shows the step's progress line.
 Reports carry the frame's generation and the stage drops any from an older
@@ -561,7 +582,10 @@ generation or another frame. A frame that reports `ready` again (it reloaded)
 loses its note, and the stage sends it `play` and `hints` again. The stage
 draws one note beside the anchor through the stage scale, a 2px outline and a
 callout on the side of the lit region with the most room, inside the stage
-(`hints/placeCallout.ts`; the hint's side only breaks a tie, unless the hint
+(`hints/placeCallout.ts`; it takes `previousSide`, and while that side still
+has room and covers neither the target nor an opened rect the callout keeps it,
+so a hint never flips side after it lands; `DemoCoachMark` remembers the side
+per hint; otherwise the hint's side only breaks a tie, unless the hint
 sets `isSideLocked`: the side is kept while it fits and does not cover the
 control, as the plan and question steps do so the callout never sits on the text
 they talk about); only the callout takes clicks. The callout touches the 4px outline with a 6px gap and never
@@ -579,21 +603,31 @@ points back at an earlier control lights it again. A control
 scrolled out of view gets a note at the bottom of the stage with Show control,
 which sends `reveal` so the frame scrolls it into view once. The coach X and
 Escape dismiss only the open hint (`dismiss` in `useDemoHints`; the next step
-shows as usual) and H or Show hint in the top bar brings it back. Only Hide hints and Show hints in the top
+shows as usual) and H or Show hint in the top bar brings it back. The frame
+forwards the playground keys (`director/forwardDemoKeys.ts`, installed by
+`useSceneDirector`): a keydown of ArrowLeft, ArrowRight, h or H inside the frame,
+with no Cmd, Ctrl or Alt, outside a text field and not handled by the app, is
+dispatched again on the frame element and bubbles to the playground, so the
+keys work after a click in the stage. Escape is not forwarded: the app owns it
+for drawers and confirms. Only Hide hints and Show hints in the top
 bar turn every hint off, and the choice is kept in the tab. There is no Skip, as
 a step the visitor did not do would break the story after it.
 
 The header line (`hints/headerInstruction.ts`) is always what to do now: the
-step's `instruction`; once the step is done, its `result` for at least 2.5
-seconds (`hints/resultDwellMs.ts`; a hint whose result needs
-reading sets `dwellMs`, 3.5 to 4.5 seconds, read through `hints/dwellOf.ts`:
-the waiting card, Follow a helper, Add comment, Push; and its optional `settle`
-runs once after the dwell, as closing the limits popover so the composer takes
-the first click) and until the control of
+step's `instruction`; once the step is done, its `result` for at least 2
+seconds (`RESULT_DWELL_MS` in `hints/resultDwellMs.ts`; a hint may set its own
+`dwellMs`, read through `hints/dwellOf.ts`, and none does today; its optional
+`settle` runs once after the dwell, as closing the limits popover so the
+composer takes the first click) and until the control of
 the next step is on screen, so a result is never replaced by an instruction
 for a control the visitor cannot see yet; when the group is done, after its
 last result, "Done. Next: <next>." (the same on a revisit and below `xl`, since
-the done card carries the button).
+the done card carries the button). A group end holds no dwell: the done card is
+the ending. The one hold between beats is Push to the Storage beat, at the
+default 2 seconds, bridged by its result, which names the next step. Every step
+that waits on a script (the answer, the plan revision, the approval, Start fix,
+the rebase, the push and the removal) carries `progressCopy` and `progress`, so
+the working pill and the header name the work (`hints/visitorCopy.test.ts`).
 The line never goes back to a
 description of the scene, and it never says a step is done before its result is
 visible. The frame shown changes after the result was held, and only if the
@@ -659,7 +693,9 @@ No fast click can skip a step. While hints are on, the frame stops a trusted
 click, Enter or Space on the control of a later step (the anchor of a hint after
 the active one, text fields apart) and reports `blocked` for the active hint. The
 stage then shows its coach again, even if it was dismissed, with a short pulse
-(`pulse` in `CoachMark`). Enter pressed on no control is stopped the same way
+(`pulse` in `CoachMark`), and for 2.4 seconds the callout adds "Follow the
+outlined control first." under its copy while the ring flashes once
+(`DemoCoachMark.tsx`). Enter pressed on no control is stopped the same way
 while such a control is on screen, so the wizard's own Enter handler cannot
 continue past Connect Linear. With Hide hints on the guard is off (`isGuarding`
 in the `hints` message). `createHintEngine.guard.test.ts` pins it. Two steps the
