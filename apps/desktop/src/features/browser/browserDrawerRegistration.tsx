@@ -1,9 +1,9 @@
 import type { DrawerRegistration } from '../../store/slices/drawer/drawerRegistration';
-import { BrowserPane } from './components/BrowserPane';
+import { LazyBrowserPane } from './components/LazyBrowserPane';
 
 export const browserDrawerRegistration: DrawerRegistration<'browser'> = {
   kind: 'browser',
   render: ({ drawer, closeDrawer }) => (
-    <BrowserPane key={drawer.sessionId} sessionId={drawer.sessionId} onClose={closeDrawer} />
+    <LazyBrowserPane key={drawer.sessionId} sessionId={drawer.sessionId} onClose={closeDrawer} />
   ),
 };
