@@ -8,7 +8,7 @@ use tauri::test::{
 use tauri::webview::InvokeRequest;
 use tauri::{App, Listener, Manager, Url, Webview, WebviewUrl, WebviewWindowBuilder, Window};
 
-use super::commands::{close_session, list_session, owned_tab};
+use super::commands::{close_session, list_session, move_to_window, owned_tab};
 use super::guard::label_of;
 use super::host::{
     close_each, close_tab, fill_popup, open_tab, reserve_popup, OpenTab, SessionClosed, TabBounds,
@@ -16,6 +16,7 @@ use super::host::{
 };
 use super::reason::{
     BROWSER_CALLER, NOT_WEB_ADDRESS, OTHER_WINDOW, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS,
+    WINDOW_GONE,
 };
 use super::{forget_window, refuse_browser_pages, BrowserRegistry};
 use crate::util::source_scan::production_hits;
@@ -304,6 +305,99 @@ fn opens_popups_hidden_beside_the_opener_up_to_the_cap_and_tells_the_window() {
             .len(),
         MAX_HIDDEN_POPUPS + 1
     );
+}
+
+const PAGE: TabBounds = TabBounds {
+    x: 247.0,
+    y: 36.0,
+    width: 1193.0,
+    height: 864.0,
+};
+
+#[test]
+fn moves_a_tab_to_another_window_with_the_same_id_and_address() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let id = open(&app, "main", "harborline");
+    let before = app.webviews().len();
+    let moved = move_to_window(&webview(&app, "main"), &id, "win-2", PAGE).expect("moves");
+    assert_eq!(moved.id, id);
+    assert_eq!(moved.url, "http://localhost:5173/");
+    assert!(!moved.is_shown);
+    assert_eq!(app.webviews().len(), before);
+    assert_eq!(webview(&app, &label_of(&id)).window().label(), "win-2");
+    let registry = app.state::<BrowserRegistry>();
+    assert_eq!(registry.window_of(&id).as_deref(), Some("win-2"));
+    assert!(list_session(&webview(&app, "main"), "harborline")
+        .expect("lists")
+        .is_empty());
+    let listed = list_session(&webview(&app, "win-2"), "harborline").expect("lists");
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].id, id);
+    assert!(owned_tab(&webview(&app, "win-2"), &id).is_ok());
+    assert!(matches!(
+        owned_tab(&webview(&app, "main"), &id),
+        Err(MessageError::Refused(code)) if code == OTHER_WINDOW
+    ));
+}
+
+#[test]
+fn refuses_to_move_a_tab_to_a_gone_window_and_keeps_it_where_it_was() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    for target in ["win-gone", &label_of(&id)] {
+        assert!(matches!(
+            move_to_window(&webview(&app, "main"), &id, target, PAGE),
+            Err(MessageError::Refused(ref code)) if code == WINDOW_GONE
+        ));
+    }
+    assert_eq!(webview(&app, &label_of(&id)).window().label(), "main");
+    let facts = app.state::<BrowserRegistry>().list("harborline", "main");
+    assert_eq!(facts.len(), 1);
+    assert!(facts[0].is_shown);
+}
+
+#[test]
+fn lets_only_the_owning_window_move_a_tab() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let id = open(&app, "main", "harborline");
+    assert!(matches!(
+        move_to_window(&webview(&app, "win-2"), &id, "win-2", PAGE),
+        Err(MessageError::Refused(code)) if code == OTHER_WINDOW
+    ));
+    assert!(matches!(
+        move_to_window(&webview(&app, &label_of(&id)), &id, "win-2", PAGE),
+        Err(MessageError::Refused(code)) if code == BROWSER_CALLER
+    ));
+    assert_eq!(
+        app.state::<BrowserRegistry>().window_of(&id).as_deref(),
+        Some("main")
+    );
+}
+
+#[test]
+fn counts_a_moved_popup_against_the_cap_of_its_new_window() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let opener = open(&app, "main", "harborline");
+    let mut popups = Vec::new();
+    for _ in 0..MAX_HIDDEN_POPUPS {
+        let seat = reserve_popup(app.handle(), &opener).expect("seat");
+        popups.push(
+            fill_popup(app.handle(), &seat, url("https://example.com/"))
+                .expect("opens")
+                .id,
+        );
+    }
+    assert!(reserve_popup(app.handle(), &opener).is_err());
+    move_to_window(&webview(&app, "main"), &popups[0], "win-2", PAGE).expect("moves");
+    assert!(reserve_popup(app.handle(), &opener).is_ok());
+    let there = open(&app, "win-2", "harborline");
+    for _ in 1..MAX_HIDDEN_POPUPS {
+        reserve_popup(app.handle(), &there).expect("seat in the new window");
+    }
+    assert!(matches!(
+        reserve_popup(app.handle(), &there),
+        Err(MessageError::Refused(code)) if code == TOO_MANY_POPUPS
+    ));
 }
 
 #[test]

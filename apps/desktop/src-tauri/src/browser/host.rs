@@ -254,6 +254,29 @@ fn open_beside<R: Runtime>(
     )
 }
 
+pub(crate) fn move_tab<R: Runtime>(
+    tab: &Webview<R>,
+    tab_id: &str,
+    window_label: &str,
+    bounds: TabBounds,
+) -> Result<TabFacts, MessageError> {
+    let app = tab.app_handle();
+    let target = app
+        .get_window(window_label)
+        .ok_or_else(|| reason::refused(WINDOW_GONE))?;
+    tab.reparent(&target).map_err(failed)?;
+    let registry = app.state::<BrowserRegistry>();
+    let moved = registry
+        .move_to_window(tab_id, window_label, now_ms())
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    tab.set_bounds(bounds.rect()).map_err(failed)?;
+    if let Err(error) = tab.hide() {
+        registry.set_shown(tab_id, true, now_ms());
+        return Err(failed(error));
+    }
+    Ok(moved)
+}
+
 pub(crate) fn webview_of<R: Runtime>(
     app: &AppHandle<R>,
     tab_id: &str,

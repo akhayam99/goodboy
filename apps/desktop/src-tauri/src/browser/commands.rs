@@ -28,6 +28,14 @@ pub(crate) struct TabPlaceArgs {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub(crate) struct TabMoveArgs {
+    tab_id: String,
+    window_label: String,
+    bounds: TabBounds,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct TabNavigateArgs {
     tab_id: String,
     url: String,
@@ -157,6 +165,14 @@ pub async fn browser_tab_list(
 }
 
 #[tauri::command]
+pub async fn browser_tab_move(
+    webview: Webview,
+    args: TabMoveArgs,
+) -> Result<TabFacts, MessageError> {
+    move_to_window(&webview, &args.tab_id, &args.window_label, args.bounds)
+}
+
+#[tauri::command]
 pub async fn browser_session_close(
     webview: Webview,
     args: SessionArgs,
@@ -173,6 +189,16 @@ pub(super) fn list_session<R: Runtime>(
         .state::<BrowserRegistry>()
         .list(session_id, caller.window().label());
     Ok(host::refresh_urls(caller.app_handle(), tabs))
+}
+
+pub(super) fn move_to_window<R: Runtime>(
+    caller: &Webview<R>,
+    tab_id: &str,
+    window_label: &str,
+    bounds: TabBounds,
+) -> Result<TabFacts, MessageError> {
+    let tab = owned_tab(caller, tab_id)?;
+    host::move_tab(&tab, tab_id, window_label, bounds)
 }
 
 pub(super) fn close_session<R: Runtime>(
@@ -208,6 +234,15 @@ mod tests {
     fn wire_shape_tab_place_args() {
         assert_wire_reads::<TabPlaceArgs>(json!({
             "tabId": "0f1e",
+            "bounds": { "x": 247.5, "y": 36.5, "width": 1193.5, "height": 864.5 },
+        }));
+    }
+
+    #[test]
+    fn wire_shape_tab_move_args() {
+        assert_wire_reads::<TabMoveArgs>(json!({
+            "tabId": "0f1e",
+            "windowLabel": "win-2",
             "bounds": { "x": 247.5, "y": 36.5, "width": 1193.5, "height": 864.5 },
         }));
     }
