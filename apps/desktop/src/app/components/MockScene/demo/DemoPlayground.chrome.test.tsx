@@ -316,7 +316,11 @@ describe('demo playground chrome', () => {
     const first = visibleFrame();
     const isMac = currentPlatform() === 'darwin';
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac });
-    fireEvent.click(screen.getByRole('button', { name: /Guide the work/ }));
+    fireEvent.click(
+      within(screen.getByRole('navigation', { name: 'Playground groups' })).getByRole('button', {
+        name: /Guide the work/,
+      }),
+    );
     const frames = Array.from(document.querySelectorAll('iframe')).filter(
       (entry) => entry !== first,
     );
@@ -376,7 +380,7 @@ describe('demo playground chrome', () => {
     expect(document.activeElement).toBe(shown);
   });
 
-  it('keeps the arrow keys moving between groups without a next button', () => {
+  it('keeps the arrow keys moving between groups beside the Next button of a done group', () => {
     seedDone({ ids: ['bring', 'direction'] });
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);

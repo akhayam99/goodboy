@@ -511,8 +511,7 @@ describe('demo playground', () => {
     expect(instruction()).toBe(plain(last?.result));
     expect(instruction()).not.toContain('is done');
     elapse({ ms: last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last }) });
-    expect(instruction()).toContain('Set the direction is done');
-    expect(instruction()).toContain('Guide the work, marked Up next.');
+    expect(instruction()).toBe('Done. Next: Guide the work.');
   });
 
   it('changes the scene only when a step that lives in another scene becomes the next one', () => {
@@ -873,12 +872,93 @@ describe('demo playground', () => {
     within(topBar()).getByRole('button', { name: 'Hide hints' });
   });
 
-  it('names the Up next marker in the header only when the next group carries it', () => {
-    seedProgress({ ids: ['bring', 'direction', 'guide'] });
-    window.history.replaceState(null, '', '/?scene=demo#bring');
-    render(<DemoPlayground />);
-    expect(instruction()).toBe('Bring your repositories is done. Go on with Set the direction.');
-    expect(railOf().textContent).not.toContain('Up next');
+  describe('when a group is done', () => {
+    const doneCard = (): HTMLElement => screen.getByTestId('demo-chapter-done');
+
+    const finishBring = () => {
+      render(<DemoPlayground />);
+      const frame = visibleFrame();
+      report({ frame, type: 'ready' });
+      const { hints } = chapterOf({ id: 'bring' });
+      for (const entry of hints.slice(0, -1)) {
+        tried({ frame, hintId: entry.id });
+        elapse({ ms: dwellOf({ hint: entry }) });
+      }
+      expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
+      const last = hints.at(-1);
+      tried({ frame, hintId: last?.id ?? '' });
+      return { frame, last };
+    };
+
+    it('ends the group on the stage in the same tick as its last result, with Next and Replay', () => {
+      const { frame, last } = finishBring();
+      expect(instruction()).toBe(plain(last?.result));
+      expect(within(doneCard()).getByRole('heading').textContent).toBe(
+        'Bring your repositories is done',
+      );
+      expect(doneCard().textContent).toContain(DEMO_GROUPS.bring.outro);
+      const next = within(doneCard()).getByRole('button', { name: /Next: Set the direction/ });
+      within(doneCard()).getByRole('button', { name: 'Replay this chapter' });
+      expect(document.activeElement).toBe(next);
+      expect(frame.hasAttribute('inert')).toBe(true);
+      expect(screen.getByTestId('demo-stage-scrim')).not.toBeNull();
+      elapse({ ms: last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last }) });
+      expect(instruction()).toBe('Done. Next: Set the direction.');
+    });
+
+    it('opens the next group from the card and drops the card', () => {
+      finishBring();
+      fireEvent.click(within(doneCard()).getByRole('button', { name: /Next: Set the direction/ }));
+      expect(window.location.hash).toBe('#direction');
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set the direction');
+      expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
+    });
+
+    it('takes the arrow key from the focused Next button to the next group', () => {
+      finishBring();
+      fireEvent.keyDown(within(doneCard()).getByRole('button', { name: /Next:/ }), {
+        key: 'ArrowRight',
+      });
+      expect(window.location.hash).toBe('#direction');
+    });
+
+    it('replays only this group from the card', () => {
+      seedProgress({ ids: ['bring', 'direction'] });
+      window.history.replaceState(null, '', '/?scene=demo#direction');
+      render(<DemoPlayground />);
+      const before = visibleFrame();
+      fireEvent.click(within(doneCard()).getByRole('button', { name: 'Replay this chapter' }));
+      expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+      expect(
+        Array.from(document.querySelectorAll('iframe')).some((frame) => frame !== before),
+      ).toBe(true);
+    });
+
+    it('shows the card over a dimmed, inert frame on a revisit, with no coach', () => {
+      seedProgress({ ids: ['bring', 'direction', 'guide'] });
+      window.history.replaceState(null, '', '/?scene=demo#bring');
+      render(<DemoPlayground />);
+      const frame = visibleFrame();
+      report({ frame, type: 'ready' });
+      hint({ frame, hintId: chapterOf({ id: 'bring' }).hints.at(-1)?.id ?? '' });
+      expect(within(doneCard()).getByRole('heading').textContent).toBe(
+        'Bring your repositories is done',
+      );
+      expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+      expect(frame.hasAttribute('inert')).toBe(true);
+      expect(instruction()).toBe('Done. Next: Set the direction.');
+      expect(railOf().textContent).not.toContain('Up next');
+    });
+
+    it('names Get Goodboy on the card of the last group', () => {
+      seedProgress({ ids: ['bring', 'direction', 'guide', 'ship'] });
+      window.history.replaceState(null, '', '/?scene=demo#ship');
+      render(<DemoPlayground />);
+      within(doneCard()).getByRole('button', { name: /Next: Get Goodboy/ });
+      expect(instruction()).toBe('Done. Next: Get Goodboy.');
+    });
   });
 
   it('turns the hints off and back on from the wrapper and keeps that in the tab', () => {

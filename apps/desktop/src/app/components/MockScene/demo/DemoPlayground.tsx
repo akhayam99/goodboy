@@ -222,12 +222,10 @@ export const DemoPlayground = () => {
               isClosing
                 ? closingCopy.instruction
                 : headerInstruction({
-                    chapter,
                     held: hints.held,
                     acting: hints.acting,
                     active: hints.activeHint,
                     nextTitle: nextTitle ?? CLOSING_TITLE,
-                    isNextUpNext: upNextId !== undefined,
                   })
             }
           />
@@ -252,6 +250,17 @@ export const DemoPlayground = () => {
               onSpotlightChange={onSpotlightChange}
               onHideHint={hints.dismiss}
               onRevealHint={hints.revealHint}
+              done={
+                isGroupDone
+                  ? {
+                      title: chapter.title,
+                      outro: chapter.outro,
+                      nextTitle: nextTitle ?? CLOSING_TITLE,
+                    }
+                  : undefined
+              }
+              onNext={onNext}
+              onReplay={onReplay}
             />
           )}
           <p className="sr-only" aria-live="polite">

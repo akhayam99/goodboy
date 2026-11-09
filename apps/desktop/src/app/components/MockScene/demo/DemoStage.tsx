@@ -15,6 +15,7 @@ import { readDemoHintReport } from './director/readDemoHintReport';
 import { readDemoThemeMessage } from './director/readDemoThemeMessage';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import { DemoHintSlot } from './DemoHintSlot';
+import { DemoChapterDone, type ChapterDone } from './DemoChapterDone';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
 import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
 
@@ -61,6 +62,9 @@ type Props = {
   readonly onSpotlightChange: (params: SpotlightParams) => void;
   readonly onHideHint: () => void;
   readonly onRevealHint: () => void;
+  readonly done: ChapterDone | undefined;
+  readonly onNext: () => void;
+  readonly onReplay: () => void;
 };
 
 type WatchParams = {
@@ -113,6 +117,9 @@ export const DemoStage = ({
   onSpotlightChange,
   onHideHint,
   onRevealHint,
+  done,
+  onNext,
+  onReplay,
 }: Props) => {
   const { ref, box, hasRoom } = useStageBox();
   const activeFit = stageFitOf({ box });
@@ -432,10 +439,21 @@ export const DemoStage = ({
           {offscreen !== undefined && shownKey === currentKey ? (
             <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
           ) : null}
+          {done === undefined ? null : (
+            <>
+              <div
+                data-testid="demo-stage-scrim"
+                aria-hidden
+                className="absolute inset-0 z-30 bg-background/50"
+              />
+              <DemoChapterDone done={done} onNext={onNext} onReplay={onReplay} />
+            </>
+          )}
           {frames.map((frame) => {
             const isVisible = frame.key === visibleKey && shownKey !== undefined;
             const isFading = frame.key === fadingKey;
-            const isInert = !isVisible && !isFading && frame.key !== currentKey;
+            const isInert =
+              done !== undefined || (!isVisible && !isFading && frame.key !== currentKey);
             const fit = stageFitOf({ box });
             return (
               <iframe
