@@ -99,6 +99,50 @@ describe('a tool stays open through a move inside its session', () => {
     expect(state().drawer).toEqual(tool);
   });
 
+  it('keeps a tool in the slot and a tool in the chip through a move', () => {
+    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    state().openDrawer(explore);
+    state().openDrawer(ask);
+
+    state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+
+    expect(state().drawer).toEqual(ask);
+    expect(state().drawerBack).toEqual(explore);
+  });
+
+  it('closes a reader on a move and brings back the tool in its chip', () => {
+    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
+    state().openDrawer(explore);
+    state().openDrawer({ kind: 'conversation', sessionId: S1, payload: { threadId: 't1' } });
+
+    state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+
+    expect(state().drawer).toEqual(explore);
+    expect(state().drawerBack).toBeNull();
+  });
+
+  it('drops a reader from the chip on a move', () => {
+    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
+    state().openDrawer({ kind: 'conversation', sessionId: S1, payload: { threadId: 't1' } });
+    state().openDrawer(explore);
+
+    state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+
+    expect(state().drawer).toEqual(explore);
+    expect(state().drawerBack).toBeNull();
+  });
+
+  it('empties the slot and the chip on another session', () => {
+    state().openDrawer({ kind: 'explore', sessionId: S1, payload: null });
+    state().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+
+    expect(state().drawer).toBeNull();
+    expect(state().drawerBack).toBeNull();
+  });
+
   it('does not carry a tool back into another session', () => {
     state().navigate({ to: sessionPlace({ sessionId: S2 }) });
     state().openDrawer({ kind: 'spawned', sessionId: S2, payload: null });

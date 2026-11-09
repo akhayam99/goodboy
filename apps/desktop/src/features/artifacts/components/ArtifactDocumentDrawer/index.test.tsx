@@ -363,6 +363,28 @@ describe('approving from the drawer', () => {
     expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
   });
 
+  it('empties the slot with its chip when the approved plan moves to the run page', async () => {
+    seedPlanDrawer({ run: 'held' });
+    stubApprove({ kind: 'approved', next: 'continues', agentId: null });
+    useAppStore.getState().navigate({
+      to: sessionPlace({
+        sessionId: PLAN_FIXTURE_SESSION,
+        lens: 'workflows',
+        target: { kind: 'run', runId: PLAN_RUN_ID },
+      }),
+    });
+    openRunPageWithDrawer();
+    useAppStore.setState({
+      drawerBack: { kind: 'explore', sessionId: PLAN_FIXTURE_SESSION, payload: null },
+    });
+    renderDrawer();
+
+    fireEvent.click(screen.getByTestId('plan-primary'));
+
+    await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+    expect(useAppStore.getState().drawerBack).toBeNull();
+  });
+
   it('names the step that started, closes the drawer wherever it is, and keeps a Follow the run action', async () => {
     seedPlanDrawer({ run: 'held' });
     stubApprove({ kind: 'approved', next: 'started', agentId: PLAN_IMPLEMENTER });

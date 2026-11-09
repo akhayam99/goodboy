@@ -66,15 +66,13 @@ describe('the create entry scenes', () => {
     }
   });
 
-  it('column-create-row puts a plus on the Chat and Terminal doors and New session under Sessions', async () => {
+  it('column-create-row puts a plus on the Chat door only and New session under Sessions', async () => {
     await mount('column-create-row');
 
     expect(screen.getByRole('button', { name: 'New chat' }).hasAttribute('data-door-create')).toBe(
       true,
     );
-    expect(
-      screen.getByRole('button', { name: 'New terminal' }).hasAttribute('data-door-create'),
-    ).toBe(true);
+    expect(screen.queryByRole('button', { name: 'New terminal' })).toBeNull();
     expect(screen.getByRole('button', { name: 'New session' }).getAttribute('data-create')).toBe(
       'session',
     );

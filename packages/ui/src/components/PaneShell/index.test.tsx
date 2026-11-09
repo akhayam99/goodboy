@@ -28,7 +28,7 @@ describe('PaneShell', () => {
   });
 
   it.each(['body', 'self'] as const)(
-    'draws no hairline under the header with scroll %s',
+    'lights no hairline under the header at rest with scroll %s',
     (scroll) => {
       const { container } = render(
         <PaneShell title="Notifications" scroll={scroll}>
@@ -36,7 +36,9 @@ describe('PaneShell', () => {
         </PaneShell>,
       );
 
-      expect(container.querySelector('[data-slot="scroll-edge"]')).toBeNull();
+      const edge = container.querySelector('[data-slot="scroll-edge"]');
+      expect(container.querySelector('[data-scrolled="true"]')).toBeNull();
+      expect(edge === null || edge.className.includes('opacity-0')).toBe(true);
     },
   );
 
@@ -222,17 +224,20 @@ describe('PaneShell', () => {
     const lead = container.querySelector('[data-slot="pane-lead"]') as HTMLElement;
     const pinned = container.querySelector('[data-slot="reveal-pinned"]') as HTMLElement;
     const fill = container.querySelector('[data-slot="pane-fill"]') as HTMLElement;
-    const region = container.querySelector('[data-slot="reveal-region"]');
+    const header = container.querySelector('[data-slot="reveal-header"]');
+    const body = container.querySelector('[data-slot="reveal-body"]');
+    const overlay = container.querySelector('[data-slot="reveal-overlay"]');
     expect(lead.contains(screen.getByText('Stopped notice'))).toBe(true);
     expect(fill.contains(screen.getByText('Chat body'))).toBe(true);
     expect(pinned.contains(lead)).toBe(true);
-    expect(region?.contains(lead)).toBe(false);
-    expect(region?.contains(fill)).toBe(true);
+    expect(overlay?.contains(pinned)).toBe(true);
+    expect(header?.contains(lead)).toBe(false);
+    expect(body?.contains(lead)).toBe(false);
+    expect(body?.contains(fill)).toBe(true);
     expect(lead.compareDocumentPosition(fill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(fill.className.split(' ')).toEqual(
       expect.arrayContaining(['min-h-0', 'min-w-0', 'flex-1', 'flex-col']),
     );
-    expect(pinned.className.split(' ')).toContain('shrink-0');
   });
 
   it('wraps the children of a self-scrolling pane in the fill slot with no lead', () => {

@@ -11,7 +11,7 @@ export const ColumnHeader = ({}: Props) => (
     data-column-header
     className={cn(
       PORT_GRID,
-      'sticky top-0 z-20 min-h-6 bg-background text-meta text-faint-foreground',
+      'sticky-surface sticky top-0 z-20 min-h-6 text-meta text-faint-foreground',
     )}
   >
     <span />

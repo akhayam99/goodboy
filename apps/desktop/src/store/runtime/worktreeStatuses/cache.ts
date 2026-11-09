@@ -28,6 +28,8 @@ const REFRESH_MS = 30_000;
 
 const MAX_CONCURRENT = 4;
 
+const BATCH_BOUND_MS = 1500;
+
 const entries = new Map<string, CacheEntry>();
 
 let running = 0;
@@ -95,26 +97,112 @@ const notify = (entry: CacheEntry) => {
   entry.listeners.forEach((listener) => listener());
 };
 
+type StagedRead = {
+  readonly entry: CacheEntry;
+  readonly value: WorktreeStatus | null;
+  readonly readAt: number;
+  readonly fetchedAt: number;
+};
+
+type Batch = {
+  isOpen: boolean;
+  unfinished: number;
+  readonly staged: Array<StagedRead>;
+  readonly landed: Promise<void>;
+  readonly land: () => void;
+  timer: ReturnType<typeof setTimeout> | null;
+};
+
+let generation = 0;
+let openBatch: Batch | null = null;
+
+type ApplyParams = {
+  readonly read: StagedRead;
+};
+
+const apply = ({ read: { entry, value, readAt, fetchedAt } }: ApplyParams) => {
+  entry.value = value;
+  entry.readAt = readAt;
+  entry.fetchedAt = fetchedAt;
+  entry.inflight = null;
+};
+
+type CommitParams = {
+  readonly batch: Batch;
+};
+
+const commit = ({ batch }: CommitParams) => {
+  batch.isOpen = false;
+  if (batch.timer !== null) {
+    clearTimeout(batch.timer);
+    batch.timer = null;
+  }
+  batch.staged.forEach((read) => apply({ read }));
+  batch.staged.forEach(({ entry }) => notify(entry));
+  batch.land();
+};
+
+const createBatch = (): Batch => {
+  let land = () => {};
+  const landed = new Promise<void>((resolve) => {
+    land = resolve;
+  });
+  const batch: Batch = { isOpen: true, unfinished: 0, staged: [], landed, land, timer: null };
+  batch.timer = setTimeout(() => {
+    commit({ batch });
+  }, BATCH_BOUND_MS);
+  return batch;
+};
+
+const joinBatch = (): Batch => {
+  if (openBatch !== null && openBatch.isOpen) {
+    return openBatch;
+  }
+  openBatch = createBatch();
+  return openBatch;
+};
+
+type FinishParams = {
+  readonly batch: Batch;
+  readonly read: StagedRead;
+  readonly startedIn: number;
+};
+
+const finish = ({ batch, read, startedIn }: FinishParams) => {
+  if (startedIn !== generation) {
+    batch.land();
+    return;
+  }
+  if (!batch.isOpen) {
+    apply({ read });
+    notify(read.entry);
+    return;
+  }
+  batch.staged.push(read);
+  batch.unfinished -= 1;
+  if (batch.unfinished === 0) {
+    commit({ batch });
+  }
+};
+
 const fetchInto = (entry: CacheEntry): Promise<void> => {
   if (entry.inflight) {
     return entry.inflight;
   }
   const requestedAt = Date.now();
+  const startedIn = generation;
+  const batch = joinBatch();
+  batch.unfinished += 1;
   const inflight = schedule(() =>
     worktreeStatus({ worktreePath: entry.worktreePath, baseBranch: entry.baseBranch }),
   )
-    .then((status) => {
-      entry.value = status;
-      entry.readAt = requestedAt;
-    })
-    .catch(() => {
-      entry.value = null;
-      entry.readAt = 0;
-    })
-    .finally(() => {
-      entry.fetchedAt = Date.now();
-      entry.inflight = null;
-      notify(entry);
+    .then(
+      (status) => ({ value: status, readAt: requestedAt }),
+      () => ({ value: null, readAt: 0 }),
+    )
+    .then(({ value, readAt }) => {
+      finish({ batch, read: { entry, value, readAt, fetchedAt: Date.now() }, startedIn });
+      return batch.landed;
     });
   entry.inflight = inflight;
   return inflight;
@@ -211,6 +299,13 @@ export const read = ({ key, freshness }: ReadByKeyParams): StatusRead => {
 export const isWorktreeStatusSettled = (key: string): boolean =>
   (entries.get(key)?.fetchedAt ?? 0) > 0;
 
+type SetSettledParams = {
+  readonly keys: ReadonlyArray<string>;
+};
+
+export const isWorktreeStatusSetSettled = ({ keys }: SetSettledParams): boolean =>
+  keys.every((key) => isWorktreeStatusSettled(key));
+
 export const ensure = async ({
   key,
   worktreePath,
@@ -263,6 +358,12 @@ export const refreshWorktreeStatuses = async ({ worktreePaths }: RefreshParams):
 };
 
 export const resetWorktreeStatusCache = () => {
+  generation += 1;
+  if (openBatch !== null && openBatch.timer !== null) {
+    clearTimeout(openBatch.timer);
+    openBatch.timer = null;
+  }
+  openBatch = null;
   entries.clear();
   queue.length = 0;
   running = 0;

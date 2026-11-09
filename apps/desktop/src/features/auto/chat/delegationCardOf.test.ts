@@ -54,6 +54,27 @@ describe('delegationCardOf', () => {
     expect(card.reason).toContain('idempotency');
   });
 
+  it('says why Auto kept the implementer over a narrower role, and nothing when it did not', () => {
+    const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'running' });
+    const kept = delegationCardOf({
+      delegation: {
+        ...delegation,
+        request: {
+          ...delegation.request,
+          roleFit: 'tester',
+          roleReason: 'The cap needs a code change first.',
+        },
+      },
+      childAgent: null,
+    });
+
+    expect(kept.roleKept).toEqual({
+      fitLabel: 'Tester',
+      reason: 'The cap needs a code change first.',
+    });
+    expect(delegationCardOf({ delegation, childAgent: null }).roleKept).toBeNull();
+  });
+
   it('names the model and the effort of a child, never its routing id', () => {
     const named = delegationCardOf({
       delegation: aDelegation({
