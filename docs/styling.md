@@ -320,7 +320,7 @@ Five rules:
    `StudioDetail`; `StudioFrame` hands it the band through `StudioBandContext`.
 2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
    (288, resizable 220 to 420). No page draws a second rail column.
-3. **Stage pages are only the Board and the Terminal.** Nothing else is fluid.
+3. **Stage pages are only the Board, the Terminal and the Browser.** Nothing else is fluid.
 4. **The page title row and the drawer header share one line.** `DrawerFrame` draws its
    header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 12px
    inset, 32px row), with one close control.

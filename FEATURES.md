@@ -236,7 +236,7 @@ Drive Goodboy from the keyboard, run a shell in the session's worktree, and open
 - **Terminal**: Open a real login shell in the workspace folder or any linked worktree.
 - **Keyboard shortcuts, back and forward**: Move through Goodboy, change a shortcut and stop an agent without leaving the keyboard.
 - **Explore**: Browse the session folder as a file tree, with a preview of the selected file beside it, Open and Copy.
-- **Browser**: Open your dev server or any web page beside the session, without leaving Goodboy.
+- **Browser**: Open your dev server or any web page beside the session or on a page of its own, without leaving Goodboy.
 
 [More on keyboard and terminal](docs/features/keyboard.md)
 

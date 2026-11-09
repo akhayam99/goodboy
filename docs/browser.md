@@ -1,10 +1,10 @@
 # Browser host
 
 > **Read this when** you are changing how Goodboy opens, places or closes a
-> web page inside a window, what such a page may reach, or the browser pane
-> beside a session. **Not for** the Browser page and the doors (server chips,
-> links, ⌘K), which are not built yet, or the data disclosure users read
-> (`SECURITY.md`).
+> web page inside a window, what such a page may reach, the browser pane
+> beside a session or the Browser page. **Not for** the other doors (server
+> chips, links, ⌘K), which are not built yet, or the data disclosure users
+> read (`SECURITY.md`).
 
 A browser tab is a native webview that Rust places inside a Goodboy window,
 next to the app's own page. Rust owns every tab. The window asks for a tab
@@ -160,6 +160,31 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   closed and never shown. A popup the host opened (`browser://tab-opened`)
   becomes a session tab while the pane is open.
 
+## The page
+
+The Browser tile in the sidebar opens the Browser page, a studio kind of its
+own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
+
+- **The list** shows every tab of the workspace's sessions, one group per
+  session in the sidebar's order, then one group of pins per project. A pin
+  opens in the picked session when it works on that project, else in the first
+  session that does. The picked session keeps its group with no tab, so New tab
+  opens a page in it. With no session holding a tab the page says so.
+- **The view** is the pane's: the same address row (no list toggle and no
+  Close, the band and Esc close the page), the same model for the picked
+  session and the same placement loop and overlay rule. The pane of that
+  session stays mounted under the page and is covered by it, so its view hides.
+- **One view, one place**: a placement owns the live ids it showed, and hides
+  only a view it still owns. The pane's late hide cannot take the view off the
+  page, and the pane shows it again once the page lets it go.
+- **The route** names the session and the tab. Picking a row amends it, and a
+  close or a new tab moves it to the tab now shown. A reload or ⌘R reads the
+  route back, so the page comes back on the same tab, not the first one.
+- **Back to the session**: the band's trail names the picked session, and
+  pressing it opens that session.
+- **The count** on the tile is the number of live webviews in this window,
+  every session (`liveBrowserTabCount`), named `Browser, 3 open`.
+
 ## Capabilities
 
 `capabilities/default.json` grants by webview label (`webviews`: `main`,
@@ -214,6 +239,13 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
   session close, a destroyed window, and that no production code looks a
   window up through `webview_windows` or `get_webview_window`. The native
   back step cannot run headless.
+- The page lives in `features/browser/components/BrowserStudio/`, its groups in
+  `browserPageGroups.ts`, the route sync in `hooks/useBrowserStudioTab`.
+  `BrowserStudio/index.test.tsx` pins the grouping, a tab of another session,
+  the reload back to the named tab and the overlay hide;
+  `createNativePlacement.test.ts` pins the owner rule;
+  `restoreLocation.test.ts` pins the route across a reload; the scenes are
+  `browser-page` and `browser-page-dark`.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants
   a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.
