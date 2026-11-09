@@ -135,13 +135,7 @@ export const BrowserAddressRow = ({
         />
       )}
       {onClose === undefined ? null : (
-        <IconButton
-          icon={X}
-          label="Close browser"
-          variant="ghost"
-          tooltipSide="top"
-          onClick={onClose}
-        />
+        <IconButton icon={X} label="Close" variant="ghost" tooltipSide="top" onClick={onClose} />
       )}
     </div>
   );

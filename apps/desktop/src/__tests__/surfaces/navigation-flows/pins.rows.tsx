@@ -84,6 +84,12 @@ export const pinsBridge = (command: string, args?: BridgeArgs): Promise<unknown>
   ) {
     return Promise.resolve([]);
   }
+  if (command === 'browser_session_close') {
+    return Promise.resolve({ closed: 0, failed: [] });
+  }
+  if (command === 'browser_session_tab_rows_delete') {
+    return Promise.resolve(0);
+  }
   return bridge(command, args);
 };
 

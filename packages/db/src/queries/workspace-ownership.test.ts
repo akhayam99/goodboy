@@ -27,6 +27,7 @@ const FATES: Readonly<Record<string, Fate>> = {
   project_values: 'follows-project',
   search_excluded_projects: 'follows-project',
   session_worktrees: 'follows-project',
+  browser_tabs: 'follows-session',
   diff_comments: 'follows-session',
   resolve_threads: 'follows-session',
   session_external_tasks: 'follows-session',

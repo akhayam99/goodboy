@@ -339,9 +339,9 @@ describe('the browser page', () => {
         row.getAttribute('aria-label'),
       ),
     ).toEqual(expect.arrayContaining(['Checkout', 'Tax rates']));
-    expect(screen.getByRole('button', { name: 'PR #318' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'API guides, pinned' })).toBeDefined();
-    expect(screen.getByRole('heading', { name: 'Browser' })).toBeDefined();
+    screen.getByRole('button', { name: 'PR #318' });
+    screen.getByRole('button', { name: 'API guides, pinned' });
+    screen.getByRole('heading', { name: 'Browser' });
   });
 
   it('shows the first tab of the session it opened for, in the native view over the page', async () => {
@@ -486,7 +486,7 @@ describe('the browser page', () => {
       expect(groupLabels()).toEqual(['Show tax in the checkout total', 'Pinned for payments-api']),
     );
     expect(screen.queryByText('No browser tabs yet')).toBeNull();
-    expect(screen.getByRole('button', { name: 'API guides, pinned' })).toBeDefined();
+    screen.getByRole('button', { name: 'API guides, pinned' });
   });
 
   it('says there is nothing yet when no session has a tab', async () => {
