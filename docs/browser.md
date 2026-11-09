@@ -161,13 +161,16 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   well (`[data-studio-slot]`), because it sits over the session without
   unmounting the pane. While one intersects the placeholder, the view is
   hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
-  the page (`toastRightOf`), so they never sit under the view.
+  the page (`toastRightOf`), and left of the Browser page's view, so they
+  never sit under a view.
 - **Writes** name the session and the tab. A state change waits for the host:
   open saves the row after `browser_tab_open` answered, close calls
   `browser_tab_close` (a `tab-gone` answer counts as closed) and then deletes the
   row. A failure keeps the old state and shows the words under the address
   row. An open that answers after a newer open, or after the pane closed, is
-  closed and never shown. A popup the host opened (`browser://tab-opened`)
+  closed and never shown; when only its row save answers that late, the tab
+  is closed and its row deleted. A session close also forgets the session's
+  live views and its shown pin. A popup the host opened (`browser://tab-opened`)
   becomes a session tab while the pane is open.
 
 ## The page
@@ -176,10 +179,13 @@ The Browser tile in the sidebar opens the Browser page, a studio kind of its
 own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
 
 - **The list** shows every tab of the workspace's sessions, one group per
-  session in the sidebar's order, then one group of pins per project. A pin
-  opens in the picked session when it works on that project, else in the first
-  session that does. The picked session keeps its group with no tab, so New tab
-  opens a page in it. With no session holding a tab the page says so.
+  session in the workspace's session order, then one group of pins per
+  project. It does not follow the sidebar's sort or filters, because a filter
+  can hide a session that holds a tab. A pin opens in the picked session when
+  it works on that project, else in the first session that does. The picked
+  session keeps its group with no tab, so New tab opens a page in it. With
+  pins and no session tab, the page opens on a session that hosts a pin. With
+  neither, the page says so.
 - **The view** is the pane's: the same address row (no list toggle and no
   Close, the band and Esc close the page), the same model for the picked
   session and the same placement loop and overlay rule. The pane of that
