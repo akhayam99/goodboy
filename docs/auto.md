@@ -1353,9 +1353,15 @@ no migration, outcome still `completed`:
   (`followAutoDelegationPublishStatement`). `recoverTree` resumes a `pushing` record that was never
   claimed under the new owner, and turns one that was claimed when Goodboy closed into a retryable
   failure; the retry reads the branch online first. Both live in `settledPush/`, with
-  `sweepStalePushing`, which `startAutoRuntime` runs once before its first tick: a confirmed
-  `pushing` record left by a crash on a tree that never recovers (done, finished, stopped) goes
-  through the same `pushSettledPublish` to the same retryable failure.
+  `sweepStalePushing`, which `createPushSweep` runs from the first tick of `startAutoRuntime`
+  without holding the tick: a confirmed `pushing` record left by a crash on a tree that never
+  recovers (done, finished, stopped) goes through the same `pushSettledPublish` to the same
+  retryable failure. A row that fails to settle is reported and the sweep goes on. A confirmed
+  record carries `startedAt` (the claim writes it, and so does `pushRow`), and
+  `pushSettledPublish` leaves it alone for `PUSH_LIVE_WINDOW_MS` (15 minutes), because another
+  window may still be pushing it; the sweep runs once more after that window when it met such a
+  record, and a record with no `startedAt` counts as old. It scans `auto_attempts` once per boot
+  and once more only in that case.
 - `force` first needs the online sha read when the attempt started (`baseline_json.remote`; unknown
   holds). It keeps a backup ref of that online sha, the commit the force push replaces
   (`history_backup_create`, kept stamp so the History prune never drops it), and a second one of
@@ -1367,8 +1373,14 @@ no migration, outcome still `completed`:
   (`PublishRunRow` in `AutoDelegationLines`, rows from `publishRowsOf`), one `publish` bridge call
   carrying every id. The row stays for the life of the push: **Pushing** on the button while the
   call runs (`pushRow` saves the `pushing` record, `isConfirmed` true, on the delegation and the
-  attempt before the push starts, so a reload or a second window shows it; any answer for a record
-  already pushing is refused "This push is already under way." and is quiet), then one line per branch from `publishLineOf` (the same words and tone as the
+  attempt before the push starts, so a reload or a second window shows it; that save only lands
+  while the record is still in the state the act read (`expectedState` of
+  `patchAutoDelegationPublishStatement` and `patchAutoAttemptPublishStatement`), so two windows
+  cannot both start the push; any answer for a record already pushing is refused "This push is
+  already under way." and is quiet). The result is saved after the push; if that write fails,
+  `settleRow` writes it again once, then writes a retryable failure "The push ran but its result
+  was not saved. Retry the push to check the branch online" so the card never stays on
+  **Pushing**. Then one line per branch from `publishLineOf` (the same words and tone as the
   `DelegationResult` chip): pushed with **Put back**, "Not pushed" when declined, put back, or a
   danger notice with the reason and **Retry push**. A failed row raises no toast; a refused answer
   whose saved record no longer waits for that act (`isPublishOpenOf`) is quiet too, because the
