@@ -367,6 +367,39 @@ describe('demo playground chrome', () => {
     expect(document.activeElement).toBe(rootOf());
   });
 
+  it('takes focus back from a frame that grabs it while it boots, seen as the window blur', () => {
+    seedDone({ ids: ['bring', 'direction', 'guide'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    render(<DemoPlayground />);
+    ready({ frame: visibleFrame() });
+    const preloaded = document.querySelector<HTMLIFrameElement>('iframe[data-shown="false"]');
+    if (preloaded === null) {
+      throw new Error('no preloaded frame');
+    }
+    vi.spyOn(document, 'activeElement', 'get').mockReturnValue(preloaded);
+    const focus = vi.spyOn(rootOf(), 'focus');
+    act(() => {
+      window.dispatchEvent(new FocusEvent('blur'));
+      vi.advanceTimersByTime(1);
+    });
+    expect(focus).toHaveBeenCalled();
+  });
+
+  it('gives focus to the Next button of a done group when its frame grabs it', () => {
+    seedDone({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#bring');
+    render(<DemoPlayground />);
+    const shown = visibleFrame();
+    ready({ frame: shown });
+    const next = screen.getByRole('button', { name: /Next: Set the direction/ });
+    rootOf().focus();
+    expect(document.activeElement).not.toBe(next);
+    act(() => {
+      shown.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    });
+    expect(document.activeElement).toBe(next);
+  });
+
   it('leaves focus on the shown frame when the visitor works inside it', () => {
     seedDone({ ids: ['bring', 'direction', 'guide'] });
     window.history.replaceState(null, '', '/?scene=demo#ship');

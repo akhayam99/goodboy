@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, type RefObject } from 'react';
 import { Button, FLOATING_SURFACE, KbdPill, WorkNode, cn } from '@goodboy/ui';
 
 export type ChapterDone = {
@@ -9,16 +9,15 @@ export type ChapterDone = {
 
 type Props = {
   readonly done: ChapterDone;
+  readonly nextRef: RefObject<HTMLButtonElement | null>;
   readonly onNext: () => void;
   readonly onReplay: () => void;
 };
 
-export const DemoChapterDone = ({ done, onNext, onReplay }: Props) => {
-  const nextRef = useRef<HTMLButtonElement>(null);
-
+export const DemoChapterDone = ({ done, nextRef, onNext, onReplay }: Props) => {
   useEffect(() => {
     nextRef.current?.focus({ preventScroll: true });
-  }, []);
+  }, [nextRef]);
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 z-40 flex justify-center px-4">

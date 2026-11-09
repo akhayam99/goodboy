@@ -69,6 +69,10 @@ type Props = {
   readonly onReplay: () => void;
 };
 
+type FocusTargetParams = {
+  readonly target: EventTarget | null;
+};
+
 type WatchParams = {
   readonly key: string;
   readonly frame: HTMLIFrameElement;
@@ -376,16 +380,33 @@ export const DemoStage = ({
   const visibleKeyRef = useRef(visibleKey);
   visibleKeyRef.current = visibleKey;
 
+  const isDoneRef = useRef(done !== undefined);
+  isDoneRef.current = done !== undefined;
+  const doneNextRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     const listener = new AbortController();
-    document.addEventListener(
-      'focusin',
-      (event) => {
-        const entry = [...elements.current].find(([, element]) => element === event.target);
-        if (entry === undefined || entry[0] === visibleKeyRef.current) {
-          return;
-        }
-        onFocusLost();
+    const reclaim = ({ target }: FocusTargetParams) => {
+      const entry = [...elements.current].find(([, element]) => element === target);
+      if (entry === undefined) {
+        return;
+      }
+      if (isDoneRef.current) {
+        doneNextRef.current?.focus({ preventScroll: true });
+        return;
+      }
+      if (entry[0] === visibleKeyRef.current) {
+        return;
+      }
+      onFocusLost();
+    };
+    document.addEventListener('focusin', (event) => reclaim({ target: event.target }), {
+      signal: listener.signal,
+    });
+    window.addEventListener(
+      'blur',
+      () => {
+        window.setTimeout(() => reclaim({ target: document.activeElement }), 0);
       },
       { signal: listener.signal },
     );
@@ -454,7 +475,12 @@ export const DemoStage = ({
                 aria-hidden
                 className="absolute inset-0 z-30 bg-background/50"
               />
-              <DemoChapterDone done={done} onNext={onNext} onReplay={onReplay} />
+              <DemoChapterDone
+                done={done}
+                nextRef={doneNextRef}
+                onNext={onNext}
+                onReplay={onReplay}
+              />
             </>
           )}
           {frames.map((frame) => {
