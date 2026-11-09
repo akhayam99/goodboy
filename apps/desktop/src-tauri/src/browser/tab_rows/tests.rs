@@ -2,8 +2,8 @@ use rusqlite::Connection;
 use tauri::Url;
 
 use super::{
-    delete_row, delete_session_rows, list_rows, pin_row, reorder_rows, save_row, unpin_row,
-    MoveArgs, SaveArgs, TabOwner, TabRow,
+    delete_row, delete_session_rows, list_rows, pin_row, reorder_rows, save_row, stale_session_ids,
+    unpin_row, MoveArgs, SaveArgs, TabOwner, TabRow,
 };
 use crate::browser::guard::AppOrigins;
 use crate::browser::reason::{
@@ -173,6 +173,29 @@ fn refuses_addresses_that_are_not_the_web() {
 }
 
 #[test]
+fn strips_credentials_from_a_stored_address_and_keeps_the_query() {
+    let conn = seeded();
+    let saved = save_row(
+        &conn,
+        &origins(),
+        &save_args(
+            "a",
+            session("s1"),
+            "https://ana:hunter2@acme.example/docs?page=2#top",
+            "",
+        ),
+        10,
+    )
+    .expect("row saves");
+
+    assert_eq!(saved.url, "https://acme.example/docs?page=2#top");
+    assert_eq!(
+        listed(&conn, &session("s1"))[0].url,
+        "https://acme.example/docs?page=2#top"
+    );
+}
+
+#[test]
 fn stores_a_blank_page_but_nothing_longer_than_the_caps() {
     let conn = seeded();
     save(&conn, "a", session("s1"), "about:blank");
@@ -300,6 +323,28 @@ fn pin_and_unpin_name_both_targets_and_refuse_a_stranger() {
     assert_eq!(reason_of(error), TAB_ROW_GONE);
     let error = unpin_row(&conn, &move_args("a"), 40).expect_err("row of another session refused");
     assert_eq!(reason_of(error), TAB_ROW_OWNER);
+}
+
+#[test]
+fn names_the_sessions_whose_tabs_outlived_them() {
+    let conn = seeded();
+    save(&conn, "a", session("s1"), "https://acme.example/1");
+    save(&conn, "b", session("s2"), "https://acme.example/2");
+    save(&conn, "c", project("p1"), "https://acme.example/3");
+    assert!(stale_session_ids(&conn, &[]).expect("lists").is_empty());
+
+    conn.execute("UPDATE sessions SET archived_at = 5 WHERE id = 's1'", [])
+        .expect("session archives");
+    let live = vec!["s1".to_string(), "s2".to_string(), "gone".to_string()];
+
+    assert_eq!(
+        stale_session_ids(&conn, &live).expect("lists"),
+        vec!["gone".to_string(), "s1".to_string()]
+    );
+    assert_eq!(
+        stale_session_ids(&conn, &[]).expect("lists"),
+        vec!["s1".to_string()]
+    );
 }
 
 #[test]
