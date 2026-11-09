@@ -7,6 +7,7 @@ use tauri::{
 
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
+use super::profile::{self, ProfileId};
 use super::reason::{
     self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
 };
@@ -52,6 +53,7 @@ impl TabBounds {
 
 pub(crate) struct OpenTab<'a> {
     pub(crate) session_id: &'a str,
+    pub(crate) profile: ProfileId,
     pub(crate) url: Url,
     pub(crate) position: Position,
     pub(crate) size: Size,
@@ -61,9 +63,16 @@ pub(crate) struct OpenTab<'a> {
 }
 
 impl<'a> OpenTab<'a> {
-    pub(crate) fn at(session_id: &'a str, url: Url, bounds: TabBounds, is_shown: bool) -> Self {
+    pub(crate) fn at(
+        session_id: &'a str,
+        profile: ProfileId,
+        url: Url,
+        bounds: TabBounds,
+        is_shown: bool,
+    ) -> Self {
         Self {
             session_id,
+            profile,
             url,
             position: bounds.position(),
             size: bounds.size(),
@@ -111,12 +120,14 @@ pub(crate) fn open_tab<R: Runtime>(
         position: tab.position,
         size: tab.size,
     };
-    let webview = spawn_webview(window, &id, &tab.url, rect, tab.is_shown)?;
+    profile::activate(&app, &tab.profile, &gate)?;
+    let webview = spawn_webview(window, &id, &tab.profile, &tab.url, rect, tab.is_shown)?;
     let registered = registry.insert_in_generation(
         NewTab {
             id: &id,
             session_id: tab.session_id,
             window_label: window.label(),
+            profile: tab.profile,
             url: tab.url.as_str(),
             rect,
             is_shown: tab.is_shown,
@@ -140,12 +151,14 @@ pub(crate) fn open_tab<R: Runtime>(
 pub(super) fn spawn_webview<R: Runtime>(
     window: &Window<R>,
     id: &str,
+    profile: &ProfileId,
     url: &Url,
     rect: Rect,
     is_shown: bool,
 ) -> Result<Webview<R>, MessageError> {
     let app = window.app_handle();
     let builder = builder_for(app, id, url, AppOrigins::of_app(app));
+    let builder = profile::scope(app, builder, profile)?;
     let webview = window
         .add_child(builder, rect.position, rect.size)
         .map_err(failed)?;
@@ -266,6 +279,7 @@ fn open_beside<R: Runtime>(
         &window,
         OpenTab {
             session_id: &seat.session_id,
+            profile: seat.profile,
             url,
             position: bounds.position,
             size: bounds.size,

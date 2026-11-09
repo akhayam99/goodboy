@@ -4,6 +4,7 @@ use tauri::{Manager, Runtime, Webview};
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::lifecycle;
+use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
     self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_CLOSED, TAB_GONE,
 };
@@ -15,6 +16,7 @@ use crate::util::{now_ms, MessageError};
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TabOpenArgs {
     session_id: String,
+    workspace_id: String,
     url: String,
     bounds: TabBounds,
     is_shown: bool,
@@ -44,6 +46,12 @@ pub(crate) struct TabArgs {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SessionArgs {
     session_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WorkspaceArgs {
+    workspace_id: String,
 }
 
 fn refuse_browser_caller<R: Runtime>(caller: &Webview<R>) -> Result<(), MessageError> {
@@ -94,11 +102,27 @@ pub async fn browser_tab_open(
     args: TabOpenArgs,
 ) -> Result<TabFacts, MessageError> {
     refuse_browser_caller(&webview)?;
+    let profile = ProfileId::of_workspace(&args.workspace_id)?;
     let url = guard::parse_address(&args.url).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
     host::open_tab(
         &webview.window(),
-        OpenTab::at(&args.session_id, url, args.bounds, args.is_shown),
+        OpenTab::at(&args.session_id, profile, url, args.bounds, args.is_shown),
     )
+}
+
+#[tauri::command]
+pub async fn browser_profile_clear(
+    webview: Webview,
+    args: WorkspaceArgs,
+) -> Result<ClearOutcome, MessageError> {
+    refuse_browser_caller(&webview)?;
+    profile::clear(webview.app_handle(), &args.workspace_id).await
+}
+
+#[tauri::command]
+pub async fn browser_profile_isolation(webview: Webview) -> Result<Isolation, MessageError> {
+    refuse_browser_caller(&webview)?;
+    Ok(profile::isolation())
 }
 
 #[tauri::command]
@@ -194,12 +218,13 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::util::wire_shape::assert_wire_reads;
+    use crate::util::wire_shape::{assert_wire_reads, assert_wire_value};
 
     #[test]
     fn wire_shape_tab_open_args() {
         assert_wire_reads::<TabOpenArgs>(json!({
             "sessionId": "harborline",
+            "workspaceId": "northwind",
             "url": "http://localhost:5173/",
             "bounds": { "x": 963.5, "y": 36.5, "width": 477.5, "height": 864.5 },
             "isShown": true,
@@ -230,5 +255,20 @@ mod tests {
     #[test]
     fn wire_shape_session_args() {
         assert_wire_reads::<SessionArgs>(json!({ "sessionId": "harborline" }));
+    }
+
+    #[test]
+    fn wire_shape_workspace_args() {
+        assert_wire_reads::<WorkspaceArgs>(json!({ "workspaceId": "northwind" }));
+    }
+
+    #[test]
+    fn wire_shape_clear_outcome() {
+        assert_wire_value(
+            &ClearOutcome {
+                should_restart: true,
+            },
+            json!({ "shouldRestart": true }),
+        );
     }
 }

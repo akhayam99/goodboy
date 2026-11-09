@@ -15,14 +15,17 @@ use super::host::{
     MAX_HIDDEN_POPUPS, TAB_OPENED_EVENT,
 };
 use super::lifecycle::{hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT};
+use super::profile::{begin_clear, ProfileId};
 use super::reason::{
-    BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, SESSION_CLOSING, TAB_CLOSED,
-    TAB_GONE, TOO_MANY_POPUPS,
+    BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY, PROFILE_LIVE,
+    SESSION_CLOSING, TAB_CLOSED, TAB_GONE, TOO_MANY_POPUPS,
 };
 use super::registry::{NewTab, TabState};
-use super::{forget_window, refuse_browser_pages, start_lifecycle, BrowserRegistry};
+use super::{
+    forget_window, refuse_browser_pages, start_lifecycle, BrowserProfiles, BrowserRegistry,
+};
 use crate::util::source_scan::production_hits;
-use crate::util::{now_ms, MessageError};
+use crate::util::{now_ms, uuid_v4, MessageError};
 
 const PANE: TabBounds = TabBounds {
     x: 963.0,
@@ -34,6 +37,9 @@ const PANE: TabBounds = TabBounds {
 fn app_with_windows(labels: &[&str]) -> App<MockRuntime> {
     let app = mock_app();
     app.manage(BrowserRegistry::default());
+    app.manage(BrowserProfiles::under(
+        std::env::temp_dir().join(format!("goodboy-browser-test-{}", uuid_v4())),
+    ));
     for label in labels {
         WebviewWindowBuilder::new(&app, *label, WebviewUrl::default())
             .build()
@@ -50,13 +56,36 @@ fn url(address: &str) -> Url {
     Url::parse(address).expect("test address parses")
 }
 
-fn open(app: &App<MockRuntime>, window_label: &str, session_id: &str) -> String {
+fn northwind() -> ProfileId {
+    ProfileId::of_workspace("northwind").expect("workspace id is valid")
+}
+
+fn acme() -> ProfileId {
+    ProfileId::of_workspace("acme").expect("workspace id is valid")
+}
+
+fn open_for(
+    app: &App<MockRuntime>,
+    window_label: &str,
+    profile: ProfileId,
+    session_id: &str,
+) -> String {
     open_tab(
         &window(app, window_label),
-        OpenTab::at(session_id, url("http://localhost:5173/"), PANE, true),
+        OpenTab::at(
+            session_id,
+            profile,
+            url("http://localhost:5173/"),
+            PANE,
+            true,
+        ),
     )
     .expect("tab opens")
     .id
+}
+
+fn open(app: &App<MockRuntime>, window_label: &str, session_id: &str) -> String {
+    open_for(app, window_label, northwind(), session_id)
 }
 
 #[test]
@@ -83,7 +112,7 @@ fn opens_a_hidden_tab_with_the_time_it_was_hidden() {
     let app = app_with_windows(&["main"]);
     let facts = open_tab(
         &window(&app, "main"),
-        OpenTab::at("harborline", url("about:blank"), PANE, false),
+        OpenTab::at("harborline", northwind(), url("about:blank"), PANE, false),
     )
     .expect("tab opens");
     assert!(!facts.is_shown);
@@ -100,7 +129,7 @@ fn refuses_to_open_an_app_or_script_address() {
     ] {
         let result = open_tab(
             &window(&app, "main"),
-            OpenTab::at("harborline", url(address), PANE, true),
+            OpenTab::at("harborline", northwind(), url(address), PANE, true),
         );
         assert!(
             matches!(result, Err(MessageError::Refused(ref code)) if code == NOT_WEB_ADDRESS),
@@ -379,7 +408,13 @@ fn refuses_a_tab_that_started_opening_before_its_session_closed() {
     let registry = app.state::<BrowserRegistry>();
     let generation = registry.generation("harborline", "main");
     registry.close_session("harborline", "main");
-    let mut stale = OpenTab::at("harborline", url("http://localhost:5173/"), PANE, true);
+    let mut stale = OpenTab::at(
+        "harborline",
+        northwind(),
+        url("http://localhost:5173/"),
+        PANE,
+        true,
+    );
     stale.generation = Some(generation);
     assert!(matches!(
         open_tab(&window(&app, "main"), stale),
@@ -810,6 +845,7 @@ fn keeps_the_old_place_when_the_webview_would_not_take_the_new_one() {
         id: "orphan",
         session_id: "harborline",
         window_label: "main",
+        profile: northwind(),
         url: "http://localhost:5173/",
         rect: PANE.rect(),
         is_shown: false,
@@ -860,4 +896,160 @@ fn ends_consistent_when_a_sweep_and_a_close_cross_paths() {
     close_tab(app.handle(), &third).expect("closes");
     sweep(app.handle(), 200 + SLEEP_LIMIT_MS);
     assert!(registry.is_empty());
+}
+
+#[test]
+fn opening_in_another_workspace_closes_the_first_workspace_s_views() {
+    let app = app_with_windows(&["main"]);
+    let first = open_for(&app, "main", northwind(), "harborline");
+    let second = open_for(&app, "main", northwind(), "harborline");
+    let other = open_for(&app, "main", acme(), "cascadia");
+    assert_eq!(state_of(&app, &first), Some(TabState::Closed));
+    assert_eq!(state_of(&app, &second), Some(TabState::Closed));
+    assert!(!is_live_webview(&app, &first));
+    assert!(!is_live_webview(&app, &second));
+    assert_eq!(state_of(&app, &other), Some(TabState::Live));
+    assert!(is_live_webview(&app, &other));
+    let listed = app.state::<BrowserRegistry>().list("harborline", "main");
+    assert_eq!(listed.len(), 2);
+    assert!(listed.iter().all(|facts| !facts.is_shown));
+}
+
+#[test]
+fn keeps_every_view_of_one_workspace_running_together() {
+    let app = app_with_windows(&["main"]);
+    let first = open_for(&app, "main", northwind(), "harborline");
+    let second = open_for(&app, "main", northwind(), "payments");
+    assert!(is_live_webview(&app, &first));
+    assert!(is_live_webview(&app, &second));
+}
+
+#[test]
+fn runs_one_workspace_at_a_time_across_windows() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let first = open_for(&app, "main", northwind(), "harborline");
+    let other = open_for(&app, "win-2", acme(), "cascadia");
+    assert_eq!(state_of(&app, &first), Some(TabState::Closed));
+    assert!(!is_live_webview(&app, &first));
+    assert!(is_live_webview(&app, &other));
+}
+
+#[test]
+fn brings_a_closed_view_back_under_the_same_id_and_closes_the_other_workspace() {
+    let app = app_with_windows(&["main"]);
+    let first = open_for(&app, "main", northwind(), "harborline");
+    let other = open_for(&app, "main", acme(), "cascadia");
+    let facts = show_tab(&window(&app, "main"), &first, now_ms()).expect("shows");
+    assert_eq!(facts.id, first);
+    assert_eq!(facts.state, TabState::Live);
+    assert!(is_live_webview(&app, &first));
+    assert_eq!(state_of(&app, &other), Some(TabState::Closed));
+    assert!(!is_live_webview(&app, &other));
+}
+
+#[test]
+fn announces_the_views_a_switch_closed() {
+    let app = app_with_windows(&["main"]);
+    let heard = hear_states(&app);
+    let first = open_for(&app, "main", northwind(), "harborline");
+    open_for(&app, "main", acme(), "cascadia");
+    assert_eq!(
+        *heard.lock().expect("sink"),
+        vec![(first, "closed".to_string())]
+    );
+}
+
+#[test]
+fn a_popup_opens_in_the_workspace_of_its_opener() {
+    let app = app_with_windows(&["main"]);
+    let opener = open_for(&app, "main", acme(), "cascadia");
+    let seat = reserve_popup(app.handle(), &opener).expect("seat");
+    assert_eq!(seat.profile, acme());
+    let facts = fill_popup(app.handle(), &seat, url("https://example.com/")).expect("popup opens");
+    assert_eq!(
+        app.state::<BrowserRegistry>().profile_of(&facts.id),
+        Some(acme())
+    );
+    assert!(is_live_webview(&app, &opener));
+}
+
+#[test]
+fn refuses_to_clear_a_workspace_that_has_a_live_view() {
+    let app = app_with_windows(&["main"]);
+    let id = open_for(&app, "main", northwind(), "harborline");
+    assert!(matches!(
+        begin_clear(app.handle(), "northwind"),
+        Err(MessageError::Refused(code)) if code == PROFILE_LIVE
+    ));
+    hide_tab(app.handle(), &id, now_ms()).expect("hides");
+    assert!(matches!(
+        begin_clear(app.handle(), "northwind"),
+        Err(MessageError::Refused(code)) if code == PROFILE_LIVE
+    ));
+}
+
+#[test]
+fn clears_a_workspace_once_its_views_are_closed() {
+    let app = app_with_windows(&["main"]);
+    let id = open_for(&app, "main", northwind(), "harborline");
+    open_for(&app, "main", acme(), "cascadia");
+    assert_eq!(state_of(&app, &id), Some(TabState::Closed));
+    assert!(begin_clear(app.handle(), "northwind").is_ok());
+    assert!(begin_clear(app.handle(), "acme").is_err());
+}
+
+#[test]
+fn leaves_other_workspaces_alone_while_one_is_clearing() {
+    let app = app_with_windows(&["main"]);
+    let lease = begin_clear(app.handle(), "northwind").expect("nothing is live");
+    let other = open_for(&app, "main", acme(), "cascadia");
+    assert!(is_live_webview(&app, &other));
+    drop(lease);
+    assert!(begin_clear(app.handle(), "northwind").is_ok());
+}
+
+#[test]
+fn refuses_to_open_or_bring_back_a_view_while_its_workspace_clears() {
+    let app = app_with_windows(&["main"]);
+    let id = open_for(&app, "main", northwind(), "harborline");
+    open_for(&app, "main", acme(), "cascadia");
+    let lease = begin_clear(app.handle(), "northwind").expect("northwind is closed");
+    let refused = open_tab(
+        &window(&app, "main"),
+        OpenTab::at(
+            "harborline",
+            northwind(),
+            url("http://localhost:5173/"),
+            PANE,
+            true,
+        ),
+    );
+    assert!(matches!(refused, Err(MessageError::Refused(code)) if code == PROFILE_BUSY));
+    assert!(matches!(
+        show_tab(&window(&app, "main"), &id, now_ms()),
+        Err(MessageError::Refused(code)) if code == PROFILE_BUSY
+    ));
+    assert_eq!(state_of(&app, &id), Some(TabState::Closed));
+    drop(lease);
+    assert!(show_tab(&window(&app, "main"), &id, now_ms()).is_ok());
+}
+
+#[test]
+fn clearing_twice_at_once_is_refused() {
+    let app = app_with_windows(&["main"]);
+    let lease = begin_clear(app.handle(), "northwind").expect("first");
+    assert!(matches!(
+        begin_clear(app.handle(), "northwind"),
+        Err(MessageError::Refused(code)) if code == PROFILE_BUSY
+    ));
+    drop(lease);
+}
+
+#[test]
+fn refuses_to_clear_a_blank_workspace() {
+    let app = app_with_windows(&["main"]);
+    assert!(matches!(
+        begin_clear(app.handle(), " "),
+        Err(MessageError::Refused(_))
+    ));
 }

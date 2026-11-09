@@ -1,9 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Mutex, MutexGuard};
 
 use serde::Serialize;
 use tauri::Rect;
 
+use super::profile::ProfileId;
 use crate::util::lock_or_recover;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -31,6 +32,7 @@ pub(crate) struct TabFacts {
 struct Tab {
     facts: TabFacts,
     window_label: String,
+    profile: ProfileId,
     rect: Rect,
     opened: u64,
 }
@@ -54,6 +56,7 @@ struct Tabs {
     next_opened: u64,
     pending_popups: HashMap<String, usize>,
     closings: HashMap<(String, String), u64>,
+    clearing: HashSet<ProfileId>,
 }
 
 impl Tabs {
@@ -75,6 +78,7 @@ pub(crate) struct NewTab<'a> {
     pub(crate) id: &'a str,
     pub(crate) session_id: &'a str,
     pub(crate) window_label: &'a str,
+    pub(crate) profile: ProfileId,
     pub(crate) url: &'a str,
     pub(crate) rect: Rect,
     pub(crate) is_shown: bool,
@@ -87,6 +91,7 @@ pub(crate) struct PopupSeat {
     pub(crate) opener_id: String,
     pub(crate) session_id: String,
     pub(crate) window_label: String,
+    pub(crate) profile: ProfileId,
     pub(crate) generation: u64,
 }
 
@@ -94,6 +99,12 @@ pub(crate) struct PopupSeat {
 pub(crate) enum SeatRefusal {
     OpenerGone,
     Full,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum ClearRefusal {
+    Live,
+    Clearing,
 }
 
 impl BrowserRegistry {
@@ -108,6 +119,7 @@ impl BrowserRegistry {
             opener_id: opener_id.to_string(),
             session_id: opener.facts.session_id.clone(),
             window_label: opener.window_label.clone(),
+            profile: opener.profile,
             generation: tabs.generation(&opener.facts.session_id, &opener.window_label),
         };
         let hidden = tabs
@@ -186,6 +198,7 @@ impl BrowserRegistry {
             Tab {
                 facts: facts.clone(),
                 window_label: tab.window_label.to_string(),
+                profile: tab.profile,
                 rect: tab.rect,
                 opened,
             },
@@ -205,6 +218,68 @@ impl BrowserRegistry {
             .by_id
             .get(id)
             .map(|tab| tab.window_label.clone())
+    }
+
+    pub(crate) fn profile_of(&self, id: &str) -> Option<ProfileId> {
+        lock_or_recover(&self.tabs)
+            .by_id
+            .get(id)
+            .map(|tab| tab.profile)
+    }
+
+    pub(crate) fn open_outside(&self, profile: &ProfileId) -> Vec<String> {
+        let tabs = lock_or_recover(&self.tabs);
+        let mut found: Vec<&Tab> = tabs
+            .by_id
+            .values()
+            .filter(|tab| tab.profile != *profile && !tab.is_closed())
+            .collect();
+        found.sort_by_key(|tab| tab.opened);
+        found.into_iter().map(|tab| tab.facts.id.clone()).collect()
+    }
+
+    pub(crate) fn is_clearing(&self, profile: &ProfileId) -> bool {
+        lock_or_recover(&self.tabs).clearing.contains(profile)
+    }
+
+    pub(crate) fn begin_clear(&self, profile: &ProfileId) -> Result<(), ClearRefusal> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        if tabs.clearing.contains(profile) {
+            return Err(ClearRefusal::Clearing);
+        }
+        if tabs
+            .by_id
+            .values()
+            .any(|tab| tab.profile == *profile && !tab.is_closed())
+        {
+            return Err(ClearRefusal::Live);
+        }
+        tabs.clearing.insert(*profile);
+        Ok(())
+    }
+
+    pub(crate) fn end_clear(&self, profile: &ProfileId) {
+        lock_or_recover(&self.tabs).clearing.remove(profile);
+    }
+
+    pub(crate) fn mark_switched(&self, id: &str, now_ms: i64) -> Option<TabFacts> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let tab = tabs.by_id.get_mut(id)?;
+        if tab.is_closed() {
+            return None;
+        }
+        let before = tab.facts.clone();
+        tab.facts.state = TabState::Closed;
+        tab.facts.is_shown = false;
+        tab.facts.hidden_since_ms = Some(now_ms);
+        Some(before)
+    }
+
+    pub(crate) fn restore(&self, before: TabFacts) {
+        let mut tabs = lock_or_recover(&self.tabs);
+        if let Some(tab) = tabs.by_id.get_mut(&before.id) {
+            tab.facts = before;
+        }
     }
 
     pub(crate) fn remove(&self, id: &str) -> Option<TabFacts> {
@@ -395,11 +470,16 @@ mod tests {
         }
     }
 
+    fn profile() -> ProfileId {
+        ProfileId::of_workspace("harborline").expect("workspace id is valid")
+    }
+
     fn open(registry: &BrowserRegistry, id: &str, session_id: &str, is_shown: bool) -> TabFacts {
         registry.insert(NewTab {
             id,
             session_id,
             window_label: "main",
+            profile: profile(),
             url: "http://localhost:5173/",
             rect: rect(),
             is_shown,
@@ -413,6 +493,7 @@ mod tests {
             id,
             session_id: "harborline",
             window_label,
+            profile: profile(),
             url: "about:blank",
             rect: rect(),
             is_shown: true,
@@ -426,6 +507,7 @@ mod tests {
             id,
             session_id: &seat.session_id,
             window_label: &seat.window_label,
+            profile: seat.profile,
             url: "https://example.com/",
             rect: rect(),
             is_shown: false,
@@ -439,6 +521,48 @@ mod tests {
     #[test]
     fn starts_empty() {
         assert!(BrowserRegistry::default().is_empty());
+    }
+
+    #[test]
+    fn puts_back_a_shown_tab_whose_switch_close_failed() {
+        let registry = BrowserRegistry::default();
+        let shown = open(&registry, "a", "harborline", true);
+        let before = registry.mark_switched("a", 5_000).expect("was open");
+        assert_eq!(before, shown);
+        let closed = registry.facts("a").expect("still listed");
+        assert_eq!(closed.state, TabState::Closed);
+        assert!(!closed.is_shown);
+        assert_eq!(registry.mark_switched("a", 6_000), None);
+        registry.restore(before);
+        assert_eq!(registry.facts("a"), Some(shown));
+    }
+
+    #[test]
+    fn lists_the_open_tabs_outside_a_profile_in_opening_order() {
+        let registry = BrowserRegistry::default();
+        let acme = ProfileId::of_workspace("acme").expect("workspace id is valid");
+        open(&registry, "b", "harborline", true);
+        open(&registry, "a", "harborline", false);
+        open(&registry, "closed", "harborline", false);
+        registry.mark_closed("closed");
+        assert_eq!(registry.open_outside(&acme), vec!["b", "a"]);
+        assert!(registry.open_outside(&profile()).is_empty());
+    }
+
+    #[test]
+    fn clears_only_a_profile_with_no_open_tab_and_one_clear_at_a_time() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "a", "harborline", false);
+        assert_eq!(registry.begin_clear(&profile()), Err(ClearRefusal::Live));
+        registry.mark_closed("a");
+        assert_eq!(registry.begin_clear(&profile()), Ok(()));
+        assert!(registry.is_clearing(&profile()));
+        assert_eq!(
+            registry.begin_clear(&profile()),
+            Err(ClearRefusal::Clearing)
+        );
+        registry.end_clear(&profile());
+        assert!(!registry.is_clearing(&profile()));
     }
 
     #[test]
