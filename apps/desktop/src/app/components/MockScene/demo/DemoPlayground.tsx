@@ -161,15 +161,20 @@ export const DemoPlayground = () => {
     }
     goToChapter({ id: firstChapter.id });
   }, [restartHints, chapterId, firstChapter.id, replay, focusFrame, goToChapter]);
+  const onShowHint = useCallback(() => {
+    showHints();
+    focusFrame();
+  }, [showHints, focusFrame]);
   const onToggleHints = useCallback(
     ({ isEnabled }: ToggleHintsParams) => {
+      focusFrame();
       if (isEnabled) {
         showHints();
         return;
       }
       hideHints();
     },
-    [showHints, hideHints],
+    [showHints, hideHints, focusFrame],
   );
   const onFrameShortcut = useCallback(({ code }: FrameShortcutParams) => {
     setShortcut((previous) => ({ code, count: (previous?.count ?? 0) + 1 }));
@@ -178,7 +183,7 @@ export const DemoPlayground = () => {
     onPrevious,
     onNext,
     onReplay,
-    onShowHint: hints.show,
+    onShowHint,
     onFrameShortcut,
   });
   useEscapeLayer(hints.dismiss, hints.coach !== undefined || hints.offscreen !== undefined);
@@ -199,7 +204,7 @@ export const DemoPlayground = () => {
         isQuiet={isSpotlit}
         isHintsEnabled={!hints.isHidden}
         isHintDismissed={hints.isDismissed}
-        onShowHint={hints.show}
+        onShowHint={onShowHint}
         onToggleHints={onToggleHints}
         onRestart={onRestart}
         onToggleTheme={swapTheme}

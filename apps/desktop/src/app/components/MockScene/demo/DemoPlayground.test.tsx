@@ -1012,6 +1012,25 @@ describe('demo playground', () => {
     });
   });
 
+  it('hands focus back to the playground after Show hint, Hide hints and Show hints', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Dismiss hint' }));
+    const showHint = within(topBar()).getByRole('button', { name: 'Show hint' });
+    showHint.focus();
+    fireEvent.click(showHint);
+    expect(document.activeElement).toBe(playgroundRoot());
+    const toggle = within(topBar()).getByRole('button', { name: 'Hide hints' });
+    toggle.focus();
+    fireEvent.click(toggle);
+    expect(document.activeElement).toBe(playgroundRoot());
+    within(topBar()).getByRole('button', { name: 'Show hints' }).focus();
+    fireEvent.click(within(topBar()).getByRole('button', { name: 'Show hints' }));
+    expect(document.activeElement).toBe(playgroundRoot());
+  });
+
   it('turns the hints off and back on from the wrapper and keeps that in the tab', () => {
     const view = render(<DemoPlayground />);
     const frame = visibleFrame();
