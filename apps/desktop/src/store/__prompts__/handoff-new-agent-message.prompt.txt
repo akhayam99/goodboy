@@ -33,6 +33,7 @@ A model marked unassessed has no reviewed routing profile, which is not a statem
 Prices are published rates per million tokens, input then output, and are absent when this build has no rate for that provider.
 anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25
 anthropic/opus-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $4/$20
+anthropic/fable-5.2 efforts low,medium,high,xhigh,max unassessed ctx 1000k $8/$40
 anthropic/fable-5.1 efforts low,medium,high,xhigh,max unassessed ctx 1000k $10/$50
 anthropic/fable-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $10/$50
 anthropic/opus-4.8 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25
