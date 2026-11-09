@@ -126,7 +126,7 @@ const renderFromStore = (): void => {
 };
 
 type FindParams = {
-  readonly text: string;
+  readonly text: string | RegExp;
 };
 
 const findInRow = async ({ text }: FindParams): Promise<HTMLElement> =>
@@ -166,6 +166,20 @@ describe('the force push row, read back through the store', () => {
 
     await findInRow({ text: PUSHED_LINE });
     expect(world.state.ports.pushes).toHaveLength(2);
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
+  it('keeps the row and its reason when the retry cannot keep a backup', async () => {
+    world.state.ports.setPushOutcomes([{ kind: 'stale', message: STALE }]);
+    renderFromStore();
+    fireEvent.click(screen.getByRole('button', { name: 'Force push' }));
+    await findInRow({ text: `Not pushed: ${STALE}` });
+    world.state.ports.setBackupFailure(new Error('the disk is full'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry push' }));
+
+    await findInRow({ text: /a backup of the branch on origin could not be kept/ });
+    expect(world.state.ports.pushes).toHaveLength(1);
     expect(reportError).not.toHaveBeenCalled();
   });
 
@@ -220,6 +234,9 @@ describe('the force push row, read back through the store', () => {
 
     await findInRow({ text: PUSHED_LINE });
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Pushing' })).toBeNull());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Put back' }).getAttribute('aria-busy')).toBeNull(),
+    );
     expect(world.state.ports.pushes).toHaveLength(1);
     expect(reportError).not.toHaveBeenCalled();
   });
