@@ -184,6 +184,8 @@ export const SESSION_EVICTION = [
   { key: 'sessionTurnSpans', keyedBy: 'session', evictOn: 'archive' },
   { key: 'browserSessionTabs', keyedBy: 'session', evictOn: 'archive' },
   { key: 'browserActiveTab', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserShownPin', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserLiveTabs', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [

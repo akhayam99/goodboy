@@ -21,6 +21,7 @@ export const openTab = ({ set, get }: SliceDeps) => {
             [sessionId]: upsertTab({ tabs: state.browserSessionTabs[sessionId] ?? [], tab }),
           },
           browserActiveTab: { ...state.browserActiveTab, [sessionId]: tab.id },
+          browserShownPin: { ...state.browserShownPin, [sessionId]: null },
         }));
       },
     });

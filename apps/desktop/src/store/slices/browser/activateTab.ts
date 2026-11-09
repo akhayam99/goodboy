@@ -8,7 +8,10 @@ export const activateTab = ({ set }: SliceDeps) => {
       if (!isKnown) {
         return state;
       }
-      return { browserActiveTab: { ...state.browserActiveTab, [sessionId]: tabId } };
+      return {
+        browserActiveTab: { ...state.browserActiveTab, [sessionId]: tabId },
+        browserShownPin: { ...state.browserShownPin, [sessionId]: null },
+      };
     });
   };
 };
