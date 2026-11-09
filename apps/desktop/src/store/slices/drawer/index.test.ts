@@ -92,6 +92,9 @@ describe('drawer slice', () => {
     expect(selectOpenDrawer(h.get())?.kind).toBe('context');
 
     h.slice.toggleDrawer(GOAL_HISTORY);
+    expect(selectOpenDrawer(h.get())?.kind).toBe('explore-file');
+
+    h.slice.toggleDrawer(README_PREVIEW);
     expect(h.get().drawer).toBeNull();
   });
 

@@ -1,11 +1,11 @@
 import { Pencil } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store/store';
-import { linkedIssueSources } from '../../../../store/slices/issue-briefs/linkedIssueSources';
-import { writeGoalFromWorkEvent } from '../../../../store/slices/issue-briefs/writeGoalFromWorkEvent';
-import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
-import { dispatchAfterNavigation } from '../../../actions/dispatchAfterNavigation';
+import { useAppStore } from '../../../../../store/store';
+import { linkedIssueSources } from '../../../../../store/slices/issue-briefs/linkedIssueSources';
+import { writeGoalFromWorkEvent } from '../../../../../store/slices/issue-briefs/writeGoalFromWorkEvent';
+import { lensPlace } from '../../../../../store/slices/navigation/canonicalLocation';
+import { dispatchAfterNavigation } from '../../../../actions/dispatchAfterNavigation';
 
 type Props = { readonly sessionId: SessionId; readonly isLocked: boolean };
 
@@ -19,7 +19,7 @@ export const WriteFromWorkButton = ({ sessionId, isLocked }: Props) => {
   }
   const writeFromWork = () => {
     const state = useAppStore.getState();
-    state.closeDrawer();
+    state.clearDrawer();
     state.navigate({ to: lensPlace({ state, sessionId, lens: null }) });
     dispatchAfterNavigation({ name: writeGoalFromWorkEvent({ sessionId }) });
   };

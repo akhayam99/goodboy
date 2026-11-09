@@ -808,6 +808,9 @@ side-signals-idle
 side-signals-running
 sidebar-rhythm
 slack-permissions
+slot-back-chip
+slot-back-chip-narrow
+slot-back-chip-swapped
 space-diff-comment
 space-diff-split
 start-from-inbox
