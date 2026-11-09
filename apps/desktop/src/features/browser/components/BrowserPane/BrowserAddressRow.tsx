@@ -116,13 +116,7 @@ export const BrowserAddressRow = ({ model, isListOpen, onToggleList, onClose }: 
         disabled={model.address === ''}
         onClick={model.openOutside}
       />
-      <IconButton
-        icon={X}
-        label="Close browser"
-        variant="ghost"
-        tooltipSide="top"
-        onClick={onClose}
-      />
+      <IconButton icon={X} label="Close" variant="ghost" tooltipSide="top" onClick={onClose} />
     </div>
   );
 };
