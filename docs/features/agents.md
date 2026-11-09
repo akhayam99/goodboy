@@ -183,7 +183,7 @@ The agent keeps its chat and its files, but you can only read it from then on. *
 - **Not checked** gives one of these reasons: nothing ticked, timed out, the tree changed or has uncommitted changes, or the checks could not run.
 - **Retry checks** on the card repeats them on the same commit from any window.
 - When you ask Auto to push, Goodboy pushes the checked commit after the agent finishes and its checks are not red. The card says **Pushed**, **Not pushed** with the reason, or **Waiting for you to confirm**.
-- A force push keeps a backup of the online version it replaces. It pushes exactly the commit that was checked and waits for one **Force push** for the whole batch. The button reads **Pushing** while it works, then the row shows each branch in place: pushed, **Not pushed**, or the reason with **Retry push**. **Put back** on the card restores the branch online first, then here.
+- A force push keeps a backup of the online version it replaces. It pushes exactly the commit that was checked and waits for one **Force push** for the whole batch. The button reads **Pushing** while it works, and it still reads so after a reload or in a second window. A push that Goodboy lost by closing mid way turns into a failure with **Retry push**. Then the row shows each branch in place: pushed, **Not pushed**, or the reason with **Retry push**. **Put back** on the card restores the branch online first, then here.
 - **Retry push** appears once, for a failure that can still pass.
 
 **Safety**

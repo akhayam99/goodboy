@@ -8,9 +8,9 @@ import {
   type AutoAttempt,
 } from '@goodboy/db';
 import { brandId, type AutoAttemptId, type SessionId } from '@goodboy/types';
-import { executePublish } from './executePublish';
-import { publishQueue } from './publishQueue';
-import type { AgentVerbContext } from './verbContext';
+import { executePublish } from '../executePublish';
+import { publishQueue } from '../publishQueue';
+import type { AgentVerbContext } from '../verbContext';
 
 export type PushSettledPublishParams = Readonly<{
   ctx: AgentVerbContext;

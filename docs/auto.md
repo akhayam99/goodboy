@@ -1352,7 +1352,10 @@ no migration, outcome still `completed`:
   the attempt and, when the batch already joined, on the settled delegation
   (`followAutoDelegationPublishStatement`). `recoverTree` resumes a `pushing` record that was never
   claimed under the new owner, and turns one that was claimed when Goodboy closed into a retryable
-  failure; the retry reads the branch online first.
+  failure; the retry reads the branch online first. Both live in `settledPush/`, with
+  `sweepStalePushing`, which `startAutoRuntime` runs once before its first tick: a confirmed
+  `pushing` record left by a crash on a tree that never recovers (done, finished, stopped) goes
+  through the same `pushSettledPublish` to the same retryable failure.
 - `force` first needs the online sha read when the attempt started (`baseline_json.remote`; unknown
   holds). It keeps a backup ref of that online sha, the commit the force push replaces
   (`history_backup_create`, kept stamp so the History prune never drops it), and a second one of
@@ -1363,7 +1366,9 @@ no migration, outcome still `completed`:
   `awaiting_confirm`: one **Force push** / **Don't push** row per delegate batch
   (`PublishRunRow` in `AutoDelegationLines`, rows from `publishRowsOf`), one `publish` bridge call
   carrying every id. The row stays for the life of the push: **Pushing** on the button while the
-  call runs, then one line per branch from `publishLineOf` (the same words and tone as the
+  call runs (`pushRow` saves the `pushing` record, `isConfirmed` true, on the delegation and the
+  attempt before the push starts, so a reload or a second window shows it; any answer for a record
+  already pushing is refused "This push is already under way." and is quiet), then one line per branch from `publishLineOf` (the same words and tone as the
   `DelegationResult` chip): pushed with **Put back**, "Not pushed" when declined, put back, or a
   danger notice with the reason and **Retry push**. A failed row raises no toast; a refused answer
   whose saved record no longer waits for that act (`isPublishOpenOf`) is quiet too, because the
