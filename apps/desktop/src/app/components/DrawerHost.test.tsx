@@ -392,8 +392,8 @@ describe('every drawer names its close control Close', () => {
 
     renderHost();
 
-    const region = await screen.findByRole('region', { name: 'Browser' });
-    fireEvent.click(within(region).getByRole('button', { name: 'Close browser' }));
+    await screen.findByRole('region', { name: 'Browser' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Close browser' }));
 
     expect(useAppStore.getState().drawer).toBeNull();
   });
