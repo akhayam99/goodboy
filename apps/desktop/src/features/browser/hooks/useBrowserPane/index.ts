@@ -73,6 +73,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     onError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   });
   const [isDrafting, setIsDrafting] = useState(false);
+  const [wakeAttempt, setWakeAttempt] = useState(0);
   const shown = isDrafting ? null : shownTabOf({ tabs, pins, activeId, pinId });
   const shownLiveId = shown === null ? undefined : live?.[shown.tab.id];
   const factOf = ({ liveId }: LiveParams) =>
@@ -153,17 +154,29 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     },
     error,
     isDrafting,
+    wakeAttempt,
     submit: async ({ text }) => {
       const parsed = addressOf({ text });
       if (parsed.kind === 'refused') {
         setError(parsed.reason);
         return false;
       }
-      return run({ step: () => navigate({ url: parsed.url }) });
+      const isDone = await run({ step: () => navigate({ url: parsed.url }) });
+      if (isDone) {
+        setWakeAttempt((count) => count + 1);
+      }
+      return isDone;
     },
     back: () => onShown({ command: browserHost.back }),
     forward: () => onShown({ command: browserHost.forward }),
-    reload: () => onShown({ command: browserHost.reload }),
+    reload: () => {
+      if (shown !== null && shownLiveId === undefined) {
+        setError(null);
+        setWakeAttempt((count) => count + 1);
+        return;
+      }
+      onShown({ command: browserHost.reload });
+    },
     select: ({ tab }) => {
       setIsDrafting(false);
       setError(null);

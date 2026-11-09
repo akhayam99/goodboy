@@ -127,7 +127,7 @@ describe('r4 session rail scenes', () => {
     expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(card('Linked')).toBeDefined();
     expect(within(rail()).queryByRole('toolbar', { name: 'Session tools' })).toBeNull();
-    expect(within(tools()).getAllByRole('button')).toHaveLength(6);
+    expect(within(tools()).getAllByRole('button')).toHaveLength(7);
     const top = within(rail().querySelector<HTMLElement>('[data-rail-top]') ?? rail());
     top.getByRole('button', { name: 'More session actions' });
     top.getByRole('button', { name: 'Refresh session' });
@@ -214,7 +214,7 @@ describe('r4 session rail scenes', () => {
 
     expect(rail().hasAttribute('data-rail-folded')).toBe(true);
     expect(rail().querySelector('[data-session-foot]')).toBeNull();
-    expect(within(tools()).getAllByRole('button')).toHaveLength(6);
+    expect(within(tools()).getAllByRole('button')).toHaveLength(7);
   });
 
   it('r4-rail-tree draws many branches one line each in rank order, with the finished ones folded', async () => {

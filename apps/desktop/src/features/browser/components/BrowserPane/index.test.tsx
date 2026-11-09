@@ -149,6 +149,61 @@ const failCommand = ({ command, reason }: FailParams) => {
   });
 };
 
+const failOnce = ({ command, reason }: FailParams) => {
+  const handler = storySpies.tauriInvoke.getMockImplementation();
+  let hasFailed = false;
+  storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+    if (name === command && !hasFailed) {
+      hasFailed = true;
+      throw { kind: 'refused', message: reason };
+    }
+    return handler?.(name, args);
+  });
+};
+
+const holdOpens = () => {
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const handler = storySpies.tauriInvoke.getMockImplementation();
+  storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+    if (name === 'browser_tab_open') {
+      await gate;
+    }
+    return handler?.(name, args);
+  });
+  return { release: () => release() };
+};
+
+const storedRow = (): BrowserTab => ({
+  id: 'row-1',
+  sessionId: SESSION_ID,
+  projectId: null,
+  url: 'https://acme.example/',
+  title: 'Acme',
+  position: 0,
+  createdAt: 1,
+  updatedAt: 1,
+});
+
+const coverView = (): HTMLElement => {
+  const menu = document.createElement('div');
+  menu.setAttribute('role', 'menu');
+  giveRect({ element: menu, rect: { x: 900, y: 120, width: 240, height: 200 } });
+  act(() => {
+    document.body.append(menu);
+  });
+  return menu;
+};
+
+const pageGoesTo = ({ text }: TypeParams) => {
+  live = live.map((facts) => (facts.id === 'live-1' ? { ...facts, url: text } : facts));
+  fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+};
+
+const storedUrl = () => store.getState().browserSessionTabs[SESSION_ID]?.[0]?.url;
+
 const argsOf = ({ payload }: PayloadParams): Readonly<Record<string, unknown>> => {
   const args: unknown =
     typeof payload === 'object' && payload !== null ? Reflect.get(payload, 'args') : null;
@@ -403,6 +458,144 @@ describe('the browser pane', () => {
     expect(store.getState().browserSessionTabs[SESSION_ID]?.map((tab) => tab.url)).toEqual([
       'https://acme.example/',
     ]);
+  });
+
+  it('closes a tab and drops its row when its row save answered after a newer open', async () => {
+    let releaseFirst: (() => void) | null = null;
+    let saves = 0;
+    const handler = storySpies.tauriInvoke.getMockImplementation();
+    storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+      if (name === 'browser_tab_row_save') {
+        saves += 1;
+        if (saves === 1) {
+          await new Promise<void>((resolve) => {
+            releaseFirst = resolve;
+          });
+        }
+      }
+      return handler?.(name, args);
+    });
+    renderPane();
+
+    await typeAddress({ text: 'northwind.example' });
+    await waitFor(() => expect(saves).toBe(1));
+    await typeAddress({ text: 'acme.example' });
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(2));
+    await act(async () => {
+      releaseFirst?.();
+    });
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_close' })).toEqual([{ tabId: 'live-1' }]),
+    );
+    await waitFor(() =>
+      expect(store.getState().browserSessionTabs[SESSION_ID]?.map((tab) => tab.url)).toEqual([
+        'https://acme.example/',
+      ]),
+    );
+    expect(store.getState().browserLiveTabs[SESSION_ID]?.['live-1']).toBeUndefined();
+  });
+
+  it('retries a hide that failed while an overlay covers the view', async () => {
+    await openFirstPage();
+    failOnce({ command: 'browser_tab_hide', reason: 'host-busy' });
+
+    const menu = coverView();
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_hide' })).toEqual([
+        { tabId: 'live-1' },
+        { tabId: 'live-1' },
+      ]),
+    );
+    expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(1);
+    menu.remove();
+  });
+
+  it('retries hiding the old tab when a tab switch could not hide it', async () => {
+    await openFirstPage();
+    fireEvent.click(screen.getByRole('button', { name: 'New tab' }));
+    await typeAddress({ text: 'acme.example' });
+    await placeView();
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_show' }).at(-1)).toEqual({ tabId: 'live-2' }),
+    );
+    failOnce({ command: 'browser_tab_hide', reason: 'host-busy' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'localhost:5173' }));
+    await placeView();
+
+    await waitFor(() =>
+      expect(
+        callsOf({ command: 'browser_tab_hide' }).filter((args) => args['tabId'] === 'live-2'),
+      ).toHaveLength(2),
+    );
+    expect(callsOf({ command: 'browser_tab_show' }).at(-1)).toEqual({ tabId: 'live-1' });
+  });
+
+  it('never shows a tab whose wake answered after an overlay covered the view', async () => {
+    rows = [storedRow()];
+    const opens = holdOpens();
+    renderPane();
+    await placeView();
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(1));
+
+    const menu = coverView();
+    await act(() => new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve())));
+    await act(async () => {
+      opens.release();
+    });
+    await act(() => new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve())));
+
+    expect(callsOf({ command: 'browser_tab_show' })).toEqual([]);
+    act(() => {
+      menu.remove();
+    });
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_show' })).toEqual([{ tabId: 'live-1' }]),
+    );
+  });
+
+  it('wakes a tab again on Reload after its first wake failed', async () => {
+    rows = [storedRow()];
+    failOnce({ command: 'browser_tab_open', reason: 'host-busy' });
+    renderPane();
+    await placeView();
+    await screen.findByRole('alert');
+    expect(callsOf({ command: 'browser_tab_show' })).toEqual([]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_show' })).toEqual([{ tabId: 'live-1' }]),
+    );
+    expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(2);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('saves an address the page comes back to after leaving it', async () => {
+    await openFirstPage();
+
+    pageGoesTo({ text: 'https://acme.example/billing' });
+    await waitFor(() => expect(storedUrl()).toBe('https://acme.example/billing'));
+    pageGoesTo({ text: 'http://localhost:5173/checkout' });
+    await waitFor(() => expect(storedUrl()).toBe('http://localhost:5173/checkout'));
+    pageGoesTo({ text: 'https://acme.example/billing' });
+
+    await waitFor(() => expect(storedUrl()).toBe('https://acme.example/billing'));
+  });
+
+  it('saves the live address again after a save failed', async () => {
+    await openFirstPage();
+    failOnce({ command: 'browser_tab_row_save', reason: 'db-busy' });
+
+    pageGoesTo({ text: 'https://acme.example/billing' });
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_row_save' })).toHaveLength(2));
+    expect(storedUrl()).toBe('http://localhost:5173/checkout');
+    live = live.map((facts) => ({ ...facts, title: 'Billing' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+
+    await waitFor(() => expect(storedUrl()).toBe('https://acme.example/billing'));
   });
 
   it('hides the view when the pane closes', async () => {

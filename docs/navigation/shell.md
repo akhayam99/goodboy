@@ -260,12 +260,12 @@ row (the plus sits in it on Chat). A running door draws no dot: what runs is in 
 tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
 dot means attention without a number. Chat with none running shows a primary dot for a new reply.
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
-Terminal counts the terminal tabs still alive, all owners, Browser counts the live browser tabs of
-every session (`liveBrowserTabCount`), and Monitoring counts the pinned ports
+Terminal counts the terminal tabs still alive, all owners, Browser counts the rows the Browser page
+lists (`browserTabCount`), and Monitoring counts the pinned ports
 and the ports Goodboy started that are in use; the numbers come from `doorSignalOf`, which the
 rows, the tiles and the folded rail all read. A pinned port that is down swaps Monitoring's count
 for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's and the tile's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
-`Browser, 3 open`, `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
+`Browser, 3 tabs`, `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
 the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot

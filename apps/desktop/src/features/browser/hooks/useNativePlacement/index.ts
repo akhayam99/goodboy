@@ -13,20 +13,23 @@ type Params = {
   readonly sessionId: SessionId;
   readonly view: RefObject<HTMLDivElement | null>;
   readonly tab: BrowserTab | null;
+  readonly attempt: number;
   readonly onError: (params: ErrorParams) => void;
 };
 
-export const useNativePlacement = ({ sessionId, view, tab, onError }: Params): void => {
+export const useNativePlacement = ({ sessionId, view, tab, attempt, onError }: Params): void => {
   const tabRef = useRef(tab);
   tabRef.current = tab;
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
+  const placementRef = useRef<ReturnType<typeof createNativePlacement> | null>(null);
 
   useEffect(() => {
     const placement = createNativePlacement({
       sessionId,
       onError: ({ error }) => onErrorRef.current({ error }),
     });
+    placementRef.current = placement;
     const overlays = createOverlayWatch();
     const sync = (): void => {
       const wantedTab = tabRef.current;
@@ -51,6 +54,14 @@ export const useNativePlacement = ({ sessionId, view, tab, onError }: Params): v
       resize?.disconnect();
       overlays.stop();
       placement.stop();
+      placementRef.current = null;
     };
   }, [sessionId, view]);
+
+  useEffect(() => {
+    if (attempt === 0) {
+      return;
+    }
+    placementRef.current?.retry();
+  }, [attempt]);
 };

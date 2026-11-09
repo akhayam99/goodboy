@@ -47,6 +47,20 @@ const namesOf = ({ command }: CommandParams): ReadonlyArray<unknown> =>
 
 const quiet = () => undefined;
 
+const settle = () => new Promise((resolve) => setTimeout(resolve, 30));
+
+const failHideOnce = () => {
+  const handler = storySpies.tauriInvoke.getMockImplementation();
+  let hasFailed = false;
+  storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+    if (name === 'browser_tab_hide' && !hasFailed) {
+      hasFailed = true;
+      throw { kind: 'refused', message: 'host-busy' };
+    }
+    return handler?.(name, args);
+  });
+};
+
 beforeAll(async () => {
   store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
@@ -75,7 +89,7 @@ describe('one native view, two places', () => {
     await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(2));
 
     pane.want({ view: null });
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle();
 
     expect(namesOf({ command: 'browser_tab_hide' })).toEqual([]);
     expect(namesOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
@@ -98,6 +112,56 @@ describe('one native view, two places', () => {
     pane.want({ view: { tab: TAB, bounds: PANE_BOUNDS } });
 
     await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(2));
+    expect(namesOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+      args: { tabId: 'live-1', bounds: PANE_BOUNDS },
+    });
+    pane.stop();
+  });
+
+  it('keeps the page view shown when the pane retries a hide that failed before the page took it', async () => {
+    const pane = createNativePlacement({ sessionId: SESSION_ID, onError: quiet });
+    const page = createNativePlacement({ sessionId: SESSION_ID, onError: quiet });
+    pane.want({ view: { tab: TAB, bounds: PANE_BOUNDS } });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(1));
+
+    failHideOnce();
+    pane.want({ view: null });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_hide' })).toHaveLength(1));
+    page.want({ view: { tab: TAB, bounds: PAGE_BOUNDS } });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(2));
+
+    pane.want({ view: null });
+    await settle();
+
+    expect(namesOf({ command: 'browser_tab_hide' })).toHaveLength(1);
+    expect(namesOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+      args: { tabId: 'live-1', bounds: PAGE_BOUNDS },
+    });
+    page.stop();
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_hide' })).toHaveLength(2));
+  });
+
+  it('lets a pane that still holds the view yield to the page, then take it back', async () => {
+    const pane = createNativePlacement({ sessionId: SESSION_ID, onError: quiet });
+    const page = createNativePlacement({ sessionId: SESSION_ID, onError: quiet });
+    pane.want({ view: { tab: TAB, bounds: PANE_BOUNDS } });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(1));
+    page.want({ view: { tab: TAB, bounds: PAGE_BOUNDS } });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(2));
+
+    pane.want({ view: { tab: TAB, bounds: { ...PANE_BOUNDS, width: 500 } } });
+    await settle();
+
+    expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(2);
+    expect(namesOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+      args: { tabId: 'live-1', bounds: PAGE_BOUNDS },
+    });
+
+    page.stop();
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_hide' })).toHaveLength(1));
+    pane.want({ view: { tab: TAB, bounds: PANE_BOUNDS } });
+
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(3));
     expect(namesOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
       args: { tabId: 'live-1', bounds: PANE_BOUNDS },
     });

@@ -22,6 +22,8 @@ export const closeBrowserSessionTabs = ({ set, get }: SliceDeps) => {
         set((state) => ({
           browserSessionTabs: { ...state.browserSessionTabs, [sessionId]: [] },
           browserActiveTab: { ...state.browserActiveTab, [sessionId]: null },
+          browserShownPin: { ...state.browserShownPin, [sessionId]: null },
+          browserLiveTabs: { ...state.browserLiveTabs, [sessionId]: {} },
         }));
       },
     });

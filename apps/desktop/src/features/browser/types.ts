@@ -49,6 +49,7 @@ export type BrowserPaneModel = {
   readonly titleOf: (params: TabParams) => string;
   readonly error: string | null;
   readonly isDrafting: boolean;
+  readonly wakeAttempt: number;
   readonly submit: (params: TextParams) => Promise<boolean>;
   readonly back: () => void;
   readonly forward: () => void;

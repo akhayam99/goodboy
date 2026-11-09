@@ -26,7 +26,13 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
     (state) => state.currentSessionId === sessionId && state.appStudio === null,
   );
 
-  useNativePlacement({ sessionId, view, tab: shownTab, onError: model.showError });
+  useNativePlacement({
+    sessionId,
+    view,
+    tab: shownTab,
+    attempt: model.wakeAttempt,
+    onError: model.showError,
+  });
 
   return (
     <DrawerFrame title="Browser" isHeaderless onClose={onClose}>

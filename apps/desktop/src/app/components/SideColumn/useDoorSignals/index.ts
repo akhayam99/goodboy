@@ -6,7 +6,7 @@ import { splitPortRows } from '../../../../features/monitoring/splitPortRows';
 import { workspacePortSet } from '../../../../features/monitoring/workspacePortSet';
 import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
 import { runningTerminalCount } from '../../../../features/terminal/runningTerminalCount';
-import { liveBrowserTabCount } from '../../../../features/browser/liveBrowserTabCount';
+import { browserTabCount } from '../../../../features/browser/browserTabCount';
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 import type { ColumnDoorId } from '../columnPlace';
 import { doorSignalOf, type DoorSignal } from '../doorSignal';
@@ -15,7 +15,7 @@ type Params = Record<never, never>;
 
 export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSignal>> => {
   const terminalTabs = useAppStore((state) => state.terminalTabs);
-  const browserCount = useAppStore((state) => liveBrowserTabCount({ live: state.browserLiveTabs }));
+  const browserCount = useAppStore((state) => browserTabCount({ state }));
   const rows = useAppStore(selectPortRows);
   const hasSnapshot = useAppStore((state) => state.monitorSnapshot !== null);
   const scanned = useAppStore((state) => state.monitorScanned);

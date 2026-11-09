@@ -33,7 +33,13 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
   const isOnScreen = useAppStore((state) => state.appStudio?.kind === 'browser');
 
   useBrowserStudioTab({ sessionId, tabId, model });
-  useNativePlacement({ sessionId, view, tab: shownTab, onError: model.showError });
+  useNativePlacement({
+    sessionId,
+    view,
+    tab: shownTab,
+    attempt: model.wakeAttempt,
+    onError: model.showError,
+  });
 
   const pick = ({ group, tab }: PickParams): void => {
     const state = useAppStore.getState();
