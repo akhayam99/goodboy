@@ -641,6 +641,29 @@ describe('PaletteOverlay, Ask in chat', () => {
     );
   });
 
+  it('offers Open in your browser for a typed address when no workspace is open', () => {
+    useAppStore.setState({ currentWorkspaceId: null });
+    const { input } = openIn(null);
+
+    type(input, 'localhost:5173');
+
+    expect(optionNames()).toEqual(['Open localhost:5173']);
+    expect(
+      screen.getByRole('option', { name: 'Open localhost:5173' }).getAttribute('aria-description'),
+    ).toBe('In your browser');
+  });
+
+  it('offers Open beside this session for a typed address inside a session', () => {
+    const { input } = openIn(PAYOUT);
+
+    type(input, 'localhost:5173');
+
+    expect(optionNames()[0]).toBe('Open localhost:5173');
+    expect(
+      screen.getByRole('option', { name: 'Open localhost:5173' }).getAttribute('aria-description'),
+    ).toBe('Beside this session');
+  });
+
   it('keeps Ask in chat alone on the Board', () => {
     const { input } = openIn(null);
     type(input, 'Why did the tester fail?');

@@ -127,6 +127,7 @@ export const DecisionRowItem = ({
       {...landing.fade}
       ref={rowRef}
       data-decision={number}
+      data-browser-links=""
       className={cn(
         'group/decision-row flex items-start gap-3 rounded-lg px-2 py-2 motion-safe:transition-colors',
         isOpen ? 'bg-fill' : isHighlighted ? 'bg-selected' : 'hover:bg-hover',

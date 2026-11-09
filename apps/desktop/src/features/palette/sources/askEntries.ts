@@ -18,9 +18,18 @@ type Params = {
   readonly query: string;
   readonly sessionId: SessionId | null;
   readonly leading: ReadonlyArray<PaletteEntry>;
+  readonly hasWorkspace: boolean;
 };
 
-export const askEntries = ({ query, sessionId, leading }: Params): ReadonlyArray<PaletteEntry> => {
+export const askEntries = ({
+  query,
+  sessionId,
+  leading,
+  hasWorkspace,
+}: Params): ReadonlyArray<PaletteEntry> => {
+  if (!hasWorkspace) {
+    return leading;
+  }
   const question = query.trim();
   const chat: PaletteEntry = {
     key: ASK_IN_CHAT_KEY,

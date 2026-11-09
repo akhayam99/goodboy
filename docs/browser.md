@@ -219,19 +219,28 @@ sits in and the address, and one function opens it (`openInBrowser`).
 - **Which tab**: a tab of the session already on the same address is shown.
   A bare server address (`http://localhost:5173`) takes any tab on that
   server. Otherwise a new tab opens. A host failure keeps the old tabs and
-  reports on the session. A pane in New tab leaves the draft when a door
-  shows a tab.
+  reports on the session. Every door that shows or opens a tab ends the New
+  tab draft explicitly (`endBrowserDraft` bumps `browserDraftEnds`, which the
+  pane watches), also when the tab it shows is
+  already the active one. A later door wins: a door request cancels an older
+  open still waiting on the host, so the tab the last click named is the one
+  shown. A tab picked in ⌘K shows that exact tab (`showBrowserTab`), never the
+  first tab on the same address.
 - **Server chips**: the port chip on a terminal tab strip and the live port
   on a running Service open `http://localhost:<port>`.
-- **Links**: a web link inside a session (the conversation, a drawer, an
-  artifact) opens beside it. The session view and the drawer carry
-  `data-browser-session`, and a link or a row finds its session there. A
-  link anywhere else opens your browser, and a GitHub commit link still
-  opens its diff.
+- **Links**: a web link in what is written in a session (a conversation
+  turn, a decision, an artifact) opens beside it. Those regions carry
+  `data-browser-links` inside the session's `data-browser-session`, and
+  `isBrowserLinkArea` checks both. A link anywhere else, such as an
+  integration, sign-in or connect guide in a drawer, opens your browser as
+  before, and so does a link outside a session. A GitHub commit link still
+  opens its diff. Chips and rows need only `data-browser-session`.
 - **The click rule**: a plain click opens the session's browser, ⌘-click
-  (Ctrl-click off macOS) opens your browser, on chips and links alike. No
-  earlier rule covered web links; ⌘-click on a file path in a terminal still
-  opens your editor.
+  (Ctrl-click off macOS) opens your browser, on chips and links alike. The
+  ⌘-click listener runs after the page's own handlers and skips a click they
+  already handled, so an anchor with its own `onClick` opens your browser
+  once. No earlier rule covered web links; ⌘-click on a file path in a
+  terminal still opens your editor.
 - **Peek**: resting on or focusing a `localhost` link in a session shows a
   card with the title of its tab (or the host), the address and what a click
   does. The card never creates a tab, because every tab is a whole webview.
@@ -240,10 +249,13 @@ sits in and the address, and one function opens it (`openInBrowser`).
   chord first (`browser.address` is scoped, so it wins only there). A page
   that has focus keeps its keys, so ⌘L reaches the row only while Goodboy
   has focus.
-- **⌘K** lists the current session's browser tabs and offers
-  `Open <address>` first for an address with `http` or `https`, a localhost
-  name, a port or a path. A bare word with a dot, like `plan.md`, stays a
-  search.
+- **⌘K** lists the browser tabs of the session the palette is scoped to (the
+  current session when it is not) and offers `Open <address>` first, beside
+  that same session, for an address with `http` or `https` or a localhost
+  name, or for a host with a port or a path. With no workspace open the entry
+  reads `In your browser` and opens your browser. A file name such as
+  `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
+  (`typedAddressOf`).
 
 ## Capabilities
 

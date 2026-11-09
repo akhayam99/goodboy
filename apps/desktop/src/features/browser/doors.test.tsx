@@ -9,6 +9,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import type { MouseEventHandler } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { nextProjectId, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
@@ -25,16 +26,19 @@ import { mountFixture } from '../../__tests__/helpers/actionFixtures';
 import { pressShortcut } from '../../__tests__/helpers/pressKey';
 import { registerShortcut } from '../../shared/keyboard/dispatcher';
 import { useCommitLinkInterceptor } from '../../shared/hooks/useCommitLinkInterceptor';
+import { openUrl } from '../../shared/lib/editor';
 import { ToastProvider } from '../../shared/components/Toast';
 import type { BrowserTab, TabOwner } from '../../store/slices/browser/types';
 import { PortChip } from '../terminal/components/PortChip';
 import type { RunnableScript } from '../scripts/buildSessionScripts';
 import { ScriptRow } from '../scripts/components/ScriptRow';
+import { useBrowserEntries } from '../palette/hooks/useBrowserEntries';
 import { browserOpenEntries } from '../palette/sources/browserOpenEntries';
 import { browserTabEntries } from '../palette/sources/browserTabEntries';
 import { BrowserLinkDoors } from './components/BrowserLinkDoors';
 import { BrowserPane } from './components/BrowserPane';
 import { claimSessionLink } from './claimSessionLink';
+import { useBrowserPane } from './hooks/useBrowserPane';
 import { openInBrowser } from './openInBrowser';
 import type { BrowserTabFacts } from './types';
 
@@ -50,6 +54,7 @@ vi.mock('../../shared/lib/db', async () =>
 
 const WORKSPACE_ID = nextWorkspaceId();
 const SESSION_ID = nextSessionId();
+const OTHER_SESSION_ID = nextSessionId();
 const PAYMENTS_API = buildStoryProject({
   id: nextProjectId(),
   workspaceId: WORKSPACE_ID,
@@ -73,7 +78,12 @@ type UrlArgs = { readonly url: string };
 type CommandParams = { readonly command: string };
 type PayloadParams = { readonly payload: unknown };
 type RowParams = { readonly id: string; readonly url: string; readonly title: string };
-type LinkParams = { readonly href: string; readonly sessionId: SessionId | null };
+type LinkParams = {
+  readonly href: string;
+  readonly sessionId: SessionId | null;
+  readonly hasLinkArea?: boolean;
+  readonly onClick?: MouseEventHandler<HTMLAnchorElement>;
+};
 
 const DEV: RunnableScript = {
   key: 'manifest-dev',
@@ -148,6 +158,7 @@ const stubHost = () => {
     browser_tab_place: null,
     browser_tab_show: null,
     browser_tab_hide: null,
+    browser_tab_close: null,
     open_url: ({ url }: UrlArgs) => {
       outside = [...outside, url];
       return null;
@@ -166,15 +177,20 @@ const callsOf = ({ command }: CommandParams) =>
     .filter(([name]) => name === command)
     .map(([, payload]) => argsOf({ payload }));
 
-const renderLink = ({ href, sessionId }: LinkParams) => {
+const renderLink = ({ href, sessionId, hasLinkArea = true, onClick }: LinkParams) => {
   renderHook(() => useCommitLinkInterceptor({ claimLink: claimSessionLink }));
+  const anchor = (
+    <a href={href} onClick={onClick}>
+      checkout
+    </a>
+  );
   render(
     <>
       {sessionId === null ? (
-        <a href={href}>checkout</a>
+        anchor
       ) : (
         <div data-browser-session={sessionId}>
-          <a href={href}>checkout</a>
+          {hasLinkArea ? <div data-browser-links="">{anchor}</div> : anchor}
         </div>
       )}
       <BrowserLinkDoors />
@@ -315,6 +331,62 @@ describe('the door', () => {
     expect(store.getState().browserActiveTab[SESSION_ID]).toBe('live-1');
   });
 
+  it('ends the New tab draft when it shows the tab that is already active', async () => {
+    rows = [
+      rowOf({ id: 'tab-checkout', url: 'http://localhost:5173/checkout', title: 'Checkout' }),
+    ];
+    store.setState({
+      browserSessionTabs: { [SESSION_ID]: rows },
+      browserActiveTab: { [SESSION_ID]: 'tab-checkout' },
+    });
+    const { result } = renderHook(() => useBrowserPane({ sessionId: SESSION_ID }));
+    act(() => result.current.startDraft());
+    expect(result.current.isDrafting).toBe(true);
+
+    await act(async () => {
+      await openInBrowser({ sessionId: SESSION_ID, url: 'http://localhost:5173/checkout' });
+    });
+
+    expect(result.current.isDrafting).toBe(false);
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
+  it('ends the New tab draft when it opens a new tab', async () => {
+    const { result } = renderHook(() => useBrowserPane({ sessionId: SESSION_ID }));
+    act(() => result.current.startDraft());
+
+    await act(async () => {
+      await openInBrowser({ sessionId: SESSION_ID, url: 'http://localhost:5173' });
+    });
+
+    expect(result.current.isDrafting).toBe(false);
+    expect(store.getState().browserActiveTab[SESSION_ID]).toBe('live-1');
+  });
+
+  it('lets the last door win while an older open still waits on the host', async () => {
+    rows = [rowOf({ id: 'tab-docs', url: 'https://docs.harborline.dev/tax', title: 'Tax rates' })];
+    let releaseHost: () => void = () => undefined;
+    const hostReply = new Promise<void>((resolve) => {
+      releaseHost = resolve;
+    });
+    const handler = storySpies.tauriInvoke.getMockImplementation();
+    storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+      if (name === 'browser_tab_open') {
+        await hostReply;
+      }
+      return handler?.(name, args);
+    });
+
+    const first = openInBrowser({ sessionId: SESSION_ID, url: 'http://localhost:5173' });
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(1));
+    await openInBrowser({ sessionId: SESSION_ID, url: 'https://docs.harborline.dev/tax' });
+    releaseHost();
+    await first;
+
+    expect(store.getState().browserActiveTab[SESSION_ID]).toBe('tab-docs');
+    expect(rows.map((row) => row.id)).toEqual(['tab-docs']);
+  });
+
   it('keeps the old tabs and says so when the host cannot open the page', async () => {
     const reportError = vi.fn(async () => undefined);
     store.setState({ reportError });
@@ -359,6 +431,49 @@ describe('a link', () => {
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
   });
 
+  it('opens your browser once on a command click when the anchor handles its own click', async () => {
+    const link = renderLink({
+      href: 'https://docs.harborline.dev/tax',
+      sessionId: SESSION_ID,
+      onClick: (event) => {
+        event.preventDefault();
+        void openUrl('https://docs.harborline.dev/tax');
+      },
+    });
+
+    fireEvent.click(link, { metaKey: true });
+
+    await waitFor(() => expect(outside).toEqual(['https://docs.harborline.dev/tax']));
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
+  it('keeps a plain click on a session link outside the conversation in your browser', async () => {
+    const link = renderLink({
+      href: 'http://localhost:5173/checkout',
+      sessionId: SESSION_ID,
+      hasLinkArea: false,
+    });
+
+    fireEvent.click(link);
+
+    await waitFor(() => expect(outside).toEqual(['http://localhost:5173/checkout']));
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+    expect(store.getState().drawer).toBeNull();
+  });
+
+  it('leaves a command click on a session link outside the conversation alone', async () => {
+    const link = renderLink({
+      href: 'https://docs.harborline.dev/tax',
+      sessionId: SESSION_ID,
+      hasLinkArea: false,
+    });
+
+    fireEvent.click(link, { metaKey: true });
+
+    expect(outside).toEqual([]);
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
   it('keeps opening your browser outside a session', async () => {
     const link = renderLink({ href: 'https://docs.harborline.dev/tax', sessionId: null });
 
@@ -396,6 +511,18 @@ describe('the peek', () => {
     const card = await screen.findByTestId('browser-link-peek', undefined, { timeout: 2000 });
     expect(card.textContent).toContain('Checkout');
     expect(card.textContent).toContain('Shows its tab beside the session.');
+  });
+
+  it('never peeks a link outside the conversation', () => {
+    const link = renderLink({
+      href: 'http://localhost:5173/checkout',
+      sessionId: SESSION_ID,
+      hasLinkArea: false,
+    });
+
+    fireEvent.focusIn(link);
+
+    expect(screen.queryByTestId('browser-link-peek')).toBeNull();
   });
 
   it('never peeks a link that is not on this machine', async () => {
@@ -463,8 +590,42 @@ describe('command K', () => {
     );
   });
 
+  it('opens beside the session the palette is scoped to', async () => {
+    const { result } = renderHook(() =>
+      useBrowserEntries({ query: 'localhost:5173', scopeSessionId: OTHER_SESSION_ID }),
+    );
+
+    result.current.opens[0]?.run();
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_open' })).toEqual([
+        expect.objectContaining({ sessionId: OTHER_SESSION_ID, url: 'http://localhost:5173/' }),
+      ]),
+    );
+    expect(store.getState().drawer).toEqual({
+      kind: 'browser',
+      sessionId: OTHER_SESSION_ID,
+      payload: null,
+    });
+  });
+
+  it('shows the exact tab picked when two tabs share an address', async () => {
+    const tabs = [
+      rowOf({ id: 'tab-first', url: 'http://localhost:5173/checkout', title: 'Checkout' }),
+      rowOf({ id: 'tab-second', url: 'http://localhost:5173/checkout', title: 'Checkout again' }),
+    ];
+    store.setState({ browserSessionTabs: { [SESSION_ID]: tabs } });
+    const entries = browserTabEntries({ sessionId: SESSION_ID, tabs });
+
+    entries[1]?.run();
+
+    expect(store.getState().browserActiveTab[SESSION_ID]).toBe('tab-second');
+  });
+
   it('leaves a word with a dot to the search', () => {
     expect(browserOpenEntries({ query: 'plan.md', sessionId: SESSION_ID })).toEqual([]);
+    expect(browserOpenEntries({ query: 'foo.ts:42', sessionId: SESSION_ID })).toEqual([]);
+    expect(browserOpenEntries({ query: 'plan.md/x', sessionId: SESSION_ID })).toEqual([]);
     expect(browserOpenEntries({ query: 'checkout total', sessionId: SESSION_ID })).toEqual([]);
   });
 
@@ -473,7 +634,7 @@ describe('command K', () => {
       rowOf({ id: 'tab-checkout', url: 'http://localhost:5173/checkout', title: 'Checkout' }),
       rowOf({ id: 'tab-docs', url: 'https://docs.harborline.dev/tax', title: '' }),
     ];
-    rows = tabs;
+    store.setState({ browserSessionTabs: { [SESSION_ID]: tabs } });
     const entries = browserTabEntries({ sessionId: SESSION_ID, tabs });
 
     expect(entries.map((entry) => [entry.label, entry.detail])).toEqual([
@@ -482,7 +643,7 @@ describe('command K', () => {
     ]);
     entries[1]?.run();
 
-    await waitFor(() => expect(store.getState().browserActiveTab[SESSION_ID]).toBe('tab-docs'));
+    expect(store.getState().browserActiveTab[SESSION_ID]).toBe('tab-docs');
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
   });
 });

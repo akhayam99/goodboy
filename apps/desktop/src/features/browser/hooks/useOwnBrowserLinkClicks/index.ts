@@ -19,7 +19,7 @@ export const useOwnBrowserLinkClicks = (): void => {
         event.preventDefault();
         void openInYourBrowser({ url: link.url });
       },
-      { capture: true, signal: listening.signal },
+      { signal: listening.signal },
     );
     return () => listening.abort();
   }, []);
