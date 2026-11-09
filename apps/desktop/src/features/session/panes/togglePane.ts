@@ -39,6 +39,9 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
     case 'spawned':
       state.openDrawer({ kind: 'spawned', sessionId, payload: null });
       return;
+    case 'browser':
+      state.openDrawer({ kind: 'browser', sessionId, payload: null });
+      return;
     default: {
       const exhaustive: never = pane;
       return exhaustive;

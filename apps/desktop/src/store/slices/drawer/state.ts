@@ -123,6 +123,10 @@ export type DrawerContent =
       readonly payload: { readonly terminalId: TerminalTabId };
     }
   | {
+      readonly kind: 'browser';
+      readonly payload: null;
+    }
+  | {
       readonly kind: 'history-versions';
       readonly payload: { readonly mountId: MountId; readonly worktreePath: string };
     }

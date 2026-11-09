@@ -84,8 +84,9 @@ describe('SessionTools', () => {
       'Agents',
       'Scripts',
       'Terminal',
+      'Browser',
     ]);
-    expect(buttons.map((button) => button.textContent)).toEqual(['', '', '', '', '', '']);
+    expect(buttons.map((button) => button.textContent)).toEqual(['', '', '', '', '', '', '']);
     expect(buttons.every((button) => button.querySelector('svg') !== null)).toBe(true);
     expect(within(toolbar).queryByRole('button', { name: /^More/ })).toBeNull();
   });
@@ -99,9 +100,10 @@ describe('SessionTools', () => {
       ['spawned', 'session.spawned'],
       ['scripts', 'lens.scripts'],
       ['terminal', 'session.terminal'],
+      ['browser', undefined],
     ]);
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
-    for (const pane of ['explore', 'context', 'ask', 'spawned', 'scripts', 'terminal']) {
+    for (const pane of ['explore', 'context', 'ask', 'spawned', 'scripts', 'terminal', 'browser']) {
       within(toolbar).getByTestId(`pane-toggle-${pane}`);
     }
   });
@@ -122,10 +124,11 @@ describe('SessionTools', () => {
       'spawned',
       'scripts',
       'terminal',
+      'browser',
     ]);
     const separators = within(toolbar).getAllByRole('separator');
     expect(separators.every((separator) => separator.tagName === 'SPAN')).toBe(true);
-    expect(within(toolbar).getAllByRole('button').length).toBe(6);
+    expect(within(toolbar).getAllByRole('button').length).toBe(7);
   });
 
   it('names each icon with its label and chord in the tooltip on the left', () => {
@@ -135,9 +138,11 @@ describe('SessionTools', () => {
       expect(tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) })).toContain(
         tool.label,
       );
-      expect(tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) })).toContain(
-        shortcutGlyphs(tool.shortcut),
-      );
+      if (tool.shortcut !== undefined) {
+        expect(
+          tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) }),
+        ).toContain(shortcutGlyphs(tool.shortcut));
+      }
     }
   });
 
@@ -160,7 +165,7 @@ describe('SessionTools', () => {
     expect(open?.getAttribute('data-tone')).toBe('open');
     expect(
       captions.filter((caption) => caption?.getAttribute('data-tone') === 'closed'),
-    ).toHaveLength(5);
+    ).toHaveLength(6);
   });
 
   it('keeps every label inside the 44px rail at the 9px caption size', () => {
@@ -221,19 +226,19 @@ describe('SessionTools', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     const buttons = within(toolbar).getAllByRole('button');
-    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1, -1]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1, -1, -1]);
     act(() => {
       buttons[0]?.focus();
     });
     fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(buttons[1]);
     fireEvent.keyDown(toolbar, { key: 'End' });
-    expect(document.activeElement).toBe(buttons[5]);
+    expect(document.activeElement).toBe(buttons[6]);
     fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(buttons[0]);
     fireEvent.keyDown(toolbar, { key: 'ArrowUp' });
-    expect(document.activeElement).toBe(buttons[5]);
-    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, -1, -1, -1, 0]);
+    expect(document.activeElement).toBe(buttons[6]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, -1, -1, -1, -1, 0]);
   });
 
   it('presses the icon of the open pane', async () => {
