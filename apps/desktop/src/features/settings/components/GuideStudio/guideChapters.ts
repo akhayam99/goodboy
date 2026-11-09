@@ -252,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Sessions, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Board, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',

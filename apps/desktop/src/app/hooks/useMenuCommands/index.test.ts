@@ -172,16 +172,16 @@ describe('useMenuCommands', () => {
   });
 
   it('opens a place only when a workspace is open', async () => {
-    const inbox = detailsOf({ name: 'goodboy:open-inbox' });
     renderHook(() => useMenuCommands());
     await listened();
 
     pick({ payload: { id: 'menu.tasks' } });
-    useAppStore.setState({ currentWorkspaceId: null });
+    const opened = useAppStore.getState().appStudio?.kind;
+    useAppStore.setState({ appStudio: null, currentWorkspaceId: null });
     pick({ payload: { id: 'menu.tasks' } });
 
-    expect(inbox).toHaveLength(1);
-    expect(inbox[0]).toEqual({ door: true });
+    expect(opened).toBe('inbox');
+    expect(useAppStore.getState().appStudio).toBeNull();
   });
 
   it('opens Monitoring as a studio of the current window', async () => {
@@ -191,6 +191,27 @@ describe('useMenuCommands', () => {
     pick({ payload: { id: 'menu.monitoring' } });
 
     expect(useAppStore.getState().appStudio?.kind).toBe('monitoring');
+  });
+
+  it('opens Browser from the Go menu', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+
+    pick({ payload: { id: 'menu.browser' } });
+
+    expect(useAppStore.getState().appStudio?.kind).toBe('browser');
+  });
+
+  it('replaces the open page when Chat and Monitoring open from the menu', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+
+    pick({ payload: { id: 'menu.tasks' } });
+    pick({ payload: { id: 'menu.chat' } });
+    pick({ payload: { id: 'menu.monitoring' } });
+    act(() => useAppStore.getState().closeStudio());
+
+    expect(useAppStore.getState().appStudio).toBeNull();
   });
 
   it('checks for updates once and opens where the result shows', async () => {

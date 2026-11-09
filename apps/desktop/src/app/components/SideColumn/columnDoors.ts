@@ -1,7 +1,6 @@
-import { NAMES } from '../../../shared/utils/names';
 import type { LucideIcon } from 'lucide-react';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
+import { DESTINATIONS, type Destination } from '../../../shared/navigation/destinations';
 import type { ColumnDoorId } from './columnPlace';
 
 export type ColumnDoor = {
@@ -13,22 +12,24 @@ export type ColumnDoor = {
   readonly isTool?: boolean;
 };
 
-export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
-  { id: 'board', label: 'Sessions', icon: CONCEPT_ICONS.sessions, shortcutId: 'session.board' },
-  { id: 'inbox', label: NAMES.tasks, icon: CONCEPT_ICONS.inbox },
-  { id: 'workflows', label: 'Workflows', icon: CONCEPT_ICONS.workflows },
-  { id: 'chat', label: 'Chat', icon: CONCEPT_ICONS.chat },
-  { id: 'impact', label: 'Impact', icon: CONCEPT_ICONS.impact, isReference: true },
-  {
-    id: 'terminal',
-    label: 'Terminal',
-    icon: CONCEPT_ICONS.terminal,
-    shortcutId: 'terminal.studio',
-    isTool: true,
-  },
-  { id: 'browser', label: 'Browser', icon: CONCEPT_ICONS.browser, isTool: true },
-  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring, isTool: true },
-];
+type DoorDestination = Destination & { readonly id: ColumnDoorId };
+
+type DoorParams = {
+  readonly destination: DoorDestination;
+};
+
+const doorOf = ({ destination }: DoorParams): ColumnDoor => ({
+  id: destination.id,
+  label: destination.label,
+  icon: destination.icon,
+  ...(destination.shortcutId !== undefined && { shortcutId: destination.shortcutId }),
+  ...(destination.isReference === true && { isReference: true }),
+  ...(destination.home === 'tile' && { isTool: true }),
+});
+
+export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
+  (destination): destination is DoorDestination => destination.home !== 'topBar',
+).map((destination) => doorOf({ destination }));
 
 export const COLUMN_ROW_DOORS: ReadonlyArray<ColumnDoor> = COLUMN_DOORS.filter(
   (door) => door.isTool !== true,

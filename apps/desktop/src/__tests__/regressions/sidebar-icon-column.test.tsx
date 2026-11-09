@@ -181,7 +181,7 @@ describe('the main sidebar keeps one icon column', () => {
       const names = marks.map((mark) => mark.name);
       expect(names).toContain('workspace tile');
       expect(names).toContain('New session');
-      expect(names.some((entry) => entry.startsWith('Sessions'))).toBe(true);
+      expect(names.some((entry) => entry.startsWith('Board'))).toBe(true);
       expect(names).toContain('Impact');
       expect(names).not.toContain('Terminal');
       expect(document.querySelectorAll('[data-column-tile]')).toHaveLength(3);

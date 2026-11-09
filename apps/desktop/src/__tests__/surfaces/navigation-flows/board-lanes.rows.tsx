@@ -49,7 +49,7 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate', 'board-lanes:archived-restore'],
     open: async (ctx) => {
       shelveOneSession(ctx);
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
     },
     lands: async () => {
       await heading('Sessions');
@@ -72,7 +72,7 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       await openPalette(/^New session/);
       await heading('New session');
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
     },
     lands: async () => {
       await heading('Sessions');

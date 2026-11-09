@@ -203,10 +203,15 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'navigate',
   },
-  'session.board': { combo: 'cmd+shift+KeyH', label: 'Board', plane: 'session', group: 'navigate' },
+  'session.board': {
+    combo: 'cmd+shift+KeyH',
+    label: NAMES.board,
+    plane: 'session',
+    group: 'navigate',
+  },
   'terminal.studio': {
     combo: 'ctrl+Backquote',
-    label: 'Terminal',
+    label: NAMES.terminal,
     plane: 'app',
     group: 'navigate',
   },

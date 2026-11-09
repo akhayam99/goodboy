@@ -32,7 +32,7 @@ export const RailOrderDoorsScene = () => (
           key={door.count}
           id="board"
           icon={CONCEPT_ICONS.sessions}
-          label="Sessions"
+          label="Board"
           isCurrent={door.count === 3}
           signal={doorSignalOf({ kind: 'board', ...door, ...NO_QUIET })}
           action={

@@ -115,7 +115,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     name: 'frame: the Board title sits on one header row, no band above it',
     covers: ['navigate'],
     open: async () => {
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
     },
     lands: async () => {
       await heading('Sessions');

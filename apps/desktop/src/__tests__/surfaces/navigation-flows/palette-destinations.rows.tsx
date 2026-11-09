@@ -90,9 +90,15 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'Show session rail'),
   },
   {
-    name: 'palette: Sessions',
-    covers: ['navigate', 'palette:Sessions'],
-    open: () => openPalette(/^Sessions$/),
+    name: 'palette: Board',
+    covers: ['navigate', 'palette:Board'],
+    open: () => openPalette(/^Board$/),
+    lands: () => heading('Sessions'),
+  },
+  {
+    name: 'palette: Board, found by its former name Sessions',
+    covers: ['palette:Board'],
+    open: () => openPalette(/^Board$/, 'Sessions'),
     lands: () => heading('Sessions'),
   },
   {
@@ -108,6 +114,13 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Terminal$/),
     lands: () => studio('Terminal'),
+  },
+  {
+    name: 'palette: Browser',
+    covers: ['studio:browser', 'palette:Browser'],
+    door: 'palette',
+    open: () => openPalette(/^Browser$/),
+    lands: () => studio('Browser'),
   },
   {
     name: 'palette: New terminal in this session',
