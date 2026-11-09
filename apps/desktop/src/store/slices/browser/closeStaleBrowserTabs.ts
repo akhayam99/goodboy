@@ -15,6 +15,9 @@ export const closeStaleBrowserTabs = ({ get }: SliceDeps) => {
       });
       return;
     }
+    if (!Array.isArray(sessionIds)) {
+      return;
+    }
     for (const sessionId of sessionIds) {
       await get().closeBrowserSessionTabs({ sessionId });
     }

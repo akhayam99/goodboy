@@ -660,6 +660,17 @@ describe('a close that failed is retried for sessions that were archived or dele
     expect(hostRows).toHaveLength(3);
   });
 
+  it('does nothing when the host answers the leftover check with no list', async () => {
+    await openThree();
+    answerCommand({ command: 'browser_stale_tab_sessions', answer: () => null });
+
+    await expect(useAppStore.getState().closeStaleBrowserTabs()).resolves.toBeUndefined();
+
+    expect(callsOf({ command: 'browser_session_close' })).toEqual([]);
+    expect(hostRows).toHaveLength(3);
+    expect(await storedErrors()).toEqual([]);
+  });
+
   it('keeps the rows and shows the error when the leftover tab still does not close', async () => {
     await openThree();
     answerCommand({ command: 'browser_stale_tab_sessions', answer: () => [SESSION_ID] });

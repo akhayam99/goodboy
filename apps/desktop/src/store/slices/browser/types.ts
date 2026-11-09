@@ -1,6 +1,6 @@
 import type { ProjectId, SessionId } from '@goodboy/types';
 
-export type { SetFn, GetFn } from '../../slice-types';
+export type { GetFn } from '../../slice-types';
 
 export type BrowserTab = {
   readonly id: string;
