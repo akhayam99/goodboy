@@ -10,6 +10,7 @@ type Params = {
   readonly regionRef: RefObject<HTMLElement | null>;
   readonly headerRef: RefObject<HTMLElement | null>;
   readonly bodyRef: RefObject<HTMLElement | null>;
+  readonly pinnedRef?: RefObject<HTMLElement | null>;
   readonly hasLanes?: boolean;
 };
 
@@ -48,6 +49,7 @@ export const revealEngine = ({
   regionRef,
   headerRef,
   bodyRef,
+  pinnedRef,
   hasLanes = false,
 }: Params): RevealEngine => {
   const intent = scrollIntent();
@@ -56,6 +58,7 @@ export const revealEngine = ({
   let claims: ReadonlyArray<PageScroller> = [];
   let lastTop = 0;
   let headerHeight = 0;
+  let pinnedHeight = 0;
   let isSliding = false;
   let isFocusHeld = false;
   let isSettling = false;
@@ -73,6 +76,8 @@ export const revealEngine = ({
     region.setAttribute('data-reveal-header', isShown ? 'shown' : 'hidden');
     region.style.setProperty('--reveal-pad', `${headerHeight}px`);
     region.style.setProperty('--reveal-shift', shift);
+    region.style.setProperty('--reveal-inset', `${pinnedHeight}px`);
+    region.style.setProperty('--reveal-top', isShown ? `${pinnedHeight}px` : `${-headerHeight}px`);
     region.style.setProperty(
       '--reveal-duration',
       isShown ? 'var(--duration-base)' : 'var(--duration-quick)',
@@ -146,6 +151,7 @@ export const revealEngine = ({
     const viewport = liveViewport();
     const isNowSliding = viewport !== null;
     headerHeight = header.offsetHeight;
+    pinnedHeight = pinnedRef?.current?.offsetHeight ?? 0;
     if (isNowSliding !== isSliding) {
       isSliding = isNowSliding;
       state = { isShown: true, anchor: viewport === null ? 0 : clampedTopOf({ viewport }) };
@@ -293,6 +299,7 @@ export const revealEngine = ({
     const header = headerRef.current;
     const body = bodyRef.current;
     const region = regionRef.current;
+    const pinned = pinnedRef?.current ?? null;
     if (region !== null) {
       REVEALS_BY_REGION.set(region, reveal);
     }
@@ -330,6 +337,9 @@ export const revealEngine = ({
     }
     if (body !== null) {
       resize.observe(body);
+    }
+    if (pinned !== null) {
+      resize.observe(pinned);
     }
     for (const { root } of claims) {
       resize.observe(root);

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { ScrollFade } from '../components/ScrollFade';
 import { ScrollerStyleContext } from '../components/ScrollFade/scrollerStyleContext';
+import { HeaderRevealContext } from '../useHeaderReveal/headerRevealContext';
 
 afterEach(cleanup);
 
@@ -299,6 +300,43 @@ describe('ScrollFade line edge', () => {
   });
 });
 
+describe('ScrollFade page scroller default edge', () => {
+  const pageReveal = { register: () => () => undefined, holdAppScroll: () => undefined };
+
+  const renderPage = ({ fadeEdges }: { readonly fadeEdges?: 'both' | 'end' }) => {
+    runFrames();
+    const view = render(
+      <HeaderRevealContext.Provider value={pageReveal}>
+        <ScrollFade className="h-40" fadeSize={32} fadeEdges={fadeEdges}>
+          <p>content</p>
+        </ScrollFade>
+      </HeaderRevealContext.Provider>,
+    );
+    const viewport = viewportOf(view.container);
+    makeOverflow({ viewport });
+    viewport.scrollTop = 150;
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    return { container: view.container, viewport };
+  };
+
+  it('draws the hairline and keeps the top unmasked so a pinned row stays sharp', () => {
+    const { container, viewport } = renderPage({});
+
+    expect(container.querySelectorAll('[data-slot="scroll-edge"]')).toHaveLength(1);
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
+    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
+  });
+
+  it('draws no hairline when only the end fades, so sticky file headers keep a clean top', () => {
+    const { container, viewport } = renderPage({ fadeEdges: 'end' });
+
+    expect(container.querySelector('[data-slot="scroll-edge"]')).toBeNull();
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
+  });
+});
+
 describe('ScrollFade overlay thumb', () => {
   afterEach(() => {
     cleanup();
@@ -402,43 +440,14 @@ describe('ScrollFade overlay thumb', () => {
     expect(thumb?.className).toContain('opacity-0');
   });
 
-  it('draws no shade under the default fade or when the sticky rows own the top edge', () => {
-    const { container, rerender } = render(
-      <ScrollFade className="h-40">
-        <p>content</p>
-      </ScrollFade>,
-    );
-    expect(container.querySelector('[data-slot="scroll-shade"]')).toBeNull();
-
-    rerender(
-      <ScrollFade className="h-40" edge="shade" fadeEdges="end">
-        <p>content</p>
-      </ScrollFade>,
-    );
-    expect(container.querySelector('[data-slot="scroll-shade"]')).toBeNull();
-  });
-
-  it('shades the top edge once scrolled and fades nothing there instead', () => {
-    runFrames();
+  it.each(['fade', 'line'] as const)('draws no shadow or gradient band with edge %s', (edge) => {
     const { container } = render(
-      <ScrollFade className="h-40" edge="shade" fadeSize={32}>
+      <ScrollFade className="h-40" edge={edge}>
         <p>content</p>
       </ScrollFade>,
     );
-    const root = htmlElementOf({ node: container.firstElementChild });
-    const viewport = viewportOf(container);
-    makeOverflow({ viewport });
-    expect(root.querySelector('[data-slot="scroll-shade"]')).not.toBeNull();
-    expect(root.querySelector('[data-slot="scroll-edge"]')).toBeNull();
-    expect(root.hasAttribute('data-scrolled')).toBe(false);
 
-    viewport.scrollTop = 150;
-    act(() => {
-      fireEvent.scroll(viewport);
-    });
-    expect(root.getAttribute('data-scrolled')).toBe('true');
-    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
-    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
-    vi.unstubAllGlobals();
+    expect(container.querySelector('[data-slot="scroll-shade"]')).toBeNull();
+    expect(container.innerHTML).not.toMatch(/shadow|gradient/);
   });
 });

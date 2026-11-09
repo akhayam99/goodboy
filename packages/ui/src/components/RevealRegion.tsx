@@ -6,6 +6,7 @@ import { HeaderRevealContext } from '../useHeaderReveal/headerRevealContext';
 
 type Props = {
   readonly header: ReactNode;
+  readonly pinned?: ReactNode;
   readonly resetKey?: string | null;
   readonly surface?: 'background' | 'subtle';
   readonly hasLanes?: boolean;
@@ -13,12 +14,13 @@ type Props = {
 };
 
 const SURFACE_CLASS = {
-  background: 'bg-background',
-  subtle: 'bg-subtle',
+  background: 'sticky-surface',
+  subtle: 'sticky-surface-subtle',
 } as const satisfies Record<NonNullable<Props['surface']>, string>;
 
 export const RevealRegion = ({
   header,
+  pinned,
   resetKey = null,
   surface = 'background',
   hasLanes = false,
@@ -27,7 +29,15 @@ export const RevealRegion = ({
   const regionRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const reveal = useHeaderReveal({ regionRef, headerRef, bodyRef, resetKey, hasLanes });
+  const pinnedRef = useRef<HTMLDivElement>(null);
+  const reveal = useHeaderReveal({
+    regionRef,
+    headerRef,
+    bodyRef,
+    pinnedRef,
+    resetKey,
+    hasLanes,
+  });
 
   return (
     <div
@@ -36,11 +46,16 @@ export const RevealRegion = ({
       className="group/reveal relative flex min-h-0 min-w-0 flex-1 flex-col overflow-clip"
     >
       <HeaderRevealContext.Provider value={null}>
+        {pinned === undefined ? null : (
+          <div ref={pinnedRef} data-slot="reveal-overlay" className="absolute inset-x-0 top-0 z-30">
+            {pinned}
+          </div>
+        )}
         <div
           ref={headerRef}
           data-slot="reveal-header"
           className={cn(
-            'absolute inset-x-0 top-[calc(var(--reveal-shift,0px)*-1)] z-20',
+            'absolute inset-x-0 top-[var(--reveal-top,0px)] z-20',
             SURFACE_CLASS[surface],
             'motion-safe:transition-[top] motion-safe:duration-(--reveal-duration) motion-safe:ease-(--reveal-ease)',
           )}
