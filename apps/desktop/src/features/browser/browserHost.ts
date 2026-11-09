@@ -1,9 +1,10 @@
-import type { SessionId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { BrowserBounds, BrowserTabFacts } from './types';
 
 type OpenParams = {
   readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
   readonly url: string;
   readonly bounds: BrowserBounds;
   readonly isShown: boolean;
@@ -26,9 +27,9 @@ type SessionParams = {
 };
 
 export const browserHost = {
-  open: ({ sessionId, url, bounds, isShown }: OpenParams) =>
+  open: ({ sessionId, workspaceId, url, bounds, isShown }: OpenParams) =>
     invokeCommand<BrowserTabFacts>('browser_tab_open', {
-      args: { sessionId, url, bounds, isShown },
+      args: { sessionId, workspaceId, url, bounds, isShown },
     }),
   place: ({ tabId, bounds }: PlaceParams) =>
     invokeCommand<null>('browser_tab_place', { args: { tabId, bounds } }),
