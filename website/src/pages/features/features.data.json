@@ -292,10 +292,10 @@
           "also": "go anywhere"
         },
         {
-          "title": "Command palette",
+          "title": "Search or run",
           "text": "Act on what you are looking at. The actions of the open agent and session come first, each with its shortcut.",
           "group": "Search and navigation",
-          "also": "command palette",
+          "also": "search or run",
           "shown": true
         },
         {
