@@ -221,6 +221,8 @@ only when your task reaches the case it covers.
   support.
 - [companion.md](companion.md): when you change how a phone pairs, what a
   paired phone may ask for, or when the pairing listener runs.
+- [browser.md](browser.md): when you change how a web page opens inside a
+  window, where a tab may navigate, or what a page in a tab may reach.
 - [mounts.md](mounts.md): when you change where a session writes on disk,
   the mount lifecycle, the mount operation log, or recovery.
 - [workflows.md](workflows.md): when you touch the workflow tables, the
