@@ -63,14 +63,16 @@ commands, and got all six once it navigated itself to the dev origin or to
 - A tab's webview is a child of the window that asked for it, labelled
   `browse-<id>`. It is created when the tab opens, never at boot.
 - Only the owning window may drive a tab, and a `browse-` webview may drive
-  none. Listing a session's tabs and closing them reach only the calling
-  window's tabs.
+  none. Listing a session's tabs reaches only the calling window's tabs.
 - Closing a session's tabs is one command, `browser_session_close`. The store
-  calls it when a session is archived or deleted. It tries every tab and answers
+  calls it when a session is archived or deleted, and it reaches the session's
+  tabs in every window, not only the caller's. It tries every tab and answers
   `{ closed, failed }`; a tab that failed to close stays listed, so calling
-  again closes the rest. A tab or popup that was still opening when the
-  session closed is refused with `session-closing` and its webview is
-  destroyed; the session takes new tabs again afterwards.
+  again closes the rest. A tab or popup that was still opening in any window
+  when the session closed is refused with `session-closing` and its webview is
+  destroyed, as is a popup whose opener closed first; the session takes new
+  tabs again afterwards. After the first pass the host looks for tabs that
+  slipped in and closes those too.
 - A tab's address in a listing is read from the live webview, so a page that
   moves with `history.pushState` or a fragment shows its new address.
 - A destroyed window's tabs leave the registry with it.
@@ -88,11 +90,14 @@ to a project is a pin that every session of the project shares.
 - Rust writes the table (`browser/tab_rows.rs`), one command per verb:
   `browser_tab_rows_list`, `browser_tab_row_save`, `browser_tab_rows_reorder`,
   `browser_tab_row_delete`, `browser_session_tab_rows_delete`,
-  `browser_tab_row_pin` and `browser_tab_row_unpin`. Every command names its
-  owner and never reads the current session.
+  `browser_tab_row_pin`, `browser_tab_row_unpin` and
+  `browser_stale_tab_sessions`. Every command names its owner and never reads
+  the current session.
 - A save takes the address through the same rule as a live tab, so a row never
-  holds a local address, and keeps the first 512 characters of the title. A
-  second save of an id updates its address and title and keeps its position.
+  holds a local address, and keeps the first 512 characters of the title. It
+  drops a username and password from the address and keeps the query and the
+  fragment, so a token in the query still lands in the row. A second save of an
+  id updates its address and title and keeps its position.
   The position is the owner's largest plus one, and a reorder answers with the
   rows in their new order.
 - A reorder must name exactly the owner's rows (`tab-rows-changed` otherwise),
@@ -103,14 +108,23 @@ to a project is a pin that every session of the project shares.
   `browserSessionTabs` and `browserActiveTab` per session, `browserProjectPins`
   per project. An action changes state only after its command answered, and a
   failure leaves the old rows and reports the error on the session or the
-  project's workspace. Writes run one at a time in call order, a load that
-  answers after a newer load or a write is dropped, and the active tab is
-  state of this window only.
+  project's workspace. Writes of one session run one at a time in call order
+  and never wait on another session, a load that answers after a newer load, a
+  write or the session's eviction is dropped, and the active tab is state of this window only. A
+  reorder that fails with `tab-rows-changed`, because another window added or
+  closed a tab, reloads the session's rows.
 - Archiving or deleting a session calls `closeBrowserSessionTabs`. It closes
-  the live tabs, then deletes the session's rows. When a tab does not close, the
-  rows stay, the error shows, and the archive or delete still goes through; the
-  next call closes the rest. Pins are not the session's rows, so they stay. The
-  rows of a deleted session also go with it (`ON DELETE CASCADE`).
+  the session's live tabs in every window, then deletes the session's rows, and
+  drops the session's keys from state. A tab still opening in any window when
+  the close starts is refused. When a tab does not close, the rows stay, the
+  error shows, and the archive or delete still goes through. Pins are not the
+  session's rows, so they stay. The rows of a deleted session also go with it
+  (`ON DELETE CASCADE`).
+- Every boot runs `closeStaleBrowserTabs`. `browser_stale_tab_sessions` names
+  the sessions that are archived and still hold rows, and the sessions that are
+  archived or gone and still hold a live tab; each gets the same close. That is
+  the retry of a close that failed, because after the archive or delete nothing
+  else calls it.
 
 ## The pane
 
@@ -219,19 +233,28 @@ sits in and the address, and one function opens it (`openInBrowser`).
 - **Which tab**: a tab of the session already on the same address is shown.
   A bare server address (`http://localhost:5173`) takes any tab on that
   server. Otherwise a new tab opens. A host failure keeps the old tabs and
-  reports on the session. A pane in New tab leaves the draft when a door
-  shows a tab.
+  reports on the session. Every door that shows or opens a tab ends the New
+  tab draft explicitly (`endBrowserDraft` bumps `browserDraftEnds`, which the
+  pane watches), also when the tab it shows is
+  already the active one. A later door wins: a door request cancels an older
+  open still waiting on the host, so the tab the last click named is the one
+  shown. A tab picked in ⌘K shows that exact tab (`showBrowserTab`), never the
+  first tab on the same address.
 - **Server chips**: the port chip on a terminal tab strip and the live port
   on a running Service open `http://localhost:<port>`.
-- **Links**: a web link inside a session (the conversation, a drawer, an
-  artifact) opens beside it. The session view and the drawer carry
-  `data-browser-session`, and a link or a row finds its session there. A
-  link anywhere else opens your browser, and a GitHub commit link still
-  opens its diff.
+- **Links**: a web link in what is written in a session (a conversation
+  turn, a decision, an artifact) opens beside it. Those regions carry
+  `data-browser-links` inside the session's `data-browser-session`, and
+  `isBrowserLinkArea` checks both. A link anywhere else, such as an
+  integration, sign-in or connect guide in a drawer, opens your browser as
+  before, and so does a link outside a session. A GitHub commit link still
+  opens its diff. Chips and rows need only `data-browser-session`.
 - **The click rule**: a plain click opens the session's browser, ⌘-click
-  (Ctrl-click off macOS) opens your browser, on chips and links alike. No
-  earlier rule covered web links; ⌘-click on a file path in a terminal still
-  opens your editor.
+  (Ctrl-click off macOS) opens your browser, on chips and links alike. The
+  ⌘-click listener runs after the page's own handlers and skips a click they
+  already handled, so an anchor with its own `onClick` opens your browser
+  once. No earlier rule covered web links; ⌘-click on a file path in a
+  terminal still opens your editor.
 - **Peek**: resting on or focusing a `localhost` link in a session shows a
   card with the title of its tab (or the host), the address and what a click
   does. The card never creates a tab, because every tab is a whole webview.
@@ -240,10 +263,13 @@ sits in and the address, and one function opens it (`openInBrowser`).
   chord first (`browser.address` is scoped, so it wins only there). A page
   that has focus keeps its keys, so ⌘L reaches the row only while Goodboy
   has focus.
-- **⌘K** lists the current session's browser tabs and offers
-  `Open <address>` first for an address with `http` or `https`, a localhost
-  name, a port or a path. A bare word with a dot, like `plan.md`, stays a
-  search.
+- **⌘K** lists the browser tabs of the session the palette is scoped to (the
+  current session when it is not) and offers `Open <address>` first, beside
+  that same session, for an address with `http` or `https` or a localhost
+  name, or for a host with a port or a path. With no workspace open the entry
+  reads `In your browser` and opens your browser. A file name such as
+  `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
+  (`typedAddressOf`).
 
 ## Performance
 
@@ -318,7 +344,8 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
 - `browser::tests` opens tabs on Tauri's mock runtime: the owning window, the
   refusals and their codes, an app command a `browse-` webview calls from a
   local address, the popup cap and its `browser://tab-opened` event, listing
-  and closing only the calling window's tabs, a retry after a partial
+  only the calling window's tabs, closing a session's tabs in every window
+  and refusing a late open in any of them, a retry after a partial
   session close, a destroyed window, and that no production code looks a
   window up through `webview_windows` or `get_webview_window`. The native
   back step cannot run headless.
@@ -340,12 +367,16 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
   run again.
 - `browser::tab_rows::tests` runs every row command against the migrated
   schema: save and update, positions, reorder, ownership, pin and unpin, the
-  cascade with a session and a project, and the address rule.
+  cascade with a session and a project, the address rule with its stripped
+  credentials, and the sessions whose tabs outlived them.
   `store/slices/browser/index.test.ts` drives the slice through `storyHarness`
   with a fake host: open, close, reorder, pin, a failure that keeps the old
-  rows, a late load, a second window loading the same rows and the close on
-  archive. `archiveTask.test.ts` and `deleteTask.teardown.test.ts` pin that
-  archive and delete call it.
+  rows, a late load, a second window loading the same rows, a reorder that
+  reloads on `tab-rows-changed`, a hung write in one session that does not hold
+  back another, the close on archive and the boot retry.
+  `archiveTask.test.ts` and `deleteTask.teardown.test.ts` pin that archive and
+  delete call it, and `archiveTask.test.ts` that no tab state is left for the
+  archived session.
 - The pane lives in `apps/desktop/src/features/browser/`: `browserHost.ts`
   calls the live tab commands, `addressOf.ts` is the address rule,
   `createNativePlacement.ts` and `hooks/useNativePlacement` own placement, and

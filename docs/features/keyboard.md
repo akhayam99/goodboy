@@ -189,7 +189,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Browser** in the sidebar opens the Browser page. It lists every tab, grouped by session, then the pins of each project. The tile counts the open tabs.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
-- A port chip, a running Service's port and a link in the session open beside it, in the tab already on that page when there is one. **⌘-click** opens your own browser instead.
+- A port chip, a running Service's port and a link in a conversation, a decision or an artifact open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
 - Rest on a localhost link to see its page title and address before you open it.
 - **⌘L** goes to the address while the browser is on screen. Elsewhere it stays Ask.
 - **⌘K** lists the session's tabs. Type an address there and **Open** it beside the session.

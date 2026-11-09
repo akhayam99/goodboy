@@ -1,11 +1,12 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { selectOpenDrawer } from '../../store/slices/drawer/selectOpenDrawer';
 import { OPEN_FAILED } from '../../store/slices/notifications/errorRecovery';
-import { browserStudioPlace } from './browserStudioPlace';
+import { browserPaneRequests } from './browserPaneRequests';
 import { hostOf } from './hostOf';
 import { openInYourBrowser } from './openInYourBrowser';
 import { openPage } from './openPage';
+import { showBrowser } from './showBrowser';
+import { showBrowserTab } from './showBrowserTab';
 import { tabForAddress } from './tabForAddress';
 
 type Params = {
@@ -13,46 +14,34 @@ type Params = {
   readonly url: string;
 };
 
-type SessionParams = {
-  readonly sessionId: SessionId;
-};
-
 const FALLBACK_BOUNDS = { x: 0, y: 0, width: 1, height: 1 };
-
-const showBrowser = ({ sessionId }: SessionParams): void => {
-  const state = useAppStore.getState();
-  const studio = state.appStudio;
-  if (studio !== null) {
-    if (studio.kind === 'browser' && studio.sessionId === sessionId) {
-      return;
-    }
-    state.switchStudio({ studio: browserStudioPlace({ sessionId }) });
-    return;
-  }
-  const drawer = selectOpenDrawer(state);
-  if (drawer?.kind === 'browser' && drawer.sessionId === sessionId) {
-    return;
-  }
-  state.openDrawer({ kind: 'browser', sessionId, payload: null });
-};
 
 export const openInBrowser = async ({ sessionId, url }: Params): Promise<void> => {
   if (sessionId === null) {
     await openInYourBrowser({ url });
     return;
   }
+  const claimed = browserPaneRequests.opens.claim({
+    key: browserPaneRequests.openKey({ sessionId }),
+  });
   showBrowser({ sessionId });
   try {
     if (useAppStore.getState().browserSessionTabs[sessionId] === undefined) {
       await useAppStore.getState().loadBrowserSessionTabs({ sessionId });
     }
+    if (!claimed.isCurrent()) {
+      return;
+    }
     const tabs = useAppStore.getState().browserSessionTabs[sessionId] ?? [];
     const known = tabForAddress({ tabs, url });
     if (known !== null) {
-      useAppStore.getState().activateBrowserTab({ sessionId, tabId: known.id });
+      showBrowserTab({ sessionId, tabId: known.id });
       return;
     }
-    await openPage({ sessionId, url, bounds: FALLBACK_BOUNDS });
+    const outcome = await openPage({ sessionId, url, bounds: FALLBACK_BOUNDS });
+    if (outcome === 'opened') {
+      useAppStore.getState().endBrowserDraft({ sessionId });
+    }
   } catch (error) {
     await useAppStore.getState().reportError({
       recovery: OPEN_FAILED,

@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { BrowserTab } from '../../../store/slices/browser/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostOf } from '../../browser/hostOf';
-import { openInBrowser } from '../../browser/openInBrowser';
+import { showBrowserTab } from '../../browser/showBrowserTab';
 import type { PaletteEntry } from '../types';
 
 type Params = {
@@ -22,6 +22,6 @@ export const browserTabEntries = ({ sessionId, tabs }: Params): ReadonlyArray<Pa
       icon: CONCEPT_ICONS.browser,
       detail: host,
       tag: 'Browser tab',
-      run: () => void openInBrowser({ sessionId, url: tab.url }),
+      run: () => showBrowserTab({ sessionId, tabId: tab.id }),
     };
   });

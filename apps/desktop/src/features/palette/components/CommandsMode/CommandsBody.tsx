@@ -117,7 +117,13 @@ export const CommandsBody = ({
   const levelActions = useObjectActions({ target: level?.target ?? null, env });
   const entries = useCommandEntries();
   const needsYou = useNeedsYouEntries();
-  const browser = useBrowserEntries({ query });
+  const askSessionId =
+    scopeTarget?.kind === 'session'
+      ? scopeTarget.sessionId
+      : parentTarget?.kind === 'session'
+        ? parentTarget.sessionId
+        : null;
+  const browser = useBrowserEntries({ query, scopeSessionId: askSessionId });
   const hasWorkspace = useAppStore((state) => state.currentWorkspaceId !== null);
   const isScopeLoaded = useIsScopeLoaded({ scopeSessionId });
   const activePalette = scopeSessionId === null ? null : palette;
@@ -333,16 +339,10 @@ export const CommandsBody = ({
     );
   }, [entries, browser.tabs, runs, sessionList, parentList, scopeTarget, parentTarget]);
 
-  const askSessionId =
-    scopeTarget?.kind === 'session'
-      ? scopeTarget.sessionId
-      : parentTarget?.kind === 'session'
-        ? parentTarget.sessionId
-        : null;
   const asks = useMemo(
     () =>
-      hasWorkspace && query.trim() !== '' && parseQuery(query).prefix === null
-        ? askEntries({ query, sessionId: askSessionId, leading: browser.opens })
+      query.trim() !== '' && parseQuery(query).prefix === null
+        ? askEntries({ query, sessionId: askSessionId, leading: browser.opens, hasWorkspace })
         : NO_ASKS,
     [askSessionId, browser.opens, hasWorkspace, query],
   );

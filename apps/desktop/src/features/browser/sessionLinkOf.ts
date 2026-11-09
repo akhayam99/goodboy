@@ -1,4 +1,5 @@
 import type { SessionId } from '@goodboy/types';
+import { isBrowserLinkArea } from './isBrowserLinkArea';
 import { sessionOfElement } from './sessionOfElement';
 
 type Params = {
@@ -24,6 +25,9 @@ export const sessionLinkOf = ({ target }: Params): SessionLink | null => {
   const url = anchor.getAttribute('href') ?? '';
   const lower = url.toLowerCase();
   if (!WEB_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
+    return null;
+  }
+  if (!isBrowserLinkArea({ anchor })) {
     return null;
   }
   const sessionId = sessionOfElement({ element: anchor });

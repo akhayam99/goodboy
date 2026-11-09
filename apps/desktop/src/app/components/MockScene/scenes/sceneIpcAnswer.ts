@@ -13,6 +13,7 @@ const EMPTY_ANSWERS: Readonly<Record<string, () => unknown>> = {
   workspaces_with_unread: () => [],
   browser_session_close: () => ({ closed: 0, failed: [] }),
   browser_session_tab_rows_delete: () => 0,
+  browser_stale_tab_sessions: () => [],
   browser_tab_rows_list: () => [],
   worktree_carry_candidates: () => [],
   worktree_setup_proposal: () => null,
