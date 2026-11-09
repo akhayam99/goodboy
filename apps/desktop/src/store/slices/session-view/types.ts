@@ -62,6 +62,17 @@ export type DiffFocus =
   | { readonly kind: 'working'; readonly path: string | null }
   | { readonly kind: 'branch'; readonly path: string | null; readonly threadId?: string | null };
 
+export type ExploreChangedView = {
+  readonly mountPath: string | null;
+  readonly mode: 'all' | 'changed';
+  readonly collapsed: Readonly<Record<string, boolean>>;
+};
+
+export type SetExploreChangedViewParams = {
+  readonly sessionId: SessionId;
+  readonly view: ExploreChangedView;
+};
+
 export type FocusedExternalTask = {
   readonly provider: SessionExternalTaskProvider;
   readonly externalId: string;
@@ -200,6 +211,7 @@ type SessionViewSliceActions = {
     readonly path: string;
     readonly isExpanded: boolean;
   }): void;
+  setExploreChangedView(params: SetExploreChangedViewParams): void;
   setExploreMountPath(params: {
     readonly sessionId: SessionId;
     readonly mountPath: string | null;

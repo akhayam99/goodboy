@@ -23,7 +23,56 @@ const openAsk = async (): Promise<void> => {
   await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
 };
 
+const openContextOverAsk = async (): Promise<void> => {
+  await openAsk();
+  await composer();
+  const sessionId = selectOpenDrawer(useAppStore.getState())?.sessionId;
+  expect(sessionId).toBeDefined();
+  if (sessionId === undefined) {
+    return;
+  }
+  useAppStore.getState().openDrawer({
+    kind: 'context',
+    sessionId,
+    payload: { section: 'goal', view: 'current' },
+  });
+  await settle();
+  await waitFor(() => expect(openedKind()).toBe('context'), WAIT);
+};
+
 export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
+  {
+    name: 'slot: the drawer it replaced waits in a back chip, the chip swaps, Esc walks back',
+    covers: ['key:ask.open', 'openAsk', 'openDrawer', 'closeDrawer'],
+    open: openContextOverAsk,
+    lands: async () => {
+      await userEvent.setup().click(await screen.findByRole('button', { name: 'Back to Ask' }));
+      await settle();
+      await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
+      expect(await screen.findByRole('button', { name: 'Back to Context' })).toBeDefined();
+
+      await pressEscape();
+      await waitFor(() => expect(openedKind()).toBe('context'), WAIT);
+      expect(screen.queryByRole('button', { name: /^Back to / })).toBeNull();
+
+      await pressEscape();
+      await waitFor(() => expect(openedKind()).toBeNull(), WAIT);
+    },
+  },
+  {
+    name: 'slot: ⌘⇧W closes the top of the slot, then the drawer from the chip',
+    covers: ['key:slot.close', 'closeDrawer'],
+    open: openContextOverAsk,
+    lands: async () => {
+      pressShortcut({ id: 'slot.close' });
+      await settle();
+      await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
+
+      pressShortcut({ id: 'slot.close', target: await composer() });
+      await settle();
+      await waitFor(() => expect(openedKind()).toBeNull(), WAIT);
+    },
+  },
   {
     name: 'ask draft: type, Esc, Esc, ⌘L brings the draft back and the composer has focus',
     covers: ['key:ask.open', 'openAsk'],

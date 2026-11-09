@@ -67,7 +67,6 @@ const actions = (): ColumnActions => ({
   openWorkflows: vi.fn(),
   openTerminalStudio: vi.fn(),
   openNewChat: vi.fn(),
-  openNewTerminal: vi.fn(),
   openMonitoring: vi.fn(),
   openImpact: vi.fn(),
   openSettings: vi.fn(),

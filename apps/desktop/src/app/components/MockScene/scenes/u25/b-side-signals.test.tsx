@@ -22,7 +22,12 @@ import { U25_B_SIDE_SIGNALS_SCENES } from './b-side-signals';
 
 const SETTLE_MS = 2_000;
 
-const NAMES = ['side-signals-running', 'side-signals-idle'] as const;
+const NAMES = [
+  'side-signals-running',
+  'side-signals-idle',
+  'side-tiles-dark',
+  'side-tiles-light',
+] as const;
 
 type SceneName = (typeof NAMES)[number];
 
@@ -73,10 +78,24 @@ describe('the side column signal scenes', () => {
     expect(screen.getByRole('button', { name: 'Terminal, 2 running' })).toBeDefined();
   });
 
-  it('side-signals-idle shows nothing on the tool rows, only the Sessions dot for who needs you', async () => {
+  it.each(['side-tiles-dark', 'side-tiles-light'] as const)(
+    '%s shows the Terminal and Monitoring tiles with their counts',
+    async (name) => {
+      await mount({ name });
+
+      expect(screen.getByRole('button', { name: 'Terminal, 2 running' }).textContent).toContain(
+        '2',
+      );
+      expect(
+        document.querySelector('[data-column-tile="monitoring"] [data-tile-count]')?.textContent,
+      ).toBe('3');
+    },
+  );
+
+  it('side-signals-idle shows nothing on the tool tiles, only the Sessions dot for who needs you', async () => {
     await mount({ name: 'side-signals-idle' });
 
-    expect(screen.getByRole('button', { name: 'Terminal' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Terminal' }).textContent).toBe('Terminal');
     expect(
       document.querySelector(
         '[data-column-door]:not([data-column-door="board"]) [data-door-signal]',

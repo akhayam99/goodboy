@@ -84,6 +84,7 @@ const FILE_ROWS: &[Row] = &[
     command("menu.newWorkspace", "New Workspace…", None),
     SEPARATOR,
     command("app.close", "Close", Some("cmd+KeyW")),
+    command("slot.close", "Close the Drawer", Some("cmd+shift+KeyW")),
 ];
 
 const EDIT_ROWS: &[Row] = &[
@@ -427,6 +428,7 @@ mod tests {
                 .and_then(|command| command.combo)
         };
         assert_eq!(combo_of("app.close"), Some("cmd+KeyW"));
+        assert_eq!(combo_of("slot.close"), Some("cmd+shift+KeyW"));
         assert_eq!(combo_of("report.open"), Some("cmd+KeyI"));
         assert_eq!(combo_of("settings.open"), Some("cmd+Comma"));
     }

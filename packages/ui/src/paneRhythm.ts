@@ -7,6 +7,7 @@ export const PANE_GROUPS_GAP_REM = 2;
 export const PANE_RHYTHM = {
   inset: 'px-6',
   headerInset: 'pt-3',
+  pinnedInset: 'pt-3 pb-5',
   headerRow: 'h-8',
   header: 'px-6 py-5',
   body: 'px-6 py-5',

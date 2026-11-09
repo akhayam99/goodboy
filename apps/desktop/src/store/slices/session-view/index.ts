@@ -5,6 +5,7 @@ import { closeArtifactConversation, openArtifactConversation } from './artifactC
 import { awaitArtifactAgent, openArtifactCreation } from './artifactCreation';
 import { markSessionOpened } from './markSessionOpened';
 import { setSessionViewPrefs } from './setSessionViewPrefs';
+import { setExploreChangedView } from './setExploreChangedView';
 import { setExploreExpanded } from './setExploreExpanded';
 import { setExploreMountPath } from './setExploreMountPath';
 import { dismissCheckProposal } from './dismissCheckProposal';
@@ -46,6 +47,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setSessionDismissedNextSteps: setSessionDismissedNextSteps({ set }),
     setExploreExpanded: setExploreExpanded(set),
     setExploreMountPath: setExploreMountPath(set),
+    setExploreChangedView: setExploreChangedView({ set }),
     setActiveLens: setActiveLens(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedArtifactId: setFocusedArtifactId(set),
