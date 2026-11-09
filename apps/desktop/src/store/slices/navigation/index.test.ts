@@ -793,13 +793,25 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toEqual(ask);
   });
 
-  it('lets another drawer replace Ask, then still closes it on a forward move', () => {
+  it('lets a reader replace Ask, then brings Ask back from the chip on a forward move', () => {
+    const store = makeStore();
+    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    store.getState().openDrawer(ask);
+    store.getState().openDrawer(DRAFTS);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    expect(store.getState().drawer).toEqual(ask);
+    expect(store.getState().drawerBack).toBeNull();
+  });
+
+  it('closes Ask from the chip when a forward move leaves its session', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
     store.getState().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
     store.getState().openDrawer(DRAFTS);
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S2 }) });
     expect(store.getState().drawer).toBeNull();
+    expect(store.getState().drawerBack).toBeNull();
   });
 
   it('closes the drawer when an agent opens and restores it on back', () => {

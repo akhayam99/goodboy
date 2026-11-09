@@ -6,7 +6,8 @@ import type { ArtifactId, SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 import { importStore, resetStoryStore, type StoryStore } from '../../storyHarness';
-import { selectSlotKinds } from './selectSlotKinds';
+import { selectOpenDrawer } from './selectOpenDrawer';
+import { selectSlotBack } from './selectSlotBack';
 import type { DrawerRequest } from './state';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -43,7 +44,13 @@ beforeAll(async () => {
   store = await importStore();
 });
 
-const slot = () => selectSlotKinds({ state: store.getState() });
+const slot = () => {
+  const state = store.getState();
+  return {
+    top: selectOpenDrawer(state)?.kind ?? null,
+    back: selectSlotBack({ state })?.kind ?? null,
+  };
+};
 
 describe('the side slot', () => {
   beforeEach(async () => {
