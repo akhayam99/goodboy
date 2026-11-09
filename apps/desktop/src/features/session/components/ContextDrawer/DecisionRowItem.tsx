@@ -59,10 +59,14 @@ export const DecisionRowItem = ({
   const [isPreviousShown, setIsPreviousShown] = useState(false);
   const [draft, setDraft] = useState(text);
   const firstText = useRef(text);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const isSwapped = text !== firstText.current;
   const label = `Decision ${number}`;
   const isLong = overflowsTwoLines({ text });
   const landing = useFreshLanding({ liveKey, text });
+  const longLabel = isOpen ? 'Show less' : 'Show more';
+  const shortLabel = `${isOpen ? 'Hide' : 'Show'} ${label.toLowerCase()} actions`;
+  const toggleLabel = isLong ? longLabel : shortLabel;
 
   const commit = () => {
     setIsEditing(false);
@@ -135,7 +139,27 @@ export const DecisionRowItem = ({
     >
       <DecisionNumber number={number} isClosed={isClosed} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div
+          key={text}
+          data-swapped={isSwapped ? 'true' : undefined}
+          onClick={(event) => {
+            if (event.target instanceof Element && event.target.closest('a') !== null) {
+              return;
+            }
+            onToggleOpen();
+            toggleRef.current?.focus();
+          }}
+          className={cn(
+            'cursor-pointer [overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap',
+            !isOpen && 'line-clamp-2',
+            isClosed && 'text-faint-foreground line-through',
+            isSwapped && 'motion-safe:animate-text-swap',
+          )}
+        >
+          <Markdown text={text} className="text-meta" />
+        </div>
         <button
+          ref={toggleRef}
           type="button"
           aria-expanded={isOpen}
           onClick={onToggleOpen}
@@ -144,25 +168,13 @@ export const DecisionRowItem = ({
               onToggleOpen();
             }
           }}
-          className={cn('flex w-full flex-col items-start gap-1 rounded-sm text-left', FOCUS_RING)}
+          className={cn(
+            'self-start rounded-sm text-left text-meta text-muted-foreground',
+            !isLong && 'sr-only focus-visible:not-sr-only',
+            FOCUS_RING,
+          )}
         >
-          <div
-            key={text}
-            data-swapped={isSwapped ? 'true' : undefined}
-            className={cn(
-              '[overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap',
-              !isOpen && 'line-clamp-2',
-              isClosed && 'text-faint-foreground line-through',
-              isSwapped && 'motion-safe:animate-text-swap',
-            )}
-          >
-            <Markdown text={text} className="text-meta" />
-          </div>
-          {isLong ? (
-            <span className="text-meta text-muted-foreground">
-              {isOpen ? 'Show less' : 'Show more'}
-            </span>
-          ) : null}
+          {toggleLabel}
         </button>
         {why === null ? null : (
           <div data-decision-why={number} className="[overflow-wrap:anywhere]">
