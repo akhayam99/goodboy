@@ -183,7 +183,7 @@ The agent keeps its chat and its files, but you can only read it from then on. *
 - **Not checked** gives one of these reasons: nothing ticked, timed out, the tree changed or has uncommitted changes, or the checks could not run.
 - **Retry checks** on the card repeats them on the same commit from any window.
 - When you ask Auto to push, Goodboy pushes the checked commit after the agent finishes and its checks are not red. The card says **Pushed**, **Not pushed** with the reason, or **Waiting for you to confirm**.
-- A force push keeps a backup of the online version it replaces. It pushes exactly the commit that was checked and waits for one **Force push** for the whole batch. **Put back** on the card restores the branch online first, then here.
+- A force push keeps a backup of the online version it replaces. It pushes exactly the commit that was checked and waits for one **Force push** for the whole batch. The button reads **Pushing** while it works, then the row shows each branch in place: pushed, **Not pushed**, or the reason with **Retry push**. **Put back** on the card restores the branch online first, then here.
 - **Retry push** appears once, for a failure that can still pass.
 
 **Safety**
@@ -228,6 +228,7 @@ This part is for contributors and agents who change the feature.
 - Header glance and dock: `useConversationGlance` and `conversationAskOf` give both one word, `useConversationAsks` lists what asks; `useAutoTreeActions` opens the child page. `AutoChildEnd` leaves a failed child's Retry to `DockFailureLine`; `p10-agent-page.test.tsx` proves there is one and it retries the child.
 - Ask in the chat or the dock: `useAskDock` gives `conversationRows` the asks the dock holds. An ask it does not hold keeps its transcript card in the last turn, which is how a second window answers one. An answer there reaches this window through `agent-turn` on `goodboy:data-changed` and `refreshAgentAsks`, which reads the saved decision and the agent's status. A stopped agent or a later message lapses the ask, so it gets no card.
 - Focus after an ask: `useDockAskFocus` sends a focus that fell to the body to the message field of its own box. `focusAgentComposer` targets `data-composer-field`, never a docked answer field.
+- Force push row: `PublishRunRow` draws `publishRowsOf`, and `publishLineOf` gives the row and the result chip the same words. `PublishRunRow.sqlite.test.tsx` runs the real publish on the story database and reads the row back through the store.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order. `ChoiceChips` draws the options.
 - Next step scenes: the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row. The `u31-next-step` scene test holds its height.
 - Image strip: `AttachmentStrip` is the one strip for a message (`UserText`), a goal (`GoalAttachmentsStrip`) and a hint (`OrchestratedHintRow`). It lives in `features/attachments/AttachmentStrip/`, outside `components/` and `hooks/`, so other features import it without growing the cross-feature count.
