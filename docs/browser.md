@@ -65,8 +65,8 @@ commands, and got all six once it navigated itself to the dev origin or to
 - Only the owning window may drive a tab, and a `browse-` webview may drive
   none. Listing a session's tabs and closing them reach only the calling
   window's tabs.
-- Closing a session's tabs is one command, `browser_session_close`, for the
-  store to call when a session is archived. It tries every tab and answers
+- Closing a session's tabs is one command, `browser_session_close`. The store
+  calls it when a session is archived or deleted. It tries every tab and answers
   `{ closed, failed }`; a tab that failed to close stays listed, so calling
   again closes the rest. A tab or popup that was still opening when the
   session closed is refused with `session-closing` and its webview is
@@ -76,6 +76,41 @@ commands, and got all six once it navigated itself to the dev origin or to
 - A destroyed window's tabs leave the registry with it.
 - The registry stamps when a tab was hidden. The sleep and close policy reads
   that stamp; it is not built yet.
+
+## Tab rows
+
+The live webview is Rust's and is gone when the app quits. What outlives it is
+a row of `browser_tabs`: an id, an owner, the address, the title and a
+position. A row holds no cookie and no page content. The owner is a session or
+a project, never both: a tab a session holds is a session tab, and a tab pinned
+to a project is a pin that every session of the project shares.
+
+- Rust writes the table (`browser/tab_rows.rs`), one command per verb:
+  `browser_tab_rows_list`, `browser_tab_row_save`, `browser_tab_rows_reorder`,
+  `browser_tab_row_delete`, `browser_session_tab_rows_delete`,
+  `browser_tab_row_pin` and `browser_tab_row_unpin`. Every command names its
+  owner and never reads the current session.
+- A save takes the address through the same rule as a live tab, so a row never
+  holds a local address, and keeps the first 512 characters of the title. A
+  second save of an id updates its address and title and keeps its position.
+  The position is the owner's largest plus one, and a reorder answers with the
+  rows in their new order.
+- A reorder must name exactly the owner's rows (`tab-rows-changed` otherwise),
+  and a row only moves between owners through pin and unpin
+  (`tab-row-owner` when the caller does not own it). Deleting a row that is
+  already gone succeeds, so a retry is safe.
+- The `browser` store slice (`store/slices/browser/`) keeps the rows as state:
+  `browserSessionTabs` and `browserActiveTab` per session, `browserProjectPins`
+  per project. An action changes state only after its command answered, and a
+  failure leaves the old rows and reports the error on the session or the
+  project's workspace. Writes run one at a time in call order, a load that
+  answers after a newer load or a write is dropped, and the active tab is
+  state of this window only.
+- Archiving or deleting a session calls `closeBrowserSessionTabs`. It closes
+  the live tabs, then deletes the session's rows. When a tab does not close, the
+  rows stay, the error shows, and the archive or delete still goes through; the
+  next call closes the rest. Pins are not the session's rows, so they stay. The
+  rows of a deleted session also go with it (`ON DELETE CASCADE`).
 
 ## Capabilities
 
@@ -107,8 +142,9 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 
 A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
-`window-gone`, `other-window`, `too-many-popups`, `session-closing`), never a sentence. The pane
-owns the words.
+`window-gone`, `other-window`, `too-many-popups`, `session-closing`,
+`tab-row-gone`, `tab-row-owner`, `tab-rows-changed`, `tab-rows-failed`), never
+a sentence. The pane owns the words.
 
 ## Under the hood
 
@@ -136,6 +172,14 @@ owns the words.
 - `add_child` needs the `unstable` feature of `tauri`, so `Cargo.toml` pins
   the minor (`~2.12`). A Tauri bump is its own pull request, with the spikes
   run again.
+- `browser::tab_rows::tests` runs every row command against the migrated
+  schema: save and update, positions, reorder, ownership, pin and unpin, the
+  cascade with a session and a project, and the address rule.
+  `store/slices/browser/index.test.ts` drives the slice through `storyHarness`
+  with a fake host: open, close, reorder, pin, a failure that keeps the old
+  rows, a late load, a second window loading the same rows and the close on
+  archive. `archiveTask.test.ts` and `deleteTask.teardown.test.ts` pin that
+  archive and delete call it.
 - Until the pane lands, `scripts/check-tauri-commands.mjs` allowlists the
-  `browser_*` commands with a reason; the pane and the tabs slice remove
-  those lines as they call them.
+  live `browser_tab_*` commands with a reason; the pane removes those lines as
+  it calls them.
