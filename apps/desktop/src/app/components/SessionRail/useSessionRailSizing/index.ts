@@ -26,11 +26,7 @@ export const useSessionRailSizing = (): SessionRailSizing => {
     cssVar: SESSION_RAIL_WIDTH_VAR,
   });
   const isDrawerOpen = useAppStore((state) => state.drawer !== null);
-  const isBrowserOpen = useAppStore((state) => state.drawer?.kind === 'browser');
   const folds = useShellFolds({ railWidth: resizable.width, toolsWidth: SESSION_TOOL_RAIL_WIDTH });
-  const fold = useSessionRailFold({
-    isNarrow: folds.isRailNarrow || isBrowserOpen,
-    isDrawerOpen,
-  });
+  const fold = useSessionRailFold({ isNarrow: folds.isRailNarrow, isDrawerOpen });
   return { resizable, fold };
 };

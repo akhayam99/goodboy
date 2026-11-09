@@ -3,6 +3,8 @@ import { TOAST_GUTTER_PX, toastRightOf, type ToastDrawerMode } from '../toastRig
 
 const DRAWER_CARD = '[data-drawer-card]';
 
+const NATIVE_VIEW = '[data-browser-view]';
+
 const modeOf = (card: HTMLElement): ToastDrawerMode => {
   const mode = card.closest<HTMLElement>('[data-drawer-mode]')?.dataset['drawerMode'];
   return mode === 'push' || mode === 'overlay' ? mode : 'closed';
@@ -16,6 +18,7 @@ const measureRight = (): number => {
   return toastRightOf({
     mode: modeOf(card),
     drawerWidth: window.innerWidth - card.getBoundingClientRect().left,
+    hasNativeView: card.querySelector(NATIVE_VIEW) !== null,
   });
 };
 

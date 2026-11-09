@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { DrawerFrame } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { browserTabListPref } from '../../browserTabListPref';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { BrowserAddressRow } from './BrowserAddressRow';
@@ -16,7 +17,7 @@ type Props = {
 export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const model = useBrowserPane({ sessionId });
   const view = useRef<HTMLDivElement | null>(null);
-  const [isListOpen, setIsListOpen] = useState(false);
+  const [isListOpen, setIsListOpen] = useState(browserTabListPref.read);
   const shownTab = model.shown?.tab ?? null;
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
@@ -29,7 +30,10 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
         <BrowserAddressRow
           model={model}
           isListOpen={isListOpen}
-          onToggleList={() => setIsListOpen((isOpen) => !isOpen)}
+          onToggleList={() => {
+            browserTabListPref.write(!isListOpen);
+            setIsListOpen(!isListOpen);
+          }}
           onClose={onClose}
         />
         {model.error === null ? null : (
