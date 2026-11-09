@@ -459,6 +459,7 @@ describe('SessionTools', () => {
       'spawned',
       'scripts',
       'terminal',
+      'browser',
     ]);
     const source = readFileSync(join(__dirname, 'ToolGroupCaption.tsx'), 'utf8');
     expect(source).toContain('text-rail');
