@@ -215,7 +215,7 @@ const fitTokensOf = ({ text }: TextParams): ReadonlyArray<string> => {
   return tokens;
 };
 
-const sentenceOf = ({ text }: TextParams): string => {
+const untilSentenceEndOf = ({ text }: TextParams): string => {
   for (let index = 0; index < text.length; index += 1) {
     const char = text.charAt(index);
     if (char === '\n') {
@@ -230,7 +230,7 @@ const sentenceOf = ({ text }: TextParams): string => {
 };
 
 const leadSentenceOf = ({ text }: TextParams): string => {
-  const sentence = sentenceOf({ text });
+  const sentence = untilSentenceEndOf({ text });
   const continuation = sentence.toLowerCase().search(CONTINUATION_RE);
   const primary = continuation === -1 ? sentence : sentence.slice(0, continuation);
   let words = 0;
