@@ -7,7 +7,11 @@ import type { PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
 
 export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, prNumber?: number, { mountId }: PrWriteOptions = {}) => {
+  return async (
+    sessionId: SessionId,
+    prNumber?: number,
+    { mountId, isFailureShown = false }: PrWriteOptions = {},
+  ) => {
     const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
@@ -26,6 +30,7 @@ export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
+          isFailureShown,
           title: `Couldn't convert #${num} to a draft`,
           run: () => port.setDraft({ isDraft: true }),
         });

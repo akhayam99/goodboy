@@ -19,7 +19,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     prNumber?: number,
     method: PrMergeMethod = 'squash',
-    { mountId, expectedHeadSha }: MergePrOptions = {},
+    { mountId, expectedHeadSha, isFailureShown = false }: MergePrOptions = {},
   ) => {
     const { num, session, repo, port } = prWriteContext({
       get,
@@ -48,6 +48,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
+          isFailureShown,
           title: prLifecycleFailureTitle({ action: 'merge', prNumber: num, nouns: port.nouns }),
           run: async () => {
             try {

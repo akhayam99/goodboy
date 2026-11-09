@@ -8,9 +8,15 @@ type Params = {
   readonly origin: ActionOrigin;
   readonly anchorKey?: string | null;
   readonly viewing?: ActionViewing | null;
+  readonly isOutcomeShown?: boolean;
 };
 
-export const useActionEnv = ({ origin, anchorKey = null, viewing = null }: Params): ActionEnv => {
+export const useActionEnv = ({
+  origin,
+  anchorKey = null,
+  viewing = null,
+  isOutcomeShown = false,
+}: Params): ActionEnv => {
   const showToast = useShowToast();
   const copyText = useCopyText();
   const viewingKind = viewing?.kind ?? null;
@@ -24,7 +30,8 @@ export const useActionEnv = ({ origin, anchorKey = null, viewing = null }: Param
       anchorKey,
       viewing:
         viewingKind === null || viewingId === null ? null : { kind: viewingKind, id: viewingId },
+      isOutcomeShown,
     }),
-    [anchorKey, copyText, origin, showToast, viewingId, viewingKind],
+    [anchorKey, copyText, isOutcomeShown, origin, showToast, viewingId, viewingKind],
   );
 };

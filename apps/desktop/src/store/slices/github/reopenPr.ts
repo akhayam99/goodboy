@@ -8,7 +8,11 @@ import type { PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
 
 export const reopenPr = (_set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, prNumber?: number, { mountId }: PrWriteOptions = {}) => {
+  return async (
+    sessionId: SessionId,
+    prNumber?: number,
+    { mountId, isFailureShown = false }: PrWriteOptions = {},
+  ) => {
     const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
@@ -27,6 +31,7 @@ export const reopenPr = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
+          isFailureShown,
           title: prLifecycleFailureTitle({ action: 'reopen', prNumber: num, nouns: port.nouns }),
           run: () => port.reopen(),
         });

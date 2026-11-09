@@ -9,6 +9,7 @@ type Params = Readonly<{
   workspaceId: WorkspaceId;
   title: string;
   isQuiet?: boolean;
+  isFailureShown?: boolean;
   run: () => Promise<void>;
 }>;
 
@@ -18,6 +19,7 @@ export const runPortWrite = async ({
   workspaceId,
   title,
   isQuiet = false,
+  isFailureShown = false,
   run,
 }: Params): Promise<void> => {
   try {
@@ -32,6 +34,7 @@ export const runPortWrite = async ({
         body: message,
         sessionId,
         workspaceId,
+        isRead: isFailureShown,
       });
     }
     throw new ReportedError(message);

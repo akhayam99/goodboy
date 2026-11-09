@@ -23,7 +23,6 @@ import { selectActiveProjectPrs } from '../../../store/slices/github/activeProje
 import { pullRequestViewOf } from '../../../store/slices/pull-request-view/pullRequestViewOf';
 import { branchGithubOf } from '../../../store/slices/github/branchGithubOf';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
-import type { PrWriteOptions } from '../../../store/slices/github/prWriteOptions';
 import { selectPrWrite } from '../../../store/slices/pr-writes/selectPrWrite';
 import {
   sessionPullRequestHostOf,
@@ -66,6 +65,7 @@ import {
   pullRequestViewerOf,
   type PullRequestFacts,
 } from './pullRequestFacts';
+import { writePullRequest } from './writePullRequest';
 
 type FactsOnly = { readonly facts: PullRequestFacts };
 
@@ -169,38 +169,6 @@ const can = ({
 
 const hostLabel = ({ facts }: FactsOnly): string => REVIEW_SOURCE_LABEL[facts.host];
 
-const writeOptionsOf = ({ facts }: FactsOnly): PrWriteOptions =>
-  facts.mountId === null ? {} : { mountId: facts.mountId };
-
-const refresh = ({ env, facts }: { readonly env: ActionEnv; readonly facts: PullRequestFacts }) => {
-  const state = env.getState();
-  const mountScope = writeOptionsOf({ facts });
-  void refreshActiveRequest({ get: env.getState, sessionId: facts.sessionId, ...mountScope });
-  if (facts.host === 'github') {
-    void state.refreshSessionPrDetail(facts.sessionId, { force: true, ...mountScope });
-  }
-  void state.loadPullRequestView({ sessionId: facts.sessionId, force: true, ...mountScope });
-};
-
-const write = async ({
-  env,
-  facts,
-  task,
-}: {
-  readonly env: ActionEnv;
-  readonly facts: PullRequestFacts;
-  readonly task: (params: {
-    readonly number: number;
-    readonly options: PrWriteOptions;
-  }) => Promise<void>;
-}): Promise<void> => {
-  if (facts.number === null) {
-    return;
-  }
-  await task({ number: facts.number, options: writeOptionsOf({ facts }) });
-  refresh({ env, facts });
-};
-
 const readyToast = ({
   env,
   facts,
@@ -208,6 +176,9 @@ const readyToast = ({
   readonly env: ActionEnv;
   readonly facts: PullRequestFacts;
 }): void => {
+  if (env.isOutcomeShown === true) {
+    return;
+  }
   const place = branchPlace({ sessionId: facts.sessionId, tab: 'pr' });
   const isShown = isTargetShown({
     state: env.getState(),
@@ -297,7 +268,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     pendingLabel: () => 'Marking ready…',
     doneLabel: ({ facts }) => `Marked ${numberLabel({ facts })} ready for review.`,
     run: async ({ facts, env }) => {
-      await write({
+      await writePullRequest({
         env,
         facts,
         task: ({ number, options }) => env.getState().markPrReady(facts.sessionId, number, options),
@@ -343,7 +314,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       };
     },
     run: async ({ facts, env, choice }) => {
-      await write({
+      await writePullRequest({
         env,
         facts,
         task: ({ number, options }) =>
@@ -356,6 +327,9 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
               { ...options, expectedHeadSha: facts.pr?.headSha ?? null },
             ),
       });
+      if (env.isOutcomeShown === true) {
+        return;
+      }
       env.showToast({
         kind: 'info',
         title: `Merged ${numberLabel({ facts })} into ${baseOf({ facts })}`,
@@ -383,7 +357,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     pendingLabel: () => 'Reopening…',
     doneLabel: ({ facts }) => `Reopened ${numberLabel({ facts })}.`,
     run: ({ facts, env }) =>
-      write({
+      writePullRequest({
         env,
         facts,
         task: ({ number, options }) => env.getState().reopenPr(facts.sessionId, number, options),
@@ -434,7 +408,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     pendingLabel: () => 'Converting…',
     doneLabel: ({ facts }) => `Converted ${numberLabel({ facts })} to draft.`,
     run: ({ facts, env }) =>
-      write({
+      writePullRequest({
         env,
         facts,
         task: ({ number, options }) =>
@@ -486,7 +460,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       role: 'danger',
     }),
     run: ({ facts, env }) =>
-      write({
+      writePullRequest({
         env,
         facts,
         task: ({ number, options }) => env.getState().closePr(facts.sessionId, number, options),

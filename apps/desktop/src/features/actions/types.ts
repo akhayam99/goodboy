@@ -146,6 +146,7 @@ export type ActionEnv = {
   readonly origin: ActionOrigin;
   readonly anchorKey: string | null;
   readonly viewing: ActionViewing | null;
+  readonly isOutcomeShown?: boolean;
 };
 
 type FactsParams<F> = {
