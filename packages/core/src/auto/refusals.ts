@@ -35,6 +35,7 @@ export const AUTO_REFUSAL_CODES = [
   'no_run',
   'retry_unavailable',
   'role_lacks_shell',
+  'role_narrower',
   'return_limit',
   'task_rebrief_limit',
   'not_returned',

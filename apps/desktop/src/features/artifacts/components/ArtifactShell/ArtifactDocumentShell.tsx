@@ -202,7 +202,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       />
     );
   };
-  const actions = actionsNode();
 
   const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;
   const state = artifactStateOf({
@@ -229,13 +228,14 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   return (
     <PaneShell
       page={artifact.kind}
+      isHeaderPinned
       header={
         <ArtifactShellHeader
           kind={artifact.kind}
           title={artifact.title}
           isTitleInDocument={subject.kind === 'report' && draft === null}
           chip={chip}
-          actions={actions}
+          actions={actionsNode()}
           meta={
             <ArtifactShellMeta
               artifact={artifact}

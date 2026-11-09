@@ -10,6 +10,7 @@ export type ColumnDoor = {
   readonly icon: LucideIcon;
   readonly shortcutId?: ShortcutId;
   readonly isReference?: boolean;
+  readonly isTool?: boolean;
 };
 
 export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
@@ -17,15 +18,24 @@ export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
   { id: 'inbox', label: NAMES.tasks, icon: CONCEPT_ICONS.inbox },
   { id: 'workflows', label: 'Workflows', icon: CONCEPT_ICONS.workflows },
   { id: 'chat', label: 'Chat', icon: CONCEPT_ICONS.chat },
+  { id: 'impact', label: 'Impact', icon: CONCEPT_ICONS.impact, isReference: true },
   {
     id: 'terminal',
     label: 'Terminal',
     icon: CONCEPT_ICONS.terminal,
     shortcutId: 'terminal.studio',
+    isTool: true,
   },
-  { id: 'impact', label: 'Impact', icon: CONCEPT_ICONS.impact, isReference: true },
-  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring, isReference: true },
+  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring, isTool: true },
 ];
+
+export const COLUMN_ROW_DOORS: ReadonlyArray<ColumnDoor> = COLUMN_DOORS.filter(
+  (door) => door.isTool !== true,
+);
+
+export const COLUMN_TOOL_DOORS: ReadonlyArray<ColumnDoor> = COLUMN_DOORS.filter(
+  (door) => door.isTool === true,
+);
 
 export type ColumnActions = {
   readonly openBoard: () => void;
@@ -34,7 +44,6 @@ export type ColumnActions = {
   readonly openWorkflows: () => void;
   readonly openTerminalStudio: () => void;
   readonly openNewChat: () => void;
-  readonly openNewTerminal: () => void;
   readonly openMonitoring: () => void;
   readonly openImpact: () => void;
   readonly openSettings: () => void;

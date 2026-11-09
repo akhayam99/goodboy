@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { COLUMN_DOORS } from './columnDoors';
+import { COLUMN_DOORS, COLUMN_ROW_DOORS, COLUMN_TOOL_DOORS } from './columnDoors';
 
 describe('the column doors', () => {
   it('names the tracker door Tasks and keeps its id', () => {
@@ -23,22 +23,33 @@ describe('the column doors', () => {
     expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists Sessions, Tasks, then Workflows, Chat, Terminal, then Impact and Monitoring', () => {
+  it('lists Sessions, Tasks, Workflows, Chat and Impact, then the Terminal and Monitoring tools', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
       'Sessions',
       'Tasks',
       'Workflows',
       'Chat',
-      'Terminal',
       'Impact',
+      'Terminal',
       'Monitoring',
     ]);
   });
 
-  it('marks only Impact and Monitoring as reference doors, below the separator', () => {
+  it('marks only Impact as a reference door', () => {
     expect(
       COLUMN_DOORS.filter((entry) => entry.isReference === true).map((entry) => entry.id),
-    ).toEqual(['impact', 'monitoring']);
-    expect(COLUMN_DOORS.slice(-2).every((entry) => entry.isReference === true)).toBe(true);
+    ).toEqual(['impact']);
+  });
+
+  it('splits the doors into rows and tools, keeping the rail order', () => {
+    expect(COLUMN_ROW_DOORS.map((entry) => entry.id)).toEqual([
+      'board',
+      'inbox',
+      'workflows',
+      'chat',
+      'impact',
+    ]);
+    expect(COLUMN_TOOL_DOORS.map((entry) => entry.id)).toEqual(['terminal', 'monitoring']);
+    expect([...COLUMN_ROW_DOORS, ...COLUMN_TOOL_DOORS]).toEqual(COLUMN_DOORS);
   });
 });

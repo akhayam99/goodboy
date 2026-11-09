@@ -40,12 +40,19 @@ const DOC = [
 
 const sources = ({ text }) => [{ path: 'a', text }];
 
-const verify = ({ rust = RUST, frontend = FRONTEND, window = '', doc = DOC }) =>
+const verify = ({
+  rust = RUST,
+  frontend = FRONTEND,
+  window = '',
+  doc = DOC,
+  unheard = new Map(),
+}) =>
   verifyEventNames({
     rustNames: rustEventNames({ sources: sources({ text: rust }) }),
     frontend: frontendTauriCalls({ sources: sources({ text: frontend }) }),
     windowNames: windowEventNames({ sources: sources({ text: window }) }),
     doc,
+    unheard,
   });
 
 describe('rustEventNames', () => {
@@ -85,6 +92,22 @@ describe('verifyEventNames', () => {
   it('reports a Rust event the doc section does not list', () => {
     const problems = verify({ doc: DOC.replace('`terminal-output`', '`terminal-out`') });
     assert.match(problems.join('\n'), /"terminal-output" is emitted by Rust and missing/);
+  });
+
+  it('accepts a documented event whose listener has not landed, until the frontend names it', () => {
+    const rust = `${RUST}\nconst TAB_OPENED_EVENT: &str = "browser://tab-opened";`;
+    const doc = DOC.replace('## Other', '| `browser://tab-opened` | | | |\n## Other');
+    const unheard = new Map([['browser://tab-opened', 'the pane lands later']]);
+    assert.deepEqual(verify({ rust, doc, unheard }), []);
+    assert.match(
+      verify({ rust, doc }).join('\n'),
+      /Rust emits "browser:\/\/tab-opened" and no frontend file names it/,
+    );
+    const frontend = `${FRONTEND}\nlisten('browser://tab-opened', handler);`;
+    assert.match(
+      verify({ rust, doc, unheard, frontend }).join('\n'),
+      /the frontend names "browser:\/\/tab-opened" now/,
+    );
   });
 
   it('reports a window event the doc does not list, and accepts one with an id suffix', () => {

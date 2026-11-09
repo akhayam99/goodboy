@@ -329,4 +329,5 @@ export {
   rerouteHintOf,
   roleCannotRunCommandsMessage,
 } from './roleTools';
+export { roleFitOf, roleNarrowerMessage } from './roleFit';
 export { AUTO_WITHDRAWN_REASON } from './AUTO_WITHDRAWN_REASON';

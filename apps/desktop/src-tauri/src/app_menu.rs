@@ -296,18 +296,30 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     Ok(())
 }
 
-fn emit_to_focused_window<R: Runtime>(app: &AppHandle<R>, payload: MenuCommandPayload) {
-    let windows = app.webview_windows();
-    let focused = windows
+const MAIN_WINDOW: &str = "main";
+
+fn pick_menu_window<'a>(windows: &[(&'a str, bool)]) -> Option<&'a str> {
+    windows
+        .iter()
+        .find(|(_, is_focused)| *is_focused)
+        .or_else(|| windows.iter().find(|(label, _)| *label == MAIN_WINDOW))
+        .or_else(|| windows.first())
+        .map(|(label, _)| *label)
+}
+
+fn menu_window_label<R: Runtime>(app: &AppHandle<R>) -> Option<String> {
+    let windows = app.windows();
+    let mut candidates: Vec<(&str, bool)> = windows
         .values()
-        .find(|window| window.is_focused().unwrap_or(false))
-        .or_else(|| windows.values().next());
-    if let Some(window) = focused {
-        let _ = app.emit_to(
-            EventTarget::webview_window(window.label()),
-            MENU_EVENT,
-            payload,
-        );
+        .map(|window| (window.label(), window.is_focused().unwrap_or(false)))
+        .collect();
+    candidates.sort_by_key(|(label, _)| *label);
+    pick_menu_window(&candidates).map(str::to_string)
+}
+
+fn emit_to_focused_window<R: Runtime>(app: &AppHandle<R>, payload: MenuCommandPayload) {
+    if let Some(label) = menu_window_label(app) {
+        let _ = app.emit_to(EventTarget::webview_window(label), MENU_EVENT, payload);
     }
 }
 
@@ -449,6 +461,56 @@ mod tests {
         let payload = serde_json::to_value(MenuCommandPayload { id: "app.close" }).unwrap();
         assert_eq!(payload, serde_json::json!({ "id": "app.close" }));
         assert_eq!(MENU_EVENT, "goodboy://menu");
+    }
+
+    #[test]
+    fn picks_the_focused_window_then_main_then_any() {
+        assert_eq!(
+            pick_menu_window(&[("main", false), ("win-2", true)]),
+            Some("win-2")
+        );
+        assert_eq!(
+            pick_menu_window(&[("a", false), ("main", false)]),
+            Some("main")
+        );
+        assert_eq!(pick_menu_window(&[("win-2", false)]), Some("win-2"));
+        assert_eq!(pick_menu_window(&[]), None);
+    }
+
+    #[test]
+    fn sends_a_menu_command_to_the_window_page_and_never_to_a_browser_tab() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::sync::Arc;
+        use tauri::{Listener, LogicalPosition, LogicalSize, WebviewBuilder, WebviewUrl};
+
+        let app = tauri::test::mock_app();
+        let main = tauri::WebviewWindowBuilder::new(&app, "main", WebviewUrl::default())
+            .build()
+            .expect("main window");
+        main.as_ref()
+            .window()
+            .add_child(
+                WebviewBuilder::new(
+                    "browse-0f1e",
+                    WebviewUrl::External("https://example.com/".parse().expect("url")),
+                ),
+                LogicalPosition::new(963.0, 36.0),
+                LogicalSize::new(477.0, 864.0),
+            )
+            .expect("child webview");
+        assert!(app.webview_windows().is_empty());
+
+        let heard = Arc::new(AtomicUsize::new(0));
+        let counter = Arc::clone(&heard);
+        main.listen(MENU_EVENT, move |_| {
+            counter.fetch_add(1, Ordering::SeqCst);
+        });
+
+        assert_eq!(menu_window_label(app.handle()).as_deref(), Some("main"));
+        for _ in 0..3 {
+            emit_to_focused_window(app.handle(), MenuCommandPayload { id: "app.close" });
+        }
+        assert_eq!(heard.load(Ordering::SeqCst), 3);
     }
 
     #[test]
