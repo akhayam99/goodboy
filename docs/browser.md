@@ -161,7 +161,7 @@ window that owns one hears `browser://tab-state`. They come back lazily,
 through the same show path as a tab the sweep closed, and showing one closes
 the views of whichever profile was running. Cookies are not lost by a switch:
 they sit in the profile's store. If a view will not close, it is put back as it
-was, the open is refused with `profile-busy`, and the views that did close stay
+was, the open fails with `profile-busy`, and the views that did close stay
 closed.
 
 **Clearing a profile.** `browser_profile_clear` takes a `workspaceId`, refuses
