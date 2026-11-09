@@ -285,6 +285,16 @@ describe('demo playground', () => {
     expect(window.location.hash).toBe('#bring');
   });
 
+  it('falls back to the first open group, not always the first one, when the hash is locked', () => {
+    seedProgress({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    const before = window.history.length;
+    render(<DemoPlayground />);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set the direction');
+    expect(window.location.hash).toBe('#direction');
+    expect(window.history.length).toBe(before);
+  });
+
   it('shows every group title with its count kept quiet', () => {
     render(<DemoPlayground />);
     for (const group of Object.values(DEMO_GROUPS)) {
@@ -333,7 +343,7 @@ describe('demo playground', () => {
 
   it('shows the loading state until the frame reports ready', () => {
     render(<DemoPlayground />);
-    expect(screen.getByRole('status').textContent).toBe('Loading Set up');
+    expect(screen.getByRole('status').textContent).toBe('Loading the demo');
     report({ frame: visibleFrame(), type: 'ready' });
     expect(screen.queryByRole('status')).toBeNull();
   });
@@ -341,7 +351,7 @@ describe('demo playground', () => {
   it('ignores a report from a window that is not one of its frames', () => {
     render(<DemoPlayground />);
     report({ frame: visibleFrame(), type: 'ready', source: window });
-    expect(screen.getByRole('status').textContent).toBe('Loading Set up');
+    expect(screen.getByRole('status').textContent).toBe('Loading the demo');
   });
 
   it('plays the cues once the frame is ready and never moves on by itself', () => {

@@ -7,6 +7,7 @@ type Params = {
 
 type SelectParams = {
   readonly id: string;
+  readonly isRedirect?: boolean;
 };
 
 type ChapterHash = {
@@ -23,15 +24,21 @@ export const useChapterHash = ({ ids, fallbackId }: Params): ChapterHash => {
   const [chapterId, setChapterId] = useState(() => readHash({ ids, fallbackId }));
 
   useEffect(() => {
-    const onHashChange = () => setChapterId(readHash({ ids, fallbackId }));
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    const listener = new AbortController();
+    const onHistory = () => setChapterId(readHash({ ids, fallbackId }));
+    window.addEventListener('hashchange', onHistory, { signal: listener.signal });
+    window.addEventListener('popstate', onHistory, { signal: listener.signal });
+    return () => listener.abort();
   }, [ids, fallbackId]);
 
-  const selectChapter = useCallback(({ id }: SelectParams) => {
+  const selectChapter = useCallback(({ id, isRedirect = false }: SelectParams) => {
     setChapterId(id);
     const url = `${window.location.pathname}${window.location.search}#${id}`;
-    window.history.replaceState(window.history.state, '', url);
+    if (isRedirect || window.location.hash === `#${id}`) {
+      window.history.replaceState(window.history.state, '', url);
+      return;
+    }
+    window.history.pushState(null, '', url);
   }, []);
 
   return { chapterId, selectChapter };

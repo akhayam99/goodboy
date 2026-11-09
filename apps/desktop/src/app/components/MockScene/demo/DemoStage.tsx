@@ -452,7 +452,7 @@ export const DemoStage = ({
           className="relative overflow-hidden rounded-lg border border-frame-edge bg-background shadow-md"
           style={{ width: box.width, height: box.height }}
         >
-          {mountedKeys.has(currentKey) ? null : <DemoStageLoading label={activeFrame.label} />}
+          {mountedKeys.has(currentKey) ? null : <DemoStageLoading />}
           {landedCoach === undefined ? null : (
             <DemoCoachMark
               coach={landedCoach}

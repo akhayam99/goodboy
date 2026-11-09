@@ -65,13 +65,15 @@ export const DemoPlayground = () => {
   const accessOf = ({ id }: ChapterParams) =>
     id === CLOSING_ID ? access.closing : (access.groups.get(id) ?? 'locked');
   const isRequestedLocked = accessOf({ id: requestedId }) === 'locked';
-  const chapterId = isRequestedLocked ? DEFAULT_GROUP_ID : requestedId;
+  const openId =
+    DEMO_CHAPTERS.find((entry) => access.groups.get(entry.id) === 'open')?.id ?? DEFAULT_GROUP_ID;
+  const chapterId = isRequestedLocked ? openId : requestedId;
 
   useEffect(() => {
     if (isRequestedLocked) {
-      selectChapter({ id: DEFAULT_GROUP_ID });
+      selectChapter({ id: openId, isRedirect: true });
     }
-  }, [isRequestedLocked, selectChapter]);
+  }, [isRequestedLocked, openId, selectChapter]);
 
   const isClosing = chapterId === CLOSING_ID;
   const [hasVisitedClosing, setHasVisitedClosing] = useState(false);

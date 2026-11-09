@@ -102,7 +102,9 @@ playground iframes its own beats). The file sits outside `dist/` and
 `src-tauri/`, so the Tauri build never reads it. The demo bundle carries no telemetry and no cookie. Its one
 network call is Vercel Web Analytics, cookieless, added by the `demoPlugins` Vite plugin in
 `apps/desktop/vite/demoHtml.ts`: it runs only for `--mode demo` and only in a build, and adds
-`<script defer src="/_vercel/insights/script.js">` and an early theme script to `dist-demo/index.html`.
+`<script defer src="/_vercel/insights/script.js">` and an early theme script to `dist-demo/index.html`,
+plus a static "Loading the Goodboy demo" line under the boot tile, which leaves
+with `#boot-shell` when the app mounts.
 The Tauri build, `pnpm dev` and the app's own `index.html` never carry either, and
 `apps/desktop/vite/demoHtml.test.ts` pins that.
 
@@ -355,7 +357,9 @@ the same grid as the top of the rail, with narrow gutters, so the app is a bit
 bigger only because its box is.
 `#<group id>` in the URL opens a group the visitor may open, and anything else
 opens Bring your repositories (`defaultGroupId.ts`); a hash that names a locked
-group is rewritten to the group shown.
+group is rewritten in place (`replaceState`) to the first open group. Every
+group the visitor picks adds a history entry (`pushState` in `useChapterHash`),
+so Back moves to the group before and never leaves the site.
 
 The rail is one vertical spine drawn with the app's own primitives: rows go
 through `layoutTimelineRail`, drawn by `TimelineRail` in a `SpawnedRailCell`,
@@ -377,8 +381,28 @@ first, "Finish <previous group> first." (`unlockHintOf.ts`, the same words as
 the compact switcher). The rail holds its tooltips back until the pointer moves
 after the open group changed (`data-settled`), so a row that slides under a
 resting pointer when the step list opens stays quiet. A done group stays open to
-revisit, on its last frame with every step checked. A hash that names a locked
-group opens Bring your repositories. Get Goodboy is locked until every group is done.
+revisit with every step checked: its frame starts again at its last beat, dimmed
+and inert under the done card (below). A hash that names a locked group opens
+the first open group. Get Goodboy is locked until every group is done.
+
+A group ends on the stage, never only on the rail. The moment its last step is
+credited (`isDone` of `stepsOf`, the same tick as the last result line), the
+stage lays a `bg-background/50` scrim over the frame, makes the frame `inert`
+and shows `DemoChapterDone` at the bottom center: a done node, "<group> is
+done", the group's `outro` (`demoGroups.ts`), a ghost Replay this chapter
+(resets that group only) and the primary Next: <next group> with its `→` key,
+which takes the focus so Enter and the arrows work. It is a stage state, not a
+dialog: the rail, the top bar and the keys keep working, and a click on the
+frame behind it does nothing. A revisit of a done group shows the same card. A
+frame that grabs the focus while it boots (Chrome lets even an inert or
+preloaded one do it, with no `focusin` on the playground) is caught on the
+window `blur`: the stage gives the focus back to the playground, or to Next
+while a group is done. While a step runs after its press, `DemoWorkingPill`
+(`role="status"`, bottom left of the stage, a pulsing dot and the step's
+`progressCopy`, else its `progress`) stands in for the lifted coach, and the
+Show control slot is held back. The coach, the slot and the pill wait for the
+320ms crossfade of a frame swap to end, so a hint never lands on the frame
+that is fading out.
 "Up next" (`data-up-next="ready"`, a solid ring and a soft glow for three cycles,
 then rest) appears only on the group after the open one, and only once the open
 group has every step done; before that nothing glows. Restart clears every
@@ -567,9 +591,9 @@ the waiting card, Follow a helper, Add comment, Push; and its optional `settle`
 runs once after the dwell, as closing the limits popover so the composer takes
 the first click) and until the control of
 the next step is on screen, so a result is never replaced by an instruction
-for a control the visitor cannot see yet; when the group is done, "<group> is
-done. Go on with <next>, marked Up next." (the marker words only while the next
-group really carries Up next; on a revisit of a done group it ends at the title).
+for a control the visitor cannot see yet; when the group is done, after its
+last result, "Done. Next: <next>." (the same on a revisit and below `xl`, since
+the done card carries the button).
 The line never goes back to a
 description of the scene, and it never says a step is done before its result is
 visible. The frame shown changes after the result was held, and only if the
@@ -648,11 +672,13 @@ focus (the real app focuses the composer on opening a helper; that stays in the
 app and is refused only in the demo frame).
 A group switch answers at once: the rail row is selected, and `DemoStageLoading`
 covers the stage until the new frame reports ready, whether it is the first one
-or a switch. It names what is loading (the frame's `label`; `StageFrame.label`).
+or a switch. It says "Loading the demo"; a beat has no label of its own.
 The frame the next step needs is loaded in advance (`preloadBeat` in
 `useBeatPlayer`, from `nextBeatIndex` of `useDemoHints`), so a frame change after
 a result is a swap. Hovering, focusing or pressing an open group row preloads
-that group's opening frame instead, and a finished group preloads the next one.
+that group's opening frame instead. Once the first step of a group is
+credited, the next group's first frame takes the one preload slot (after the
+next beat of the same group), so it has the whole group to boot before Next.
 In the demo the Goodboy menu never opens itself after the first task, the chip
 stays at rest and the menu holds no setup checklist (`isDirectedScene`).
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
