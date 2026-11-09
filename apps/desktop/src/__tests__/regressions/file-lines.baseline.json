@@ -18,7 +18,7 @@
   "apps/desktop/src/features/diff/components/DiffViewSelector/index.tsx": 421,
   "apps/desktop/src/features/diff/components/SessionDiffPane/index.tsx": 310,
   "apps/desktop/src/features/explore/components/ExplorePane/ExploreTree.tsx": 275,
-  "apps/desktop/src/features/explore/components/ExplorePane/index.tsx": 285,
+  "apps/desktop/src/features/explore/components/ExplorePane/index.tsx": 275,
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryCommitRow.tsx": 276,
   "apps/desktop/src/features/history/components/CommitsHistory/index.tsx": 275,
   "apps/desktop/src/features/history/components/RebaseStopPanel.tsx": 458,

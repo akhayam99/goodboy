@@ -111,7 +111,7 @@ export const setFocusedArtifactId = (set: SetFn) => {
   return (sessionId: SessionId, artifactId: ArtifactId | null): void => {
     set((s) => ({
       focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: artifactId },
-      ...slotAfterArtifactFocus({ drawer: s.drawer, back: s.drawerBack, artifactId }),
+      ...slotAfterArtifactFocus({ sessionId, drawer: s.drawer, back: s.drawerBack, artifactId }),
     }));
   };
 };

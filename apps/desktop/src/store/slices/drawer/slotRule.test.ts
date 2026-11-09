@@ -168,6 +168,35 @@ describe('the side slot', () => {
     expect(slot()).toEqual({ top: 'terminal', back: null });
   });
 
+  it('keeps the chip when another session changes its artifact focus', () => {
+    const report = brandId<ArtifactId>({ value: 'report-1' });
+    store.getState().setFocusedArtifactId(SESSION_ID, report);
+    store.getState().openDrawer({
+      kind: 'artifact',
+      sessionId: SESSION_ID,
+      payload: { artifactId: report, tab: 'details' },
+    });
+    store.getState().openDrawer(TERMINAL);
+
+    store.getState().setFocusedArtifactId(OTHER_SESSION_ID, null);
+
+    expect(slot()).toEqual({ top: 'terminal', back: 'artifact' });
+  });
+
+  it('keeps the open artifact drawer when another session changes its artifact focus', () => {
+    const report = brandId<ArtifactId>({ value: 'report-1' });
+    store.getState().setFocusedArtifactId(SESSION_ID, report);
+    store.getState().openDrawer({
+      kind: 'artifact',
+      sessionId: SESSION_ID,
+      payload: { artifactId: report, tab: 'details' },
+    });
+
+    store.getState().setFocusedArtifactId(OTHER_SESSION_ID, null);
+
+    expect(slot()).toEqual({ top: 'artifact', back: null });
+  });
+
   it('never chips a drawer of another session', () => {
     store.getState().openDrawer(TERMINAL);
     store.getState().openDrawer({ ...EXPLORE, sessionId: OTHER_SESSION_ID });

@@ -1072,6 +1072,25 @@ describe('ExplorePane changed files', () => {
     );
   });
 
+  it('keeps the changed only choice when the pane is replaced and comes back', async () => {
+    mountRepo();
+    list({ relPath: '', entries: [folder('src'), entry({ relPath: 'notes.txt' })] });
+    list({ relPath: 'src', entries: [entry({ relPath: 'src/a.ts' })] });
+    summarise([{ path: 'src/a.ts', status: 'modified' }]);
+    mount();
+    fireEvent.click(await screen.findByRole('switch', { name: 'Changed only' }));
+    await rowNamed('a.ts');
+
+    cleanup();
+    mount();
+
+    expect(await rowNamed('a.ts')).toBeDefined();
+    expect(screen.queryByRole('treeitem', { name: 'notes.txt' })).toBeNull();
+    expect(
+      (await screen.findByRole('switch', { name: 'Changed only' })).getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
   it('says nothing changed against the base once the last change is gone', async () => {
     mountRepo();
     list({ relPath: '', entries: [entry({ relPath: 'page.tsx' })] });

@@ -307,7 +307,9 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
   presentation with the head's Open page (tooltip Open in Changes) that opens the Changes tab on the file. The folders you opened
   are kept per session and project in the session-view slice (`exploreExpanded`,
-  keyed by session, mount path and folder) and open again when you come back,
+  keyed by session, mount path and folder) and open again when you come back;
+  the Changed only choice and its closed folders are kept per session too
+  (`exploreChangedView`), so a drawer that replaced Explore gives them back,
   and a file opened from elsewhere opens the folders above it. The file drawer
   key holds the project (`explore-file:{mount}:{path}`), so the same relative
   path in a second project replaces the drawer instead of closing it. The tree has one tab stop; Up and Down move, Right
