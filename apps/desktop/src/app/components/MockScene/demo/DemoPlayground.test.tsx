@@ -605,6 +605,18 @@ describe('demo playground', () => {
     expect(screen.queryByTestId('demo-coach-mark')).not.toBeNull();
   });
 
+  it('warms the next group as soon as the first step of this one is done', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const nextScene = chapterOf({ id: 'direction' }).beats[0]?.scene ?? '';
+    expect(document.querySelectorAll('iframe')).toHaveLength(1);
+    tried({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    expect(document.querySelectorAll('iframe')).toHaveLength(2);
+    expect(frameOf({ scene: nextScene }).hasAttribute('inert')).toBe(true);
+    expect(visibleFrame()).toBe(frame);
+  });
+
   it('asks a group frame for its hint again when the visitor comes back to it', () => {
     seedProgress({ ids: ['bring'] });
     window.history.replaceState(null, '', '/?scene=demo#direction');

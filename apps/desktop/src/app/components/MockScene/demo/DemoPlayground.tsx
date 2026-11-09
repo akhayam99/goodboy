@@ -98,10 +98,11 @@ export const DemoPlayground = () => {
   const isNextOpen = nextId !== undefined && accessOf({ id: nextId }) === 'open';
   const upNextId = isGroupDone && isNextOpen ? nextId : undefined;
 
+  const isNextWarm = !isClosing && (hints.activeIndex >= 1 || hints.isDone);
   const preloadBeat =
     intentChapter?.beats[0] ??
     (hints.nextBeatIndex === undefined ? undefined : chapter.beats[hints.nextBeatIndex]) ??
-    (isGroupDone && isNextOpen ? nextChapter?.beats[0] : undefined);
+    (isNextWarm ? nextChapter?.beats[0] : undefined);
   const player = useBeatPlayer({
     chapter,
     beatIndex: hints.beatIndex,
