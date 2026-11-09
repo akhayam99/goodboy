@@ -193,6 +193,20 @@ describe('useMenuCommands', () => {
     expect(useAppStore.getState().appStudio?.kind).toBe('monitoring');
   });
 
+  it('opens the Browser as a studio of the current window, and only with a workspace open', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+
+    useAppStore.setState({ currentWorkspaceId: null });
+    pick({ payload: { id: 'menu.browser' } });
+    expect(useAppStore.getState().appStudio).toBeNull();
+
+    useAppStore.setState({ currentWorkspaceId: workspace.id });
+    pick({ payload: { id: 'menu.browser' } });
+
+    expect(useAppStore.getState().appStudio?.kind).toBe('browser');
+  });
+
   it('checks for updates once and opens where the result shows', async () => {
     const check = vi.fn(async () => undefined);
     useAppStore.setState({ updaterStatus: 'idle', checkForUpdates: check });

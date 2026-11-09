@@ -7,6 +7,7 @@ import { checkForUpdatesNow } from '../../../features/updater/checkForUpdatesNow
 import { openChangelogStudio } from '../../../features/changelog/changelogStudioEvent';
 import { openSessionTerminalHere } from '../../../features/terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
+import { browserStudioPlace } from '../../../features/browser/browserStudioPlace';
 
 type MenuAction = {
   readonly label: string;
@@ -87,6 +88,15 @@ export const MENU_ACTIONS = {
     label: 'Monitoring',
     run: inWorkspace({
       run: () => useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } }),
+    }),
+  },
+  'menu.browser': {
+    label: 'Browser',
+    run: inWorkspace({
+      run: () => {
+        const state = useAppStore.getState();
+        state.openStudio({ studio: browserStudioPlace({ sessionId: state.currentSessionId }) });
+      },
     }),
   },
   'menu.guide': { label: 'Guide', run: () => dispatchWindowEvent({ name: 'goodboy:open-guide' }) },

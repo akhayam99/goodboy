@@ -35,8 +35,21 @@ const MAC_NAMES: Readonly<Record<string, string>> = {
   'app.close': 'Close',
   'column.toggle': 'Show or Hide Sidebar',
   'zoom.reset': 'Actual Size',
-  'session.board': 'Sessions',
 };
+
+const GO_DOORS: ReadonlyArray<string> = [
+  'session.board',
+  'menu.tasks',
+  'menu.workflows',
+  'menu.chat',
+  'menu.impact',
+  'menu.monitoring',
+  'menu.notifications',
+  'terminal.studio',
+  'menu.browser',
+];
+
+const GO_SECTION = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/;
 
 const OPENS_A_WINDOW: ReadonlySet<string> = new Set([
   'settings.open',
@@ -162,6 +175,26 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
   it('lists every menu action in the menu bar', () => {
     const ids = new Set(menuCommands.map(({ id }) => id));
     expect(Object.keys(MENU_ACTIONS).filter((id) => !ids.has(id))).toEqual([]);
+  });
+
+  it('lists the doors in the Go menu in the order of the sidebar, Browser included', () => {
+    const body = GO_SECTION.exec(source)?.[1] ?? '';
+    const ids = [...body.matchAll(/\bcommand\(\s*"([^"]+)"/g)].map(([, id = '']) => id);
+    expect(ids).toEqual(['nav.back', 'nav.forward', ...GO_DOORS]);
+  });
+
+  it('names the Go doors as the registry and the names table do', () => {
+    const body = GO_SECTION.exec(source)?.[1] ?? '';
+    const labels = [...body.matchAll(/\bcommand\(\s*"([^"]+)",\s*"([^"]+)"/g)].map(
+      ([, id = '', label = '']) => ({ id, label }),
+    );
+    expect(labels.find(({ id }) => id === 'session.board')?.label).toBe(
+      SHORTCUTS['session.board'].label,
+    );
+    expect(labels.find(({ id }) => id === 'menu.browser')?.label).toBe(
+      MENU_ACTIONS['menu.browser'].label,
+    );
+    expect(labels.some(({ label }) => label === 'Sessions')).toBe(false);
   });
 
   it('leaves Undo and Redo to the predefined items', () => {

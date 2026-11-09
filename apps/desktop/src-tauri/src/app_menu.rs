@@ -115,15 +115,16 @@ const GO_ROWS: &[Row] = &[
     command("nav.back", "Back", Some("cmd+BracketLeft")),
     command("nav.forward", "Forward", Some("cmd+BracketRight")),
     SEPARATOR,
-    command("session.board", "Sessions", Some("cmd+shift+KeyH")),
+    command("session.board", "Board", Some("cmd+shift+KeyH")),
     command("menu.tasks", "Tasks", None),
-    command("menu.chat", "Chat", None),
     command("menu.workflows", "Workflows", None),
-    command("terminal.studio", "Terminal", Some("ctrl+Backquote")),
+    command("menu.chat", "Chat", None),
     command("menu.impact", "Impact", None),
-    SEPARATOR,
-    command("menu.notifications", "Notifications", None),
     command("menu.monitoring", "Monitoring", None),
+    command("menu.notifications", "Notifications", None),
+    SEPARATOR,
+    command("terminal.studio", "Terminal", Some("ctrl+Backquote")),
+    command("menu.browser", "Browser", None),
 ];
 
 const WINDOW_ROWS: &[Row] = &[
@@ -511,6 +512,43 @@ mod tests {
             emit_to_focused_window(app.handle(), MenuCommandPayload { id: "app.close" });
         }
         assert_eq!(heard.load(Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    fn lists_the_doors_in_the_go_menu_in_the_order_of_the_sidebar() {
+        let ids: Vec<&str> = GO_ROWS
+            .iter()
+            .filter_map(|row| match row {
+                Row::Command(command) => Some(command.id),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            ids,
+            vec![
+                "nav.back",
+                "nav.forward",
+                "session.board",
+                "menu.tasks",
+                "menu.workflows",
+                "menu.chat",
+                "menu.impact",
+                "menu.monitoring",
+                "menu.notifications",
+                "terminal.studio",
+                "menu.browser",
+            ]
+        );
+    }
+
+    #[test]
+    fn groups_the_go_menu_as_history_then_places_then_tools() {
+        let separators: Vec<usize> = GO_ROWS
+            .iter()
+            .enumerate()
+            .filter_map(|(index, row)| (*row == SEPARATOR).then_some(index))
+            .collect();
+        assert_eq!(separators, vec![2, 10]);
     }
 
     #[test]
