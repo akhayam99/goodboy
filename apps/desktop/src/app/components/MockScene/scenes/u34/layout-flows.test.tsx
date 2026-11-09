@@ -84,13 +84,13 @@ it('opens Agents at 1280, folds the rail, respects a manual unfold, and restores
   act(() => {
     observers.resizeAll();
   });
-  const rail = screen.getByRole('navigation', { name: 'Session' });
+  const rail = screen.getByRole('navigation', { name: 'Session pages' });
   expect(rail.hasAttribute('data-rail-folded')).toBe(false);
   fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
   expect(rail.hasAttribute('data-rail-folded')).toBe(true);
   expect(container.querySelector('[data-drawer-mode="push"]')).not.toBeNull();
   expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('0');
-  fireEvent.click(screen.getByRole('button', { name: 'Show session rail' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show session pages' }));
   expect(rail.hasAttribute('data-rail-folded')).toBe(false);
   expect(container.querySelector('[data-drawer-mode="overlay"]')).not.toBeNull();
   expect(container.querySelector('[data-drawer-scrim]')).not.toBeNull();

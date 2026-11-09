@@ -1,8 +1,10 @@
 import { SESSION_TOOL_RAIL_WIDTH } from '../../../features/session/components/SessionTools/sessionToolRailWidth';
 import { useMemo } from 'react';
+import { RotateCw } from 'lucide-react';
 import {
   COLLAPSED_RAIL_WIDTH,
   FoldLayers,
+  IconButton,
   PANE_RHYTHM,
   ResizeHandle,
   cn,
@@ -42,7 +44,7 @@ export const SessionRail = ({ session, sizing }: Props) => {
   const isStudioOver = place !== null;
   useInnerColumn({
     id: 'session-rail',
-    label: fold.isFolded ? 'Show the session rail' : 'Fold the session rail',
+    label: fold.isFolded ? 'Show session pages' : 'Hide session pages',
     toggle: fold.toggle,
     isActive: !isStudioOver,
   });
@@ -53,7 +55,7 @@ export const SessionRail = ({ session, sizing }: Props) => {
   return (
     <nav
       ref={resizable.targetRef}
-      aria-label="Session"
+      aria-label="Session pages"
       data-session-rail="session"
       data-rail-folded={fold.isFolded ? '' : undefined}
       style={{
@@ -79,6 +81,20 @@ export const SessionRail = ({ session, sizing }: Props) => {
       {isSessionChrome && isTopFailure ? (
         <div className="shrink-0 px-2">
           <ActionStatusLine controls={controls} showReasons={false} />
+        </div>
+      ) : null}
+      {fold.isFolded ? (
+        <div data-rail-actions="" className="flex w-11 shrink-0 flex-col items-center gap-1">
+          <SessionLevelActions session={session} controls={controls} isFolded />
+          {isTopFailure ? (
+            <IconButton
+              icon={RotateCw}
+              label="Retry"
+              tooltip={controls.failure?.message}
+              tone="danger"
+              onClick={controls.retry}
+            />
+          ) : null}
         </div>
       ) : null}
       <FoldLayers

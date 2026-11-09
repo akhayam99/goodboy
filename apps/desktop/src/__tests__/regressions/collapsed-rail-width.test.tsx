@@ -41,6 +41,10 @@ const RAIL_SESSION_LEVEL = readFileSync(
   join(SOURCE_ROOT, 'app', 'components', 'SessionRail', 'RailSessionLevel.tsx'),
   'utf8',
 );
+const SESSION_PAGE_ROW = readFileSync(
+  join(SOURCE_ROOT, 'app', 'components', 'SessionRail', 'SessionPageRow.tsx'),
+  'utf8',
+);
 afterEach(cleanup);
 
 const classNameContaining = ({ source, marker }: { source: string; marker: string }): string => {
@@ -95,7 +99,7 @@ describe('workspace tile and collapsed rail axis', () => {
   it('draws a rail button as its open row without the word, so a fold moves no icon', () => {
     expect(RAIL_BUTTON).toContain("cn('h-7 w-full justify-start px-2', RAIL_BUTTON_BASE)");
     expect(RAIL_SESSION_LEVEL).toContain('className="flex flex-col gap-1 px-2"');
-    expect(RAIL_SESSION_LEVEL).toContain('iconSize={ICON_SIZE.row}');
+    expect(SESSION_PAGE_ROW).toContain('iconSize={ICON_SIZE.row}');
     expect(RAIL_SESSION_LEVEL).not.toContain('<RailIdentityNode');
   });
 });

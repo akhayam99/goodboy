@@ -6833,11 +6833,6 @@
       "count": 4
     }
   },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionPages.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/bulkSelection.test.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1

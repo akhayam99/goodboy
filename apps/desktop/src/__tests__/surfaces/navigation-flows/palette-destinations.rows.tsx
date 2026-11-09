@@ -84,10 +84,10 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'Refresh session'),
   },
   {
-    name: 'palette: Fold the session rail',
-    covers: ['palette:Fold the session rail'],
-    open: () => openPalette(/^Fold the session rail/, 'fold the session rail'),
-    lands: () => visible('button', 'Show session rail'),
+    name: 'palette: Hide session pages',
+    covers: ['palette:Hide session pages'],
+    open: () => openPalette(/^Hide session pages/, 'hide session pages'),
+    lands: () => visible('button', 'Show session pages'),
   },
   {
     name: 'palette: Sessions',

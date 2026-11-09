@@ -247,7 +247,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'shell',
     group: 'daily',
-    title: 'Sidebar and session rail',
+    title: 'Sidebar and session pages',
     lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the session tools sit in a thin column at the right.',
     points: [
       {
@@ -263,8 +263,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: "Pin session, in a row's right click menu, keeps it in a Pinned group on top, and Move up and Move down reorder it.",
       },
       {
-        term: 'Session rail',
-        desc: 'Overview, Runs, Artifacts and Questions, with counts; Runs holds plans, presets, Auto and agents. Then the Projects card, one tree of folders and branches, and the Linked card.',
+        term: 'Session pages',
+        desc: `Overview, Runs, Artifacts and Questions, with counts; Runs holds plans, presets, Auto and agents. Then the Projects card, one tree of folders and branches, and the Linked card. Hide session pages, or ${shortcutGlyphs('innerColumn.toggle')}, folds the list to icons.`,
       },
       {
         term: 'Session actions and +',
@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session tools',
-        desc: `The icon column at the right of the session page holds Explore, Context and Ask under Read, then Agents, Scripts, Terminal and Browser under Work. A pane closes with ${shortcutGlyphs('overlay.close')}, and the one it replaced waits in a chip. Open as page moves a Browser tab to the Browser page. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
+        desc: `The icon column at the right of the session page holds Explore, Context and Ask under Read, then Agents, Scripts, Terminal and Browser under Work. A pane closes with ${shortcutGlyphs('overlay.close')}, and the one it replaced waits in a chip. Open as page moves a Browser tab to the Browser page.`,
       },
     ],
     links: [],

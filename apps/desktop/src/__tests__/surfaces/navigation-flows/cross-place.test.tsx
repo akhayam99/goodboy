@@ -254,7 +254,7 @@ const expectAskInToolColumn = (): void => {
     ask?.closest('[role="toolbar"][aria-label="Session tools"]'),
     'Ask sits in the session tools column',
   ).not.toBeNull();
-  expect(ask?.closest('nav[aria-label="Session"]') ?? null).toBeNull();
+  expect(ask?.closest('nav[aria-label="Session pages"]') ?? null).toBeNull();
   expect(ask?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
   expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
