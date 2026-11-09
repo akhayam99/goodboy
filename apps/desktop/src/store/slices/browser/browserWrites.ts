@@ -13,7 +13,7 @@ type ProjectKeyParams = {
 export const browserWrites = {
   loads: createLatestOnly(),
   queue: createSerialQueue(),
-  writeKey: 'browser-tabs',
+  writeKey: ({ sessionId }: SessionKeyParams) => `browser-tabs:${sessionId}`,
   sessionLoadKey: ({ sessionId }: SessionKeyParams) => `session:${sessionId}`,
   projectLoadKey: ({ projectId }: ProjectKeyParams) => `project:${projectId}`,
 };

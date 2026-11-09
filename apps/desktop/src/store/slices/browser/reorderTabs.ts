@@ -1,8 +1,11 @@
+import { CommandError } from '../../../shared/lib/invokeCommand';
 import { browserTabCommands } from './browserTabCommands';
 import { browserWrite } from './browserWrite';
 import { browserWrites } from './browserWrites';
 import type { SliceDeps } from '../../slice-types';
 import type { ReorderTabsParams } from './types';
+
+const TAB_ROWS_CHANGED = 'tab-rows-changed';
 
 export const reorderTabs = ({ set, get }: SliceDeps) => {
   return ({ sessionId, ids }: ReorderTabsParams): Promise<boolean> =>
@@ -16,6 +19,11 @@ export const reorderTabs = ({ set, get }: SliceDeps) => {
         set((state) => ({
           browserSessionTabs: { ...state.browserSessionTabs, [sessionId]: tabs },
         }));
+      },
+      onFailure: ({ error }) => {
+        if (error instanceof CommandError && error.message === TAB_ROWS_CHANGED) {
+          void get().loadBrowserSessionTabs({ sessionId });
+        }
       },
     });
 };

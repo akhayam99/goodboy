@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use tauri::webview::{NewWindowResponse, PageLoadEvent};
 use tauri::{
@@ -311,15 +313,22 @@ pub(crate) fn close_each(
     result
 }
 
-pub(crate) fn close_session<R: Runtime>(
-    app: &AppHandle<R>,
-    session_id: &str,
-    window_label: &str,
-) -> SessionClosed {
-    let ids = app
-        .state::<BrowserRegistry>()
-        .close_session(session_id, window_label);
-    close_each(&ids, |id| close_tab(app, id))
+pub(crate) fn close_session<R: Runtime>(app: &AppHandle<R>, session_id: &str) -> SessionClosed {
+    let labels: Vec<String> = app.windows().keys().cloned().collect();
+    let registry = app.state::<BrowserRegistry>();
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut result = SessionClosed::default();
+    let mut ids = registry.close_session(session_id, &labels);
+    loop {
+        ids.retain(|id| seen.insert(id.clone()));
+        if ids.is_empty() {
+            return result;
+        }
+        let round = close_each(&ids, |id| close_tab(app, id));
+        result.closed += round.closed;
+        result.failed.extend(round.failed);
+        ids = registry.session_tab_ids(session_id);
+    }
 }
 
 #[cfg(test)]

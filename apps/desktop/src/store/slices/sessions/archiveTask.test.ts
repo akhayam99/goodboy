@@ -204,6 +204,31 @@ describe('archiveTask stops live work first', () => {
     expect(await archivedAt()).not.toBeNull();
   });
 
+  it('leaves no browser tab state behind once the session is archived and evicted', async () => {
+    useAppStore.setState({
+      browserSessionTabs: {
+        [sessionId]: [
+          {
+            id: 'tab-a',
+            sessionId,
+            projectId: null,
+            url: 'https://northwind.example/orders',
+            title: 'Orders',
+            position: 0,
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+      },
+      browserActiveTab: { [sessionId]: 'tab-a' },
+    });
+
+    await useAppStore.getState().archiveTask(sessionId);
+
+    expect(useAppStore.getState().browserSessionTabs).not.toHaveProperty(sessionId);
+    expect(useAppStore.getState().browserActiveTab).not.toHaveProperty(sessionId);
+  });
+
   it('archives anyway when a browser tab does not close, and shows the error', async () => {
     stubStoryInvoke({
       workspaces_with_unread: [],

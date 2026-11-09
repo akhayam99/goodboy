@@ -7,6 +7,7 @@ use super::reason::{
     self, INVALID_ADDRESS, NOT_WEB_ADDRESS, TAB_ROWS_CHANGED, TAB_ROWS_FAILED, TAB_ROW_GONE,
     TAB_ROW_OWNER,
 };
+use super::registry::BrowserRegistry;
 use crate::db::Db;
 use crate::util::{now_ms, MessageError};
 
@@ -153,10 +154,12 @@ fn storable_address(address: &str, origins: &AppOrigins) -> Result<String, Messa
     if address.len() > MAX_ADDRESS_BYTES {
         return Err(reason::refused(INVALID_ADDRESS));
     }
-    let url = guard::parse_address(address).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
+    let mut url = guard::parse_address(address).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
     if !guard::may_open(&url, origins) {
         return Err(reason::refused(NOT_WEB_ADDRESS));
     }
+    let _ = url.set_username("");
+    let _ = url.set_password(None);
     Ok(url.to_string())
 }
 
@@ -272,6 +275,40 @@ pub(crate) fn delete_session_rows(
     .map_err(db_failed)
 }
 
+pub(crate) fn stale_session_ids(
+    conn: &Connection,
+    live_session_ids: &[String],
+) -> Result<Vec<String>, MessageError> {
+    let mut statement = conn
+        .prepare(
+            "SELECT DISTINCT t.session_id FROM browser_tabs t
+             JOIN sessions s ON s.id = t.session_id
+             WHERE s.archived_at IS NOT NULL",
+        )
+        .map_err(db_failed)?;
+    let mut stale = statement
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(db_failed)?
+        .collect::<rusqlite::Result<Vec<_>>>()
+        .map_err(db_failed)?;
+    for session_id in live_session_ids {
+        let archived: Option<bool> = conn
+            .query_row(
+                "SELECT archived_at IS NOT NULL FROM sessions WHERE id = ?1",
+                params![session_id],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(db_failed)?;
+        if archived.unwrap_or(true) {
+            stale.push(session_id.clone());
+        }
+    }
+    stale.sort();
+    stale.dedup();
+    Ok(stale)
+}
+
 pub(crate) fn pin_row(
     conn: &Connection,
     args: &MoveArgs,
@@ -385,6 +422,16 @@ pub async fn browser_session_tab_rows_delete(
 ) -> Result<usize, MessageError> {
     let conn = connection(&state)?;
     delete_session_rows(&conn, &args.session_id)
+}
+
+#[tauri::command]
+pub async fn browser_stale_tab_sessions(
+    state: State<'_, Db>,
+    registry: State<'_, BrowserRegistry>,
+) -> Result<Vec<String>, MessageError> {
+    let live = registry.session_ids();
+    let conn = connection(&state)?;
+    stale_session_ids(&conn, &live)
 }
 
 #[tauri::command]

@@ -189,29 +189,47 @@ fn webview(app: &App<MockRuntime>, label: &str) -> Webview<MockRuntime> {
 }
 
 #[test]
-fn closes_the_session_tabs_of_the_calling_window_and_no_other() {
+fn closes_the_session_tabs_of_every_window_and_no_other_session() {
     let app = app_with_windows(&["main", "win-2"]);
     let first = open(&app, "main", "harborline");
     let second = open(&app, "main", "harborline");
     let elsewhere = open(&app, "win-2", "harborline");
     let kept = open(&app, "main", "northwind");
+    let kept_elsewhere = open(&app, "win-2", "northwind");
     let closed = close_session(&webview(&app, "main"), "harborline").expect("closes");
     assert_eq!(
         closed,
         SessionClosed {
-            closed: 2,
+            closed: 3,
             failed: vec![]
         }
     );
     let registry = app.state::<BrowserRegistry>();
     assert!(registry.facts(&first).is_none());
     assert!(registry.facts(&second).is_none());
+    assert!(registry.facts(&elsewhere).is_none());
+    assert!(app.get_webview(&label_of(&first)).is_none());
+    assert!(app.get_webview(&label_of(&elsewhere)).is_none());
     assert_eq!(registry.ids_of_session("northwind", "main"), vec![kept]);
     assert_eq!(
-        registry.ids_of_session("harborline", "win-2"),
-        vec![elsewhere]
+        registry.ids_of_session("northwind", "win-2"),
+        vec![kept_elsewhere]
     );
-    assert!(app.get_webview(&label_of(&first)).is_none());
+}
+
+#[test]
+fn refuses_a_tab_that_started_opening_in_another_window_before_the_session_closed() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let registry = app.state::<BrowserRegistry>();
+    let generation = registry.generation("harborline", "win-2");
+    close_session(&webview(&app, "main"), "harborline").expect("closes");
+    let mut stale = OpenTab::at("harborline", url("http://localhost:5173/"), PANE, true);
+    stale.generation = Some(generation);
+    assert!(matches!(
+        open_tab(&window(&app, "win-2"), stale),
+        Err(MessageError::Refused(code)) if code == SESSION_CLOSING
+    ));
+    assert!(registry.is_empty());
 }
 
 #[test]
@@ -351,7 +369,7 @@ fn refuses_and_destroys_a_popup_that_finishes_opening_after_its_session_closed()
     let seat = reserve_popup(app.handle(), &opener).expect("seat");
     let before = app.webviews().len();
     app.state::<BrowserRegistry>()
-        .close_session("harborline", "main");
+        .close_session("harborline", &["main".to_string()]);
     let late = fill_popup(app.handle(), &seat, url("https://example.com/"));
     assert!(matches!(
         late,
@@ -370,7 +388,7 @@ fn refuses_a_tab_that_started_opening_before_its_session_closed() {
     let app = app_with_windows(&["main"]);
     let registry = app.state::<BrowserRegistry>();
     let generation = registry.generation("harborline", "main");
-    registry.close_session("harborline", "main");
+    registry.close_session("harborline", &["main".to_string()]);
     let mut stale = OpenTab::at("harborline", url("http://localhost:5173/"), PANE, true);
     stale.generation = Some(generation);
     assert!(matches!(
