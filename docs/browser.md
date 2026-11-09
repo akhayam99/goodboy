@@ -68,7 +68,11 @@ commands, and got all six once it navigated itself to the dev origin or to
 - Closing a session's tabs is one command, `browser_session_close`, for the
   store to call when a session is archived. It tries every tab and answers
   `{ closed, failed }`; a tab that failed to close stays listed, so calling
-  again closes the rest.
+  again closes the rest. A tab or popup that was still opening when the
+  session closed is refused with `session-closing` and its webview is
+  destroyed; the session takes new tabs again afterwards.
+- A tab's address in a listing is read from the live webview, so a page that
+  moves with `history.pushState` or a fragment shows its new address.
 - A destroyed window's tabs leave the registry with it.
 - The registry stamps when a tab was hidden. The sleep and close policy reads
   that stamp; it is not built yet.
@@ -103,7 +107,7 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 
 A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
-`window-gone`, `other-window`, `too-many-popups`), never a sentence. The pane
+`window-gone`, `other-window`, `too-many-popups`, `session-closing`), never a sentence. The pane
 owns the words.
 
 ## Under the hood

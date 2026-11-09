@@ -6,7 +6,9 @@ use tauri::{
 };
 
 use super::guard::{self, AppOrigins};
-use super::reason::{self, NOT_WEB_ADDRESS, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE};
+use super::reason::{
+    self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
+};
 use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts};
 use crate::platform::web_history::HistoryStep;
 use crate::util::{now_ms, uuid_v4, MessageError};
@@ -54,6 +56,7 @@ pub(crate) struct OpenTab<'a> {
     pub(crate) size: Size,
     pub(crate) is_shown: bool,
     pub(crate) opener_id: Option<&'a str>,
+    pub(crate) generation: Option<u64>,
 }
 
 impl<'a> OpenTab<'a> {
@@ -65,6 +68,7 @@ impl<'a> OpenTab<'a> {
             size: bounds.size(),
             is_shown,
             opener_id: None,
+            generation: None,
         }
     }
 }
@@ -96,6 +100,10 @@ pub(crate) fn open_tab<R: Runtime>(
     if !guard::may_open(&tab.url, &origins) {
         return Err(reason::refused(NOT_WEB_ADDRESS));
     }
+    let registry = app.state::<BrowserRegistry>();
+    let generation = tab
+        .generation
+        .unwrap_or_else(|| registry.generation(tab.session_id, window.label()));
     let id = uuid_v4();
     let builder = builder_for(&app, &id, &tab.url, origins);
     let webview = window
@@ -107,15 +115,43 @@ pub(crate) fn open_tab<R: Runtime>(
             return Err(failed(error));
         }
     }
-    Ok(app.state::<BrowserRegistry>().insert(NewTab {
-        id: &id,
-        session_id: tab.session_id,
-        window_label: window.label(),
-        url: tab.url.as_str(),
-        is_shown: tab.is_shown,
-        opener_id: tab.opener_id,
-        now_ms: now_ms(),
-    }))
+    let registered = registry.insert_in_generation(
+        NewTab {
+            id: &id,
+            session_id: tab.session_id,
+            window_label: window.label(),
+            url: tab.url.as_str(),
+            is_shown: tab.is_shown,
+            opener_id: tab.opener_id,
+            now_ms: now_ms(),
+        },
+        generation,
+    );
+    match registered {
+        Some(facts) => Ok(facts),
+        None => {
+            let _ = webview.close();
+            Err(reason::refused(SESSION_CLOSING))
+        }
+    }
+}
+
+pub(crate) fn refresh_urls<R: Runtime>(app: &AppHandle<R>, tabs: Vec<TabFacts>) -> Vec<TabFacts> {
+    let registry = app.state::<BrowserRegistry>();
+    tabs.into_iter()
+        .map(|facts| {
+            let Some(live) = webview_of(app, &facts.id)
+                .ok()
+                .and_then(|webview| webview.url().ok())
+            else {
+                return facts;
+            };
+            if live.as_str() == facts.url {
+                return facts;
+            }
+            registry.set_url(&facts.id, live.as_str()).unwrap_or(facts)
+        })
+        .collect()
 }
 
 fn builder_for<R: Runtime>(
@@ -213,6 +249,7 @@ fn open_beside<R: Runtime>(
             size: bounds.size,
             is_shown: false,
             opener_id: Some(&seat.opener_id),
+            generation: Some(seat.generation),
         },
     )
 }
@@ -281,7 +318,7 @@ pub(crate) fn close_session<R: Runtime>(
 ) -> SessionClosed {
     let ids = app
         .state::<BrowserRegistry>()
-        .ids_of_session(session_id, window_label);
+        .close_session(session_id, window_label);
     close_each(&ids, |id| close_tab(app, id))
 }
 

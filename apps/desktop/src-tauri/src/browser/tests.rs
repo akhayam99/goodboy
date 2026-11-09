@@ -14,7 +14,9 @@ use super::host::{
     close_each, close_tab, fill_popup, open_tab, reserve_popup, OpenTab, SessionClosed, TabBounds,
     MAX_HIDDEN_POPUPS, TAB_OPENED_EVENT,
 };
-use super::reason::{BROWSER_CALLER, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_GONE, TOO_MANY_POPUPS};
+use super::reason::{
+    BROWSER_CALLER, NOT_WEB_ADDRESS, OTHER_WINDOW, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS,
+};
 use super::{forget_window, refuse_browser_pages, BrowserRegistry};
 use crate::util::source_scan::production_hits;
 use crate::util::MessageError;
@@ -339,6 +341,73 @@ fn finds_a_window_by_its_window_label_once_it_holds_a_tab() {
     assert!(
         offenders.is_empty(),
         "look a window up with get_window or windows, which still see a window that holds a tab: {offenders:?}"
+    );
+}
+
+#[test]
+fn refuses_and_destroys_a_popup_that_finishes_opening_after_its_session_closed() {
+    let app = app_with_windows(&["main"]);
+    let opener = open(&app, "main", "harborline");
+    let seat = reserve_popup(app.handle(), &opener).expect("seat");
+    let before = app.webviews().len();
+    app.state::<BrowserRegistry>()
+        .close_session("harborline", "main");
+    let late = fill_popup(app.handle(), &seat, url("https://example.com/"));
+    assert!(matches!(
+        late,
+        Err(MessageError::Refused(code)) if code == SESSION_CLOSING
+    ));
+    assert_eq!(app.webviews().len(), before);
+    assert_eq!(
+        app.state::<BrowserRegistry>()
+            .ids_of_session("harborline", "main"),
+        vec![opener]
+    );
+}
+
+#[test]
+fn refuses_a_tab_that_started_opening_before_its_session_closed() {
+    let app = app_with_windows(&["main"]);
+    let registry = app.state::<BrowserRegistry>();
+    let generation = registry.generation("harborline", "main");
+    registry.close_session("harborline", "main");
+    let mut stale = OpenTab::at("harborline", url("http://localhost:5173/"), PANE, true);
+    stale.generation = Some(generation);
+    assert!(matches!(
+        open_tab(&window(&app, "main"), stale),
+        Err(MessageError::Refused(code)) if code == SESSION_CLOSING
+    ));
+    assert!(registry.is_empty());
+    assert_eq!(app.webviews().len(), 1);
+}
+
+#[test]
+fn opens_tabs_again_in_a_session_after_it_was_closed() {
+    let app = app_with_windows(&["main"]);
+    open(&app, "main", "harborline");
+    close_session(&webview(&app, "main"), "harborline").expect("closes");
+    let reopened = open(&app, "main", "harborline");
+    assert_eq!(
+        app.state::<BrowserRegistry>()
+            .ids_of_session("harborline", "main"),
+        vec![reopened]
+    );
+}
+
+#[test]
+fn lists_the_address_the_page_moved_to_without_a_new_page_load() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    webview(&app, &label_of(&id))
+        .navigate(url("http://localhost:5173/pricing#plans"))
+        .expect("same document move");
+    let listed = list_session(&webview(&app, "main"), "harborline").expect("lists");
+    assert_eq!(listed[0].url, "http://localhost:5173/pricing#plans");
+    assert_eq!(
+        app.state::<BrowserRegistry>()
+            .facts(&id)
+            .map(|facts| facts.url),
+        Some("http://localhost:5173/pricing#plans".to_string())
     );
 }
 

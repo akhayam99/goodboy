@@ -37,6 +37,16 @@ struct Tabs {
     by_id: HashMap<String, Tab>,
     next_opened: u64,
     pending_popups: HashMap<String, usize>,
+    closings: HashMap<(String, String), u64>,
+}
+
+impl Tabs {
+    fn generation(&self, session_id: &str, window_label: &str) -> u64 {
+        self.closings
+            .get(&(session_id.to_string(), window_label.to_string()))
+            .copied()
+            .unwrap_or_default()
+    }
 }
 
 #[derive(Default)]
@@ -59,6 +69,7 @@ pub(crate) struct PopupSeat {
     pub(crate) opener_id: String,
     pub(crate) session_id: String,
     pub(crate) window_label: String,
+    pub(crate) generation: u64,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -79,6 +90,7 @@ impl BrowserRegistry {
             opener_id: opener_id.to_string(),
             session_id: opener.facts.session_id.clone(),
             window_label: opener.window_label.clone(),
+            generation: tabs.generation(&opener.facts.session_id, &opener.window_label),
         };
         let hidden = tabs
             .by_id
@@ -107,8 +119,38 @@ impl BrowserRegistry {
         }
     }
 
+    pub(crate) fn generation(&self, session_id: &str, window_label: &str) -> u64 {
+        lock_or_recover(&self.tabs).generation(session_id, window_label)
+    }
+
+    pub(crate) fn close_session(&self, session_id: &str, window_label: &str) -> Vec<String> {
+        {
+            let mut tabs = lock_or_recover(&self.tabs);
+            let key = (session_id.to_string(), window_label.to_string());
+            *tabs.closings.entry(key).or_default() += 1;
+        }
+        self.ids_of_session(session_id, window_label)
+    }
+
+    pub(crate) fn insert_in_generation(
+        &self,
+        tab: NewTab<'_>,
+        generation: u64,
+    ) -> Option<TabFacts> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        if tabs.generation(tab.session_id, tab.window_label) != generation {
+            return None;
+        }
+        Some(Self::insert_locked(&mut tabs, tab))
+    }
+
+    #[cfg(test)]
     pub(crate) fn insert(&self, tab: NewTab<'_>) -> TabFacts {
         let mut tabs = lock_or_recover(&self.tabs);
+        Self::insert_locked(&mut tabs, tab)
+    }
+
+    fn insert_locked(tabs: &mut Tabs, tab: NewTab<'_>) -> TabFacts {
         let opened = tabs.next_opened;
         tabs.next_opened += 1;
         let facts = TabFacts {
@@ -168,6 +210,8 @@ impl BrowserRegistry {
         let mut tabs = lock_or_recover(&self.tabs);
         let before = tabs.by_id.len();
         tabs.by_id.retain(|_, tab| tab.window_label != window_label);
+        tabs.closings
+            .retain(|(_, window), _| window != window_label);
         before - tabs.by_id.len()
     }
 

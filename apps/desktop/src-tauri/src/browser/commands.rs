@@ -169,9 +169,10 @@ pub(super) fn list_session<R: Runtime>(
     session_id: &str,
 ) -> Result<Vec<TabFacts>, MessageError> {
     refuse_browser_caller(caller)?;
-    Ok(caller
+    let tabs = caller
         .state::<BrowserRegistry>()
-        .list(session_id, caller.window().label()))
+        .list(session_id, caller.window().label());
+    Ok(host::refresh_urls(caller.app_handle(), tabs))
 }
 
 pub(super) fn close_session<R: Runtime>(
