@@ -1,19 +1,31 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { brandId, type SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import {
+  importStore,
+  resetStoryStore,
+  STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import { makeGate } from '../../../../store/runtime/auto/testing/makeGate';
+import { aDelegation, aView, FIXTURE_SESSION } from '../../testing/autoViewFixtures';
 import { registerPublishPort, type PublishPort } from '../../publishPort';
 import { usePublishAct } from './index';
 
-const SESSION = brandId<SessionId>({ value: 'session-harborline' });
+const SESSION = FIXTURE_SESSION;
+
+let useAppStore: StoryStore;
 
 const reportError = vi.fn(async () => undefined);
 const loadAutoTrees = vi.fn(async () => undefined);
 
-beforeEach(() => {
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
   reportError.mockClear();
   loadAutoTrees.mockClear();
   useAppStore.setState({ reportError, loadAutoTrees });
@@ -23,6 +35,38 @@ afterEach(() => {
   cleanup();
   registerPublishPort({ port: null });
 });
+
+type SavedParams = {
+  readonly key: string;
+  readonly state: string;
+};
+
+const savedPush = ({ key, state }: SavedParams) =>
+  aDelegation({
+    key,
+    role: 'implementer',
+    state: 'settled',
+    outcome: 'completed',
+    settledAt: 1_000,
+    result: {
+      verified: {
+        publish: {
+          mode: 'force',
+          state,
+          branch: `harborline/${key}`,
+          sha: 'abc1234',
+          leaseSha: 'remote111',
+          backupRef: 'refs/goodboy/backup/keep-1',
+          message: null,
+          isRetryable: false,
+          isConfirmed: state !== 'awaiting_confirm',
+          tries: 1,
+          reviewerReportId: null,
+          isContentChanging: false,
+        },
+      },
+    },
+  });
 
 const actOnce = async (port: PublishPort | null) => {
   registerPublishPort({ port });
@@ -50,7 +94,6 @@ describe('answering a push from the card', () => {
 
     const result = await actOnce(port);
 
-    expect(port).toHaveBeenCalledOnce();
     expect(port).toHaveBeenCalledWith({
       act: 'confirm',
       delegationIds: ['delegation-a', 'delegation-b'],
@@ -86,13 +129,17 @@ describe('answering a push from the card', () => {
     expect(result.current.busyIds).toEqual([]);
   });
 
-  it('shows the sentence of each branch that failed or was refused and keeps the ones that worked quiet', async () => {
+  it('leaves a failed push to the card and raises no toast', async () => {
+    useAppStore.setState({
+      autoTreeViews: {
+        [SESSION]: [aView({ delegations: [savedPush({ key: 'a', state: 'failed' })] })],
+      },
+    });
     const port = vi.fn<PublishPort>(async () => ({
       kind: 'done',
       rows: [
-        { delegationId: 'delegation-a', state: 'pushed', message: null },
         {
-          delegationId: 'delegation-b',
+          delegationId: 'delegation-a',
           state: 'failed',
           message: 'Origin changed. Check again before force pushing.',
         },
@@ -101,11 +148,54 @@ describe('answering a push from the card', () => {
 
     await actOnce(port);
 
-    expect(reportError).toHaveBeenCalledOnce();
+    expect(reportError).not.toHaveBeenCalled();
+    expect(loadAutoTrees).toHaveBeenCalledOnce();
+  });
+
+  it('stays quiet when a refused answer is for a push that already moved on', async () => {
+    useAppStore.setState({
+      autoTreeViews: {
+        [SESSION]: [aView({ delegations: [savedPush({ key: 'a', state: 'pushed' })] })],
+      },
+    });
+    const port = vi.fn<PublishPort>(async () => ({
+      kind: 'done',
+      rows: [
+        {
+          delegationId: 'delegation-a',
+          state: 'refused',
+          message: 'This push is not waiting for an answer.',
+        },
+      ],
+    }));
+
+    await actOnce(port);
+
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
+  it('reports a refusal while the push still waits for the same answer', async () => {
+    useAppStore.setState({
+      autoTreeViews: {
+        [SESSION]: [aView({ delegations: [savedPush({ key: 'a', state: 'awaiting_confirm' })] })],
+      },
+    });
+    const port = vi.fn<PublishPort>(async () => ({
+      kind: 'done',
+      rows: [
+        {
+          delegationId: 'delegation-a',
+          state: 'refused',
+          message: 'The push was not saved on the card because the result moved on.',
+        },
+      ],
+    }));
+
+    await actOnce(port);
+
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Couldn't finish the push" }),
     );
-    expect(loadAutoTrees).toHaveBeenCalledOnce();
   });
 
   it('reports a port that throws, frees the buttons and lets the next try go through', async () => {

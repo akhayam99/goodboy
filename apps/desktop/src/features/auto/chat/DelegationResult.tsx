@@ -20,17 +20,6 @@ type Props = {
   readonly onPutBackPublish?: () => void;
 };
 
-type PublishToneParams = {
-  readonly state: NonNullable<DelegationResultView['publish']>['state'];
-};
-
-const publishToneOf = ({ state }: PublishToneParams): Tone => {
-  if (state === 'failed') {
-    return 'warning';
-  }
-  return state === 'pushed' ? 'success' : 'neutral';
-};
-
 type CountParams = {
   readonly count: number;
 };
@@ -140,7 +129,7 @@ const chipsOf = ({
       <span key="publish" role="status" className="inline-flex min-w-0">
         <Chip
           kind="reference"
-          tone={publishToneOf({ state: result.publish.state })}
+          tone={result.publish.tone}
           label={<span className="min-w-0 truncate">{result.publish.text}</span>}
           className="min-w-0 max-w-full"
         />
