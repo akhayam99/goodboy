@@ -21,6 +21,7 @@ const FATES: Readonly<Record<string, Fate>> = {
   workspace_profiles: 'deleted-by-merge',
   notifications: 'detached',
   retained_worktree_paths: 'detached',
+  browser_tabs: 'follows-project',
   pr_series: 'follows-project',
   project_relocations: 'follows-project',
   project_scripts: 'follows-project',

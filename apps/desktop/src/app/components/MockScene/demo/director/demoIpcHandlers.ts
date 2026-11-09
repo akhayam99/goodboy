@@ -156,6 +156,7 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
   ['session_budget_get', () => null],
   ['browser_session_close', () => ({ closed: 0, failed: [] })],
   ['browser_session_tab_rows_delete', () => 0],
+  ['browser_stale_tab_sessions', () => []],
   ['worktree_changed_files', () => EMPTY_CHANGED_FILES],
   ...EMPTY_LISTS.map((command): readonly [string, Handler] => [command, () => []]),
   ['gh_status', () => ({ available: true, mode: 'gh-cli', scopes: [] })],

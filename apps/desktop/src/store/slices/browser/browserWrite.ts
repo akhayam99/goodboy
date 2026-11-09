@@ -7,12 +7,17 @@ type CommitParams<Value> = {
   readonly value: Value;
 };
 
+type FailureParams = {
+  readonly error: unknown;
+};
+
 type Params<Value> = {
   readonly get: GetFn;
   readonly failureTitle: string;
-  readonly target: { readonly sessionId?: SessionId; readonly workspaceId?: WorkspaceId };
+  readonly target: { readonly sessionId: SessionId; readonly workspaceId?: WorkspaceId };
   readonly step: () => Promise<Value>;
   readonly commit: (params: CommitParams<Value>) => void;
+  readonly onFailure?: (params: FailureParams) => void;
 };
 
 const applyNothing = (): void => undefined;
@@ -23,9 +28,10 @@ export const browserWrite = async <Value>({
   target,
   step,
   commit,
+  onFailure = applyNothing,
 }: Params<Value>): Promise<boolean> => {
   const result = await browserWrites.queue.run({
-    key: browserWrites.writeKey,
+    key: browserWrites.writeKey({ sessionId: target.sessionId }),
     task: async () => {
       const outcome = await commitAfterConfirm({
         get,
@@ -40,5 +46,8 @@ export const browserWrite = async <Value>({
       return outcome;
     },
   });
+  if (!result.isOk) {
+    onFailure({ error: result.error });
+  }
   return result.isOk;
 };

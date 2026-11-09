@@ -155,6 +155,7 @@ const storyInvokeHandlers = {
   workspaces_attention: [],
   browser_session_close: { closed: 0, failed: [] },
   browser_session_tab_rows_delete: 0,
+  browser_stale_tab_sessions: [],
   browser_tab_rows_list: [],
   get_workspace_overrides: null,
   get_session_overrides: null,
