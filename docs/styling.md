@@ -318,6 +318,9 @@ Five rules:
    first child of the detail) and the rail starts at the top of the sheet, so it never sits
    over the rail. A split studio wraps its detail in
    `StudioDetail`; `StudioFrame` hands it the band through `StudioBandContext`.
+   The detail cell of `StudioRailLayout` is a block, not a flex box, so a detail root
+   that is not `StudioDetail` takes `h-full`: `flex-1` there does nothing, and an empty
+   child (the Browser page's native view) measures zero high.
 2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
    (288, resizable 220 to 420). No page draws a second rail column.
 3. **Stage pages are only the Board, the Terminal and the Browser.** Nothing else is fluid.
