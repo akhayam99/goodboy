@@ -5,8 +5,10 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openPaneOf } from '../../panes/openPaneOf';
 import { togglePane } from '../../panes/togglePane';
+import { waitingPaneOf } from '../../panes/waitingPaneOf';
 import { SESSION_TOOLS, type SessionTool } from './sessionTools';
 import { SessionToolButton } from './SessionToolButton';
+import { ToolGroupCaption } from './ToolGroupCaption';
 import { toolbarIndexAfter } from './toolbarIndexAfter';
 import { useScriptsSignal } from './useScriptsSignal';
 import { useTerminalFinishSignal } from './useTerminalFinishSignal';
@@ -18,6 +20,7 @@ type Props = {
 
 export const SessionTools = ({ sessionId }: Props) => {
   const openPane = useAppStore((state) => openPaneOf({ state, sessionId }));
+  const waitingPane = useAppStore((state) => waitingPaneOf({ state, sessionId }));
   const contextSignal = useToolSignal({ sessionId, isContextOpen: openPane === 'context' });
   const scriptsSignal = useScriptsSignal({ sessionId });
   const terminalSignal = useTerminalFinishSignal({
@@ -66,9 +69,13 @@ export const SessionTools = ({ sessionId }: Props) => {
               className="h-px w-5 shrink-0 bg-border-soft"
             />
           ) : null}
+          {index === 0 || SESSION_TOOLS[index - 1]?.group !== tool.group ? (
+            <ToolGroupCaption group={tool.group} />
+          ) : null}
           <SessionToolButton
             tool={tool}
             isOpen={openPane === tool.pane}
+            isWaiting={waitingPane === tool.pane}
             signal={signalOf[tool.pane] ?? null}
             tabIndex={index === focusIndex ? 0 : -1}
             onFocus={() => setFocusIndex(index)}

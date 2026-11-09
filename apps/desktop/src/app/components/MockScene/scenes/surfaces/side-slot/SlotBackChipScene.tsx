@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../../../store';
 import { selectDrawerSizing } from '../../../../../../store/slices/drawer/selectDrawerSizing';
 import type { OpenDrawer } from '../../../../../../store/slices/drawer/state';
 import { sessionTerminalOwner } from '../../../../../../store/slices/terminal/terminalOwner';
+import { SessionTools } from '../../../../../../features/session/components/SessionTools';
 import { DrawerHost } from '../../../../DrawerHost';
 import { mockSceneIpc } from '../../mockSceneIpc';
 import { shellPromptLines, terminalSnapshotAnswer } from '../../terminalSceneOutput';
@@ -19,6 +20,11 @@ import {
 export type SlotBackChipState = 'plan' | 'swapped' | 'narrow';
 
 type Props = {
+  readonly state: SlotBackChipState;
+  readonly hasRail?: boolean;
+};
+
+type SeedParams = {
   readonly state: SlotBackChipState;
 };
 
@@ -42,7 +48,7 @@ const TERMINAL_SNAPSHOT = terminalSnapshotAnswer({
   lines: shellPromptLines({ folder: 'ledger-core gb-4m8r2t' }),
 });
 
-const seedSlot = ({ state }: Props): void => {
+const seedSlot = ({ state }: SeedParams): void => {
   seedPlanDrawerScene({ variant: 'waiting' });
   useAppStore.setState({
     terminalTabs: {
@@ -66,7 +72,7 @@ const seedSlot = ({ state }: Props): void => {
   }
 };
 
-export const SlotBackChipScene = ({ state }: Props) => {
+export const SlotBackChipScene = ({ state, hasRail = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const sizing = useAppStore(selectDrawerSizing);
   const isDrawerOpen = useAppStore((s) => s.drawer !== null);
@@ -94,6 +100,7 @@ export const SlotBackChipScene = ({ state }: Props) => {
         ariaLabel="Side panel"
         resizeLabel="Resize side panel"
       />
+      {hasRail ? <SessionTools sessionId={PLAN_DRAWER_SESSION_ID} /> : null}
     </main>
   );
 };

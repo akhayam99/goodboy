@@ -3,23 +3,40 @@ import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
 import { ToolSignalDot } from './ToolSignalDot';
+import { ToolWaitingRing } from './ToolWaitingRing';
+import { toolStateOf } from './toolStateOf';
 import type { ToolSignal } from './useToolSignal';
 
 type Props = {
   readonly tool: SessionTool;
   readonly isOpen: boolean;
+  readonly isWaiting: boolean;
   readonly signal: ToolSignal | null;
   readonly tabIndex: number;
   readonly onFocus: () => void;
   readonly onToggle: () => void;
 };
 
-export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onToggle }: Props) => {
+export const SessionToolButton = ({
+  tool,
+  isOpen,
+  isWaiting,
+  signal,
+  tabIndex,
+  onFocus,
+  onToggle,
+}: Props) => {
   const name = tool.fullLabel ?? tool.label;
-  const label = signal === null ? name : `${name}, ${signal.note}`;
+  const state = toolStateOf({ isOpen, isWaiting });
+  const stateName = state === 'waiting' ? `${name}, waiting` : name;
+  const label = signal === null ? stateName : `${stateName}, ${signal.note}`;
   const tone = navEntryToneOf({ icon: tool.icon });
   return (
-    <span data-slot="session-tool" className="relative flex min-w-0 flex-col items-center gap-0.5">
+    <span
+      data-slot="session-tool"
+      data-state={state}
+      className="relative flex min-w-0 flex-col items-center gap-0.5"
+    >
       <IconButton
         icon={tool.icon}
         label={label}
@@ -46,6 +63,7 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
       >
         {tool.label}
       </span>
+      {state === 'waiting' ? <ToolWaitingRing /> : null}
       {signal === null ? null : <ToolSignalDot signal={signal} />}
     </span>
   );
