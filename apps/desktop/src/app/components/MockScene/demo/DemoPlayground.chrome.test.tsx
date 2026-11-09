@@ -131,7 +131,7 @@ describe('demo playground chrome', () => {
     expect(document.querySelector('header')?.querySelector('a[target="_blank"]')).toBeNull();
   });
 
-  it('closes on a calm Get Goodboy screen with one line and the download action', () => {
+  it('closes on a calm Get Goodboy screen with one line, the download and the GitHub star', () => {
     seedDone({ ids: ALL_IDS });
     visitOn({ userAgent: MAC_AGENT });
     window.history.replaceState(null, '', '/?scene=demo#get');
@@ -143,8 +143,13 @@ describe('demo playground chrome', () => {
       within(closing)
         .getByRole('link', { name: /Download for macOS/ })
         .getAttribute('href'),
-    ).toBe('https://goodboy-ai.dev/#install');
-    expect(within(closing).queryAllByRole('link')).toHaveLength(1);
+    ).toBe('https://goodboy-ai.dev/?theme=dark#install');
+    expect(within(closing).getByRole('link', { name: 'Star on GitHub' }).getAttribute('href')).toBe(
+      'https://github.com/akhayam99/goodboy',
+    );
+    expect(within(closing).getAllByRole('link')).toHaveLength(2);
+    expect(within(closing).queryAllByRole('heading')).toHaveLength(0);
+    expect(screen.getAllByRole('heading', { name: 'Get Goodboy' })).toHaveLength(1);
     expect(document.querySelector('iframe')).toBeNull();
   });
 
@@ -158,7 +163,7 @@ describe('demo playground chrome', () => {
       within(closing)
         .getByRole('link', { name: /Download for Linux/ })
         .getAttribute('href'),
-    ).toBe('https://goodboy-ai.dev/#install');
+    ).toBe('https://goodboy-ai.dev/?theme=dark#install');
     expect(screen.queryAllByRole('link', { name: /Download for macOS/ })).toHaveLength(0);
   });
 
@@ -168,10 +173,23 @@ describe('demo playground chrome', () => {
     window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
     const closing = screen.getByTestId('demo-closing');
-    expect(within(closing).queryAllByRole('link')).toHaveLength(0);
+    expect(within(closing).queryAllByRole('link', { name: /Download/ })).toHaveLength(0);
+    expect(within(closing).getAllByRole('link')).toHaveLength(1);
     expect(within(closing).getByRole('note').textContent).toBe(
       'Goodboy for Windows is on the way.',
     );
+  });
+
+  it('follows the theme in the download link', () => {
+    seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: MAC_AGENT });
+    window.history.replaceState(null, '', '/?scene=demo&theme=light#get');
+    render(<DemoPlayground />);
+    expect(
+      within(screen.getByTestId('demo-closing'))
+        .getByRole('link', { name: /Download for macOS/ })
+        .getAttribute('href'),
+    ).toBe('https://goodboy-ai.dev/?theme=light#install');
   });
 
   it('keeps the Get Goodboy row out of the group count and below the groups', () => {
@@ -324,6 +342,38 @@ describe('demo playground chrome', () => {
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK' });
     expect(window.location.hash).not.toBe('#direction');
     expect(post.mock.calls.some(([message]) => message?.type === 'shortcut')).toBe(false);
+  });
+
+  it('keeps the preloaded frame out of the focus order and takes focus back from it', () => {
+    seedDone({ ids: ['bring', 'direction', 'guide'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    render(<DemoPlayground />);
+    const shown = visibleFrame();
+    ready({ frame: shown });
+    const preloaded = document.querySelector<HTMLIFrameElement>('iframe[data-shown="false"]');
+    if (preloaded === null) {
+      throw new Error('no preloaded frame');
+    }
+    expect(preloaded.hasAttribute('inert')).toBe(true);
+    expect(preloaded.tabIndex).toBe(-1);
+    expect(shown.hasAttribute('inert')).toBe(false);
+    act(() => {
+      preloaded.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    });
+    expect(document.activeElement).toBe(rootOf());
+  });
+
+  it('leaves focus on the shown frame when the visitor works inside it', () => {
+    seedDone({ ids: ['bring', 'direction', 'guide'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    render(<DemoPlayground />);
+    const shown = visibleFrame();
+    ready({ frame: shown });
+    shown.focus();
+    act(() => {
+      shown.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    });
+    expect(document.activeElement).toBe(shown);
   });
 
   it('keeps the arrow keys moving between groups without a next button', () => {

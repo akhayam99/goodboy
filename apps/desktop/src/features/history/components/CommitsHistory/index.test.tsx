@@ -327,11 +327,11 @@ describe('the base row', () => {
     });
   });
 
-  it('scrolls to the base row and focuses the Rebase of the status line when asked', () => {
+  it('scrolls to the base row and focuses the Rebase of the branch header when asked', () => {
     setup({ graph: { ...LEDGER_GRAPH, behind: 0, mainCommits: [] } });
-    const railRebase = document.createElement('button');
-    railRebase.setAttribute('data-worktree-verb', 'mount.rebase');
-    document.body.append(railRebase);
+    const headerRebase = document.createElement('button');
+    headerRebase.setAttribute('data-branch-primary', 'diff.rebase');
+    document.body.append(headerRebase);
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
 
@@ -342,8 +342,8 @@ describe('the base row', () => {
     });
 
     expect(scroll).toHaveBeenCalled();
-    expect(document.activeElement).toBe(railRebase);
-    railRebase.remove();
+    expect(document.activeElement).toBe(headerRebase);
+    headerRebase.remove();
   });
 });
 

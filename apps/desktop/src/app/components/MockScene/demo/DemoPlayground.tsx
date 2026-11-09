@@ -197,6 +197,8 @@ export const DemoPlayground = () => {
         theme={theme}
         isQuiet={isSpotlit}
         isHintsEnabled={!hints.isHidden}
+        isHintDismissed={hints.isDismissed}
+        onShowHint={hints.show}
         onToggleHints={onToggleHints}
         onRestart={onRestart}
         onToggleTheme={swapTheme}
@@ -225,11 +227,12 @@ export const DemoPlayground = () => {
                     acting: hints.acting,
                     active: hints.activeHint,
                     nextTitle: nextTitle ?? CLOSING_TITLE,
+                    isNextUpNext: upNextId !== undefined,
                   })
             }
           />
           {isClosing ? (
-            <DemoClosing copy={closingCopy} />
+            <DemoClosing copy={closingCopy} theme={theme} />
           ) : (
             <DemoStage
               theme={theme}

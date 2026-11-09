@@ -371,7 +371,8 @@ rail on narrow windows, keeps its own). Get Goodboy closes the same spine.
 The path is sequential (`hints/groupAccessOf.ts`). A group is `done` once all its
 steps are, `locked` while a group before it is not done, and `open` otherwise;
 the first group is open from the start. A locked
-group row is muted, disabled and has no hover state. A done group stays open to
+group row is muted and disabled; on hover it says why, in the words of the
+compact switcher (`unlockHintOf.ts`). A done group stays open to
 revisit, on its last frame with every step checked. A hash that names a locked
 group opens Bring your repositories. Get Goodboy is locked until every group is done.
 "Up next" (`data-up-next="ready"`, a solid ring and a soft glow for three cycles,
@@ -384,7 +385,12 @@ left side holds the logo and a goodboy-ai.dev link back to the website (both
 carry the current `?theme=`). The download lives only on the Get Goodboy
 screen (`DemoClosing`) and follows the visitor's system (`currentPlatform`,
 `closingCopyOf`): Download for macOS, Download for Linux, or on Windows a note
-that Windows is on the way and no button. The page behind the stage uses the
+that Windows is on the way and no button. Its link carries the current
+`?theme=` (`downloadHrefOf.ts`), and a ghost Star on GitHub link, the one the
+phone page uses, sits beside it. A hint the visitor dismissed shows a Show hint
+button in the top bar. The stage keeps the frames it preloads `inert`, and
+takes the focus back if one gets it, so the wrapper keys work on a fresh load.
+The page behind the stage uses the
 `surround` surface, a touch darker than the app surfaces (lighter than the
 first cut in dark), so the app frame reads as a window.
 
@@ -525,7 +531,7 @@ second one in `progressCopy`. A control
 scrolled out of view gets a note at the bottom of the stage with Show control,
 which sends `reveal` so the frame scrolls it into view once. The coach X and
 Escape dismiss only the open hint (`dismiss` in `useDemoHints`; the next step
-shows as usual) and H brings it back. Only Hide hints and Show hints in the top
+shows as usual) and H or Show hint in the top bar brings it back. Only Hide hints and Show hints in the top
 bar turn every hint off, and the choice is kept in the tab. There is no Skip, as
 a step the visitor did not do would break the story after it.
 
@@ -538,7 +544,9 @@ runs once after the dwell, as closing the limits popover so the composer takes
 the first click) and until the control of
 the next step is on screen, so a result is never replaced by an instruction
 for a control the visitor cannot see yet; when the group is done, "<group> is
-done. Go on with <next>, marked Up next." The line never goes back to a
+done. Go on with <next>, marked Up next." (the marker words only while the next
+group really carries Up next; on a revisit of a done group it ends at the title).
+The line never goes back to a
 description of the scene, and it never says a step is done before its result is
 visible. The frame shown changes after the result was held, and only if the
 next step lives in another frame. Simulated replies speak as the agent on the

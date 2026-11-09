@@ -512,7 +512,7 @@ describe('demo playground', () => {
     expect(instruction()).not.toContain('is done');
     elapse({ ms: last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last }) });
     expect(instruction()).toContain('Set the direction is done');
-    expect(instruction()).toContain('Guide the work');
+    expect(instruction()).toContain('Guide the work, marked Up next.');
   });
 
   it('changes the scene only when a step that lives in another scene becomes the next one', () => {
@@ -802,6 +802,28 @@ describe('demo playground', () => {
     elapse({ ms: RESULT_DWELL_MS });
     hint({ frame, hintId: second?.id ?? '' });
     expect(screen.getByRole('note').textContent).toContain(second?.copy ?? '');
+  });
+
+  it('offers Show hint in the top bar while the open hint is dismissed and brings it back', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    expect(within(topBar()).queryByRole('button', { name: 'Show hint' })).toBeNull();
+    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Dismiss hint' }));
+    expect(screen.queryByRole('note')).toBeNull();
+    fireEvent.click(within(topBar()).getByRole('button', { name: 'Show hint' }));
+    expect(screen.queryByRole('note')).not.toBeNull();
+    expect(within(topBar()).queryByRole('button', { name: 'Show hint' })).toBeNull();
+    within(topBar()).getByRole('button', { name: 'Hide hints' });
+  });
+
+  it('names the Up next marker in the header only when the next group carries it', () => {
+    seedProgress({ ids: ['bring', 'direction', 'guide'] });
+    window.history.replaceState(null, '', '/?scene=demo#bring');
+    render(<DemoPlayground />);
+    expect(instruction()).toBe('Bring your repositories is done. Go on with Set the direction.');
+    expect(railOf().textContent).not.toContain('Up next');
   });
 
   it('turns the hints off and back on from the wrapper and keeps that in the tab', () => {

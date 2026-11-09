@@ -1,6 +1,6 @@
 import type { AppStore } from '../../../../../store/store';
 import { STORY_REVIEW_SESSION_ID } from '../../scenes/story/storyReviewSeed';
-import type { DemoHint } from './demoHintTypes';
+import type { BlockParams, DemoHint } from './demoHintTypes';
 import { hasElement } from './hasElement';
 import { isOtherControl } from './isOtherControl';
 
@@ -10,9 +10,16 @@ type StateParams = {
 
 const START_FIX = '[data-demo-anchor="resolve-start"]';
 const APPLY_FIX = 'button[data-review-verb="reviewComment.accept"]';
-const REBASE = 'button[data-worktree-verb="mount.rebase"]';
+const HEADER_APPLY = 'button[data-branch-primary="step.apply"]';
+const REBASE =
+  'button[data-branch-primary="diff.rebase"], button[data-branch-secondary="diff.rebase"]';
 const CONFIRM = 'button[data-confirm-action="true"]';
 const STORAGE_REMOVE = '[data-demo-anchor="storage-remove"]';
+
+const isApplyBlocked = ({ target }: BlockParams): boolean =>
+  target.closest(HEADER_APPLY) === null &&
+  target.closest(APPLY_FIX) === null &&
+  isOtherControl({ target });
 
 const itemsOf = ({ state }: StateParams) =>
   state.sessionResolveQueueItems[STORY_REVIEW_SESSION_ID] ?? [];
@@ -54,10 +61,11 @@ export const SHIP_HINTS: ReadonlyArray<DemoHint> = [
     result: "The test is in your branch. nadia-p's thread stays open until you push.",
     beat: 0,
     isDimmed: false,
-    isBlocked: isOtherControl,
-    anchor: APPLY_FIX,
+    isBlocked: isApplyBlocked,
+    anchor: ({ root }) => (hasElement({ root, selector: HEADER_APPLY }) ? HEADER_APPLY : APPLY_FIX),
     side: 'top',
-    revealWhen: ({ root }) => hasElement({ root, selector: APPLY_FIX }),
+    revealWhen: ({ root }) =>
+      hasElement({ root, selector: HEADER_APPLY }) || hasElement({ root, selector: APPLY_FIX }),
     doneWhen: ({ state, start }) => acceptedOf({ state }) > acceptedOf({ state: start }),
   },
   {
