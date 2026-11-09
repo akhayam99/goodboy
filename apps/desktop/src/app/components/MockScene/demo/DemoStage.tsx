@@ -387,6 +387,9 @@ export const DemoStage = ({
   useEffect(() => {
     const listener = new AbortController();
     const reclaim = ({ target }: FocusTargetParams) => {
+      if (listener.signal.aborted) {
+        return;
+      }
       const entry = [...elements.current].find(([, element]) => element === target);
       if (entry === undefined) {
         return;
