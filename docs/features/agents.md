@@ -130,7 +130,9 @@ Run a plan part by part. An implementer given a plan splits into one sub-agent p
 
 ### Auto agent
 
-Try an agent that picks the roles for you. **Auto** answers a question itself. When there is something to make, it hands the work to a Planner, Implementer, Tester, Reviewer or another role. It picks a model for each and reads what comes back.
+Try an agent that picks the roles for you. **Auto** answers a question itself. When there is something to make, it hands the work to the narrowest role that fits. That is a CI fixer for a red check, a Scribe for pull request text, a Tester for tests, and Docs for the README or changelog. The Implementer is the fallback for code changes. It picks a model for each and reads what comes back.
+
+A new Implementer child whose task fits a narrower role is refused once, with the role named. Auto can resend it with a reason, and the child page shows **Why not Tester** under why Auto chose Implementer.
 
 Auto is always available. Start it from **Start a run**, which hands one-agent asks to Auto. There is no switch in Settings. Auto shows up as one row in the Overview.
 
