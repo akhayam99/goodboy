@@ -38,6 +38,10 @@ const TerminalStudio = lazyNamed({
   load: () => import('../../../features/terminal/components/TerminalStudio'),
   pick: ({ TerminalStudio }) => TerminalStudio,
 });
+const BrowserStudio = lazyNamed({
+  load: () => import('../../../features/browser/components/BrowserStudio'),
+  pick: ({ BrowserStudio }) => BrowserStudio,
+});
 const MonitoringStudio = lazyNamed({
   load: () => import('../../../features/monitoring/components/MonitoringStudio'),
   pick: ({ MonitoringStudio }) => MonitoringStudio,
@@ -116,6 +120,10 @@ export const renderStudio = ({
           worktree={overlay.worktree ?? null}
           onClose={close}
         />
+      );
+    case 'browser':
+      return currentWorkspace === null ? null : (
+        <BrowserStudio sessionId={overlay.sessionId} tabId={overlay.tabId} onClose={close} />
       );
     case 'monitoring':
       return currentWorkspace === null ? null : <MonitoringStudio onClose={close} />;

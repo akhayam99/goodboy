@@ -33,9 +33,24 @@ type WantParams = {
   readonly view: WantedView | null;
 };
 
+type OwnerParams = {
+  readonly liveId: string;
+};
+
 const MAX_STEPS = 6;
 
+const VIEW_OWNERS = new Map<string, object>();
+
 export const createNativePlacement = ({ sessionId, onError }: Params) => {
+  const owner = {};
+  const isOwner = ({ liveId }: OwnerParams): boolean => VIEW_OWNERS.get(liveId) === owner;
+  const release = ({ liveId }: OwnerParams): boolean => {
+    if (!isOwner({ liveId })) {
+      return false;
+    }
+    VIEW_OWNERS.delete(liveId);
+    return true;
+  };
   let wanted: WantedView | null = null;
   let shown: ShownView | null = null;
   let blockedTabId: string | null = null;
@@ -65,6 +80,9 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
     }
     const { liveId } = shown;
     shown = null;
+    if (!release({ liveId })) {
+      return;
+    }
     await browserHost.hide({ tabId: liveId }).catch((error: unknown) => {
       if (!isTabGone({ error })) {
         throw error;
@@ -82,16 +100,17 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
       blockedTabId = target.tab.id;
       return;
     }
-    if (shown !== null && shown.liveId === liveId) {
+    if (shown !== null && shown.liveId === liveId && isOwner({ liveId })) {
       await browserHost.place({ tabId: liveId, bounds: target.bounds });
       shown = { liveId, tabId: target.tab.id, bounds: target.bounds };
       return;
     }
     const previous = shown;
+    VIEW_OWNERS.set(liveId, owner);
     await browserHost.place({ tabId: liveId, bounds: target.bounds });
     await browserHost.show({ tabId: liveId });
     shown = { liveId, tabId: target.tab.id, bounds: target.bounds };
-    if (previous !== null) {
+    if (previous !== null && previous.liveId !== liveId && release({ liveId: previous.liveId })) {
       await browserHost.hide({ tabId: previous.liveId }).catch((error: unknown) => {
         if (!isTabGone({ error })) {
           onError({ error });
@@ -103,6 +122,9 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
   const fail = ({ error, target }: FailParams): void => {
     if (target !== null && isTabGone({ error })) {
       useAppStore.getState().unbindBrowserLiveTab({ sessionId, tabId: target.tab.id });
+      if (shown !== null) {
+        release({ liveId: shown.liveId });
+      }
       shown = null;
       return;
     }

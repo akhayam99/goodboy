@@ -23,7 +23,7 @@ describe('the column doors', () => {
     expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists Sessions, Tasks, Workflows, Chat and Impact, then the Terminal and Monitoring tools', () => {
+  it('lists Sessions, Tasks, Workflows, Chat and Impact, then the Terminal, Browser and Monitoring tools', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
       'Sessions',
       'Tasks',
@@ -31,6 +31,7 @@ describe('the column doors', () => {
       'Chat',
       'Impact',
       'Terminal',
+      'Browser',
       'Monitoring',
     ]);
   });
@@ -49,7 +50,11 @@ describe('the column doors', () => {
       'chat',
       'impact',
     ]);
-    expect(COLUMN_TOOL_DOORS.map((entry) => entry.id)).toEqual(['terminal', 'monitoring']);
+    expect(COLUMN_TOOL_DOORS.map((entry) => entry.id)).toEqual([
+      'terminal',
+      'browser',
+      'monitoring',
+    ]);
     expect([...COLUMN_ROW_DOORS, ...COLUMN_TOOL_DOORS]).toEqual(COLUMN_DOORS);
   });
 });

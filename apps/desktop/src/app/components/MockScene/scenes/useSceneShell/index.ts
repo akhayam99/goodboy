@@ -49,6 +49,7 @@ export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneSh
       openChat: overlays.openChat,
       openWorkflows: overlays.openWorkflows,
       openTerminalStudio: overlays.openTerminalStudio,
+      openBrowserStudio: overlays.openBrowserStudio,
       openNewChat: overlays.openNewChat,
       openMonitoring: overlays.openMonitoring,
       openImpact: overlays.openImpact,

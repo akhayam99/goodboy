@@ -11,6 +11,7 @@ vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { aWorkspace } from '@goodboy/types/testing';
+import type { SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -34,6 +35,7 @@ const actions = (): ColumnActions => ({
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openTerminalStudio: vi.fn(),
+  openBrowserStudio: vi.fn(),
   openNewChat: vi.fn(),
   openMonitoring: vi.fn(),
   openImpact: vi.fn(),
@@ -110,15 +112,38 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('the tool tiles', () => {
-  it('draws Terminal and Monitoring as one labelled group of tiles with the word under the icon', () => {
+  it('draws Terminal, Browser and Monitoring as one labelled group of tiles with the word under the icon', () => {
     mountColumn();
 
     expect(tiles().getAttribute('role')).toBe('group');
     expect(tiles().getAttribute('aria-label')).toBe('Tools');
-    expect(Array.from(tiles().querySelectorAll('[data-column-tile]'))).toHaveLength(2);
+    expect(
+      Array.from(tiles().querySelectorAll('[data-column-tile]')).map((tile) =>
+        tile.getAttribute('data-column-tile'),
+      ),
+    ).toEqual(['terminal', 'browser', 'monitoring']);
     expect(tileOf({ id: 'terminal' }).textContent).toBe('Terminal');
+    expect(tileOf({ id: 'browser' }).textContent).toBe('Browser');
     expect(tileOf({ id: 'monitoring' }).textContent).toBe('Monitoring');
-    expect(tileOf({ id: 'terminal' }).querySelector('svg')).not.toBeNull();
+    expect(tileOf({ id: 'browser' }).querySelector('svg')).not.toBeNull();
+  });
+
+  it('counts the live browser tabs of every session on the Browser tile, and nothing when none is live', () => {
+    mountColumn();
+    expect(tileOf({ id: 'browser' }).getAttribute('aria-label')).toBe('Browser');
+    expect(tileOf({ id: 'browser' }).querySelector('[data-tile-count]')).toBeNull();
+    cleanup();
+
+    useAppStore.setState({
+      browserLiveTabs: {
+        [brandedId<SessionId>({ value: 'session-a' })]: { 'tab-1': 'live-1', 'tab-2': 'live-2' },
+        [brandedId<SessionId>({ value: 'session-b' })]: { 'tab-3': 'live-3' },
+      },
+    });
+    mountColumn();
+
+    expect(tileOf({ id: 'browser' }).getAttribute('aria-label')).toBe('Browser, 3 open');
+    expect(tileOf({ id: 'browser' }).querySelector('[data-tile-count]')?.textContent).toBe('3');
   });
 
   it('counts live terminals in the name and on the tile, and nothing when none run', () => {
@@ -171,16 +196,19 @@ describe('the tool tiles', () => {
     mountColumn({ doors, onNavigate });
 
     fireEvent.click(screen.getByRole('button', { name: 'Terminal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Browser' }));
     fireEvent.click(screen.getByRole('button', { name: 'Monitoring' }));
 
     expect(doors.openTerminalStudio).toHaveBeenCalledOnce();
+    expect(doors.openBrowserStudio).toHaveBeenCalledOnce();
     expect(doors.openMonitoring).toHaveBeenCalledOnce();
-    expect(onNavigate).toHaveBeenCalledTimes(2);
+    expect(onNavigate).toHaveBeenCalledTimes(3);
   });
 
   it.each([
     ['terminal', 'monitoring'],
-    ['monitoring', 'terminal'],
+    ['browser', 'terminal'],
+    ['monitoring', 'browser'],
   ] as const)(
     'presses the %s tile only on its own page and does nothing when pressed',
     (place, other) => {
@@ -193,6 +221,7 @@ describe('the tool tiles', () => {
       fireEvent.click(tileOf({ id: place }));
 
       expect(doors.openTerminalStudio).not.toHaveBeenCalled();
+      expect(doors.openBrowserStudio).not.toHaveBeenCalled();
       expect(doors.openMonitoring).not.toHaveBeenCalled();
     },
   );
@@ -217,13 +246,23 @@ describe('the tool tiles', () => {
   it('keeps the doors as icons with the same names on the folded column', () => {
     useAppStore.setState({
       terminalTabs: { [WORKSPACE.id]: [aliveTerminal({ id: 'tab-1' })] },
+      browserLiveTabs: { [brandedId<SessionId>({ value: 'session-a' })]: { 'tab-1': 'live-1' } },
     });
     render(
-      <ColumnRail scope="workspace" workspaceId={WORKSPACE.id} place="board" actions={actions()} />,
+      <ColumnRail
+        scope="workspace"
+        workspaceId={WORKSPACE.id}
+        place="browser"
+        actions={actions()}
+      />,
     );
 
     expect(document.querySelector('[data-column-tiles]')).toBeNull();
     expect(screen.getByRole('button', { name: 'Terminal, 1 running' }).textContent).toBe('');
+    const browser = screen.getByRole('button', { name: 'Browser, 1 open' });
+    expect(browser.textContent).toBe('');
+    expect(browser.querySelector('svg')).not.toBeNull();
+    expect(browser.getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('button', { name: 'Monitoring' }).textContent).toBe('');
   });
 });

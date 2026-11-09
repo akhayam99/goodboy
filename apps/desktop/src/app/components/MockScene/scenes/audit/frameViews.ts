@@ -40,6 +40,9 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
     case 'terminal':
       openers.openTerminalStudio();
       return;
+    case 'browser':
+      openers.openBrowserStudio();
+      return;
     case 'monitoring':
       openers.openMonitoring();
       return;
