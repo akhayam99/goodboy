@@ -32,6 +32,7 @@ import { readDemoRevealCommand } from '../readDemoRevealCommand';
 import { readDemoThemeMessage } from '../readDemoThemeMessage';
 import { readDemoShortcutCommand } from '../readDemoShortcutCommand';
 import { dispatchDemoShortcut } from '../dispatchDemoShortcut';
+import { forwardDemoKeys } from '../forwardDemoKeys';
 import { waitForPaint } from '../waitForPaint';
 
 type Params = {
@@ -201,6 +202,8 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       },
       { signal: listeners.signal },
     );
+
+    forwardDemoKeys({ view: window, signal: listeners.signal });
 
     const unwatchTheme = subscribeAppliedTheme(() => {
       const applied = getAppliedTheme();
