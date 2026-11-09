@@ -818,6 +818,9 @@ side-tiles-dark
 side-tiles-light
 sidebar-rhythm
 slack-permissions
+slot-back-chip
+slot-back-chip-narrow
+slot-back-chip-swapped
 space-diff-comment
 space-diff-split
 start-from-inbox
@@ -1315,6 +1318,8 @@ u36-states-overview-noreply-dark
 u36-states-overview-noreply-light
 u36-states-overview-timed-out-child-dark
 u36-states-overview-timed-out-child-light
+u37-artifact-report-scrolled
+u37-artifact-report-scrolled-light
 u37-branch-work
 u37-header-reveal
 u37-header-reveal-agent

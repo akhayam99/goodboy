@@ -14,6 +14,7 @@ const htmlElementOf = ({ node }: { readonly node: Element | null | undefined }):
 };
 
 const HEADER_PX = 160;
+const PINNED_PX = 48;
 const VIEW_PX = 600;
 const CONTENT_PX = 4000;
 
@@ -77,6 +78,8 @@ const nodeOf = ({ selector }: NodeParams): HTMLElement => {
 const region = (): HTMLElement => nodeOf({ selector: '[data-slot="reveal-region"]' });
 const headerNode = (): HTMLElement => nodeOf({ selector: '[data-slot="reveal-header"]' });
 
+const overlayNode = (): HTMLElement => nodeOf({ selector: '[data-slot="reveal-overlay"]' });
+
 const pageViewport = (): HTMLElement => nodeOf({ selector: '[data-page-scroller]' });
 
 type SizeParams = {
@@ -85,6 +88,11 @@ type SizeParams = {
 
 const sizeHeader = ({ height }: SizeParams): void => {
   Object.defineProperty(headerNode(), 'offsetHeight', { value: height, configurable: true });
+  resizeAll();
+};
+
+const sizePinned = ({ height }: SizeParams): void => {
+  Object.defineProperty(overlayNode(), 'offsetHeight', { value: height, configurable: true });
   resizeAll();
 };
 
@@ -176,8 +184,62 @@ describe('PaneShell header reveal', () => {
     const back = screen.getByRole('button', { name: 'Back to overview' });
     expect(headerNode().contains(back)).toBe(false);
     expect(headerNode().contains(screen.getByText('Push failed'))).toBe(false);
-    expect(region().contains(back)).toBe(false);
+    expect(pageViewport().contains(back)).toBe(false);
+    expect(overlayNode().contains(back)).toBe(true);
     expect(headerNode().contains(screen.getByRole('heading', { level: 1 }))).toBe(true);
+  });
+
+  it('paints the pinned row height as the inset and parks the header under it', () => {
+    const viewport = mountPage();
+    sizePinned({ height: PINNED_PX });
+
+    expect(region().style.getPropertyValue('--reveal-inset')).toBe(`${PINNED_PX}px`);
+    expect(region().style.getPropertyValue('--reveal-top')).toBe(`${PINNED_PX}px`);
+    scrollTo({ viewport, top: 100 });
+    expect(headerState()).toBe('hidden');
+    expect(region().style.getPropertyValue('--reveal-top')).toBe(`${-HEADER_PX}px`);
+    scrollTo({ viewport, top: 90 });
+    expect(headerState()).toBe('shown');
+    expect(region().style.getPropertyValue('--reveal-top')).toBe(`${PINNED_PX}px`);
+  });
+
+  it('drops the inset to zero when the pinned row hides', () => {
+    mountPage();
+    sizePinned({ height: PINNED_PX });
+    sizePinned({ height: 0 });
+
+    expect(region().style.getPropertyValue('--reveal-inset')).toBe('0px');
+    expect(region().style.getPropertyValue('--reveal-top')).toBe('0px');
+  });
+
+  it('keeps a self scrolling body below the pinned row', () => {
+    mountPage();
+
+    expect(nodeOf({ selector: '[data-slot="pane-body"]' }).className).toContain(
+      'pt-[var(--reveal-inset,0px)]',
+    );
+    expect(pageViewport().className).not.toContain('pt-[var(--reveal-inset,0px)]');
+  });
+
+  it('runs the body scroller under the pinned row and keeps the reveal', () => {
+    render(
+      <PageTrailContext.Provider value={<button type="button">Back to artifacts</button>}>
+        <PaneShell title="Northwind incident report">
+          <p>Report body</p>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+    sizeHeader({ height: HEADER_PX });
+    sizePinned({ height: PINNED_PX });
+    const viewport = sizeViewport();
+
+    expect(pageViewport().className).toContain('pt-[var(--reveal-inset,0px)]');
+    expect(pageViewport().className).toContain('scroll-pt-[var(--reveal-inset,0px)]');
+    expect(region().style.getPropertyValue('--reveal-inset')).toBe(`${PINNED_PX}px`);
+    scrollTo({ viewport, top: 100 });
+    expect(headerState()).toBe('hidden');
+    scrollTo({ viewport, top: 90 });
+    expect(headerState()).toBe('shown');
   });
 
   it('makes only the outer scroller of the body the page scroller', () => {

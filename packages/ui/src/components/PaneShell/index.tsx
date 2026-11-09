@@ -17,6 +17,7 @@ type BaseProps = {
   readonly dock?: ReactNode;
   readonly dockEdge?: 'line' | 'space';
   readonly lead?: ReactNode;
+  readonly isHeaderPinned?: boolean;
   readonly headerRhythm?: 'title' | 'section';
   readonly page?: FramePage;
   readonly width?: PageColumnWidth;
@@ -50,6 +51,7 @@ export const PaneShell = (props: Props) => {
     dock,
     dockEdge = 'line',
     lead,
+    isHeaderPinned = false,
     headerRhythm = 'title',
     page,
     width: widthOverride,
@@ -70,14 +72,16 @@ export const PaneShell = (props: Props) => {
       </PaneBannerContext.Provider>
     </PaneActionsContext.Provider>
   );
+  const headerAnimation = isHeaderPinned ? '' : animationClassName;
   const header =
     props.header !== undefined ? (
       <PageHeader
         isOnColumn
         isTrailPinned
+        isPinned={isHeaderPinned}
         rhythm={headerRhythm}
         tabs={tabs}
-        animationClassName={animationClassName}
+        animationClassName={headerAnimation}
         row={props.header}
         {...(page !== undefined && { page })}
       />
@@ -85,9 +89,10 @@ export const PaneShell = (props: Props) => {
       <PageHeader
         isOnColumn
         isTrailPinned
+        isPinned={isHeaderPinned}
         rhythm={headerRhythm}
         tabs={tabs}
-        animationClassName={animationClassName}
+        animationClassName={headerAnimation}
         title={props.title}
         meta={props.meta}
         actions={props.actions}
@@ -114,6 +119,7 @@ export const PaneShell = (props: Props) => {
       header={header}
       banner={banner}
       lead={lead}
+      isHeaderPinned={isHeaderPinned}
       dockBlock={dockBlock}
       isSelfScroll={scroll === 'self'}
       resetKey={revealKey ?? null}

@@ -24,4 +24,5 @@ export const createInitialSessionViewState = ({}: Params) => ({
   sessionGroupExpanded: {},
   exploreExpanded: {},
   exploreMountPath: {},
+  exploreChangedView: {},
 });

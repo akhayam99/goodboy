@@ -13,6 +13,7 @@ type Props = {
   readonly header: ReactNode;
   readonly banner: ReactNode;
   readonly lead: ReactNode;
+  readonly isHeaderPinned: boolean;
   readonly dockBlock: ReactNode;
   readonly isSelfScroll: boolean;
   readonly resetKey: string | null;
@@ -25,6 +26,7 @@ export const RevealPane = ({
   header,
   banner,
   lead,
+  isHeaderPinned,
   dockBlock,
   isSelfScroll,
   resetKey,
@@ -34,17 +36,22 @@ export const RevealPane = ({
   const trail = useContext(PageTrailContext);
   const isOuterUnderTrail = useContext(UnderTrailContext);
   const hasTrail = trail != null;
+  const isUnderTrail = isOuterUnderTrail || hasTrail;
+  const isEvenInset = hasTrail || isHeaderPinned;
+  const headerBlock = (
+    <UnderTrailContext.Provider value={isUnderTrail}>{header}</UnderTrailContext.Provider>
+  );
   const pinned =
-    !hasTrail && lead == null ? null : (
+    !isEvenInset && lead == null ? null : (
       <div
         data-slot="reveal-pinned"
-        className={cn('shrink-0', !hasTrail && 'has-[[data-slot=pane-lead]:empty]:hidden')}
+        className={cn('sticky-surface', !isEvenInset && 'has-[[data-slot=pane-lead]:empty]:hidden')}
       >
         <PageColumn
           width={width}
           className={cn(
             'flex flex-col gap-3',
-            !isOuterUnderTrail && PANE_RHYTHM.headerInset,
+            !isOuterUnderTrail && (isEvenInset ? PANE_RHYTHM.pinnedInset : PANE_RHYTHM.headerInset),
             animationClassName,
           )}
         >
@@ -58,6 +65,10 @@ export const RevealPane = ({
               {lead}
             </div>
           )}
+          {isHeaderPinned ? headerBlock : null}
+          {isHeaderPinned && banner !== null ? (
+            <div className="has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
+          ) : null}
         </PageColumn>
       </div>
     );
@@ -65,26 +76,31 @@ export const RevealPane = ({
   return (
     <HeaderRevealContext.Provider value={null}>
       <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
-        {pinned}
         <RevealRegion
           resetKey={resetKey}
+          pinned={pinned}
           header={
-            <PageColumn width={width}>
-              {header}
-              {banner === null ? null : (
-                <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
-              )}
-            </PageColumn>
+            isHeaderPinned ? null : (
+              <PageColumn width={width}>
+                {headerBlock}
+                {banner === null ? null : (
+                  <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
+                )}
+              </PageColumn>
+            )
           }
         >
           {isSelfScroll ? (
-            <div data-slot="pane-body" className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <div
+              data-slot="pane-body"
+              className="flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-inset,0px)]"
+            >
               <div data-slot="pane-fill" className="flex min-h-0 min-w-0 flex-1 flex-col">
                 {children}
               </div>
             </div>
           ) : (
-            <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+            <ScrollFade className="min-h-0 flex-1" fadeSize={24} isUnderPinned>
               <PageColumn width={width} className="pb-5">
                 <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
                   {children}

@@ -20,6 +20,8 @@ vi.mock('../../shared/lib/db', async () =>
 vi.mock('@goodboy/db', async () => (await import('../../store/storyHarness')).dbModuleMock());
 vi.mock('../../store/runtime/worktreeStatuses/cache', () => ({
   readWorktreeStatus: (key: string) => statuses.get(key) ?? null,
+  isWorktreeStatusSetSettled: ({ keys }: { readonly keys: ReadonlyArray<string> }) =>
+    keys.every((key) => statuses.has(key)),
   worktreeStatusKey: ({ worktreePath }: { readonly worktreePath: string }) => worktreePath,
 }));
 
@@ -135,5 +137,14 @@ describe('behindBranchesOf', () => {
     const found = behindBranchesOf({ state: store.getState(), sessionId: SESSION.id });
 
     expect(found.map((branch) => branch.mountId)).toEqual([CLOSED, OPEN]);
+  });
+
+  it('shows no total while one branch of the set is still unread', () => {
+    statuses.set('/wt/closed', {
+      mainDistance: { kind: 'known', ahead: 1, behind: 3 },
+      inProgress: null,
+    });
+
+    expect(behindBranchesOf({ state: store.getState(), sessionId: SESSION.id })).toEqual([]);
   });
 });

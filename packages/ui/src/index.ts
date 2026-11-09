@@ -3,6 +3,8 @@ export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
 export { DrawerEdgeContext } from './drawerEdgeContext';
+export { DrawerBackChipContext } from './drawerBackChipContext';
+export type { DrawerChip } from './drawerBackChipContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { DISABLED } from './disabledStyle';
 export { FOCUS_RING } from './focusRing';

@@ -56,6 +56,7 @@ export const ReportStudio = ({ sessionId, artifact }: Props) => {
     >
       {hasOutline && isOutlineAside ? (
         <aside
+          aria-label="Report outline"
           data-testid="report-outline-rail"
           className="sticky top-0 flex max-h-[60vh] w-45 shrink-0 flex-col self-start"
         >
