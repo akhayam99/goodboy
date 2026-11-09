@@ -63,8 +63,9 @@ export const ScrollFade = ({
   const reveal = useContext(HeaderRevealContext);
   const isClaimed = useContext(ClaimedScrollerContext);
   const isPageScroller = canBePageScroller && reveal !== null && !isClaimed && !horizontal;
-  const edge = edgeProp ?? (isPageScroller ? 'line' : 'fade');
+  const edge = edgeProp ?? (isPageScroller && fadeEdges !== 'end' ? 'line' : 'fade');
   const isLineEdge = edge === 'line';
+  const isDefaultLineEdge = isLineEdge && edgeProp === undefined;
   const fadePx = fadeSizeToPx(fadeSize);
   const frameRef = useRef<number | null>(null);
 
@@ -78,7 +79,8 @@ export const ScrollFade = ({
     const scrollSize = horizontal ? el.scrollWidth : el.scrollHeight;
     const maxScroll = Math.max(0, scrollSize - clientSize);
     const topFade = isLineEdge ? LINE_EDGE_FADE_PX : fadePx;
-    const top = fadeEdges === 'end' || isUnderPinned ? 0 : Math.min(topFade, scrollPos);
+    const isTopSharp = fadeEdges === 'end' || isUnderPinned || isDefaultLineEdge;
+    const top = isTopSharp ? 0 : Math.min(topFade, scrollPos);
     const bottom = Math.min(fadePx, Math.max(0, maxScroll - scrollPos));
     const hasFade = top > 0 || bottom > 0 || el.style.getPropertyValue('--fade-top') !== '';
     if (hasFade) {
@@ -94,7 +96,7 @@ export const ScrollFade = ({
       return;
     }
     root.removeAttribute('data-scrolled');
-  }, [fadeEdges, fadePx, horizontal, isLineEdge, isUnderPinned, ref]);
+  }, [fadeEdges, fadePx, horizontal, isDefaultLineEdge, isLineEdge, isUnderPinned, ref]);
 
   const scheduleFade = useCallback(() => {
     if (frameRef.current !== null) {

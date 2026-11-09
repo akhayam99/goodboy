@@ -574,7 +574,8 @@ drawer's back link sits in the frame above its scroller, so nothing passes
 under it and it needs no surface. The only edge is the `border-soft` hairline of
 `ScrollFade edge="line"`, which fades in over `--duration-quick` once the view is
 scrolled; the page scroller under a `RevealRegion` header takes it by default,
-drawn at the bottom of the pinned row when the scroller runs under it.
+without a top mask so a sticky row inside it stays sharp, drawn at the bottom of
+the pinned row when the scroller runs under it.
 `fadeEdges="end"` keeps the top edge to the sticky rows, so no hairline fade is
 drawn there.
 

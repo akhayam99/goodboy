@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { ScrollFade } from '../components/ScrollFade';
 import { ScrollerStyleContext } from '../components/ScrollFade/scrollerStyleContext';
+import { HeaderRevealContext } from '../useHeaderReveal/headerRevealContext';
 
 afterEach(cleanup);
 
@@ -296,6 +297,43 @@ describe('ScrollFade line edge', () => {
     );
 
     expect(container.querySelector('[data-slot="scroll-edge"]')).toBeNull();
+  });
+});
+
+describe('ScrollFade page scroller default edge', () => {
+  const pageReveal = { register: () => () => undefined, holdAppScroll: () => undefined };
+
+  const renderPage = ({ fadeEdges }: { readonly fadeEdges?: 'both' | 'end' }) => {
+    runFrames();
+    const view = render(
+      <HeaderRevealContext.Provider value={pageReveal}>
+        <ScrollFade className="h-40" fadeSize={32} fadeEdges={fadeEdges}>
+          <p>content</p>
+        </ScrollFade>
+      </HeaderRevealContext.Provider>,
+    );
+    const viewport = viewportOf(view.container);
+    makeOverflow({ viewport });
+    viewport.scrollTop = 150;
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    return { container: view.container, viewport };
+  };
+
+  it('draws the hairline and keeps the top unmasked so a pinned row stays sharp', () => {
+    const { container, viewport } = renderPage({});
+
+    expect(container.querySelectorAll('[data-slot="scroll-edge"]')).toHaveLength(1);
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
+    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
+  });
+
+  it('draws no hairline when only the end fades, so sticky file headers keep a clean top', () => {
+    const { container, viewport } = renderPage({ fadeEdges: 'end' });
+
+    expect(container.querySelector('[data-slot="scroll-edge"]')).toBeNull();
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
   });
 });
 
