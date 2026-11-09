@@ -7,7 +7,10 @@ import type { BrowserTab } from '../../../../../../store/slices/browser/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 
-export type BrowserPaneSceneState = 'pane' | 'tabs' | 'page';
+export type BrowserPaneSceneState = 'pane' | 'tabs' | 'page' | 'peek';
+
+const PEEK_DECISION =
+  'Check the tax line on [localhost:5173/checkout](http://localhost:5173/checkout) before the PR goes up';
 
 type SeedParams = {
   readonly state: BrowserPaneSceneState;
@@ -20,6 +23,10 @@ type RowParams = {
   readonly sessionId: SessionId | null;
   readonly projectId: ProjectId | null;
   readonly position: number;
+};
+
+type PeekParams = {
+  readonly tabs: ReadonlyArray<BrowserTab>;
 };
 
 type PayloadParams = {
@@ -78,6 +85,19 @@ const factsOf = ({
   openerId: null,
 });
 
+const seedPeek = ({ tabs }: PeekParams): void => {
+  useAppStore.setState((current) => ({
+    browserSessionTabs: { [SESSION_ID]: tabs },
+    sessionDecisions: {
+      ...current.sessionDecisions,
+      [SESSION_ID]: (current.sessionDecisions[SESSION_ID] ?? []).map((row) =>
+        row.number === 2 ? { ...row, text: PEEK_DECISION } : row,
+      ),
+    },
+  }));
+  useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'decisions' });
+};
+
 export const seedBrowserPane = ({ state }: SeedParams): void => {
   seedActivityRunScene();
   const projectId = pinProjectOf({ state: useAppStore.getState(), sessionId: SESSION_ID });
@@ -124,6 +144,10 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
   ];
   const live = tabs.map(factsOf);
   let opened = 0;
+  if (state === 'peek') {
+    seedPeek({ tabs });
+    return;
+  }
   mockSceneIpc((command, payload) => {
     switch (command) {
       case 'browser_tab_rows_list':
