@@ -1,16 +1,34 @@
 import { brandId, type AutoAttemptId } from '@goodboy/types';
 import type { AgentVerbContext } from '../verbContext';
-import { pushSettledPublish } from './pushSettledPublish';
+import { pushSettledPublish, type PushSettledOutcome } from './pushSettledPublish';
 
 export type SweepStalePushingParams = Readonly<{
   ctx: AgentVerbContext;
+}>;
+
+export type SweepOutcome = Readonly<{
+  swept: number;
+  live: number;
+  failed: ReadonlyArray<unknown>;
 }>;
 
 type StaleRow = {
   readonly id: string;
 };
 
-export const sweepStalePushing = async ({ ctx }: SweepStalePushingParams): Promise<number> => {
+type OneParams = {
+  readonly ctx: AgentVerbContext;
+  readonly id: string;
+};
+
+const sweepOne = ({ ctx, id }: OneParams): Promise<PushSettledOutcome | Error> =>
+  pushSettledPublish({ ctx, attemptId: brandId<AutoAttemptId>({ value: id }) }).catch(
+    (error: unknown): Error => (error instanceof Error ? error : new Error(String(error))),
+  );
+
+export const sweepStalePushing = async ({
+  ctx,
+}: SweepStalePushingParams): Promise<SweepOutcome> => {
   const rows = await ctx.db.select<StaleRow>(
     `SELECT id FROM auto_attempts
      WHERE state = 'ended'
@@ -19,14 +37,19 @@ export const sweepStalePushing = async ({ ctx }: SweepStalePushingParams): Promi
      ORDER BY id`,
   );
   let swept = 0;
+  let live = 0;
+  const failed: unknown[] = [];
   for (const row of rows) {
-    const outcome = await pushSettledPublish({
-      ctx,
-      attemptId: brandId<AutoAttemptId>({ value: row.id }),
-    });
+    const outcome = await sweepOne({ ctx, id: row.id });
+    if (outcome instanceof Error) {
+      failed.push(outcome);
+    }
     if (outcome === 'interrupted') {
       swept += 1;
     }
+    if (outcome === 'live') {
+      live += 1;
+    }
   }
-  return swept;
+  return { swept, live, failed };
 };

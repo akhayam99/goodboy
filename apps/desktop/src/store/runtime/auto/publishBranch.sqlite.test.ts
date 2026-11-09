@@ -4,8 +4,21 @@ import { listAutoAttemptsOfDelegation, listAutoDelegations } from '@goodboy/db';
 import { brandId, type AutoDelegationId } from '@goodboy/types';
 import type { AutoCheckScript } from './ports';
 import { publishQueue } from './publishQueue';
-import { sweepStalePushing } from './settledPush/sweepStalePushing';
 import { makeGate } from './testing/makeGate';
+import {
+  attemptPublishOf,
+  END,
+  idsOf,
+  implementer,
+  LEDGER_FORCE,
+  LEDGER_PATH,
+  LEDGER_PUSH,
+  NOTIFY_PATH,
+  recordOf,
+  delegationsOf,
+  settle,
+  START,
+} from './testing/publishWorld';
 import {
   autoDelegates,
   autoTurnEnds,
@@ -15,77 +28,12 @@ import {
   userSays,
   type RuntimeWorld,
 } from './testing/runtimeWorld';
-
-const LEDGER_PATH = '/work/harborline/ledger-core';
-const NOTIFY_PATH = '/work/harborline/notify-relay';
-
 const TYPECHECK: AutoCheckScript = { id: 'typecheck-id', name: 'typecheck' };
-
-const START: MountSnapshot = { head: 'base000', entries: [], isPartial: false };
-const END: MountSnapshot = { head: 'abc123', entries: [], isPartial: false };
 
 const STALE = 'Origin changed. Check again before force pushing.';
 
-type PublishSpec = string | Readonly<Record<string, unknown>>;
-
-const implementer = ({ publish, mount }: { publish: PublishSpec; mount: string }) => ({
-  role: 'implementer',
-  task: `rewrite the history of ${mount}`,
-  reason: 'a code change',
-  mount,
-  publish,
-});
-
-type EndParams = {
-  readonly publishes: ReadonlyArray<Readonly<{ publish: PublishSpec; mount: string }>>;
-  readonly checks?: ReadonlyArray<AutoCheckScript>;
-  readonly configure?: (world: RuntimeWorld) => void;
-};
-
-const settle = async ({ publishes, checks = [], configure }: EndParams): Promise<RuntimeWorld> => {
-  const world = await makeRuntimeWorld();
-  await userSays({ world, id: 'outbox-user-1', text: 'tidy the history and push it' });
-  world.state.ports.setChecks(checks);
-  world.state.ports.setSnapshots(LEDGER_PATH, [START, END]);
-  world.state.ports.setSnapshots(NOTIFY_PATH, [START, END]);
-  configure?.(world);
-  const outcome = await autoDelegates({
-    world,
-    spec: { children: publishes.map((one) => implementer(one)) },
-  });
-  if (!outcome.isOk) {
-    throw new Error(`the delegate was refused: ${outcome.error ?? ''}`);
-  }
-  await autoTurnEnds({ world });
-  for (const [index, turn] of world.state.ports.childTurns.entries()) {
-    await childTurnEnds({
-      world,
-      index,
-      text: `Done.\n<<step-done id="${turn.childAgentId}">>`,
-    });
-  }
-  return world;
-};
-
-const delegationsOf = async (world: RuntimeWorld) =>
-  listAutoDelegations({ db: world.state.world.db, treeId: world.treeId });
-
-const recordOf = async (world: RuntimeWorld, index = 0): Promise<ResultPublish> => {
-  const delegation = (await delegationsOf(world))[index];
-  const record = publishOfResult({ result: delegation?.result });
-  if (record === null) {
-    throw new Error('a publish record was expected');
-  }
-  return record;
-};
-
-const idsOf = async (world: RuntimeWorld): Promise<ReadonlyArray<AutoDelegationId>> =>
-  (await delegationsOf(world)).map((delegation) => delegation.id);
-
 const digestOf = (world: RuntimeWorld): string => world.state.ports.autoTurns[1]?.text ?? '';
 
-const LEDGER_PUSH = { publish: 'push', mount: 'mount-ledger-core' };
-const LEDGER_FORCE = { publish: 'force', mount: 'mount-ledger-core' };
 const NOTIFY_FORCE = { publish: 'force', mount: 'mount-notify-relay' };
 
 describe('pushing the branch of a writer after its work', () => {
@@ -287,21 +235,6 @@ const delegatedOnly = async (): Promise<RuntimeWorld> => {
   await autoDelegates({ world, spec: { children: [implementer(LEDGER_PUSH)] } });
   await autoTurnEnds({ world });
   return world;
-};
-
-const attemptPublishOf = async (world: RuntimeWorld): Promise<unknown> => {
-  const [delegation] = await delegationsOf(world);
-  if (delegation === undefined) {
-    return null;
-  }
-  const attempts = await listAutoAttemptsOfDelegation({
-    db: world.state.world.db,
-    delegationId: delegation.id,
-  });
-  const snapshot = attempts.at(-1)?.resultSnapshot;
-  return typeof snapshot === 'object' && snapshot !== null && 'envelope' in snapshot
-    ? publishOfResult({ result: snapshot.envelope })
-    : null;
 };
 
 const bumpGeneration = async (world: RuntimeWorld): Promise<void> => {
@@ -774,164 +707,5 @@ describe('putting a force push back', () => {
 
     expect(result.rows[0]?.state).toBe('refused');
     expect(world.state.ports.restores).toEqual([]);
-  });
-});
-
-type HoldParams = {
-  readonly world: RuntimeWorld;
-};
-
-const holdPushes = ({ world }: HoldParams) => {
-  const held = makeGate();
-  const original = world.state.ports.pushBranch;
-  vi.spyOn(world.state.ports, 'pushBranch').mockImplementation(async (params) => {
-    await held.promise;
-    return original(params);
-  });
-  return held;
-};
-
-const leavePushing = async ({ world }: HoldParams): Promise<void> => {
-  await world.state.world.db.execute(
-    `UPDATE auto_delegations SET result_json = json_set(result_json,
-      '$.verified.publish.state', 'pushing',
-      '$.verified.publish.isConfirmed', json('true'),
-      '$.verified.publish.isRetryable', json('false'),
-      '$.verified.publish.message', NULL)`,
-    [],
-  );
-  await world.state.world.db.execute(
-    `UPDATE auto_attempts SET result_snapshot_json = json_set(result_snapshot_json,
-      '$.envelope.verified.publish.state', 'pushing',
-      '$.envelope.verified.publish.isConfirmed', json('true'),
-      '$.envelope.verified.publish.isRetryable', json('false'),
-      '$.envelope.verified.publish.message', NULL)`,
-    [],
-  );
-};
-
-describe('a push in flight survives a reload', () => {
-  it('saves pushing before the push runs and the result after, where a reload reads it', async () => {
-    const world = await settle({ publishes: [LEDGER_FORCE] });
-    const held = holdPushes({ world });
-
-    const answered = world.runtime.publish({ act: 'confirm', delegationIds: await idsOf(world) });
-    await vi.waitFor(async () =>
-      expect(await recordOf(world)).toMatchObject({
-        state: 'pushing',
-        isConfirmed: true,
-        isRetryable: false,
-        message: null,
-      }),
-    );
-    expect(world.state.ports.pushes).toEqual([]);
-    expect(await attemptPublishOf(world)).toMatchObject({ state: 'pushing', isConfirmed: true });
-
-    const reloaded = restartedWorld({ world, isLeaseLapsed: false });
-    expect(await recordOf(reloaded)).toMatchObject({ state: 'pushing', isConfirmed: true });
-
-    held.open();
-    const result = await answered;
-    expect(result.rows[0]).toMatchObject({ state: 'pushed' });
-    expect(await recordOf(reloaded)).toMatchObject({ state: 'pushed' });
-    expect(await attemptPublishOf(reloaded)).toMatchObject({ state: 'pushed' });
-  });
-
-  it('pushes once when a second answer comes during the push', async () => {
-    const world = await settle({ publishes: [LEDGER_FORCE] });
-    const delegationIds = await idsOf(world);
-    const held = holdPushes({ world });
-
-    const first = world.runtime.publish({ act: 'confirm', delegationIds });
-    await vi.waitFor(async () => expect(await recordOf(world)).toMatchObject({ state: 'pushing' }));
-    const second = world.runtime.publish({ act: 'confirm', delegationIds });
-    held.open();
-
-    expect((await first).rows[0]?.state).toBe('pushed');
-    expect((await second).rows[0]?.state).toBe('refused');
-    expect(world.state.ports.pushes).toHaveLength(1);
-  });
-
-  it('refuses every answer for a push already under way and pushes nothing', async () => {
-    const world = await settle({ publishes: [LEDGER_FORCE] });
-    await leavePushing({ world });
-
-    for (const act of ['confirm', 'decline', 'retry', 'put_back'] as const) {
-      const result = await world.runtime.publish({ act, delegationIds: await idsOf(world) });
-      expect(result.rows[0]).toMatchObject({
-        state: 'refused',
-        message: 'This push is already under way.',
-      });
-    }
-    expect(world.state.ports.pushes).toEqual([]);
-    expect(await recordOf(world)).toMatchObject({ state: 'pushing' });
-  });
-
-  it('turns a push left pushing by a crash into a failure the user can retry, on boot', async () => {
-    const world = await settle({ publishes: [LEDGER_FORCE] });
-    await leavePushing({ world });
-    const restarted = restartedWorld({ world });
-
-    const swept = await sweepStalePushing({ ctx: restarted.state.ctx });
-
-    expect(swept).toBe(1);
-    expect(restarted.state.ports.pushes).toEqual([]);
-    const expected = {
-      state: 'failed',
-      isRetryable: true,
-      isConfirmed: false,
-      message: expect.stringContaining('Goodboy closed while it was pushing'),
-    };
-    expect(await recordOf(restarted)).toMatchObject(expected);
-    expect(await attemptPublishOf(restarted)).toMatchObject(expected);
-    expect(await sweepStalePushing({ ctx: restarted.state.ctx })).toBe(0);
-  });
-
-  it('leaves a push that waits for an answer, and a finished one, alone on boot', async () => {
-    const waiting = await settle({ publishes: [LEDGER_FORCE] });
-    const done = await settle({ publishes: [LEDGER_PUSH] });
-
-    expect(await sweepStalePushing({ ctx: waiting.state.ctx })).toBe(0);
-    expect(await sweepStalePushing({ ctx: done.state.ctx })).toBe(0);
-
-    expect(await recordOf(waiting)).toMatchObject({ state: 'awaiting_confirm' });
-    expect(await recordOf(done)).toMatchObject({ state: 'pushed' });
-  });
-
-  it('asks again before a force push is retried after the boot sweep', async () => {
-    const world = await settle({ publishes: [LEDGER_FORCE] });
-    await leavePushing({ world });
-    const restarted = restartedWorld({ world });
-    await sweepStalePushing({ ctx: restarted.state.ctx });
-
-    const retried = await restarted.runtime.publish({
-      act: 'retry',
-      delegationIds: await idsOf(restarted),
-    });
-
-    expect(retried.rows[0]?.state).toBe('awaiting_confirm');
-    expect(restarted.state.ports.pushes).toEqual([]);
-    const confirmed = await restarted.runtime.publish({
-      act: 'confirm',
-      delegationIds: await idsOf(restarted),
-    });
-    expect(confirmed.rows[0]).toMatchObject({ state: 'pushed' });
-    expect(restarted.state.ports.pushes).toHaveLength(1);
-  });
-
-  it('pushes a plain push again after the boot sweep with one retry', async () => {
-    const world = await settle({ publishes: [LEDGER_PUSH] });
-    await leavePushing({ world });
-    const restarted = restartedWorld({ world });
-    await sweepStalePushing({ ctx: restarted.state.ctx });
-
-    const retried = await restarted.runtime.publish({
-      act: 'retry',
-      delegationIds: await idsOf(restarted),
-    });
-
-    expect(retried.rows[0]).toMatchObject({ state: 'pushed' });
-    expect(restarted.state.ports.pushes).toHaveLength(1);
-    expect(await recordOf(restarted)).toMatchObject({ state: 'pushed' });
   });
 });

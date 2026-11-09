@@ -11,13 +11,14 @@ import { brandId, type AutoAttemptId, type SessionId } from '@goodboy/types';
 import { executePublish } from '../executePublish';
 import { publishQueue } from '../publishQueue';
 import type { AgentVerbContext } from '../verbContext';
+import { isPushLive } from './isPushLive';
 
 export type PushSettledPublishParams = Readonly<{
   ctx: AgentVerbContext;
   attemptId: AutoAttemptId;
 }>;
 
-export type PushSettledOutcome = 'pushed' | 'failed' | 'fenced' | 'interrupted' | 'none';
+export type PushSettledOutcome = 'pushed' | 'failed' | 'fenced' | 'interrupted' | 'live' | 'none';
 
 const ABORT_CLAIM = 'publish_claim';
 const ABORT_SETTLE = 'publish_settle';
@@ -99,6 +100,9 @@ const pushPending = async ({
     return 'none';
   }
   if (record.isConfirmed) {
+    if (isPushLive({ record, nowMs: ctx.now() })) {
+      return 'live';
+    }
     await writeSettled({
       ctx,
       attempt,
