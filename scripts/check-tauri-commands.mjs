@@ -16,7 +16,6 @@ const FRONTEND_SOURCE_DIRECTORIES = [
 ];
 const BROWSER_PANE_REASON = 'the browser pane calls it once it lands, docs/browser.md';
 const ALLOWLIST_REASON_BY_COMMAND = new Map([
-  ['browser_session_close', 'the tabs slice calls it when a session is archived, docs/browser.md'],
   ['browser_tab_back', BROWSER_PANE_REASON],
   ['browser_tab_close', BROWSER_PANE_REASON],
   ['browser_tab_forward', BROWSER_PANE_REASON],
