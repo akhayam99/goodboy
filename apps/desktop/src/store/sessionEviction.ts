@@ -182,6 +182,8 @@ export const SESSION_EVICTION = [
   { key: 'pendingOrchestrations', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'runIdleEpisodes', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'sessionTurnSpans', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserSessionTabs', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserActiveTab', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [
@@ -273,6 +275,7 @@ export const NON_SESSION_STATE_KEYS = [
   'storageOtherTools',
   'projectRootScripts',
   'budgetRules',
+  'browserProjectPins',
   'providerSpendBreakdown',
   'providerBudgetStatus',
   'budgetAlerts',

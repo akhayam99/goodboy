@@ -11,6 +11,9 @@ const EMPTY_ANSWERS: Readonly<Record<string, () => unknown>> = {
   budget_rule_list: () => [],
   workflow_list: () => [],
   workspaces_with_unread: () => [],
+  browser_session_close: () => ({ closed: 0, failed: [] }),
+  browser_session_tab_rows_delete: () => 0,
+  browser_tab_rows_list: () => [],
   worktree_carry_candidates: () => [],
   worktree_setup_proposal: () => null,
   worktree_deps_check: () => ({

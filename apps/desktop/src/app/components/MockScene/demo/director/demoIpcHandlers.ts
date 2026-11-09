@@ -53,6 +53,7 @@ const executeOf = ({ statement }: StatementParams) =>
 const EMPTY_LISTS: ReadonlyArray<string> = [
   'detect_editors',
   'detect_browsers',
+  'browser_tab_rows_list',
   'explore_list',
   'process_ledger_list',
   'project_scripts_scan',
@@ -153,6 +154,8 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
     }),
   ],
   ['session_budget_get', () => null],
+  ['browser_session_close', () => ({ closed: 0, failed: [] })],
+  ['browser_session_tab_rows_delete', () => 0],
   ['worktree_changed_files', () => EMPTY_CHANGED_FILES],
   ...EMPTY_LISTS.map((command): readonly [string, Handler] => [command, () => []]),
   ['gh_status', () => ({ available: true, mode: 'gh-cli', scopes: [] })],
