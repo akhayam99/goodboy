@@ -1,12 +1,25 @@
 import { OPEN_FAILED } from '../../../store/slices/notifications/errorRecovery';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { openUrl } from '../../lib/editor';
 import { useAppStore } from '../../../store';
 
 export type CommitDiffTarget = { repo: string; sha: string };
 
-export const useCommitLinkInterceptor = () => {
+type ClaimParams = {
+  readonly href: string;
+  readonly anchor: Element;
+};
+
+type Params = {
+  readonly claimLink?: (params: ClaimParams) => boolean;
+};
+
+const NO_CLAIM = (): boolean => false;
+
+export const useCommitLinkInterceptor = ({ claimLink = NO_CLAIM }: Params = {}) => {
   const [commitDiff, setCommitDiff] = useState<CommitDiffTarget | null>(null);
+  const claimRef = useRef(claimLink);
+  claimRef.current = claimLink;
 
   useEffect(() => {
     const COMMIT_RE = /^https?:\/\/github\.com\/([^/]+\/[^/]+)\/commit\/([0-9a-f]{7,40})/i;
@@ -27,6 +40,9 @@ export const useCommitLinkInterceptor = () => {
       }
       if (/^https?:/i.test(href)) {
         e.preventDefault();
+        if (anchor != null && claimRef.current({ href, anchor })) {
+          return;
+        }
         openUrl(href).catch((error: unknown) => {
           void useAppStore.getState().reportError({
             recovery: OPEN_FAILED,

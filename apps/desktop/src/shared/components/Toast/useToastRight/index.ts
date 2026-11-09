@@ -3,12 +3,24 @@ import { TOAST_GUTTER_PX, toastRightOf, type ToastDrawerMode } from '../toastRig
 
 const DRAWER_CARD = '[data-drawer-card]';
 
+const NATIVE_VIEW = '[data-browser-view]';
+
+const PAGE_VIEW = `[data-studio-slot] ${NATIVE_VIEW}`;
+
 const modeOf = (card: HTMLElement): ToastDrawerMode => {
   const mode = card.closest<HTMLElement>('[data-drawer-mode]')?.dataset['drawerMode'];
   return mode === 'push' || mode === 'overlay' ? mode : 'closed';
 };
 
 const measureRight = (): number => {
+  const pageView = document.querySelector<HTMLElement>(PAGE_VIEW);
+  if (pageView !== null) {
+    return toastRightOf({
+      mode: 'push',
+      drawerWidth: window.innerWidth - pageView.getBoundingClientRect().left,
+      hasNativeView: true,
+    });
+  }
   const card = document.querySelector<HTMLElement>(DRAWER_CARD);
   if (card === null) {
     return TOAST_GUTTER_PX;
@@ -16,6 +28,7 @@ const measureRight = (): number => {
   return toastRightOf({
     mode: modeOf(card),
     drawerWidth: window.innerWidth - card.getBoundingClientRect().left,
+    hasNativeView: card.querySelector(NATIVE_VIEW) !== null,
   });
 };
 
@@ -37,7 +50,7 @@ export const useToastRight = ({ isActive }: Params): number => {
     const measure = (): void => {
       frame = 0;
       setRight(measureRight());
-      const card = document.querySelector(DRAWER_CARD);
+      const card = document.querySelector(PAGE_VIEW) ?? document.querySelector(DRAWER_CARD);
       if (card === observed) {
         return;
       }

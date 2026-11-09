@@ -36,6 +36,7 @@ import {
   FolderSearch,
   FolderTree,
   Gauge,
+  Globe,
   Route,
   GitBranch,
   GitCommit,
@@ -108,6 +109,7 @@ import {
 
 export const CONCEPT_ICONS = {
   agents: Bot,
+  browser: Globe,
   appearance: Palette,
   approval: Hand,
   archive: Archive,
@@ -215,6 +217,7 @@ export const CONCEPT_ICONS = {
 type Concept = keyof typeof CONCEPT_ICONS;
 
 export const CONCEPT_TONE = {
+  browser: 'info',
   agents: 'primary',
   appearance: 'neutral',
   approval: 'warning',

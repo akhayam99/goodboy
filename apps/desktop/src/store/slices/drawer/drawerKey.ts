@@ -38,6 +38,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return `fix-comments:${content.payload.mountId ?? ''}`;
     case 'terminal':
       return `terminal:${content.payload.terminalId}`;
+    case 'browser':
+      return 'browser';
     case 'history-versions':
       return `history-versions:${content.payload.mountId}`;
     case 'file-diff':

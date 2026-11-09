@@ -33,8 +33,10 @@ export const HistoryBaseRow = ({
       appScrollIntoView({ element: heading, block: 'center' });
       const page = heading.closest('[data-branch-pane]') ?? document;
       const own = page.querySelector<HTMLElement>('[data-base-rebase]');
-      const rail = document.querySelector<HTMLElement>('[data-worktree-verb="mount.rebase"]');
-      (own ?? rail)?.focus();
+      const header = document.querySelector<HTMLElement>(
+        '[data-branch-primary="diff.rebase"], [data-branch-secondary="diff.rebase"]',
+      );
+      (own ?? header)?.focus();
     };
     window.addEventListener(name, onFocus);
     return () => window.removeEventListener(name, onFocus);

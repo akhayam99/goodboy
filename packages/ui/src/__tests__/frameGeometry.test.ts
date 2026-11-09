@@ -78,7 +78,7 @@ describe('PAGE_MEASURE', () => {
       FRAME_PAGES.filter((page) => PAGE_MEASURE[page] === width);
 
     expect(measureOf('measure')).toEqual(['agent', 'chat']);
-    expect(measureOf('full')).toEqual(['board', 'terminal']);
+    expect(measureOf('full')).toEqual(['board', 'terminal', 'browser']);
     expect(PAGE_MEASURE.overview).toBe(PAGE_MEASURE.runs);
     expect(Object.keys(PAGE_MEASURE).sort()).toEqual([...FRAME_PAGES].sort());
   });
@@ -102,8 +102,8 @@ describe('PAGE_FRAME', () => {
     expect(incomplete.board).toBeUndefined();
   });
 
-  it('keeps the stage frame to the Board and the Terminal', () => {
-    expect(pagesOf({ type: 'stage' })).toEqual(['board', 'terminal']);
+  it('keeps the stage frame to the Board, the Terminal and the Browser', () => {
+    expect(pagesOf({ type: 'stage' })).toEqual(['board', 'terminal', 'browser']);
   });
 
   it('keeps the split frame to the pages with a rail', () => {

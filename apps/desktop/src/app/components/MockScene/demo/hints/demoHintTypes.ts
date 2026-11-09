@@ -31,6 +31,7 @@ export type DemoHint = {
   readonly progressCopy?: string;
   readonly beat: number;
   readonly anchor: HintAnchor;
+  readonly press?: string;
   readonly focus?: HintAnchor;
   readonly side?: HintSide;
   readonly isSideLocked?: boolean;

@@ -22,7 +22,7 @@ import { SessionRefreshBridge } from './features/session/components/SessionRefre
 import { RowActionsCueBridge } from './app/components/RowActionsCueBridge';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { ShellLeft } from './app/components/SideColumn/ShellLeft';
-import type { ColumnActions } from './app/components/SideColumn/columnDoors';
+import { useColumnActions } from './app/hooks/useColumnActions';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { useViewedOnReturn } from './app/hooks/useViewedOnReturn';
@@ -115,6 +115,7 @@ export const App = () => {
     openSpend,
     openWorkflows,
     openTerminalStudio,
+    openBrowserStudio,
     openNewChat,
     openMonitoring,
     openImpact,
@@ -131,36 +132,21 @@ export const App = () => {
     studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
     settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsColumnSlot : null,
   });
-  const columnActions = useMemo<ColumnActions>(
-    () => ({
-      openBoard: goToBoard,
-      openInbox,
-      openChat,
-      openWorkflows,
-      openTerminalStudio,
-      openNewChat,
-      openMonitoring,
-      openImpact,
-      openSettings,
-      openChangelog,
-      openGuide,
-      openShortcuts: openShortcutHelp,
-    }),
-    [
-      goToBoard,
-      openInbox,
-      openChat,
-      openWorkflows,
-      openTerminalStudio,
-      openNewChat,
-      openMonitoring,
-      openImpact,
-      openSettings,
-      openChangelog,
-      openGuide,
-      openShortcutHelp,
-    ],
-  );
+  const columnActions = useColumnActions({
+    openBoard: goToBoard,
+    openInbox,
+    openChat,
+    openWorkflows,
+    openTerminalStudio,
+    openBrowserStudio,
+    openNewChat,
+    openMonitoring,
+    openImpact,
+    openSettings,
+    openChangelog,
+    openGuide,
+    openShortcuts: openShortcutHelp,
+  });
 
   useEffect(() => {
     void hydrate();

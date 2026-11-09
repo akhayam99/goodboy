@@ -24,6 +24,7 @@ import { sampleScoutRuns } from '../onboarding/sampleScoutRuns';
 import { connectDemoTool } from '../onboarding/connectDemoTool';
 import { InstantToolConnectContext } from '../../../../../features/onboarding/OnboardingWizard/instantToolConnectContext';
 import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
+import { showDemoNotice } from '../../demo/director/showDemoNotice';
 import { sceneParam } from './sceneParams';
 
 type PickParams<T extends string> = {
@@ -43,6 +44,7 @@ type SceneSetup = {
   readonly step: WizardStepId;
   readonly agents: WizardSceneAgents;
   readonly ws: WizardSceneWorkspace;
+  readonly hasGithub: boolean;
 };
 
 const readSetup = (): SceneSetup => {
@@ -57,11 +59,13 @@ const readSetup = (): SceneSetup => {
     options: WIZARD_SCENE_WORKSPACES,
     fallback: STEPS_BEFORE_A_WORKSPACE.has(step) ? 'none' : 'repo',
   });
-  return { step, agents, ws };
+  return { step, agents, ws, hasGithub: sceneParam({ key: 'github' }) !== 'none' };
 };
 
+const REOPEN_NOTICE = 'Setup stays open in the demo.';
 const OPEN_DELAY_MS = 100;
 const REOPEN_MS = 1200;
+const WATCH_MS = 200;
 const PICK_POLL_MS = 80;
 
 export const OnboardingScene = () => {
@@ -70,8 +74,8 @@ export const OnboardingScene = () => {
   const session = useAppStore((state) => sessionById(state.sessions, state.currentSessionId));
 
   useEffect(() => {
-    const { step, agents, ws } = setup;
-    seedWizardScene({ agents, ws, hasLinear: step === 'first-session' });
+    const { step, agents, ws, hasGithub } = setup;
+    seedWizardScene({ agents, ws, hasLinear: step === 'first-session', hasGithub });
     setIsReady(true);
     return () => sampleScoutRuns.cancel();
   }, [setup]);
@@ -108,16 +112,34 @@ export const OnboardingScene = () => {
     if (!isReady || !isDirectedScene()) {
       return;
     }
+    let wasWizardOpen = false;
+    let closedAt: number | null = Date.now();
     const timer = window.setInterval(() => {
       const state = useAppStore.getState();
       const isWizardOpen = document.querySelector('[aria-label="Goodboy setup"]') !== null;
-      if (isWizardOpen || state.currentSessionId !== null) {
+      if (isWizardOpen) {
+        wasWizardOpen = true;
+        closedAt = null;
         return;
       }
+      if (state.currentSessionId !== null) {
+        return;
+      }
+      if (closedAt === null) {
+        closedAt = Date.now();
+        if (wasWizardOpen) {
+          showDemoNotice({ message: REOPEN_NOTICE });
+        }
+      }
+      if (Date.now() - closedAt < REOPEN_MS) {
+        return;
+      }
+      wasWizardOpen = false;
+      closedAt = Date.now();
       const step: WizardStepId = state.workspaces.length > 0 ? 'first-session' : 'agents';
       const detail: OpenWizardDetail = { mode: 'full', step };
       window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail }));
-    }, REOPEN_MS);
+    }, WATCH_MS);
     return () => window.clearInterval(timer);
   }, [isReady]);
 

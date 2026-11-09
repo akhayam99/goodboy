@@ -28,7 +28,7 @@ const runOf = ({ label }: RunParams): ProviderRunId =>
 
 export const installStoryPlan = ({ store }: Params): void => {
   installDemoWorld({ store });
-  installPlanCommentPrefill();
+  installPlanCommentPrefill({ store });
   const simulatedSend = store.getState().sendTurn;
   const sendTurn = (async (input) => {
     if (input.sessionId !== STORY_SESSION_ID) {

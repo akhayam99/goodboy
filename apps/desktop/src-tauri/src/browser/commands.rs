@@ -3,10 +3,12 @@ use tauri::{Manager, Runtime, Webview};
 
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
+use super::lifecycle;
+use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
-    self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_GONE,
+    self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_CLOSED, TAB_GONE,
 };
-use super::registry::{BrowserRegistry, TabFacts};
+use super::registry::{BrowserRegistry, TabFacts, TabState};
 use crate::platform::web_history::HistoryStep;
 use crate::util::{now_ms, MessageError};
 
@@ -14,6 +16,7 @@ use crate::util::{now_ms, MessageError};
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TabOpenArgs {
     session_id: String,
+    workspace_id: String,
     url: String,
     bounds: TabBounds,
     is_shown: bool,
@@ -45,9 +48,27 @@ pub(crate) struct SessionArgs {
     session_id: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WorkspaceArgs {
+    workspace_id: String,
+}
+
 fn refuse_browser_caller<R: Runtime>(caller: &Webview<R>) -> Result<(), MessageError> {
     if guard::is_browser_label(caller.label()) {
         return Err(reason::refused(BROWSER_CALLER));
+    }
+    Ok(())
+}
+
+fn check_owner<R: Runtime>(caller: &Webview<R>, tab_id: &str) -> Result<(), MessageError> {
+    refuse_browser_caller(caller)?;
+    let owner = caller
+        .state::<BrowserRegistry>()
+        .window_of(tab_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    if owner != caller.window().label() {
+        return Err(reason::refused(OTHER_WINDOW));
     }
     Ok(())
 }
@@ -56,14 +77,10 @@ pub(super) fn owned_tab<R: Runtime>(
     caller: &Webview<R>,
     tab_id: &str,
 ) -> Result<Webview<R>, MessageError> {
-    refuse_browser_caller(caller)?;
+    check_owner(caller, tab_id)?;
     let app = caller.app_handle();
-    let owner = app
-        .state::<BrowserRegistry>()
-        .window_of(tab_id)
-        .ok_or_else(|| reason::failed(TAB_GONE))?;
-    if owner != caller.window().label() {
-        return Err(reason::refused(OTHER_WINDOW));
+    if app.state::<BrowserRegistry>().state_of(tab_id) == Some(TabState::Closed) {
+        return Err(reason::failed(TAB_CLOSED));
     }
     host::webview_of(app, tab_id)
 }
@@ -85,36 +102,45 @@ pub async fn browser_tab_open(
     args: TabOpenArgs,
 ) -> Result<TabFacts, MessageError> {
     refuse_browser_caller(&webview)?;
+    let profile = ProfileId::of_workspace(&args.workspace_id)?;
     let url = guard::parse_address(&args.url).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
     host::open_tab(
         &webview.window(),
-        OpenTab::at(&args.session_id, url, args.bounds, args.is_shown),
+        OpenTab::at(&args.session_id, profile, url, args.bounds, args.is_shown),
     )
 }
 
 #[tauri::command]
+pub async fn browser_profile_clear(
+    webview: Webview,
+    args: WorkspaceArgs,
+) -> Result<ClearOutcome, MessageError> {
+    refuse_browser_caller(&webview)?;
+    profile::clear(webview.app_handle(), &args.workspace_id).await
+}
+
+#[tauri::command]
+pub async fn browser_profile_isolation(webview: Webview) -> Result<Isolation, MessageError> {
+    refuse_browser_caller(&webview)?;
+    Ok(profile::isolation())
+}
+
+#[tauri::command]
 pub async fn browser_tab_place(webview: Webview, args: TabPlaceArgs) -> Result<(), MessageError> {
-    owned_tab(&webview, &args.tab_id)?
-        .set_bounds(args.bounds.rect())
-        .map_err(failed)
+    check_owner(&webview, &args.tab_id)?;
+    lifecycle::place_tab(webview.app_handle(), &args.tab_id, args.bounds.rect())
 }
 
 #[tauri::command]
 pub async fn browser_tab_show(webview: Webview, args: TabArgs) -> Result<TabFacts, MessageError> {
-    owned_tab(&webview, &args.tab_id)?.show().map_err(failed)?;
-    webview
-        .state::<BrowserRegistry>()
-        .set_shown(&args.tab_id, true, now_ms())
-        .ok_or_else(|| reason::failed(TAB_GONE))
+    check_owner(&webview, &args.tab_id)?;
+    lifecycle::show_tab(&webview.window(), &args.tab_id, now_ms())
 }
 
 #[tauri::command]
 pub async fn browser_tab_hide(webview: Webview, args: TabArgs) -> Result<TabFacts, MessageError> {
-    owned_tab(&webview, &args.tab_id)?.hide().map_err(failed)?;
-    webview
-        .state::<BrowserRegistry>()
-        .set_shown(&args.tab_id, false, now_ms())
-        .ok_or_else(|| reason::failed(TAB_GONE))
+    check_owner(&webview, &args.tab_id)?;
+    lifecycle::hide_tab(webview.app_handle(), &args.tab_id, now_ms())
 }
 
 #[tauri::command]
@@ -144,7 +170,7 @@ pub async fn browser_tab_forward(webview: Webview, args: TabArgs) -> Result<(), 
 
 #[tauri::command]
 pub async fn browser_tab_close(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
-    owned_tab(&webview, &args.tab_id)?;
+    check_owner(&webview, &args.tab_id)?;
     host::close_tab(webview.app_handle(), &args.tab_id)
 }
 
@@ -180,11 +206,7 @@ pub(super) fn close_session<R: Runtime>(
     session_id: &str,
 ) -> Result<SessionClosed, MessageError> {
     refuse_browser_caller(caller)?;
-    Ok(host::close_session(
-        caller.app_handle(),
-        session_id,
-        caller.window().label(),
-    ))
+    Ok(host::close_session(caller.app_handle(), session_id))
 }
 
 #[cfg(test)]
@@ -192,12 +214,13 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::util::wire_shape::assert_wire_reads;
+    use crate::util::wire_shape::{assert_wire_reads, assert_wire_value};
 
     #[test]
     fn wire_shape_tab_open_args() {
         assert_wire_reads::<TabOpenArgs>(json!({
             "sessionId": "harborline",
+            "workspaceId": "northwind",
             "url": "http://localhost:5173/",
             "bounds": { "x": 963.5, "y": 36.5, "width": 477.5, "height": 864.5 },
             "isShown": true,
@@ -228,5 +251,20 @@ mod tests {
     #[test]
     fn wire_shape_session_args() {
         assert_wire_reads::<SessionArgs>(json!({ "sessionId": "harborline" }));
+    }
+
+    #[test]
+    fn wire_shape_workspace_args() {
+        assert_wire_reads::<WorkspaceArgs>(json!({ "workspaceId": "northwind" }));
+    }
+
+    #[test]
+    fn wire_shape_clear_outcome() {
+        assert_wire_value(
+            &ClearOutcome {
+                should_restart: true,
+            },
+            json!({ "shouldRestart": true }),
+        );
     }
 }
