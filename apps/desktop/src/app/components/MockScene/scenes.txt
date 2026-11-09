@@ -806,6 +806,8 @@ side-info-doors
 side-info-framed
 side-signals-idle
 side-signals-running
+side-tiles-dark
+side-tiles-light
 sidebar-rhythm
 slack-permissions
 slot-back-chip

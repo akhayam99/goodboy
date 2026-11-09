@@ -11,7 +11,6 @@ import {
   type InboxStudioFocus,
   type StudioPlace,
 } from '../../../store';
-import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
 import { terminalStudioPlace } from '../../../features/terminal/terminalStudioPlace';
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
@@ -134,14 +133,6 @@ export const useAppOverlays = ({
 
   const openNewChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
 
-  const openNewTerminal = useCallback(() => {
-    const workspaceId = currentWorkspace?.id;
-    if (workspaceId === undefined) {
-      return;
-    }
-    void openWorkspaceTerminal({ workspaceId });
-  }, [currentWorkspace?.id]);
-
   const openMonitoring = useCallback(() => goTo({ overlay: { kind: 'monitoring' } }), [goTo]);
 
   const openImpact = useCallback(() => goTo({ overlay: { kind: 'impact', scope: null } }), [goTo]);
@@ -242,7 +233,6 @@ export const useAppOverlays = ({
     openSpend,
     openTerminalStudio,
     openNewChat,
-    openNewTerminal,
     openMonitoring,
     openImpact,
     openWorkflows,
