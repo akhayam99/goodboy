@@ -39,6 +39,7 @@ import { createDrawerSlice } from '../../store/slices/drawer';
 import { DRAWER_KINDS } from '../../store/slices/drawer/drawerKinds';
 import { createNavigationSlice } from '../../store/slices/navigation';
 import { STORAGE_KEYS } from '../../shared/lib/storage-keys';
+import { IPHONE_SETTINGS_PLACE } from '../../features/settings/iphoneSettingsPlace';
 import { listWindowLayouts } from '../../features/workspace/windowLayout';
 import { useSessionSidebarVisibility } from '../../features/workspace/hooks/useSessionSidebarVisibility';
 import { useSessionRailFold } from '../../app/components/SessionRail/useSessionRailFold';
@@ -110,6 +111,18 @@ const restoredFrom = async ({ entry }: SavedParams) => {
   return store.getState();
 };
 
+type FormerParams = {
+  readonly kind: string;
+};
+
+const formerBlobOf = ({ kind }: FormerParams): BlobLike => {
+  const entry = PREVIOUS_BUILD_BLOBS.former.find((blob) => blob.kind === kind);
+  if (entry === undefined) {
+    throw new Error(`no former blob of kind ${kind}`);
+  }
+  return entry;
+};
+
 const studioKindsInSource = (): ReadonlyArray<string> =>
   Array.from(
     readFileSync(join(SRC, 'store/slices/navigation/studio.ts'), 'utf8').matchAll(
@@ -167,27 +180,48 @@ describe('layouts saved by the previous build', () => {
     },
   );
 
-  it('drops a saved draft page and keeps the window on its previous screen, without a crash', async () => {
+  it('does not list a saved draft page as a layout', async () => {
     const entry = PREVIOUS_BUILD_BLOBS.draft;
 
     expect(await savedLayoutOf({ entry })).toBeUndefined();
   });
 
-  it.each(PREVIOUS_BUILD_BLOBS.former)('migrates the $name on restore', async (entry) => {
+  it('moves the companion studio of an older build to the iPhone settings page', async () => {
+    const entry = formerBlobOf({ kind: 'companion' });
+
     const state = await restoredFrom({ entry });
 
-    expect(state.appStudio?.kind).not.toBe('companion');
-    expect(state.drawer?.kind).not.toBe('run-step');
-    expect(state.activeLens[SESSION] ?? null).not.toBe('agents');
+    expect(state.appStudio).toEqual(IPHONE_SETTINGS_PLACE);
   });
 
-  it('restores a blob with a session-less Terminal dock without a crash', async () => {
+  it('moves the retired agents lens of an older build to the lens that replaced it', async () => {
+    const entry = formerBlobOf({ kind: 'agents' });
+
+    const state = await restoredFrom({ entry });
+
+    expect(state.currentSessionId).toBe(SESSION);
+    expect(state.activeLens[SESSION]).toBe('workflows');
+  });
+
+  it('drops the retired run-step drawer of an older build and keeps its session', async () => {
+    const entry = formerBlobOf({ kind: 'run-step' });
+
+    const state = await restoredFrom({ entry });
+
+    expect(state.drawer).toBeNull();
+    expect(state.currentSessionId).toBe(SESSION);
+  });
+
+  it('restores a blob with a session-less Terminal dock on the board with no drawer', async () => {
     const entry = PREVIOUS_BUILD_BLOBS.terminalDockWithoutSession;
 
     const layout = await savedLayoutOf({ entry });
     expect(layout).toBeDefined();
 
-    await expect(restoredFrom({ entry })).resolves.toBeDefined();
+    const state = await restoredFrom({ entry });
+
+    expect(state.currentSessionId).toBeNull();
+    expect(state.drawer).toBeNull();
   });
 });
 

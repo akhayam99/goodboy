@@ -56,10 +56,24 @@ describe('one selected sign across the navigation surfaces', () => {
 
   it('lights a row only from isCurrent, never from its own state, in the column, the session rail and the session list', () => {
     const marks = signSources.flatMap(({ path, source }) =>
-      Array.from(source.matchAll(/aria-current=\{([^}]*)\}/g), (match) => `${path}: ${match[1]}`),
+      Array.from(source.matchAll(/aria-current=(?:\{([^}]*)\}|"([^"]*)")/g), (match) => {
+        return `${path}: ${match[1] ?? `"${match[2]}"`}`;
+      }),
     );
     expect(marks.length).toBeGreaterThan(0);
-    expect(marks.filter((mark) => !mark.includes("isCurrent ? 'page' : undefined"))).toEqual([]);
+    expect(marks.filter((mark) => !mark.endsWith(": isCurrent ? 'page' : undefined"))).toEqual([]);
+  });
+
+  it('builds the session list current row from the open session, never from hover or its own state', () => {
+    const list = signSources.find(({ path }) => path.endsWith('SessionActivityBar/index.tsx'));
+
+    expect(list?.source).toContain('const isActive = id === currentSessionId;');
+    expect(list?.source).toContain('isCurrent={isActive && !isStudioOver}');
+    const currents = Array.from(
+      (list?.source ?? '').matchAll(/isCurrent=\{([^}]*)\}/g),
+      (match) => match[1],
+    );
+    expect(currents).toEqual(['isActive && !isStudioOver']);
   });
 
   it('derives every door current from the one column place', () => {
