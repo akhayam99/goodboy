@@ -21,6 +21,12 @@ export const AutoChildBrief = ({ card, routing, images }: Props) => (
         {card.reason}
       </p>
     )}
+    {card.roleKept === null ? null : (
+      <p className="text-foreground">
+        <span className="text-muted-foreground">Why not {card.roleKept.fitLabel}: </span>
+        {card.roleKept.reason}
+      </p>
+    )}
     <p className="flex min-w-0 items-center text-muted-foreground">
       <RoutingLabel
         provider={routing.provider}

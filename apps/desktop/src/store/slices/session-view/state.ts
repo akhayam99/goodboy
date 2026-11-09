@@ -1,5 +1,6 @@
 import type { SessionId, AgentId, WorkspaceId, SessionViewPrefs, ArtifactId } from '@goodboy/types';
 import type {
+  ExploreChangedView,
   LensKind,
   DiffFocus,
   SessionCreation,
@@ -38,4 +39,5 @@ export type SessionViewState = {
     Record<SessionId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
   >;
   readonly exploreMountPath: Readonly<Record<SessionId, string | null>>;
+  readonly exploreChangedView: Readonly<Record<SessionId, ExploreChangedView>>;
 };

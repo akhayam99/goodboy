@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
+import { backAfterPlace } from '../drawer/backAfterPlace';
 import { foldedLensOf } from './foldedLensOf';
 import type { BranchTab, GetFn, Location, SessionView, SetFn } from './types';
 
@@ -82,6 +83,7 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
     void get().setCurrentSession(null);
     set({
       drawer: null,
+      drawerBack: null,
       openSessionDraftWorkspaceId: place.at === 'board' ? null : get().currentWorkspaceId,
     });
     return;
@@ -101,6 +103,7 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   set((state) => ({
     ...surfaceChanges({ state, sessionId, view: resolved }),
     drawer,
+    drawerBack: backAfterPlace({ state, place, drawer }),
     openSessionDraftWorkspaceId: null,
   }));
   if (resolved.agentId !== null) {

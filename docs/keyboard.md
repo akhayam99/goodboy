@@ -20,6 +20,12 @@ session view back to the previous place. The Sessions page does nothing.
 `terminal.closeTab` is the scoped entry that declines when a popover is open or
 no tab is selected, so `app.close` takes the press.
 
+⌘⇧W (`slot.close`, Ctrl+F4 elsewhere) closes the top of the side slot and
+nothing else (`closeSlot`): the drawer in the back chip comes back, a second
+press empties the slot, and with no drawer open it does nothing. On macOS the
+File menu item Close the Drawer owns the chord, so the press reaches the app
+even when a terminal or a web page has the keyboard.
+
 A key means the new thing of the place you are in. ⌘N is a new session
 (`session.new`), except on the Chat page (`chat.newHere`, a new chat), on the
 Terminal page and the session terminal drawer (`terminal.newHere`, the New

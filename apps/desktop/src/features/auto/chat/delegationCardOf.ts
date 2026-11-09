@@ -9,6 +9,11 @@ import { delegationResultOf, type DelegationResultView } from './delegationResul
 import { recordField, textField } from './readJson';
 import { settledStatusOf, type DelegationStatus } from './settledStatusOf';
 
+export type RoleKept = Readonly<{
+  fitLabel: string;
+  reason: string;
+}>;
+
 export type DelegationCardModel = Readonly<{
   delegationId: string;
   childAgentId: AgentId;
@@ -20,6 +25,7 @@ export type DelegationCardModel = Readonly<{
   modelLine: ModelLine | null;
   task: string | null;
   reason: string | null;
+  roleKept: RoleKept | null;
   routingNote: string | null;
   status: DelegationStatus;
   isRevision: boolean;
@@ -122,6 +128,19 @@ const routingNoteOf = ({ routing, modelLine }: NoteParams): string | null => {
   return why === null ? `${asked}, ${used}.` : `${asked}, ${used}: ${why}`;
 };
 
+type RoleKeptParams = {
+  readonly request: unknown;
+};
+
+const roleKeptOf = ({ request }: RoleKeptParams): RoleKept | null => {
+  const fit = parseAutoDelegationRole({ role: textField({ source: request, key: 'roleFit' }) });
+  const reason = textField({ source: request, key: 'roleReason' });
+  if (fit === null || reason === null) {
+    return null;
+  }
+  return { fitLabel: AGENT_KIND_META[kindForRole({ role: fit })].noun, reason };
+};
+
 type Params = {
   readonly delegation: AutoDelegation;
   readonly childAgent: Agent | null;
@@ -151,6 +170,7 @@ export const delegationCardOf = ({
     modelLine,
     task: textField({ source: delegation.request, key: 'task' }),
     reason: textField({ source: delegation.request, key: 'reason' }),
+    roleKept: roleKeptOf({ request: delegation.request }),
     routingNote: routingNoteOf({ routing: delegation.routing, modelLine }),
     status,
     isRevision: delegation.reviseOf !== null,

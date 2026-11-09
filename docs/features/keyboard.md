@@ -120,14 +120,15 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **Esc** closes the dialog or preview in front, listed as Close the dialog or preview.
 - While an agent runs and nothing else is open, **Esc** twice stops it. The first press says "Esc again to stop" beside the Stop button for three seconds. The second stops the agent, listed as Stop the running agent, press twice.
 - A menu, a drawer or a dialog that is open always takes the key first. The key leaves the page only when no turn runs.
-- In a session, **Esc** walks one ladder. In a box with text it leaves the box and keeps your text. Then it closes the panel on the right. Then it does what the back row above the page does, so a step goes to its run and a list goes to the Overview. On the Overview it does nothing.
+- In a session, **Esc** walks one ladder. In a box with text it leaves the box and keeps your text. Then it closes the panel on the right, and the panel it had replaced comes back. Then it closes that one. Then it does what the back row above the page does, so a step goes to its run and a list goes to the Overview. On the Overview it does nothing.
+- **⌘⇧W** closes the panel on the right from anywhere, even with the keyboard in a terminal. The panel it had replaced comes back first. Off macOS it is **Ctrl+F4**.
 - **⌘⌥W** and **⌘⌥P** on a run, a step, an agent or an artifact go to Runs or Artifacts. So do they from Settings or a panel over the list. Pressed on the list itself they stay.
 
 **The Mac menu bar**
 
 On a Mac the menu bar carries the same keys.
 
-- File holds New Session, New Chat and Close (**⌘W**).
+- File holds New Session, New Chat, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
 - Edit holds Search.
 - View holds the sidebar, the palette, zoom and Reload.
 - Go walks to Sessions, Tasks, Chat, Workflows, Terminal, Impact, Notifications and Monitoring.

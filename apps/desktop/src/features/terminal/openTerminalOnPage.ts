@@ -16,6 +16,6 @@ export const openTerminalOnPage = ({ terminalId, sessionId }: OpenParams): void 
   const tab = findTerminalTab({ state, tabId: terminalId });
   const worktree = tab === null ? null : terminalWorktreeKeyIn({ state, tab });
   state.setTerminalSelection({ selection: { sessionId, worktree, terminalId } });
-  state.closeDrawer();
+  state.clearDrawer();
   state.switchStudio({ studio: { kind: 'terminal', terminalId, sessionId, worktree } });
 };

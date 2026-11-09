@@ -4,6 +4,7 @@ export const MENU_BOUND_IDS: ReadonlyArray<string> = [
   'session.new',
   'chat.new',
   'app.close',
+  'slot.close',
   'search.open',
   'column.toggle',
   'palette.open',
