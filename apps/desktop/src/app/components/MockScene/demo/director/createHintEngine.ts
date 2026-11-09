@@ -50,6 +50,16 @@ type AnchorParams = {
   readonly probe: HintProbe;
 };
 
+type SelectorParams = {
+  readonly anchor: DemoHint['anchor'];
+  readonly probe: HintProbe;
+};
+
+type Anchor = {
+  readonly element: Element | null;
+  readonly isRecovering: boolean;
+};
+
 type RegionParams = {
   readonly hint: DemoHint;
   readonly probe: HintProbe;
@@ -71,6 +81,7 @@ type StateParams = {
 type ElementParams = {
   readonly element: Element | null;
   readonly region: Element | null;
+  readonly isRecovering: boolean;
 };
 
 const CUT_TOLERANCE = 2;
@@ -108,6 +119,7 @@ type Placement = {
   readonly focus: DemoRect | null;
   readonly isOffscreen: boolean;
   readonly isCut: boolean;
+  readonly isRecovering: boolean;
 };
 
 type Current = {
@@ -121,6 +133,7 @@ const MISSING: Placement = {
   focus: null,
   isOffscreen: false,
   isCut: false,
+  isRecovering: false,
 };
 
 type Box = {
@@ -196,6 +209,7 @@ export const createHintEngine = ({
   let lastSignature = '';
   let shownId: string | null = null;
   let isShownPlaced = false;
+  let isShownRecovering = false;
   let candidate = '';
   let stableFrames = 0;
   let pending: number | null = null;
@@ -220,12 +234,24 @@ export const createHintEngine = ({
     isAnchorClicked: clicked.has(hint.id),
   });
 
-  const anchorOf = ({ hint, probe }: AnchorParams): Element | null => {
-    const selector = typeof hint.anchor === 'string' ? hint.anchor : hint.anchor(probe);
+  const elementOf = ({ anchor, probe }: SelectorParams): Element | null => {
+    const selector = typeof anchor === 'string' ? anchor : anchor(probe);
     if (selector === null) {
       return null;
     }
     return root.querySelector(selector);
+  };
+
+  const ownAnchorOf = ({ hint, probe }: AnchorParams): Element | null =>
+    elementOf({ anchor: hint.anchor, probe });
+
+  const anchorOf = ({ hint, probe }: AnchorParams): Anchor => {
+    const own = ownAnchorOf({ hint, probe });
+    if (own !== null || hint.recoveryAnchor === undefined) {
+      return { element: own, isRecovering: false };
+    }
+    const back = elementOf({ anchor: hint.recoveryAnchor, probe });
+    return { element: back, isRecovering: back !== null };
   };
 
   const regionOf = ({ hint, probe, anchor }: RegionParams): Element | null => {
@@ -253,7 +279,7 @@ export const createHintEngine = ({
     });
   };
 
-  const placementOf = ({ element, region }: ElementParams): Placement => {
+  const placementOf = ({ element, region, isRecovering }: ElementParams): Placement => {
     if (element === null) {
       return MISSING;
     }
@@ -270,7 +296,7 @@ export const createHintEngine = ({
       centerY >= visible.top &&
       centerY <= visible.bottom;
     if (!isShown) {
-      return { element, rect: null, focus: null, isOffscreen: true, isCut: false };
+      return { element, rect: null, focus: null, isOffscreen: true, isCut: false, isRecovering };
     }
     const isCut =
       box.top < visible.top - CUT_TOLERANCE ||
@@ -283,6 +309,7 @@ export const createHintEngine = ({
       focus: focusOf({ region }),
       isOffscreen: false,
       isCut,
+      isRecovering,
     };
   };
 
@@ -291,11 +318,12 @@ export const createHintEngine = ({
 
   const placeHint = ({ hint, state }: ProbeParams): Placement => {
     const probe = probeOf({ hint, state });
-    const anchor = anchorOf({ hint, probe });
+    const { element: anchor, isRecovering } = anchorOf({ hint, probe });
     const place = (): Placement =>
       placementOf({
         element: anchor,
         region: anchor === null ? null : regionOf({ hint, probe, anchor }),
+        isRecovering,
       });
     const placement = place();
     const isScrollNeeded = placement.isOffscreen || placement.isCut;
@@ -380,6 +408,7 @@ export const createHintEngine = ({
         ? (current?.placement.focus ?? null)
         : unionOf({ rects: [current?.placement.focus ?? rect, ...resultRects] });
     const isOffscreen = current?.placement.isOffscreen ?? false;
+    const isRecovering = current?.placement.isRecovering ?? false;
     const hintId = current?.hint.id ?? null;
     const element = current?.placement.element ?? null;
     for (const [pressedId, pressed] of clickedElements) {
@@ -399,11 +428,15 @@ export const createHintEngine = ({
       isOffscreen,
       isClicked,
       isPressed,
+      isRecovering,
     });
     if (signature === lastSignature) {
       return;
     }
-    const isArriving = hintId !== null && rect !== null && (shownId !== hintId || !isShownPlaced);
+    const isArriving =
+      hintId !== null &&
+      rect !== null &&
+      (shownId !== hintId || !isShownPlaced || isShownRecovering !== isRecovering);
     if (isArriving) {
       const key = JSON.stringify({ hintId, rect });
       stableFrames = key === candidate ? stableFrames + 1 : 1;
@@ -417,6 +450,7 @@ export const createHintEngine = ({
     stableFrames = 0;
     shownId = hintId;
     isShownPlaced = rect !== null;
+    isShownRecovering = isRecovering;
     lastSignature = signature;
     onReport({
       report: {
@@ -429,6 +463,7 @@ export const createHintEngine = ({
         isOffscreen,
         isClicked,
         isPressed,
+        isRecovering,
       },
     });
   };
@@ -464,7 +499,7 @@ export const createHintEngine = ({
       return;
     }
     const state = store.getState();
-    const own = anchorOf({ hint: active, probe: probeOf({ hint: active, state }) });
+    const { element: own } = anchorOf({ hint: active, probe: probeOf({ hint: active, state }) });
     if (own?.contains(event.target) === true) {
       return;
     }
@@ -480,7 +515,7 @@ export const createHintEngine = ({
     }
     const skipping = hints
       .slice(hints.indexOf(active) + 1)
-      .map((hint) => anchorOf({ hint, probe: probeOf({ hint, state }) }))
+      .map((hint) => ownAnchorOf({ hint, probe: probeOf({ hint, state }) }))
       .filter((anchor) => anchor !== null && !isTextField({ element: anchor }));
     const isOnSkipping = skipping.some((anchor) => anchor?.contains(target) === true);
     const isEnterAnywhere =
@@ -518,11 +553,11 @@ export const createHintEngine = ({
         return;
       }
       const hint = activeOf();
-      const anchor =
+      const { element: anchor, isRecovering } =
         hint === undefined
-          ? null
+          ? { element: null, isRecovering: false }
           : anchorOf({ hint, probe: probeOf({ hint, state: store.getState() }) });
-      if (hint === undefined || anchor === null || !anchor.contains(event.target)) {
+      if (hint === undefined || anchor === null || isRecovering || !anchor.contains(event.target)) {
         schedule();
         return;
       }
@@ -557,7 +592,10 @@ export const createHintEngine = ({
       if (hint === undefined) {
         return;
       }
-      const anchor = anchorOf({ hint, probe: probeOf({ hint, state: store.getState() }) });
+      const { element: anchor } = anchorOf({
+        hint,
+        probe: probeOf({ hint, state: store.getState() }),
+      });
       anchor?.scrollIntoView({ block: 'center', inline: 'nearest' });
       schedule();
     },
@@ -572,6 +610,7 @@ export const createHintEngine = ({
       lastSignature = '';
       shownId = null;
       isShownPlaced = false;
+      isShownRecovering = false;
       candidate = '';
       stableFrames = 0;
       dwellUntil = 0;

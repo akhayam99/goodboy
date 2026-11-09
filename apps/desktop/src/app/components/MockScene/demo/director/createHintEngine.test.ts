@@ -383,6 +383,39 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  describe('way back', () => {
+    const recovering = (): DemoHint =>
+      step({ id: 'keep', recoveryAnchor: '#open', doneWhen: () => false });
+
+    it('lights the way back when the step has lost its own control, and says so', async () => {
+      document.body.innerHTML = '<button type="button" id="open">Open</button>';
+      const { engine, reports } = engineFor({ hints: [recovering()] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(reports.at(-1)).toMatchObject({
+        type: 'anchor',
+        hintId: 'keep',
+        rect: { x: 100, y: 200 },
+        isRecovering: true,
+      });
+      document.body.insertAdjacentHTML('beforeend', '<button type="button" id="keep">K</button>');
+      await frame();
+      expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isRecovering: false });
+      engine.dispose();
+    });
+
+    it('does not count a press on the way back as the press of the step', async () => {
+      document.body.innerHTML = '<button type="button" id="open">Open</button>';
+      const { engine, reports } = engineFor({ hints: [recovering()] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      click({ selector: '#open' });
+      await frame();
+      expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isClicked: false, isPressed: false });
+      engine.dispose();
+    });
+  });
+
   describe('arrival', () => {
     type RowParams = {
       readonly y: number;

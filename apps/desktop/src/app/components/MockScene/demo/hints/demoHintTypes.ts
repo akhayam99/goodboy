@@ -21,6 +21,12 @@ type HintAnchor = string | ((probe: HintProbe) => string | null);
 
 export type HintSide = 'top' | 'bottom' | 'left' | 'right';
 
+type HintRecovery = {
+  readonly copy: string;
+  readonly instruction: string;
+  readonly side?: HintSide;
+};
+
 export type DemoHint = {
   readonly id: string;
   readonly label: string;
@@ -31,6 +37,8 @@ export type DemoHint = {
   readonly progressCopy?: string;
   readonly beat: number;
   readonly anchor: HintAnchor;
+  readonly recoveryAnchor?: HintAnchor;
+  readonly recovery?: HintRecovery;
   readonly press?: string;
   readonly focus?: HintAnchor;
   readonly side?: HintSide;

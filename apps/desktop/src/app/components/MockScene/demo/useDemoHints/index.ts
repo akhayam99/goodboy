@@ -40,6 +40,7 @@ type AnchorState = {
   readonly isOffscreen: boolean;
   readonly isClicked: boolean;
   readonly isPressed: boolean;
+  readonly isRecovering: boolean;
 };
 
 type Hold = {
@@ -71,6 +72,7 @@ export type DemoHints = Steps & {
   readonly tally: HintTally;
   readonly isHidden: boolean;
   readonly isDismissed: boolean;
+  readonly isRecovering: boolean;
   readonly tallyOf: (params: TallyParams) => HintTally;
   readonly onHintReport: (params: HintReportParams) => void;
   readonly hide: () => void;
@@ -199,6 +201,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
         isOffscreen: report.isOffscreen,
         isClicked: report.isClicked === true,
         isPressed: report.isPressed === true,
+        isRecovering: report.isRecovering === true,
       });
     },
     [hints, chapter.id, markTried],
@@ -226,6 +229,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const isActive = current !== null && current.hintId === activeHint?.id;
   const isDismissed = activeHint !== undefined && dismissedIds.has(activeHint.id);
   const isOpen = activeHint !== undefined && isActive && isEnabled && !isDismissed;
+  const recovery = isActive && current.isRecovering ? activeHint?.recovery : undefined;
 
   const coach = useMemo((): CoachMark | undefined => {
     if (!isOpen || activeHint === undefined || current === null || current.rect === null) {
@@ -236,23 +240,24 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     }
     return {
       hintId: activeHint.id,
-      copy: acting?.progressCopy ?? activeHint.copy,
-      side: activeHint.side,
-      isSideLocked: activeHint.isSideLocked === true,
+      copy: recovery?.copy ?? acting?.progressCopy ?? activeHint.copy,
+      side: recovery === undefined ? activeHint.side : recovery.side,
+      isSideLocked:
+        recovery === undefined ? activeHint.isSideLocked === true : recovery.side !== undefined,
       rect: current.rect,
       focus: current.focus,
       opened: current.opened,
       isDimmed: activeHint.isDimmed !== false,
       pulse,
     };
-  }, [isOpen, activeHint, acting, current, pulse]);
+  }, [isOpen, activeHint, acting, recovery, current, pulse]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
     if (!isOpen || activeHint === undefined || current === null || !current.isOffscreen) {
       return undefined;
     }
-    return { hintId: activeHint.id, copy: activeHint.copy };
-  }, [isOpen, activeHint, current]);
+    return { hintId: activeHint.id, copy: recovery?.copy ?? activeHint.copy };
+  }, [isOpen, activeHint, recovery, current]);
 
   const hide = useCallback(() => setEnabled({ isEnabled: false }), [setEnabled]);
 
@@ -311,6 +316,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     tally: hintTally({ chapter, progress }),
     isHidden: !isEnabled,
     isDismissed,
+    isRecovering: recovery !== undefined,
     tallyOf,
     onHintReport,
     hide,

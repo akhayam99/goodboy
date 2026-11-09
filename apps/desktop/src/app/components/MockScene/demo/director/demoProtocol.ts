@@ -59,6 +59,7 @@ type DemoAnchorReport = {
   readonly isOffscreen: boolean;
   readonly isClicked?: boolean;
   readonly isPressed?: boolean;
+  readonly isRecovering?: boolean;
 };
 
 type DemoTriedReport = {
