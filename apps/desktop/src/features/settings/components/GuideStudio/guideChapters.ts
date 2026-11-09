@@ -252,15 +252,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Sessions, Tasks, Workflows, Chat, Terminal, Browser, Impact and Monitoring, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Sessions, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
-        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived. Finished sessions close the list in Done.',
+        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived.',
       },
       {
         term: 'Pin a session',
-        desc: "Pin session, in a row's right click menu, keeps it in a Pinned group on top, whatever the sort, and Move up and Move down reorder it. Folded, the sidebar shows only sessions that need you, run or have news, and counts the rest.",
+        desc: "Pin session, in a row's right click menu, keeps it in a Pinned group on top, and Move up and Move down reorder it.",
       },
       {
         term: 'Session rail',
@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session tools',
-        desc: `The icon column at the right of the session page holds Explore, Context, Ask, Agents, Scripts and Terminal, each named below its icon, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
+        desc: `The icon column at the right of the session page holds Explore, Context and Ask under Read, then Agents, Scripts, Terminal and Browser under Work. A pane closes with ${shortcutGlyphs('overlay.close')}, and the one it replaced waits in a chip. Open as page moves a Browser tab to the Browser page. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
       },
     ],
     links: [],
@@ -301,7 +301,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'The agent behind Start a run. It answers what it can, hands the rest to child agents of the roles it picks and goes on under a limit, listed under Runs. A returned child reads Idle.',
+        desc: 'The agent behind Start a run. It answers what it can, hands the rest to child agents of the narrowest role that fits and goes on under a limit, listed under Runs. A returned child reads Idle.',
       },
       {
         term: 'Let Auto take it from here',
@@ -330,7 +330,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'A run lists its steps, with Add step under them. The line at the end says what it waits for, with the button that moves it on, such as Review plan. A halted step reads Needs you, with Open step N.',
+        desc: 'A run lists its steps, with Add step under them. The line at the end says what it waits for, with the button that moves it on. A halted step reads Needs you, with Open step N.',
       },
       {
         term: 'Orchestrated',
@@ -438,7 +438,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Changes, Commits, Checks and Work. Rebase sits on its row, and Running here opens Monitoring on the branch. The palette, a notification or the board open the same page.',
+        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Changes, Commits, Checks and Work. Rebase sits on its row, and Running here opens Monitoring on the branch.',
       },
       {
         term: 'Pull request',
@@ -765,7 +765,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents, ${shortcutGlyphs('lens.scripts')} Scripts and ${shortcutGlyphs('session.terminal')} Terminal.`,
+        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents, ${shortcutGlyphs('lens.scripts')} Scripts and ${shortcutGlyphs('session.terminal')} Terminal. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('slot.close')} closes the drawer.`,
       },
       {
         term: 'Terminal',

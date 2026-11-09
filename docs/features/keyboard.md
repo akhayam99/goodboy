@@ -196,6 +196,8 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **⌘L** goes to the address while the browser is on screen. Elsewhere it stays Ask.
 - **⌘K** lists the session's tabs. Type an address there and **Open** it beside the session.
 - Tabs belong to the session. Pin a tab to keep it in every session of the project. Tabs close when the session is archived.
+- Each workspace keeps its own cookies and site data, so a sign-in never shows in another workspace. Switching workspace closes the other one's tabs, and they reopen at their address when you show them.
+- A tab hidden for 10 minutes closes its page and keeps its address and title in the list. A window keeps four live tabs, and a fifth closes the one hidden longest. A tab you are looking at never closes.
 - **Open in your browser** hands the page to your own browser at any time.
 
 ## Under the hood
