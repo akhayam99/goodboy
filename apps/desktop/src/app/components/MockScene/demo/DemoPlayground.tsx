@@ -241,6 +241,7 @@ export const DemoPlayground = () => {
                     acting: hints.acting,
                     active: hints.activeHint,
                     nextTitle: nextTitle ?? CLOSING_TITLE,
+                    isRecovering: hints.isRecovering,
                   })
             }
           />

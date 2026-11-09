@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { headerInstruction } from './headerInstruction';
+import { GUIDE_HINTS } from './guideHints';
 import { SHIP_HINTS } from './shipHints';
 
 const fix = SHIP_HINTS.find((hint) => hint.id === 'fix-start');
@@ -17,6 +18,7 @@ describe('the header line', () => {
         acting: undefined,
         active: fix,
         nextTitle: 'Get Goodboy',
+        isRecovering: false,
       }),
     ).toBe(fix.instruction);
   });
@@ -28,6 +30,7 @@ describe('the header line', () => {
         acting: fix,
         active: fix,
         nextTitle: 'Get Goodboy',
+        isRecovering: false,
       }),
     ).toBe(fix.progress);
   });
@@ -39,6 +42,7 @@ describe('the header line', () => {
         acting: apply,
         active: apply,
         nextTitle: 'Get Goodboy',
+        isRecovering: false,
       }),
     ).toBe(apply.instruction);
   });
@@ -50,6 +54,7 @@ describe('the header line', () => {
         acting: fix,
         active: apply,
         nextTitle: 'Get Goodboy',
+        isRecovering: false,
       }),
     ).toBe(fix.result);
   });
@@ -61,6 +66,7 @@ describe('the header line', () => {
         acting: undefined,
         active: undefined,
         nextTitle: 'Get Goodboy',
+        isRecovering: false,
       }),
     ).toBe('Done. Next: Get Goodboy.');
   });
@@ -72,7 +78,24 @@ describe('the header line', () => {
         acting: undefined,
         active: undefined,
         nextTitle: 'Set the direction',
+        isRecovering: false,
       }),
     ).toBe(fix.result);
+  });
+
+  it('points back at the plan when its drawer was closed', () => {
+    const comment = GUIDE_HINTS.find((hint) => hint.id === 'plan-comment');
+    if (comment === undefined) {
+      throw new Error('missing guide fixture');
+    }
+    expect(
+      headerInstruction({
+        held: undefined,
+        acting: undefined,
+        active: comment,
+        nextTitle: 'Review and ship',
+        isRecovering: true,
+      }),
+    ).toBe("Press the plan's title to open it again and go on.");
   });
 });
