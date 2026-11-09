@@ -245,7 +245,7 @@ See how long a step has left, estimated from your own past runs. Queued steps sh
 See and undo what agents changed in a session without a branch.
 
 - In a plain folder agents edit in place. Every writing turn saves what it may change first, shell commands such as `rm` and `mv` and new files included.
-- **Changes** in the session pages lists each turn, newest first, with the files it added, changed or removed and their line counts.
+- **Changes** in the Session pages list shows each turn, newest first, with the files it added, changed or removed and their line counts.
 - Pick a file to see its text before and after, with the changed words marked.
 - **Restore to before reply 3** puts one file back. **Undo changes from this reply** puts back the whole reply. **Remove this new file** takes out a file the agent created.
 - Each restore first saves the text you have now, so **Undo restore** puts it back.
