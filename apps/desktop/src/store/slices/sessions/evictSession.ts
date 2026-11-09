@@ -4,6 +4,7 @@ import { SESSION_EVICTION, type EvictionMode, type EvictionScope } from '../../s
 import { withoutSessionRuns } from '../action-runs/withoutSessionRuns';
 import { storedAgentDraft } from '../agents/storedAgentDraft';
 import { storedGroupBy } from '../session-grouping/storedGroupBy';
+import { browserWrites } from '../browser/browserWrites';
 import { dropSession } from '../navigation/history';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
@@ -68,6 +69,7 @@ export const evictSession = ({ set, get }: Params) => {
         dropSession({ stack, sessionId }),
       ]),
     );
+    browserWrites.loads.cancel({ key: browserWrites.sessionLoadKey({ sessionId }) });
     const actionRuns =
       mode === 'delete'
         ? withoutSessionRuns({ runs: state.actionRuns, sessionId })

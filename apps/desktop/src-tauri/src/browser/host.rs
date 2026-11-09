@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use tauri::webview::{NewWindowResponse, PageLoadEvent};
 use tauri::{
@@ -6,6 +8,7 @@ use tauri::{
 };
 
 use super::guard::{self, AppOrigins};
+use super::lifecycle;
 use super::reason::{
     self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
 };
@@ -101,26 +104,23 @@ pub(crate) fn open_tab<R: Runtime>(
         return Err(reason::refused(NOT_WEB_ADDRESS));
     }
     let registry = app.state::<BrowserRegistry>();
+    let gate = registry.gate();
     let generation = tab
         .generation
         .unwrap_or_else(|| registry.generation(tab.session_id, window.label()));
     let id = uuid_v4();
-    let builder = builder_for(&app, &id, &tab.url, origins);
-    let webview = window
-        .add_child(builder, tab.position, tab.size)
-        .map_err(failed)?;
-    if !tab.is_shown {
-        if let Err(error) = webview.hide() {
-            let _ = webview.close();
-            return Err(failed(error));
-        }
-    }
+    let rect = Rect {
+        position: tab.position,
+        size: tab.size,
+    };
+    let webview = spawn_webview(window, &id, &tab.url, rect, tab.is_shown)?;
     let registered = registry.insert_in_generation(
         NewTab {
             id: &id,
             session_id: tab.session_id,
             window_label: window.label(),
             url: tab.url.as_str(),
+            rect,
             is_shown: tab.is_shown,
             opener_id: tab.opener_id,
             now_ms: now_ms(),
@@ -128,12 +128,36 @@ pub(crate) fn open_tab<R: Runtime>(
         generation,
     );
     match registered {
-        Some(facts) => Ok(facts),
+        Some(facts) => {
+            lifecycle::enforce_cap(&app, window.label(), &gate);
+            Ok(registry.facts(&id).unwrap_or(facts))
+        }
         None => {
             let _ = webview.close();
             Err(reason::refused(SESSION_CLOSING))
         }
     }
+}
+
+pub(super) fn spawn_webview<R: Runtime>(
+    window: &Window<R>,
+    id: &str,
+    url: &Url,
+    rect: Rect,
+    is_shown: bool,
+) -> Result<Webview<R>, MessageError> {
+    let app = window.app_handle();
+    let builder = builder_for(app, id, url, AppOrigins::of_app(app));
+    let webview = window
+        .add_child(builder, rect.position, rect.size)
+        .map_err(failed)?;
+    if !is_shown {
+        if let Err(error) = webview.hide() {
+            let _ = webview.close();
+            return Err(failed(error));
+        }
+    }
+    Ok(webview)
 }
 
 pub(crate) fn refresh_urls<R: Runtime>(app: &AppHandle<R>, tabs: Vec<TabFacts>) -> Vec<TabFacts> {
@@ -287,10 +311,12 @@ pub(crate) fn step_history<R: Runtime>(
 }
 
 pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<(), MessageError> {
+    let registry = app.state::<BrowserRegistry>();
+    let _gate = registry.gate();
     if let Some(webview) = app.get_webview(&guard::label_of(tab_id)) {
         webview.close().map_err(failed)?;
     }
-    app.state::<BrowserRegistry>().remove(tab_id);
+    registry.remove(tab_id);
     Ok(())
 }
 
@@ -311,15 +337,22 @@ pub(crate) fn close_each(
     result
 }
 
-pub(crate) fn close_session<R: Runtime>(
-    app: &AppHandle<R>,
-    session_id: &str,
-    window_label: &str,
-) -> SessionClosed {
-    let ids = app
-        .state::<BrowserRegistry>()
-        .close_session(session_id, window_label);
-    close_each(&ids, |id| close_tab(app, id))
+pub(crate) fn close_session<R: Runtime>(app: &AppHandle<R>, session_id: &str) -> SessionClosed {
+    let labels: Vec<String> = app.windows().keys().cloned().collect();
+    let registry = app.state::<BrowserRegistry>();
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut result = SessionClosed::default();
+    let mut ids = registry.close_session(session_id, &labels);
+    loop {
+        ids.retain(|id| seen.insert(id.clone()));
+        if ids.is_empty() {
+            return result;
+        }
+        let round = close_each(&ids, |id| close_tab(app, id));
+        result.closed += round.closed;
+        result.failed.extend(round.failed);
+        ids = registry.session_tab_ids(session_id);
+    }
 }
 
 #[cfg(test)]

@@ -265,7 +265,10 @@ the slot. Esc in the session is one ladder: an open menu, popover or field
 takes it first, then the top of the slot closes, then the drawer from the
 chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS, File > Close the Drawer)
 closes the top of the slot from anywhere, a focused terminal or web page
-included; an open menu or dialog takes it first. The rules, the store and the navigation cases are in
+included; an open menu or dialog takes it first. The right rail stays at 44px
+and says the same thing: the tool in the slot is pressed, the tool in the chip
+wears a small ring and is named waiting, and a signal dot sits with either (see
+[session-rail.md](./session-rail.md), The session tools). The rules, the store and the navigation cases are in
 [home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
