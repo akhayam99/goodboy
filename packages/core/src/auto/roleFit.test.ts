@@ -93,6 +93,25 @@ describe('roleFitOf', () => {
     expect(roleFitOf({ title: null, task })).toBeNull();
   });
 
+  it.each<readonly [string, AutoDelegationRole | null]>([
+    ['The lint check is failing. Make it pass.', 'ci-fixer'],
+    ['The build of notify-relay fails since Monday.', 'ci-fixer'],
+    ['Write the title and body of the pull request.', 'scribe'],
+    ['Update docs/auto.md to describe the new option.', 'docs'],
+    ['Describe the flags in packages/ledger-core/README.md.', 'docs'],
+    ['The parser has no regression test. Write one.', 'tester'],
+    ['Do not add regression tests; fix the parser.', null],
+    ['The parser is not untested; fix the rounding bug.', null],
+    ['Do not under any circumstances ever open a PR.', null],
+    ['Do not rewrite but open a PR.', 'scribe'],
+    ['Fix the parser, then add tests and update docs/auto.md.', null],
+    ['Fix the parser, then update the docs.', null],
+    ['Fix the parser of payments-api, add tests and update the docs.', null],
+    ['In ledger-core, add tests for the retry cap.', 'tester'],
+  ])('fits %s on %s', (task, role) => {
+    expect(roleFitOf({ title: null, task })).toBe(role);
+  });
+
   it('never returns a role Auto cannot start', () => {
     for (const entry of CASES) {
       const role = roleFitOf({ title: entry.title, task: entry.task });

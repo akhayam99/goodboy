@@ -1,4 +1,4 @@
-import { isNegationWord } from './roleTools';
+import { isClauseBreakWord, isNegationWord } from './roleTools';
 import { isAutoRoleStartable, type AutoDelegationRole } from './roles';
 
 type FitScope = 'whole' | 'lead';
@@ -63,7 +63,7 @@ const ROLE_FIT_ROWS: ReadonlyArray<FitRow> = [
       },
       {
         steps: [
-          new Set(['ci', 'pipeline']),
+          new Set(['ci', 'pipeline', 'check', 'checks', 'build', 'job', 'workflow', 'lint']),
           new Set(['red', 'fails', 'failing', 'failed', 'broken']),
         ],
       },
@@ -77,6 +77,7 @@ const ROLE_FIT_ROWS: ReadonlyArray<FitRow> = [
     label: 'a scribe',
     triggers: [
       { steps: [PR_WORDS, new Set(['title', 'body', 'description', 'text'])] },
+      { steps: [new Set(['title', 'body', 'description']), PR_WORDS] },
       {
         isVerbLed: true,
         steps: [new Set(['open', 'create', 'draft', 'raise']), PR_WORDS],
@@ -103,8 +104,12 @@ const ROLE_FIT_ROWS: ReadonlyArray<FitRow> = [
           new Set(['test', 'tests', 'spec', 'specs', 'coverage']),
         ],
       },
-      { isNegationBlind: true, steps: [new Set(['regression']), new Set(['test', 'tests'])] },
-      { isNegationBlind: true, steps: [new Set(['untested'])] },
+      { steps: [new Set(['regression']), new Set(['test', 'tests'])] },
+      {
+        isNegationBlind: true,
+        steps: [new Set(['no']), new Set(['regression']), new Set(['test', 'tests'])],
+      },
+      { steps: [new Set(['untested'])] },
     ],
   },
   {
@@ -124,7 +129,11 @@ const ROLE_FIT_ROWS: ReadonlyArray<FitRow> = [
 ];
 
 const STEP_GAP = 2;
-const NEGATION_LOOKBACK = 4;
+const NEGATION_LOOKBACK = 6;
+const MIN_LEAD_WORDS = 3;
+const CONTINUATION_RE = /;|\bthen\b/;
+const DOC_FOLDERS: ReadonlySet<string> = new Set(['docs', 'documentation']);
+const DOC_FILES: ReadonlySet<string> = new Set(['readme.md', 'changelog.md']);
 const WORD_CHAR_RE = /[a-z0-9'./_-]/;
 const EDGE_CHARS: ReadonlySet<string> = new Set(["'", '.', '/', '_', '-']);
 const BREAK_CHARS: ReadonlySet<string> = new Set([',', ';', ':', '!', '?', '\n']);
@@ -145,9 +154,25 @@ type TextParams = {
   readonly text: string;
 };
 
-type WordParams = {
+type TokenParams = {
   readonly word: string;
+};
+
+type WordParams = TokenParams & {
   readonly tokens: string[];
+};
+
+const docPathTokenOf = ({ word }: TokenParams): string => {
+  const segments = word.split('/');
+  const first = segments[0] ?? '';
+  const last = segments[segments.length - 1] ?? '';
+  if (segments.length > 1 && DOC_FOLDERS.has(first)) {
+    return first;
+  }
+  if (segments.length > 1 && DOC_FILES.has(last)) {
+    return last;
+  }
+  return word;
 };
 
 const pushWord = ({ word, tokens }: WordParams): void => {
@@ -164,7 +189,7 @@ const pushWord = ({ word, tokens }: WordParams): void => {
     end -= 1;
   }
   if (end > start) {
-    tokens.push(word.slice(start, end));
+    tokens.push(docPathTokenOf({ word: word.slice(start, end) }));
   }
   if (isSentenceEnd) {
     tokens.push('');
@@ -190,7 +215,7 @@ const fitTokensOf = ({ text }: TextParams): ReadonlyArray<string> => {
   return tokens;
 };
 
-const leadSentenceOf = ({ text }: TextParams): string => {
+const sentenceOf = ({ text }: TextParams): string => {
   for (let index = 0; index < text.length; index += 1) {
     const char = text.charAt(index);
     if (char === '\n') {
@@ -202,6 +227,29 @@ const leadSentenceOf = ({ text }: TextParams): string => {
     }
   }
   return text;
+};
+
+const leadSentenceOf = ({ text }: TextParams): string => {
+  const sentence = sentenceOf({ text });
+  const continuation = sentence.toLowerCase().search(CONTINUATION_RE);
+  const primary = continuation === -1 ? sentence : sentence.slice(0, continuation);
+  let words = 0;
+  let isInWord = false;
+  for (let index = 0; index < primary.length; index += 1) {
+    const char = primary.charAt(index);
+    if (char === ',' && words >= MIN_LEAD_WORDS) {
+      return primary.slice(0, index);
+    }
+    if (char.trim() === '') {
+      isInWord = false;
+      continue;
+    }
+    if (!isInWord) {
+      isInWord = true;
+      words += 1;
+    }
+  }
+  return primary;
 };
 
 type MatchParams = {
@@ -250,7 +298,7 @@ const isNegatedSpan = ({ tokens, start, end }: NegatedParams): boolean => {
   const floor = Math.max(0, start - NEGATION_LOOKBACK);
   for (let index = start - 1; index >= floor; index -= 1) {
     const token = tokens[index] ?? '';
-    if (token === '') {
+    if (token === '' || isClauseBreakWord({ word: token })) {
       break;
     }
     if (isNegationWord({ word: token })) {

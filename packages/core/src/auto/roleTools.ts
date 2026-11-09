@@ -12,7 +12,7 @@ const RUN_COMMAND_RE =
 const LS_REMOTE_RE = /\bls-remote\b/i;
 const COMMIT_RANGE_RE = /\b(?=[0-9a-f]{0,39}\d)[0-9a-f]{7,40}\.{2,3}[\w/-]+|\.{2,3}HEAD\b/i;
 const GIT_OUTPUT_RE =
-  /\bfiles (?:of |in |per |changed by |touched by )?(?:each|every) commit\b|\btrailers?\b|\bremote branch (?:still )?exists?\b|\bwhether the remote branch\b/i;
+  /\bfiles (?:of |in |per |changed by |touched by )?(?:each|every) commit\b|\b(?:commit|git|co-authored-by|signed-off-by)[ \t]+(?:message[ \t]+)?trailers?\b|\btrailers?[ \t]+(?:of|in|on)[ \t]+(?:each|every|the|a)[ \t]+commits?\b|\bremote branch (?:still )?exists?\b|\bwhether the remote branch\b/i;
 
 const MISSING_SHELL_RE =
   /\bno (?:shell|bash|terminal)\b|\b(?:shell|bash|terminal) tool\b|\bcannot run (?:commands?|shell)\b|\b(?:did not|didn't|does not|doesn't|do not|don't) have (?:a )?(?:shell|bash)\b/i;
@@ -92,6 +92,8 @@ type WordParams = {
 
 export const isNegationWord = ({ word }: WordParams): boolean =>
   NEGATION_WORDS.has(word) || word.endsWith(NEGATION_CONTRACTION_SUFFIX);
+
+export const isClauseBreakWord = ({ word }: WordParams): boolean => CLAUSE_BREAK_WORDS.has(word);
 
 const isNegatedMention = ({ text, at }: NegatedParams): boolean => {
   const head = clauseHeadOf({ text, at });

@@ -149,6 +149,33 @@ describe('retrying a delegation that ended without a result', () => {
     );
   });
 
+  it('keeps the roleFit and roleReason of an overridden implementer on the retry', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await userSays({ world, id: 'outbox-user-1', text: 'add the ledger tests' });
+    await autoDelegates({
+      world,
+      spec: {
+        children: [
+          {
+            ...IMPLEMENTER,
+            task: 'Add tests for the retry cap of ledger-core.',
+            roleReason: 'The cap needs a code change first.',
+          },
+        ],
+      },
+    });
+    await autoTurnEnds({ world });
+    await childTurnEnds({ world, index: 0, text: 'I could not finish this.' });
+
+    await retry(world);
+
+    const repeated = await retryDelegation(world);
+    expect(repeated.request).toMatchObject({
+      roleFit: 'tester',
+      roleReason: 'The cap needs a code change first.',
+    });
+  });
+
   it('answers the same request id with the same receipt and one retry', async () => {
     const world = await failedChild();
     const first = await retry(world);
@@ -333,6 +360,39 @@ describe('continuing a child that was stopped', () => {
     expect(turns[1]?.text).toContain('Its work is still in this worktree');
     expect(turns[1]?.text).toContain('Do not start over.');
     expect(turns[1]?.text).not.toContain('Do the work again from the start');
+  });
+
+  it('keeps the roleFit and roleReason of the stopped delegation on the continuation', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    world.state.ports.setSnapshots(LEDGER_PATH, [START, STOPPED, STOPPED]);
+    await userSays({ world, id: 'outbox-user-1', text: 'add the ledger tests' });
+    await autoDelegates({
+      world,
+      spec: {
+        children: [
+          {
+            ...IMPLEMENTER,
+            task: 'Add tests for the retry cap of ledger-core.',
+            roleReason: 'The cap needs a code change first.',
+          },
+        ],
+      },
+    });
+    await autoTurnEnds({ world });
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: 'I wrote half of it.',
+      overrides: { exit: 'cancelled' },
+    });
+
+    await retry(world, { task: 'Finish the last two cases.' });
+
+    const continued = await retryDelegation(world);
+    expect(continued.request).toMatchObject({
+      roleFit: 'tester',
+      roleReason: 'The cap needs a code change first.',
+    });
   });
 
   it('keeps the commits of the stopped attempt in the result of the retry', async () => {

@@ -49,6 +49,7 @@ describe('commandMentionOf', () => {
   it.each([
     'Find where the retry limit is set in payments-api.',
     'Explain why the checkout total is wrong.',
+    'Review the HTTP trailers handling in ledger-core.',
     'Compare the versions 1.2.0...1.4.0 of the changelog of notify-relay.',
     'Wait... then read the file; deadbeef is not a commit here.',
     '',

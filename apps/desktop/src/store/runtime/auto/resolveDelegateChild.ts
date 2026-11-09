@@ -552,6 +552,12 @@ export const resolveDelegateChild = async ({
         reason: child.reason,
         ...(fit !== null &&
           child.roleReason !== null && { roleFit: fit, roleReason: child.roleReason }),
+        ...(retry !== null &&
+          retry.request['roleFit'] !== undefined &&
+          retry.request['roleReason'] !== undefined && {
+            roleFit: retry.request['roleFit'],
+            roleReason: retry.request['roleReason'],
+          }),
         ...(child.shouldConfirm && { confirm: true }),
         doneWhen: child.doneWhen,
         expected: child.expected,

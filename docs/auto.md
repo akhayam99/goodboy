@@ -1010,16 +1010,20 @@ the model follows it. The Orchestrated prompt renders the same table filtered to
 **Role fit.** One row is enforced. `resolveDelegateChild` reads the title and task of a new
 Implementer child with `roleFitOf` (`packages/core/src/auto/roleFit.ts`), a linear word scan with
 no backtracking pattern. History words, a red or failing check and a pull request to write or
-open count anywhere in the task; tests and docs count only in the title or the first sentence, so a
-code task that ends with "add tests and update the docs" stays with the Implementer. A word after
-no, not, never or don't in the same clause does not count, except "no regression test". When a
+open count anywhere in the task; tests and docs count only in the title or the first work item (up
+to the first sentence end, semicolon, "then" or comma after three words), so a code task that
+continues with "then add tests and update the docs" stays with the Implementer. A path under
+`docs/` or a `README.md` or `CHANGELOG.md` counts as a docs word. A word after no, not, never or
+don't in the same clause (up to six words back, cut at but, then or instead) does not count, except
+"no regression test". When a
 narrower role fits, the batch is refused with `role_narrower` and nothing is written: "This task
 asks for tests: a tester fits. Send it to a tester ("role":"tester"), or keep the implementer with
 "roleReason": one line on why the implementer fits better." A second send whose child carries
 `roleReason` passes; the admission stores `roleFit` and `roleReason` in `request_json`, and the
 child's page shows "Why not Tester: <reason>" under "Why Auto chose Implementer" (`roleKept` in
 `delegationCardOf`, `AutoChildBrief`). A retry, a continue and a revise keep their role and are
-never scanned. While Auto cannot start a Rewriter (`AUTO_CLOSED_ROLES` in `roles.ts`), history work
+never scanned; a retry and a continue copy `roleFit` and `roleReason` from the earlier request, so
+the page keeps its "Why not" line. While Auto cannot start a Rewriter (`AUTO_CLOSED_ROLES` in `roles.ts`), history work
 fits the Implementer, so it is not refused.
 
 The system prompt (`packages/core/src/auto/prompt.ts`) carries the role list and a routing table,
