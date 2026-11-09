@@ -12,7 +12,7 @@ type Params = {
 };
 
 export const useSaveLiveAddresses = ({ sessionId, tabs, live, facts }: Params): void => {
-  const asked = useRef(new Set<string>());
+  const saving = useRef(new Set<string>());
 
   useEffect(() => {
     for (const tab of tabs) {
@@ -26,13 +26,16 @@ export const useSaveLiveAddresses = ({ sessionId, tabs, live, facts }: Params): 
         continue;
       }
       const key = `${tab.id}\n${fact.url}\n${title}`;
-      if (asked.current.has(key)) {
+      if (saving.current.has(key)) {
         continue;
       }
-      asked.current.add(key);
+      saving.current.add(key);
       void useAppStore
         .getState()
-        .updateBrowserTab({ sessionId, tabId: tab.id, url: fact.url, title });
+        .updateBrowserTab({ sessionId, tabId: tab.id, url: fact.url, title })
+        .finally(() => {
+          saving.current.delete(key);
+        });
     }
   }, [sessionId, tabs, live, facts]);
 };

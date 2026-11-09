@@ -22,7 +22,13 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
 
-  useNativePlacement({ sessionId, view, tab: shownTab, onError: model.showError });
+  useNativePlacement({
+    sessionId,
+    view,
+    tab: shownTab,
+    attempt: model.wakeAttempt,
+    onError: model.showError,
+  });
 
   return (
     <DrawerFrame title="Browser" isHeaderless onClose={onClose}>

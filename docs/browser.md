@@ -125,11 +125,12 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   choice (`goodboy:browser-tab-list:v1`).
 - **The address rule** (`addressOf`): a full `http` or `https` address loads
   as typed; a bare host loads on `https`, and on `http` when it is
-  `localhost`, a `*.localhost` name, `127.x`, `[::1]` or `0.0.0.0`. Words,
+  `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
+  `0.0.0.0`. A name whose first label is `127` stays on `https`. Words,
   a host with no dot and every other scheme are refused under the row. The
   pane never sends text to a search engine.
-- **Tabs**: the strip shows the session's tabs, then the project pins as icons,
-  then New tab. The list shows This session and Pinned for the project, with
+- **Tabs**: the strip shows the session's tabs, then the project pins with
+  their title and a pin mark, then New tab. The list shows This session and Pinned for the project, with
   the note that tabs close when the session is archived. With no tab the pane
   shows an empty state and focuses the address.
 - **Live tabs**: a row and a live webview are not the same thing. Opening a
@@ -138,19 +139,28 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   webview; showing it opens one at the saved address and binds the new id. A
   pin shown in the pane is `browserShownPin`; pinning the shown tab keeps it on
   screen. The pane reads the live address and title every 1.5 seconds and
-  saves a session tab's row when they change.
+  saves a session tab's row whenever they differ from the stored row, a page
+  that comes back to an earlier address included. A failed save is tried
+  again at the next change.
 - **Placement**: one loop (`createNativePlacement`) owns show, hide and
   `set_bounds`. Every frame, with a `ResizeObserver` as backup, it measures the
   placeholder (`viewBoundsOf`) and wants the shown tab at that rect, or no tab
   when the placeholder is gone, hidden or covered. It runs one host call at a
   time toward the latest wanted state, shows the new tab before hiding the old
   one, and drops a live id the host answers `tab-gone` for, so the next frame
-  reopens the row. Closing the pane hides the view.
+  reopens the row. A view whose hide failed stays on its list and is hidden
+  again on the next frame. A wake that answers after the wanted tab changed
+  is never placed or shown. A failed wake stops trying that tab until Reload
+  or a new address. Closing the pane hides the view.
 - **Overlays**: a menu, a popover, a dialog or the palette is any element that
-  matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`), and a
-  studio page counts too (`[data-studio-slot]`), because it sits over the
-  session without unmounting the pane. While one intersects the placeholder,
-  the view is hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
+  matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). For a
+  popover the cover check measures the children of `[data-dropdown-portal]`,
+  because the wrapper itself has no height, and an element with no area never
+  counts. A tooltip (`[role="tooltip"]`) covers the view too, but stays out
+  of `OVERLAY_SELECTOR`, which also gates shortcuts. A studio page counts as
+  well (`[data-studio-slot]`), because it sits over the session without
+  unmounting the pane. While one intersects the placeholder, the view is
+  hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), so they never sit under the view.
 - **Writes** name the session and the tab. A state change waits for the host:
   open saves the row after `browser_tab_open` answered, close calls
@@ -268,6 +278,9 @@ a sentence. The pane owns the words (`features/browser/browserFailureText.ts`).
   fake host: open and show at the placeholder, refused words with no host
   call, navigation and history by live id, a refused navigation, close before
   the row delete, pin, an overlay over the view and one elsewhere, a late open
-  closed and the view hidden when the pane closes. `addressOf.test.ts` pins the
-  address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
+  closed, a failed hide tried again, a late wake never shown, a failed wake
+  woken again by Reload, a revisited address saved, a failed save tried again
+  and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
+  the cover check for a popover with no role and for tooltips.
+  `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
   and dark) draw a stand in where the native view goes.
