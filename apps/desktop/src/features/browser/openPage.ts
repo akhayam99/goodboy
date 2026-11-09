@@ -27,6 +27,11 @@ export const openPage = async ({ sessionId, url, bounds }: Params): Promise<Open
     await closeOrphanTab({ sessionId, liveId: facts.id });
     return 'failed';
   }
+  if (!claimed.isCurrent()) {
+    await closeOrphanTab({ sessionId, liveId: facts.id });
+    await useAppStore.getState().closeBrowserTab({ sessionId, tabId: facts.id });
+    return 'stale';
+  }
   useAppStore.getState().bindBrowserLiveTab({ sessionId, tabId: facts.id, liveId: facts.id });
   return 'opened';
 };
