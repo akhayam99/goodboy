@@ -26,7 +26,7 @@ const hasWebScheme = ({ text }: Params): boolean => {
 const isLoopback = ({ host }: HostParams): boolean =>
   host === 'localhost' ||
   host.endsWith('.localhost') ||
-  host.startsWith('127.') ||
+  (IPV4.test(host) && host.startsWith('127.')) ||
   host === '[::1]' ||
   host === '0.0.0.0';
 

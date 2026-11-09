@@ -21,6 +21,11 @@ describe('addressOf', () => {
     expect(urlOf('[::1]:8080')).toBe('http://[::1]:8080/');
   });
 
+  it('keeps https for a host whose first label only looks like loopback', () => {
+    expect(urlOf('127.acme.example')).toBe('https://127.acme.example/');
+    expect(urlOf('127.0.0.1.northwind.example')).toBe('https://127.0.0.1.northwind.example/');
+  });
+
   it('keeps the scheme a full address names', () => {
     expect(urlOf('https://localhost:5173')).toBe('https://localhost:5173/');
     expect(urlOf('http://northwind.example/orders')).toBe('http://northwind.example/orders');
