@@ -51,7 +51,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const QUESTION = (isChecked: boolean) => `
+type QuestionParams = {
+  readonly isChecked: boolean;
+};
+
+const questionOf = ({ isChecked }: QuestionParams): string => `
   <div data-oq-anchor>
     <button type="button" role="radio" aria-checked="${isChecked}" aria-label="${STORY_QUESTION.recommended}">${STORY_QUESTION.recommended}</button>
     <button type="button" role="radio" aria-checked="false" aria-label="Reject it with a 409">Reject it with a 409</button>
@@ -130,12 +134,12 @@ describe('the direction chapter when the question is answered another way', () =
 
   it('keeps the choose step open until the recommended answer is picked or the question is answered', async () => {
     await startSession();
-    document.body.innerHTML = QUESTION(false);
+    document.body.innerHTML = questionOf({ isChecked: false });
     const { engine, tried, lit } = run({ settledIds: ['story-draft', 'story-start'] });
     settle();
     expect(lit()).toBe('story-choose');
     expect(tried()).toEqual([]);
-    document.body.innerHTML = QUESTION(true);
+    document.body.innerHTML = questionOf({ isChecked: true });
     settle();
     expect(tried()).toEqual(['story-choose']);
     expect(lit()).toBe('story-answer');

@@ -41,19 +41,22 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-const COMPOSER = (id: string): string => `
-  <div data-testid="plan-comment-composer" id="${id}"><textarea></textarea></div>
-`;
+type ComposerParams = {
+  readonly id: string;
+};
 
-const fieldOf = (id: string): HTMLTextAreaElement | null =>
+const fieldOf = ({ id }: ComposerParams): HTMLTextAreaElement | null =>
   document.querySelector<HTMLTextAreaElement>(`#${id} textarea`);
 
-const mount = async (id: string): Promise<void> => {
-  document.body.insertAdjacentHTML('beforeend', COMPOSER(id));
+const mount = async ({ id }: ComposerParams): Promise<void> => {
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    `<div data-testid="plan-comment-composer" id="${id}"><textarea></textarea></div>`,
+  );
   await Promise.resolve();
 };
 
-const unmount = async (id: string): Promise<void> => {
+const unmount = async ({ id }: ComposerParams): Promise<void> => {
   document.querySelector(`#${id}`)?.remove();
   await Promise.resolve();
 };
@@ -74,25 +77,25 @@ const draftsOf = () => store.getState().artifactComments[STORY_SESSION_ID] ?? []
 describe('the prepared plan comment', () => {
   it('fills the first composer the visitor opens', async () => {
     installPlanCommentPrefill({ store });
-    await mount('first');
-    expect(fieldOf('first')?.value).toBe(STORY_COMMENT);
+    await mount({ id: 'first' });
+    expect(fieldOf({ id: 'first' })?.value).toBe(STORY_COMMENT);
   });
 
   it('leaves a composer opened after the comment was added empty, so it cannot be kept as a second draft', async () => {
     installPlanCommentPrefill({ store });
-    await mount('first');
+    await mount({ id: 'first' });
     await add();
-    await unmount('first');
-    await mount('second');
-    expect(fieldOf('second')?.value).toBe('');
+    await unmount({ id: 'first' });
+    await mount({ id: 'second' });
+    expect(fieldOf({ id: 'second' })?.value).toBe('');
   });
 
   it('fills the composer again when the first one was closed before a comment was added', async () => {
     installPlanCommentPrefill({ store });
-    await mount('first');
-    await unmount('first');
-    await mount('second');
-    expect(fieldOf('second')?.value).toBe(STORY_COMMENT);
+    await mount({ id: 'first' });
+    await unmount({ id: 'first' });
+    await mount({ id: 'second' });
+    expect(fieldOf({ id: 'second' })?.value).toBe(STORY_COMMENT);
   });
 });
 
