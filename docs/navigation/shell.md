@@ -12,29 +12,20 @@ skeleton: it is not true yet, no test fails on it, and the unit that makes it
 true turns it into a **holds** line and adds its guard in the same change. A
 unit that changes the skeleton edits this section first.
 
-1. **Left is where you go. Target.** Today the column lists destinations and
-   sessions, the session rail lists the open session's pages, and Terminal,
-   Browser and Monitoring still sit in the column as tiles.
-2. **Right is what you hold. Target.** Today the right rail and its dock carry
-   the session tools, and Terminal and Browser also have a page of their own.
-3. **One home, one name. Target.** Today the first door is the Board page and its
-   column row reads Sessions, and Terminal and Browser open as a page from the
-   column and as a dock from the rail.
-4. **A page replaces the page. Target.** Today a studio is half page and half
-   overlay: it keeps a slot of its own, and `app/shellArrangement` still carries
-   a `studioCoversLeft` cell that is always false.
+1. **Left is where you go. Target.** Owned by The column and The session rail.
+2. **Right is what you hold. Target.** Owned by The session tools
+   ([session-rail.md](./session-rail.md)).
+3. **One home, one name. Target.** Owned by Column doors.
+4. **A page replaces the page. Target.** Owned by Surfaces.
 5. **The top bar is identity, movement and live state. Holds for the toggle.**
    The sidebar toggle sits in the top bar, left of Back and Forward, and is the
    only control the bar holds for another container. Every chip opening the
    home of its number is target.
-6. **The bottom-left is the app's corner. Target.** Today it holds Settings, the
-   bug and the Goodboy chip, whose menu carries Help, in the open column and on
-   the folded rail.
+6. **The bottom-left is the app's corner. Target.** Owned by The column foot.
 7. **A menu shows five rows at most. Target.** Right-click menus are exempt:
    they mirror the action catalog (Context menus).
-8. **Each column folds one way. Target.** Today the column folds from the top bar
-   toggle (`goodboy:sessions-sidebar-collapsed`) and the session rail from its
-   own (`goodboy:session-rail-collapsed:v1`), each remembered apart.
+8. **Each column folds one way. Target.** Owned by the rail paragraphs under
+   Surfaces.
 
 What holds today and is guarded:
 
@@ -307,7 +298,7 @@ wears a small ring and is named waiting, and a signal dot sits with either (see
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: no toggle of its own (the sidebar
 toggle sits in the top bar), the doors Sessions (the Board, ⌘⇧H), Tasks,
-Chat, Workflows and Impact as one 28px row each (row icon and word in
+Workflows, Chat and Impact as one 28px row each (row icon and word in
 `text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
 new chat, never the last one), always visible. The tools, Terminal (⌃`), Browser and Monitoring, are
 not rows: they share one row of 48px tiles under the doors (`ColumnToolTiles`), the icon with its
@@ -455,7 +446,7 @@ outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
 - Left: workspace identity. It has a 200px limit and truncates, with the full
-  name in its tooltip. The sidebar toggle lives in the column, not here.
+  name in its tooltip.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the tooltip (`Back to Comments`,
   the session on a second line, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
@@ -818,8 +809,8 @@ state from `autoFactsByAgentId`.
 
 ## Column doors
 
-Settings (the foot door and ⌘,) always opens the Settings home, with or
-without a workspace; Workspace settings opens only from the
+Settings (the foot door and ⌘,) always opens the last settings page (General
+at first), with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a quiet reference row in the column (`isReference`), not
 a top bar icon; it opens its Overview
