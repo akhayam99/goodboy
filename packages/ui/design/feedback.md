@@ -91,9 +91,11 @@ and answers again when the work ends. The product rules live in
   place shows it with `ActionRunLine`
   (`apps/desktop/src/features/actions/components/ActionControls/`): a
   `role="status"` done line with Dismiss, or a danger `Notice` with the reason
-  and Retry. Its failure is still logged, as a read row with no toast, and its
-  success never toasts. A slow run adds its elapsed seconds to the busy word
-  after three seconds.
+  and Retry. Its failure is still logged, as a read row with no toast while a
+  surface of the run is mounted and as an unread row when none is left, and
+  its success never toasts. A done line may keep a Follow button when the
+  toast it replaced navigated. A slow run adds its elapsed seconds to the
+  busy word after three seconds.
 
 The registry buttons run through the `action-runs` slice
 (`apps/desktop/src/store/slices/action-runs`): `runAction({ key, actionId,

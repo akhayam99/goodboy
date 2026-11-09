@@ -108,21 +108,31 @@ never exists on one surface only.
   pull request by session and mount and a diff by session and worktree, so the
   Branch header and every other surface on that target share one busy mark,
   refuse a second press while it runs and show the same result line, even
-  after the surface that started it unmounts. Another kind keeps a run per
-  hook instance, dropped on unmount. A button reads `pendingId` through
+  after the surface that started it unmounts. Every mounted controls hook is
+  a surface of its key: a settled run is dropped when the last surface
+  unmounts and when its session is deleted, and a failure that settles with
+  no surface left is logged unread, because the check runs when the write
+  fails. A pending run older than ten minutes is reset when a surface mounts
+  again. Another kind keeps a run per hook instance, dropped on unmount. A
+  confirm that meets a run another surface started in between stays open.
+  The Branch overflow menu runs close and convert to draft through the same
+  controls. A button reads `pendingId` through
   `actionButtonStateOf` (busy, `pendingLabel` while it runs, the elapsed
   seconds after three, disabled). An action that mutates defines
   `pendingLabel` and `doneLabel`; when it finishes `ActionRunLine` (under
   `ActionStatusLine`) shows the `doneLabel` sentence with a dismiss button
   until the next action, and a run that returns `'unchanged'` (a rebase that
   stopped or went to the history rewriter) shows no sentence. The controls set
-  `isOutcomeShown` on the action env, so a pull request write that fails is
-  logged as a read row with no toast and Merge and Mark ready skip their
-  toast; the palette, which has no line, keeps them. `kinds/mutationFeedback.test.ts` fails
-  a new async diff or pull request action that lacks either word. `__tests__/actions/stateMatrix.test.ts` pins, per
-  kind and per state, which verbs show, in which slot, and why a verb is
-  blocked, and runs them on the real store; `kinds/*.matrix.test.ts` pins the
-  same for the three UX5 kinds against the plan's state table.
+  `isOutcomeShown` and `hasRunSurface` on the action env, so a pull request
+  write that fails while a surface is mounted is logged as a read row with no
+  toast, and Merge and Mark ready skip their toast; the palette, which has no
+  line, keeps them. The Mark ready done line keeps a Follow button to the
+  pull request tab (`doneTo` on the action) while that tab is not open.
+  `kinds/mutationFeedback.test.ts` fails a new async diff or pull request
+  action that lacks either word. `__tests__/actions/stateMatrix.test.ts`
+  pins, per kind and per state, which verbs show, in which slot, and why a
+  verb is blocked, and runs them on the real store; `kinds/*.matrix.test.ts`
+  pins the same for the three UX5 kinds against the plan's state table.
 - **Preview, tint and held rows.** A verb may carry a `preview` (a role
   today): a menu that is given `onPreview` calls it with the descriptor while
   the row is hovered or focused and with `null` when it leaves or the menu
