@@ -8,6 +8,7 @@ import { addressOf } from '../../addressOf';
 import { browserFailureText } from '../../browserFailureText';
 import { browserHost } from '../../browserHost';
 import { browserPaneRequests } from '../../browserPaneRequests';
+import { hostOf } from '../../hostOf';
 import { isTabGone } from '../../isTabGone';
 import { openPage } from '../../openPage';
 import { pinProjectOf } from '../../pinProjectOf';
@@ -141,7 +142,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     address,
     titleOf: ({ tab }) => {
       const fact = factOf({ liveId: live?.[tab.id] });
-      return fact !== undefined && fact.title !== '' ? fact.title : tab.title;
+      if (fact !== undefined && fact.title !== '') {
+        return fact.title;
+      }
+      return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
     },
     error,
     isDrafting,
