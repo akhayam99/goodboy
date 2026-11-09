@@ -9,15 +9,21 @@ type Props = {
   readonly view: RefObject<HTMLDivElement | null>;
   readonly shown: ShownTab | null;
   readonly title: string;
+  readonly emptyTitle?: string;
 };
 
-export const BrowserView = ({ view, shown, title }: Props) => (
+export const BrowserView = ({
+  view,
+  shown,
+  title,
+  emptyTitle = 'Open a page beside the session',
+}: Props) => (
   <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border-soft bg-background">
     {shown === null ? (
       <div className="flex min-h-0 flex-1 items-center justify-center p-6">
         <EmptyState
           icon={CONCEPT_ICONS.browser}
-          title="Open a page beside the session"
+          title={emptyTitle}
           description="A localhost address opens your dev server."
         />
       </div>

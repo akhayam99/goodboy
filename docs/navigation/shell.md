@@ -257,9 +257,9 @@ workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 the doors Board
 (⌘⇧H), Tasks, Chat, Workflows and Impact as one 28px row each (row icon and word in
 `text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
-new chat, never the last one), always visible. The tools, Terminal (⌃`) and Monitoring, are
+new chat, never the last one), always visible. The tools, Terminal (⌃`), Browser and Monitoring, are
 not rows: they share one row of 48px tiles under the doors (`ColumnToolTiles`), the icon with its
-word under it, each tile as wide as the others so a third tool joins the same row. A tile opens the
+word under it, each tile as wide as the others. A tile opens the
 tool's page, is pressed on that page, takes the same focus ring as a row and carries the count
 at its top right (`text-chip`, tabular, `9+` past nine) or the warning dot. New terminal lives on
 the Terminal page, in the palette and in the menu, not on the tile. Tools are tiles and doors are
@@ -275,11 +275,12 @@ row (the plus sits in it on Chat). A running door draws no dot: what runs is in 
 tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
 dot means attention without a number. Chat with none running shows a primary dot for a new reply.
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
-Terminal counts the terminal tabs still alive, all owners, and Monitoring counts the pinned ports
-and the ports Goodboy started that are in use; both numbers come from `doorSignalOf`, which the
+Terminal counts the terminal tabs still alive, all owners, Browser counts the rows the Browser page
+lists (`browserTabCount`), and Monitoring counts the pinned ports
+and the ports Goodboy started that are in use; the numbers come from `doorSignalOf`, which the
 rows, the tiles and the folded rail all read. A pinned port that is down swaps Monitoring's count
 for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's and the tile's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
-`Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
+`Browser, 3 tabs`, `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
 the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot

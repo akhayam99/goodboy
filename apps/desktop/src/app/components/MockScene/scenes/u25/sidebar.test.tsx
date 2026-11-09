@@ -71,7 +71,7 @@ describe('the sidebar scenes', () => {
       'chat',
     );
     expect(screen.queryByRole('button', { name: 'New terminal' })).toBeNull();
-    expect(document.querySelectorAll('[data-column-tile]')).toHaveLength(2);
+    expect(document.querySelectorAll('[data-column-tile]')).toHaveLength(3);
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
     expect(document.querySelector('[data-column-create]')).toBeNull();
   });
