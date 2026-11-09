@@ -5,8 +5,12 @@ import {
   type ProviderRunId,
   type Session,
   type SessionId,
+  type WorkspaceId,
 } from '@goodboy/types';
+import { DEFAULT_PERMISSION_MODE } from '../../../../../features/permissions/modeCopy';
+import type { AgentKindRouting } from '../../../../../features/session/agent-kind';
 import { useAppStore } from '../../../../../store';
+import { selectWorkspaceKindRouting } from '../../../../../store/slices/agents/selectWorkspaceKindRouting';
 import type { AppStore } from '../../../../../store/store';
 import type { StartSessionFromDraftParams } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
@@ -24,7 +28,6 @@ import { sampleScoutReply } from './sampleScoutReply';
 const THINK_MS = 1400;
 const SENTENCE_MS = 1100;
 const DONE_MS = 900;
-const SCOUT_MODEL = 'claude-opus-5-5';
 
 const IDLE_LOADING = {
   agents: false,
@@ -128,12 +131,28 @@ const focusOf = ({ start }: FocusParams): string => {
   }
 };
 
+type RoutingParams = {
+  readonly state: AppStore;
+  readonly workspaceId: WorkspaceId;
+  readonly start: StartSessionFromDraftParams['start'];
+};
+
+const routingOf = ({ state, workspaceId, start }: RoutingParams): AgentKindRouting => {
+  if (start.kind === 'scout' && start.routing !== null) {
+    return start.routing;
+  }
+  return selectWorkspaceKindRouting({ state, workspaceId, kind: 'scout' });
+};
+
 export const startSampleScout = async ({
   workspaceId,
   start,
 }: StartSessionFromDraftParams): Promise<Session> => {
   sampleScoutRuns.cancel();
   const state = useAppStore.getState();
+  const { provider, model } = routingOf({ state, workspaceId, start });
+  const permissionMode =
+    state.sessionDrafts[workspaceId]?.permissionMode ?? DEFAULT_PERMISSION_MODE;
   const focus = focusOf({ start }).trim();
   const projectId = state.sessionDrafts[workspaceId]?.projectIds[0] ?? null;
   const folder = projectById(state.projects, projectId)?.name ?? 'this workspace';
@@ -147,8 +166,8 @@ export const startSampleScout = async ({
     goal: draftGoalText({ text: focus }),
     state: { kind: 'idle', lastActivityAt: at },
     contextSlots: [],
-    providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
-    permissionMode: 'default',
+    providerPreference: { defaultProvider: provider, allowTurnOverride: true },
+    permissionMode,
     workflowRuns: [],
     autoRun: false,
     titleUserEdited: false,
@@ -163,8 +182,8 @@ export const startSampleScout = async ({
     name: 'Scout',
     kind: 'scout',
     status: 'pending',
-    providerOverride: 'anthropic',
-    modelOverride: SCOUT_MODEL,
+    providerOverride: provider,
+    modelOverride: model,
   };
   seedShellChrome({ session, siblings: [], branches: {}, telemetryAt: at, lens: 'workflows' });
   useAppStore.setState({
@@ -200,9 +219,7 @@ export const startSampleScout = async ({
       appendTurnEvents({
         store: useAppStore,
         agentId,
-        events: [
-          { kind: 'user_text', runId, text: focus, provider: 'anthropic', model: SCOUT_MODEL, at },
-        ],
+        events: [{ kind: 'user_text', runId, text: focus, provider, model, at }],
       });
       startAgentTurn({ store: useAppStore, sessionId, agentId, runId, at });
       streamReply({ sessionId, agentId, runId, reply: sampleScoutReply({ focus, folder }) });

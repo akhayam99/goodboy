@@ -9,13 +9,18 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { useAppStore } from '../../../../../store';
+import { selectWorkspaceKindRouting } from '../../../../../store/slices/agents/selectWorkspaceKindRouting';
+import { DEFAULT_PERMISSION_MODE } from '../../../../../features/permissions/modeCopy';
+import { createHintEngine, type HintEngine } from '../../demo/director/createHintEngine';
+import type { DemoHintReport } from '../../demo/director/demoProtocol';
+import { BRING_HINTS } from '../../demo/hints/bringHints';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { OnboardingScene } from './OnboardingScene';
@@ -169,4 +174,148 @@ describe('onboarding scene', () => {
       { timeout: 4000 },
     );
   }, 20000);
+
+  it('answers with no GitHub only when the scene is told so', async () => {
+    await mount({ query: '&step=agents' });
+    expect(useAppStore.getState().githubStatus?.available).toBe(true);
+    cleanup();
+    await resetStoryStore();
+
+    await mount({ query: '&step=agents&github=none' });
+    expect(useAppStore.getState().githubStatus).toBeNull();
+  });
+
+  it('starts the sample scout on the model and edit mode the composer showed', async () => {
+    await mountOpen({ query: '&step=workspace' });
+    fireEvent.click(await enabledButton({ name: /Choose folder/ }));
+    fireEvent.click(await enabledButton({ name: /Create workspace/ }));
+    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
+    const state = useAppStore.getState();
+    const workspaceId = state.currentWorkspaceId;
+    if (workspaceId === null) {
+      throw new Error('no workspace');
+    }
+    const shown = selectWorkspaceKindRouting({ state, workspaceId, kind: 'scout' });
+    const draftMode = state.sessionDrafts[workspaceId]?.permissionMode ?? DEFAULT_PERMISSION_MODE;
+
+    fireEvent.click(await enabledButton({ name: /^Start/ }));
+
+    await waitFor(() => expect(shownStep()).toBeNull(), { timeout: 5000 });
+    const after = useAppStore.getState();
+    const sessionId = after.currentSessionId;
+    const agentId = sessionId === null ? undefined : after.selectedAgentId[sessionId];
+    const events = agentId === undefined || agentId === null ? [] : after.transcripts[agentId];
+    expect(events?.[0]).toMatchObject({
+      kind: 'user_text',
+      provider: shown.provider,
+      model: shown.model,
+    });
+    expect(after.sessions.find((session) => session.id === sessionId)?.permissionMode).toBe(
+      draftMode,
+    );
+  }, 20000);
+
+  it('tells the visitor setup stays open when Skip closes it in the directed scene', async () => {
+    await mount({ query: '&step=first-session&ws=repo&director=1' });
+    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
+    await enabledButton({ name: 'Draft the brief' });
+
+    fireEvent.click(await enabledButton({ name: 'Skip' }));
+
+    await waitFor(() => expect(shownStep()).toBeNull(), { timeout: 3000 });
+    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 4000 });
+    const messages = useAppStore.getState().undoNotices.map((notice) => notice.toast.message);
+    expect(messages).toEqual(['Setup stays open in the demo.']);
+  }, 20000);
+});
+
+type ClickParams = {
+  readonly element: Element;
+};
+
+const visitorClick = async ({ element }: ClickParams): Promise<boolean> => {
+  const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+  Object.defineProperty(event, 'isTrusted', { value: true });
+  await act(async () => {
+    element.dispatchEvent(event);
+  });
+  return event.defaultPrevented;
+};
+
+const engines: Array<HintEngine> = [];
+
+afterEach(() => {
+  for (const engine of engines.splice(0)) {
+    engine.dispose();
+  }
+});
+
+const startBringEngine = () => {
+  const reports: Array<DemoHintReport> = [];
+  const engine = createHintEngine({
+    store: useAppStore,
+    view: window,
+    generation: () => 0,
+    hintsOf: () => BRING_HINTS,
+    onReport: ({ report }) => reports.push(report),
+  });
+  engines.push(engine);
+  engine.setTrack({ chapterId: 'bring', settledIds: [], isGuarding: true });
+  return {
+    tried: (): ReadonlyArray<string> =>
+      reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : [])),
+    blocked: (): ReadonlyArray<string> =>
+      reports.flatMap((report) => (report.type === 'blocked' ? [report.hintId] : [])),
+  };
+};
+
+describe('chapter 1 hints on the onboarding scene', () => {
+  it('walks sign in, continue, create, connect Linear and the issue list', async () => {
+    await mount({ query: '&step=agents&pick=folder&github=none&director=1' });
+    await waitFor(() => expect(shownStep()).toBe('agents'), { timeout: 5000 });
+    const { tried, blocked } = startBringEngine();
+    expect(BRING_HINTS).toHaveLength(6);
+
+    expect(await visitorClick({ element: await enabledButton({ name: 'Check now' }) })).toBe(true);
+    expect(blocked()).toEqual(['setup-agent-signin']);
+    await visitorClick({ element: await enabledButton({ name: /Sign in to Codex/ }) });
+    await waitFor(() => expect(tried()).toEqual(['setup-agent-signin']), { timeout: 4000 });
+
+    await visitorClick({ element: await enabledButton({ name: /^Continue/ }) });
+    await waitFor(() => expect(tried()).toContain('setup-agents'), { timeout: 4000 });
+    await waitFor(() => expect(shownStep()).toBe('workspace'), { timeout: 5000 });
+
+    await visitorClick({ element: await enabledButton({ name: /Create workspace/ }) });
+    await waitFor(() => expect(tried()).toContain('setup-create'), { timeout: 5000 });
+    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
+
+    const openTools = await screen.findByRole('button', { name: 'Connect Linear or Jira' });
+    expect(await visitorClick({ element: await enabledButton({ name: /^Start/ }) })).toBe(true);
+    expect(await visitorClick({ element: await enabledButton({ name: 'Skip' }) })).toBe(true);
+    expect(shownStep()).toBe('first-session');
+    expect(blocked().length).toBeGreaterThan(0);
+
+    await visitorClick({ element: openTools });
+    await waitFor(() => expect(shownStep()).toBe('tools'), { timeout: 5000 });
+    await waitFor(() => expect(tried()).toContain('setup-open-tools'), { timeout: 4000 });
+
+    await visitorClick({ element: await enabledButton({ name: 'Connect Linear' }) });
+    await waitFor(() => expect(tried()).toContain('setup-linear'), { timeout: 4000 });
+
+    await visitorClick({ element: await enabledButton({ name: /^Continue/ }) });
+    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
+    await waitFor(() => expect(tried()).toEqual(BRING_HINTS.map((hint) => hint.id)), {
+      timeout: 4000,
+    });
+
+    const issues = await screen.findByRole('list', { name: 'Issues' });
+    expect(
+      within(issues)
+        .getAllByText(/^HBL-/)
+        .map((node) => node.textContent),
+    ).toEqual(['HBL-412', 'HBL-409', 'HBL-397']);
+    expect(
+      within(issues).getByText('HBL-412').closest('[aria-pressed]')?.getAttribute('aria-pressed'),
+    ).toBe('true');
+  }, 40000);
 });
