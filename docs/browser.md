@@ -3,8 +3,8 @@
 > **Read this when** you are changing how Goodboy opens, places or closes a
 > web page inside a window, what such a page may reach, the browser pane
 > beside a session, the Browser page or a door that opens one (server chips,
-> links, ⌘K, ⌘L). **Not for** the data disclosure users read
-> (`SECURITY.md`).
+> links, ⌘K, ⌘L), or what the browser may cost in commits and memory.
+> **Not for** the data disclosure users read (`SECURITY.md`).
 
 A browser tab is a native webview that Rust places inside a Goodboy window,
 next to the app's own page. Rust owns every tab. The window asks for a tab
@@ -378,6 +378,29 @@ sits in and the address, and one function opens it (`openInBrowser`).
   `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
   (`typedAddressOf`).
 
+## Performance
+
+The browser costs nothing until a tab opens, and then stays inside a budget.
+`features/browser/browserBudgets.ts` (`BROWSER_BUDGETS`) holds every number a
+test or a release checks.
+
+- **Never opened**: no `browser_*` host command, no frame request and no
+  store commit run before the first tab. The pane (`LazyBrowserPane`) and the
+  page (`renderStudio`) are lazy chunks, so the first bundle carries only the
+  host calls and the tab actions; `bundle-budget.json` stays as it is. A
+  webview is created only by `browser_tab_open`, never at boot.
+- **A tab opens, switches and closes** in a fixed number of store commits
+  (4, 1 and 1).
+- **The view moves** with one host call per frame at most, and none for a
+  frame where the placeholder did not move. A frame sets no React state and
+  writes no store key, so it commits nothing in the pane or the conversation
+  (the one write on the loop's path is unbinding a view the host lost). `sameBounds` drops a frame that did not move the view.
+- **Memory** is the engine's, not React's. A live tab costs 70 to 110 MB and
+  hidden tabs cost as much as shown ones on macOS, so only closing frees
+  memory. Four tabs stay under 450 MB over the no tab state. A person
+  measures it at each release (`docs/testing.md` → Manual release gate:
+  browser memory); the phase 0 numbers are in the plan's spike S8.
+
 ## Capabilities
 
 `capabilities/default.json` grants by webview label (`webviews`: `main`,
@@ -506,3 +529,12 @@ words (`features/browser/browserFailureText.ts`).
   session, the peek, ⌘L beside Ask and the ⌘K entries.
   `tabForAddress.test.ts` pins the tab match; the scenes are `browser-peek`
   and `browser-peek-dark`.
+- The budgets: `features/browser/browserBudgets.ts` holds the numbers.
+  `browserBudgets.test.tsx` runs in the unit project and counts, never times:
+  no `browser_*` command and no frame request while no tab was opened, the
+  store commits to open, switch and close a tab, one host call per frame while
+  the view moves and none while it rests, no commit in React or the store in
+  either case, and that `docs/testing.md` still names the manual gate's
+  numbers. `viewBoundsOf.perf.test.ts` times one measure over a 500 row page
+  with open menus in the perf project. The memory numbers are checked by hand
+  at each release (`docs/testing.md` → Manual release gate: browser memory).

@@ -18,6 +18,7 @@
       ],
       "ignoreIssues": {
         "src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": ["exports"],
+        "src/features/browser/browserBudgets.ts": ["files"],
         "src/features/chat/spawn-from-comment.ts": ["exports"],
         "src/features/chat/utils/transcript-items-trace.ts": ["exports"],
         "src/features/companion/mobileConfinement.ts": ["exports"],
