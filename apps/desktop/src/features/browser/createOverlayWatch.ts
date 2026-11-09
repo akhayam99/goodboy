@@ -1,6 +1,11 @@
 import { OVERLAY_SELECTOR } from '../../shared/keyboard/overlaySelector';
 
-const COVER_SELECTOR = `${OVERLAY_SELECTOR}, [data-studio-slot]`;
+const COVER_SELECTOR = [
+  OVERLAY_SELECTOR,
+  '[data-dropdown-portal] > *',
+  '[role="tooltip"]',
+  '[data-studio-slot]',
+].join(', ');
 
 type CoversParams = {
   readonly view: HTMLElement;
@@ -13,7 +18,12 @@ type IntersectParams = {
 };
 
 const intersects = ({ a, b }: IntersectParams): boolean =>
-  a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  a.width > 0 &&
+  a.height > 0 &&
+  a.left < b.right &&
+  b.left < a.right &&
+  a.top < b.bottom &&
+  b.top < a.bottom;
 
 export const createOverlayWatch = () => {
   let overlays: ReadonlyArray<Element> = [];
