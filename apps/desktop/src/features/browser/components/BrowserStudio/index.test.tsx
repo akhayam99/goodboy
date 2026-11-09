@@ -1,12 +1,13 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import { nextProjectId, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
   buildStoryProject,
   buildStorySession,
   importStore,
+  openStorySqlite,
   resetStoryStore,
   storySpies,
   stubStoryInvoke,
@@ -18,6 +19,7 @@ import type { BrowserTab, TabOwner } from '../../../../store/slices/browser/type
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { browserTabCount } from '../../browserTabCount';
 import type { BrowserTabFacts } from '../../types';
+import { BrowserPane } from '../BrowserPane';
 import { BrowserStudio } from './index';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -40,6 +42,8 @@ const PAYMENTS_API = buildStoryProject({
   rootPath: '/work/payments-api',
 });
 const VIEW_RECT = { x: 320, y: 96, width: 800, height: 720 };
+const PANE_RECT = { x: 963, y: 36, width: 477, height: 864 };
+const STUDIO_RECT = { x: 248, y: 0, width: 1192, height: 900 };
 
 type RowParams = {
   readonly id: string;
@@ -57,6 +61,7 @@ type RectParams = { readonly element: Element; readonly rect: typeof VIEW_RECT }
 type CommandParams = { readonly command: string };
 type PayloadParams = { readonly payload: unknown };
 type StudioParams = { readonly tabId: string | null; readonly sessionId?: SessionId | null };
+type ScopeParams = { readonly scope: string; readonly rect: typeof VIEW_RECT };
 
 let store: StoryStore;
 let rows: BrowserTab[];
@@ -137,11 +142,24 @@ const placeView = async () => {
 
 const RoutedBrowser = () => {
   const studio = store((state) => state.appStudio);
-  if (studio?.kind !== 'browser') {
-    return null;
-  }
+  const drawer = store((state) => state.drawer);
   return (
-    <BrowserStudio sessionId={studio.sessionId} tabId={studio.tabId} onClose={() => undefined} />
+    <>
+      {drawer?.kind === 'browser' ? (
+        <div data-test-pane="">
+          <BrowserPane sessionId={drawer.sessionId} onClose={() => undefined} />
+        </div>
+      ) : null}
+      {studio?.kind === 'browser' ? (
+        <div data-studio-slot="content">
+          <BrowserStudio
+            sessionId={studio.sessionId}
+            tabId={studio.tabId}
+            onClose={() => undefined}
+          />
+        </div>
+      ) : null}
+    </>
   );
 };
 
@@ -152,6 +170,84 @@ const openPage = ({ tabId, sessionId = CHECKOUT_SESSION }: StudioParams) => {
       <RoutedBrowser />
     </ToastProvider>,
   );
+};
+
+const placeViewIn = async ({ scope, rect }: ScopeParams) => {
+  const view = await waitFor(() => {
+    const found = document.querySelector(`${scope} [data-browser-view]`);
+    if (found === null) {
+      throw new Error(`No view placeholder in ${scope} yet.`);
+    }
+    return found;
+  });
+  giveRect({ element: view, rect });
+};
+
+const lastViewCall = () => {
+  const call = storySpies.tauriInvoke.mock.calls
+    .filter(([name]) => name === 'browser_tab_show' || name === 'browser_tab_hide')
+    .at(-1);
+  return call === undefined ? null : [call[0], argsOf({ payload: call[1] })['tabId']];
+};
+
+const openPane = async () => {
+  store.getState().openDrawer({ kind: 'browser', sessionId: CHECKOUT_SESSION, payload: null });
+  render(
+    <ToastProvider>
+      <RoutedBrowser />
+    </ToastProvider>,
+  );
+  await placeViewIn({ scope: '[data-test-pane]', rect: PANE_RECT });
+  await waitFor(() => expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']));
+};
+
+const promote = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Open as page' }));
+  const slot = await waitFor(() => {
+    const found = document.querySelector('[data-studio-slot]');
+    if (found === null) {
+      throw new Error('The page did not open.');
+    }
+    return found;
+  });
+  giveRect({ element: slot, rect: STUDIO_RECT });
+  await placeViewIn({ scope: '[data-studio-slot]', rect: VIEW_RECT });
+};
+
+const failPagePlace = () => {
+  const handler = storySpies.tauriInvoke.getMockImplementation();
+  storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+    const bounds = argsOf({ payload: args })['bounds'];
+    const isPage =
+      typeof bounds === 'object' && bounds !== null && Reflect.get(bounds, 'x') === VIEW_RECT.x;
+    if (name === 'browser_tab_place' && isPage) {
+      throw { kind: 'refused', message: 'other-window' };
+    }
+    return handler?.(name, args);
+  });
+};
+
+const holdNextShow = () => {
+  let release: () => void = () => undefined;
+  let isHeld = false;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const handler = storySpies.tauriInvoke.getMockImplementation();
+  storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+    if (name === 'browser_tab_show' && !isHeld) {
+      isHeld = true;
+      await gate;
+    }
+    return handler?.(name, args);
+  });
+  return { release: () => release() };
+};
+
+const expectNoReload = () => {
+  expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(1);
+  expect(callsOf({ command: 'browser_tab_navigate' })).toEqual([]);
+  expect(callsOf({ command: 'browser_tab_reload' })).toEqual([]);
 };
 
 const groupLabels = (): ReadonlyArray<string | null> =>
@@ -197,6 +293,7 @@ beforeEach(async () => {
     }),
   ];
   await resetStoryStore();
+  await openStorySqlite();
   store.setState({
     currentWorkspaceId: WORKSPACE_ID,
     projects: [PAYMENTS_API],
@@ -399,5 +496,103 @@ describe('the browser page', () => {
 
     expect(await screen.findByText('No browser tabs yet')).toBeDefined();
     expect(document.querySelector('[data-browser-view]')).toBeNull();
+  });
+});
+
+describe('moving a tab between the pane and the page', () => {
+  it('opens the shown tab as a page with the same live view and no reload', async () => {
+    await openPane();
+    await promote();
+
+    expect(store.getState().appStudio).toEqual({
+      kind: 'browser',
+      sessionId: CHECKOUT_SESSION,
+      tabId: 'tab-checkout',
+    });
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+        tabId: 'live-1',
+        bounds: VIEW_RECT,
+      }),
+    );
+    await waitFor(() => expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']));
+    expectNoReload();
+  });
+
+  it('puts the tab back beside the session with the same live view and no reload', async () => {
+    await openPane();
+    await promote();
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+        tabId: 'live-1',
+        bounds: VIEW_RECT,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back beside the session' }));
+
+    expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().drawer).toEqual({
+      kind: 'browser',
+      sessionId: CHECKOUT_SESSION,
+      payload: null,
+    });
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+        tabId: 'live-1',
+        bounds: PANE_RECT,
+      }),
+    );
+    await waitFor(() => expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']));
+    expectNoReload();
+  });
+
+  it('shows the error on the page and leaves the view to the pane when the page cannot place it', async () => {
+    await openPane();
+    failPagePlace();
+    await promote();
+
+    const page = document.querySelector('[data-studio-slot]');
+    await waitFor(() =>
+      expect(page?.querySelector('[role="alert"]')?.textContent).toBe(
+        'This tab is open in another window.',
+      ),
+    );
+    expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back beside the session' }));
+
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
+    expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']);
+    expect(callsOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+      tabId: 'live-1',
+      bounds: PANE_RECT,
+    });
+    expectNoReload();
+  });
+
+  it('drops a page show that answers after the tab went back beside the session', async () => {
+    await openPane();
+    const held = holdNextShow();
+    await promote();
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back beside the session' }));
+    await act(async () => {
+      held.release();
+    });
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+        tabId: 'live-1',
+        bounds: PANE_RECT,
+      }),
+    );
+    await waitFor(() => expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']));
+    const viewCalls = storySpies.tauriInvoke.mock.calls
+      .map(([name]) => name)
+      .filter((name) => name === 'browser_tab_show' || name === 'browser_tab_hide');
+    expect(viewCalls.slice(-2)).toEqual(['browser_tab_hide', 'browser_tab_show']);
+    expectNoReload();
   });
 });
