@@ -103,13 +103,22 @@ never exists on one surface only.
   palette ignore `slot` and list every available action.
   `useActionControls` renders those controls with the pending words on the
   control, the blocked reason on the line under the header and a failure with
-  Retry under the control. A button reads `pendingId` through
-  `actionButtonStateOf` (busy, `pendingLabel` while it runs, disabled), and a
-  run ignores a press while another run is in flight. An action that mutates
-  defines `pendingLabel` and `doneLabel`; when it finishes `ActionStatusLine`
-  shows the `doneLabel` sentence with a dismiss button until the next action,
-  and a run that returns `'unchanged'` (a rebase that stopped or went to the
-  history rewriter) shows no sentence. `kinds/mutationFeedback.test.ts` fails
+  Retry under the control. Its runs live in the `action-runs` slice
+  (`store/slices/action-runs/`), one run per target: `actionRunKeyOf` names a
+  pull request by session and mount and a diff by session and worktree, so the
+  Branch header and every other surface on that target share one busy mark,
+  refuse a second press while it runs and show the same result line, even
+  after the surface that started it unmounts. Another kind keeps a run per
+  hook instance, dropped on unmount. A button reads `pendingId` through
+  `actionButtonStateOf` (busy, `pendingLabel` while it runs, the elapsed
+  seconds after three, disabled). An action that mutates defines
+  `pendingLabel` and `doneLabel`; when it finishes `ActionRunLine` (under
+  `ActionStatusLine`) shows the `doneLabel` sentence with a dismiss button
+  until the next action, and a run that returns `'unchanged'` (a rebase that
+  stopped or went to the history rewriter) shows no sentence. The controls set
+  `isOutcomeShown` on the action env, so a pull request write that fails is
+  logged as a read row with no toast and Merge and Mark ready skip their
+  toast; the palette, which has no line, keeps them. `kinds/mutationFeedback.test.ts` fails
   a new async diff or pull request action that lacks either word. `__tests__/actions/stateMatrix.test.ts` pins, per
   kind and per state, which verbs show, in which slot, and why a verb is
   blocked, and runs them on the real store; `kinds/*.matrix.test.ts` pins the

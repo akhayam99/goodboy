@@ -71,8 +71,10 @@ A response applies only while it is the answer to the newest request.
 - `claim({ key })` takes a token without running anything and returns
   `isCurrent()`, for a loader that applies several fields in one `set`.
 - In use: `refreshMonitorSnapshot` in `store/slices/monitoring/`; the run of a
-  registry button in `features/actions/useActionControls` (a finish after the
-  `scopeKey` changed is dropped, outcome and failure alike); `sessionReads` in
+  registry button, through `runAction` in `store/slices/action-runs/` (each
+  claim takes a token per target key, and a finish whose token is no longer
+  current, because its run was dropped on unmount or scope change, is dropped,
+  outcome and failure alike); `sessionReads` in
   `store/runtime/state-writes/sessionReads.ts`, one sequence for the plans and
   one for the artifacts of each session, shared by every loader that writes
   `sessionPlans` or `sessionArtifacts`. A new loader of either claims right
