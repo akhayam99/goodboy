@@ -445,6 +445,10 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
   sites that assign `toString` or `constructor` on a plain object broke under
   it. The app document freezes itself instead, with
   `public/freeze-prototype.js` as the first script of `index.html`.
+- A tab sends a current Safari user agent on macOS (`TAB_USER_AGENT` in
+  `browser/host.rs`). The bare WKWebView agent lacks the `Version/` and
+  `Safari/` tokens, and sites such as Google then serve their legacy pages.
+  Windows and Linux keep their engine's own agent.
 - Back and forward are native on macOS: the host steps the WebKit view's own
   history, so a page cannot trap them. Tauri 2.12 exposes no
   native step, so on Windows and Linux they still run `history.back()` and
