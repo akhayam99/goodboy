@@ -47,7 +47,7 @@ const namesOf = ({ command }: CommandParams): ReadonlyArray<unknown> =>
 
 const quiet = () => undefined;
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 30));
+const settle = () => new Promise((resolve) => setImmediate(resolve));
 
 const failHideOnce = () => {
   const handler = storySpies.tauriInvoke.getMockImplementation();
