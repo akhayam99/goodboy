@@ -64,15 +64,19 @@ export const useBrowserPage = ({ sessionId }: Params): BrowserPage => {
       projectId: projectOf[index] ?? null,
       tabs: tabsOf[index] ?? NO_TABS,
     }));
-    const isKnown = rows.some((row) => row.sessionId === sessionId);
-    const selectedId = isKnown
-      ? sessionId
-      : (rows.find((row) => row.tabs.length > 0)?.sessionId ?? null);
     const pins = projectIds.map((projectId, index) => ({
       projectId,
       projectName: namesOf[index] ?? '',
       pins: pinsOf[index] ?? NO_TABS,
     }));
+    const pinned = new Set(
+      pins.filter((project) => project.pins.length > 0).map((project) => project.projectId),
+    );
+    const isKnown = rows.some((row) => row.sessionId === sessionId);
+    const firstHost =
+      rows.find((row) => row.tabs.length > 0) ??
+      rows.find((row) => row.projectId !== null && pinned.has(row.projectId));
+    const selectedId = isKnown ? sessionId : (firstHost?.sessionId ?? null);
     return { groups: browserPageGroups({ sessions: rows, pins, selectedId }), selectedId };
   }, [sessions, projectOf, tabsOf, projectIds, pinsOf, namesOf, sessionId]);
 };

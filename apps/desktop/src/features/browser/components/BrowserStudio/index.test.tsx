@@ -381,6 +381,17 @@ describe('the browser page', () => {
     );
   });
 
+  it('opens on a session that hosts a pin when no session holds a tab', async () => {
+    rows = rows.filter((row) => row.projectId !== null);
+    openPage({ tabId: null, sessionId: null });
+
+    await waitFor(() =>
+      expect(groupLabels()).toEqual(['Show tax in the checkout total', 'Pinned for payments-api']),
+    );
+    expect(screen.queryByText('No browser tabs yet')).toBeNull();
+    expect(screen.getByRole('button', { name: 'API guides, pinned' })).toBeDefined();
+  });
+
   it('says there is nothing yet when no session has a tab', async () => {
     rows = [];
     store.setState({ sessions: [] });
