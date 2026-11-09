@@ -218,17 +218,17 @@ color when the integration is connected, muted when it is not. `providers`
 The settings rail and the panel sections read these, so an item and its
 section share one glyph.
 
-| Concept      | Glyph                       | Tone    | Meaning                                       |
-| ------------ | --------------------------- | ------- | --------------------------------------------- |
-| `appearance` | `Palette`                   | neutral | Settings > App > General, and its Appearance  |
-| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                   |
-| `editor`     | `SquareCode`                | neutral | The default editor                            |
-| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                            |
-| `backup`     | `DatabaseBackup`            | neutral | Config export and import                      |
-| `storage`    | `Database`                  | neutral | Local database and archived sessions          |
-| `sessions`   | `SquareKanban`              | primary | A session: the Sessions door, search, palette |
-| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback                |
-| `danger`     | `TriangleAlert`             | danger  | A danger zone                                 |
+| Concept      | Glyph                       | Tone    | Meaning                                      |
+| ------------ | --------------------------- | ------- | -------------------------------------------- |
+| `appearance` | `Palette`                   | neutral | Settings > App > General, and its Appearance |
+| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                  |
+| `editor`     | `SquareCode`                | neutral | The default editor                           |
+| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                           |
+| `backup`     | `DatabaseBackup`            | neutral | Config export and import                     |
+| `storage`    | `Database`                  | neutral | Local database and archived sessions         |
+| `sessions`   | `SquareKanban`              | primary | A session: the Board door, search, palette   |
+| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback               |
+| `danger`     | `TriangleAlert`             | danger  | A danger zone                                |
 
 ## Actions
 

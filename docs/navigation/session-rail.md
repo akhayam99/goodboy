@@ -389,7 +389,7 @@ hands the rest of the summary to the hover card; the session header keeps its
 chips.
 
 **The user chooses what the list shows and in what order.** The sidebar list
-has no "Sessions" eyebrow and no filter row of its own: the Sessions door row
+has no "Sessions" eyebrow and no filter row of its own: the Board door row
 holds one funnel button in its action slot at the right, **Filter sessions**
 (`SidebarSessionsFilter` over `SessionFilterPopover`), with a primary 6px dot
 while a filter is on (a status, a project or Show archived; `displayStateOf`

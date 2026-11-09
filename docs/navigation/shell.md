@@ -335,7 +335,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): on the workspace level the toggle, New, Sessions, Tasks, Workflows, Chat and Terminal as icons
+  (`ColumnRail`): on the workspace level the toggle, New, Board, Tasks, Workflows, Chat and Terminal as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below; a pin that
   does not own the flyout opens the facts-only session hover card after a
@@ -443,8 +443,8 @@ covered.
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
   two, and a group with no rows is not drawn. Sessions that need you are not in the
-  bar, in the chip or in its panel: the Sessions door carries the count. Needs you counts three
-  units, and each tooltip names its own: sessions ("2 sessions need you") on the Sessions
+  bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
+  units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
   door, the dock badge and the palette; questions ("3 questions") on the
   Questions entry of the session rail; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
@@ -608,8 +608,9 @@ its own.
 On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
 Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
 New Workspace, Close), Edit, View (sidebar, Command Palette, zoom, Reload, full
-screen), Go (Back, Forward, Sessions, Tasks, Chat, Workflows, Terminal,
-Impact, Notifications, Monitoring), Window and Help (Guide, What's New,
+screen), Go (Back, Forward, then the destinations in the order of
+`DESTINATIONS`: Board, Tasks, Workflows, Chat, Impact, Terminal, Browser,
+Monitoring, Notifications), Window and Help (Guide, What's New,
 Keyboard Shortcuts, Report a Bug). One table lays all of them out
 (`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
 (About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)
@@ -623,11 +624,12 @@ through the dispatcher, so a scoped owner keeps its place; any other id runs
 its `MENU_ACTIONS` entry (`menuActions.ts`: Check for Updates, New Terminal,
 New Workspace, the Go doors, Guide, What's New). An id with neither warns once
 and does nothing. A new menu item therefore adds a row to the table and an id,
-never an event or a listener. The menu labels the registry's Board as
-Sessions (`session.board`), and the Go doors that need a workspace do nothing
-without one. `menuBar.parity.test.ts` reads the Rust table and fails when an id
-has no registry entry or action, a combo differs from the registry's, a label
-is not title case, or a key has two owners.
+never an event or a listener. Every Go door opens through `openDestination`,
+the same call as the column and the palette, and the doors that need a
+workspace do nothing without one. `menuBar.parity.test.ts` reads the Rust table
+and fails when an id has no registry entry or action, a combo differs from the
+registry's, a label is not title case, a key has two owners, or the Go rows
+differ from `DESTINATIONS` in order.
 
 ## Report sheet
 
