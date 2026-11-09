@@ -48,6 +48,12 @@ describe('computeCursorCostUsd', () => {
     expect(cursorCost).toBeCloseTo(claudeCost);
   });
 
+  it('claude-fable-5-2-high matches anthropic fable 5.2 list price', () => {
+    const cursorCost = computeCursorCostUsd({ usage, model: 'claude-fable-5-2-high' });
+    const claudeCost = computeCostUsd({ usage, model: 'claude-fable-5-2' });
+    expect(cursorCost).toBeCloseTo(claudeCost);
+  });
+
   it('gemini-3.7-flash-medium bills at the cursor flash rate', () => {
     expect(computeCursorCostUsd({ usage, model: 'gemini-3.7-flash-medium' })).toBeCloseTo(
       0.75 + 3.75,
