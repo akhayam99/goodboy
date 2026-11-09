@@ -43,12 +43,23 @@ describe('roleNeedRows', () => {
     }
   });
 
-  it('covers every Auto role that is not the implementer', () => {
+  it('covers every Auto role and puts the implementer last as the fallback', () => {
     const rows = roleNeedRows({ driver: 'auto' }).map((row) => row.role);
 
-    for (const role of AUTO_DELEGATION_ROLES.filter((candidate) => candidate !== 'implementer')) {
+    for (const role of AUTO_DELEGATION_ROLES) {
       expect(rows).toContain(role);
     }
+    expect(rows.at(-1)).toBe('implementer');
+  });
+
+  it('writes the narrower rows as triggers', () => {
+    const auto = roleNeedsSection({ driver: 'auto' });
+
+    expect(auto).toContain('- rewriter. Add it when: History words: regroup, squash, reword');
+    expect(auto).toContain('- ci-fixer. Add it when: A red or failing check is named anywhere');
+    expect(auto).toContain('- scribe. Add it when: A pull request title, body or opening');
+    expect(auto).toContain('Or: The failure is a red check of the branch: a CI fixer');
+    expect(roleNeedsSection({ driver: 'orchestrator' })).not.toContain('CI fixer');
   });
 });
 
@@ -57,7 +68,10 @@ describe('roleNeedsSection', () => {
     const auto = roleNeedsSection({ driver: 'auto' });
     const orchestrator = roleNeedsSection({ driver: 'orchestrator' });
 
-    expect(auto).toContain('one implementer with nothing added');
+    expect(auto).toContain('Pick the narrowest row whose trigger you see');
+    expect(auto).toContain('is the fallback when no other row fits');
+    expect(auto).toContain('"roleReason"');
+    expect(auto).not.toContain('one implementer with nothing added');
     expect(auto).toContain('a reviewer always joins');
     expect(orchestrator).toContain('the fewest steps');
     expect(orchestrator).not.toContain('a reviewer always joins');

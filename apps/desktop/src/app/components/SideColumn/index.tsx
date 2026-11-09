@@ -7,7 +7,8 @@ import { SidebarSessionsFilter } from '../../../features/workspace/components/Se
 import type { ShellColumnScope } from '../../shellArrangement';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
-import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { ColumnToolTiles } from './ColumnToolTiles';
+import { COLUMN_ROW_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { useDoorSignals } from './useDoorSignals';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
 
@@ -59,7 +60,7 @@ export const SideColumn = ({
                 workspaceId={workspaceId}
                 {...(onNavigate !== undefined && { onNavigate })}
               />
-              {COLUMN_DOORS.map((door) => (
+              {COLUMN_ROW_DOORS.map((door) => (
                 <Fragment key={door.id}>
                   <ColumnDoorRow
                     id={door.id}
@@ -79,16 +80,16 @@ export const SideColumn = ({
                     {...(door.id === 'board' && {
                       action: <SidebarSessionsFilter workspaceId={workspaceId} />,
                     })}
-                    {...(door.id === 'terminal' && {
-                      create: {
-                        label: 'New terminal',
-                        onCreate: go(actions.openNewTerminal),
-                      },
-                    })}
                     onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
                   />
                 </Fragment>
               ))}
+              <ColumnToolTiles
+                place={place}
+                actions={actions}
+                signals={signals}
+                {...(onNavigate !== undefined && { onNavigate })}
+              />
             </div>
             <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
               <SessionNavSidebar

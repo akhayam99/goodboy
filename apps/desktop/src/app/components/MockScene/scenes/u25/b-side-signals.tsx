@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { LedgerRow, MonitorSnapshot, PinnedPort } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../../store';
+import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import type { TerminalTab, TerminalTabId } from '../../../../../shared/types/terminal';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { sceneClock } from '../../sceneClock';
@@ -68,6 +69,7 @@ const tabOf = ({ id, title }: TabParams): TerminalTab => ({
 
 type Props = {
   readonly isBusy: boolean;
+  readonly theme?: 'dark' | 'light';
 };
 
 type SeedParams = {
@@ -90,12 +92,15 @@ export const seedSideSignals = ({ isBusy }: SeedParams): void => {
   });
 };
 
-const SideSignalsScene = ({ isBusy }: Props) => {
+const SideSignalsScene = ({ isBusy, theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
+    if (theme !== undefined) {
+      applyDocumentTheme({ theme });
+    }
     seedSideSignals({ isBusy });
     setIsReady(true);
-  }, [isBusy]);
+  }, [isBusy, theme]);
   if (!isReady) {
     return null;
   }
@@ -105,4 +110,6 @@ const SideSignalsScene = ({ isBusy }: Props) => {
 export const U25_B_SIDE_SIGNALS_SCENES = {
   'side-signals-running': () => <SideSignalsScene isBusy />,
   'side-signals-idle': () => <SideSignalsScene isBusy={false} />,
+  'side-tiles-dark': () => <SideSignalsScene isBusy theme="dark" />,
+  'side-tiles-light': () => <SideSignalsScene isBusy theme="light" />,
 };

@@ -14,6 +14,7 @@ type BaseProps = {
   readonly width?: PageColumnWidth;
   readonly isOnColumn?: boolean;
   readonly isTrailPinned?: boolean;
+  readonly isPinned?: boolean;
   readonly rhythm?: 'title' | 'section';
   readonly tabs?: ReactNode;
   readonly animationClassName?: string;
@@ -43,6 +44,7 @@ export const PageHeader = (props: PageHeaderProps) => {
     width,
     isOnColumn = false,
     isTrailPinned = false,
+    isPinned = false,
     rhythm = 'title',
     tabs,
     animationClassName = 'motion-safe:animate-studio-in',
@@ -67,10 +69,11 @@ export const PageHeader = (props: PageHeaderProps) => {
       data-page={page}
       data-rhythm={rhythm}
       data-under-trail={isUnderTrail ? '' : undefined}
+      data-pinned={isPinned ? '' : undefined}
       className={cn(
         'flex min-w-0 shrink-0 flex-col',
-        PANE_RHYTHM.below[rhythm],
-        !isUnderTrail && PANE_RHYTHM.headerInset,
+        !isPinned && PANE_RHYTHM.below[rhythm],
+        !isPinned && !isUnderTrail && PANE_RHYTHM.headerInset,
       )}
     >
       <div className={cn('flex min-w-0 flex-col gap-2', animationClassName)}>

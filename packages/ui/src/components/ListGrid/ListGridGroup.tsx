@@ -50,7 +50,11 @@ export const ListGridGroup = ({
       {label === undefined ? null : (
         <div
           data-list-grid-group-label=""
-          className={cn(SUBGRID, 'h-5 items-center', isSticky && 'sticky top-0 z-10 bg-background')}
+          className={cn(
+            SUBGRID,
+            'h-5 items-center',
+            isSticky && 'sticky-surface sticky top-0 z-10',
+          )}
         >
           <div className="col-start-2 col-end-[-1] flex min-w-0 items-center gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-2">

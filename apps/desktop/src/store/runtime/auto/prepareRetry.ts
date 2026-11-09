@@ -207,6 +207,7 @@ export const prepareRetry = async ({
     title: textFieldOf({ source: original.request, key: 'title' }),
     task: textFieldOf({ source: original.request, key: 'task' }) ?? '',
     reason: child.reason,
+    roleReason: null,
     provider: child.provider ?? textFieldOf({ source: original.routing, key: 'provider' }),
     model: child.model ?? textFieldOf({ source: original.routing, key: 'model' }),
     effort: child.effort ?? textFieldOf({ source: original.routing, key: 'effort' }),

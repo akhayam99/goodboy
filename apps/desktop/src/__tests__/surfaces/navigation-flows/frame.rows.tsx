@@ -72,9 +72,10 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   expectOnPagePrimitive({ page, title });
   if (!isStudio) {
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
+    const hasPageTrail = document.querySelector('[data-slot="page-trail"]') !== null;
     expect(
       title.closest('[data-slot="pane-header"]')?.hasAttribute('data-under-trail') ?? false,
-    ).toBe(false);
+    ).toBe(hasPageTrail);
     return;
   }
   const frame = title.closest('[data-studio-frame]');

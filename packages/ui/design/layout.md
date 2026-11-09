@@ -182,7 +182,10 @@ close.
 page title line (`PANE_RHYTHM.headerInset`, `PANE_RHYTHM.headerRow`), a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
-then Close. A pane whose title is a control (the terminal scope picker) passes it as
+then Close. When a drawer waits behind this one, the row leads with its back
+chip (`DrawerBackChip` through `DrawerBackChipContext`): a 24px secondary
+button with an arrow, the kind and the muted title, at most half the row, the
+title truncating first; it replaces the back row. A pane whose title is a control (the terminal scope picker) passes it as
 `titleContent`: it replaces the visible heading, the region keeps `title` as its name. A pane that is a page (Explore) passes `isHeaderless` and draws `PaneShell` as its body: the frame then keeps only the region, Esc and focus, and `title` stays its name. Close always reads `Close` and is a 28px target (`size-7`, 14px
 glyph); every utility in the header (copy, open on its page) is a 28px
 icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
