@@ -47,6 +47,16 @@ impl Tabs {
             .copied()
             .unwrap_or_default()
     }
+
+    fn ids_of(&self, session_id: &str) -> Vec<String> {
+        let mut found: Vec<&Tab> = self
+            .by_id
+            .values()
+            .filter(|tab| tab.facts.session_id == session_id)
+            .collect();
+        found.sort_by_key(|tab| tab.opened);
+        found.into_iter().map(|tab| tab.facts.id.clone()).collect()
+    }
 }
 
 #[derive(Default)]
@@ -123,13 +133,28 @@ impl BrowserRegistry {
         lock_or_recover(&self.tabs).generation(session_id, window_label)
     }
 
-    pub(crate) fn close_session(&self, session_id: &str, window_label: &str) -> Vec<String> {
-        {
-            let mut tabs = lock_or_recover(&self.tabs);
-            let key = (session_id.to_string(), window_label.to_string());
-            *tabs.closings.entry(key).or_default() += 1;
+    pub(crate) fn close_session(&self, session_id: &str, window_labels: &[String]) -> Vec<String> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let mut labels: Vec<String> = window_labels.to_vec();
+        labels.extend(
+            tabs.by_id
+                .values()
+                .filter(|tab| tab.facts.session_id == session_id)
+                .map(|tab| tab.window_label.clone()),
+        );
+        labels.sort();
+        labels.dedup();
+        for label in labels {
+            *tabs
+                .closings
+                .entry((session_id.to_string(), label))
+                .or_default() += 1;
         }
-        self.ids_of_session(session_id, window_label)
+        tabs.ids_of(session_id)
+    }
+
+    pub(crate) fn session_tab_ids(&self, session_id: &str) -> Vec<String> {
+        lock_or_recover(&self.tabs).ids_of(session_id)
     }
 
     pub(crate) fn insert_in_generation(
@@ -139,6 +164,12 @@ impl BrowserRegistry {
     ) -> Option<TabFacts> {
         let mut tabs = lock_or_recover(&self.tabs);
         if tabs.generation(tab.session_id, tab.window_label) != generation {
+            return None;
+        }
+        if tab
+            .opener_id
+            .is_some_and(|opener| !tabs.by_id.contains_key(opener))
+        {
             return None;
         }
         Some(Self::insert_locked(&mut tabs, tab))
@@ -215,6 +246,19 @@ impl BrowserRegistry {
         before - tabs.by_id.len()
     }
 
+    pub(crate) fn session_ids(&self) -> Vec<String> {
+        let tabs = lock_or_recover(&self.tabs);
+        let mut ids: Vec<String> = tabs
+            .by_id
+            .values()
+            .map(|tab| tab.facts.session_id.clone())
+            .collect();
+        ids.sort();
+        ids.dedup();
+        ids
+    }
+
+    #[cfg(test)]
     pub(crate) fn ids_of_session(&self, session_id: &str, window_label: &str) -> Vec<String> {
         self.list(session_id, window_label)
             .into_iter()
@@ -385,6 +429,44 @@ mod tests {
             registry.reserve_popup("gone", 1),
             Err(SeatRefusal::OpenerGone)
         );
+    }
+
+    #[test]
+    fn refuses_a_popup_whose_opener_closed_before_it_was_inserted() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "opener", "harborline", true);
+        let seat = registry.reserve_popup("opener", 1).expect("seat");
+        registry.remove("opener");
+        let inserted = registry.insert_in_generation(
+            NewTab {
+                id: "p1",
+                session_id: &seat.session_id,
+                window_label: &seat.window_label,
+                url: "https://example.com/",
+                is_shown: false,
+                opener_id: Some(&seat.opener_id),
+                now_ms: 2_000,
+            },
+            seat.generation,
+        );
+        assert!(inserted.is_none());
+        assert!(registry.is_empty());
+    }
+
+    #[test]
+    fn closes_a_session_in_every_window_and_marks_each_one_closing() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "a", "harborline", true);
+        open_in(&registry, "b", "win-2");
+        open(&registry, "c", "northwind", true);
+        let windows = vec!["main".to_string(), "win-2".to_string(), "win-3".to_string()];
+        let ids = registry.close_session("harborline", &windows);
+        assert_eq!(ids, vec!["a", "b"]);
+        assert_eq!(registry.session_tab_ids("harborline"), vec!["a", "b"]);
+        for label in ["main", "win-2", "win-3"] {
+            assert_eq!(registry.generation("harborline", label), 1);
+        }
+        assert_eq!(registry.generation("northwind", "main"), 0);
     }
 
     #[test]

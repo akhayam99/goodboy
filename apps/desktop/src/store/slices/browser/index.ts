@@ -1,6 +1,7 @@
 import { activateTab } from './activateTab';
 import { bindLiveTab } from './bindLiveTab';
 import { closeBrowserSessionTabs } from './closeBrowserSessionTabs';
+import { closeStaleBrowserTabs } from './closeStaleBrowserTabs';
 import { closeTab } from './closeTab';
 import { endDraft } from './endDraft';
 import { loadProjectPins } from './loadProjectPins';
@@ -30,5 +31,6 @@ export const createBrowserSlice = ({ set, get }: SliceDeps) => {
     bindBrowserLiveTab: bindLiveTab({ set, get }),
     unbindBrowserLiveTab: unbindLiveTab({ set, get }),
     closeBrowserSessionTabs: closeBrowserSessionTabs({ set, get }),
+    closeStaleBrowserTabs: closeStaleBrowserTabs({ set, get }),
   };
 };

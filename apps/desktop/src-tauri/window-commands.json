@@ -53,6 +53,7 @@
     "bridge_stop",
     "browser_session_close",
     "browser_session_tab_rows_delete",
+    "browser_stale_tab_sessions",
     "browser_tab_back",
     "browser_tab_close",
     "browser_tab_forward",
