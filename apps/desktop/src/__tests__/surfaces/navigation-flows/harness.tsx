@@ -76,6 +76,9 @@ const STATUS: WorktreeStatus = {
 const BRIDGE: Readonly<Record<string, unknown>> = {
   worktree_commits: COMMITS,
   worktree_diff: '',
+  browser_session_close: { closed: 0, failed: [] },
+  browser_session_tab_rows_delete: 0,
+  browser_stale_tab_sessions: [],
   checkout_update_base: { base: 'main', checkoutBranch: 'main', commitsPulled: 2 },
   worktree_changed_files: {
     paths: ['src/importer.ts'],
