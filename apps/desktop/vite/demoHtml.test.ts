@@ -16,6 +16,12 @@ describe('the demo html', () => {
     expect(html).toContain("localStorage.getItem('goodboy-demo-theme')");
   });
 
+  it('says the demo is loading under the boot tile, inside the shell the app removes on mount', () => {
+    const html = withDemoHead({ html: INDEX_HTML });
+    expect(html).toContain('<div id="boot-shell"><i></i><p>Loading the Goodboy demo</p></div>');
+    expect(html.indexOf('#boot-shell p')).toBeLessThan(html.indexOf('</head>'));
+  });
+
   it('adds the script once', () => {
     const once = withDemoHead({ html: INDEX_HTML });
     expect(withDemoHead({ html: once })).toBe(once);
@@ -28,6 +34,7 @@ describe('the demo html', () => {
   it('leaves the html the desktop app ships without analytics', () => {
     expect(INDEX_HTML).not.toContain('_vercel');
     expect(INDEX_HTML).not.toContain('goodboy-demo-theme');
+    expect(INDEX_HTML).not.toContain('Loading the Goodboy demo');
   });
 });
 

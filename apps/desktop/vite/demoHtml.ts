@@ -24,6 +24,26 @@ const THEME_SCRIPT = [
   '</script>',
 ].join('\n');
 
+const BOOT_SHELL = '<div id="boot-shell"><i></i></div>';
+
+const LOADING_LINE = 'Loading the Goodboy demo';
+
+const LOADING_STYLE = [
+  '<style>',
+  '  #boot-shell p {',
+  '    color: CanvasText;',
+  '    font: 13px/1.4 system-ui, -apple-system, sans-serif;',
+  '    left: 0;',
+  '    margin: 0;',
+  '    opacity: 0.6;',
+  '    position: absolute;',
+  '    right: 0;',
+  '    text-align: center;',
+  '    top: calc(50% + 13px);',
+  '  }',
+  '</style>',
+].join('\n');
+
 type Params = {
   readonly html: string;
 };
@@ -31,7 +51,9 @@ type Params = {
 export const withDemoHead = ({ html }: Params): string =>
   html.includes(INSIGHTS_TAG)
     ? html
-    : html.replace('</head>', `${THEME_SCRIPT}\n${INSIGHTS_TAG}\n</head>`);
+    : html
+        .replace('</head>', `${LOADING_STYLE}\n${THEME_SCRIPT}\n${INSIGHTS_TAG}\n</head>`)
+        .replace(BOOT_SHELL, `<div id="boot-shell"><i></i><p>${LOADING_LINE}</p></div>`);
 
 const demoHtml = (): Plugin => ({
   name: DEMO_PLUGIN_NAME,
