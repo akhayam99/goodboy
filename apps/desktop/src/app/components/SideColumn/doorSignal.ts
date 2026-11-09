@@ -1,4 +1,5 @@
 import { needsYouText } from '../../../shared/utils/needsYouText';
+import { countTextOf } from './countTextOf';
 type DoorTone = 'danger' | 'warning' | 'neutral';
 
 export type DoorSignal = {
@@ -9,8 +10,6 @@ export type DoorSignal = {
   readonly tone?: DoorTone;
   readonly countText?: string;
 };
-
-const DOOR_COUNT_CAP = 9;
 
 type TerminalParams = {
   readonly kind: 'terminal';
@@ -73,13 +72,6 @@ type BoardParams = {
 };
 
 type Params = TerminalParams | InboxParams | ChatParams | MonitoringParams | BoardParams;
-
-type CountTextParams = {
-  readonly count: number;
-};
-
-export const countTextOf = ({ count }: CountTextParams): string =>
-  count > DOOR_COUNT_CAP ? `${DOOR_COUNT_CAP}+` : String(count);
 
 type FactParams = {
   readonly lead: string;

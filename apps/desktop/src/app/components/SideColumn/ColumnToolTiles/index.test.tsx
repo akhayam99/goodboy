@@ -69,7 +69,11 @@ const tiles = (): HTMLElement => {
   return group;
 };
 
-const tileOf = ({ id }: { readonly id: string }): HTMLElement => {
+type TileParams = {
+  readonly id: string;
+};
+
+const tileOf = ({ id }: TileParams): HTMLElement => {
   const tile = tiles().querySelector<HTMLElement>(`[data-column-tile="${id}"]`);
   if (tile === null) {
     throw new Error(`no tile for ${id}`);
@@ -77,7 +81,11 @@ const tileOf = ({ id }: { readonly id: string }): HTMLElement => {
   return tile;
 };
 
-const aliveTerminal = ({ id }: { readonly id: string }) => ({
+type TerminalParams = {
+  readonly id: string;
+};
+
+const aliveTerminal = ({ id }: TerminalParams) => ({
   id: brandedId<TerminalTabId>({ value: id }),
   owner: { kind: 'workspace' as const, workspaceId: WORKSPACE.id },
   title: 'dev',

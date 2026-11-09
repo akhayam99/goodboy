@@ -98,7 +98,7 @@
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
   Needs you rows read the attention group of `useStageGroupedSessions`.
-  Monitoring is the door after Impact, its page has no band and no Close, and
+  Monitoring is the tile after Terminal, its page has no band and no Close, and
   it is the one way to the page in the chrome: the top bar holds no Monitoring
   icon. A pinned port that is down puts the warning dot on it, named "Monitoring,
   pinned port :5173 is down" (`monitoringSignal` lists the down pins,

@@ -3,7 +3,8 @@ import { Button, cn, ICON_SIZE, tintClasses, Tooltip } from '@goodboy/ui';
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { DoorSignalMark } from '../DoorSignalMark';
-import { countTextOf, type DoorSignal } from '../doorSignal';
+import { countTextOf } from '../countTextOf';
+import type { DoorSignal } from '../doorSignal';
 
 type Props = {
   readonly id: string;
@@ -42,7 +43,7 @@ export const ColumnToolTile = ({
           onSelect();
         }}
         className={cn(
-          'relative h-12 w-full min-w-0 flex-col gap-0.5 px-0',
+          'relative h-12 w-full min-w-0 flex-col gap-1 px-0',
           isCurrent ? 'cursor-default bg-selected text-foreground hover:bg-selected' : 'bg-subtle',
         )}
       >
