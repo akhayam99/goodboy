@@ -127,10 +127,12 @@ characters; a description takes 70 to 165 (`website/scripts/lib/seoCheck.mjs`).
   `/features`, and caches `/assets/` and `/fonts/` for a year as immutable. A
   hashed asset changes name when it changes; the font carries its version in
   its name, so a new font file needs a new name.
-- `vercel.json` skips the Vercel build, preview included, when a commit
-  changes nothing the site reads: `website/`, `CHANGELOG.md`, `FEATURES.md` or
-  `docs/features/`. A new build input outside `website/` joins that
-  `ignoreCommand` list, or its change never reaches the live site.
+- `vercel.json` skips the Vercel build, preview included, when nothing the
+  site reads changed since the last deployed commit of that branch
+  (`VERCEL_GIT_PREVIOUS_SHA`): `website/`, `CHANGELOG.md`, `FEATURES.md` or
+  `docs/features/`. With no such commit, or one the clone lacks, it builds. A
+  new build input outside `website/` joins that `ignoreCommand` list, or its
+  change never reaches the live site.
 
 ## Pages
 

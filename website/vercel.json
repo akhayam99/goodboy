@@ -4,7 +4,7 @@
   "installCommand": "pnpm install --ignore-workspace --frozen-lockfile",
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ../CHANGELOG.md ../FEATURES.md ../docs/features",
+  "ignoreCommand": "test -n \"$VERCEL_GIT_PREVIOUS_SHA\" && git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA\" && git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- . ../CHANGELOG.md ../FEATURES.md ../docs/features",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
