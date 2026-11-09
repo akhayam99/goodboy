@@ -30,15 +30,16 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
-import { create } from 'zustand';
 import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
-import type { AppStore } from '../../store/store';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from '../../test/storyHarness';
-import { createDrawerSlice } from '../../store/slices/drawer';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../test/storyHarness';
 import { DRAWER_KINDS } from '../../store/slices/drawer/drawerKinds';
-import { createNavigationSlice } from '../../store/slices/navigation';
-import { STORAGE_KEYS } from '../../shared/lib/storage-keys';
 import { IPHONE_SETTINGS_PLACE } from '../../features/settings/iphoneSettingsPlace';
 import { listWindowLayouts } from '../../features/workspace/windowLayout';
 import { useSessionSidebarVisibility } from '../../features/workspace/hooks/useSessionSidebarVisibility';
@@ -52,6 +53,13 @@ const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
 const AGENT = brandId<AgentId>({ value: 'agent-1' });
 const SRC = join(__dirname, '..', '..');
 
+const FORMER_KEYS = {
+  sessionSidebarCollapsed: 'goodboy:sessions-sidebar-collapsed',
+  sessionRailCollapsed: 'goodboy:session-rail-collapsed:v1',
+  sessionRailFoldedCards: 'goodboy:session-rail-folded-cards:v1',
+  sessionRailTreeOpen: 'goodboy:session-rail-tree-open:v1',
+} as const;
+
 const SAVED_SCROLL: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   board: { queue: 12 },
   session: { review: 40 },
@@ -64,34 +72,22 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
-const restoreTestStore = () =>
-  create<AppStore>()((set, get) => ({
-    ...useAppStore.getInitialState(),
+const seedStore = async () => {
+  await resetStoryStore();
+  stubStoryInvoke({});
+  useAppStore.setState({
     currentWorkspaceId: WS,
-    currentSessionId: null,
     sessions: [aSession({ id: SESSION })],
-    navigation: {},
-    appStudio: null,
-    activeLens: {},
-    selectedAgentId: {},
-    focusedWorkflowRunId: {},
-    focusedArtifactId: {},
-    drawer: null,
     sessionPhaseRuns: { [SESSION]: [anAgent({ id: AGENT, sessionId: SESSION })] },
-    setCurrentSession: async (id: SessionId | null) => {
-      set((state) => ({
-        currentSessionId: id,
-        activeLens: id === null ? state.activeLens : { ...state.activeLens, [id]: null },
-      }));
-    },
-    selectAgent: async (sessionId: SessionId, agentId: AgentId) => {
-      set((state) => ({ selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } }));
-    },
-    ...createNavigationSlice({ set, get }),
-    ...createDrawerSlice({ set, get }),
-  }));
+  });
+};
 
-type BlobLike = { readonly name: string; readonly kind: string; readonly blob: object };
+type BlobLike = {
+  readonly name: string;
+  readonly kind: string;
+  readonly blob: object;
+  readonly expected?: unknown;
+};
 
 type SavedParams = {
   readonly entry: BlobLike;
@@ -106,9 +102,8 @@ const savedLayoutOf = async ({ entry }: SavedParams) => {
 
 const restoredFrom = async ({ entry }: SavedParams) => {
   const layout = await savedLayoutOf({ entry });
-  const store = restoreTestStore();
-  await store.getState().restoreLocation({ location: layout!.location });
-  return store.getState();
+  await useAppStore.getState().restoreLocation({ location: layout!.location });
+  return useAppStore.getState();
 };
 
 type FormerParams = {
@@ -131,8 +126,9 @@ const studioKindsInSource = (): ReadonlyArray<string> =>
     (match) => match[1] ?? '',
   );
 
-beforeEach(() => {
+beforeEach(async () => {
   h.settings.clear();
+  await seedStore();
   localStorage.clear();
 });
 
@@ -158,25 +154,34 @@ describe('layouts saved by the previous build', () => {
     expect(layout?.location.focus.scroll).toEqual(SAVED_SCROLL[entry.kind]);
   });
 
+  it('moves the former review lens of a session place to the branch page', async () => {
+    const entry = PREVIOUS_BUILD_BLOBS.places.find((place) => place.kind === 'session');
+
+    const state = await restoredFrom({ entry: entry! });
+
+    expect(state.currentSessionId).toBe(SESSION);
+    expect(state.activeLens[SESSION]).toBe('branch');
+  });
+
   it.each(PREVIOUS_BUILD_BLOBS.studios)('loads the $name and restores the page', async (entry) => {
     const layout = await savedLayoutOf({ entry });
-    expect(layout?.location.studio).toMatchObject({ kind: entry.kind });
+    expect(layout?.location.studio).toEqual(entry.expected);
 
     const state = await restoredFrom({ entry });
 
-    expect(state.appStudio).toMatchObject({ kind: entry.kind });
+    expect(state.appStudio).toEqual(entry.expected);
   });
 
   it.each(PREVIOUS_BUILD_BLOBS.drawers)(
     'loads the $name and restores the drawer',
     async (entry) => {
       const layout = await savedLayoutOf({ entry });
-      expect(layout?.location.focus.drawer).toMatchObject({ kind: entry.kind, sessionId: SESSION });
+      expect(layout?.location.focus.drawer).toEqual(entry.expected);
 
       const state = await restoredFrom({ entry });
 
       expect(state.currentSessionId).toBe(SESSION);
-      expect(state.drawer).toMatchObject({ kind: entry.kind, sessionId: SESSION });
+      expect(state.drawer).toEqual(entry.expected);
     },
   );
 
@@ -227,28 +232,28 @@ describe('layouts saved by the previous build', () => {
 
 describe('fold states saved by the previous build', () => {
   it('reads the folded main sidebar and the open one', () => {
-    localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, '1');
+    localStorage.setItem(FORMER_KEYS.sessionSidebarCollapsed, '1');
     const folded = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
     expect(folded.result.current.isCollapsed).toBe(true);
 
-    localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, '0');
+    localStorage.setItem(FORMER_KEYS.sessionSidebarCollapsed, '0');
     const open = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
     expect(open.result.current.isCollapsed).toBe(false);
   });
 
   it('reads the folded session rail and the open one', () => {
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    localStorage.setItem(FORMER_KEYS.sessionRailCollapsed, '1');
     const folded = renderHook(() => useSessionRailFold({ isNarrow: false }));
     expect(folded.result.current.isFolded).toBe(true);
 
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '0');
+    localStorage.setItem(FORMER_KEYS.sessionRailCollapsed, '0');
     const open = renderHook(() => useSessionRailFold({ isNarrow: false }));
     expect(open.result.current.isFolded).toBe(false);
   });
 
   it('reads the folded cards of the session level and ignores a name it does not know', () => {
     localStorage.setItem(
-      STORAGE_KEYS.sessionRailFoldedCards,
+      FORMER_KEYS.sessionRailFoldedCards,
       JSON.stringify(['projects', 'folder', 'former-card']),
     );
 
@@ -263,7 +268,7 @@ describe('fold states saved by the previous build', () => {
 
   it('reads the tree choices of a session and leaves the other sessions their defaults', () => {
     localStorage.setItem(
-      STORAGE_KEYS.sessionRailTreeOpen,
+      FORMER_KEYS.sessionRailTreeOpen,
       JSON.stringify({ [SESSION]: { 'project:ledger-core': false, 'finished:all': 'x' } }),
     );
     const node = { kind: 'project', id: 'ledger-core', isOpenByDefault: true } as const;
@@ -280,10 +285,10 @@ describe('fold states saved by the previous build', () => {
   });
 
   it('falls back to the defaults on a value no build wrote', () => {
-    localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, 'maybe');
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '{');
-    localStorage.setItem(STORAGE_KEYS.sessionRailFoldedCards, '{');
-    localStorage.setItem(STORAGE_KEYS.sessionRailTreeOpen, '[');
+    localStorage.setItem(FORMER_KEYS.sessionSidebarCollapsed, 'maybe');
+    localStorage.setItem(FORMER_KEYS.sessionRailCollapsed, '{');
+    localStorage.setItem(FORMER_KEYS.sessionRailFoldedCards, '{');
+    localStorage.setItem(FORMER_KEYS.sessionRailTreeOpen, '[');
 
     expect(
       renderHook(() => useSessionSidebarVisibility({ hasSidebar: true })).result.current

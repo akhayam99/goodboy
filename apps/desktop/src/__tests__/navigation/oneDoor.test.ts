@@ -17,6 +17,16 @@ const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
   'app/components/SessionRail/RailBranchesButton.tsx',
 ]);
 
+const SHOWN_ROWS: ReadonlySet<string> = new Set([
+  'app/components/SessionRail/RailBranchRow.tsx',
+  'app/components/SessionRail/SessionLevel/BranchRowLine.tsx',
+  'app/components/SessionRail/SessionLevel/LevelLinked.tsx',
+  'app/components/SessionRail/SessionLevel/LinkedTaskRow/index.tsx',
+]);
+
+const CURRENT_MARK = "isCurrent ? 'page' : undefined";
+const SHOWN_MARK = "isShown ? 'page' : undefined";
+
 const INTERNAL_MOVES = /\b(setActiveLens|setCurrentSession|selectAgent)\b/;
 
 const isSource = (path: string): boolean =>
@@ -54,14 +64,36 @@ describe('one selected sign across the navigation surfaces', () => {
     source: readFileSync(path, 'utf8'),
   }));
 
-  it('lights a row only from isCurrent, never from its own state, in the column, the session rail and the session list', () => {
-    const marks = signSources.flatMap(({ path, source }) =>
-      Array.from(source.matchAll(/aria-current=(?:\{([^}]*)\}|"([^"]*)")/g), (match) => {
-        return `${path}: ${match[1] ?? `"${match[2]}"`}`;
-      }),
+  const marksOf = () =>
+    signSources.flatMap(({ path, source }) =>
+      Array.from(
+        source.matchAll(/(?:aria-current|ariaCurrent)=(?:\{([^}]*)\}|"([^"]*)")/g),
+        (match) => ({ path, expression: match[1] ?? `"${match[2]}"` }),
+      ),
     );
+
+  it('lights a row only from isCurrent, never from its own state, in the column, the session rail and the session list', () => {
+    const marks = marksOf();
     expect(marks.length).toBeGreaterThan(0);
-    expect(marks.filter((mark) => !mark.endsWith(": isCurrent ? 'page' : undefined"))).toEqual([]);
+    expect(
+      marks
+        .filter(({ expression }) => expression !== CURRENT_MARK && expression !== SHOWN_MARK)
+        .map(({ path, expression }) => `${path}: ${expression}`),
+    ).toEqual([]);
+  });
+
+  it('lets only the session rail branch and linked rows light from the shown work', () => {
+    const shown = marksOf().filter(({ expression }) => expression === SHOWN_MARK);
+
+    expect(shown.map(({ path }) => path).sort()).toEqual([...SHOWN_ROWS].sort());
+  });
+
+  it('reads the session pages sign through ariaCurrent', () => {
+    const pages = marksOf().filter(({ path }) =>
+      path.endsWith('SessionActivityBar/SessionPages.tsx'),
+    );
+
+    expect(pages.map(({ expression }) => expression)).toEqual([CURRENT_MARK]);
   });
 
   it('builds the session list current row from the open session, never from hover or its own state', () => {

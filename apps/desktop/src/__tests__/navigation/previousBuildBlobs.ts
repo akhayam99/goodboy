@@ -4,6 +4,10 @@ type PreviousBuildBlob = {
   readonly blob: object;
 };
 
+type ExpectedBlob = PreviousBuildBlob & {
+  readonly expected: unknown;
+};
+
 const WS = 'ws-harborline';
 const SESSION = 'session-ledger-core';
 const WORKTREE = '/work/ledger-core';
@@ -93,15 +97,14 @@ const DRAWERS: Readonly<Record<string, unknown>> = {
   },
 };
 
-const STUDIO_BLOBS: ReadonlyArray<PreviousBuildBlob> = Object.entries(STUDIOS).map(
-  ([kind, studio]) => ({
-    name: `studio ${kind}`,
-    kind,
-    blob: blobOf({ place: SESSION_PLACE, studio }),
-  }),
-);
+const STUDIO_BLOBS: ReadonlyArray<ExpectedBlob> = Object.entries(STUDIOS).map(([kind, studio]) => ({
+  name: `studio ${kind}`,
+  kind,
+  blob: blobOf({ place: SESSION_PLACE, studio }),
+  expected: studio,
+}));
 
-const DRAWER_BLOBS: ReadonlyArray<PreviousBuildBlob> = Object.entries(DRAWERS).map(
+const DRAWER_BLOBS: ReadonlyArray<ExpectedBlob> = Object.entries(DRAWERS).map(
   ([kind, payload]) => ({
     name: `drawer ${kind}`,
     kind,
@@ -109,6 +112,7 @@ const DRAWER_BLOBS: ReadonlyArray<PreviousBuildBlob> = Object.entries(DRAWERS).m
       place: SESSION_PLACE,
       drawer: { kind, sessionId: SESSION, payload },
     }),
+    expected: { kind, sessionId: SESSION, payload },
   }),
 );
 
