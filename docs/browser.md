@@ -126,6 +126,57 @@ destroyed second, after its live address is stored. If the webview will not clos
 and the next sweep tries again. A popup opened over the cap can close itself;
 its facts, in the answer and in `browser://tab-opened`, then say `closed`.
 
+## Profiles
+
+A tab belongs to a workspace, and a workspace has its own browser profile:
+cookies, local storage and every other site datum. A sign-in in one workspace
+never shows in another. `browser_tab_open` takes the `workspaceId` the tab
+belongs to; a blank one is refused with `invalid-workspace`. A popup uses its
+opener's profile, and a closed tab comes back in the profile it left.
+
+The profile is named by the workspace id: the first 16 bytes of a SHA-256 over
+the id, written as 32 hex digits when it names a folder. The same workspace
+always gets the same profile, two workspaces never share one, and the name
+holds no character of the id, so no id can reach another path.
+
+- **macOS 14 and later**: the profile is a WebKit data store with that
+  identifier. WebKit keeps it; Goodboy sees no folder.
+- **macOS 13 and older**: WebKit has no named stores, and Tauri falls back to
+  the app's one store without saying so. Every workspace then shares one
+  profile. `browser_profile_isolation` answers `shared` (and `perWorkspace`
+  everywhere else) so the pane can warn, and `browser_profile_clear` refuses
+  with `profile-shared`, because clearing would wipe every workspace.
+- **Windows and Linux**: the profile is a data directory,
+  `~/.goodboy/browser/profiles/<name>`, created when the first tab of the
+  workspace opens. Tauri gives each distinct directory its own WebView2
+  environment or WebKit context, so the stores are separate in one window.
+  Linux needs no window of its own for this. The Linux pane limit (children do
+  not take their bounds) is about placement, and belongs to the pane.
+
+**One profile runs at a time, across every window.** Before a webview is
+built, opening a tab or bringing a closed one back first closes the live and
+asleep views of every other profile, under the same lock the lifecycle takes.
+Those tabs stay listed as `closed`, keep their id, address and place, and each
+window that owns one hears `browser://tab-state`. They come back lazily,
+through the same show path as a tab the sweep closed, and showing one closes
+the views of whichever profile was running. Cookies are not lost by a switch:
+they sit in the profile's store. If a view will not close, it is put back as it
+was, the open is refused with `profile-busy`, and the views that did close stay
+closed.
+
+**Clearing a profile.** `browser_profile_clear` takes a `workspaceId`, refuses
+with `profile-live` while any of the workspace's tabs is live or asleep (switch
+to another workspace or close them first), and refuses with `profile-busy` when
+the same profile is already being cleared. While it runs, opening or showing a
+tab of that workspace is refused with `profile-busy`, so a view never opens on a
+store being wiped. On macOS it removes the WebKit store; on Windows and Linux it
+deletes the folder. It answers `{ shouldRestart }`: Linux keeps its WebKit
+context for the life of the app, so cookies already in memory outlive the
+deleted folder and the answer is `true`; elsewhere it is `false`.
+
+Windows and Linux are written against the Tauri and wry sources and have not
+been run: the first run on each of them is the check (spike S3 was never run).
+
 ## Capabilities
 
 `capabilities/default.json` grants by webview label (`webviews`: `main`,
@@ -157,14 +208,16 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
-`session-closing`), never a sentence. The pane
+`session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
+`profile-shared`, `profile-unavailable`), never a sentence. The pane
 owns the words.
 
 ## Under the hood
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  eleven `browser_*` commands; `registry.rs` holds the tabs, the popup seats
+  thirteen `browser_*` commands; `profile.rs` holds the profile id, the
+  per-platform store, the switch and the clear; `registry.rs` holds the tabs, the popup seats
   (`MAX_HIDDEN_POPUPS`) and the pure picks of which tabs to close;
   `lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`), the
   sweep, show, hide and place, and `browser://tab-state`. The native back and forward step lives in
@@ -185,7 +238,13 @@ owns the words.
   timer close at 10 minutes less a millisecond and at 10 minutes, the cap
   close order, a closed tab shown again under its id and address, a shown tab
   that no sweep closes, the events, and that starting the lifecycle at boot
-  leaves the registry and the webviews as they were.
+  leaves the registry and the webviews as they were. The profile tests pin a
+  stable and distinct id and folder per workspace, that a switch closes the
+  other workspace's views (in one window and across two) and announces it, that
+  a closed view returns under its id, that a popup keeps its opener's profile,
+  and that a clear refuses with live views, a second clear and a blank id and
+  blocks opens while it runs. The macOS store and the Windows and Linux folder
+  are not reachable from the mock runtime.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants
   a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.
