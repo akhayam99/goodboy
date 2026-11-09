@@ -83,20 +83,6 @@ export const SessionRail = ({ session, sizing }: Props) => {
           <ActionStatusLine controls={controls} showReasons={false} />
         </div>
       ) : null}
-      {fold.isFolded ? (
-        <div data-rail-actions="" className="flex w-11 shrink-0 flex-col items-center gap-1">
-          <SessionLevelActions session={session} controls={controls} isFolded />
-          {isTopFailure ? (
-            <IconButton
-              icon={RotateCw}
-              label="Retry"
-              tooltip={controls.failure?.message}
-              tone="danger"
-              onClick={controls.retry}
-            />
-          ) : null}
-        </div>
-      ) : null}
       <FoldLayers
         isFolded={fold.isFolded}
         openWidth={`var(${SESSION_RAIL_WIDTH_VAR})`}
@@ -111,9 +97,23 @@ export const SessionRail = ({ session, sizing }: Props) => {
           </div>
         }
       />
+      {fold.isFolded ? (
+        <div data-rail-actions="" className="flex w-11 shrink-0 flex-col items-center gap-1">
+          {isTopFailure ? (
+            <IconButton
+              icon={RotateCw}
+              label="Retry"
+              tooltip={controls.failure?.message}
+              tone="danger"
+              onClick={controls.retry}
+            />
+          ) : null}
+          <SessionLevelActions session={session} controls={controls} isFolded />
+        </div>
+      ) : null}
       {fold.isFolded ? null : (
         <div className="absolute inset-y-0 -right-1 z-10 flex">
-          <ResizeHandle {...resizable.handleProps} ariaLabel="Resize session rail" drawsEdge />
+          <ResizeHandle {...resizable.handleProps} ariaLabel="Resize session pages" drawsEdge />
         </div>
       )}
     </nav>

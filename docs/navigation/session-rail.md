@@ -306,11 +306,12 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   session pages** or **Show session pages**, ⌥⌘B) folds it to the current level
   as icons with right tooltips (`SessionRailIcons`): one icon per page with its
   dot, then the pull request number per worktree, with its state and dot reason
-  in the tooltip. Under the toggle the folded rail keeps **More session
-  actions** (`⋯`, the same menu as open, `data-rail-actions`), and a failed
-  action keeps a **Retry** icon under it. Pin and Refresh show only when open;
+  in the tooltip. At its foot the folded rail keeps **More session
+  actions** (`⋯`, the same menu as open, `data-rail-actions`), with a **Retry**
+  icon above it after a failed action. The block sits below the icons, so a fold
+  moves no page or worktree icon. Pin and Refresh show only when open;
   ⌘⇧R and the sidebar row's right click menu keep them. The folded rail has no
-  foot; the tools column beside the content stays as it is.
+  Projects foot; the tools column beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
   nodes on every screen. Folding the session pages leaves the diff page's file
   rail as it is.

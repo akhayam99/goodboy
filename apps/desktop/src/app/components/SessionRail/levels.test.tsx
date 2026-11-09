@@ -803,7 +803,22 @@ describe('the session rail as the inner column', () => {
 });
 
 describe('the folded session rail', () => {
-  it('names itself Session pages and keeps More session actions under the toggle', () => {
+  it('starts the page icons right under the top row, open and folded, so a fold moves none', () => {
+    seed();
+    mountColumn();
+    const openFrame = elementOf('[data-fold]', rail());
+    expect(openFrame.previousElementSibling).toBe(elementOf('[data-rail-top]', rail()));
+    expect(rail().querySelector('[data-rail-actions]')).toBeNull();
+    cleanup();
+
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    mountColumn();
+    const foldedFrame = elementOf('[data-fold]', rail());
+    expect(foldedFrame.previousElementSibling).toBe(elementOf('[data-rail-top]', rail()));
+    expect(foldedFrame.nextElementSibling).toBe(elementOf('[data-rail-actions]', rail()));
+  });
+
+  it('names itself Session pages and keeps More session actions at the foot', () => {
     seed();
     localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
     mountColumn();

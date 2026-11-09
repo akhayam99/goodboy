@@ -21,6 +21,8 @@ import {
 import type { PageCountFacts } from '../../../../features/session/pageCountWord';
 import { pagesOf } from '../../../../features/session/pageRegistry';
 import { sessionOf } from '../../../../features/workspace/testing/sessionColumn';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { RailFlyoutSession } from '../../SideColumn/RailFlyoutSession';
 import { SessionPages } from '.';
 import type { SessionPageVariant } from '../SessionPageRow';
 
@@ -89,7 +91,7 @@ describe('the session pages rows', () => {
     const text = await hover({ target: screen.getByRole('button', { name: /^Runs/ }) });
 
     expect(text).toContain('Runs, 1 running');
-    expect(text).toMatch(/⌘|⌃|⌥|W/);
+    expect(text).toContain(shortcutGlyphs('lens.workflows'));
   });
 
   it('puts the same tooltip on a folded row', async () => {
@@ -98,6 +100,21 @@ describe('the session pages rows', () => {
     const text = await hover({ target: screen.getByRole('button', { name: 'Runs, 1 running' }) });
 
     expect(text).toContain('Runs, 1 running');
+    expect(text).toContain(shortcutGlyphs('lens.workflows'));
+  });
+
+  it('puts the same tooltip on a row of the sidebar flyout', async () => {
+    render(
+      <RailFlyoutSession
+        session={sessionOf({ goal: 'Reconcile the ledger export' })}
+        hasStudioOver={false}
+      />,
+    );
+
+    const text = await hover({ target: screen.getByRole('button', { name: /^Runs/ }) });
+
+    expect(text).toContain('Runs');
+    expect(text).toContain(shortcutGlyphs('lens.workflows'));
   });
 
   it('marks a waiting question with a dot on the open and the folded row', () => {
