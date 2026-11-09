@@ -296,6 +296,7 @@ describe('the browser pane', () => {
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([
       expect.objectContaining({
         sessionId: SESSION_ID,
+        workspaceId: WORKSPACE_ID,
         url: 'http://localhost:5173/checkout',
         isShown: false,
       }),
