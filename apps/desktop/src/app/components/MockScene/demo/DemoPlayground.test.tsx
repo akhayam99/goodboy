@@ -588,6 +588,21 @@ describe('demo playground', () => {
     expect(screen.getByRole('note').textContent).toContain(crossingHint.copy);
   });
 
+  it('asks a group frame for its hint again when the visitor comes back to it', () => {
+    seedProgress({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+    const back = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
+    fireEvent.click(rowOf({ title: 'Set the direction' }));
+    const tracks = back.mock.calls.filter(
+      ([message]) => typeof message === 'object' && message !== null && message.type === 'hints',
+    );
+    expect(tracks.length).toBeGreaterThan(0);
+  });
+
   it('keeps the result line until the next control is on screen', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
@@ -694,22 +709,15 @@ describe('demo playground', () => {
     };
 
     const openDirection = ({ doneCount }: OpenParams) => {
-      window.sessionStorage.setItem(
-        HINT_PROGRESS_KEY,
-        JSON.stringify({
-          bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
-          direction: {
-            tried: chapterOf({ id: 'direction' })
-              .hints.slice(0, doneCount)
-              .map((entry) => entry.id),
-            epoch: 0,
-          },
-        }),
-      );
+      seedProgress({ ids: ['bring'] });
       window.history.replaceState(null, '', '/?scene=demo#direction');
       render(<DemoPlayground />);
       const frame = visibleFrame();
       report({ frame, type: 'ready' });
+      for (const entry of chapterOf({ id: 'direction' }).hints.slice(0, doneCount)) {
+        tried({ frame, hintId: entry.id });
+        elapse({ ms: dwellOf({ hint: entry }) });
+      }
       return frame;
     };
 

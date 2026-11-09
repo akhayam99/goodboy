@@ -390,6 +390,8 @@ that Windows is on the way and no button. Its link carries the current
 phone page uses, sits beside it. A hint the visitor dismissed shows a Show hint
 button in the top bar. The stage keeps the frames it preloads `inert`, and
 takes the focus back if one gets it, so the wrapper keys work on a fresh load.
+A group the visitor leaves and opens again keeps its frame, and the stage sends
+that frame its hints again, so the coach comes back on the step left open.
 The page behind the stage uses the
 `surround` surface, a touch darker than the app surfaces (lighter than the
 first cut in dark), so the app frame reads as a window.

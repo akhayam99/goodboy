@@ -276,6 +276,14 @@ export const DemoStage = ({
   }, [command, mountedKeys, loadEpoch]);
 
   useEffect(() => {
+    for (const key of [...hintsSent.current.keys()]) {
+      if (key !== currentKey) {
+        hintsSent.current.delete(key);
+      }
+    }
+  }, [currentKey]);
+
+  useEffect(() => {
     if (hintTrack === undefined || !mountedKeys.has(currentKey)) {
       return;
     }
