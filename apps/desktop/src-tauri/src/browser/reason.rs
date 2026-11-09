@@ -15,6 +15,10 @@ pub(crate) const PROFILE_LIVE: &str = "profile-live";
 pub(crate) const PROFILE_SHARED: &str = "profile-shared";
 #[cfg_attr(target_os = "macos", allow(dead_code))]
 pub(crate) const PROFILE_UNAVAILABLE: &str = "profile-unavailable";
+pub(crate) const TAB_ROW_GONE: &str = "tab-row-gone";
+pub(crate) const TAB_ROW_OWNER: &str = "tab-row-owner";
+pub(crate) const TAB_ROWS_CHANGED: &str = "tab-rows-changed";
+pub(crate) const TAB_ROWS_FAILED: &str = "tab-rows-failed";
 
 pub(crate) fn refused(code: &str) -> MessageError {
     MessageError::Refused(code.to_string())

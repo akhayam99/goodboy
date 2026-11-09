@@ -21,7 +21,6 @@ const ALLOWLIST_REASON_BY_COMMAND = new Map([
     'the browser pane calls it to clear a workspace browser data, docs/browser.md',
   ],
   ['browser_profile_isolation', BROWSER_PANE_REASON],
-  ['browser_session_close', 'the tabs slice calls it when a session is archived, docs/browser.md'],
   ['browser_tab_back', BROWSER_PANE_REASON],
   ['browser_tab_close', BROWSER_PANE_REASON],
   ['browser_tab_forward', BROWSER_PANE_REASON],
