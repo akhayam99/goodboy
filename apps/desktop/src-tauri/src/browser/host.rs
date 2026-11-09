@@ -11,7 +11,7 @@ use super::profile::{self, ProfileId};
 use super::reason::{
     self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
 };
-use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts};
+use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts, TabState};
 use crate::platform::web_history::HistoryStep;
 use crate::util::{now_ms, uuid_v4, MessageError};
 
@@ -111,10 +111,18 @@ pub(crate) fn open_tab<R: Runtime>(
         return Err(reason::refused(NOT_WEB_ADDRESS));
     }
     let registry = app.state::<BrowserRegistry>();
-    let gate = registry.gate();
     let generation = tab
         .generation
         .unwrap_or_else(|| registry.generation(tab.session_id, window.label()));
+    let gate = registry.gate();
+    if registry.generation(tab.session_id, window.label()) != generation {
+        return Err(reason::refused(SESSION_CLOSING));
+    }
+    if let Some(opener_id) = tab.opener_id {
+        if matches!(registry.state_of(opener_id), None | Some(TabState::Closed)) {
+            return Err(reason::failed(TAB_GONE));
+        }
+    }
     let id = uuid_v4();
     let rect = Rect {
         position: tab.position,

@@ -62,7 +62,7 @@ fn close_webviews<R: Runtime>(app: &AppHandle<R>, ids: &[String], _gate: &Gate<'
             registry.reopen_asleep(id);
             continue;
         }
-        announce(app, &facts);
+        announce(app, &registry.facts(id).unwrap_or(facts));
     }
 }
 

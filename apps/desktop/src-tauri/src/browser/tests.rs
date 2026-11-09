@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use tauri::ipc::{CallbackFn, InvokeBody};
 use tauri::test::{
@@ -202,6 +203,9 @@ fn refuses_every_app_command_to_a_browser_page_even_from_a_local_address() {
         .build(mock_context(noop_assets()))
         .expect("app builds");
     app.manage(BrowserRegistry::default());
+    app.manage(BrowserProfiles::under(
+        std::env::temp_dir().join(format!("goodboy-browser-test-{}", uuid_v4())),
+    ));
     WebviewWindowBuilder::new(&app, "main", WebviewUrl::default())
         .build()
         .expect("window builds");
@@ -1119,6 +1123,105 @@ fn a_switch_retried_after_a_stuck_view_closes_it() {
     let retried = close_switched(&registry, &ids, |_| Ok(()), |_| {});
     assert!(retried.is_ok());
     assert_eq!(registry.state_of("ledger-core"), Some(TabState::Closed));
+}
+
+#[test]
+fn a_stale_open_closes_no_view_of_the_running_workspace() {
+    let app = app_with_windows(&["main"]);
+    let running = open_for(&app, "main", acme(), "cascadia");
+    let registry = app.state::<BrowserRegistry>();
+    let generation = registry.generation("harborline", "main");
+    registry.close_session("harborline", "main");
+    let mut stale = OpenTab::at(
+        "harborline",
+        northwind(),
+        url("http://localhost:5173/"),
+        PANE,
+        true,
+    );
+    stale.generation = Some(generation);
+    assert!(matches!(
+        open_tab(&window(&app, "main"), stale),
+        Err(MessageError::Refused(code)) if code == SESSION_CLOSING
+    ));
+    assert_eq!(state_of(&app, &running), Some(TabState::Live));
+    assert!(is_live_webview(&app, &running));
+}
+
+#[test]
+fn an_open_that_waited_for_the_gate_does_not_outlive_a_session_close() {
+    let app = app_with_windows(&["main"]);
+    let registry = app.state::<BrowserRegistry>();
+    let main = window(&app, "main");
+    let gate = registry.gate();
+    let opened = std::thread::scope(|scope| {
+        let waiting = scope.spawn(|| {
+            open_tab(
+                &main,
+                OpenTab::at(
+                    "harborline",
+                    northwind(),
+                    url("http://localhost:5173/"),
+                    PANE,
+                    true,
+                ),
+            )
+        });
+        std::thread::sleep(Duration::from_millis(200));
+        registry.close_session("harborline", "main");
+        drop(gate);
+        waiting.join().expect("open thread")
+    });
+    assert!(matches!(
+        opened,
+        Err(MessageError::Refused(code)) if code == SESSION_CLOSING
+    ));
+    assert!(registry.is_empty());
+    assert_eq!(app.webviews().len(), 1);
+}
+
+#[test]
+fn a_popup_open_whose_opener_was_switched_out_closes_no_view() {
+    let app = app_with_windows(&["main"]);
+    let opener = open_for(&app, "main", acme(), "cascadia");
+    let running = open_for(&app, "main", northwind(), "harborline");
+    assert_eq!(state_of(&app, &opener), Some(TabState::Closed));
+    let mut popup = OpenTab::at("cascadia", acme(), url("https://example.com/"), PANE, false);
+    popup.opener_id = Some(&opener);
+    assert!(matches!(
+        open_tab(&window(&app, "main"), popup),
+        Err(MessageError::Failed(code)) if code == TAB_GONE
+    ));
+    assert_eq!(state_of(&app, &running), Some(TabState::Live));
+    assert!(is_live_webview(&app, &running));
+}
+
+#[test]
+fn tells_the_window_the_address_a_hidden_page_moved_to_when_the_sweep_closes_it() {
+    let app = app_with_windows(&["main"]);
+    let heard = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&heard);
+    app.listen_any(TAB_STATE_EVENT, move |event| {
+        let payload: serde_json::Value =
+            serde_json::from_str(event.payload()).expect("payload is json");
+        sink.lock().expect("sink").push((
+            payload["state"].as_str().expect("state").to_string(),
+            payload["url"].as_str().expect("url").to_string(),
+        ));
+    });
+    let id = open(&app, "main", "harborline");
+    hide_tab(app.handle(), &id, 100).expect("hides");
+    webview(&app, &label_of(&id))
+        .navigate(url("http://localhost:5173/pricing#plans"))
+        .expect("same document move");
+    sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
+    assert_eq!(
+        heard.lock().expect("sink").last(),
+        Some(&(
+            "closed".to_string(),
+            "http://localhost:5173/pricing#plans".to_string()
+        ))
+    );
 }
 
 #[test]

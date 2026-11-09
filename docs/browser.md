@@ -71,7 +71,10 @@ commands, and got all six once it navigated itself to the dev origin or to
   `{ closed, failed }`; a tab that failed to close stays listed, so calling
   again closes the rest. A tab or popup that was still opening when the
   session closed is refused with `session-closing` and its webview is
-  destroyed; the session takes new tabs again afterwards.
+  destroyed; the session takes new tabs again afterwards. An open reads the
+  session's generation before it waits for the lock and checks it again once it
+  holds it, and a popup also checks that its opener is still live or asleep,
+  both before any other workspace's views are closed.
 - A tab's address in a listing is read from the live webview, so a page that
   moves with `history.pushState` or a fragment shows its new address.
 - A destroyed window's tabs leave the registry with it.
