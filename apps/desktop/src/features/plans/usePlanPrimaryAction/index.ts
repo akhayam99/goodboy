@@ -90,7 +90,7 @@ export const usePlanPrimaryAction = ({
   const approveWorkflowRunPlan = useAppStore((state) => state.approveWorkflowRunPlan);
   const runPlan = useAppStore((state) => state.runPlan);
   const reportError = useAppStore((state) => state.reportError);
-  const closeDrawer = useAppStore((state) => state.closeDrawer);
+  const clearDrawer = useAppStore((state) => state.clearDrawer);
   const follow = useFollowToast();
   const announceRun = usePlanRunToast();
   const planRun = usePlanRun({ sessionId, planId: plan.id });
@@ -142,7 +142,7 @@ export const usePlanPrimaryAction = ({
       const isOverPlan =
         state.drawer?.kind === 'artifact-document' && state.drawer.payload.artifactId === plan.id;
       if (isOverPlan) {
-        closeDrawer();
+        clearDrawer();
         await waitForRender();
       }
       follow(
@@ -153,7 +153,7 @@ export const usePlanPrimaryAction = ({
         }),
       );
     },
-    [closeDrawer, follow, plan.id, sessionId],
+    [clearDrawer, follow, plan.id, sessionId],
   );
 
   const approveHeld = useCallback(

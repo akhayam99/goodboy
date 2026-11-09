@@ -50,6 +50,7 @@ const STUDIO_KINDS: ReadonlyArray<StudioKind> = [
   'notifications',
   'chat',
   'terminal',
+  'browser',
   'monitoring',
 ];
 

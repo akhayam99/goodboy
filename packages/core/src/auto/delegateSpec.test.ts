@@ -319,6 +319,22 @@ describe('parsing the spec of an agent delegate call', () => {
     expect(plain.kind === 'ok' && titled.kind === 'ok' && plain.hash !== titled.hash).toBe(true);
   });
 
+  it('reads an optional roleReason and keeps old specs hashing the same', () => {
+    const base = { role: 'implementer', task: 'Add tests for notify-relay', reason: 'code' };
+    const plain = parseDelegateSpec({ text: spec([base]) });
+    const kept = parseDelegateSpec({
+      text: spec([{ ...base, roleReason: 'The tests need a code change first.' }]),
+    });
+    const blank = parseDelegateSpec({ text: spec([{ ...base, roleReason: ' ' }]) });
+    expect(plain).toMatchObject({ kind: 'ok', children: [{ roleReason: null }] });
+    expect(blank).toEqual(plain);
+    expect(kept).toMatchObject({
+      kind: 'ok',
+      children: [{ roleReason: 'The tests need a code change first.' }],
+    });
+    expect(plain.kind === 'ok' && kept.kind === 'ok' && plain.hash !== kept.hash).toBe(true);
+  });
+
   it('refuses a retry that sets a title', () => {
     const retry = parseDelegateSpec({
       text: spec([{ retryOf: 'delegation-a', reason: 'again', title: 'Fix it again' }]),

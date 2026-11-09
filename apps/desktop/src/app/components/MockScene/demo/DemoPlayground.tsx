@@ -64,7 +64,15 @@ export const DemoPlayground = () => {
 
   const accessOf = ({ id }: ChapterParams) =>
     id === CLOSING_ID ? access.closing : (access.groups.get(id) ?? 'locked');
-  const chapterId = accessOf({ id: requestedId }) === 'locked' ? DEFAULT_GROUP_ID : requestedId;
+  const isRequestedLocked = accessOf({ id: requestedId }) === 'locked';
+  const chapterId = isRequestedLocked ? DEFAULT_GROUP_ID : requestedId;
+
+  useEffect(() => {
+    if (isRequestedLocked) {
+      selectChapter({ id: DEFAULT_GROUP_ID });
+    }
+  }, [isRequestedLocked, selectChapter]);
+
   const isClosing = chapterId === CLOSING_ID;
   const chapterIndex = isClosing
     ? DEMO_CHAPTERS.length - 1
@@ -189,6 +197,8 @@ export const DemoPlayground = () => {
         theme={theme}
         isQuiet={isSpotlit}
         isHintsEnabled={!hints.isHidden}
+        isHintDismissed={hints.isDismissed}
+        onShowHint={hints.show}
         onToggleHints={onToggleHints}
         onRestart={onRestart}
         onToggleTheme={swapTheme}
@@ -217,11 +227,12 @@ export const DemoPlayground = () => {
                     acting: hints.acting,
                     active: hints.activeHint,
                     nextTitle: nextTitle ?? CLOSING_TITLE,
+                    isNextUpNext: upNextId !== undefined,
                   })
             }
           />
           {isClosing ? (
-            <DemoClosing copy={closingCopy} />
+            <DemoClosing copy={closingCopy} theme={theme} />
           ) : (
             <DemoStage
               theme={theme}

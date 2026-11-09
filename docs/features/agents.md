@@ -130,7 +130,9 @@ Run a plan part by part. An implementer given a plan splits into one sub-agent p
 
 ### Auto agent
 
-Try an agent that picks the roles for you. **Auto** answers a question itself. When there is something to make, it hands the work to a Planner, Implementer, Tester, Reviewer or another role. It picks a model for each and reads what comes back.
+Try an agent that picks the roles for you. **Auto** answers a question itself. When there is something to make, it hands the work to the narrowest role that fits. That is a CI fixer for a red check, a Scribe for pull request text, a Tester for tests, and Docs for the README or changelog. The Implementer is the fallback for code changes. It picks a model for each and reads what comes back.
+
+A new Implementer child whose task fits a narrower role is refused once, with the role named. Auto can resend it with a reason, and the child page shows **Why not Tester** under why Auto chose Implementer.
 
 Auto is always available. Start it from **Start a run**, which hands one-agent asks to Auto. There is no switch in Settings. Auto shows up as one row in the Overview.
 
@@ -150,6 +152,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - Auto's reply adds only what the reports mean together. The plan waits in the dock joined to the message field with **Approve and start Build**, **Ask for changes** and **Open plan**.
 - Auto's state shows once, in the dock, as in **Implementer running, Tester queued**.
 - An agent that cannot finish comes back to Auto at once, while the others keep working. Auto must decide about it: go on with it, give the task to another role, let it go with a reason, or ask you with a **Next step** card. An agent comes back twice at most, and a task is handed over three times at most before Auto asks you.
+- Auto gives each task to the narrowest role that fits: a red check to a CI fixer, the pull request to a Scribe, tests to a Tester, docs to Docs. The Implementer changes code. When Auto keeps an Implementer for work a narrower role fits, the agent's page says why, as in **Why not Tester**.
 - Auto talks to the agents it started. It can give one that ended new instructions, and it keeps its role and its work. It can send a working one a message, which the agent reads when its turn ends. It can stop one, and the line reads **Stopped by Auto** with the reason. Auto sends one agent four messages at most.
 - When you write to an agent Auto started, your message goes on with that agent's work, in its role and on its model, and the answer goes to Auto. While the agent works, your message waits for its turn to end.
 

@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Goodboy",
-  "version": "0.31.14",
+  "version": "0.32.0",
   "identifier": "com.goodboy.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -29,7 +29,7 @@
     ],
     "security": {
       "freezePrototype": true,
-      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-src gbframe: http://gbframe.localhost; connect-src 'self' ipc: http://ipc.localhost; base-uri 'none'; form-action 'none'"
+      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-src gbframe: http://gbframe.localhost; connect-src 'self' ipc: http://ipc.localhost; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     }
   },
   "bundle": {

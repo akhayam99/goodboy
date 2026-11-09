@@ -20,6 +20,7 @@ describe('the header line', () => {
         acting: undefined,
         active: fix,
         nextTitle: 'Get Goodboy',
+        isNextUpNext: true,
       }),
     ).toBe(fix.instruction);
   });
@@ -32,6 +33,7 @@ describe('the header line', () => {
         acting: fix,
         active: fix,
         nextTitle: 'Get Goodboy',
+        isNextUpNext: true,
       }),
     ).toBe(fix.progress);
   });
@@ -44,6 +46,7 @@ describe('the header line', () => {
         acting: apply,
         active: apply,
         nextTitle: 'Get Goodboy',
+        isNextUpNext: true,
       }),
     ).toBe(apply.instruction);
   });
@@ -56,6 +59,7 @@ describe('the header line', () => {
         acting: fix,
         active: apply,
         nextTitle: 'Get Goodboy',
+        isNextUpNext: true,
       }),
     ).toBe(fix.result);
   });
@@ -68,7 +72,21 @@ describe('the header line', () => {
         acting: undefined,
         active: undefined,
         nextTitle: 'Get Goodboy',
+        isNextUpNext: true,
       }),
     ).toBe(`${chapter.title} is done. Go on with Get Goodboy, marked Up next.`);
+  });
+
+  it('names no Up next marker when the next group does not carry it', () => {
+    expect(
+      headerInstruction({
+        chapter,
+        held: undefined,
+        acting: undefined,
+        active: undefined,
+        nextTitle: 'Set the direction',
+        isNextUpNext: false,
+      }),
+    ).toBe(`${chapter.title} is done. Go on with Set the direction.`);
   });
 });

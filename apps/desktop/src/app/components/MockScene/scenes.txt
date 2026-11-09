@@ -155,6 +155,14 @@ brand-security-findings
 brand-slack
 brand-storage
 brand-tools
+browser-page
+browser-page-dark
+browser-pane
+browser-pane-dark
+browser-pane-tabs
+browser-pane-tabs-dark
+browser-peek
+browser-peek-dark
 c01-grid-dots
 c01-grid-groups
 c01-grid-list
@@ -774,6 +782,8 @@ session-hover
 session-marks
 session-marks-bitbucket
 session-pinned
+session-rail-pressed
+session-rail-waiting
 session-start
 session-states
 session-studio-over
@@ -806,8 +816,13 @@ side-info-doors
 side-info-framed
 side-signals-idle
 side-signals-running
+side-tiles-dark
+side-tiles-light
 sidebar-rhythm
 slack-permissions
+slot-back-chip
+slot-back-chip-narrow
+slot-back-chip-swapped
 space-diff-comment
 space-diff-split
 start-from-inbox
@@ -1305,6 +1320,8 @@ u36-states-overview-noreply-dark
 u36-states-overview-noreply-light
 u36-states-overview-timed-out-child-dark
 u36-states-overview-timed-out-child-light
+u37-artifact-report-scrolled
+u37-artifact-report-scrolled-light
 u37-branch-work
 u37-header-reveal
 u37-header-reveal-agent

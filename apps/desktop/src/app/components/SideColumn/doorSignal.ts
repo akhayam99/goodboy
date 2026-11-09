@@ -1,4 +1,5 @@
 import { needsYouText } from '../../../shared/utils/needsYouText';
+import { countTextOf } from './countTextOf';
 type DoorTone = 'danger' | 'warning' | 'neutral';
 
 export type DoorSignal = {
@@ -10,7 +11,17 @@ export type DoorSignal = {
   readonly countText?: string;
 };
 
-const DOOR_COUNT_CAP = 9;
+type BrowserParams = {
+  readonly kind: 'browser';
+  readonly count: number;
+  readonly inUse?: undefined;
+  readonly downPins?: undefined;
+  readonly hasUnread?: undefined;
+  readonly reasons?: undefined;
+  readonly tone?: undefined;
+  readonly quietCount?: undefined;
+  readonly quietReasons?: undefined;
+};
 
 type TerminalParams = {
   readonly kind: 'terminal';
@@ -72,14 +83,8 @@ type BoardParams = {
   readonly hasUnread?: undefined;
 };
 
-type Params = TerminalParams | InboxParams | ChatParams | MonitoringParams | BoardParams;
-
-type CountTextParams = {
-  readonly count: number;
-};
-
-const countTextOf = ({ count }: CountTextParams): string =>
-  count > DOOR_COUNT_CAP ? `${DOOR_COUNT_CAP}+` : String(count);
+type Params =
+  TerminalParams | BrowserParams | InboxParams | ChatParams | MonitoringParams | BoardParams;
 
 type FactParams = {
   readonly lead: string;
@@ -130,6 +135,17 @@ export const doorSignalOf = ({
       return undefined;
     }
     return { count, isWarning: false, isUnread: false, fact: `${count} running` };
+  }
+  if (kind === 'browser') {
+    if (count === 0) {
+      return undefined;
+    }
+    return {
+      count,
+      isWarning: false,
+      isUnread: false,
+      fact: count === 1 ? '1 tab' : `${count} tabs`,
+    };
   }
   if (kind === 'inbox') {
     if (count === 0) {

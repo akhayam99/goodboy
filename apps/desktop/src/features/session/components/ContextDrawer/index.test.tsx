@@ -496,11 +496,11 @@ describe('Context drawer sections', () => {
   it('keeps the decisions readable but not editable while the context updates', () => {
     setSummarizer({ status: 'running' });
     const { container } = mount({ section: 'decisions' });
-    const row = container.querySelector('[data-decision="7"] button');
+    const row = container.querySelector<HTMLElement>('[data-decision="7"]');
     if (row === null) {
       throw new Error('Missing decision 7');
     }
-    fireEvent.click(row);
+    fireEvent.click(within(row).getByRole('button', { name: /^(Show|Hide) .+/ }));
     screen.getByText('Show the stuck-delivery banner after the third failed retry, not the first');
     expect(screen.queryByRole('button', { name: 'Edit decision 7' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove decision 7' })).toBeNull();
@@ -508,6 +508,36 @@ describe('Context drawer sections', () => {
     expect(screen.getByRole('menuitem', { name: 'Edit' }).getAttribute('aria-disabled')).toBe(
       'true',
     );
+  });
+
+  it('opens a link in a decision without toggling the row, and still toggles by text and keyboard', () => {
+    setLedger({
+      ledger: [
+        aDecision({
+          sessionId: SESSION_ID,
+          number: 1,
+          text: 'Preview the build at [localhost:5173](http://localhost:5173/) before merging',
+        }),
+      ],
+    });
+    const { container } = mount({ section: 'decisions' });
+    const row = container.querySelector<HTMLElement>('[data-decision="1"]');
+    if (row === null) {
+      throw new Error('Missing decision 1');
+    }
+    const toggle = within(row).getByRole('button', { name: 'Show decision 1 actions' });
+    expect(toggle.closest('a')).toBeNull();
+    expect(row.querySelector('button a')).toBeNull();
+    const link = within(row).getByRole('link', { name: 'localhost:5173' });
+    link.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(link);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(within(row).getByText(/Preview the build at/));
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.keyDown(toggle, { key: 'Escape' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('says why an empty card is empty', () => {

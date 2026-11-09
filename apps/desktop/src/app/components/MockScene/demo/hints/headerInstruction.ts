@@ -7,14 +7,23 @@ type Params = {
   readonly acting: DemoHint | undefined;
   readonly active: DemoHint | undefined;
   readonly nextTitle: string;
+  readonly isNextUpNext: boolean;
 };
 
-export const headerInstruction = ({ chapter, held, acting, active, nextTitle }: Params): string => {
+export const headerInstruction = ({
+  chapter,
+  held,
+  acting,
+  active,
+  nextTitle,
+  isNextUpNext,
+}: Params): string => {
   if (held !== undefined) {
     return held.result;
   }
   if (active === undefined) {
-    return `${chapter.title} is done. Go on with ${nextTitle}, marked Up next.`;
+    const marker = isNextUpNext ? ', marked Up next' : '';
+    return `${chapter.title} is done. Go on with ${nextTitle}${marker}.`;
   }
   return acting?.progress ?? active.instruction;
 };

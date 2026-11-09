@@ -354,7 +354,8 @@ group uses the same scale. The stage has no inset and sits on
 the same grid as the top of the rail, with narrow gutters, so the app is a bit
 bigger only because its box is.
 `#<group id>` in the URL opens a group the visitor may open, and anything else
-opens Bring your repositories (`defaultGroupId.ts`).
+opens Bring your repositories (`defaultGroupId.ts`); a hash that names a locked
+group is rewritten to the group shown.
 
 The rail is one vertical spine drawn with the app's own primitives: rows go
 through `layoutTimelineRail`, drawn by `TimelineRail` in a `SpawnedRailCell`,
@@ -370,7 +371,8 @@ rail on narrow windows, keeps its own). Get Goodboy closes the same spine.
 The path is sequential (`hints/groupAccessOf.ts`). A group is `done` once all its
 steps are, `locked` while a group before it is not done, and `open` otherwise;
 the first group is open from the start. A locked
-group row is muted, disabled and has no hover state. A done group stays open to
+group row is muted and disabled; on hover it says why, in the words of the
+compact switcher (`unlockHintOf.ts`). A done group stays open to
 revisit, on its last frame with every step checked. A hash that names a locked
 group opens Bring your repositories. Get Goodboy is locked until every group is done.
 "Up next" (`data-up-next="ready"`, a solid ring and a soft glow for three cycles,
@@ -383,7 +385,14 @@ left side holds the logo and a goodboy-ai.dev link back to the website (both
 carry the current `?theme=`). The download lives only on the Get Goodboy
 screen (`DemoClosing`) and follows the visitor's system (`currentPlatform`,
 `closingCopyOf`): Download for macOS, Download for Linux, or on Windows a note
-that Windows is on the way and no button. The page behind the stage uses the
+that Windows is on the way and no button. Its link carries the current
+`?theme=` (`downloadHrefOf.ts`), and a ghost Star on GitHub link, the one the
+phone page uses, sits beside it. A hint the visitor dismissed shows a Show hint
+button in the top bar. The stage keeps the frames it preloads `inert`, and
+takes the focus back if one gets it, so the wrapper keys work on a fresh load.
+A group the visitor leaves and opens again keeps its frame, and the stage sends
+that frame its hints again, so the coach comes back on the step left open.
+The page behind the stage uses the
 `surround` surface, a touch darker than the app surfaces (lighter than the
 first cut in dark), so the app frame reads as a window.
 
@@ -455,13 +464,13 @@ nothing throws. Commands that would leave the mock world (`git_push`, GitHub
 writes, links, editor and Finder opens, chat replies) show a calm Demo playground
 notice through the undo toast bridge instead (`demoExitNotices.ts`). A timeline's `setup` swaps the store actions a flow needs for local simulations that change the real store only as their simulated step lands. The demo tells one story, HBL-412 (retried webhooks credit an account twice), in four groups; the copy of every step is in `demo/hints/`, the story's own text in `scenes/story/storyContent.ts`.
 
-Bring your repositories is the real setup wizard (`onboarding`, `pick=folder`): the folder is already chosen, so the first press is Create. Set the direction is `story-direction` (`StorySessionScene.tsx`, `storyWorld.ts`): a Harborline workspace with payments-api, ledger-core and notify-relay and Linear connected, the wizard open on Pick up an issue with HBL-412 selected, and the real New session page behind it. `installStoryDirection.ts` prepares the draft (Orchestrated, Asks you After the plan) when the wizard hands the issue over, swaps `startSessionFromDraft` for a local one that opens one issue-linked session on the planner's question, and swaps `answerOpenQuestions` for `createStoryAnswer.ts`: the answer starts the handoff (`limitsHandoffCues.ts`: Claude hits its limit, the decision note records the move, Codex runs a read and returns the plan as an artifact), and the plan lands in the session once the reply ends (`registerStoryPlan.ts`).
+Bring your repositories is the real setup wizard (`onboarding`, `step=agents`, `pick=folder`, `github=none`). It opens on Agents, where Codex shows Not signed in: the steps are Sign in on Codex, Continue, Create (the folder is picked when Workspace opens), Connect Linear or Jira, Connect on Linear and Continue, which lands on Pick up an issue with HBL-412 selected. `github=none` makes the scene answer "no GitHub" for the workspace (`wizardSceneSeed.ts`), so First session offers Connect Linear or Jira; the demo's `gh_status` answer stays available for the later groups. Skip and Set up later close the wizard and `OnboardingScene.tsx` reopens it after a second with a "Setup stays open in the demo." notice. The sample Scout run starts on the model and edit mode the composer showed (`startSampleScout.ts`). Set the direction is `story-direction` (`StorySessionScene.tsx`, `storyWorld.ts`): a Harborline workspace with payments-api, ledger-core and notify-relay and Linear connected, the wizard open on Pick up an issue with HBL-412 selected, and the real New session page behind it. `installStoryDirection.ts` prepares the draft (Orchestrated, Asks you After the plan) when the wizard hands the issue over, swaps `startSessionFromDraft` for a local one that opens one issue-linked session on the planner's question, and swaps `answerOpenQuestions` for `createStoryAnswer.ts`: the answer starts the handoff (`limitsHandoffCues.ts`: Claude hits its limit, the decision note records the move, Codex runs a read and returns the plan as an artifact), and the plan lands in the session once the reply ends (`registerStoryPlan.ts`).
 
 Guide the work is `story-plan`: the same session after the handoff (`applyStoryAnswer.ts` replays the cues at once). The plan drawer is the real one; `installPlanCommentPrefill.ts` puts the example comment in the editor, and `replayAnchorOf.ts` shows the Comment button of the replay-test paragraph by sending it the hover. `installStoryPlan.ts` swaps `sendTurn`: a comment to the planner runs `storyRevisionCues.ts` (a Codex reply with plan v2, which adds the simultaneous retries test, then the comment turns addressed through the send's `onSettled`), and `Approved plan v2.` runs `storyWorkCues.ts` (a Codex implementer in payments-api and a tester that reads and runs the checks in ledger-core without changing its files; `castAutoScene.ts` retells the delegations of the shared Auto seed). Nothing in the story opens the pull request: dana-r did, before the review checkpoint.
 
 Review and ship starts on `story-review` (`StoryReviewScene.tsx`, `storyReviewSeed.ts`): the real Branch page of the resolve seed cut down to one comment from nadia-p on a pull request dana-r opened, with the real fix drawer open on it. `installStoryReview.ts` runs the resolve simulation (`installResolveActions.ts`, `resolveFixCues.ts`), opens the comment once its fix and drafted reply exist and closes it on Apply fix, then answers `worktree_status` by phase (`storyReviewGit.ts`): three behind main, then rebased and diverged from origin. `rebaseBranch` records a clean applied run, so the Branch page reads Rebased on main with the branch Diverged from origin and no longer behind main, and it opens the real Force push confirmation (`openStoryPushConfirm.ts`); `pushBranch` lands the push, publishes the drafted reply and closes the thread. The last step is `demo-storage` (`scenes/demo/DemoStorageScene.tsx`): the real Storage page with the three safe folders of older archived Harborline branches and the story's own folder in use; `installStorageActions.ts` opens the removal confirmation and swaps `removeStorageFolders` for a timed local removal that drops the three folders and sets the outcome notice.
 
-A hint can name the controls its step does not want pressed (`isBlocked`): the guard stops a click, Enter or Space on them, so one press moves a step. A step with a `progress` line shows it in the header between its press and its result. The scene hides the Run started and Session started toasts of a directed frame, so a toast never sits under a coach mark. the size in Storage falls. `&theme=dark`
+A hint can name the controls its step does not want pressed (`isBlocked`): the guard stops a click, Enter or Space on them, so one press moves a step. `isOtherControl` spares any control that carries a `data-demo-anchor`; the Bring your repositories steps block every control (`isAnyControl`) except the setup path itself (Sign in, Continue, Choose folder, Create, Connect Linear or Jira, Connect Linear), so Start and Skip on the first session cannot end the group early, and a visitor who pressed Escape can still press the step they came back to. A step with a `progress` line shows it in the header between its press and its result. The scene hides the Run started and Session started toasts of a directed frame, so a toast never sits under a coach mark. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
@@ -507,24 +516,38 @@ never armed and never credited early, and a press on a later control counts for
 nothing. The done check compares against the store as it was when the reveal
 check first held, so data a scene seeds after the engine starts never counts as
 the visitor's action; a reveal check therefore waits for its control to render.
+A step whose control is gone once it is passed (the question after Answer, the
+composer after Add comment) also holds its reveal and done checks on the store,
+so a visitor who went ahead with Hide hints on, or answered another way, still
+gets it credited. When the plan drawer is closed in Guide the work, the steps
+after opening the plan light the plan row again (and let it be pressed) until
+the work they wait for has started. A step that names its own control (`press`)
+counts only a press of that control, so reopening the plan from the row never
+shows the step's progress line.
 Reports carry the frame's generation and the stage drops any from an older
 generation or another frame. A frame that reports `ready` again (it reloaded)
 loses its note, and the stage sends it `play` and `hints` again. The stage
 draws one note beside the anchor through the stage scale, a 2px outline and a
 callout on the side of the lit region with the most room, inside the stage
-(`hints/placeCallout.ts`; the hint's side only breaks a tie); only the callout
-takes clicks. The callout touches the 4px outline with a 6px gap and never
+(`hints/placeCallout.ts`; the hint's side only breaks a tie, unless the hint
+sets `isSideLocked`: the side is kept while it fits and does not cover the
+control, as the plan and question steps do so the callout never sits on the text
+they talk about); only the callout takes clicks. The callout touches the 4px outline with a 6px gap and never
 overlaps the control or the rects the last press opened (`opened` on the anchor
 report, `avoid` in `placeCallout`); `hints/coachPlacement.test.ts` measures the
 callout against the target for every hint of every group. The note goes away as
 soon as the visitor presses that control (`isPressed`, the press on the very
 element the hint anchors; a click that only focuses the composer keeps it), so
 it never covers what the control opens; a step with two presses names the
-second one in `progressCopy`. A control
+second one in `progressCopy`. The press is reported from the click's own
+capture phase, before the control can go away, so the header shows the step's
+`progress` line while its work runs and drops a result still held from the step
+before. The press ends once the lit control is another one, so a step that
+points back at an earlier control lights it again. A control
 scrolled out of view gets a note at the bottom of the stage with Show control,
 which sends `reveal` so the frame scrolls it into view once. The coach X and
 Escape dismiss only the open hint (`dismiss` in `useDemoHints`; the next step
-shows as usual) and H brings it back. Only Hide hints and Show hints in the top
+shows as usual) and H or Show hint in the top bar brings it back. Only Hide hints and Show hints in the top
 bar turn every hint off, and the choice is kept in the tab. There is no Skip, as
 a step the visitor did not do would break the story after it.
 
@@ -537,14 +560,18 @@ runs once after the dwell, as closing the limits popover so the composer takes
 the first click) and until the control of
 the next step is on screen, so a result is never replaced by an instruction
 for a control the visitor cannot see yet; when the group is done, "<group> is
-done. Go on with <next>, marked Up next." The line never goes back to a
+done. Go on with <next>, marked Up next." (the marker words only while the next
+group really carries Up next; on a revisit of a done group it ends at the title).
+The line never goes back to a
 description of the scene, and it never says a step is done before its result is
 visible. The frame shown changes after the result was held, and only if the
 next step lives in another frame. Simulated replies speak as the agent on the
 sample project and never mention the app or the demo. Progress is the list of
 done steps per group, kept in `sessionStorage` under `goodboy-demo-hints`
 (every read and write survives blocked storage), so a new tab starts fresh,
-and Replay clears the open group only. Replay bumps the group's `epoch`; a mark
+and Replay clears the open group only. A page load drops the done steps of a
+group that is not fully done, because its scene restarts from the beginning
+(`hints/settledProgressOf.ts`); a finished group keeps its check and its unlock. Replay bumps the group's `epoch`; a mark
 made against an older epoch is dropped, so a stale tab cannot bring a replayed
 group back. A `tried` report is accepted only for the step that is next, in
 `useDemoHints`, as well as in the engine. Every group has its data file:

@@ -261,6 +261,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         void get()
           .reconcileOrphanWorktrees()
           .catch(() => {});
+        void get().closeStaleBrowserTabs();
         scheduleStorageCheck({ get });
         scheduleSearchBackfill({ get });
 

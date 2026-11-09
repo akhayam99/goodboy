@@ -12,6 +12,76 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.32.0
+
+A browser opens beside your session, the side slot keeps the drawer it replaced, and Auto picks the narrowest role that fits.
+
+This version updates your data in one direction. To go back to 0.31, restore the backup Goodboy made before updating.
+
+### New
+
+#### A browser beside your session
+<!-- gb area=sessions image=browser-pane pr=2155,2162,2163,2168 -->
+
+Browser in the session tools opens a pane in the side slot, beside the work. It has an address row with Back, Forward, Reload and Pin to the project, a strip of tabs and a list of the session's tabs. A bare host opens on https, localhost on http, and words are refused. Nothing goes to a search engine.
+
+Tabs belong to the session and come back after a restart at their address. Pin a tab to the project and it shows in every session of that project. A page in a tab reaches no Goodboy command, a popup opens as a tab in the same session, and downloads are refused.
+
+#### The Browser page and its tile
+<!-- gb area=sessions image=browser-page pr=2157,2164,2167 -->
+
+Browser in the sidebar opens one page with every tab of the workspace, grouped by session, then the pins of each project. Pick a tab to show it there, without opening its session first. The tile counts the open tabs, and the trail at the top goes back to the session. A reload returns to the same tab.
+
+Open as page in the pane moves the live tab to the page, and Back beside the session moves it back. The page keeps its place, scroll and half typed form, and nothing reloads.
+
+#### Open servers and links in the browser
+<!-- gb area=sessions pr=2166 -->
+
+The port chip of a terminal tab and the port of a running Service open `http://localhost:<port>` in the session's browser, or show the tab already on that server. A plain click on a web link inside a session opens it beside the work. Cmd-click (Ctrl-click off macOS) opens your own browser. Resting on a localhost link shows a card with the tab title and what a click does.
+
+`⌘L` focuses the address row while the pane or the Browser page is on screen, and stays Ask about this session everywhere else. `⌘K` lists the session's tabs and puts Open first for a typed address: a scheme, a localhost name, a port or a path. A bare word such as plan.md stays a search.
+
+#### Browser profiles per workspace
+<!-- gb area=sessions pr=2165 -->
+
+On macOS 14 and later, sign-ins in one workspace never show in another: each workspace keeps its own cookies and site data. On macOS 13 every workspace shares one store. Goodboy runs one workspace's tabs at a time, across windows. Switching workspace closes the other one's tabs. They stay in the list and reopen at their address when you show them.
+
+#### Hidden tabs sleep, and four stay live
+<!-- gb area=sessions pr=2161 -->
+
+A tab hidden for 10 minutes closes its page and frees the memory. It keeps its address and title in the list. More than four live tabs in a window closes the one hidden longest. A tab you are looking at never closes. Show a closed tab and it reopens at its last address.
+
+### Improved
+
+#### The side slot keeps the drawer it replaced
+<!-- gb area=sessions image=slot-waiting pr=2156,2159 -->
+
+A drawer that opens in the side slot no longer throws away the one it replaced. That one waits in a chip at the left of the drawer head. Esc, the close button or `⌘⇧W` (Close the Drawer in the File menu) brings it back, and a tool keeps its state while it waits. A third open drops the oldest.
+
+The session tools column names its two groups, Read and Work, and marks the tool waiting behind the slot with a ring.
+
+#### Terminal, Browser and Monitoring share one row of tiles
+<!-- gb area=app image=side-tiles pr=2157,2164 -->
+
+The sidebar gives each tool a 48px tile with a count or a warning dot, in one row under the doors, instead of a row each. The sessions list keeps its height. New terminal sits on the Terminal page, in the palette and in the menu, no longer on the sidebar row.
+
+#### Auto picks the narrowest role that fits
+<!-- gb area=agents pr=2158 -->
+
+Auto reaches for a CI fixer when a check is red, a Scribe for pull request text, a Tester for tests and Docs for the README or changelog. The Implementer is the fallback for code changes.
+
+A new Implementer child whose task fits a narrower role is refused once, with the role named. Auto can resend it with a reason, and the child page shows "Why not Tester" under why Auto chose Implementer.
+
+#### Sticky headers blur what scrolls under them
+<!-- gb area=app pr=2154 -->
+
+The pinned back row and the status bar of a report, plan or wireframe frost the page that passes under them, instead of drawing a shadow. They keep even padding top and bottom, and the text stays readable under the blur. With reduced transparency on, they are opaque.
+
+### Fixed
+
+- An empty Needs you card on a session Overview no longer leaves a gap, so Running sits right under the summary. <!-- gb area=sessions pr=2151 -->
+- The Projects card of a session shows branch counts, the Rebase all line and the Next row once every branch is read, all at once instead of branch by branch. <!-- gb area=sessions pr=2153 -->
+
 ## Goodboy v0.31.14
 
 Auto decides on every child that comes back, continues, messages or stops its children, and you can message an Auto child.

@@ -1,0 +1,17 @@
+export const BROWSER_BUDGETS = {
+  hostCommandsBeforeFirstTab: 0,
+  frameRequestsBeforeFirstTab: 0,
+  hostCallsPerPlacementFrame: 1,
+  hostCallsPerStillFrame: 0,
+  placementMeasureMsPerFrame: 1,
+  reactCommitsPerPlacementFrame: 0,
+  storeCommitsPerPlacementFrame: 0,
+  storeCommitsPerOpen: 4,
+  storeCommitsPerSwitch: 1,
+  storeCommitsPerClose: 1,
+  liveTabsPerWindow: 4,
+  minutesHiddenBeforeClose: 10,
+  memoryMbOverNoTabsWithFourTabs: 450,
+  memoryMbPerLiveTab: { low: 70, high: 110 },
+  scrollP95WithinPercent: 10,
+} as const;

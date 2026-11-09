@@ -13,6 +13,9 @@ const IGNORED_WINDOW_EVENTS = new Set([
   'goodboy:test-flag',
   'goodboy:goal-hint-dismissed',
 ]);
+const UNHEARD_REASON_BY_EVENT = new Map([
+  ['browser://tab-state', 'the browser pane listens once it lands, docs/browser.md'],
+]);
 
 const RUST_CONSTANT =
   /\bconst\s+[A-Z0-9_]*EVENT[A-Z0-9_]*\s*:\s*&(?:'static\s+)?str\s*=\s*"([^"]+)"/g;
@@ -113,12 +116,23 @@ const sectionOf = ({ doc, heading }) => {
   return next === -1 ? rest : rest.slice(0, next);
 };
 
-export const verifyEventNames = ({ rustNames, frontend, windowNames, doc }) => {
+export const verifyEventNames = ({
+  rustNames,
+  frontend,
+  windowNames,
+  doc,
+  unheard = UNHEARD_REASON_BY_EVENT,
+}) => {
   const problems = [];
   const rustSection = backticked({ doc: sectionOf({ doc, heading: RUST_SECTION_HEADING }) });
   const documented = backticked({ doc });
+  for (const name of [...unheard.keys()].sort()) {
+    if (frontend.literals.has(name)) {
+      problems.push(`the frontend names "${name}" now: remove it from UNHEARD_REASON_BY_EVENT`);
+    }
+  }
   for (const name of [...rustNames].sort()) {
-    if (!frontend.literals.has(name)) {
+    if (!frontend.literals.has(name) && !unheard.has(name)) {
       problems.push(`Rust emits "${name}" and no frontend file names it`);
     }
     if (!rustSection.has(name)) {

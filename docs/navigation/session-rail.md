@@ -165,7 +165,13 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   approved, open, draft, none, merged, closed), check counts and the one
   signal worst first: `n failing`, then `Conflict`, then `n behind` (`BranchRowChip`,
   `branchRowChipOf`); approved, queued, open, draft and running checks draw no
-  chip, the glyph color carries them. The check counts come from the runs read
+  chip, the glyph color carries them. Counts load first, then show: the git
+  status reads of the card's branches land in the cache as one set, held at
+  most 1.5 s so one slow read never freezes the rest and then lands alone, so the
+  rows, the `n branches behind` line and the Next rebase row show no count
+  (the list is `aria-busy`) until every branch is read, and a refresh keeps
+  the last complete set until the new one has landed whole; a branch whose
+  base changed shows no count until its new read lands (`loadThenShow.test.tsx`). The check counts come from the runs read
   for the request on any host, skipped kept apart from passed. The number, the
   state word and the branch are not on the line: they sit in the row's fact
   card (`branchRowCardOf`: the branch as title, `#318` beside it, the state,
@@ -340,7 +346,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   still in the session but whose steps did not load says "This run couldn't be
   read" with Retry (`RunMetadataMissing`), never that it is gone.
 
-The tools (Explore, Context, Ask, Agents, Scripts, Terminal) are panes, not pages:
+The tools (Explore, Context, Ask, Agents, Scripts, Terminal, Browser) are panes, not pages:
 they open from the session tools column at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -670,12 +676,25 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 ## The session tools
 
 One 44px column at the right edge of the session content holds Explore,
-Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore, Context and
-Ask form the reading group; one separator leads to the other tools.
-Each tool keeps its pane id and shortcut. `SessionToolButton` names every
+Context, Ask, Agents, Scripts, Terminal and Browser (`SESSION_TOOLS`). Explore,
+Context and Ask form the reading group; one separator leads to the other tools.
+Two captions, Read and Work (`ToolGroupCaption`), sit over the two groups in
+the same `text-rail` role.
+Each tool keeps its pane id and shortcut; Browser has no shortcut yet. `SessionToolButton` names every
 tool below its icon in the 9px `text-rail` role: faint when closed, muted when
 open. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
+
+A tool has three states (`toolStateOf`): at rest, pressed when it holds the
+slot, and waiting when it is the tool in the slot's back chip. Waiting draws a
+small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
+`Terminal, waiting`; pressing it opens the saved request of the chip again
+(`togglePane`), so Context comes back on the same section and view, and the
+tool it replaces moves into the chip.
+`waitingPaneOf` reads the same `selectSlotBack` the drawer head's back chip
+reads, so the two never disagree: a reader or form in the chip rings nothing,
+and a tool that is pressed never rings. The signal dot keeps its meaning and
+sits with any state, on the other corner of the icon.
 
 The column is a vertical toolbar with one tab stop. Up, Down, Home and End
 move it (`toolbarIndexAfter`). Its signal dots keep their reason in the
@@ -763,7 +782,7 @@ Folding the rail leaves the column in place.
 
 - **Outside a session there is no tools group.** The workspace pages (the
   board, the studios) already hold the two tools that make sense there as
-  column doors: **Terminal** (with New terminal on its plus) and **Chat**
+  column: the **Terminal** tile and the **Chat** door
   (with New chat), the workspace conversation that answers what Ask answers
   for one session. Ask, Explore, Context and Scripts read one session, so they
   exist only inside one, and ⌘L is bound only while a session is visible.
@@ -785,6 +804,11 @@ Folding the rail leaves the column in place.
   Explore or Scripts lens: the palette's Open Explore and Open Scripts, toasts
   and stored notifications (`open-lens` scripts) open the pane through
   `openToolPane`, which first goes to the session when another one is shown.
+- **Browser opens a page beside the work** (drawer kind `browser`,
+  `features/browser/`): the session's tabs and the project pins in a reader
+  tier pane, so the session rail folds to icons while it is open.
+  [browser.md](../browser.md#the-pane) owns its address row, its tabs and the
+  rules for the native view.
 - **Context signals ride on Context.** A 6px dot in the Context tool's right
   slot (on the folded icon, its corner) marks decisions changed since the last
   look (info), a running summary (info, pulsing) or a failed summary (danger)

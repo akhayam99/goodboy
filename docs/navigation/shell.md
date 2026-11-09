@@ -237,13 +237,33 @@ the detail as a page rail. The right drawer is context, never navigation. The
 right drawer holds reference material beside the page and closes with the pane
 that opened it.
 
+**The right drawer is one slot, and the latest open wins.** What it replaced
+waits in a back chip at the left of the drawer head, one level deep, so a
+third open drops the oldest. The chip reads the kind and the title
+(`Plan · Add tax to the checkout total`, `Terminal`); a click swaps the two.
+Closing the drawer brings back what the chip holds, and closing that empties
+the slot. Esc in the session is one ladder: an open menu, popover or field
+takes it first, then the top of the slot closes, then the drawer from the
+chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS, File > Close the Drawer)
+closes the top of the slot from anywhere, a focused terminal or web page
+included; an open menu or dialog takes it first. The right rail stays at 44px
+and says the same thing: the tool in the slot is pressed, the tool in the chip
+wears a small ring and is named waiting, and a signal dot sits with either (see
+[session-rail.md](./session-rail.md), The session tools). The rules, the store and the navigation cases are in
+[home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
+
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 the doors Board
-(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (row icon and word in
+(⌘⇧H), Tasks, Chat, Workflows and Impact as one 28px row each (row icon and word in
 `text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
-new chat, never the last one) and Terminal in a plus (New terminal in the workspace folder),
-both always visible; one separator
+new chat, never the last one), always visible. The tools, Terminal (⌃`), Browser and Monitoring, are
+not rows: they share one row of 48px tiles under the doors (`ColumnToolTiles`), the icon with its
+word under it, each tile as wide as the others. A tile opens the
+tool's page, is pressed on that page, takes the same focus ring as a row and carries the count
+at its top right (`text-chip`, tabular, `9+` past nine) or the warning dot. New terminal lives on
+the Terminal page, in the palette and in the menu, not on the tile. Tools are tiles and doors are
+rows. Then one separator
 (`h-px bg-border-soft`) with the same gap above and below; the Sessions list
 (`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
 session row, selected while the draft is open, a primary dot and `Draft in progress` while a
@@ -251,14 +271,16 @@ draft waits) and whose group headers carry no top margin: the list's one gap (`l
 doors' gap) spaces the groups; then at the foot Settings (⌘,) and the Goodboy row.
 Every door row has one trailing grid
 (`ColumnDoorRow`): a 20px signal slot right aligned, then a 24px action slot reserved on every
-row (the plus sits in it on Chat and Terminal). A running door draws no dot: what runs is in its
+row (the plus sits in it on Chat). A running door draws no dot: what runs is in its
 tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
 dot means attention without a number. Chat with none running shows a primary dot for a new reply.
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
-Terminal counts the terminal tabs still alive, all owners, and Monitoring counts the pinned ports
-and the ports Goodboy started that are in use; a pinned port that is down swaps Monitoring's count
-for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
-`Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
+Terminal counts the terminal tabs still alive, all owners, Browser counts the rows the Browser page
+lists (`browserTabCount`), and Monitoring counts the pinned ports
+and the ports Goodboy started that are in use; the numbers come from `doorSignalOf`, which the
+rows, the tiles and the folded rail all read. A pinned port that is down swaps Monitoring's count
+for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's and the tile's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
+`Browser, 3 tabs`, `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
 the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot
@@ -335,8 +357,8 @@ hide animation or overlay can move it.
   its toggle folds the column: the one toggle sits in the top bar, left of Back
   and Forward (`ColumnToggleButton` in `AppTopBar`, ⌘B), and no pane and no
   window width folds it. `shellFoldsOf` (read through `useShellFolds`) reads the
-  open pane's tier: a reader tier pane (720: a file, a diff, a document, New)
-  folds the session rail to its 44px icons while it is open; a side tier pane
+  open pane's tier: a reader tier pane (720: a file, a diff, a document, New,
+  the browser) folds the session rail to its 44px icons while it is open; a side tier pane
   (416: Explore, Context, Ask, Agents, Scripts, Terminal and the transcripts
   Agents opens) folds nothing. The saved
   choices are untouched, and the rail toggle opens a rail folded this way for

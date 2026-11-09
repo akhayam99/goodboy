@@ -320,7 +320,7 @@ Five rules:
    `StudioDetail`; `StudioFrame` hands it the band through `StudioBandContext`.
 2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
    (288, resizable 220 to 420). No page draws a second rail column.
-3. **Stage pages are only the Board and the Terminal.** Nothing else is fluid.
+3. **Stage pages are only the Board, the Terminal and the Browser.** Nothing else is fluid.
 4. **The page title row and the drawer header share one line.** `DrawerFrame` draws its
    header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 12px
    inset, 32px row), with one close control.
@@ -469,10 +469,23 @@ its tab, so a tab change brings the header back even when React keeps the
 scroller). When the header leaves, the whole body (a toolbar above the
 scroller included) moves up with it (`--reveal-shift`) and grows by the same
 height in step, so its bottom edge never moves: a composer at the foot of the
-body stays put, a chat pinned to its last line keeps it, and the scroller never
-sits under the header, so its thumb, shade and sticky rows need nothing. The
-header's `top`, the body's `margin-top` and its `height` read the same var in
-one layout pass; never move one of them with `translate`, which runs on the
+body stays put and a chat pinned to its last line keeps it. The back row and
+the `lead` overlay the top of the region (`RevealRegion` `pinned`): the engine
+measures them on resize and paints `--reveal-inset`, and the header sits at that
+inset (`--reveal-top`, or its own height above the region when hidden, so it
+never shows through the frosted row). The `PaneShell` body scroller
+(`ScrollFade` `isUnderPinned`) runs from the bottom of the shown header, or
+from the top of the region once the header steps aside or is pinned, with the
+inset as its top padding and `scroll-padding-top`, so text scrolls under the back row and
+an anchor lands below it. A self-scrolling body pads the inset instead and stays
+below the row. A sticky row inside the scroller (a list group label, a diff file
+header, the report outline) sits at `top: 0`: a sticky box parks at the
+scroller's padding edge, so the inset padding already puts it right under the
+pinned zone, and `top: var(--reveal-inset)` would count the inset twice. A page whose header is a
+status bar the reader keeps (the artifact page, `PaneShell` `isHeaderPinned`)
+puts it in the pinned zone with the back row instead: nothing steps aside, and
+the document scrolls under both. The header's `top` (`--reveal-top`) and the body's `top` and `height`
+(`--reveal-shift`) read vars painted in the same `paint()` pass; never move one of them with `translate`, which runs on the
 compositor a frame apart and makes a pinned last line wobble. A page with less
 than 24px left to scroll once the header is gone never hides it, and a hidden
 page that runs out of room brings it back, so a short diff never strands the
@@ -505,8 +518,7 @@ The slide uses `--duration-base` and `--ease-enter` to arrive,
 A body with no scroller keeps the header in place. The terminal output (xterm)
 owns its own viewport, not a `ScrollFade`, and is never inside a reveal body,
 since any change to its height refits it: the Terminal page keeps its title,
-and only the rail reveals, the New terminal row stepping aside over the list
-of terminals. The setup wizard keeps its one header row: it holds the way out
+and only the rail reveals. The setup wizard keeps its one header row: it holds the way out
 (**Close** or **Set up later**) and the step progress, so it is the back row
 and nothing in it steps aside. A page whose back sits in a trail of its own
 (the workflow editor) passes that trail as the `lead`. A
@@ -548,12 +560,25 @@ headers belong to its body, such as the file headers of a diff, passes
 `fadeEdges="end"`: only its bottom edge fades, so the header on top stays
 sharp.
 
-**Content that goes under a fixed header gets a shade, not a fade.**
-`ScrollFade edge="shade"` draws, once the view is scrolled, a 12px band from
-the `scroll-edge` color token to transparent under its top edge, fading in over
-`--duration-quick`. No line, no blur; the bottom edge keeps its fade. The page
-scroller under a `RevealRegion` header takes the shade by default. `fadeEdges="end"` keeps the top
-edge to the sticky rows, so no shade is drawn there.
+**A sticky header blurs what passes under it; it never casts a shadow.** The
+pinned back row, the artifact page's pinned zone (back row and status bar
+together), the sliding header of a `RevealRegion` and the sticky rows of a
+list or a diff take `sticky-surface` (`sticky-surface-subtle` on `subtle`): the
+surface role at 90% with `blur(3px) saturate(1.2)`, opaque under
+`prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
+`bg-background` on the header itself. Its block padding leans down: the pinned zone
+is `pt-3 pb-5` (`PANE_RHYTHM.pinnedInset`), more room below than above, because
+the back row's 24px line already holds 4px above its text, and a header under or inside it adds no
+inset of its own. Page content scrolls under the pinned zone, so the blur is
+what the reader sees there, and the scroller's top fade is off under it. A
+drawer's back link sits in the frame above its scroller, so nothing passes
+under it and it needs no surface. The only edge is the `border-soft` hairline of
+`ScrollFade edge="line"`, which fades in over `--duration-quick` once the view is
+scrolled; the page scroller under a `RevealRegion` header takes it by default,
+without a top mask so a sticky row inside it stays sharp, drawn at the bottom of
+the pinned row when the scroller runs under it.
+`fadeEdges="end"` keeps the top edge to the sticky rows, so no hairline fade is
+drawn there.
 
 ## Dividers separate chrome from content, never content from content
 

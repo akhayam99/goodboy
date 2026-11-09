@@ -107,6 +107,7 @@ export const SESSION_EVICTION = [
   { key: 'activeLens', keyedBy: 'session', evictOn: 'archive' },
   { key: 'exploreExpanded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'exploreMountPath', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'exploreChangedView', keyedBy: 'session', evictOn: 'archive' },
   { key: 'trackerMoves', keyedBy: 'session', evictOn: 'archive' },
   { key: 'trackerMoveSettled', keyedBy: 'session', evictOn: 'archive' },
   { key: 'trackerMoveChecks', keyedBy: 'session', evictOn: 'archive' },
@@ -182,6 +183,11 @@ export const SESSION_EVICTION = [
   { key: 'pendingOrchestrations', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'runIdleEpisodes', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'sessionTurnSpans', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserSessionTabs', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserActiveTab', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserShownPin', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserLiveTabs', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserDraftEnds', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [
@@ -273,6 +279,7 @@ export const NON_SESSION_STATE_KEYS = [
   'storageOtherTools',
   'projectRootScripts',
   'budgetRules',
+  'browserProjectPins',
   'providerSpendBreakdown',
   'providerBudgetStatus',
   'budgetAlerts',
@@ -328,6 +335,7 @@ export const NON_SESSION_STATE_KEYS = [
   'openSessionDraftWorkspaceId',
   'goodboyNamedSessionId',
   'drawer',
+  'drawerBack',
   'navigation',
   'appStudio',
   'lastSettingsFocus',

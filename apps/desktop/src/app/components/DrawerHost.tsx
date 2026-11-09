@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
+import { DrawerBackChipContext } from '@goodboy/ui';
 import { useAppStore } from '../../store';
 import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
+import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
+import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
 import { ExplorePane } from '../../features/explore/components/ExplorePane';
@@ -192,6 +195,7 @@ const renderDrawer = ({
     case 'conversation':
       return <ReviewCommentDrawerHost />;
     case 'ask':
+    case 'browser':
     case 'check-analysis':
     case 'file-diff':
     case 'history-versions':
@@ -208,6 +212,7 @@ const renderDrawer = ({
 
 export const DrawerHost = () => {
   const drawer = useAppStore(selectDrawerPanel);
+  const backChip = useSlotBackChip({ back: useAppStore((state) => selectSlotBack({ state })) });
   const closeDrawer = useAppStore((s) => s.closeDrawer);
   const closeQuestion = useAppStore((s) => s.closeQuestion);
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -228,7 +233,11 @@ export const DrawerHost = () => {
   }
   return (
     <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
-      {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
+      <DrawerBackChipContext.Provider value={backChip}>
+        <div className="contents" data-browser-session={drawer.sessionId}>
+          {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
+        </div>
+      </DrawerBackChipContext.Provider>
     </PanelBoundary>
   );
 };

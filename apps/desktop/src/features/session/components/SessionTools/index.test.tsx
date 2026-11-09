@@ -18,6 +18,9 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import type { TerminalTabId } from '../../../../shared/types/terminal';
+import type { OpenDrawer } from '../../../../store/slices/drawer/state';
+import { brandedId } from '../../../history/testing/brandedId';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -63,6 +66,18 @@ const toggle = (name: 'ask' | 'terminal' | 'explore' | 'context' | 'scripts') =>
 
 const drawerKind = () => useAppStore.getState().drawer?.kind ?? null;
 
+const TERMINAL: OpenDrawer = {
+  kind: 'terminal',
+  sessionId: SESSION_ID,
+  payload: { terminalId: brandedId<TerminalTabId>({ value: `${SESSION_ID}::t1` }) },
+};
+
+const CONTEXT: OpenDrawer = {
+  kind: 'context',
+  sessionId: SESSION_ID,
+  payload: { section: 'goal', view: 'current' },
+};
+
 const README: ExploreEntry = {
   name: 'README.md',
   relPath: 'README.md',
@@ -84,8 +99,9 @@ describe('SessionTools', () => {
       'Agents',
       'Scripts',
       'Terminal',
+      'Browser',
     ]);
-    expect(buttons.map((button) => button.textContent)).toEqual(['', '', '', '', '', '']);
+    expect(buttons.map((button) => button.textContent)).toEqual(['', '', '', '', '', '', '']);
     expect(buttons.every((button) => button.querySelector('svg') !== null)).toBe(true);
     expect(within(toolbar).queryByRole('button', { name: /^More/ })).toBeNull();
   });
@@ -99,9 +115,10 @@ describe('SessionTools', () => {
       ['spawned', 'session.spawned'],
       ['scripts', 'lens.scripts'],
       ['terminal', 'session.terminal'],
+      ['browser', undefined],
     ]);
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
-    for (const pane of ['explore', 'context', 'ask', 'spawned', 'scripts', 'terminal']) {
+    for (const pane of ['explore', 'context', 'ask', 'spawned', 'scripts', 'terminal', 'browser']) {
       within(toolbar).getByTestId(`pane-toggle-${pane}`);
     }
   });
@@ -122,10 +139,11 @@ describe('SessionTools', () => {
       'spawned',
       'scripts',
       'terminal',
+      'browser',
     ]);
     const separators = within(toolbar).getAllByRole('separator');
     expect(separators.every((separator) => separator.tagName === 'SPAN')).toBe(true);
-    expect(within(toolbar).getAllByRole('button').length).toBe(6);
+    expect(within(toolbar).getAllByRole('button').length).toBe(7);
   });
 
   it('names each icon with its label and chord in the tooltip on the left', () => {
@@ -135,9 +153,11 @@ describe('SessionTools', () => {
       expect(tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) })).toContain(
         tool.label,
       );
-      expect(tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) })).toContain(
-        shortcutGlyphs(tool.shortcut),
-      );
+      if (tool.shortcut !== undefined) {
+        expect(
+          tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) }),
+        ).toContain(shortcutGlyphs(tool.shortcut));
+      }
     }
   });
 
@@ -160,7 +180,7 @@ describe('SessionTools', () => {
     expect(open?.getAttribute('data-tone')).toBe('open');
     expect(
       captions.filter((caption) => caption?.getAttribute('data-tone') === 'closed'),
-    ).toHaveLength(5);
+    ).toHaveLength(6);
   });
 
   it('keeps every label inside the 44px rail at the 9px caption size', () => {
@@ -185,9 +205,10 @@ describe('SessionTools', () => {
     const railGap = 8;
     const headerInset = 12;
     const groups = new Set(SESSION_TOOLS.map((tool) => tool.group)).size;
-    const children = SESSION_TOOLS.length + groups - 1;
+    const children = SESSION_TOOLS.length + 2 * groups - 1;
     const needed =
       headerInset +
+      groups * caption +
       SESSION_TOOLS.length * (button + captionGap + caption) +
       (children - 1) * railGap +
       (groups - 1);
@@ -221,19 +242,19 @@ describe('SessionTools', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     const buttons = within(toolbar).getAllByRole('button');
-    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1, -1]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1, -1, -1]);
     act(() => {
       buttons[0]?.focus();
     });
     fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(buttons[1]);
     fireEvent.keyDown(toolbar, { key: 'End' });
-    expect(document.activeElement).toBe(buttons[5]);
+    expect(document.activeElement).toBe(buttons[6]);
     fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(buttons[0]);
     fireEvent.keyDown(toolbar, { key: 'ArrowUp' });
-    expect(document.activeElement).toBe(buttons[5]);
-    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, -1, -1, -1, 0]);
+    expect(document.activeElement).toBe(buttons[6]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, -1, -1, -1, -1, 0]);
   });
 
   it('presses the icon of the open pane', async () => {
@@ -414,6 +435,160 @@ describe('SessionTools', () => {
     renderCluster();
 
     expect(toggle('scripts').closest('.relative')?.querySelector('[data-signal]')).toBeNull();
+  });
+
+  it('captions the two groups, Read above Explore and Work above Agents', () => {
+    renderCluster();
+    const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
+    const order = Array.from(
+      toolbar.querySelectorAll(
+        '[data-slot="tool-group-caption"], [data-testid^="pane-toggle-"], [data-testid="session-tools-separator"]',
+      ),
+    ).map((node) =>
+      node.getAttribute('data-slot') === 'tool-group-caption'
+        ? `caption:${node.textContent}`
+        : node.getAttribute('data-testid')?.replace('pane-toggle-', ''),
+    );
+    expect(order).toEqual([
+      'caption:Read',
+      'explore',
+      'context',
+      'ask',
+      'session-tools-separator',
+      'caption:Work',
+      'spawned',
+      'scripts',
+      'terminal',
+      'browser',
+    ]);
+    const source = readFileSync(join(__dirname, 'ToolGroupCaption.tsx'), 'utf8');
+    expect(source).toContain('text-rail');
+    expect(source).toContain('[@media(max-height:480px)]:hidden');
+    expect(toolbar.style.width).toBe(`${SESSION_TOOL_RAIL_WIDTH}px`);
+  });
+
+  it('rests every tool until one holds the slot or waits behind it', () => {
+    renderCluster();
+    const states = Array.from(document.querySelectorAll('[data-slot="session-tool"]')).map((node) =>
+      node.getAttribute('data-state'),
+    );
+    expect(states).toEqual(SESSION_TOOLS.map(() => 'rest'));
+    expect(screen.queryByTestId('tool-waiting')).toBeNull();
+  });
+
+  it('presses the tool in the slot and rings the one waiting in the back chip', () => {
+    renderCluster();
+    act(() => {
+      useAppStore.setState({
+        drawer: { kind: 'scripts', sessionId: SESSION_ID, payload: null },
+        drawerBack: TERMINAL,
+      });
+    });
+    const stateOf = (name: 'scripts' | 'terminal' | 'ask') =>
+      toggle(name).closest('[data-slot="session-tool"]')?.getAttribute('data-state');
+    expect(stateOf('scripts')).toBe('pressed');
+    expect(stateOf('terminal')).toBe('waiting');
+    expect(stateOf('ask')).toBe('rest');
+    expect(screen.getAllByTestId('tool-waiting')).toHaveLength(1);
+    expect(
+      toggle('terminal').closest('.relative')?.querySelector('[data-testid="tool-waiting"]'),
+    ).not.toBeNull();
+    expect(toggle('terminal').getAttribute('aria-label')).toBe('Terminal, waiting');
+    expect(toggle('scripts').getAttribute('aria-label')).toBe('Scripts');
+    expect(toggle('terminal').getAttribute('aria-pressed')).toBe('false');
+    expect(toggle('ask').getAttribute('aria-label')).toBe('Ask this session');
+  });
+
+  it('swaps the ring and the pressed tool when the waiting tool is clicked', () => {
+    renderCluster();
+    act(() => {
+      useAppStore.setState({
+        drawer: { kind: 'scripts', sessionId: SESSION_ID, payload: null },
+        drawerBack: { kind: 'ask', sessionId: SESSION_ID, payload: null },
+      });
+    });
+    const stateOf = (name: 'scripts' | 'ask') =>
+      toggle(name).closest('[data-slot="session-tool"]')?.getAttribute('data-state');
+
+    fireEvent.click(toggle('ask'));
+
+    expect(stateOf('ask')).toBe('pressed');
+    expect(stateOf('scripts')).toBe('waiting');
+    expect(screen.getAllByTestId('tool-waiting')).toHaveLength(1);
+    expect(toggle('ask').getAttribute('aria-pressed')).toBe('true');
+    expect(toggle('scripts').getAttribute('aria-label')).toBe('Scripts, waiting');
+
+    fireEvent.click(toggle('scripts'));
+
+    expect(stateOf('scripts')).toBe('pressed');
+    expect(stateOf('ask')).toBe('waiting');
+  });
+
+  it('brings the waiting drawer back with its own payload when its tool is clicked', () => {
+    const versions: OpenDrawer = {
+      kind: 'context',
+      sessionId: SESSION_ID,
+      payload: { section: 'summary', view: 'versions' },
+    };
+    renderCluster();
+    act(() => {
+      useAppStore.setState({
+        drawer: { kind: 'scripts', sessionId: SESSION_ID, payload: null },
+        drawerBack: versions,
+      });
+    });
+
+    fireEvent.click(toggle('context'));
+
+    expect(useAppStore.getState().drawer).toEqual(versions);
+    expect(drawerKind()).toBe('context');
+    expect(useAppStore.getState().drawerBack?.kind).toBe('scripts');
+  });
+
+  it('keeps the signal dot beside the ring on a waiting tool', () => {
+    renderCluster();
+    act(() => {
+      useAppStore.setState((state) => ({
+        drawer: { kind: 'ask', sessionId: SESSION_ID, payload: null },
+        drawerBack: CONTEXT,
+        summarizerStatus: {
+          ...state.summarizerStatus,
+          [SESSION_ID]: {
+            status: 'running',
+            lastUpdate: null,
+            error: null,
+            lastUsage: null,
+            lastAttempt: null,
+          },
+        },
+      }));
+    });
+    const tool = toggle('context').closest('[data-slot="session-tool"]');
+    expect(tool?.getAttribute('data-state')).toBe('waiting');
+    expect(tool?.querySelector('[data-testid="tool-waiting"]')).not.toBeNull();
+    expect(tool?.querySelector('[data-signal="running"]')).not.toBeNull();
+    expect(toggle('context').getAttribute('aria-label')).toBe('Context, waiting, Updating context');
+  });
+
+  it('rings nothing when the back chip holds a reader, and when it holds the pressed tool', () => {
+    renderCluster();
+    act(() => {
+      useAppStore.setState({
+        drawer: { kind: 'ask', sessionId: SESSION_ID, payload: null },
+        drawerBack: {
+          kind: 'conversation',
+          sessionId: SESSION_ID,
+          payload: { threadId: 'thread-1' },
+        },
+      });
+    });
+    expect(screen.queryByTestId('tool-waiting')).toBeNull();
+    act(() => {
+      useAppStore.setState({
+        drawerBack: { kind: 'ask', sessionId: SESSION_ID, payload: null },
+      });
+    });
+    expect(screen.queryByTestId('tool-waiting')).toBeNull();
   });
 
   it('shows a running dot on Scripts while a script runs', () => {

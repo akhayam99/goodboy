@@ -123,6 +123,10 @@ export type DrawerContent =
       readonly payload: { readonly terminalId: TerminalTabId };
     }
   | {
+      readonly kind: 'browser';
+      readonly payload: null;
+    }
+  | {
       readonly kind: 'history-versions';
       readonly payload: { readonly mountId: MountId; readonly worktreePath: string };
     }
@@ -167,8 +171,10 @@ export type OpenDrawer = DrawerRequest;
 
 export type DrawerSliceState = {
   readonly drawer: OpenDrawer | null;
+  readonly drawerBack: OpenDrawer | null;
 };
 
 export const drawerInitialState: DrawerSliceState = {
   drawer: null,
+  drawerBack: null,
 };

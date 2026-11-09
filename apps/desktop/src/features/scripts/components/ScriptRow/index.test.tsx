@@ -6,7 +6,7 @@ import type { ProjectScriptId } from '@goodboy/types';
 import type { RunnableScript } from '../../buildSessionScripts';
 import type { ScriptLiveFacts } from '../../scriptLiveFacts';
 import type { ScriptRunRecord } from '../../scripts';
-vi.mock('../../../../shared/lib/editor', () => ({ openUrl: vi.fn() }));
+vi.mock('../../../../shared/lib/editor', () => ({ openUrl: vi.fn(async () => undefined) }));
 
 import { openUrl } from '../../../../shared/lib/editor';
 import { ScriptRow } from './index';

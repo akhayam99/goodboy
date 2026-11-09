@@ -182,8 +182,9 @@ describe('the main sidebar keeps one icon column', () => {
       expect(names).toContain('workspace tile');
       expect(names).toContain('New session');
       expect(names.some((entry) => entry.startsWith('Sessions'))).toBe(true);
-      expect(names).toContain('Terminal');
       expect(names).toContain('Impact');
+      expect(names).not.toContain('Terminal');
+      expect(document.querySelectorAll('[data-column-tile]')).toHaveLength(3);
       expect(names).toContain('Settings');
       expect(document.querySelectorAll('button[data-select-id] [data-nav-icon]').length).toBe(0);
       expectOneColumn({ marks });

@@ -37,30 +37,8 @@ export type ShortcutScope =
   | 'scripts'
   | 'workspace'
   | 'codeSession'
+  | 'browser'
   | 'overlay';
-
-export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
-  list: 'In the Tasks and Notifications lists',
-  selection: 'In a list with checkboxes',
-  review: 'On the Comments tab',
-  commits: 'On the Commits tab',
-  pullRequest: 'On the Pull request tab',
-  diff: 'On the Changes tab',
-  terminal: 'In the terminal',
-  composer: 'Where a chat composer is open',
-  ask: 'In the Ask panel',
-  chatPage: 'On the Chat page',
-  terminalPage: 'On the Terminal page and the terminal drawer',
-  home: 'On Home, where no workspace is open',
-  find: 'After a search in the view',
-  overview: 'On a session overview',
-  row: 'On a focused row',
-  activityRow: 'On an activity row',
-  scripts: 'On the Scripts page',
-  workspace: 'With a workspace open',
-  codeSession: 'In a session with a branch',
-  overlay: 'In a dialog or a preview',
-};
 
 export type ShortcutFamily = 'workspace-digit' | 'terminal-tab-digit';
 
@@ -225,12 +203,7 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'navigate',
   },
-  'session.board': {
-    combo: 'cmd+shift+KeyH',
-    label: 'Board',
-    plane: 'session',
-    group: 'navigate',
-  },
+  'session.board': { combo: 'cmd+shift+KeyH', label: 'Board', plane: 'session', group: 'navigate' },
   'terminal.studio': {
     combo: 'ctrl+Backquote',
     label: 'Terminal',
@@ -489,6 +462,14 @@ export const SHORTCUTS = {
     label: 'Ask about this session',
     plane: 'app',
     group: 'session',
+  },
+  'browser.address': {
+    combo: 'cmd+KeyL',
+    offMacCombo: 'ctrl+shift+KeyL',
+    label: 'Browser address',
+    plane: 'app',
+    group: 'session',
+    scope: 'browser',
   },
   'ask.reset': {
     combo: 'cmd+KeyN',
@@ -883,6 +864,13 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'window',
   },
+  'slot.close': {
+    combo: 'cmd+shift+KeyW',
+    offMacCombo: 'ctrl+F4',
+    label: 'Close the drawer',
+    plane: 'session',
+    group: 'window',
+  },
   'terminal.closeTab': {
     combo: 'cmd+KeyW',
     offMacCombo: 'ctrl+shift+KeyW',
@@ -922,11 +910,7 @@ export const SHORTCUT_FAMILY_LABEL: Readonly<Record<ShortcutFamily, string>> = {
   'terminal-tab-digit': 'Go to terminal tab 1 to 9',
 };
 
-const MAC_GLYPH: Record<string, string> = {
-  cmd: '⌘',
-  shift: '⇧',
-  alt: '⌥',
-  ctrl: '⌃',
+const PUNCTUATION: Record<string, string> = {
   Comma: ',',
   Period: '.',
   Slash: '/',
@@ -934,11 +918,19 @@ const MAC_GLYPH: Record<string, string> = {
   Equal: '=',
   BracketLeft: '[',
   BracketRight: ']',
+  Backquote: '`',
+};
+
+const MAC_GLYPH: Record<string, string> = {
+  ...PUNCTUATION,
+  cmd: '⌘',
+  shift: '⇧',
+  alt: '⌥',
+  ctrl: '⌃',
   Backspace: '⌫',
   Escape: '⎋',
   Enter: '↵',
   Space: '␣',
-  Backquote: '`',
   ArrowDown: '↓',
   ArrowUp: '↑',
   ArrowLeft: '←',
@@ -946,23 +938,16 @@ const MAC_GLYPH: Record<string, string> = {
 };
 
 const KEY_LABEL: Record<string, string> = {
+  ...PUNCTUATION,
   cmd: 'Ctrl',
   shift: 'Shift',
   alt: 'Alt',
   ctrl: 'Ctrl',
-  Comma: ',',
-  Period: '.',
-  Slash: '/',
-  Minus: '-',
-  Equal: '=',
-  BracketLeft: '[',
-  BracketRight: ']',
   Backspace: 'Backspace',
   Delete: 'Delete',
   Escape: 'Esc',
   Enter: 'Enter',
   Space: 'Space',
-  Backquote: '`',
   ArrowDown: 'Down',
   ArrowUp: 'Up',
   ArrowLeft: 'Left',

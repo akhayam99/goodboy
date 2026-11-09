@@ -129,7 +129,8 @@ container as a card inset 8px on its right, top and bottom.
 **Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
 from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
-(the plan, report and wireframe document, an Explore file, a file diff) opens at
+(the plan, report and wireframe document, an Explore file, a file diff, the
+browser) opens at
 720px, resizes from 480 to `min(1000, room)` while it pushes and to
 `min(1000, page - 16)` over the page, and keeps its own
 `goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
@@ -189,24 +190,44 @@ are gone the moment it closes (a drawer that holds a `canvas`, `iframe`, `video`
 works at once. Reopening during the exit cancels it and shows the drawer as it
 stands, without playing the entry again.
 
-**A drawer's up is its back row, never a trail.** A drawer is page state, not
-an address, so it draws no breadcrumb. A drawer opened from another drawer shows
-one quiet back row under its header (`DrawerBackLink` from `@goodboy/ui`, the row
-`DrawerFrame`'s `back` draws), naming where it returns: **Back to agents**,
-**Back to Explore**, **Back to scripts**. The run step drawer has no `DrawerFrame`
-and draws the same `DrawerBackLink` above its transcript; **Back to agents**
-reopens the Agents drawer on the run it came from.
+**A drawer's up is its back chip, never a trail.** A drawer is page state, not
+an address, so it draws no breadcrumb. The drawer that the open one replaced
+waits in a back chip that leads the header row (`DrawerFrame` draws
+`DrawerBackChip` from what `DrawerHost` hands it through
+`DrawerBackChipContext`): an arrow, the kind and the title, such as
+**Plan · Add tax to the checkout total** or **Terminal**, at most half the
+header wide, the title truncating first (`app/hooks/useSlotBackChip`,
+`slotChipLabelOf`). A click opens it and puts the current one in the chip.
+While the chip shows, the head draws no back row; without one, a drawer opened
+from another drawer keeps its quiet back row (`DrawerBackLink`, the row
+`DrawerFrame`'s `back` draws): **Back to agents**, **Back to Explore**,
+**Back to scripts**. The run step drawer has no `DrawerFrame` and draws the
+same `DrawerBackLink` above its transcript; **Back to agents** reopens the
+Agents drawer on the run it came from.
 
-One drawer at a time, per window. The `drawer` store slice holds
-`{ kind, sessionId, payload }`: `openDrawer`, `closeDrawer` and `toggleDrawer`
-(pressing the trigger again closes it). **The open drawer is part of the
-history entry's focus.** A forward move (crumb, sidebar, palette, a child such
+One drawer at a time, per window, plus one waiting in the chip. The `drawer`
+store slice holds `drawer` and `drawerBack`, each `{ kind, sessionId, payload }`
+or null: `openDrawer` puts the request in the slot and what it replaced in
+`drawerBack` (`slotAfterOpen`), so a third open drops the oldest; reopening the
+drawer in the slot, an artifact on another tab included (`slotKey`), keeps the
+chip; a drawer of another session clears it. `closeDrawer` brings `drawerBack`
+back and empties it, so Escape, the X, the trigger pressed again
+(`toggleDrawer`), a crashed drawer's leave and ⌘⇧W all walk the same two steps.
+`clearDrawer` empties both at once, for a caller whose work moved elsewhere (a
+terminal opened on its page, a plan approved onto the run page, View transcript,
+Write title and goal from linked work); the chip does not come back after it.
+A tool keeps its state while it waits: Terminal keeps its shell, Explore its
+open folders. A second window has its own store, so its own slot.
+**The open drawer is part of the
+history entry's focus; the chip is not.** A forward move (crumb, sidebar, palette, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
 Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
-Scripts, Agents, Terminal): a forward move that stays in its session keeps it open
+Scripts, Agents, Terminal, Browser): a forward move that stays in its session keeps it open
 (`keepToolDrawer` in `navigate`), so a chip in an answer changes the page beside
-it; leaving the session closes it, and Back brings it back like any drawer. A
-reader, an item or a form never stays. Another drawer opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
+it. A tool in the chip stays too: over a reader it comes back into the slot,
+under a tool it stays in the chip (`backAfterPlace` in `applyLocation`). Leaving
+the session empties both, and Back brings the drawer back like any drawer. A
+reader, an item or a form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
@@ -265,9 +286,11 @@ that fails puts it back.
 button pinned to the card's top right corner (a 28px target that does not move
 with the width of the action) and the action on its own row. Beside a pushing
 drawer the stack's right edge is the drawer card's left edge minus the 12px
-gutter (`toastRightOf({ mode, drawerWidth })`, measured from
+gutter (`toastRightOf({ mode, drawerWidth, hasNativeView })`, measured from
 `[data-drawer-card]` while a toast is on screen); over an overlay drawer it
-stays at the right edge and above the scrim. It still lifts above the Ask
+stays at the right edge and above the scrim, except over the browser pane,
+whose page draws above every toast, so the stack keeps left of it there too
+([browser.md](../browser.md#the-pane)). It still lifts above the Ask
 composer and the transcript reply field (`useToastLift`).
 
 **Floating surfaces are one surface.** Menus, popovers, the hover card, the

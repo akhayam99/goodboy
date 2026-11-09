@@ -551,6 +551,23 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       });
     },
   }),
+  keyRow({
+    id: 'browser.address',
+    note: 'with the browser on screen the same chord focuses its address, not Ask',
+    open: async (ctx) => {
+      useAppStore
+        .getState()
+        .openDrawer({ kind: 'browser', sessionId: ctx.sessionId, payload: null });
+      await screen.findByRole('textbox', { name: 'Address' });
+      await press('browser.address')();
+    },
+    lands: async (ctx) => {
+      const field = await screen.findByRole('textbox', { name: 'Address' });
+      await waitFor(() => expect(document.activeElement).toBe(field));
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+      expect(selectOpenDrawer(useAppStore.getState())?.sessionId).toBe(ctx.sessionId);
+    },
+  }),
 ];
 
 const STARRED_TITLES = [
@@ -717,6 +734,28 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) => {
       await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
       expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
+    },
+  }),
+  keyRow({
+    id: 'slot.close',
+    note: 'File > Close the Drawer in the macOS menu bar closes the top of the slot',
+    open: async (ctx) => {
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId: ctx.sessionId }) });
+      await settle();
+      useAppStore
+        .getState()
+        .openDrawer({ kind: 'explore', sessionId: ctx.sessionId, payload: null });
+      useAppStore.getState().openDrawer({
+        kind: 'context',
+        sessionId: ctx.sessionId,
+        payload: { section: 'goal', view: 'current' },
+      });
+      await settle();
+      await pickMenuItem({ id: 'slot.close' });
+    },
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('explore'));
+      expect(useAppStore.getState().drawerBack).toBeNull();
     },
   }),
   keyRow({

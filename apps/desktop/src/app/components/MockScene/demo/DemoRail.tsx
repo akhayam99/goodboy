@@ -79,7 +79,7 @@ export const DemoRail = ({
   const closingRail = rail.railById.get(groupNodeOf({ chapterId: CLOSING_ID }));
   const isClosingQuiet = isQuiet && upNextId !== CLOSING_ID && activeId !== CLOSING_ID;
   return (
-    <div className="hidden w-64 shrink-0 flex-col pb-5 lg:flex">
+    <div className="hidden w-72 shrink-0 flex-col pb-5 lg:flex">
       <nav aria-label="Playground groups" className="flex min-h-0 flex-1 flex-col">
         <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col p-4" edge="line">
           {chapters.map((chapter, index) => {

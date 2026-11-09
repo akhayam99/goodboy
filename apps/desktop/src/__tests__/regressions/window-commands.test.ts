@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const TAURI = join(__dirname, '..', '..', '..', 'src-tauri');
 
 type Capability = {
-  readonly windows: readonly string[];
+  readonly webviews: readonly string[];
   readonly permissions: readonly string[];
 };
 
@@ -61,7 +61,7 @@ describe('the native alerts each window type may use', () => {
 
 describe('the commands each window type may call', () => {
   it('knows every window class the capability grants', () => {
-    expect(readCapability().windows).toEqual(['main', 'win-*']);
+    expect(readCapability().webviews).toEqual(['main', 'win-*']);
   });
 
   it('assigns every registered command to a window type', () => {

@@ -3,6 +3,7 @@
 import { Plus } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { DrawerFrame } from './DrawerFrame';
 import { IconButton } from './IconButton';
 
@@ -56,5 +57,27 @@ describe('DrawerFrame head', () => {
     );
 
     expect(container.querySelector('[data-drawer-header-row]')?.className).toBe(plain);
+  });
+
+  it('leads the head with the back chip and drops the back row while the chip holds one', () => {
+    const onBack = vi.fn();
+    render(
+      <DrawerBackChipContext.Provider
+        value={{ kind: 'Plan', title: 'Add tax to the checkout total', onBack }}
+      >
+        <DrawerFrame
+          title="Terminal"
+          back={{ label: 'Back to Explore', onBack: vi.fn() }}
+          onClose={vi.fn()}
+        >
+          body
+        </DrawerFrame>
+      </DrawerBackChipContext.Provider>,
+    );
+
+    expect(headButtons()).toEqual(['Back to Plan · Add tax to the checkout total', 'Close']);
+    expect(screen.queryByRole('button', { name: 'Back to Explore' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^Back to Plan/ }));
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

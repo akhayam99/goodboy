@@ -29,6 +29,7 @@ export const applyStoryAnswer = (): void => {
     sessionId: STORY_SESSION_ID,
     agentId: STORY_PLANNER_ID,
     text,
+    answer: STORY_QUESTION.recommended,
   })) {
     cue.apply({ store: useAppStore, at: nowIso({}), hint: () => undefined });
   }

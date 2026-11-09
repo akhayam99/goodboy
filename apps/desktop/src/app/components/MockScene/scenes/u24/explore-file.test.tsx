@@ -87,7 +87,8 @@ describe('the Explore file scenes', () => {
     const stage = screen.getByTestId('explore-file-stage');
     expect(stage.style.width).toBe('1100px');
     expect(
-      within(stage).getByRole('region', { name: 'rounding.ts' }).parentElement?.style.width,
+      within(stage).getByRole('region', { name: 'rounding.ts' }).closest('[data-browser-session]')
+        ?.parentElement?.style.width,
     ).toBe('1000px');
   });
 });

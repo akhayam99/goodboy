@@ -110,6 +110,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     await get()
       .closeSessionTerminals(sessionId)
       .catch(() => undefined);
+    await get().closeBrowserSessionTabs({ sessionId });
     let runStopped = true;
     if (session.state.kind === 'running') {
       const runId = (session.state as { kind: 'running'; runId: ProviderRunId }).runId;

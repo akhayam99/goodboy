@@ -11,8 +11,8 @@ import {
   type InboxStudioFocus,
   type StudioPlace,
 } from '../../../store';
-import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
 import { terminalStudioPlace } from '../../../features/terminal/terminalStudioPlace';
+import { browserStudioPlace } from '../../../features/browser/browserStudioPlace';
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
 import { AppStudio } from '../../components/AppOverlayRouter/AppStudio';
@@ -132,15 +132,15 @@ export const useAppOverlays = ({
     [goTo],
   );
 
-  const openNewChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
+  const openBrowserStudio = useCallback(
+    () =>
+      goTo({
+        overlay: browserStudioPlace({ sessionId: useAppStore.getState().currentSessionId }),
+      }),
+    [goTo],
+  );
 
-  const openNewTerminal = useCallback(() => {
-    const workspaceId = currentWorkspace?.id;
-    if (workspaceId === undefined) {
-      return;
-    }
-    void openWorkspaceTerminal({ workspaceId });
-  }, [currentWorkspace?.id]);
+  const openNewChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
 
   const openMonitoring = useCallback(() => goTo({ overlay: { kind: 'monitoring' } }), [goTo]);
 
@@ -241,8 +241,8 @@ export const useAppOverlays = ({
     openShortcutHelp,
     openSpend,
     openTerminalStudio,
+    openBrowserStudio,
     openNewChat,
-    openNewTerminal,
     openMonitoring,
     openImpact,
     openWorkflows,

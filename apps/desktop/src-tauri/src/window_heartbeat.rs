@@ -100,7 +100,7 @@ pub(crate) fn was_suspended(monotonic_gap: Duration, wall_gap: Duration) -> bool
 }
 
 fn window_state(app: &AppHandle, label: &str) -> WindowState {
-    let Some(window) = app.get_webview_window(label) else {
+    let Some(window) = app.get_window(label) else {
         return WindowState::Gone;
     };
     let is_showing = window.is_visible().unwrap_or(true) && !window.is_minimized().unwrap_or(false);

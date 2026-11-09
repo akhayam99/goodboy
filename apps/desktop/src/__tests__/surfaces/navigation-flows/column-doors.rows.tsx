@@ -44,8 +44,8 @@ const DOOR_ORDER: ReadonlyArray<string> = [
   'inbox',
   'workflows',
   'chat',
-  'terminal',
   'impact',
+  'terminal',
   'monitoring',
 ];
 
@@ -183,6 +183,17 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: 'column: browser',
+    covers: ['openBrowserStudio', 'studio:browser'],
+    door: 'visible',
+    open: () => click(doorIn('browser')),
+    lands: both(
+      () => studio('Browser'),
+      async () => expect(doorIn('browser').getAttribute('aria-current')).toBe('page'),
+      async () => expect(useAppStore.getState().appStudio?.kind).toBe('browser'),
+    ),
+  },
+  {
     name: 'column: impact',
     covers: ['openImpact', 'studio:impact'],
     door: 'visible',
@@ -281,9 +292,12 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: new terminal opens the studio on a fresh terminal',
-    covers: ['openNewTerminal'],
-    open: () => click(createIn('terminal')),
+    name: 'column: the terminal tile opens the studio and its page starts a fresh terminal',
+    covers: ['openTerminalStudio'],
+    open: async () => {
+      await click(doorIn('terminal'));
+      await clickButton(/^New terminal$/);
+    },
     lands: both(
       () => studio('Terminal'),
       () => visible('complementary', 'Terminals'),
