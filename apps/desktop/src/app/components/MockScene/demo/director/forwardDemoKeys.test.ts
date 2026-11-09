@@ -11,7 +11,7 @@ type StageParams = {
 type KeyParams = {
   readonly key: string;
   readonly target?: string;
-  readonly metaKey?: boolean;
+  readonly isMeta?: boolean;
 };
 
 const stage = ({ isFramed = true }: StageParams = {}) => {
@@ -27,10 +27,10 @@ const stage = ({ isFramed = true }: StageParams = {}) => {
   forwardDemoKeys({ view, signal: listeners.signal });
   const forwarded: string[] = [];
   host.addEventListener('keydown', (event) => forwarded.push(event.key));
-  const press = ({ key, target = 'button', metaKey = false }: KeyParams): boolean => {
+  const press = ({ key, target = 'button', isMeta = false }: KeyParams): boolean => {
     const event = new view.KeyboardEvent('keydown', {
       key,
-      metaKey,
+      metaKey: isMeta,
       bubbles: true,
       cancelable: true,
     });
@@ -58,7 +58,7 @@ describe('keys pressed inside the demo frame', () => {
   it('stay in the frame while the visitor types, uses a shortcut or presses Escape', () => {
     const { forwarded, press, listeners } = stage();
     expect(press({ key: 'ArrowRight', target: 'textarea' })).toBe(false);
-    press({ key: 'ArrowRight', metaKey: true });
+    press({ key: 'ArrowRight', isMeta: true });
     press({ key: 'Escape' });
     press({ key: 'r' });
     expect(forwarded).toEqual([]);

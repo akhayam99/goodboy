@@ -57,7 +57,7 @@ describe('the demo coach mark', () => {
     const { rerender } = render(view({ coach: coachOf({}) }));
     expect(screen.queryByText(WARNING)).toBeNull();
     rerender(view({ coach: coachOf({ pulse: 1 }) }));
-    expect(screen.getByText(WARNING)).not.toBeNull();
+    expect(screen.getByText(WARNING).textContent).toBe(WARNING);
     act(() => {
       vi.advanceTimersByTime(2000);
     });
@@ -65,7 +65,7 @@ describe('the demo coach mark', () => {
     act(() => {
       vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByText(WARNING)).not.toBeNull();
+    expect(screen.getByText(WARNING).textContent).toBe(WARNING);
     act(() => {
       vi.advanceTimersByTime(400);
     });
