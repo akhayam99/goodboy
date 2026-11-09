@@ -1,6 +1,7 @@
 import { browserTabCommands } from './browserTabCommands';
 import { browserWrite } from './browserWrite';
 import { browserWrites } from './browserWrites';
+import { omitSession } from './omitSession';
 import type { SliceDeps } from '../../slice-types';
 import type { SessionParams } from './types';
 
@@ -20,8 +21,8 @@ export const closeBrowserSessionTabs = ({ set, get }: SliceDeps) => {
       commit: () => {
         browserWrites.loads.cancel({ key: browserWrites.sessionLoadKey({ sessionId }) });
         set((state) => ({
-          browserSessionTabs: { ...state.browserSessionTabs, [sessionId]: [] },
-          browserActiveTab: { ...state.browserActiveTab, [sessionId]: null },
+          browserSessionTabs: omitSession({ record: state.browserSessionTabs, sessionId }),
+          browserActiveTab: omitSession({ record: state.browserActiveTab, sessionId }),
         }));
       },
     });
