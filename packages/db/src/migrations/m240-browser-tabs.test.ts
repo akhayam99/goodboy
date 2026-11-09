@@ -4,7 +4,15 @@ import { insertRow, migrateThrough } from '../test-helpers/migration-rows';
 
 type Database = Awaited<ReturnType<typeof makeMigratedTestDatabase>>;
 
-const seedOwners = async ({ db }: { readonly db: Database }): Promise<void> => {
+type SeedParams = {
+  readonly db: Database;
+};
+
+type RowParams = {
+  readonly overrides: Readonly<Record<string, unknown>>;
+};
+
+const seedOwners = async ({ db }: SeedParams): Promise<void> => {
   await insertRow({
     db,
     table: 'workspaces',
@@ -27,7 +35,7 @@ const seedOwners = async ({ db }: { readonly db: Database }): Promise<void> => {
   });
 };
 
-const tabRow = (overrides: Readonly<Record<string, unknown>>) => ({
+const tabRow = ({ overrides }: RowParams) => ({
   id: 't1',
   session_id: 's1',
   project_id: null,
@@ -65,21 +73,21 @@ describe('m240 browser tabs', () => {
     await seedOwners({ db });
 
     await expect(
-      insertRow({ db, table: 'browser_tabs', row: tabRow({ session_id: null }) }),
+      insertRow({ db, table: 'browser_tabs', row: tabRow({ overrides: { session_id: null } }) }),
     ).rejects.toThrow();
     await expect(
-      insertRow({ db, table: 'browser_tabs', row: tabRow({ project_id: 'p1' }) }),
+      insertRow({ db, table: 'browser_tabs', row: tabRow({ overrides: { project_id: 'p1' } }) }),
     ).rejects.toThrow();
   });
 
   it('keeps a pin when a session goes away and drops the tabs of that session', async () => {
     const db = await makeMigratedTestDatabase();
     await seedOwners({ db });
-    await insertRow({ db, table: 'browser_tabs', row: tabRow({ id: 't1' }) });
+    await insertRow({ db, table: 'browser_tabs', row: tabRow({ overrides: { id: 't1' } }) });
     await insertRow({
       db,
       table: 'browser_tabs',
-      row: tabRow({ id: 't2', session_id: null, project_id: 'p1' }),
+      row: tabRow({ overrides: { id: 't2', session_id: null, project_id: 'p1' } }),
     });
 
     await db.execute("DELETE FROM sessions WHERE id = 's1'");
@@ -94,7 +102,7 @@ describe('m240 browser tabs', () => {
     await insertRow({
       db,
       table: 'browser_tabs',
-      row: tabRow({ id: 't2', session_id: null, project_id: 'p1' }),
+      row: tabRow({ overrides: { id: 't2', session_id: null, project_id: 'p1' } }),
     });
 
     await db.execute("DELETE FROM projects WHERE id = 'p1'");
