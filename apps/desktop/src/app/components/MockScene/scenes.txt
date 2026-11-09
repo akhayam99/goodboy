@@ -1326,6 +1326,12 @@ u37-header-reveal-runs
 u37-monitoring-branch
 u37-running-here
 u37-running-here-idle
+u38-action-run-done
+u38-action-run-done-light
+u38-action-run-failed
+u38-action-run-failed-light
+u38-action-run-slow
+u38-action-run-slow-light
 update-card
 update-card-long-version
 update-card-narrow

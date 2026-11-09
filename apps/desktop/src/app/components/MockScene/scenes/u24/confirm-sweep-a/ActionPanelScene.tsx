@@ -57,6 +57,7 @@ export const ActionPanelScene = () => {
     actions: [MERGE],
     inSlot: () => [MERGE],
     pendingId: null,
+    pendingSeconds: null,
     confirming: isConfirming ? MERGE : null,
     failure: null,
     outcome: null,

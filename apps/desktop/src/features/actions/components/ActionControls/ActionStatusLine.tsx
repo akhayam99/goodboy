@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { X } from 'lucide-react';
-import { Button, IconButton, Notice } from '@goodboy/ui';
+import type { ActionRun } from '../../../../store/slices/action-runs/types';
 import type { ActionControls } from '../../useActionControls';
+import { ActionRunLine } from './ActionRunLine';
 
 type Props = {
   readonly controls: ActionControls;
@@ -9,6 +9,30 @@ type Props = {
   readonly failureActions?: ReactNode;
   readonly failureHint?: ReactNode;
   readonly failureDetail?: ReactNode;
+};
+
+const failureTitleOf = ({ controls }: Pick<Props, 'controls'>): string => {
+  const failure = controls.failure;
+  if (failure === null) {
+    return '';
+  }
+  const failed = controls.actions.find((action) => action.id === failure.actionId);
+  if (failed !== undefined) {
+    return `${failed.label} failed`;
+  }
+  return failure.actionId.endsWith('push') ? 'Push failed' : "Couldn't finish";
+};
+
+const runOf = ({
+  controls,
+}: Pick<Props, 'controls'>): Pick<ActionRun, 'phase' | 'message'> | null => {
+  if (controls.failure !== null) {
+    return { phase: 'failed', message: controls.failure.message };
+  }
+  if (controls.outcome !== null) {
+    return { phase: 'done', message: controls.outcome.message };
+  }
+  return null;
 };
 
 export const ActionStatusLine = ({
@@ -29,11 +53,8 @@ export const ActionStatusLine = ({
     reason,
     actions: visible.filter((action) => action.blockedReason === reason),
   }));
-  const failed =
-    controls.failure === null
-      ? null
-      : (controls.actions.find((action) => action.id === controls.failure?.actionId) ?? null);
-  if (reasons.length === 0 && controls.failure === null && controls.outcome === null) {
+  const run = runOf({ controls });
+  if (reasons.length === 0 && run === null) {
     return null;
   }
   return (
@@ -46,44 +67,15 @@ export const ActionStatusLine = ({
           <span className="text-muted-foreground">{reason}</span>
         </p>
       ))}
-      {controls.outcome !== null && (
-        <div role="status" className="flex min-w-0 items-center gap-1">
-          <p className="min-w-0 text-right text-foreground">{controls.outcome.message}</p>
-          <IconButton
-            icon={X}
-            label="Dismiss"
-            size="xs"
-            variant="ghost"
-            onClick={controls.dismissOutcome}
-          />
-        </div>
-      )}
-      {controls.failure !== null && (
-        <div className="flex w-full min-w-0 flex-col gap-2 self-stretch text-left">
-          <Notice
-            tone="danger"
-            placement="inline"
-            role="alert"
-            title={
-              failed !== null
-                ? `${failed.label} failed`
-                : controls.failure.actionId.endsWith('push')
-                  ? 'Push failed'
-                  : "Couldn't finish"
-            }
-            body={failureDetail ?? controls.failure.message}
-            actions={
-              <>
-                {failureActions}
-                <Button size="sm" variant="secondary" onClick={controls.retry}>
-                  Retry
-                </Button>
-              </>
-            }
-          />
-          {failureHint}
-        </div>
-      )}
+      <ActionRunLine
+        run={run}
+        failureTitle={failureTitleOf({ controls })}
+        onRetry={controls.retry}
+        onDismiss={run?.phase === 'failed' ? controls.dismissFailure : controls.dismissOutcome}
+        failureActions={failureActions}
+        failureHint={failureHint}
+        failureDetail={failureDetail}
+      />
     </div>
   );
 };

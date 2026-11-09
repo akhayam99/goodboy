@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { formatError } from '@goodboy/ui';
-import { createLatestOnly } from '../../../store/runtime/state-writes/latestOnly';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useActionRun, useAppStore } from '../../../store';
+import { selectActionRun } from '../../../store/slices/action-runs/selectActionRun';
+import { useNow } from '../../../shared/hooks/useNow';
+import { actionRunKeyOf } from '../actionRunKeyOf';
+import { pendingSecondsOf } from '../pendingSecondsOf';
 import { useActionEnv } from '../useActionEnv';
 import { useObjectActions } from '../useObjectActions';
 import type { ActionSlot, ObjectTarget, ResolvedAction } from '../types';
@@ -18,8 +21,6 @@ type ActionFailure = {
   readonly choice: string | null;
 };
 
-const RUN_KEY = 'action';
-
 type ActionOutcome = {
   readonly actionId: string;
   readonly message: string;
@@ -30,11 +31,17 @@ type ConfirmParams = {
   readonly insteadId?: string;
 };
 
+type ExecuteParams = {
+  readonly actionId: string;
+  readonly choice?: string | null;
+};
+
 export type ActionControls = {
   readonly target: ObjectTarget | null;
   readonly actions: ReadonlyArray<ResolvedAction>;
   readonly inSlot: (params: { readonly slot: ActionSlot }) => ReadonlyArray<ResolvedAction>;
   readonly pendingId: string | null;
+  readonly pendingSeconds: number | null;
   readonly confirming: ResolvedAction | null;
   readonly failure: ActionFailure | null;
   readonly outcome: ActionOutcome | null;
@@ -51,76 +58,71 @@ export const useActionControls = ({
   anchorKey = null,
   scopeKey = null,
 }: Params): ActionControls => {
-  const env = useActionEnv({ origin: 'button', anchorKey });
+  const env = useActionEnv({ origin: 'button', anchorKey, isOutcomeShown: true });
   const { actions, runWithOutcome } = useObjectActions({ target, env });
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  const instanceId = useId();
+  const sharedKey = target === null ? null : actionRunKeyOf({ target });
+  const runKey = target === null ? null : (sharedKey ?? `instance:${instanceId}:${scopeKey ?? ''}`);
+  const run = useActionRun({ key: runKey });
+  const pending = run !== null && run.phase === 'pending' ? run : null;
+  const now = useNow(1_000, pending !== null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [failure, setFailure] = useState<ActionFailure | null>(null);
-  const [outcome, setOutcome] = useState<ActionOutcome | null>(null);
-  const isRunningRef = useRef(false);
-  const latest = useRef(createLatestOnly());
 
   useEffect(() => {
-    latest.current.cancel({ key: RUN_KEY });
-    isRunningRef.current = false;
-    setPendingId(null);
     setConfirmingId(null);
-    setFailure(null);
-    setOutcome(null);
   }, [scopeKey]);
 
+  useEffect(() => {
+    if (sharedKey !== null || runKey === null) {
+      return undefined;
+    }
+    return () => useAppStore.getState().dropActionRun({ key: runKey });
+  }, [runKey, sharedKey]);
+
+  const isPendingNow = useCallback(
+    () => selectActionRun({ state: useAppStore.getState(), key: runKey })?.phase === 'pending',
+    [runKey],
+  );
+
   const execute = useCallback(
-    async ({
-      actionId,
-      choice = null,
-    }: {
-      readonly actionId: string;
-      readonly choice?: string | null;
-    }) => {
-      if (isRunningRef.current) {
+    async ({ actionId, choice = null }: ExecuteParams) => {
+      if (runKey === null) {
         return;
       }
       const doneLabel = actions.find((candidate) => candidate.id === actionId)?.doneLabel ?? null;
-      isRunningRef.current = true;
-      setFailure(null);
-      setOutcome(null);
-      setPendingId(actionId);
-      try {
-        const status = await latest.current.run({
-          key: RUN_KEY,
-          request: () => runWithOutcome({ actionId, choice }),
-          apply: (result) => {
-            if (doneLabel !== null && result === 'done') {
-              setOutcome({ actionId, message: doneLabel });
-            }
-          },
-        });
-        if (status === 'stale') {
-          return;
-        }
-      } catch (error) {
-        setFailure({ actionId, message: formatError(error), error, choice });
-      }
-      isRunningRef.current = false;
-      setPendingId(null);
+      await useAppStore.getState().runAction({
+        key: runKey,
+        actionId,
+        choice,
+        task: async () => {
+          const result = await runWithOutcome({ actionId, choice });
+          return doneLabel !== null && result === 'done' ? doneLabel : null;
+        },
+      });
     },
-    [actions, runWithOutcome],
+    [actions, runKey, runWithOutcome],
   );
+
+  const dismiss = useCallback(() => {
+    if (runKey !== null) {
+      useAppStore.getState().dismissActionRun({ key: runKey });
+    }
+  }, [runKey]);
 
   const trigger = useCallback(
     ({ actionId }: { readonly actionId: string }) => {
       const action = actions.find((candidate) => candidate.id === actionId);
-      if (action === undefined || action.blockedReason !== null || isRunningRef.current) {
+      if (action === undefined || action.blockedReason !== null || isPendingNow()) {
         return;
       }
       if (action.confirm !== null) {
-        setFailure(null);
+        dismiss();
         setConfirmingId(actionId);
         return;
       }
       void execute({ actionId });
     },
-    [actions, execute],
+    [actions, dismiss, execute, isPendingNow],
   );
 
   const confirming = useMemo(
@@ -157,14 +159,32 @@ export const useActionControls = ({
 
   const cancel = useCallback(() => setConfirmingId(null), []);
 
+  const failure = useMemo<ActionFailure | null>(
+    () =>
+      run === null || run.phase !== 'failed'
+        ? null
+        : {
+            actionId: run.actionId,
+            message: run.message ?? '',
+            error: run.error,
+            choice: run.choice,
+          },
+    [run],
+  );
+
+  const outcome = useMemo<ActionOutcome | null>(
+    () =>
+      run === null || run.phase !== 'done' || run.message === null
+        ? null
+        : { actionId: run.actionId, message: run.message },
+    [run],
+  );
+
   const retry = useCallback(() => {
     if (failure !== null) {
       void execute({ actionId: failure.actionId, choice: failure.choice });
     }
   }, [execute, failure]);
-
-  const dismissFailure = useCallback(() => setFailure(null), []);
-  const dismissOutcome = useCallback(() => setOutcome(null), []);
 
   const inSlot = useCallback(
     ({ slot }: { readonly slot: ActionSlot }) => actions.filter((action) => action.slot === slot),
@@ -175,7 +195,8 @@ export const useActionControls = ({
     target,
     actions,
     inSlot,
-    pendingId,
+    pendingId: pending?.actionId ?? null,
+    pendingSeconds: pendingSecondsOf({ startedAt: pending?.startedAt ?? null, now }),
     confirming,
     failure,
     outcome,
@@ -183,7 +204,7 @@ export const useActionControls = ({
     confirm,
     cancel,
     retry,
-    dismissFailure,
-    dismissOutcome,
+    dismissFailure: dismiss,
+    dismissOutcome: dismiss,
   };
 };
