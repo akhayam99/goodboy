@@ -1347,6 +1347,11 @@
           "text": "Browse the session folder as a file tree, with a chip for the project and a letter on changed files. A file opens in a drawer, and a changed file adds a Changes view.",
           "group": "Keyboard and terminal",
           "also": "explore"
+        },
+        {
+          "title": "Browser",
+          "text": "Open your dev server or any web page beside the session. Tabs belong to the session, a pinned tab stays in every session of the project, and Open in your browser hands the page over.",
+          "group": "Keyboard and terminal"
         }
       ]
     },
