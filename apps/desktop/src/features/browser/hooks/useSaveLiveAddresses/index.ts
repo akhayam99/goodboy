@@ -12,7 +12,7 @@ type Params = {
 };
 
 export const useSaveLiveAddresses = ({ sessionId, tabs, live, facts }: Params): void => {
-  const saving = useRef(new Set<string>());
+  const observed = useRef(new Map<string, string>());
 
   useEffect(() => {
     for (const tab of tabs) {
@@ -22,19 +22,21 @@ export const useSaveLiveAddresses = ({ sessionId, tabs, live, facts }: Params): 
         continue;
       }
       const title = fact.title === '' ? tab.title : fact.title;
+      const key = `${fact.url}\n${title}`;
+      if (observed.current.get(tab.id) === key) {
+        continue;
+      }
+      observed.current.set(tab.id, key);
       if (fact.url === tab.url && title === tab.title) {
         continue;
       }
-      const key = `${tab.id}\n${fact.url}\n${title}`;
-      if (saving.current.has(key)) {
-        continue;
-      }
-      saving.current.add(key);
       void useAppStore
         .getState()
         .updateBrowserTab({ sessionId, tabId: tab.id, url: fact.url, title })
-        .finally(() => {
-          saving.current.delete(key);
+        .then((isSaved) => {
+          if (!isSaved && observed.current.get(tab.id) === key) {
+            observed.current.delete(tab.id);
+          }
         });
     }
   }, [sessionId, tabs, live, facts]);
