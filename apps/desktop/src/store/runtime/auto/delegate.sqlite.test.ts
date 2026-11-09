@@ -301,6 +301,79 @@ describe('the delegate command', () => {
     expect(rows.map((row) => row.role)).toEqual(['implementer']);
   });
 
+  it('refuses an implementer once when a tester fits, then admits it with a roleReason', async () => {
+    const state = await setup();
+    const child = {
+      role: 'implementer',
+      title: 'Add tests for the retry cap',
+      task: 'Add tests for the retry cap of ledger-core: zero, one and the cap.',
+      reason: 'tests in the branch',
+      mount: 'mount-ledger-core',
+    };
+    const refused = await run(state, delegateCommand({ children: [child] }));
+    expect(refused).toMatchObject({ isOk: false, code: 'role_narrower' });
+    expect(refused.error).toContain('This task asks for tests: a tester fits.');
+    expect(refused.error).toContain('"roleReason"');
+    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
+    const kept = await run(
+      state,
+      delegateCommand(
+        {
+          children: [
+            { ...child, roleReason: 'The cap needs a code change before it can be tested.' },
+          ],
+        },
+        'request-2',
+      ),
+    );
+    expect(kept).toMatchObject({ isOk: true });
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(rows.map((row) => row.role)).toEqual(['implementer']);
+    expect(rows[0]?.request).toMatchObject({
+      roleFit: 'tester',
+      roleReason: 'The cap needs a code change before it can be tested.',
+    });
+  });
+
+  it('admits history work on an implementer while Auto cannot start a rewriter', async () => {
+    const state = await setup();
+    const outcome = await run(
+      state,
+      delegateCommand({
+        children: [
+          {
+            role: 'implementer',
+            title: 'Regroup the branch history',
+            task: 'Regroup the commits of ledger-core into four clusters.',
+            reason: 'a history rewrite',
+            mount: 'mount-ledger-core',
+          },
+        ],
+      }),
+    );
+    expect(outcome).toMatchObject({ isOk: true });
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(rows[0]?.request['roleFit']).toBeUndefined();
+  });
+
+  it('refuses a scout asked for outputs only git gives', async () => {
+    const state = await setup();
+    const refused = await run(
+      state,
+      delegateCommand({
+        children: [
+          {
+            role: 'scout',
+            task: 'List the files of each commit on ledger-core and say whether the remote branch exists.',
+            reason: 'facts of the branch',
+          },
+        ],
+      }),
+    );
+    expect(refused).toMatchObject({ isOk: false, code: 'role_lacks_shell' });
+    expect(refused.error).not.toContain('rewriter');
+  });
+
   it('admits a planner whose task forbids the commands it names', async () => {
     const state = await setup();
     const outcome = await run(

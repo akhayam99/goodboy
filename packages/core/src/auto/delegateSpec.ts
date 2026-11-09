@@ -21,6 +21,7 @@ export type DelegateChildSpec = Readonly<{
   title: string | null;
   task: string;
   reason: string;
+  roleReason: string | null;
   provider: string | null;
   model: string | null;
   effort: string | null;
@@ -173,6 +174,7 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
       title: null,
       task: task ?? '',
       reason,
+      roleReason: null,
       provider: clippedTextOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
       model: clippedTextOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),
       effort: clippedTextOf({ value: raw['effort'], max: DELEGATE_FIELD_CHARS }),
@@ -258,6 +260,7 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
       title: titleOf({ value: raw['title'] }),
       task: task ?? '',
       reason,
+      roleReason: clippedTextOf({ value: raw['roleReason'], max: DELEGATE_REASON_CHARS }),
       provider: clippedTextOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
       model: clippedTextOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),
       effort: clippedTextOf({ value: raw['effort'], max: DELEGATE_FIELD_CHARS }),
@@ -333,6 +336,7 @@ export const hashDelegateChildren = ({ children }: HashParams): string =>
         ...(child.forQuestion === null ? [] : [['forQuestion', child.forQuestion]]),
         ...(child.title === null ? [] : [['title', child.title]]),
         ...(child.replaces === null ? [] : [['replaces', child.replaces]]),
+        ...(child.roleReason === null ? [] : [['roleReason', child.roleReason]]),
         ...(child.shouldConfirm ? [['confirm', true]] : []),
       ]),
     ),

@@ -7,14 +7,23 @@ import {
   canAutoRoleRunCommands,
   commandMentionOf,
   isMissingShellText,
+  rerouteHintOf,
   roleCannotRunCommandsMessage,
 } from './roleTools';
-import { AUTO_DELEGATION_ROLES } from './roles';
+import {
+  AUTO_CLOSED_ROLES,
+  AUTO_DELEGATION_ROLES,
+  AUTO_WRITER_ROLES,
+  isAutoRoleStartable,
+} from './roles';
 
 describe('canAutoRoleRunCommands', () => {
   it('gives a shell to the writer roles only', () => {
     const withShell = AUTO_DELEGATION_ROLES.filter((role) => canAutoRoleRunCommands({ role }));
-    expect(withShell).toEqual([...AUTO_COMMAND_ROLES]);
+    expect(withShell).toEqual([...AUTO_WRITER_ROLES]);
+    expect(AUTO_COMMAND_ROLES).toEqual(
+      AUTO_WRITER_ROLES.filter((role) => isAutoRoleStartable({ role })),
+    );
     expect(canAutoRoleRunCommands({ role: 'investigator' })).toBe(false);
     expect(canAutoRoleRunCommands({ role: 'scout' })).toBe(false);
     expect(canAutoRoleRunCommands({ role: 'implementer' })).toBe(true);
@@ -29,6 +38,10 @@ describe('commandMentionOf', () => {
     'Run pnpm test in the mount.',
     'Check each commit in `a1b2c3d4e..HEAD`: does its subject match its diff?',
     'Compare origin/main...HEAD and list the commits that revert each other.',
+    'List the files of each commit on ak/feat-retry in ledger-core.',
+    'Report the Co-Authored-By trailer of every commit.',
+    'Say whether the remote branch of notify-relay still exists.',
+    'Check that the remote branch exists before the rewrite.',
   ])('flags a task that runs commands: %s', (text) => {
     expect(commandMentionOf({ text })).not.toBeNull();
   });
@@ -36,6 +49,7 @@ describe('commandMentionOf', () => {
   it.each([
     'Find where the retry limit is set in payments-api.',
     'Explain why the checkout total is wrong.',
+    'Review the HTTP trailers handling in ledger-core.',
     'Compare the versions 1.2.0...1.4.0 of the changelog of notify-relay.',
     'Wait... then read the file; deadbeef is not a commit here.',
     '',
@@ -96,6 +110,15 @@ describe('roleCannotRunCommandsMessage', () => {
     expect(message).toContain('investigator has no shell');
     expect(message).toContain('implementer');
     expect(message).not.toContain('scout,');
+  });
+
+  it('never lists a role Auto cannot start', () => {
+    for (const closed of AUTO_CLOSED_ROLES) {
+      expect(AUTO_COMMAND_ROLES).not.toContain(closed);
+      expect(roleCannotRunCommandsMessage({ role: 'scout' })).not.toContain(closed);
+      expect(rerouteHintOf({ role: 'scout' })).not.toContain(closed);
+      expect(rerouteHintOf({ role: 'scout', need: 'writer' })).not.toContain(closed);
+    }
   });
 
   it('is unchanged when no phrase matched', () => {
