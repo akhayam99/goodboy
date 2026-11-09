@@ -376,11 +376,15 @@ export const createHintEngine = ({
         : unionOf({ rects: [current?.placement.focus ?? rect, ...resultRects] });
     const isOffscreen = current?.placement.isOffscreen ?? false;
     const hintId = current?.hint.id ?? null;
+    const element = current?.placement.element ?? null;
+    for (const [pressedId, pressed] of clickedElements) {
+      if (pressed !== element) {
+        clickedElements.delete(pressedId);
+      }
+    }
     const isClicked = hintId !== null && clicked.has(hintId);
     const isPressed =
-      hintId !== null &&
-      current?.placement.element !== null &&
-      clickedElements.get(hintId) === current?.placement.element;
+      hintId !== null && element !== null && clickedElements.get(hintId) === element;
     const opened = rect === null ? [] : resultRects;
     const signature = JSON.stringify({
       hintId,
@@ -417,14 +421,18 @@ export const createHintEngine = ({
     pending = view.requestAnimationFrame(evaluate);
   };
 
-  const poll = (): void => {
-    if (isDisposed) {
-      return;
-    }
+  const flush = (): void => {
     if (pending !== null) {
       view.cancelAnimationFrame(pending);
     }
     evaluate();
+  };
+
+  const poll = (): void => {
+    if (isDisposed) {
+      return;
+    }
+    flush();
     pollTimer = view.setTimeout(poll, POLL_MS);
   };
 
@@ -491,14 +499,17 @@ export const createHintEngine = ({
         return;
       }
       const hint = activeOf();
-      if (hint !== undefined) {
-        const anchor = anchorOf({ hint, probe: probeOf({ hint, state: store.getState() }) });
-        if (anchor !== null && anchor.contains(event.target)) {
-          clicked.add(hint.id);
-          clickedElements.set(hint.id, anchor);
-        }
+      const anchor =
+        hint === undefined
+          ? null
+          : anchorOf({ hint, probe: probeOf({ hint, state: store.getState() }) });
+      if (hint === undefined || anchor === null || !anchor.contains(event.target)) {
+        schedule();
+        return;
       }
-      schedule();
+      clicked.add(hint.id);
+      clickedElements.set(hint.id, anchor);
+      flush();
     },
     { capture: true, signal: clickListener.signal },
   );
