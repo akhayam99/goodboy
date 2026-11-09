@@ -597,6 +597,7 @@ mod tests {
                 is_shown: false,
                 opener_id: Some(&seat.opener_id),
                 now_ms: 2_000,
+                rect: rect(),
             },
             seat.generation,
         );

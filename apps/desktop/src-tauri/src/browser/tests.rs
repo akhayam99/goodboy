@@ -858,7 +858,7 @@ fn ends_consistent_when_a_sweep_and_a_close_cross_paths() {
     hide_tab(app.handle(), &first, 100).expect("hides");
     hide_tab(app.handle(), &second, 100).expect("hides");
     let registry = app.state::<BrowserRegistry>();
-    let ids = registry.close_session("harborline", "main");
+    let ids = registry.close_session("harborline", &["main".to_string()]);
     sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
     assert_eq!(state_of(&app, &first), Some(TabState::Closed));
     let closed = close_each(&ids, |id| close_tab(app.handle(), id));
