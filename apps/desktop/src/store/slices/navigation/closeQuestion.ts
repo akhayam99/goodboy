@@ -1,4 +1,5 @@
 import type { SliceDeps } from '../../slice-types';
+import { selectSlotBack } from '../drawer/selectSlotBack';
 import { currentStack } from './currentStack';
 import { goHistory } from './goHistory';
 
@@ -7,6 +8,10 @@ export const closeQuestion = ({ set, get }: SliceDeps) => {
     const state = get();
     const drawer = state.drawer ?? null;
     if (drawer === null || drawer.kind !== 'question') {
+      return;
+    }
+    if (selectSlotBack({ state }) !== null) {
+      state.closeDrawer();
       return;
     }
     const stack = currentStack(state);

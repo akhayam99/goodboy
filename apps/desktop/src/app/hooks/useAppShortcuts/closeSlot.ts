@@ -15,9 +15,5 @@ export const closeSlot = ({}: Params): void => {
   if (drawer === null) {
     return;
   }
-  if (drawer.kind === 'question') {
-    state.closeQuestion();
-    return;
-  }
   state.closeDrawer();
 };
