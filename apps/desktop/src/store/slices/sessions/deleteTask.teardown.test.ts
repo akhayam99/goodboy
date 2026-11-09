@@ -97,6 +97,9 @@ const makeStore = (state: { kind: string; runId?: string } = { kind: 'idle' }) =
     await new Promise((resolve) => setTimeout(resolve, 5));
     order.push('terminals closed');
   }),
+  closeBrowserSessionTabs: vi.fn(async () => {
+    order.push('browser tabs closed');
+  }),
   evictSession: vi.fn(),
   emitNotification: vi.fn(async () => undefined),
   reconcileOrphanWorktrees: vi.fn(async () => undefined),
@@ -119,7 +122,8 @@ describe('deleting a session', () => {
 
     await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
 
-    expect(order).toEqual(['terminals closed', 'worktree removed']);
+    expect(order).toEqual(['terminals closed', 'browser tabs closed', 'worktree removed']);
+    expect(store.closeBrowserSessionTabs).toHaveBeenCalledWith({ sessionId: SESSION_ID });
     expect(detachSessionMounts).toHaveBeenCalledWith({
       db: {},
       sessionId: SESSION_ID,
