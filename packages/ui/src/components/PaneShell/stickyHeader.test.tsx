@@ -71,15 +71,15 @@ describe('sticky page header surface', () => {
     );
   });
 
-  it('pads the pinned back row so the text sits as far from the bottom as from the top', () => {
+  it('pads the pinned back row with more room below than above', () => {
     const { container } = renderTrailPane();
 
     const column = container.querySelector('[data-slot="reveal-pinned"] [data-page-column]');
     const classes = classesOf(column);
-    expect(PANE_RHYTHM.pinnedInset).toBe('pt-3 pb-4');
-    expect(classes).toEqual(expect.arrayContaining(['pt-3', 'pb-4']));
+    expect(PANE_RHYTHM.pinnedInset).toBe('pt-3 pb-5');
+    expect(classes).toEqual(expect.arrayContaining(['pt-3', 'pb-5']));
     expect(classes).not.toContain('py-3');
-    expect(classes).not.toContain('pb-3');
+    expect(classes).not.toContain('pb-4');
   });
 
   it('keeps the title row off a second top inset under the pinned back row', () => {
@@ -108,10 +108,10 @@ describe('sticky page header surface', () => {
     expect(classesOf(pinned)).toContain('sticky-surface');
     expect(pinned?.innerHTML).not.toMatch(/shadow|gradient/);
     expect(classesOf(pinned?.querySelector('[data-page-column]') ?? null)).toEqual(
-      expect.arrayContaining(['pt-3', 'pb-4']),
+      expect.arrayContaining(['pt-3', 'pb-5']),
     );
     expect(classesOf(header)).not.toContain('pt-3');
-    expect(classesOf(header)).not.toContain('pb-4');
+    expect(classesOf(header)).not.toContain('pb-5');
     expect(container.querySelector('[data-slot="reveal-header"]')?.childElementCount).toBe(0);
     expect(classesOf(container.querySelector('[data-page-scroller]'))).toEqual(
       expect.arrayContaining([

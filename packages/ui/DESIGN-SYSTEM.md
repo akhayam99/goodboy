@@ -122,7 +122,7 @@ drawer container at 1.2:1 or more on chrome and background, and
 background, panel and floating.
 
 A sticky header is a surface, never a shadow. `sticky-surface` (and
-`sticky-surface-subtle` for a header on `subtle`) paints the role at 85% over a
+`sticky-surface-subtle` for a header on `subtle`) paints the role at 90% over a
 `backdrop-filter` of `blur(3px) saturate(1.2)`, so content that passes under it
 shows through frosted. Page content scrolls under the pinned back row of a
 `PaneShell`, so the frosted row is what the reader sees there. Under
@@ -130,8 +130,8 @@ shows through frosted. Page content scrolls under the pinned back row of a
 opaque role and the blur is off. A sticky header draws no `shadow-*` and no
 gradient band; the only edge is the 1px `border-soft` hairline of
 `ScrollFade edge="line"`, lit once content is scrolled under it. Its block
-padding reads the same above and below, from the spacing scale (`PANE_RHYTHM.pinnedInset`
-is `pt-3 pb-4` for the pinned back row, whose 24px line holds 4px above its text). Features use the two utilities and never
+padding leaves more room below than above, from the spacing scale (`PANE_RHYTHM.pinnedInset`
+is `pt-3 pb-5` for the pinned back row, whose 24px line holds 4px above its text). Features use the two utilities and never
 write their own blur, alpha or shadow.
 
 A clickable card at rest carries two signals together (a fill one step above
