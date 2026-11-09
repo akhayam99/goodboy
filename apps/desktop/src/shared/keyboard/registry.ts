@@ -37,30 +37,8 @@ export type ShortcutScope =
   | 'scripts'
   | 'workspace'
   | 'codeSession'
+  | 'browser'
   | 'overlay';
-
-export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
-  list: 'In the Tasks and Notifications lists',
-  selection: 'In a list with checkboxes',
-  review: 'On the Comments tab',
-  commits: 'On the Commits tab',
-  pullRequest: 'On the Pull request tab',
-  diff: 'On the Changes tab',
-  terminal: 'In the terminal',
-  composer: 'Where a chat composer is open',
-  ask: 'In the Ask panel',
-  chatPage: 'On the Chat page',
-  terminalPage: 'On the Terminal page and the terminal drawer',
-  home: 'On Home, where no workspace is open',
-  find: 'After a search in the view',
-  overview: 'On a session overview',
-  row: 'On a focused row',
-  activityRow: 'On an activity row',
-  scripts: 'On the Scripts page',
-  workspace: 'With a workspace open',
-  codeSession: 'In a session with a branch',
-  overlay: 'In a dialog or a preview',
-};
 
 export type ShortcutFamily = 'workspace-digit' | 'terminal-tab-digit';
 
@@ -489,6 +467,14 @@ export const SHORTCUTS = {
     label: 'Ask about this session',
     plane: 'app',
     group: 'session',
+  },
+  'browser.address': {
+    combo: 'cmd+KeyL',
+    offMacCombo: 'ctrl+shift+KeyL',
+    label: 'Browser address',
+    plane: 'app',
+    group: 'session',
+    scope: 'browser',
   },
   'ask.reset': {
     combo: 'cmd+KeyN',

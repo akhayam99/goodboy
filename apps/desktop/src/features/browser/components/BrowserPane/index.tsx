@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { DrawerFrame } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { browserTabListPref } from '../../browserTabListPref';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
@@ -21,6 +22,9 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const shownTab = model.shown?.tab ?? null;
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
+  const isOnScreen = useAppStore(
+    (state) => state.currentSessionId === sessionId && state.appStudio === null,
+  );
 
   useNativePlacement({ sessionId, view, tab: shownTab, onError: model.showError });
 
@@ -29,6 +33,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
       <div className="flex min-h-0 flex-1 flex-col gap-2">
         <BrowserAddressRow
           model={model}
+          isAddressShortcutOn={isOnScreen}
           isListOpen={isListOpen}
           onToggleList={() => {
             browserTabListPref.write(!isListOpen);
