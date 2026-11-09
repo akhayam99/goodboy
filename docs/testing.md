@@ -353,7 +353,7 @@ A layout claim is proved by geometry, here, and by no class or attribute in a un
 
 - the h1, the trail's first crumb when the page draws one (only studio pages under a trail still do) and the first body column share one left edge, and a scene with no h1 fails this rule instead of skipping it; an h1 under an overlay drawer's scrim (an `inert` page) is still measured (an entry marked `isBare: true` is a pane mounted without its studio frame or a drawer with no page title, so it is held to the sheet rules only);
 - every `[data-slot]` inside the page container lies inside it (a slot under a scroller may sit below the fold, and one a horizontal scroller moved out sideways, like a Board lane, is not counted);
-- no left rail rect overlaps the trail;
+- no rect of the session pages or of a page rail overlaps the trail;
 - the crumb row centre equals the drawer header centre when a drawer is open;
 - a composer's bottom is at or above the sheet bottom;
 - a `data-container="drawer"` is a sibling of its `data-container="page"`, never inside one;

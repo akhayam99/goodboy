@@ -841,7 +841,7 @@
         },
         {
           "title": "One trail to the Branch page",
-          "text": "Open a branch from the palette, a notification, a chat card or the board and the same Branch page opens. The session rail stays on the session, and Back is history.",
+          "text": "Open a branch from the palette, a notification, a chat card or the board and the same Branch page opens. The session pages stay on the session, and Back is history.",
           "group": "Review and resolve on the Branch page",
           "also": "review layers"
         },
@@ -949,7 +949,7 @@
         },
         {
           "title": "Link an item to a session",
-          "text": "Attach a Tasks item to work that already exists, on a session, its branch or the whole workspace. Link work searches every connected tracker at once, and linked work lives in the session rail, where a record opens with a way back.",
+          "text": "Attach a Tasks item to work that already exists, on a session, its branch or the whole workspace. Link work searches every connected tracker at once, and linked work lives in the session pages, where a record opens with a way back.",
           "group": "Tasks and your tools",
           "also": "link to a session"
         },

@@ -118,7 +118,7 @@ The **Work** tab shows what Goodboy did on the branch: its runs, its questions, 
 
 ### One trail to the Branch page
 
-Every way into a branch, from the palette, a notification, a chat card or the board, opens the same Branch page, and the session rail stays on the session. **Back** walks your history.
+Every way into a branch, from the palette, a notification, a chat card or the board, opens the same Branch page, and the session pages stay on the session. **Back** walks your history.
 
 ### Write it
 

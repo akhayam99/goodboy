@@ -110,7 +110,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 **Fold a column**
 
 - **⌘B** folds the sidebar. **⌥⌘B** folds the column inside the page you are on.
-- That column is the session rail on every level, the Chat and Terminal lists, the Guide chapters, the changelog versions, the Settings scopes or the notification filters.
+- That column is the session pages on every level, the Chat and Terminal lists, the Guide chapters, the changelog versions, the Settings scopes or the notification filters.
 - Each remembers it per page. On a page with no inner column the key does nothing and the palette leaves the entry out.
 
 **Undo and Esc**
@@ -186,7 +186,7 @@ Browse the session folder as a file tree, with a preview of the selected file be
 
 Open your dev server, a port or a link beside the session or on a page of its own, without leaving Goodboy.
 
-- **Browser** in the session tools opens the page beside the work. The session rail folds to icons while it is open.
+- **Browser** in the session tools opens the page beside the work. The session pages fold to icons while it is open.
 - **Browser** in the sidebar opens the Browser page. It lists every tab, grouped by session, then the pins of each project. The tile counts the open tabs.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - **Open as page** moves the shown tab from beside the session to the Browser page. **Back beside the session** moves it back. The page never reloads, so a half-typed form stays.
