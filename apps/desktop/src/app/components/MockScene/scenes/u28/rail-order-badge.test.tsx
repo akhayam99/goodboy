@@ -59,7 +59,7 @@ describe('rail order and badge scenes', () => {
     }
   });
 
-  it('session-tools-order reads files and context, then talk and work, then the terminal', () => {
+  it('session-tools-order reads files and context, then talk and work, then the terminal and the browser', () => {
     mount({ name: 'session-tools-order' });
 
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
@@ -67,7 +67,15 @@ describe('rail order and badge scenes', () => {
       within(toolbar)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['Explore', 'Context', 'Ask this session', 'Agents', 'Scripts', 'Terminal']);
+    ).toEqual([
+      'Explore',
+      'Context',
+      'Ask this session',
+      'Agents',
+      'Scripts',
+      'Terminal',
+      'Browser',
+    ]);
     expect(within(toolbar).getAllByRole('separator')).toHaveLength(1);
   });
 

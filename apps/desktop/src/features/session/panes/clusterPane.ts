@@ -1,1 +1,2 @@
-export type ClusterPane = 'ask' | 'terminal' | 'explore' | 'context' | 'scripts' | 'spawned';
+export type ClusterPane =
+  'ask' | 'terminal' | 'explore' | 'context' | 'scripts' | 'spawned' | 'browser';

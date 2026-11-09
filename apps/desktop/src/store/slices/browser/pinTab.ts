@@ -31,6 +31,9 @@ export const pinTab = ({ set, get }: SliceDeps) => {
             browserActiveTab: wasActive
               ? { ...state.browserActiveTab, [sessionId]: neighborAfterClose({ tabs, tabId }) }
               : state.browserActiveTab,
+            browserShownPin: wasActive
+              ? { ...state.browserShownPin, [sessionId]: tabId }
+              : state.browserShownPin,
           };
         });
       },

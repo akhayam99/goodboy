@@ -142,11 +142,13 @@ describe('c03 session tools scenes', () => {
       'Agents',
       'Scripts',
       'Terminal',
+      'Browser',
     ]);
     expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual([
       'false',
       'false',
       'true',
+      'false',
       'false',
       'false',
       'false',
@@ -158,7 +160,7 @@ describe('c03 session tools scenes', () => {
     const rail = screen.getByRole('navigation', { name: 'Session' });
     expect(rail.getAttribute('data-session-rail')).toBe('session');
     expect(pressed()).toEqual(['Explore']);
-    expect(within(cluster()).getAllByRole('button')).toHaveLength(6);
+    expect(within(cluster()).getAllByRole('button')).toHaveLength(7);
   });
 
   it.each([

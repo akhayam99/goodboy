@@ -1,9 +1,10 @@
 # Browser host
 
 > **Read this when** you are changing how Goodboy opens, places or closes a
-> web page inside a window, or what such a page may reach. **Not for** the
-> pane, its tabs list and its doors (they land with the pane), or the data
-> disclosure users read (`SECURITY.md`).
+> web page inside a window, what such a page may reach, or the browser pane
+> beside a session. **Not for** the Browser page and the doors (server chips,
+> links, ⌘K), which are not built yet, or the data disclosure users read
+> (`SECURITY.md`).
 
 A browser tab is a native webview that Rust places inside a Goodboy window,
 next to the app's own page. Rust owns every tab. The window asks for a tab
@@ -52,8 +53,7 @@ address.
   is refused with `too-many-popups` in the log. Showing a popup frees its
   seat, and so does closing it, by hand, by the sweep or by the cap.
   Otherwise nothing opens.
-- Every download is refused. The ask lands with the pane, which is the first
-  part that can listen for it.
+- Every download is refused. Asking before a download is not built yet.
 
 Phase 0 spike S2 proved the wall: a page in a tab got none of six probe
 commands, and got all six once it navigated itself to the dev origin or to
@@ -175,6 +175,64 @@ to a project is a pin that every session of the project shares.
   the retry of a close that failed, because after the archive or delete nothing
   else calls it.
 
+## The pane
+
+The Browser tool in a session's tools column opens the pane in the session's
+one side slot, as a tool drawer in the reader tier (`DRAWER_KINDS.browser`),
+so the session rail folds to icons while it is open. Pressing the tool again,
+the X or Esc on the pane closes it; Esc inside the page goes to the page.
+
+- **The address row** holds Back, Forward and Reload, the address, Pin to the
+  session's project (Unpin when a pin is shown), Open in your browser and
+  Close. The first button toggles the tab list, and the pane remembers the
+  choice (`goodboy:browser-tab-list:v1`).
+- **The address rule** (`addressOf`): a full `http` or `https` address loads
+  as typed; a bare host loads on `https`, and on `http` when it is
+  `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
+  `0.0.0.0`. A name whose first label is `127` stays on `https`. Words,
+  a host with no dot and every other scheme are refused under the row. The
+  pane never sends text to a search engine.
+- **Tabs**: the strip shows the session's tabs, then the project pins with
+  their title and a pin mark, then New tab. The list shows This session and Pinned for the project, with
+  the note that tabs close when the session is archived. With no tab the pane
+  shows an empty state and focuses the address.
+- **Live tabs**: a row and a live webview are not the same thing. Opening a
+  page asks the host for a hidden webview, saves its row with the webview's id
+  and binds the two in `browserLiveTabs`. After a restart a row has no live
+  webview; showing it opens one at the saved address and binds the new id. A
+  pin shown in the pane is `browserShownPin`; pinning the shown tab keeps it on
+  screen. The pane reads the live address and title every 1.5 seconds and
+  saves a session tab's row whenever they differ from the stored row, a page
+  that comes back to an earlier address included. A failed save is tried
+  again at the next change.
+- **Placement**: one loop (`createNativePlacement`) owns show, hide and
+  `set_bounds`. Every frame, with a `ResizeObserver` as backup, it measures the
+  placeholder (`viewBoundsOf`) and wants the shown tab at that rect, or no tab
+  when the placeholder is gone, hidden or covered. It runs one host call at a
+  time toward the latest wanted state, shows the new tab before hiding the old
+  one, and drops a live id the host answers `tab-gone` for, so the next frame
+  reopens the row. A view whose hide failed stays on its list and is hidden
+  again on the next frame. A wake that answers after the wanted tab changed
+  is never placed or shown. A failed wake stops trying that tab until Reload
+  or a new address. Closing the pane hides the view.
+- **Overlays**: a menu, a popover, a dialog or the palette is any element that
+  matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). For a
+  popover the cover check measures the children of `[data-dropdown-portal]`,
+  because the wrapper itself has no height, and an element with no area never
+  counts. A tooltip (`[role="tooltip"]`) covers the view too, but stays out
+  of `OVERLAY_SELECTOR`, which also gates shortcuts. A studio page counts as
+  well (`[data-studio-slot]`), because it sits over the session without
+  unmounting the pane. While one intersects the placeholder, the view is
+  hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
+  the page (`toastRightOf`), so they never sit under the view.
+- **Writes** name the session and the tab. A state change waits for the host:
+  open saves the row after `browser_tab_open` answered, close calls
+  `browser_tab_close` (a `tab-gone` answer counts as closed) and then deletes the
+  row. A failure keeps the old state and shows the words under the address
+  row. An open that answers after a newer open, or after the pane closed, is
+  closed and never shown. A popup the host opened (`browser://tab-opened`)
+  becomes a session tab while the pane is open.
+
 ## Capabilities
 
 `capabilities/default.json` grants by webview label (`webviews`: `main`,
@@ -207,7 +265,8 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
 `session-closing`, `tab-row-gone`, `tab-row-owner`, `tab-rows-changed`,
-`tab-rows-failed`), never a sentence. The pane owns the words.
+`tab-rows-failed`), never a sentence. The pane owns the words
+(`features/browser/browserFailureText.ts`).
 
 ## Under the hood
 
@@ -254,6 +313,17 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
   `archiveTask.test.ts` and `deleteTask.teardown.test.ts` pin that archive and
   delete call it, and `archiveTask.test.ts` that no tab state is left for the
   archived session.
-- Until the pane lands, `scripts/check-tauri-commands.mjs` allowlists the
-  live `browser_tab_*` commands with a reason; the pane removes those lines as
-  it calls them.
+- The pane lives in `apps/desktop/src/features/browser/`: `browserHost.ts`
+  calls the live tab commands, `addressOf.ts` is the address rule,
+  `createNativePlacement.ts` and `hooks/useNativePlacement` own placement, and
+  `createOverlayWatch.ts` finds an overlay over the view.
+  `components/BrowserPane/index.test.tsx` drives it through `storyHarness` with a
+  fake host: open and show at the placeholder, refused words with no host
+  call, navigation and history by live id, a refused navigation, close before
+  the row delete, pin, an overlay over the view and one elsewhere, a late open
+  closed, a failed hide tried again, a late wake never shown, a failed wake
+  woken again by Reload, a revisited address saved, a failed save tried again
+  and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
+  the cover check for a popover with no role and for tooltips.
+  `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
+  and dark) draw a stand in where the native view goes.

@@ -181,6 +181,15 @@ Browse the session folder as a file tree, with a preview of the selected file be
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
+### Browser
+
+Open your dev server or any web page beside the session, without leaving Goodboy.
+
+- **Browser** in the session tools opens the page beside the work. The session rail folds to icons while it is open.
+- Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
+- Tabs belong to the session. Pin a tab to keep it in every session of the project. Tabs close when the session is archived.
+- **Open in your browser** hands the page to your own browser at any time.
+
 ## Under the hood
 
 This part is for contributors and agents who change the feature.
@@ -193,6 +202,7 @@ This part is for contributors and agents who change the feature.
 - One spelling per key: hints read the shortcut registry through the `shortcut` prop or `shortcutGlyphs`.
 - Stop the running agent: the registry id is `agent.stop`.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
+- Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule.
 - Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
 
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.
