@@ -194,6 +194,61 @@ describe('archiveTask stops live work first', () => {
     expect(await archivedAt()).toBeNull();
   });
 
+  it('closes the live browser tabs of the session once the archive is stored', async () => {
+    await useAppStore.getState().archiveTask(sessionId);
+
+    const closes = storySpies.tauriInvoke.mock.calls.filter(
+      ([name]) => name === 'browser_session_close',
+    );
+    expect(closes).toEqual([['browser_session_close', { args: { sessionId } }]]);
+    expect(await archivedAt()).not.toBeNull();
+  });
+
+  it('leaves no browser tab state behind once the session is archived and evicted', async () => {
+    useAppStore.setState({
+      browserSessionTabs: {
+        [sessionId]: [
+          {
+            id: 'tab-a',
+            sessionId,
+            projectId: null,
+            url: 'https://northwind.example/orders',
+            title: 'Orders',
+            position: 0,
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+      },
+      browserActiveTab: { [sessionId]: 'tab-a' },
+    });
+
+    await useAppStore.getState().archiveTask(sessionId);
+
+    expect(useAppStore.getState().browserSessionTabs).not.toHaveProperty(sessionId);
+    expect(useAppStore.getState().browserActiveTab).not.toHaveProperty(sessionId);
+  });
+
+  it('archives anyway when a browser tab does not close, and shows the error', async () => {
+    stubStoryInvoke({
+      workspaces_with_unread: [],
+      workflows_for_session: [],
+      browser_session_close: { closed: 0, failed: [{ tabId: 'tab-a', reason: 'tab-gone' }] },
+    });
+
+    await useAppStore.getState().archiveTask(sessionId);
+
+    expect(boardIds()).toEqual([]);
+    expect(await archivedAt()).not.toBeNull();
+    expect(
+      useAppStore
+        .getState()
+        .notifications.some(
+          (notification) => notification.title === "Couldn't close the browser tabs",
+        ),
+    ).toBe(true);
+  });
+
   it('stops a running agent before the archive, and Undo brings back a stopped agent', async () => {
     const hold = gate();
     const live = new Set<string>();

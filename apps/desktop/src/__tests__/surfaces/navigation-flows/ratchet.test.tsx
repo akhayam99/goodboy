@@ -54,6 +54,7 @@ const SETTINGS_SCOPES = namesIn({
 const EXEMPT: Readonly<Record<string, string>> = {
   openWorkspace: 'focuses or opens another window, not a page in this one',
   openTerminal: 'adds a terminal tab to the dock, not a page',
+  openBrowserTab: 'adds a tab to the browser pane of a session, not a page',
   setActiveLens: 'internal to the navigation slice, the one door is navigate',
   openPalette: 'opens the palette overlay, every palette destination has its own row',
   openShortcutHelp: 'same page as the shortcuts settings row',

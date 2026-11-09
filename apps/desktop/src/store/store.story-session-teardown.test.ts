@@ -108,6 +108,10 @@ vi.mock('@goodboy/core/github', async (importOriginal) => ({
   toCachedPullRequest: vi.fn(() => null),
 }));
 
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../test/storyHarness')).tauriCoreModuleMock(),
+);
+
 vi.mock('../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 vi.mock('../features/worktree/worktree', () => ({

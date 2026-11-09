@@ -404,7 +404,7 @@ describe('store contract', () => {
         if (command === 'boot_breadcrumb') {
           throw new Error('breadcrumb sink exploded');
         }
-        return Promise.resolve(null);
+        return Promise.resolve(command === 'browser_stale_tab_sessions' ? [] : null);
       }) as never);
 
       await store.getState().hydrate();
@@ -425,7 +425,7 @@ describe('store contract', () => {
             },
           };
         }
-        return Promise.resolve(null);
+        return Promise.resolve(command === 'browser_stale_tab_sessions' ? [] : null);
       }) as never);
 
       await store.getState().hydrate();

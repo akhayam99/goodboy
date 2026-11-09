@@ -180,11 +180,7 @@ pub(super) fn close_session<R: Runtime>(
     session_id: &str,
 ) -> Result<SessionClosed, MessageError> {
     refuse_browser_caller(caller)?;
-    Ok(host::close_session(
-        caller.app_handle(),
-        session_id,
-        caller.window().label(),
-    ))
+    Ok(host::close_session(caller.app_handle(), session_id))
 }
 
 #[cfg(test)]

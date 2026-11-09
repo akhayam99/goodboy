@@ -1431,6 +1431,18 @@ CREATE TABLE thread_reads (
   UNIQUE (session_id, thread_id)
 );
 
+CREATE TABLE browser_tabs (
+  id TEXT PRIMARY KEY,
+  session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
+  project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  position INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  CHECK ((session_id IS NULL) <> (project_id IS NULL))
+);
+
 CREATE INDEX idx_permission_audit_retry_created ON permission_audit_retry(created_at);
 
 CREATE INDEX idx_turn_events_agent_created ON turn_events(agent_id, created_at);
@@ -1840,6 +1852,10 @@ CREATE UNIQUE INDEX idx_auto_delegations_open_child
 CREATE INDEX idx_auto_delegations_child ON auto_delegations(child_agent_id);
 
 CREATE INDEX idx_turn_file_sets_session ON turn_file_sets(session_id, recorded_at);
+
+CREATE INDEX idx_browser_tabs_session ON browser_tabs(session_id, position);
+
+CREATE INDEX idx_browser_tabs_project ON browser_tabs(project_id, position);
 
 CREATE VIEW live_agents AS SELECT * FROM agents WHERE deleted_at IS NULL;
 
