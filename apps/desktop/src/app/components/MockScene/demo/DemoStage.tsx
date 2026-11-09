@@ -126,21 +126,23 @@ export const DemoStage = ({
 }: Props) => {
   const { ref, box, hasRoom } = useStageBox();
   const activeFit = stageFitOf({ box });
-  const isSpotlit =
-    coach !== undefined &&
-    coach.isDimmed &&
-    !isHoleTooBig({
-      anchor: coach.rect,
-      focus: coach.focus,
-      bounds: { width: activeFit.width, height: activeFit.height },
-    });
-  useEffect(() => {
-    onSpotlightChange({ isOn: isSpotlit && coach !== undefined });
-  }, [isSpotlit, coach, onSpotlightChange]);
   const [frames, setFrames] = useState<ReadonlyArray<StageFrame>>([]);
   const [mountedKeys, setMountedKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [shownKey, setShownKey] = useState<string | undefined>(undefined);
   const [fadingKey, setFadingKey] = useState<string | undefined>(undefined);
+  const isLanded = shownKey === activeFrame.key && fadingKey === undefined;
+  const landedCoach = isLanded ? coach : undefined;
+  const isSpotlit =
+    landedCoach !== undefined &&
+    landedCoach.isDimmed &&
+    !isHoleTooBig({
+      anchor: landedCoach.rect,
+      focus: landedCoach.focus,
+      bounds: { width: activeFit.width, height: activeFit.height },
+    });
+  useEffect(() => {
+    onSpotlightChange({ isOn: isSpotlit });
+  }, [isSpotlit, onSpotlightChange]);
   const elements = useRef(new Map<string, HTMLIFrameElement>());
   const sent = useRef(new Map<string, SentCommand>());
   const hintsSent = useRef(new Map<string, string>());
@@ -430,19 +432,19 @@ export const DemoStage = ({
           style={{ width: box.width, height: box.height }}
         >
           {mountedKeys.has(currentKey) ? null : <DemoStageLoading label={activeFrame.label} />}
-          {coach !== undefined && shownKey === currentKey ? (
+          {landedCoach === undefined ? null : (
             <DemoCoachMark
-              coach={coach}
+              coach={landedCoach}
               scale={activeFit.scale}
               bounds={{ width: box.width, height: box.height }}
               isSpotlit={isSpotlit}
               onHide={onHideHint}
             />
-          ) : null}
-          {offscreen !== undefined && shownKey === currentKey ? (
+          )}
+          {offscreen !== undefined && isLanded ? (
             <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
           ) : null}
-          {working !== undefined && coach === undefined && shownKey === currentKey ? (
+          {working !== undefined && coach === undefined && isLanded ? (
             <DemoWorkingPill copy={working} />
           ) : null}
           {done === undefined ? null : (

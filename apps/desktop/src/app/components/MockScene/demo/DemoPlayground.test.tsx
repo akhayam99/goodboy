@@ -587,6 +587,24 @@ describe('demo playground', () => {
     expect(screen.getByRole('note').textContent).toContain(crossingHint.copy);
   });
 
+  it('draws the coach only once the new frame has faded in after a group switch', () => {
+    seedProgress({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#bring');
+    render(<DemoPlayground />);
+    report({ frame: visibleFrame(), type: 'ready' });
+    fireEvent.click(rowOf({ title: 'Set the direction' }));
+    const next = frameOf({ scene: chapterOf({ id: 'direction' }).beats[0]?.scene ?? '' });
+    report({ frame: next, type: 'ready' });
+    expect(visibleFrame()).toBe(next);
+    hint({ frame: next, hintId: chapterOf({ id: 'direction' }).hints[0]?.id ?? '' });
+    expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+    elapse({ ms: 319 });
+    expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+    elapse({ ms: 1 });
+    expect(screen.queryByTestId('demo-coach-mark')).not.toBeNull();
+  });
+
   it('asks a group frame for its hint again when the visitor comes back to it', () => {
     seedProgress({ ids: ['bring'] });
     window.history.replaceState(null, '', '/?scene=demo#direction');
