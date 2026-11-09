@@ -75,7 +75,11 @@ describe('starting the story workflow', () => {
 });
 
 describe('answering the planner question', () => {
-  const answer = async () => {
+  type AnswerParams = {
+    readonly choice?: string;
+  };
+
+  const answer = async ({ choice = STORY_QUESTION.recommended }: AnswerParams = {}) => {
     await startSession();
     const [question] = store.getState().sessionOpenQuestions[STORY_SESSION_ID] ?? [];
     if (question === undefined) {
@@ -85,10 +89,36 @@ describe('answering the planner question', () => {
       .getState()
       .answerOpenQuestions(
         STORY_SESSION_ID,
-        [{ id: question.id, text: question.text, answer: STORY_QUESTION.recommended }],
+        [{ id: question.id, text: question.text, answer: choice }],
         STORY_PLANNER_ID,
       );
   };
+
+  const plannerSaid = (): string =>
+    plannerEvents()
+      .flatMap((event) => (event.kind === 'assistant_text' ? [event.delta] : []))
+      .join('');
+
+  it.each([
+    ['Return the original credit', 'A repeated webhook returns the original credit'],
+    ['Reject it with a 409', 'a repeated webhook that is rejected with a 409'],
+    ['Return 200 and log a warning', 'a repeated webhook that returns 200 and logs a warning'],
+  ])('has the planner speak about the option %s', async (choice, sentence) => {
+    await answer({ choice });
+    vi.advanceTimersByTime(15000);
+    expect(plannerSaid()).toContain(sentence);
+    for (const other of STORY_QUESTION.options.filter((option) => option !== choice)) {
+      expect(plannerSaid()).not.toContain(
+        `A repeated webhook ${STORY_QUESTION.outcomes[other]}, so I wrote the plan`,
+      );
+    }
+  });
+
+  it('repeats a typed answer back to the visitor', async () => {
+    await answer({ choice: 'Retry with a backoff' });
+    vi.advanceTimersByTime(15000);
+    expect(plannerSaid()).toContain('You said "Retry with a backoff"');
+  });
 
   it('moves the planner from Claude to Codex when Claude is at its limit', async () => {
     await answer();

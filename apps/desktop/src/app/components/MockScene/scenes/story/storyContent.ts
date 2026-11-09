@@ -12,6 +12,11 @@ export const STORY_QUESTION = {
   text: 'What should a repeated webhook return?',
   options: ['Return the original credit', 'Reject it with a 409', 'Return 200 and log a warning'],
   recommended: 'Return the original credit',
+  outcomes: {
+    'Return the original credit': 'returns the original credit',
+    'Reject it with a 409': 'is rejected with a 409',
+    'Return 200 and log a warning': 'returns 200 and logs a warning',
+  },
 } as const;
 
 export const STORY_PLANNER = {
@@ -19,8 +24,6 @@ export const STORY_PLANNER = {
     'I read the webhook handler in payments-api and the posting writer in ledger-core. The handler applies the credit before it records the event id, so a late redelivery is credited again. One decision before I write the plan.',
   command: 'rg -n "applyWebhook|postEntry" payments-api/src ledger-core/src',
   output: 'payments-api/src/webhooks/applyWebhook.ts\nledger-core/src/postings/postEntry.ts',
-  handoff:
-    'Picked this up on Codex with the same issue and your answer. A repeated webhook returns the original credit, so I wrote the plan around that.',
   revision:
     'Added a test for two retries arriving at the same moment, as you asked. The plan is now v2.',
 } as const;

@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import type { Steps } from './hints/stepsOf';
+import { unlockHintOf } from './unlockHintOf';
 import { useUpNextBreath } from './useUpNextBreath';
 
 type Props = {
@@ -59,9 +60,7 @@ export const DemoCompactNav = ({
             <IconButton
               icon={ChevronRight}
               label="Next group"
-              tooltip={
-                isNextLocked ? `${nextTitle} unlocks when this group is done` : `Next: ${nextTitle}`
-              }
+              tooltip={isNextLocked ? unlockHintOf({ title: nextTitle }) : `Next: ${nextTitle}`}
               shortcut="→"
               size="md"
               disabled={isNextLocked}
