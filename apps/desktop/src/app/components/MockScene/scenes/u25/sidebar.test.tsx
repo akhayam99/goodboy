@@ -63,12 +63,15 @@ describe('the sidebar scenes', () => {
     }
   });
 
-  it('sidebar-rhythm has no separator, doors with a plus, and New session first', async () => {
+  it('sidebar-rhythm has no separator, the chat plus, the tool tiles and New session first', async () => {
     await mount('sidebar-rhythm');
 
     expect(screen.queryAllByRole('separator')).toHaveLength(0);
-    expect(screen.getByRole('button', { name: 'New chat' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New terminal' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New chat' }).getAttribute('data-door-create')).toBe(
+      'chat',
+    );
+    expect(screen.queryByRole('button', { name: 'New terminal' })).toBeNull();
+    expect(document.querySelectorAll('[data-column-tile]')).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
     expect(document.querySelector('[data-column-create]')).toBeNull();
   });

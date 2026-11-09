@@ -505,8 +505,7 @@ The slide uses `--duration-base` and `--ease-enter` to arrive,
 A body with no scroller keeps the header in place. The terminal output (xterm)
 owns its own viewport, not a `ScrollFade`, and is never inside a reveal body,
 since any change to its height refits it: the Terminal page keeps its title,
-and only the rail reveals, the New terminal row stepping aside over the list
-of terminals. The setup wizard keeps its one header row: it holds the way out
+and only the rail reveals. The setup wizard keeps its one header row: it holds the way out
 (**Close** or **Set up later**) and the step progress, so it is the back row
 and nothing in it steps aside. A page whose back sits in a trail of its own
 (the workflow editor) passes that trail as the `lead`. A

@@ -85,8 +85,8 @@
   Impact's Spend tab, and the Usage chips open the Providers menu. The bar
   never edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
-  Tasks, Chat, Workflows, Terminal, Impact and Monitoring; Chat and Terminal each end in a plus
-  (New chat, New terminal) that is always visible. No separator: the Pinned and
+  Tasks, Chat, Workflows and Impact as rows, then Terminal and Monitoring as one row of tiles; Chat ends in a plus
+  (New chat) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
   door's trailing slot is a 6px dot (running, unread, warning); the count is in
   its tooltip and accessible name, never a colored number. Sessions is the one
@@ -98,7 +98,7 @@
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
   Needs you rows read the attention group of `useStageGroupedSessions`.
-  Monitoring is the door after Impact, its page has no band and no Close, and
+  Monitoring is the tile after Terminal, its page has no band and no Close, and
   it is the one way to the page in the chrome: the top bar holds no Monitoring
   icon. A pinned port that is down puts the warning dot on it, named "Monitoring,
   pinned port :5173 is down" (`monitoringSignal` lists the down pins,
