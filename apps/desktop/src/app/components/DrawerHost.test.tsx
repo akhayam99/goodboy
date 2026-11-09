@@ -356,7 +356,6 @@ const ENTRIES: ReadonlyArray<Entry> = [
 ];
 
 const PAGE_OWNED_KINDS: ReadonlyArray<DrawerRequest['kind']> = ['conversation'];
-const OWN_TEST_KINDS: ReadonlyArray<DrawerRequest['kind']> = ['browser'];
 
 const renderHost = () =>
   render(
@@ -392,18 +391,6 @@ describe('every drawer names its close control Close', () => {
     },
   );
 
-  it('browser: closes through the address row, named for what it closes', async () => {
-    seedSession();
-    useAppStore.setState({ drawer: { kind: 'browser', sessionId: SESSION, payload: null } });
-
-    renderHost();
-
-    await screen.findByRole('region', { name: 'Browser' });
-    fireEvent.click(await screen.findByRole('button', { name: 'Close browser' }));
-
-    expect(useAppStore.getState().drawer).toBeNull();
-  });
-
   it('covers every drawer kind the host can open', () => {
     const hosted = Array.from(
       readFileSync(join(__dirname, 'DrawerHost.tsx'), 'utf8').matchAll(
@@ -414,7 +401,6 @@ describe('every drawer names its close control Close', () => {
     const covered: ReadonlySet<string> = new Set([
       ...ENTRIES.map((entry) => entry.kind),
       ...PAGE_OWNED_KINDS,
-      ...OWN_TEST_KINDS,
     ]);
 
     expect(hosted.length).toBeGreaterThan(0);
