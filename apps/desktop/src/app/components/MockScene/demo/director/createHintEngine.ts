@@ -78,6 +78,7 @@ const HOVER_GRACE_MS = 600;
 const MAX_DWELL_MS = 8000;
 const DWELL_SLACK_MS = 30;
 const POLL_MS = 250;
+const STABLE_FRAMES = 2;
 
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
 
@@ -193,6 +194,10 @@ export const createHintEngine = ({
   const scrolled = new Set<string>();
   const baselines = new Map<string, AppStore>();
   let lastSignature = '';
+  let shownId: string | null = null;
+  let isShownPlaced = false;
+  let candidate = '';
+  let stableFrames = 0;
   let pending: number | null = null;
   let isDisposed = false;
   let isGuarding = false;
@@ -398,6 +403,20 @@ export const createHintEngine = ({
     if (signature === lastSignature) {
       return;
     }
+    const isArriving = hintId !== null && rect !== null && (shownId !== hintId || !isShownPlaced);
+    if (isArriving) {
+      const key = JSON.stringify({ hintId, rect });
+      stableFrames = key === candidate ? stableFrames + 1 : 1;
+      candidate = key;
+      if (stableFrames < STABLE_FRAMES) {
+        schedule();
+        return;
+      }
+    }
+    candidate = '';
+    stableFrames = 0;
+    shownId = hintId;
+    isShownPlaced = rect !== null;
     lastSignature = signature;
     onReport({
       report: {
@@ -551,6 +570,10 @@ export const createHintEngine = ({
       scrolled.clear();
       baselines.clear();
       lastSignature = '';
+      shownId = null;
+      isShownPlaced = false;
+      candidate = '';
+      stableFrames = 0;
       dwellUntil = 0;
       results.reset();
       schedule();

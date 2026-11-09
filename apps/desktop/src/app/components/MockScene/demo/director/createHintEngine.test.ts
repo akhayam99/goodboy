@@ -104,7 +104,7 @@ const engineFor = ({ hints }: EngineParams) => {
 
 const frame = async (): Promise<void> => {
   await Promise.resolve();
-  vi.advanceTimersByTime(20);
+  vi.advanceTimersByTime(40);
 };
 
 const dwell = async (): Promise<void> => {
@@ -279,7 +279,7 @@ describe('the hint engine', () => {
       hints: [step({ id: 'open', doneWhen: () => false })],
     });
     engine.setTrack({ chapterId: 'test', settledIds: [] });
-    vi.advanceTimersByTime(20);
+    vi.advanceTimersByTime(40);
     expect(reports.at(-1)).toMatchObject({ hintId: 'open', isClicked: false });
     click({ selector: '#open' });
     expect(reports.at(-1)).toMatchObject({
@@ -381,6 +381,57 @@ describe('the hint engine', () => {
     engine.reveal({ hintId: 'open' });
     expect(scrolled).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
     engine.dispose();
+  });
+
+  describe('arrival', () => {
+    type RowParams = {
+      readonly y: number;
+    };
+
+    const placeAt = ({ y }: RowParams): void => {
+      vi.mocked(Element.prototype.getBoundingClientRect).mockReturnValue(
+        new DOMRect(100, y, 40, 24),
+      );
+    };
+
+    const nextFrame = (): void => {
+      vi.advanceTimersByTime(16);
+    };
+
+    const placed = (reports: ReadonlyArray<DemoHintReport>) =>
+      reports.filter((report) => report.type === 'anchor' && report.rect !== null);
+
+    it('shows a new hint once, after its control held still for two frames', () => {
+      document.body.innerHTML = BUTTONS;
+      const { engine, reports } = engineFor({ hints: STORY });
+      placeAt({ y: 100 });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      nextFrame();
+      placeAt({ y: 150 });
+      nextFrame();
+      placeAt({ y: 200 });
+      nextFrame();
+      expect(placed(reports)).toEqual([]);
+      nextFrame();
+      expect(placed(reports)).toHaveLength(1);
+      expect(placed(reports)[0]).toMatchObject({ hintId: 'open', rect: { y: 200 } });
+      engine.dispose();
+    });
+
+    it('follows a hint already shown on the very next frame', () => {
+      document.body.innerHTML = BUTTONS;
+      const { engine, reports } = engineFor({ hints: STORY });
+      placeAt({ y: 100 });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      vi.advanceTimersByTime(40);
+      expect(placed(reports)).toHaveLength(1);
+      placeAt({ y: 260 });
+      window.dispatchEvent(new Event('scroll'));
+      nextFrame();
+      expect(placed(reports)).toHaveLength(2);
+      expect(placed(reports).at(-1)).toMatchObject({ hintId: 'open', rect: { y: 260 } });
+      engine.dispose();
+    });
   });
 
   describe('focus region', () => {
