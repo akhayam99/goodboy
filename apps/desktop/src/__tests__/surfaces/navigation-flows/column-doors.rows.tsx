@@ -183,6 +183,17 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: 'column: browser',
+    covers: ['openBrowserStudio', 'studio:browser'],
+    door: 'visible',
+    open: () => click(doorIn('browser')),
+    lands: both(
+      () => studio('Browser'),
+      async () => expect(doorIn('browser').getAttribute('aria-current')).toBe('page'),
+      async () => expect(useAppStore.getState().appStudio?.kind).toBe('browser'),
+    ),
+  },
+  {
     name: 'column: impact',
     covers: ['openImpact', 'studio:impact'],
     door: 'visible',

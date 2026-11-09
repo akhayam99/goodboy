@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId } from '@goodboy/types';
 import type { BrowserTab } from '../../store/slices/browser/types';
 
 export type BrowserTabFacts = {
@@ -63,6 +63,27 @@ export type BrowserPaneModel = {
 };
 
 export type OpenOutcome = 'opened' | 'stale' | 'failed';
+
+export type BrowserPageSession = {
+  readonly sessionId: SessionId;
+  readonly title: string;
+  readonly projectId: ProjectId | null;
+  readonly tabs: ReadonlyArray<BrowserTab>;
+};
+
+export type BrowserPagePins = {
+  readonly projectId: ProjectId;
+  readonly projectName: string;
+  readonly pins: ReadonlyArray<BrowserTab>;
+};
+
+export type BrowserPageGroup = {
+  readonly key: string;
+  readonly label: string;
+  readonly sessionId: SessionId;
+  readonly tabs: ReadonlyArray<BrowserTab>;
+  readonly isPins: boolean;
+};
 
 export type BrowserAddress =
   | { readonly kind: 'ok'; readonly url: string }

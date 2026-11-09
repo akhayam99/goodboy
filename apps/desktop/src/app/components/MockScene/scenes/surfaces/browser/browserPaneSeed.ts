@@ -1,13 +1,13 @@
-import type { ProjectId, SessionId } from '@goodboy/types';
+import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
 import { browserTabListPref } from '../../../../../../features/browser/browserTabListPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
 import type { BrowserTabFacts } from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab } from '../../../../../../store/slices/browser/types';
-import { SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
+import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 
-export type BrowserPaneSceneState = 'pane' | 'tabs';
+export type BrowserPaneSceneState = 'pane' | 'tabs' | 'page';
 
 type SeedParams = {
   readonly state: BrowserPaneSceneState;
@@ -45,6 +45,13 @@ const isProjectOwner = ({ payload }: PayloadParams): boolean => {
   const owner = fieldOf({ payload, field: 'owner' });
   return typeof owner === 'object' && owner !== null && Reflect.get(owner, 'kind') === 'project';
 };
+
+const ownerSessionOf = ({ payload }: PayloadParams): unknown => {
+  const owner = fieldOf({ payload, field: 'owner' });
+  return typeof owner === 'object' && owner !== null ? Reflect.get(owner, 'sessionId') : null;
+};
+
+const ROUNDING_ID = brandId<SessionId>({ value: 'mock-browser-rounding' });
 
 const rowOf = ({ id, url, title, sessionId, projectId, position }: RowParams): BrowserTab => ({
   id,
@@ -105,12 +112,25 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
             position: 0,
           }),
         ];
+  const roundingTabs = [
+    rowOf({
+      id: 'mock-browser-pr',
+      url: 'https://git.northwind.dev/ledger-core/pull/318',
+      title: 'PR #318',
+      sessionId: ROUNDING_ID,
+      projectId: null,
+      position: 0,
+    }),
+  ];
   const live = tabs.map(factsOf);
   let opened = 0;
   mockSceneIpc((command, payload) => {
     switch (command) {
       case 'browser_tab_rows_list':
-        return isProjectOwner({ payload }) ? pins : tabs;
+        if (isProjectOwner({ payload })) {
+          return pins;
+        }
+        return ownerSessionOf({ payload }) === ROUNDING_ID ? roundingTabs : tabs;
       case 'browser_tab_list':
         return live;
       case 'browser_tab_open':
@@ -137,5 +157,14 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
     },
     ...(projectId === null ? {} : { browserProjectPins: { [projectId]: pins } }),
   });
+  if (state === 'page') {
+    useAppStore.setState((current) => ({
+      sessions: [
+        ...current.sessions,
+        { ...SESSION, id: ROUNDING_ID, goal: 'Fix the rounding drift', workflowRuns: [] },
+      ],
+      browserSessionTabs: { ...current.browserSessionTabs, [ROUNDING_ID]: roundingTabs },
+    }));
+  }
   useAppStore.getState().openDrawer({ kind: 'browser', sessionId: SESSION_ID, payload: null });
 };

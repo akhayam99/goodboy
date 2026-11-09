@@ -1,10 +1,10 @@
 # Browser host
 
 > **Read this when** you are changing how Goodboy opens, places or closes a
-> web page inside a window, what such a page may reach, or the browser pane
-> beside a session. **Not for** the Browser page and the doors (server chips,
-> links, ⌘K), which are not built yet, or the data disclosure users read
-> (`SECURITY.md`).
+> web page inside a window, what such a page may reach, the browser pane
+> beside a session or the Browser page. **Not for** the other doors (server
+> chips, links, ⌘K), which are not built yet, or the data disclosure users
+> read (`SECURITY.md`).
 
 A browser tab is a native webview that Rust places inside a Goodboy window,
 next to the app's own page. Rust owns every tab. The window asks for a tab
@@ -224,14 +224,51 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   well (`[data-studio-slot]`), because it sits over the session without
   unmounting the pane. While one intersects the placeholder, the view is
   hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
-  the page (`toastRightOf`), so they never sit under the view.
+  the page (`toastRightOf`), and left of the Browser page's view, so they
+  never sit under a view.
 - **Writes** name the session and the tab. A state change waits for the host:
   open saves the row after `browser_tab_open` answered, close calls
   `browser_tab_close` (a `tab-gone` answer counts as closed) and then deletes the
   row. A failure keeps the old state and shows the words under the address
   row. An open that answers after a newer open, or after the pane closed, is
-  closed and never shown. A popup the host opened (`browser://tab-opened`)
+  closed and never shown; when only its row save answers that late, the tab
+  is closed and its row deleted. A session close also forgets the session's
+  live views and its shown pin. A popup the host opened (`browser://tab-opened`)
   becomes a session tab while the pane is open.
+
+## The page
+
+The Browser tile in the sidebar opens the Browser page, a studio kind of its
+own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
+
+- **The list** shows every tab of the workspace's sessions, one group per
+  session in the workspace's session order, then one group of pins per
+  project. It does not follow the sidebar's sort or filters, because a filter
+  can hide a session that holds a tab. A pin opens in the picked session when
+  it works on that project, else in the first session that does. The picked
+  session keeps its group with no tab, so New tab opens a page in it. With
+  pins and no session tab, the page opens on a session that hosts a pin. With
+  neither, the page says so.
+- **The view** is the pane's: the same address row (no list toggle and no
+  Close, the band and Esc close the page), the same model for the picked
+  session and the same placement loop and overlay rule. The pane of that
+  session stays mounted under the page and is covered by it, so its view hides.
+- **One view, one place**: a placement owns the live ids it showed, and hides
+  only a view it still owns, a hide tried again after a failure included. The
+  pane's late hide cannot take the view off the page. A pane that still holds
+  the view waits while the page owns it, and shows it again once the page
+  lets it go.
+- **The route** names the session and the tab. Picking a row amends it, and a
+  close or a new tab moves it to the tab now shown. A reload or ⌘R reads the
+  route back, so the page comes back on the same tab, not the first one. A
+  route with no session opens on the first session holding a tab, at its
+  first tab, and names that session.
+- **Back to the session**: the band's trail names the picked session, and
+  pressing it opens that session.
+- **The count** on the tile is the number of rows the page lists: the tabs of
+  the workspace's sessions plus the pins of their projects, named
+  `Browser, 3 tabs`. A tab counts whether or not its page is open. A
+  session's rows load when its pane or the page opens.
 
 ## Capabilities
 
@@ -295,6 +332,16 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
   close order, a closed tab shown again under its id and address, a shown tab
   that no sweep closes, the events, and that starting the lifecycle at boot
   leaves the registry and the webviews as they were.
+- The page lives in `features/browser/components/BrowserStudio/`, its groups in
+  `browserPageGroups.ts`, the route sync in `hooks/useBrowserStudioTab`.
+  The sessions come from `browserScopeSessions`, the count from
+  `browserTabCount`. `BrowserStudio/index.test.tsx` pins the grouping, a tab
+  of another session, the reload back to the named tab, a route with no
+  session, the overlay hide, and that only the workspace's sessions load and
+  the count matches the rows; `createNativePlacement.test.ts` pins the owner
+  rule both ways and a failed hide retried after the page took the view;
+  `restoreLocation.test.ts` pins the route across a reload; the scenes are
+  `browser-page` and `browser-page-dark`.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants
   a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.

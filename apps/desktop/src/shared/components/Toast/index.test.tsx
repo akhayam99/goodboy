@@ -268,4 +268,35 @@ describe('ToastProvider', () => {
       expect(screen.getByRole('status').parentElement?.style.right).toBe('');
     });
   });
+
+  describe('beside the browser page view', () => {
+    const VIEW_WIDTH = 720;
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('stops at the left edge of the page view, ahead of a covered pane', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: HTMLElement,
+      ) {
+        const left = this.hasAttribute('data-browser-view') ? window.innerWidth - VIEW_WIDTH : 0;
+        return new DOMRect(left, 0, 0, 0);
+      });
+      render(
+        <ToastProvider>
+          <Harness />
+          <div data-studio-slot="content">
+            <div data-browser-view="" />
+          </div>
+          <aside data-drawer-mode="push">
+            <div data-drawer-card="" />
+          </aside>
+        </ToastProvider>,
+      );
+      show({ kind: 'info', message: 'Copied' });
+
+      expect(screen.getByRole('status').parentElement?.style.right).toBe(`${VIEW_WIDTH + 12}px`);
+    });
+  });
 });

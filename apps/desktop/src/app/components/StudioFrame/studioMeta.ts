@@ -125,6 +125,16 @@ export const STUDIO_META = {
     skeleton: { shape: 'terminal', hasRail: true },
     railWidth: 'standard',
   },
+  browser: {
+    icon: CONCEPT_ICONS.browser,
+    tone: CONCEPT_TONE.browser,
+    title: 'Browser',
+    close: 'none',
+    tier: 'full',
+    page: 'browser',
+    skeleton: { shape: 'rows', hasRail: true },
+    railWidth: 'standard',
+  },
   monitoring: {
     icon: CONCEPT_ICONS.monitoring,
     tone: CONCEPT_TONE.monitoring,

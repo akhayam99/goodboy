@@ -14,6 +14,7 @@ export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }
     case 'notifications':
     case 'chat':
     case 'terminal':
+    case 'browser':
     case 'monitoring':
       return false;
     default: {

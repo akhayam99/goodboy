@@ -460,6 +460,42 @@ describe('the browser pane', () => {
     ]);
   });
 
+  it('closes a tab and drops its row when its row save answered after a newer open', async () => {
+    let releaseFirst: (() => void) | null = null;
+    let saves = 0;
+    const handler = storySpies.tauriInvoke.getMockImplementation();
+    storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+      if (name === 'browser_tab_row_save') {
+        saves += 1;
+        if (saves === 1) {
+          await new Promise<void>((resolve) => {
+            releaseFirst = resolve;
+          });
+        }
+      }
+      return handler?.(name, args);
+    });
+    renderPane();
+
+    await typeAddress({ text: 'northwind.example' });
+    await waitFor(() => expect(saves).toBe(1));
+    await typeAddress({ text: 'acme.example' });
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(2));
+    await act(async () => {
+      releaseFirst?.();
+    });
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_close' })).toEqual([{ tabId: 'live-1' }]),
+    );
+    await waitFor(() =>
+      expect(store.getState().browserSessionTabs[SESSION_ID]?.map((tab) => tab.url)).toEqual([
+        'https://acme.example/',
+      ]),
+    );
+    expect(store.getState().browserLiveTabs[SESSION_ID]?.['live-1']).toBeUndefined();
+  });
+
   it('retries a hide that failed while an overlay covers the view', async () => {
     await openFirstPage();
     failOnce({ command: 'browser_tab_hide', reason: 'host-busy' });
