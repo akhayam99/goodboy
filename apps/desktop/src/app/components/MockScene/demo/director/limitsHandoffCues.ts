@@ -13,10 +13,10 @@ import { textCuesEndMs } from './textCuesEndMs';
 const CODEX = BRAND_MODELS.implement;
 const CLAUDE = BRAND_MODELS.scout;
 
-const NOTICE_AT_MS = 1500;
-const TOOL_START_AT_MS = 2400;
-const TOOL_END_AT_MS = 3900;
-const REPLY_AT_MS = 4600;
+const NOTICE_AT_MS = 900;
+const TOOL_START_AT_MS = 1500;
+const TOOL_END_AT_MS = 2400;
+const REPLY_AT_MS = 3000;
 
 type Params = {
   readonly sessionId: SessionId;

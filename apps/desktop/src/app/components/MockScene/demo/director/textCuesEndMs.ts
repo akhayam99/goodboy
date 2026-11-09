@@ -1,4 +1,4 @@
-export const TEXT_SENTENCE_MS = 900;
+export const TEXT_SENTENCE_MS = 600;
 
 type Params = {
   readonly atMs: number;

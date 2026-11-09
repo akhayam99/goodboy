@@ -115,7 +115,7 @@ export const resolveFixCues = ({
   const toolUseId = `demo-resolve-test-${runId}`;
   return [
     eventCue({
-      atMs: 900,
+      atMs: 600,
       agentId,
       events: ({ at }) => [
         {
@@ -127,27 +127,27 @@ export const resolveFixCues = ({
       ],
     }),
     eventCue({
-      atMs: 2200,
+      atMs: 1500,
       agentId,
       events: ({ at }) => [
         { kind: 'file_edit', runId, path: STORY_REVIEW.path, editType: 'modify', at },
       ],
     }),
-    eventCue({ atMs: 3200, agentId, events: bash({ runId, toolUseId }) }),
+    eventCue({ atMs: 2300, agentId, events: bash({ runId, toolUseId }) }),
     eventCue({
-      atMs: 4600,
+      atMs: 3300,
       agentId,
       events: ({ at }) => [
         { kind: 'tool_call_end', runId, toolUseId, output: '7 passed', isError: false, at },
       ],
     }),
     eventCue({
-      atMs: 5200,
+      atMs: 3900,
       agentId,
       events: ({ at }) => [{ kind: 'assistant_text', runId, delta: `\n\n${SUMMARY}`, at }],
     }),
     {
-      atMs: 6400,
+      atMs: 4500,
       apply: ({ store, at }) => {
         appendTurnEvents({ store, agentId, events: [{ kind: 'done', runId, at }] });
         settleFix({ store, sessionId, agentId, runId, attemptId, threadIds });

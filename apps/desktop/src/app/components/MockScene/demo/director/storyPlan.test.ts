@@ -84,7 +84,7 @@ describe('sending the plan comment to the planner', () => {
 
   it('writes a plan v2 that adds the concurrent retries test and marks the comment Addressed', async () => {
     await sendComment();
-    vi.advanceTimersByTime(8000);
+    vi.advanceTimersByTime(3500);
     expect(planOf()?.bodyMd).toBe(storyPlanBodyOf({ revision: 2 }));
     expect(planOf()?.bodyMd).toContain(STORY_PLAN.concurrentParagraph);
     const stored = (store.getState().sessionArtifacts[STORY_SESSION_ID] ?? [])[0];
@@ -98,7 +98,7 @@ describe('sending the plan comment to the planner', () => {
 describe('approving the revised plan', () => {
   const approve = async () => {
     await sendComment();
-    vi.advanceTimersByTime(8000);
+    vi.advanceTimersByTime(3500);
     await store.getState().sendTurn({
       sessionId: STORY_SESSION_ID,
       agentId: STORY_ROOT_ID,
@@ -108,7 +108,7 @@ describe('approving the revised plan', () => {
 
   it('coordinates a Codex implementer in payments-api and a tester against ledger-core', async () => {
     await approve();
-    vi.advanceTimersByTime(30000);
+    vi.advanceTimersByTime(5500);
     const delegations = (store.getState().autoTreeViews[STORY_SESSION_ID] ?? []).flatMap(
       (view) => view.delegations,
     );
@@ -120,9 +120,27 @@ describe('approving the revised plan', () => {
     expect(delegations.filter((entry) => entry.role === 'implementer')).toHaveLength(1);
   });
 
+  it('ends the Auto turn within a second of both agents reading Done', async () => {
+    await approve();
+    const isSettled = (): boolean =>
+      (store.getState().autoTreeViews[STORY_SESSION_ID] ?? [])
+        .flatMap((view) => view.delegations)
+        .some((entry) => entry.childAgentId === IMPLEMENTER_ID && entry.state === 'settled');
+    let elapsed = 0;
+    while (!isSettled() && elapsed < 10000) {
+      vi.advanceTimersByTime(100);
+      elapsed += 100;
+    }
+    expect(isSettled()).toBe(true);
+    expect(store.getState().agentTurnState[STORY_ROOT_ID]?.kind).not.toBe('idle');
+    vi.advanceTimersByTime(1000);
+    expect(store.getState().agentTurnState[STORY_ROOT_ID]?.kind).toBe('idle');
+    expect(elapsed + 1000).toBeLessThanOrEqual(5500);
+  });
+
   it('leaves ledger-core untouched and never opens a pull request', async () => {
     await approve();
-    vi.advanceTimersByTime(30000);
+    vi.advanceTimersByTime(5500);
     const delegations = (store.getState().autoTreeViews[STORY_SESSION_ID] ?? []).flatMap(
       (view) => view.delegations,
     );

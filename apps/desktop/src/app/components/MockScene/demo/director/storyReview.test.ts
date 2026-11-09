@@ -60,7 +60,7 @@ const fixAndApply = async () => {
     name: 'Resolve: 1 review comment',
     humanPrompt: 'Fix this review comment.',
   });
-  vi.advanceTimersByTime(8000);
+  vi.advanceTimersByTime(5000);
   const entry = entryOf();
   if (entry === undefined) {
     throw new Error('no comment');
@@ -102,7 +102,7 @@ describe('the review checkpoint', () => {
       humanPrompt: 'Fix this review comment.',
     });
     expect(entryOf()?.thread.stage).toBe('working');
-    vi.advanceTimersByTime(8000);
+    vi.advanceTimersByTime(5000);
     expect(entryOf()?.thread).toMatchObject({ stage: 'proposed', replyDraft: STORY_REVIEW.reply });
     expect(store.getState().drawer).toMatchObject({
       kind: 'conversation',
