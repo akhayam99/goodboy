@@ -42,6 +42,7 @@ export const browserTabCommands = {
     invokeCommand<null>('browser_tab_row_delete', { args: { owner, id } }),
   removeSessionRows: ({ sessionId }: SessionParams) =>
     invokeCommand<number>('browser_session_tab_rows_delete', { args: { sessionId } }),
+  staleSessions: () => invokeCommand<ReadonlyArray<SessionId>>('browser_stale_tab_sessions'),
   pin: ({ id, sessionId, projectId }: MoveParams) =>
     invokeCommand<BrowserTab>('browser_tab_row_pin', { args: { id, sessionId, projectId } }),
   unpin: ({ id, sessionId, projectId }: MoveParams) =>

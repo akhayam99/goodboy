@@ -162,6 +162,20 @@ const answerCommand = ({
   );
 };
 
+const readKey = ({ value, key }: { readonly value: unknown; readonly key: string }): unknown =>
+  typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined;
+
+const isDeleteOf = ({
+  args,
+  sessionId,
+}: {
+  readonly args: unknown;
+  readonly sessionId: SessionId;
+}): boolean => {
+  const owner = readKey({ value: readKey({ value: args, key: 'args' }), key: 'owner' });
+  return readKey({ value: owner, key: 'sessionId' }) === sessionId;
+};
+
 const storedErrors = async () =>
   useAppStore
     .getState()
@@ -488,6 +502,36 @@ describe('a late answer is dropped', () => {
     expect(tabIds()).toEqual(['tab-a']);
   });
 
+  it('a load that answers after its session was evicted does not bring the tabs back', async () => {
+    let releaseLoad: (rows: BrowserTab[]) => void = () => undefined;
+    answerCommand({
+      command: 'browser_tab_rows_list',
+      answer: () =>
+        new Promise<BrowserTab[]>((resolve) => {
+          releaseLoad = resolve;
+        }),
+    });
+
+    const load = useAppStore.getState().loadBrowserSessionTabs({ sessionId: SESSION_ID });
+    useAppStore.getState().evictSession({ sessionId: SESSION_ID, mode: 'archive' });
+    releaseLoad([
+      {
+        id: 'tab-a',
+        sessionId: SESSION_ID,
+        projectId: null,
+        url: NORTHWIND_URL,
+        title: 'Orders',
+        position: 0,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ]);
+    await load;
+
+    expect(useAppStore.getState().browserSessionTabs).not.toHaveProperty(SESSION_ID);
+    expect(useAppStore.getState().browserActiveTab).not.toHaveProperty(SESSION_ID);
+  });
+
   it('two quick reorders land in call order, so the last one wins', async () => {
     await openThree();
 
@@ -538,7 +582,8 @@ describe('closing a session closes its live tabs and deletes its rows', () => {
     expect(commands).toEqual(['browser_session_close', 'browser_session_tab_rows_delete']);
     expect(hostRows).toEqual([]);
     expect(tabIds()).toEqual([]);
-    expect(activeTab()).toBeNull();
+    expect(useAppStore.getState().browserSessionTabs).not.toHaveProperty(SESSION_ID);
+    expect(useAppStore.getState().browserActiveTab).not.toHaveProperty(SESSION_ID);
   });
 
   it('a tab that did not close keeps its rows, shows the error, and never throws', async () => {
@@ -576,5 +621,174 @@ describe('closing a session closes its live tabs and deletes its rows', () => {
 
     expect(hostRows).toEqual([]);
     expect(tabIds()).toEqual([]);
+  });
+});
+
+describe('a close that failed is retried for sessions that were archived or deleted', () => {
+  const callsOf = ({ command }: { readonly command: string }) =>
+    storySpies.tauriInvoke.mock.calls.filter(([name]) => name === command);
+
+  it('closes the leftover tabs of every session the host names and deletes their rows', async () => {
+    await openThree();
+    answerCommand({ command: 'browser_stale_tab_sessions', answer: () => [SESSION_ID] });
+
+    await useAppStore.getState().closeStaleBrowserTabs();
+
+    expect(callsOf({ command: 'browser_session_close' })).toEqual([
+      ['browser_session_close', { args: { sessionId: SESSION_ID } }],
+    ]);
+    expect(hostRows).toEqual([]);
+    expect(useAppStore.getState().browserSessionTabs).not.toHaveProperty(SESSION_ID);
+  });
+
+  it('shows the error and leaves everything as it was when the host cannot list them', async () => {
+    await openThree();
+    failCommand({ command: 'browser_stale_tab_sessions' });
+
+    await expect(useAppStore.getState().closeStaleBrowserTabs()).resolves.toBeUndefined();
+
+    expect(hostRows).toHaveLength(3);
+    expect(await storedErrors()).toEqual([{ title: "Couldn't check the leftover browser tabs" }]);
+  });
+
+  it('does nothing when no session left tabs behind', async () => {
+    await openThree();
+
+    await useAppStore.getState().closeStaleBrowserTabs();
+
+    expect(callsOf({ command: 'browser_session_close' })).toEqual([]);
+    expect(hostRows).toHaveLength(3);
+  });
+
+  it('does nothing when the host answers the leftover check with no list', async () => {
+    await openThree();
+    answerCommand({ command: 'browser_stale_tab_sessions', answer: () => null });
+
+    await expect(useAppStore.getState().closeStaleBrowserTabs()).resolves.toBeUndefined();
+
+    expect(callsOf({ command: 'browser_session_close' })).toEqual([]);
+    expect(hostRows).toHaveLength(3);
+    expect(await storedErrors()).toEqual([]);
+  });
+
+  it('keeps the rows and shows the error when the leftover tab still does not close', async () => {
+    await openThree();
+    answerCommand({ command: 'browser_stale_tab_sessions', answer: () => [SESSION_ID] });
+    answerCommand({
+      command: 'browser_session_close',
+      answer: () => ({ closed: 2, failed: [{ tabId: 'tab-b', reason: 'tab-gone' }] }),
+    });
+
+    await useAppStore.getState().closeStaleBrowserTabs();
+
+    expect(hostRows).toHaveLength(3);
+    expect(await storedErrors()).toEqual([{ title: "Couldn't close the browser tabs" }]);
+  });
+
+  it('finishes the job on the next boot after a failed close', async () => {
+    await openThree();
+    let isFirst = true;
+    answerCommand({
+      command: 'browser_session_close',
+      answer: () => {
+        if (isFirst) {
+          isFirst = false;
+          return { closed: 2, failed: [{ tabId: 'tab-b', reason: 'tab-gone' }] };
+        }
+        return { closed: 1, failed: [] };
+      },
+    });
+    await useAppStore.getState().closeBrowserSessionTabs({ sessionId: SESSION_ID });
+    expect(hostRows).toHaveLength(3);
+
+    answerCommand({ command: 'browser_stale_tab_sessions', answer: () => [SESSION_ID] });
+    await useAppStore.getState().closeStaleBrowserTabs();
+
+    expect(hostRows).toEqual([]);
+  });
+});
+
+describe('writes of one session never wait on another session', () => {
+  it('a hung close in one session does not hold back a close in another', async () => {
+    await openThree();
+    await useAppStore.getState().openBrowserTab({
+      sessionId: OTHER_SESSION_ID,
+      tabId: 'tab-z',
+      url: ACME_URL,
+      title: 'Dashboard',
+    });
+    const handler = storySpies.tauriInvoke.getMockImplementation();
+    let release: () => void = () => undefined;
+    storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+      if (name === 'browser_tab_row_delete' && isDeleteOf({ args, sessionId: SESSION_ID })) {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+      }
+      return handler?.(name, args);
+    });
+
+    const hung = useAppStore.getState().closeBrowserTab({ sessionId: SESSION_ID, tabId: 'tab-a' });
+    const wasClosed = await useAppStore
+      .getState()
+      .closeBrowserTab({ sessionId: OTHER_SESSION_ID, tabId: 'tab-z' });
+
+    expect(wasClosed).toBe(true);
+    expect(tabIds({ sessionId: OTHER_SESSION_ID })).toEqual([]);
+    expect(tabIds()).toEqual(['tab-a', 'tab-b', 'tab-c']);
+
+    release();
+    await hung;
+    expect(tabIds()).toEqual(['tab-b', 'tab-c']);
+  });
+});
+
+describe('a reorder that lost to another window reloads the tabs', () => {
+  it('reloads the rows when the host says the set of tabs changed', async () => {
+    await openThree();
+    hostRows = [
+      ...hostRows,
+      {
+        id: 'tab-d',
+        sessionId: SESSION_ID,
+        projectId: null,
+        url: NORTHWIND_URL,
+        title: 'Orders',
+        position: 3,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+    const handler = storySpies.tauriInvoke.getMockImplementation();
+    storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+      if (name === 'browser_tab_rows_reorder') {
+        throw { kind: 'refused', message: 'tab-rows-changed' };
+      }
+      return handler?.(name, args);
+    });
+
+    const wasReordered = await useAppStore
+      .getState()
+      .reorderBrowserTabs({ sessionId: SESSION_ID, ids: ['tab-c', 'tab-b', 'tab-a'] });
+
+    expect(wasReordered).toBe(false);
+    await vi.waitFor(() => expect(tabIds()).toEqual(['tab-a', 'tab-b', 'tab-c', 'tab-d']));
+  });
+
+  it('does not reload after any other reorder failure', async () => {
+    await openThree();
+    failCommand({ command: 'browser_tab_rows_reorder' });
+    const before = storySpies.tauriInvoke.mock.calls.filter(
+      ([name]) => name === 'browser_tab_rows_list',
+    ).length;
+
+    await useAppStore
+      .getState()
+      .reorderBrowserTabs({ sessionId: SESSION_ID, ids: ['tab-c', 'tab-b', 'tab-a'] });
+
+    const after = storySpies.tauriInvoke.mock.calls.filter(
+      ([name]) => name === 'browser_tab_rows_list',
+    ).length;
+    expect(after).toBe(before);
   });
 });
