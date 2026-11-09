@@ -93,7 +93,7 @@ export const SHIP_HINTS: ReadonlyArray<DemoHint> = [
     progressCopy: 'Pushing and resolving the thread',
     instruction: 'Press **Force push** to publish the rebased branch with your fix.',
     progress: "Pushing your branch and posting the reply on nadia-p's thread.",
-    result: "Pushed. nadia-p's thread is resolved.",
+    result: "Pushed. nadia-p's thread is resolved. Next, free the space you no longer need.",
     beat: 0,
     isDimmed: false,
     isBlocked: isOtherControl,
@@ -120,7 +120,7 @@ export const SHIP_HINTS: ReadonlyArray<DemoHint> = [
         : hasElement({ root, selector: STORAGE_REMOVE })
           ? STORAGE_REMOVE
           : null,
-    side: 'bottom',
+    side: 'top',
     revealWhen: ({ root }) =>
       hasElement({ root, selector: CONFIRM }) || hasElement({ root, selector: STORAGE_REMOVE }),
     doneWhen: ({ state }) => (state.storageOutcome?.removed ?? 0) > 0,

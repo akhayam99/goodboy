@@ -75,7 +75,7 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'story-choose',
     label: 'Choose retry behavior',
-    copy: 'Choose the recommended answer',
+    copy: 'Pick the recommended answer',
     instruction:
       'Select **Return the original credit** so a retry succeeds without another credit.',
     result: 'Your answer is picked. The planner waits until you send it.',
