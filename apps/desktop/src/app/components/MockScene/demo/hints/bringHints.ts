@@ -3,7 +3,7 @@ import {
   type WizardStepId,
 } from '../../../../../features/onboarding/OnboardingWizard/wizardSteps';
 import type { AppStore } from '../../../../../store/store';
-import type { DemoHint, HintCheck } from './demoHintTypes';
+import type { BlockParams, DemoHint, HintCheck } from './demoHintTypes';
 import { hasElement } from './hasElement';
 import { isAnyControl } from './isAnyControl';
 
@@ -50,6 +50,20 @@ const AGENTS_CONTINUE = '[data-step="agents"] [data-demo-anchor="setup-continue"
 const WORKSPACE_CREATE = '[data-step="workspace"] [data-demo-anchor="setup-create"]';
 const LINEAR_CONNECT = '[data-step="tools"] button[aria-label="Connect Linear"]';
 const OPEN_TOOLS = '[data-step="first-session"] [data-demo-anchor="setup-open-tools"]';
+const TOOLS_CONTINUE = '[data-step="tools"] [data-demo-anchor="setup-continue"]';
+const CHOOSE_FOLDER = '[data-step="workspace"] [data-demo-anchor="setup-choose-folder"]';
+const SETUP_PATH = [
+  CODEX_SIGN_IN,
+  AGENTS_CONTINUE,
+  CHOOSE_FOLDER,
+  WORKSPACE_CREATE,
+  OPEN_TOOLS,
+  LINEAR_CONNECT,
+  TOOLS_CONTINUE,
+].join(', ');
+
+const isOffSetupPath = ({ target }: BlockParams): boolean =>
+  target.closest(SETUP_PATH) === null && isAnyControl({ target });
 
 export const BRING_HINTS: ReadonlyArray<DemoHint> = [
   {
@@ -61,7 +75,7 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     beat: 0,
     anchor: CODEX_SIGN_IN,
     focus: WIZARD_COLUMN,
-    isBlocked: isAnyControl,
+    isBlocked: isOffSetupPath,
     revealWhen: ({ root }) => hasElement({ root, selector: CODEX_SIGN_IN }),
     doneWhen: ({ state, start }) => hasCodex({ state }) && !hasCodex({ state: start }),
   },
@@ -74,7 +88,7 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     beat: 0,
     anchor: AGENTS_CONTINUE,
     focus: WIZARD_COLUMN,
-    isBlocked: isAnyControl,
+    isBlocked: isOffSetupPath,
     revealWhen: ({ root }) => hasElement({ root, selector: AGENTS_CONTINUE }),
     doneWhen: isPastStep({ step: 'agents' }),
   },
@@ -87,7 +101,7 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     beat: 0,
     anchor: WORKSPACE_CREATE,
     focus: WIZARD_COLUMN,
-    isBlocked: isAnyControl,
+    isBlocked: isOffSetupPath,
     revealWhen: ({ root }) => hasElement({ root, selector: WORKSPACE_CREATE }),
     doneWhen: isPastStep({ step: 'workspace' }),
   },
@@ -100,7 +114,7 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     beat: 0,
     anchor: OPEN_TOOLS,
     focus: WIZARD_COLUMN,
-    isBlocked: isAnyControl,
+    isBlocked: isOffSetupPath,
     revealWhen: ({ root }) => hasElement({ root, selector: OPEN_TOOLS }),
     doneWhen: isOnStep({ step: 'tools' }),
   },
@@ -113,7 +127,7 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     beat: 0,
     anchor: LINEAR_CONNECT,
     focus: WIZARD_COLUMN,
-    isBlocked: isAnyControl,
+    isBlocked: isOffSetupPath,
     revealWhen: ({ root }) => hasElement({ root, selector: LINEAR_CONNECT }),
     doneWhen: ({ state, start }) => hasLinear({ state }) && !hasLinear({ state: start }),
   },
@@ -125,9 +139,9 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     result:
       'Pick up an issue now lists HBL-412, the duplicate-credit bug. Next, set the direction.',
     beat: 0,
-    anchor: '[data-step="tools"] [data-demo-anchor="setup-continue"]',
+    anchor: TOOLS_CONTINUE,
     focus: WIZARD_COLUMN,
-    isBlocked: isAnyControl,
+    isBlocked: isOffSetupPath,
     revealWhen: isOnStep({ step: 'tools' }),
     doneWhen: isOnStep({ step: 'first-session' }),
   },
