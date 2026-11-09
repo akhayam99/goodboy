@@ -1,4 +1,5 @@
 import type { AppStore } from '../../../../../store/store';
+import { STORY_SESSION_ID } from '../../scenes/story/storyWorld';
 import type { DemoHint, HintProbe } from './demoHintTypes';
 import { hasElement } from './hasElement';
 import { isOtherControl } from './isOtherControl';
@@ -32,13 +33,16 @@ const hasNewIssueSession = ({ state, start }: HintProbe): boolean => {
   );
 };
 
-const answeredOf = ({ state }: StateParams): number =>
-  Object.values(state.sessionAnsweredQuestions)
-    .flat()
-    .filter((question) => question.status === 'answered').length;
+const hasAnswered = ({ state }: StateParams): boolean =>
+  (state.sessionAnsweredQuestions[STORY_SESSION_ID] ?? []).some(
+    (question) => question.status === 'answered',
+  );
 
 const hasPlan = ({ state }: StateParams): boolean =>
-  Object.values(state.sessionPlans).flat().length > 0;
+  (state.sessionPlans[STORY_SESSION_ID] ?? []).length > 0;
+
+const isOptionChecked = ({ root }: RootParams): boolean =>
+  root.querySelector(OPTION)?.getAttribute('aria-checked') === 'true';
 
 export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
   {
@@ -58,7 +62,7 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     id: 'story-start',
     label: 'Start issue work',
     copy: 'Start work on this issue',
-    instruction: 'Press **Start workflow** to begin work on HBL-412.',
+    instruction: 'Press **Start** to begin work on HBL-412.',
     result: "Work started. Claude's planner has one question before it writes the plan.",
     beat: 0,
     isDimmed: false,
@@ -80,8 +84,10 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     isBlocked: isOtherControl,
     anchor: OPTION,
     side: 'left',
-    revealWhen: ({ root }) => hasElement({ root, selector: OPTION }),
-    doneWhen: ({ root }) => root.querySelector(OPTION)?.getAttribute('aria-checked') === 'true',
+    isSideLocked: true,
+    revealWhen: ({ root, state }) =>
+      hasElement({ root, selector: OPTION }) || hasAnswered({ state }),
+    doneWhen: ({ root, state }) => isOptionChecked({ root }) || hasAnswered({ state }),
   },
   {
     id: 'story-answer',
@@ -97,10 +103,9 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     isBlocked: isOtherControl,
     anchor: ANSWER,
     side: 'top',
-    revealWhen: ({ root }) =>
-      hasElement({ root, selector: ANSWER }) &&
-      root.querySelector(OPTION)?.getAttribute('aria-checked') === 'true',
-    doneWhen: ({ state, start }) =>
-      answeredOf({ state }) > answeredOf({ state: start }) && hasPlan({ state }),
+    revealWhen: ({ root, state }) =>
+      (hasElement({ root, selector: ANSWER }) && isOptionChecked({ root })) ||
+      hasAnswered({ state }),
+    doneWhen: ({ state }) => hasAnswered({ state }) && hasPlan({ state }),
   },
 ];
