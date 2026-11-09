@@ -74,8 +74,45 @@ commands, and got all six once it navigated itself to the dev origin or to
 - A tab's address in a listing is read from the live webview, so a page that
   moves with `history.pushState` or a fragment shows its new address.
 - A destroyed window's tabs leave the registry with it.
-- The registry stamps when a tab was hidden. The sleep and close policy reads
-  that stamp; it is not built yet.
+
+## Lifecycle
+
+A tab is in one of three states, shown as `state` in its facts.
+
+- **live**: shown.
+- **asleep**: hidden, webview still alive. Hiding stamps `hiddenSinceMs`.
+- **closed**: the webview is destroyed. The registry keeps the tab's id, its
+  last address, its title and the last place it was given, so the tab is still
+  listed.
+
+Hiding frees nothing, because a hidden webview keeps its memory (spike S8).
+Only closing frees it, so two rules close a tab:
+
+- **Ten minutes hidden.** A background thread sweeps every 30 seconds and
+  closes each asleep tab hidden for 10 minutes or more. Showing the tab and
+  hiding it again restarts the clock.
+- **More than four live per window.** Opening or showing a tab that makes a
+  window hold more than four live webviews (live and asleep, popups included)
+  closes the asleep tab hidden the longest, then the next, until four remain.
+  A shown tab is never closed by either rule, so a window of more than four
+  shown tabs keeps them all.
+
+Showing a closed tab builds its webview again at the stored address and place,
+under the same id and the same `browse-` label, and it comes back live. The
+page loads again, so its scroll and form state are gone. A closed tab refuses
+navigate, reload, back and forward with `tab-closed`; show it first. Hiding a
+closed tab answers its facts as they are, placing one only stores the place,
+and closing one removes it from the registry.
+
+A tab that changes state (live to asleep and back, asleep to closed, closed to
+live) sends `browser://tab-state` with its facts to its own window, whoever
+asked for the change. A call that finds the tab already in that state sends
+nothing.
+
+Nothing is created at boot. The sweep thread starts with the app and owns no
+webview; the registry is empty until a window opens a tab. Every change of
+state runs under one lock in the registry, so a show never meets a sweep
+half way through destroying the same webview.
 
 ## Capabilities
 
@@ -107,15 +144,18 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 
 A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
-`window-gone`, `other-window`, `too-many-popups`, `session-closing`), never a sentence. The pane
+`tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
+`session-closing`), never a sentence. The pane
 owns the words.
 
 ## Under the hood
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  eleven `browser_*` commands; `registry.rs` holds the tabs and the popup
-  seats (`MAX_HIDDEN_POPUPS`). The native back and forward step lives in
+  eleven `browser_*` commands; `registry.rs` holds the tabs, the popup seats
+  (`MAX_HIDDEN_POPUPS`) and the pure picks of which tabs to close;
+  `lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`), the
+  sweep, show, hide and place, and `browser://tab-state`. The native back and forward step lives in
   `src-tauri/src/platform/web_history.rs`, the only `unsafe` the host needs.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
@@ -129,7 +169,11 @@ owns the words.
   and closing only the calling window's tabs, a retry after a partial
   session close, a destroyed window, and that no production code looks a
   window up through `webview_windows` or `get_webview_window`. The native
-  back step cannot run headless.
+  back step cannot run headless. The lifecycle tests pass the clock in: the
+  timer close at 10 minutes less a millisecond and at 10 minutes, the cap
+  close order, a closed tab shown again under its id and address, a shown tab
+  that no sweep closes, the events, and that starting the lifecycle at boot
+  leaves the registry and the webviews as they were.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants
   a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.
