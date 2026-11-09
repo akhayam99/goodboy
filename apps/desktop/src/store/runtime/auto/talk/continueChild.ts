@@ -183,6 +183,7 @@ const childSpecOf = ({ delegation, text, from }: ChildSpecParams): DelegateChild
   title: null,
   task: text,
   reason: REASON_OF[from],
+  roleReason: null,
   provider: null,
   model: null,
   effort: null,

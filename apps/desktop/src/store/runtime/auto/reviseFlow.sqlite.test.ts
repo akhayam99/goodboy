@@ -628,6 +628,7 @@ describe('retrying a revise', () => {
         title: null,
         task: '',
         reason: 'again',
+        roleReason: null,
         provider: null,
         model: null,
         effort: null,

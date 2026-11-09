@@ -67,16 +67,19 @@ describe('the side column signal scenes', () => {
     }
   });
 
-  it('side-info-doors keeps one trailing slot, a dot only for unread, and both plus buttons', async () => {
+  it('side-info-doors keeps one trailing slot, a dot only for unread, and the chat plus', async () => {
     await mount({ name: 'side-info-doors' });
 
     const terminal = screen.getByRole('button', { name: 'Terminal, 2 running' });
     expect(terminal.querySelector('[data-door-signal]')).toBeNull();
+    expect(terminal.querySelector('[data-tile-count]')?.textContent).toBe('2');
     const chat = screen.getByRole('button', { name: 'Chat, unread' });
     expect(chat.querySelector('[data-door-signal="unread"]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'New chat' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New terminal' })).toBeDefined();
-    expect(document.querySelectorAll('[data-door-slot="signal"]').length).toBe(8);
+    expect(screen.getByRole('button', { name: 'New chat' }).getAttribute('data-door-create')).toBe(
+      'chat',
+    );
+    expect(screen.queryByRole('button', { name: 'New terminal' })).toBeNull();
+    expect(document.querySelectorAll('[data-door-slot="signal"]').length).toBe(6);
   });
 
   it('side-info-framed gives every counted session page its number in a shot frame', async () => {

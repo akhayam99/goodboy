@@ -46,11 +46,11 @@ describe('ReportStudio', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Outcome' })).toBeDefined();
   });
 
-  it('pins the outline rail so it survives the body scroll', () => {
+  it('pins the outline rail below the pinned zone so it survives the body scroll', () => {
     renderStudio();
     const rail = screen.getByTestId('report-outline-rail');
-    expect(rail.className).toContain('sticky');
-    expect(rail.className).toContain('top-0');
+    expect(rail.className).toMatch(/(^| )sticky top-0( |$)/);
+    expect(rail.className).not.toContain('--reveal-inset');
     expect(rail.className).toContain('self-start');
     expect(rail.querySelector('.overflow-y-auto')).not.toBeNull();
   });
