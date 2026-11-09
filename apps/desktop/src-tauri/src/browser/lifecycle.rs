@@ -72,27 +72,42 @@ pub(crate) fn close_for_switch<R: Runtime>(
     _gate: &Gate<'_>,
 ) -> Result<(), MessageError> {
     let registry = app.state::<BrowserRegistry>();
+    close_switched(
+        &registry,
+        ids,
+        |id| {
+            let webview = app.get_webview(&guard::label_of(id));
+            if let Some(live) = webview.as_ref().and_then(|webview| webview.url().ok()) {
+                registry.set_url(id, live.as_str());
+            }
+            match webview {
+                Some(webview) => webview.close().map_err(failed),
+                None => Ok(()),
+            }
+        },
+        |facts| announce(app, facts),
+    )
+}
+
+pub(crate) fn close_switched(
+    registry: &BrowserRegistry,
+    ids: &[String],
+    mut close: impl FnMut(&str) -> Result<(), MessageError>,
+    mut tell: impl FnMut(&TabFacts),
+) -> Result<(), MessageError> {
     let mut stuck = false;
     for id in ids {
         let Some(before) = registry.mark_switched(id, now_ms()) else {
             continue;
         };
-        let webview = app.get_webview(&guard::label_of(id));
-        if let Some(live) = webview.as_ref().and_then(|webview| webview.url().ok()) {
-            registry.set_url(id, live.as_str());
-        }
-        let closed = match webview {
-            Some(webview) => webview.close(),
-            None => Ok(()),
-        };
-        if let Err(error) = closed {
+        if let Err(error) = close(id) {
             log::warn!("[browser] profile_switch_close_failed reason={error}");
             registry.restore(before);
             stuck = true;
             continue;
         }
         if let Some(facts) = registry.facts(id) {
-            announce(app, &facts);
+            tell(&facts);
         }
     }
     match stuck {
@@ -160,6 +175,7 @@ fn recreate<R: Runtime>(
     if !guard::may_open(&url, &AppOrigins::of_app(app)) {
         return Err(reason::refused(NOT_WEB_ADDRESS));
     }
+    profile::prepare(app, &tab_profile)?;
     profile::activate(app, &tab_profile, gate)?;
     let webview = spawn_webview(window, tab_id, &tab_profile, &url, rect, true)?;
     registry.revive(tab_id, true, now_ms).ok_or_else(|| {

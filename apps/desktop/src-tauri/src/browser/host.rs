@@ -120,6 +120,7 @@ pub(crate) fn open_tab<R: Runtime>(
         position: tab.position,
         size: tab.size,
     };
+    profile::prepare(&app, &tab.profile)?;
     profile::activate(&app, &tab.profile, &gate)?;
     let webview = spawn_webview(window, &id, &tab.profile, &tab.url, rect, tab.is_shown)?;
     let registered = registry.insert_in_generation(

@@ -1,4 +1,6 @@
+use std::future::Future;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -13,6 +15,8 @@ use crate::util::MessageError;
 
 const PROFILE_SALT: &str = "goodboy-browser-profile:";
 const PROFILES_DIR: [&str; 2] = ["browser", "profiles"];
+const WIPE_ATTEMPTS: usize = 3;
+const WIPE_RETRY_DELAY: Duration = Duration::from_millis(400);
 
 #[cfg(target_os = "macos")]
 const FIRST_MACOS_WITH_STORES: u32 = 14;
@@ -108,6 +112,30 @@ impl BrowserProfiles {
             .map(|root| root.join(profile.name()))
             .ok_or_else(|| reason::failed(PROFILE_UNAVAILABLE))
     }
+
+    #[cfg_attr(target_os = "macos", allow(dead_code))]
+    pub(crate) fn ensure_dir(&self, profile: &ProfileId) -> Result<PathBuf, MessageError> {
+        let dir = self.dir_of(profile)?;
+        std::fs::create_dir_all(&dir).map_err(|error| MessageError::Failed(error.to_string()))?;
+        Ok(dir)
+    }
+}
+
+#[cfg(target_os = "macos")]
+pub(crate) fn prepare<R: Runtime>(
+    _app: &AppHandle<R>,
+    _profile: &ProfileId,
+) -> Result<(), MessageError> {
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn prepare<R: Runtime>(
+    app: &AppHandle<R>,
+    profile: &ProfileId,
+) -> Result<(), MessageError> {
+    app.state::<BrowserProfiles>().ensure_dir(profile)?;
+    Ok(())
 }
 
 #[cfg(target_os = "macos")]
@@ -128,9 +156,22 @@ pub(crate) fn scope<R: Runtime>(
     builder: WebviewBuilder<R>,
     profile: &ProfileId,
 ) -> Result<WebviewBuilder<R>, MessageError> {
-    let dir = app.state::<BrowserProfiles>().dir_of(profile)?;
-    std::fs::create_dir_all(&dir).map_err(|error| MessageError::Failed(error.to_string()))?;
+    let dir = app.state::<BrowserProfiles>().ensure_dir(profile)?;
     Ok(builder.data_directory(dir))
+}
+
+pub(crate) fn switch_targets(
+    registry: &BrowserRegistry,
+    profile: &ProfileId,
+    isolation: Isolation,
+) -> Result<Vec<String>, MessageError> {
+    if registry.is_clearing(profile) {
+        return Err(reason::refused(PROFILE_BUSY));
+    }
+    match isolation {
+        Isolation::Shared => Ok(Vec::new()),
+        Isolation::PerWorkspace => Ok(registry.open_outside(profile)),
+    }
 }
 
 pub(crate) fn activate<R: Runtime>(
@@ -138,11 +179,7 @@ pub(crate) fn activate<R: Runtime>(
     profile: &ProfileId,
     gate: &Gate<'_>,
 ) -> Result<(), MessageError> {
-    let registry = app.state::<BrowserRegistry>();
-    if registry.is_clearing(profile) {
-        return Err(reason::refused(PROFILE_BUSY));
-    }
-    let others = registry.open_outside(profile);
+    let others = switch_targets(&app.state::<BrowserRegistry>(), profile, isolation())?;
     lifecycle::close_for_switch(app, &others, gate)
 }
 
@@ -185,8 +222,37 @@ pub(crate) fn begin_clear<R: Runtime>(
     })
 }
 
-#[cfg(target_os = "macos")]
+pub(crate) async fn retry_wipe<Wipe, Pending>(
+    attempts: usize,
+    delay: Duration,
+    mut wipe: Wipe,
+) -> Result<ClearOutcome, MessageError>
+where
+    Wipe: FnMut() -> Pending,
+    Pending: Future<Output = Result<ClearOutcome, MessageError>>,
+{
+    let attempts = attempts.max(1);
+    let mut attempt = 1;
+    loop {
+        let error = match wipe().await {
+            Ok(outcome) => return Ok(outcome),
+            Err(error) => error,
+        };
+        if attempt >= attempts {
+            return Err(error);
+        }
+        log::warn!("[browser] profile_wipe_retry attempt={attempt} reason={error}");
+        attempt += 1;
+        tokio::time::sleep(delay).await;
+    }
+}
+
 pub(crate) async fn wipe<R: Runtime>(lease: &ClearLease<R>) -> Result<ClearOutcome, MessageError> {
+    retry_wipe(WIPE_ATTEMPTS, WIPE_RETRY_DELAY, || wipe_once(lease)).await
+}
+
+#[cfg(target_os = "macos")]
+async fn wipe_once<R: Runtime>(lease: &ClearLease<R>) -> Result<ClearOutcome, MessageError> {
     lease
         .app
         .remove_data_store(lease.profile.bytes())
@@ -198,7 +264,7 @@ pub(crate) async fn wipe<R: Runtime>(lease: &ClearLease<R>) -> Result<ClearOutco
 }
 
 #[cfg(not(target_os = "macos"))]
-pub(crate) async fn wipe<R: Runtime>(lease: &ClearLease<R>) -> Result<ClearOutcome, MessageError> {
+async fn wipe_once<R: Runtime>(lease: &ClearLease<R>) -> Result<ClearOutcome, MessageError> {
     let dir = lease
         .app
         .state::<BrowserProfiles>()
@@ -224,8 +290,13 @@ pub(crate) async fn clear<R: Runtime>(
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
+    use tauri::{LogicalPosition, LogicalSize, Rect};
+
+    use super::super::registry::NewTab;
     use super::*;
+    use crate::util::uuid_v4;
 
     fn profile(workspace_id: &str) -> ProfileId {
         ProfileId::of_workspace(workspace_id).expect("workspace id is valid")
@@ -297,6 +368,115 @@ mod tests {
             profiles.dir_of(&profile("northwind")),
             Err(MessageError::Failed(ref code)) if code == PROFILE_UNAVAILABLE
         ));
+    }
+
+    #[test]
+    fn a_profile_folder_that_cannot_be_created_is_a_failure() {
+        let blocker = std::env::temp_dir().join(format!("goodboy-profile-blocker-{}", uuid_v4()));
+        std::fs::write(&blocker, b"file").expect("blocker file");
+        let profiles = BrowserProfiles::under(blocker.clone());
+        assert!(matches!(
+            profiles.ensure_dir(&profile("northwind")),
+            Err(MessageError::Failed(_))
+        ));
+        std::fs::remove_file(&blocker).expect("blocker removed");
+    }
+
+    #[test]
+    fn a_profile_folder_is_created_once_and_reused() {
+        let root = std::env::temp_dir().join(format!("goodboy-profile-root-{}", uuid_v4()));
+        let profiles = BrowserProfiles::under(root.clone());
+        let first = profiles.ensure_dir(&profile("northwind")).expect("created");
+        let second = profiles.ensure_dir(&profile("northwind")).expect("reused");
+        assert_eq!(first, second);
+        assert!(first.is_dir());
+        std::fs::remove_dir_all(&root).expect("root removed");
+    }
+
+    fn wipe_that_fails(times: usize, calls: &AtomicUsize) -> Result<ClearOutcome, MessageError> {
+        let call = calls.fetch_add(1, Ordering::SeqCst) + 1;
+        match call > times {
+            true => Ok(ClearOutcome {
+                should_restart: false,
+            }),
+            false => Err(MessageError::Failed("busy".to_string())),
+        }
+    }
+
+    #[test]
+    fn a_wipe_that_fails_twice_succeeds_on_the_third_try() {
+        let calls = AtomicUsize::new(0);
+        let outcome = tauri::async_runtime::block_on(retry_wipe(3, Duration::ZERO, || async {
+            wipe_that_fails(2, &calls)
+        }));
+        assert_eq!(
+            outcome.expect("third try works"),
+            ClearOutcome {
+                should_restart: false
+            }
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    fn a_wipe_that_keeps_failing_stops_after_its_attempts_and_says_why() {
+        let calls = AtomicUsize::new(0);
+        let outcome = tauri::async_runtime::block_on(retry_wipe(3, Duration::ZERO, || async {
+            wipe_that_fails(usize::MAX, &calls)
+        }));
+        assert!(matches!(outcome, Err(MessageError::Failed(ref why)) if why == "busy"));
+        assert_eq!(calls.load(Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    fn a_wipe_that_works_is_not_repeated() {
+        let calls = AtomicUsize::new(0);
+        let outcome = tauri::async_runtime::block_on(retry_wipe(3, Duration::ZERO, || async {
+            wipe_that_fails(0, &calls)
+        }));
+        assert!(outcome.is_ok());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn a_shared_store_leaves_the_other_workspaces_open() {
+        let registry = BrowserRegistry::default();
+        registry.insert(NewTab {
+            id: "northwind-tab",
+            session_id: "harborline",
+            window_label: "main",
+            profile: profile("northwind"),
+            url: "http://localhost:5173/",
+            rect: Rect {
+                position: LogicalPosition::new(0.0, 0.0).into(),
+                size: LogicalSize::new(10.0, 10.0).into(),
+            },
+            is_shown: true,
+            opener_id: None,
+            now_ms: 1,
+        });
+        let acme = profile("acme");
+        assert_eq!(
+            switch_targets(&registry, &acme, Isolation::Shared).expect("targets"),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            switch_targets(&registry, &acme, Isolation::PerWorkspace).expect("targets"),
+            vec!["northwind-tab".to_string()]
+        );
+    }
+
+    #[test]
+    fn a_clearing_profile_refuses_a_switch_in_either_isolation() {
+        let registry = BrowserRegistry::default();
+        let northwind = profile("northwind");
+        registry.begin_clear(&northwind).expect("nothing is live");
+        for isolation in [Isolation::Shared, Isolation::PerWorkspace] {
+            assert!(matches!(
+                switch_targets(&registry, &northwind, isolation),
+                Err(MessageError::Refused(ref code)) if code == PROFILE_BUSY
+            ));
+        }
     }
 
     #[cfg(target_os = "macos")]

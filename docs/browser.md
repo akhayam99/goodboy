@@ -143,12 +143,14 @@ holds no character of the id, so no id can reach another path.
   identifier. WebKit keeps it; Goodboy sees no folder.
 - **macOS 13 and older**: WebKit has no named stores, and Tauri falls back to
   the app's one store without saying so. Every workspace then shares one
-  profile. `browser_profile_isolation` answers `shared` (and `perWorkspace`
+  profile, so opening a tab never closes another workspace's views.
+  `browser_profile_isolation` answers `shared` (and `perWorkspace`
   everywhere else) so the pane can warn, and `browser_profile_clear` refuses
   with `profile-shared`, because clearing would wipe every workspace.
-- **Windows and Linux**: the profile is a data directory,
-  `~/.goodboy/browser/profiles/<name>`, created when the first tab of the
-  workspace opens. Tauri gives each distinct directory its own WebView2
+- **Windows and Linux**: the profile is a data directory, `browser/profiles/<name>`
+  in the app data folder, created before any view of another workspace is
+  closed, so a folder that cannot be made fails the open and leaves the running
+  workspace as it was. Tauri gives each distinct directory its own WebView2
   environment or WebKit context, so the stores are separate in one window.
   Linux needs no window of its own for this. The Linux pane limit (children do
   not take their bounds) is about placement, and belongs to the pane.
@@ -170,7 +172,9 @@ to another workspace or close them first), and refuses with `profile-busy` when
 the same profile is already being cleared. While it runs, opening or showing a
 tab of that workspace is refused with `profile-busy`, so a view never opens on a
 store being wiped. On macOS it removes the WebKit store; on Windows and Linux it
-deletes the folder. It answers `{ shouldRestart }`: Linux keeps its WebKit
+deletes the folder. A webview that is still shutting down can hold the store, so
+the clear tries up to three times, 400 ms apart, and only then fails with the
+platform's error; the user can try again. It answers `{ shouldRestart }`: Linux keeps its WebKit
 context for the life of the app, so cookies already in memory outlive the
 deleted folder and the answer is `true`; elsewhere it is `false`.
 
@@ -242,9 +246,13 @@ owns the words.
   stable and distinct id and folder per workspace, that a switch closes the
   other workspace's views (in one window and across two) and announces it, that
   a closed view returns under its id, that a popup keeps its opener's profile,
-  and that a clear refuses with live views, a second clear and a blank id and
-  blocks opens while it runs. The macOS store and the Windows and Linux folder
-  are not reachable from the mock runtime.
+  that a switch which cannot close one view restores it, closes the rest and
+  succeeds on a retry, that a shared store closes nothing, that a folder that
+  cannot be made leaves the running workspace alone, that a popup whose opener
+  was switched out fails without a view, and that a clear refuses with live
+  views, a second clear and a blank id, blocks opens while it runs and retries
+  a failing wipe up to three times. The macOS store and the Windows and Linux
+  folder are not reachable from the mock runtime.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants
   a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.

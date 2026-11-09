@@ -14,7 +14,9 @@ use super::host::{
     close_each, close_tab, fill_popup, open_tab, reserve_popup, OpenTab, SessionClosed, TabBounds,
     MAX_HIDDEN_POPUPS, TAB_OPENED_EVENT,
 };
-use super::lifecycle::{hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT};
+use super::lifecycle::{
+    close_switched, hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT,
+};
 use super::profile::{begin_clear, ProfileId};
 use super::reason::{
     BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY, PROFILE_LIVE,
@@ -1052,4 +1054,138 @@ fn refuses_to_clear_a_blank_workspace() {
         begin_clear(app.handle(), " "),
         Err(MessageError::Refused(_))
     ));
+}
+
+fn seed_tab(registry: &BrowserRegistry, id: &str, profile: ProfileId, is_shown: bool) {
+    registry.insert(NewTab {
+        id,
+        session_id: "harborline",
+        window_label: "main",
+        profile,
+        url: "http://localhost:5173/",
+        rect: PANE.rect(),
+        is_shown,
+        opener_id: None,
+        now_ms: 100,
+    });
+}
+
+#[test]
+fn a_switch_that_cannot_close_one_view_restores_it_and_closes_the_rest() {
+    let registry = BrowserRegistry::default();
+    seed_tab(&registry, "ledger-core", northwind(), false);
+    seed_tab(&registry, "notify-relay", northwind(), true);
+    seed_tab(&registry, "payments-api", northwind(), false);
+    let ids: Vec<String> = ["ledger-core", "notify-relay", "payments-api"]
+        .iter()
+        .map(|id| id.to_string())
+        .collect();
+    let stuck_before = registry.facts("notify-relay").expect("tab exists");
+    assert_eq!(stuck_before.state, TabState::Live);
+    assert!(stuck_before.is_shown);
+    let told = Mutex::new(Vec::new());
+    let result = close_switched(
+        &registry,
+        &ids,
+        |id| match id {
+            "notify-relay" => Err(MessageError::Failed("webview-stuck".to_string())),
+            _ => Ok(()),
+        },
+        |facts| told.lock().expect("sink").push(facts.id.clone()),
+    );
+    assert!(matches!(result, Err(MessageError::Failed(code)) if code == PROFILE_BUSY));
+    assert_eq!(registry.facts("notify-relay"), Some(stuck_before));
+    assert_eq!(registry.state_of("ledger-core"), Some(TabState::Closed));
+    assert_eq!(registry.state_of("payments-api"), Some(TabState::Closed));
+    assert_eq!(
+        *told.lock().expect("sink"),
+        vec!["ledger-core".to_string(), "payments-api".to_string()]
+    );
+}
+
+#[test]
+fn a_switch_retried_after_a_stuck_view_closes_it() {
+    let registry = BrowserRegistry::default();
+    seed_tab(&registry, "ledger-core", northwind(), true);
+    let ids = vec!["ledger-core".to_string()];
+    let stuck = close_switched(
+        &registry,
+        &ids,
+        |_| Err(MessageError::Failed("webview-stuck".to_string())),
+        |_| {},
+    );
+    assert!(stuck.is_err());
+    assert_eq!(registry.state_of("ledger-core"), Some(TabState::Live));
+    let retried = close_switched(&registry, &ids, |_| Ok(()), |_| {});
+    assert!(retried.is_ok());
+    assert_eq!(registry.state_of("ledger-core"), Some(TabState::Closed));
+}
+
+#[test]
+fn a_switch_does_not_touch_a_view_that_is_already_closed() {
+    let registry = BrowserRegistry::default();
+    seed_tab(&registry, "ledger-core", northwind(), false);
+    registry.mark_closed("ledger-core");
+    let calls = AtomicUsize::new(0);
+    let result = close_switched(
+        &registry,
+        &["ledger-core".to_string()],
+        |_| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        },
+        |_| {},
+    );
+    assert!(result.is_ok());
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn a_popup_whose_opener_was_switched_out_fails_and_leaves_no_view() {
+    let app = app_with_windows(&["main"]);
+    let opener = open_for(&app, "main", acme(), "cascadia");
+    let seat = reserve_popup(app.handle(), &opener).expect("seat");
+    let other = open_for(&app, "main", northwind(), "harborline");
+    assert_eq!(state_of(&app, &opener), Some(TabState::Closed));
+    let before = app.webviews().len();
+    let late = fill_popup(app.handle(), &seat, url("https://example.com/"));
+    assert!(matches!(late, Err(MessageError::Failed(code)) if code == TAB_GONE));
+    assert_eq!(app.webviews().len(), before);
+    assert!(is_live_webview(&app, &other));
+    assert_eq!(
+        app.state::<BrowserRegistry>()
+            .ids_of_session("cascadia", "main"),
+        vec![opener]
+    );
+}
+
+#[cfg(not(target_os = "macos"))]
+#[test]
+fn keeps_the_running_workspace_when_the_new_one_has_no_folder() {
+    let app = app_with_windows(&["main"]);
+    let running = open_for(&app, "main", northwind(), "harborline");
+    let blocked = app
+        .state::<BrowserProfiles>()
+        .dir_of(&acme())
+        .expect("folder path");
+    std::fs::create_dir_all(blocked.parent().expect("parent")).expect("parent folder");
+    std::fs::write(&blocked, b"file").expect("blocking file");
+    let failed = open_tab(
+        &window(&app, "main"),
+        OpenTab::at(
+            "cascadia",
+            acme(),
+            url("http://localhost:5173/"),
+            PANE,
+            true,
+        ),
+    );
+    assert!(matches!(failed, Err(MessageError::Failed(_))));
+    assert_eq!(state_of(&app, &running), Some(TabState::Live));
+    assert!(is_live_webview(&app, &running));
+    let facts = app
+        .state::<BrowserRegistry>()
+        .facts(&running)
+        .expect("facts");
+    assert!(facts.is_shown);
 }
