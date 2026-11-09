@@ -367,7 +367,7 @@ export const TranscriptRows = ({
   return (
     <>
       {splitTurns({ nodes: out, starts: turnStarts }).map((nodes, turn) => (
-        <li key={`turn-${turn}`} data-turn="">
+        <li key={`turn-${turn}`} data-turn="" data-browser-links="">
           <ul className={PANE_RHYTHM.transcript.blocks}>{nodes}</ul>
         </li>
       ))}

@@ -3,6 +3,7 @@ import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { AppFrame } from '../../audit/AppFrame';
 import { useSceneRailFold } from '../../useSceneRailFold';
 import { seedBrowserPane, type BrowserPaneSceneState } from './browserPaneSeed';
+import { usePeekedLink } from './usePeekedLink';
 
 type Props = {
   readonly state: BrowserPaneSceneState;
@@ -12,6 +13,7 @@ type Props = {
 export const BrowserPaneScene = ({ state, theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useSceneRailFold({ isFolded: false });
+  usePeekedLink({ isOn: isReady && state === 'peek' });
   useEffect(() => {
     applyDocumentTheme({ theme });
     seedBrowserPane({ state });

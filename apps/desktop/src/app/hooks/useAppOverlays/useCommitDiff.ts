@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import { useCommitLinkInterceptor } from '../../../shared/hooks/useCommitLinkInterceptor';
 import { openUrl } from '../../../shared/lib/editor';
 import { useAppStore } from '../../../store';
+import { claimSessionLink } from '../../../features/browser/claimSessionLink';
 
 export const useCommitDiff = () => {
-  const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
+  const { commitDiff, setCommitDiff } = useCommitLinkInterceptor({ claimLink: claimSessionLink });
   const currentSessionId = useAppStore((state) => state.currentSessionId);
   const openDrawer = useAppStore((state) => state.openDrawer);
 

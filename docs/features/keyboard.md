@@ -37,7 +37,7 @@ The strip ends with the same controls on every scope.
 - **⋯** holds **Send last output**, **Copy worktree path** and **Open session**. A folder with no session has a quiet **Copy folder path** instead.
 - **Send last output** attaches the end of the tab's scrollback to the session's composer. It is sent only when you send.
 - Selecting text in a terminal shows **Send to the agent**. It attaches just the selection the same way.
-- A port a terminal listens on shows as quiet text on a worktree row that is not selected. For the selected worktree it shows as a chip at the right edge of the tab strip, never on a tab. A click opens localhost on it.
+- A port a terminal listens on shows as quiet text on a worktree row that is not selected. For the selected worktree it shows as a chip at the right edge of the tab strip, never on a tab. A click opens localhost on it in the session's browser, **⌘-click** in your own. A folder with no session opens your browser.
 - Port detection runs every 5 seconds and sees TCP only.
 
 **Close a tab**
@@ -149,6 +149,7 @@ Pin the scripts you use and run them from the session.
 - It groups scripts on one grid into **Services** (dev servers and watchers) and **Commands** (scripts that run and end).
 - A click on a row opens its output. The row's one control is **Run** or **Stop**. **Pin**, **Restart** and the rest live in the right click menu.
 - A running service shows its dot and uptime. CPU and memory are two rows in the card you get when you rest on its status.
+- Its port opens beside the session on a click, and in your own browser on **⌘-click**.
 - **Run** on a Service starts it in place and leaves the list as it is. The row's last line, uptime and port are the feedback. A click on the row, or Enter, opens its output.
 - A project with more than one Service has **Start all services** on the Services band. It starts the ones that are not running.
 - **Run** on a Command shows the Command's live output in place of the list, with **Run again**, **Copy output**, **Send to the agent** and **Back to scripts**.
@@ -183,12 +184,16 @@ Browse the session folder as a file tree, with a preview of the selected file be
 
 ### Browser
 
-Open your dev server or any web page beside the session or on a page of its own, without leaving Goodboy.
+Open your dev server, a port or a link beside the session or on a page of its own, without leaving Goodboy.
 
 - **Browser** in the session tools opens the page beside the work. The session rail folds to icons while it is open.
 - **Browser** in the sidebar opens the Browser page. It lists every tab, grouped by session, then the pins of each project. The tile counts the open tabs.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
+- A port chip, a running Service's port and a link in a conversation, a decision or an artifact open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
+- Rest on a localhost link to see its page title and address before you open it.
+- **⌘L** goes to the address while the browser is on screen. Elsewhere it stays Ask.
+- **⌘K** lists the session's tabs. Type an address there and **Open** it beside the session.
 - Tabs belong to the session. Pin a tab to keep it in every session of the project. Tabs close when the session is archived.
 - **Open in your browser** hands the page to your own browser at any time.
 
@@ -205,6 +210,7 @@ This part is for contributors and agents who change the feature.
 - Stop the running agent: the registry id is `agent.stop`.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule.
+- Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
 
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.

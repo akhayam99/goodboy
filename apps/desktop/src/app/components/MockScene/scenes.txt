@@ -161,6 +161,8 @@ browser-pane
 browser-pane-dark
 browser-pane-tabs
 browser-pane-tabs-dark
+browser-peek
+browser-peek-dark
 c01-grid-dots
 c01-grid-groups
 c01-grid-list

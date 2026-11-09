@@ -18,7 +18,7 @@ export const KeepAliveWorkSurface = ({ sessionId, isActive }: KeepAliveWorkSurfa
   }
   return (
     <Activity mode={isActive ? 'visible' : 'hidden'}>
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" data-browser-session={sessionId}>
         <PanelBoundary leaveLabel="Go to the board" onLeave={goToBoard}>
           <SessionWorkspace session={session} />
         </PanelBoundary>

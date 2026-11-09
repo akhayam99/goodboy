@@ -5,13 +5,8 @@ const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwi
 
 vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
-import {
-  SHORTCUTS,
-  SHORTCUT_SCOPE_LABEL,
-  formatCombo,
-  shortcutGlyphs,
-  shortcutRangeGlyphs,
-} from './registry';
+import { SHORTCUTS, formatCombo, shortcutGlyphs, shortcutRangeGlyphs } from './registry';
+import { SHORTCUT_SCOPE_LABEL } from './shortcutScopeLabel';
 import type { ShortcutEntry } from './registry';
 import { RESERVED_COMBOS } from './overrides/reservedCombos';
 
@@ -86,6 +81,9 @@ describe('shortcut registry', () => {
         continue;
       }
       if (id === 'terminal.closeTab' && shadowed === 'app.close') {
+        continue;
+      }
+      if (id === 'browser.address' && shadowed === 'ask.open') {
         continue;
       }
       if (

@@ -1,5 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { askAboutSession } from '../../session/ask/askAboutSession';
+import { askInChat } from '../../workspace-chat/askInChat';
 import type { PaletteEntry } from '../types';
 
 const ASK_SESSION_KEY = 'ask:session';
@@ -15,19 +17,19 @@ const ASK_IN_CHAT_LABEL = 'Ask in chat';
 type Params = {
   readonly query: string;
   readonly sessionId: SessionId | null;
-  readonly askSession: (params: {
-    readonly sessionId: SessionId;
-    readonly question: string;
-  }) => void;
-  readonly askChat: (question: string) => void;
+  readonly leading: ReadonlyArray<PaletteEntry>;
+  readonly hasWorkspace: boolean;
 };
 
 export const askEntries = ({
   query,
   sessionId,
-  askSession,
-  askChat,
+  leading,
+  hasWorkspace,
 }: Params): ReadonlyArray<PaletteEntry> => {
+  if (!hasWorkspace) {
+    return leading;
+  }
   const question = query.trim();
   const chat: PaletteEntry = {
     key: ASK_IN_CHAT_KEY,
@@ -36,12 +38,13 @@ export const askEntries = ({
     group: null,
     icon: CONCEPT_ICONS.chat,
     detail: `"${question}"`,
-    run: () => askChat(question),
+    run: () => void askInChat({ question }),
   };
   if (sessionId === null) {
-    return [chat];
+    return [...leading, chat];
   }
   return [
+    ...leading,
     {
       key: ASK_SESSION_KEY,
       label: ASK_SESSION_LABEL,
@@ -49,7 +52,7 @@ export const askEntries = ({
       group: null,
       icon: CONCEPT_ICONS.ask,
       detail: `"${question}"`,
-      run: () => askSession({ sessionId, question }),
+      run: () => askAboutSession({ sessionId, question }),
     },
     chat,
   ];

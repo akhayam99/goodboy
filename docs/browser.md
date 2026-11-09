@@ -2,9 +2,9 @@
 
 > **Read this when** you are changing how Goodboy opens, places or closes a
 > web page inside a window, what such a page may reach, the browser pane
-> beside a session or the Browser page. **Not for** the other doors (server
-> chips, links, ⌘K), which are not built yet, or the data disclosure users
-> read (`SECURITY.md`).
+> beside a session, the Browser page or a door that opens one (server chips,
+> links, ⌘K, ⌘L). **Not for** the data disclosure users read
+> (`SECURITY.md`).
 
 A browser tab is a native webview that Rust places inside a Goodboy window,
 next to the app's own page. Rust owns every tab. The window asks for a tab
@@ -328,6 +328,56 @@ own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
   `Browser, 3 tabs`. A tab counts whether or not its page is open. A
   session's rows load when its pane or the page opens.
 
+## Doors
+
+A door opens a page in a session's browser. Every door names the session it
+sits in and the address, and one function opens it (`openInBrowser`).
+
+- **Where it opens**: in the session view the door opens the pane; on a page
+  over the session (the Terminal page) it opens the Browser page on that
+  session. A door with no session, such as a terminal on a plain folder,
+  opens your browser.
+- **Which tab**: a tab of the session already on the same address is shown.
+  A bare server address (`http://localhost:5173`) takes any tab on that
+  server. Otherwise a new tab opens. A host failure keeps the old tabs and
+  reports on the session. Every door that shows or opens a tab ends the New
+  tab draft explicitly (`endBrowserDraft` bumps `browserDraftEnds`, which the
+  pane watches), also when the tab it shows is
+  already the active one. A later door wins: a door request cancels an older
+  open still waiting on the host, so the tab the last click named is the one
+  shown. A tab picked in ⌘K shows that exact tab (`showBrowserTab`), never the
+  first tab on the same address.
+- **Server chips**: the port chip on a terminal tab strip and the live port
+  on a running Service open `http://localhost:<port>`.
+- **Links**: a web link in what is written in a session (a conversation
+  turn, a decision, an artifact) opens beside it. Those regions carry
+  `data-browser-links` inside the session's `data-browser-session`, and
+  `isBrowserLinkArea` checks both. A link anywhere else, such as an
+  integration, sign-in or connect guide in a drawer, opens your browser as
+  before, and so does a link outside a session. A GitHub commit link still
+  opens its diff. Chips and rows need only `data-browser-session`.
+- **The click rule**: a plain click opens the session's browser, ⌘-click
+  (Ctrl-click off macOS) opens your browser, on chips and links alike. The
+  ⌘-click listener runs after the page's own handlers and skips a click they
+  already handled, so an anchor with its own `onClick` opens your browser
+  once. No earlier rule covered web links; ⌘-click on a file path in a
+  terminal still opens your editor.
+- **Peek**: resting on or focusing a `localhost` link in a session shows a
+  card with the title of its tab (or the host), the address and what a click
+  does. The card never creates a tab, because every tab is a whole webview.
+- **⌘L** focuses the address row while the pane is on screen or the Browser
+  page is open. Elsewhere ⌘L stays Ask about this session, which held the
+  chord first (`browser.address` is scoped, so it wins only there). A page
+  that has focus keeps its keys, so ⌘L reaches the row only while Goodboy
+  has focus.
+- **⌘K** lists the browser tabs of the session the palette is scoped to (the
+  current session when it is not) and offers `Open <address>` first, beside
+  that same session, for an address with `http` or `https` or a localhost
+  name, or for a host with a port or a path. With no workspace open the entry
+  reads `In your browser` and opens your browser. A file name such as
+  `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
+  (`typedAddressOf`).
+
 ## Capabilities
 
 `capabilities/default.json` grants by webview label (`webviews`: `main`,
@@ -444,3 +494,15 @@ words (`features/browser/browserFailureText.ts`).
   the cover check for a popover with no role and for tooltips.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
   and dark) draw a stand in where the native view goes.
+- The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
+  `isOwnBrowserClick.ts` is the click rule, `sessionOfElement.ts` reads
+  `data-browser-session`, `claimSessionLink.ts` takes a link from the shared
+  interceptor (`useCommitLinkInterceptor`), `hooks/useOwnBrowserLinkClicks`
+  takes ⌘-click and `components/BrowserLinkDoors` draws the peek. The ⌘K
+  entries come from `palette/hooks/useBrowserEntries` and `typedAddressOf.ts`.
+  `doors.test.tsx` pins each door with a fake host: a chip opening a new tab
+  and reusing one, ⌘-click and a session-less chip calling the system opener,
+  a service row, a door on a page, a host failure, links in and out of a
+  session, the peek, ⌘L beside Ask and the ⌘K entries.
+  `tabForAddress.test.ts` pins the tab match; the scenes are `browser-peek`
+  and `browser-peek-dark`.

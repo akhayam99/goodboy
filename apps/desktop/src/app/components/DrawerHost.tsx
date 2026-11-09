@@ -234,7 +234,9 @@ export const DrawerHost = () => {
   return (
     <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
       <DrawerBackChipContext.Provider value={backChip}>
-        {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
+        <div className="contents" data-browser-session={drawer.sessionId}>
+          {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
+        </div>
       </DrawerBackChipContext.Provider>
     </PanelBoundary>
   );
