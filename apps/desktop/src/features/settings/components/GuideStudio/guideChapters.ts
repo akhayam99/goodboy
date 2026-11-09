@@ -234,7 +234,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Now chip',
-        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber dot on Sessions in the sidebar.',
+        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber dot on Board in the sidebar.',
       },
       {
         term: 'Top bar',
@@ -256,7 +256,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rows',
-        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived.',
+        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Board holds Sort, Group, Filter and Show archived.',
       },
       {
         term: 'Pin a session',
