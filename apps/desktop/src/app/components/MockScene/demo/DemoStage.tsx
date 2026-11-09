@@ -353,6 +353,24 @@ export const DemoStage = ({
   }, [reveal, currentKey]);
 
   const visibleKey = shownKey ?? currentKey;
+  const visibleKeyRef = useRef(visibleKey);
+  visibleKeyRef.current = visibleKey;
+
+  useEffect(() => {
+    const listener = new AbortController();
+    document.addEventListener(
+      'focusin',
+      (event) => {
+        const entry = [...elements.current].find(([, element]) => element === event.target);
+        if (entry === undefined || entry[0] === visibleKeyRef.current) {
+          return;
+        }
+        onFocusLost();
+      },
+      { signal: listener.signal },
+    );
+    return () => listener.abort();
+  }, [onFocusLost]);
 
   const watch = ({ key, frame }: WatchParams) => {
     window.setTimeout(() => {
@@ -409,6 +427,7 @@ export const DemoStage = ({
           {frames.map((frame) => {
             const isVisible = frame.key === visibleKey && shownKey !== undefined;
             const isFading = frame.key === fadingKey;
+            const isInert = !isVisible && !isFading && frame.key !== currentKey;
             const fit = stageFitOf({ box });
             return (
               <iframe
@@ -418,6 +437,7 @@ export const DemoStage = ({
                 src={frame.src}
                 tabIndex={isVisible ? 0 : -1}
                 aria-hidden={isVisible ? undefined : true}
+                inert={isInert}
                 data-shown={frame.key === visibleKey ? 'true' : 'false'}
                 onLoad={(event) => watch({ key: frame.key, frame: event.currentTarget })}
                 className={cn(

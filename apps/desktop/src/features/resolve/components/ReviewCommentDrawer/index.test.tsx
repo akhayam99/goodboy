@@ -230,6 +230,19 @@ describe('the comment drawer', () => {
     expect(openThread()).not.toBe(THREAD_IDS.retryConstant);
   });
 
+  it('skips from S with the drawer focused and moves to the next open comment', async () => {
+    const deferResolveQueueItem = vi.fn<StoreState['deferResolveQueueItem']>(async () => undefined);
+    stubDefer({ defer: deferResolveQueueItem });
+    await mount({ threadId: THREAD_IDS.retryConstant });
+
+    section().focus();
+    press({ key: 's', code: 'KeyS' });
+    await settle();
+
+    expect(deferResolveQueueItem).toHaveBeenCalledOnce();
+    expect(openThread()).not.toBe(THREAD_IDS.retryConstant);
+  });
+
   it('shows a failed verb inline in the drawer and retries it from the verb', async () => {
     const deferResolveQueueItem = vi
       .fn<StoreState['deferResolveQueueItem']>()

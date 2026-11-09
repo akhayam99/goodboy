@@ -70,6 +70,7 @@ export type DemoHints = Steps & {
   readonly reveal: HintReveal | undefined;
   readonly tally: HintTally;
   readonly isHidden: boolean;
+  readonly isDismissed: boolean;
   readonly tallyOf: (params: TallyParams) => HintTally;
   readonly onHintReport: (params: HintReportParams) => void;
   readonly hide: () => void;
@@ -308,6 +309,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     reveal,
     tally: hintTally({ chapter, progress }),
     isHidden: !isEnabled,
+    isDismissed,
     tallyOf,
     onHintReport,
     hide,
