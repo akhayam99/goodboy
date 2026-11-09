@@ -210,7 +210,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Sessions page of the sidebar. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
+    lead: 'The Board of the sidebar. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
     points: [
       {
         term: 'Session card',
@@ -218,7 +218,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Board and sidebar list',
-        desc: 'Lanes on the Sessions page. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
+        desc: 'Lanes on the Board. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
       },
       {
         term: 'Done and archived',

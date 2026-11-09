@@ -28,6 +28,12 @@ export const destinationStudioOf = ({ id, state }: Params): StudioPlace => {
       return { kind: 'monitoring' };
     case 'notifications':
       return { kind: 'notifications' };
+    case 'settings':
+      return { kind: 'settings', focus: { scope: 'home' } };
+    case 'guide':
+      return { kind: 'guide' };
+    case 'whatsNew':
+      return { kind: 'changelog' };
     default: {
       const unreachable: never = id;
       return unreachable;

@@ -1,7 +1,7 @@
 import type { StudioKind } from '../../../store';
-import type { DestinationId } from '../../../shared/navigation/destinations';
+import type { DestinationId, FootDestinationId } from '../../../shared/navigation/destinations';
 
-export type ColumnDoorId = Exclude<DestinationId, 'notifications'>;
+export type ColumnDoorId = Exclude<DestinationId, 'notifications' | FootDestinationId>;
 
 export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | null;
 

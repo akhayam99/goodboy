@@ -3,6 +3,8 @@ import { CONCEPT_ICONS } from '../components/conceptIcons';
 import type { ShortcutId } from '../keyboard/registry';
 import { NAMES, formerNamesOf } from '../utils/names';
 
+export type FootDestinationId = 'settings' | 'guide' | 'whatsNew';
+
 export type DestinationId =
   | 'board'
   | 'inbox'
@@ -12,18 +14,22 @@ export type DestinationId =
   | 'terminal'
   | 'browser'
   | 'monitoring'
-  | 'notifications';
+  | 'notifications'
+  | FootDestinationId;
 
 export type StudioDestinationId = Exclude<DestinationId, 'board'>;
 
-export type DestinationHome = 'column' | 'tile' | 'topBar';
+export type DestinationHome = 'column' | 'tile' | 'topBar' | 'foot';
+
+export type DestinationScope = 'app' | 'workspace' | 'session';
 
 export type Destination = {
   readonly id: DestinationId;
   readonly label: string;
   readonly icon: LucideIcon;
-  readonly menuId: string;
+  readonly menuId?: string;
   readonly home: DestinationHome;
+  readonly scope: DestinationScope;
   readonly aliases: ReadonlyArray<string>;
   readonly shortcutId?: ShortcutId;
   readonly isReference?: boolean;
@@ -36,6 +42,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.sessions,
     menuId: 'session.board',
     home: 'column',
+    scope: 'workspace',
     aliases: ['Sessions', 'Back to board'],
     shortcutId: 'session.board',
   },
@@ -45,6 +52,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.inbox,
     menuId: 'menu.tasks',
     home: 'column',
+    scope: 'workspace',
     aliases: formerNamesOf(NAMES.tasks),
   },
   {
@@ -53,6 +61,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.workflows,
     menuId: 'menu.workflows',
     home: 'column',
+    scope: 'workspace',
     aliases: [],
   },
   {
@@ -61,6 +70,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.chat,
     menuId: 'menu.chat',
     home: 'column',
+    scope: 'workspace',
     aliases: [],
   },
   {
@@ -69,6 +79,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.impact,
     menuId: 'menu.impact',
     home: 'column',
+    scope: 'workspace',
     aliases: [],
     isReference: true,
   },
@@ -78,6 +89,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.terminal,
     menuId: 'terminal.studio',
     home: 'tile',
+    scope: 'workspace',
     aliases: ['Go to Terminal', 'Terminals'],
     shortcutId: 'terminal.studio',
   },
@@ -87,6 +99,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.browser,
     menuId: 'menu.browser',
     home: 'tile',
+    scope: 'workspace',
     aliases: ['Go to Browser'],
   },
   {
@@ -95,6 +108,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.monitoring,
     menuId: 'menu.monitoring',
     home: 'tile',
+    scope: 'workspace',
     aliases: ['Go to Monitoring', 'Ports'],
   },
   {
@@ -103,6 +117,35 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     icon: CONCEPT_ICONS.notifications,
     menuId: 'menu.notifications',
     home: 'topBar',
+    scope: 'workspace',
     aliases: [],
+  },
+  {
+    id: 'settings',
+    label: NAMES.settings,
+    icon: CONCEPT_ICONS.settings,
+    menuId: 'settings.open',
+    home: 'foot',
+    scope: 'app',
+    aliases: ['Open settings'],
+    shortcutId: 'settings.open',
+  },
+  {
+    id: 'guide',
+    label: NAMES.guide,
+    icon: CONCEPT_ICONS.guide,
+    menuId: 'menu.guide',
+    home: 'foot',
+    scope: 'app',
+    aliases: [],
+  },
+  {
+    id: 'whatsNew',
+    label: NAMES.whatsNew,
+    icon: CONCEPT_ICONS.changelog,
+    menuId: 'menu.whatsNew',
+    home: 'foot',
+    scope: 'app',
+    aliases: formerNamesOf(NAMES.whatsNew),
   },
 ];

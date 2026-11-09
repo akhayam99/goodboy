@@ -1,13 +1,14 @@
 import { pullPaletteRepos } from '../pullPaletteRepos';
 import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { destinationEntryOf } from '../destinationEntryOf';
+import { destinationPaletteKeyOf } from '../destinationPaletteKeyOf';
+import { footDestinationEntryOf } from '../footDestinationEntryOf';
 import { contextPaletteEntryOf } from '../contextPaletteEntryOf';
 import { useMemo } from 'react';
 import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
 import { useCurrentInnerColumn } from '@goodboy/ui';
 import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types';
 import {
-  BOARD_PLACE,
   EMPTY_ARRAY,
   agentPlace,
   sessionPlace,
@@ -35,7 +36,6 @@ import { openSessionTerminalHere } from '../../terminal/openSessionTerminalHere'
 import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
 import { openImpactStudio } from '../../impact/openImpactStudio';
 import { openRunDefaults } from '../../settings/openRunDefaults';
-import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
 import { openNewWorkspace } from '../../workspace/openNewWorkspace';
 import { useIsMainWindow } from '../../workspace/useIsMainWindow';
 import { getWizardState, resumeSetup } from '../../onboarding/onboardingSettings';
@@ -231,19 +231,18 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     if (hasWorkspace) {
       const workspaceId = currentWorkspace.id;
       out.push(
-        ...DESTINATIONS.map((destination): PaletteEntry => ({
-          key: `goto:${destination.id}`,
-          label: destination.label,
-          ...(destination.aliases.length > 0 && { secondary: destination.aliases }),
-          kind: 'goto',
-          group: null,
-          icon: destination.icon,
-          ...(destination.shortcutId !== undefined && { shortcut: destination.shortcutId }),
-          run: () =>
-            destination.id === 'board'
-              ? navigate({ to: BOARD_PLACE })
-              : openDestination({ id: destination.id }),
-        })),
+        ...DESTINATIONS.filter((destination) => destination.home !== 'foot').map(
+          (destination): PaletteEntry => ({
+            key: destinationPaletteKeyOf({ id: destination.id }),
+            label: destination.label,
+            ...(destination.aliases.length > 0 && { secondary: destination.aliases }),
+            kind: 'goto',
+            group: null,
+            icon: destination.icon,
+            ...(destination.shortcutId !== undefined && { shortcut: destination.shortcutId }),
+            run: () => openDestination({ id: destination.id }),
+          }),
+        ),
         {
           key: 'goto:run-defaults',
           label: NAMES.runDefaults,
@@ -430,16 +429,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     }
 
     out.push(
-      {
-        key: 'action:settings',
-        label: 'Settings',
-        secondary: ['Open settings'],
-        kind: 'goto',
-        group: 'action',
-        icon: CONCEPT_ICONS.settings,
-        shortcut: 'settings.open',
-        run: () => openSettingsDoor({ scope: 'home' }),
-      },
+      footDestinationEntryOf({ id: 'settings' }),
       ...settingsPaletteEntries({ groups: settingsGroups, open: openSettingsDoor }).filter(
         (entry) => entry.key !== 'setting:app:shortcuts',
       ),
@@ -478,27 +468,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         icon: Smartphone,
         run: () => dispatchWindowEvent({ name: 'goodboy:open-pair-device' }),
       },
-      {
-        key: 'help:guide',
-        label: 'Guide',
-        kind: 'help',
-        group: 'help',
-        icon: CONCEPT_ICONS.guide,
-        run: () => dispatchWindowEvent({ name: 'goodboy:open-guide' }),
-      },
-      ...(hasWorkspace
-        ? [
-            {
-              key: 'goto:changelog',
-              label: NAMES.whatsNew,
-              kind: 'help',
-              group: 'help',
-              icon: CONCEPT_ICONS.changelog,
-              secondary: formerNamesOf(NAMES.whatsNew),
-              run: openChangelogStudio,
-            } satisfies PaletteEntry,
-          ]
-        : []),
+      footDestinationEntryOf({ id: 'guide' }),
+      ...(hasWorkspace ? [footDestinationEntryOf({ id: 'whatsNew' })] : []),
       {
         key: 'help:shortcuts',
         label: 'Keyboard shortcuts',

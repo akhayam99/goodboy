@@ -162,13 +162,34 @@ describe('useMenuCommands', () => {
   });
 
   it('runs a menu item that has no key from the menu action table', async () => {
-    const guides = detailsOf({ name: 'goodboy:open-guide' });
     renderHook(() => useMenuCommands());
     await listened();
 
     pick({ payload: { id: 'menu.guide' } });
 
-    expect(guides).toHaveLength(1);
+    expect(useAppStore.getState().appStudio?.kind).toBe('guide');
+  });
+
+  it('opens the Guide with no workspace and What is new only with one', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+    useAppStore.setState({ appStudio: null, currentWorkspaceId: null });
+
+    pick({ payload: { id: 'menu.whatsNew' } });
+    const withoutWorkspace = useAppStore.getState().appStudio;
+    pick({ payload: { id: 'menu.guide' } });
+
+    expect(withoutWorkspace).toBeNull();
+    expect(useAppStore.getState().appStudio?.kind).toBe('guide');
+  });
+
+  it('opens What is new as a page of the current window', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+
+    pick({ payload: { id: 'menu.whatsNew' } });
+
+    expect(useAppStore.getState().appStudio?.kind).toBe('changelog');
   });
 
   it('opens a place only when a workspace is open', async () => {

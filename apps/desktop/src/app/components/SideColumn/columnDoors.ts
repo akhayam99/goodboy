@@ -28,7 +28,8 @@ const doorOf = ({ destination }: DoorParams): ColumnDoor => ({
 });
 
 export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
-  (destination): destination is DoorDestination => destination.home !== 'topBar',
+  (destination): destination is DoorDestination =>
+    destination.home === 'column' || destination.home === 'tile',
 ).map((destination) => doorOf({ destination }));
 
 export const COLUMN_ROW_DOORS: ReadonlyArray<ColumnDoor> = COLUMN_DOORS.filter(

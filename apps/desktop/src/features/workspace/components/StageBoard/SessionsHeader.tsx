@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { PageHeader, RevealRegion } from '@goodboy/ui';
 import type { Session, WorkspaceId } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
 import { SessionFilterPopover } from '../SessionActivityBar/SessionFilterPopover';
 import { HiddenByFilters } from './HiddenByFilters';
 import { NeedsYouElsewhere } from './NeedsYouElsewhere';
@@ -36,7 +37,7 @@ export const SessionsHeader = ({
           page="board"
           isOnColumn
           rhythm="section"
-          title="Sessions"
+          title={NAMES.board}
           actions={
             <>
               <NeedsYouElsewhere count={needsYouElsewhere} onClear={onClearFilters} />

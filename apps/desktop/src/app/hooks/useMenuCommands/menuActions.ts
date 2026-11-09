@@ -1,11 +1,9 @@
 import { useAppStore } from '../../../store';
-import { NAMES } from '../../../shared/utils/names';
 import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
 import type { StudioDestinationId } from '../../../shared/navigation/destinations';
 import { destinationOf } from '../../../shared/navigation/destinationOf';
 import { openDestination } from '../../../shared/navigation/openDestination';
 import { checkForUpdatesNow } from '../../../features/updater/checkForUpdatesNow';
-import { openChangelogStudio } from '../../../features/changelog/changelogStudioEvent';
 import { openSessionTerminalHere } from '../../../features/terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
 
@@ -29,12 +27,16 @@ const inWorkspace =
 
 type DestinationActionParams = {
   readonly id: StudioDestinationId;
+  readonly isGuarded?: boolean;
 };
 
-const destinationAction = ({ id }: DestinationActionParams): MenuAction => ({
-  label: destinationOf({ id }).label,
-  run: inWorkspace({ run: () => openDestination({ id }) }),
-});
+const destinationAction = ({ id, isGuarded = true }: DestinationActionParams): MenuAction => {
+  const run = (): void => openDestination({ id });
+  return {
+    label: destinationOf({ id }).label,
+    run: isGuarded ? inWorkspace({ run }) : run,
+  };
+};
 
 const openNewTerminal = (): void => {
   const state = useAppStore.getState();
@@ -64,6 +66,6 @@ export const MENU_ACTIONS = {
   'menu.notifications': destinationAction({ id: 'notifications' }),
   'menu.monitoring': destinationAction({ id: 'monitoring' }),
   'menu.browser': destinationAction({ id: 'browser' }),
-  'menu.guide': { label: 'Guide', run: () => dispatchWindowEvent({ name: 'goodboy:open-guide' }) },
-  'menu.whatsNew': { label: NAMES.whatsNew, run: inWorkspace({ run: openChangelogStudio }) },
+  'menu.guide': destinationAction({ id: 'guide', isGuarded: false }),
+  'menu.whatsNew': destinationAction({ id: 'whatsNew' }),
 } as const satisfies Readonly<Record<string, MenuAction>>;
