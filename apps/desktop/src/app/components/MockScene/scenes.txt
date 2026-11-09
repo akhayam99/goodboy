@@ -782,6 +782,8 @@ session-hover
 session-marks
 session-marks-bitbucket
 session-pinned
+session-rail-pressed
+session-rail-waiting
 session-start
 session-states
 session-studio-over
