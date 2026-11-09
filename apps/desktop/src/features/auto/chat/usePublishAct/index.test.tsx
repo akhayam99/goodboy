@@ -10,7 +10,7 @@ import {
 } from '../../../../store/storyHarness';
 import { makeGate } from '../../../../store/runtime/auto/testing/makeGate';
 import { aDelegation, aView, FIXTURE_SESSION } from '../../testing/autoViewFixtures';
-import { registerPublishPort, type PublishPort } from '../../publishPort';
+import { registerPublishPort, type PublishAct, type PublishPort } from '../../publishPort';
 import { usePublishAct } from './index';
 
 const SESSION = FIXTURE_SESSION;
@@ -39,9 +39,10 @@ afterEach(() => {
 type SavedParams = {
   readonly key: string;
   readonly state: string;
+  readonly isRetryable?: boolean;
 };
 
-const savedPush = ({ key, state }: SavedParams) =>
+const savedPush = ({ key, state, isRetryable = false }: SavedParams) =>
   aDelegation({
     key,
     role: 'implementer',
@@ -58,7 +59,7 @@ const savedPush = ({ key, state }: SavedParams) =>
           leaseSha: 'remote111',
           backupRef: 'refs/goodboy/backup/keep-1',
           message: null,
-          isRetryable: false,
+          isRetryable,
           isConfirmed: state !== 'awaiting_confirm',
           tries: 1,
           reviewerReportId: null,
@@ -68,12 +69,12 @@ const savedPush = ({ key, state }: SavedParams) =>
     },
   });
 
-const actOnce = async (port: PublishPort | null) => {
+const actOnce = async (port: PublishPort | null, name: PublishAct = 'confirm') => {
   registerPublishPort({ port });
   const { result } = renderHook(() => usePublishAct());
   await act(async () => {
     await result.current.act({
-      act: 'confirm',
+      act: name,
       delegationIds: ['delegation-a', 'delegation-b'],
       sessionId: SESSION,
     });
@@ -234,5 +235,61 @@ describe('answering a push from the card', () => {
       expect.objectContaining({ title: "Couldn't finish the push" }),
     );
     expect(loadAutoTrees).not.toHaveBeenCalled();
+  });
+});
+
+type RefusalParams = {
+  readonly name: PublishAct;
+  readonly open: SavedParams;
+  readonly moved: SavedParams;
+  readonly message: string;
+};
+
+type PortParams = {
+  readonly message: string;
+};
+
+const refusalPort = ({ message }: PortParams) =>
+  vi.fn<PublishPort>(async () => ({
+    kind: 'done',
+    rows: [{ delegationId: 'delegation-a', state: 'refused' as const, message }],
+  }));
+
+const REFUSALS: ReadonlyArray<RefusalParams> = [
+  {
+    name: 'put_back',
+    open: { key: 'a', state: 'pushed' },
+    moved: { key: 'a', state: 'declined' },
+    message: 'Nothing changed. The branch moved on after the push.',
+  },
+  {
+    name: 'retry',
+    open: { key: 'a', state: 'failed', isRetryable: true },
+    moved: { key: 'a', state: 'pushed' },
+    message: 'Nothing changed. The push is not waiting to be retried.',
+  },
+];
+
+describe.each(REFUSALS)('a refused $name', ({ name, open, moved, message }) => {
+  it('is reported while the saved push still offers that act', async () => {
+    useAppStore.setState({
+      autoTreeViews: { [SESSION]: [aView({ delegations: [savedPush(open)] })] },
+    });
+
+    await actOnce(refusalPort({ message }), name);
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't finish the push" }),
+    );
+  });
+
+  it('stays quiet when the saved push already moved on', async () => {
+    useAppStore.setState({
+      autoTreeViews: { [SESSION]: [aView({ delegations: [savedPush(moved)] })] },
+    });
+
+    await actOnce(refusalPort({ message }), name);
+
+    expect(reportError).not.toHaveBeenCalled();
   });
 });

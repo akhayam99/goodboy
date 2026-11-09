@@ -21,7 +21,8 @@ const isAskedOf = ({ publish }: AskedParams): boolean =>
   (publish.state === 'awaiting_confirm' ||
     publish.state === 'pushing' ||
     publish.state === 'declined' ||
-    publish.isConfirmed);
+    publish.isConfirmed ||
+    (publish.state === 'failed' && publish.tries > 0));
 
 export const publishRowsOf = ({ delegations }: Params): ReadonlyArray<PublishRow> =>
   delegations.flatMap((delegation) => {
