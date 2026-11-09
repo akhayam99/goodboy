@@ -28,7 +28,7 @@ const stage = ({ isFramed = true }: StageParams = {}) => {
   const forwarded: string[] = [];
   host.addEventListener('keydown', (event) => forwarded.push(event.key));
   const press = ({ key, target = 'button', isMeta = false }: KeyParams): boolean => {
-    const event = new view.KeyboardEvent('keydown', {
+    const event = new KeyboardEvent('keydown', {
       key,
       metaKey: isMeta,
       bubbles: true,
