@@ -129,7 +129,11 @@ describe('coach placement for every hint', () => {
       readonly lit: ScreenRect | null;
     };
 
-    const stageOf = ({ rect }: { readonly rect: ScreenRect }): DemoRect => ({
+    type StageParams = {
+      readonly rect: ScreenRect;
+    };
+
+    const stageOf = ({ rect }: StageParams): DemoRect => ({
       x: rect.x - ORIGIN.x,
       y: rect.y - ORIGIN.y,
       width: rect.width,
