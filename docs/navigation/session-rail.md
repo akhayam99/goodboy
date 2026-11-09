@@ -676,12 +676,25 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 ## The session tools
 
 One 44px column at the right edge of the session content holds Explore,
-Context, Ask, Agents, Scripts, Terminal and Browser (`SESSION_TOOLS`). Explore, Context and
-Ask form the reading group; one separator leads to the other tools.
+Context, Ask, Agents, Scripts, Terminal and Browser (`SESSION_TOOLS`). Explore,
+Context and Ask form the reading group; one separator leads to the other tools.
+Two captions, Read and Work (`ToolGroupCaption`), sit over the two groups in
+the same `text-rail` role.
 Each tool keeps its pane id and shortcut; Browser has no shortcut yet. `SessionToolButton` names every
 tool below its icon in the 9px `text-rail` role: faint when closed, muted when
 open. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
+
+A tool has three states (`toolStateOf`): at rest, pressed when it holds the
+slot, and waiting when it is the tool in the slot's back chip. Waiting draws a
+small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
+`Terminal, waiting`; pressing it opens the saved request of the chip again
+(`togglePane`), so Context comes back on the same section and view, and the
+tool it replaces moves into the chip.
+`waitingPaneOf` reads the same `selectSlotBack` the drawer head's back chip
+reads, so the two never disagree: a reader or form in the chip rings nothing,
+and a tool that is pressed never rings. The signal dot keeps its meaning and
+sits with any state, on the other corner of the icon.
 
 The column is a vertical toolbar with one tab stop. Up, Down, Home and End
 move it (`toolbarIndexAfter`). Its signal dots keep their reason in the
