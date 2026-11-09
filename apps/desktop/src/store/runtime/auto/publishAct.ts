@@ -42,6 +42,7 @@ const ABORT_FENCE_ATTEMPT = 'fence_attempt';
 
 const GONE = 'This result is no longer here, so there is nothing to push.';
 const NOTHING_TO_ACT_ON = 'This agent has no push to act on.';
+const ALREADY_PUSHING = 'This push is already under way.';
 const NOT_WAITING = 'This push is not waiting for an answer.';
 const CANNOT_RETRY = 'This push cannot be tried again.';
 const CANNOT_PUT_BACK = 'This push cannot be put back.';
@@ -106,6 +107,44 @@ type RowParams = {
   readonly record: ResultPublish;
 };
 
+type PushRowParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegation: AutoDelegation;
+  readonly sessionId: SessionId;
+  readonly mountId: string;
+  readonly worktreePath: string;
+  readonly toPush: ResultPublish;
+};
+
+const pushRow = async ({
+  ctx,
+  delegation,
+  sessionId,
+  mountId,
+  worktreePath,
+  toPush,
+}: PushRowParams): Promise<PublishRowResult> => {
+  const pending: ResultPublish = {
+    ...toPush,
+    state: 'pushing',
+    message: null,
+    isRetryable: false,
+    isConfirmed: true,
+  };
+  const saved = await writeRecord({ ctx, delegation, record: pending });
+  if (saved.state === 'refused') {
+    return saved;
+  }
+  const executed = await executePublish({
+    ports: ctx.ports,
+    sessionId,
+    mountId,
+    worktreePath,
+    record: pending,
+  });
+  return writeRecord({ ctx, delegation, record: executed });
+};
+
 const confirmRow = async ({
   ctx,
   delegation,
@@ -117,14 +156,7 @@ const confirmRow = async ({
   if (record.state !== 'awaiting_confirm') {
     return refused({ delegationId: delegation.id, message: NOT_WAITING });
   }
-  const executed = await executePublish({
-    ports: ctx.ports,
-    sessionId,
-    mountId,
-    worktreePath,
-    record,
-  });
-  return writeRecord({ ctx, delegation, record: executed });
+  return pushRow({ ctx, delegation, sessionId, mountId, worktreePath, toPush: record });
 };
 
 const declineRow = async ({ ctx, delegation, record }: RowParams): Promise<PublishRowResult> => {
@@ -177,20 +209,13 @@ const remoteNowOf = async ({
 };
 
 const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
-  const { ctx, delegation, sessionId, mountId, worktreePath, record } = params;
+  const { ctx, delegation, worktreePath, record } = params;
   const wanted = publishOfRequest({ request: delegation.request });
   if (!canRetryPublish({ publish: record }) || wanted === null) {
     return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
   }
   if (record.isConfirmed && record.mode === 'push') {
-    const executed = await executePublish({
-      ports: ctx.ports,
-      sessionId,
-      mountId,
-      worktreePath,
-      record,
-    });
-    return writeRecord({ ctx, delegation, record: executed });
+    return pushRow({ ...params, toPush: record });
   }
   const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
   const baseline = attempts.filter((attempt) => attempt.state === 'ended').at(-1)?.baseline;
@@ -216,14 +241,7 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
   if (planned.state !== 'pushing') {
     return writeRecord({ ctx, delegation, record: planned });
   }
-  const executed = await executePublish({
-    ports: ctx.ports,
-    sessionId,
-    mountId,
-    worktreePath,
-    record: { ...planned, isConfirmed: true },
-  });
-  return writeRecord({ ctx, delegation, record: executed });
+  return pushRow({ ...params, toPush: planned });
 };
 
 type OnlineParams = {
@@ -368,6 +386,9 @@ const actOnOne = async ({ ctx, act, delegationId }: OneParams): Promise<PublishR
       const current = fresh === null ? null : publishOfResult({ result: fresh.result });
       if (fresh === null || current === null) {
         return refused({ delegationId, message: GONE });
+      }
+      if (current.state === 'pushing' && current.isConfirmed) {
+        return refused({ delegationId, message: ALREADY_PUSHING });
       }
       return ROW_ACTS[act]({
         ctx,
