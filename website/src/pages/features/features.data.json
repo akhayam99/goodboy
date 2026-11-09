@@ -1351,7 +1351,8 @@
         {
           "title": "Browser",
           "text": "Open your dev server or any web page beside the session. Tabs belong to the session, a pinned tab stays in every session of the project, and Open in your browser hands the page over.",
-          "group": "Keyboard and terminal"
+          "group": "Keyboard and terminal",
+          "also": "browser"
         }
       ]
     },
