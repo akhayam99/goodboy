@@ -1,1 +1,1 @@
-export const APP_SIZE = { width: 1440, height: 900 } as const;
+export const APP_SIZE = { width: 1280, height: 800 } as const;

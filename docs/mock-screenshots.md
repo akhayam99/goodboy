@@ -347,7 +347,7 @@ an anchor, and two checks. A frame (`DemoBeat`) is another scene loaded in an
 iframe of the same server (`?scene=<id>&<params>&theme=<dark|light>`), so every
 frame gets a clean store and its own timers. The stage fills the space the page
 leaves it and the app fills the stage: a frame's viewport is the stage box
-divided by a scale that is the one of a 1440 by 900 app fitted to the box and
+divided by a scale that is the one of a 1280 by 800 app fitted to the box and
 never above 1 (`appSize.ts`, `stageFitOf.ts`, measured by `useStageBox`), so the
 app is never zoomed: a bigger stage shows more room, not bigger type. Every
 group uses the same scale. The stage has no inset and sits on
@@ -379,7 +379,7 @@ group opens Bring your repositories. Get Goodboy is locked until every group is 
 then rest) appears only on the group after the open one, and only once the open
 group has every step done; before that nothing glows. Restart clears every
 group and goes back to the first step of Bring your repositories. The rail is hidden below the
-`lg` breakpoint; `DemoCompactNav` then shows the group switcher (Next group is
+`xl` breakpoint (1280px), so a laptop window gives the stage its width; `DemoCompactNav` then shows the group switcher (Next group is
 disabled while the next group is locked) and the current step. The top bar's
 left side holds the logo and a goodboy-ai.dev link back to the website (both
 carry the current `?theme=`). The download lives only on the Get Goodboy
@@ -658,7 +658,7 @@ The tick list offers only `~/Code` and, on a Mac, `~/Documents` (every other
 home folder the app looks for answers not found, so it is not listed), and both
 lead to the same three repositories: no tick, one tick, two ticks or the picker
 ends on a workspace Create accepts, with no purpose to pick. Every setup page
-fits the 900px layout without an inner scroll (`setupSceneAnswer.test.ts`).
+fits the 800px layout without an inner scroll (`setupSceneAnswer.test.ts`).
 `seedWizardScene` signs in a detected agent on Sign in, keeps the new workspace
 on `setCurrentWorkspace` and starts the first task through
 `startSampleScout.ts`: it seeds a Scout session, appends the visitor's prompt and

@@ -216,7 +216,7 @@ export const DemoPlayground = () => {
           upNextId={upNextId}
           isQuiet={isSpotlit}
         />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-5 pt-4 lg:pl-2 lg:pr-5">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-5 pt-4 xl:pl-2 xl:pr-5">
           <DemoChapterHeader
             title={isClosing ? CLOSING_TITLE : chapter.title}
             instruction={
