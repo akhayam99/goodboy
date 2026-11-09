@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { Profiler } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -301,5 +303,19 @@ describe('the browser stays inside its budget', () => {
     );
     expect(reactCommits).toBe(BROWSER_BUDGETS.reactCommitsPerPlacementFrame);
     expect(storeCommits).toBe(BROWSER_BUDGETS.storeCommitsPerPlacementFrame);
+  });
+
+  it('names the manual memory gate numbers in docs/testing.md', () => {
+    const doc = readFileSync(join(__dirname, '../../../../../docs/testing.md'), 'utf8').replace(
+      /\s+/g,
+      ' ',
+    );
+    const { memoryMbPerLiveTab } = BROWSER_BUDGETS;
+
+    expect(doc).toContain(`under ${BROWSER_BUDGETS.memoryMbOverNoTabsWithFourTabs} MB`);
+    expect(doc).toContain(`${memoryMbPerLiveTab.low} to ${memoryMbPerLiveTab.high} MB`);
+    expect(doc).toContain(`stays at ${BROWSER_BUDGETS.liveTabsPerWindow}`);
+    expect(doc).toContain(`${BROWSER_BUDGETS.minutesHiddenBeforeClose} minutes`);
+    expect(doc).toContain(`within ${BROWSER_BUDGETS.scrollP95WithinPercent} percent`);
   });
 });

@@ -209,6 +209,7 @@ A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a bu
 - The search query is guarded by `packages/db/src/queries/search.plan.test.ts`, which runs `EXPLAIN QUERY PLAN` on the query `searchIndex` really sends and checks that it walks the FTS index, reads documents by rowid or index, and never scans a table. `search.perf.test.ts` keeps the 100k message timing for the perf project.
 - Never assert a duration on an array copy or another operation with no I/O.
 - The streaming path keeps its numbers in one module, `store/slices/transcripts/streamBudgets.ts` (`STREAM_BUDGETS`). Three files read it. `store/store.turn-stream.test.ts` runs 1, 8 and 32 concurrent runs through the real `runTurn` and the real store, with only `@tauri-apps/api/event` replaced by `test/turnEventBus.ts`, and counts the listeners (one per window) and the listener calls per envelope, and the rows copied per flush. `store/store.sqlite-open-turns.test.ts` opens a session with 5,000 stored turn events on the story database and counts the rows and bytes of the first read and of the view's first paint against `initialTranscriptRows` and `initialTranscriptBytes`. `store/store.turn-stream.perf.test.ts` holds the time per event for listener dispatch and for the whole path (`dispatchMsPerEvent`, `totalMsPerEvent`). A change to `chat/turn.ts`, `transcripts/buffer.ts` or `selectAgent.ts` keeps the counts and the budgets green, and lowers a number in `STREAM_BUDGETS` when it makes the path cheaper.
+- The browser keeps its numbers in one module, `features/browser/browserBudgets.ts` (`BROWSER_BUDGETS`). `features/browser/browserBudgets.test.tsx` is in the `unit` project and counts, never times: no `browser_*` command and no frame request while no tab was opened, the store commits to open, switch and close a tab, and, per frame while the view moves, at most one host call and no commit in React or in the store, and no host call at all for a frame where the view did not move. `features/browser/viewBoundsOf.perf.test.ts` holds the time of one measure over a 500 row page with open menus (`placementMeasureMsPerFrame`). The first bundle stays on the `bundle` job above, because a lazy import still splits shared modules out of the entry: compare the file count as well as the bytes. A change to the pane, the placement loop or the tab actions keeps the counts green and lowers a number in `BROWSER_BUDGETS` when it makes the path cheaper.
 
 ## The golden rule
 
@@ -239,6 +240,37 @@ A covered window suspends CSS animations. `WorkspaceLauncher` and
 animation, which starts at `opacity: 0`, so a capture of an occluded window
 shows both blank. Uncover the window before judging either surface; a blank
 capture of a covered window is not a paint failure.
+
+## Manual release gate: browser memory
+
+A tab is an engine process group, and no unit test can measure one. Every
+release that touches the browser host or the pane runs this by hand, on macOS
+and on Windows, and writes the numbers into the release notes. The budgets are
+the `memoryMbOverNoTabsWithFourTabs`, `memoryMbPerLiveTab`,
+`liveTabsPerWindow` and `minutesHiddenBeforeClose` entries of
+`BROWSER_BUDGETS` in `features/browser/browserBudgets.ts`; a test
+(`browserBudgets.test.tsx`) fails when this section stops naming them.
+
+1. Launch the release build the way the window gate does. Open a workspace
+   and a session with no browser tab. Note the footprint of the app and of
+   every engine process (Activity Monitor on macOS, Task Manager on Windows)
+   after 5 minutes. A build where the browser was never opened must match
+   `origin/main` within noise.
+2. Open one tab on a Vite preview of a mock project (Harborline) and one on a
+   large web app. Per live tab the footprint grows by 70 to 110 MB. Past 110
+   MB for a typical page, find out why before the release.
+3. Open four tabs, one shown and three hidden. The footprint over the no tab
+   state stays under 450 MB. Hidden tabs cost as much as shown ones on
+   macOS, so only closing a tab frees memory.
+4. Open a fifth tab. The oldest hidden tab closes at once and the count of
+   live webviews stays at 4. Show the closed tab: it reloads its address.
+5. Leave a hidden tab for 10 minutes. Its webview closes and its row stays.
+6. Scroll a long conversation with the pane open and closed. The p95 frame
+   time with the pane open stays within 10 percent of the pane closed.
+7. Close every tab and quit. No engine process of the app is left running.
+
+Record each footprint and the build's commit. A step that fails blocks the
+release, however green the suites are.
 
 ## Reaching a state that only exists in memory
 
