@@ -63,7 +63,7 @@ const globOverlaps = ({ pattern, slots }: GlobOverlapParams): boolean => {
       continue;
     }
     for (let index = slots.length; index >= 1; index -= 1) {
-      const isSame = token === '?' || slots[index - 1].includes(token);
+      const isSame = token === '?' || slots[index - 1]?.includes(token) === true;
       reachable[index] = reachable[index - 1] === true && isSame;
     }
     reachable[0] = false;
