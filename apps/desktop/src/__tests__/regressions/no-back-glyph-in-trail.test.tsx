@@ -83,7 +83,7 @@ const paneShellActionsOf = ({ source }: ActionsParams): ReadonlyArray<string> =>
 };
 
 describe('no back glyph in a trail', () => {
-  it('draws the session trail with no back glyph, no back row in the session rail, and names every back glyph Back or Previous', async () => {
+  it('draws the session trail with no back glyph, no back row in the session rail, and names every back glyph Back', async () => {
     const Scene = MOCK_SCENES[SESSION_SCENE];
     if (Scene === undefined) {
       throw new Error(`no scene ${SESSION_SCENE}`);
@@ -104,9 +104,7 @@ describe('no back glyph in a trail', () => {
     for (const glyph of glyphs) {
       const button = glyph.closest('button');
       const label = button?.getAttribute('aria-label') ?? '';
-      expect(label).toMatch(
-        button?.hasAttribute('data-nav-arrow') === true ? /^Previous/ : /^Back/,
-      );
+      expect(label).toMatch(/^Back/);
     }
   });
 

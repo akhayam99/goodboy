@@ -92,9 +92,9 @@ afterEach(() => {
 });
 
 describe('NavCluster', () => {
-  it('disables Previous with nothing behind, and names the destination when there is one', () => {
+  it('disables Back with nothing behind, and names the destination when there is one', () => {
     render(<NavCluster />);
-    const back = screen.getByRole('button', { name: 'Previous' });
+    const back = screen.getByRole('button', { name: 'Back' });
     expect(back.getAttribute('aria-disabled')).toBe('true');
     expect(back.parentElement?.getAttribute('data-tooltip')).toBe('Nothing to go back to');
     fireEvent.click(back);
@@ -103,9 +103,9 @@ describe('NavCluster', () => {
     cleanup();
     store.navigation = { 'ws-1': { entries: [sessionView('review'), BOARD_ENTRY], index: 1 } };
     render(<NavCluster />);
-    const live = screen.getByRole('button', { name: 'Previous: Comments' });
-    expect(live.parentElement?.getAttribute('data-tooltip')).toContain(
-      'Previous: Comments\nRetry failed webhook deliveries',
+    const live = screen.getByRole('button', { name: 'Back: Comments' });
+    expect(live.parentElement?.getAttribute('data-tooltip')).toBe(
+      'Back: Comments\nRetry failed webhook deliveries\nHold for history',
     );
     fireEvent.click(live);
     expect(store.back).toHaveBeenCalledOnce();
@@ -156,12 +156,12 @@ describe('NavCluster', () => {
     store.navigation = { 'ws-1': { entries: [runEntry, agentEntry, otherEntry], index: 2 } };
     render(<NavCluster />);
 
-    const previous = screen.getByRole('button', { name: /^Previous: / });
-    expect(previous.getAttribute('aria-label')).toBe('Previous: Tester');
-    expect(previous.parentElement?.getAttribute('data-tooltip')).toBe(
-      'Previous: Tester\nRetry failed webhook deliveries',
+    const back = screen.getByRole('button', { name: /^Back: / });
+    expect(back.getAttribute('aria-label')).toBe('Back: Tester');
+    expect(back.parentElement?.getAttribute('data-tooltip')).toBe(
+      'Back: Tester\nRetry failed webhook deliveries\nHold for history',
     );
-    fireEvent.contextMenu(previous);
+    fireEvent.contextMenu(back);
     expect(screen.getAllByRole('menuitemradio').map((item) => item.textContent)).toEqual([
       'OverviewGuard the settlement batch',
       'TesterRetry failed webhook deliveries',
@@ -175,7 +175,7 @@ describe('NavCluster', () => {
     };
     render(<NavCluster />);
 
-    fireEvent.contextMenu(screen.getByRole('button', { name: 'Previous: Comments' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Back: Comments' }));
     const items = screen.getAllByRole('menuitemradio');
     expect(items.map((item) => item.textContent)).toEqual([
       'Board',

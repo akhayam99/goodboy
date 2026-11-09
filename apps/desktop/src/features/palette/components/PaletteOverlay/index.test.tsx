@@ -67,7 +67,7 @@ const openIn = (sessionId: SessionId | null, agentId: AgentId | null = null) => 
       <PaletteOverlay onClose={onClose} />
     </ToastProvider>,
   );
-  return { onClose, input: screen.getByRole('combobox', { name: 'Command palette search' }) };
+  return { onClose, input: screen.getByRole('combobox', { name: 'Search or run' }) };
 };
 
 const type = (input: HTMLElement, value: string) => {

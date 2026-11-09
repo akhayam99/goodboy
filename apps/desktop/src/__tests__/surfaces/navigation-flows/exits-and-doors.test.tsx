@@ -41,7 +41,7 @@ const DOORS: ReadonlyArray<Door> = [
   { name: 'Monitoring', kind: 'monitoring', isSidebarPage: true },
 ];
 
-const historyButton = (verb: 'Previous' | 'Forward'): HTMLElement => {
+const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
   const found = Array.from(
     document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
   ).find((button) => (button.getAttribute('aria-label') ?? '').startsWith(verb));
@@ -81,7 +81,7 @@ const EXITS: ReadonlyArray<Exit> = [
   },
   {
     name: 'Back',
-    run: () => click(historyButton('Previous')),
+    run: () => click(historyButton('Back')),
   },
 ];
 
@@ -203,7 +203,7 @@ describe('doors replace the open studio and content links stack', () => {
     expect(appStudioKind()).toBe('settings');
     expect(stack()?.entries.length).toBe(withOneStudio + 1);
 
-    await click(historyButton('Previous'));
+    await click(historyButton('Back'));
     expect(appStudioKind()).toBe('inbox');
   });
 });
@@ -300,13 +300,13 @@ const ROUTES: ReadonlyArray<Route> = [
 ];
 
 describe('every route has exactly one way back', () => {
-  it('shows no way back on a session page but the Previous arrow', async () => {
+  it('shows no way back on a session page but the Back arrow', async () => {
     await boot({ seed: 'pr' });
 
     expect(waysBack()).toEqual([]);
     expect(
       Array.from(document.querySelectorAll('[data-nav-cluster] button')).filter((button) =>
-        (button.getAttribute('aria-label') ?? '').startsWith('Previous'),
+        (button.getAttribute('aria-label') ?? '').startsWith('Back'),
       ),
     ).toHaveLength(1);
   });
@@ -324,7 +324,7 @@ describe('every route has exactly one way back', () => {
       const isSidebarPage = route.isSidebarPage === true;
       expect(ways).toHaveLength(isSidebarPage ? 0 : 1);
 
-      await click(isSidebarPage ? historyButton('Previous') : requireValue({ value: ways[0] }));
+      await click(isSidebarPage ? historyButton('Back') : requireValue({ value: ways[0] }));
       await settle(8);
 
       expect(route.isOpen()).toBe(false);

@@ -37,6 +37,7 @@ const { hooks, store, noAttention } = vi.hoisted(() => {
     },
     store: {
       navigate: vi.fn(),
+      openStudio: vi.fn(),
       cancelScript: vi.fn(async () => undefined),
       scriptRuns: {} as Record<string, Record<string, unknown>>,
       sessions: [] as ReadonlyArray<Session>,
@@ -93,6 +94,7 @@ beforeEach(() => {
   store.sessions = [];
   store.projectScripts = {};
   store.navigate.mockClear();
+  store.openStudio.mockClear();
   store.cancelScript.mockClear();
 });
 
@@ -170,6 +172,19 @@ describe('NowChip', () => {
     });
 
     expect(store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: RUNNING.id }) });
+    expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
+  });
+
+  it('ends on Open Monitoring, the home of the numbers it counts, and closes', async () => {
+    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
+    render(<NowChip onOpenScript={vi.fn()} />);
+
+    const panel = await open();
+    await act(async () => {
+      fireEvent.click(within(panel).getByRole('button', { name: 'Open Monitoring' }));
+    });
+
+    expect(store.openStudio).toHaveBeenCalledWith({ studio: { kind: 'monitoring' } });
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
   });
 
