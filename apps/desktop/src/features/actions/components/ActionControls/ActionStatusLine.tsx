@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ActionRun } from '../../../../store/slices/action-runs/types';
 import type { ActionControls } from '../../useActionControls';
+import { ActionFollowButton } from './ActionFollowButton';
 import { ActionRunLine } from './ActionRunLine';
 
 type Props = {
@@ -23,7 +24,7 @@ const failureTitleOf = ({ controls }: Pick<Props, 'controls'>): string => {
   return failure.actionId.endsWith('push') ? 'Push failed' : "Couldn't finish";
 };
 
-const runOf = ({
+const lineRunOf = ({
   controls,
 }: Pick<Props, 'controls'>): Pick<ActionRun, 'phase' | 'message'> | null => {
   if (controls.failure !== null) {
@@ -53,7 +54,7 @@ export const ActionStatusLine = ({
     reason,
     actions: visible.filter((action) => action.blockedReason === reason),
   }));
-  const run = runOf({ controls });
+  const run = lineRunOf({ controls });
   if (reasons.length === 0 && run === null) {
     return null;
   }
@@ -72,6 +73,11 @@ export const ActionStatusLine = ({
         failureTitle={failureTitleOf({ controls })}
         onRetry={controls.retry}
         onDismiss={run?.phase === 'failed' ? controls.dismissFailure : controls.dismissOutcome}
+        doneActions={
+          controls.outcome?.place === undefined ? null : (
+            <ActionFollowButton place={controls.outcome.place} />
+          )
+        }
         failureActions={failureActions}
         failureHint={failureHint}
         failureDetail={failureDetail}

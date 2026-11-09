@@ -240,7 +240,7 @@ describe('useActionControls feedback', () => {
     act(() => result.current.trigger({ actionId: REOPEN }));
     await waitFor(() => expect(result.current.outcome?.message).toBe('Reopened #319.'));
     expect(reopenPr).toHaveBeenNthCalledWith(2, SESSION_B.id, LATER_NUMBER, {
-      isFailureShown: true,
+      hasFailureSurface: expect.any(Function),
     });
 
     await act(async () => oldGate.resolve());
@@ -348,5 +348,78 @@ describe('useActionControls on one shared run per target', () => {
     expect(second.result.current.pendingId).toBe(REOPEN);
     await act(async () => gate.resolve());
     await waitFor(() => expect(second.result.current.outcome?.message).toBe('Reopened #318.'));
+  });
+
+  it('forgets a settled run once every surface is gone', async () => {
+    mockReopen(async () => undefined);
+    const first = renderHook(
+      () => useControls({ sessionId: SESSION_A.id, scopeKey: SESSION_A.id }),
+      { wrapper: Wrapper },
+    );
+    act(() => first.result.current.trigger({ actionId: REOPEN }));
+    await waitFor(() => expect(first.result.current.outcome?.message).toBe('Reopened #318.'));
+    first.unmount();
+    expect(store.getState().actionRuns).toEqual({});
+
+    const second = renderHook(
+      () => useControls({ sessionId: SESSION_A.id, scopeKey: SESSION_A.id }),
+      { wrapper: Wrapper },
+    );
+    expect(second.result.current.outcome).toBeNull();
+    expect(second.result.current.failure).toBeNull();
+  });
+
+  it('forgets a failure when the last surface leaves', async () => {
+    mockReopen(async () => {
+      throw new Error('GitHub said no');
+    });
+    const { result, unmount } = renderHook(() => useTwoSurfaces({ sessionId: SESSION_A.id }), {
+      wrapper: Wrapper,
+    });
+    act(() => result.current.header.trigger({ actionId: REOPEN }));
+    await waitFor(() => expect(result.current.page.failure?.message).toBe('GitHub said no'));
+
+    unmount();
+
+    expect(store.getState().actionRuns).toEqual({});
+    expect(store.getState().actionRunSurfaces).toEqual({});
+  });
+});
+
+const CLOSE = 'pullRequest.close';
+const CONVERT = 'pullRequest.convertToDraft';
+
+describe('useActionControls confirm on a shared run', () => {
+  it('keeps the confirm panel open when another surface started a run in between', async () => {
+    store.setState({
+      sessionGithub: {
+        [SESSION_A.id]: {
+          ...githubOf({ projectId: PROJECT.id, number: PR.number }),
+          pr: { ...PR, state: 'open' },
+        },
+      },
+    });
+    const gate = deferred();
+    const convertPrToDraft = vi.fn<StoreState['convertPrToDraft']>(() => gate.promise);
+    const closePr = vi.fn<StoreState['closePr']>(async () => undefined);
+    store.setState({ convertPrToDraft, closePr });
+    const { result } = renderHook(() => useTwoSurfaces({ sessionId: SESSION_A.id }), {
+      wrapper: Wrapper,
+    });
+
+    act(() => result.current.header.trigger({ actionId: CLOSE }));
+    expect(result.current.header.confirming?.id).toBe(CLOSE);
+    act(() => result.current.page.trigger({ actionId: CONVERT }));
+    expect(result.current.page.pendingId).toBe(CONVERT);
+
+    await act(async () => result.current.header.confirm());
+    expect(closePr).not.toHaveBeenCalled();
+    expect(result.current.header.confirming?.id).toBe(CLOSE);
+
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(result.current.header.pendingId).toBeNull());
+    await act(async () => result.current.header.confirm());
+    expect(closePr).toHaveBeenCalledTimes(1);
+    expect(result.current.header.confirming).toBeNull();
   });
 });

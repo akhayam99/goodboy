@@ -150,7 +150,7 @@ describe('a pull request action reports its outcome on one channel', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('the branch was deleted');
     expect(screen.getAllByText(/the branch was deleted/)).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
     await waitFor(() =>
       expect(store.getState().notifications.map((row) => row.read)).toEqual([true]),
     );
@@ -169,5 +169,42 @@ describe('a pull request action reports its outcome on one channel', () => {
     expect(status.textContent).toContain('Marked #318 ready for review.');
     expect(screen.queryByText('Marked #318 ready for review')).toBeNull();
     expect(store.getState().notifications).toEqual([]);
+  });
+
+  it('keeps a Follow link to the pull request tab in the done line', async () => {
+    seed({ state: 'draft' });
+    stubStoryInvoke({ gh_run: { stdout: '', stderr: '', exitCode: 0 } });
+    render(<PullRequestSurface sessionId={SESSION.id} actionId="pullRequest.markReady" />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Run the action' }));
+    });
+
+    await screen.findByRole('status');
+    expect((await screen.findByRole('button', { name: 'Follow' })).textContent).toBe('Follow');
+  });
+
+  it('logs the failure unread when the line is gone by the time the write fails', async () => {
+    seed({ state: 'closed' });
+    let refuse: () => void = () => undefined;
+    const refused = new Promise<{ stdout: string; stderr: string; exitCode: number }>((done) => {
+      refuse = () =>
+        done({ stdout: '', stderr: 'Could not reopen: the branch was deleted', exitCode: 1 });
+    });
+    stubStoryInvoke({ gh_run: () => refused });
+    const view = render(
+      <PullRequestSurface sessionId={SESSION.id} actionId="pullRequest.reopen" />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Run the action' }));
+    });
+    view.unmount();
+    await act(async () => refuse());
+
+    await waitFor(() =>
+      expect(store.getState().notifications.map((row) => row.read)).toEqual([false]),
+    );
+    expect(store.getState().actionRuns).toEqual({});
   });
 });

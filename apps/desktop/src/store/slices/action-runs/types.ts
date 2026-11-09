@@ -4,6 +4,7 @@ export type ActionRunPhase = 'pending' | 'done' | 'failed';
 
 export type ActionRun = {
   readonly key: string;
+  readonly sessionId: string | null;
   readonly actionId: string;
   readonly choice: string | null;
   readonly phase: ActionRunPhase;
@@ -23,6 +24,7 @@ export type ActionRunKeyParams = {
 };
 
 export type ClaimActionRunParams = ActionRunKeyParams & {
+  readonly sessionId?: string | null;
   readonly actionId: string;
   readonly choice: string | null;
 };

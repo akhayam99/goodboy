@@ -267,6 +267,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     slot: () => 'primary',
     pendingLabel: () => 'Marking ready…',
     doneLabel: ({ facts }) => `Marked ${numberLabel({ facts })} ready for review.`,
+    doneTo: ({ facts }) => branchPlace({ sessionId: facts.sessionId, tab: 'pr' }),
     run: async ({ facts, env }) => {
       await writePullRequest({
         env,

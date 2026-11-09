@@ -7,7 +7,7 @@ import { prWriteContext } from './prWriteContext';
 import { reviewedHeadShaOf } from './reviewedHeadShaOf';
 import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
-import type { PrWriteOptions } from './prWriteOptions';
+import { noFailureSurface, type PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
 
 type MergePrOptions = PrWriteOptions & {
@@ -19,7 +19,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     prNumber?: number,
     method: PrMergeMethod = 'squash',
-    { mountId, expectedHeadSha, isFailureShown = false }: MergePrOptions = {},
+    { mountId, expectedHeadSha, hasFailureSurface = noFailureSurface }: MergePrOptions = {},
   ) => {
     const { num, session, repo, port } = prWriteContext({
       get,
@@ -48,7 +48,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
-          isFailureShown,
+          hasFailureSurface,
           title: prLifecycleFailureTitle({ action: 'merge', prNumber: num, nouns: port.nouns }),
           run: async () => {
             try {

@@ -8,6 +8,7 @@ type Props = {
   readonly failureTitle: string;
   readonly onRetry: () => void;
   readonly onDismiss: () => void;
+  readonly doneActions?: ReactNode;
   readonly failureActions?: ReactNode;
   readonly failureHint?: ReactNode;
   readonly failureDetail?: ReactNode;
@@ -18,6 +19,7 @@ export const ActionRunLine = ({
   failureTitle,
   onRetry,
   onDismiss,
+  doneActions = null,
   failureActions = null,
   failureHint = null,
   failureDetail = null,
@@ -30,6 +32,7 @@ export const ActionRunLine = ({
       {run.phase === 'done' ? (
         <div role="status" className="flex min-w-0 items-center gap-1">
           <p className="min-w-0 text-right text-foreground">{run.message}</p>
+          {doneActions}
           <IconButton icon={X} label="Dismiss" size="xs" variant="ghost" onClick={onDismiss} />
         </div>
       ) : (

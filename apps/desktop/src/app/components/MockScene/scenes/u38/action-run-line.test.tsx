@@ -24,7 +24,7 @@ describe('the action run line scenes', () => {
     render(<Scene />);
 
     expect(screen.getByRole('status').textContent).toContain('Merged #318 into main.');
-    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Dismiss' })).toHaveLength(1);
   });
 
   it('shows the failure once, in place, with Retry', () => {
@@ -33,7 +33,7 @@ describe('the action run line scenes', () => {
 
     expect(screen.getByRole('alert').textContent).toContain('Base branch was modified');
     expect(screen.getAllByText(/Base branch was modified/)).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
   });
 
   it('registers every state in both themes', () => {

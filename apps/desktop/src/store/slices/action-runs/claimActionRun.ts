@@ -4,7 +4,7 @@ import type { ClaimActionRunParams } from './types';
 let nextToken = 0;
 
 export const claimActionRun = ({ set, get }: SliceDeps) => {
-  return ({ key, actionId, choice }: ClaimActionRunParams): number | null => {
+  return ({ key, sessionId = null, actionId, choice }: ClaimActionRunParams): number | null => {
     if (get().actionRuns[key]?.phase === 'pending') {
       return null;
     }
@@ -15,6 +15,7 @@ export const claimActionRun = ({ set, get }: SliceDeps) => {
         ...state.actionRuns,
         [key]: {
           key,
+          sessionId,
           actionId,
           choice,
           phase: 'pending',

@@ -222,6 +222,7 @@ describe('the merge confirm choice', () => {
 
   it('leaves the outcome to the line under the button: no toast, failure logged quietly', async () => {
     const showToast = vi.fn();
+    const hasRunSurface = () => true;
     const mergePr = vi.fn(async () => undefined);
     useAppStore.setState({
       mergePr,
@@ -232,14 +233,14 @@ describe('the merge confirm choice', () => {
     const merge = PULL_REQUEST_KIND.actions.find((action) => action.id === 'pullRequest.merge');
     await merge?.run({
       facts: facts({ mountId: SHOWN_MOUNT }),
-      env: { ...ENV, origin: 'button', showToast, isOutcomeShown: true },
+      env: { ...ENV, origin: 'button', showToast, isOutcomeShown: true, hasRunSurface },
       choice: 'squash',
     });
 
     expect(showToast).not.toHaveBeenCalled();
     expect(mergePr).toHaveBeenCalledWith(SESSION, 318, 'squash', {
       ...MOUNT_PINNED,
-      isFailureShown: true,
+      hasFailureSurface: hasRunSurface,
     });
   });
 });

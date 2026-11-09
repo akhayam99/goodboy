@@ -6,6 +6,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
+import { PENDING_RESET_MS } from './attachActionRunSurface';
+import { hasActionRunSurface } from './hasActionRunSurface';
 import { selectActionRun } from './selectActionRun';
 
 vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
@@ -40,13 +42,15 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  store.getState().attachActionRunSurface({ key: PR_KEY });
+  store.getState().attachActionRunSurface({ key: DIFF_KEY });
 });
 
 type RunOfParams = {
   readonly key: string;
 };
 
-const runOf = ({ key }: RunOfParams) => selectActionRun({ state: store.getState(), key });
+const runAt = ({ key }: RunOfParams) => selectActionRun({ state: store.getState(), key });
 
 describe('action runs', () => {
   it('holds one pending run per target and refuses a second claim until it settles', async () => {
@@ -56,7 +60,7 @@ describe('action runs', () => {
       .getState()
       .runAction({ key: PR_KEY, actionId: 'pullRequest.merge', choice: 'squash', task });
 
-    expect(runOf({ key: PR_KEY })).toMatchObject({
+    expect(runAt({ key: PR_KEY })).toMatchObject({
       phase: 'pending',
       actionId: 'pullRequest.merge',
       choice: 'squash',
@@ -70,7 +74,7 @@ describe('action runs', () => {
 
     first.resolve('Merged #318 into main.');
     await expect(running).resolves.toBe('applied');
-    expect(runOf({ key: PR_KEY })).toMatchObject({
+    expect(runAt({ key: PR_KEY })).toMatchObject({
       phase: 'done',
       message: 'Merged #318 into main.',
     });
@@ -92,8 +96,8 @@ describe('action runs', () => {
       task: async () => 'Pushed 2 commits.',
     });
 
-    expect(runOf({ key: DIFF_KEY })?.phase).toBe('done');
-    expect(runOf({ key: PR_KEY })?.phase).toBe('pending');
+    expect(runAt({ key: DIFF_KEY })?.phase).toBe('done');
+    expect(runAt({ key: PR_KEY })?.phase).toBe('pending');
   });
 
   it('keeps the failure in place with its message and choice, and a new claim replaces it', async () => {
@@ -106,7 +110,7 @@ describe('action runs', () => {
       },
     });
 
-    expect(runOf({ key: PR_KEY })).toMatchObject({
+    expect(runAt({ key: PR_KEY })).toMatchObject({
       phase: 'failed',
       message: 'Base branch was modified',
       choice: 'rebase',
@@ -119,7 +123,7 @@ describe('action runs', () => {
       choice: 'rebase',
       task: () => retry.promise,
     });
-    expect(runOf({ key: PR_KEY })?.phase).toBe('pending');
+    expect(runAt({ key: PR_KEY })?.phase).toBe('pending');
     retry.resolve(null);
   });
 
@@ -131,7 +135,7 @@ describe('action runs', () => {
       task: async () => null,
     });
 
-    expect(runOf({ key: PR_KEY })).toBeNull();
+    expect(runAt({ key: PR_KEY })).toBeNull();
   });
 
   it('drops a late answer once its run was dropped, even if a new run took the key', async () => {
@@ -154,7 +158,7 @@ describe('action runs', () => {
     old.reject(new Error('late failure'));
 
     await expect(late).resolves.toBe('stale');
-    expect(runOf({ key: PR_KEY })).toMatchObject({
+    expect(runAt({ key: PR_KEY })).toMatchObject({
       phase: 'pending',
       actionId: 'pullRequest.reopen',
     });
@@ -171,11 +175,67 @@ describe('action runs', () => {
     });
 
     store.getState().dismissActionRun({ key: PR_KEY });
-    expect(runOf({ key: PR_KEY })?.phase).toBe('pending');
+    expect(runAt({ key: PR_KEY })?.phase).toBe('pending');
 
     pending.resolve('Merged #318 into main.');
-    await vi.waitFor(() => expect(runOf({ key: PR_KEY })?.phase).toBe('done'));
+    await vi.waitFor(() => expect(runAt({ key: PR_KEY })?.phase).toBe('done'));
     store.getState().dismissActionRun({ key: PR_KEY });
-    expect(runOf({ key: PR_KEY })).toBeNull();
+    expect(runAt({ key: PR_KEY })).toBeNull();
+  });
+
+  it('drops a settled run once the last surface is gone, and keeps it while one is left', async () => {
+    await store.getState().runAction({
+      key: PR_KEY,
+      actionId: 'pullRequest.merge',
+      choice: null,
+      task: async () => 'Merged #318 into main.',
+    });
+    store.getState().attachActionRunSurface({ key: PR_KEY });
+    store.getState().detachActionRunSurface({ key: PR_KEY });
+    expect(runAt({ key: PR_KEY })?.phase).toBe('done');
+    store.getState().detachActionRunSurface({ key: PR_KEY });
+    expect(runAt({ key: PR_KEY })).toBeNull();
+    expect(store.getState().actionRunSurfaces[PR_KEY]).toBeUndefined();
+  });
+
+  it('keeps a pending run when its surface goes, then leaves nothing once it settles unseen', async () => {
+    const hold = gate();
+    const running = store.getState().runAction({
+      key: PR_KEY,
+      actionId: 'pullRequest.merge',
+      choice: null,
+      task: () => hold.promise,
+    });
+    store.getState().detachActionRunSurface({ key: PR_KEY });
+    expect(runAt({ key: PR_KEY })?.phase).toBe('pending');
+    expect(hasActionRunSurface({ state: store.getState(), key: PR_KEY })).toBe(false);
+
+    hold.reject(new Error('Base branch was modified'));
+    await expect(running).resolves.toBe('applied');
+    expect(runAt({ key: PR_KEY })).toBeNull();
+  });
+
+  it('resets a pending run that outlived its task when a surface mounts again', () => {
+    const hold = gate();
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+    void store.getState().runAction({
+      key: PR_KEY,
+      actionId: 'pullRequest.merge',
+      choice: null,
+      task: () => hold.promise,
+    });
+    store.getState().detachActionRunSurface({ key: PR_KEY });
+
+    now.mockReturnValue(1_000 + PENDING_RESET_MS - 1);
+    store.getState().attachActionRunSurface({ key: PR_KEY });
+    expect(runAt({ key: PR_KEY })?.phase).toBe('pending');
+    store.getState().detachActionRunSurface({ key: PR_KEY });
+
+    now.mockReturnValue(1_000 + PENDING_RESET_MS + 1);
+    store.getState().attachActionRunSurface({ key: PR_KEY });
+    expect(runAt({ key: PR_KEY })).toBeNull();
+    now.mockRestore();
+    hold.resolve(null);
   });
 });

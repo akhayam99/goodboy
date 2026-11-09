@@ -37,7 +37,7 @@ export const writePullRequest = async ({ env, facts, task }: Params): Promise<vo
     number: facts.number,
     options: {
       ...mountScopeOf({ facts }),
-      ...(env.isOutcomeShown === true && { isFailureShown: true }),
+      ...(env.hasRunSurface !== undefined && { hasFailureSurface: env.hasRunSurface }),
     },
   });
   refresh({ env, facts });

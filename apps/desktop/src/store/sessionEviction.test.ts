@@ -15,6 +15,7 @@ import {
   type EvictionMode,
   type EvictionScope,
 } from './sessionEviction';
+import type { ActionRun } from './slices/action-runs/types';
 import { evictSession } from './slices/sessions/evictSession';
 import type { SetFn } from './slice-types';
 import type { AppState } from './types';
@@ -42,6 +43,21 @@ const otherByScope = {
   workflowRun: OTHER_RUN_ID,
   mount: OTHER_MOUNT_ID,
 } satisfies Record<EvictionScope, string>;
+
+const ACTION_RUN_KEY = `pullRequest:${SESSION_ID}:${MOUNT_ID}`;
+const OTHER_ACTION_RUN_KEY = `pullRequest:${OTHER_SESSION_ID}:${OTHER_MOUNT_ID}`;
+
+const actionRunOf = ({ sessionId }: { readonly sessionId: SessionId }): ActionRun => ({
+  key: `pullRequest:${sessionId}`,
+  sessionId,
+  actionId: 'pullRequest.merge',
+  choice: null,
+  phase: 'done',
+  message: 'Merged #318 into main.',
+  error: null,
+  startedAt: 0,
+  token: 1,
+});
 
 const mountView = (id: MountId): SessionMountView => ({ id }) as SessionMountView;
 
@@ -94,6 +110,10 @@ const buildPopulatedState = (): AppState => {
       [SESSION_ID]: [mountView(MOUNT_ID)],
       [OTHER_SESSION_ID]: [mountView(OTHER_MOUNT_ID)],
     },
+    actionRuns: {
+      [ACTION_RUN_KEY]: actionRunOf({ sessionId: SESSION_ID }),
+      [OTHER_ACTION_RUN_KEY]: actionRunOf({ sessionId: OTHER_SESSION_ID }),
+    },
   };
 };
 
@@ -141,5 +161,15 @@ describe('session eviction registry', () => {
       expect(target).toBe(rule.key === 'pendingAdvanceSessions' ? false : undefined);
       expect(other).not.toBeUndefined();
     }
+  });
+
+  it('delete drops the settled action runs of the session and archive keeps them', () => {
+    const deleted = runEviction({ mode: 'delete' });
+    expect(Object.keys(deleted.actionRuns)).toEqual([OTHER_ACTION_RUN_KEY]);
+
+    const archived = runEviction({ mode: 'archive' });
+    expect(Object.keys(archived.actionRuns).sort()).toEqual(
+      [ACTION_RUN_KEY, OTHER_ACTION_RUN_KEY].sort(),
+    );
   });
 });

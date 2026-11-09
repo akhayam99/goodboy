@@ -8,7 +8,7 @@ export const finishActionRun = ({ set, get }: SliceDeps) => {
     if (current === undefined || current.token !== token || current.phase !== 'pending') {
       return false;
     }
-    if (result.kind === 'silent') {
+    if (result.kind === 'silent' || (get().actionRunSurfaces[key] ?? 0) === 0) {
       set((state) => ({ actionRuns: withoutRun({ runs: state.actionRuns, key }) }));
       return true;
     }

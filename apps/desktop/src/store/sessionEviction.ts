@@ -346,6 +346,7 @@ export const NON_SESSION_STATE_KEYS = [
   'retainedWorktreePaths',
   'prWriteClaims',
   'actionRuns',
+  'actionRunSurfaces',
   'issueBriefs',
   'workspaceDurationHistory',
   'scribeWork',

@@ -1,4 +1,6 @@
+import { attachActionRunSurface } from './attachActionRunSurface';
 import { claimActionRun } from './claimActionRun';
+import { detachActionRunSurface } from './detachActionRunSurface';
 import { dismissActionRun } from './dismissActionRun';
 import { dropActionRun } from './dropActionRun';
 import { finishActionRun } from './finishActionRun';
@@ -12,5 +14,7 @@ export const createActionRunsSlice = ({ set, get }: SliceDeps) => ({
   finishActionRun: finishActionRun({ set, get }),
   dismissActionRun: dismissActionRun({ set, get }),
   dropActionRun: dropActionRun({ set }),
+  attachActionRunSurface: attachActionRunSurface({ set, get }),
+  detachActionRunSurface: detachActionRunSurface({ set, get }),
   runAction: runAction({ get }),
 });
