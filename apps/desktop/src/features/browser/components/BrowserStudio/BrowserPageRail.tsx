@@ -32,7 +32,7 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
     return tab.title === '' ? hostOf({ url: tab.url }) : tab.title;
   };
   return (
-    <nav aria-label="Browser tabs" className="flex min-h-0 flex-1 flex-col px-2 pt-2">
+    <nav aria-label="Tabs by session" className="flex min-h-0 flex-1 flex-col px-2 pt-2">
       <RevealRegion
         header={
           <div className="flex min-w-0 flex-col pb-2">

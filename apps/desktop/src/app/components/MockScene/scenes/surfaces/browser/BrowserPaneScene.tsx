@@ -20,5 +20,7 @@ export const BrowserPaneScene = ({ state, theme }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={false} hasPane />;
+  return (
+    <AppFrame view={state === 'page' ? 'browser' : 'session'} isRailCollapsed={false} hasPane />
+  );
 };

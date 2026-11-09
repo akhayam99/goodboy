@@ -53,7 +53,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
       <BrowserPageTrail sessionId={sessionId} />
       <BrowserPageHeader />
       <StudioRailLayout
-        railLabel="Browser tabs"
+        railLabel="Tabs by session"
         railWidth="standard"
         surface="browser"
         placement="page"

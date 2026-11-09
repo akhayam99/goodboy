@@ -155,6 +155,8 @@ brand-security-findings
 brand-slack
 brand-storage
 brand-tools
+browser-page
+browser-page-dark
 browser-pane
 browser-pane-dark
 browser-pane-tabs
