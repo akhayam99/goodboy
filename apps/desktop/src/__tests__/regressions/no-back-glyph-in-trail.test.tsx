@@ -104,7 +104,9 @@ describe('no back glyph in a trail', () => {
     for (const glyph of glyphs) {
       const button = glyph.closest('button');
       const label = button?.getAttribute('aria-label') ?? '';
-      expect(label).toMatch(/^Back/);
+      expect(label).toMatch(
+        button?.hasAttribute('data-nav-arrow') === true ? /^(Back|Forward)(: |$)/ : /^Back to /,
+      );
     }
   });
 

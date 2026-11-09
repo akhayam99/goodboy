@@ -781,7 +781,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
     ],
     links: [
-      { label: 'Open the command palette', target: { kind: 'palette' } },
+      { label: 'Open Search or run', target: { kind: 'palette' } },
       {
         label: 'See all shortcuts',
         target: {

@@ -485,7 +485,7 @@ The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
 1. Below `chrome-wide` the command center narrows (its label is `Search or run`
-   at every width; the workspace name lives in its tooltip) and
+   until `chrome-labels`; the workspace name lives in its tooltip) and
    Usage keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
    (`running`, `scripts`, `today`) drop and Usage keeps
