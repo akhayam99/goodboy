@@ -13,7 +13,9 @@ const IGNORED_WINDOW_EVENTS = new Set([
   'goodboy:test-flag',
   'goodboy:goal-hint-dismissed',
 ]);
-const UNHEARD_REASON_BY_EVENT = new Map();
+const UNHEARD_REASON_BY_EVENT = new Map([
+  ['browser://tab-state', 'the browser pane listens once it lands, docs/browser.md'],
+]);
 
 const RUST_CONSTANT =
   /\bconst\s+[A-Z0-9_]*EVENT[A-Z0-9_]*\s*:\s*&(?:'static\s+)?str\s*=\s*"([^"]+)"/g;
