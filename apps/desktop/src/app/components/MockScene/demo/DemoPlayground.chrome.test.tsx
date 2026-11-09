@@ -371,7 +371,7 @@ describe('demo playground chrome', () => {
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac });
     fireEvent.click(
       within(screen.getByRole('navigation', { name: 'Playground groups' })).getByRole('button', {
-        name: /Guide the work/,
+        name: /^Guide the work/,
       }),
     );
     const frames = Array.from(document.querySelectorAll('iframe')).filter(

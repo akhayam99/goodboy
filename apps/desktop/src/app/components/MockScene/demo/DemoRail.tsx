@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Download } from 'lucide-react';
 import { ScrollFade, WORK_NODE_GLYPH_SIZE, cn } from '@goodboy/ui';
 import { CLOSING_ID } from './closingId';
@@ -77,12 +78,26 @@ export const DemoRail = ({
     ]),
     { id: groupNodeOf({ chapterId: CLOSING_ID }), laneOf: null, isPending: false },
   ];
+  const [settledId, setSettledId] = useState<string | undefined>(undefined);
+  const isSettled = settledId === activeId;
+  const settle = () => {
+    if (isSettled) {
+      return;
+    }
+    setSettledId(activeId);
+  };
   const rail = demoRailOf({ nodes });
   const closingRail = rail.railById.get(groupNodeOf({ chapterId: CLOSING_ID }));
   const isClosingQuiet = isQuiet && upNextId !== CLOSING_ID && activeId !== CLOSING_ID;
   return (
     <div className="hidden w-72 shrink-0 flex-col pb-5 xl:flex">
-      <nav aria-label="Playground groups" className="flex min-h-0 flex-1 flex-col">
+      <nav
+        aria-label="Playground groups"
+        data-settled={isSettled ? 'true' : 'false'}
+        onPointerMove={settle}
+        onFocus={settle}
+        className="flex min-h-0 flex-1 flex-col"
+      >
         <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col p-4" edge="line">
           {chapters.map((chapter, index) => {
             const isActive = chapter.id === activeId;
@@ -99,6 +114,7 @@ export const DemoRail = ({
               >
                 <DemoRailGroupRow
                   title={chapter.title}
+                  previousTitle={chapters[index - 1]?.title}
                   mark={{ kind: 'index', value: String(index + 1) }}
                   rail={rowRail}
                   railWidth={rail.width}
@@ -106,6 +122,7 @@ export const DemoRail = ({
                   isActive={isActive}
                   isUpNext={chapter.id === upNextId}
                   tally={tallyOf({ chapter })}
+                  isTooltipSuppressed={!isSettled}
                   onSelect={() => onSelect({ id: chapter.id })}
                   onIntent={() => onIntent({ id: chapter.id })}
                 />
@@ -135,6 +152,7 @@ export const DemoRail = ({
             {closingRail === undefined ? null : (
               <DemoRailGroupRow
                 title={CLOSING_TITLE}
+                previousTitle={chapters.at(-1)?.title}
                 mark={{
                   kind: 'glyph',
                   glyph: <Download size={WORK_NODE_GLYPH_SIZE} aria-hidden />,
@@ -144,6 +162,7 @@ export const DemoRail = ({
                 access={access.closing === 'open' && isClosingVisited ? 'done' : access.closing}
                 isActive={activeId === CLOSING_ID}
                 isUpNext={upNextId === CLOSING_ID}
+                isTooltipSuppressed={!isSettled}
                 onSelect={() => onSelect({ id: CLOSING_ID })}
                 onIntent={() => onIntent({ id: CLOSING_ID })}
               />

@@ -60,7 +60,7 @@ export const DemoCompactNav = ({
             <IconButton
               icon={ChevronRight}
               label="Next group"
-              tooltip={isNextLocked ? unlockHintOf({ title: nextTitle }) : `Next: ${nextTitle}`}
+              tooltip={isNextLocked ? unlockHintOf({ previousTitle: title }) : `Next: ${nextTitle}`}
               shortcut="→"
               size="md"
               disabled={isNextLocked}

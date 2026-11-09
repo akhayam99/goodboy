@@ -371,8 +371,12 @@ rail on narrow windows, keeps its own). Get Goodboy closes the same spine.
 The path is sequential (`hints/groupAccessOf.ts`). A group is `done` once all its
 steps are, `locked` while a group before it is not done, and `open` otherwise;
 the first group is open from the start. A locked
-group row is muted and disabled; on hover it says why, in the words of the
-compact switcher (`unlockHintOf.ts`). A done group stays open to
+group row is muted and `aria-disabled`: it stays in the tab order, a click does
+nothing and it preloads nothing. On hover or focus it names the group to finish
+first, "Finish <previous group> first." (`unlockHintOf.ts`, the same words as
+the compact switcher). The rail holds its tooltips back until the pointer moves
+after the open group changed (`data-settled`), so a row that slides under a
+resting pointer when the step list opens stays quiet. A done group stays open to
 revisit, on its last frame with every step checked. A hash that names a locked
 group opens Bring your repositories. Get Goodboy is locked until every group is done.
 "Up next" (`data-up-next="ready"`, a solid ring and a soft glow for three cycles,
