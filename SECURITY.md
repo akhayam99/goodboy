@@ -36,6 +36,7 @@ Goodboy runs only on your machine. There is no server in the middle. The app you
 - Your session history, settings and usage records live in one SQLite file at `~/.goodboy/data.db`. The file is yours
 - On macOS and Linux, the `~/.goodboy` folder is owner-only (`0700`), and `data.db`, its `-wal` and `-shm` files and every `.bak` copy (migration snapshots and the copy kept by a local reset) are owner-only (`0600`). Goodboy sets this when it opens the database and again right after each snapshot is written. On Windows Goodboy sets no permission bits: the files rest in your user profile, which Windows already limits to your account, and Goodboy does not change their access list
 - The temporary folders a Chat or Ask turn uses to show images and files to the agent are readable only by you (`0700` for the folder holding them, `0500` for each turn folder, `0400` for its files), and are deleted when the turn ends. A folder a crash left behind is deleted the next time Goodboy starts, once it is six hours old
+- A browser tab you open beside a session leaves one row in `data.db`: its address, its title (the first 512 characters) and its place in the list. The row holds no cookie and no page content. A tab you close, and every tab of a session you archive or delete, loses its row. Cookies and the data a site stores sit in the system web engine's own store, never in `data.db`, and Goodboy reads none of it
 - When the app starts, it only applies pending database updates (migrations). It never deletes anything
 - A local reset is a separate action you choose on purpose. It deletes the database and builds it again from zero. It never touches your system's password store
 
@@ -45,6 +46,8 @@ Apart from signing in to a provider, Goodboy goes online in two cases:
 
 - A release build checks for its own updates against a published list of versions (the manifest). This is the only request Goodboy makes without you asking, and only when no provider is connected. Goodboy verifies an update before it installs it, and downloads that release's changelog pictures in the background at the same time, cached under `~/.goodboy/cache/changelog` (30 MB cap, oldest release evicted first)
 - Some actions send one request each, and only because you clicked them. These are opening the **Changelog** (it fetches release dates only, and downloads a picture for the release you are viewing if it is not already cached; the notes themselves are packaged with the app), pressing **Load image** on an image inside rendered Markdown, and sending a bug report. While you type a report with GitHub connected, the sheet also searches the open Goodboy issues for a match, half a second after you stop typing
+
+A page in a browser tab is not a Goodboy request. It talks to its own site, like any browser, and only after you typed its address, pressed a link or a server chip, or picked it in the palette. Goodboy adds nothing to that traffic and never sends the text of the address row to a search engine. A page can reach no Goodboy command, so it cannot read your sessions, your keys or your files (see **Under the hood**).
 
 ### Alerts while you are away
 
