@@ -730,6 +730,27 @@ describe('demo playground', () => {
       expect(instruction()).toBe(plain(answerStep?.progress));
     });
 
+    it('shows the working pill with the short progress line while the step runs, never a stale slot', () => {
+      const frame = openDirection({ doneCount: 3 });
+      hint({ frame, hintId: answerStep?.id ?? '' });
+      expect(screen.queryByTestId('demo-working-pill')).toBeNull();
+      hint({
+        frame,
+        hintId: answerStep?.id ?? '',
+        rect: null,
+        isOffscreen: true,
+        isClicked: true,
+        isPressed: true,
+      });
+      const pill = screen.getByTestId('demo-working-pill');
+      expect(pill.getAttribute('role')).toBe('status');
+      expect(pill.textContent).toBe(answerStep?.progressCopy ?? answerStep?.progress);
+      expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+      expect(screen.queryByTestId('demo-hint-slot')).toBeNull();
+      tried({ frame, hintId: answerStep?.id ?? '' });
+      expect(screen.queryByTestId('demo-working-pill')).toBeNull();
+    });
+
     it('drops the result of the earlier step as soon as the next control is pressed', () => {
       const frame = openDirection({ doneCount: 2 });
       tried({ frame, hintId: choose?.id ?? '' });

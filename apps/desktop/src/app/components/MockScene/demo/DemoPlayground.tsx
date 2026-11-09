@@ -244,12 +244,13 @@ export const DemoPlayground = () => {
               onFocusLost={focusFrame}
               hintTrack={hints.track}
               coach={hints.coach}
-              offscreen={hints.offscreen}
+              offscreen={hints.acting === undefined ? hints.offscreen : undefined}
               reveal={hints.reveal}
               onHintReport={hints.onHintReport}
               onSpotlightChange={onSpotlightChange}
               onHideHint={hints.dismiss}
               onRevealHint={hints.revealHint}
+              working={hints.acting?.progressCopy ?? hints.acting?.progress}
               done={
                 isGroupDone
                   ? {

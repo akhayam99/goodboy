@@ -16,6 +16,7 @@ import { readDemoThemeMessage } from './director/readDemoThemeMessage';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import { DemoHintSlot } from './DemoHintSlot';
 import { DemoChapterDone, type ChapterDone } from './DemoChapterDone';
+import { DemoWorkingPill } from './DemoWorkingPill';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
 import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
 
@@ -62,6 +63,7 @@ type Props = {
   readonly onSpotlightChange: (params: SpotlightParams) => void;
   readonly onHideHint: () => void;
   readonly onRevealHint: () => void;
+  readonly working: string | undefined;
   readonly done: ChapterDone | undefined;
   readonly onNext: () => void;
   readonly onReplay: () => void;
@@ -117,6 +119,7 @@ export const DemoStage = ({
   onSpotlightChange,
   onHideHint,
   onRevealHint,
+  working,
   done,
   onNext,
   onReplay,
@@ -438,6 +441,9 @@ export const DemoStage = ({
           ) : null}
           {offscreen !== undefined && shownKey === currentKey ? (
             <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
+          ) : null}
+          {working !== undefined && coach === undefined && shownKey === currentKey ? (
+            <DemoWorkingPill copy={working} />
           ) : null}
           {done === undefined ? null : (
             <>
