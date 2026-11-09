@@ -19,6 +19,11 @@ type OwnParams = {
   readonly own: string;
 };
 
+type ProbeParams = {
+  readonly state: AppStore;
+  readonly isAnchorClicked: boolean;
+};
+
 const PLAN_OPEN = 'button[data-testid="plan-row-open"]';
 const COMPOSER = '[data-testid="plan-comment-composer"]';
 const ADD_COMMENT = `${COMPOSER} button[data-variant="primary"]`;
@@ -41,6 +46,13 @@ const approvalsOf = ({ state }: StateParams): number =>
 
 const hasCommented = ({ state }: StateParams): boolean => commentsOf({ state }).length > 0;
 
+const isPlanOpen = ({ state }: StateParams): boolean => state.drawer?.kind === 'artifact-document';
+
+const hasAttached = ({ state, isAnchorClicked }: ProbeParams): boolean =>
+  isAnchorClicked ||
+  commentsOf({ state }).some((comment) => comment.status !== 'draft') ||
+  (draftsOf({ state }) > 0 && isPlanOpen({ state }));
+
 const hasCoordinated = ({ state }: StateParams): boolean => {
   const delegations = (state.autoTreeViews[STORY_SESSION_ID] ?? []).flatMap(
     (view) => view.delegations,
@@ -60,6 +72,12 @@ const recoveryOf = ({ root }: RootParams): string | null =>
 const anchorOrRecovery = ({ root, own }: OwnParams): string | null =>
   hasElement({ root, selector: own }) ? own : recoveryOf({ root });
 
+const PLAN_RECOVERY = {
+  copy: 'Reopen the plan',
+  instruction: "Press the plan's title to open it again and go on.",
+  side: 'left',
+} as const satisfies DemoHint['recovery'];
+
 const isOtherThanPlanRow = ({ target }: BlockParams): boolean =>
   target.closest(PLAN_OPEN) === null && isOtherControl({ target });
 
@@ -77,7 +95,7 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
     side: 'left',
     isSideLocked: true,
     revealWhen: ({ root }) => hasElement({ root, selector: PLAN_OPEN }),
-    doneWhen: ({ state }) => state.drawer?.kind === 'artifact-document' || hasCommented({ state }),
+    doneWhen: ({ state }) => isPlanOpen({ state }) || hasCommented({ state }),
   },
   {
     id: 'plan-mark',
@@ -88,7 +106,9 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
     beat: 0,
     isDimmed: false,
     isBlocked: isOtherThanPlanRow,
-    anchor: ({ root }) => recoveryOf({ root }),
+    anchor: ({ root }) => replayAnchorOf({ root }),
+    recoveryAnchor: PLAN_OPEN,
+    recovery: PLAN_RECOVERY,
     side: 'top',
     isSideLocked: true,
     revealWhen: ({ root, state }) => recoveryOf({ root }) !== null || hasCommented({ state }),
@@ -105,12 +125,15 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
     isDimmed: false,
     isBlocked: isOtherThanPlanRow,
     press: ADD_COMMENT,
-    anchor: ({ root }) => anchorOrRecovery({ root, own: ADD_COMMENT }),
+    anchor: ({ root }) =>
+      hasElement({ root, selector: ADD_COMMENT }) ? ADD_COMMENT : replayAnchorOf({ root }),
+    recoveryAnchor: PLAN_OPEN,
+    recovery: PLAN_RECOVERY,
     side: 'left',
     isSideLocked: true,
     revealWhen: ({ root, state }) =>
       anchorOrRecovery({ root, own: ADD_COMMENT }) !== null || hasCommented({ state }),
-    doneWhen: ({ state }) => hasCommented({ state }),
+    doneWhen: hasAttached,
   },
   {
     id: 'plan-send',
@@ -121,12 +144,12 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
     progress: 'Codex is updating the plan with the simultaneous-retry test.',
     result: 'Your comment is in plan v2, marked **Addressed**.',
     beat: 0,
-    dwellMs: 4500,
     isDimmed: false,
     isBlocked: isOtherThanPlanRow,
     press: SEND,
-    anchor: ({ root, state }) =>
-      draftsOf({ state }) > 0 ? anchorOrRecovery({ root, own: SEND }) : SEND,
+    anchor: SEND,
+    recoveryAnchor: ({ state }) => (draftsOf({ state }) > 0 ? PLAN_OPEN : null),
+    recovery: PLAN_RECOVERY,
     side: 'left',
     isSideLocked: true,
     revealWhen: ({ root, state }) =>
@@ -144,12 +167,12 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
     progress: 'Auto starts a Codex implementer in payments-api and a tester against ledger-core.',
     result: 'Plan approved. One agent wrote the fix, another ran the checks, and they passed.',
     beat: 0,
-    dwellMs: 4500,
     isDimmed: false,
     isBlocked: isOtherThanPlanRow,
     press: APPROVE,
-    anchor: ({ root, state }) =>
-      approvalsOf({ state }) === 0 ? anchorOrRecovery({ root, own: APPROVE }) : APPROVE,
+    anchor: APPROVE,
+    recoveryAnchor: ({ state }) => (approvalsOf({ state }) === 0 ? PLAN_OPEN : null),
+    recovery: PLAN_RECOVERY,
     side: 'bottom',
     isSideLocked: true,
     revealWhen: ({ root, state }) =>

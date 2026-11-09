@@ -14,6 +14,7 @@ type Params = {
   readonly bounds: Size;
   readonly side: HintSide | undefined;
   readonly isLocked?: boolean;
+  readonly previousSide?: HintSide;
   readonly gap: number;
   readonly margin: number;
 };
@@ -134,6 +135,7 @@ export const placeCallout = ({
   bounds,
   side: preferred,
   isLocked = false,
+  previousSide,
   gap,
   margin,
 }: Params): CalloutPlacement => {
@@ -175,6 +177,10 @@ export const placeCallout = ({
     !isCovering({ placement: wanted.placement, callout, rects: [target] })
   ) {
     return wanted.placement;
+  }
+  const kept = candidates.find((candidate) => candidate.placement.side === previousSide);
+  if (kept !== undefined && kept.room >= 0 && kept.isClear) {
+    return kept.placement;
   }
   const best = [...candidates].sort((left, right) => {
     const byRank = rankOf(right) - rankOf(left);
