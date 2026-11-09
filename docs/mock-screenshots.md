@@ -514,20 +514,32 @@ never armed and never credited early, and a press on a later control counts for
 nothing. The done check compares against the store as it was when the reveal
 check first held, so data a scene seeds after the engine starts never counts as
 the visitor's action; a reveal check therefore waits for its control to render.
+A step whose control is gone once it is passed (the question after Answer, the
+composer after Add comment) also holds its reveal and done checks on the store,
+so a visitor who went ahead with Hide hints on, or answered another way, still
+gets it credited. When the plan drawer is closed in Guide the work, the steps
+after opening the plan light the plan row again (and let it be pressed) until
+the work they wait for has started.
 Reports carry the frame's generation and the stage drops any from an older
 generation or another frame. A frame that reports `ready` again (it reloaded)
 loses its note, and the stage sends it `play` and `hints` again. The stage
 draws one note beside the anchor through the stage scale, a 2px outline and a
 callout on the side of the lit region with the most room, inside the stage
-(`hints/placeCallout.ts`; the hint's side only breaks a tie); only the callout
-takes clicks. The callout touches the 4px outline with a 6px gap and never
+(`hints/placeCallout.ts`; the hint's side only breaks a tie, unless the hint
+sets `isSideLocked`: the side is kept while it fits and does not cover the
+control, as the plan and question steps do so the callout never sits on the text
+they talk about); only the callout takes clicks. The callout touches the 4px outline with a 6px gap and never
 overlaps the control or the rects the last press opened (`opened` on the anchor
 report, `avoid` in `placeCallout`); `hints/coachPlacement.test.ts` measures the
 callout against the target for every hint of every group. The note goes away as
 soon as the visitor presses that control (`isPressed`, the press on the very
 element the hint anchors; a click that only focuses the composer keeps it), so
 it never covers what the control opens; a step with two presses names the
-second one in `progressCopy`. A control
+second one in `progressCopy`. The press is reported from the click's own
+capture phase, before the control can go away, so the header shows the step's
+`progress` line while its work runs and drops a result still held from the step
+before. The press ends once the lit control is another one, so a step that
+points back at an earlier control lights it again. A control
 scrolled out of view gets a note at the bottom of the stage with Show control,
 which sends `reveal` so the frame scrolls it into view once. The coach X and
 Escape dismiss only the open hint (`dismiss` in `useDemoHints`; the next step

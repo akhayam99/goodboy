@@ -273,6 +273,70 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  it('reports the press in the same tick as the click, before the control can go away', () => {
+    document.body.innerHTML = BUTTONS;
+    const { engine, reports } = engineFor({
+      hints: [step({ id: 'open', doneWhen: () => false })],
+    });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    vi.advanceTimersByTime(20);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'open', isClicked: false });
+    click({ selector: '#open' });
+    expect(reports.at(-1)).toMatchObject({
+      type: 'anchor',
+      hintId: 'open',
+      isClicked: true,
+      isPressed: true,
+    });
+    engine.dispose();
+  });
+
+  it('reports the press even when the control is removed by the click itself', () => {
+    document.body.innerHTML = BUTTONS;
+    document.querySelector('#open')?.addEventListener('click', () => {
+      document.querySelector('#open')?.remove();
+    });
+    const { engine, reports } = engineFor({
+      hints: [step({ id: 'open', doneWhen: () => false })],
+    });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    vi.advanceTimersByTime(20);
+    click({ selector: '#open' });
+    vi.advanceTimersByTime(20);
+    const anchors = reports.filter((report) => report.type === 'anchor');
+    expect(anchors.some((report) => report.hintId === 'open' && report.isClicked === true)).toBe(
+      true,
+    );
+    engine.dispose();
+  });
+
+  it('lifts the press once the lit control is another one, so the coach can come back to it', () => {
+    document.body.innerHTML = '<button type="button" id="open">Open</button>';
+    const { engine, reports } = engineFor({
+      hints: [
+        step({
+          id: 'open',
+          anchor: () => (document.querySelector('#drawer') === null ? '#open' : '#drawer'),
+          doneWhen: () => false,
+        }),
+      ],
+    });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    vi.advanceTimersByTime(20);
+    click({ selector: '#open' });
+    expect(reports.at(-1)).toMatchObject({ hintId: 'open', isPressed: true });
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<button type="button" id="drawer">Drawer</button>',
+    );
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'open', isPressed: false });
+    document.querySelector('#drawer')?.remove();
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'open', isPressed: false });
+    engine.dispose();
+  });
+
   it('flags a control scrolled out of view and scrolls it in on request', async () => {
     document.body.innerHTML = BUTTONS;
     const scrolled = vi.fn();

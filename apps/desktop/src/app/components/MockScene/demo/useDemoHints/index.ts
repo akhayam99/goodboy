@@ -187,6 +187,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
         setHold((previous) => (previous?.phase === 'wait' ? null : previous));
         if (report.isClicked === true) {
           setActingId(report.hintId);
+          setHold(null);
         }
       }
       setAnchor({

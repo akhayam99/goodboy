@@ -685,6 +685,53 @@ describe('demo playground', () => {
     expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
   });
 
+  describe('while the pressed step is running', () => {
+    const answerStep = chapterOf({ id: 'direction' }).hints.at(-1);
+    const choose = chapterOf({ id: 'direction' }).hints.at(-2);
+
+    type OpenParams = {
+      readonly doneCount: number;
+    };
+
+    const openDirection = ({ doneCount }: OpenParams) => {
+      window.sessionStorage.setItem(
+        HINT_PROGRESS_KEY,
+        JSON.stringify({
+          bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
+          direction: {
+            tried: chapterOf({ id: 'direction' })
+              .hints.slice(0, doneCount)
+              .map((entry) => entry.id),
+            epoch: 0,
+          },
+        }),
+      );
+      window.history.replaceState(null, '', '/?scene=demo#direction');
+      render(<DemoPlayground />);
+      const frame = visibleFrame();
+      report({ frame, type: 'ready' });
+      return frame;
+    };
+
+    it('says what the work is doing once the visitor has pressed the control', () => {
+      const frame = openDirection({ doneCount: 3 });
+      hint({ frame, hintId: answerStep?.id ?? '' });
+      expect(instruction()).toBe(plain(answerStep?.instruction));
+      hint({ frame, hintId: answerStep?.id ?? '', isClicked: true, isPressed: true });
+      expect(instruction()).toBe(plain(answerStep?.progress));
+      hint({ frame, hintId: null, rect: null });
+      expect(instruction()).toBe(plain(answerStep?.progress));
+    });
+
+    it('drops the result of the earlier step as soon as the next control is pressed', () => {
+      const frame = openDirection({ doneCount: 2 });
+      tried({ frame, hintId: choose?.id ?? '' });
+      expect(instruction()).toBe(plain(choose?.result));
+      hint({ frame, hintId: answerStep?.id ?? '', isClicked: true, isPressed: true });
+      expect(instruction()).toBe(plain(answerStep?.progress));
+    });
+  });
+
   it('dims the app around the hinted control and lets the control and its note stay sharp', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
