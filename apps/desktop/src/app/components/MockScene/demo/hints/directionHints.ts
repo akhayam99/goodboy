@@ -98,7 +98,6 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     progress: 'Claude hit its limit. Codex is carrying on with the same task and writing the plan.',
     result: 'Claude hit its limit, so Codex picked up the same task and wrote the plan.',
     beat: 0,
-    dwellMs: 4500,
     isDimmed: false,
     isBlocked: isOtherControl,
     anchor: ANSWER,

@@ -14,6 +14,16 @@ const SPEC_PHRASES = [
   'is selected',
 ] as const;
 
+const WAITS_ON_A_SCRIPT = [
+  'story-answer',
+  'plan-send',
+  'plan-approve',
+  'fix-start',
+  'fix-rebase',
+  'fix-push',
+  'storage-remove',
+] as const;
+
 const hints = DEMO_CHAPTERS.flatMap((chapter) => chapter.hints);
 
 const wordsOf = (text: string): number => text.split('**').join('').split(/\s+/).length;
@@ -27,6 +37,12 @@ describe('the step copy', () => {
         expect(hint.result.toLowerCase(), hint.id).not.toContain(phrase);
       }
     }
+  });
+
+  it.each(WAITS_ON_A_SCRIPT)('names the work while %s runs', (id) => {
+    const hint = hints.find((entry) => entry.id === id);
+    expect(hint?.progressCopy ?? '').not.toBe('');
+    expect(hint?.progress ?? '').not.toBe('');
   });
 
   it('keeps every instruction short', () => {
