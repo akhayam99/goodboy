@@ -3,10 +3,11 @@ use tauri::{Manager, Runtime, Webview};
 
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
+use super::lifecycle;
 use super::reason::{
-    self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_GONE,
+    self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_CLOSED, TAB_GONE,
 };
-use super::registry::{BrowserRegistry, TabFacts};
+use super::registry::{BrowserRegistry, TabFacts, TabState};
 use crate::platform::web_history::HistoryStep;
 use crate::util::{now_ms, MessageError};
 
@@ -52,18 +53,26 @@ fn refuse_browser_caller<R: Runtime>(caller: &Webview<R>) -> Result<(), MessageE
     Ok(())
 }
 
-pub(super) fn owned_tab<R: Runtime>(
-    caller: &Webview<R>,
-    tab_id: &str,
-) -> Result<Webview<R>, MessageError> {
+fn check_owner<R: Runtime>(caller: &Webview<R>, tab_id: &str) -> Result<(), MessageError> {
     refuse_browser_caller(caller)?;
-    let app = caller.app_handle();
-    let owner = app
+    let owner = caller
         .state::<BrowserRegistry>()
         .window_of(tab_id)
         .ok_or_else(|| reason::failed(TAB_GONE))?;
     if owner != caller.window().label() {
         return Err(reason::refused(OTHER_WINDOW));
+    }
+    Ok(())
+}
+
+pub(super) fn owned_tab<R: Runtime>(
+    caller: &Webview<R>,
+    tab_id: &str,
+) -> Result<Webview<R>, MessageError> {
+    check_owner(caller, tab_id)?;
+    let app = caller.app_handle();
+    if app.state::<BrowserRegistry>().state_of(tab_id) == Some(TabState::Closed) {
+        return Err(reason::failed(TAB_CLOSED));
     }
     host::webview_of(app, tab_id)
 }
@@ -94,27 +103,20 @@ pub async fn browser_tab_open(
 
 #[tauri::command]
 pub async fn browser_tab_place(webview: Webview, args: TabPlaceArgs) -> Result<(), MessageError> {
-    owned_tab(&webview, &args.tab_id)?
-        .set_bounds(args.bounds.rect())
-        .map_err(failed)
+    check_owner(&webview, &args.tab_id)?;
+    lifecycle::place_tab(webview.app_handle(), &args.tab_id, args.bounds.rect())
 }
 
 #[tauri::command]
 pub async fn browser_tab_show(webview: Webview, args: TabArgs) -> Result<TabFacts, MessageError> {
-    owned_tab(&webview, &args.tab_id)?.show().map_err(failed)?;
-    webview
-        .state::<BrowserRegistry>()
-        .set_shown(&args.tab_id, true, now_ms())
-        .ok_or_else(|| reason::failed(TAB_GONE))
+    check_owner(&webview, &args.tab_id)?;
+    lifecycle::show_tab(&webview.window(), &args.tab_id, now_ms())
 }
 
 #[tauri::command]
 pub async fn browser_tab_hide(webview: Webview, args: TabArgs) -> Result<TabFacts, MessageError> {
-    owned_tab(&webview, &args.tab_id)?.hide().map_err(failed)?;
-    webview
-        .state::<BrowserRegistry>()
-        .set_shown(&args.tab_id, false, now_ms())
-        .ok_or_else(|| reason::failed(TAB_GONE))
+    check_owner(&webview, &args.tab_id)?;
+    lifecycle::hide_tab(webview.app_handle(), &args.tab_id, now_ms())
 }
 
 #[tauri::command]
@@ -144,7 +146,7 @@ pub async fn browser_tab_forward(webview: Webview, args: TabArgs) -> Result<(), 
 
 #[tauri::command]
 pub async fn browser_tab_close(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
-    owned_tab(&webview, &args.tab_id)?;
+    check_owner(&webview, &args.tab_id)?;
     host::close_tab(webview.app_handle(), &args.tab_id)
 }
 

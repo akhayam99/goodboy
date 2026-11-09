@@ -268,6 +268,7 @@ pub fn run() {
             use tauri::Manager;
             logging::init(app.handle());
             query_bridge::start(app.handle().clone());
+            browser::start_lifecycle(app.handle().clone());
             if !cfg!(debug_assertions) {
                 window_heartbeat::start(
                     app.handle().clone(),

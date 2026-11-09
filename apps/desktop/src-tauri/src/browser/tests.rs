@@ -1,5 +1,5 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use tauri::ipc::{CallbackFn, InvokeBody};
 use tauri::test::{
@@ -14,12 +14,15 @@ use super::host::{
     close_each, close_tab, fill_popup, open_tab, reserve_popup, OpenTab, SessionClosed, TabBounds,
     MAX_HIDDEN_POPUPS, TAB_OPENED_EVENT,
 };
+use super::lifecycle::{hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT};
 use super::reason::{
-    BROWSER_CALLER, NOT_WEB_ADDRESS, OTHER_WINDOW, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS,
+    BROWSER_CALLER, NOT_WEB_ADDRESS, OTHER_WINDOW, SESSION_CLOSING, TAB_CLOSED, TAB_GONE,
+    TOO_MANY_POPUPS,
 };
-use super::{forget_window, refuse_browser_pages, BrowserRegistry};
+use super::registry::TabState;
+use super::{forget_window, refuse_browser_pages, start_lifecycle, BrowserRegistry};
 use crate::util::source_scan::production_hits;
-use crate::util::MessageError;
+use crate::util::{now_ms, MessageError};
 
 const PANE: TabBounds = TabBounds {
     x: 963.0,
@@ -316,8 +319,7 @@ fn frees_a_popup_seat_when_the_user_shows_the_popup() {
         opened.push(fill_popup(app.handle(), &seat, url("https://example.com/")).expect("opens"));
     }
     assert!(reserve_popup(app.handle(), &opener).is_err());
-    app.state::<BrowserRegistry>()
-        .set_shown(&opened[0].id, true, 5_000);
+    show_tab(&window(&app, "main"), &opened[0].id, 5_000).expect("shows");
     assert!(reserve_popup(app.handle(), &opener).is_ok());
 }
 
@@ -428,4 +430,253 @@ fn forgets_the_tabs_of_a_destroyed_window() {
             .ids_of_session("harborline", "main"),
         vec![kept]
     );
+}
+
+fn state_of(app: &App<MockRuntime>, id: &str) -> Option<TabState> {
+    app.state::<BrowserRegistry>().state_of(id)
+}
+
+fn is_live_webview(app: &App<MockRuntime>, id: &str) -> bool {
+    app.get_webview(&label_of(id)).is_some()
+}
+
+fn hear_states(app: &App<MockRuntime>) -> Arc<Mutex<Vec<(String, String)>>> {
+    let heard = Arc::new(Mutex::new(vec![]));
+    let sink = Arc::clone(&heard);
+    app.listen_any(TAB_STATE_EVENT, move |event| {
+        let payload: serde_json::Value =
+            serde_json::from_str(event.payload()).expect("payload is json");
+        sink.lock().expect("sink").push((
+            payload["id"].as_str().expect("id").to_string(),
+            payload["state"].as_str().expect("state").to_string(),
+        ));
+    });
+    heard
+}
+
+#[test]
+fn creates_nothing_and_registers_nothing_when_the_lifecycle_starts_at_boot() {
+    let app = app_with_windows(&["main"]);
+    start_lifecycle(app.handle().clone());
+    assert!(app.state::<BrowserRegistry>().is_empty());
+    assert_eq!(app.webviews().len(), 1);
+}
+
+#[test]
+fn closes_a_tab_hidden_for_ten_minutes_and_keeps_its_address_and_title() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let registry = app.state::<BrowserRegistry>();
+    registry.set_url(&id, "http://localhost:5173/pricing");
+    registry.set_title(&id, "Pricing");
+    let hidden_at = now_ms();
+    hide_tab(app.handle(), &id, hidden_at).expect("hides");
+    assert_eq!(state_of(&app, &id), Some(TabState::Asleep));
+
+    sweep(app.handle(), hidden_at + SLEEP_LIMIT_MS - 1);
+    assert_eq!(state_of(&app, &id), Some(TabState::Asleep));
+    assert!(is_live_webview(&app, &id));
+
+    sweep(app.handle(), hidden_at + SLEEP_LIMIT_MS);
+    assert_eq!(state_of(&app, &id), Some(TabState::Closed));
+    assert!(!is_live_webview(&app, &id));
+    let facts = registry.facts(&id).expect("still listed");
+    assert_eq!(facts.url, "http://localhost:5173/pricing");
+    assert_eq!(facts.title, "Pricing");
+    assert_eq!(registry.ids_of_session("harborline", "main"), vec![id]);
+}
+
+#[test]
+fn never_closes_a_shown_tab_however_late_the_sweep_runs() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    sweep(app.handle(), i64::MAX);
+    assert_eq!(state_of(&app, &id), Some(TabState::Live));
+    assert!(is_live_webview(&app, &id));
+}
+
+#[test]
+fn closes_the_least_recently_shown_hidden_tab_first_when_a_fifth_goes_live() {
+    let app = app_with_windows(&["main"]);
+    let ids: Vec<String> = (0..4).map(|_| open(&app, "main", "harborline")).collect();
+    hide_tab(app.handle(), &ids[2], 100).expect("hides");
+    hide_tab(app.handle(), &ids[0], 200).expect("hides");
+    hide_tab(app.handle(), &ids[1], 300).expect("hides");
+
+    let fifth = open(&app, "main", "harborline");
+    assert_eq!(state_of(&app, &ids[2]), Some(TabState::Closed));
+    assert_eq!(state_of(&app, &ids[0]), Some(TabState::Asleep));
+    assert_eq!(state_of(&app, &ids[1]), Some(TabState::Asleep));
+    assert_eq!(state_of(&app, &ids[3]), Some(TabState::Live));
+    assert_eq!(state_of(&app, &fifth), Some(TabState::Live));
+
+    let sixth = open(&app, "main", "harborline");
+    assert_eq!(state_of(&app, &ids[0]), Some(TabState::Closed));
+    assert_eq!(state_of(&app, &ids[1]), Some(TabState::Asleep));
+    assert_eq!(state_of(&app, &sixth), Some(TabState::Live));
+    let live = [&ids[1], &ids[3], &fifth, &sixth];
+    assert!(live.iter().all(|id| is_live_webview(&app, id)));
+}
+
+#[test]
+fn keeps_every_shown_tab_when_all_of_them_are_over_the_cap() {
+    let app = app_with_windows(&["main"]);
+    let ids: Vec<String> = (0..6).map(|_| open(&app, "main", "harborline")).collect();
+    assert!(ids
+        .iter()
+        .all(|id| state_of(&app, id) == Some(TabState::Live) && is_live_webview(&app, id)));
+}
+
+#[test]
+fn counts_the_cap_per_window() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let ids: Vec<String> = (0..4).map(|_| open(&app, "main", "harborline")).collect();
+    for id in &ids {
+        hide_tab(app.handle(), id, 100).expect("hides");
+    }
+    let other = open(&app, "win-2", "harborline");
+    assert!(ids.iter().all(|id| is_live_webview(&app, id)));
+    assert!(is_live_webview(&app, &other));
+}
+
+#[test]
+fn shows_a_closed_tab_again_under_the_same_id_at_its_last_address() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let registry = app.state::<BrowserRegistry>();
+    registry.set_url(&id, "http://localhost:5173/pricing");
+    hide_tab(app.handle(), &id, 100).expect("hides");
+    sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
+    assert!(!is_live_webview(&app, &id));
+
+    let facts = show_tab(&window(&app, "main"), &id, 900_000).expect("shows");
+    assert_eq!(facts.id, id);
+    assert_eq!(facts.state, TabState::Live);
+    assert!(facts.is_shown);
+    assert_eq!(facts.hidden_since_ms, None);
+    assert_eq!(facts.url, "http://localhost:5173/pricing");
+    let page = webview(&app, &label_of(&id));
+    assert_eq!(
+        page.url().expect("url").as_str(),
+        "http://localhost:5173/pricing"
+    );
+    assert_eq!(registry.ids_of_session("harborline", "main"), vec![id]);
+}
+
+#[test]
+fn closes_an_older_hidden_tab_when_showing_a_closed_one_goes_over_the_cap() {
+    let app = app_with_windows(&["main"]);
+    let ids: Vec<String> = (0..4).map(|_| open(&app, "main", "harborline")).collect();
+    hide_tab(app.handle(), &ids[0], 100).expect("hides");
+    hide_tab(app.handle(), &ids[1], 200).expect("hides");
+    let fifth = open(&app, "main", "harborline");
+    assert_eq!(state_of(&app, &ids[0]), Some(TabState::Closed));
+
+    show_tab(&window(&app, "main"), &ids[0], 300).expect("shows");
+    assert_eq!(state_of(&app, &ids[0]), Some(TabState::Live));
+    assert_eq!(state_of(&app, &ids[1]), Some(TabState::Closed));
+    assert_eq!(state_of(&app, &fifth), Some(TabState::Live));
+}
+
+#[test]
+fn shows_and_hides_a_live_tab_without_creating_a_webview() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let before = app.webviews().len();
+    let hidden = hide_tab(app.handle(), &id, 100).expect("hides");
+    assert_eq!(hidden.state, TabState::Asleep);
+    assert_eq!(hidden.hidden_since_ms, Some(100));
+    let shown = show_tab(&window(&app, "main"), &id, 200).expect("shows");
+    assert_eq!(shown.state, TabState::Live);
+    assert_eq!(app.webviews().len(), before);
+}
+
+#[test]
+fn hides_a_closed_tab_without_error_and_leaves_it_closed() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    hide_tab(app.handle(), &id, 100).expect("hides");
+    sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
+    let again = hide_tab(app.handle(), &id, 700_000).expect("hides again");
+    assert_eq!(again.state, TabState::Closed);
+    assert!(!again.is_shown);
+}
+
+#[test]
+fn refuses_to_drive_a_closed_tab_with_its_own_code_and_still_places_and_closes_it() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    hide_tab(app.handle(), &id, 100).expect("hides");
+    sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
+    assert!(matches!(
+        owned_tab(&webview(&app, "main"), &id),
+        Err(MessageError::Failed(code)) if code == TAB_CLOSED
+    ));
+    assert!(place_tab(app.handle(), &id, PANE.rect()).is_ok());
+    assert!(matches!(
+        place_tab(app.handle(), "gone", PANE.rect()),
+        Err(MessageError::Failed(code)) if code == TAB_GONE
+    ));
+    close_tab(app.handle(), &id).expect("closes");
+    assert!(app.state::<BrowserRegistry>().is_empty());
+}
+
+#[test]
+fn refuses_to_show_a_tab_that_is_gone() {
+    let app = app_with_windows(&["main"]);
+    assert!(matches!(
+        show_tab(&window(&app, "main"), "gone", 100),
+        Err(MessageError::Failed(code)) if code == TAB_GONE
+    ));
+}
+
+#[test]
+fn tells_the_owning_window_each_time_a_tab_changes_state() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let heard = hear_states(&app);
+    let id = open(&app, "main", "harborline");
+    hide_tab(app.handle(), &id, 100).expect("hides");
+    hide_tab(app.handle(), &id, 150).expect("hides again");
+    sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
+    sweep(app.handle(), 200 + SLEEP_LIMIT_MS);
+    show_tab(&window(&app, "main"), &id, 900_000).expect("shows");
+    show_tab(&window(&app, "main"), &id, 900_100).expect("shows again");
+    let expected: Vec<(String, String)> = ["asleep", "closed", "live"]
+        .iter()
+        .map(|state| (id.clone(), state.to_string()))
+        .collect();
+    assert_eq!(*heard.lock().expect("sink"), expected);
+}
+
+#[test]
+fn tells_the_window_about_a_tab_closed_over_the_cap() {
+    let app = app_with_windows(&["main"]);
+    let heard = hear_states(&app);
+    let ids: Vec<String> = (0..4).map(|_| open(&app, "main", "harborline")).collect();
+    hide_tab(app.handle(), &ids[0], 100).expect("hides");
+    open(&app, "main", "harborline");
+    let heard = heard.lock().expect("sink");
+    assert_eq!(
+        *heard,
+        vec![
+            (ids[0].clone(), "asleep".to_string()),
+            (ids[0].clone(), "closed".to_string())
+        ]
+    );
+}
+
+#[test]
+fn keeps_a_closed_popup_in_the_registry_so_it_can_come_back() {
+    let app = app_with_windows(&["main"]);
+    let opener = open(&app, "main", "harborline");
+    let seat = reserve_popup(app.handle(), &opener).expect("seat");
+    let popup = fill_popup(app.handle(), &seat, url("https://example.com/")).expect("opens");
+    sweep(
+        app.handle(),
+        popup.hidden_since_ms.expect("hidden") + SLEEP_LIMIT_MS,
+    );
+    assert_eq!(state_of(&app, &popup.id), Some(TabState::Closed));
+    let shown = show_tab(&window(&app, "main"), &popup.id, 900_000).expect("shows");
+    assert_eq!(shown.opener_id.as_deref(), Some(opener.as_str()));
+    assert_eq!(shown.url, "https://example.com/");
 }
