@@ -608,12 +608,20 @@ its own.
 On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
 Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
 New Workspace, Close), Edit, View (sidebar, Command Palette, zoom, Reload, full
-screen), Go (Back, Forward, Sessions, Tasks, Chat, Workflows, Terminal,
-Impact, Notifications, Monitoring), Window and Help (Guide, What's New,
-Keyboard Shortcuts, Report a Bug). One table lays all of them out
+screen), Go (Back, Forward | Board, Tasks, Workflows, Chat, Impact,
+Monitoring, Notifications | Terminal, Browser), Window and Help (Guide, What's
+New, Keyboard Shortcuts, Report a Bug). One table lays all of them out
 (`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
 (About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)
-or a command with an id, a title-case label and an optional combo.
+or a command with an id, a title-case label and an optional combo. The Go menu
+is the app's doors in the sidebar's order and under the sidebar's names, with
+the workspace tools last; it is the one menu allowed more than five rows,
+because the bar follows the macOS convention and lists every door. Every menu
+the app draws itself (a `⋯`, a header menu, a popover of actions) holds five
+rows at most, and `menu-row-budget.test.ts` counts the literal rows of every
+hand written menu; the registry menus are measured state by state in
+`overflowRows.test.ts`. Right click menus mirror the action catalog and are
+not bound.
 
 One rule runs the bar: a command row emits one event, `goodboy://menu` with
 `{ id }`, to the focused window, and `useMenuCommands` is the one listener
@@ -623,11 +631,12 @@ through the dispatcher, so a scoped owner keeps its place; any other id runs
 its `MENU_ACTIONS` entry (`menuActions.ts`: Check for Updates, New Terminal,
 New Workspace, the Go doors, Guide, What's New). An id with neither warns once
 and does nothing. A new menu item therefore adds a row to the table and an id,
-never an event or a listener. The menu labels the registry's Board as
-Sessions (`session.board`), and the Go doors that need a workspace do nothing
-without one. `menuBar.parity.test.ts` reads the Rust table and fails when an id
+never an event or a listener. The menu uses the registry's name for Board
+(`session.board`), and the Go doors that need a workspace do nothing without
+one. Browser opens as a studio of the window (`menu.browser`), like
+Monitoring. `menuBar.parity.test.ts` reads the Rust table and fails when an id
 has no registry entry or action, a combo differs from the registry's, a label
-is not title case, or a key has two owners.
+is not title case, a key has two owners, or the Go doors leave their order.
 
 ## Report sheet
 
