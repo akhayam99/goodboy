@@ -1,11 +1,12 @@
 import { useRef } from 'react';
 import { Lock } from 'lucide-react';
-import { ICON_SIZE, ROW_INTERACTIVE, WorkNode, cn, type WorkNodeMark } from '@goodboy/ui';
+import { ICON_SIZE, ROW_INTERACTIVE, Tooltip, WorkNode, cn, type WorkNodeMark } from '@goodboy/ui';
 import type { RailRow } from '../../../../features/workTreeModel/railGeometry';
 import { SpawnedRailCell } from '../../SpawnedPanel/SpawnedRailCell';
 import type { GroupAccess } from './hints/groupAccessOf';
 import type { HintTally } from './hints/hintTally';
 import { GROUP_ROW_HEIGHT } from './demoRailOf';
+import { unlockHintOf } from './unlockHintOf';
 import { useUpNextBreath } from './useUpNextBreath';
 
 type Props = {
@@ -55,11 +56,12 @@ export const DemoRailGroupRow = ({
       mark={mark}
     />
   );
-  return (
+  const row = (
     <button
       ref={rowRef}
       type="button"
       disabled={isLocked}
+      title={isLocked ? undefined : title}
       onClick={onSelect}
       onPointerEnter={onIntent}
       onPointerDown={onIntent}
@@ -105,5 +107,14 @@ export const DemoRailGroupRow = ({
         </span>
       ) : null}
     </button>
+  );
+  return (
+    <Tooltip
+      content={isLocked ? unlockHintOf({ title }) : undefined}
+      side="right"
+      anchorClassName="flex w-full"
+    >
+      {row}
+    </Tooltip>
   );
 };

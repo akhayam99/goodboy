@@ -219,6 +219,29 @@ describe('demo rail', () => {
     within(rowOf({ title: 'Guide the work' })).getByText(/Locked/);
   });
 
+  it('explains a locked group on hover with the words of the compact nav', () => {
+    render(<DemoPlayground />);
+    const anchor = rowOf({ title: 'Guide the work' }).parentElement;
+    if (anchor === null) {
+      throw new Error('no tooltip anchor');
+    }
+    fireEvent.mouseEnter(anchor);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByRole('tooltip').textContent).toBe(
+      'Guide the work unlocks when the group before it is done',
+    );
+  });
+
+  it('names a group by its full title on hover when the row has to truncate it', () => {
+    render(<DemoPlayground />);
+    expect(rowOf({ title: 'Bring your repositories' }).getAttribute('title')).toBe(
+      'Bring your repositories',
+    );
+    expect(rowOf({ title: 'Guide the work' }).hasAttribute('title')).toBe(false);
+  });
+
   it('opens the first group and keeps the later ones locked until it is done', () => {
     render(<DemoPlayground />);
     expect(rowOf({ title: 'Bring your repositories' }).disabled).toBe(false);

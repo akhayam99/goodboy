@@ -224,9 +224,32 @@ const SEEDED: Readonly<Record<WizardSceneWorkspace, Seeded>> = {
 type SeedParams = AgentsParams & {
   readonly ws: WizardSceneWorkspace;
   readonly hasLinear: boolean;
+  readonly hasGithub?: boolean;
 };
 
-export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded => {
+const WITH_GITHUB = {
+  githubStatus: { mode: 'gh-cli', available: true, user: 'dana-r', scopes: ['repo'] },
+} satisfies Partial<AppStore>;
+
+const WITHOUT_GITHUB = {
+  githubStatus: null,
+  githubWorkspaceStatus: {},
+  refreshGithubConnection: (async ({ workspaceId }) => {
+    if (workspaceId === null) {
+      return;
+    }
+    useAppStore.setState((state) => ({
+      githubWorkspaceStatus: { ...state.githubWorkspaceStatus, [workspaceId]: null },
+    }));
+  }) satisfies AppStore['refreshGithubConnection'],
+} satisfies Partial<AppStore>;
+
+export const seedWizardScene = ({
+  agents,
+  ws,
+  hasLinear,
+  hasGithub = true,
+}: SeedParams): Seeded => {
   sampleScoutRuns.cancel();
   const detected = agentsFor({ agents });
   const seeded = SEEDED[ws];
@@ -253,7 +276,7 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
       workspace === null ? {} : { [workspace.id]: hasLinear ? [LINEAR_BINDING] : [] },
     workspaceOverrides: {},
     settings: { ...useAppStore.getState().settings, [SETTING_NEW_PROJECT_PARENT]: CODE },
-    githubStatus: { mode: 'gh-cli', available: true, user: 'dana-r', scopes: ['repo'] },
+    ...(hasGithub ? WITH_GITHUB : WITHOUT_GITHUB),
     providerStatus: detected.statuses.anthropic,
     codexStatus: detected.statuses.codex,
     cursorStatus: detected.statuses.cursor,

@@ -21,7 +21,11 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     ...DEMO_GROUPS.bring,
     hints: BRING_HINTS,
     beats: [
-      { label: 'Set up', scene: 'onboarding', params: { step: 'workspace', pick: 'folder' } },
+      {
+        label: 'Set up',
+        scene: 'onboarding',
+        params: { step: 'agents', pick: 'folder', github: 'none' },
+      },
     ],
   },
   {

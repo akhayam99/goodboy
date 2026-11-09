@@ -6,6 +6,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { AppStore } from '../../../../../store/store';
+import { isSameAnchor } from '../../../../../features/plans/planComments/planCommentAnchors';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import type { DirectorStore } from './directorTypes';
 import { demoRuns } from './demoRunRegistry';
@@ -74,6 +75,17 @@ export const installArtifactComments = ({ store }: Params): void => {
     const text = body.trim();
     if (text.length === 0) {
       return null;
+    }
+    const twin = (store.getState().artifactComments[sessionId] ?? []).find(
+      (existing) =>
+        existing.artifactId === artifactId &&
+        existing.revision === revision &&
+        existing.status === 'draft' &&
+        existing.body === text &&
+        isSameAnchor({ left: existing.anchor, right: anchor }),
+    );
+    if (twin !== undefined) {
+      return twin.id;
     }
     const id = crypto.randomUUID();
     const at = nowIso({});

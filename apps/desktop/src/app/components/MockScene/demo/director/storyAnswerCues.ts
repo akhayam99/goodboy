@@ -4,20 +4,27 @@ import { storyPlanEnvelopeOf } from '../../scenes/story/storyPlan';
 import type { DemoCue } from './directorTypes';
 import { limitsHandoffCues } from './limitsHandoffCues';
 import { registerStoryPlan } from './registerStoryPlan';
+import { storyHandoffOf } from './storyHandoffOf';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly text: string;
+  readonly answer: string;
 };
 
-export const storyAnswerCues = ({ sessionId, agentId, text }: Params): ReadonlyArray<DemoCue> => {
+export const storyAnswerCues = ({
+  sessionId,
+  agentId,
+  text,
+  answer,
+}: Params): ReadonlyArray<DemoCue> => {
   const codexRun = brandId<ProviderRunId>({ value: `demo-story-codex-${crypto.randomUUID()}` });
   return limitsHandoffCues({
     sessionId,
     agentId,
     text,
-    reply: STORY_PLANNER.handoff,
+    reply: storyHandoffOf({ answer }),
     command: STORY_PLANNER.command,
     output: STORY_PLANNER.output,
     artifact: storyPlanEnvelopeOf({ revision: 1 }),
