@@ -67,7 +67,7 @@ const start = ({ settledIds }: StartParams) => {
   });
   engine.setTrack({ chapterId: 'ship', settledIds, isGuarding: true });
   const lastAnchor = () =>
-    reports.findLast((report) => report.type === 'anchor' && report.hintId !== null);
+    reports.filter((report) => report.type === 'anchor' && report.hintId !== null).at(-1);
   const blocked = (): ReadonlyArray<string> =>
     reports.flatMap((report) => (report.type === 'blocked' ? [report.hintId] : []));
   return { engine, lastAnchor, blocked };
