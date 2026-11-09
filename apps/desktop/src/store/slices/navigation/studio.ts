@@ -24,6 +24,11 @@ export type StudioPlace =
   | { readonly kind: 'monitoring'; readonly target?: MonitoringTarget | null }
   | { readonly kind: 'chat'; readonly chatId: ChatId | null }
   | {
+      readonly kind: 'browser';
+      readonly sessionId: SessionId | null;
+      readonly tabId: string | null;
+    }
+  | {
       readonly kind: 'terminal';
       readonly terminalId: TerminalTabId | null;
       readonly sessionId: SessionId | null;
@@ -53,6 +58,8 @@ export const studioKey = ({ studio }: KeyParams): string => {
       return joined(['chat', studio.chatId]);
     case 'terminal':
       return joined(['terminal', studio.sessionId, studio.terminalId]);
+    case 'browser':
+      return joined(['browser', studio.sessionId, studio.tabId]);
     case 'addWorkspace':
       return 'add-workspace';
     case 'monitoring':

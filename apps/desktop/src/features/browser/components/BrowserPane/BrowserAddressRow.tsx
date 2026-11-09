@@ -8,12 +8,12 @@ const DANGER_BORDER = tintClasses('danger').border;
 
 type Props = {
   readonly model: BrowserPaneModel;
-  readonly isListOpen: boolean;
-  readonly onToggleList: () => void;
-  readonly onClose: () => void;
+  readonly isListOpen?: boolean;
+  readonly onToggleList?: () => void;
+  readonly onClose?: () => void;
 };
 
-export const BrowserAddressRow = ({ model, isListOpen, onToggleList, onClose }: Props) => {
+export const BrowserAddressRow = ({ model, isListOpen = false, onToggleList, onClose }: Props) => {
   const [draft, setDraft] = useState<string | null>(null);
   const fieldRef = useRef<HTMLInputElement | null>(null);
   const isEmpty = model.shown === null;
@@ -44,14 +44,16 @@ export const BrowserAddressRow = ({ model, isListOpen, onToggleList, onClose }: 
 
   return (
     <div className="flex shrink-0 items-center gap-1 px-2 pt-2">
-      <IconButton
-        icon={PanelLeft}
-        label={isListOpen ? 'Hide tab list' : 'Show tab list'}
-        aria-pressed={isListOpen}
-        variant="ghost"
-        tooltipSide="top"
-        onClick={onToggleList}
-      />
+      {onToggleList === undefined ? null : (
+        <IconButton
+          icon={PanelLeft}
+          label={isListOpen ? 'Hide tab list' : 'Show tab list'}
+          aria-pressed={isListOpen}
+          variant="ghost"
+          tooltipSide="top"
+          onClick={onToggleList}
+        />
+      )}
       <IconButton
         icon={ArrowLeft}
         label="Back"
@@ -116,7 +118,9 @@ export const BrowserAddressRow = ({ model, isListOpen, onToggleList, onClose }: 
         disabled={model.address === ''}
         onClick={model.openOutside}
       />
-      <IconButton icon={X} label="Close" variant="ghost" tooltipSide="top" onClick={onClose} />
+      {onClose === undefined ? null : (
+        <IconButton icon={X} label="Close" variant="ghost" tooltipSide="top" onClick={onClose} />
+      )}
     </div>
   );
 };

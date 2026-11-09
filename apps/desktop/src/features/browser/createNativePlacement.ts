@@ -33,13 +33,27 @@ type WantParams = {
   readonly view: WantedView | null;
 };
 
+type OwnerParams = {
+  readonly liveId: string;
+};
+
 type StaleParams = {
   readonly target: WantedView;
 };
 
 const MAX_STEPS = 6;
 
+const VIEW_OWNERS = new Map<string, object>();
+
 export const createNativePlacement = ({ sessionId, onError }: Params) => {
+  const owner = {};
+  const isOwner = ({ liveId }: OwnerParams): boolean => VIEW_OWNERS.get(liveId) === owner;
+  const release = ({ liveId }: OwnerParams): void => {
+    if (!isOwner({ liveId })) {
+      return;
+    }
+    VIEW_OWNERS.delete(liveId);
+  };
   let wanted: WantedView | null = null;
   let shown: ShownView | null = null;
   let blockedTabId: string | null = null;
@@ -61,12 +75,13 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
     if (wanted.tab.id === blockedTabId) {
       return true;
     }
-    return (
-      shown !== null &&
-      shown.tabId === wanted.tab.id &&
-      shown.liveId === liveOf(wanted) &&
-      sameBounds({ a: shown.bounds, b: wanted.bounds })
-    );
+    if (shown === null || shown.tabId !== wanted.tab.id || shown.liveId !== liveOf(wanted)) {
+      return false;
+    }
+    if (!VIEW_OWNERS.has(shown.liveId)) {
+      return false;
+    }
+    return !isOwner({ liveId: shown.liveId }) || sameBounds({ a: shown.bounds, b: wanted.bounds });
   };
 
   const retire = (): void => {
@@ -79,6 +94,10 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
 
   const hideStuck = async (): Promise<boolean> => {
     for (const [liveId, wasReported] of Array.from(stuck)) {
+      if (!isOwner({ liveId })) {
+        stuck.delete(liveId);
+        continue;
+      }
       const isHidden = await browserHost.hide({ tabId: liveId }).then(
         () => true,
         (error: unknown) => {
@@ -96,6 +115,7 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
         return false;
       }
       stuck.delete(liveId);
+      release({ liveId });
     }
     return true;
   };
@@ -113,7 +133,7 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
       blockedTabId = target.tab.id;
       return hideStuck();
     }
-    if (shown !== null && shown.liveId === liveId) {
+    if (shown !== null && shown.liveId === liveId && isOwner({ liveId })) {
       await browserHost.place({ tabId: liveId, bounds: target.bounds });
       shown = { liveId, tabId: target.tab.id, bounds: target.bounds };
       return hideStuck();
@@ -122,6 +142,7 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
     if (isStale({ target })) {
       return true;
     }
+    VIEW_OWNERS.set(liveId, owner);
     retire();
     stuck.delete(liveId);
     await browserHost.show({ tabId: liveId });

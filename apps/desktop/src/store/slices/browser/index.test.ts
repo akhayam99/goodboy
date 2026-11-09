@@ -345,6 +345,19 @@ describe('browser tabs pin and unpin', () => {
     expect(pinIds()).toEqual(['tab-b']);
     expect(tabIds()).toEqual([]);
   });
+
+  it('a session close forgets its live views and its shown pin', async () => {
+    await openThree();
+    useAppStore
+      .getState()
+      .bindBrowserLiveTab({ sessionId: SESSION_ID, tabId: 'tab-a', liveId: 'live-a' });
+    useAppStore.setState({ browserShownPin: { [SESSION_ID]: 'pin-guides' } });
+
+    await useAppStore.getState().closeBrowserSessionTabs({ sessionId: SESSION_ID });
+
+    expect(useAppStore.getState().browserLiveTabs[SESSION_ID]).toBeUndefined();
+    expect(useAppStore.getState().browserShownPin[SESSION_ID]).toBeUndefined();
+  });
 });
 
 describe('a failed host call keeps the old state and shows the error', () => {

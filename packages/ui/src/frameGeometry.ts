@@ -11,6 +11,7 @@ export const FRAME_PAGE_HEADER_INSET_PX = 12;
 export const FRAME_PAGES = [
   'board',
   'terminal',
+  'browser',
   'overview',
   'branch',
   'runs',
@@ -70,6 +71,7 @@ export const PAGE_FRAME: Readonly<Record<FramePage, FrameType>> = {
   guideChapter: 'reader',
   board: 'stage',
   terminal: 'stage',
+  browser: 'stage',
   chat: 'split',
   branch: 'split',
   guide: 'split',
@@ -145,6 +147,7 @@ export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
   chat: 'measure',
   board: 'full',
   terminal: 'full',
+  browser: 'full',
 };
 
 export const frameGeometryOf = ({ page }: FramePageParams): FrameGeometry => {
