@@ -40,6 +40,7 @@ impl Tab {
         self.facts.session_id == session_id
             && self.facts.opener_id.is_some()
             && !self.facts.is_shown
+            && !self.is_closed()
     }
 
     fn is_closed(&self) -> bool {
@@ -318,10 +319,20 @@ impl BrowserRegistry {
     pub(crate) fn mark_closed(&self, id: &str) -> Option<TabFacts> {
         let mut tabs = lock_or_recover(&self.tabs);
         let tab = tabs.by_id.get_mut(id)?;
-        if tab.facts.is_shown {
+        if tab.facts.is_shown || tab.is_closed() {
             return None;
         }
         tab.facts.state = TabState::Closed;
+        Some(tab.facts.clone())
+    }
+
+    pub(crate) fn reopen_asleep(&self, id: &str) -> Option<TabFacts> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let tab = tabs.by_id.get_mut(id)?;
+        if tab.facts.is_shown || !tab.is_closed() {
+            return None;
+        }
+        tab.facts.state = TabState::Asleep;
         Some(tab.facts.clone())
     }
 
@@ -491,6 +502,26 @@ mod tests {
         popup(&registry, "p2", &seat);
         registry.remove("p2");
         assert!(registry.reserve_popup("opener", 1).is_ok());
+    }
+
+    #[test]
+    fn frees_the_seats_of_popups_the_sweep_or_the_cap_closed() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "opener", "harborline", true);
+        for id in ["p1", "p2", "p3", "p4"] {
+            let seat = registry.reserve_popup("opener", 4).expect("seat");
+            popup(&registry, id, &seat);
+        }
+        assert_eq!(registry.reserve_popup("opener", 4), Err(SeatRefusal::Full));
+        for id in ["p1", "p2", "p3", "p4"] {
+            registry.mark_closed(id);
+        }
+        let seat = registry
+            .reserve_popup("opener", 4)
+            .expect("seat once the popups are closed");
+        popup(&registry, "p5", &seat);
+        assert_eq!(registry.state_of("p5"), Some(TabState::Asleep));
+        assert_eq!(registry.state_of("p1"), Some(TabState::Closed));
     }
 
     #[test]
@@ -685,6 +716,22 @@ mod tests {
         assert_eq!(revived.hidden_since_ms, None);
         assert_eq!(revived.url, "https://example.com/docs");
         assert_eq!(registry.revive("a", true, 9_500), None);
+    }
+
+    #[test]
+    fn rolls_a_tab_back_to_asleep_when_its_webview_would_not_close() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "a", "harborline", false);
+        open(&registry, "b", "harborline", true);
+        assert!(registry.mark_closed("a").is_some());
+        assert_eq!(registry.mark_closed("a"), None);
+        let back = registry.reopen_asleep("a").expect("tab is closed");
+        assert_eq!(back.state, TabState::Asleep);
+        assert_eq!(back.hidden_since_ms, Some(1_000));
+        assert_eq!(registry.expired(1_000 + LIMIT_MS, LIMIT_MS), vec!["a"]);
+        assert_eq!(registry.reopen_asleep("a"), None);
+        assert_eq!(registry.reopen_asleep("b"), None);
+        assert_eq!(registry.reopen_asleep("gone"), None);
     }
 
     #[test]

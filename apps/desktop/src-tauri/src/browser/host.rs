@@ -128,7 +128,7 @@ pub(crate) fn open_tab<R: Runtime>(
     match registered {
         Some(facts) => {
             lifecycle::enforce_cap(&app, window.label(), &gate);
-            Ok(facts)
+            Ok(registry.facts(&id).unwrap_or(facts))
         }
         None => {
             let _ = webview.close();

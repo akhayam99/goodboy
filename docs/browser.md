@@ -49,8 +49,9 @@ address.
   session and window, and that window hears `browser://tab-opened` with the
   tab's facts (`openerId` names the tab that opened it). A session holds at
   most four hidden popups, those still opening included; past that a popup
-  is refused with `too-many-popups` in the log. Showing or closing one frees
-  its seat. Otherwise nothing opens.
+  is refused with `too-many-popups` in the log. Showing a popup frees its
+  seat, and so does closing it, by hand, by the sweep or by the cap.
+  Otherwise nothing opens.
 - Every download is refused. The ask lands with the pane, which is the first
   part that can listen for it.
 
@@ -91,9 +92,11 @@ Only closing frees it, so two rules close a tab:
 - **Ten minutes hidden.** A background thread sweeps every 30 seconds and
   closes each asleep tab hidden for 10 minutes or more. Showing the tab and
   hiding it again restarts the clock.
-- **More than four live per window.** Opening or showing a tab that makes a
-  window hold more than four live webviews (live and asleep, popups included)
-  closes the asleep tab hidden the longest, then the next, until four remain.
+- **More than four live per window.** Opening, showing or hiding a tab that
+  leaves a window with more than four live webviews (live and asleep, popups
+  included) closes the asleep tab hidden the longest, then the next, until
+  four remain. Hiding a tab in a window of five shown tabs therefore closes
+  that tab at once.
   A shown tab is never closed by either rule, so a window of more than four
   shown tabs keeps them all.
 
@@ -112,7 +115,16 @@ nothing.
 Nothing is created at boot. The sweep thread starts with the app and owns no
 webview; the registry is empty until a window opens a tab. Every change of
 state runs under one lock in the registry, so a show never meets a sweep
-half way through destroying the same webview.
+half way through destroying the same webview. That lock stays held across the
+calls that wait on the main thread (building, showing and closing a webview,
+and the event), so a slow webview build holds up the sweep and the other
+commands for as long as it takes. The lock is taken before the registry's own
+and no main-thread callback takes it, so this never deadlocks.
+
+A tab the cap or the sweep closed is marked closed first and its webview
+destroyed second, after its live address is stored. If the webview will not close, the tab goes back to asleep
+and the next sweep tries again. A popup opened over the cap can close itself;
+its facts, in the answer and in `browser://tab-opened`, then say `closed`.
 
 ## Capabilities
 

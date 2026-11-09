@@ -45,17 +45,23 @@ pub(crate) fn enforce_cap<R: Runtime>(app: &AppHandle<R>, window_label: &str, ga
 fn close_webviews<R: Runtime>(app: &AppHandle<R>, ids: &[String], _gate: &Gate<'_>) {
     let registry = app.state::<BrowserRegistry>();
     for id in ids {
-        let closed = match app.get_webview(&guard::label_of(id)) {
+        let Some(facts) = registry.mark_closed(id) else {
+            continue;
+        };
+        let webview = app.get_webview(&guard::label_of(id));
+        if let Some(live) = webview.as_ref().and_then(|webview| webview.url().ok()) {
+            registry.set_url(id, live.as_str());
+        }
+        let closed = match webview {
             Some(webview) => webview.close(),
             None => Ok(()),
         };
         if let Err(error) = closed {
             log::warn!("[browser] tab_close_failed reason={error}");
+            registry.reopen_asleep(id);
             continue;
         }
-        if let Some(facts) = registry.mark_closed(id) {
-            announce(app, &facts);
-        }
+        announce(app, &facts);
     }
 }
 
@@ -127,7 +133,7 @@ pub(crate) fn hide_tab<R: Runtime>(
     now_ms: i64,
 ) -> Result<TabFacts, MessageError> {
     let registry = app.state::<BrowserRegistry>();
-    let _gate = registry.gate();
+    let gate = registry.gate();
     let before = registry
         .state_of(tab_id)
         .ok_or_else(|| reason::failed(TAB_GONE))?;
@@ -140,7 +146,10 @@ pub(crate) fn hide_tab<R: Runtime>(
     if facts.state != before {
         announce(app, &facts);
     }
-    Ok(facts)
+    if let Some(window_label) = registry.window_of(tab_id) {
+        enforce_cap(app, &window_label, &gate);
+    }
+    Ok(registry.facts(tab_id).unwrap_or(facts))
 }
 
 pub(crate) fn place_tab<R: Runtime>(
@@ -153,9 +162,9 @@ pub(crate) fn place_tab<R: Runtime>(
     let state = registry
         .state_of(tab_id)
         .ok_or_else(|| reason::failed(TAB_GONE))?;
-    registry.set_rect(tab_id, rect);
-    if state == TabState::Closed {
-        return Ok(());
+    if state != TabState::Closed {
+        webview_of(app, tab_id)?.set_bounds(rect).map_err(failed)?;
     }
-    webview_of(app, tab_id)?.set_bounds(rect).map_err(failed)
+    registry.set_rect(tab_id, rect);
+    Ok(())
 }
