@@ -19,6 +19,11 @@ export const BrowserAddressRow = ({ model, isListOpen, onToggleList, onClose }: 
   const isEmpty = model.shown === null;
   const canStep = model.shown !== null;
   const value = draft ?? model.address;
+  const shownId = model.shown?.tab.id ?? null;
+
+  useEffect(() => {
+    setDraft(null);
+  }, [shownId]);
 
   useEffect(() => {
     if (!isEmpty) {
