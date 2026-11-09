@@ -203,12 +203,7 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'navigate',
   },
-  'session.board': {
-    combo: 'cmd+shift+KeyH',
-    label: 'Board',
-    plane: 'session',
-    group: 'navigate',
-  },
+  'session.board': { combo: 'cmd+shift+KeyH', label: 'Board', plane: 'session', group: 'navigate' },
   'terminal.studio': {
     combo: 'ctrl+Backquote',
     label: 'Terminal',
@@ -869,6 +864,13 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'window',
   },
+  'slot.close': {
+    combo: 'cmd+shift+KeyW',
+    offMacCombo: 'ctrl+F4',
+    label: 'Close the drawer',
+    plane: 'session',
+    group: 'window',
+  },
   'terminal.closeTab': {
     combo: 'cmd+KeyW',
     offMacCombo: 'ctrl+shift+KeyW',
@@ -908,11 +910,7 @@ export const SHORTCUT_FAMILY_LABEL: Readonly<Record<ShortcutFamily, string>> = {
   'terminal-tab-digit': 'Go to terminal tab 1 to 9',
 };
 
-const MAC_GLYPH: Record<string, string> = {
-  cmd: '⌘',
-  shift: '⇧',
-  alt: '⌥',
-  ctrl: '⌃',
+const PUNCTUATION: Record<string, string> = {
   Comma: ',',
   Period: '.',
   Slash: '/',
@@ -920,11 +918,19 @@ const MAC_GLYPH: Record<string, string> = {
   Equal: '=',
   BracketLeft: '[',
   BracketRight: ']',
+  Backquote: '`',
+};
+
+const MAC_GLYPH: Record<string, string> = {
+  ...PUNCTUATION,
+  cmd: '⌘',
+  shift: '⇧',
+  alt: '⌥',
+  ctrl: '⌃',
   Backspace: '⌫',
   Escape: '⎋',
   Enter: '↵',
   Space: '␣',
-  Backquote: '`',
   ArrowDown: '↓',
   ArrowUp: '↑',
   ArrowLeft: '←',
@@ -932,23 +938,16 @@ const MAC_GLYPH: Record<string, string> = {
 };
 
 const KEY_LABEL: Record<string, string> = {
+  ...PUNCTUATION,
   cmd: 'Ctrl',
   shift: 'Shift',
   alt: 'Alt',
   ctrl: 'Ctrl',
-  Comma: ',',
-  Period: '.',
-  Slash: '/',
-  Minus: '-',
-  Equal: '=',
-  BracketLeft: '[',
-  BracketRight: ']',
   Backspace: 'Backspace',
   Delete: 'Delete',
   Escape: 'Esc',
   Enter: 'Enter',
   Space: 'Space',
-  Backquote: '`',
   ArrowDown: 'Down',
   ArrowUp: 'Up',
   ArrowLeft: 'Left',

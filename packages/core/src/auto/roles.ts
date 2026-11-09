@@ -47,7 +47,8 @@ export const AUTO_ROLE_WHEN = {
   planner: 'turn a request into steps with risks and checks before anything changes',
   investigator: 'diagnose a failure, a crash or a wrong result and find its cause',
   reviewer: 'judge a change that already exists and list what is wrong with it',
-  implementer: 'change code, commit it, reinstall dependencies or fix what an investigator found',
+  implementer:
+    'change source code and commit it (a feature, a fix, a refactor, what an investigator found, a dependency reinstall) when no narrower role fits',
   tester: 'write or fix tests for a named behavior',
   docs: 'write documentation, a README or a changelog in the repository',
   scribe:
@@ -72,3 +73,8 @@ type AutoRoleParams = {
 
 export const isAutoWriterRole = ({ role }: AutoRoleParams): boolean =>
   AUTO_WRITER_ROLES.some((candidate) => candidate === role);
+
+export const AUTO_CLOSED_ROLES = ['rewriter'] as const satisfies ReadonlyArray<AutoDelegationRole>;
+
+export const isAutoRoleStartable = ({ role }: AutoRoleParams): boolean =>
+  !AUTO_CLOSED_ROLES.some((candidate) => candidate === role);

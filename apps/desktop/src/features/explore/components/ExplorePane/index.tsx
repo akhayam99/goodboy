@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import {
   Button,
   DrawerFrame,
@@ -18,6 +18,7 @@ import type { LoadFolderParams, SelectFileParams, SetExpandedParams } from '../.
 import { exploreMetaOf } from '../../exploreMeta';
 import { EXPLORE_ROOT_PATH, ancestorPathsOf } from '../../exploreRows';
 import { useExploreChanges } from '../../hooks/useExploreChanges';
+import { useExploreChangedView } from '../../hooks/useExploreChangedView';
 import { useExploreListing } from '../../hooks/useExploreListing';
 import { useExploreRoot } from '../../hooks/useExploreRoot';
 import { ExploreNoFolder } from './ExploreNoFolder';
@@ -34,16 +35,6 @@ const GONE_SENTENCE = 'Closed. Its files were removed.';
 
 const NO_EXPANDED: Readonly<Record<string, boolean>> = Object.freeze({});
 
-type ExploreMode = 'all' | 'changed';
-
-type ChangedView = {
-  readonly mountPath: string | null;
-  readonly mode: ExploreMode;
-  readonly collapsed: Readonly<Record<string, boolean>>;
-};
-
-const FRESH_VIEW: ChangedView = { mountPath: null, mode: 'all', collapsed: NO_EXPANDED };
-
 export const ExplorePane = ({ sessionId, noFolderAction, onClose }: Props) => {
   const now = useNow(30_000);
   const root = useExploreRoot({ sessionId });
@@ -56,9 +47,11 @@ export const ExplorePane = ({ sessionId, noFolderAction, onClose }: Props) => {
   const changesMountPath = target.kind === 'mount' ? target.path : null;
   const changesView = useExploreChanges({ sessionId, mountPath: changesMountPath });
   const { changes } = changesView;
-  const [storedView, setStoredView] = useState<ChangedView>(FRESH_VIEW);
-  const view = storedView.mountPath === changesMountPath ? storedView : FRESH_VIEW;
-  const isChangedMode = view.mode === 'changed' && changesView.isAvailable;
+  const { view, isChangedMode, setChangedOnly, setExpanded } = useExploreChangedView({
+    sessionId,
+    mountPath: changesMountPath,
+    isAvailable: changesView.isAvailable,
+  });
   const changedListing = useMemo(() => changedListingOf({ changes, listing }), [changes, listing]);
   const changedExpanded = useMemo(
     () => changedExpandedOf({ listing: changedListing, collapsed: view.collapsed }),
@@ -100,24 +93,13 @@ export const ExplorePane = ({ sessionId, noFolderAction, onClose }: Props) => {
         return;
       }
       if (isChangedMode) {
-        setStoredView({
-          ...view,
-          mountPath: changesMountPath,
-          collapsed: { ...view.collapsed, [path]: !isExpanded },
-        });
+        setExpanded({ path, isExpanded });
         return;
       }
       setExploreExpanded({ sessionId, mountPath: sessionDir, path, isExpanded });
     },
-    [sessionDir, sessionId, setExploreExpanded, isChangedMode, view, changesMountPath],
+    [sessionDir, sessionId, setExploreExpanded, setExpanded, isChangedMode],
   );
-
-  const handleChangedOnly = (isChangedOnly: boolean) =>
-    setStoredView({
-      mountPath: changesMountPath,
-      mode: isChangedOnly ? 'changed' : 'all',
-      collapsed: NO_EXPANDED,
-    });
 
   const handleSelectFile = useCallback(
     ({ entry }: SelectFileParams) => {
@@ -272,7 +254,11 @@ export const ExplorePane = ({ sessionId, noFolderAction, onClose }: Props) => {
       <div className="flex w-full min-w-0 items-center justify-between gap-3">
         <ExploreProjectChip target={target} groups={root.groups} rowCount={root.rowCount} />
         {hasToggle ? (
-          <Switch label="Changed only" checked={isChangedMode} onChange={handleChangedOnly} />
+          <Switch
+            label="Changed only"
+            checked={isChangedMode}
+            onChange={(isChangedOnly) => setChangedOnly({ isChangedOnly })}
+          />
         ) : null}
       </div>
     );

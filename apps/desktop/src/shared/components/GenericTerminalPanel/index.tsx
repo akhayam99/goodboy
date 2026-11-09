@@ -13,7 +13,7 @@ import { resolveTerminalTheme } from './terminal-theme';
 import { Button, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { bufferText, registerTerminalText } from './terminalText';
-import { isTerminalTabChord } from './isTerminalTabChord';
+import { isTerminalAppChord } from './isTerminalAppChord';
 import { terminalFindKey } from './terminalFindKey';
 import { terminalFindOptions } from './terminalFindDecorations';
 import { TerminalFindBar, type TerminalFindController } from './TerminalFindBar';
@@ -113,7 +113,7 @@ export const GenericTerminalPanel = ({
     term.loadAddon(searchAddon);
     searchRef.current = searchAddon;
     term.attachCustomKeyEventHandler((event) => {
-      if (isTerminalTabChord({ event })) {
+      if (isTerminalAppChord({ event })) {
         return false;
       }
       const key = terminalFindKey({ event, isOpen: isFindOpenRef.current });

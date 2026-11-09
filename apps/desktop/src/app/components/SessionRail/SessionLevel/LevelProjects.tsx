@@ -99,7 +99,11 @@ export const LevelProjects = ({ session, isActive }: Props) => {
         </div>
       )}
       {groups.length === 0 ? null : (
-        <div data-card-projects="" className="flex min-w-0 flex-col gap-3">
+        <div
+          data-card-projects=""
+          aria-busy={snapshot.pending.size > 0}
+          className="flex min-w-0 flex-col gap-3"
+        >
           {groups.map((group) => (
             <ProjectTree
               key={group.projectId}

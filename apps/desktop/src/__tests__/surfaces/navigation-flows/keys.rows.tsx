@@ -737,6 +737,28 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
+    id: 'slot.close',
+    note: 'File > Close the Drawer in the macOS menu bar closes the top of the slot',
+    open: async (ctx) => {
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId: ctx.sessionId }) });
+      await settle();
+      useAppStore
+        .getState()
+        .openDrawer({ kind: 'explore', sessionId: ctx.sessionId, payload: null });
+      useAppStore.getState().openDrawer({
+        kind: 'context',
+        sessionId: ctx.sessionId,
+        payload: { section: 'goal', view: 'current' },
+      });
+      await settle();
+      await pickMenuItem({ id: 'slot.close' });
+    },
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('explore'));
+      expect(useAppStore.getState().drawerBack).toBeNull();
+    },
+  }),
+  keyRow({
     id: 'report.open',
     note: 'Help > Report a Bug in the macOS menu bar opens one sheet',
     open: async () => {

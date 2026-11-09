@@ -415,7 +415,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         if (facts.stepAgentId === null) {
           return;
         }
-        env.getState().closeDrawer();
+        env.getState().clearDrawer();
         env.getState().navigate({
           to: agentPlace({ sessionId: facts.sessionId, agentId: facts.stepAgentId }),
         });
