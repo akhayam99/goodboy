@@ -1,6 +1,5 @@
 type Params = {
-  readonly title: string;
+  readonly previousTitle: string;
 };
 
-export const unlockHintOf = ({ title }: Params): string =>
-  `${title} unlocks when the group before it is done`;
+export const unlockHintOf = ({ previousTitle }: Params): string => `Finish ${previousTitle} first.`;

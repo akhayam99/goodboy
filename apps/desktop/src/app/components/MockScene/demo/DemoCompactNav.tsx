@@ -36,7 +36,7 @@ export const DemoCompactNav = ({
   const nextRef = useRef<HTMLSpanElement>(null);
   const isPulsing = useUpNextBreath({ targetRef: nextRef, isReady: isNextReady });
   return (
-    <nav aria-label="Playground navigation" className="flex flex-col gap-2 lg:hidden">
+    <nav aria-label="Playground navigation" className="flex flex-col gap-2 xl:hidden">
       <div className="flex items-center justify-between gap-2">
         <IconButton
           icon={ChevronLeft}
@@ -60,7 +60,7 @@ export const DemoCompactNav = ({
             <IconButton
               icon={ChevronRight}
               label="Next group"
-              tooltip={isNextLocked ? unlockHintOf({ title: nextTitle }) : `Next: ${nextTitle}`}
+              tooltip={isNextLocked ? unlockHintOf({ previousTitle: title }) : `Next: ${nextTitle}`}
               shortcut="→"
               size="md"
               disabled={isNextLocked}

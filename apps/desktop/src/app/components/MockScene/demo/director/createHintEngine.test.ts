@@ -104,7 +104,7 @@ const engineFor = ({ hints }: EngineParams) => {
 
 const frame = async (): Promise<void> => {
   await Promise.resolve();
-  vi.advanceTimersByTime(20);
+  vi.advanceTimersByTime(40);
 };
 
 const dwell = async (): Promise<void> => {
@@ -279,7 +279,7 @@ describe('the hint engine', () => {
       hints: [step({ id: 'open', doneWhen: () => false })],
     });
     engine.setTrack({ chapterId: 'test', settledIds: [] });
-    vi.advanceTimersByTime(20);
+    vi.advanceTimersByTime(40);
     expect(reports.at(-1)).toMatchObject({ hintId: 'open', isClicked: false });
     click({ selector: '#open' });
     expect(reports.at(-1)).toMatchObject({
@@ -358,6 +358,42 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  it('keeps the press once the pressed control is gone, so its coach never comes back', () => {
+    document.body.innerHTML =
+      '<div id="screen"><button type="button" id="open">Open</button></div>';
+    const { engine, reports } = engineFor({ hints: [step({ id: 'open', doneWhen: () => false })] });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    vi.advanceTimersByTime(40);
+    click({ selector: '#open' });
+    expect(reports.at(-1)).toMatchObject({ hintId: 'open', isPressed: true });
+    const screenRoot = document.querySelector('#screen');
+    if (screenRoot === null) {
+      throw new Error('missing screen');
+    }
+    screenRoot.innerHTML = '<button type="button" id="open">Creating</button>';
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'open', isClicked: true, isPressed: true });
+    engine.dispose();
+  });
+
+  it('lights the way back after the pressed control is gone, then its own control again', () => {
+    document.body.innerHTML = '<button type="button" id="keep">Keep</button>';
+    const { engine, reports } = engineFor({
+      hints: [step({ id: 'keep', recoveryAnchor: '#open', doneWhen: () => false })],
+    });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    vi.advanceTimersByTime(40);
+    click({ selector: '#keep' });
+    expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isPressed: true });
+    document.body.innerHTML = '<button type="button" id="open">Open</button>';
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isRecovering: true, isPressed: false });
+    document.body.innerHTML = '<button type="button" id="keep">Keep</button>';
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isRecovering: false, isPressed: false });
+    engine.dispose();
+  });
+
   it('flags a control scrolled out of view and scrolls it in on request', async () => {
     document.body.innerHTML = BUTTONS;
     const scrolled = vi.fn();
@@ -381,6 +417,214 @@ describe('the hint engine', () => {
     engine.reveal({ hintId: 'open' });
     expect(scrolled).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
     engine.dispose();
+  });
+
+  describe('way back', () => {
+    const recovering = (): DemoHint =>
+      step({ id: 'keep', recoveryAnchor: '#open', doneWhen: () => false });
+
+    it('lights the way back when the step has lost its own control, and says so', async () => {
+      document.body.innerHTML = '<button type="button" id="open">Open</button>';
+      const { engine, reports } = engineFor({ hints: [recovering()] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(reports.at(-1)).toMatchObject({
+        type: 'anchor',
+        hintId: 'keep',
+        rect: { x: 100, y: 200 },
+        isRecovering: true,
+      });
+      document.body.insertAdjacentHTML('beforeend', '<button type="button" id="keep">K</button>');
+      await frame();
+      expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isRecovering: false });
+      engine.dispose();
+    });
+
+    it('does not count a press on the way back as the press of the step', async () => {
+      document.body.innerHTML = '<button type="button" id="open">Open</button>';
+      const { engine, reports } = engineFor({ hints: [recovering()] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      click({ selector: '#open' });
+      await frame();
+      expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isClicked: false, isPressed: false });
+      engine.dispose();
+    });
+  });
+
+  describe('arrival', () => {
+    type RowParams = {
+      readonly y: number;
+    };
+
+    const placeAt = ({ y }: RowParams): void => {
+      vi.mocked(Element.prototype.getBoundingClientRect).mockReturnValue(
+        new DOMRect(100, y, 40, 24),
+      );
+    };
+
+    const nextFrame = (): void => {
+      vi.advanceTimersByTime(16);
+    };
+
+    const placed = (reports: ReadonlyArray<DemoHintReport>) =>
+      reports.filter((report) => report.type === 'anchor' && report.rect !== null);
+
+    it('shows a new hint once, after its control held still for two frames', () => {
+      document.body.innerHTML = BUTTONS;
+      const { engine, reports } = engineFor({ hints: STORY });
+      placeAt({ y: 100 });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      nextFrame();
+      placeAt({ y: 150 });
+      nextFrame();
+      placeAt({ y: 200 });
+      nextFrame();
+      expect(placed(reports)).toEqual([]);
+      nextFrame();
+      expect(placed(reports)).toHaveLength(1);
+      expect(placed(reports)[0]).toMatchObject({ hintId: 'open', rect: { y: 200 } });
+      engine.dispose();
+    });
+
+    it('holds a new hint while its control slides, and shows it once where it stops', () => {
+      document.body.innerHTML = BUTTONS;
+      const { engine, reports } = engineFor({ hints: STORY });
+      placeAt({ y: 40 });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      for (const y of [80, 140, 210, 290, 360, 400]) {
+        nextFrame();
+        placeAt({ y });
+      }
+      expect(placed(reports)).toEqual([]);
+      for (let frame = 0; frame < 6; frame += 1) {
+        nextFrame();
+      }
+      expect(placed(reports)).toHaveLength(1);
+      expect(placed(reports)[0]).toMatchObject({ hintId: 'open', rect: { y: 400 } });
+      engine.dispose();
+    });
+
+    it('waits for stillness again when a held control goes away and comes back later', async () => {
+      const { engine, reports } = engineFor({ hints: STORY });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      nextFrame();
+      expect(reports.at(-1)).toMatchObject({ type: 'anchor', hintId: null });
+      placeAt({ y: 40 });
+      document.body.innerHTML = BUTTONS;
+      await Promise.resolve();
+      nextFrame();
+      document.body.innerHTML = '';
+      await frame();
+      vi.advanceTimersByTime(1500);
+      placeAt({ y: 120 });
+      document.body.innerHTML = BUTTONS;
+      await Promise.resolve();
+      nextFrame();
+      placeAt({ y: 200 });
+      nextFrame();
+      expect(placed(reports)).toEqual([]);
+      nextFrame();
+      expect(placed(reports)).toHaveLength(1);
+      expect(placed(reports)[0]).toMatchObject({ hintId: 'open', rect: { y: 200 } });
+      engine.dispose();
+    });
+
+    describe('while the page animates', () => {
+      type SlideParams = {
+        readonly target: Element | null;
+        readonly iterations: number;
+      };
+
+      const slides: Array<SlideParams> = [];
+
+      beforeEach(() => {
+        slides.length = 0;
+        Object.defineProperty(document, 'getAnimations', {
+          configurable: true,
+          value: () =>
+            slides.map(({ target, iterations }) => ({
+              playState: 'running',
+              effect: { target, getTiming: () => ({ iterations }) },
+            })),
+        });
+      });
+
+      afterEach(() => {
+        Reflect.deleteProperty(document, 'getAnimations');
+      });
+
+      const DRAWER = '<aside id="drawer"><button type="button" id="open">Open</button></aside>';
+
+      it('waits for the drawer around the control to finish its slide', () => {
+        document.body.innerHTML = DRAWER;
+        slides.push({ target: document.querySelector('#drawer'), iterations: 1 });
+        const { engine, reports } = engineFor({ hints: STORY });
+        placeAt({ y: 200 });
+        engine.setTrack({ chapterId: 'test', settledIds: [] });
+        for (let frame = 0; frame < 10; frame += 1) {
+          nextFrame();
+        }
+        expect(placed(reports)).toEqual([]);
+        slides.length = 0;
+        nextFrame();
+        nextFrame();
+        expect(placed(reports)).toHaveLength(1);
+        engine.dispose();
+      });
+
+      it('does not wait for an animation outside the control and its parents', () => {
+        document.body.innerHTML = `${DRAWER}<span id="elsewhere"></span>`;
+        slides.push({ target: document.querySelector('#elsewhere'), iterations: 1 });
+        const { engine, reports } = engineFor({ hints: STORY });
+        placeAt({ y: 200 });
+        engine.setTrack({ chapterId: 'test', settledIds: [] });
+        nextFrame();
+        nextFrame();
+        expect(placed(reports)).toHaveLength(1);
+        engine.dispose();
+      });
+
+      it('never waits for a looping animation', () => {
+        document.body.innerHTML = DRAWER;
+        slides.push({ target: document.querySelector('#drawer'), iterations: Infinity });
+        const { engine, reports } = engineFor({ hints: STORY });
+        placeAt({ y: 200 });
+        engine.setTrack({ chapterId: 'test', settledIds: [] });
+        nextFrame();
+        nextFrame();
+        expect(placed(reports)).toHaveLength(1);
+        engine.dispose();
+      });
+
+      it('shows the hint after a short cap when the slide never ends', () => {
+        document.body.innerHTML = DRAWER;
+        slides.push({ target: document.querySelector('#drawer'), iterations: 1 });
+        const { engine, reports } = engineFor({ hints: STORY });
+        placeAt({ y: 200 });
+        engine.setTrack({ chapterId: 'test', settledIds: [] });
+        vi.advanceTimersByTime(1100);
+        expect(placed(reports)).toEqual([]);
+        vi.advanceTimersByTime(200);
+        expect(placed(reports)).toHaveLength(1);
+        engine.dispose();
+      });
+    });
+
+    it('follows a hint already shown on the very next frame', () => {
+      document.body.innerHTML = BUTTONS;
+      const { engine, reports } = engineFor({ hints: STORY });
+      placeAt({ y: 100 });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      vi.advanceTimersByTime(40);
+      expect(placed(reports)).toHaveLength(1);
+      placeAt({ y: 260 });
+      window.dispatchEvent(new Event('scroll'));
+      nextFrame();
+      expect(placed(reports)).toHaveLength(2);
+      expect(placed(reports).at(-1)).toMatchObject({ hintId: 'open', rect: { y: 260 } });
+      engine.dispose();
+    });
   });
 
   describe('focus region', () => {

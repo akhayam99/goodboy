@@ -2,7 +2,7 @@ import type { AgentId, ProviderRunId } from '@goodboy/types';
 import type { DemoCue } from './directorTypes';
 import { eventCue } from './eventCue';
 
-import { TEXT_SENTENCE_MS } from './textCuesEndMs';
+import { textCuesEndMs } from './textCuesEndMs';
 
 type Params = {
   readonly atMs: number;
@@ -10,6 +10,7 @@ type Params = {
   readonly runId: ProviderRunId;
   readonly text: string;
   readonly isParagraph?: boolean;
+  readonly maxSpanMs?: number;
 };
 
 export const textCues = ({
@@ -18,11 +19,13 @@ export const textCues = ({
   runId,
   text,
   isParagraph = false,
+  maxSpanMs,
 }: Params): ReadonlyArray<DemoCue> => {
   const parts = text.split('. ');
+  const stepMs = textCuesEndMs({ atMs: 0, text, maxSpanMs }) / parts.length;
   return parts.map((part, index) =>
     eventCue({
-      atMs: atMs + index * TEXT_SENTENCE_MS,
+      atMs: atMs + index * stepMs,
       agentId,
       events: ({ at }) => [
         {

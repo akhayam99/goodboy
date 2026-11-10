@@ -90,12 +90,12 @@ describe('the Tasks drawer split scene', () => {
     const pageMotion = motions.find((node) => !node.contains(panel) && !panel.contains(node));
     const panelMotion = motions.find((node) => panel.contains(node));
 
-    expect(pageMotion?.className).toContain('motion-safe:animate-studio-in');
-    expect(panelMotion?.className).toContain('motion-safe:animate-studio-in');
+    expect(pageMotion?.getAttribute('data-studio-motion')).toBe('in');
+    expect(panelMotion?.getAttribute('data-studio-motion')).toBe('in');
 
     if (pageMotion !== undefined) {
       fireEvent.animationEnd(pageMotion);
     }
-    expect(panelMotion?.className).not.toContain('motion-safe:animate-studio-in');
+    expect(panelMotion?.getAttribute('data-studio-motion')).toBe('settled');
   });
 });

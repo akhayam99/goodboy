@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { Scrim, cn } from '@goodboy/ui';
 import { useStageBox } from './useStageBox';
 import { stageFitOf } from './stageFitOf';
 import { isHoleTooBig } from './hints/isHoleTooBig';
@@ -15,6 +15,8 @@ import { readDemoHintReport } from './director/readDemoHintReport';
 import { readDemoThemeMessage } from './director/readDemoThemeMessage';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import { DemoHintSlot } from './DemoHintSlot';
+import { DemoChapterDone, type ChapterDone } from './DemoChapterDone';
+import { DemoWorkingPill } from './DemoWorkingPill';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
 import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
 
@@ -61,6 +63,14 @@ type Props = {
   readonly onSpotlightChange: (params: SpotlightParams) => void;
   readonly onHideHint: () => void;
   readonly onRevealHint: () => void;
+  readonly working: string | undefined;
+  readonly done: ChapterDone | undefined;
+  readonly onNext: () => void;
+  readonly onReplay: () => void;
+};
+
+type FocusTargetParams = {
+  readonly target: EventTarget | null;
 };
 
 type WatchParams = {
@@ -113,24 +123,30 @@ export const DemoStage = ({
   onSpotlightChange,
   onHideHint,
   onRevealHint,
+  working,
+  done,
+  onNext,
+  onReplay,
 }: Props) => {
   const { ref, box, hasRoom } = useStageBox();
   const activeFit = stageFitOf({ box });
-  const isSpotlit =
-    coach !== undefined &&
-    coach.isDimmed &&
-    !isHoleTooBig({
-      anchor: coach.rect,
-      focus: coach.focus,
-      bounds: { width: activeFit.width, height: activeFit.height },
-    });
-  useEffect(() => {
-    onSpotlightChange({ isOn: isSpotlit && coach !== undefined });
-  }, [isSpotlit, coach, onSpotlightChange]);
   const [frames, setFrames] = useState<ReadonlyArray<StageFrame>>([]);
   const [mountedKeys, setMountedKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [shownKey, setShownKey] = useState<string | undefined>(undefined);
   const [fadingKey, setFadingKey] = useState<string | undefined>(undefined);
+  const isLanded = shownKey === activeFrame.key && fadingKey === undefined;
+  const landedCoach = isLanded ? coach : undefined;
+  const isSpotlit =
+    landedCoach !== undefined &&
+    landedCoach.isDimmed &&
+    !isHoleTooBig({
+      anchor: landedCoach.rect,
+      focus: landedCoach.focus,
+      bounds: { width: activeFit.width, height: activeFit.height },
+    });
+  useEffect(() => {
+    onSpotlightChange({ isOn: isSpotlit });
+  }, [isSpotlit, onSpotlightChange]);
   const elements = useRef(new Map<string, HTMLIFrameElement>());
   const sent = useRef(new Map<string, SentCommand>());
   const hintsSent = useRef(new Map<string, string>());
@@ -364,16 +380,36 @@ export const DemoStage = ({
   const visibleKeyRef = useRef(visibleKey);
   visibleKeyRef.current = visibleKey;
 
+  const isDoneRef = useRef(done !== undefined);
+  isDoneRef.current = done !== undefined;
+  const doneNextRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     const listener = new AbortController();
-    document.addEventListener(
-      'focusin',
-      (event) => {
-        const entry = [...elements.current].find(([, element]) => element === event.target);
-        if (entry === undefined || entry[0] === visibleKeyRef.current) {
-          return;
-        }
-        onFocusLost();
+    const reclaim = ({ target }: FocusTargetParams) => {
+      if (listener.signal.aborted) {
+        return;
+      }
+      const entry = [...elements.current].find(([, element]) => element === target);
+      if (entry === undefined) {
+        return;
+      }
+      if (isDoneRef.current) {
+        doneNextRef.current?.focus({ preventScroll: true });
+        return;
+      }
+      if (entry[0] === visibleKeyRef.current) {
+        return;
+      }
+      onFocusLost();
+    };
+    document.addEventListener('focusin', (event) => reclaim({ target: event.target }), {
+      signal: listener.signal,
+    });
+    window.addEventListener(
+      'blur',
+      () => {
+        window.setTimeout(() => reclaim({ target: document.activeElement }), 0);
       },
       { signal: listener.signal },
     );
@@ -419,23 +455,39 @@ export const DemoStage = ({
           className="relative overflow-hidden rounded-lg border border-frame-edge bg-background shadow-md"
           style={{ width: box.width, height: box.height }}
         >
-          {mountedKeys.has(currentKey) ? null : <DemoStageLoading label={activeFrame.label} />}
-          {coach !== undefined && shownKey === currentKey ? (
+          {mountedKeys.has(currentKey) ? null : <DemoStageLoading />}
+          {landedCoach === undefined ? null : (
             <DemoCoachMark
-              coach={coach}
+              coach={landedCoach}
               scale={activeFit.scale}
               bounds={{ width: box.width, height: box.height }}
               isSpotlit={isSpotlit}
               onHide={onHideHint}
             />
-          ) : null}
-          {offscreen !== undefined && shownKey === currentKey ? (
+          )}
+          {offscreen !== undefined && isLanded ? (
             <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
           ) : null}
+          {working !== undefined && coach === undefined && isLanded ? (
+            <DemoWorkingPill copy={working} />
+          ) : null}
+          {done === undefined ? null : (
+            <>
+              <Scrim testId="demo-stage-scrim" className="z-30" />
+              <DemoChapterDone
+                key={done.title}
+                done={done}
+                nextRef={doneNextRef}
+                onNext={onNext}
+                onReplay={onReplay}
+              />
+            </>
+          )}
           {frames.map((frame) => {
             const isVisible = frame.key === visibleKey && shownKey !== undefined;
             const isFading = frame.key === fadingKey;
-            const isInert = !isVisible && !isFading && frame.key !== currentKey;
+            const isInert =
+              done !== undefined || (!isVisible && !isFading && frame.key !== currentKey);
             const fit = stageFitOf({ box });
             return (
               <iframe

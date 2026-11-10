@@ -58,6 +58,9 @@ type RowParams = {
   readonly title: string;
 };
 
+const isLockedRow = (row: HTMLButtonElement | undefined): boolean =>
+  row?.getAttribute('aria-disabled') === 'true';
+
 const rowOf = ({ title }: RowParams): HTMLButtonElement => {
   const row = groupRows().find((entry) => entry.textContent?.includes(title));
   if (row === undefined) {
@@ -206,20 +209,24 @@ describe('demo rail', () => {
     expect(stepRows()[0]?.getAttribute('data-state')).toBe('current');
   });
 
-  it('locks the groups after the current one: muted, disabled and without a hover state', () => {
+  it('locks the groups after the current one: muted, inert to a click, still focusable and saying why', () => {
     render(<DemoPlayground />);
     for (const title of ['Guide the work', 'Review and ship', 'Get Goodboy']) {
       const row = rowOf({ title });
       expect(row.getAttribute('data-access')).toBe('locked');
-      expect(row.disabled).toBe(true);
+      expect(isLockedRow(row)).toBe(true);
+      expect(row.disabled).toBe(false);
+      row.focus();
+      expect(document.activeElement).toBe(row);
       fireEvent.click(row);
       expect(window.location.hash).not.toBe(`#${title}`);
     }
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
-    within(rowOf({ title: 'Guide the work' })).getByText(/Locked/);
+    expect(document.querySelectorAll('iframe')).toHaveLength(1);
+    within(rowOf({ title: 'Guide the work' })).getByText('Finish Set the direction first.');
   });
 
-  it('explains a locked group on hover with the words of the compact nav', () => {
+  it('names the group to finish first on a locked row, once the pointer has moved', () => {
     render(<DemoPlayground />);
     const anchor = rowOf({ title: 'Guide the work' }).parentElement;
     if (anchor === null) {
@@ -229,9 +236,24 @@ describe('demo rail', () => {
     act(() => {
       vi.advanceTimersByTime(1000);
     });
-    expect(screen.getByRole('tooltip').textContent).toBe(
-      'Guide the work unlocks when the group before it is done',
-    );
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    fireEvent.mouseLeave(anchor);
+    fireEvent.pointerMove(railOf());
+    expect(railOf().getAttribute('data-settled')).toBe('true');
+    fireEvent.mouseEnter(anchor);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByRole('tooltip').textContent).toBe('Finish Set the direction first.');
+  });
+
+  it('holds the tooltips back again when the open group changes under a resting pointer', () => {
+    seedDone({ ids: ['bring'] });
+    render(<DemoPlayground />);
+    fireEvent.pointerMove(railOf());
+    expect(railOf().getAttribute('data-settled')).toBe('true');
+    fireEvent.click(rowOf({ title: 'Set the direction' }));
+    expect(railOf().getAttribute('data-settled')).toBe('false');
   });
 
   it('names a group by its full title on hover when the row has to truncate it', () => {
@@ -244,8 +266,8 @@ describe('demo rail', () => {
 
   it('opens the first group and keeps the later ones locked until it is done', () => {
     render(<DemoPlayground />);
-    expect(rowOf({ title: 'Bring your repositories' }).disabled).toBe(false);
-    expect(rowOf({ title: 'Set the direction' }).disabled).toBe(true);
+    expect(isLockedRow(rowOf({ title: 'Bring your repositories' }))).toBe(false);
+    expect(isLockedRow(rowOf({ title: 'Set the direction' }))).toBe(true);
     fireEvent.click(rowOf({ title: 'Set the direction' }));
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
   });
@@ -255,7 +277,7 @@ describe('demo rail', () => {
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     expect(rowOf({ title: 'Set the direction' }).getAttribute('data-access')).toBe('done');
-    expect(rowOf({ title: 'Set the direction' }).disabled).toBe(false);
+    expect(isLockedRow(rowOf({ title: 'Set the direction' }))).toBe(false);
     expect(rowOf({ title: 'Guide the work' }).getAttribute('data-access')).toBe('open');
     expect(rowOf({ title: 'Review and ship' }).getAttribute('data-access')).toBe('locked');
     expect(stepRows().every((step) => step.getAttribute('data-state') === 'done')).toBe(true);
@@ -305,11 +327,11 @@ describe('demo rail', () => {
     const last = groupRows().at(-1);
     expect(last?.textContent).toContain('Get Goodboy');
     expect(last?.getAttribute('data-access')).toBe('locked');
-    expect(last?.disabled).toBe(true);
+    expect(isLockedRow(last)).toBe(true);
     expect(last?.getAttribute('data-up-next')).toBe('none');
     finish({ id: 'ship' });
     expect(last?.getAttribute('data-access')).toBe('open');
-    expect(last?.disabled).toBe(false);
+    expect(isLockedRow(last)).toBe(false);
     expect(last?.getAttribute('data-up-next')).toBe('ready');
     expect(last?.textContent).toContain('Up next');
     fireEvent.click(last ?? document.body);

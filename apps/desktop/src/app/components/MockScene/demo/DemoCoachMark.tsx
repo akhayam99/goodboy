@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
-import type { HintSide } from './hints/demoHintTypes';
+import type { HintAlign, HintSide } from './hints/demoHintTypes';
 import { holeOf } from './hints/holeOf';
 import { placeCallout } from './hints/placeCallout';
 import { DemoSpotlight } from './DemoSpotlight';
@@ -12,11 +12,13 @@ export type CoachMark = {
   readonly copy: string;
   readonly side: HintSide | undefined;
   readonly isSideLocked: boolean;
+  readonly align?: HintAlign;
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
   readonly opened: ReadonlyArray<DemoRect>;
   readonly isDimmed: boolean;
   readonly pulse: number;
+  readonly isWarning: boolean;
 };
 
 type Size = {
@@ -40,6 +42,8 @@ const CALLOUT_WIDTH = 240;
 const CARET = 8;
 const ENTER_MS = 120;
 const PULSE_MS = 360;
+const GLOW_FROM = '0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent)';
+const GLOW_TO = '0 0 0 6px color-mix(in srgb, var(--color-primary) 28%, transparent)';
 
 const ENTER_SHIFT = {
   bottom: 'translateY(-4px)',
@@ -97,10 +101,17 @@ const scaledOf = ({ rect, scale }: ScaledParams): DemoRect => ({
   height: rect.height * scale,
 });
 
+type KeptSide = {
+  readonly hintId: string;
+  readonly side: HintSide;
+};
+
 export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props) => {
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
+  const keptRef = useRef<KeptSide | null>(null);
+  const { isWarning } = coach;
 
   const target: DemoRect = {
     x: coach.rect.x * scale - RING_OUTSET,
@@ -131,7 +142,9 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
 
   useLayoutEffect(() => {
     setHeight(calloutRef.current?.offsetHeight ?? null);
-  }, [coach.hintId, coach.copy]);
+  }, [coach.hintId, coach.copy, isWarning]);
+
+  const kept = keptRef.current;
 
   const placement =
     height === null
@@ -144,10 +157,19 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
           bounds,
           side: coach.side,
           isLocked: coach.isSideLocked,
+          previousSide: kept !== null && kept.hintId === coach.hintId ? kept.side : undefined,
+          align: coach.align,
           gap: GAP,
           margin: MARGIN,
         });
   const side = placement?.side ?? coach.side ?? 'right';
+
+  useLayoutEffect(() => {
+    if (placement === null) {
+      return;
+    }
+    keptRef.current = { hintId: coach.hintId, side: placement.side };
+  });
 
   useEffect(() => {
     const ring = ringRef.current;
@@ -173,15 +195,28 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
   }, [coach.hintId, side]);
 
   useEffect(() => {
+    const ring = ringRef.current;
     const callout = calloutRef.current;
-    if (coach.pulse === 0 || callout === null || !canAnimate({ element: callout })) {
+    if (
+      coach.pulse === 0 ||
+      ring === null ||
+      callout === null ||
+      !canAnimate({ element: callout })
+    ) {
       return;
     }
     const nudge = callout.animate(
       [{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }],
       { duration: PULSE_MS, easing: 'ease-out' },
     );
-    return () => nudge.cancel();
+    const flash = ring.animate(
+      [{ boxShadow: GLOW_FROM }, { boxShadow: GLOW_TO }, { boxShadow: GLOW_FROM }],
+      { duration: PULSE_MS, easing: 'ease-in-out' },
+    );
+    return () => {
+      nudge.cancel();
+      flash.cancel();
+    };
   }, [coach.pulse]);
 
   return (
@@ -226,6 +261,9 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
           <p className="text-row text-foreground">{coach.copy}</p>
           <IconButton icon={X} label="Dismiss hint" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
+        {isWarning ? (
+          <p className="text-meta text-muted-foreground">Follow the outlined control first.</p>
+        ) : null}
       </div>
     </div>
   );

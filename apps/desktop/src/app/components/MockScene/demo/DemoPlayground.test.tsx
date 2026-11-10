@@ -285,6 +285,16 @@ describe('demo playground', () => {
     expect(window.location.hash).toBe('#bring');
   });
 
+  it('falls back to the first open group, not always the first one, when the hash is locked', () => {
+    seedProgress({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    const before = window.history.length;
+    render(<DemoPlayground />);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set the direction');
+    expect(window.location.hash).toBe('#direction');
+    expect(window.history.length).toBe(before);
+  });
+
   it('shows every group title with its count kept quiet', () => {
     render(<DemoPlayground />);
     for (const group of Object.values(DEMO_GROUPS)) {
@@ -333,7 +343,7 @@ describe('demo playground', () => {
 
   it('shows the loading state until the frame reports ready', () => {
     render(<DemoPlayground />);
-    expect(screen.getByRole('status').textContent).toBe('Loading Set up');
+    expect(screen.getByRole('status').textContent).toBe('Loading the demo');
     report({ frame: visibleFrame(), type: 'ready' });
     expect(screen.queryByRole('status')).toBeNull();
   });
@@ -341,7 +351,7 @@ describe('demo playground', () => {
   it('ignores a report from a window that is not one of its frames', () => {
     render(<DemoPlayground />);
     report({ frame: visibleFrame(), type: 'ready', source: window });
-    expect(screen.getByRole('status').textContent).toBe('Loading Set up');
+    expect(screen.getByRole('status').textContent).toBe('Loading the demo');
   });
 
   it('plays the cues once the frame is ready and never moves on by itself', () => {
@@ -494,7 +504,7 @@ describe('demo playground', () => {
     expect(instruction()).toBe(plain(second?.instruction));
   });
 
-  it('says the group is done only after the last result has been on screen', () => {
+  it('says the group is done as soon as its last step is done', () => {
     seedProgress({ ids: ['bring'] });
     const { hints } = chapterOf({ id: 'direction' });
     window.history.replaceState(null, '', '/?scene=demo#direction');
@@ -508,11 +518,9 @@ describe('demo playground', () => {
     const last = hints.at(-1);
     hint({ frame, hintId: last?.id ?? '' });
     tried({ frame, hintId: last?.id ?? '' });
-    expect(instruction()).toBe(plain(last?.result));
-    expect(instruction()).not.toContain('is done');
+    expect(instruction()).toBe('Done. Next: Guide the work.');
     elapse({ ms: last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last }) });
-    expect(instruction()).toContain('Set the direction is done');
-    expect(instruction()).toContain('Guide the work, marked Up next.');
+    expect(instruction()).toBe('Done. Next: Guide the work.');
   });
 
   it('changes the scene only when a step that lives in another scene becomes the next one', () => {
@@ -731,6 +739,27 @@ describe('demo playground', () => {
       expect(instruction()).toBe(plain(answerStep?.progress));
     });
 
+    it('shows the working pill with the short progress line while the step runs, never a stale slot', () => {
+      const frame = openDirection({ doneCount: 3 });
+      hint({ frame, hintId: answerStep?.id ?? '' });
+      expect(screen.queryByTestId('demo-working-pill')).toBeNull();
+      hint({
+        frame,
+        hintId: answerStep?.id ?? '',
+        rect: null,
+        isOffscreen: true,
+        isClicked: true,
+        isPressed: true,
+      });
+      const pill = screen.getByTestId('demo-working-pill');
+      expect(pill.getAttribute('role')).toBe('status');
+      expect(pill.textContent).toBe(answerStep?.progressCopy ?? answerStep?.progress);
+      expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+      expect(screen.queryByTestId('demo-hint-slot')).toBeNull();
+      tried({ frame, hintId: answerStep?.id ?? '' });
+      expect(screen.queryByTestId('demo-working-pill')).toBeNull();
+    });
+
     it('drops the result of the earlier step as soon as the next control is pressed', () => {
       const frame = openDirection({ doneCount: 2 });
       tried({ frame, hintId: choose?.id ?? '' });
@@ -871,14 +900,6 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note')).not.toBeNull();
     expect(within(topBar()).queryByRole('button', { name: 'Show hint' })).toBeNull();
     within(topBar()).getByRole('button', { name: 'Hide hints' });
-  });
-
-  it('names the Up next marker in the header only when the next group carries it', () => {
-    seedProgress({ ids: ['bring', 'direction', 'guide'] });
-    window.history.replaceState(null, '', '/?scene=demo#bring');
-    render(<DemoPlayground />);
-    expect(instruction()).toBe('Bring your repositories is done. Go on with Set the direction.');
-    expect(railOf().textContent).not.toContain('Up next');
   });
 
   it('turns the hints off and back on from the wrapper and keeps that in the tab', () => {

@@ -4,6 +4,7 @@ import { STORY_ROOT_ID, STORY_SESSION_ID } from '../../scenes/story/storyWorld';
 import type { DemoCue } from './directorTypes';
 import { AUTO_STORY } from './autoStory';
 import { applyAutoScene } from './applyAutoScene';
+import { eventCue } from './eventCue';
 import { finishAgentTurn } from './finishAgentTurn';
 import { startAgentTurn } from './startAgentTurn';
 import { textCues } from './textCues';
@@ -12,9 +13,9 @@ import { textCuesEndMs } from './textCuesEndMs';
 const LEAD_AT_MS = 600;
 const NOTE_GAP_MS = 500;
 const AFTER_LEAD_MS = 300;
-const AFTER_NOTES_MS = 1500;
+const AFTER_NOTES_MS = 600;
 const FINAL_GAP_MS = 400;
-const FINISH_GAP_MS = 600;
+const FINISH_GAP_MS = 300;
 
 type RunParams = {
   readonly label: string;
@@ -94,15 +95,15 @@ export const storyWorkCues = ({ rootRun }: Params): ReadonlyArray<DemoCue> => {
         });
       },
     },
-    ...textCues({
+    eventCue({
       atMs: doneAt + FINAL_GAP_MS,
       agentId: STORY_ROOT_ID,
-      runId: finalRun,
-      text: AUTO_STORY.final,
-      isParagraph: true,
+      events: ({ at }) => [
+        { kind: 'assistant_text', runId: finalRun, delta: `\n\n${AUTO_STORY.final}`, at },
+      ],
     }),
     {
-      atMs: textCuesEndMs({ atMs: doneAt + FINAL_GAP_MS, text: AUTO_STORY.final }) + FINISH_GAP_MS,
+      atMs: doneAt + FINAL_GAP_MS + FINISH_GAP_MS,
       apply: ({ store, at }) => {
         finishAgentTurn({
           store,

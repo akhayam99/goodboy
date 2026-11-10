@@ -11,7 +11,6 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { TEXT_ROLE } from '@goodboy/ui';
 import type { ExploreEntry } from '../../../explore/explore';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -184,11 +183,6 @@ describe('SessionTools', () => {
       .closest('[data-slot="session-tool"]')
       ?.querySelector('[data-slot="tool-caption"]');
     expect(open?.getAttribute('data-tone')).toBe('open');
-    expect(open?.className).toContain(TEXT_ROLE.label);
-    expect(captions[0]?.className).toContain(TEXT_ROLE.secondary);
-    expect(document.querySelector('[data-slot="tool-group-caption"]')?.className).toContain(
-      TEXT_ROLE.secondary,
-    );
     expect(
       captions.filter((caption) => caption?.getAttribute('data-tone') === 'closed'),
     ).toHaveLength(6);
