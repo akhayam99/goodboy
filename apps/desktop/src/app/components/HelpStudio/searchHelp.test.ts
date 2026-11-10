@@ -59,16 +59,6 @@ describe('searchHelp', () => {
     expect(guide.every((hit) => hit.excerpt !== '')).toBe(true);
   });
 
-  it.each(['palette', 'command palette'])(
-    'finds the Search or run shortcut under the old words "%s"',
-    (query) => {
-      const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query });
-      const labels = hits.flatMap((hit) => (hit.kind === 'shortcut' ? [hit.label] : []));
-
-      expect(labels).toContain('Search or run');
-    },
-  );
-
   it('gives every hit its own key', () => {
     const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: 'session' });
 

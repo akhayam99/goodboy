@@ -1,4 +1,5 @@
 import { mockIPC } from '@tauri-apps/api/mocks';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import { HelpStudio } from '../../../HelpStudio';
 import { useAppStore } from '../../../../../store';
 import { FramedStudioScene } from '../u23/FramedStudioScene';

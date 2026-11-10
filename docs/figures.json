@@ -36,11 +36,11 @@
     "recipe": "--scene 'artifact-generating&brand=1' --window 1280x330 --wait 8000"
   },
   "features/board-card": {
-    "version": "0.27.1",
-    "recipe": "--scene 'board-shell&brand=1' --clip 727,125,492,236 --window 1700x700 --wait 8000"
+    "version": "0.33.0",
+    "recipe": "--scene 'board-shell&brand=1' --clip 790,131,542,234 --window 1920x700 --wait 8000"
   },
   "features/board-stage": {
-    "version": "0.31.10",
+    "version": "0.33.0",
     "recipe": "--scene 'board-shell&brand=1' --window 1920x620 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/context-decisions": {
@@ -120,11 +120,11 @@
     "recipe": "--scene 'activity-groups&brand=1' --clip 491,133,741,917 --window 1280x1050 --wait 8000"
   },
   "features/overview-next": {
-    "version": "0.31.12",
+    "version": "0.33.0",
     "recipe": "--scene 'c05-overview-merged-next&brand=1' --clip 499,289,725,328 --window 1280x800 --wait 8000"
   },
   "features/overview-session": {
-    "version": "0.31.12",
+    "version": "0.33.0",
     "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x540 --wait 8000"
   },
   "features/providers-codex-reset": {
@@ -192,63 +192,63 @@
     "recipe": "--scene 'search&brand=1' --window 1280x800 --wait 8000"
   },
   "features/security-backup-notice": {
-    "version": "0.27.1",
-    "recipe": "--scene 'changelog&brand=1' --click '0.27.0' --clip 300,8,960,232 --window 1280x800 --wait 8000"
+    "version": "0.33.0",
+    "recipe": "--scene 'changelog&brand=1' --click 0.27.0 --clip 545,70,720,260 --window 1280x800 --wait 8000"
   },
   "features/security-changelog-update": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'changelog&brand=1' --window 1280x800 --wait 8000"
   },
   "features/security-export-import": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'settings-app&section=backup&brand=1' --window 1280x1050 --wait 8000"
   },
   "features/security-findings": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'brand-security-findings&brand=1' --window 1280x420 --wait 8000"
   },
   "features/security-newer-data": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'features-newer-data&brand=1' --window 1280x700 --wait 8000"
   },
   "features/security-updates": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'update-card&brand=1' --window 1280x800 --clip 0,590,380,210 --wait 8000"
   },
   "features/setup-about-you": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'settings-workspace&section=profile&brand=1' --window 1280x700 --wait 8000"
   },
   "features/setup-agents": {
-    "version": "0.27.1",
-    "recipe": "--scene 'onboarding&step=agents&brand=1' --window 1280x780--wait 8000"
+    "version": "0.33.0",
+    "recipe": "--scene 'onboarding&step=agents&brand=1' --window 1280x780 --wait 8000"
   },
   "features/setup-cli-update": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'settings-providers&provider=anthropic&cli=old&brand=1' --scroll '[aria-label=\"Account\"]' --window 1280x800 --wait 8000"
   },
   "features/setup-home": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'onboarding-home&state=list&brand=1' --window 1280x600 --wait 8000"
   },
   "features/setup-integrations": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'settings-tools&tool=github&brand=1' --window 1280x800 --wait 8000"
   },
   "features/setup-permissions": {
-    "version": "0.27.1",
-    "recipe": "--scene 'settings-providers&provider=codex&brand=1' --window 1280x1100 --clip 264,533,1000,280 --wait 8000"
+    "version": "0.33.0",
+    "recipe": "--scene 'settings-providers&provider=codex&brand=1' --window 1280x1100 --clip 517,583,749,268 --wait 8000"
   },
   "features/setup-provider-page": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'settings-providers&provider=anthropic&brand=1' --window 1280x800 --wait 8000"
   },
   "features/setup-welcome": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'onboarding&step=welcome&brand=1' --window 1280x600 --wait 8000"
   },
   "features/setup-workspace": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'onboarding&step=workspace&brand=1' --window 1280x860 --wait 8000"
   },
   "features/storage-branches": {
@@ -264,19 +264,19 @@
     "recipe": "--scene 'r4-report-bug&brand=1' --window 1280x800 --clip 225,560,600,235 --wait 8000"
   },
   "features/switch-display-options": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'sessions-menu&brand=1' --window 1280x900 --wait 8000"
   },
   "features/switch-notifications": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'notifications&brand=1' --click 'Needs action' --window 1280x800 --wait 8000"
   },
   "features/switch-now-chip": {
-    "version": "0.27.1",
+    "version": "0.33.0",
     "recipe": "--scene 'board-shell&brand=1' --click 2 --window 1500x600 --wait 8000"
   },
   "features/switch-rail": {
-    "version": "0.31.12",
+    "version": "0.33.0",
     "recipe": "--scene 'session-hover&brand=1' --clip 0,0,640,720 --window 1800x720 --wait 8000"
   },
   "features/workflow-hints": {
@@ -328,7 +328,7 @@
     "recipe": "--scene 'mounts&brand=1' --window 1280x700 --wait 8000"
   },
   "readme/readme-hero": {
-    "version": "0.31.12",
+    "version": "0.33.0",
     "recipe": "pnpm readme:hero"
   }
 }

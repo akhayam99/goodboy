@@ -12,6 +12,73 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.33.0
+
+Every section opens as a page in one place, Settings sits beside the sidebar, and Terminal and Browser dock on the right of every screen.
+
+### New
+
+#### Terminal and Browser in the right dock
+<!-- gb area=sessions image=right-dock pr=2191 -->
+
+The right rail shows on every screen of a workspace. On a session page it holds Explore, Context, Ask, Agents and Scripts, and Terminal and Browser sit at its foot everywhere. Each opens a dock beside the page: on a session it shows that session's terminal or tabs, anywhere else the workspace's. The rail buttons count running terminals and open tabs.
+
+Open as page in the dock header grows the dock into a page, and Dock in the page header puts it back on the same tab. The dock stays open as you move between sessions, the Board and other pages.
+
+### Improved
+
+#### Board and the sidebar
+<!-- gb area=app image=sidebar pr=2184,2186,2191 -->
+
+The sidebar lists New session, then Board, Tasks, Workflows, Chat, Impact and Monitoring, then your sessions. The first row and its page are called Board, and Search or run still finds it by Sessions. Monitoring is a row with its count of ports in use, and the Terminal, Browser and Monitoring tiles are gone.
+
+The Go menu of the macOS menu bar and Search or run list the same pages in the same order, and Browser is in both.
+
+#### Settings, Help and Report a bug in the sidebar foot
+<!-- gb area=app image=help pr=2187 -->
+
+The foot of the sidebar holds Settings, then the Goodboy line with the version and a bug icon for Report a bug. The folded sidebar shows the same three. A click on the Goodboy line opens Help, which has two tabs, Guide and What's new, with Sponsor on GitHub at the top.
+
+The menu that used to open from the Goodboy line is gone. Keyboard shortcuts lives in Settings, Shortcuts, and Pair an iPhone in Settings, iPhone.
+
+#### Settings as a page
+<!-- gb area=settings screen=settings/app image=settings-page pr=2188 -->
+
+Settings opens as a page beside the sidebar, like every other page, with Back to app and a trail at the top. Its sections sit in their own rail with Search settings in the first row, and the rail folds by itself on a narrow window. The sidebar stays live: any row leaves Settings in one click, and Settings is lit in the foot while it is open.
+
+#### The sidebar toggle in the top bar
+<!-- gb area=app pr=2181,2188 -->
+
+The sidebar toggle is the first control of the top bar, above the column it folds. The toggle and `⌘B` work on every page, Settings included, and only they decide whether the sidebar stays folded: a new session no longer opens it. Every page rail folds from the top left of its first row, with Hide or Show and the rail's name.
+
+The arrows read Back and Forward, and the search field reads Search or run, the same words as in the menu bar and the Guide.
+
+#### The session pages rail
+<!-- gb area=sessions image=session-pages pr=2183 -->
+
+The rail beside a session lists its pages, Overview, Runs, Artifacts and Questions, with the same counts, dots and tooltips whether it is open, folded to icons or shown from the sidebar. Hide session pages folds it, and folded it keeps More session actions at its foot.
+
+#### One page at a time, and drawers that wait
+<!-- gb area=sessions pr=2189 -->
+
+Tasks, Chat, Workflows, Impact, Monitoring, Notifications, Settings and Help open in the same place, over the page they replace. A session drawer such as Context or Ask waits hidden while a page is open, and comes back as it was, with its draft and its scroll.
+
+`Esc` and `⌘W` act on the page you see, never on a hidden drawer. A drawer shortcut on a page leaves the page and shows its drawer.
+
+#### Menus of five rows
+<!-- gb area=app pr=2182 -->
+
+Menus with a fixed list of actions keep to five rows. The Go menu lists Back and Forward, then Board, Tasks, Workflows, Chat, Impact, Monitoring and Notifications, then Show or Hide Terminal and Show or Hide Browser.
+
+#### Control and backtick shows the Terminal dock
+<!-- gb area=sessions pr=2191 -->
+
+Control and backtick shows or hides the Terminal dock on any screen, and `⌘⌥T` does the same. It used to open the Terminal page. Open as page in the dock still gets you there.
+
+### Fixed
+
+- Help, What's new, Notifications and New workspace light their own control, so the open session's row no longer reads as the current place. <!-- gb area=app pr=2186 -->
+
 ## Goodboy v0.32.1
 
 The Auto push card shows each push and how it ended, browser tabs run real sites, and the newest Claude Fable joins the model list.

@@ -244,7 +244,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       reloads.length = 0;
       await press('app.reload')();
     },
-    lands: async () => expect(reloads).toHaveLength(1),
+    lands: async () => waitFor(() => expect(reloads).toHaveLength(1)),
   }),
   keyRow({
     id: 'zoom.in',
