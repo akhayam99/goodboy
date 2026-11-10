@@ -4,36 +4,33 @@
 
 ## Studios
 
-Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
-the guide, Add workspace) render in the shell's studio slot, which
-covers the content area only, beside the column, as its own sheet; the page
-title is its one header (no title band). The column stays live, so another door or a session row is
-one click away. **Settings is the one studio that takes the column**, in
-both sidebar states: `shellArrangement` takes `isSettingsOpen` and returns
-`leftSlot: 'column'` with no peek, so a folded sidebar shows the column at its
-saved width while Settings is open and the rail returns when it closes. The
-stored collapse is never written (`leftSidebarCollapsed` reports it as it is,
-`isLeftRail` says what is drawn), and ⌘B waits. The column's content
-cross-fades (160ms) to `‹ Back to app` (with its Esc hint), `Search settings`
-and the settings groups, on the chrome like the sessions list, and the page
-fills the content area as the one sheet. There is no band, no crumb and no
-second sheet: `StudioFrame` draws no band (`hasBand={false}`), `SettingsStudio`
-draws no `StudioTrail` and no `StudioRailLayout`, and the page's title row sits
-where Overview's does (`UnderTrailContext` drops the 12px a bare page adds, and
-the 40px a band would take is the top padding). There is no Close: Back to app,
-Esc and Back land alike. A session key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and
-closes Settings on its way. On close, `StudioFrame` gives focus back to what
-opened the studio, or to the studio's door when that is gone (the palette),
-unless focus already sits outside the studio (`restoreStudioOpener`). The
-exception is Home, which has no column to give. On Home, New workspace swaps
-the list for the form in place, and the app studios take the whole window:
-Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette
-opens there too.
+Every studio (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Settings,
+Changelog, the guide, Add workspace) renders in the shell's studio slot, which
+covers the content area only, beside the column, as its own sheet. The column
+never changes for a studio: it stays live in both sidebar states, so another
+door or a session row is one click away, and ⌘B and the sidebar toggle fold it
+on every page (`shellArrangement` takes no studio). **Settings is a page with
+its own scopes rail**: the 40px band holds `‹ Back to app` (with its Esc hint)
+and the crumb (`StudioTrail`), and below it `SettingsScopesLayout` draws a
+`StudioRailLayout` named Settings scopes (`placement="page"` beside the column,
+`chrome` on Home) with the fold control and `Search settings` in its first row,
+the groups or the matching settings under it, and the page as the detail
+(`data-settings-detail`). The scopes rail folds like every page rail
+(`goodboy:studio-rail-folded:settings:v1`); its folded strip keeps Show and a
+Search icon that opens the rail on the field. The Settings row in the column
+foot is lit while it is open. Back to app, Esc and Back land alike. A session
+key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and closes Settings on its way, and so
+does any column row. On close, `StudioFrame` gives focus back to what opened
+the studio, or to the studio's door when that is gone (the palette), unless
+focus already sits outside the studio (`restoreStudioOpener`). On Home, which
+has no column, New workspace swaps the list for the form in place, and the app
+studios take the whole window: Settings (its corner gear, ⌘, or ⌘/ for
+shortcuts) and the guide. The palette opens there too.
 Studios are not part of the breadcrumb IA. They exit on Esc, and only one is
-open at a time. There is no Close button: a studio beside the column leaves by
-its door or Esc, and a studio that replaces the column (Settings, Help, New
-workspace) shows `Back to app` with the Esc chip at the top left
-(`StudioBackButton`, `close: 'back'` in `studioMeta.ts`).
+open at a time. There is no Close button: a door page leaves by another door or
+Esc, and an app page (Settings, Help, New workspace) shows `Back to app` with
+the Esc chip at the top left of its band (`StudioBackButton`, `close: 'back'`
+in `studioMeta.ts`).
 
 - **An open studio is a history entry.** Opening a studio, or switching from
   one studio to another, pushes an entry over the page underneath
@@ -49,8 +46,7 @@ workspace) shows `Back to app` with the Esc chip at the top left
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Tasks to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle, Back to app; Settings in the default shell has no band at all,
-  so `hasBand` is off and its skeleton has no rail), the Esc layer and the motion: `studio-in` when
+  subtitle, Back to app), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
@@ -227,26 +223,27 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   edge as the only line. Tasks' and Notifications' filters are the same frame. Every page rail opens at
   288px (`standard`); the skeleton reads the same constant.
 - **A page rail folds, and folds itself when there is no room.** A page may pass
-  `onCollapsedChange`: the rail's first row then holds a fold control (tooltip
-  "Fold the rail" with ⌥⌘B), a folded rail leaves a 44px strip with "Show the
-  rail" at the same height (none while the pane is too narrow to dock,
-  `canUnfold`), and `useStudioRailFold` remembers the choice per surface
+  `onCollapsedChange`: the rail's first row then starts with a fold control
+  ("Hide <rail name>", ⌥⌘B, pressed while the rail shows), a folded rail leaves
+  a 44px strip with "Show <rail name>" at the same x and height (none while the
+  pane is too narrow to dock, `canUnfold`), plus any `foldedActions` the page
+  passes under it, and `useStudioRailFold` remembers the choice per surface
   (`goodboy:studio-rail-folded:<studio>:v1`). Chat, Terminal, the Guide, the
-  changelog, Settings in its studio frame and Notifications fold this way.
+  changelog, Settings and Notifications fold this way.
   **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
   on: each foldable column registers with `useInnerColumn` while its page
   shows (the session rail while no studio covers it, a page rail through
   `StudioRailLayout`), the key toggles the last one registered
   (`innerColumnStore.toggleCurrent`), the palette lists it under that
-  column's name (Fold the chat list, Show the session rail) and leaves it out
+  column's name (Hide chat list, Show settings scopes) and leaves it out
   on a page with none, where the key does nothing. Under a pane of 880px the rail
   folds without saving anything and docks again when the pane widens. A folded
   rail leaves the shared `FilterButton` (28px tall, the lines icon with the
-  count of active filters; docking the rail again is the Show the rail strip
-  at the rail edge or ⌥⌘B, never a header button) in the title row, opening the same facets in a popover. The search field of
+  count of active filters; docking the rail again is the Show strip at the
+  rail edge or ⌥⌘B, never a header button) in the title row, opening the same facets in a popover. The search field of
   Tasks moves into the title row with it.
-- **Every studio list resizes.** `StudioRailLayout` (Settings in the legacy
-  layout, Guide, Chat, Changelog, Bitbucket, Tasks, Notifications) drags from
+- **Every studio list resizes.** `StudioRailLayout` (Settings, Guide, Chat,
+  Changelog, Bitbucket, Tasks, Notifications) drags from
   its right edge between 220 and 420px (a page may pass `min` and `max`), step
   8px (32 with Shift) with the arrow keys, and goes
   back to its default (256 narrow, 288 standard) on a double click. Each studio
@@ -265,10 +262,9 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   back to General (`resolveSettingsFocus`). A link that names a page (a scope,
   a section, a provider or a tool) opens that page. `scope: 'home'` stays as
   the alias for "the last page" and `SettingsStudio` resolves it once, then
-  amends the history entry to the concrete page. The rail is the only index,
-  portaled into the column (`SettingsColumnNav`, `Back to app` first, then
-  `Search settings`, then the groups) in both sidebar states, or drawn beside
-  the page on Home: its three scopes (App, Providers, This workspace, with Integrations nested under it) come from `settingsDirectory`. Every row is one 28px
+  amends the history entry to the concrete page. The scopes rail is the only
+  index, drawn beside the page (its fold control and `Search settings` first,
+  then the groups): its three scopes (App, Providers, This workspace, with Integrations nested under it) come from `settingsDirectory`. Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
@@ -279,7 +275,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   the usage notice that used to close the Usage band). Every page is also a palette entry
   (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`, `Workspace settings: Models`), built from
   the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
-  column filters those same entries by name and former name, lists them in
+  rail (`SettingsSearchResults`) filters those same entries by name and former name, lists them in
   place of the groups, and opens the one picked on the same history entry; with
   no match it says `No settings match`. The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);

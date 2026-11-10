@@ -287,10 +287,9 @@ the snapshot is older than 15 seconds, and never beside another scan. The collap
 (no number) on those two doors, with the fact in the tooltip. Before any workspace exists the column keeps only its app
 half: Settings, the Goodboy line and the bug. The column is 240px by default and
 resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
-width resets once). Its first button or ⌘B folds it, on every screen, into the
-rail; the choice is saved and peek never touches it. Settings is the one
-exception: it opens at the column's width over a folded sidebar, and ⌘B waits
-until Back to app (see Studios).
+width resets once). The sidebar toggle or ⌘B folds it, on every screen,
+Settings included, into the rail; the choice is saved, only those two write it
+(`goodboy:sessions-sidebar-collapsed`), and peek and New session never touch it.
 
 **Header actions.** One grammar draws the actions of every page header and
 drawer header (`HeaderActions`): secondary controls, at most one secondary
@@ -354,15 +353,16 @@ hide animation or overlay can move it.
   (`FoldLayers`, [styling.md](../styling.md#the-window-grid)): the width eases, the
   words fade, and the 44px rail's icons sit on the open rows' lines.
 - **The main sidebar never folds by itself; a pane folds by its tier.** Only
-  its toggle folds the column: the one toggle sits in the top bar, left of Back
-  and Forward (`ColumnToggleButton` in `AppTopBar`, ⌘B), and no pane and no
-  window width folds it. `shellFoldsOf` (read through `useShellFolds`) reads the
+  its toggle folds the column: the one toggle is the first control of the top
+  bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⌘B),
+  and no pane, no page and no window width folds or unfolds it. `shellFoldsOf` (read through `useShellFolds`) reads the
   open pane's tier: a reader tier pane (720: a file, a diff, a document, New,
   the browser) folds the session rail to its 44px icons while it is open; a side tier pane
   (416: Explore, Context, Ask, Agents, Scripts, Terminal and the transcripts
-  Agents opens) folds nothing. The saved
-  choices are untouched, and the rail toggle opens a rail folded this way for
-  as long as the pane stays open. The session rail keeps its own toggle at the
+  Agents opens) folds nothing. A fold of this kind never writes a saved
+  choice (`useSessionRailFold`), and the rail toggle opens a rail folded this
+  way for as long as the pane stays open, also without saving; the saved fold
+  comes back when the pane closes. The session rail keeps its own toggle at the
   left of its top row.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
   work row, so it can hover over main without taking layout space. The studio
@@ -401,8 +401,13 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: workspace identity. It has a 200px limit and truncates, with the full
-  name in its tooltip. The sidebar toggle lives in the column, not here.
+- Left: the sidebar toggle, then the workspace identity. The toggle
+  (`ColumnToggleButton`, ⌘B, 28px like every top bar control) sits right of
+  the traffic lights, above the column it folds, and is the column's one
+  toggle; the column itself has no toggle row. It reads "Hide sidebar" while
+  the column is open and "Show sidebar" while it is the rail, and its
+  `aria-pressed` follows. The identity has a 200px limit and truncates, with
+  the full name in its tooltip.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the tooltip (`Back to Comments`,
   the session on a second line, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
@@ -430,8 +435,6 @@ covered.
   navigates to that session's Runs as a new history entry after the chat's own
   and fills the **Start a run** field (nothing starts until Start); Back returns
   to the same chat because `captureLocation` keeps `appStudio`.
-- Left of Back and Forward: the main sidebar toggle (`ColumnToggleButton`, ⌘B), the one
-  toggle of the column; the column itself has no toggle row.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
