@@ -326,7 +326,7 @@ The setup and Home scenes live in `scenes/onboarding/` and sit in one
 states, three tools states, two first session states),
 `onboarding-new-workspace-<state>-<theme>` for the one form,
 `onboarding-home-<state>-<theme>` (list, new, empty),
-`onboarding-setup-menu-<theme>` and `onboarding-brand-tile-<theme>`. The step
+and `onboarding-brand-tile-<theme>`. The step
 scenes share `wizardSceneSeed.ts` (Acme web, the plain Acme docs, four agent
 CLIs) and settle all motion, because a headless capture does not advance CSS
 motion. Two take params instead, for the guide figures, whose shots switch

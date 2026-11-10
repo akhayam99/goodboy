@@ -53,8 +53,11 @@ const TAB_TITLE: Readonly<Record<HelpTab, string>> = {
   whatsNew: NAMES.whatsNew,
 };
 
+const SPONSOR_ACCESSORY = <SponsorLink />;
+
 export const HelpStudio = ({ tab, onClose, onOpenScreen }: Props) => {
   const releases = useAppStore((state) => state.changelogReleases);
+  const openStudio = useAppStore((state) => state.openStudio);
   const switchStudio = useAppStore((state) => state.switchStudio);
   const [query, setQuery] = useState('');
   const [activeHit, setActiveHit] = useState(0);
@@ -75,7 +78,7 @@ export const HelpStudio = ({ tab, onClose, onOpenScreen }: Props) => {
     if (next === tab) {
       return;
     }
-    switchStudio({ studio: { kind: next === 'guide' ? 'guide' : 'changelog' } });
+    openStudio({ studio: { kind: next === 'guide' ? 'guide' : 'changelog' } });
   };
 
   useEffect(
@@ -148,7 +151,7 @@ export const HelpStudio = ({ tab, onClose, onOpenScreen }: Props) => {
       icon={tab === 'guide' ? CONCEPT_ICONS.guide : CONCEPT_ICONS.changelog}
       tone={tab === 'guide' ? CONCEPT_TONE.guide : CONCEPT_TONE.changelog}
       title={TAB_TITLE[tab]}
-      headerAccessory={<SponsorLink />}
+      headerAccessory={SPONSOR_ACCESSORY}
       onClose={onClose}
     >
       {() => {

@@ -29,7 +29,7 @@ const HelpScene = () => {
   }, []);
 
   return (
-    <FramedStudioScene kind="guide" place="link">
+    <FramedStudioScene kind="guide" place="link" columnPlace="help">
       <HelpStudio tab="guide" onClose={NOOP} onOpenScreen={NOOP} />
     </FramedStudioScene>
   );

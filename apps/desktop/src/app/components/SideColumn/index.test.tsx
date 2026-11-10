@@ -98,7 +98,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks New session, five door rows, one row of tool tiles, the sessions, then Settings and the Goodboy row, the toggle left to the top bar', () => {
+  it('stacks New session, five door rows, one row of tool tiles, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
     mountColumn();
     const nav = navLayer();
 

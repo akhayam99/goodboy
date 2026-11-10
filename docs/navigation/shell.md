@@ -560,12 +560,14 @@ and shows in mock scenes too. The update pill (`features/updater/components/Upda
 is soft, enters once and holds still. It is its own button beside the lockup and
 shows only the new version and a state icon; the state ("is ready", "did not
 install") lives in its tooltip and accessible name. The lockup drops to the dog
-mark when the line is too narrow for it (a container query on
-`[data-column-corner]`: under 13.5rem at rest, under 12.25rem with a pill), so the pill and the
-bug icon stay on one line at every column width; only a version too long for the
-row truncates. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
+mark when a pill sits beside it and the line is too narrow for both (a container
+query on `[data-column-corner]`, under 12.25rem), so the pill and the bug icon
+stay on one line at every column width; the pill truncates before the lockup
+does. At rest the lockup drops to the mark under 13.5rem, so the bug icon keeps
+its room, and above that only a version too long for the row truncates. The whole line is set in the meta size. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
 400px. The pill opens the update card. On the rail, which has no room for a
-pill, the mark carries the update dot, and a click opens Help on What's new,
+pill, the mark carries the update dot, and a click opens Help on What's new
+(also while the Guide is open),
 where the release that is the pending update carries the update verbs. The pinned column
 also owns the update arrival card and the restart when idle; a peeked column
 leaves both to it (`isPrimary`).

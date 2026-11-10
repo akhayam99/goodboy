@@ -155,4 +155,49 @@ describe('GoodboyChip on the rail', () => {
     expect(onOpenChangelog).toHaveBeenCalledOnce();
     expect(onOpenHelp).not.toHaveBeenCalled();
   });
+
+  it('opens What is new from the update dot while the Guide is open', () => {
+    useAppStore.setState({ updaterStatus: 'available', appStudio: { kind: 'guide' } });
+    const { onOpenHelp, onOpenChangelog } = renderChip({ variant: 'rail', isCurrent: true });
+
+    fireEvent.click(screen.getByTestId('goodboy-chip'));
+
+    expect(onOpenChangelog).toHaveBeenCalledOnce();
+    expect(onOpenHelp).not.toHaveBeenCalled();
+  });
+
+  it('does nothing from the update dot once What is new is open', () => {
+    useAppStore.setState({ updaterStatus: 'available', appStudio: { kind: 'changelog' } });
+    const { onOpenHelp, onOpenChangelog } = renderChip({ variant: 'rail', isCurrent: true });
+
+    fireEvent.click(screen.getByTestId('goodboy-chip'));
+
+    expect(onOpenChangelog).not.toHaveBeenCalled();
+    expect(onOpenHelp).not.toHaveBeenCalled();
+  });
+});
+
+describe('GoodboyChip sizing in the column', () => {
+  it('sets the whole line in the meta size, as the version and Beta read the same', () => {
+    renderChip();
+
+    expect(screen.getByRole('button', { name: DOOR_LABEL }).className).toContain('text-meta');
+  });
+
+  it('keeps the lockup whole beside the pill so the pill is what truncates', () => {
+    useAppStore.setState({ updaterStatus: 'available' });
+    renderChip();
+
+    expect(screen.getByTestId('goodboy-chip').className).toContain('shrink-0');
+  });
+
+  it('falls to the mark under 13.5rem at rest and keeps the full lockup above it', () => {
+    renderChip();
+
+    const chip = screen.getByRole('button', { name: DOOR_LABEL });
+    expect(chip.querySelector('[data-lockup-wide]')?.className).toContain('@max-[13.5rem]:hidden');
+    expect(chip.querySelector('[data-lockup-narrow]')?.className).toContain(
+      '@max-[13.5rem]:contents',
+    );
+  });
 });

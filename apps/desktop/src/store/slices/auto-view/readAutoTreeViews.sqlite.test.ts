@@ -156,6 +156,27 @@ describe('readAutoTreeViews', () => {
     expect(sameAutoTreeViews({ first: views, second: later })).toBe(false);
   });
 
+  it('sees a push result saved into the result of a settled delegation as a change', async () => {
+    const world = await makeAutoWorld();
+    await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'impl', role: 'implementer' })] }),
+    );
+    const publish = { mode: 'force', state: 'awaiting_confirm', branch: 'harborline/fix-ledger' };
+    await world.db.execute(
+      "UPDATE auto_delegations SET state = 'settled', outcome = 'completed', settled_at = ?, result_json = ?",
+      [world.clock.now(), JSON.stringify({ verified: { publish } })],
+    );
+    const before = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+
+    await world.db.execute(
+      "UPDATE auto_delegations SET result_json = json_set(result_json, '$.verified.publish.state', 'pushed')",
+      [],
+    );
+    const after = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+
+    expect(sameAutoTreeViews({ first: before, second: after })).toBe(false);
+  });
+
   it('reads an old refusal row without roles as a refusal of no named role', async () => {
     const world = await makeAutoWorld();
     await addOutboxRow({
