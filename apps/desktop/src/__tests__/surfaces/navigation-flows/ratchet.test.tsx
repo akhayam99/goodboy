@@ -12,7 +12,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { APP_SECTIONS } from '../../../features/settings/components/SettingsStudio/appSections';
 import { ALL_ROWS, ROW_FILES, ROW_SUFFIX, STUDIO_KINDS } from './allRows';
 import {
@@ -54,6 +54,7 @@ const SETTINGS_SCOPES = namesIn({
 const EXEMPT: Readonly<Record<string, string>> = {
   openWorkspace: 'focuses or opens another window, not a page in this one',
   openTerminal: 'adds a terminal tab to the dock, not a page',
+  openBrowserTab: 'saves the row of a browser tab the host opened, not a page',
   setActiveLens: 'internal to the navigation slice, the one door is navigate',
   openPalette: 'opens the palette overlay, every palette destination has its own row',
   openShortcutHelp: 'same page as the shortcuts settings row',
@@ -162,18 +163,21 @@ describe('navigation flow table ratchet', () => {
         .flat()
         .map((agent) => agent.name),
     );
-    const destinations = screen
-      .getAllByRole('option')
-      .map((option) => option.getAttribute('aria-label') ?? option.textContent ?? '')
-      .filter(
-        (label) =>
-          ![...sessionGoals, ...workspaceNames, ...agentNames].some((name) =>
-            label.startsWith(name),
-          ) &&
-          !/^Theme: (dark|light|system)$/.test(label) &&
-          !/^Use the (new|classic) session overview/.test(label),
-      )
-      .map((label) => `palette:${label.replace(/(Ctrl|⌘).*$/, '').trim()}`);
+    const destinationsNow = () =>
+      screen
+        .getAllByRole('option')
+        .map((option) => option.getAttribute('aria-label') ?? option.textContent ?? '')
+        .filter(
+          (label) =>
+            ![...sessionGoals, ...workspaceNames, ...agentNames].some((name) =>
+              label.startsWith(name),
+            ) &&
+            !/^Theme: (dark|light|system)$/.test(label) &&
+            !/^Use the (new|classic) session overview/.test(label),
+        )
+        .map((label) => `palette:${label.replace(/(Ctrl|⌘).*$/, '').trim()}`);
+    await waitFor(() => expect(destinationsNow().length).toBeGreaterThan(0), { timeout: 10_000 });
+    const destinations = destinationsNow();
 
     expect(crumbs.length).toBeGreaterThan(0);
     expect(destinations.length).toBeGreaterThan(0);

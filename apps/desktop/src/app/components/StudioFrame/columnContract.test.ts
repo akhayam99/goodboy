@@ -153,6 +153,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   workflow: ['features/workflows/components/WorkflowsPanel/index.tsx'],
   inbox: ['features/inbox/components/InboxStudio/index.tsx'],
   terminal: ['features/terminal/components/TerminalStudio/index.tsx'],
+  browser: ['features/browser/components/BrowserStudio/BrowserStudioBody.tsx'],
   impact: [
     'features/impact/components/ImpactStudio/OverviewPanel.tsx',
     'features/impact/components/ImpactStudio/FlowPanel.tsx',

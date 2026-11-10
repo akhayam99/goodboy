@@ -1,12 +1,17 @@
 pub(crate) mod commands;
 mod guard;
 mod host;
+mod lifecycle;
+mod profile;
 mod reason;
 mod registry;
+pub(crate) mod tab_rows;
 
 use tauri::ipc::Invoke;
 use tauri::{AppHandle, Manager, Runtime};
 
+pub(crate) use lifecycle::start as start_lifecycle;
+pub(crate) use profile::BrowserProfiles;
 pub(crate) use registry::BrowserRegistry;
 
 pub(crate) fn forget_window<R: Runtime>(app: &AppHandle<R>, window_label: &str) {

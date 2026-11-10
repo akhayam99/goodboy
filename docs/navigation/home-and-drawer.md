@@ -129,7 +129,8 @@ container as a card inset 8px on its right, top and bottom.
 **Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
 from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
-(the plan, report and wireframe document, an Explore file, a file diff) opens at
+(the plan, report and wireframe document, an Explore file, a file diff, the
+browser) opens at
 720px, resizes from 480 to `min(1000, room)` while it pushes and to
 `min(1000, page - 16)` over the page, and keeps its own
 `goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
@@ -221,7 +222,7 @@ open folders. A second window has its own store, so its own slot.
 history entry's focus; the chip is not.** A forward move (crumb, sidebar, palette, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
 Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
-Scripts, Agents, Terminal): a forward move that stays in its session keeps it open
+Scripts, Agents, Terminal, Browser): a forward move that stays in its session keeps it open
 (`keepToolDrawer` in `navigate`), so a chip in an answer changes the page beside
 it. A tool in the chip stays too: over a reader it comes back into the slot,
 under a tool it stays in the chip (`backAfterPlace` in `applyLocation`). Leaving
@@ -285,9 +286,11 @@ that fails puts it back.
 button pinned to the card's top right corner (a 28px target that does not move
 with the width of the action) and the action on its own row. Beside a pushing
 drawer the stack's right edge is the drawer card's left edge minus the 12px
-gutter (`toastRightOf({ mode, drawerWidth })`, measured from
+gutter (`toastRightOf({ mode, drawerWidth, hasNativeView })`, measured from
 `[data-drawer-card]` while a toast is on screen); over an overlay drawer it
-stays at the right edge and above the scrim. It still lifts above the Ask
+stays at the right edge and above the scrim, except over the browser pane,
+whose page draws above every toast, so the stack keeps left of it there too
+([browser.md](../browser.md#the-pane)). It still lifts above the Ask
 composer and the transcript reply field (`useToastLift`).
 
 **Floating surfaces are one surface.** Menus, popovers, the hover card, the

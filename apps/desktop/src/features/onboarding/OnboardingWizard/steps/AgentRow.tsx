@@ -94,6 +94,7 @@ export const AgentRow = ({
             disabled={isLocked}
             aria-label={`Sign in to ${row.label}`}
             onClick={onConnect}
+            data-demo-anchor="setup-agent-signin"
           >
             Sign in
           </Button>

@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
   windowReloadIntent: `${PREFIX}window-reload-intent`,
   rowActionsCue: `${PREFIX}row-actions-cue:v1`,
   pushFixes: `${PREFIX}push-fixes:v1`,
+  browserTabList: `${PREFIX}browser-tab-list:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {

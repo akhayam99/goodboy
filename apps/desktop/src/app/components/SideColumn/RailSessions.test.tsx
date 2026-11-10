@@ -43,6 +43,7 @@ const actions = (): ColumnActions => ({
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openTerminalStudio: vi.fn(),
+  openBrowserStudio: vi.fn(),
   openNewChat: vi.fn(),
   openMonitoring: vi.fn(),
   openImpact: vi.fn(),
@@ -212,6 +213,7 @@ describe('the open session on the rail', () => {
       'chat',
       'impact',
       'terminal',
+      'browser',
       'monitoring',
       'settings',
     ]);

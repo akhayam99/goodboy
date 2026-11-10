@@ -1,5 +1,7 @@
 import { Chip, FactCard, InteractiveRow, StatusDot, Tooltip, type Tone } from '@goodboy/ui';
-import { openUrl } from '../../../../shared/lib/editor';
+import { isOwnBrowserClick } from '../../../browser/isOwnBrowserClick';
+import { openFromElement } from '../../../browser/openFromElement';
+import { ownBrowserClickWord } from '../../../browser/ownBrowserClickWord';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { lastOutputLine } from '../../../../shared/utils/lastOutputLine';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -71,14 +73,24 @@ export const ServiceRow = ({
       </span>
       <span data-slot="script-meta" className={SCRIPT_ROW_CELL.meta}>
         {livePort === null ? null : (
-          <Chip
-            as="button"
-            kind="id"
-            tone="info"
-            label={`:${livePort}`}
-            ariaLabel={`Open localhost:${livePort}`}
-            onClick={() => void openUrl(`http://localhost:${livePort}`)}
-          />
+          <Tooltip
+            content={`Open localhost:${livePort} beside the session. ${ownBrowserClickWord()} opens your browser`}
+          >
+            <Chip
+              as="button"
+              kind="id"
+              tone="info"
+              label={`:${livePort}`}
+              ariaLabel={`Open localhost:${livePort}`}
+              onClick={(event) =>
+                void openFromElement({
+                  element: event.currentTarget,
+                  url: `http://localhost:${livePort}`,
+                  isOwnBrowser: isOwnBrowserClick({ event }),
+                })
+              }
+            />
+          </Tooltip>
         )}
         {livePort === null && expectedPort !== null && isPortBusy ? (
           <Tooltip content={portHolder}>

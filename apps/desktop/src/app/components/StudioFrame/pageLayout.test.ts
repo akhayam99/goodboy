@@ -24,6 +24,10 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     files: ['features/terminal/components/TerminalStudio/TerminalPageHeader.tsx'],
   },
   {
+    page: 'browser',
+    files: ['features/browser/components/BrowserStudio/BrowserPageHeader.tsx'],
+  },
+  {
     page: 'settings',
     files: [
       'features/settings/components/SettingsStudio/AppScopePanel.tsx',
@@ -109,6 +113,7 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   chat: 'measure',
   workflows: 'column',
   terminal: 'full',
+  browser: 'full',
   settings: 'column',
   monitoring: 'column',
   notifications: 'column',
@@ -142,6 +147,7 @@ const REVEAL_ROOT_OF: Readonly<Partial<Record<FramePage, string>>> = {
   board: 'features/workspace/components/StageBoard/SessionsHeader.tsx',
   chat: 'features/workspace-chat/components/ChatRoom/ChatHeader.tsx',
   terminal: 'features/terminal/components/TerminalStudio/TerminalRail.tsx',
+  browser: 'features/browser/components/BrowserStudio/BrowserPageRail.tsx',
 };
 
 const SIDE_SCROLLER_FILES: ReadonlyArray<string> = [
@@ -167,6 +173,7 @@ const SKELETON_BODY_OF: Readonly<Record<keyof typeof STUDIO_META, string>> = {
   notifications: 'rows',
   chat: 'room',
   terminal: 'terminal',
+  browser: 'rows',
   monitoring: 'rows',
 };
 

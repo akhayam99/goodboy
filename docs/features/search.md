@@ -8,8 +8,9 @@ Every place you go sits in one sidebar on the left. It looks the same on every s
 
 - **New session**
 - **Sessions** and **Tasks** (the work of your other tools)
-- **Workflows**, **Chat** and **Terminal**. Chat and Terminal each have a **+** to start one.
-- the quieter **Impact** and **Monitoring**
+- **Workflows** and **Chat**. Chat has a **+** to start one.
+- the quieter **Impact**
+- one row of tiles for **Terminal**, **Browser** and **Monitoring**, each with a count or a warning dot
 - your pinned and recent sessions
 - **Settings**
 
@@ -22,13 +23,15 @@ Click a session and its row stays selected. The session opens with its own rail 
 
 The **⋯** holds **Limit**, **Archive** and **Delete** with the session's other actions.
 
-At the right of the page, the session tools are a column of icons, each named with its shortcut on hover: **Explore**, **Context**, **Ask this session**, **Agents**, **Scripts** and **Terminal**. The active tool shows its name below its icon. A thin line separates reading from the other tools.
+At the right of the page, the session tools are a column of icons, each named with its shortcut on hover. Under **Read** sit **Explore**, **Context** and **Ask this session**. Under **Work** sit **Agents**, **Scripts**, **Terminal** and **Browser**. The active tool shows its name below its icon. A ring marks the tool waiting behind the drawer in the side slot.
 
 A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
 
 **⌘B** folds the sidebar into a slim bar of icons. **⌥⌘B** or the rail's own button folds the rail. It is the same key that folds the list beside Chat, Terminal, the Guide and Settings. Opening a drawer folds the rail when needed; closing it restores your fold. Folded, the sidebar draws only sessions that need you, run or have unread news, each as its state node; the rest wait behind a `+N` button. Branches show the request state icon. Each tooltip names the state.
 
 An amber dot on **Sessions** says sessions need you. A dot on **Monitoring** names the pinned port that is down.
+
+A drawer that opens in the side slot keeps the one it replaced. That one waits in a chip at the left of the drawer head. **Esc**, the close button or **⌘⇧W** brings it back with its state. A third open drops the oldest.
 
 ### Go anywhere
 

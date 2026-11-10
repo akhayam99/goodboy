@@ -1,9 +1,10 @@
 # Browser host
 
 > **Read this when** you are changing how Goodboy opens, places or closes a
-> web page inside a window, or what such a page may reach. **Not for** the
-> pane, its tabs list and its doors (they land with the pane), or the data
-> disclosure users read (`SECURITY.md`).
+> web page inside a window, what such a page may reach, the browser pane
+> beside a session, the Browser page or a door that opens one (server chips,
+> links, ⌘K, ⌘L), or what the browser may cost in commits and memory.
+> **Not for** the data disclosure users read (`SECURITY.md`).
 
 A browser tab is a native webview that Rust places inside a Goodboy window,
 next to the app's own page. Rust owns every tab. The window asks for a tab
@@ -49,10 +50,10 @@ address.
   session and window, and that window hears `browser://tab-opened` with the
   tab's facts (`openerId` names the tab that opened it). A session holds at
   most four hidden popups, those still opening included; past that a popup
-  is refused with `too-many-popups` in the log. Showing or closing one frees
-  its seat. Otherwise nothing opens.
-- Every download is refused. The ask lands with the pane, which is the first
-  part that can listen for it.
+  is refused with `too-many-popups` in the log. Showing a popup frees its
+  seat, and so does closing it, by hand, by the sweep or by the cap.
+  Otherwise nothing opens.
+- Every download is refused. Asking before a download is not built yet.
 
 Phase 0 spike S2 proved the wall: a page in a tab got none of six probe
 commands, and got all six once it navigated itself to the dev origin or to
@@ -63,19 +64,362 @@ commands, and got all six once it navigated itself to the dev origin or to
 - A tab's webview is a child of the window that asked for it, labelled
   `browse-<id>`. It is created when the tab opens, never at boot.
 - Only the owning window may drive a tab, and a `browse-` webview may drive
-  none. Listing a session's tabs and closing them reach only the calling
-  window's tabs.
-- Closing a session's tabs is one command, `browser_session_close`, for the
-  store to call when a session is archived. It tries every tab and answers
+  none. Listing a session's tabs reaches only the calling window's tabs.
+- Closing a session's tabs is one command, `browser_session_close`. The store
+  calls it when a session is archived or deleted, and it reaches the session's
+  tabs in every window, not only the caller's. It tries every tab and answers
   `{ closed, failed }`; a tab that failed to close stays listed, so calling
-  again closes the rest. A tab or popup that was still opening when the
-  session closed is refused with `session-closing` and its webview is
-  destroyed; the session takes new tabs again afterwards.
+  again closes the rest. A tab or popup that was still opening in any window
+  when the session closed is refused with `session-closing` and its webview is
+  destroyed, as is a popup whose opener closed first; the session takes new
+  tabs again afterwards. After the first pass the host looks for tabs that
+  slipped in and closes those too.
+  An open reads the session's generation before it waits for the lock and
+  checks it again once it holds it, before any other workspace's views are
+  closed.
 - A tab's address in a listing is read from the live webview, so a page that
   moves with `history.pushState` or a fragment shows its new address.
 - A destroyed window's tabs leave the registry with it.
-- The registry stamps when a tab was hidden. The sleep and close policy reads
-  that stamp; it is not built yet.
+
+## Lifecycle
+
+A tab is in one of three states, shown as `state` in its facts.
+
+- **live**: shown.
+- **asleep**: hidden, webview still alive. Hiding stamps `hiddenSinceMs`.
+- **closed**: the webview is destroyed. The registry keeps the tab's id, its
+  last address, its title and the last place it was given, so the tab is still
+  listed.
+
+Hiding frees nothing, because a hidden webview keeps its memory (spike S8).
+Only closing frees it, so two rules close a tab:
+
+- **Ten minutes hidden.** A background thread sweeps every 30 seconds and
+  closes each asleep tab hidden for 10 minutes or more. Showing the tab and
+  hiding it again restarts the clock.
+- **More than four live per window.** Opening, showing or hiding a tab that
+  leaves a window with more than four live webviews (live and asleep, popups
+  included) closes the asleep tab hidden the longest, then the next, until
+  four remain. Hiding a tab in a window of five shown tabs therefore closes
+  that tab at once.
+  A shown tab is never closed by either rule, so a window of more than four
+  shown tabs keeps them all.
+
+Showing a closed tab builds its webview again at the stored address and place,
+under the same id and the same `browse-` label, and it comes back live. The
+page loads again, so its scroll and form state are gone. A closed tab refuses
+navigate, reload, back and forward with `tab-closed`; show it first. Hiding a
+closed tab answers its facts as they are, placing one only stores the place,
+and closing one removes it from the registry.
+
+A tab that changes state (live to asleep and back, asleep to closed, closed to
+live) sends `browser://tab-state` with its facts to its own window, whoever
+asked for the change. A call that finds the tab already in that state sends
+nothing.
+
+Nothing is created at boot. The sweep thread starts with the app and owns no
+webview; the registry is empty until a window opens a tab. Every change of
+state runs under one lock in the registry, so a show never meets a sweep
+half way through destroying the same webview. That lock stays held across the
+calls that wait on the main thread (building, showing and closing a webview,
+and the event), so a slow webview build holds up the sweep and the other
+commands for as long as it takes. The lock is taken before the registry's own
+and no main-thread callback takes it, so this never deadlocks.
+
+A tab the cap or the sweep closed is marked closed first and its webview
+destroyed second, after its live address is stored. If the webview will not close, the tab goes back to asleep
+and the next sweep tries again. A popup opened over the cap can close itself;
+its facts, in the answer and in `browser://tab-opened`, then say `closed`.
+
+## Profiles
+
+A tab belongs to a workspace, and a workspace has its own browser profile:
+cookies, local storage and every other site datum. A sign-in in one workspace
+never shows in another. `browser_tab_open` takes the `workspaceId` the tab
+belongs to; a blank one is refused with `invalid-workspace`. A popup uses its
+opener's profile, and a closed tab comes back in the profile it left.
+
+The profile is named by the workspace id: the first 16 bytes of a SHA-256 over
+the id, written as 32 hex digits when it names a folder. The same workspace
+always gets the same profile, two workspaces never share one, and the name
+holds no character of the id, so no id can reach another path.
+
+- **macOS 14 and later**: the profile is a WebKit data store with that
+  identifier. WebKit keeps it; Goodboy sees no folder.
+- **macOS 13 and older**: WebKit has no named stores, and Tauri falls back to
+  the app's one store without saying so. Every workspace then shares one
+  profile, so opening a tab never closes another workspace's views.
+  `browser_profile_isolation` answers `shared` (and `perWorkspace`
+  everywhere else) so the pane can warn, and `browser_profile_clear` refuses
+  with `profile-shared`, because clearing would wipe every workspace.
+- **Windows and Linux**: the profile is a data directory, `browser/profiles/<name>`
+  in the app data folder, created before any view of another workspace is
+  closed, so a folder that cannot be made fails the open and leaves the running
+  workspace as it was. Tauri gives each distinct directory its own WebView2
+  environment or WebKit context, so the stores are separate in one window.
+  Linux needs no window of its own for this. The Linux pane limit (children do
+  not take their bounds) is about placement, and belongs to the pane.
+
+**One profile runs at a time, across every window.** Before a webview is
+built, opening a tab or bringing a closed one back first closes the live and
+asleep views of every other profile, under the same lock the lifecycle takes.
+Those tabs stay listed as `closed`, keep their id, address and place, and each
+window that owns one hears `browser://tab-state`. They come back lazily,
+through the same show path as a tab the sweep closed, and showing one closes
+the views of whichever profile was running. Cookies are not lost by a switch:
+they sit in the profile's store. If a view will not close, it is put back as it
+was, the open fails with `profile-busy`, and the views that did close stay
+closed.
+
+**Clearing a profile.** `browser_profile_clear` takes a `workspaceId`, refuses
+with `profile-live` while any of the workspace's tabs is live or asleep (switch
+to another workspace or close them first), and refuses with `profile-busy` when
+the same profile is already being cleared. While it runs, opening or showing a
+tab of that workspace is refused with `profile-busy`, so a view never opens on a
+store being wiped. On macOS it removes the WebKit store; on Windows and Linux it
+deletes the folder. A webview that is still shutting down can hold the store, so
+the clear tries up to three times, 400 ms apart, and only then fails with the
+platform's error; the user can try again. It answers `{ shouldRestart }`: Linux keeps its WebKit
+context for the life of the app, so cookies already in memory outlive the
+deleted folder and the answer is `true`; elsewhere it is `false`.
+
+Windows and Linux are written against the Tauri and wry sources and have not
+been run: the first run on each of them is the check (spike S3 was never run).
+
+## Tab rows
+
+The live webview is Rust's and is gone when the app quits. What outlives it is
+a row of `browser_tabs`: an id, an owner, the address, the title and a
+position. A row holds no cookie and no page content. The owner is a session or
+a project, never both: a tab a session holds is a session tab, and a tab pinned
+to a project is a pin that every session of the project shares.
+
+- Rust writes the table (`browser/tab_rows.rs`), one command per verb:
+  `browser_tab_rows_list`, `browser_tab_row_save`, `browser_tab_rows_reorder`,
+  `browser_tab_row_delete`, `browser_session_tab_rows_delete`,
+  `browser_tab_row_pin`, `browser_tab_row_unpin` and
+  `browser_stale_tab_sessions`. Every command names its owner and never reads
+  the current session.
+- A save takes the address through the same rule as a live tab, so a row never
+  holds a local address, and keeps the first 512 characters of the title. It
+  drops a username and password from the address and keeps the query and the
+  fragment, so a token in the query still lands in the row. A second save of an
+  id updates its address and title and keeps its position.
+  The position is the owner's largest plus one, and a reorder answers with the
+  rows in their new order.
+- A reorder must name exactly the owner's rows (`tab-rows-changed` otherwise),
+  and a row only moves between owners through pin and unpin
+  (`tab-row-owner` when the caller does not own it). Deleting a row that is
+  already gone succeeds, so a retry is safe.
+- The `browser` store slice (`store/slices/browser/`) keeps the rows as state:
+  `browserSessionTabs` and `browserActiveTab` per session, `browserProjectPins`
+  per project. An action changes state only after its command answered, and a
+  failure leaves the old rows and reports the error on the session or the
+  project's workspace. Writes of one session run one at a time in call order
+  and never wait on another session, a load that answers after a newer load, a
+  write or the session's eviction is dropped, and the active tab is state of this window only. A
+  reorder that fails with `tab-rows-changed`, because another window added or
+  closed a tab, reloads the session's rows.
+- Archiving or deleting a session calls `closeBrowserSessionTabs`. It closes
+  the session's live tabs in every window, then deletes the session's rows, and
+  drops the session's keys from state. A tab still opening in any window when
+  the close starts is refused. When a tab does not close, the rows stay, the
+  error shows, and the archive or delete still goes through. Pins are not the
+  session's rows, so they stay. The rows of a deleted session also go with it
+  (`ON DELETE CASCADE`).
+- Every boot runs `closeStaleBrowserTabs`. `browser_stale_tab_sessions` names
+  the sessions that are archived and still hold rows, and the sessions that are
+  archived or gone and still hold a live tab; each gets the same close. That is
+  the retry of a close that failed, because after the archive or delete nothing
+  else calls it.
+
+## The pane
+
+The Browser tool in a session's tools column opens the pane in the session's
+one side slot, as a tool drawer in the reader tier (`DRAWER_KINDS.browser`),
+so the session rail folds to icons while it is open. Pressing the tool again,
+the X or Esc on the pane closes it; Esc inside the page goes to the page.
+
+- **The address row** holds Back, Forward and Reload, the address, Pin to the
+  session's project (Unpin when a pin is shown), Open in your browser, Open as
+  page (see Moves) and Close. The first button toggles the tab list, and the pane remembers the
+  choice (`goodboy:browser-tab-list:v1`).
+- **The address rule** (`addressOf`): a full `http` or `https` address loads
+  as typed; a bare host loads on `https`, and on `http` when it is
+  `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
+  `0.0.0.0`. A name whose first label is `127` stays on `https`. Words,
+  a host with no dot and every other scheme are refused under the row. The
+  pane never sends text to a search engine.
+- **Tabs**: the strip shows the session's tabs, then the project pins with
+  their title and a pin mark, then New tab. The list shows This session and Pinned for the project, with
+  the note that tabs close when the session is archived. With no tab the pane
+  shows an empty state and focuses the address.
+- **Live tabs**: a row and a live webview are not the same thing. Opening a
+  page asks the host for a hidden webview, saves its row with the webview's id
+  and binds the two in `browserLiveTabs`. After a restart a row has no live
+  webview; showing it opens one at the saved address and binds the new id. A
+  pin shown in the pane is `browserShownPin`; pinning the shown tab keeps it on
+  screen. The pane reads the live address and title every 1.5 seconds and
+  saves a session tab's row whenever they differ from the stored row, a page
+  that comes back to an earlier address included. A failed save is tried
+  again at the next change.
+- **Placement**: one loop (`createNativePlacement`) owns show, hide and
+  `set_bounds`. Every frame, with a `ResizeObserver` as backup, it measures the
+  placeholder (`viewBoundsOf`) and wants the shown tab at that rect, or no tab
+  when the placeholder is gone, hidden or covered. It runs one host call at a
+  time toward the latest wanted state, shows the new tab before hiding the old
+  one, and drops a live id the host answers `tab-gone` for, so the next frame
+  reopens the row. A view whose hide failed stays on its list and is hidden
+  again on the next frame. A wake that answers after the wanted tab changed
+  is never placed or shown. A failed wake stops trying that tab until Reload
+  or a new address. Closing the pane hides the view.
+- **Overlays**: a menu, a popover, a dialog or the palette is any element that
+  matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). For a
+  popover the cover check measures the children of `[data-dropdown-portal]`,
+  because the wrapper itself has no height, and an element with no area never
+  counts. A tooltip (`[role="tooltip"]`) covers the view too, but stays out
+  of `OVERLAY_SELECTOR`, which also gates shortcuts. A studio page counts as
+  well (`[data-studio-slot]`), because it sits over the session without
+  unmounting the pane. While one intersects the placeholder, the view is
+  hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
+  the page (`toastRightOf`), and left of the Browser page's view, so they
+  never sit under a view.
+- **Writes** name the session and the tab. A state change waits for the host:
+  open saves the row after `browser_tab_open` answered, close calls
+  `browser_tab_close` (a `tab-gone` answer counts as closed) and then deletes the
+  row. A failure keeps the old state and shows the words under the address
+  row. An open that answers after a newer open, or after the pane closed, is
+  closed and never shown; when only its row save answers that late, the tab
+  is closed and its row deleted. A session close also forgets the session's
+  live views and its shown pin. A popup the host opened (`browser://tab-opened`)
+  becomes a session tab while the pane is open.
+
+## The page
+
+The Browser tile in the sidebar opens the Browser page, a studio kind of its
+own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
+
+- **The list** shows every tab of the workspace's sessions, one group per
+  session in the workspace's session order, then one group of pins per
+  project. It does not follow the sidebar's sort or filters, because a filter
+  can hide a session that holds a tab. A pin opens in the picked session when
+  it works on that project, else in the first session that does. The picked
+  session keeps its group with no tab, so New tab opens a page in it. With
+  pins and no session tab, the page opens on a session that hosts a pin. With
+  neither, the page says so.
+- **The view** is the pane's: the same address row (no list toggle and no
+  Close, the band and Esc close the page), the same model for the picked
+  session and the same placement loop and overlay rule. The pane of that
+  session stays mounted under the page and is covered by it, so its view hides.
+- **One view, one place**: a placement owns the live ids it showed, and hides
+  only a view it still owns, a hide tried again after a failure included. The
+  pane's late hide cannot take the view off the page. A pane that still holds
+  the view waits while the page owns it, and shows it again once the page
+  lets it go.
+- **The route** names the session and the tab. Picking a row amends it, and a
+  close or a new tab moves it to the tab now shown. A reload or ⌘R reads the
+  route back, so the page comes back on the same tab, not the first one. A
+  route with no session opens on the first session holding a tab, at its
+  first tab, and names that session.
+- **Back to the session**: the band's trail names the picked session, and
+  pressing it opens that session. Back beside the session, in the header,
+  also opens its pane on the tab (see Moves).
+- **The count** on the tile is the number of rows the page lists: the tabs of
+  the workspace's sessions plus the pins of their projects, named
+  `Browser, 3 tabs`. A tab counts whether or not its page is open. A
+  session's rows load when its pane or the page opens.
+
+## Moves
+
+A move never reloads the page: the same live webview, with the same id, gets
+new bounds or a new window. A form half typed and the scroll stay.
+
+- **Open as page** in the pane's address row opens the Browser page on the
+  session and the shown tab (`promoteBrowserTab`). The page's placement takes
+  the view through the owner rule above and places it at the page's rect; the
+  pane, now covered, lets it go.
+- **Back beside the session** in the page's header opens the session with its
+  browser pane (`demoteBrowserTab`). The page's placement hides the view and
+  lets it go, and the pane shows it at the pane's rect. The pane shows the tab
+  the page showed, because both read the session's shown tab in this window.
+- A host failure while the page places the view shows under the page's
+  address row, and the view stays with the pane, which shows it again on
+  Back beside the session. A page show that answers after the tab went back
+  is hidden again, and the pane takes the view.
+- **Another window**: moving a tab to another window comes later.
+
+## Doors
+
+A door opens a page in a session's browser. Every door names the session it
+sits in and the address, and one function opens it (`openInBrowser`).
+
+- **Where it opens**: in the session view the door opens the pane; on a page
+  over the session (the Terminal page) it opens the Browser page on that
+  session. A door with no session, such as a terminal on a plain folder,
+  opens your browser.
+- **Which tab**: a tab of the session already on the same address is shown.
+  A bare server address (`http://localhost:5173`) takes any tab on that
+  server. Otherwise a new tab opens. A host failure keeps the old tabs and
+  reports on the session. Every door that shows or opens a tab ends the New
+  tab draft explicitly (`endBrowserDraft` bumps `browserDraftEnds`, which the
+  pane watches), also when the tab it shows is
+  already the active one. A later door wins: a door request cancels an older
+  open still waiting on the host, so the tab the last click named is the one
+  shown. A tab picked in ⌘K shows that exact tab (`showBrowserTab`), never the
+  first tab on the same address.
+- **Server chips**: the port chip on a terminal tab strip and the live port
+  on a running Service open `http://localhost:<port>`.
+- **Links**: a web link in what is written in a session (a conversation
+  turn, a decision, an artifact) opens beside it. Those regions carry
+  `data-browser-links` inside the session's `data-browser-session`, and
+  `isBrowserLinkArea` checks both. A link anywhere else, such as an
+  integration, sign-in or connect guide in a drawer, opens your browser as
+  before, and so does a link outside a session. A GitHub commit link still
+  opens its diff. Chips and rows need only `data-browser-session`.
+- **The click rule**: a plain click opens the session's browser, ⌘-click
+  (Ctrl-click off macOS) opens your browser, on chips and links alike. The
+  ⌘-click listener runs after the page's own handlers and skips a click they
+  already handled, so an anchor with its own `onClick` opens your browser
+  once. No earlier rule covered web links; ⌘-click on a file path in a
+  terminal still opens your editor.
+- **Peek**: resting on or focusing a `localhost` link in a session shows a
+  card with the title of its tab (or the host), the address and what a click
+  does. The card never creates a tab, because every tab is a whole webview.
+- **⌘L** focuses the address row while the pane is on screen or the Browser
+  page is open. Elsewhere ⌘L stays Ask about this session, which held the
+  chord first (`browser.address` is scoped, so it wins only there). A page
+  that has focus keeps its keys, so ⌘L reaches the row only while Goodboy
+  has focus.
+- **⌘K** lists the browser tabs of the session the palette is scoped to (the
+  current session when it is not) and offers `Open <address>` first, beside
+  that same session, for an address with `http` or `https` or a localhost
+  name, or for a host with a port or a path. With no workspace open the entry
+  reads `In your browser` and opens your browser. A file name such as
+  `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
+  (`typedAddressOf`).
+
+## Performance
+
+The browser costs nothing until a tab opens, and then stays inside a budget.
+`features/browser/browserBudgets.ts` (`BROWSER_BUDGETS`) holds every number a
+test or a release checks.
+
+- **Never opened**: no `browser_*` host command, no frame request and no
+  store commit run before the first tab. The pane (`LazyBrowserPane`) and the
+  page (`renderStudio`) are lazy chunks, so the first bundle carries only the
+  host calls and the tab actions; `bundle-budget.json` stays as it is. A
+  webview is created only by `browser_tab_open`, never at boot.
+- **A tab opens, switches and closes** in a fixed number of store commits
+  (4, 1 and 1).
+- **The view moves** with one host call per frame at most, and none for a
+  frame where the placeholder did not move. A frame sets no React state and
+  writes no store key, so it commits nothing in the pane or the conversation
+  (the one write on the loop's path is unbinding a view the host lost). `sameBounds` drops a frame that did not move the view.
+- **Memory** is the engine's, not React's. A live tab costs 70 to 110 MB and
+  hidden tabs cost as much as shown ones on macOS, so only closing frees
+  memory. Four tabs stay under 450 MB over the no tab state. A person
+  measures it at each release (`docs/testing.md` → Manual release gate:
+  browser memory); the phase 0 numbers are in the plan's spike S8.
 
 ## Capabilities
 
@@ -107,15 +451,21 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 
 A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
-`window-gone`, `other-window`, `too-many-popups`, `session-closing`), never a sentence. The pane
-owns the words.
+`tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
+`session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
+`profile-shared`, `profile-unavailable`, `tab-row-gone`, `tab-row-owner`,
+`tab-rows-changed`, `tab-rows-failed`), never a sentence. The pane owns the
+words (`features/browser/browserFailureText.ts`).
 
 ## Under the hood
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  eleven `browser_*` commands; `registry.rs` holds the tabs and the popup
-  seats (`MAX_HIDDEN_POPUPS`). The native back and forward step lives in
+  thirteen `browser_*` commands; `profile.rs` holds the profile id, the
+  per-platform store, the switch and the clear; `registry.rs` holds the tabs, the popup seats
+  (`MAX_HIDDEN_POPUPS`) and the pure picks of which tabs to close;
+  `lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`), the
+  sweep, show, hide and place, and `browser://tab-state`. The native back and forward step lives in
   `src-tauri/src/platform/web_history.rs`, the only `unsafe` the host needs.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
@@ -126,16 +476,88 @@ owns the words.
 - `browser::tests` opens tabs on Tauri's mock runtime: the owning window, the
   refusals and their codes, an app command a `browse-` webview calls from a
   local address, the popup cap and its `browser://tab-opened` event, listing
-  and closing only the calling window's tabs, a retry after a partial
+  only the calling window's tabs, closing a session's tabs in every window
+  and refusing a late open in any of them, a retry after a partial
   session close, a destroyed window, and that no production code looks a
   window up through `webview_windows` or `get_webview_window`. The native
-  back step cannot run headless.
+  back step cannot run headless. The lifecycle tests pass the clock in: the
+  timer close at 10 minutes less a millisecond and at 10 minutes, the cap
+  close order, a closed tab shown again under its id and address, a shown tab
+  that no sweep closes, the events, and that starting the lifecycle at boot
+  leaves the registry and the webviews as they were. The profile tests pin a
+  stable and distinct id and folder per workspace, that a switch closes the
+  other workspace's views (in one window and across two) and announces it, that
+  a closed view returns under its id, that a popup keeps its opener's profile,
+  that a switch which cannot close one view restores it, closes the rest and
+  succeeds on a retry, that a shared store closes nothing, that a folder that
+  cannot be made leaves the running workspace alone, that a popup whose opener
+  was switched out fails without a view, and that a clear refuses with live
+  views, a second clear and a blank id, blocks opens while it runs and retries
+  a failing wipe up to three times. The macOS store and the Windows and Linux
+  folder are not reachable from the mock runtime.
+- The page lives in `features/browser/components/BrowserStudio/`, its groups in
+  `browserPageGroups.ts`, the route sync in `hooks/useBrowserStudioTab`.
+  The sessions come from `browserScopeSessions`, the count from
+  `browserTabCount`. `BrowserStudio/index.test.tsx` pins the grouping, a tab
+  of another session, the reload back to the named tab, a route with no
+  session, the overlay hide, that only the workspace's sessions load and
+  the count matches the rows, and the moves: Open as page and Back beside the
+  session keep one live id with no open, navigate or reload, a failed place
+  on the page shows its words and leaves the view to the pane, and a late page
+  show is hidden again; `createNativePlacement.test.ts` pins the owner
+  rule both ways and a failed hide retried after the page took the view;
+  `restoreLocation.test.ts` pins the route across a reload; the scenes are
+  `browser-page` and `browser-page-dark`.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants
   a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.
 - `add_child` needs the `unstable` feature of `tauri`, so `Cargo.toml` pins
   the minor (`~2.12`). A Tauri bump is its own pull request, with the spikes
   run again.
-- Until the pane lands, `scripts/check-tauri-commands.mjs` allowlists the
-  `browser_*` commands with a reason; the pane and the tabs slice remove
-  those lines as they call them.
+- `browser::tab_rows::tests` runs every row command against the migrated
+  schema: save and update, positions, reorder, ownership, pin and unpin, the
+  cascade with a session and a project, the address rule with its stripped
+  credentials, and the sessions whose tabs outlived them.
+  `store/slices/browser/index.test.ts` drives the slice through `storyHarness`
+  with a fake host: open, close, reorder, pin, a failure that keeps the old
+  rows, a late load, a second window loading the same rows, a reorder that
+  reloads on `tab-rows-changed`, a hung write in one session that does not hold
+  back another, the close on archive and the boot retry.
+  `archiveTask.test.ts` and `deleteTask.teardown.test.ts` pin that archive and
+  delete call it, and `archiveTask.test.ts` that no tab state is left for the
+  archived session.
+- The pane lives in `apps/desktop/src/features/browser/`: `browserHost.ts`
+  calls the live tab commands, `addressOf.ts` is the address rule,
+  `createNativePlacement.ts` and `hooks/useNativePlacement` own placement, and
+  `createOverlayWatch.ts` finds an overlay over the view.
+  `components/BrowserPane/index.test.tsx` drives it through `storyHarness` with a
+  fake host: open and show at the placeholder, refused words with no host
+  call, navigation and history by live id, a refused navigation, close before
+  the row delete, pin, an overlay over the view and one elsewhere, a late open
+  closed, a failed hide tried again, a late wake never shown, a failed wake
+  woken again by Reload, a revisited address saved, a failed save tried again
+  and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
+  the cover check for a popover with no role and for tooltips.
+  `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
+  and dark) draw a stand in where the native view goes.
+- The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
+  `isOwnBrowserClick.ts` is the click rule, `sessionOfElement.ts` reads
+  `data-browser-session`, `claimSessionLink.ts` takes a link from the shared
+  interceptor (`useCommitLinkInterceptor`), `hooks/useOwnBrowserLinkClicks`
+  takes ⌘-click and `components/BrowserLinkDoors` draws the peek. The ⌘K
+  entries come from `palette/hooks/useBrowserEntries` and `typedAddressOf.ts`.
+  `doors.test.tsx` pins each door with a fake host: a chip opening a new tab
+  and reusing one, ⌘-click and a session-less chip calling the system opener,
+  a service row, a door on a page, a host failure, links in and out of a
+  session, the peek, ⌘L beside Ask and the ⌘K entries.
+  `tabForAddress.test.ts` pins the tab match; the scenes are `browser-peek`
+  and `browser-peek-dark`.
+- The budgets: `features/browser/browserBudgets.ts` holds the numbers.
+  `browserBudgets.test.tsx` runs in the unit project and counts, never times:
+  no `browser_*` command and no frame request while no tab was opened, the
+  store commits to open, switch and close a tab, one host call per frame while
+  the view moves and none while it rests, no commit in React or the store in
+  either case, and that `docs/testing.md` still names the manual gate's
+  numbers. `viewBoundsOf.perf.test.ts` times one measure over a 500 row page
+  with open menus in the perf project. The memory numbers are checked by hand
+  at each release (`docs/testing.md` → Manual release gate: browser memory).

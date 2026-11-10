@@ -12,7 +12,7 @@ export type SessionTool = {
   readonly icon: LucideIcon;
   readonly label: string;
   readonly fullLabel?: string;
-  readonly shortcut: ShortcutId;
+  readonly shortcut?: ShortcutId;
 };
 
 export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
@@ -58,5 +58,11 @@ export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
     icon: CONCEPT_ICONS.terminal,
     label: 'Terminal',
     shortcut: 'session.terminal',
+  },
+  {
+    pane: 'browser',
+    group: 'work',
+    icon: CONCEPT_ICONS.browser,
+    label: 'Browser',
   },
 ];

@@ -108,6 +108,30 @@ describe('the rest of a reload', () => {
     });
   });
 
+  it('comes back to the Browser page on the tab it showed, after the tab was picked on the page', async () => {
+    const before = restoreTestStore();
+    before.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    before.getState().switchStudio({ studio: { kind: 'browser', sessionId: S1, tabId: null } });
+    before
+      .getState()
+      .amendStudio({ studio: { kind: 'browser', sessionId: S1, tabId: 'tab-checkout' } });
+    const saved = parseLocation({
+      value: JSON.parse(JSON.stringify(captureWindowLocation({ state: before.getState() }))),
+    });
+
+    const after = restoreTestStore();
+    await after.getState().restoreLocation({ location: saved! });
+
+    expect(after.getState().appStudio).toEqual({
+      kind: 'browser',
+      sessionId: S1,
+      tabId: 'tab-checkout',
+    });
+    before.getState().back();
+    expect(before.getState().appStudio).toBeNull();
+    expect(before.getState().currentSessionId).toBe(S1);
+  });
+
   it('brings Back to the Runs row the page was left from', () => {
     const store = restoreTestStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });

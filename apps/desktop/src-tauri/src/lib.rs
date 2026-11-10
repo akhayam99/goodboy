@@ -268,6 +268,14 @@ pub fn run() {
             use tauri::Manager;
             logging::init(app.handle());
             query_bridge::start(app.handle().clone());
+            app.manage(match app_paths::data_dir() {
+                Ok(dir) => browser::BrowserProfiles::under(dir),
+                Err(error) => {
+                    log::warn!("[browser] profile_dir_unavailable reason={error}");
+                    browser::BrowserProfiles::unavailable()
+                }
+            });
+            browser::start_lifecycle(app.handle().clone());
             if !cfg!(debug_assertions) {
                 window_heartbeat::start(
                     app.handle().clone(),
@@ -741,6 +749,8 @@ pub fn run() {
             slack::slack_post_reply,
             slack::slack_add_reaction,
             qa_preview::qa_deciding_workflow_runs,
+            browser::commands::browser_profile_clear,
+            browser::commands::browser_profile_isolation,
             browser::commands::browser_tab_open,
             browser::commands::browser_tab_place,
             browser::commands::browser_tab_show,
@@ -752,6 +762,14 @@ pub fn run() {
             browser::commands::browser_tab_close,
             browser::commands::browser_tab_list,
             browser::commands::browser_session_close,
+            browser::tab_rows::browser_tab_rows_list,
+            browser::tab_rows::browser_tab_row_save,
+            browser::tab_rows::browser_tab_rows_reorder,
+            browser::tab_rows::browser_tab_row_delete,
+            browser::tab_rows::browser_session_tab_rows_delete,
+            browser::tab_rows::browser_stale_tab_sessions,
+            browser::tab_rows::browser_tab_row_pin,
+            browser::tab_rows::browser_tab_row_unpin,
         ]))
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

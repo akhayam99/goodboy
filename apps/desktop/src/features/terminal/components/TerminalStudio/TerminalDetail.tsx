@@ -54,6 +54,7 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
         onRename={model.renameTab}
         onNew={model.openDefault}
         isShortcutEnabled={isActive}
+        sessionId={worktree.sessionId}
         folderAction={
           <ChangeFolderPicker
             targets={model.targets}

@@ -3,6 +3,7 @@ import type { Session, Workspace } from '@goodboy/types';
 import { DeleteSessionOverlay } from './DeleteSessionOverlay';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import { WindowCloseSheet } from '../../../features/workspace/components/WindowCloseSheet';
+import { BrowserLinkDoors } from '../../../features/browser/components/BrowserLinkDoors';
 import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
 import { lazyNamed } from '../../../shared/lib/lazyNamed';
@@ -87,6 +88,7 @@ export const AppOverlayRouter = ({
       ) : null}
       <OnboardingWizard isMainWindow={isInMainWindow} />
       <WindowCloseSheet />
+      <BrowserLinkDoors />
     </Suspense>
   );
 };

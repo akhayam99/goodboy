@@ -26,6 +26,7 @@ export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
     shortcutId: 'terminal.studio',
     isTool: true,
   },
+  { id: 'browser', label: 'Browser', icon: CONCEPT_ICONS.browser, isTool: true },
   { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring, isTool: true },
 ];
 
@@ -43,6 +44,7 @@ export type ColumnActions = {
   readonly openChat: () => void;
   readonly openWorkflows: () => void;
   readonly openTerminalStudio: () => void;
+  readonly openBrowserStudio: () => void;
   readonly openNewChat: () => void;
   readonly openMonitoring: () => void;
   readonly openImpact: () => void;
@@ -73,6 +75,9 @@ export const openColumnDoor = ({ id, actions }: OpenDoorParams): void => {
       return;
     case 'terminal':
       actions.openTerminalStudio();
+      return;
+    case 'browser':
+      actions.openBrowserStudio();
       return;
     case 'monitoring':
       actions.openMonitoring();

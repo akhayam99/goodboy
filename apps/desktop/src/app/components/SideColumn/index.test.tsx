@@ -34,6 +34,7 @@ const actions = (): ColumnActions => ({
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openTerminalStudio: vi.fn(),
+  openBrowserStudio: vi.fn(),
   openNewChat: vi.fn(),
   openMonitoring: vi.fn(),
   openImpact: vi.fn(),
@@ -116,6 +117,7 @@ describe('SideColumn', () => {
       'chat',
       'impact',
       'terminal',
+      'browser',
       'monitoring',
       'settings',
     ]);
@@ -128,7 +130,7 @@ describe('SideColumn', () => {
       Array.from(nav.querySelectorAll('[data-column-tiles] [data-column-tile]')).map((tile) =>
         tile.getAttribute('data-column-tile'),
       ),
-    ).toEqual(['terminal', 'monitoring']);
+    ).toEqual(['terminal', 'browser', 'monitoring']);
     expect(nav.querySelector('[data-column-sessions]')).not.toBeNull();
     const foot = nav.querySelector('[data-column-foot]') as HTMLElement;
     expect(within(foot).getByRole('button', { name: 'Settings' })).toBeDefined();
@@ -159,14 +161,21 @@ describe('SideColumn', () => {
     expect(screen.queryByRole('button', { name: 'New terminal' })).toBeNull();
   });
 
-  it('has a Monitoring tile after Terminal that opens Monitoring', () => {
+  it('has Browser and Monitoring tiles after Terminal that open their pages', () => {
     const doors = actions();
     mountColumn({ doors });
 
+    fireEvent.click(screen.getByRole('button', { name: /^Browser/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Monitoring/ }));
 
+    expect(doors.openBrowserStudio).toHaveBeenCalledOnce();
     expect(doors.openMonitoring).toHaveBeenCalledOnce();
-    expect(doorNames(navLayer()).slice(-3)).toEqual(['terminal', 'monitoring', 'settings']);
+    expect(doorNames(navLayer()).slice(-4)).toEqual([
+      'terminal',
+      'browser',
+      'monitoring',
+      'settings',
+    ]);
   });
 
   it('names the pinned port that is down on the Monitoring door, with the warning dot', () => {
@@ -205,7 +214,7 @@ describe('SideColumn', () => {
     const rows = Array.from(nav.querySelectorAll<HTMLElement>('[data-column-door-row]'));
 
     expect(rows.map((row) => row.getAttribute('data-column-door-row'))).toEqual(
-      doorNames(nav).filter((id) => id !== 'terminal' && id !== 'monitoring'),
+      doorNames(nav).filter((id) => id !== 'terminal' && id !== 'browser' && id !== 'monitoring'),
     );
     expect(
       nav.querySelector('[data-column-door-row="chat"] [data-door-create="chat"]'),
@@ -219,6 +228,7 @@ describe('SideColumn', () => {
     ['chat', ['chat']],
     ['workflows', ['workflows']],
     ['terminal', ['terminal']],
+    ['browser', ['browser']],
     ['monitoring', ['monitoring']],
     ['settings', ['settings']],
     ['new', []],
@@ -476,7 +486,7 @@ describe('ColumnRail', () => {
     expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 
-  it('keeps every door as an icon at 44px: New, the seven doors, then Settings, the bug and the mark', () => {
+  it('keeps every door as an icon at 44px: New, the eight doors, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -490,6 +500,7 @@ describe('ColumnRail', () => {
       'chat',
       'impact',
       'terminal',
+      'browser',
       'monitoring',
       'settings',
     ]);

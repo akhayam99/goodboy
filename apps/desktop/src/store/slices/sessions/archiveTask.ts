@@ -63,6 +63,8 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       .catch(() => undefined);
     await get().recordSessionEvent({ sessionId, kind: 'session_archived' });
 
+    await get().closeBrowserSessionTabs({ sessionId });
+
     await get()
       .cleanupSessionMounts({ sessionId, reason: 'archive' })
       .catch(() => undefined);

@@ -1,0 +1,25 @@
+import type { ShortcutScope } from './registry';
+
+export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
+  list: 'In the Tasks and Notifications lists',
+  selection: 'In a list with checkboxes',
+  review: 'On the Comments tab',
+  commits: 'On the Commits tab',
+  pullRequest: 'On the Pull request tab',
+  diff: 'On the Changes tab',
+  terminal: 'In the terminal',
+  composer: 'Where a chat composer is open',
+  ask: 'In the Ask panel',
+  chatPage: 'On the Chat page',
+  terminalPage: 'On the Terminal page and the terminal drawer',
+  home: 'On Home, where no workspace is open',
+  find: 'After a search in the view',
+  overview: 'On a session overview',
+  row: 'On a focused row',
+  activityRow: 'On an activity row',
+  scripts: 'On the Scripts page',
+  workspace: 'With a workspace open',
+  codeSession: 'In a session with a branch',
+  browser: 'In the browser pane and on the Browser page',
+  overlay: 'In a dialog or a preview',
+};
