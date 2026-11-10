@@ -25,6 +25,10 @@ const MODEL_PICKER = /^(Model routing|Model for this chat|Model for Ask|Model): 
 
 type SceneName = keyof typeof U37_COMPOSER_SCENES;
 
+const SCENE_NAMES = Object.keys(U37_COMPOSER_SCENES).filter(
+  (name): name is SceneName => name in U37_COMPOSER_SCENES,
+);
+
 beforeAll(async () => {
   await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
@@ -68,7 +72,7 @@ describe('the u37 composer scenes', () => {
     }
   });
 
-  it.each(Object.keys(U37_COMPOSER_SCENES) as ReadonlyArray<SceneName>)(
+  it.each(SCENE_NAMES)(
     '%s draws a composer with its model picker in the footer',
     async (name) => {
       await mount(name);
