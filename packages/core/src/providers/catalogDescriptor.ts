@@ -5,11 +5,12 @@ type Params = {
   readonly model: CatalogModel;
 };
 
-const THINKER_ONLY_KEYS: ReadonlySet<string> = new Set(['fable-5', 'fable-5.1']);
+const THINKER_ONLY_KEYS: ReadonlySet<string> = new Set(['fable-5', 'fable-5.1', 'fable-5.2']);
 
 export const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'opus-5.5': 88,
   'opus-5': 85,
+  'fable-5.2': 96,
   'fable-5.1': 95,
   'fable-5': 90,
   'opus-4.8': 80,

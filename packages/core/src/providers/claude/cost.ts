@@ -6,6 +6,11 @@ const FABLE_PRICE: ModelPrice = {
   outputPerMtok: 50,
   cachedInputPerMtok: 1,
 };
+const FABLE_52_PRICE: ModelPrice = {
+  inputPerMtok: 8,
+  outputPerMtok: 40,
+  cachedInputPerMtok: 0.2,
+};
 const FABLE_51_PRICE: ModelPrice = {
   inputPerMtok: 10,
   outputPerMtok: 50,
@@ -49,6 +54,7 @@ const HAIKU_55_PRICE: ModelPrice = {
 };
 
 export const CLAUDE_PRICES: Record<string, ModelPrice> = {
+  'claude-fable-5-2': FABLE_52_PRICE,
   'claude-fable-5-1': FABLE_51_PRICE,
   'claude-fable-5': FABLE_PRICE,
   'claude-opus-5-5': OPUS_55_PRICE,
