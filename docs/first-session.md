@@ -11,7 +11,7 @@ Go from install to a merged pull request in one session. The steps use Harborlin
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-light.webp" alt="The Workspace step of setup with a drop area for a folder">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### 2. Write the ask
 
@@ -26,7 +26,7 @@ The Board shows every session in lanes: **Building**, **Running**, **Needs you**
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds four sessions, each with a question waiting">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### 4. Review in place
 

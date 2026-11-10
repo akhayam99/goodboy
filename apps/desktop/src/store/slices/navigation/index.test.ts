@@ -879,6 +879,25 @@ describe('navigation slice', () => {
     expect(dropped.entries.map((entry) => locationKey(entry))).toEqual(['board', `s/${S2}`]);
     expect(dropped.index).toBe(1);
   });
+
+  it('clears the tool of an evicted session from the entries it keeps', () => {
+    const browser: DrawerRequest = { kind: 'browser', sessionId: S1, payload: null };
+    const board = {
+      workspaceId: WS,
+      place: BOARD_PLACE,
+      studio: null,
+      focus: { drawer: browser, scroll: {} },
+    };
+    const s2 = {
+      workspaceId: WS,
+      place: sessionPlace({ sessionId: S2 }),
+      studio: null,
+      focus: EMPTY,
+    };
+    const dropped = dropSession({ stack: { entries: [board, s2], index: 1 }, sessionId: S1 });
+    expect(dropped.entries[0]?.focus.drawer).toBeNull();
+    expect(dropped.entries[1]).toBe(s2);
+  });
 });
 
 const DRAFTS: DrawerRequest = {

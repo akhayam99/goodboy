@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import { brandId, type SessionId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 const { platform } = vi.hoisted(() => {
   const platform: { current: 'darwin' | 'linux' } = { current: 'darwin' };
@@ -291,12 +291,12 @@ describe('App lens shortcuts off darwin', () => {
     });
   });
 
-  it('reloads on ctrl', () => {
+  it('reloads on ctrl', async () => {
     render(<App />);
 
     press({ code: 'KeyR', key: 'r', ctrlKey: true });
 
-    expect(reload).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
   });
 
   it('leaves the command key inert, so nothing double-fires', () => {
@@ -505,12 +505,12 @@ describe('App lens shortcuts on darwin', () => {
     });
   });
 
-  it('reloads on the plain reload combo', () => {
+  it('reloads on the plain reload combo', async () => {
     render(<App />);
 
     press({ code: 'KeyR', key: 'r', metaKey: true });
 
-    expect(reload).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
   });
 
   it('does not reload when the Resolve lens combo fires', () => {

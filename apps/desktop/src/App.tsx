@@ -41,7 +41,7 @@ import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useHiddenWindowPause } from './shared/hooks/useHiddenWindowPause';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useProviderLimitsProbe } from './shared/hooks/useProviderLimitsProbe';
-import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
+import { useBrowserWindowShortcuts } from './features/browser/hooks/useBrowserWindowShortcuts';
 import { useKeepFullScreenOnEscape } from './shared/hooks/useKeepFullScreenOnEscape';
 import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
@@ -154,7 +154,7 @@ export const App = () => {
   useWindowPresence();
   useViewedOnReturn();
   useWindowLayout();
-  useWindowShortcuts();
+  useBrowserWindowShortcuts();
   useArtifactMirror({ isReady: hydrated });
   useMonitoringSignalRefresh({ isReady: hydrated });
   useTitlebarInset();

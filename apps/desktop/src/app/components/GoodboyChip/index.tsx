@@ -19,7 +19,6 @@ type Props = {
   readonly isCurrent: boolean;
   readonly variant?: GoodboyChipVariant;
   readonly isPrimary?: boolean;
-  readonly isCurrent?: boolean;
 };
 
 const DOOR_LABEL = `Goodboy, ${NAMES.help.toLowerCase()}`;
@@ -36,7 +35,6 @@ export const GoodboyChip = ({
   isCurrent,
   variant = 'column',
   isPrimary = true,
-  isCurrent = false,
 }: Props) => {
   const update = useUpdateCardState();
   const version = useInstalledVersion();

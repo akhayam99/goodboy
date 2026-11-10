@@ -731,7 +731,11 @@ or a switch. It says "Loading the demo"; a beat has no label of its own.
 The frame the next step needs is loaded in advance (`preloadBeat` in
 `useBeatPlayer`, from `nextBeatIndex` of `useDemoHints`), so a frame change after
 a result is a swap. Hovering, focusing or pressing an open group row preloads
-that group's opening frame instead, and a finished group preloads the next one.
+that group's opening frame instead. Once the first step of a group is
+credited, the next group's first frame takes the one preload slot (after the
+next beat of the same group), so it has the whole group to boot before Next.
+In the demo the Goodboy menu never opens itself after the first task, the chip
+stays at rest and the menu holds no setup checklist (`isDirectedScene`).
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
 answer, keeps the unsent draft and streams a short acknowledgment.
 

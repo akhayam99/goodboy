@@ -1,5 +1,6 @@
 import type { AppState } from '../../types';
 import type { Place } from '../navigation/types';
+import { isWorkspaceTool } from './isWorkspaceTool';
 import { keptTool } from './keptTool';
 import { sharesSlot } from './sharesSlot';
 import { slotKey } from './slotKey';
@@ -23,7 +24,8 @@ export const backAfterPlace = ({ state, place, drawer }: Params): OpenDrawer | n
         (kept) =>
           kept !== null &&
           sharesSlot({ top: drawer, back: kept }) &&
-          slotKey({ content: kept }) !== slotKey({ content: drawer }),
+          slotKey({ content: kept }) !== slotKey({ content: drawer }) &&
+          !(isWorkspaceTool({ content: drawer }) && kept.kind === drawer.kind),
       ) ?? null
   );
 };

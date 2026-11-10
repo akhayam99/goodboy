@@ -34,14 +34,14 @@ A session nobody touched for three days stays where it is and fades. Rest the po
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="760" alt="The Northwind Sessions list in one-line rows with a state sign, Show 10 more, and a card over the open session Fix webhook retries">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Sessions options menu open in the left column of the Northwind workspace, with Status, Project, Archive with Show archived, Sort set to Needs you first, Alphabetical, Last activity and Created, and Group set to None, PR state, Stage and Project">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 The Sessions options menu ends with **Mark all as read**, which clears every reply you have not opened and is off when there is none. The session you are looking at counts as read, so **Mark as unread** is not offered on it while its last agent is the one on screen.
 
@@ -58,7 +58,7 @@ Know what runs from any screen. The chip in the top bar counts the sessions and 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-light.webp" alt="The top bar chip 2 sessions need you, 2 running opened into the panel Now in Harborline over the Board: Needs you 2 with Warn merchants before a payout hold and Fix the rounding drift in the settlement export, Running 2 with Speed up the payout export for large merchants and Nightly reconciliation before the Monday close, and Open Monitoring">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Notifications
 
@@ -71,7 +71,7 @@ Leave agents working and look away. While no Goodboy window is in front, the app
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-light.webp" alt="The Notifications page for Harborline filtered on Needs action: Session reached 80% of its limit, Handoff degraded and 1 session folder left on disk, with a More notification actions menu holding Mark all read and Delete all, and a left column of views, severity, source and workspace filters">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Open in new window
 

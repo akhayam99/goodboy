@@ -280,7 +280,12 @@ it; Esc inside the page goes to the page.
   reopens the row. A view whose hide failed stays on its list and is hidden
   again on the next frame. A wake that answers after the wanted tab changed
   is never placed or shown. A failed wake stops trying that tab until Reload
-  or a new address. Closing the pane hides the view.
+  or a new address. Closing the pane hides the view. A pane that goes away
+  while a host call still runs, or whose last hide failed, tries the hide
+  again a few times after it is gone (`STOP_RETRIES`), because no frame will
+  ask again. Before ⌘R reloads the window, every view a placement still owns
+  is hidden (`hideOwnedViews`, capped wait): the reloaded page no longer knows
+  their ids, so a shown view would stay painted with no pane around it.
 - **Overlays**: a menu, a popover, a dialog or Search or run is any element that
   matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). For a
   popover the cover check measures the children of `[data-dropdown-portal]`,
@@ -530,8 +535,11 @@ words (`features/browser/browserFailureText.ts`).
   keep one live id with no open, navigate or reload, a failed place
   on the page shows its words and leaves the view to the pane, and a late page
   show is hidden again; `createNativePlacement.test.ts` pins the owner
-  rule both ways and a failed hide retried after the page took the view;
-  `restoreLocation.test.ts` pins the route across a reload; the scenes are
+  rule both ways, a failed hide retried after the page took the view, the
+  hide after a pane left mid call or after a failed hide, and the hide before
+  a reload; `leaveWithLiveTab.test.tsx` mounts `ux39-p11-browser-session` and
+  checks that the view stays in the visible dock or is hidden when Chat or
+  Settings opens and when the dock closes; `restoreLocation.test.ts` pins the route across a reload; the scenes are
   `browser-page` and `browser-page-dark`.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants

@@ -678,7 +678,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
@@ -731,7 +731,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.whatsNew,
-        desc: 'Release notes in the Help window. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
+        desc: 'Release notes in the second tab of Help, beside the Guide. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
       },
       {
         term: 'Report a bug',

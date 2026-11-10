@@ -11,7 +11,7 @@ See where each task stands without moving cards around. Six lanes, **building**,
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with its sessions in six lanes: Building 3, Running 2, Needs you 4 with a question waiting on each card, In review 2 with #318 and #90, Done 2 with #198 and #205, and Archived 2">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Done and Archived lanes
 
@@ -23,10 +23,10 @@ Read a task at a glance: its title on two lines, its project in gray, and one si
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-light.webp" width="572" alt="Four session cards: Warn merchants before a payout hold in notify-relay and Fix the rounding drift in the settlement export in ledger-core, each with an open question mark at the right, and Stop retried webhooks posting a second credit in payments-api with pull request #318 and Reconcile the settlement export in ledger-core with pull request #90, each with its pull request in green">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-light.webp" width="572" alt="Four session cards: Warn merchants before a payout hold in notify-relay and Fix the rounding drift in the settlement export in ledger-core, each with a question mark and 1 question for you, and Stop retried webhooks posting a second credit in payments-api with pull request #318 and Reconcile the settlement export against the ledger snapshot in ledger-core with pull request #90">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Bulk select
 
