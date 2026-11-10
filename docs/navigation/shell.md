@@ -628,7 +628,7 @@ page on the `guideChapter` reader frame, with Previous and Next; the Help search
 opens the first hit and flashes its point, Escape clears it. The chapter
 "Listens" holds one table of prefixes (`PrefixTable`, read from
 `quick-actions/grammar.ts`): `$` means Scripts in the palette and the composer. The chapter
-"Sidebar and session rail" restates this shell in `guideChapters.ts`, and
+"Sidebar and session pages" restates this shell in `guideChapters.ts`, and
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
 registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
 `sessionNodeOf`, so a new mark appears there without a second table. The addresses live in

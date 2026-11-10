@@ -17,11 +17,12 @@ import { sessionMenuOf } from './sessionMenuOf';
 type Props = {
   readonly session: Session;
   readonly controls: ActionControls;
+  readonly isFolded?: boolean;
 };
 
 const PIN_IDS: ReadonlySet<string> = new Set(['session.pin', 'session.unpin']);
 
-export const SessionLevelActions = ({ session, controls }: Props) => {
+export const SessionLevelActions = ({ session, controls, isFolded = false }: Props) => {
   const sessionId = session.id;
   const refresh = useSessionRefresh();
   const isRefreshing = useAppStore((state) => state.sessionSyncing[sessionId] === true);
@@ -56,6 +57,7 @@ export const SessionLevelActions = ({ session, controls }: Props) => {
           target={target}
           label="More session actions"
           size="control"
+          side={isFolded ? 'right' : 'bottom'}
           only={only}
           relabel={relabel}
           onArm={({ action }) => controls.trigger({ actionId: action.id })}
@@ -63,7 +65,7 @@ export const SessionLevelActions = ({ session, controls }: Props) => {
       )}
     />
   );
-  if (session.archivedAt != null) {
+  if (isFolded || session.archivedAt != null) {
     return (
       <div data-session-actions="" className="flex shrink-0 items-center gap-1">
         {menu}

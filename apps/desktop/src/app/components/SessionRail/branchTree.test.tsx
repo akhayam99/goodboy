@@ -168,7 +168,7 @@ const rowButton = (project: string, name: RegExp): HTMLElement =>
 const levelCount = (): number => document.querySelectorAll('[data-level-layer="worktree"]').length;
 
 const railLevel = (): string | null =>
-  screen.getByRole('navigation', { name: 'Session' }).getAttribute('data-session-rail');
+  screen.getByRole('navigation', { name: 'Session pages' }).getAttribute('data-session-rail');
 
 const menuLabels = async (): Promise<ReadonlyArray<string>> =>
   (await screen.findAllByRole('menuitem')).map((item) => item.textContent ?? '');

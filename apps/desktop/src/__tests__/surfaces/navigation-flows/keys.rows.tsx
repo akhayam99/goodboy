@@ -299,7 +299,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'innerColumn.toggle',
     note: 'folds the session rail, the inner column of a session page',
-    lands: () => visible('button', 'Show session rail'),
+    lands: () => visible('button', 'Show session pages'),
   }),
   keyRow({
     id: 'chat.new',

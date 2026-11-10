@@ -220,7 +220,6 @@
   "apps/desktop/src/features/workspace-chat/components/ChatStudio.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/DraftedBy.tsx": 1,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/NewSessionRow.tsx": 1,
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionPages.tsx": 1,
   "apps/desktop/src/features/workspace/components/SessionRowTitle.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/NeedsYouElsewhere.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/SessionSignal.tsx": 1,

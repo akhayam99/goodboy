@@ -7,8 +7,10 @@
 **The column never changes level; the session rail does.** The column always
 shows the workspace: New session, the doors, then the Pinned and Sessions
 lists. Clicking a session row selects that row, opens the session on its
-Overview and shows its session rail at the left of the page, inside the
-content sheet. The rail has one level, the session: its Projects tree holds every
+Overview and shows the session pages at the left of the page, inside the
+content sheet. **Session pages** is the one name of this rail: the navigation
+landmark, the toggle (**Hide session pages** and **Show session pages**), the
+palette entry for ⌥⌘B and the Guide all say it. The rail has one level, the session: its Projects tree holds every
 branch, and neither the open rail nor the folded rail drills. A branch's pages are the
 tab strip of the Branch page, so the rail never repeats them. A preset run and Auto
 never drill either: what they spawned lives in the Agents panel of the session tools
@@ -26,7 +28,7 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   F2 on the focused title, renames it in place with the same rename as the
   sidebar row (an archived session's title stays read only), and "Overview" is only the
   rail entry's label. The rail's top row holds the rail
-  toggle at the left and three buttons at the right
+  toggle at the left (with ⌥⌘B in its tooltip) and three buttons at the right
   (`SessionLevel/SessionLevelActions`): **Pin session**, a toggle that shows
   pressed while on and runs its registry action (`session.pin` / `unpin`; a
   failure keeps the old state and shows under the row with Retry,
@@ -123,8 +125,11 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   count under its title: Runs, Artifacts and a tracker list
   (Linear, Jira and the rest) carry their counts on their group rows or filter
   tabs only. Every number comes from
-  one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
-  its flyout read the same function; the Runs count is `sessionRunCountsOf`
+  one function, `pageSlotOf` over `usePageCountFacts`. One row draws a page in
+  all three places, the open list, the folded icons and the column flyout
+  (`SessionPageRow` under `SessionPages`, variant `row` or `icon`), so the
+  label, the count and the dot never differ, and its tooltip holds the label,
+  the count word and the page's shortcut (⌘⌥O, W, P, Q, F) in each of them; the Runs count is `sessionRunCountsOf`
   over the same `sessionRunsOf` rows the page lists, and a test pins it to the
   Now card (`sessionRunsOf.test.ts`); the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
@@ -297,13 +302,18 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   rail: a thin icon toolbar at the right edge of the session content, between
   the page and the open drawer (see The session tools), the same on every
   page of the session, folded rail or not.
-- **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
-  rail, ⌥⌘B) folds it to the current level as icons with right tooltips
-  (`SessionRailIcons`): one icon per page with its dot, then the pull request number per
-  worktree, with its state and dot reason in the tooltip. The folded rail has no foot and no top
-  row buttons; the tools column beside the content stays as it is.
+- **Folded (44px).** The rail's own toggle (`SessionRailToggle`, **Hide
+  session pages** or **Show session pages**, ⌥⌘B) folds it to the current level
+  as icons with right tooltips (`SessionRailIcons`): one icon per page with its
+  dot, then the pull request number per worktree, with its state and dot reason
+  in the tooltip. At its foot the folded rail keeps **More session
+  actions** (`⋯`, the same menu as open, `data-rail-actions`), with a **Retry**
+  icon above it after a failed action. The block sits below the icons, so a fold
+  moves no page or worktree icon. Pin and Refresh show only when open;
+  ⌘⇧R and the sidebar row's right click menu keep them. The folded rail has no
+  Projects foot; the tools column beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
-  nodes on every screen. Folding the session rail leaves the diff page's file
+  nodes on every screen. Folding the session pages leaves the diff page's file
   rail as it is.
 - **A preset run keeps the rail on the session.** Opening a run with a fixed
   step list (a saved workflow or Describe steps; `executionMode` not
