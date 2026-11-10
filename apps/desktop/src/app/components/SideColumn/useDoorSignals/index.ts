@@ -6,7 +6,7 @@ import { splitPortRows } from '../../../../features/monitoring/splitPortRows';
 import { workspacePortSet } from '../../../../features/monitoring/workspacePortSet';
 import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
-import type { ColumnDoorId } from '../columnPlace';
+import type { ColumnDoorId } from '../../../../shared/navigation/columnPlace';
 import { doorSignalOf, type DoorSignal } from '../doorSignal';
 
 type Params = Record<never, never>;

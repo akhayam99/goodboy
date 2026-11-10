@@ -200,7 +200,7 @@
   on the rail alike: the open studio's door; New session while the draft is
   open; Board on the board; the Goodboy line for Help, either tab (`place`
   `help`); the bell for Notifications. New workspace is a flow and lights
-  nothing. Every control reads it from one place (`columnPlaceOf`, through
+  nothing. Every control reads it from one place (`columnPlaceOf`, through `selectColumnPlace` and
   `useColumnPlace`), so no page leaves two lit. Inside a session no door does:
   the open session's row is the column's sign and the current page row is the
   session rail's (see Session rail), one sign per navigation column. Under any

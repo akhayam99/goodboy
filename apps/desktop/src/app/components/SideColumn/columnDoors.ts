@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { DESTINATIONS, type Destination } from '../../../shared/navigation/destinations';
-import type { ColumnDoorId } from './columnPlace';
+import type { ColumnDoorId } from '../../../shared/navigation/columnPlace';
 
 export type ColumnDoor = {
   readonly id: ColumnDoorId;

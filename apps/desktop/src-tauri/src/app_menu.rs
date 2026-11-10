@@ -519,6 +519,43 @@ mod tests {
     }
 
     #[test]
+    fn lists_the_go_menu_destinations_in_the_order_of_the_destination_list() {
+        let ids: Vec<&str> = GO_ROWS
+            .iter()
+            .filter_map(|row| match row {
+                Row::Command(command) => Some(command.id),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            ids,
+            vec![
+                "nav.back",
+                "nav.forward",
+                "session.board",
+                "menu.tasks",
+                "menu.workflows",
+                "menu.chat",
+                "menu.impact",
+                "menu.monitoring",
+                "menu.notifications",
+                "terminal.studio",
+                "menu.browser",
+            ]
+        );
+    }
+
+    #[test]
+    fn groups_the_go_menu_as_history_then_places_then_tools() {
+        let separators: Vec<usize> = GO_ROWS
+            .iter()
+            .enumerate()
+            .filter_map(|(index, row)| (*row == SEPARATOR).then_some(index))
+            .collect();
+        assert_eq!(separators, vec![2, 10]);
+    }
+
+    #[test]
     fn never_starts_or_ends_a_menu_with_a_separator() {
         for section in SECTIONS {
             assert_ne!(section.rows.first(), Some(&SEPARATOR));

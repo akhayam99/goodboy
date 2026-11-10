@@ -160,7 +160,6 @@
     "apps/desktop/src/app/components/SessionRail/SessionLevel/useLevelCardFold/index.ts": 2,
     "apps/desktop/src/app/components/SessionRail/SessionLevel/useRailTreeOpen/index.ts": 2,
     "apps/desktop/src/app/components/SessionRail/useSessionRailFold/index.ts": 2,
-    "apps/desktop/src/app/components/SideColumn/columnPlace.ts": 1,
     "apps/desktop/src/app/components/SideColumn/index.tsx": 1,
     "apps/desktop/src/app/components/SideColumn/RailFlyout.tsx": 1,
     "apps/desktop/src/app/components/SideColumn/RailSessions.tsx": 5,
