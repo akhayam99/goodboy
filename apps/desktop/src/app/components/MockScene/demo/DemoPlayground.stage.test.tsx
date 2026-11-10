@@ -295,6 +295,29 @@ describe('demo playground stage states', () => {
       expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
     });
 
+    it('focuses Next again when it opens a group that is done too', () => {
+      seedProgress({ ids: ['bring', 'direction'] });
+      window.history.replaceState(null, '', '/?scene=demo#bring');
+      render(<DemoPlayground />);
+      fireEvent.click(within(doneCard()).getByRole('button', { name: /Next: Set the direction/ }));
+      expect(window.location.hash).toBe('#direction');
+      expect(within(doneCard()).getByRole('heading').textContent).toBe('Set the direction is done');
+      expect(document.activeElement).toBe(
+        within(doneCard()).getByRole('button', { name: /Next:/ }),
+      );
+    });
+
+    it('keeps the playground keys after Replay this chapter', () => {
+      seedProgress({ ids: ['bring', 'direction'] });
+      window.history.replaceState(null, '', '/?scene=demo#direction');
+      render(<DemoPlayground />);
+      const replay = within(doneCard()).getByRole('button', { name: 'Replay this chapter' });
+      replay.focus();
+      fireEvent.click(replay);
+      expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
+      expect(document.activeElement).toBe(playgroundRoot());
+    });
+
     it('takes the arrow key from the focused Next button to the next group', () => {
       finishBring();
       fireEvent.keyDown(within(doneCard()).getByRole('button', { name: /Next:/ }), {

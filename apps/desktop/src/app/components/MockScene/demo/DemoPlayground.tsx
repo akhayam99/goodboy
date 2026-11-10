@@ -156,7 +156,8 @@ export const DemoPlayground = () => {
   const onReplay = useCallback(() => {
     resetHints();
     replay();
-  }, [resetHints, replay]);
+    focusFrame();
+  }, [resetHints, replay, focusFrame]);
   const firstChapter = DEMO_CHAPTERS[0];
   const onRestart = useCallback(() => {
     restartHints();

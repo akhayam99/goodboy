@@ -392,8 +392,10 @@ credited (`isDone` of `stepsOf`, the same tick as the last result line), the
 stage lays the `Scrim` primitive over the frame, makes the frame `inert`
 and shows `DemoChapterDone` at the bottom center: a done node, "<group> is
 done", the group's `outro` (`demoGroups.ts`), a ghost Replay this chapter
-(resets that group only) and the primary Next: <next group> with its `→` key,
-which takes the focus so Enter and the arrows work. It is a stage state, not a
+(resets that group only and hands the focus back to the playground) and the
+primary Next: <next group> with its `→` key, which takes the focus so Enter and
+the arrows work, again on each group when Next opens one that is done too (the
+card is keyed by the group title). It is a stage state, not a
 dialog: the rail, the top bar and the keys keep working, and a click on the
 frame behind it does nothing. A revisit of a done group shows the same card. A
 frame that grabs the focus while it boots (Chrome lets even an inert or

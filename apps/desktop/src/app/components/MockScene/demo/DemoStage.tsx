@@ -475,6 +475,7 @@ export const DemoStage = ({
             <>
               <Scrim testId="demo-stage-scrim" className="z-30" />
               <DemoChapterDone
+                key={done.title}
                 done={done}
                 nextRef={doneNextRef}
                 onNext={onNext}
