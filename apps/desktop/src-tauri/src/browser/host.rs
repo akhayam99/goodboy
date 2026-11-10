@@ -22,6 +22,9 @@ const MIN_SIDE: f64 = 1.0;
 pub(crate) const MAX_HIDDEN_POPUPS: usize = 4;
 pub(crate) const TAB_OPENED_EVENT: &str = "browser://tab-opened";
 
+#[cfg(target_os = "macos")]
+pub(crate) const TAB_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15";
+
 #[cfg(not(target_os = "macos"))]
 const BACK_SCRIPT: &str = "history.back()";
 #[cfg(not(target_os = "macos"))]
@@ -211,7 +214,10 @@ fn builder_for<R: Runtime>(
     let popup_opener = id.to_string();
     let load_tab = id.to_string();
     let title_tab = id.to_string();
-    WebviewBuilder::new(guard::label_of(id), WebviewUrl::External(url.clone()))
+    let builder = WebviewBuilder::new(guard::label_of(id), WebviewUrl::External(url.clone()));
+    #[cfg(target_os = "macos")]
+    let builder = builder.user_agent(TAB_USER_AGENT);
+    builder
         .on_navigation(move |target| guard::may_navigate(target, &navigation_origins))
         .on_new_window(move |target, _features| {
             if let Some(target) = guard::popup_target(&target, &origins) {
