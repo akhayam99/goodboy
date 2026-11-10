@@ -4,7 +4,7 @@ import { FramedStudioScene } from '../u23/FramedStudioScene';
 
 const NOOP = () => undefined;
 
-const QUERY = 'palette';
+const QUERY = 'search or run';
 
 const TYPE_AFTER_MS = 1_000;
 

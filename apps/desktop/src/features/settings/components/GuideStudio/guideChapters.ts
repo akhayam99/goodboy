@@ -752,7 +752,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Most of Goodboy works from the keyboard. One list drives the keys, the shortcut page, the menu bar and the tooltips.',
     points: [
       {
-        term: 'Command palette',
+        term: 'Search or run',
         desc: 'Opens on what you look at: in a session, Next steps first, then its actions. A few letters find sessions, agents, plans, pages, scripts and actions, and any text can go to Ask in chat.',
       },
       {
@@ -781,7 +781,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
     ],
     links: [
-      { label: 'Open the command palette', target: { kind: 'palette' } },
+      { label: 'Open Search or run', target: { kind: 'palette' } },
       {
         label: 'See all shortcuts',
         target: {

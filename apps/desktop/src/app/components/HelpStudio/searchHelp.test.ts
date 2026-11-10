@@ -27,8 +27,8 @@ describe('searchHelp', () => {
   it('lists guide hits first, then releases', () => {
     const hits = searchHelp({
       chapters: GUIDE_CHAPTERS,
-      releases: [release({ version: '0.30.0', markdown: 'a palette for Harborline' })],
-      query: 'palette',
+      releases: [release({ version: '0.30.0', markdown: 'search or run for Harborline' })],
+      query: 'search or run',
     });
     const kinds = hits.map((hit) => hit.kind);
 
@@ -38,13 +38,13 @@ describe('searchHelp', () => {
   });
 
   it('ranks a guide hit whose title matches before one that only mentions the word', () => {
-    const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: 'palette' });
+    const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: 'search or run' });
     const guide = hits.flatMap((hit) => (hit.kind === 'guide' ? [hit.hit] : []));
     const firstTitleMatch = guide.findIndex((hit) =>
-      (hit.term ?? hit.chapterTitle).toLowerCase().includes('palette'),
+      (hit.term ?? hit.chapterTitle).toLowerCase().includes('search or run'),
     );
     const firstBodyOnly = guide.findIndex(
-      (hit) => !(hit.term ?? hit.chapterTitle).toLowerCase().includes('palette'),
+      (hit) => !(hit.term ?? hit.chapterTitle).toLowerCase().includes('search or run'),
     );
 
     expect(firstTitleMatch).toBe(0);
@@ -52,7 +52,7 @@ describe('searchHelp', () => {
   });
 
   it('carries a one line excerpt on every guide hit', () => {
-    const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: 'palette' });
+    const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: 'search or run' });
     const guide = hits.flatMap((hit) => (hit.kind === 'guide' ? [hit.hit] : []));
 
     expect(guide.length).toBeGreaterThan(0);

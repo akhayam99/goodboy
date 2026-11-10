@@ -80,10 +80,10 @@
   presence ("where do I go, what else is going on"): its doors and the sessions
   list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
-  Forward and Search, clustered in the centre. It never holds a destination.
-  The spend chip is state that opens the studio that owns that number, on
-  Impact's Spend tab, and the Usage chips open the Providers menu. The bar
-  never edits a record in place.
+  Forward and Search or run, clustered in the centre. It never holds a
+  destination. The spend chip is state that opens the studio that owns that
+  number, on Impact's Spend tab, and the Usage chips open the Providers menu.
+  The bar never edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Board (the board, ⌘⇧H),
   Tasks, Workflows, Chat, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
   (New chat) that is always visible. No separator: the Pinned and
