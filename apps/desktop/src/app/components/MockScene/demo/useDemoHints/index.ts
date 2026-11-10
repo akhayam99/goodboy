@@ -244,6 +244,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       side: recovery === undefined ? activeHint.side : recovery.side,
       isSideLocked:
         recovery === undefined ? activeHint.isSideLocked === true : recovery.side !== undefined,
+      align: recovery === undefined ? activeHint.align : undefined,
       rect: current.rect,
       focus: current.focus,
       opened: current.opened,

@@ -39,6 +39,23 @@ describe('callout placement', () => {
     expect(place({ target })).toMatchObject({ side: 'right', x: 312 });
   });
 
+  it('lines a top callout up with the far end of a wide target when asked', () => {
+    const target = { x: 100, y: 300, width: 500, height: 28 };
+    const placement = placeCallout({
+      target,
+      avoid: [],
+      lit: null,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: 'top',
+      isLocked: true,
+      align: 'end',
+      gap: 12,
+      margin: 16,
+    });
+    expect(placement).toEqual({ side: 'top', x: 360, y: 198 });
+  });
+
   it('takes the side with the most room even when the preferred side fits', () => {
     const target = { x: 600, y: 200, width: 100, height: 32 };
     const placement = place({ target });

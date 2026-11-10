@@ -1,5 +1,5 @@
 import type { DemoRect } from '../director/demoProtocol';
-import type { HintSide } from './demoHintTypes';
+import type { HintAlign, HintSide } from './demoHintTypes';
 
 type Size = {
   readonly width: number;
@@ -15,6 +15,7 @@ type Params = {
   readonly side: HintSide | undefined;
   readonly isLocked?: boolean;
   readonly previousSide?: HintSide;
+  readonly align?: HintAlign;
   readonly gap: number;
   readonly margin: number;
 };
@@ -36,7 +37,7 @@ type ClampParams = {
 const clamp = ({ value, low, high }: ClampParams): number =>
   Math.min(Math.max(value, low), Math.max(low, high));
 
-type SideParams = Pick<Params, 'target' | 'callout' | 'bounds' | 'gap' | 'margin'> & {
+type SideParams = Pick<Params, 'target' | 'callout' | 'bounds' | 'gap' | 'margin' | 'align'> & {
   readonly side: HintSide;
 };
 
@@ -57,26 +58,39 @@ const roomOf = ({ target, callout, bounds, side, gap, margin }: SideParams): num
   }
 };
 
-const placeOn = ({ target, callout, bounds, side, gap, margin }: SideParams): CalloutPlacement => {
-  const centerX = clamp({
-    value: target.x + target.width / 2 - callout.width / 2,
+const placeOn = ({
+  target,
+  callout,
+  bounds,
+  side,
+  gap,
+  margin,
+  align = 'center',
+}: SideParams): CalloutPlacement => {
+  const isEnd = align === 'end';
+  const alongX = clamp({
+    value: isEnd
+      ? target.x + target.width - callout.width
+      : target.x + target.width / 2 - callout.width / 2,
     low: margin,
     high: bounds.width - margin - callout.width,
   });
-  const centerY = clamp({
-    value: target.y + target.height / 2 - callout.height / 2,
+  const alongY = clamp({
+    value: isEnd
+      ? target.y + target.height - callout.height
+      : target.y + target.height / 2 - callout.height / 2,
     low: margin,
     high: bounds.height - margin - callout.height,
   });
   switch (side) {
     case 'bottom':
-      return { side, x: centerX, y: target.y + target.height + gap };
+      return { side, x: alongX, y: target.y + target.height + gap };
     case 'top':
-      return { side, x: centerX, y: target.y - gap - callout.height };
+      return { side, x: alongX, y: target.y - gap - callout.height };
     case 'right':
-      return { side, x: target.x + target.width + gap, y: centerY };
+      return { side, x: target.x + target.width + gap, y: alongY };
     case 'left':
-      return { side, x: target.x - gap - callout.width, y: centerY };
+      return { side, x: target.x - gap - callout.width, y: alongY };
     default: {
       const unreachable: never = side;
       return unreachable;
@@ -136,10 +150,11 @@ export const placeCallout = ({
   side: preferred,
   isLocked = false,
   previousSide,
+  align,
   gap,
   margin,
 }: Params): CalloutPlacement => {
-  const base = { target, callout, bounds, gap, margin };
+  const base = { target, callout, bounds, gap, margin, align };
   const order = [
     ...(preferred === undefined ? [] : [preferred]),
     ...SIDE_ORDER.filter((side) => side !== preferred),

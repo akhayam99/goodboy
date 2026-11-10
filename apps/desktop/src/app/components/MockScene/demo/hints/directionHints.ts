@@ -83,8 +83,9 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     isDimmed: false,
     isBlocked: isOtherControl,
     anchor: OPTION,
-    side: 'left',
+    side: 'top',
     isSideLocked: true,
+    align: 'end',
     revealWhen: ({ root, state }) =>
       hasElement({ root, selector: OPTION }) || hasAnswered({ state }),
     doneWhen: ({ root, state }) => isOptionChecked({ root }) || hasAnswered({ state }),

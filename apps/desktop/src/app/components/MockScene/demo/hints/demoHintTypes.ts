@@ -21,6 +21,8 @@ type HintAnchor = string | ((probe: HintProbe) => string | null);
 
 export type HintSide = 'top' | 'bottom' | 'left' | 'right';
 
+export type HintAlign = 'center' | 'end';
+
 type HintRecovery = {
   readonly copy: string;
   readonly instruction: string;
@@ -43,6 +45,7 @@ export type DemoHint = {
   readonly focus?: HintAnchor;
   readonly side?: HintSide;
   readonly isSideLocked?: boolean;
+  readonly align?: HintAlign;
   readonly dwellMs?: number;
   readonly isDimmed?: boolean;
   readonly settle?: (params: SettleParams) => void;

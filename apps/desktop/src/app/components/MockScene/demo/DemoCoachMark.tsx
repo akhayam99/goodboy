@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
-import type { HintSide } from './hints/demoHintTypes';
+import type { HintAlign, HintSide } from './hints/demoHintTypes';
 import { holeOf } from './hints/holeOf';
 import { placeCallout } from './hints/placeCallout';
 import { DemoSpotlight } from './DemoSpotlight';
@@ -12,6 +12,7 @@ export type CoachMark = {
   readonly copy: string;
   readonly side: HintSide | undefined;
   readonly isSideLocked: boolean;
+  readonly align?: HintAlign;
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
   readonly opened: ReadonlyArray<DemoRect>;
@@ -158,6 +159,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
           side: coach.side,
           isLocked: coach.isSideLocked,
           previousSide: kept !== null && kept.hintId === coach.hintId ? kept.side : undefined,
+          align: coach.align,
           gap: GAP,
           margin: MARGIN,
         });
