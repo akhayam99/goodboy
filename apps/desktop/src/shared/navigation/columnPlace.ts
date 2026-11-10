@@ -1,9 +1,9 @@
-import type { StudioKind } from '../../store';
-import type { DestinationId, FootDestinationId } from './destinations';
+import type { StudioKind } from '../../../store';
+import type { DestinationId, FootDestinationId } from '../../../shared/navigation/destinations';
 
 export type ColumnDoorId = Exclude<DestinationId, 'notifications' | FootDestinationId>;
 
-export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | null;
+export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | 'help' | null;
 
 type Params = {
   readonly hasSession: boolean;
@@ -34,8 +34,9 @@ const studioPlace = ({ studio }: StudioParams): ColumnPlace => {
     case 'impact':
       return 'impact';
     case 'guide':
-    case 'addWorkspace':
     case 'changelog':
+      return 'help';
+    case 'addWorkspace':
     case 'notifications':
       return null;
     default: {

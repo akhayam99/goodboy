@@ -193,7 +193,6 @@ import { GitLaterScene, type GitLaterState } from '../scenes/nogit/GitLaterScene
 import { PickScene, type PickSceneState } from '../scenes/nogit/PickScene';
 import { FoldersScene, type FoldersSceneState } from '../scenes/nogit/FoldersScene';
 import { SplashScene } from '../scenes/onboarding/SplashScene';
-import { SetupMenuScene } from '../scenes/onboarding/SetupMenuScene';
 import {
   NewWorkspaceScene,
   type NewWorkspaceSceneState,
@@ -261,10 +260,6 @@ const ONBOARDING_SCENES: Readonly<Record<string, ComponentType>> = Object.fromEn
   ...themed({
     id: 'onboarding-splash',
     render: ({ theme }) => createElement(SplashScene, { theme }),
-  }),
-  ...themed({
-    id: 'onboarding-setup-menu',
-    render: ({ theme }) => createElement(SetupMenuScene, { theme }),
   }),
   ...NEW_WORKSPACE_STATES.flatMap((state) =>
     themed({

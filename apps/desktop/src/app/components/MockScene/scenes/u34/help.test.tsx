@@ -47,22 +47,8 @@ afterEach(() => {
 });
 
 describe('the Help scenes', () => {
-  it('registers both scenes', () => {
+  it('registers the scene', () => {
     Object.entries(U34_HELP_SCENES).forEach(([id, Scene]) => expect(MOCK_SCENES[id]).toBe(Scene));
-  });
-
-  it('u34-help-shortcuts opens the read only sheet with Back to app and no Close', async () => {
-    const Scene = U34_HELP_SCENES['u34-help-shortcuts'];
-    render(
-      <ToastProvider>
-        <Scene />
-      </ToastProvider>,
-    );
-
-    await screen.findByRole('heading', { level: 1, name: 'Shortcuts' }, WAIT);
-    screen.getByRole('button', { name: /^Back to app/ });
-    screen.getByRole('button', { name: 'Customize in Settings' });
-    expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
   });
 
   it('the guide scene leaves the same way as the other Help scenes', async () => {
@@ -76,7 +62,7 @@ describe('the Help scenes', () => {
     expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
   });
 
-  it('u34-help-search lists results from the guide and the shortcuts together', async () => {
+  it('u34-help-search lists results from the guide and the releases together', async () => {
     const Scene = U34_HELP_SCENES['u34-help-search'];
     render(
       <ToastProvider>
@@ -92,7 +78,6 @@ describe('the Help scenes', () => {
       .getAllByRole('button')
       .map((button) => button.getAttribute('aria-label') ?? '');
     expect(labels.some((label) => label.endsWith(', Guide'))).toBe(true);
-    expect(labels.some((label) => label.endsWith(', Shortcuts'))).toBe(true);
     expect(
       labels.filter((label) => label.endsWith(`, ${NAMES.whatsNew}`)).length,
     ).toBeLessThanOrEqual(3);

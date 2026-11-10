@@ -7,18 +7,24 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
+const { mocks } = vi.hoisted(() => ({ mocks: { openUrl: vi.fn(async () => undefined) } }));
+
+vi.mock('../../../shared/lib/editor', () => ({ openUrl: mocks.openUrl }));
+
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
+  storySpies,
   resetStoryStore,
   type StoryStore,
 } from '../../../store/storyHarness';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { SPONSOR_URL } from '../../../shared/lib/productLinks';
 import { clearGuideChapter } from '../../../features/settings/components/GuideStudio/guideChapterRequest';
 import { StudioFrame } from '../StudioFrame';
 import { HelpStudio } from './index';
+import type { HelpTab } from './helpTabs';
 
 let useAppStore: StoryStore;
 
@@ -28,6 +34,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation(() => new Promise<never>(() => undefined));
   clearGuideChapter();
 });
 
@@ -35,10 +42,21 @@ afterEach(() => {
   cleanup();
 });
 
-type TabId = 'guide' | 'whatsNew' | 'shortcuts';
+const HelpHost = () => {
+  const kind = useAppStore((state) => state.appStudio?.kind ?? null);
+  return (
+    <HelpStudio
+      tab={kind === 'changelog' ? 'whatsNew' : 'guide'}
+      onClose={vi.fn()}
+      onOpenScreen={vi.fn()}
+    />
+  );
+};
 
-const renderHelp = (initialTab: TabId = 'guide') =>
-  render(<HelpStudio initialTab={initialTab} onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+const renderHelp = (initial: HelpTab = 'guide') => {
+  useAppStore.setState({ appStudio: { kind: initial === 'guide' ? 'guide' : 'changelog' } });
+  return render(<HelpHost />);
+};
 
 const search = () => screen.getByRole('searchbox', { name: 'Search help' });
 const tab = (name: string) => screen.getByRole('tab', { name });
@@ -51,64 +69,55 @@ describe('HelpStudio', () => {
   it('opens on the tab it is asked for, with one search and Back to app instead of Close', () => {
     render(
       <StudioFrame kind="guide" onClose={vi.fn()}>
-        <HelpStudio initialTab="shortcuts" onClose={vi.fn()} onOpenScreen={vi.fn()} />
+        <HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />
       </StudioFrame>,
     );
 
-    expect(tab('Shortcuts').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Guide').getAttribute('aria-selected')).toBe('true');
     expect(screen.getAllByRole('searchbox')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
     expect(screen.getAllByRole('button', { name: /^Back to app/ })).toHaveLength(1);
   });
 
-  it('switches between the tabs without leaving the studio', () => {
+  it('offers the Guide and What is new tabs and no Shortcuts tab', () => {
     renderHelp();
 
-    expect(screen.getAllByRole('heading', { level: 1, name: 'What is Goodboy' })).toHaveLength(1);
-    fireEvent.click(tab('Shortcuts'));
-    expect(screen.getAllByRole('heading', { level: 1, name: 'Shortcuts' })).toHaveLength(1);
-    expect(screen.queryByText('Read only')).toBeNull();
-    fireEvent.click(tab('Guide'));
-    expect(screen.getAllByRole('heading', { level: 1, name: 'What is Goodboy' })).toHaveLength(1);
+    expect(screen.getAllByRole('tab').map((entry) => entry.textContent)).toEqual([
+      'Guide',
+      "What's new",
+    ]);
+  });
+
+  it('switches the tab by opening the other studio, so Back returns to the first tab', () => {
+    renderHelp();
+    useAppStore.getState().openStudio({ studio: { kind: 'guide' } });
+
+    expect(tab('Guide').getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(tab("What's new"));
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'changelog' });
+    expect(tab("What's new").getAttribute('aria-selected')).toBe('true');
+    act(() => useAppStore.getState().back());
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'guide' });
+    expect(tab('Guide').getAttribute('aria-selected')).toBe('true');
     expect(screen.getAllByRole('searchbox')).toHaveLength(1);
   });
 
-  it('shows the shortcut sheet read only, with one link to the recorder in Settings', () => {
-    renderHelp('shortcuts');
+  it('holds Sponsor on GitHub as its one outside link', () => {
+    renderHelp();
 
-    expect(screen.getAllByText(shortcutGlyphs('palette.open')).length).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: /^Change keys for/ })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Customize in Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sponsor on GitHub' }));
 
-    expect(useAppStore.getState().appStudio).toEqual({
-      kind: 'settings',
-      focus: { scope: 'app', section: 'shortcuts' },
-    });
+    expect(mocks.openUrl).toHaveBeenCalledExactlyOnceWith(SPONSOR_URL);
   });
 
-  it('searches the guide and the shortcuts at once and groups the results by tab', () => {
+  it('searches the guide and the releases at once and groups the results by tab', () => {
     renderHelp();
 
     fireEvent.change(search(), { target: { value: 'search or run' } });
 
     const labels = hitLabels();
-    expect(labels.some((label) => label.endsWith(', Shortcuts'))).toBe(true);
     expect(labels.some((label) => label.endsWith(', Guide'))).toBe(true);
-  });
-
-  it('finds a shortcut by its key and opens the Shortcuts tab from the result', () => {
-    renderHelp();
-
-    fireEvent.change(search(), { target: { value: shortcutGlyphs('palette.open') } });
-    const hit = within(screen.getByRole('list', { name: 'Help results' }))
-      .getAllByRole('button')
-      .find((button) => button.getAttribute('aria-label')?.endsWith(', Shortcuts') === true);
-    expect(hit).not.toBeUndefined();
-    fireEvent.click(hit ?? document.body);
-
-    expect(tab('Shortcuts').getAttribute('aria-selected')).toBe('true');
-    expect(screen.queryByRole('list', { name: 'Help results' })).toBeNull();
-    expect(search().getAttribute('value') ?? '').toBe('');
+    expect(labels.some((label) => label.endsWith(', Shortcuts'))).toBe(false);
   });
 
   it('says so when nothing in any tab matches', () => {

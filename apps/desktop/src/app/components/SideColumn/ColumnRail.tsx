@@ -118,9 +118,9 @@ export const ColumnRail = ({
         <ReportBugButton variant="rail" />
         <GoodboyChip
           variant="rail"
+          isCurrent={place === 'help'}
           onOpenChangelog={actions.openChangelog}
-          onOpenGuide={actions.openGuide}
-          onOpenShortcuts={actions.openShortcuts}
+          onOpenHelp={actions.openGuide}
         />
       </div>
     </nav>

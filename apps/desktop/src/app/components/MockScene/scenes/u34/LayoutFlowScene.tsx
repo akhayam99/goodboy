@@ -29,7 +29,6 @@ const ACTIONS: ColumnActions = {
   openSettings: noop,
   openChangelog: noop,
   openGuide: noop,
-  openShortcuts: noop,
 };
 
 const LIMITS_GOAL = 'Add the tenant limit check to payout creation';

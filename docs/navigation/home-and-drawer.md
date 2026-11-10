@@ -21,7 +21,7 @@ it carries the lockup itself: the 40px `BrandTile`, the word and the version
   agents run here. The search field shows from five workspaces on.
 - **New workspace** (⌘N on Home, `home.newWorkspace`) fires
   `goodboy:add-workspace` through `openNewWorkspace`, like the switcher, the
-  palette, the Goodboy menu and the menu bar. On Home the `addWorkspace` place
+  palette and the menu bar. On Home the `addWorkspace` place
   swaps the list for `NewWorkspaceForm` in place, the lockup stays put, Cancel
   or Escape goes back, and Create opens the new workspace and lands in it,
   whatever the folders are: a plain Code folder was already offered git on its
@@ -302,7 +302,7 @@ card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
 off-scale widths a floating surface declares per file and never lets one
 grow.
 
-**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy row with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. It stays away while its row is inert, as when Settings covers the column (`useIsAnchorInert`), and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy line with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. It stays away while its row is inert, as when Settings covers the column (`useIsAnchorInert`), and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
 
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the

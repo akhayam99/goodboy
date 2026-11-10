@@ -93,7 +93,6 @@ export const AppFrame = ({
       openSettings: overlays.openSettings,
       openChangelog: overlays.openChangelog,
       openGuide: overlays.openGuide,
-      openShortcuts: overlays.openShortcutHelp,
     }),
     [goToBoard, overlays],
   );

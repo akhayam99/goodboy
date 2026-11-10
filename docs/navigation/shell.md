@@ -311,7 +311,7 @@ rows. Then one separator
 (`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
 session row, selected while the draft is open, a primary dot and `Draft in progress` while a
 draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
-doors' gap) spaces the groups; then at the foot Settings (⌘,) and the Goodboy row.
+doors' gap) spaces the groups; then at the foot Settings (⌘,) and the Goodboy line with the bug icon.
 Every door row has one trailing grid
 (`ColumnDoorRow`): a 20px signal slot right aligned, then a 24px action slot reserved on every
 row (the plus sits in it on Chat). A running door draws no dot: what runs is in its
@@ -328,7 +328,7 @@ for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). 
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
 the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot
 (no number) on those two doors, with the fact in the tooltip. Before any workspace exists the column keeps only its app
-half: Settings, the Goodboy row and the bug. The column is 240px by default and
+half: Settings, the Goodboy line and the bug. The column is 240px by default and
 resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
 width resets once). Its first button or ⌘B folds it, on every screen, into the
 rail; the choice is saved and peek never touches it. Settings is the one
@@ -575,44 +575,50 @@ only drop under zoom.
   (`theme-switch-is-one-paint`). No shortcut is bound to it.
 - The top bar never edits. Reporting a bug, the update
   and the version are about Goodboy itself, so they live at the foot of the
-  column: the Goodboy row. The setup checklist is a card on the Board.
+  column: the Goodboy line. The setup checklist is a card on the Board.
 
 ## The column foot
 
-Settings (⌘,) sits above the Goodboy row. There is no setup line and no bug icon:
-Report a bug (⌘I) is in the Goodboy menu. The rail, with no room for a menu row, keeps the three
-in their place at the bottom: the Settings icon, the bug and the Goodboy mark, which
-carries a dot while an update waits.
+The foot is the app's corner. It holds three things and nothing that goes to a
+page of the workspace: Settings, Help and Report a bug. It has no menu. The open
+column draws two lines. Line one is Settings (⌘,). Line two is the Goodboy line, a
+door to Help, with the update pill beside it when an update waits and, at the end
+of the line, a 24px bug icon, Report a bug (⌘I), which says "Draft saved" in its
+name while a report is half written. The folded rail keeps the same three in the
+same order: the Settings icon, the bug and the Goodboy mark, which carries a dot
+while an update waits.
 
-The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
-menu or Linear's help menu does. Its label says one thing, in this order: an
-update is pending (the bare lockup, then the version pill), or the brand lockup
-with the installed version. The lockup
+The Goodboy line (`app/components/GoodboyChip`, variants `column` and `rail`) is
+a door like the rows above it: it opens Help on the Guide, it is selected
+(`bg-selected`, `aria-current="page"`) while a Help tab is open, and a click on
+it then does nothing. Its label says one thing, in this order: an update is
+pending (the bare lockup, then the version pill), or the brand lockup with
+"Beta" and the installed version. The lockup
 (`GoodboyChip/BrandLockup.tsx`) is one dark chip holding only the dog mark and
 "Goodboy", the same in light and dark; "Beta" and "v<version>" sit after it in
-theme text. The popover header and the rail mark draw the same lockup. The version is
+theme text. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
 and shows in mock scenes too. The update pill (`features/updater/components/UpdatePill`)
 is soft, enters once and holds still. It is its own button beside the lockup and
 shows only the new version and a state icon; the state ("is ready", "did not
-install") lives in its tooltip and accessible name. It stays on one line at
-every column width: when the lockup and the pill have under 168px, the lockup
-drops to the dog mark (a container query on the row), and only a version too
-long for the row truncates.
-`validate-scenes.mjs --only update-pill` pins this at 200, 240 and 400px. The
-pill opens the update card; the column menu holds no update. On the rail, which
-has no room for a pill, the menu's first row is the same pill label and opens
-the same card (`railUpdate` in `GoodboyChip/index.tsx`). The popover header is the
-lockup and "<version> · Beta", and the version opens What's new. Below it sit two
-labelled groups on the shared
-`MenuList` rows of `@goodboy/ui`: **Help** (Guide, What's new, Keyboard shortcuts
-with ⌘/, Report a bug last with ⌘I, and Draft saved when a draft waits) and
-**Goodboy** (`NAMES.pairIphone` and Sponsor on GitHub, the last
-with the external mark). There is no paragraph under the groups. Guide opens the
-guide studio and Pair an iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
-`{ scope: 'app', section: 'iphone' }`), so neither waits behind the palette. Every
-studio keeps a door you can see: the flow table in
+install") lives in its tooltip and accessible name. The lockup drops to the dog
+mark when a pill sits beside it and the line is too narrow for both (a container
+query on `[data-column-corner]`, under 12.25rem), so the pill and the bug icon
+stay on one line at every column width; the pill truncates before the lockup
+does. At rest the lockup drops to the mark under 13.5rem, so the bug icon keeps
+its room, and above that only a version too long for the row truncates. The whole line is set in the meta size. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
+400px. The pill opens the update card. On the rail, which has no room for a
+pill, the mark carries the update dot, and a click opens Help on What's new
+(also while the Guide is open),
+where the release that is the pending update carries the update verbs. The pinned column
+also owns the update arrival card and the restart when idle; a peeked column
+leaves both to it (`isPrimary`).
+
+Pair an iPhone lives in Settings, iPhone (`goodboy:open-pair-device` lands on
+`{ scope: 'app', section: 'iphone' }`) and in the palette. Keyboard shortcuts
+lives in Settings, Shortcuts (⌘/). Neither is in the foot. Every studio keeps a
+door you can see: the flow table in
 `__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
 `door` of `visible` or `palette`, and `studio-doors.test.ts` fails when a studio
 kind has no `visible` row. Three links open the Guide on a chapter and Back
@@ -631,20 +637,18 @@ opens the first hit and flashes its point, Escape clears it. The chapter
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
 registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
 `sessionNodeOf`, so a new mark appears there without a second table. The addresses live in
-`shared/lib/productLinks.ts`. Report a bug closes the
-popover and opens the report sheet. The popover opens by itself once, when the
-first agent finishes a turn, and never while the setup wizard is open; the
-checklist has no floating card. Only the pinned row does that (and reports the
-update arrival); the copy inside a peeked column is quiet.
+`shared/lib/productLinks.ts`. Report a bug opens the report sheet.
 
-**Help** is one studio (`app/components/HelpStudio`) with three tabs, Guide,
-What's new and Shortcuts, and one search (`RailSearch`, "Search help") over all
-three: a result opens its tab and its chapter, release or shortcut group. The
-Guide and What's new doors open it on their tab (`initialTab`); it replaces the
-column like Settings, so its band holds `Back to app` with the Esc chip at the
-top left and there is no Close (`close: 'back'`, `StudioFrame/index.test.tsx`
-pins it). The Shortcuts tab is the read only sheet with one link, "Customize in
-Settings", because the recorder stays in Settings. The What's new tab is a rail
+**Help** is one page (`app/components/HelpStudio`) with two tabs, Guide and
+What's new, and one search (`RailSearch`, "Search help") over both: a result
+opens its tab and its chapter or release. A tab is a studio kind, `guide` or
+`changelog`, so switching tabs is an `openStudio` of the other one and Back
+returns to the tab you left; the band title reads "Guide" or "What's new". The
+band's one other control is "Sponsor on GitHub", which leaves the app
+(`SponsorLink`). The page's band holds `Back to app` with the Esc chip at the top
+left and there is no Close (`close: 'back'`, `StudioFrame/index.test.tsx` pins
+it). The Goodboy line opens it on the Guide and the palette rows open either
+tab. The What's new tab is a rail
 of releases grouped by minor, with an Older group below 0.4 (`ChangelogRail`),
 and a reader beside it. `CatchUpReader` (`page="whatsNew"`) opens first and sums
 up everything since the version you last read; `ReleaseReader`
@@ -688,23 +692,18 @@ New Workspace, the Go doors, Guide, What's New). An id with neither warns once
 and does nothing. A new menu item therefore adds a row to the table and an id,
 never an event or a listener. Every Go door opens through `openDestination`,
 the same call as the column and the palette, and the doors that need a
-workspace do nothing without one. `openDestination` does nothing when the
-destination is a page the column already shows as current (Tasks, Chat,
-Workflows, Impact, Terminal, Browser, Monitoring), read from the same
-`selectColumnPlace` as the column. A Go pick on the open page therefore adds no
-history entry, keeps a promoted Browser tab and keeps the scope of an open
-Impact page. `menuBar.parity.test.ts` reads the Rust table and fails when an id
-has no registry entry or action, a combo differs from the registry's, a label
-is not title case, a key has two owners, or the Go rows differ from
-`DESTINATIONS` in order or in name.
+workspace do nothing without one. `menuBar.parity.test.ts` reads the Rust table
+and fails when an id has no registry entry or action, a combo differs from the
+registry's, a label is not title case, a key has two owners, or the Go rows
+differ from `DESTINATIONS` in order.
 
 ## Report sheet
 
 One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
 the window, centred, with no overlay: the page under it stays live. Every door
-lands there: ⌘I from anywhere, Report a bug in
-the Goodboy menu, Report a bug in the
+lands there: ⌘I from anywhere, the bug icon in the column foot and on the folded
+rail, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
 `goodboy://menu` with `report.open` to the focused window; `useMenuCommands`
@@ -767,7 +766,7 @@ nothing, and it never ends setup. Set up later writes `onboarding.wizard =
 later`; entering a step writes `onboarding.step`. A relaunch with setup still
 open reopens at that step (`resumeStep` falls back to Workspace when the step
 needs a workspace that is gone), in the main window only, on Home (see Home
-below); the Goodboy menu offers Resume setup while it is
+below); the palette offers Resume setup while it is
 paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
 `nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
 `finish`, `later` and `setBusy`. There is no splash step: the first step is
@@ -848,8 +847,8 @@ providers and usage; the menu holds no usage figure and sends there with
 Models row When a provider is out, writing through the same
 `setProviderPolicy`, then Connect for each CLI provider that is not connected,
 then Manage providers. It reads the cached providers and never refreshes them
-on open. Changelog opens from the Goodboy menu and the palette, so it earns no
-door. The connected tools have no glyph strip any more: Tasks' Source
+on open. What's new is a tab of Help and a palette row, so it earns no
+door here. The connected tools have no glyph strip any more: Tasks' Source
 filter is the tool door, and Connect a tool lives in Settings > Integrations.
 
 - **The release notice answers "have you read the notes for what you're
@@ -858,7 +857,7 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
   fresh install shows none, and dismissing it marks that version as read.
 - Opening any studio closes the others. A door that is current does nothing.
 - **Before any workspace exists, the column keeps its app half**: Settings,
-  the Goodboy row and the bug. New session, the doors and the sessions belong
+  the Goodboy line and the bug. New session, the doors and the sessions belong
   to a workspace and wait for one. Settings then opens its home with only the
   App and Providers groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and

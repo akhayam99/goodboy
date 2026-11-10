@@ -44,14 +44,14 @@ never a new file.
 tile, then the word `Goodboy`. It has no tagline, no registered mark and no
 second line.
 
-In the app chrome the mark drops the tile. The Goodboy row at the foot of the column draws the bare glyph in
+In the app chrome the mark drops the tile. The Goodboy line at the foot of the column draws the bare glyph in
 `text-foreground`, so it is light on the dark theme and dark on the
 light theme, next to the same word. The mask file and its ratios do not
 change. This is the title bar convention of Linear, Cursor and Arc: a
 monochrome glyph in the chrome, the tile on the dock icon.
 
-The app shows the mark in three places: the Goodboy chip (the row at the
-foot of the column, the mark on its rail, and the header of its menu), the
+The app shows the mark in three places: the Goodboy chip (the line at the
+foot of the column and the mark on its rail), the
 boot splash (the same black tile, drawn by `BootBrand`), and the lockup on first
 run and Home. That lockup is the black tile with the white mark, then the word.
 The setup header and Home show it small. These use `BrandTile` (`shared/components/BrandTile.tsx`), with the shared

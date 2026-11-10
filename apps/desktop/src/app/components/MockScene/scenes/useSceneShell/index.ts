@@ -56,7 +56,6 @@ export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneSh
       openSettings: overlays.openSettings,
       openChangelog: overlays.openChangelog,
       openGuide: overlays.openGuide,
-      openShortcuts: overlays.openShortcutHelp,
     }),
     [goToBoard, overlays],
   );

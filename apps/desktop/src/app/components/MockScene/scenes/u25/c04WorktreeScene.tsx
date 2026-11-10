@@ -38,7 +38,6 @@ const ACTIONS: ColumnActions = {
   openSettings: noop,
   openChangelog: noop,
   openGuide: noop,
-  openShortcuts: noop,
 };
 
 const LEDGER_PROJECT_ID = brandedId<ProjectId>({ value: 'mock-c04-project-ledger-core' });

@@ -32,7 +32,6 @@ const ACTIONS: ColumnActions = {
   openSettings: noop,
   openChangelog: noop,
   openGuide: noop,
-  openShortcuts: noop,
 };
 
 export type LevelsSceneConfig = {

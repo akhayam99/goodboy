@@ -58,7 +58,7 @@ const buildRelease = (version: string, markdown: string): ReleaseEntry => ({
 });
 
 const renderStudio = () =>
-  render(<HelpStudio initialTab="whatsNew" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+  render(<HelpStudio tab="whatsNew" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
 const baseState = (releases: ReadonlyArray<ReleaseEntry>): ChangelogState => ({
   changelogReleases: releases,

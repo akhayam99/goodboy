@@ -10,10 +10,8 @@ import {
   both,
   click,
   clickButton,
-  clickMenuItem,
   heading,
   openPalette,
-  settingsColumn,
   settle,
   useAppStore,
   visible,
@@ -312,45 +310,29 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: goodboy chip to the changelog',
+    name: "column: goodboy line, then the What's new tab",
     covers: ['openChangelog', 'studio:changelog'],
     door: 'visible',
     open: async () => {
-      await clickButton(/^Goodboy beta/);
-      await clickMenuItem(/^What's new/);
-    },
-    lands: () => heading(/^Goodboy \d/),
-  },
-  {
-    name: 'column: goodboy chip to the guide',
-    covers: ['openGuide', 'studio:guide'],
-    door: 'visible',
-    open: async () => {
-      await clickButton(/^Goodboy beta/);
-      await clickMenuItem(/^Guide/);
-    },
-    lands: () => studio('Help'),
-  },
-  {
-    name: 'column: goodboy chip to pair an iPhone',
-    covers: ['studio:settings', 'scope:app', 'settings:iphone'],
-    door: 'visible',
-    open: async () => {
-      await clickButton(/^Goodboy beta/);
-      await clickMenuItem(/^Pair an iPhone/);
+      await clickButton(/^Goodboy, help/);
+      await click(await screen.findByRole('tab', { name: "What's new" }));
     },
     lands: both(
-      () => settingsColumn(),
-      () => heading('iPhone'),
+      () => studio("What's new"),
+      () => heading(/^Goodboy \d/),
     ),
   },
   {
-    name: 'column: report a bug from the Goodboy menu opens the sheet',
+    name: 'column: goodboy line to the guide',
+    covers: ['openGuide', 'studio:guide'],
+    door: 'visible',
+    open: () => clickButton(/^Goodboy, help/),
+    lands: () => studio('Guide'),
+  },
+  {
+    name: 'column: the bug icon beside the goodboy line opens the sheet',
     covers: ['column:report'],
-    open: async () => {
-      await clickButton(/^Goodboy beta/);
-      await clickMenuItem(/^Report a bug/);
-    },
+    open: () => clickButton(/^Report a bug/),
     lands: () => visible('dialog', 'Report a bug'),
   },
   {
