@@ -24,5 +24,14 @@ export const GoodboyChipLabel = ({ state, installedVersion, isMarkOnly = false }
       </>
     );
   }
-  return <BrandLockup version={installedVersion} />;
+  return (
+    <>
+      <span data-lockup-wide="" className="contents @max-[13.5rem]:hidden">
+        <BrandLockup version={installedVersion} />
+      </span>
+      <span data-lockup-narrow="" className="hidden @max-[13.5rem]:contents">
+        <BrandLockup version={installedVersion} isMarkOnly />
+      </span>
+    </>
+  );
 };

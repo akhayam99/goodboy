@@ -191,10 +191,13 @@ describe('GoodboyChip sizing in the column', () => {
     expect(screen.getByTestId('goodboy-chip').className).toContain('shrink-0');
   });
 
-  it('keeps the full lockup at rest whatever the width', () => {
+  it('falls to the mark under 13.5rem at rest and keeps the full lockup above it', () => {
     renderChip();
 
     const chip = screen.getByRole('button', { name: DOOR_LABEL });
-    expect(chip.querySelector('[data-lockup-narrow]')).toBeNull();
+    expect(chip.querySelector('[data-lockup-wide]')?.className).toContain('@max-[13.5rem]:hidden');
+    expect(chip.querySelector('[data-lockup-narrow]')?.className).toContain(
+      '@max-[13.5rem]:contents',
+    );
   });
 });

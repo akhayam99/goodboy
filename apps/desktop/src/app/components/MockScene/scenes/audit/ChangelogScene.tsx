@@ -45,7 +45,7 @@ export const ChangelogScene = () => {
   }
   return (
     <ToastProvider>
-      <FramedStudioScene kind="changelog" place="changelog">
+      <FramedStudioScene kind="changelog" place="changelog" columnPlace="help">
         <HelpStudio tab="whatsNew" onClose={noop} onOpenScreen={noop} />
       </FramedStudioScene>
     </ToastProvider>

@@ -557,8 +557,8 @@ install") lives in its tooltip and accessible name. The lockup drops to the dog
 mark when a pill sits beside it and the line is too narrow for both (a container
 query on `[data-column-corner]`, under 12.25rem), so the pill and the bug icon
 stay on one line at every column width; the pill truncates before the lockup
-does. At rest the full lockup always shows, and only a version too long for the
-row truncates. The whole line is set in the meta size. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
+does. At rest the lockup drops to the mark under 13.5rem, so the bug icon keeps
+its room, and above that only a version too long for the row truncates. The whole line is set in the meta size. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
 400px. The pill opens the update card. On the rail, which has no room for a
 pill, the mark carries the update dot, and a click opens Help on What's new
 (also while the Guide is open),
