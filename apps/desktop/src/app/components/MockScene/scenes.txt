@@ -59,6 +59,8 @@ auto-child-returned-today
 auto-move-moved
 auto-move-panel
 auto-overview-row
+auto-push-ask
+auto-push-results
 b-monitoring-busy
 b-monitoring-expanded
 board

@@ -1,5 +1,5 @@
 import { EMPTY_USER_FACTS } from '@goodboy/core/auto';
-import { insertAutoOutbox, type AutoOutboxKind } from '@goodboy/db';
+import { insertAutoOutbox, type AutoOutboxKind, type Database } from '@goodboy/db';
 import { brandId, type AutoOutboxId } from '@goodboy/types';
 import type { AutoTurnEnded } from '../ports';
 import type { AgentVerbContext } from '../verbContext';
@@ -20,6 +20,7 @@ type DeliveryWorldParams = {
   readonly planIds?: ReadonlyArray<Readonly<{ id: string; agentId: string }>>;
   readonly isDeciding?: boolean;
   readonly capUsd?: number;
+  readonly database?: Database;
 };
 
 export const makeDeliveryWorld = async ({
@@ -27,12 +28,14 @@ export const makeDeliveryWorld = async ({
   planIds,
   isDeciding = false,
   capUsd = 5,
+  database,
 }: DeliveryWorldParams = {}): Promise<DeliveryWorld> => {
   const world = await makeAutoWorld({
     isDeciding,
     capUsd,
     ...(agentIds === undefined ? {} : { agentIds }),
     ...(planIds === undefined ? {} : { planIds }),
+    ...(database === undefined ? {} : { database }),
   });
   const ports = makeFakePorts();
   const ended: Array<AutoTurnEnded> = [];

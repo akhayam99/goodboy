@@ -1,9 +1,18 @@
+import { checksRunOfResult, publishOfResult } from '@goodboy/core/auto';
+import { isRecord } from '@goodboy/types/helpers';
 import type { AutoTreeView } from './state';
 
 type Params = {
   readonly first: ReadonlyArray<AutoTreeView>;
   readonly second: ReadonlyArray<AutoTreeView>;
 };
+
+type ResultParams = {
+  readonly result: unknown;
+};
+
+const verifiedChecksOf = ({ result }: ResultParams): unknown =>
+  isRecord(result) && isRecord(result['verified']) ? (result['verified']['checks'] ?? null) : null;
 
 const signatureOf = (view: AutoTreeView): string =>
   JSON.stringify([
@@ -15,6 +24,9 @@ const signatureOf = (view: AutoTreeView): string =>
       delegation.settledAt,
       delegation.isStopping,
       delegation.questionCycles,
+      publishOfResult({ result: delegation.result }),
+      checksRunOfResult({ result: delegation.result }),
+      verifiedChecksOf({ result: delegation.result }),
     ]),
     view.hiddenChildIds,
     view.artifacts.map((row) => [
