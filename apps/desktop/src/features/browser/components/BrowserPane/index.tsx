@@ -45,12 +45,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
             browserTabListPref.write(!isListOpen);
             setIsListOpen(!isListOpen);
           }}
-          onOpenAsPage={() => {
-            if (shownTab === null) {
-              return;
-            }
-            promoteBrowserTab({ sessionId, tabId: shownTab.id });
-          }}
+          onOpenAsPage={() => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null })}
           onClose={onClose}
         />
         {model.error === null ? null : (

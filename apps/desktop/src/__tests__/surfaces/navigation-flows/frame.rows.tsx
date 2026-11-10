@@ -15,7 +15,6 @@ import {
   openCrumb,
   openPalette,
   settle,
-  useAppStore,
 } from './harness';
 
 const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
@@ -212,11 +211,16 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'frame: the Terminal page sits on the page header inset',
     covers: ['studio:terminal'],
+    door: 'visible',
     open: async () => {
-      useAppStore.getState().openStudio({
-        studio: { kind: 'terminal', terminalId: null, sessionId: null },
-      });
-      await settle();
+      const [terminal] = screen
+        .getAllByTestId('pane-toggle-terminal')
+        .filter((button) => button.closest('[data-drawer-edge]') === null);
+      if (terminal === undefined) {
+        throw new Error('No Terminal button on the right rail');
+      }
+      await click(terminal);
+      await clickButton(/^Open as page$/);
     },
     lands: async () => {
       await studio('Terminal');

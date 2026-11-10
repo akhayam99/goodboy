@@ -192,6 +192,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'right rail: Terminal grows into its page from the dock, the button selected',
     covers: ['studio:terminal'],
+    door: 'visible',
     open: async () => {
       await click(railTool('terminal'));
       await clickButton(/^Open as page$/);
@@ -214,15 +215,12 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'browser page: the Browser button stays selected while its page is open',
+    name: 'right rail: Browser grows into its page from the dock, the button selected',
     covers: ['studio:browser'],
+    door: 'visible',
     open: async () => {
-      const sessionId = useAppStore.getState().currentSessionId;
-      if (sessionId === null) {
-        throw new Error('The browser row needs an open session');
-      }
-      useAppStore.getState().openStudio({ studio: { kind: 'browser', sessionId, tabId: null } });
-      await settle();
+      await click(railTool('browser'));
+      await clickButton(/^Open as page$/);
     },
     lands: both(
       () => studio('Browser'),

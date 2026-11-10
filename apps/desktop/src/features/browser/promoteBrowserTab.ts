@@ -2,8 +2,8 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 
 type Params = {
-  readonly sessionId: SessionId;
-  readonly tabId: string;
+  readonly sessionId: SessionId | null;
+  readonly tabId: string | null;
 };
 
 export const promoteBrowserTab = ({ sessionId, tabId }: Params): void => {

@@ -134,7 +134,7 @@ export const BrowserAddressRow = ({
         disabled={model.address === ''}
         onClick={model.openOutside}
       />
-      {onOpenAsPage === undefined || model.shown === null ? null : (
+      {onOpenAsPage === undefined ? null : (
         <IconButton
           icon={Maximize2}
           label="Open as page"

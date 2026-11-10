@@ -214,13 +214,14 @@ describe('useMenuCommands', () => {
     expect(useAppStore.getState().appStudio?.kind).toBe('monitoring');
   });
 
-  it('opens Browser from the Go menu', async () => {
+  it('opens the Browser dock from the Go menu, not a page', async () => {
     renderHook(() => useMenuCommands());
     await listened();
 
     pick({ payload: { id: 'menu.browser' } });
 
-    expect(useAppStore.getState().appStudio?.kind).toBe('browser');
+    expect(useAppStore.getState().drawer?.kind).toBe('browser');
+    expect(useAppStore.getState().appStudio).toBeNull();
   });
 
   it('replaces the open page when Chat and Monitoring open from the menu', async () => {
