@@ -36,7 +36,7 @@ import { planPublish } from './planPublish';
 import { returnedRevise } from './reviseFailure/returnedRevise';
 import { stoppedRevise } from './reviseFailure/stoppedRevise';
 import type { ChildTurnEnded } from './ports';
-import { pushSettledPublish } from './pushSettledPublish';
+import { pushSettledPublish } from './settledPush/pushSettledPublish';
 import { readCommittedFilesOf } from './readCommittedFiles';
 import { readSnapshot } from './readSnapshot';
 import { reviseAskOf } from './reviseAskOf';

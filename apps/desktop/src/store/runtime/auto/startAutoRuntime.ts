@@ -44,6 +44,7 @@ import { followArtifactAnnouncements } from './followArtifactAnnouncements';
 import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import { makeAutoRuntime } from './makeAutoRuntime';
 import type { SleepParams } from './startDeliveredTurn';
+import { createPushSweep, type PushSweepErrorParams } from './settledPush/createPushSweep';
 import {
   startAutoTree,
   startAutoTrees,
@@ -334,7 +335,14 @@ export const startAutoRuntime = async ({
       recovered.add(treeId);
     }
   };
+  const sweepPushes = createPushSweep({
+    ctx: runtime.ctx,
+    onError: ({ error }: PushSweepErrorParams) => {
+      void getState().reportError({ recovery: CHECK_STATE, title: 'Auto hit a problem', error });
+    },
+  });
   const tick = async (): Promise<void> => {
+    void sweepPushes();
     await startAutoTrees({ ctx: runtime.ctx, ...treeCaps });
     const trees = await listAutoTreesToRecover({ db });
     await Promise.all(trees.map((tree) => tickTree(tree.id)));

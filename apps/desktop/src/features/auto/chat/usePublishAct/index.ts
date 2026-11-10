@@ -55,7 +55,7 @@ export const usePublishAct = (): PublishActModel => {
               continue;
             }
             const saved = savedPublishOf({ sessionId, delegationId: row.delegationId });
-            if (!isPublishOpenOf({ act: name, publish: saved })) {
+            if (row.isStorageFailure !== true && !isPublishOpenOf({ act: name, publish: saved })) {
               continue;
             }
             await reportError({
