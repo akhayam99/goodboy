@@ -52,6 +52,18 @@ describe('computeCursorCostUsd', () => {
     const cursorCost = computeCursorCostUsd({ usage, model: 'claude-fable-5-2-high' });
     const claudeCost = computeCostUsd({ usage, model: 'claude-fable-5-2' });
     expect(cursorCost).toBeCloseTo(claudeCost);
+    expect(cursorCost).toBeCloseTo(8 + 40);
+  });
+
+  it('claude-fable-5-2-high bills cache read at 0.20 and cache write at 10 per Mtok', () => {
+    const empty: ProviderUsage = { ...usage, inputTokens: 0, outputTokens: 0 };
+    const model = 'claude-fable-5-2-high';
+    expect(
+      computeCursorCostUsd({ usage: { ...empty, cachedInputTokens: 1_000_000 }, model }),
+    ).toBeCloseTo(0.2);
+    expect(
+      computeCursorCostUsd({ usage: { ...empty, cacheCreationInputTokens: 1_000_000 }, model }),
+    ).toBeCloseTo(10);
   });
 
   it('gemini-3.7-flash-medium bills at the cursor flash rate', () => {
