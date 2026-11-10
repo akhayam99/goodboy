@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { publishRowsOf } from '../../../features/auto/chat/publishRowsOf';
 import { PUSH_LIVE_WINDOW_MS } from './settledPush/PUSH_LIVE_WINDOW_MS';
 import { PUSH_SWEEP_RETRY_MS } from './settledPush/PUSH_SWEEP_RETRY_MS';
 import { createPushSweep } from './settledPush/createPushSweep';
@@ -6,6 +7,7 @@ import { sweepStalePushing } from './settledPush/sweepStalePushing';
 import { publishAct } from './publishAct';
 import {
   attemptPublishOf,
+  delegationsOf,
   holdPushes,
   idsOf,
   LEDGER_FORCE,
@@ -179,6 +181,9 @@ describe('a push whose result could not be saved', () => {
     expect(world.state.ports.pushes).toHaveLength(1);
     expect(await recordOf(world)).toMatchObject(expected);
     expect(await attemptPublishOf(world)).toMatchObject(expected);
+    const rows = publishRowsOf({ delegations: await delegationsOf(world) });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.line).toMatchObject({ state: 'failed', canRetry: true });
   });
 });
 
@@ -201,6 +206,9 @@ describe('the boot sweep of a push left pushing', () => {
     expect(await recordOf(restarted)).toMatchObject(expected);
     expect(await attemptPublishOf(restarted)).toMatchObject(expected);
     expect(await sweepStalePushing({ ctx: restarted.state.ctx })).toMatchObject({ swept: 0 });
+    const rows = publishRowsOf({ delegations: await delegationsOf(restarted) });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.line).toMatchObject({ state: 'failed', canRetry: true });
   });
 
   it('leaves a push another window started a moment ago alone, and sweeps it once it is old', async () => {

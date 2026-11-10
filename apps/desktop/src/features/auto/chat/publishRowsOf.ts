@@ -22,6 +22,7 @@ const isAskedOf = ({ publish }: AskedParams): boolean =>
     publish.state === 'pushing' ||
     publish.state === 'declined' ||
     publish.isConfirmed ||
+    publish.startedAt !== null ||
     (publish.state === 'failed' && publish.tries > 0));
 
 export const publishRowsOf = ({ delegations }: Params): ReadonlyArray<PublishRow> =>
