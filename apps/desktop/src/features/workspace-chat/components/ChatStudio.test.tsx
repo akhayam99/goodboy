@@ -135,7 +135,7 @@ describe('the chat list fold', () => {
 
     expect(screen.queryByRole('complementary', { name: 'Chat list' })).toBeNull();
     expect(localStorage.getItem('goodboy:studio-rail-folded:chat:v1')).toBe('1');
-    fireEvent.click(screen.getByRole('button', { name: 'Show the rail' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show chat list' }));
 
     expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
     expect(localStorage.getItem('goodboy:studio-rail-folded:chat:v1')).toBe('0');
