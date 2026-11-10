@@ -167,7 +167,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
             main={
               <div className="flex min-h-0 min-w-0 flex-1">
                 <div
-                  data-studio-motion=""
+                  data-studio-motion={isClosing ? 'out' : 'in'}
                   className={cn('flex min-h-0 min-w-0 flex-1 flex-col', motion)}
                   onAnimationEnd={(event) => {
                     if (event.target === event.currentTarget) {
@@ -183,7 +183,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
             drawer={
               drawerSpec?.node == null || !isPanelShown ? null : (
                 <div
-                  data-studio-motion=""
+                  data-studio-motion={isClosing ? 'out' : hasEntered ? 'settled' : 'in'}
                   className={cn(
                     'flex min-h-0 min-w-0 flex-1 flex-col',
                     (isClosing || !hasEntered) && motion,
