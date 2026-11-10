@@ -136,3 +136,23 @@ describe('the column draws what its saved fold says, on every page', () => {
     expect(columnWidthOf({ isSidebarCollapsed: false })).toBe('var(--goodboy-left-sidebar-width)');
   });
 });
+
+describe('the top bar left zone stays above the column it folds', () => {
+  it('caps the left zone at the column width while the column is open', () => {
+    expect(TOP_BAR).toContain("isColumnOpen && 'max-w-(--goodboy-left-sidebar-width)'");
+    expect(TOP_BAR).toContain('const isColumnOpen = sidebar?.isCollapsed === false;');
+  });
+
+  it('sets the column width on the shell root, so the top bar reads the same value', () => {
+    const { container } = render(
+      <AppShell
+        topBar={<div>bar</div>}
+        leftSidebar={<div>column</div>}
+        main={<div>content</div>}
+      />,
+    );
+    const root = container.querySelector<HTMLElement>('[data-app-backdrop]');
+
+    expect(root?.style.getPropertyValue('--goodboy-left-sidebar-width')).not.toBe('');
+  });
+});

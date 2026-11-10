@@ -1,4 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
+import { cn } from '@goodboy/ui';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import { RepoEntry } from '../../../features/workspace/components/RepoEntry';
@@ -28,6 +29,7 @@ type Props = {
 
 export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, sidebar }: Props) => {
   const workspace = useCurrentWorkspace();
+  const isColumnOpen = sidebar?.isCollapsed === false;
   return (
     <>
       <div
@@ -35,7 +37,12 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, si
         data-top-bar=""
         className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 px-2"
       >
-        <div className="col-start-1 flex pl-(--titlebar-inset) min-w-0 items-center gap-1">
+        <div
+          className={cn(
+            'col-start-1 flex pl-(--titlebar-inset) min-w-0 items-center gap-1',
+            isColumnOpen && 'max-w-(--goodboy-left-sidebar-width)',
+          )}
+        >
           {sidebar === undefined ? null : (
             <ColumnToggleButton isCollapsed={sidebar.isCollapsed} onToggle={sidebar.onToggle} />
           )}
