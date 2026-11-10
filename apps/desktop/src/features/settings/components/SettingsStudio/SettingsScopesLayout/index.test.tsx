@@ -126,6 +126,15 @@ describe('the Settings scopes rail on a narrow pane', () => {
     expect(localStorage.getItem(FOLD_KEY)).toBeNull();
   });
 
+  it('stays docked in the sheet of a 1100 wide window with the column open', () => {
+    mount();
+
+    resizeTo({ width: 852 });
+
+    expect(rail()).not.toBeNull();
+    screen.getByRole('searchbox', { name: 'Search settings' });
+  });
+
   it('docks again once the pane widens', () => {
     mount();
     resizeTo({ width: 700 });

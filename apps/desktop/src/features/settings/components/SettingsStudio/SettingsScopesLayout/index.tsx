@@ -14,6 +14,8 @@ import type { SettingsGroup } from '../settingsDirectory';
 import { SettingsRail } from '../SettingsRail';
 import { SettingsSearchResults } from '../SettingsSearchResults';
 
+const SETTINGS_RAIL_FOLD_BELOW = 720;
+
 type Props = {
   readonly pageKey: string | null;
   readonly groups: ReadonlyArray<SettingsGroup>;
@@ -31,7 +33,7 @@ export const SettingsScopesLayout = ({
   placement,
   detail,
 }: Props) => {
-  const fold = useStudioRailFold({ surface: 'settings' });
+  const fold = useStudioRailFold({ surface: 'settings', foldBelow: SETTINGS_RAIL_FOLD_BELOW });
   const [query, setQuery] = useState('');
   const [isSearchAsked, setIsSearchAsked] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
