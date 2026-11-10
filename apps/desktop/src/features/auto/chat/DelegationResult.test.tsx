@@ -104,6 +104,7 @@ describe('DelegationResult summary', () => {
       publish: {
         text: 'Not pushed: connection reset',
         state: 'failed',
+        tone: 'warning',
         canRetry: true,
         canPutBack: false,
       },
@@ -128,6 +129,7 @@ describe('DelegationResult summary', () => {
       publish: {
         text: 'Force pushed ak/ledger-export at abc1234, the earlier version is kept as a backup',
         state: 'pushed',
+        tone: 'success',
         canRetry: false,
         canPutBack: true,
       },
@@ -146,6 +148,7 @@ describe('DelegationResult summary', () => {
           publish: {
             text: 'Pushed ak/ledger-export at abc1234',
             state: 'pushed',
+            tone: 'success',
             canRetry: false,
             canPutBack: false,
           },

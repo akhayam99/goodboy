@@ -54,6 +54,7 @@ type WorldParams = {
   readonly capUsd?: number;
   readonly planIds?: ReadonlyArray<Readonly<{ id: string; agentId: string }>>;
   readonly isDeciding?: boolean;
+  readonly database?: Database;
 };
 
 export const makeAutoWorld = async ({
@@ -61,8 +62,9 @@ export const makeAutoWorld = async ({
   capUsd = 5,
   planIds = [],
   isDeciding = true,
+  database,
 }: WorldParams = {}): Promise<AutoWorld> => {
-  const db = await makeMigratedTestDatabase();
+  const db = database ?? (await makeMigratedTestDatabase());
   await seedAutoSession({ db, agentIds });
   await seedAutoTree({ db, capUsd });
   for (const plan of planIds) {
