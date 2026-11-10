@@ -224,7 +224,7 @@ describe('HelpStudio on the Guide', () => {
     fireEvent.click(chapterButton('Keyboard shortcuts'));
 
     const keyboard = within(page('Keyboard shortcuts'));
-    expect(keyboard.getByRole('heading', { level: 2, name: 'Command palette' })).toBeDefined();
+    expect(keyboard.getByRole('heading', { level: 2, name: 'Search or run' })).toBeDefined();
     expect(keyboard.getByText(shortcutGlyphs('palette.open'))).toBeDefined();
     expect(keyboard.queryByText('New terminal tab')).toBeNull();
   });

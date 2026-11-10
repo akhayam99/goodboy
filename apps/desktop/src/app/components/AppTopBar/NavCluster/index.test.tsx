@@ -1,167 +1,166 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { brandId, type Session, type SessionId, type WorkflowRunId } from '@goodboy/types';
-import { aSession, aWorkflowRun } from '@goodboy/types/testing';
-
-const SESSION_ID = 'session-1' as SessionId;
-
-const { store } = vi.hoisted(() => {
-  const noRows = (): Record<string, ReadonlyArray<unknown>> => ({});
-  return {
-    store: {
-      currentWorkspaceId: 'ws-1',
-      currentSessionId: null as string | null,
-      openSessionDraftWorkspaceId: null as string | null,
-      appStudio: null as { readonly kind: string } | null,
-      sessions: [] as ReadonlyArray<Session>,
-      sessionPhaseRuns: noRows(),
-      sessionWorkflows: noRows(),
-      phaseTemplates: noRows(),
-      navigation: {} as Record<string, unknown>,
-      back: vi.fn(),
-      forward: vi.fn(),
-      goToHistory: vi.fn(),
-      navigate: vi.fn(),
-      closeStudio: vi.fn(),
-      switchStudio: vi.fn(),
-    },
-  };
-});
-
-vi.mock('../../../../store', () => ({
-  BOARD_PLACE: { at: 'board' },
-  useAppStore: Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
-    getState: () => store,
-  }),
-}));
-
-vi.mock('@goodboy/ui', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/ui')>();
-  return {
-    ...actual,
-    Tooltip: ({
-      content,
-      shortcut,
-      children,
-    }: {
-      content: string;
-      shortcut?: string;
-      children: React.ReactNode;
-    }) => (
-      <span data-tooltip={content} data-shortcut={shortcut}>
-        {children}
-      </span>
-    ),
-  };
-});
-
+import {
+  brandId,
+  type AgentId,
+  type Session,
+  type SessionId,
+  type WorkflowRunId,
+} from '@goodboy/types';
+import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import {
+  harborline,
+  seedColumn,
+  sessionOf,
+} from '../../../../features/workspace/testing/sessionColumn';
+import { BOARD_PLACE, sessionPlace } from '../../../../store/slices/navigation/place';
+import {
+  EMPTY_FOCUS,
+  type Location,
+  type Place,
+  type SessionTarget,
+} from '../../../../store/slices/navigation/types';
+import type { LensKind } from '../../../../store/slices/session-view/types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { NavCluster } from './index';
 
-const sessionView = (lens: string | null) => ({
-  workspaceId: 'ws-1',
-  place: {
-    at: 'session',
-    sessionId: SESSION_ID,
-    view: { lens, agentId: null, target: null },
-  },
-  studio: null,
-  focus: { drawer: null, scroll: {} },
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
 });
 
-const BOARD_ENTRY = {
-  workspaceId: 'ws-1',
-  place: { at: 'board' },
-  studio: null,
-  focus: { drawer: null, scroll: {} },
+afterEach(cleanup);
+
+const RETRY = sessionOf({ goal: 'Retry failed webhook deliveries' });
+
+type PlaceParams = {
+  readonly place: Place;
 };
 
-beforeEach(() => {
-  store.currentSessionId = null;
-  store.openSessionDraftWorkspaceId = null;
-  store.appStudio = null;
-  store.navigation = {};
-  store.sessionPhaseRuns = {};
-  store.sessions = [{ id: SESSION_ID, goal: 'Retry failed webhook deliveries' } as Session];
+const locationOf = ({ place }: PlaceParams): Location => ({
+  workspaceId: harborline.id,
+  place,
+  studio: null,
+  focus: EMPTY_FOCUS,
 });
 
-afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
-});
+const BOARD_ENTRY = locationOf({ place: BOARD_PLACE });
+
+type ViewParams = {
+  readonly sessionId: SessionId;
+  readonly lens: LensKind | null;
+  readonly agentId?: AgentId | null;
+  readonly target?: SessionTarget | null;
+};
+
+const sessionView = (params: ViewParams): Location => locationOf({ place: sessionPlace(params) });
+
+type SeedParams = {
+  readonly sessions?: ReadonlyArray<Session>;
+  readonly entries: ReadonlyArray<Location>;
+  readonly index: number;
+};
+
+const seed = ({ sessions = [RETRY], entries, index }: SeedParams) => {
+  seedColumn({ store: useAppStore, sessions });
+  useAppStore.setState({ navigation: { [harborline.id]: { entries: [...entries], index } } });
+};
+
+const indexNow = (): number | undefined => useAppStore.getState().navigation[harborline.id]?.index;
 
 describe('NavCluster', () => {
-  it('disables Previous with nothing behind, and names the destination when there is one', () => {
+  it('disables Back with nothing behind, and names the destination when there is one', () => {
+    seed({ entries: [BOARD_ENTRY], index: 0 });
     render(<NavCluster />);
-    const back = screen.getByRole('button', { name: 'Previous' });
+    const back = screen.getByRole('button', { name: 'Back' });
     expect(back.getAttribute('aria-disabled')).toBe('true');
-    expect(back.parentElement?.getAttribute('data-tooltip')).toBe('Nothing to go back to');
+    expect(tooltipTextOf({ element: back })).toBe('Nothing to go back to');
     fireEvent.click(back);
-    expect(store.back).not.toHaveBeenCalled();
+    expect(indexNow()).toBe(0);
 
     cleanup();
-    store.navigation = { 'ws-1': { entries: [sessionView('review'), BOARD_ENTRY], index: 1 } };
+    seed({
+      entries: [sessionView({ sessionId: RETRY.id, lens: 'review' }), BOARD_ENTRY],
+      index: 1,
+    });
     render(<NavCluster />);
-    const live = screen.getByRole('button', { name: 'Previous: Comments' });
-    expect(live.parentElement?.getAttribute('data-tooltip')).toContain(
-      'Previous: Comments\nRetry failed webhook deliveries',
-    );
+    const live = screen.getByRole('button', { name: 'Back: Comments' });
+    expect(tooltipTextOf({ element: live })).toContain('Retry failed webhook deliveries');
+    expect(tooltipTextOf({ element: live })).toContain('Hold for history');
     fireEvent.click(live);
-    expect(store.back).toHaveBeenCalledOnce();
+
+    expect(indexNow()).toBe(0);
+    expect(useAppStore.getState().currentSessionId).toBe(RETRY.id);
   });
 
   it('names the agent and the run an entry shows, even from another session', () => {
-    const OTHER_ID = brandId<SessionId>({ value: 'session-2' });
-    store.sessions = [
-      aSession({
-        id: SESSION_ID,
-        goal: 'Retry failed webhook deliveries',
-        workflowRuns: [
-          aWorkflowRun({
-            id: brandId<WorkflowRunId>({ value: 'run-relay' }),
-            title: 'Retry the relay on 503',
-          }),
-        ],
-      }),
-      aSession({ id: OTHER_ID, goal: 'Guard the settlement batch', workflowRuns: [] }),
-    ];
-    store.sessionPhaseRuns = {
-      [SESSION_ID]: [{ id: 'agent-tester', name: 'Tester', kind: 'tester' }],
-    };
-    const agentEntry = {
-      ...sessionView('workflows'),
-      place: {
-        at: 'session',
-        sessionId: SESSION_ID,
-        view: { lens: 'workflows', agentId: 'agent-tester', target: null },
+    const OTHER_ID = brandId<SessionId>({ value: 'session-guard' });
+    const withRun = aSession({
+      workspaceId: harborline.id,
+      goal: 'Retry failed webhook deliveries',
+      workflowRuns: [
+        aWorkflowRun({
+          id: brandId<WorkflowRunId>({ value: 'run-relay' }),
+          title: 'Retry the relay on 503',
+        }),
+      ],
+    });
+    const other = aSession({
+      id: OTHER_ID,
+      workspaceId: harborline.id,
+      goal: 'Guard the settlement batch',
+      workflowRuns: [],
+    });
+    const sessionId = withRun.id;
+    const testerId = brandId<AgentId>({ value: 'agent-tester' });
+    seed({
+      sessions: [withRun, other],
+      entries: [
+        sessionView({
+          sessionId,
+          lens: 'workflows',
+          target: { kind: 'run', runId: 'run-relay' },
+        }),
+        sessionView({ sessionId, lens: 'workflows', agentId: testerId }),
+        sessionView({ sessionId: OTHER_ID, lens: null }),
+      ],
+      index: 2,
+    });
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [sessionId]: [anAgent({ id: testerId, name: 'Tester', kind: 'tester' })],
       },
-    };
-    const runEntry = {
-      ...sessionView('workflows'),
-      place: {
-        at: 'session',
-        sessionId: SESSION_ID,
-        view: { lens: 'workflows', agentId: null, target: { kind: 'run', runId: 'run-relay' } },
-      },
-    };
-    const otherEntry = {
-      ...sessionView(null),
-      place: {
-        at: 'session',
-        sessionId: OTHER_ID,
-        view: { lens: null, agentId: null, target: null },
-      },
-    };
-    store.navigation = { 'ws-1': { entries: [runEntry, agentEntry, otherEntry], index: 2 } };
+    });
     render(<NavCluster />);
 
-    const previous = screen.getByRole('button', { name: /^Previous: / });
-    expect(previous.getAttribute('aria-label')).toBe('Previous: Tester');
-    expect(previous.parentElement?.getAttribute('data-tooltip')).toBe(
-      'Previous: Tester\nRetry failed webhook deliveries',
-    );
-    fireEvent.contextMenu(previous);
+    const back = screen.getByRole('button', { name: /^Back: / });
+    expect(back.getAttribute('aria-label')).toBe('Back: Tester');
+    expect(tooltipTextOf({ element: back })).toContain('Retry failed webhook deliveries');
+    fireEvent.contextMenu(back);
     expect(screen.getAllByRole('menuitemradio').map((item) => item.textContent)).toEqual([
       'OverviewGuard the settlement batch',
       'TesterRetry failed webhook deliveries',
@@ -170,12 +169,18 @@ describe('NavCluster', () => {
   });
 
   it('opens the recent history on right click and jumps to an entry', () => {
-    store.navigation = {
-      'ws-1': { entries: [sessionView(null), sessionView('review'), BOARD_ENTRY], index: 2 },
-    };
+    const sessionId = RETRY.id;
+    seed({
+      entries: [
+        sessionView({ sessionId, lens: null }),
+        sessionView({ sessionId, lens: 'review' }),
+        BOARD_ENTRY,
+      ],
+      index: 2,
+    });
     render(<NavCluster />);
 
-    fireEvent.contextMenu(screen.getByRole('button', { name: 'Previous: Comments' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Back: Comments' }));
     const items = screen.getAllByRole('menuitemradio');
     expect(items.map((item) => item.textContent)).toEqual([
       'Board',
@@ -183,7 +188,8 @@ describe('NavCluster', () => {
       'OverviewRetry failed webhook deliveries',
     ]);
     expect(items[0]?.getAttribute('aria-checked')).toBe('true');
-    fireEvent.click(items[2] as HTMLElement);
-    expect(store.goToHistory).toHaveBeenCalledWith({ index: 0 });
+    fireEvent.click(items[2] ?? document.body);
+
+    expect(indexNow()).toBe(0);
   });
 });

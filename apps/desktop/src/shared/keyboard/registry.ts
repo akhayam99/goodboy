@@ -77,7 +77,7 @@ export const SHORTCUTS = {
     group: 'general',
     yieldsToText: true,
   },
-  'palette.open': { combo: 'cmd+KeyK', label: 'Command palette', plane: 'app', group: 'general' },
+  'palette.open': { combo: 'cmd+KeyK', label: 'Search or run', plane: 'app', group: 'general' },
   'search.open': { combo: 'cmd+KeyF', label: 'Search', plane: 'app', group: 'general' },
   'settings.open': { combo: 'cmd+Comma', label: 'Settings', plane: 'app', group: 'general' },
   'settings.shortcuts': {
