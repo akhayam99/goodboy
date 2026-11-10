@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { useChapterHash } from './index';
 
 const IDS: ReadonlyArray<string> = ['bring', 'direction', 'guide', 'ship', 'get'];
@@ -12,6 +12,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   window.history.replaceState(null, '', '/');
 });
 
