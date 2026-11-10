@@ -120,21 +120,24 @@ export const AppShell = ({
     hasFooter,
   });
   const gridStyle = {
-    ...left.style,
     gridTemplateAreas: layout.templateAreas,
     gridTemplateColumns: layout.templateColumns,
     gridTemplateRows: layout.templateRows,
   } satisfies CSSProperties;
 
   return (
-    <div data-app-backdrop="" className="flex h-screen w-screen flex-col bg-backdrop">
+    <div
+      data-app-backdrop=""
+      ref={left.targetRef}
+      style={left.style}
+      className="flex h-screen w-screen flex-col bg-backdrop"
+    >
       {topBar != null ? <div className="shrink-0">{topBar}</div> : null}
       <div
         className={cn(
           'grid min-h-0 w-full flex-1 overflow-hidden text-foreground motion-safe:transition-[grid-template-columns] duration-200 ease-enter',
           className,
         )}
-        ref={left.targetRef}
         style={gridStyle}
       >
         {hasLeftSidebar ? (

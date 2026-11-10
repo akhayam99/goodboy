@@ -391,16 +391,16 @@ describe('app overlay hook, workspace launcher', () => {
     expect(await openStudios()).toEqual(['palette']);
   });
 
-  it.each([['goodboy:open-guide', 'guide']])(
-    'mounts the app studio that %s names over the launcher',
-    async (name, kind) => {
-      renderLauncher();
+  it.each([
+    ['goodboy:open-guide', 'guide'],
+    ['goodboy:open-changelog', 'changelog'],
+  ])('mounts the app studio that %s names over the launcher', async (name, kind) => {
+    renderLauncher();
 
-      fire({ name });
+    fire({ name });
 
-      expect(await openStudios()).toEqual([kind]);
-    },
-  );
+    expect(await openStudios()).toEqual([kind]);
+  });
 
   it('opens New workspace in place on Home, with no studio over it, and Cancel goes back', async () => {
     renderLauncher();

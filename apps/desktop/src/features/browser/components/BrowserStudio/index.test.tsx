@@ -62,6 +62,8 @@ type CommandParams = { readonly command: string };
 type PayloadParams = { readonly payload: unknown };
 type StudioParams = { readonly tabId: string | null; readonly sessionId?: SessionId | null };
 type ScopeParams = { readonly scope: string; readonly rect: typeof VIEW_RECT };
+type ElementParams = { readonly element: Element };
+type ChainParams = { readonly from: Element; readonly to: Element };
 
 let store: StoryStore;
 let rows: BrowserTab[];
@@ -181,6 +183,29 @@ const placeViewIn = async ({ scope, rect }: ScopeParams) => {
     return found;
   });
   giveRect({ element: view, rect });
+};
+
+const classesOf = ({ element }: ElementParams): ReadonlySet<string> =>
+  new Set(element.getAttribute('class')?.split(/\s+/) ?? []);
+
+const unsizedBetween = ({ from, to }: ChainParams) => {
+  const unsized: string[] = [];
+  for (let element: Element = from; element !== to;) {
+    const parent = element.parentElement;
+    if (parent === null) {
+      return [...unsized, 'detached'];
+    }
+    const own = classesOf({ element });
+    const above = classesOf({ element: parent });
+    const isFilled = above.has('flex')
+      ? !above.has('flex-col') || own.has('flex-1') || own.has('h-full')
+      : own.has('h-full');
+    if (!isFilled) {
+      unsized.push(element.getAttribute('class') ?? element.tagName);
+    }
+    element = parent;
+  }
+  return unsized;
 };
 
 const lastViewCall = () => {
@@ -364,6 +389,28 @@ describe('the browser page', () => {
       kind: 'browser',
       sessionId: CHECKOUT_SESSION,
       tabId: 'tab-checkout',
+    });
+  });
+
+  it('gives the native view the full height of the page, with no stand-in to prop it open', async () => {
+    openPage({ tabId: null });
+    const view = await waitFor(() => {
+      const found = document.querySelector('[data-browser-view]');
+      if (found === null) {
+        throw new Error('The page draws no view placeholder yet.');
+      }
+      return found;
+    });
+    const layout = document.querySelector('[data-studio-rail="page"]');
+
+    expect(layout).not.toBeNull();
+    expect(unsizedBetween({ from: view, to: layout?.parentElement ?? view })).toEqual([]);
+
+    giveRect({ element: view, rect: VIEW_RECT });
+    await waitFor(() => expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']));
+    expect(callsOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
+      tabId: 'live-1',
+      bounds: VIEW_RECT,
     });
   });
 

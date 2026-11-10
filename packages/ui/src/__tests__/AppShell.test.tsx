@@ -210,7 +210,7 @@ describe('AppShell right drawer', () => {
       <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />,
     );
     const setItem = vi.spyOn(localStorage, 'setItem');
-    const grid = container.querySelector<HTMLElement>('[style*="grid-template-areas"]');
+    const shell = container.querySelector<HTMLElement>('[data-app-backdrop]');
     const handle = screen.getByRole('separator', { name: 'Resize left sidebar' });
 
     fireEvent.mouseDown(handle, { button: 0, clientX: 340 });
@@ -219,7 +219,7 @@ describe('AppShell right drawer', () => {
     );
 
     expect(setItem).not.toHaveBeenCalled();
-    expect(grid?.style.getPropertyValue('--goodboy-left-sidebar-width')).toBe(
+    expect(shell?.style.getPropertyValue('--goodboy-left-sidebar-width')).toBe(
       `${LEFT_SIDEBAR_DEFAULT + 49}px`,
     );
 

@@ -5,12 +5,12 @@ export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }
   switch (overlay.kind) {
     case 'settings':
     case 'guide':
+    case 'changelog':
       return true;
     case 'addWorkspace':
     case 'workflow':
     case 'inbox':
     case 'impact':
-    case 'changelog':
     case 'notifications':
     case 'chat':
     case 'terminal':

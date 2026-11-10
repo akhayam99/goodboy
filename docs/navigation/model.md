@@ -127,7 +127,7 @@
   destinations in its Navigate group follow the order of the list. Board answers
   to Sessions in the palette and its page is titled Board. Each session page has
   its own glyph: Runs draws `CONCEPT_ICONS.runs`, not the Workflows door glyph,
-  and Artifacts draws `CONCEPT_ICONS.artifacts`. Moving a destination to another
+  and Artifacts keeps `CONCEPT_ICONS.plans`. Moving a destination to another
   home is a change of its `home` and its row in the table, nothing else.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
@@ -176,9 +176,10 @@
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
   that opens Settings, a card that opens Impact) stacks (`openStudio`), so Back
-  returns to where the link was. A notification row with no session is a link
-  too: it stacks the Notifications page, and only the foot of the list is a door.
-  Board is a door as well: opened over a studio it replaces that studio's entry
+  returns to where the link was. The tabs of Help (Guide, What's new) stack
+  too. A notification row with no session is a link too: it stacks the
+  Notifications page, and only the foot of the list is a door. Board is a door
+  as well: opened over a studio it replaces that studio's entry
   (`openDestination`), so Back from the board returns to the page below the
   studio. Events from the bars carry `door: true`.
 - **One exit.** Close, Esc and Back leave a studio the same way: they land on

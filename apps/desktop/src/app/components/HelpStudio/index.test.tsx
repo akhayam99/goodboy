@@ -12,7 +12,7 @@ const { mocks } = vi.hoisted(() => ({ mocks: { openUrl: vi.fn(async () => undefi
 vi.mock('../../../shared/lib/editor', () => ({ openUrl: mocks.openUrl }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -88,14 +88,15 @@ describe('HelpStudio', () => {
     ]);
   });
 
-  it('switches the tab by switching the studio, so the tab is the history entry', () => {
+  it('switches the tab by opening the other studio, so Back returns to the first tab', () => {
     renderHelp();
+    useAppStore.getState().openStudio({ studio: { kind: 'guide' } });
 
     expect(tab('Guide').getAttribute('aria-selected')).toBe('true');
     fireEvent.click(tab("What's new"));
     expect(useAppStore.getState().appStudio).toEqual({ kind: 'changelog' });
     expect(tab("What's new").getAttribute('aria-selected')).toBe('true');
-    fireEvent.click(tab('Guide'));
+    act(() => useAppStore.getState().back());
     expect(useAppStore.getState().appStudio).toEqual({ kind: 'guide' });
     expect(tab('Guide').getAttribute('aria-selected')).toBe('true');
     expect(screen.getAllByRole('searchbox')).toHaveLength(1);

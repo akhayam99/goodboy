@@ -459,7 +459,10 @@ covered.
   toggle; the column itself has no toggle row. It reads "Hide sidebar" while
   the column is open and "Show sidebar" while it is the rail, and its
   `aria-pressed` follows. The identity has a 200px limit and truncates, with
-  the full name in its tooltip.
+  the full name in its tooltip. While the column is open, the whole left zone
+  is no wider than the column (`--goodboy-left-sidebar-width`, set on the shell
+  root by `AppShell`), so the identity and the repo entry never spill over the
+  page.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the tooltip (`Back to Comments`,
   the session on a second line, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
@@ -609,12 +612,14 @@ and shows in mock scenes too. The update pill (`features/updater/components/Upda
 is soft, enters once and holds still. It is its own button beside the lockup and
 shows only the new version and a state icon; the state ("is ready", "did not
 install") lives in its tooltip and accessible name. The lockup drops to the dog
-mark when the line is too narrow for it (a container query on
-`[data-column-corner]`: under 13.5rem at rest, under 12.25rem with a pill), so the pill and the
-bug icon stay on one line at every column width; only a version too long for the
-row truncates. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
+mark when a pill sits beside it and the line is too narrow for both (a container
+query on `[data-column-corner]`, under 12.25rem), so the pill and the bug icon
+stay on one line at every column width; the pill truncates before the lockup
+does. At rest the lockup drops to the mark under 13.5rem, so the bug icon keeps
+its room, and above that only a version too long for the row truncates. The whole line is set in the meta size. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
 400px. The pill opens the update card. On the rail, which has no room for a
-pill, the mark carries the update dot, and a click opens Help on What's new,
+pill, the mark carries the update dot, and a click opens Help on What's new
+(also while the Guide is open),
 where the release that is the pending update carries the update verbs. The pinned column
 also owns the update arrival card and the restart when idle; a peeked column
 leaves both to it (`isPrimary`).
@@ -648,8 +653,10 @@ What's new, and one search (`RailSearch`, "Search help") over both: a result
 opens its tab and its chapter or release. A tab is a studio kind, `guide` or
 `changelog`, so switching tabs is a `switchStudio` between the two and the tab
 you read is the history entry; the band title reads "Guide" or "What's new". The
-band's one other control is "Sponsor on GitHub", which leaves the app
-(`SponsorLink`). The page's band holds `Back to app` with the Esc chip at the top
+page's one other control is "Sponsor on GitHub", which leaves the app
+(`SponsorLink`): beside Back to app in the band, or, when Help takes the whole
+window on Home, at the end of the title row beside Close, with no strip of its
+own (`DetachedStudio`). The page's band holds `Back to app` with the Esc chip at the top
 left and there is no Close (`close: 'back'`, `StudioFrame/index.test.tsx` pins
 it). The Goodboy line opens it on the Guide and the palette rows open either
 tab. The What's new tab is a rail

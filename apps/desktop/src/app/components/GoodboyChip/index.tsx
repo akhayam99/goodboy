@@ -7,6 +7,7 @@ import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding
 import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import { useInstalledVersion } from '../../../features/changelog/hooks/useInstalledVersion';
 import { NAMES } from '../../../shared/utils/names';
+import { useAppStore } from '../../../store';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyChipEffects } from './GoodboyChipEffects';
 
@@ -24,7 +25,7 @@ const DOOR_LABEL = `Goodboy, ${NAMES.help.toLowerCase()}`;
 
 const TRIGGER_SHAPE: Record<GoodboyChipVariant | 'column-pill', string> = {
   column: 'h-7 min-w-0 flex-1 gap-2 overflow-hidden px-2',
-  'column-pill': 'h-7 min-w-0 shrink gap-2 overflow-hidden px-2',
+  'column-pill': 'h-7 shrink-0 gap-2 overflow-hidden px-2',
   rail: 'size-8 shrink-0 justify-center',
 };
 
@@ -38,6 +39,7 @@ export const GoodboyChip = ({
   const update = useUpdateCardState();
   const version = useInstalledVersion();
   const anchorRef = useRef<HTMLDivElement>(null);
+  const isChangelogOpen = useAppStore((state) => state.appStudio?.kind === 'changelog');
   const hasUpdate = update.state !== null;
   const state: GoodboyChipState = hasUpdate ? 'update' : 'rest';
   const isInMainWindow = useIsMainWindow();
@@ -71,15 +73,15 @@ export const GoodboyChip = ({
       {isPrimary ? (
         <GoodboyChipEffects anchorRef={anchorRef} onOpenChangelog={onOpenChangelog} />
       ) : null}
-      <Tooltip content={NAMES.help} side={variant === 'rail' ? 'right' : 'top'}>
+      <Tooltip content={label} side={variant === 'rail' ? 'right' : 'top'}>
         <button
           type="button"
           onClick={() => {
-            if (isCurrent) {
+            if (isRailUpdate && !isChangelogOpen) {
+              onOpenChangelog();
               return;
             }
-            if (isRailUpdate) {
-              onOpenChangelog();
+            if (isCurrent || isRailUpdate) {
               return;
             }
             onOpenHelp();
@@ -89,7 +91,7 @@ export const GoodboyChip = ({
           data-testid={isPrimary ? 'goodboy-chip' : undefined}
           data-goodboy-chip={variant}
           className={cn(
-            'relative flex items-center rounded-md motion-safe:transition-colors',
+            'relative flex items-center rounded-md text-meta motion-safe:transition-colors',
             FOCUS_RING,
             TRIGGER_SHAPE[hasRowPill ? 'column-pill' : variant],
             isCurrent ? 'cursor-default bg-selected' : 'hover:bg-hover',

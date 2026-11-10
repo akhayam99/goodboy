@@ -24,7 +24,7 @@ export const useSessionRailFold = ({
 }: Params): SessionRailFold => {
   const [isFoldPicked, setIsFoldPicked] = useState(foldedPref.read);
   const [isOpenedNarrow, setIsOpenedNarrow] = useState(false);
-  const isFolded = !isOpenedNarrow && (isFoldPicked || isNarrow);
+  const isFolded = isNarrow ? !isOpenedNarrow : isFoldPicked;
 
   useEffect(() => {
     if (isDrawerOpen) {

@@ -439,10 +439,17 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 - Tauri gives a tab the same initialization scripts as a window, and 2.12
   has no option to leave them out of a child webview. Every page in a tab
   sees `__TAURI_INTERNALS__` with the invoke key and the window and webview
-  labels, and runs under the `freezePrototype` script from `tauri.conf.json`
-  (not yet checked in a real tab). A site that assigns `toString` or
-  `constructor` on a plain object throws in strict mode there. The command
-  wall is the guarantee, not the missing script (`docs/traps.md`).
+  labels. The command wall is the guarantee, not the missing script
+  (`docs/traps.md`).
+- Tabs run with an unfrozen `Object.prototype` on purpose. `freezePrototype`
+  in `tauri.conf.json` is off because Tauri adds it to every tab, and real
+  sites that assign `toString` or `constructor` on a plain object broke under
+  it. The app document freezes itself instead, with
+  `public/freeze-prototype.js` as the first script of `index.html`.
+- A tab sends a current Safari user agent on macOS (`TAB_USER_AGENT` in
+  `browser/host.rs`). The bare WKWebView agent lacks the `Version/` and
+  `Safari/` tokens, and sites such as Google then serve their legacy pages.
+  Windows and Linux keep their engine's own agent.
 - Back and forward are native on macOS: the host steps the WebKit view's own
   history, so a page cannot trap them. Tauri 2.12 exposes no
   native step, so on Windows and Linux they still run `history.back()` and

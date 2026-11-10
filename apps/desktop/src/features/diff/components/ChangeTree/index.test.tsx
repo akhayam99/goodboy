@@ -213,8 +213,8 @@ describe('ChangeTree', () => {
       .getAllByRole('button')
       .slice(0, 3)
       .map((button) => button.getAttribute('aria-label') ?? button.textContent);
-    expect(head).toEqual(['Next unviewed file', 'Keyboard shortcuts', 'Fold the file list']);
-    fireEvent.click(screen.getByRole('button', { name: 'Fold the file list' }));
+    expect(head).toEqual(['Next unviewed file', 'Keyboard shortcuts', 'Hide file list']);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide file list' }));
     expect(onFold).toHaveBeenCalledTimes(1);
   });
 
