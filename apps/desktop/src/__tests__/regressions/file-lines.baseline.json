@@ -35,7 +35,7 @@
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 715,
   "apps/desktop/src/features/search/components/SearchMode/index.tsx": 313,
   "apps/desktop/src/features/session/agent-kind.ts": 725,
-  "apps/desktop/src/features/session/components/AgentDetailPane/index.tsx": 272,
+  "apps/desktop/src/features/session/components/AgentDetailPane/index.tsx": 270,
   "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": 386,
   "apps/desktop/src/features/session/components/ContextDrawer/index.tsx": 290,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 302,

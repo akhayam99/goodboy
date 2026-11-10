@@ -3,6 +3,8 @@ import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
+import { RunModelChip } from '../StartRun/RunModelChip';
+import type { RunModelView } from '../StartRun/useRunModel';
 import { DraftTasks } from './DraftTasks';
 import { TaskPicker } from './TaskPicker';
 
@@ -10,10 +12,17 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly isDisabled: boolean;
   readonly isSubmitBlocked: boolean;
+  readonly model: RunModelView;
   readonly onSubmit: () => void;
 };
 
-export const StartTaskField = ({ workspaceId, isDisabled, isSubmitBlocked, onSubmit }: Props) => {
+export const StartTaskField = ({
+  workspaceId,
+  isDisabled,
+  isSubmitBlocked,
+  model,
+  onSubmit,
+}: Props) => {
   const goal = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowGoal);
   const hasTask = useAppStore(
     (state) => selectSessionDraft({ state, workspaceId }).pickedIssues.length > 0,
@@ -39,6 +48,7 @@ export const StartTaskField = ({ workspaceId, isDisabled, isSubmitBlocked, onSub
         footerStart={
           hasTask ? null : <TaskPicker workspaceId={workspaceId} isDisabled={isDisabled} />
         }
+        model={<RunModelChip model={model} isDisabled={isDisabled} variant="pill" />}
       />
     </section>
   );

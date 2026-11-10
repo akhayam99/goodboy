@@ -10,6 +10,7 @@ import { useStartRun } from '../StartRun/useStartRun';
 import { runModelSlotOfShape } from '../../startRun/runModelSlotOf';
 import { NewSessionStartForm } from '../StartForm/NewSessionStartForm';
 import { startFormKindOfDraft } from '../StartForm/startFormKinds';
+import { useDraftAgentModel } from '../StartForm/useDraftAgentModel';
 import { StartBranchNotice } from './StartBranchNotice';
 import { StartTaskField } from './StartTaskField';
 import { useRestoreLastStart } from './useRestoreLastStart';
@@ -79,6 +80,8 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
     }
   }, [patchSessionDraft, projectIds.length, suggestedId, workspaceId]);
 
+  const agentModel = useDraftAgentModel({ workspaceId, base: shapeModel });
+  const model = kind === null ? autoRun.model : kind === 'agent' ? agentModel : shapeModel;
   const suggestedIds = suggestedId === null ? [] : [suggestedId];
   const isBusy = isStarting || shapeRun.isStarting || autoRun.isStarting;
   const hasGoal = autoRun.text.trim() !== '';
@@ -89,6 +92,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
         workspaceId={workspaceId}
         isDisabled={isBusy}
         isSubmitBlocked={!hasGoal || isBusy}
+        model={model}
         onSubmit={() => void (kind === null ? autoRun.start() : shapeRun.start())}
       />
       <StartBranchNotice workspaceId={workspaceId} isDisabled={isBusy} />
@@ -98,7 +102,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
         shapeRun={shapeRun}
         autoRun={autoRun}
         limit={limit}
-        shapeModel={shapeModel}
+        model={model}
       />
       {notice === undefined || notice === null ? null : (
         <div data-slot="kickoff-notice">{notice}</div>

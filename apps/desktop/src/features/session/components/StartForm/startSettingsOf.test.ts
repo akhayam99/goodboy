@@ -5,7 +5,6 @@ import { startSettingsOf } from './startSettingsOf';
 const NODES = {
   where: 'where',
   role: 'role',
-  model: 'model',
   asks: 'asks',
   edits: 'edits',
   limit: 'limit',
@@ -21,7 +20,7 @@ const keysOf = ({ kind }: KeysParams): ReadonlyArray<string> =>
 
 describe('startSettingsOf', () => {
   it('gives every kind that asks and limits the same chip order', () => {
-    const expected = ['where', 'model', 'asks', 'edits', 'limit', 'guidance'];
+    const expected = ['where', 'asks', 'edits', 'limit', 'guidance'];
     expect(keysOf({ kind: null })).toEqual(expected);
     expect(keysOf({ kind: 'auto' })).toEqual(expected);
     expect(keysOf({ kind: 'orchestrated' })).toEqual(expected);
@@ -29,7 +28,7 @@ describe('startSettingsOf', () => {
   });
 
   it('adds Role to Agent and drops Asks you and Limit', () => {
-    expect(keysOf({ kind: 'agent' })).toEqual(['where', 'role', 'model', 'edits', 'guidance']);
+    expect(keysOf({ kind: 'agent' })).toEqual(['where', 'role', 'edits', 'guidance']);
   });
 
   it('marks the changed settings', () => {

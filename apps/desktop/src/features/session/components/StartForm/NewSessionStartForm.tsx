@@ -16,7 +16,6 @@ import type { StartShapeModel } from '../SessionKickoff/useStartShape';
 import type { RunModelView } from '../StartRun/useRunModel';
 import type { StartRunModel } from '../StartRun/useStartRun';
 import { StartForm } from './StartForm';
-import { useDraftAgentModel } from './useDraftAgentModel';
 import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from './startFormKinds';
 import {
   startAsksOf,
@@ -34,7 +33,7 @@ type Props = {
   readonly shapeRun: StartShapeModel;
   readonly autoRun: StartRunModel;
   readonly limit: AutoTreeLimitModel;
-  readonly shapeModel: RunModelView;
+  readonly model: RunModelView;
 };
 
 type PickParams = {
@@ -49,7 +48,7 @@ export const NewSessionStartForm = ({
   shapeRun,
   autoRun,
   limit,
-  shapeModel,
+  model,
 }: Props) => {
   const draft = useAppStore(
     useShallow((state) => {
@@ -102,8 +101,6 @@ export const NewSessionStartForm = ({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
   });
-  const agentModel = useDraftAgentModel({ workspaceId, base: shapeModel });
-  const model = kind === null ? autoRun.model : kind === 'agent' ? agentModel : shapeModel;
   const hint =
     kind === null && hasGoal
       ? routeLineOf({
