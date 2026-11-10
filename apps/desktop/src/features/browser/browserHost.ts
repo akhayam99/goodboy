@@ -43,6 +43,8 @@ export const browserHost = {
   back: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_back', { args: { tabId } }),
   forward: ({ tabId }: TabParams) =>
     invokeCommand<null>('browser_tab_forward', { args: { tabId } }),
+  inspectable: ({ tabId }: TabParams) =>
+    invokeCommand<null>('browser_tab_inspectable', { args: { tabId } }),
   close: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_close', { args: { tabId } }),
   list: ({ sessionId }: SessionParams) =>
     invokeCommand<ReadonlyArray<BrowserTabFacts>>('browser_tab_list', { args: { sessionId } }),

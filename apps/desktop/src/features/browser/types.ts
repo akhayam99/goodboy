@@ -48,6 +48,7 @@ export type BrowserPaneModel = {
   readonly address: string;
   readonly titleOf: (params: TabParams) => string;
   readonly error: string | null;
+  readonly notice: string | null;
   readonly isDrafting: boolean;
   readonly wakeAttempt: number;
   readonly submit: (params: TextParams) => Promise<boolean>;
@@ -61,6 +62,7 @@ export type BrowserPaneModel = {
   readonly openOutside: () => void;
   readonly copyAddress: () => void;
   readonly duplicate: () => void;
+  readonly inspect: () => void;
   readonly showError: (params: ErrorParams) => void;
 };
 

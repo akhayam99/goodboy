@@ -181,6 +181,43 @@ fn refuses_a_browser_page_that_tries_to_drive_a_tab() {
     ));
 }
 
+#[cfg(target_os = "macos")]
+#[test]
+fn makes_a_live_tab_inspectable_through_the_public_selector() {
+    use super::host::make_inspectable;
+    use crate::platform::web_inspect::is_inspect_supported;
+    assert!(is_inspect_supported());
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = owned_tab(&webview(&app, "main"), &id).expect("owned tab");
+    assert!(make_inspectable(&tab).is_ok());
+}
+
+#[cfg(not(target_os = "macos"))]
+#[test]
+fn refuses_to_make_a_tab_inspectable_off_macos() {
+    use super::host::make_inspectable;
+    use super::reason::UNSUPPORTED_PLATFORM;
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = owned_tab(&webview(&app, "main"), &id).expect("owned tab");
+    assert!(matches!(
+        make_inspectable(&tab),
+        Err(MessageError::Refused(code)) if code == UNSUPPORTED_PLATFORM
+    ));
+}
+
+#[test]
+fn keeps_the_inspector_to_the_public_selector() {
+    let offenders = production_hits(
+        &["open_devtools", "_inspector", "developerExtrasEnabled"],
+        &[],
+    );
+    assert!(offenders.is_empty(), "{offenders:?}");
+    let manifest = include_str!("../../Cargo.toml");
+    assert!(!manifest.contains("devtools"));
+}
+
 #[tauri::command]
 async fn probe() -> String {
     "answered".to_string()

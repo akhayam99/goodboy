@@ -46,6 +46,7 @@ type DoneParams = {
   readonly isDone: boolean;
 };
 
+const INSPECT_NOTICE = 'Open the Develop menu in Safari and pick this tab.';
 const NO_TABS: ReadonlyArray<BrowserTab> = [];
 const FALLBACK_BOUNDS = { x: 0, y: 0, width: 1, height: 1 };
 
@@ -69,6 +70,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const live = useAppStore((state) => state.browserLiveTabs[sessionId]);
   const draftEnds = useAppStore((state) => state.browserDraftEnds[sessionId] ?? 0);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const { facts, refresh } = useLiveTabFacts({
     sessionId,
     onError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
@@ -104,6 +106,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
 
   const run = async ({ step }: StepParams): Promise<boolean> => {
     setError(null);
+    setNotice(null);
     try {
       await step();
       refresh();
@@ -154,6 +157,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
     },
     error,
+    notice,
     isDrafting,
     wakeAttempt,
     submit: async ({ text }) => {
@@ -246,6 +250,16 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       void run({ step: () => openNew({ url: address }) }).then((isDone) => {
         if (isDone) {
           setWakeAttempt((count) => count + 1);
+        }
+      });
+    },
+    inspect: () => {
+      if (shownLiveId === undefined) {
+        return;
+      }
+      void run({ step: () => browserHost.inspectable({ tabId: shownLiveId }) }).then((isDone) => {
+        if (isDone) {
+          setNotice(INSPECT_NOTICE);
         }
       });
     },

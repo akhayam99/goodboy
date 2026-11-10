@@ -11,7 +11,8 @@ use super::guard::{self, AppOrigins};
 use super::lifecycle;
 use super::profile::{self, ProfileId};
 use super::reason::{
-    self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
+    self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, UNSUPPORTED_PLATFORM,
+    WINDOW_GONE,
 };
 use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts, TabState};
 use crate::platform::web_history::HistoryStep;
@@ -337,6 +338,27 @@ pub(crate) fn step_history<R: Runtime>(
         HistoryStep::Forward => FORWARD_SCRIPT,
     };
     webview.eval(script).map_err(failed)
+}
+
+pub(crate) fn make_inspectable<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
+    if !crate::platform::web_inspect::is_inspect_supported() {
+        return Err(reason::refused(UNSUPPORTED_PLATFORM));
+    }
+    set_inspectable(webview)
+}
+
+#[cfg(target_os = "macos")]
+fn set_inspectable<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
+    webview
+        .with_webview(|platform| {
+            crate::platform::web_inspect::make_live_wk_web_view_inspectable(platform)
+        })
+        .map_err(failed)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn set_inspectable<R: Runtime>(_webview: &Webview<R>) -> Result<(), MessageError> {
+    Err(reason::refused(UNSUPPORTED_PLATFORM))
 }
 
 pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<(), MessageError> {
