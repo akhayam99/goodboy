@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PUSH_LIVE_WINDOW_MS } from './settledPush/PUSH_LIVE_WINDOW_MS';
+import { PUSH_SWEEP_RETRY_MS } from './settledPush/PUSH_SWEEP_RETRY_MS';
 import { createPushSweep } from './settledPush/createPushSweep';
 import { sweepStalePushing } from './settledPush/sweepStalePushing';
 import { publishAct } from './publishAct';
@@ -271,6 +272,54 @@ describe('the boot sweep of a push left pushing', () => {
     world.state.world.clock.advance({ ms: PUSH_LIVE_WINDOW_MS + 1 });
     await sweep();
     expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('sweeps a row again after the database could not settle it', async () => {
+    const world = await settle({ publishes: [LEDGER_FORCE] });
+    await leavePushing({ world });
+    const restarted = restartedWorld({ world });
+    const flaky = withWriteHook({
+      ctx: restarted.state.ctx,
+      beforeWrite: failWritesFrom({ from: 1, until: 1 }),
+    });
+    const onError = vi.fn();
+    const sweep = createPushSweep({ ctx: flaky, onError });
+
+    await sweep();
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(await recordOf(world)).toMatchObject({ state: 'pushing' });
+
+    await sweep();
+    expect(await recordOf(world)).toMatchObject({ state: 'pushing' });
+
+    world.state.world.clock.advance({ ms: PUSH_SWEEP_RETRY_MS });
+    await sweep();
+    expect(await recordOf(world)).toMatchObject({ state: 'failed', isRetryable: true });
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  it('sweeps again after the query itself threw', async () => {
+    const world = await settle({ publishes: [LEDGER_FORCE] });
+    await leavePushing({ world });
+    const restarted = restartedWorld({ world });
+    const db = Object.create(restarted.state.ctx.db);
+    let calls = 0;
+    db.select = async (...args: Parameters<typeof restarted.state.ctx.db.select>) => {
+      calls += 1;
+      if (calls === 1) {
+        throw new Error(DB_BUSY);
+      }
+      return restarted.state.ctx.db.select(...args);
+    };
+    const onError = vi.fn();
+    const sweep = createPushSweep({ ctx: { ...restarted.state.ctx, db }, onError });
+
+    await sweep();
+    expect(onError).toHaveBeenCalledTimes(1);
+
+    world.state.world.clock.advance({ ms: PUSH_SWEEP_RETRY_MS });
+    await sweep();
+    expect(await recordOf(world)).toMatchObject({ state: 'failed', isRetryable: true });
   });
 
   it('leaves a push that waits for an answer, and a finished one, alone on boot', async () => {
