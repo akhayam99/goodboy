@@ -49,6 +49,9 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
     case 'spend':
       openers.openSpend();
       return;
+    case 'impact':
+      openers.openImpact();
+      return;
     case 'changelog':
       openers.openChangelog();
       return;

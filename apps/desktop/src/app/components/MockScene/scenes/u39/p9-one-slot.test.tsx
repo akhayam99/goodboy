@@ -86,6 +86,19 @@ describe('the ux39 P9 one slot scenes', () => {
       expect(slot()).not.toBeNull();
       expect(sidePanelMode()).toBe('closed');
       expect(useAppStore.getState().drawer?.kind).toBe('context');
+      expect(
+        document.querySelector('aside[data-drawer-parked] [data-drawer-content]'),
+      ).not.toBeNull();
+      expect(screen.queryByText(/Cannot read properties/)).toBeNull();
     },
   );
+
+  it('ux39-p9-impact-parked opens Impact on its first tab, not Spend', async () => {
+    await mount('ux39-p9-impact-parked');
+
+    expect(useAppStore.getState().appStudio?.kind).toBe('impact');
+    const studio = useAppStore.getState().appStudio;
+    expect(studio?.kind === 'impact' ? studio.scope?.kind : null).not.toBe('spend');
+    expect(screen.queryByText(/has no answer/)).toBeNull();
+  });
 });
