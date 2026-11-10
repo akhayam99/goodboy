@@ -17,6 +17,14 @@ type IntersectParams = {
   readonly b: DOMRect;
 };
 
+type ReachParams = {
+  readonly overlay: Element;
+  readonly view: HTMLElement;
+};
+
+const isUnderSlot = ({ overlay, view }: ReachParams): boolean =>
+  !overlay.matches('[data-studio-slot]') || overlay.parentElement?.contains(view) === true;
+
 const intersects = ({ a, b }: IntersectParams): boolean =>
   a.width > 0 &&
   a.height > 0 &&
@@ -51,6 +59,7 @@ export const createOverlayWatch = () => {
         (overlay) =>
           overlay.isConnected &&
           !overlay.contains(view) &&
+          isUnderSlot({ overlay, view }) &&
           intersects({ a: overlay.getBoundingClientRect(), b: rect }),
       );
     },
