@@ -229,8 +229,10 @@ it. A tool in the chip stays too: over a reader it comes back into the slot,
 under a tool it stays in the chip (`backAfterPlace` in `applyLocation`). Leaving
 the session empties both, and Back brings the drawer back like any drawer. A
 studio over the session parks the drawer instead: the slot and the chip keep
-it, nothing shows it (`selectDrawerPanel` is null under a studio), no close key
-reaches it, and it shows again when the studio closes. A reader, an item or a
+it, it stays mounted but hidden and inert, no close key reaches it
+(`selectDrawerPanel` is null under a studio), and it shows again, as it was,
+when the studio closes. Its own key on the studio closes the studio and shows
+it. A reader, an item or a
 form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional

@@ -89,7 +89,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 - Keys on this page are the Mac keys. On Linux, ⌘ reads as Ctrl, and a few chords differ: **⌘I** is **Ctrl+Shift+I**.
 - A **⌘⌥** key opens each view. On Linux the chord is **Ctrl+Shift+Alt** with the same letter or digit, since a bare Ctrl+Alt chord belongs to the desktop there.
-- **⌘⌥C** opens Context on Goal. The former Goal, Decisions and Summary chords are retired; section links still reach their card.
+- **⌘⌥C** opens Context on Goal. The former Goal, Decisions and Summary chords are retired; section links still reach their card. On a page such as Tasks, a drawer's key leaves the page and shows that drawer beside the session.
 - **⌘1** to **⌘9** switch workspaces.
 - **⌘[** and **⌘]** walk your history.
 - **⌘↑** goes up one level to the page that holds the one you are on.

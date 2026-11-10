@@ -164,11 +164,11 @@
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
 - **One main slot.** Board, the session, the draft and every studio are pages
-  in the one main slot, one at a time: a studio replaces the page in the sheet
-  and the drawer column stays beside it. Scope decides the pattern.
-  Session-scoped editors layer over the session pane. Anything that became a
-  lens stays a lens. A session drawer parks while a studio is open (see
-  [shell.md](./shell.md), The dock follows the page).
+  in the one main slot, one at a time: a studio replaces the page in the sheet.
+  Scope decides the pattern. Session-scoped editors layer over the session
+  pane. Anything that became a lens stays a lens. Every drawer belongs to a
+  session today, so every drawer parks while a studio is open and the sheet
+  takes its width (see [shell.md](./shell.md), The dock follows the page).
 - **A door replaces, a link stacks.** A door is a control that names a studio:
   a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), the Goodboy
   line, the foot of the bell list, a ⌘K Go to

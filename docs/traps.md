@@ -40,12 +40,16 @@ The Rust files with the most comments lost them in one pass. What a reader would
   move: it follows the page. A row never opens a tool: the tool is open already
   or the user did not ask for it.
 
-- A drawer parked under a studio is still in `state.drawer`. Anything that
-  shows or closes the drawer reads `selectDrawerPanel` (null under a studio);
-  `selectOpenDrawer` answers what the session holds, so a close path that reads
-  it would close a drawer nobody sees. The session rail's fold (`useShellFolds`)
-  reads `selectOpenDrawer` on purpose: the session keeps its shape under the
-  page, so coming back moves only the drawer.
+- A drawer parked under a studio is still in `state.drawer` and still mounted
+  (`DrawerHost` and the shell read `selectOpenDrawer`, and `DrawerColumn` hides
+  it with `isParked`). A close path reads `selectDrawerPanel` (null under a
+  studio): `selectOpenDrawer` answers what the session holds, so a close that
+  reads it closes a drawer nobody sees. A toggle (`togglePane`, `toggleDrawer`,
+  `toggleContextDrawer`) closes the studio first, then shows the drawer, and
+  never closes one on a page. The session rail's fold (`useShellFolds`) reads
+  `selectOpenDrawer` on purpose: the session keeps its shape under the page, so
+  coming back moves only the drawer. A parked `DrawerFrame` drops its Escape
+  layer, so Esc reaches the page.
 
 - The macOS menu bar and the web view share every ⌘ key, and the web view sees
   the key first: a `preventDefault` in a shortcut handler stops the native menu

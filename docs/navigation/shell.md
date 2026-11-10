@@ -290,8 +290,13 @@ Closing the drawer brings back what the chip holds, and closing that empties
 the slot. **The dock follows the page.** A session drawer belongs to its
 session: while a page (a studio) replaces the session, the drawer parks, out of
 sight and out of reach of every close key, and Esc, Close or Back brings it
-back with the session (`selectDrawerPanel` shows nothing under a studio, and
-the history entry keeps the drawer). Esc in the session is one ladder: an open
+back with the session. A parked drawer stays mounted, hidden and inert
+(`DrawerColumn` `isParked`), out of the flow so the page takes its width, with
+no exit and no width change, so a draft, a scroll position or a running
+terminal survives the trip. Close keys read `selectDrawerPanel`, which is null
+under a studio, and the history entry keeps the drawer. A drawer's own key
+(⌘⌥C, ⌘⌥X, ⌘⌥S) on a page closes the page and shows that drawer; it never
+closes a parked one. Esc in the session is one ladder: an open
 menu, popover or field takes it first, then the top of the slot closes, then
 the drawer from the chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS,
 File > Close the Drawer) closes the top of the slot from anywhere, a focused
@@ -418,8 +423,10 @@ hide animation or overlay can move it.
   work row, so it can hover over main without taking layout space. A studio is
   a page in the one main slot: it draws inside the content sheet, over the page
   it replaces (`AppShell`'s `studio`, `[data-studio-slot="content"]`), so the
-  column stays live beside every studio and the drawer column stays beside the
-  sheet. The page under it stays mounted and inert. The peek is drawn after
+  column stays live beside every studio, and the drawer parks under it. The
+  slot is opaque (`bg-background`, `bg-chrome` for a studio that draws its own
+  sheets), so the page never shows through while a studio fades in or out. The
+  page under it stays mounted and inert. The peek is drawn after
   the sheet, so a peeked column floats over a studio too. A studio never covers
   the top bar.
 

@@ -6,9 +6,10 @@
 
 Every studio (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Settings,
 Changelog, the guide, Add workspace) is a page in the one main slot: it renders
-inside the content sheet, over the page it replaces, beside the column and with
-the drawer column beside the sheet. The page under it stays mounted and inert,
-and a session drawer parks until the studio closes. The column
+inside the content sheet, over the page it replaces, beside the column. The
+page under it stays mounted and inert. Every drawer belongs to a session today,
+so every drawer parks (mounted, hidden and inert) until the studio closes, and
+the sheet takes its width. The column
 never changes for a studio: it stays live in both sidebar states, so another
 door or a session row is one click away, and ⌘B and the sidebar toggle fold it
 on every page (`shellArrangement` takes no studio). **Settings is a page with
@@ -18,7 +19,9 @@ and the crumb (`StudioTrail`), and below it `SettingsScopesLayout` draws a
 `chrome` on Home) with the fold control and `Search settings` in its first row,
 the groups or the matching settings under it, and the page as the detail
 (`data-settings-detail`). The scopes rail folds like every page rail
-(`goodboy:studio-rail-folded:settings:v1`); its folded strip keeps Show and a
+(`goodboy:studio-rail-folded:settings:v1`), but folds by itself only on a pane
+under 720px (`SETTINGS_RAIL_FOLD_BELOW`), so a 1100px window with the column
+open keeps it docked; its folded strip keeps Show and a
 Search icon that opens the rail on the field. The Settings row in the column
 foot is lit while it is open. Back to app, Esc and Back land alike. A session
 key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and closes Settings on its way, and so
