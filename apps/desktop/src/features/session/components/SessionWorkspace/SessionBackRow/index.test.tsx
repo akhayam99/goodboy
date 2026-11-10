@@ -109,7 +109,12 @@ beforeEach(async () => {
   });
 });
 
-afterEach(cleanup);
+afterEach(async () => {
+  cleanup();
+  await act(async () => {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  });
+});
 
 type WalkParams = {
   readonly places: ReadonlyArray<PlaceRequest>;
