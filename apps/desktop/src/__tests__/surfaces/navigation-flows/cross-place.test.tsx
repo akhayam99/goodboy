@@ -103,8 +103,9 @@ const expectColumnBesideStudio = (): void => {
   const column = document.querySelector('[data-side-column], [data-column-rail]');
   expect(column).not.toBeNull();
   expect(column?.closest('aside')?.hasAttribute('inert')).toBe(false);
-  expect(document.querySelector('[data-studio-slot="content"]')).not.toBeNull();
-  expect(document.querySelector('[data-studio-slot="cover"]')).toBeNull();
+  const slot = document.querySelector('[data-drawer-main] [data-studio-slot="content"]');
+  expect(slot).not.toBeNull();
+  expect(slot?.previousElementSibling?.hasAttribute('inert')).toBe(true);
 };
 
 const expectHealthy = (): void => {
@@ -706,10 +707,69 @@ describe('moving across every place keeps one frame', () => {
     expect(studio()).toBe('inbox');
     expect(document.querySelector('main [data-drawer-main] [data-studio-slot]')).not.toBeNull();
     expect(sidePanelMode()).toBe('closed');
+    const parked = document.querySelector('main aside[aria-label="Side panel"]');
+    expect(parked?.hasAttribute('data-drawer-parked')).toBe(true);
+    expect(parked?.hasAttribute('inert')).toBe(true);
+    expect(parked?.hasAttribute('data-drawer-exit')).toBe(false);
     await escape();
 
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expect(parked?.hasAttribute('inert')).toBe(false);
+    expectHealthy();
+  });
+
+  it('keeps a parked Explore mounted with its scroll through a Tasks round trip', async () => {
+    await boot({ seed: 'pr' });
+
+    await press('lens.explore');
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('explore'));
+    const card = requireValue({
+      value: document.querySelector<HTMLElement>('main aside [data-drawer-content] > div'),
+    });
+    card.scrollTop = 120;
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    expect(card.isConnected).toBe(true);
+    await escape();
+
+    expect(studio()).toBeNull();
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expect(document.querySelector('main aside [data-drawer-content] > div')).toBe(card);
+    expect(card.scrollTop).toBe(120);
+    expectHealthy();
+  });
+
+  it('shows a parked drawer on its key from a page instead of closing it unseen', async () => {
+    const { sessionId } = await boot({ seed: 'pr' });
+
+    await press('lens.context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+
+    await press('lens.context');
+
+    expect(studio()).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBe(sessionId);
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expectHealthy();
+  });
+
+  it('opens a drawer on its key from a page with nothing parked, beside the session', async () => {
+    await boot({ seed: 'pr' });
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
+
+    await press('lens.context');
+
+    expect(studio()).toBeNull();
     expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expectHealthy();

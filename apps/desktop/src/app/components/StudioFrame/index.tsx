@@ -147,7 +147,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
         data-studio={kind}
         data-studio-title={title}
         data-studio-placement={placement}
-        {...(isDrawerHost && !isClosing && { 'data-studio-sheet-owner': '' })}
+        {...(isDrawerHost && { 'data-studio-sheet-owner': '' })}
         className={cn(
           'relative flex h-full w-full min-h-0 flex-col',
           placement === 'cover' || isDrawerHost ? 'bg-chrome' : 'bg-background',

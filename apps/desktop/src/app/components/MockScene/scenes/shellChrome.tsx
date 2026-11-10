@@ -10,7 +10,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { DrawerHost } from '../../DrawerHost';
-import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
@@ -108,7 +108,7 @@ export const ShellFrame = ({
   sidebar = 'collapsed',
   hasOwnTrail = false,
 }: ShellFrameProps) => {
-  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const isDrawerOpen = useAppStore((state) => selectOpenDrawer(state) !== null);
   const rail = useSceneSidebar({ isCollapsed: sidebar === 'collapsed' });
   const arrangement = shellArrangement({
     hasWorkspace: true,
