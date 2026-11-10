@@ -1,14 +1,23 @@
-import { selectOpenDrawer } from '../drawer/selectOpenDrawer';
+import { selectDrawerPanel } from '../drawer/selectDrawerPanel';
 import type { OpenContextDrawerParams } from './openContextDrawer';
 import type { GetFn } from './types';
 
 export const toggleContextDrawer = (get: GetFn) => {
   return (params: OpenContextDrawerParams): void => {
+    const isOnPage = get().appStudio !== null;
+    if (isOnPage) {
+      get().closeStudio();
+    }
     const state = get();
-    const current = selectOpenDrawer(state);
+    const current = selectDrawerPanel(state);
     const isOpen =
       current !== null && current.kind === 'context' && current.sessionId === params.sessionId;
-    if (isOpen && (params.section === undefined || current.payload.section === params.section)) {
+    const isSameSection =
+      isOpen && (params.section === undefined || current.payload.section === params.section);
+    if (isSameSection && isOnPage) {
+      return;
+    }
+    if (isSameSection) {
       state.closeDrawer();
       return;
     }

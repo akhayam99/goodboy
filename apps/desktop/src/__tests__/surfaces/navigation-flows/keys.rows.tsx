@@ -541,6 +541,33 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       expect(await screen.findByRole('textbox', { name: 'Pull request title' })).toBeDefined(),
   }),
   pressRow({ id: 'lens.context', lands: drawerIs(null) }),
+  keyRow({
+    id: 'lens.context',
+    note: 'on a page with Context parked closes the page and shows Context',
+    open: async (ctx) => {
+      useAppStore.getState().openContextDrawer({ sessionId: ctx.sessionId });
+      useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+      await settle();
+      await press('lens.context')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
+      await drawerIs(null)(ctx);
+    },
+  }),
+  keyRow({
+    id: 'lens.context',
+    note: 'on a page with nothing parked closes the page and opens Context',
+    open: async () => {
+      useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+      await settle();
+      await press('lens.context')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
+      await drawerIs(null)(ctx);
+    },
+  }),
   pressRow({
     id: 'ask.open',
     lands: async (ctx) => {

@@ -14,8 +14,16 @@ type Params = {
 };
 
 export const togglePane = ({ sessionId, pane }: Params): void => {
+  const isOnPage = useAppStore.getState().appStudio !== null;
+  if (isOnPage) {
+    useAppStore.getState().closeStudio();
+  }
   const state = useAppStore.getState();
-  if (openPaneOf({ state, sessionId }) === pane) {
+  const isShown = openPaneOf({ state, sessionId }) === pane;
+  if (isShown && isOnPage) {
+    return;
+  }
+  if (isShown) {
     state.closeDrawer();
     return;
   }

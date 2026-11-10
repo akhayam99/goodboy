@@ -1,15 +1,22 @@
 import { drawerKey } from './drawerKey';
-import { selectOpenDrawer } from './selectOpenDrawer';
+import { selectDrawerPanel } from './selectDrawerPanel';
 import type { DrawerRequest } from './state';
 import type { GetFn } from './types';
 
 export const toggleDrawer = (get: GetFn) => {
   return (request: DrawerRequest): void => {
-    const current = selectOpenDrawer(get());
+    const isOnPage = get().appStudio !== null;
+    if (isOnPage) {
+      get().closeStudio();
+    }
+    const current = selectDrawerPanel(get());
     const isSame =
       current !== null &&
       current.sessionId === request.sessionId &&
       drawerKey(current) === drawerKey(request);
+    if (isSame && isOnPage) {
+      return;
+    }
     if (isSame) {
       get().closeDrawer();
       return;
