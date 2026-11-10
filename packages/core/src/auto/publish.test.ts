@@ -19,6 +19,7 @@ const aPublish = (patch: Partial<ResultPublish> = {}): ResultPublish => ({
   message: null,
   isRetryable: false,
   isConfirmed: false,
+  startedAt: null,
   tries: 0,
   reviewerReportId: null,
   isContentChanging: false,
@@ -104,6 +105,15 @@ describe('reading a publish back', () => {
     expect(publishOfResult({ result: { verified: { publish: { state: 'sent' } } } })).toBeNull();
     expect(publishOfResult({ result: { verified: {} } })).toBeNull();
     expect(publishOfResult({ result: null })).toBeNull();
+  });
+
+  it('reads when a push started and an unknown start as null', () => {
+    const started = aPublish({ state: 'pushing', isConfirmed: true, startedAt: 1_700_000_000_000 });
+    const readStarted = publishOfResult({ result: { verified: { publish: started } } });
+    const unnamed = { ...started, startedAt: 'yesterday' };
+    const readUnnamed = publishOfResult({ result: { verified: { publish: unnamed } } });
+    expect(readStarted?.startedAt).toBe(1_700_000_000_000);
+    expect(readUnnamed?.startedAt).toBeNull();
   });
 
   it('reads the publish a delegation was asked for from its request', () => {

@@ -42,6 +42,7 @@ const ABORT_FENCE_ATTEMPT = 'fence_attempt';
 
 const GONE = 'This result is no longer here, so there is nothing to push.';
 const NOTHING_TO_ACT_ON = 'This agent has no push to act on.';
+const ALREADY_PUSHING = 'This push is already under way.';
 const NOT_WAITING = 'This push is not waiting for an answer.';
 const CANNOT_RETRY = 'This push cannot be tried again.';
 const CANNOT_PUT_BACK = 'This push cannot be put back.';
@@ -50,6 +51,11 @@ const NOT_READABLE = 'it could not be read.';
 const NOTHING_CHANGED = 'Nothing was put back, online or here:';
 const LOCAL_LEFT = 'The local branch was left as it is:';
 const NOT_SAVED = 'The push was not saved on the card because the result moved on.';
+const STORAGE_FAILED =
+  'The push ran but the card could not save its result. Goodboy keeps trying to save it';
+const SETTLE_RETRY_MS: ReadonlyArray<number> = [2_000, 10_000, 30_000, 120_000, 600_000];
+const UNKNOWN_RESULT =
+  'The push ran but its result was not saved. Retry the push to check the branch online';
 
 type RefusedParams = {
   readonly delegationId: AutoDelegationId;
@@ -66,9 +72,15 @@ type WriteParams = {
   readonly ctx: AgentVerbContext;
   readonly delegation: AutoDelegation;
   readonly record: ResultPublish;
+  readonly expectedState?: ResultPublish['state'];
 };
 
-const writeRecord = async ({ ctx, delegation, record }: WriteParams): Promise<PublishRowResult> => {
+const writeRecord = async ({
+  ctx,
+  delegation,
+  record,
+  expectedState,
+}: WriteParams): Promise<PublishRowResult> => {
   const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
   const latest = attempts.filter((attempt) => attempt.state === 'ended').at(-1);
   const written = await ctx.db.transaction({
@@ -77,6 +89,7 @@ const writeRecord = async ({ ctx, delegation, record }: WriteParams): Promise<Pu
         delegationId: delegation.id,
         generation: delegation.generation,
         publish: record,
+        ...(expectedState !== undefined && { expectedState }),
         abortCode: ABORT_FENCE_DELEGATION,
       }),
       ...(latest === undefined
@@ -86,6 +99,7 @@ const writeRecord = async ({ ctx, delegation, record }: WriteParams): Promise<Pu
               attemptId: latest.id,
               generation: latest.generation,
               publish: record,
+              ...(expectedState !== undefined && { expectedState }),
               abortCode: ABORT_FENCE_ATTEMPT,
             }),
           ]),
@@ -106,6 +120,138 @@ type RowParams = {
   readonly record: ResultPublish;
 };
 
+type PushRowParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegation: AutoDelegation;
+  readonly sessionId: SessionId;
+  readonly mountId: string;
+  readonly worktreePath: string;
+  readonly toPush: ResultPublish;
+  readonly fromState: ResultPublish['state'];
+};
+
+type SaveAgainParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegationId: AutoDelegationId;
+  readonly record: ResultPublish;
+  readonly expectedState?: ResultPublish['state'];
+};
+
+const saveAgain = ({
+  ctx,
+  delegationId,
+  record,
+  expectedState,
+}: SaveAgainParams): Promise<PublishRowResult> =>
+  getAutoDelegation({ db: ctx.db, delegationId })
+    .then((fresh): Promise<PublishRowResult> =>
+      fresh === null
+        ? Promise.resolve(refused({ delegationId, message: GONE }))
+        : writeRecord({ ctx, delegation: fresh, record, expectedState }),
+    )
+    .catch((): PublishRowResult => ({
+      ...refused({ delegationId, message: STORAGE_FAILED }),
+      isStorageFailure: true,
+    }));
+
+type SettleLaterParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegationId: AutoDelegationId;
+  readonly executed: ResultPublish;
+};
+
+type WaitParams = {
+  readonly ms: number;
+};
+
+const waitFor = ({ ms }: WaitParams): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const settleLater = async ({ ctx, delegationId, executed }: SettleLaterParams): Promise<void> => {
+  for (let attempt = 0; ; attempt += 1) {
+    await waitFor({ ms: SETTLE_RETRY_MS[Math.min(attempt, SETTLE_RETRY_MS.length - 1)] ?? 0 });
+    const saved = await saveAgain({
+      ctx,
+      delegationId,
+      record: executed,
+      expectedState: 'pushing',
+    });
+    if (saved.isStorageFailure !== true) {
+      return;
+    }
+  }
+};
+
+type SettleParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegationId: AutoDelegationId;
+  readonly executed: ResultPublish;
+  readonly pending: ResultPublish;
+};
+
+const settleRow = async ({
+  ctx,
+  delegationId,
+  executed,
+  pending,
+}: SettleParams): Promise<PublishRowResult> => {
+  for (let write = 0; write < 2; write += 1) {
+    const saved = await saveAgain({ ctx, delegationId, record: executed });
+    if (saved.state !== 'refused') {
+      return saved;
+    }
+  }
+  const last = await saveAgain({
+    ctx,
+    delegationId,
+    record: {
+      ...executed,
+      state: 'failed',
+      message: UNKNOWN_RESULT,
+      isRetryable: true,
+      isConfirmed: false,
+      tries: pending.tries,
+    },
+  });
+  if (last.isStorageFailure === true) {
+    void settleLater({ ctx, delegationId, executed });
+  }
+  return last;
+};
+
+const pushRow = async ({
+  ctx,
+  delegation,
+  sessionId,
+  mountId,
+  worktreePath,
+  toPush,
+  fromState,
+}: PushRowParams): Promise<PublishRowResult> => {
+  const pending: ResultPublish = {
+    ...toPush,
+    state: 'pushing',
+    message: null,
+    isRetryable: false,
+    isConfirmed: true,
+    startedAt: ctx.now(),
+  };
+  const saved = await writeRecord({ ctx, delegation, record: pending, expectedState: fromState });
+  if (saved.state === 'refused') {
+    return saved;
+  }
+  const executed = await executePublish({
+    ports: ctx.ports,
+    sessionId,
+    mountId,
+    worktreePath,
+    record: pending,
+  });
+  return settleRow({ ctx, delegationId: delegation.id, executed, pending });
+};
+
 const confirmRow = async ({
   ctx,
   delegation,
@@ -117,14 +263,15 @@ const confirmRow = async ({
   if (record.state !== 'awaiting_confirm') {
     return refused({ delegationId: delegation.id, message: NOT_WAITING });
   }
-  const executed = await executePublish({
-    ports: ctx.ports,
+  return pushRow({
+    ctx,
+    delegation,
     sessionId,
     mountId,
     worktreePath,
-    record,
+    toPush: record,
+    fromState: record.state,
   });
-  return writeRecord({ ctx, delegation, record: executed });
 };
 
 const declineRow = async ({ ctx, delegation, record }: RowParams): Promise<PublishRowResult> => {
@@ -177,20 +324,13 @@ const remoteNowOf = async ({
 };
 
 const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
-  const { ctx, delegation, sessionId, mountId, worktreePath, record } = params;
+  const { ctx, delegation, worktreePath, record } = params;
   const wanted = publishOfRequest({ request: delegation.request });
   if (!canRetryPublish({ publish: record }) || wanted === null) {
     return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
   }
   if (record.isConfirmed && record.mode === 'push') {
-    const executed = await executePublish({
-      ports: ctx.ports,
-      sessionId,
-      mountId,
-      worktreePath,
-      record,
-    });
-    return writeRecord({ ctx, delegation, record: executed });
+    return pushRow({ ...params, toPush: record, fromState: record.state });
   }
   const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
   const baseline = attempts.filter((attempt) => attempt.state === 'ended').at(-1)?.baseline;
@@ -216,14 +356,7 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
   if (planned.state !== 'pushing') {
     return writeRecord({ ctx, delegation, record: planned });
   }
-  const executed = await executePublish({
-    ports: ctx.ports,
-    sessionId,
-    mountId,
-    worktreePath,
-    record: { ...planned, isConfirmed: true },
-  });
-  return writeRecord({ ctx, delegation, record: executed });
+  return pushRow({ ...params, toPush: planned, fromState: record.state });
 };
 
 type OnlineParams = {
@@ -368,6 +501,9 @@ const actOnOne = async ({ ctx, act, delegationId }: OneParams): Promise<PublishR
       const current = fresh === null ? null : publishOfResult({ result: fresh.result });
       if (fresh === null || current === null) {
         return refused({ delegationId, message: GONE });
+      }
+      if (current.state === 'pushing' && current.isConfirmed) {
+        return refused({ delegationId, message: ALREADY_PUSHING });
       }
       return ROW_ACTS[act]({
         ctx,

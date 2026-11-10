@@ -429,6 +429,7 @@ type PatchPublishStatementParams = {
   readonly delegationId: AutoDelegationId;
   readonly generation: number;
   readonly publish: unknown;
+  readonly expectedState?: string;
   readonly abortCode: string;
 };
 
@@ -436,12 +437,22 @@ export const patchAutoDelegationPublishStatement = ({
   delegationId,
   generation,
   publish,
+  expectedState,
   abortCode,
 }: PatchPublishStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_delegations
     SET result_json = json_set(result_json, '$.verified.publish', json(?))
-    WHERE id = ? AND generation = ? AND state = 'settled' AND result_json IS NOT NULL`,
-  params: [JSON.stringify(publish), delegationId, generation],
+    WHERE id = ? AND generation = ? AND state = 'settled' AND result_json IS NOT NULL${
+      expectedState === undefined
+        ? ''
+        : " AND json_extract(result_json, '$.verified.publish.state') = ?"
+    }`,
+  params: [
+    JSON.stringify(publish),
+    delegationId,
+    generation,
+    ...(expectedState === undefined ? [] : [expectedState]),
+  ],
   abortWhen: 'noChanges',
   abortCode,
 });
