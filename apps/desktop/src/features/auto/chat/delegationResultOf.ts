@@ -1,19 +1,16 @@
 import {
-  canPutBackPublish,
   canRerunChecks,
-  canRetryPublish,
   checksRunOfResult,
   checksTextOf,
   outcomeLineOf,
   parseOutcomeLine,
   publishOfResult,
-  publishTextOf,
   stripOutcomeLine,
   type OutcomeLine,
-  type PublishState,
 } from '@goodboy/core/auto';
 import type { AutoOutcome } from '@goodboy/db';
 import { delegationReasonTextOf } from '../delegationReasonTextOf';
+import { publishLineOf, type PublishLine } from './publishLineOf';
 import { isJsonRecord, listField, numberField, recordField, textField } from './readJson';
 
 type ResultCheckView = Readonly<{
@@ -29,13 +26,6 @@ type ResultArtifactView = Readonly<{
   revision: number | null;
 }>;
 
-type PublishView = Readonly<{
-  text: string;
-  state: PublishState;
-  canRetry: boolean;
-  canPutBack: boolean;
-}>;
-
 export type DelegationResultView = Readonly<{
   outcomeLine: OutcomeLine | null;
   summary: string | null;
@@ -49,7 +39,7 @@ export type DelegationResultView = Readonly<{
   checksText: string | null;
   checksVerdict: 'green' | 'red' | 'not_checked' | null;
   canRerunChecks: boolean;
-  publish: PublishView | null;
+  publish: PublishLine | null;
 }>;
 
 const REMOTE_MOVED_CARD = 'The branch changed online while this agent worked.';
@@ -170,15 +160,7 @@ export const delegationResultOf = ({
       publish,
       failure: reasonText,
     }),
-    publish:
-      publish === null
-        ? null
-        : {
-            text: publishTextOf({ publish }),
-            state: publish.state,
-            canRetry: canRetryPublish({ publish }),
-            canPutBack: canPutBackPublish({ publish }),
-          },
+    publish: publish === null ? null : publishLineOf({ publish }),
     checksText:
       checksRun === null
         ? null
