@@ -55,10 +55,10 @@ Follow what happened in a session in one list. **Full log** on the **Done** card
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" width="821" alt="The Activity timeline of a session: a Needs you block with #318 and Which failures should count toward a stuck delivery, a Next row with Fix and Not now, and below Now the steps, each row with a role icon, its title, its model and its time, a Fix run on #318 with 4 need you and 4 working, and Add the stuck-delivery banner on Kimi K3">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" width="821" alt="The overview of Per-tenant limits on payouts with the Full log drawer open beside it: the Needs you, Running, Next and Done cards on the left, with Full log on the Done card, and the Log on the right, with a search box and below Now a question to answer, the Build workflow with steps 3, 2 and 1, each with its role icon and title, then Summarise the plan, a rebase and Plan the payout limits">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Cards
 
