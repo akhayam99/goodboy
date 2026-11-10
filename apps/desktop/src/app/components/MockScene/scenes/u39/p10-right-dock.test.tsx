@@ -125,6 +125,18 @@ describe('the ux39 right dock scenes', () => {
     );
   });
 
+  it('ux39-p11-terminal-page docks a terminal from the empty page like Browser does', async () => {
+    await mount('ux39-p11-terminal-page');
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Dock' }).click();
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(useAppStore.getState().appStudio).toBeNull();
+    expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+  });
+
   it('ux39-p11-browser-session docks Browser on the session', async () => {
     await mount('ux39-p11-browser-session');
 

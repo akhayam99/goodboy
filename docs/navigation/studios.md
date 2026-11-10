@@ -92,7 +92,8 @@ in `studioMeta.ts`).
   the session terminal below); its page is the large size of the same object,
   opened from the dock's `Open as page` (`openTerminalOnPage`, a push, so ⌘[
   brings the dock back on the same tab) and left by `Dock` in its header
-  (`dockTerminalPage`). The page is `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`TerminalStudio`:
+  (`dockTerminalPage`). With no terminal yet, `Dock` stays and opens one in the
+  dock (`dockEmptyTerminalPage`), as the empty Browser page does. The page is `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`TerminalStudio`:
   `StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
   child is `New terminal`, a split secondary control: the button opens a tab in the selected
   worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminalPickerClusters`)
