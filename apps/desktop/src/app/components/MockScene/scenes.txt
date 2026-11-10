@@ -167,6 +167,8 @@ browser-pane-rail
 browser-pane-rail-dark
 browser-pane-tabs
 browser-pane-tabs-dark
+browser-passkey
+browser-passkey-dark
 browser-peek
 browser-peek-dark
 c01-grid-dots

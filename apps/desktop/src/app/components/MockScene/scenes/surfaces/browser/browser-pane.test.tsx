@@ -19,6 +19,7 @@ import {
   resetStoryStore,
   storySpies,
 } from '../../../../../../store/storyHarness';
+import { passkeyBannerText } from '../../../../../../features/browser/passkeyBannerText';
 import { MOCK_SCENES } from '../../..';
 import { BROWSER_PANE_SCENES } from './browser-pane';
 
@@ -74,6 +75,8 @@ describe('the browser pane scenes', () => {
       'browser-pane-rail-dark',
       'browser-pane-tabs',
       'browser-pane-tabs-dark',
+      'browser-passkey',
+      'browser-passkey-dark',
       'browser-peek',
       'browser-peek-dark',
     ]);
@@ -155,6 +158,24 @@ describe('the browser pane scenes', () => {
     await screen.findByRole('region', { name: 'Browser' }, WAIT);
     const menu = await screen.findByRole('menu', { name: 'Page actions' }, WAIT);
     expect(within(menu).getAllByRole('menuitem')).toHaveLength(3);
+  });
+
+  it('shows the passkey banner above the sign-in tab for the hand-over capture', async () => {
+    mount({ id: 'browser-passkey' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const banner = await within(pane).findByRole(
+      'region',
+      { name: passkeyBannerText({ host: 'id.cascadia.dev' }).region },
+      WAIT,
+    );
+    within(banner).getByText("Passkeys do not work in Goodboy's browser");
+    within(banner).getByRole('button', { name: 'Open in your browser' });
+    within(banner).getByRole('button', { name: 'Dismiss' });
+    expect(within(pane).getByRole('textbox', { name: 'Address' })).toHaveProperty(
+      'value',
+      'https://id.cascadia.dev/signin',
+    );
   });
 
   it('marks the sleeping tab and folds the list to a rail of favicons', async () => {

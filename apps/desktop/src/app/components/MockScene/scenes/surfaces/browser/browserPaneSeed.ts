@@ -7,7 +7,11 @@ import type { BrowserTab } from '../../../../../../store/slices/browser/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 
-export type BrowserPaneSceneState = 'pane' | 'tabs' | 'rail' | 'page' | 'peek' | 'cover';
+export type BrowserPaneSceneState =
+  'pane' | 'tabs' | 'rail' | 'page' | 'peek' | 'cover' | 'passkey';
+
+const SIGN_IN_ID = 'mock-browser-signin';
+const SIGN_IN_HOST = 'id.cascadia.dev';
 
 const PEEK_DECISION =
   'Check the tax line on [localhost:5173/checkout](http://localhost:5173/checkout) before the PR goes up';
@@ -113,6 +117,14 @@ const seedPeek = ({ tabs }: PeekParams): void => {
 export const seedBrowserPane = ({ state }: SeedParams): void => {
   seedActivityRunScene();
   const projectId = pinProjectOf({ state: useAppStore.getState(), sessionId: SESSION_ID });
+  const signIn = rowOf({
+    id: SIGN_IN_ID,
+    url: `https://${SIGN_IN_HOST}/signin`,
+    title: 'Sign in · Cascadia ID',
+    sessionId: SESSION_ID,
+    projectId: null,
+    position: 2,
+  });
   const tabs = [
     rowOf({
       id: 'mock-browser-checkout',
@@ -130,6 +142,7 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
       projectId: null,
       position: 1,
     }),
+    ...(state === 'passkey' ? [signIn] : []),
   ];
   const pins =
     projectId === null
@@ -186,7 +199,17 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
   browserTabListPref.write({ mode: listModeOf({ state }) });
   useAppStore.setState({
     browserSessionTabs: { [SESSION_ID]: tabs },
-    browserActiveTab: { [SESSION_ID]: 'mock-browser-checkout' },
+    browserActiveTab: {
+      [SESSION_ID]: state === 'passkey' ? SIGN_IN_ID : 'mock-browser-checkout',
+    },
+    browserPasskeyAsks:
+      state === 'passkey'
+        ? {
+            [SESSION_ID]: {
+              [`mock-live-${SIGN_IN_ID}`]: { host: SIGN_IN_HOST, isDismissed: false },
+            },
+          }
+        : {},
     browserShownPin: { [SESSION_ID]: null },
     browserLiveTabs: {
       [SESSION_ID]: Object.fromEntries(tabs.map((tab) => [tab.id, `mock-live-${tab.id}`])),
