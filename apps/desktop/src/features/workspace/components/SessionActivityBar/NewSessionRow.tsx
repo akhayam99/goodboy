@@ -3,18 +3,17 @@ import { cn, ICON_SIZE, PANE_RHYTHM, ROW_INTERACTIVE, StatusDot, Tooltip } from 
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { selectIsSessionDraftShown } from '../../../../store/slices/sessionDraft/selectIsSessionDraftShown';
 import { hasSessionDraftContent } from '../../../../store/slices/sessionDraft/hasSessionDraftContent';
 
 import { requestNewSession } from '../../../session/requestNewSession';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly isCurrent: boolean;
   readonly onNavigate?: () => void;
 };
 
-export const NewSessionRow = ({ workspaceId, onNavigate }: Props) => {
-  const isCurrent = useAppStore((state) => selectIsSessionDraftShown({ state }));
+export const NewSessionRow = ({ workspaceId, isCurrent, onNavigate }: Props) => {
   const hasDraft = useAppStore((state) =>
     hasSessionDraftContent({ draft: selectSessionDraft({ state, workspaceId }) }),
   );

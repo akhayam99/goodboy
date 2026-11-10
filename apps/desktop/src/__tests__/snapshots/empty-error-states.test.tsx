@@ -72,7 +72,7 @@ describe('empty states', () => {
   });
 
   it('NotificationCenter: no notifications', async () => {
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
     expect(await screen.findByText('No notifications yet')).toBeDefined();
   });

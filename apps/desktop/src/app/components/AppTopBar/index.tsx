@@ -6,6 +6,7 @@ import { RepoEntry } from '../../../features/workspace/components/RepoEntry';
 import { FolderGitWatch } from '../../../features/workspace/components/FolderGitWatch';
 import { useCurrentWorkspace } from '../../../store';
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
+import { useColumnPlace } from '../../hooks/useColumnPlace';
 import { ColumnToggleButton } from '../SideColumn/ColumnToggleButton';
 import { CommandCenter } from './CommandCenter';
 import { HostReachabilityLine } from './HostReachabilityLine';
@@ -29,7 +30,7 @@ type Props = {
 
 export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, sidebar }: Props) => {
   const workspace = useCurrentWorkspace();
-  const isColumnOpen = sidebar?.isCollapsed === false;
+  const place = useColumnPlace();
   return (
     <>
       <div
@@ -71,7 +72,7 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, si
 
           <SpendButton onOpenSpend={onOpenSpend} />
 
-          <NotificationCenter />
+          <NotificationCenter isCurrent={place === 'notifications'} />
         </div>
       </div>
       <HostReachabilityLine />

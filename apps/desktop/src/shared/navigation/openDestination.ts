@@ -15,7 +15,7 @@ export const openDestination = ({ id }: Params): void => {
       state.appStudio !== null ||
       selectIsSessionDraftShown({ state })
     ) {
-      state.navigate({ to: BOARD_PLACE });
+      state.navigate({ to: BOARD_PLACE, ...(state.appStudio !== null && { mode: 'replace' }) });
     }
     return;
   }

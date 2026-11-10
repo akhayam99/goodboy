@@ -24,7 +24,7 @@ export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }
   }
 };
 
-type FooterPlace = 'link' | 'inbox' | 'workflows' | 'settings' | 'impact' | 'changelog';
+type FooterPlace = 'link' | 'guide' | 'inbox' | 'workflows' | 'settings' | 'impact' | 'changelog';
 
 export type FooterTarget = {
   readonly place: FooterPlace | null;

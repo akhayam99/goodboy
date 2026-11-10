@@ -19,6 +19,7 @@ type Props = {
   readonly isCurrent: boolean;
   readonly variant?: GoodboyChipVariant;
   readonly isPrimary?: boolean;
+  readonly isCurrent?: boolean;
 };
 
 const DOOR_LABEL = `Goodboy, ${NAMES.help.toLowerCase()}`;
@@ -35,6 +36,7 @@ export const GoodboyChip = ({
   isCurrent,
   variant = 'column',
   isPrimary = true,
+  isCurrent = false,
 }: Props) => {
   const update = useUpdateCardState();
   const version = useInstalledVersion();
@@ -64,6 +66,72 @@ export const GoodboyChip = ({
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [isPrimary, isInMainWindow]);
+
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+    if (!wasOpen || isOpen) {
+      return;
+    }
+    const focused = document.activeElement;
+    if (focused !== null && focused !== document.body) {
+      return;
+    }
+    dropdown.containerRef.current?.querySelector<HTMLElement>('[data-goodboy-chip]')?.focus();
+  }, [isOpen, dropdown.containerRef]);
+
+  const leaveFor =
+    ({ action }: { readonly action: () => void }) =>
+    () => {
+      close();
+      action();
+    };
+
+  const menuTrigger = (
+    <Tooltip
+      content={TRIGGER_LABEL[state]}
+      side={variant === 'rail' ? 'right' : 'top'}
+      isSuppressed={isOpen}
+    >
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={TRIGGER_LABEL[state]}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-current={isCurrent ? 'page' : undefined}
+        data-testid={isPrimary ? 'goodboy-chip' : undefined}
+        data-goodboy-chip={variant}
+        className={cn(
+          'relative flex items-center rounded-md text-meta motion-safe:transition-colors',
+          FOCUS_RING,
+          TRIGGER_SHAPE[hasRowPill ? 'column-pill' : variant],
+          isOpen && 'bg-muted',
+          !isOpen && isCurrent && 'bg-selected text-foreground',
+          !isOpen && !isCurrent && 'hover:bg-hover',
+        )}
+      >
+        <GoodboyChipLabel
+          state={state}
+          installedVersion={version}
+          isMarkOnly={variant === 'rail'}
+        />
+        {variant === 'rail' && state !== 'rest' ? (
+          <StatusDot tone="primary" size="sm" className="absolute right-1 top-1" />
+        ) : null}
+      </button>
+    </Tooltip>
+  );
+
+  const trigger = hasRowPill ? (
+    <>
+      {menuTrigger}
+      <UpdatePill tooltipSide="top" />
+    </>
+  ) : (
+    menuTrigger
+  );
 
   return (
     <div

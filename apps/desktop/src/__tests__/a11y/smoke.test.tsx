@@ -172,13 +172,13 @@ const renderInToasts = (node: React.ReactNode) => render(<ToastProvider>{node}</
 
 describe('a11y smoke, NotificationCenter', () => {
   it('empty state', async () => {
-    const { container } = render(<NotificationCenter />);
+    const { container } = render(<NotificationCenter isCurrent={false} />);
     await expectBaseline({ name: 'NotificationCenter empty', container });
   });
 
   it('two notifications, one unread', async () => {
     storeSeed.current = { notifications: NOTIFICATIONS };
-    const { container } = render(<NotificationCenter />);
+    const { container } = render(<NotificationCenter isCurrent={false} />);
     await expectBaseline({ name: 'NotificationCenter populated', container });
   });
 });

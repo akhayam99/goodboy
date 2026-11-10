@@ -74,7 +74,6 @@ export const NAMES = {
   whatsNew: "What's new",
   settings: 'Settings',
   guide: 'Guide',
-  help: 'Help',
   spendCap: 'Limit',
   spendCaps: 'Limits',
   usage: 'Usage',
