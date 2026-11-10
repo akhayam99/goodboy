@@ -66,6 +66,10 @@ beforeAll(async () => {
   await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+const setWindowWidth = ({ width }: ResizeParams) => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
+};
+
 beforeEach(async () => {
   await resetStoryStore();
   localStorage.clear();
@@ -101,6 +105,38 @@ const mount = () =>
   );
 
 const rail = () => screen.queryByRole('complementary', { name: 'Settings scopes' });
+
+describe('the Settings scopes rail on a narrow window', () => {
+  it('starts folded under 1200 wide when nothing is saved, and saves nothing', () => {
+    setWindowWidth({ width: 1100 });
+    mount();
+
+    expect(rail()).toBeNull();
+    screen.getByRole('button', { name: /^Show settings scopes/ });
+    expect(localStorage.getItem(FOLD_KEY)).toBeNull();
+  });
+
+  it('keeps a saved docked choice under 1200 wide', () => {
+    setWindowWidth({ width: 1100 });
+    localStorage.setItem(FOLD_KEY, '0');
+    mount();
+
+    expect(rail()).not.toBeNull();
+  });
+
+  it('starts docked from 1200 wide', () => {
+    setWindowWidth({ width: 1200 });
+    mount();
+
+    expect(rail()).not.toBeNull();
+  });
+
+  it('makes the detail pane a container for its dense rows', () => {
+    mount();
+
+    expect(screen.getByText('detail').parentElement?.className).toContain('@container');
+  });
+});
 
 describe('the Settings scopes rail on a narrow pane', () => {
   it('folds by itself, keeps Show and Search, and saves nothing', () => {
