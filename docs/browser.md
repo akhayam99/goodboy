@@ -446,8 +446,11 @@ So the host watches for the request instead. On macOS every frame of a tab
 runs a small script at document start that wraps `navigator.credentials.get`
 and `create`: a call that asks for a passkey, unless it is only the quiet
 autofill offer, posts to a native message handler
-and then runs unchanged. The handler marks the tab's facts
-`isPasskeyBlocked`. The pane and the page show a notice above that tab only,
+and then runs unchanged. A request whose options or bridge throw on read still
+runs. The handler is added just after the view is made, so a request from the
+first document looks for it again every 100 ms for two seconds. The handler
+marks the tab's facts `isPasskeyBlocked`; an ask that lands before the tab is
+registered is held and applied when it is. The pane and the page show a notice above that tab only,
 with Open in your browser (the same action as the address row) and Dismiss.
 Dismiss clears the mark on the host (`browser_tab_passkey_dismiss`); a new
 document load clears it too. A refused dismiss keeps the notice and shows the
@@ -498,7 +501,8 @@ words (`features/browser/browserFailureText.ts`).
   `browser/passkey.rs` (the handler class and the handler-to-tab map) with its
   script in `browser/passkey.js`; `host.rs` adds the script to every frame,
   registers the handler after the view is made, clears the mark on a page
-  start and forgets the handler when the tab closes. These two are the only
+  start and forgets the handler when the tab closes, when its open is refused
+  late and when its window is destroyed (`forget_window`). These two are the only
   `unsafe` the host needs.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
@@ -544,10 +548,12 @@ words (`features/browser/browserFailureText.ts`).
 - `passkey::tests` pins that an ask reaches only its own tab, that a
   respawned tab or a reused handler address belongs to the newest tab and
   that a closed tab is forgotten; `registry.rs` pins the mark and its clear
-  per tab. `features/browser/passkeyWatchScript.test.ts` runs the script on a
+  per tab and an ask held until its tab registers; `browser::tests` pins that
+  a destroyed window forgets its tabs' handlers. `features/browser/passkeyWatchScript.test.ts` runs the script on a
   fake page: a passkey `get` or `create` is reported and still runs, a
-  conditional or non-passkey request stays quiet, and a missing or broken
-  handler never breaks the page. `BrowserPane/index.test.tsx` and
+  conditional or non-passkey request stays quiet, a handler that arrives late
+  is still told and one that never arrives is given up on, and throwing
+  options, a throwing bridge or a broken handler never break the page. `BrowserPane/index.test.tsx` and
   `BrowserStudio/index.test.tsx` pin the notice on its tab, Open in your
   browser, Dismiss on the host and a refused dismiss; the scenes are
   `browser-pane-passkey` and `browser-pane-passkey-dark`. The native handler

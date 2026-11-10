@@ -159,6 +159,9 @@ pub(crate) fn open_tab<R: Runtime>(
         }
         None => {
             let _ = webview.close();
+            registry.remove(&id);
+            #[cfg(target_os = "macos")]
+            passkey::WATCHES.forget(&id);
             Err(reason::refused(SESSION_CLOSING))
         }
     }
@@ -195,7 +198,7 @@ fn watch_passkeys<R: Runtime>(webview: &Webview<R>, tab_id: &str) {
     let asked_tab = tab_id.to_string();
     let on_ask: passkey::OnAsk = std::sync::Arc::new(move || {
         app.state::<BrowserRegistry>()
-            .set_passkey_blocked(&asked_tab, true);
+            .mark_passkey_blocked(&asked_tab);
     });
     let watched_tab = tab_id.to_string();
     let watched = webview.with_webview(move |platform| {

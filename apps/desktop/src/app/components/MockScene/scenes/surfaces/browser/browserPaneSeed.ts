@@ -146,7 +146,7 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
       position: 0,
     }),
   ];
-  const live = tabs
+  let live = tabs
     .map(factsOf)
     .map((facts, index) => ({ ...facts, isPasskeyBlocked: isPasskey && index === 0 }));
   let opened = 0;
@@ -170,6 +170,13 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
           url: textOf({ payload, field: 'url' }),
           title: '',
         });
+      case 'browser_tab_passkey_dismiss': {
+        const tabId = textOf({ payload, field: 'tabId' });
+        live = live.map((facts) =>
+          facts.id === tabId ? { ...facts, isPasskeyBlocked: false } : facts,
+        );
+        return live.find((facts) => facts.id === tabId) ?? null;
+      }
       case 'browser_tab_show':
       case 'browser_tab_hide':
         return live.find((facts) => facts.id === textOf({ payload, field: 'tabId' })) ?? live[0];

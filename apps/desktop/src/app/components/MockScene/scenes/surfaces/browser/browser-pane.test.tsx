@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { installFakeResizeObserver } from '../../../../../../test/fakeResizeObserver';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../../test/sceneInvoke';
@@ -152,7 +152,12 @@ describe('the browser pane scenes', () => {
       throw new Error('The passkey notice has no status region.');
     }
     within(notice).getByRole('button', { name: 'Open in your browser' });
-    within(notice).getByRole('button', { name: 'Dismiss' });
+    fireEvent.click(within(notice).getByRole('button', { name: 'Dismiss' }));
+
+    await waitFor(
+      () => expect(screen.queryByText("Passkeys don't work in Goodboy's browser")).toBeNull(),
+      WAIT,
+    );
   });
 
   it('lists the session tabs and the project pins beside the page', async () => {
