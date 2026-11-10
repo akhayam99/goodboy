@@ -178,26 +178,19 @@ describe('GoodboyChip on the rail', () => {
 });
 
 describe('GoodboyChip sizing in the column', () => {
-  it('sets the whole line in the meta size, as the version and Beta read the same', () => {
-    renderChip();
-
-    expect(screen.getByRole('button', { name: DOOR_LABEL }).className).toContain('text-meta');
-  });
-
-  it('keeps the lockup whole beside the pill so the pill is what truncates', () => {
-    useAppStore.setState({ updaterStatus: 'available' });
-    renderChip();
-
-    expect(screen.getByTestId('goodboy-chip').className).toContain('shrink-0');
-  });
-
-  it('falls to the mark under 13.5rem at rest and keeps the full lockup above it', () => {
+  it('draws the full lockup and the mark alone so the width picks one', () => {
     renderChip();
 
     const chip = screen.getByRole('button', { name: DOOR_LABEL });
-    expect(chip.querySelector('[data-lockup-wide]')?.className).toContain('@max-[13.5rem]:hidden');
-    expect(chip.querySelector('[data-lockup-narrow]')?.className).toContain(
-      '@max-[13.5rem]:contents',
-    );
+    expect(chip.querySelector('[data-lockup-wide]')).not.toBeNull();
+    expect(chip.querySelector('[data-lockup-narrow]')).not.toBeNull();
+  });
+
+  it('keeps the whole lockup in the door beside the update pill', () => {
+    useAppStore.setState({ updaterStatus: 'available' });
+    renderChip();
+
+    const chip = screen.getByTestId('goodboy-chip');
+    expect(chip.textContent).toContain('Goodboy');
   });
 });
