@@ -94,6 +94,16 @@ describe('closeSlot', () => {
     expect(store.getState().drawer).toBeNull();
   });
 
+  it('leaves a drawer parked under a page alone', () => {
+    store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+
+    closeSlot({});
+
+    expect(store.getState().drawer?.kind).toBe('ask');
+    expect(store.getState().appStudio?.kind).toBe('impact');
+  });
+
   it('leaves the drawer alone while a dialog is open over it', () => {
     store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
     document.body.innerHTML = '<div role="dialog"></div>';

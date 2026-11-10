@@ -10,7 +10,6 @@ export type ShellArrangement = {
   readonly isLeftRail: boolean;
   readonly leftSlot: ShellLeftSlot;
   readonly leftOverlaySlot: ShellLeftOverlaySlot;
-  readonly studioCoversLeft: boolean;
 };
 
 type ShellArrangementParams = {
@@ -27,5 +26,4 @@ export const shellArrangement = ({
   isLeftRail: isSidebarCollapsed,
   leftSlot: isSidebarCollapsed ? 'rail' : 'column',
   leftOverlaySlot: isSidebarCollapsed && hasWorkspace ? 'peek' : 'none',
-  studioCoversLeft: false,
 });

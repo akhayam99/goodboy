@@ -275,6 +275,10 @@ const expectDrawerBesideContent = ({
   ).toBeTruthy();
 };
 
+const sidePanelMode = (): string | null =>
+  document.querySelector('main aside[aria-label="Side panel"]')?.getAttribute('data-drawer-mode') ??
+  null;
+
 const openDrawerKind = (): string | null => selectOpenDrawer(useAppStore.getState())?.kind ?? null;
 
 const drawerRequests = (sessionId: SessionId): ReadonlyArray<DrawerRequest> => {
@@ -692,7 +696,7 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('keeps a drawer with its page while a studio sits over it', async () => {
+  it('parks a session drawer under a page, and Esc brings it back with its page', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
     await press('lens.context');
@@ -700,11 +704,36 @@ describe('moving across every place keeps one frame', () => {
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
+    expect(document.querySelector('main [data-drawer-main] [data-studio-slot]')).not.toBeNull();
+    expect(sidePanelMode()).toBe('closed');
     await escape();
 
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
     expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expectHealthy();
+  });
+
+  it('closes the page with ⌘W, never the drawer parked under it, and Back brings the drawer back', async () => {
+    await boot({ seed: 'pr' });
+
+    await press('lens.context');
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context'));
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    await press('app.close');
+
+    expect(studio()).toBeNull();
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+
+    await click(door('workflows'));
+    expect(studio()).toBe('workflow');
+    await press('nav.back');
+
+    expect(studio()).toBeNull();
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expectHealthy();
   });
 

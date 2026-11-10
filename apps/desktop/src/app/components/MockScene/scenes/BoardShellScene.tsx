@@ -71,7 +71,6 @@ const BoardShellSceneContent = () => {
     <>
       <AppShell
         studio={shell.studio}
-        studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
             sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}

@@ -124,7 +124,6 @@ export const App = () => {
     currentWorkspace,
     workspaceProjectRoot,
     isWorkspaceLauncherBranch,
-    studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
   });
   const columnActions = useColumnActions({
     openBoard: goToBoard,
@@ -314,7 +313,6 @@ export const App = () => {
               </SidebarPeekOverlay>
             ) : undefined
           }
-          studioCoversLeft={arrangement.studioCoversLeft}
           drawer={isDrawerOpen ? <DrawerHost /> : null}
           drawerSizing={drawerSizing}
           drawerPlacement={drawerPlacement}

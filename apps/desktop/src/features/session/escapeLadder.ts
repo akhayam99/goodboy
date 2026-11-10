@@ -1,7 +1,7 @@
 import { useAppStore } from '../../store';
 import { isOverlayOpen } from '../../shared/keyboard/isOverlayOpen';
 import { isTextEntryTarget } from '../../shared/keyboard/isTypingTarget';
-import { selectOpenDrawer } from '../../store/slices/drawer/selectOpenDrawer';
+import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
 import { captureLocation } from '../../store/slices/navigation/captureLocation';
 import { parentPlace } from '../../store/slices/navigation/parentPlace';
 
@@ -47,7 +47,7 @@ export const escapeLadder = ({}: Params): void => {
     return;
   }
   const state = useAppStore.getState();
-  if (selectOpenDrawer(state) !== null) {
+  if (selectDrawerPanel(state) !== null) {
     state.closeDrawer();
     return;
   }

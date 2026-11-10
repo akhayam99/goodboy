@@ -28,7 +28,6 @@ export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneSh
     currentWorkspace,
     workspaceProjectRoot: null,
     isWorkspaceLauncherBranch: false,
-    studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
   });
   useSceneShortcuts({
     openPalette: overlays.openPalette,

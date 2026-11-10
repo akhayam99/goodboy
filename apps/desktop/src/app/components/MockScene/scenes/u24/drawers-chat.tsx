@@ -71,7 +71,6 @@ const DrawerSplitChat = () => {
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={<div />}
-        studioCoversLeft={false}
         studio={
           <StudioFrame kind="chat" placement="content" onClose={noop}>
             <ChatStudio workspaceId={WORKSPACE_ID} chatId={CONSENT_CHAT_ID} onClose={noop} />

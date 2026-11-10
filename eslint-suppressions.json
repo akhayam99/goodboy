@@ -1449,7 +1449,7 @@
   },
   "apps/desktop/src/app/shellArrangement/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/actions/chatSelectionTarget.test.ts": {
@@ -13114,7 +13114,7 @@
   },
   "packages/ui/src/components/AppShell.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 12
+      "count": 10
     }
   },
   "packages/ui/src/components/Avatar.tsx": {

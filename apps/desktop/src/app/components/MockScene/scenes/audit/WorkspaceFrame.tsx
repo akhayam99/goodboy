@@ -37,7 +37,6 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         drawerSizing={drawerSizing}
         studio={shell.studio}
-        studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
             sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}

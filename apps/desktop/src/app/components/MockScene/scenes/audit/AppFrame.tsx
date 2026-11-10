@@ -67,7 +67,6 @@ export const AppFrame = ({
     currentWorkspace,
     workspaceProjectRoot: '/mock/root',
     isWorkspaceLauncherBranch: isLauncher,
-    studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
   });
   useSceneShortcuts({
     openPalette: overlays.openPalette,
@@ -136,7 +135,6 @@ export const AppFrame = ({
         }
         main={<div className="relative h-full w-full">{main}</div>}
         studio={overlays.studio}
-        studioCoversLeft={arrangement.studioCoversLeft}
         {...(hasPane && {
           drawer: isDrawerOpen ? <DrawerHost /> : null,
           drawerSizing,

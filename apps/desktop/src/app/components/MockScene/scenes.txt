@@ -1350,6 +1350,10 @@ ux39-p7-open
 ux39-p7-open-branchless
 ux39-p7-runs-waiting
 ux39-p7-runs-waiting-folded
+ux39-p9-impact-parked
+ux39-p9-session-drawer
+ux39-p9-tasks-parked
+ux39-p9-workflows-parked
 wireframe-failed
 workflow
 workflow-run
