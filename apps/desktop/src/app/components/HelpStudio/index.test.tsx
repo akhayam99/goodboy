@@ -113,7 +113,7 @@ describe('HelpStudio', () => {
   it('searches the guide and the releases at once and groups the results by tab', () => {
     renderHelp();
 
-    fireEvent.change(search(), { target: { value: 'palette' } });
+    fireEvent.change(search(), { target: { value: 'search or run' } });
 
     const labels = hitLabels();
     expect(labels.some((label) => label.endsWith(', Guide'))).toBe(true);

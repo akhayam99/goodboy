@@ -664,11 +664,12 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
   is named with its reason. It also fails on a back arrow or chevron outside
   the back row, `DrawerFrame` and the history arrows, with a named allowlist
   for the backs that are not a way up. The history arrows in the top bar are
-  memory, not a way up, so they never say Back: the left one reads
-  `Previous: {place}` and the right one `Forward: {place}` (an agent's name, a
-  run's title, a page), with the session's title on a second line; a hold or a
-  right click opens the History menu with the same names. A test that wants an
-  arrow takes `[data-nav-arrow="back"]`.
+  memory, not a way up: the left one reads `Back: {place}` and the right one
+  `Forward: {place}` (an agent's name, a run's title, a page), with the
+  session's title on a second line and `Hold for history` on a third; a hold or a
+  right click opens the History menu with the same names. A way up reads
+  `Back to {place}`, so a test that wants the arrow takes
+  `[data-nav-arrow="back"]`.
 - **The header holds only its page.** `SessionWorkspace` hands no actions
   to the page headers: the session tools live in their column at the right of
   the content (see The session tools), so no header carries a second `⋯` (pinned by
