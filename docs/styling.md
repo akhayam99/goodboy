@@ -262,7 +262,7 @@ One primitive draws the top of every page: `PageHeader`
 (`PANE_RHYTHM.headerInset`, 12px, none under a studio band), the 32px title
 row (`PaneTitleRow`), the gap under the header, the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
-page with its own frame (the Sessions board, the Terminal, the chat room header)
+page with its own frame (the Board, the Terminal, the chat room header)
 mounts it directly. No page sets its own header padding: the Settings column, the
 board frame and the terminal drop their own top rows.
 
@@ -280,7 +280,7 @@ A page root names its kind (`page="overview"`, `page="terminal"`) and
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | column  | Overview, Runs, a run, an agent, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
 | measure | the chat room (header, thread, composer)                                                                                                                  |
-| full    | the Sessions board, the Terminal                                                                                                                          |
+| full    | the Board, the Terminal                                                                                                                                   |
 
 A loading page draws `PageSkeleton` with the same kind, so its title bar and
 body start where the page will: `STUDIO_META[kind].skeleton` names the body shape

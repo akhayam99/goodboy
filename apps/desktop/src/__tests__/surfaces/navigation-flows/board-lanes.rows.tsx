@@ -49,10 +49,10 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate', 'board-lanes:archived-restore'],
     open: async (ctx) => {
       shelveOneSession(ctx);
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
     },
     lands: async () => {
-      await heading('Sessions');
+      await heading('Board');
       const archived = await lane('archived');
       expect(within(archived).getByRole('button', { name: ARCHIVED_GOAL })).toBeDefined();
       expect(await lane('done')).toBeDefined();
@@ -72,10 +72,10 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       await openPalette(/^New session/);
       await heading('New session');
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
     },
     lands: async () => {
-      await heading('Sessions');
+      await heading('Board');
       expect(await lane('archived')).toBeDefined();
       expect(await lane('done')).toBeDefined();
       expect(screen.queryByRole('heading', { name: 'New session' })).toBeNull();

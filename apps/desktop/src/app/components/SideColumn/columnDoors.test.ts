@@ -16,16 +16,16 @@ describe('the column doors', () => {
     expect(COLUMN_DOORS.filter((entry) => !registry.has(entry.icon))).toEqual([]);
   });
 
-  it('keeps the running stage glyph off the Sessions door', () => {
+  it('keeps the running stage glyph off the Board door', () => {
     const door = COLUMN_DOORS.find((entry) => entry.id === 'board');
 
     expect(door?.icon).toBe(CONCEPT_ICONS.sessions);
     expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists Sessions, Tasks, Workflows, Chat and Impact, then the Terminal, Browser and Monitoring tools', () => {
+  it('lists Board, Tasks, Workflows, Chat and Impact, then the Terminal, Browser and Monitoring tools', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
-      'Sessions',
+      'Board',
       'Tasks',
       'Workflows',
       'Chat',

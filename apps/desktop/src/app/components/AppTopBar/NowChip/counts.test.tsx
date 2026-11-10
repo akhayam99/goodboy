@@ -95,18 +95,18 @@ const renderShell = () =>
 const sessionsDoor = (): HTMLElement => {
   const door = document.querySelector<HTMLElement>('[data-side-column] [data-column-door="board"]');
   if (door === null) {
-    throw new Error('no Sessions door');
+    throw new Error('no Board door');
   }
   return door;
 };
 
-describe('the Sessions door and the Now chip count sessions by their stage', () => {
-  it('marks a running session that has a question on the Sessions door and in the Now chip', () => {
+describe('the Board door and the Now chip count sessions by their stage', () => {
+  it('marks a running session that has a question on the Board door and in the Now chip', () => {
     seed([asking], [asking]);
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
-      'Sessions, 1 session needs you: 1 question for you',
+      'Board, 1 session needs you: 1 question for you',
     );
     expect(sessionsDoor().querySelector('[data-door-signal="warning"]')).not.toBeNull();
     expect(document.querySelector('[data-now-needs-you]')).toBeNull();
@@ -118,11 +118,11 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
-      'Sessions, 2 sessions need you: 1 question for you, The plan needs approval',
+      'Board, 2 sessions need you: 1 question for you, The plan needs approval',
     );
   });
 
-  it('keeps a running session that has a question out of the Now chip: it counts on the Sessions door', async () => {
+  it('keeps a running session that has a question out of the Now chip: it counts on the Board door', async () => {
     seed([asking, working], [asking]);
     renderShell();
 
@@ -140,7 +140,7 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     seed([working]);
     renderShell();
 
-    expect(sessionsDoor().getAttribute('aria-label')).toBe('Sessions');
+    expect(sessionsDoor().getAttribute('aria-label')).toBe('Board');
     expect(sessionsDoor().querySelector('[data-door-signal]')).toBeNull();
   });
 });

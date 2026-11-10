@@ -210,7 +210,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Sessions page of the sidebar. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
+    lead: 'The Board of the sidebar. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
     points: [
       {
         term: 'Session card',
@@ -218,7 +218,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Board and sidebar list',
-        desc: 'Lanes on the Sessions page. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
+        desc: 'Lanes on the Board. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
       },
       {
         term: 'Done and archived',
@@ -234,7 +234,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Now chip',
-        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber dot on Sessions in the sidebar.',
+        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber dot on Board in the sidebar.',
       },
       {
         term: 'Top bar',
@@ -252,11 +252,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Sessions, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Board, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
-        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived.',
+        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Board holds Sort, Group, Filter and Show archived.',
       },
       {
         term: 'Pin a session',

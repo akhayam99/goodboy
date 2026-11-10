@@ -70,7 +70,7 @@ Twelve files kept a claim from a release migration: each `it()` says a capabilit
 | Removed `it()`                                            | Row that proves it                                                                  |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | session tools: the Context row opens the Context drawer   | `palette-destinations`: context drawer from the session tools                       |
-| Sessions page: Archived lane keeps Restore                | `board-lanes`: Archived stays in view and Restore sends its first card to its stage |
+| Board: Archived lane keeps Restore                        | `board-lanes`: Archived stays in view and Restore sends its first card to its stage |
 | Tasks issue pane: Start session on an issue nobody linked | `start-paths`: Tasks issue Start opens the New session draft with the issue above   |
 | New session: Start a run from the Overview New menu       | `create-and-search`: overview New opens its menu, and Start a run opens the field   |
 | New session: Report and Wireframe drawer forms            | `create-and-search`: new drawer, write report and write wireframe                   |
