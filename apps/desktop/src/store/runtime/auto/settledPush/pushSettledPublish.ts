@@ -8,16 +8,17 @@ import {
   type AutoAttempt,
 } from '@goodboy/db';
 import { brandId, type AutoAttemptId, type SessionId } from '@goodboy/types';
-import { executePublish } from './executePublish';
-import { publishQueue } from './publishQueue';
-import type { AgentVerbContext } from './verbContext';
+import { executePublish } from '../executePublish';
+import { publishQueue } from '../publishQueue';
+import type { AgentVerbContext } from '../verbContext';
+import { isPushLive } from './isPushLive';
 
 export type PushSettledPublishParams = Readonly<{
   ctx: AgentVerbContext;
   attemptId: AutoAttemptId;
 }>;
 
-export type PushSettledOutcome = 'pushed' | 'failed' | 'fenced' | 'interrupted' | 'none';
+export type PushSettledOutcome = 'pushed' | 'failed' | 'fenced' | 'interrupted' | 'live' | 'none';
 
 const ABORT_CLAIM = 'publish_claim';
 const ABORT_SETTLE = 'publish_settle';
@@ -68,10 +69,12 @@ const writeSettled = async ({ ctx, attempt, publish, isClaimed }: WriteParams): 
 type RetryableParams = {
   readonly record: ResultPublish;
   readonly message: string;
+  readonly nowMs: number;
 };
 
-const retryable = ({ record, message }: RetryableParams): ResultPublish => ({
+const retryable = ({ record, message, nowMs }: RetryableParams): ResultPublish => ({
   ...record,
+  startedAt: record.startedAt ?? nowMs,
   state: 'failed',
   message,
   isRetryable: true,
@@ -99,10 +102,13 @@ const pushPending = async ({
     return 'none';
   }
   if (record.isConfirmed) {
+    if (isPushLive({ record, nowMs: ctx.now() })) {
+      return 'live';
+    }
     await writeSettled({
       ctx,
       attempt,
-      publish: retryable({ record, message: INTERRUPTED }),
+      publish: retryable({ record, message: INTERRUPTED, nowMs: ctx.now() }),
       isClaimed: true,
     });
     return 'interrupted';
@@ -123,7 +129,7 @@ const pushPending = async ({
     await writeSettled({
       ctx,
       attempt,
-      publish: retryable({ record, message: FENCED }),
+      publish: retryable({ record, message: FENCED, nowMs: ctx.now() }),
       isClaimed: false,
     });
     return 'fenced';

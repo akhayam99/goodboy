@@ -228,6 +228,7 @@ type PatchAttemptPublishStatementParams = {
   readonly attemptId: AutoAttemptId;
   readonly generation: number;
   readonly publish: unknown;
+  readonly expectedState?: string;
   readonly abortCode: string;
 };
 
@@ -235,12 +236,22 @@ export const patchAutoAttemptPublishStatement = ({
   attemptId,
   generation,
   publish,
+  expectedState,
   abortCode,
 }: PatchAttemptPublishStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_attempts
     SET result_snapshot_json = json_set(result_snapshot_json, '$.envelope.verified.publish', json(?))
-    WHERE id = ? AND generation = ? AND state = 'ended' AND result_snapshot_json IS NOT NULL`,
-  params: [JSON.stringify(publish), attemptId, generation],
+    WHERE id = ? AND generation = ? AND state = 'ended' AND result_snapshot_json IS NOT NULL${
+      expectedState === undefined
+        ? ''
+        : " AND json_extract(result_snapshot_json, '$.envelope.verified.publish.state') = ?"
+    }`,
+  params: [
+    JSON.stringify(publish),
+    attemptId,
+    generation,
+    ...(expectedState === undefined ? [] : [expectedState]),
+  ],
   abortWhen: 'noChanges',
   abortCode,
 });
@@ -266,13 +277,14 @@ export const claimAutoAttemptPublishStatement = ({
   abortCode,
 }: ClaimAttemptPublishStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_attempts
-    SET result_snapshot_json = json_set(result_snapshot_json, '$.envelope.verified.publish.isConfirmed', json('true'))
+    SET result_snapshot_json = json_set(result_snapshot_json, '$.envelope.verified.publish.isConfirmed', json('true'), '$.envelope.verified.publish.startedAt', ?)
     WHERE id = ? AND tree_id = ? AND generation = ? AND state = 'ended' AND ${PENDING_PUBLISH_SQL}
       AND EXISTS (
         SELECT 1 FROM auto_trees
         WHERE id = ? AND generation = ? AND stop_state = 'none' AND ${AUTO_OWNER_GUARD_SQL}
       )`,
   params: [
+    nowMs,
     attemptId,
     treeId,
     generation,

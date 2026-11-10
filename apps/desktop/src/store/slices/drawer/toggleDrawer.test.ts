@@ -50,6 +50,18 @@ describe('toggleDrawer', () => {
     expect(shownKind()).toBe('explore');
   });
 
+  it('leaves every stacked page in one press and shows the parked drawer', () => {
+    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().openStudio({ studio: { kind: 'guide' } });
+    store.getState().openStudio({ studio: { kind: 'changelog' } });
+
+    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+
+    expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().currentSessionId).toBe(SESSION_ID);
+    expect(shownKind()).toBe('explore');
+  });
+
   it('closes the page and opens the drawer when nothing was parked', () => {
     store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
 

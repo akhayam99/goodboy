@@ -168,6 +168,7 @@ describe('a model the owner hid is not picked by the orchestrator path', () => {
         'opus-5.5',
         'fable-5',
         'fable-5.1',
+        'fable-5.2',
         'sonnet-4.5',
         'sonnet-4.6',
         'sonnet-5',

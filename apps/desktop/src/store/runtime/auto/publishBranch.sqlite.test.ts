@@ -6,6 +6,20 @@ import type { AutoCheckScript } from './ports';
 import { publishQueue } from './publishQueue';
 import { makeGate } from './testing/makeGate';
 import {
+  attemptPublishOf,
+  END,
+  idsOf,
+  implementer,
+  LEDGER_FORCE,
+  LEDGER_PATH,
+  LEDGER_PUSH,
+  NOTIFY_PATH,
+  recordOf,
+  delegationsOf,
+  settle,
+  START,
+} from './testing/publishWorld';
+import {
   autoDelegates,
   autoTurnEnds,
   childTurnEnds,
@@ -14,77 +28,12 @@ import {
   userSays,
   type RuntimeWorld,
 } from './testing/runtimeWorld';
-
-const LEDGER_PATH = '/work/harborline/ledger-core';
-const NOTIFY_PATH = '/work/harborline/notify-relay';
-
 const TYPECHECK: AutoCheckScript = { id: 'typecheck-id', name: 'typecheck' };
-
-const START: MountSnapshot = { head: 'base000', entries: [], isPartial: false };
-const END: MountSnapshot = { head: 'abc123', entries: [], isPartial: false };
 
 const STALE = 'Origin changed. Check again before force pushing.';
 
-type PublishSpec = string | Readonly<Record<string, unknown>>;
-
-const implementer = ({ publish, mount }: { publish: PublishSpec; mount: string }) => ({
-  role: 'implementer',
-  task: `rewrite the history of ${mount}`,
-  reason: 'a code change',
-  mount,
-  publish,
-});
-
-type EndParams = {
-  readonly publishes: ReadonlyArray<Readonly<{ publish: PublishSpec; mount: string }>>;
-  readonly checks?: ReadonlyArray<AutoCheckScript>;
-  readonly configure?: (world: RuntimeWorld) => void;
-};
-
-const settle = async ({ publishes, checks = [], configure }: EndParams): Promise<RuntimeWorld> => {
-  const world = await makeRuntimeWorld();
-  await userSays({ world, id: 'outbox-user-1', text: 'tidy the history and push it' });
-  world.state.ports.setChecks(checks);
-  world.state.ports.setSnapshots(LEDGER_PATH, [START, END]);
-  world.state.ports.setSnapshots(NOTIFY_PATH, [START, END]);
-  configure?.(world);
-  const outcome = await autoDelegates({
-    world,
-    spec: { children: publishes.map((one) => implementer(one)) },
-  });
-  if (!outcome.isOk) {
-    throw new Error(`the delegate was refused: ${outcome.error ?? ''}`);
-  }
-  await autoTurnEnds({ world });
-  for (const [index, turn] of world.state.ports.childTurns.entries()) {
-    await childTurnEnds({
-      world,
-      index,
-      text: `Done.\n<<step-done id="${turn.childAgentId}">>`,
-    });
-  }
-  return world;
-};
-
-const delegationsOf = async (world: RuntimeWorld) =>
-  listAutoDelegations({ db: world.state.world.db, treeId: world.treeId });
-
-const recordOf = async (world: RuntimeWorld, index = 0): Promise<ResultPublish> => {
-  const delegation = (await delegationsOf(world))[index];
-  const record = publishOfResult({ result: delegation?.result });
-  if (record === null) {
-    throw new Error('a publish record was expected');
-  }
-  return record;
-};
-
-const idsOf = async (world: RuntimeWorld): Promise<ReadonlyArray<AutoDelegationId>> =>
-  (await delegationsOf(world)).map((delegation) => delegation.id);
-
 const digestOf = (world: RuntimeWorld): string => world.state.ports.autoTurns[1]?.text ?? '';
 
-const LEDGER_PUSH = { publish: 'push', mount: 'mount-ledger-core' };
-const LEDGER_FORCE = { publish: 'force', mount: 'mount-ledger-core' };
 const NOTIFY_FORCE = { publish: 'force', mount: 'mount-notify-relay' };
 
 describe('pushing the branch of a writer after its work', () => {
@@ -286,21 +235,6 @@ const delegatedOnly = async (): Promise<RuntimeWorld> => {
   await autoDelegates({ world, spec: { children: [implementer(LEDGER_PUSH)] } });
   await autoTurnEnds({ world });
   return world;
-};
-
-const attemptPublishOf = async (world: RuntimeWorld): Promise<unknown> => {
-  const [delegation] = await delegationsOf(world);
-  if (delegation === undefined) {
-    return null;
-  }
-  const attempts = await listAutoAttemptsOfDelegation({
-    db: world.state.world.db,
-    delegationId: delegation.id,
-  });
-  const snapshot = attempts.at(-1)?.resultSnapshot;
-  return typeof snapshot === 'object' && snapshot !== null && 'envelope' in snapshot
-    ? publishOfResult({ result: snapshot.envelope })
-    : null;
 };
 
 const bumpGeneration = async (world: RuntimeWorld): Promise<void> => {

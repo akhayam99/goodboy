@@ -15,7 +15,7 @@ const VERSIONED_ID =
   /['"`](claude-)?(sonnet|opus|haiku|fable)-\d|['"`]gpt-\d|['"`]gemini-\d|['"`]kimi-k\d|['"`]glm-\d|['"`]grok-\d|['"`]composer-\d/;
 
 const CATALOG_LAYER =
-  /^packages\/core\/src\/providers\/([a-z]+\/(catalog|cost|agent-model-ids)|parseLegacyId|catalogDescriptor)\.ts$/;
+  /^packages\/core\/src\/providers\/([a-z]+\/(catalog|[a-z][A-Za-z]*Catalog|cost|agent-model-ids)|parseLegacyId|catalogDescriptor)\.ts$/;
 
 const ALLOWED_TODAY: ReadonlyArray<string> = ['packages/db/src/test-helpers/search-fixtures.ts'];
 

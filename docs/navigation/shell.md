@@ -293,10 +293,14 @@ sight and out of reach of every close key, and Esc, Close or Back brings it
 back with the session. A parked drawer stays mounted, hidden and inert
 (`DrawerColumn` `isParked`), out of the flow so the page takes its width, with
 no exit and no width change, so a draft, a scroll position or a running
-terminal survives the trip. Close keys read `selectDrawerPanel`, which is null
-under a studio, and the history entry keeps the drawer. A drawer's own key
-(⌘⌥C, ⌘⌥X, ⌘⌥S) on a page closes the page and shows that drawer; it never
-closes a parked one. Esc in the session is one ladder: an open
+terminal survives the trip. The session under the page widens while the drawer
+is parked and narrows again on return, so its transcript re-wraps. Close keys
+read `selectDrawerPanel`, which is null under a studio, and the history entry
+keeps the drawer. Esc inside a parked drawer is suspended, so it reaches the
+page, and after the trip the drawer's inner step (a plan in Ask) answers first
+again. A drawer's own key (⌘⌥C, ⌘⌥X, ⌘⌥S) on a page leaves that page and every
+page stacked under it, and shows that drawer; it never closes a parked one,
+and an overlay drawer takes focus back. Esc in the session is one ladder: an open
 menu, popover or field takes it first, then the top of the slot closes, then
 the drawer from the chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS,
 File > Close the Drawer) closes the top of the slot from anywhere, a focused

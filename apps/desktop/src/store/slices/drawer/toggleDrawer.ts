@@ -1,3 +1,4 @@
+import { leaveStudio } from '../navigation/leaveStudio';
 import { drawerKey } from './drawerKey';
 import { isWorkspaceTool } from './isWorkspaceTool';
 import { selectDrawerPanel } from './selectDrawerPanel';
@@ -10,7 +11,7 @@ export const toggleDrawer = (get: GetFn) => {
     const isOnPage =
       studio !== null && (!isWorkspaceTool({ content: request }) || studio.kind === request.kind);
     if (isOnPage) {
-      get().closeStudio();
+      leaveStudio({ get });
     }
     const current = selectDrawerPanel(get());
     const isSame =

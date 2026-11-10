@@ -48,6 +48,7 @@ export const readStudioRailWidth = ({
 type Props = {
   readonly rail: ReactNode | null;
   readonly detail: ReactNode;
+  readonly detailClassName?: string;
   readonly railLabel: string;
   readonly railWidth: RailWidth;
   readonly surface: string;
@@ -64,6 +65,7 @@ type Props = {
 export const StudioRailLayout = ({
   rail,
   detail,
+  detailClassName,
   railLabel,
   railWidth,
   surface,
@@ -161,6 +163,7 @@ export const StudioRailLayout = ({
         className={cn(
           'min-h-0 min-w-0 flex-1 overflow-hidden bg-background',
           !isPage && SHEET_CLASSES.wrapped,
+          detailClassName,
         )}
       >
         {detail}

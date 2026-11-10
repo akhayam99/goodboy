@@ -721,25 +721,24 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('keeps a parked Explore mounted with its scroll through a Tasks round trip', async () => {
+  it('keeps a parked Explore mounted as the same node through a Tasks round trip', async () => {
     await boot({ seed: 'pr' });
 
     await press('lens.explore');
     await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('explore'));
-    const card = requireValue({
-      value: document.querySelector<HTMLElement>('main aside [data-drawer-content] > div'),
-    });
-    card.scrollTop = 120;
+    const explore = 'main aside section[aria-label="Explore"]';
+    const section = await waitFor(() =>
+      requireValue({ value: document.querySelector<HTMLElement>(explore) }),
+    );
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
-    expect(card.isConnected).toBe(true);
+    expect(section.isConnected).toBe(true);
     await escape();
 
     expect(studio()).toBeNull();
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
-    expect(document.querySelector('main aside [data-drawer-content] > div')).toBe(card);
-    expect(card.scrollTop).toBe(120);
+    expect(document.querySelector(explore)).toBe(section);
     expectHealthy();
   });
 

@@ -12,7 +12,7 @@ describe('strongestModelForTier', () => {
   it('gives a thinker the top of the same tier', () => {
     expect(
       strongestModelForTier({ provider: 'anthropic', tier: 'expensive', wantsThinker: true })?.id,
-    ).toBe('fable-5.1');
+    ).toBe('fable-5.2');
   });
 
   it('answers with the top of the requested tier, not the top of the catalogue', () => {

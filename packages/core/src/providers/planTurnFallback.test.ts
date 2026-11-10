@@ -179,7 +179,7 @@ const ROWS: ReadonlyArray<Row> = [
     attempt: 0,
     connectedProviders: ['codex', 'anthropic'],
     wantsThinker: true,
-    expected: { provider: 'anthropic', model: 'fable-5.1' },
+    expected: { provider: 'anthropic', model: 'fable-5.2' },
   },
   {
     name: 'a usage limit on Gemini Pro lands on the strongest anthropic mid model',
