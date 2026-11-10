@@ -259,9 +259,17 @@ it; Esc inside the page goes to the page.
   a host with no dot and every other scheme are refused under the row. The
   pane never sends text to a search engine.
 - **Tabs**: the strip shows the session's tabs, then the project pins with
-  their title and a pin mark, then New tab. The list shows This session and Pinned for the project, with
-  the note that tabs close when the session is archived. With no tab the pane
-  shows an empty state and focuses the address.
+  their title and a pin mark, then New tab. The list shows `Pinned · <project>`
+  first, then This session, then New tab; the note that tabs close when the
+  session is archived is the tooltip of the This session label. A tab the
+  engine put to sleep or closed (`browser://tab-state`, read by
+  `useTabStates`, corrected by the 1.5 second poll) shows its favicon faint and
+  a moon mark, "Asleep, reloads when opened". The list has three widths in
+  `browserTabListPref`: `list` (192px), `rail` (36px of favicons, titles in
+  tooltips) and `hidden`; the fold button cycles `list` and `rail`, and a pane
+  under 560px wide shows the rail. The old boolean value reads as `list` or
+  `hidden`. The Browser page rail uses the same rows and the same groups order.
+  With no tab the pane shows an empty state and focuses the address.
 - **Live tabs**: a row and a live webview are not the same thing. Opening a
   page asks the host for a hidden webview, saves its row with the webview's id
   and binds the two in `browserLiveTabs`. After a restart a row has no live

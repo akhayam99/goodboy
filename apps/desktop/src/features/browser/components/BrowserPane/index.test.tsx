@@ -86,6 +86,7 @@ const factsOf = ({ args }: OpenArgs): BrowserTabFacts => {
     sessionId: args.sessionId,
     url: args.url,
     title: '',
+    state: 'live',
     isShown: false,
     hiddenSinceMs: null,
     openerId: null,
