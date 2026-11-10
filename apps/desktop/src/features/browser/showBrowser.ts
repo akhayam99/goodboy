@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { selectOpenDrawer } from '../../store/slices/drawer/selectOpenDrawer';
+import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
 import { browserStudioPlace } from './browserStudioPlace';
 
 type Params = {
@@ -10,14 +10,13 @@ type Params = {
 export const showBrowser = ({ sessionId }: Params): void => {
   const state = useAppStore.getState();
   const studio = state.appStudio;
-  if (studio !== null) {
-    if (studio.kind === 'browser' && studio.sessionId === sessionId) {
-      return;
+  if (studio?.kind === 'browser') {
+    if (studio.sessionId !== sessionId) {
+      state.switchStudio({ studio: browserStudioPlace({ sessionId }) });
     }
-    state.switchStudio({ studio: browserStudioPlace({ sessionId }) });
     return;
   }
-  const drawer = selectOpenDrawer(state);
+  const drawer = selectDrawerPanel(state);
   if (drawer?.kind === 'browser' && drawer.sessionId === sessionId) {
     return;
   }

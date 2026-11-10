@@ -53,7 +53,7 @@ describe('openWorkspaceTerminal', () => {
   it('opens a terminal for the workspace and the session it started from', async () => {
     const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
 
-    await openWorkspaceTerminal({ workspaceId: WORKSPACE_ID });
+    await openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: false });
 
     expect(terminalStudioCount()).toBe(1);
   });
@@ -61,7 +61,7 @@ describe('openWorkspaceTerminal', () => {
   it('drops the result when the session changed while the home folder was pending', async () => {
     const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
     const gate = holdHome();
-    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID });
+    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: false });
 
     useAppStore.setState({ currentSessionId: SECOND_SESSION });
     gate.resolve('/Users/mock');
@@ -73,7 +73,7 @@ describe('openWorkspaceTerminal', () => {
   it('drops the result when the workspace changed while the home folder was pending', async () => {
     const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
     const gate = holdHome();
-    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID });
+    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: false });
 
     useAppStore.setState({ currentWorkspaceId: nextWorkspaceId() });
     gate.resolve('/Users/mock');

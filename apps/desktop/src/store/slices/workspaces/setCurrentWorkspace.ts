@@ -396,6 +396,8 @@ const loadWorkspaceSnapshot = async ({
 const clearedWorkspaceState = () => ({
   currentSessionId: null,
   appStudio: null,
+  drawer: null,
+  drawerBack: null,
   sessions: [],
   archivedSessions: {},
   sessionSummary: null,

@@ -13,7 +13,9 @@ type Params = {
 
 export const useSlotBackChip = ({ back }: Params): DrawerChip | null => {
   const artifacts = useAppStore((s) =>
-    back === null ? NO_ARTIFACTS : (s.sessionArtifacts[back.sessionId] ?? NO_ARTIFACTS),
+    back === null || back.sessionId === null
+      ? NO_ARTIFACTS
+      : (s.sessionArtifacts[back.sessionId] ?? NO_ARTIFACTS),
   );
   const openDrawer = useAppStore((s) => s.openDrawer);
   return useMemo(() => {

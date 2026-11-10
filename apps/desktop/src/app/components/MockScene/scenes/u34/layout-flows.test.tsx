@@ -59,7 +59,7 @@ it.each(Object.entries(U34_LAYOUT_FLOW_SCENES))('mounts %s', async (id, Scene) =
     screen.getByRole('button', { name: '4 more branches' });
   }
   if (id === 'u34-u30-active-tool') {
-    const rail = screen.getByRole('toolbar', { name: 'Session tools' });
+    const rail = screen.getByRole('toolbar', { name: 'Tools' });
     expect(rail.querySelector('[data-slot="tool-caption"][data-tone="open"]')?.textContent).toBe(
       'Agents',
     );
@@ -80,7 +80,7 @@ it('opens Agents at 1280, folds the rail, respects a manual unfold, and restores
       <Scene />
     </ToastProvider>,
   );
-  await screen.findByRole('toolbar', { name: 'Session tools' });
+  await screen.findByRole('toolbar', { name: 'Tools' });
   act(() => {
     observers.resizeAll();
   });

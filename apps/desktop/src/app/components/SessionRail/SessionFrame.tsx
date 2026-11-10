@@ -1,6 +1,6 @@
 import { useContext, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { DrawerEdgeContext } from '@goodboy/ui';
+import { DrawerEdgeContext, ShellRailContext } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { SessionTools } from '../../../features/session/components/SessionTools';
 import { SessionCostChip } from '../../../features/session/components/SessionOverviewPane/SessionCostChip';
@@ -15,6 +15,7 @@ type Props = {
 
 export const SessionFrame = ({ session, children }: Props) => {
   const edgeHost = useContext(DrawerEdgeContext);
+  const isRailInShell = useContext(ShellRailContext);
   const sizing = useSessionRailSizing();
   return (
     <SessionRailFoldContext value={sizing.fold.isFolded}>
@@ -28,8 +29,8 @@ export const SessionFrame = ({ session, children }: Props) => {
           />
         </div>
         <div className="relative h-full min-w-0 flex-1">{children}</div>
-        <SessionTools key={`tools-${session.id}`} sessionId={session.id} />
-        {edgeHost === null
+        {isRailInShell ? null : <SessionTools key={`tools-${session.id}`} sessionId={session.id} />}
+        {isRailInShell || edgeHost === null
           ? null
           : createPortal(
               <SessionTools key={`edge-tools-${session.id}`} sessionId={session.id} />,

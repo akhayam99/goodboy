@@ -101,10 +101,6 @@ export const useAppOverlays = ({
 
   const openChat = useCallback(() => openDestination({ id: 'chat' }), []);
 
-  const openTerminalStudio = useCallback(() => openDestination({ id: 'terminal' }), []);
-
-  const openBrowserStudio = useCallback(() => openDestination({ id: 'browser' }), []);
-
   const openNewChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
 
   const openMonitoring = useCallback(() => openDestination({ id: 'monitoring' }), []);
@@ -204,8 +200,6 @@ export const useAppOverlays = ({
     openSettings,
     openShortcutHelp,
     openSpend,
-    openTerminalStudio,
-    openBrowserStudio,
     openNewChat,
     openMonitoring,
     openImpact,

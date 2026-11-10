@@ -43,9 +43,18 @@ const DOOR_ORDER: ReadonlyArray<string> = [
   'workflows',
   'chat',
   'impact',
-  'terminal',
   'monitoring',
 ];
+
+const railTool = (name: 'terminal' | 'browser'): HTMLElement => {
+  const [button] = screen
+    .getAllByTestId(`pane-toggle-${name}`)
+    .filter((candidate) => candidate.closest('[data-drawer-edge]') === null);
+  if (button === undefined) {
+    throw new Error(`No ${name} button on the right rail`);
+  }
+  return button;
+};
 
 const doorIdsInColumn = (): ReadonlyArray<string> =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-side-column] [data-column-door]')).map(
@@ -170,25 +179,54 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'New workflow'),
   },
   {
-    name: 'column: terminal',
-    covers: ['openTerminalStudio', 'studio:terminal'],
+    name: 'right rail: Terminal docks beside the place and its button is pressed',
+    covers: ['rail:terminal'],
     door: 'visible',
-    open: () => click(doorIn('terminal')),
+    open: () => click(railTool('terminal')),
     lands: both(
-      () => studio('Terminal'),
-      () => visible('heading', 'No terminal yet'),
-      async () => expect(doorIn('terminal').getAttribute('aria-current')).toBe('page'),
+      () => visible('button', 'Open as page'),
+      async () => expect(railTool('terminal').getAttribute('aria-pressed')).toBe('true'),
+      async () => expect(useAppStore.getState().appStudio).toBeNull(),
     ),
   },
   {
-    name: 'column: browser',
-    covers: ['openBrowserStudio', 'studio:browser'],
+    name: 'right rail: Terminal grows into its page from the dock, the button selected',
+    covers: ['studio:terminal'],
+    open: async () => {
+      await click(railTool('terminal'));
+      await clickButton(/^Open as page$/);
+    },
+    lands: both(
+      () => studio('Terminal'),
+      async () => expect(railTool('terminal').getAttribute('aria-current')).toBe('page'),
+      async () => expect(doorIdsInColumn()).not.toContain('terminal'),
+    ),
+  },
+  {
+    name: 'right rail: Browser docks beside the place',
+    covers: ['rail:browser'],
     door: 'visible',
-    open: () => click(doorIn('browser')),
+    open: () => click(railTool('browser')),
+    lands: both(
+      async () => expect(useAppStore.getState().drawer?.kind).toBe('browser'),
+      async () => expect(railTool('browser').getAttribute('aria-pressed')).toBe('true'),
+      async () => expect(useAppStore.getState().appStudio).toBeNull(),
+    ),
+  },
+  {
+    name: 'browser page: the Browser button stays selected while its page is open',
+    covers: ['studio:browser'],
+    open: async () => {
+      const sessionId = useAppStore.getState().currentSessionId;
+      if (sessionId === null) {
+        throw new Error('The browser row needs an open session');
+      }
+      useAppStore.getState().openStudio({ studio: { kind: 'browser', sessionId, tabId: null } });
+      await settle();
+    },
     lands: both(
       () => studio('Browser'),
-      async () => expect(doorIn('browser').getAttribute('aria-current')).toBe('page'),
-      async () => expect(useAppStore.getState().appStudio?.kind).toBe('browser'),
+      async () => expect(railTool('browser').getAttribute('aria-current')).toBe('page'),
     ),
   },
   {
@@ -291,21 +329,24 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: the terminal tile opens the studio and its page starts a fresh terminal',
-    covers: ['openTerminalStudio'],
-    open: async () => {
-      await click(doorIn('terminal'));
-      await clickButton(/^New terminal$/);
-    },
+    name: 'right rail: the Terminal button docks a terminal and counts it in its label',
+    covers: ['toggleTerminalDock'],
+    open: () => click(railTool('terminal')),
     lands: both(
-      () => studio('Terminal'),
-      () => visible('complementary', 'Terminals'),
       async () =>
         waitFor(
           () =>
             expect(
               Object.values(useAppStore.getState().terminalTabs).flat().length,
             ).toBeGreaterThan(0),
+          WAIT,
+        ),
+      async () =>
+        waitFor(
+          () =>
+            expect(railTool('terminal').getAttribute('aria-label')).toMatch(
+              /^Terminal, \d+ running/,
+            ),
           WAIT,
         ),
     ),

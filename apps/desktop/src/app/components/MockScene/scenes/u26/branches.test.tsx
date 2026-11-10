@@ -88,7 +88,9 @@ describe('the u26 branches scenes, units 1 and 2', () => {
 
       expect(screen.queryByRole('checkbox')).toBeNull();
       expect(rows().filter((row) => row.getAttribute('aria-selected') === 'true')).toHaveLength(3);
-      expect(within(screen.getByRole('toolbar')).getByText('3 selected')).toBeDefined();
+      expect(
+        within(screen.getByRole('toolbar', { name: /selected$/ })).getByText('3 selected'),
+      ).toBeDefined();
       expect(screen.getByText('Shift click for a range, Option click to add one')).toBeDefined();
     },
   );
@@ -100,7 +102,9 @@ describe('the u26 branches scenes, units 1 and 2', () => {
 
       expect(screen.queryByRole('checkbox')).toBeNull();
       expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3);
-      expect(within(screen.getByRole('toolbar')).getByText('3 selected')).toBeDefined();
+      expect(
+        within(screen.getByRole('toolbar', { name: /selected$/ })).getByText('3 selected'),
+      ).toBeDefined();
     },
   );
 

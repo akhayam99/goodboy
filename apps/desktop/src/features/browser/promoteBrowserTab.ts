@@ -7,5 +7,5 @@ type Params = {
 };
 
 export const promoteBrowserTab = ({ sessionId, tabId }: Params): void => {
-  useAppStore.getState().switchStudio({ studio: { kind: 'browser', sessionId, tabId } });
+  useAppStore.getState().openStudio({ studio: { kind: 'browser', sessionId, tabId } });
 };

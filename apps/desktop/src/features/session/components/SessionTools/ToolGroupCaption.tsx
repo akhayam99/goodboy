@@ -5,8 +5,8 @@ type Props = {
 };
 
 const GROUP_CAPTION = {
-  read: 'Read',
-  work: 'Work',
+  session: 'Session',
+  workspace: 'Workspace',
 } as const satisfies Record<SessionTool['group'], string>;
 
 export const ToolGroupCaption = ({ group }: Props) => (

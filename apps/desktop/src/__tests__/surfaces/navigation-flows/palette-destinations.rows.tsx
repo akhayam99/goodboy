@@ -109,18 +109,25 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => studio('Chat'),
   },
   {
-    name: 'palette: Terminal',
-    covers: ['studio:terminal', 'palette:Terminal'],
+    name: 'palette: Terminal opens the dock, not a page',
+    covers: ['palette:Terminal'],
     door: 'palette',
     open: () => openPalette(/^Terminal$/),
-    lands: () => studio('Terminal'),
+    lands: async () => {
+      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+      expect(useAppStore.getState().appStudio).toBeNull();
+    },
   },
   {
-    name: 'palette: Browser',
-    covers: ['studio:browser', 'palette:Browser'],
+    name: 'palette: Browser opens the dock, not a page',
+    covers: ['palette:Browser'],
     door: 'palette',
     open: () => openPalette(/^Browser$/),
-    lands: () => studio('Browser'),
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'), WAIT);
+      expect(useAppStore.getState().appStudio).toBeNull();
+    },
   },
   {
     name: 'palette: New terminal in this session',
@@ -128,7 +135,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^New terminal in this session$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -148,7 +155,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },

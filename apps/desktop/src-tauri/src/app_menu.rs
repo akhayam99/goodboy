@@ -120,11 +120,11 @@ const GO_ROWS: &[Row] = &[
     command("menu.workflows", "Workflows", None),
     command("menu.chat", "Chat", None),
     command("menu.impact", "Impact", None),
-    SEPARATOR,
-    command("terminal.studio", "Terminal", Some("ctrl+Backquote")),
-    command("menu.browser", "Browser", None),
     command("menu.monitoring", "Monitoring", None),
     command("menu.notifications", "Notifications", None),
+    SEPARATOR,
+    command("terminal.studio", "Show or Hide Terminal", Some("ctrl+Backquote")),
+    command("menu.browser", "Browser", None),
 ];
 
 const WINDOW_ROWS: &[Row] = &[

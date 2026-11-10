@@ -72,30 +72,26 @@ describe('the side column signal scenes', () => {
     }
   });
 
-  it('side-signals-running names 2 running terminals', async () => {
+  it('side-signals-running keeps the running terminals off the column, they count on the right rail', async () => {
     await mount({ name: 'side-signals-running' });
 
-    expect(screen.getByRole('button', { name: 'Terminal, 2 running' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Terminal/ })).toBeNull();
   });
 
   it.each(['side-tiles-dark', 'side-tiles-light'] as const)(
-    '%s shows the Terminal and Monitoring tiles with their counts',
+    '%s draws Monitoring as a quiet row with its count, and no tiles',
     async (name) => {
       await mount({ name });
 
-      expect(screen.getByRole('button', { name: 'Terminal, 2 running' }).textContent).toContain(
-        '2',
-      );
-      expect(
-        document.querySelector('[data-column-tile="monitoring"] [data-tile-count]')?.textContent,
-      ).toBe('3');
+      screen.getByRole('button', { name: 'Monitoring, 3 in use' });
+      expect(document.querySelector('[data-column-tile]')).toBeNull();
     },
   );
 
-  it('side-signals-idle shows nothing on the tool tiles, only the Sessions dot for who needs you', async () => {
+  it('side-signals-idle shows nothing on the rows, only the Sessions dot for who needs you', async () => {
     await mount({ name: 'side-signals-idle' });
 
-    expect(screen.getByRole('button', { name: 'Terminal' }).textContent).toBe('Terminal');
+    expect(screen.getByRole('button', { name: 'Monitoring' }).textContent).toBe('Monitoring');
     expect(
       document.querySelector(
         '[data-column-door]:not([data-column-door="board"]) [data-door-signal]',

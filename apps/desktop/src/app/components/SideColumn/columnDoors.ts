@@ -9,7 +9,6 @@ export type ColumnDoor = {
   readonly icon: LucideIcon;
   readonly shortcutId?: ShortcutId;
   readonly isReference?: boolean;
-  readonly isTool?: boolean;
 };
 
 type DoorDestination = Destination & { readonly id: ColumnDoorId };
@@ -24,29 +23,17 @@ const doorOf = ({ destination }: DoorParams): ColumnDoor => ({
   icon: destination.icon,
   ...(destination.shortcutId !== undefined && { shortcutId: destination.shortcutId }),
   ...(destination.isReference === true && { isReference: true }),
-  ...(destination.home === 'tile' && { isTool: true }),
 });
 
 export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
-  (destination): destination is DoorDestination =>
-    destination.home === 'column' || destination.home === 'tile',
+  (destination): destination is DoorDestination => destination.home === 'column',
 ).map((destination) => doorOf({ destination }));
-
-export const COLUMN_ROW_DOORS: ReadonlyArray<ColumnDoor> = COLUMN_DOORS.filter(
-  (door) => door.isTool !== true,
-);
-
-export const COLUMN_TOOL_DOORS: ReadonlyArray<ColumnDoor> = COLUMN_DOORS.filter(
-  (door) => door.isTool === true,
-);
 
 export type ColumnActions = {
   readonly openBoard: () => void;
   readonly openInbox: () => void;
   readonly openChat: () => void;
   readonly openWorkflows: () => void;
-  readonly openTerminalStudio: () => void;
-  readonly openBrowserStudio: () => void;
   readonly openNewChat: () => void;
   readonly openMonitoring: () => void;
   readonly openImpact: () => void;
@@ -73,12 +60,6 @@ export const openColumnDoor = ({ id, actions }: OpenDoorParams): void => {
       return;
     case 'workflows':
       actions.openWorkflows();
-      return;
-    case 'terminal':
-      actions.openTerminalStudio();
-      return;
-    case 'browser':
-      actions.openBrowserStudio();
       return;
     case 'monitoring':
       actions.openMonitoring();

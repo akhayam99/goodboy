@@ -217,7 +217,7 @@ describe('layouts saved by the previous build', () => {
     expect(state.currentSessionId).toBe(SESSION);
   });
 
-  it('restores a blob with a session-less Terminal dock on the board with no drawer', async () => {
+  it('restores a blob with a session-less Terminal dock on the board, the dock kept', async () => {
     const entry = PREVIOUS_BUILD_BLOBS.terminalDockWithoutSession;
 
     const layout = await savedLayoutOf({ entry });
@@ -226,7 +226,11 @@ describe('layouts saved by the previous build', () => {
     const state = await restoredFrom({ entry });
 
     expect(state.currentSessionId).toBeNull();
-    expect(state.drawer).toBeNull();
+    expect(state.drawer).toEqual({
+      kind: 'terminal',
+      sessionId: null,
+      payload: { terminalId: 'terminal-1' },
+    });
   });
 });
 

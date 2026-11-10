@@ -76,7 +76,8 @@ const opensNotificationsDestination = (line: string): boolean =>
 
 const readsDestinationList = (line: string): boolean => line.includes('DESTINATIONS');
 
-const opensDestination = (line: string): boolean => line.includes('openDestination({');
+const opensDestination = (line: string): boolean =>
+  line.includes('openDestination({') || line.includes('runDestination({');
 
 describe('the notifications studio has three entrances, the bell, the palette and the menu bar', () => {
   const files = listSourceFiles(SRC_ROOT);

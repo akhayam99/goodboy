@@ -10,6 +10,7 @@ import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
 import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';
 import { shellArrangement } from '../../../shellArrangement';
+import { useShellRight } from '../../../hooks/useShellRight';
 import { useSceneShell } from './useSceneShell';
 import { useSceneSidebar } from './useSceneSidebar';
 
@@ -66,10 +67,12 @@ const BoardShellSceneContent = () => {
     isSidebarCollapsed: rail.isCollapsed,
   });
   const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
+  const { rightRail } = useShellRight({});
 
   return (
     <>
       <AppShell
+        rightRail={rightRail}
         studio={shell.studio}
         topBar={
           <AppTopBar

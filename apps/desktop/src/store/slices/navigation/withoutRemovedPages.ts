@@ -127,6 +127,9 @@ const pageOfRemovedDrawer = ({ drawer }: DrawerParams): Place | null => {
     return null;
   }
   const { sessionId } = drawer;
+  if (sessionId === null) {
+    return null;
+  }
   const saved: object | null = drawer.payload;
   if (saved === null || !('agentId' in saved) || typeof saved.agentId !== 'string') {
     return sessionPlace({ sessionId });

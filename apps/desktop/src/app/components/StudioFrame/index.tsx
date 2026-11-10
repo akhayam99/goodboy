@@ -11,6 +11,7 @@ import {
 import {
   cn,
   DrawerColumn,
+  DrawerEdgeContext,
   PAGE_FRAME,
   readStudioRailWidth,
   SHEET_CLASSES,
@@ -32,6 +33,8 @@ import { STUDIO_META } from './studioMeta';
 import { captureStudioOpener } from './captureStudioOpener';
 import { restoreStudioOpener } from './restoreStudioOpener';
 import { StudioSkeleton } from './StudioSkeleton';
+import { ShellToolRail } from '../ShellToolRail';
+import { useOneRightPanel } from '../../hooks/useOneRightPanel';
 import type { StudioPlacement } from './studioPlacement';
 
 type Props = {
@@ -93,6 +96,8 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
   const isBandDrawn = isBandClose || trailClaims > 0 || accessory !== null;
   const isUnderTrail = isBandDrawn || isOuterUnderTrail;
 
+  const isPanelShown = useOneRightPanel({ spec: drawerSpec, isActive: isDrawerHost });
+  const shellEdge = useContext(DrawerEdgeContext);
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
   const bandNode = isBandDrawn ? (
     <StudioBand
@@ -157,9 +162,16 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
         {isDrawerHost ? (
           <DrawerColumn
             frame="sheet"
-            main={framed}
+            main={
+              <div className="flex min-h-0 min-w-0 flex-1">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">{framed}</div>
+                <DrawerEdgeContext.Provider value={shellEdge}>
+                  <ShellToolRail />
+                </DrawerEdgeContext.Provider>
+              </div>
+            }
             drawer={
-              drawerSpec?.node == null ? null : (
+              drawerSpec?.node == null || !isPanelShown ? null : (
                 <UnderTrailContext.Provider value={isUnderTrail}>
                   {drawerSpec.node}
                 </UnderTrailContext.Provider>

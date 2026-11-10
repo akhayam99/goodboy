@@ -149,7 +149,9 @@ const RoutedBrowser = () => {
     <>
       {drawer?.kind === 'browser' ? (
         <div data-test-pane="">
-          <BrowserPane sessionId={drawer.sessionId} onClose={() => undefined} />
+          {drawer.sessionId === null ? null : (
+            <BrowserPane sessionId={drawer.sessionId} onClose={() => undefined} />
+          )}
         </div>
       ) : null}
       {studio?.kind === 'browser' ? (
@@ -576,7 +578,7 @@ describe('moving a tab between the pane and the page', () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back beside the session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
 
     expect(store.getState().appStudio).toBeNull();
     expect(store.getState().drawer).toEqual({
@@ -607,7 +609,7 @@ describe('moving a tab between the pane and the page', () => {
     );
     expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back beside the session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
 
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
     expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']);
@@ -624,7 +626,7 @@ describe('moving a tab between the pane and the page', () => {
     await promote();
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back beside the session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
     await act(async () => {
       held.release();
     });

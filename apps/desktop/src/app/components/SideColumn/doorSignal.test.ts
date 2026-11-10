@@ -106,19 +106,6 @@ describe('doorSignalOf', () => {
     expect(signal?.countText).toBe('1');
   });
 
-  it('says nothing for a terminal row with no live terminal', () => {
-    expect(doorSignalOf({ kind: 'terminal', count: 0 })).toBeUndefined();
-  });
-
-  it('counts the live terminals', () => {
-    expect(doorSignalOf({ kind: 'terminal', count: 2 })).toEqual({
-      count: 2,
-      isWarning: false,
-      isUnread: false,
-      fact: '2 running',
-    });
-  });
-
   it('says nothing for a monitoring row with no port in use and no pin down', () => {
     expect(doorSignalOf({ kind: 'monitoring', inUse: 0, downPins: [] })).toBeUndefined();
   });

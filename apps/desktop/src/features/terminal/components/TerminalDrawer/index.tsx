@@ -10,7 +10,7 @@ import {
 import { TerminalDrawerBody } from './TerminalDrawerBody';
 
 type Props = {
-  readonly sessionId: SessionId;
+  readonly sessionId: SessionId | null;
   readonly terminalId: TerminalTabId;
   readonly onClose: () => void;
 };
@@ -21,8 +21,10 @@ export const TerminalDrawer = ({ sessionId, terminalId, onClose }: Props) => {
     const tab = findTerminalTab({ state, tabId: terminalId });
     return tab === null ? null : terminalWorktreeKeyIn({ state, tab });
   });
-  const workspaceId = useAppStore(
-    (s) => sessionById(s.sessions, sessionId)?.workspaceId ?? s.currentWorkspaceId,
+  const workspaceId = useAppStore((s) =>
+    sessionId === null
+      ? s.currentWorkspaceId
+      : (sessionById(s.sessions, sessionId)?.workspaceId ?? s.currentWorkspaceId),
   );
 
   useEffect(() => {

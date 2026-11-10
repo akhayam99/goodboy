@@ -197,11 +197,18 @@ describe('the side slot', () => {
     expect(slot()).toEqual({ top: 'artifact', back: null });
   });
 
-  it('never chips a drawer of another session', () => {
-    store.getState().openDrawer(TERMINAL);
+  it('never chips a session drawer of another session', () => {
+    store.getState().openDrawer(PLAN);
     store.getState().openDrawer({ ...EXPLORE, sessionId: OTHER_SESSION_ID });
 
     expect(store.getState().drawerBack).toBeNull();
+  });
+
+  it('chips Terminal over a tool of another session, a workspace tool has no session to leave', () => {
+    store.getState().openDrawer(TERMINAL);
+    store.getState().openDrawer({ ...EXPLORE, sessionId: OTHER_SESSION_ID });
+
+    expect(store.getState().drawerBack?.kind).toBe('terminal');
   });
 
   it('gives a second window its own slot', async () => {

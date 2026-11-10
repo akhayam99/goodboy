@@ -15,6 +15,7 @@ import {
   openCrumb,
   openPalette,
   settle,
+  useAppStore,
 } from './harness';
 
 const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
@@ -210,9 +211,13 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'frame: the Terminal page sits on the page header inset',
-    covers: ['openTerminalStudio', 'studio:terminal'],
-    door: 'visible',
-    open: () => click(doorOf('terminal')),
+    covers: ['studio:terminal'],
+    open: async () => {
+      useAppStore.getState().openStudio({
+        studio: { kind: 'terminal', terminalId: null, sessionId: null },
+      });
+      await settle();
+    },
     lands: async () => {
       await studio('Terminal');
       await heading('Terminal');

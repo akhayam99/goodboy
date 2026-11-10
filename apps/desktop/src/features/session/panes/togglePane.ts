@@ -3,7 +3,8 @@ import { useAppStore } from '../../../store';
 import { selectSlotBack } from '../../../store/slices/drawer/selectSlotBack';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
-import { toggleSessionTerminal } from '../../terminal/toggleSessionTerminal';
+import { toggleBrowserDock } from '../../browser/toggleBrowserDock';
+import { toggleTerminalDock } from '../../terminal/toggleTerminalDock';
 import type { ClusterPane } from './clusterPane';
 import { openPaneOf } from './openPaneOf';
 import { waitingPaneOf } from './waitingPaneOf';
@@ -14,6 +15,14 @@ type Params = {
 };
 
 export const togglePane = ({ sessionId, pane }: Params): void => {
+  if (pane === 'terminal') {
+    toggleTerminalDock({ isToggle: true });
+    return;
+  }
+  if (pane === 'browser') {
+    toggleBrowserDock({ isToggle: true });
+    return;
+  }
   const isOnPage = useAppStore.getState().appStudio !== null;
   if (isOnPage) {
     useAppStore.getState().closeStudio();
@@ -36,9 +45,6 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
     case 'ask':
       state.openAsk({ sessionId });
       return;
-    case 'terminal':
-      toggleSessionTerminal({ sessionId });
-      return;
     case 'explore':
       openExplorePane({ state, sessionId, mountPath: null });
       return;
@@ -53,9 +59,6 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
       return;
     case 'spawned':
       state.openDrawer({ kind: 'spawned', sessionId, payload: null });
-      return;
-    case 'browser':
-      state.openDrawer({ kind: 'browser', sessionId, payload: null });
       return;
     default: {
       const exhaustive: never = pane;

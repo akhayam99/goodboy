@@ -1,11 +1,12 @@
 import { useAppStore } from '../../../store';
 import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
-import type { StudioDestinationId } from '../../../shared/navigation/destinations';
+import type { PageDestinationId } from '../../../shared/navigation/destinations';
 import { destinationOf } from '../../../shared/navigation/destinationOf';
 import { openDestination } from '../../../shared/navigation/openDestination';
 import { checkForUpdatesNow } from '../../../features/updater/checkForUpdatesNow';
 import { openSessionTerminalHere } from '../../../features/terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
+import { toggleBrowserDock } from '../../../features/browser/toggleBrowserDock';
 
 type MenuAction = {
   readonly label: string;
@@ -26,7 +27,7 @@ const inWorkspace =
   };
 
 type DestinationActionParams = {
-  readonly id: StudioDestinationId;
+  readonly id: PageDestinationId;
   readonly isGuarded?: boolean;
 };
 
@@ -49,7 +50,7 @@ const openNewTerminal = (): void => {
     void openSessionTerminalHere({ sessionId, isFresh: true });
     return;
   }
-  void openWorkspaceTerminal({ workspaceId });
+  void openWorkspaceTerminal({ workspaceId, isFresh: true });
 };
 
 export const MENU_ACTIONS = {
@@ -65,7 +66,10 @@ export const MENU_ACTIONS = {
   'menu.impact': destinationAction({ id: 'impact' }),
   'menu.notifications': destinationAction({ id: 'notifications' }),
   'menu.monitoring': destinationAction({ id: 'monitoring' }),
-  'menu.browser': destinationAction({ id: 'browser' }),
+  'menu.browser': {
+    label: destinationOf({ id: 'browser' }).label,
+    run: inWorkspace({ run: () => toggleBrowserDock({ isToggle: false }) }),
+  },
   'menu.guide': destinationAction({ id: 'guide', isGuarded: false }),
   'menu.whatsNew': destinationAction({ id: 'whatsNew' }),
 } as const satisfies Readonly<Record<string, MenuAction>>;

@@ -22,7 +22,7 @@ export const BrowserStudioBody = ({ sessionId, tabId }: Props) => {
             tone={CONCEPT_TONE.browser}
             icon={CONCEPT_ICONS.browser}
             title="No browser tabs yet"
-            description="Open Browser from a session's tools. Its tabs show here, grouped by session."
+            description="Open Browser from the right rail. Its tabs show here, grouped by session."
           />
         </PageColumn>
       </div>

@@ -166,15 +166,16 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
     expect(goIds).toEqual(['nav.back', 'nav.forward', ...paged.map(({ menuId }) => menuId)]);
   });
 
-  it('keeps a separator between the pages and the tools in the Go menu', () => {
+  it('keeps a separator between the pages and the right rail tools in the Go menu', () => {
     const block = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/.exec(source)?.[1] ?? '';
     const rows = block
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line !== '')
       .map((line) => (line === 'SEPARATOR,' ? '-' : (/"([^"]+)"/.exec(line)?.[1] ?? '')));
-    const afterImpact = rows.indexOf('menu.impact') + 1;
-    expect(rows[afterImpact]).toBe('-');
+    const firstTool = rows.indexOf('terminal.studio');
+    expect(rows[firstTool - 1]).toBe('-');
+    expect(rows.slice(firstTool)).toEqual(['terminal.studio', 'menu.browser']);
   });
 
   it('lists the foot destinations in the Help and App menus', () => {

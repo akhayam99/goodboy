@@ -206,7 +206,7 @@ export const SHORTCUTS = {
   'session.board': { combo: 'cmd+shift+KeyH', label: 'Board', plane: 'session', group: 'navigate' },
   'terminal.studio': {
     combo: 'ctrl+Backquote',
-    label: NAMES.terminal,
+    label: 'Show or hide Terminal',
     plane: 'app',
     group: 'navigate',
   },
@@ -420,7 +420,7 @@ export const SHORTCUTS = {
   'session.terminal': {
     combo: 'cmd+alt+KeyT',
     offMacCombo: 'ctrl+shift+alt+KeyT',
-    label: 'Session terminal',
+    label: 'Show or hide Terminal',
     plane: 'lens',
     group: 'session',
   },
