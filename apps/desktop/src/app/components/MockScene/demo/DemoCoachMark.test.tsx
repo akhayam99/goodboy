@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import type { DemoRect } from './director/demoProtocol';
 
@@ -12,12 +12,14 @@ type CoachParams = {
   readonly rect?: DemoRect;
   readonly pulse?: number;
   readonly hintId?: string;
+  readonly isWarning?: boolean;
 };
 
 const coachOf = ({
   rect = { x: 100, y: 100, width: 40, height: 24 },
   pulse = 0,
   hintId = 'open',
+  isWarning = false,
 }: CoachParams): CoachMark => ({
   hintId,
   copy: 'Open the plan',
@@ -28,6 +30,7 @@ const coachOf = ({
   opened: [],
   isDimmed: false,
   pulse,
+  isWarning,
 });
 
 type ViewParams = {
@@ -53,23 +56,18 @@ afterEach(() => {
 });
 
 describe('the demo coach mark', () => {
-  it('says why a click was blocked for a moment, then goes back to the hint alone', () => {
+  it('says why a click was blocked while the hint carries the warning, then the hint alone', () => {
     const { rerender } = render(view({ coach: coachOf({}) }));
     expect(screen.queryByText(WARNING)).toBeNull();
+    rerender(view({ coach: coachOf({ pulse: 1, isWarning: true }) }));
+    expect(screen.getByText(WARNING).textContent).toBe(WARNING);
     rerender(view({ coach: coachOf({ pulse: 1 }) }));
-    expect(screen.getByText(WARNING).textContent).toBe(WARNING);
-    act(() => {
-      vi.advanceTimersByTime(2000);
-    });
-    rerender(view({ coach: coachOf({ pulse: 2 }) }));
-    act(() => {
-      vi.advanceTimersByTime(2000);
-    });
-    expect(screen.getByText(WARNING).textContent).toBe(WARNING);
-    act(() => {
-      vi.advanceTimersByTime(400);
-    });
     expect(screen.queryByText(WARNING)).toBeNull();
+  });
+
+  it('warns as soon as it appears when the hint comes back on a blocked click', () => {
+    render(view({ coach: coachOf({ pulse: 3, isWarning: true }) }));
+    expect(screen.getByText(WARNING).textContent).toBe(WARNING);
   });
 
   it('does not warn when it first appears after an earlier blocked click', () => {

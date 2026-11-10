@@ -112,7 +112,11 @@ type TriedParams = {
   readonly hintId: string;
 };
 
-const tried = ({ frame, hintId }: TriedParams) => {
+type SignalParams = TriedParams & {
+  readonly type: 'tried' | 'blocked';
+};
+
+const signal = ({ frame, hintId, type }: SignalParams) => {
   act(() => {
     window.dispatchEvent(
       new MessageEvent('message', {
@@ -120,7 +124,7 @@ const tried = ({ frame, hintId }: TriedParams) => {
           channel: DEMO_PROTOCOL.channel,
           version: DEMO_PROTOCOL.version,
           generation: 0,
-          type: 'tried',
+          type,
           hintId,
         },
         origin: window.location.origin,
@@ -129,6 +133,12 @@ const tried = ({ frame, hintId }: TriedParams) => {
     );
   });
 };
+
+const tried = ({ frame, hintId }: TriedParams) => signal({ frame, hintId, type: 'tried' });
+
+const blocked = ({ frame, hintId }: TriedParams) => signal({ frame, hintId, type: 'blocked' });
+
+const WARNING = 'Follow the outlined control first.';
 
 type ElapseParams = {
   readonly ms: number;
@@ -363,6 +373,38 @@ describe('demo playground stage states', () => {
       within(doneCard()).getByRole('button', { name: /Next: Get Goodboy/ });
       expect(instruction()).toBe('Done. Next: Get Goodboy.');
     });
+  });
+
+  it('brings a dismissed hint back on a blocked click and says why for 2.4 s', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const hintId = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
+    hint({ frame, hintId });
+    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Dismiss hint' }));
+    expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+    blocked({ frame, hintId });
+    expect(within(screen.getByRole('note')).getByText(WARNING).textContent).toBe(WARNING);
+    elapse({ ms: 2399 });
+    expect(screen.queryByText(WARNING)).not.toBeNull();
+    elapse({ ms: 1 });
+    expect(screen.queryByText(WARNING)).toBeNull();
+    screen.getByTestId('demo-coach-mark');
+  });
+
+  it('does not replay an expired warning when a dismissed hint comes back', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const hintId = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
+    hint({ frame, hintId });
+    blocked({ frame, hintId });
+    expect(screen.queryByText(WARNING)).not.toBeNull();
+    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Dismiss hint' }));
+    elapse({ ms: 2400 });
+    fireEvent.click(within(topBar()).getByRole('button', { name: 'Show hint' }));
+    screen.getByTestId('demo-coach-mark');
+    expect(screen.queryByText(WARNING)).toBeNull();
   });
 
   it('hands focus back to the playground after Show hint, Hide hints and Show hints', () => {

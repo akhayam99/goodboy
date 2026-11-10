@@ -711,11 +711,13 @@ click, Enter or Space on the control of a later step (the anchor of a hint after
 the active one, text fields apart) and reports `blocked` for the active hint. The
 stage then shows its coach again, even if it was dismissed, with a short pulse
 (`pulse` in `CoachMark`), and for 2.4 seconds the callout adds "Follow the
-outlined control first." under its copy while the ring flashes once
-(`DemoCoachMark.tsx`). Enter pressed on no control is stopped the same way
-while such a control is on screen, so the wizard's own Enter handler cannot
-continue past Connect Linear. With Hide hints on the guard is off (`isGuarding`
-in the `hints` message). `createHintEngine.guard.test.ts` pins it. Two steps the
+outlined control first." under its copy while the ring flashes once. The
+warning and its expiry live in `useDemoHints` (`isWarning` in `CoachMark`), not
+in the coach, so a dismissed hint that comes back on the click still says it,
+and a warning that expired while the coach was gone never shows again. Enter
+pressed on no control is stopped the same way while such a control is on
+screen, so the wizard's own Enter handler cannot continue past Connect Linear.
+With Hide hints on the guard is off (`isGuarding` in the `hints` message). `createHintEngine.guard.test.ts` pins it. Two steps the
 frame finishes in the same tick are both credited, in order (`pendingIdsRef` in
 `useDemoHints`).
 Hints never take focus. After

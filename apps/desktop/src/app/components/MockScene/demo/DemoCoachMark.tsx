@@ -18,6 +18,7 @@ export type CoachMark = {
   readonly opened: ReadonlyArray<DemoRect>;
   readonly isDimmed: boolean;
   readonly pulse: number;
+  readonly isWarning: boolean;
 };
 
 type Size = {
@@ -41,7 +42,6 @@ const CALLOUT_WIDTH = 240;
 const CARET = 8;
 const ENTER_MS = 120;
 const PULSE_MS = 360;
-const WARNING_MS = 2400;
 const GLOW_FROM = '0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent)';
 const GLOW_TO = '0 0 0 6px color-mix(in srgb, var(--color-primary) 28%, transparent)';
 
@@ -111,8 +111,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
   const keptRef = useRef<KeptSide | null>(null);
-  const [settledPulse, setSettledPulse] = useState(coach.pulse);
-  const isWarning = coach.pulse !== settledPulse;
+  const { isWarning } = coach;
 
   const target: DemoRect = {
     x: coach.rect.x * scale - RING_OUTSET,
@@ -194,15 +193,6 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
       enter.cancel();
     };
   }, [coach.hintId, side]);
-
-  useEffect(() => {
-    if (!isWarning) {
-      return;
-    }
-    const pulse = coach.pulse;
-    const timer = window.setTimeout(() => setSettledPulse(pulse), WARNING_MS);
-    return () => window.clearTimeout(timer);
-  }, [isWarning, coach.pulse]);
 
   useEffect(() => {
     const ring = ringRef.current;

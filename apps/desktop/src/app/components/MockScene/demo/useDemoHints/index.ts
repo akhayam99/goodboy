@@ -83,7 +83,12 @@ export type DemoHints = Steps & {
   readonly restart: () => void;
 };
 
+type Warning = {
+  readonly hintId: string;
+};
+
 const HOLD_WAIT_MS = 20000;
+const WARNING_MS = 2400;
 
 export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints => {
   const {
@@ -99,6 +104,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const [actingId, setActingId] = useState<string | null>(null);
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [pulse, setPulse] = useState(0);
+  const [warning, setWarning] = useState<Warning | null>(null);
 
   const { hints } = chapter;
   const steps = stepsOf({ chapter, progress });
@@ -153,6 +159,17 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     return () => window.clearTimeout(timer);
   }, [hold, hints]);
 
+  useEffect(() => {
+    if (warning === null) {
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setWarning((previous) => (previous === warning ? null : previous)),
+      WARNING_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [warning]);
+
   const onHintReport = useCallback(
     ({ report }: HintReportParams) => {
       if (report.hintId !== null && !hints.some((hint) => hint.id === report.hintId)) {
@@ -170,6 +187,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
           return new Set([...previous].filter((id) => id !== blockedId));
         });
         setPulse((previous) => previous + 1);
+        setWarning({ hintId: blockedId });
         return;
       }
       if (report.type === 'tried') {
@@ -250,8 +268,9 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       opened: current.opened,
       isDimmed: activeHint.isDimmed !== false,
       pulse,
+      isWarning: warning?.hintId === activeHint.id,
     };
-  }, [isOpen, activeHint, acting, recovery, current, pulse]);
+  }, [isOpen, activeHint, acting, recovery, current, pulse, warning]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
     if (!isOpen || activeHint === undefined || current === null || !current.isOffscreen) {
@@ -288,6 +307,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     setHold(null);
     setActingId(null);
     setDismissedIds(new Set());
+    setWarning(null);
   }, [resetProgress, chapter.id]);
 
   const restart = useCallback(() => {
@@ -296,6 +316,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     setHold(null);
     setActingId(null);
     setDismissedIds(new Set());
+    setWarning(null);
   }, [resetAllProgress]);
 
   const tallyOf = useCallback(
