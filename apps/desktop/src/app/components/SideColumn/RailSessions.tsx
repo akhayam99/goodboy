@@ -10,7 +10,7 @@ import { RailFlyout } from './RailFlyout';
 import { RailFlyoutBody } from './RailFlyoutBody';
 import { RailMoreButton } from './RailMoreButton';
 import { RailSessionButton, type RailSessionSign } from './RailSessionButton';
-import { isStudioOverSession, type ColumnPlace } from './columnPlace';
+import { isStudioOverSession, type ColumnPlace } from '../../../shared/navigation/columnPlace';
 import { useRailPinned } from './useRailPinned';
 import { useRailFlyout, type RailFlyoutKey } from './useRailFlyout';
 

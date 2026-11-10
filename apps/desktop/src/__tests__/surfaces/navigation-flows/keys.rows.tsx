@@ -823,6 +823,22 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       expect(await screen.findAllByRole('dialog', { name: 'Report a bug' })).toHaveLength(1);
     },
   }),
+  {
+    name: 'menu: Go > Browser shows the Browser dock, hides it on a second pick, and opens no page',
+    covers: ['menu:menu.browser'],
+    open: async () => {
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'));
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'));
+    },
+    lands: async () => {
+      expect(useAppStore.getState().drawer?.kind).toBe('browser');
+      expect(useAppStore.getState().appStudio).toBeNull();
+    },
+  },
   keyRow({
     id: 'app.undo',
     note: 'the web view takes the undo key once, so the native Undo item never runs too',

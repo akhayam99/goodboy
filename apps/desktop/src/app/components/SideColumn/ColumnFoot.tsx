@@ -3,7 +3,7 @@ import { GoodboyChip } from '../GoodboyChip';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ReportBugButton } from './ReportBugButton';
 import type { ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 const SETTINGS = destinationOf({ id: 'settings' });
 

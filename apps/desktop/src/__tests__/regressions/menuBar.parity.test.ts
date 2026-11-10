@@ -38,6 +38,8 @@ const MAC_NAMES: Readonly<Record<string, string>> = {
   'zoom.reset': 'Actual Size',
 };
 
+const GO_SECTION = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/;
+
 const OPENS_A_WINDOW: ReadonlySet<string> = new Set([
   'settings.open',
   'menu.checkForUpdates',
@@ -167,15 +169,14 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
   });
 
   it('keeps a separator between the pages and the right rail tools in the Go menu', () => {
-    const block = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/.exec(source)?.[1] ?? '';
-    const rows = block
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line !== '')
-      .map((line) => (line === 'SEPARATOR,' ? '-' : (/"([^"]+)"/.exec(line)?.[1] ?? '')));
-    const firstTool = rows.indexOf('terminal.studio');
+    const block = GO_SECTION.exec(source)?.[1] ?? '';
+    const rows = [...block.matchAll(/\bSEPARATOR\b|\bcommand\(\s*"([^"]+)"/g)].map(([token, id]) =>
+      token === 'SEPARATOR' ? '-' : (id ?? ''),
+    );
+    const tools = DESTINATIONS.filter(({ home }) => home === 'rail').map(({ menuId }) => menuId);
+    const firstTool = rows.indexOf(tools[0] ?? '');
     expect(rows[firstTool - 1]).toBe('-');
-    expect(rows.slice(firstTool)).toEqual(['terminal.studio', 'menu.browser']);
+    expect(rows.slice(firstTool)).toEqual(tools);
   });
 
   it('lists the foot destinations in the Help and App menus', () => {
@@ -192,6 +193,22 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
   it('lists every menu action in the menu bar', () => {
     const ids = new Set(menuCommands.map(({ id }) => id));
     expect(Object.keys(MENU_ACTIONS).filter((id) => !ids.has(id))).toEqual([]);
+  });
+
+  it('names the Go doors as the registry and the names table do', () => {
+    const body = GO_SECTION.exec(source)?.[1] ?? '';
+    const labels = [...body.matchAll(/\bcommand\(\s*"([^"]+)",\s*"([^"]+)"/g)].map(
+      ([, id = '', label = '']) => ({ id, label }),
+    );
+    expect(labels.find(({ id }) => id === 'session.board')?.label).toBe(
+      SHORTCUTS['session.board'].label,
+    );
+    const drift = DESTINATIONS.filter(({ home }) => home !== 'foot').filter(
+      ({ menuId, label, home }) =>
+        labels.find(({ id }) => id === menuId)?.label !==
+        (home === 'rail' ? `Show or Hide ${label}` : label),
+    );
+    expect(drift.map(({ id }) => id)).toEqual([]);
   });
 
   it('leaves Undo and Redo to the predefined items', () => {

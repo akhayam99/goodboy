@@ -4,7 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import type { FooterTarget } from '../../../hooks/useAppOverlays/overlayState';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
-import type { ColumnPlace } from '../../SideColumn/columnPlace';
+import type { ColumnPlace } from '../../../../shared/navigation/columnPlace';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { shellArrangement } from '../../../shellArrangement';

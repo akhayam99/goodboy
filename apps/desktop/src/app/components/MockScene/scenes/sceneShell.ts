@@ -1,4 +1,4 @@
-import type { ColumnPlace } from '../../SideColumn/columnPlace';
+import type { ColumnPlace } from '../../../../shared/navigation/columnPlace';
 import type { FooterTarget } from '../../../hooks/useAppOverlays/overlayState';
 
 export const sceneColumnPlace = ({ target }: { readonly target: FooterTarget }): ColumnPlace => {

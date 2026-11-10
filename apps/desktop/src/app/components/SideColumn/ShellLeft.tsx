@@ -4,7 +4,7 @@ import { useColumnPlace } from '../../hooks/useColumnPlace';
 import type { ShellArrangement } from '../../shellArrangement';
 import { ColumnRail } from './ColumnRail';
 import type { ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 import { SideColumn } from './index';
 
 type Props = {

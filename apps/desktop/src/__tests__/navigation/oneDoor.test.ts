@@ -172,9 +172,12 @@ describe('one selected sign across the navigation surfaces', () => {
       readFileSync(path, 'utf8').includes('columnPlaceOf('),
     );
 
+    const hook = readFileSync(join(SRC, 'app', 'hooks', 'useColumnPlace', 'index.ts'), 'utf8');
+
     expect(shellLeft).toContain('useColumnPlace()');
+    expect(hook).toContain('selectColumnPlace({ state })');
     expect(placeReaders.map((path) => relative(SRC, path).split(sep).join('/'))).toEqual([
-      'app/hooks/useColumnPlace/index.ts',
+      'shared/navigation/selectColumnPlace.ts',
     ]);
   });
 });

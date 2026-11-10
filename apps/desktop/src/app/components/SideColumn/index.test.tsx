@@ -26,7 +26,7 @@ import { brandedId } from '../../../features/history/testing/brandedId';
 import { ColumnRail } from './ColumnRail';
 import { SideColumn } from './index';
 import { COLUMN_DOORS, type ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
 

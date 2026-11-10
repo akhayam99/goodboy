@@ -81,9 +81,11 @@
   list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
   Forward and Search or run, clustered in the centre. It never holds a
-  destination. The spend chip is state that opens the studio that owns that
-  number, on Impact's Spend tab, and the Usage chips open the Providers menu.
-  The bar never edits a record in place.
+  destination. Every chip opens the home of the number it shows: the Now chip
+  ends on Monitoring, the Spend chip opens Impact on its Spend tab (the bar
+  holds no Impact icon), and the Usage chips open the Providers menu. The only
+  control it holds for another container is the sidebar toggle. The bar never
+  edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Board (the board, ⌘⇧H),
   Tasks, Workflows, Chat, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
   (New chat) that is always visible. No separator: the Pinned and
@@ -198,7 +200,7 @@
   on the rail alike: the open studio's door; New session while the draft is
   open; Board on the board; the Goodboy line for Help, either tab (`place`
   `help`); the bell for Notifications. New workspace is a flow and lights
-  nothing. Every control reads it from one place (`columnPlaceOf`, through
+  nothing. Every control reads it from one place (`columnPlaceOf`, through `selectColumnPlace` and
   `useColumnPlace`), so no page leaves two lit. Inside a session no door does:
   the open session's row is the column's sign and the current page row is the
   session rail's (see Session rail), one sign per navigation column. Under any
