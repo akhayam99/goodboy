@@ -28,7 +28,7 @@ Cursor also accepts the fast Opus 5.5 models and Grok 4.7 at low, high and xhigh
 ### Improved
 
 #### The push card shows its run and its result
-<!-- gb area=agents image=push-card pr=2169 -->
+<!-- gb area=agents pr=2169 -->
 
 Force push on an Auto card now answers in place. The button reads Pushing at once and takes no second click. When the push ends, each branch gets its own line: pushed with Put back, Not pushed, or the reason it failed with Retry push.
 
