@@ -111,4 +111,28 @@ describe('openWorkspaceTerminal', () => {
     expect(useAppStore.getState().terminalSelection?.terminalId).toBe(tab?.id);
     expect(useAppStore.getState().drawer).toBeNull();
   });
+
+  it('makes the reused tab the active one when its folder is opened again', async () => {
+    const { openWorkspaceTerminalAt } = await import('./openWorkspaceTerminalAt');
+    const { terminalOwnerKey, workspaceTerminalOwner } =
+      await import('../../store/slices/terminal/terminalOwner');
+    const key = terminalOwnerKey({ owner: workspaceTerminalOwner({ workspaceId: WORKSPACE_ID }) });
+    const open = (cwd: string) =>
+      openWorkspaceTerminalAt({
+        state: useAppStore.getState(),
+        workspaceId: WORKSPACE_ID,
+        cwd,
+        isFresh: false,
+      });
+
+    open('/Users/mock/ledger-core');
+    open('/Users/mock/notify-relay');
+    const [first, second] = Object.values(useAppStore.getState().terminalTabs).flat();
+    expect(useAppStore.getState().activeTerminalTab[key]).toBe(second?.id);
+
+    open('/Users/mock/ledger-core');
+
+    expect(useAppStore.getState().activeTerminalTab[key]).toBe(first?.id);
+    expect(terminalStudioCount()).toBe(2);
+  });
 });

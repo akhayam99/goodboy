@@ -1,3 +1,4 @@
+import { useIsDrawerParked } from '@goodboy/ui';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 
@@ -12,7 +13,8 @@ type Params = {
 
 export const useScriptKeys = ({ keys, selectedKey, onSelect, onOpen, onRun, onStop }: Params) => {
   useListKeys({ keys, selectedKey, onSelect, onActivate: onOpen });
-  const hasSelection = selectedKey !== null;
+  const isParked = useIsDrawerParked();
+  const isActive = selectedKey !== null && !isParked;
   useShortcut(
     'scripts.run',
     () => {
@@ -20,7 +22,7 @@ export const useScriptKeys = ({ keys, selectedKey, onSelect, onOpen, onRun, onSt
         onRun(selectedKey);
       }
     },
-    hasSelection,
+    isActive,
   );
   useShortcut(
     'scripts.stop',
@@ -29,6 +31,6 @@ export const useScriptKeys = ({ keys, selectedKey, onSelect, onOpen, onRun, onSt
         onStop(selectedKey);
       }
     },
-    hasSelection,
+    isActive,
   );
 };
