@@ -26,6 +26,7 @@ import { BoardSkeleton } from './BoardSkeleton';
 import { BoardEmpty } from './BoardEmpty';
 import { BoardLanes } from './BoardLanes';
 import { boardLanesOf, rootRemPx } from './boardLanesOf';
+import { scrollLaneRemOf } from './scrollLaneRemOf';
 import { BOARD_STAGES } from './boardStages';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useArchivedSessionsLoad } from './useArchivedSessionsLoad';
@@ -121,6 +122,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const frame = useElementWidth();
   const remPx = useMemo(() => rootRemPx(), []);
   const layout = boardLanesOf({ width: frame.width ?? WIDTH_BEFORE_MEASURE, remPx });
+  const scrollLaneRem = scrollLaneRemOf({ width: frame.width ?? WIDTH_BEFORE_MEASURE, remPx });
   const selectionTarget = useMemo<ObjectTarget | null>(
     () => (selectedIds.length === 0 ? null : { kind: 'sessions', sessionIds: selectedIds }),
     [selectedIds],
@@ -223,6 +225,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             <BoardFactsFrame workspaceId={workspaceId}>
               <BoardLanes
                 layout={layout}
+                scrollLaneRem={scrollLaneRem}
                 byStage={byStage}
                 archived={projectArchived}
                 isArchivedLoading={archivedList === undefined}

@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef } from 'react';
-import { cn, PANE_RHYTHM, ScrollFade, tintClasses } from '@goodboy/ui';
+import { BOARD_LANE_FADE_PX, cn, PANE_RHYTHM, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY } from '../../../../store';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
@@ -21,6 +21,7 @@ const columnsClassOf = ({ layout }: { readonly layout: BoardLanesLayout }): stri
 
 type Props = {
   readonly layout: BoardLanesLayout;
+  readonly scrollLaneRem: number;
   readonly byStage: ReadonlyMap<string, ReadonlyArray<Session>>;
   readonly archived: ReadonlyArray<Session>;
   readonly isArchivedLoading: boolean;
@@ -39,6 +40,7 @@ type CardHover = {
 
 export const BoardLanes = ({
   layout,
+  scrollLaneRem,
   byStage,
   archived,
   isArchivedLoading,
@@ -107,7 +109,7 @@ export const BoardLanes = ({
   return (
     <ScrollFade
       orientation="horizontal"
-      fadeSize="w-8"
+      fadeSize={BOARD_LANE_FADE_PX}
       className="min-h-0 flex-1"
       viewportRef={viewportRef}
     >
@@ -115,6 +117,7 @@ export const BoardLanes = ({
         ref={columnsRef}
         onPointerDown={lasso.onPointerDown}
         data-selecting={selectedIds.length > 0}
+        style={isScrolling ? { gridTemplateColumns: `repeat(5,${scrollLaneRem}rem)` } : undefined}
         className={cn(
           'group/select-list relative grid h-full min-h-0 grid-rows-[minmax(0,1fr)]',
           PANE_RHYTHM.board.laneGap,
