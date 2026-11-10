@@ -482,11 +482,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/app/components/AppTopBar/NavCluster/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
   "apps/desktop/src/app/components/AppTopBar/NavCluster/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -500,11 +495,6 @@
   "apps/desktop/src/app/components/AppTopBar/NowChip/counts.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/app/components/AppTopBar/NowChip/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
     }
   },
   "apps/desktop/src/app/components/AppTopBar/index.test.tsx": {
