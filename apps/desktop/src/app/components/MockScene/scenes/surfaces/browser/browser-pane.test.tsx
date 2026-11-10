@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { installFakeResizeObserver } from '../../../../../../test/fakeResizeObserver';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../../test/sceneInvoke';
@@ -70,6 +70,8 @@ describe('the browser pane scenes', () => {
       'browser-pane-address',
       'browser-pane-address-dark',
       'browser-pane-dark',
+      'browser-pane-loading',
+      'browser-pane-loading-dark',
       'browser-pane-more',
       'browser-pane-more-dark',
       'browser-pane-tabs',
@@ -128,6 +130,25 @@ describe('the browser pane scenes', () => {
     const field = await within(pane).findByRole('textbox', { name: 'Address' }, WAIT);
     expect(field).toHaveProperty('value', 'http://localhost:5173/checkout');
     expect(within(pane).queryByRole('button', { name: /^Edit address/ })).toBeNull();
+  });
+
+  it('shows the page loading with a line under the row, Stop, a fetched icon and a Forward that is off', async () => {
+    mount({ id: 'browser-pane-loading' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    within(pane).getByRole('progressbar', { name: 'Loading page' });
+    within(pane).getByRole('button', { name: 'Stop' });
+    expect(within(pane).queryByRole('button', { name: 'Reload' })).toBeNull();
+    const pill = within(pane).getByRole('button', { name: 'Edit address, Checkout' });
+    await waitFor(() => expect(pill.querySelector('img')).not.toBeNull(), WAIT);
+    await waitFor(
+      () =>
+        expect(within(pane).getByRole('button', { name: 'Forward' }).hasAttribute('disabled')).toBe(
+          true,
+        ),
+      WAIT,
+    );
+    expect(within(pane).getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('opens the More menu with its five rows', async () => {

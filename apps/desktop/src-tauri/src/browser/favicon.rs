@@ -7,6 +7,7 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use reqwest::redirect::Policy;
 use reqwest::Client;
+use serde::Serialize;
 use tauri::Url;
 
 const MAX_ICON_BYTES: usize = 64 * 1024;
@@ -24,6 +25,13 @@ const ICON_MIMES: [&str; 7] = [
     "image/webp",
 ];
 const ICON_RELS: [&str; 2] = ["icon", "shortcut icon"];
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TabFavicon {
+    pub(crate) origin: String,
+    pub(crate) src: Option<String>,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Remembered {
@@ -379,6 +387,17 @@ mod tests {
         );
         assert_eq!(mime_of(Some("text/html"), &ico), None);
         assert_eq!(mime_of(None, &url("https://northwind.example/i.png")), None);
+    }
+
+    #[test]
+    fn wire_shape_tab_favicon() {
+        crate::util::wire_shape::assert_wire_value(
+            &TabFavicon {
+                origin: "http://localhost:5173".to_string(),
+                src: None,
+            },
+            serde_json::json!({ "origin": "http://localhost:5173", "src": null }),
+        );
     }
 
     #[test]

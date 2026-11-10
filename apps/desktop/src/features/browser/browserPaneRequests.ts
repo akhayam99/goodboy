@@ -8,6 +8,8 @@ type SessionKeyParams = {
 export const browserPaneRequests = {
   opens: createLatestOnly(),
   facts: createLatestOnly(),
+  history: createLatestOnly(),
+  favicons: createLatestOnly(),
   waking: new Map<string, Promise<string | null>>(),
   openKey: ({ sessionId }: SessionKeyParams) => `open:${sessionId}`,
   factsKey: ({ sessionId }: SessionKeyParams) => `facts:${sessionId}`,

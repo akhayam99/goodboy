@@ -1,6 +1,11 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
-import type { BrowserBounds, BrowserTabFacts } from './types';
+import type {
+  BrowserBounds,
+  BrowserHistoryState,
+  BrowserTabFacts,
+  BrowserTabFavicon,
+} from './types';
 
 type OpenParams = {
   readonly sessionId: SessionId;
@@ -40,6 +45,11 @@ export const browserHost = {
   navigate: ({ tabId, url }: NavigateParams) =>
     invokeCommand<null>('browser_tab_navigate', { args: { tabId, url } }),
   reload: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_reload', { args: { tabId } }),
+  stop: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_stop', { args: { tabId } }),
+  historyState: ({ tabId }: TabParams) =>
+    invokeCommand<BrowserHistoryState | null>('browser_history_state', { args: { tabId } }),
+  favicon: ({ tabId }: TabParams) =>
+    invokeCommand<BrowserTabFavicon | null>('browser_favicon', { args: { tabId } }),
   back: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_back', { args: { tabId } }),
   forward: ({ tabId }: TabParams) =>
     invokeCommand<null>('browser_tab_forward', { args: { tabId } }),

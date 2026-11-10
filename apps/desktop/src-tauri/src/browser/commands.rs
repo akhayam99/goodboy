@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use tauri::{Manager, Runtime, Webview};
 
-use super::favicon::{self, BrowserFavicons};
+use super::favicon::{self, BrowserFavicons, TabFavicon};
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::lifecycle;
@@ -176,10 +176,14 @@ pub async fn browser_history_state(
 pub async fn browser_favicon(
     webview: Webview,
     args: TabArgs,
-) -> Result<Option<String>, MessageError> {
+) -> Result<Option<TabFavicon>, MessageError> {
     let page = owned_tab(&webview, &args.tab_id)?.url().map_err(failed)?;
+    let Some(origin) = favicon::host_key(&page) else {
+        return Ok(None);
+    };
     let cache = webview.state::<BrowserFavicons>();
-    Ok(favicon::favicon_of(&cache, &page, favicon::find_icon).await)
+    let src = favicon::favicon_of(&cache, &page, favicon::find_icon).await;
+    Ok(Some(TabFavicon { origin, src }))
 }
 
 #[tauri::command]

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
@@ -10,13 +10,17 @@ import { browserHost } from '../../browserHost';
 import { browserPaneRequests } from '../../browserPaneRequests';
 import { hostOf } from '../../hostOf';
 import { isTabGone } from '../../isTabGone';
+import { LOAD_STALLED_TEXT } from '../../loadStalledText';
 import { openPage } from '../../openPage';
 import { pinProjectOf } from '../../pinProjectOf';
 import { shownTabOf } from '../../shownTabOf';
 import type { BrowserPaneModel } from '../../types';
+import { useFavicon } from '../useFavicon';
+import { useHistoryState } from '../useHistoryState';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
+import { useTabLoad } from '../useTabLoad';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -80,9 +84,30 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const factOf = ({ liveId }: LiveParams) =>
     liveId === undefined ? undefined : facts.find((fact) => fact.id === liveId);
   const address = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
+  const shownLiveIdRef = useRef(shownLiveId);
+  shownLiveIdRef.current = shownLiveId;
+  const isLoading = useAppStore(
+    (state) => shownLiveId !== undefined && state.browserLoads[shownLiveId] !== undefined,
+  );
+  const history = useHistoryState({ tabId: shownLiveId, signal: `${address}|${isLoading}` });
 
   useSaveLiveAddresses({ sessionId, tabs, live, facts });
   useOpenedPopups({ sessionId });
+  useFavicon({ liveId: shownLiveId, url: address });
+  useTabLoad({
+    sessionId,
+    onFinished: ({ tabId }) => {
+      refresh();
+      if (tabId === shownLiveIdRef.current) {
+        setError((current) => (current === LOAD_STALLED_TEXT ? null : current));
+      }
+    },
+    onStalled: ({ tabId }) => {
+      if (tabId === shownLiveIdRef.current) {
+        setError(LOAD_STALLED_TEXT);
+      }
+    },
+  });
 
   useEffect(() => {
     void useAppStore.getState().loadBrowserSessionTabs({ sessionId });
@@ -155,6 +180,9 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     },
     error,
     isDrafting,
+    isLoading,
+    canGoBack: history.canGoBack,
+    canGoForward: history.canGoForward,
     wakeAttempt,
     submit: async ({ text }) => {
       const parsed = addressOf({ text });
@@ -177,6 +205,17 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         return;
       }
       onShown({ command: browserHost.reload });
+    },
+    stop: () => {
+      if (shownLiveId === undefined) {
+        return;
+      }
+      void run({
+        step: async () => {
+          await browserHost.stop({ tabId: shownLiveId });
+          useAppStore.getState().forgetBrowserLoad({ tabId: shownLiveId });
+        },
+      });
     },
     select: ({ tab }) => {
       setIsDrafting(false);

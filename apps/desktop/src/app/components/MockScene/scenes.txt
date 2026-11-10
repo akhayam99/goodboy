@@ -163,6 +163,8 @@ browser-pane
 browser-pane-address
 browser-pane-address-dark
 browser-pane-dark
+browser-pane-loading
+browser-pane-loading-dark
 browser-pane-more
 browser-pane-more-dark
 browser-pane-tabs
