@@ -455,7 +455,9 @@ agent wait ends within 5.5 seconds of the visitor's click
 (`demo/director/cueClock.test.ts`): assistant text streams a sentence every
 600ms (`TEXT_SENTENCE_MS` in `director/textCuesEndMs.ts`), the Claude to Codex
 hand-off (`director/limitsHandoffCues.ts`) shows the limit notice at 900ms, runs
-its tool from 1500 to 2400ms and starts the reply at 3000ms, the review fix
+its tool from 1500 to 2400ms and streams the reply from 3000ms within 1800ms
+(`maxSpanMs` of `textCues`, so a typed answer of many sentences streams faster
+instead of running long), the review fix
 (`director/resolveFixCues.ts`) ends at 4500ms, and the Auto run
 (`director/storyWorkCues.ts`) writes its closing summary in one cue and ends the
 root turn 300ms after it, within a second of both agents reading Done, so the

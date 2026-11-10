@@ -50,12 +50,16 @@ describe('the agent scripts a visitor waits on', () => {
     expect(TEXT_SENTENCE_MS).toBe(600);
   });
 
-  it.each([...STORY_QUESTION.options, 'Retry with a backoff'])(
-    'hands the planner to Codex and returns the plan within 5.5 s for %s',
-    (answer) => {
-      expect(endOf({ cues: answerCuesOf({ answer }) })).toBeLessThanOrEqual(MAX_SCRIPT_MS);
-    },
-  );
+  it.each([
+    ...STORY_QUESTION.options,
+    'Retry with a backoff',
+    'Keep the original credit. Record the retry. Check the key. Reuse the result.',
+  ])('hands the planner to Codex and returns the plan within 5.5 s for %s', (answer) => {
+    const cues = answerCuesOf({ answer });
+    const times = cues.map((cue) => cue.atMs);
+    expect(endOf({ cues })).toBeLessThanOrEqual(MAX_SCRIPT_MS);
+    expect(times).toEqual([...times].sort((left, right) => left - right));
+  });
 
   it('revises the plan within 5.5 s', () => {
     const cues = storyRevisionCues({
