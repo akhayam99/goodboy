@@ -71,7 +71,7 @@ describe('the header line', () => {
     ).toBe('Done. Next: Get Goodboy.');
   });
 
-  it('keeps the last result on screen before it says the group is done', () => {
+  it('says the group is done at once, while the done card carries the last result', () => {
     expect(
       headerInstruction({
         held: fix,
@@ -80,7 +80,7 @@ describe('the header line', () => {
         nextTitle: 'Set the direction',
         isRecovering: false,
       }),
-    ).toBe(fix.result);
+    ).toBe('Done. Next: Set the direction.');
   });
 
   it('points back at the plan when its drawer was closed', () => {

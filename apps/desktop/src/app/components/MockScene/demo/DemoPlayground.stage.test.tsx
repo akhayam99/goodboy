@@ -222,8 +222,6 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
-const plain = (text: string | undefined): string => (text ?? '').split('**').join('');
-
 describe('demo playground stage states', () => {
   it('draws the coach only once the new frame has faded in after a group switch', () => {
     seedProgress({ ids: ['bring'] });
@@ -275,7 +273,7 @@ describe('demo playground stage states', () => {
 
     it('ends the group on the stage in the same tick as its last result, with Next and Replay', () => {
       const { frame, last } = finishBring();
-      expect(instruction()).toBe(plain(last?.result));
+      expect(instruction()).toBe('Done. Next: Set the direction.');
       expect(within(doneCard()).getByRole('heading').textContent).toBe(
         'Bring your repositories is done',
       );

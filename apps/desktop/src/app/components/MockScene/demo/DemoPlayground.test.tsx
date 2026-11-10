@@ -504,7 +504,7 @@ describe('demo playground', () => {
     expect(instruction()).toBe(plain(second?.instruction));
   });
 
-  it('says the group is done only after the last result has been on screen', () => {
+  it('says the group is done as soon as its last step is done', () => {
     seedProgress({ ids: ['bring'] });
     const { hints } = chapterOf({ id: 'direction' });
     window.history.replaceState(null, '', '/?scene=demo#direction');
@@ -518,8 +518,7 @@ describe('demo playground', () => {
     const last = hints.at(-1);
     hint({ frame, hintId: last?.id ?? '' });
     tried({ frame, hintId: last?.id ?? '' });
-    expect(instruction()).toBe(plain(last?.result));
-    expect(instruction()).not.toContain('is done');
+    expect(instruction()).toBe('Done. Next: Guide the work.');
     elapse({ ms: last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last }) });
     expect(instruction()).toBe('Done. Next: Guide the work.');
   });

@@ -15,11 +15,11 @@ export const headerInstruction = ({
   nextTitle,
   isRecovering,
 }: Params): string => {
-  if (held !== undefined) {
-    return held.result;
-  }
   if (active === undefined) {
     return `Done. Next: ${nextTitle}.`;
+  }
+  if (held !== undefined) {
+    return held.result;
   }
   if (isRecovering && active.recovery !== undefined) {
     return active.recovery.instruction;
