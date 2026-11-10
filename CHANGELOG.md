@@ -12,6 +12,34 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.32.1
+
+The Auto push card shows each push and how it ended, browser tabs run real sites, and the newest Claude Fable joins the model list.
+
+### New
+
+#### Claude Fable 5.2 in the model list
+<!-- gb area=providers pr=2178 -->
+
+Claude Fable 5.2 is in the Claude catalog, with a 1M context window and every effort from low to max. Cursor offers the same family, priced like the Claude row.
+
+Cursor also accepts the fast Opus 5.5 models and Grok 4.7 at low, high and xhigh effort.
+
+### Improved
+
+#### The push card shows its run and its result
+<!-- gb area=agents pr=2169 -->
+
+Force push on an Auto card now answers in place. The button reads Pushing at once and takes no second click. When the push ends, each branch gets its own line: pushed with Put back, Not pushed, or the reason it failed with Retry push.
+
+The card and the agent's result chip use the same words, and a failed push shows on the card instead of in a toast.
+
+### Fixed
+
+- A force push in flight shows as Pushing after a reload and in a second window, and one cut short by Goodboy closing offers Retry push. <!-- gb area=agents pr=2171 -->
+- Sites whose menus or sign-in pages didn't work in a browser tab now do, and sites that served an old version of their pages serve the current one. <!-- gb area=sessions pr=2180 -->
+- The Browser page shows the live tab again, instead of the address row over an empty area. <!-- gb area=sessions pr=2180 -->
+
 ## Goodboy v0.32.0
 
 A browser opens beside your session, the side slot keeps the drawer it replaced, and Auto picks the narrowest role that fits.
