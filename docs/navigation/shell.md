@@ -2,6 +2,49 @@
 
 > **Read this when** you change the frame of the window: a context menu, a surface, the top bar, the column foot, the menu bar, the report sheet, the column doors or a shortcut. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
 
+## Skeleton
+
+The window is one strip of chrome (the top bar), a left column, one main slot
+and, inside a workspace, a right rail with a dock. Eight principles say where
+each thing lives. A principle marked **holds** is true in the code today and is
+guarded by a test. A principle marked **target** is the direction of the
+skeleton: it is not true yet, no test fails on it, and the unit that makes it
+true turns it into a **holds** line and adds its guard in the same change. A
+unit that changes the skeleton edits this section first.
+
+1. **Left is where you go. Target.** Owned by The column and The session rail.
+2. **Right is what you hold. Target.** Owned by The session tools
+   ([session-rail.md](./session-rail.md)).
+3. **One home, one name. Target.** Owned by Column doors.
+4. **A page replaces the page. Target.** Owned by Surfaces.
+5. **The top bar is identity, movement and live state. Holds for the toggle.**
+   The sidebar toggle sits in the top bar, left of Back and Forward, and is the
+   only control the bar holds for another container. Every chip opening the
+   home of its number is target.
+6. **The bottom-left is the app's corner. Target.** Owned by The column foot.
+7. **A menu shows five rows at most. Target.** Right-click menus are exempt:
+   they mirror the action catalog (Context menus).
+8. **Each column folds one way. Target.** Owned by the rail paragraphs under
+   Surfaces.
+
+What holds today and is guarded:
+
+- **One selected sign.** A row lights from `isCurrent` and never from its own
+  state, in the column, the session rail and the session list; every column
+  door reads the one column place (`useColumnPlace`); the session rail reads the
+  session pages sign (`currentSignOf`). `__tests__/navigation/oneDoor.test.ts`.
+- **One door for moves.** Only `navigate`, `back`, `forward`, `up` and
+  `amendFocus` move the user outside the navigation slice. Same test.
+- **Saved layouts load without loss.** A window layout and the fold choices
+  written by 0.32.0 restore: every studio kind, every drawer kind, the board,
+  a session, and a Terminal dock without a session.
+  `__tests__/navigation/restore-previous-build.test.ts`.
+- **Every route has a row.** `__tests__/surfaces/navigation-flows/`.
+
+A persisted key, a studio kind, a drawer kind and a lens id keep their names:
+the fixtures above are the proof that a build can still read what the last one
+wrote.
+
 ## Context menus
 
 Every object's actions are written once, in the action registry
@@ -253,9 +296,9 @@ wears a small ring and is named waiting, and a signal dot sits with either (see
 [home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
-workspace, in the same shape everywhere: the toggle on the traffic-light axis,
-the doors Board
-(⌘⇧H), Tasks, Chat, Workflows and Impact as one 28px row each (row icon and word in
+workspace, in the same shape everywhere: no toggle of its own (the sidebar
+toggle sits in the top bar), the doors Sessions (the Board, ⌘⇧H), Tasks,
+Workflows, Chat and Impact as one 28px row each (row icon and word in
 `text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
 new chat, never the last one), always visible. The tools, Terminal (⌃`), Browser and Monitoring, are
 not rows: they share one row of 48px tiles under the doors (`ColumnToolTiles`), the icon with its
@@ -391,7 +434,7 @@ Preferences live in Settings. Each item has one home; anything else that shows
 it is a signal that links there.
 
 On macOS the window has no native title bar: the traffic lights sit inside the
-top bar, which carries a 78px inset (12px in full screen and on other systems).
+top bar, which carries a 72px inset (12px in full screen and on other systems).
 The bar is a deep drag region: any spot that is not a control moves the window,
 and a double click zooms it. Controls never drag.
 
@@ -402,7 +445,7 @@ outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
 - Left: workspace identity. It has a 200px limit and truncates, with the full
-  name in its tooltip. The sidebar toggle lives in the column, not here.
+  name in its tooltip.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the tooltip (`Back to Comments`,
   the session on a second line, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
@@ -477,7 +520,7 @@ today. Open Impact`, opening the Impact studio on its Spend tab (it is never
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-wide` the command center narrows (its label is `Search`
+1. Below `chrome-wide` the command center narrows (its label is `Search or run`
    at every width; the workspace name lives in its tooltip) and
    Usage keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
@@ -770,7 +813,8 @@ state from `autoFactsByAgentId`.
 Settings (the foot door and ⌘,) always opens the last settings page (General
 at first), with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
-destination, so it has a door, the icon beside the bell; it opens its Overview
+destination, so it has a quiet reference row in the column (`isReference`), not
+a top bar icon; it opens its Overview
 tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
 open its Spend tab. The **Providers menu** is not a door to the Providers and
 models page: it changes things in place (`app/components/ProvidersMenu`, opened

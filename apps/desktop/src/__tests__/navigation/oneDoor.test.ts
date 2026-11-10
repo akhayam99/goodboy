@@ -6,11 +6,26 @@ import { describe, expect, it } from 'vitest';
 const SRC = join(__dirname, '..', '..');
 const SCANNED_ROOTS = ['features', 'app', 'shared'];
 const COLUMN_ROOT = join(SRC, 'app', 'components', 'SideColumn');
+const SESSION_RAIL_ROOT = join(SRC, 'app', 'components', 'SessionRail');
+const SESSION_LIST_ROOT = join(SRC, 'features', 'workspace', 'components', 'SessionActivityBar');
+const SIGN_ROOTS = [COLUMN_ROOT, SESSION_RAIL_ROOT, SESSION_LIST_ROOT];
+const SESSION_RAIL_PREFIX = 'app/components/SessionRail/';
 
 const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
   'app/components/SessionRail/RailSessionLevel.tsx',
-  'app/components/SessionRail/RailWorktreeLevel.tsx',
+  'app/components/SessionRail/RailWorktreeButton.tsx',
+  'app/components/SessionRail/RailBranchesButton.tsx',
 ]);
+
+const SHOWN_ROWS: ReadonlySet<string> = new Set([
+  'app/components/SessionRail/RailBranchRow.tsx',
+  'app/components/SessionRail/SessionLevel/BranchRowLine.tsx',
+  'app/components/SessionRail/SessionLevel/LevelLinked.tsx',
+  'app/components/SessionRail/SessionLevel/LinkedTaskRow/index.tsx',
+]);
+
+const CURRENT_MARK = "isCurrent ? 'page' : undefined";
+const SHOWN_MARK = "isShown ? 'page' : undefined";
 
 const INTERNAL_MOVES = /\b(setActiveLens|setCurrentSession|selectAgent)\b/;
 
@@ -37,27 +52,87 @@ describe('one door for navigation', () => {
   });
 });
 
-describe('one selected sign across the column doors', () => {
+const pathOf = (path: string): string => relative(SRC, path).split(sep).join('/');
+
+describe('one selected sign across the navigation surfaces', () => {
   const columnSources = walk(COLUMN_ROOT).map((path) => ({
-    path: relative(SRC, path).split(sep).join('/'),
+    path: pathOf(path),
+    source: readFileSync(path, 'utf8'),
+  }));
+  const signSources = SIGN_ROOTS.flatMap((root) => walk(root)).map((path) => ({
+    path: pathOf(path),
     source: readFileSync(path, 'utf8'),
   }));
 
-  it('lights a door only from isCurrent, never from its own state', () => {
-    const marks = columnSources.flatMap(({ path, source }) =>
-      Array.from(source.matchAll(/aria-current=\{([^}]*)\}/g), (match) => `${path}: ${match[1]}`),
+  const marksOf = () =>
+    signSources.flatMap(({ path, source }) =>
+      Array.from(
+        source.matchAll(/(?:aria-current|ariaCurrent)=(?:\{([^}]*)\}|"([^"]*)")/g),
+        (match) => ({ path, expression: match[1] ?? `"${match[2]}"` }),
+      ),
     );
+
+  it('lights a row only from isCurrent, never from its own state, in the column, the session rail and the session list', () => {
+    const marks = marksOf();
     expect(marks.length).toBeGreaterThan(0);
-    expect(marks.filter((mark) => !mark.includes("isCurrent ? 'page' : undefined"))).toEqual([]);
+    expect(
+      marks
+        .filter(({ expression }) => expression !== CURRENT_MARK && expression !== SHOWN_MARK)
+        .map(({ path, expression }) => `${path}: ${expression}`),
+    ).toEqual([]);
+  });
+
+  it('lets only the session rail branch and linked rows light from the shown work', () => {
+    const shown = marksOf().filter(({ expression }) => expression === SHOWN_MARK);
+
+    expect(shown.map(({ path }) => path).sort()).toEqual([...SHOWN_ROWS].sort());
+  });
+
+  it('reads the session pages sign through ariaCurrent', () => {
+    const pages = marksOf().filter(({ path }) =>
+      path.endsWith('SessionActivityBar/SessionPages.tsx'),
+    );
+
+    expect(pages.map(({ expression }) => expression)).toEqual([CURRENT_MARK]);
+  });
+
+  it('builds the session list current row from the open session, never from hover or its own state', () => {
+    const list = signSources.find(({ path }) => path.endsWith('SessionActivityBar/index.tsx'));
+
+    expect(list?.source).toContain('const isActive = id === currentSessionId;');
+    expect(list?.source).toContain('isCurrent={isActive && !isStudioOver}');
+    const currents = Array.from(
+      (list?.source ?? '').matchAll(/isCurrent=\{([^}]*)\}/g),
+      (match) => match[1],
+    );
+    expect(currents).toEqual(['isActive && !isStudioOver']);
   });
 
   it('derives every door current from the one column place', () => {
-    const doorSources = columnSources.filter(({ path }) => !SESSION_LEVEL_PAGES.has(path));
-    const currents = doorSources.flatMap(({ path, source }) =>
+    const currents = columnSources.flatMap(({ path, source }) =>
       Array.from(source.matchAll(/isCurrent=\{([^}]*)\}/g), (match) => `${path}: ${match[1]}`),
     );
     expect(currents.length).toBeGreaterThan(0);
     expect(currents.filter((current) => !/place === /.test(current))).toEqual([]);
+  });
+
+  it('keeps the session rail on its own sign: the session pages sign, the shown worktree, or never current', () => {
+    const railSources = signSources.filter(({ path }) => path.startsWith(SESSION_RAIL_PREFIX));
+    const marked = railSources.filter(({ source }) => /isCurrent=\{/.test(source));
+
+    expect(marked.map(({ path }) => path).sort()).toEqual([...SESSION_LEVEL_PAGES].sort());
+    const level = railSources.find(
+      ({ path }) => path === 'app/components/SessionRail/RailSessionLevel.tsx',
+    );
+    expect(level?.source).toContain('currentSignOf(');
+    expect(level?.source).toContain('sign === page.id');
+  });
+
+  it('lights the New session row from the draft selector, never from its own state', () => {
+    const row = signSources.find(({ path }) =>
+      path.endsWith('SessionActivityBar/NewSessionRow.tsx'),
+    );
+    expect(row?.source).toContain('selectIsSessionDraftShown(');
   });
 
   it('reads the place from one selector, the same one the rail and the peek read', () => {
