@@ -1148,7 +1148,6 @@ u32-run-questions
 u33-overview-needs-you
 u33-run-stopped-questions
 u34-help-search
-u34-help-shortcuts
 u34-needs-you-question
 u34-needs-you-run-question
 u34-p18-folded-branches-4
@@ -1337,6 +1336,8 @@ u37-monitoring-branch
 u37-running-here
 u37-running-here-idle
 u39-destinations
+u39-foot
+u39-foot-update
 update-card
 update-card-long-version
 update-card-narrow

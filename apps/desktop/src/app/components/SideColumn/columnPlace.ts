@@ -3,7 +3,7 @@ import type { DestinationId, FootDestinationId } from '../../../shared/navigatio
 
 export type ColumnDoorId = Exclude<DestinationId, 'notifications' | FootDestinationId>;
 
-export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | null;
+export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | 'help' | null;
 
 type Params = {
   readonly hasSession: boolean;
@@ -30,8 +30,9 @@ const studioPlace = ({ studio }: { readonly studio: StudioKind }): ColumnPlace =
     case 'impact':
       return 'impact';
     case 'guide':
-    case 'addWorkspace':
     case 'changelog':
+      return 'help';
+    case 'addWorkspace':
     case 'notifications':
       return null;
     default: {

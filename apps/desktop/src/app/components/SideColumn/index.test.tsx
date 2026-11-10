@@ -41,7 +41,6 @@ const actions = (): ColumnActions => ({
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
-  openShortcuts: vi.fn(),
 });
 
 type MountParams = {
@@ -135,7 +134,37 @@ describe('SideColumn', () => {
     const foot = nav.querySelector('[data-column-foot]') as HTMLElement;
     expect(within(foot).getByRole('button', { name: 'Settings' })).toBeDefined();
     expect(within(foot).getByTestId('goodboy-chip')).toBeDefined();
-    expect(within(foot).queryByRole('button', { name: 'Report a bug' })).toBeNull();
+    expect(within(foot).getByRole('button', { name: 'Report a bug' })).toBeDefined();
+  });
+
+  it('keeps Settings on line one and the Goodboy line and the bug icon on line two', () => {
+    mountColumn();
+    const foot = navLayer().querySelector<HTMLElement>('[data-column-foot]');
+    const corner = foot?.querySelector<HTMLElement>('[data-column-corner]');
+    if (foot === null || corner === null || corner === undefined) {
+      throw new Error('no column foot');
+    }
+
+    expect(foot.firstElementChild?.getAttribute('data-column-door-row')).toBe('settings');
+    expect(within(corner).getByTestId('goodboy-chip')).toBeDefined();
+    expect(within(corner).getByRole('button', { name: 'Report a bug' })).toBeDefined();
+    const chip = within(corner).getByTestId('goodboy-chip');
+    const bug = within(corner).getByRole('button', { name: 'Report a bug' });
+    expect(chip.compareDocumentPosition(bug) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  });
+
+  it('opens Help from the Goodboy line and lights it while Help is open', () => {
+    const doors = actions();
+    const { unmount } = mountColumn({ doors });
+
+    fireEvent.click(screen.getByTestId('goodboy-chip'));
+
+    expect(doors.openGuide).toHaveBeenCalledOnce();
+    expect(screen.getByTestId('goodboy-chip').getAttribute('aria-current')).toBeNull();
+    unmount();
+    mountColumn({ place: 'help', doors });
+    expect(screen.getByTestId('goodboy-chip').getAttribute('aria-current')).toBe('page');
+    expect(currentDoors(navLayer())).toEqual([]);
   });
 
   it('names a live terminal on the Terminal tile and counts it, with no running dot', () => {
@@ -398,14 +427,12 @@ describe('SideColumn', () => {
     expect(within(navLayer()).queryAllByRole('separator')).toHaveLength(0);
   });
 
-  it('opens the report sheet from Report a bug in the Goodboy menu, with no bug button in the foot', () => {
+  it('opens the report sheet from the bug icon beside the Goodboy line', () => {
     const onReport = vi.fn();
     window.addEventListener(OPEN_REPORT_SHEET_EVENT, onReport);
     mountColumn();
 
-    expect(screen.queryByRole('button', { name: 'Report a bug' })).toBeNull();
-    fireEvent.click(screen.getByTestId('goodboy-chip'));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Report a bug/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Report a bug' }));
 
     expect(onReport).toHaveBeenCalledOnce();
     window.removeEventListener(OPEN_REPORT_SHEET_EVENT, onReport);
@@ -439,7 +466,7 @@ describe('SideColumn', () => {
     expect(navLayer().hasAttribute('inert')).toBe(false);
   });
 
-  it('leaves the Goodboy menu effects to the pinned column when it peeks', () => {
+  it('leaves the Goodboy line effects to the pinned column when it peeks', () => {
     mountColumn({ isPeek: true });
 
     expect(screen.queryByTestId('goodboy-chip')).toBeNull();
@@ -518,6 +545,15 @@ describe('ColumnRail', () => {
     const { container } = mountRail({ place });
 
     expect(currentDoors(container)).toEqual(expected);
+  });
+
+  it('lights the Goodboy mark while Help is open and lights no door', () => {
+    const { container } = mountRail({ place: 'help' });
+
+    expect(
+      container.querySelector('[data-goodboy-chip="rail"]')?.getAttribute('aria-current'),
+    ).toBe('page');
+    expect(currentDoors(container)).toEqual([]);
   });
 
   it('keeps Settings, the bug and the mark with no workspace', () => {

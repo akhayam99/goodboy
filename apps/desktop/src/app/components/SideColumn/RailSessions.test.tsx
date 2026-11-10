@@ -50,7 +50,6 @@ const actions = (): ColumnActions => ({
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
-  openShortcuts: vi.fn(),
 });
 
 beforeAll(async () => {

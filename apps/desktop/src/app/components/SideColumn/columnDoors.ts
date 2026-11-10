@@ -53,7 +53,6 @@ export type ColumnActions = {
   readonly openSettings: () => void;
   readonly openChangelog: () => void;
   readonly openGuide: () => void;
-  readonly openShortcuts: () => void;
 };
 
 type OpenDoorParams = {

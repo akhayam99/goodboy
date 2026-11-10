@@ -75,7 +75,6 @@ const ACTIONS: ColumnActions = {
   openSettings: noop,
   openChangelog: noop,
   openGuide: noop,
-  openShortcuts: noop,
 };
 
 const renderShell = () =>

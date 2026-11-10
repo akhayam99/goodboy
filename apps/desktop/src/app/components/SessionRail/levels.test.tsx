@@ -73,7 +73,6 @@ const actions = (): ColumnActions => ({
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
-  openShortcuts: vi.fn(),
 });
 
 const open = sessionOf({ goal: 'Stop retried webhooks', lastOpenedAt: '2026-10-06T09:00:00.000Z' });
