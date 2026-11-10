@@ -881,6 +881,24 @@ describe('NotificationCenter', () => {
     expect(document.querySelector('[data-bell-dot]')).toBeNull();
   });
 
+  it('stacks the page from a row with no session, so Back returns to the page below', async () => {
+    state.notifications = [
+      buildNotification({ id: 'n1', title: 'app wide notice', coalesceKey: 'app-wide' }),
+    ];
+    const listener = vi.fn();
+    window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+    render(<NotificationCenter isCurrent={false} />);
+    await openCenter();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'app wide notice' }));
+    });
+
+    const event: unknown = listener.mock.calls[0]?.[0];
+    expect(event instanceof CustomEvent ? event.detail : 'missing').toBeNull();
+    window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+  });
+
   it('navigates from a single-entry group with a target', async () => {
     state.sessions = [{ id: 'session-1', goal: 'Ship grouping' }];
     state.notifications = [

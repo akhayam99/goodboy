@@ -43,8 +43,14 @@ const unreadGroupKeys = ({ notifications }: UnreadKeysParams): ReadonlySet<strin
       .map((group) => notificationGroupKey({ group })),
   );
 
-const openNotificationsStudio = () => {
-  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, { detail: { door: true } }));
+type OpenStudioParams = {
+  readonly isDoor: boolean;
+};
+
+const openNotificationsStudio = ({ isDoor }: OpenStudioParams) => {
+  window.dispatchEvent(
+    new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, isDoor ? { detail: { door: true } } : undefined),
+  );
 };
 
 type Props = {
@@ -207,7 +213,7 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
           groups={shownGroups}
           viewportRef={viewportRef}
           close={close}
-          onOpenStudio={openNotificationsStudio}
+          onOpenStudio={() => openNotificationsStudio({ isDoor: false })}
           onDismiss={(ids) => {
             void dismissNotificationGroup({ ids });
           }}
@@ -226,7 +232,7 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
           selected={false}
           onClick={() => {
             close();
-            openNotificationsStudio();
+            openNotificationsStudio({ isDoor: true });
           }}
           className="items-center justify-between gap-2 rounded-none px-3 py-2 text-meta"
         >

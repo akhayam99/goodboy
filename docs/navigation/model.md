@@ -173,7 +173,11 @@
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
   that opens Settings, a card that opens Impact) stacks (`openStudio`), so Back
-  returns to where the link was. Events from the bars carry `door: true`.
+  returns to where the link was. A notification row with no session is a link
+  too: it stacks the Notifications page, and only the foot of the list is a door.
+  Board is a door as well: opened over a studio it replaces that studio's entry
+  (`openDestination`), so Back from the board returns to the page below the
+  studio. Events from the bars carry `door: true`.
 - **One exit.** Close, Esc and Back leave a studio the same way: they land on
   the entry below it, and Forward brings the studio back. When nothing sits
   below, Close rewrites the top entry as the page without the studio. Esc is
