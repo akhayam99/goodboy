@@ -99,7 +99,7 @@ export const UpdateWhatsNewScene = () => {
       <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         {isChangelogOpen ? (
           <HelpStudio
-            initialTab="whatsNew"
+            tab="whatsNew"
             onClose={() => setIsChangelogOpen(false)}
             onOpenScreen={noop}
           />

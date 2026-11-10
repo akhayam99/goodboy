@@ -51,7 +51,7 @@ const chapterOf = (id: string) => {
 
 describe('HelpStudio on the Guide', () => {
   it('lists every chapter in the rail under its group and opens one chapter at a time', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     const nav = within(rail());
     Object.values(GUIDE_GROUP_LABEL).forEach((label) => expect(nav.getByText(label)).toBeDefined());
@@ -62,7 +62,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('opens a chapter from the rail, titled by it, with its group, points and words in the meta', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Commits'));
 
@@ -81,7 +81,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('walks the chapters with Previous and Next', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Commits'));
     fireEvent.click(screen.getByRole('button', { name: 'Next chapter, Artifacts' }));
@@ -97,7 +97,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('has no Previous on the first chapter and no Next on the last', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     const pager = () => screen.getByRole('navigation', { name: 'More chapters' });
     expect(within(pager()).queryByRole('button', { name: /^Previous chapter/ })).toBeNull();
@@ -106,7 +106,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('lists chapters and points that match the search, and Enter opens the first and flashes its point', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.change(search(), { target: { value: 'resolve with auto' } });
 
@@ -127,7 +127,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('moves the result Enter opens with the arrow keys', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.change(search(), { target: { value: 'rebase' } });
     const results = within(screen.getByRole('list', { name: 'Help results' })).getAllByRole(
@@ -142,7 +142,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('opens a chapter hit without a flash', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.change(search(), { target: { value: 'storage and cleanup' } });
     fireEvent.click(
@@ -156,7 +156,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('says so when nothing matches, and Escape brings the chapters back', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.change(search(), { target: { value: 'kubernetes' } });
     expect(within(rail()).getByText('Nothing in help matches "kubernetes".')).toBeDefined();
@@ -166,7 +166,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('opens the screen a chapter links to', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Providers and limits'));
     fireEvent.click(
@@ -182,7 +182,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('opens Monitoring and Impact, Spend from their chapters', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Monitoring'));
     fireEvent.click(within(page('Monitoring')).getByRole('button', { name: 'Open Monitoring' }));
@@ -196,7 +196,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('closes the guide to show the board', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Board'));
     fireEvent.click(within(page('Board')).getByRole('button', { name: 'Go to the board' }));
@@ -207,7 +207,7 @@ describe('HelpStudio on the Guide', () => {
   it('asks for a new session from the New session chapter', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:new-session', listener);
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('New session'));
     fireEvent.click(
@@ -219,7 +219,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('reads the keys from the shortcut registry', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Keyboard shortcuts'));
 
@@ -231,7 +231,7 @@ describe('HelpStudio on the Guide', () => {
 
   it('opens on the chapter a caller asked for, through the old id of a renamed chapter too', async () => {
     requestGuideChapter('history');
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     expect(chapterButton('Commits').getAttribute('aria-current')).toBe('true');
     await waitFor(() => expect(peekGuideChapter()).toBeNull());
@@ -239,13 +239,13 @@ describe('HelpStudio on the Guide', () => {
 
   it('opens What is Goodboy for an id it does not know', () => {
     requestGuideChapter('gone-chapter');
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'What is Goodboy' })).toBeDefined();
   });
 
   it('turns to the chapter a caller asks for while the guide is already open', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
     fireEvent.change(search(), { target: { value: 'limit' } });
 
     act(() => requestGuideChapter('legend'));
@@ -256,7 +256,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('names the board columns the way the board does', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Board'));
 
@@ -266,7 +266,7 @@ describe('HelpStudio on the Guide', () => {
   });
 
   it('draws the session marks of the shell in the Legend, one node per row', () => {
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Legend'));
 
@@ -294,11 +294,9 @@ describe('HelpStudio on the Guide', () => {
 
   it('keeps the asked chapter when the frame mounts the guide twice', () => {
     requestGuideChapter('monitoring');
-    const { unmount } = render(
-      <HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />,
-    );
+    const { unmount } = render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
     unmount();
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Monitoring' })).toBeDefined();
   });
@@ -306,7 +304,7 @@ describe('HelpStudio on the Guide', () => {
   it('puts Back to app in the band of the chapter detail beside the rail, and no Close', () => {
     const { container } = render(
       <StudioFrame kind="guide" onClose={vi.fn()}>
-        <HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />
+        <HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />
       </StudioFrame>,
     );
 

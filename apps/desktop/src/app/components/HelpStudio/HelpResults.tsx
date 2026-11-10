@@ -1,4 +1,4 @@
-import { Button, EmptyLine, Eyebrow, KeyHint, SelectableRow } from '@goodboy/ui';
+import { Button, EmptyLine, Eyebrow, SelectableRow } from '@goodboy/ui';
 import { pluralize } from '../../../shared/utils/pluralize';
 import { queryWordsOf } from '../../../features/settings/components/GuideStudio/queryWordsOf';
 import { HitLabel } from '../../../features/settings/components/GuideStudio/parts/HitLabel';
@@ -23,8 +23,6 @@ const hitLabelOf = ({ hit }: LabelParams): string => {
       return hit.hit.term ?? hit.hit.chapterTitle;
     case 'release':
       return hit.version;
-    case 'shortcut':
-      return hit.label;
     default: {
       const unreachable: never = hit;
       return unreachable;
@@ -38,8 +36,6 @@ const hitDetailOf = ({ hit }: LabelParams): string => {
       return hit.hit.term === null ? HELP_HIT_GROUP.guide : hit.hit.chapterTitle;
     case 'release':
       return HELP_HIT_GROUP.release;
-    case 'shortcut':
-      return HELP_HIT_GROUP.shortcut;
     default: {
       const unreachable: never = hit;
       return unreachable;
@@ -80,11 +76,8 @@ export const HelpResults = ({
               onClick={() => onOpenHit(hit)}
               className="flex-col items-start gap-0 px-2 py-1"
             >
-              <span className="flex w-full items-center justify-between gap-2 text-ui text-foreground">
-                <span className="min-w-0 truncate">
-                  <HitLabel text={hitLabelOf({ hit })} words={words} />
-                </span>
-                {hit.kind === 'shortcut' ? <KeyHint keys={hit.glyphs} /> : null}
+              <span className="w-full truncate text-ui text-foreground">
+                <HitLabel text={hitLabelOf({ hit })} words={words} />
               </span>
               <span className="w-full truncate text-ui text-faint-foreground">
                 <HitLabel text={hitLineOf({ hit })} words={words} />

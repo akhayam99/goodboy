@@ -48,7 +48,7 @@ describe.each(LINKS)('the deep link from %s', (_door, id, title) => {
 
   it('lands the Guide on that chapter', async () => {
     openGuideChapter({ id });
-    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+    render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     const rail = screen.getByRole('navigation', { name: 'Guide chapters' });
     await waitFor(() =>

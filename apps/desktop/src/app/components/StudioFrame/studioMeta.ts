@@ -39,7 +39,7 @@ export const STUDIO_META = {
   guide: {
     icon: CONCEPT_ICONS.guide,
     tone: CONCEPT_TONE.guide,
-    title: 'Help',
+    title: NAMES.guide,
     close: 'back',
     tier: 'column',
     page: 'guide',
@@ -88,7 +88,7 @@ export const STUDIO_META = {
   changelog: {
     icon: CONCEPT_ICONS.changelog,
     tone: CONCEPT_TONE.changelog,
-    title: 'Help',
+    title: NAMES.whatsNew,
     close: 'back',
     tier: 'column',
     page: 'whatsNew',

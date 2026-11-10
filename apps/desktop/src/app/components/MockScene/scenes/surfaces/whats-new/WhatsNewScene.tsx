@@ -57,7 +57,7 @@ const WhatsNewScene = ({ variant }: Props) => {
 
   return (
     <FramedStudioScene kind="changelog" place="changelog" seed={seedDates}>
-      <HelpStudio initialTab="whatsNew" onClose={NOOP} onOpenScreen={NOOP} />
+      <HelpStudio tab="whatsNew" onClose={NOOP} onOpenScreen={NOOP} />
     </FramedStudioScene>
   );
 };

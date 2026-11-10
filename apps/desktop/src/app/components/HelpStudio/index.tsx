@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { RailSearchStep } from '../../../shared/components/RailSearch';
 import { StudioShell } from '../../../shared/components/StudioShell';
+import { NAMES } from '../../../shared/utils/names';
 import { useAppStore } from '../../../store';
 import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import {
@@ -16,23 +17,27 @@ import {
 } from '../../../features/settings/components/GuideStudio/GuideTab';
 import { HelpRailHeader } from './HelpRailHeader';
 import { HelpResults } from './HelpResults';
+import { SponsorLink } from './SponsorLink';
 import { capReleaseHits } from './capReleaseHits';
 import { HELP_HIT_TAB, searchHelp, type HelpHit } from './searchHelp';
 import type { HelpTab } from './helpTabs';
-import { ShortcutsTab } from './ShortcutsTab';
 
 type OpenScreenParams = {
   readonly screen: ChangelogScreen;
 };
 
 type Props = {
-  readonly initialTab: HelpTab;
+  readonly tab: HelpTab;
   readonly onClose: () => void;
   readonly onOpenScreen: (params: OpenScreenParams) => void;
 };
 
 type ChangeQueryParams = {
   readonly next: string;
+};
+
+type ChangeTabParams = {
+  readonly next: HelpTab;
 };
 
 type StepParams = {
@@ -43,9 +48,14 @@ type OpenHitParams = {
   readonly hit: HelpHit;
 };
 
-export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
+const TAB_TITLE: Readonly<Record<HelpTab, string>> = {
+  guide: NAMES.guide,
+  whatsNew: NAMES.whatsNew,
+};
+
+export const HelpStudio = ({ tab, onClose, onOpenScreen }: Props) => {
   const releases = useAppStore((state) => state.changelogReleases);
-  const [tab, setTab] = useState<HelpTab>(initialTab);
+  const switchStudio = useAppStore((state) => state.switchStudio);
   const [query, setQuery] = useState('');
   const [activeHit, setActiveHit] = useState(0);
   const [guideFocus, setGuideFocus] = useState<GuideFocus | null>(null);
@@ -61,15 +71,22 @@ export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
   });
   const isSearching = query.trim() !== '';
 
+  const changeTab = ({ next }: ChangeTabParams) => {
+    if (next === tab) {
+      return;
+    }
+    switchStudio({ studio: { kind: next === 'guide' ? 'guide' : 'changelog' } });
+  };
+
   useEffect(
     () =>
       onGuideChapterRequest({
         listener: () => {
-          setTab('guide');
+          switchStudio({ studio: { kind: 'guide' } });
           setQuery('');
         },
       }),
-    [],
+    [switchStudio],
   );
 
   const changeQuery = ({ next }: ChangeQueryParams) => {
@@ -94,7 +111,7 @@ export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
     if (hit.kind === 'release') {
       setReleaseRequest({ version: hit.version, nonce });
     }
-    setTab(HELP_HIT_TAB[hit.kind]);
+    changeTab({ next: HELP_HIT_TAB[hit.kind] });
     changeQuery({ next: '' });
   };
 
@@ -109,7 +126,7 @@ export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
     <HelpRailHeader
       tab={tab}
       query={query}
-      onTabChange={setTab}
+      onTabChange={(next) => changeTab({ next })}
       onQueryChange={(next) => changeQuery({ next })}
       onSubmit={submit}
       onStep={(direction) => step({ direction })}
@@ -128,9 +145,10 @@ export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
 
   return (
     <StudioShell
-      icon={CONCEPT_ICONS.guide}
-      tone={CONCEPT_TONE.guide}
-      title="Help"
+      icon={tab === 'guide' ? CONCEPT_ICONS.guide : CONCEPT_ICONS.changelog}
+      tone={tab === 'guide' ? CONCEPT_TONE.guide : CONCEPT_TONE.changelog}
+      title={TAB_TITLE[tab]}
+      headerAccessory={<SponsorLink />}
       onClose={onClose}
     >
       {() => {
@@ -143,9 +161,6 @@ export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
               onOpenScreen={onOpenScreen}
             />
           );
-        }
-        if (tab === 'shortcuts') {
-          return <ShortcutsTab header={header} results={results} />;
         }
         return <GuideTab header={header} results={results} focus={guideFocus} />;
       }}

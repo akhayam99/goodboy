@@ -87,8 +87,8 @@ vi.mock('../../../features/settings/components/SettingsStudio', () => ({
   ),
 }));
 vi.mock('../../components/HelpStudio', () => ({
-  HelpStudio: ({ initialTab }: { readonly initialTab: string }) => (
-    <div data-testid="studio" data-kind={initialTab === 'guide' ? 'guide' : 'changelog'} />
+  HelpStudio: ({ tab }: { readonly tab: string }) => (
+    <div data-testid="studio" data-kind={tab === 'guide' ? 'guide' : 'changelog'} />
   ),
 }));
 vi.mock('../../../features/workspace/components/WorkspaceLinkStudio', () => ({

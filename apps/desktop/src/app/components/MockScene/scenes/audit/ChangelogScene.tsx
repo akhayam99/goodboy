@@ -45,7 +45,7 @@ export const ChangelogScene = () => {
   return (
     <ToastProvider>
       <main className="h-screen overflow-hidden bg-background text-foreground">
-        <HelpStudio initialTab="whatsNew" onClose={noop} onOpenScreen={noop} />
+        <HelpStudio tab="whatsNew" onClose={noop} onOpenScreen={noop} />
       </main>
     </ToastProvider>
   );
