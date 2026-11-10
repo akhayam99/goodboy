@@ -160,7 +160,7 @@ describe('the Board door leaves an open studio for the board', () => {
       if (door.kind === 'settings') {
         await click(screen.getByRole('button', { name: /^Back to app/ }));
       }
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
 
       expect(appStudioKind()).toBeNull();
       expect(useAppStore.getState().currentSessionId).toBeNull();
@@ -246,9 +246,9 @@ describe('exactly one door in the frame is marked current', () => {
   it('marks Board once the board is shown', async () => {
     await boot({ seed: 'pr' });
 
-    await clickButton(/^Sessions/);
+    await clickButton(/^Board/);
 
-    expect(currentMarks()).toEqual([expect.stringMatching(/^Sessions\b/)]);
+    expect(currentMarks()).toEqual([expect.stringMatching(/^Board\b/)]);
   });
 });
 

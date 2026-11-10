@@ -3,8 +3,13 @@ import { Divider, type MenuEntry, FOCUS_RING, cn } from '@goodboy/ui';
 import { AppMenuList } from '../../../features/actions/AppMenuList';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { destinationOf } from '../../../shared/navigation/destinationOf';
 import { NAMES } from '../../../shared/utils/names';
 import { BrandLockup } from './BrandLockup';
+
+const GUIDE = destinationOf({ id: 'guide' });
+
+const WHATS_NEW = destinationOf({ id: 'whatsNew' });
 
 type RailUpdate = {
   readonly label: string;
@@ -58,15 +63,15 @@ export const GoodboyMenu = ({
     {
       kind: 'item',
       key: 'guide',
-      label: 'Guide',
-      icon: CONCEPT_ICONS.guide,
+      label: GUIDE.label,
+      icon: GUIDE.icon,
       onSelect: onOpenGuide,
     },
     {
       kind: 'item',
       key: 'whats-new',
-      label: NAMES.whatsNew,
-      icon: CONCEPT_ICONS.changelog,
+      label: WHATS_NEW.label,
+      icon: WHATS_NEW.icon,
       onSelect: onOpenChangelog,
     },
     {

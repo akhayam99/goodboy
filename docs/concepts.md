@@ -291,7 +291,7 @@ meanings and the state maps against it.
 | Closed           | You closed a failed agent out.                                |
 
 Needs you counts three units, and each tooltip names its own: sessions ("2
-sessions need you") on the Sessions door, the dock badge and the palette; questions ("3 questions") on the Questions entry of the session rail;
+sessions need you") on the Board door, the dock badge and the palette; questions ("3 questions") on the Questions entry of the session rail;
 items ("4 items need you") on the Overview card and the Runs group. The bell is
 unchanged. `needsYouText` and `countNoun` write every one of them.
 

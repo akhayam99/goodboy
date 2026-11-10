@@ -116,6 +116,17 @@ describe('useGoToBoard', () => {
     expect(state.openSessionDraftWorkspaceId).toBeNull();
   });
 
+  it('lands on the board from a stack of two studios, not on the first studio', () => {
+    act(() => useAppStore.getState().openStudio({ studio: CHANGELOG }));
+    act(() => useAppStore.getState().openStudio({ studio: SETTINGS }));
+
+    goToBoard();
+
+    const state = useAppStore.getState();
+    expect(state.appStudio).toBeNull();
+    expect(state.currentSessionId).toBeNull();
+  });
+
   it('adds one history entry from the draft, and Back returns to the draft', () => {
     useAppStore.getState().navigate({ to: { at: 'session-draft' } });
     expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(workspace.id);

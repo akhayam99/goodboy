@@ -115,15 +115,16 @@ const GO_ROWS: &[Row] = &[
     command("nav.back", "Back", Some("cmd+BracketLeft")),
     command("nav.forward", "Forward", Some("cmd+BracketRight")),
     SEPARATOR,
-    command("session.board", "Sessions", Some("cmd+shift+KeyH")),
+    command("session.board", "Board", Some("cmd+shift+KeyH")),
     command("menu.tasks", "Tasks", None),
-    command("menu.chat", "Chat", None),
     command("menu.workflows", "Workflows", None),
-    command("terminal.studio", "Terminal", Some("ctrl+Backquote")),
+    command("menu.chat", "Chat", None),
     command("menu.impact", "Impact", None),
     SEPARATOR,
-    command("menu.notifications", "Notifications", None),
+    command("terminal.studio", "Terminal", Some("ctrl+Backquote")),
+    command("menu.browser", "Browser", None),
     command("menu.monitoring", "Monitoring", None),
+    command("menu.notifications", "Notifications", None),
 ];
 
 const WINDOW_ROWS: &[Row] = &[

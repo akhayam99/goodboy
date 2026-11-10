@@ -131,7 +131,7 @@ On a Mac the menu bar carries the same keys.
 - File holds New Session, New Chat, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
 - Edit holds Search.
 - View holds the sidebar, the palette, zoom and Reload.
-- Go walks to Sessions, Tasks, Chat, Workflows, Terminal, Impact, Notifications and Monitoring.
+- Go walks to Board, Tasks, Workflows, Chat, Impact, Terminal, Browser, Monitoring and Notifications.
 - Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
 <picture>

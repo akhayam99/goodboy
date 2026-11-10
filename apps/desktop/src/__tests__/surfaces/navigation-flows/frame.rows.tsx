@@ -115,10 +115,10 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     name: 'frame: the Board title sits on one header row, no band above it',
     covers: ['navigate'],
     open: async () => {
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
     },
     lands: async () => {
-      await heading('Sessions');
+      await heading('Board');
       const title = onlyH1({ scope: document });
       const row = titleRowOf(title);
       expect(row).not.toBeNull();

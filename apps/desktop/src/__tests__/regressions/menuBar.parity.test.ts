@@ -5,6 +5,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SHORTCUTS, type ShortcutId } from '../../shared/keyboard/registry';
 import { registerShortcut } from '../../shared/keyboard/dispatcher';
 import { MENU_ACTIONS } from '../../app/hooks/useMenuCommands/menuActions';
+import { DESTINATIONS } from '../../shared/navigation/destinations';
 import { pressShortcut } from '../helpers/pressKey';
 
 const MENU_SOURCE = join(__dirname, '..', '..', '..', 'src-tauri', 'src', 'app_menu.rs');
@@ -35,7 +36,6 @@ const MAC_NAMES: Readonly<Record<string, string>> = {
   'app.close': 'Close',
   'column.toggle': 'Show or Hide Sidebar',
   'zoom.reset': 'Actual Size',
-  'session.board': 'Sessions',
 };
 
 const OPENS_A_WINDOW: ReadonlySet<string> = new Set([
@@ -157,6 +157,35 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
       .map(({ id, label }) => ({ id, label, expected: expectedLabel({ id }) }))
       .filter(({ label, expected }) => label !== expected);
     expect(drift).toEqual([]);
+  });
+
+  it('lists the Go menu destinations in the destination list order', () => {
+    const block = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/.exec(source)?.[1] ?? '';
+    const goIds = [...block.matchAll(/\bcommand\(\s*"([^"]+)"/g)].map(([, id = '']) => id);
+    const paged = DESTINATIONS.filter(({ home }) => home !== 'foot');
+    expect(goIds).toEqual(['nav.back', 'nav.forward', ...paged.map(({ menuId }) => menuId)]);
+  });
+
+  it('keeps a separator between the pages and the tools in the Go menu', () => {
+    const block = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/.exec(source)?.[1] ?? '';
+    const rows = block
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '')
+      .map((line) => (line === 'SEPARATOR,' ? '-' : (/"([^"]+)"/.exec(line)?.[1] ?? '')));
+    const afterImpact = rows.indexOf('menu.impact') + 1;
+    expect(rows[afterImpact]).toBe('-');
+  });
+
+  it('lists the foot destinations in the Help and App menus', () => {
+    const ids = new Set(menuCommands.map(({ id }) => id));
+    const foot = DESTINATIONS.filter(({ home }) => home === 'foot');
+    expect(foot.map(({ menuId }) => menuId)).toEqual([
+      'settings.open',
+      'menu.guide',
+      'menu.whatsNew',
+    ]);
+    foot.forEach(({ menuId }) => expect(ids.has(menuId ?? '')).toBe(true));
   });
 
   it('lists every menu action in the menu bar', () => {

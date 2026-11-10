@@ -247,7 +247,7 @@ describe('StageBoard loading gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getByText('No sessions yet')).toBeDefined();
-    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 
@@ -269,7 +269,7 @@ describe('StageBoard loading gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     expect(screen.getByTestId('session-filter')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
   });
@@ -287,7 +287,7 @@ describe('StageBoard loading gate', () => {
     state.archivedSessions = { [wsId]: [shelved] };
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByText('No sessions yet')).toBeNull();
-    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     const columns = screen.getAllByTestId('stage-column');
     expect(columns.some((column) => column.textContent?.includes('archived'))).toBe(true);
     expect(screen.getByRole('button', { name: 'card s-9' })).toBeDefined();

@@ -74,7 +74,7 @@ file names it. Size is `control` in the lens switcher. `lensDestinations` in
 | Lens (`LENS_LABEL`)         | Concept        | Glyph                   | Tone    | Listed                                     |
 | --------------------------- | -------------- | ----------------------- | ------- | ------------------------------------------ |
 | Context                     | `context`      | `Library`               | info    | always                                     |
-| Workflows                   | `workflows`    | `Waypoints`             | primary | always                                     |
+| Runs                        | `runs`         | `Route`                 | primary | always                                     |
 | Agents                      | `agents`       | `Bot`                   | primary | always                                     |
 | Questions                   | `questions`    | `CircleHelp`            | warning | always                                     |
 | Artifacts                   | `plans`        | `ClipboardList`         | draft   | always                                     |
@@ -85,6 +85,10 @@ file names it. Size is `control` in the lens switcher. `lensDestinations` in
 | Terminal                    | `terminal`     | `SquareTerminal`        | neutral | with a branch                              |
 | Pull request                | `pr`           | `GitPullRequest`        | primary | with a branch, when the host is not GitHub |
 | Linear, GitLab, Jira, Slack | brand concepts | `@goodboy/ui` brand set | primary | with a branch, when that tool is connected |
+
+Runs reads `CONCEPT_ICONS.runs` (`Route`), so the switcher, the column and the
+palette draw one glyph for it. `Waypoints` stays the glyph of a workflow run
+row in the feed. Artifacts keeps `CONCEPT_ICONS.plans` (`ClipboardList`).
 
 Goal (`goal`, `Target`), Decisions (`decisions`, `CheckCheck`) and Session
 summary (`sessionSummary`, `NotebookText`) are parts of the Context region:
@@ -162,7 +166,7 @@ A kind always renders through `AgentKindChip`
   glyph: a guessed Generalist is worse than none.
 
 A workflow row in the feed carries the same circle in a neutral tint with the
-glyph the New menu and the Workflows lens use: `workflows` (`Waypoints`) for a
+glyph the New menu uses: `workflows` (`Waypoints`) for a
 preset or custom run, `orchestrator` (`Network`) for an orchestrated one, and
 never the word Workflow. The origin (Preset run, Custom run) is the tooltip and
 the accessible name.
@@ -218,17 +222,17 @@ color when the integration is connected, muted when it is not. `providers`
 The settings rail and the panel sections read these, so an item and its
 section share one glyph.
 
-| Concept      | Glyph                       | Tone    | Meaning                                       |
-| ------------ | --------------------------- | ------- | --------------------------------------------- |
-| `appearance` | `Palette`                   | neutral | Settings > App > General, and its Appearance  |
-| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                   |
-| `editor`     | `SquareCode`                | neutral | The default editor                            |
-| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                            |
-| `backup`     | `DatabaseBackup`            | neutral | Config export and import                      |
-| `storage`    | `Database`                  | neutral | Local database and archived sessions          |
-| `sessions`   | `SquareKanban`              | primary | A session: the Sessions door, search, palette |
-| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback                |
-| `danger`     | `TriangleAlert`             | danger  | A danger zone                                 |
+| Concept      | Glyph                       | Tone    | Meaning                                      |
+| ------------ | --------------------------- | ------- | -------------------------------------------- |
+| `appearance` | `Palette`                   | neutral | Settings > App > General, and its Appearance |
+| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                  |
+| `editor`     | `SquareCode`                | neutral | The default editor                           |
+| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                           |
+| `backup`     | `DatabaseBackup`            | neutral | Config export and import                     |
+| `storage`    | `Database`                  | neutral | Local database and archived sessions         |
+| `sessions`   | `SquareKanban`              | primary | A session: the Board door, search, palette   |
+| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback               |
+| `danger`     | `TriangleAlert`             | danger  | A danger zone                                |
 
 ## Actions
 

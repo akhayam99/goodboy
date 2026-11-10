@@ -1338,6 +1338,7 @@ u37-header-reveal-runs
 u37-monitoring-branch
 u37-running-here
 u37-running-here-idle
+u39-destinations
 update-card
 update-card-long-version
 update-card-narrow

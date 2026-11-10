@@ -67,7 +67,7 @@ forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
 title row: a 28px secondary button with the lines icon (`ListFilter`) and the count of active
 filters, opening the same facets in a popover. Every filter trigger renders
 through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only
-the two icon-only `xs` triggers (the Sessions header and the file tree), and
+the two icon-only `xs` triggers (the Board header and the file tree), and
 that list only falls.
 
 ## Pane anatomy
