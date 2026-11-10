@@ -108,12 +108,6 @@ export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
     scheduleClose();
   }, [scheduleClose]);
 
-  const pin = useCallback(() => {
-    closePeek();
-    writePreference({ next: false });
-    setIsFoldPicked(false);
-  }, [closePeek]);
-
   const toggle = useCallback(() => {
     if (!hasSidebar) {
       return;
@@ -153,7 +147,6 @@ export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
     isCollapsed,
     isPeeking,
     toggle,
-    pin,
     requestPeek,
     cancelPeek,
     scheduleClose,

@@ -3,7 +3,8 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { AppShell, COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
+import { AppShell, COLLAPSED_RAIL_WIDTH, TOP_BAR_CONTROL } from '@goodboy/ui';
+import { ColumnToggleButton } from '../../app/components/SideColumn/ColumnToggleButton';
 import { shellArrangement } from '../../app/shellArrangement';
 
 const SOURCE_ROOT = join(__dirname, '..', '..');
@@ -65,21 +66,29 @@ const spacingOf = ({ className, prefix }: SpacingParams): number => {
 };
 
 describe('workspace tile and collapsed rail axis', () => {
-  it('lands the workspace tile center on the rail button axis', () => {
+  it('lands the sidebar toggle center on the rail button axis, with the identity after it', () => {
     const bar = classNameContaining({ source: TOP_BAR, marker: 'grid h-9' });
+    const leftZone = classNameContaining({ source: TOP_BAR, marker: 'col-start-1' });
     const row = classNameContaining({ source: IDENTITY_ROW, marker: 'flex w-full' });
-    const trigger = classNameContaining({ source: IDENTITY_ROW, marker: 'group flex w-full' });
-    const tile = classNameContaining({ source: TILE, marker: 'flex size-5' });
+    const { container } = render(
+      <ColumnToggleButton isCollapsed={false} onToggle={() => undefined} />,
+    );
+    const toggle = container.querySelector('[data-sidebar-toggle]')?.getAttribute('class') ?? '';
 
-    const tileCenter =
+    const toggleCenter =
       spacingOf({ className: bar, prefix: 'px' }) +
       Number.parseFloat('0px') +
-      spacingOf({ className: trigger, prefix: 'px' }) +
-      spacingOf({ className: tile, prefix: 'size' }) / 2;
+      spacingOf({ className: toggle, prefix: 'size' }) / 2;
 
-    expect(tileCenter).toBe(22);
-    expect(tileCenter).toBe(COLLAPSED_RAIL_WIDTH / 2);
-    expect(row).toContain('ml-(--titlebar-inset)');
+    expect(toggleCenter).toBe(22);
+    expect(toggleCenter).toBe(COLLAPSED_RAIL_WIDTH / 2);
+    expect(toggle.split(/\s+/)).toContain(TOP_BAR_CONTROL.square);
+    expect(TOP_BAR.indexOf('<ColumnToggleButton')).toBeLessThan(
+      TOP_BAR.indexOf('<WorkspaceIdentityRow'),
+    );
+    expect(leftZone).toContain('pl-(--titlebar-inset)');
+    expect(row).not.toContain('--titlebar-inset');
+    expect(TILE).toContain('flex size-5');
     expect(STYLES).toContain(`--titlebar-inset: 0px;`);
   });
 
@@ -100,13 +109,13 @@ describe('workspace tile and collapsed rail axis', () => {
   });
 });
 
-describe('the column keeps its pinned width while Settings holds it', () => {
-  const columnWidthOf = ({ isSettingsOpen }: { readonly isSettingsOpen: boolean }): string => {
-    const arrangement = shellArrangement({
-      hasWorkspace: true,
-      isSidebarCollapsed: true,
-      isSettingsOpen,
-    });
+describe('the column draws what its saved fold says, on every page', () => {
+  const columnWidthOf = ({
+    isSidebarCollapsed,
+  }: {
+    readonly isSidebarCollapsed: boolean;
+  }): string => {
+    const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed });
     const { container } = render(
       <AppShell
         leftSidebar={<div>column</div>}
@@ -119,11 +128,11 @@ describe('the column keeps its pinned width while Settings holds it', () => {
     return grid.style.gridTemplateColumns.split(' ')[0] ?? '';
   };
 
-  it('draws the 44px rail on a folded sidebar while Settings is closed', () => {
-    expect(columnWidthOf({ isSettingsOpen: false })).toBe(`${COLLAPSED_RAIL_WIDTH}px`);
+  it('draws the 44px rail on a folded sidebar', () => {
+    expect(columnWidthOf({ isSidebarCollapsed: true })).toBe(`${COLLAPSED_RAIL_WIDTH}px`);
   });
 
-  it('draws the column at its saved width on the same folded sidebar while Settings is open', () => {
-    expect(columnWidthOf({ isSettingsOpen: true })).toBe('var(--goodboy-left-sidebar-width)');
+  it('draws the column at its saved width on an open sidebar', () => {
+    expect(columnWidthOf({ isSidebarCollapsed: false })).toBe('var(--goodboy-left-sidebar-width)');
   });
 });

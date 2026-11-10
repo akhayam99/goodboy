@@ -137,7 +137,6 @@ export const ShellFrame = ({
             currentSessionId={session.id}
             isDraftShown={false}
             actions={shell.actions}
-            settingsSlotRef={shell.settingsSlotRef}
           />
         }
         main={

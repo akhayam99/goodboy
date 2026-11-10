@@ -19,12 +19,8 @@ type Props = {
   readonly place: ColumnPlace;
   readonly actions: ColumnActions;
   readonly onNavigate?: () => void;
-  readonly settingsSlotRef?: (node: HTMLDivElement | null) => void;
   readonly isPeek?: boolean;
 };
-
-const LAYER =
-  'absolute inset-0 flex min-h-0 min-w-0 flex-col gap-1 pb-2 pt-1 motion-safe:transition-[opacity,transform] motion-safe:duration-160 motion-safe:ease-out';
 
 export const SideColumn = ({
   scope,
@@ -33,11 +29,9 @@ export const SideColumn = ({
   place,
   actions,
   onNavigate,
-  settingsSlotRef,
   isPeek = false,
 }: Props) => {
   const signals = useDoorSignals({});
-  const isSettingsShown = place === 'settings' && settingsSlotRef !== undefined;
   const go = (open: () => void) => () => {
     open();
     onNavigate?.();
@@ -47,11 +41,7 @@ export const SideColumn = ({
       <nav
         aria-label="Sidebar"
         data-column-layer="nav"
-        inert={isSettingsShown}
-        className={cn(
-          LAYER,
-          isSettingsShown ? 'pointer-events-none -translate-x-1.5 opacity-0' : 'opacity-100',
-        )}
+        className="absolute inset-0 flex min-h-0 min-w-0 flex-col gap-1 pb-2 pt-1"
       >
         {scope === 'workspace' && workspaceId !== null ? (
           <div className="flex min-h-0 flex-1 flex-col gap-1">
@@ -111,18 +101,6 @@ export const SideColumn = ({
           {...(onNavigate !== undefined && { onNavigate })}
         />
       </nav>
-      {settingsSlotRef === undefined ? null : (
-        <div
-          ref={settingsSlotRef}
-          data-column-layer="settings"
-          inert={!isSettingsShown}
-          className={cn(
-            LAYER,
-            'px-2',
-            isSettingsShown ? 'opacity-100' : 'pointer-events-none translate-x-1.5 opacity-0',
-          )}
-        />
-      )}
     </div>
   );
 };

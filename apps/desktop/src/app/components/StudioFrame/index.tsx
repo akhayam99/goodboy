@@ -39,18 +39,9 @@ type Props = {
   readonly onClose: () => void;
   readonly children: ReactNode;
   readonly placement?: StudioPlacement;
-  readonly isClosable?: boolean;
-  readonly hasBand?: boolean;
 };
 
-export const StudioFrame = ({
-  kind,
-  onClose,
-  children,
-  placement = 'cover',
-  isClosable = true,
-  hasBand = true,
-}: Props) => {
+export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Props) => {
   const [chrome, setChrome] = useState<StudioChrome | null>(null);
   const [drawerSpec, setDrawerSpec] = useState<StudioDrawerSpec | null>(null);
   const [closingKind, setClosingKind] = useState<StudioKind | null>(null);
@@ -98,12 +89,11 @@ export const StudioFrame = ({
   );
   const title = chrome?.title ?? meta.title;
   const accessory = chrome?.accessory ?? null;
-  const isBandClose = isClosable && meta.close === 'back';
-  const isBandDrawn = hasBand && (isBandClose || trailClaims > 0 || accessory !== null);
+  const isBandClose = meta.close === 'back';
+  const isBandDrawn = isBandClose || trailClaims > 0 || accessory !== null;
   const isUnderTrail = isBandDrawn || isOuterUnderTrail;
 
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
-  const isSkeletonUnderBand = hasBand && isClosable && meta.close === 'back';
   const bandNode = isBandDrawn ? (
     <StudioBand
       label={title}
@@ -127,11 +117,11 @@ export const StudioFrame = ({
       >
         <Suspense
           fallback={
-            <UnderTrailContext.Provider value={isSkeletonUnderBand}>
+            <UnderTrailContext.Provider value={isBandClose}>
               <StudioSkeleton
-                skeleton={hasBand ? meta.skeleton : { shape: meta.skeleton.shape, hasRail: false }}
+                skeleton={meta.skeleton}
                 page={meta.page}
-                isBandInDetail={isSplit && isSkeletonUnderBand}
+                isBandInDetail={isSplit && isBandClose}
                 title={meta.title}
                 railWidthPx={readStudioRailWidth({
                   surface: kind,

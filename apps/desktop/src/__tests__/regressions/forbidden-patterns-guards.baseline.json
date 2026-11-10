@@ -150,7 +150,6 @@
     "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatReads.tsx": 1,
     "apps/desktop/src/features/workspace/components/LocateMovedProjects/LocateMovedProjectRow.tsx": 1,
     "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 1,
-    "apps/desktop/src/features/workspace/components/WorkspaceIdentityRow/index.tsx": 1,
     "apps/desktop/src/shared/components/Learnings/LearningRow.tsx": 1,
     "apps/desktop/src/shared/components/Toast/ToastCard.tsx": 1,
     "packages/ui/src/components/ContextMenu/MenuList.tsx": 1,

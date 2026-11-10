@@ -51,7 +51,31 @@ describe('useSessionRailFold', () => {
     rerender({ isNarrow: false });
     rerender({ isNarrow: true });
     expect(result.current.isFolded).toBe(true);
-    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('0');
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBeNull();
+  });
+
+  it('never writes the saved choice while it folds by itself, so a saved fold comes back', () => {
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    const { result, rerender } = renderHook((props) => useSessionRailFold(props), {
+      initialProps: { isNarrow: true, isDrawerOpen: true },
+    });
+
+    act(() => {
+      result.current.toggle();
+    });
+    expect(result.current.isFolded).toBe(false);
+    act(() => {
+      result.current.toggle();
+    });
+    expect(result.current.isFolded).toBe(true);
+    act(() => {
+      result.current.toggle();
+    });
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
+
+    rerender({ isNarrow: false, isDrawerOpen: false });
+    expect(result.current.isFolded).toBe(true);
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
   });
 });
 

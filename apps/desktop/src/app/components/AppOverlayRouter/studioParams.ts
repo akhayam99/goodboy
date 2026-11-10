@@ -1,3 +1,4 @@
+import type { StudioRailPlacement } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
@@ -19,7 +20,6 @@ type StudioParams = {
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly placement?: StudioPlacement;
-  readonly settingsColumnSlot?: HTMLElement | null;
 };
 
 export type AppStudioProps = Omit<StudioParams, 'overlay'> & {
@@ -27,5 +27,5 @@ export type AppStudioProps = Omit<StudioParams, 'overlay'> & {
 };
 
 export type RenderStudioParams = Omit<StudioParams, 'placement'> & {
-  readonly isInColumnShell: boolean;
+  readonly railPlacement: StudioRailPlacement;
 };

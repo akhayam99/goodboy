@@ -827,7 +827,7 @@
     "apps/desktop/src/features/settings/components/SettingsStudio/ClassicComposerKeysField.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/FlowPlanPreview.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/GoodboyIgnoreField.tsx": 1,
-    "apps/desktop/src/features/settings/components/SettingsStudio/index.tsx": 7,
+    "apps/desktop/src/features/settings/components/SettingsStudio/index.tsx": 6,
     "apps/desktop/src/features/settings/components/SettingsStudio/OpenWithBand.tsx": 2,
     "apps/desktop/src/features/settings/components/SettingsStudio/ReplyTemplateField.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/SecurityFindingRow.tsx": 1,

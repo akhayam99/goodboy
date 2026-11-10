@@ -24,7 +24,7 @@ export const useSessionRailFold = ({
 }: Params): SessionRailFold => {
   const [isFoldPicked, setIsFoldPicked] = useState(foldedPref.read);
   const [isOpenedNarrow, setIsOpenedNarrow] = useState(false);
-  const isFolded = isFoldPicked || (isNarrow && !isOpenedNarrow);
+  const isFolded = !isOpenedNarrow && (isFoldPicked || isNarrow);
 
   useEffect(() => {
     if (isDrawerOpen) {
@@ -34,20 +34,15 @@ export const useSessionRailFold = ({
   }, [isDrawerOpen]);
 
   const toggle = useCallback(() => {
-    if (isNarrow && !isFolded) {
-      setIsOpenedNarrow(false);
-      return;
-    }
     if (isNarrow) {
-      foldedPref.write(false);
-      setIsFoldPicked(false);
-      setIsOpenedNarrow(true);
+      setIsOpenedNarrow(isFolded);
       return;
     }
-    const isNowFolded = !isFoldPicked;
+    const isNowFolded = !isFolded;
     foldedPref.write(isNowFolded);
     setIsFoldPicked(isNowFolded);
-  }, [isFoldPicked, isFolded, isNarrow]);
+    setIsOpenedNarrow(false);
+  }, [isFolded, isNarrow]);
 
   return { isFolded, toggle };
 };

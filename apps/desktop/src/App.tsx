@@ -92,15 +92,12 @@ export const App = () => {
   );
   const currentSession = useCurrentSession();
   const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
-  const isSettingsOpen = useAppStore((s) => s.appStudio?.kind === 'settings');
   const sessionSidebar = useSessionSidebarVisibility({ hasSidebar: true });
-  const [settingsColumnSlot, setSettingsColumnSlot] = useState<HTMLDivElement | null>(null);
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = currentWorkspace === null;
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace != null,
     isSidebarCollapsed: sessionSidebar.isCollapsed,
-    isSettingsOpen,
   });
   const goToBoard = useGoToBoard();
   const {
@@ -126,11 +123,8 @@ export const App = () => {
     currentSession,
     currentWorkspace,
     workspaceProjectRoot,
-    isSessionSidebarCollapsed: sessionSidebar.isCollapsed,
     isWorkspaceLauncherBranch,
-    pinSessionSidebar: sessionSidebar.pin,
     studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
-    settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsColumnSlot : null,
   });
   const columnActions = useColumnActions({
     openBoard: goToBoard,
@@ -278,7 +272,7 @@ export const App = () => {
         <AppShell
           topBar={
             <AppTopBar
-              sidebar={{ isCollapsed: sessionSidebar.isCollapsed, onToggle: sessionSidebar.toggle }}
+              sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: sessionSidebar.toggle }}
               onOpenSpend={openSpend}
               onOpenScript={(run) => void openRunningScript({ run })}
               openProviderId={settingsProviderId}
@@ -292,7 +286,6 @@ export const App = () => {
               currentSessionId={currentSession?.id ?? null}
               isDraftShown={isDraftShown}
               actions={columnActions}
-              settingsSlotRef={setSettingsColumnSlot}
             />
           }
           leftOverlay={

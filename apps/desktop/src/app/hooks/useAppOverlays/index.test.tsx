@@ -133,9 +133,7 @@ const Harness = ({ isLauncher = false }: { readonly isLauncher?: boolean }) => {
     currentSession: null,
     currentWorkspace: isLauncher ? null : WORKSPACE,
     workspaceProjectRoot: '/repo',
-    isSessionSidebarCollapsed: false,
     isWorkspaceLauncherBranch: isLauncher,
-    pinSessionSidebar: () => undefined,
   });
   useEffect(() => {
     handle.current = overlays;
