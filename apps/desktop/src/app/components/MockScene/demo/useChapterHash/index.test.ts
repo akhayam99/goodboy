@@ -41,6 +41,35 @@ describe('useChapterHash', () => {
     expect(window.history.length).toBe(before);
   });
 
+  it('replaces an unknown hash with the group shown, with no new history entry', () => {
+    window.history.replaceState(null, '', '/?scene=demo#nope');
+    const before = window.history.length;
+    const { result } = renderHash();
+    expect(result.current.chapterId).toBe('bring');
+    expect(window.location.hash).toBe('#bring');
+    expect(window.location.search).toBe('?scene=demo');
+    expect(window.history.length).toBe(before);
+  });
+
+  it('keeps the group shown when an unknown hash is typed while the demo is open', () => {
+    const { result } = renderHash();
+    act(() => result.current.selectChapter({ id: 'guide' }));
+    const before = window.history.length;
+    act(() => {
+      window.history.replaceState(null, '', '/?scene=demo#nope');
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    expect(result.current.chapterId).toBe('guide');
+    expect(window.location.hash).toBe('#guide');
+    expect(window.history.length).toBe(before);
+  });
+
+  it('leaves an empty hash alone', () => {
+    window.history.replaceState(null, '', '/?scene=demo');
+    renderHash();
+    expect(window.location.hash).toBe('');
+  });
+
   it('follows the hash when the visitor goes back', () => {
     const { result } = renderHash();
     act(() => result.current.selectChapter({ id: 'direction' }));
