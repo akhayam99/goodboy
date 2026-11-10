@@ -28,6 +28,7 @@ type PickParams = {
 export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
   const model = useBrowserPane({ sessionId });
   const fold = useStudioRailFold({ surface: 'browser' });
+  const frame = useRef<HTMLDivElement | null>(null);
   const view = useRef<HTMLDivElement | null>(null);
   const shownTab = model.shown?.tab ?? null;
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
@@ -36,6 +37,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
   useBrowserStudioTab({ sessionId, tabId, model });
   useNativePlacement({
     sessionId,
+    frame,
     view,
     tab: shownTab,
     attempt: model.wakeAttempt,
@@ -89,6 +91,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
             )}
             <div className="flex min-h-0 flex-1 px-2">
               <BrowserView
+                frame={frame}
                 view={view}
                 shown={model.shown}
                 title={title}
