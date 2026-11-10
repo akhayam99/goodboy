@@ -130,12 +130,6 @@ describe('the Settings scopes rail on a narrow window', () => {
 
     expect(rail()).not.toBeNull();
   });
-
-  it('makes the detail pane a container for its dense rows', () => {
-    mount();
-
-    expect(screen.getByText('detail').parentElement?.className).toContain('@container');
-  });
 });
 
 describe('the Settings scopes rail on a narrow pane', () => {

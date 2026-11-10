@@ -112,7 +112,7 @@ beforeEach(async () => {
 afterEach(async () => {
   cleanup();
   await act(async () => {
-    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    await Promise.resolve();
   });
 });
 

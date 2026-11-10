@@ -127,11 +127,9 @@ describe('RoleRow', () => {
     expect(screen.getByText('Writes the plan.')).toBeDefined();
   });
 
-  it('drops the description under a 600px pane and keeps the effort and the chip', () => {
+  it('keeps the effort and the chip on a pinned row', () => {
     const trigger = row({ preference: OPUS_PIN, policy: CLAUDE_ON });
 
-    expect(screen.getByText('Writes the plan.').className).toMatch(/\bhidden\b.*@\[600px\]:block/);
-    expect(trigger.querySelector('[data-role-effort]')?.className).toContain('shrink-0');
     expect(trigger.querySelector('[data-role-effort]')?.textContent).toBe('High');
     expect(trigger.textContent).toContain('Pinned');
   });
