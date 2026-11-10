@@ -264,6 +264,7 @@ pub fn run() {
         .manage(window_close::CloseClaims::default())
         .manage(window_heartbeat::Heartbeats::default())
         .manage(browser::BrowserRegistry::default())
+        .manage(browser::BrowserFavicons::default())
         .setup(move |app| {
             use tauri::Manager;
             logging::init(app.handle());
@@ -757,6 +758,9 @@ pub fn run() {
             browser::commands::browser_tab_hide,
             browser::commands::browser_tab_navigate,
             browser::commands::browser_tab_reload,
+            browser::commands::browser_tab_stop,
+            browser::commands::browser_history_state,
+            browser::commands::browser_favicon,
             browser::commands::browser_tab_back,
             browser::commands::browser_tab_forward,
             browser::commands::browser_tab_close,

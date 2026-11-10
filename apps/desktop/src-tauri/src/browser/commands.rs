@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use tauri::{Manager, Runtime, Webview};
 
+use super::favicon::{self, BrowserFavicons};
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::lifecycle;
@@ -9,7 +10,7 @@ use super::reason::{
     self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_CLOSED, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts, TabState};
-use crate::platform::web_history::HistoryStep;
+use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::util::{now_ms, MessageError};
 
 #[derive(Debug, Deserialize)]
@@ -156,6 +157,29 @@ pub async fn browser_tab_navigate(
 #[tauri::command]
 pub async fn browser_tab_reload(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     owned_tab(&webview, &args.tab_id)?.reload().map_err(failed)
+}
+
+#[tauri::command]
+pub async fn browser_tab_stop(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
+    host::stop_load(&owned_tab(&webview, &args.tab_id)?)
+}
+
+#[tauri::command]
+pub async fn browser_history_state(
+    webview: Webview,
+    args: TabArgs,
+) -> Result<Option<HistoryState>, MessageError> {
+    host::history_state(&owned_tab(&webview, &args.tab_id)?)
+}
+
+#[tauri::command]
+pub async fn browser_favicon(
+    webview: Webview,
+    args: TabArgs,
+) -> Result<Option<String>, MessageError> {
+    let page = owned_tab(&webview, &args.tab_id)?.url().map_err(failed)?;
+    let cache = webview.state::<BrowserFavicons>();
+    Ok(favicon::favicon_of(&cache, &page, favicon::find_icon).await)
 }
 
 #[tauri::command]
