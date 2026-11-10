@@ -801,6 +801,8 @@ sessions-menu
 sessions-nomatch
 settings-app
 settings-general-pinned
+settings-links
+settings-links-dark
 settings-no-workspace
 settings-projects-failed
 settings-projects-nostar

@@ -1,14 +1,11 @@
-import { openInBrowser } from './openInBrowser';
-import { openInYourBrowser } from './openInYourBrowser';
+import { openWebLink } from './openWebLink';
 import { sessionOfElement } from './sessionOfElement';
 
 type Params = {
   readonly element: Element;
   readonly url: string;
-  readonly isOwnBrowser: boolean;
+  readonly event: Pick<MouseEvent, 'metaKey' | 'ctrlKey'>;
 };
 
-export const openFromElement = ({ element, url, isOwnBrowser }: Params): Promise<void> =>
-  isOwnBrowser
-    ? openInYourBrowser({ url })
-    : openInBrowser({ sessionId: sessionOfElement({ element }), url });
+export const openFromElement = ({ element, url, event }: Params): Promise<void> =>
+  openWebLink({ sessionId: sessionOfElement({ element }), url, event });

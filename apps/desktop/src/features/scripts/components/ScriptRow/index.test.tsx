@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ProjectScriptId } from '@goodboy/types';
 import type { RunnableScript } from '../../buildSessionScripts';
 import type { ScriptLiveFacts } from '../../scriptLiveFacts';
@@ -250,7 +250,7 @@ describe('ScriptRow service', () => {
     expect(screen.getByRole('button', { name: 'Run dev' })).toBeDefined();
   });
 
-  it('shows the last line, uptime and the port link while running, usage in the tooltip', () => {
+  it('shows the last line, uptime and the port link while running, usage in the tooltip', async () => {
     renderRow({
       script: DEV,
       expectedPort: 5005,
@@ -263,7 +263,7 @@ describe('ScriptRow service', () => {
     expect(screen.queryByText('Running')).toBeNull();
     expect(screen.queryByText('150 MB')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open localhost:5005' }));
-    expect(openUrl).toHaveBeenCalledWith('http://localhost:5005');
+    await waitFor(() => expect(openUrl).toHaveBeenCalledWith('http://localhost:5005'));
   });
 
   it('keeps one Stop glyph while running, Restart moves to the menu', () => {

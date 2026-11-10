@@ -6,7 +6,9 @@ import { LazyGenericTerminalPanel } from '../../../../shared/components/GenericT
 import { useAppStore } from '../../../../store';
 import { createTerminalDriver } from '../../terminalDriver';
 import { openTerminalOnce } from '../../openTerminalOnce';
+import { WebLinkPeek } from '../../../browser/WebLinkPeek';
 import { useTerminalFileLinks } from '../../hooks/useTerminalFileLinks';
+import { useTerminalWebLinks } from '../../hooks/useTerminalWebLinks';
 import { useTerminalOutputHandoff } from '../../hooks/useTerminalOutputHandoff';
 import { EndedCommandStrip } from './EndedCommandStrip';
 
@@ -29,6 +31,7 @@ export const TerminalPane = ({
   const setTerminalTabStatus = useAppStore((s) => s.setTerminalTabStatus);
   const driver = useMemo(() => createTerminalDriver({ terminalId: tab.id }), [tab.id]);
   const onOpenFileLink = useTerminalFileLinks({ tab });
+  const webLinks = useTerminalWebLinks({ tab, sessionId });
   const endedCommand = useAppStore((s) =>
     tab.isRestored === true ? (s.endedWork?.terminals[tab.id] ?? null) : null,
   );
@@ -86,7 +89,10 @@ export const TerminalPane = ({
             selectionAction: { label: handoff.askLabel, onAct: handoff.sendSelection },
           })}
           onOpenFileLink={onOpenFileLink}
+          onOpenWebLink={webLinks.onOpenWebLink}
+          onWebLinkHover={webLinks.onWebLinkHover}
         />
+        {webLinks.peek === null ? null : <WebLinkPeek target={webLinks.peek} />}
       </div>
     </div>
   );

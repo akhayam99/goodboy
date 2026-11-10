@@ -1,5 +1,4 @@
 import { Chip, FactCard, InteractiveRow, StatusDot, Tooltip, type Tone } from '@goodboy/ui';
-import { isOwnBrowserClick } from '../../../browser/isOwnBrowserClick';
 import { openFromElement } from '../../../browser/openFromElement';
 import { ownBrowserClickWord } from '../../../browser/ownBrowserClickWord';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
@@ -86,7 +85,7 @@ export const ServiceRow = ({
                 void openFromElement({
                   element: event.currentTarget,
                   url: `http://localhost:${livePort}`,
-                  isOwnBrowser: isOwnBrowserClick({ event }),
+                  event,
                 })
               }
             />

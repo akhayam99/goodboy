@@ -192,8 +192,10 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Dock** puts it back. The page never reloads, so a half-typed form stays.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
-- A port chip, a running Service's port and a link in a conversation, a decision or an artifact open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
-- Rest on a localhost link to see its page title and address before you open it.
+- A port chip, a running Service's port, a link in a conversation, a decision or an artifact and a web address in a terminal open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
+- **Settings → App → General → Open with → Links** picks where a plain click goes: **In Goodboy** or **In your browser**. **⌘-click** always opens your own browser.
+- A terminal with no session sends its links to your own browser.
+- Rest on a localhost link, or on a web address in a terminal, to see where a click goes before you open it.
 - **⌘L** goes to the address while the browser is on screen. Elsewhere it stays Ask.
 - **⌘K** lists the session's tabs. Type an address there and **Open** it beside the session.
 - Tabs belong to the session. Pin a tab to keep it in every session of the project. Tabs close when the session is archived.
