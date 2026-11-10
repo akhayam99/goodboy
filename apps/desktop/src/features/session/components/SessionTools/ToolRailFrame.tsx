@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -13,6 +13,7 @@ import { togglePane } from '../../panes/togglePane';
 import { SESSION_TOOL_RAIL_WIDTH } from './sessionToolRailWidth';
 import { SESSION_TOOLS, WORKSPACE_TOOLS, type SessionTool } from './sessionTools';
 import { SessionToolButton } from './SessionToolButton';
+import { railFocusMemo } from './railFocusMemo';
 import { ToolGroupCaption } from './ToolGroupCaption';
 import { toolbarIndexAfter } from './toolbarIndexAfter';
 import { toolFactOf } from './toolFactOf';
@@ -53,15 +54,41 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
   const runningCount = useAppStore((state) => runningTerminalCount({ tabs: state.terminalTabs }));
   const tabCount = useAppStore((state) => browserTabCount({ state }));
   const sessionTools = session === null ? [] : SESSION_TOOLS;
-  const count = sessionTools.length + WORKSPACE_TOOLS.length;
-  const [focusIndex, setFocusIndex] = useState(0);
+  const tools = [...sessionTools, ...WORKSPACE_TOOLS];
+  const count = tools.length;
+  const [focusIndex, setFocusIndex] = useState(() =>
+    Math.max(
+      0,
+      tools.findIndex((tool) => tool.pane === railFocusMemo.pane),
+    ),
+  );
   const activeIndex = Math.min(focusIndex, count - 1);
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const activePaneRef = useRef<ClusterPane | null>(null);
+  activePaneRef.current = tools[activeIndex]?.pane ?? null;
+  useLayoutEffect(() => {
+    const rail = railRef.current;
+    if (railFocusMemo.hasFocus) {
+      railFocusMemo.hasFocus = false;
+      rail
+        ?.querySelector<HTMLButtonElement>(`[data-testid="pane-toggle-${activePaneRef.current}"]`)
+        ?.focus();
+    }
+    return () => {
+      railFocusMemo.pane = activePaneRef.current;
+      railFocusMemo.hasFocus = rail !== null && rail.contains(document.activeElement);
+      queueMicrotask(() => {
+        railFocusMemo.hasFocus = false;
+      });
+    };
+  }, []);
   const rovingOf = ({ index }: IndexParams) => ({
     tabIndex: index === activeIndex ? 0 : -1,
     onFocus: () => setFocusIndex(index),
   });
   return (
     <div
+      ref={railRef}
       style={{ width: SESSION_TOOL_RAIL_WIDTH }}
       role="toolbar"
       aria-label="Tools"

@@ -315,7 +315,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   icon above it after a failed action. The block sits below the icons, so a fold
   moves no page or worktree icon. Pin and Refresh show only when open;
   ⌘⇧R and the sidebar row's right click menu keep them. The folded rail has no
-  Projects foot; the tools column beside the content stays as it is.
+  Projects foot; the right rail beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
   nodes on every screen. Folding the session pages leaves the diff page's file
   rail as it is.
@@ -361,7 +361,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   read" with Retry (`RunMetadataMissing`), never that it is gone.
 
 The tools (Explore, Context, Ask, Agents, Scripts, Terminal, Browser) are panes, not pages:
-they open from the session tools column at the right of the content (see The
+they open from the right rail at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
 
@@ -695,8 +695,11 @@ a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
 the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
 Workflows). Those three pages fade their content in and out while the rail
 stays still (`StudioFrame` animates its `data-studio-motion` nodes, never the
-`StudioRail`), and with a record panel shown as an overlay the rail copies
-itself above that panel's scrim, as it does above the shell's. It holds two
+`StudioRail`); a record panel open with the page fades in with it, and one
+opened later keeps the drawer's own motion. Moving between the shell rail and
+a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
+record panel shown as an overlay the rail copies itself above that panel's
+scrim, as it does above the shell's. It holds two
 groups by scope. On a session page with no page open, the Session group holds
 Explore, Context, Ask, Agents and Scripts (`SESSION_TOOLS`), under the caption
 Session (`ToolGroupCaption`, `text-rail`). At its foot, on every screen, the
@@ -706,9 +709,11 @@ anchored to the bottom, one separator sits above it when the Session group
 shows, and the column keeps the same inset at its foot as at its top. A test
 scene or frame without the shell rail keeps the column inside `SessionFrame`
 (`ShellRailContext`).
-Each tool keeps its pane id and shortcut; Terminal shows ⌃`and Browser has no shortcut.`SessionToolButton`names every
-tool below its icon in the 9px`text-rail` role: faint when closed, muted when
-open. On a window under 480px tall all captions hide together and the tooltips
+Each tool keeps its pane id and shortcut; Terminal shows ``⌃` `` and Browser
+has no shortcut. `SessionToolButton` names every tool below its icon in the
+9px `text-rail` caption role: secondary (`TEXT_ROLE.secondary`) when closed,
+label strength when open, and the Session caption is secondary too, so every
+caption keeps its contrast in light mode. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
 A tool has four states (`toolStateOf`): at rest, pressed when it holds the

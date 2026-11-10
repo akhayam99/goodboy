@@ -48,6 +48,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
   const [chrome, setChrome] = useState<StudioChrome | null>(null);
   const [drawerSpec, setDrawerSpec] = useState<StudioDrawerSpec | null>(null);
   const [closingKind, setClosingKind] = useState<StudioKind | null>(null);
+  const [hasEntered, setHasEntered] = useState(false);
   const [opener] = useState(captureStudioOpener);
   const kindRef = useRef(kind);
   kindRef.current = kind;
@@ -168,6 +169,11 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
                 <div
                   data-studio-motion=""
                   className={cn('flex min-h-0 min-w-0 flex-1 flex-col', motion)}
+                  onAnimationEnd={(event) => {
+                    if (event.target === event.currentTarget) {
+                      setHasEntered(true);
+                    }
+                  }}
                 >
                   {framed}
                 </div>
@@ -178,7 +184,10 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
               drawerSpec?.node == null || !isPanelShown ? null : (
                 <div
                   data-studio-motion=""
-                  className={cn('flex min-h-0 min-w-0 flex-1 flex-col', isClosing && motion)}
+                  className={cn(
+                    'flex min-h-0 min-w-0 flex-1 flex-col',
+                    (isClosing || !hasEntered) && motion,
+                  )}
                 >
                   <UnderTrailContext.Provider value={isUnderTrail}>
                     {drawerSpec.node}
