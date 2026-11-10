@@ -50,7 +50,7 @@ light theme, next to the same word. The mask file and its ratios do not
 change. This is the title bar convention of Linear, Cursor and Arc: a
 monochrome glyph in the chrome, the tile on the dock icon.
 
-The app shows the mark in three places: the Goodboy chip (the line at the
+The app shows the mark in three places: the Goodboy line (at the
 foot of the column and the mark on its rail), the
 boot splash (the same black tile, drawn by `BootBrand`), and the lockup on first
 run and Home. That lockup is the black tile with the white mark, then the word.
@@ -98,7 +98,7 @@ The generator refuses to run when those two disagree.
 **The working chrome never paints the tile.** A fixed black tile on the top bar
 disappeared on the dark theme (1.09:1 against `bg-background`) and read as a
 dark block on the light theme. Neither is the brand. So the working chrome (top
-bar, sidebar, Goodboy chip) shows the bare glyph in the theme foreground. Do
+bar, sidebar, Goodboy line) shows the bare glyph in the theme foreground. Do
 not bring the tile back into it. The setup header and Home are not working
 chrome: they sit alone on the background, where the tile reads as the app icon.
 On the dark theme it stays black, with no border and no lighter variant, and it

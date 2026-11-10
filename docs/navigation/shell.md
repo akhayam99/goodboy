@@ -313,7 +313,8 @@ tools (`useOneRightPanel`, `closeWorkspaceTools`). Close keys
 read `selectDrawerPanel`, which is null under a studio unless a workspace tool
 shows beside it, and the history entry keeps the drawer. A workspace switch
 empties the slot. Esc inside a parked drawer is suspended, so it reaches the
-page, and after the trip the drawer's inner step (a plan in Ask) answers first
+page, and so are the list keys and the Scripts run and stop keys
+(`useIsDrawerParked`), so a hidden list never moves or runs a script. After the trip the drawer's inner step (a plan in Ask) answers first
 again. A drawer's own key (⌘⌥C, ⌘⌥X, ⌘⌥S) on a page leaves that page and every
 page stacked under it, and shows that drawer; it never closes a parked one,
 and an overlay drawer takes focus back. Esc in the session is one ladder: an open
@@ -532,7 +533,7 @@ covered.
   the page that owns those counts. Sessions that need you are not in the
   bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
   units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
-  door, the dock badge and the palette; questions ("3 questions") on the
+  door, the dock badge and Search or run; questions ("3 questions") on the
   Questions entry of the session rail; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
@@ -564,8 +565,8 @@ today. Open Impact`, opening the Impact studio on its Spend tab (it is never
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-wide` the command center narrows (its label is `Search or run`
-   until `chrome-labels`; the workspace name lives in its tooltip) and
+1. Below `chrome-wide` the command center narrows (its `Search or run` label
+   shows from `chrome-labels` up; the workspace name lives in its tooltip) and
    Usage keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
    (`running`, `scripts`, `today`) drop and Usage keeps

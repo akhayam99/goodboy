@@ -130,13 +130,6 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'palette: Browser',
-    covers: ['studio:browser', 'palette:Browser'],
-    door: 'palette',
-    open: () => openPalette(/^Browser$/),
-    lands: () => studio('Browser'),
-  },
-  {
     name: 'palette: New terminal in this session',
     covers: ['palette:New terminal in this session'],
     door: 'palette',

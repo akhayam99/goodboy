@@ -1,3 +1,4 @@
+import { useIsDrawerParked } from '@goodboy/ui';
 import { useEffect, useRef } from 'react';
 import { eventMatches, plainKeyYields } from '../../keyboard/dispatcher';
 import { SHORTCUTS, type ShortcutId } from '../../keyboard/registry';
@@ -53,9 +54,15 @@ const matchedListKey = ({ event }: MatchParams): ListKeyId | null =>
 export const useListKeys = (params: Params): void => {
   const latest = useRef(params);
   latest.current = params;
+  const isParked = useIsDrawerParked();
+  const isParkedRef = useRef(isParked);
+  isParkedRef.current = isParked;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isParkedRef.current) {
+        return;
+      }
       if (event.metaKey || event.ctrlKey || event.altKey || plainKeyYields(event)) {
         return;
       }
