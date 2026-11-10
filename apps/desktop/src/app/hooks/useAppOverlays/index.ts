@@ -24,11 +24,8 @@ type Params = {
   readonly currentSession: Session | null;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
-  readonly isSessionSidebarCollapsed: boolean;
   readonly isWorkspaceLauncherBranch: boolean;
-  readonly pinSessionSidebar: () => void;
   readonly studioPlacement?: StudioPlacement;
-  readonly settingsColumnSlot?: HTMLElement | null;
 };
 
 type OpenParams = {
@@ -39,11 +36,8 @@ export const useAppOverlays = ({
   currentSession,
   currentWorkspace,
   workspaceProjectRoot,
-  isSessionSidebarCollapsed,
   isWorkspaceLauncherBranch,
-  pinSessionSidebar,
   studioPlacement = 'cover',
-  settingsColumnSlot = null,
 }: Params) => {
   const overlay = useAppStore((state) => state.appStudio);
   const openStudio = useAppStore((state) => state.openStudio);
@@ -71,13 +65,7 @@ export const useAppOverlays = ({
   }, []);
 
   useStudioEvents({ open, goTo, close, openPalette });
-  useSessionSurfaceEvents({
-    close,
-    currentSession,
-    currentWorkspace,
-    isSessionSidebarCollapsed,
-    pinSessionSidebar,
-  });
+  useSessionSurfaceEvents({ close, currentWorkspace });
 
   const dismissDelete = useCallback(() => setDeleteOpen(false), []);
   useEscapeLayer(dismissDelete, deleteOpen);
@@ -185,7 +173,6 @@ export const useAppOverlays = ({
           currentWorkspace,
           workspaceProjectRoot,
           placement: studioPlacement,
-          settingsColumnSlot,
         });
 
   const layers: ReactNode = createElement(AppOverlayRouter, {

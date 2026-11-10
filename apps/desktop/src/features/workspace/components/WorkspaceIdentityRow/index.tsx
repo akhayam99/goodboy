@@ -44,7 +44,7 @@ export const WorkspaceIdentityRow = () => {
   }
 
   return (
-    <div className="relative ml-(--titlebar-inset) flex w-full min-w-0 items-center gap-0.5">
+    <div className="relative flex w-full min-w-0 items-center gap-0.5">
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"

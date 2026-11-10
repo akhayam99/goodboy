@@ -19,12 +19,15 @@ export const DefaultRow = ({
   children,
 }: Props) => (
   <BandRow isInteractive className="min-w-0 gap-3 py-0.5">
-    <span data-default-row={anchor} className="w-36 shrink-0 truncate text-body text-foreground">
+    <span
+      data-default-row={anchor}
+      className="min-w-0 flex-1 truncate text-body text-foreground @[600px]:w-36 @[600px]:flex-none"
+    >
       {label}
     </span>
     <TruncatedText
       className={cn(
-        'min-w-0 flex-1 truncate text-meta',
+        'hidden min-w-0 flex-1 truncate text-meta @[600px]:block',
         isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
       )}
     >

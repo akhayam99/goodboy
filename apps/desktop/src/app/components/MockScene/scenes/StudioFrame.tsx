@@ -14,20 +14,15 @@ const noop = () => undefined;
 
 type StudioFrameProps = {
   readonly target: FooterTarget;
-  readonly main: ReactNode | ((columnSlot: HTMLElement | null) => ReactNode);
+  readonly main: ReactNode;
   readonly columnPlace?: ColumnPlace;
 };
 
 export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => {
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    isSidebarCollapsed: false,
-    isSettingsOpen,
-  });
+  const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed: false });
   const shell = useSceneShell({ arrangement });
-  const slot = arrangement.leftSlot === 'column' ? shell.settingsSlot : null;
   const place = columnPlace === undefined ? sceneColumnPlace({ target }) : columnPlace;
 
   return (
@@ -49,10 +44,9 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
             isDraftShown={false}
             actions={shell.actions}
             {...(isSettingsOpen ? {} : { placeOverride: place })}
-            settingsSlotRef={shell.settingsSlotRef}
           />
         }
-        main={typeof main === 'function' ? main(slot) : main}
+        main={main}
         {...(isSettingsOpen && { studio: shell.studio })}
         studioCoversLeft={arrangement.studioCoversLeft}
       />

@@ -1000,9 +1000,9 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   tree's.
 - **A fix run has no page of its own.** Its transcript is a drawer on the
   Comments tab, so the Branch page behind it keeps its own back row.
-- **Settings draws no band in the column.** On Home, where it covers the
-  window, it claims its studio band with Settings, the scope and the App
-  section. The scope segment lists App, the workspace, Providers and
+- **Settings claims its studio band** with Back to app, then Settings, the
+  scope and the App section, beside the column and on Home alike. The scope
+  segment lists App, the workspace, Providers and
   Integrations; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.

@@ -12,7 +12,6 @@ type Props = {
   readonly groups: ReadonlyArray<SettingsGroup>;
   readonly workspaceName: string | null;
   readonly onSelect: (params: SettingsScopeChange) => void;
-  readonly isInColumn?: boolean;
 };
 
 type Folds = Readonly<Record<NestedScope, boolean>>;
@@ -38,13 +37,7 @@ type GroupParams = {
 const groupOf = ({ groups, scope }: GroupParams): SettingsGroup | undefined =>
   groups.find((group) => group.scope === scope);
 
-export const SettingsRail = ({
-  pageKey,
-  groups,
-  workspaceName,
-  onSelect,
-  isInColumn = false,
-}: Props) => {
+export const SettingsRail = ({ pageKey, groups, workspaceName, onSelect }: Props) => {
   const [folds, setFolds] = useState<Folds>(() => opened({ folds: CLOSED, groups, pageKey }));
   const [seenPageKey, setSeenPageKey] = useState(pageKey);
   if (seenPageKey !== pageKey) {
@@ -60,7 +53,7 @@ export const SettingsRail = ({
   return (
     <nav
       aria-label="Settings scopes"
-      className={cn('flex flex-col gap-3', isInColumn ? 'py-1' : PANE_RHYTHM.navRail.body)}
+      className={cn('flex flex-col gap-3', PANE_RHYTHM.navRail.body)}
     >
       {app === undefined ? null : (
         <SettingsRailPageGroup

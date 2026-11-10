@@ -1,12 +1,10 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
 import type { ShellArrangement } from '../../../../shellArrangement';
 import { useAppStore, useCurrentSession, useCurrentWorkspace } from '../../../../../store';
 import { useSceneShortcuts } from '../useSceneShortcuts';
-
-const noop = () => undefined;
 
 type Params = {
   readonly arrangement: ShellArrangement;
@@ -18,8 +16,6 @@ type SceneShell = {
   readonly isStudioOpen: boolean;
   readonly studio: ReactNode;
   readonly layers: ReactNode;
-  readonly settingsSlot: HTMLDivElement | null;
-  readonly settingsSlotRef: (node: HTMLDivElement | null) => void;
 };
 
 export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneShell => {
@@ -27,16 +23,12 @@ export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneSh
   const currentSession = useCurrentSession();
   const isStudioOpen = useAppStore((state) => state.appStudio !== null);
   const goToBoard = useGoToBoard();
-  const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
   const overlays = useAppOverlays({
     currentSession,
     currentWorkspace,
     workspaceProjectRoot: null,
-    isSessionSidebarCollapsed: arrangement.leftSidebarCollapsed,
     isWorkspaceLauncherBranch: false,
-    pinSessionSidebar: noop,
     studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
-    settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsSlot : null,
   });
   useSceneShortcuts({
     openPalette: overlays.openPalette,
@@ -64,7 +56,5 @@ export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneSh
     isStudioOpen,
     studio: overlays.studio,
     layers: overlays.layers,
-    settingsSlot,
-    settingsSlotRef: setSettingsSlot,
   };
 };

@@ -10,7 +10,7 @@ const isFocusHeldElsewhere = (): boolean => {
   if (!(active instanceof HTMLElement) || active === document.body || !active.isConnected) {
     return false;
   }
-  return active.closest('[data-studio-frame], [data-settings-column], [inert]') === null;
+  return active.closest('[data-studio-frame], [inert]') === null;
 };
 
 const isFocusable = (element: HTMLElement | null): element is HTMLElement =>

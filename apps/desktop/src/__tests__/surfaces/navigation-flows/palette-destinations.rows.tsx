@@ -15,7 +15,7 @@ import {
   lens,
   openCrumb,
   openPalette,
-  settingsColumn,
+  settingsPage,
   useAppStore,
   visible,
   getSection,
@@ -300,7 +300,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Workspace settings: Projects/, 'workspace settings folders'),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => visible('textbox', 'Workspace name'),
     ),
   },
@@ -310,7 +310,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Settings$/),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => visible('navigation', 'Settings scopes'),
     ),
   },
@@ -320,7 +320,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Check for updates/),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => heading('Updates'),
     ),
   },
@@ -422,7 +422,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'scope:providers', 'palette:Connect a provider'],
     open: () => openPalette(/^Connect a provider/),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => visible('region', 'Providers'),
     ),
   },
@@ -432,7 +432,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Pair an iPhone/, 'iPhone'),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => heading('iPhone'),
     ),
   },

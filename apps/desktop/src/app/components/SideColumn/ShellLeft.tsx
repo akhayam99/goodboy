@@ -15,7 +15,6 @@ type Props = {
   readonly actions: ColumnActions;
   readonly variant?: 'pinned' | 'peek';
   readonly onNavigate?: () => void;
-  readonly settingsSlotRef?: (node: HTMLDivElement | null) => void;
   readonly placeOverride?: ColumnPlace;
 };
 
@@ -29,7 +28,6 @@ export const ShellLeft = ({
   actions,
   variant = 'pinned',
   onNavigate,
-  settingsSlotRef,
   placeOverride,
 }: Props) => {
   const storePlace = useColumnPlace();
@@ -44,7 +42,6 @@ export const ShellLeft = ({
       actions={actions}
       isPeek={isPeek}
       {...(onNavigate !== undefined && { onNavigate })}
-      {...(!isPeek && settingsSlotRef !== undefined && { settingsSlotRef })}
     />
   );
   if (isPeek) {

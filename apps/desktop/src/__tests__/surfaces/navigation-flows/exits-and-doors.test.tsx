@@ -157,9 +157,6 @@ describe('the Board door leaves an open studio for the board', () => {
       await boot({ seed: 'pr' });
 
       await openDoor({ door });
-      if (door.kind === 'settings') {
-        await click(screen.getByRole('button', { name: /^Back to app/ }));
-      }
       await clickButton(/^Board/);
 
       expect(appStudioKind()).toBeNull();
@@ -217,21 +214,17 @@ describe('exactly one door in the frame is marked current', () => {
       await openDoor({ door });
 
       expect(currentMarks()).toEqual([door.name]);
-      if (door.kind === 'settings') {
-        expect(
-          document.querySelector('[data-column-layer="settings"]')?.hasAttribute('inert'),
-        ).toBe(false);
-        expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-          true,
-        );
-      }
+      expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
+      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
+        false,
+      );
     },
   );
 
   it('marks one door at a time while the doors replace each other', async () => {
     await boot({ seed: 'pr' });
 
-    for (const door of DOORS.filter((candidate) => candidate.kind !== 'settings')) {
+    for (const door of DOORS) {
       await openDoor({ door });
       expect(currentMarks()).toEqual([door.name]);
     }

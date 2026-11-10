@@ -16,12 +16,20 @@ export const STUDIO_RAIL_FOLD_BELOW = 880;
 const FOLDED = '1';
 const DOCKED = '0';
 
-const readFolded = ({ surface }: SurfaceParams): boolean => {
+type ReadParams = SurfaceParams & {
+  readonly foldedByDefaultBelow: number | null;
+};
+
+const readFolded = ({ surface, foldedByDefaultBelow }: ReadParams): boolean => {
   try {
-    return localStorage.getItem(studioRailFoldKey({ surface })) === FOLDED;
+    const saved = localStorage.getItem(studioRailFoldKey({ surface }));
+    if (saved !== null) {
+      return saved === FOLDED;
+    }
   } catch {
     return false;
   }
+  return foldedByDefaultBelow !== null && window.innerWidth < foldedByDefaultBelow;
 };
 
 const writeFolded = ({ surface, isFolded }: WriteParams): void => {
@@ -34,6 +42,7 @@ const writeFolded = ({ surface, isFolded }: WriteParams): void => {
 
 type Params = SurfaceParams & {
   readonly foldBelow?: number;
+  readonly foldedByDefaultBelow?: number;
 };
 
 export type StudioRailFold = {
@@ -46,10 +55,21 @@ export type StudioRailFold = {
 export const useStudioRailFold = ({
   surface,
   foldBelow = STUDIO_RAIL_FOLD_BELOW,
+  foldedByDefaultBelow,
 }: Params): StudioRailFold => {
   const paneRef = useRef<HTMLDivElement | null>(null);
-  const [isFolded, setIsFolded] = useState(() => readFolded({ surface }));
+  const [isFolded, setIsFolded] = useState(() =>
+    readFolded({ surface, foldedByDefaultBelow: foldedByDefaultBelow ?? null }),
+  );
   const [paneWidth, setPaneWidth] = useState<number | null>(null);
+  const [isOpenedNarrow, setIsOpenedNarrow] = useState(false);
+  const isNarrow = paneWidth !== null && paneWidth < foldBelow;
+
+  useEffect(() => {
+    if (!isNarrow) {
+      setIsOpenedNarrow(false);
+    }
+  }, [isNarrow]);
 
   useEffect(() => {
     const node = paneRef.current;
@@ -68,13 +88,17 @@ export const useStudioRailFold = ({
 
   const setFolded = useCallback(
     (isNowFolded: boolean) => {
+      if (isNarrow) {
+        setIsOpenedNarrow(!isNowFolded);
+        return;
+      }
       setIsFolded(isNowFolded);
       writeFolded({ surface, isFolded: isNowFolded });
     },
-    [surface],
+    [surface, isNarrow],
   );
 
-  const isNarrow = paneWidth !== null && paneWidth < foldBelow;
+  const isCollapsed = isNarrow ? !isOpenedNarrow : isFolded;
 
-  return { paneRef, isCollapsed: isFolded || isNarrow, canDock: !isNarrow, setFolded };
+  return { paneRef, isCollapsed, canDock: !isNarrow, setFolded };
 };

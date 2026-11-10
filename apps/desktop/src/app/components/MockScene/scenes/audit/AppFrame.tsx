@@ -57,23 +57,17 @@ export const AppFrame = ({
   const isDraftShown =
     hasDraft && draftWorkspaceId !== null && draftWorkspaceId === currentWorkspace?.id;
   const goToBoard = useGoToBoard();
-  const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
-  const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
   const isLauncher = view === 'launcher' || currentWorkspace === null;
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace !== null,
     isSidebarCollapsed: isMainCollapsed,
-    isSettingsOpen,
   });
   const overlays = useAppOverlays({
     currentSession,
     currentWorkspace,
     workspaceProjectRoot: '/mock/root',
-    isSessionSidebarCollapsed: isRailCollapsed,
     isWorkspaceLauncherBranch: isLauncher,
-    pinSessionSidebar: noop,
     studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
-    settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsSlot : null,
   });
   useSceneShortcuts({
     openPalette: overlays.openPalette,
@@ -138,7 +132,6 @@ export const AppFrame = ({
             currentSessionId={isDraftShown ? null : (currentSession?.id ?? null)}
             isDraftShown={isDraftShown}
             actions={actions}
-            settingsSlotRef={setSettingsSlot}
           />
         }
         main={<div className="relative h-full w-full">{main}</div>}

@@ -125,6 +125,7 @@ export {
   readStudioRailWidth,
   studioRailStorageKey,
 } from './components/StudioRailLayout';
+export type { StudioRailPlacement } from './components/StudioRailLayout';
 export { readStoredWidth, useResizableWidth } from './useResizableWidth';
 export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
 export { INNER_COLUMN_SHORTCUT, innerColumnStore } from './innerColumnStore';

@@ -97,7 +97,8 @@ describe('r4 layout scenes', () => {
 
     const header = pageHeaderOf(container);
     expect(header.getAttribute('data-page')).toBe(page);
-    expect(header.className.split(' ')).toContain('pt-3');
+    const isUnderTrail = header.hasAttribute('data-under-trail');
+    expect(header.className.split(' ').includes('pt-3')).toBe(!isUnderTrail);
     const column = header.closest('[data-page-column]');
     if (page === 'board') {
       expect(column).toBeNull();

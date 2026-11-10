@@ -54,7 +54,6 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
             isDraftShown={false}
             {...(!hasRail && { placeOverride: 'board' })}
             actions={shell.actions}
-            settingsSlotRef={shell.settingsSlotRef}
           />
         }
         main={

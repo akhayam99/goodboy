@@ -212,16 +212,9 @@ export const useAppShortcuts = ({
   useShortcut('workspace.switcher', () =>
     dispatchWindowEvent({ name: 'goodboy:open-workspace-switcher' }),
   );
-  const toggleVisibleSidebar = useCallback(() => {
-    const state = useAppStore.getState();
-    if (state.appStudio?.kind === 'settings') {
-      return;
-    }
-    toggleSidebar();
-  }, [toggleSidebar]);
   const goToBoard = useGoToBoard();
 
-  useShortcut('column.toggle', toggleVisibleSidebar);
+  useShortcut('column.toggle', toggleSidebar);
   useShortcut('innerColumn.toggle', () => {
     innerColumnStore.toggleCurrent();
   });

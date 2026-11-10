@@ -2,7 +2,7 @@ import { expect } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FOCUS_RING } from '@goodboy/ui';
-import { type Row, WAIT, clickButton, settingsColumn, settle } from './harness';
+import { type Row, WAIT, clickButton, settingsPage, settle } from './harness';
 
 const MOST_TABS = 60;
 const FOCUS_RING_TOKENS = FOCUS_RING.split(' ');
@@ -75,7 +75,7 @@ export const CONTROLS_ROWS: ReadonlyArray<Row> = [
     covers: [],
     open: async () => {
       await clickButton('Settings');
-      await settingsColumn();
+      await settingsPage();
       await clickButton(/^Updates/);
     },
     lands: async () => {

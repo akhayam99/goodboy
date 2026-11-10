@@ -241,7 +241,8 @@ Opening a side drawer folds the session rail when its expanded width would
 leave too little content for the push rule. A reader folds it at every width.
 Closing restores the saved fold. Unfolding by hand keeps the rail open for
 that drawer, including through resize; the drawer overlays when it cannot
-push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold.
+push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold, and
+neither the fold nor that unfold ever writes the saved choice.
 
 **Header grammar.** The close control always reads `Close`, in every drawer: the
 region is already named by its title (`<section aria-label={title}>`), so no
@@ -302,7 +303,7 @@ card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
 off-scale widths a floating surface declares per file and never lets one
 grow.
 
-**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy line with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. It stays away while its row is inert, as when Settings covers the column (`useIsAnchorInert`), and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy line with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. It stays away while its row is inert (`useIsAnchorInert`) and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
 
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the

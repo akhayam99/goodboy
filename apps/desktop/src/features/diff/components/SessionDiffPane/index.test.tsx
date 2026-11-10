@@ -289,7 +289,7 @@ describe('SessionDiffPane with the file rail docked on the right', () => {
     expect(buttons.slice(0, 3)).toEqual([
       'Next unviewed file',
       'Keyboard shortcuts',
-      'Fold the file list',
+      'Hide file list',
     ]);
     expect(within(railOf()).getByRole('separator', { name: 'Resize the file list' })).toBeDefined();
     expect(toolbarFiles()).toBeNull();
@@ -374,7 +374,7 @@ describe('SessionDiffPane with the file rail folded', () => {
   it('folds the rail, remembers it and opens it again from Files N in the toolbar', () => {
     renderPane({ diff: diffOf(FILES) });
 
-    fireEvent.click(within(railOf()).getByRole('button', { name: 'Fold the file list' }));
+    fireEvent.click(within(railOf()).getByRole('button', { name: 'Hide file list' }));
 
     expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
     expect(localStorage.getItem(FOLDED_KEY)).toBe('1');
@@ -505,7 +505,7 @@ describe('SessionDiffPane on a page too narrow to dock the rail', () => {
     pressShortcut({ id: 'diff.focusFilter' });
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Filter files' }));
 
-    fireEvent.click(within(railOf()).getByRole('button', { name: 'Fold the file list' }));
+    fireEvent.click(within(railOf()).getByRole('button', { name: 'Hide file list' }));
     expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
 
     const files = toolbarFiles();

@@ -166,7 +166,7 @@
         },
         {
           "title": "Settings",
-          "text": "Settings opens on the page you used last and takes over the left column. Every page is also in the palette.",
+          "text": "Settings opens on the page you used last, beside the sidebar, with its own list of pages and a search. Every page is also in the palette.",
           "group": "Set up",
           "also": "settings pages",
           "shown": true

@@ -11,6 +11,8 @@ const SETTINGS = destinationOf({ id: 'settings' });
 
 const SETTINGS = destinationOf({ id: 'settings' });
 
+const SETTINGS = destinationOf({ id: 'settings' });
+
 type Props = {
   readonly place: ColumnPlace;
   readonly isPrimary: boolean;

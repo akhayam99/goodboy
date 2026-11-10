@@ -423,7 +423,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/index.test.tsx": 42,
   "apps/desktop/src/features/settings/components/SettingsStudio/resetAndDisconnect.test.tsx": 2,
   "apps/desktop/src/features/settings/components/SettingsStudio/SecurityFindingsSection.test.tsx": 7,
-  "apps/desktop/src/features/settings/components/SettingsStudio/SettingsColumnNav.test.tsx": 6,
   "apps/desktop/src/features/settings/components/SettingsStudio/SettingsRail.test.tsx": 5,
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceAfterMergeSection.test.tsx": 3,
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProfileSection.test.tsx": 2,

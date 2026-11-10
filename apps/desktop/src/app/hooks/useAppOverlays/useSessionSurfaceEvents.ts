@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { Session, Workspace } from '@goodboy/types';
+import type { Workspace } from '@goodboy/types';
 import { openPlanAnywhere } from '../../../features/plans/openPlanAnywhere';
 import { openStartRun } from '../../../features/session/startRun/openStartRun';
 import { sessionPlace, useAppStore } from '../../../store';
@@ -7,21 +7,12 @@ import { eventSessionId, eventValue, isPlanId } from './eventDetail';
 
 type Params = {
   readonly close: () => void;
-  readonly currentSession: Session | null;
   readonly currentWorkspace: Workspace | null;
-  readonly isSessionSidebarCollapsed: boolean;
-  readonly pinSessionSidebar: () => void;
 };
 
 type Listener = readonly [string, (event: Event) => void];
 
-export const useSessionSurfaceEvents = ({
-  close,
-  currentSession,
-  currentWorkspace,
-  isSessionSidebarCollapsed,
-  pinSessionSidebar,
-}: Params) => {
+export const useSessionSurfaceEvents = ({ close, currentWorkspace }: Params) => {
   useEffect(() => {
     const openStartRunField = (event: Event) => {
       const sessionId = eventSessionId(event) ?? useAppStore.getState().currentSessionId;
@@ -62,11 +53,8 @@ export const useSessionSurfaceEvents = ({
         return;
       }
       close();
-      if (currentSession !== null && isSessionSidebarCollapsed) {
-        pinSessionSidebar();
-      }
     };
     window.addEventListener('goodboy:new-session', onNewSession);
     return () => window.removeEventListener('goodboy:new-session', onNewSession);
-  }, [close, currentSession, currentWorkspace, isSessionSidebarCollapsed, pinSessionSidebar]);
+  }, [close, currentWorkspace]);
 };

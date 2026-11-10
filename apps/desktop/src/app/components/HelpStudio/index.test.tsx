@@ -113,6 +113,14 @@ describe('HelpStudio', () => {
   it('searches the guide and the releases at once and groups the results by tab', () => {
     renderHelp();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Sponsor on GitHub' }));
+
+    expect(mocks.openUrl).toHaveBeenCalledExactlyOnceWith(SPONSOR_URL);
+  });
+
+  it('searches the guide and the releases at once and groups the results by tab', () => {
+    renderHelp();
+
     fireEvent.change(search(), { target: { value: 'search or run' } });
 
     const labels = hitLabels();

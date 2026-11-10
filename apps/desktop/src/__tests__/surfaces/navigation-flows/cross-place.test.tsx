@@ -174,13 +174,13 @@ const expectPlace = ({ session, lens, studio: kind, doors }: ExpectedPlace): voi
   expect(currentDoors()).toEqual(doors);
 };
 
-type ColumnState = 'column' | 'rail' | 'settings';
+type ColumnState = 'column' | 'rail';
 
 const expectColumn = (expected: ColumnState): void => {
   const column = document.querySelector('[data-side-column]');
   const rail = document.querySelector('[data-column-rail]');
   const nav = document.querySelector('[data-column-layer="nav"]');
-  const settings = document.querySelector('[data-column-layer="settings"]');
+  expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
   if (expected === 'rail') {
     expect(rail).not.toBeNull();
     expect(column).toBeNull();
@@ -188,11 +188,7 @@ const expectColumn = (expected: ColumnState): void => {
   }
   expect(column).not.toBeNull();
   expect(rail).toBeNull();
-  expect(nav?.hasAttribute('inert')).toBe(expected === 'settings');
-  if (expected === 'settings') {
-    expect(settings?.hasAttribute('inert')).toBe(false);
-    screen.getByRole('button', { name: /^Back to app/ });
-  }
+  expect(nav?.hasAttribute('inert')).toBe(false);
 };
 
 type FocusOwner = 'drawer' | 'column' | 'main' | 'studio' | 'none';
@@ -560,7 +556,7 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('swaps the column for Settings, and Back to app, Esc and Back all land on the same page', async () => {
+  it('opens Settings beside the live column, and Back to app, Esc and Back all land on the same page', async () => {
     await boot({ seed: 'pr' });
     await openCrumb(/^Artifacts/);
 
@@ -592,7 +588,11 @@ describe('moving across every place keeps one frame', () => {
       await click(door('settings'));
       expect(studio()).toBe('settings');
       screen.getByRole('navigation', { name: 'Settings scopes' });
-      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(true);
+      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
+        false,
+      );
+      expectColumnBesideStudio();
+      expect(currentDoors()).toEqual(['settings']);
 
       await exit();
 
@@ -612,7 +612,7 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('finds a setting from the column search and opens its page in place', async () => {
+  it('finds a setting from the scopes rail search and opens its page in place', async () => {
     await boot({ seed: 'pr' });
     await click(door('settings'));
     const entriesBefore =
@@ -932,7 +932,13 @@ describe('moving across every place keeps one frame', () => {
       door('settings').focus();
       await click(door('settings'));
       expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
-      expectColumn('settings');
+      expectColumn('column');
+      expectColumnBesideStudio();
+      await press('column.toggle');
+      expectColumn('rail');
+      expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
+      await press('column.toggle');
+      expectColumn('column');
       screen.getByRole('button', { name: /^Back to app/ }).focus();
       await backToApp();
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
