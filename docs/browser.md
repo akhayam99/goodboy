@@ -497,13 +497,15 @@ words (`features/browser/browserFailureText.ts`).
   (`MAX_HIDDEN_POPUPS`) and the pure picks of which tabs to close;
   `lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`), the
   sweep, show, hide and place, and `browser://tab-state`. The native back and forward step lives in
-  `src-tauri/src/platform/web_history.rs`. The passkey watch lives in
-  `browser/passkey.rs` (the handler class and the handler-to-tab map) with its
-  script in `browser/passkey.js`; `host.rs` adds the script to every frame,
+  `src-tauri/src/platform/web_history.rs`. The passkey watch keeps its
+  handler-to-tab map in `browser/passkey.rs`, its native handler class in
+  `src-tauri/src/platform/passkey_handler.rs` and its script in
+  `browser/passkey.js`; `host.rs` adds the script to every frame,
   registers the handler after the view is made, clears the mark on a page
   start and forgets the handler when the tab closes, when its open is refused
-  late and when its window is destroyed (`forget_window`). These two are the only
-  `unsafe` the host needs.
+  late and when its window is destroyed (`forget_window`). The two `platform/`
+  files are the only `unsafe` the host needs, which the unsafe ratchet in
+  `proc/signal.rs` enforces.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
   `about:blank` and `about:srcdoc` frames and a page that sends itself to the

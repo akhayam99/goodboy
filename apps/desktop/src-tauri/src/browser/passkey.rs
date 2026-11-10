@@ -52,79 +52,22 @@ pub(crate) static WATCHES: std::sync::LazyLock<PasskeyWatch> =
     std::sync::LazyLock::new(PasskeyWatch::default);
 
 #[cfg(target_os = "macos")]
-mod native {
-    use std::ffi::CStr;
-    use std::sync::OnceLock;
-
-    use objc2::rc::Retained;
-    use objc2::runtime::{AnyClass, AnyObject, ClassBuilder, Sel};
-    use objc2::{class, msg_send, sel};
-
-    use super::{OnAsk, WATCHES};
-
-    const HANDLER_NAME: &CStr = c"goodboyPasskey";
-    const HANDLER_CLASS: &CStr = c"GoodboyPasskeyHandler";
-
-    type ReceiveFn =
-        unsafe extern "C-unwind" fn(*mut AnyObject, Sel, *mut AnyObject, *mut AnyObject);
-
-    unsafe extern "C-unwind" fn did_receive(
-        this: *mut AnyObject,
-        _cmd: Sel,
-        _controller: *mut AnyObject,
-        _message: *mut AnyObject,
-    ) {
-        WATCHES.ask(this as usize);
-    }
-
-    fn handler_class() -> Option<&'static AnyClass> {
-        static CLASS: OnceLock<Option<&'static AnyClass>> = OnceLock::new();
-        *CLASS.get_or_init(|| {
-            let Some(mut builder) = ClassBuilder::new(HANDLER_CLASS, class!(NSObject)) else {
-                return AnyClass::get(HANDLER_CLASS);
-            };
-            let receive: ReceiveFn = did_receive;
-            unsafe {
-                builder.add_method(
-                    sel!(userContentController:didReceiveScriptMessage:),
-                    receive,
-                );
-            }
-            Some(builder.register())
-        })
-    }
-
-    pub(crate) fn watch_wk_web_view(
-        platform: tauri::webview::PlatformWebview,
-        tab_id: &str,
-        on_ask: OnAsk,
-    ) {
-        let Some(handler_class) = handler_class() else {
-            log::warn!("[browser] passkey_watch_skipped reason=no-handler-class");
-            return;
-        };
-        unsafe {
-            let view = platform.inner().cast::<AnyObject>();
-            let configuration: *mut AnyObject = msg_send![view, configuration];
-            let controller: *mut AnyObject = msg_send![configuration, userContentController];
-            if controller.is_null() {
-                log::warn!("[browser] passkey_watch_skipped reason=no-content-controller");
-                return;
-            }
-            let name: *mut AnyObject = msg_send![
-                class!(NSString),
-                stringWithUTF8String: HANDLER_NAME.as_ptr()
-            ];
-            let handler: Retained<AnyObject> = msg_send![handler_class, new];
-            let _: () = msg_send![controller, removeScriptMessageHandlerForName: name];
-            let _: () = msg_send![controller, addScriptMessageHandler: &*handler, name: name];
-            WATCHES.watch(Retained::as_ptr(&handler) as usize, tab_id, on_ask);
-        }
-    }
+pub(crate) fn watch_wk_web_view(
+    platform: tauri::webview::PlatformWebview,
+    tab_id: &str,
+    on_ask: OnAsk,
+) {
+    let added = crate::platform::passkey_handler::add_to_live_wk_web_view(platform, ask_from);
+    let Some(handler) = added else {
+        return;
+    };
+    WATCHES.watch(handler, tab_id, on_ask);
 }
 
 #[cfg(target_os = "macos")]
-pub(crate) use native::watch_wk_web_view;
+fn ask_from(handler: usize) {
+    WATCHES.ask(handler);
+}
 
 #[cfg(test)]
 mod tests {
