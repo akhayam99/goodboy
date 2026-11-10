@@ -252,8 +252,30 @@ it; Esc inside the page goes to the page.
   list toggle, Back, Forward and Reload, the address pill, Pin to the session's
   project (Unpin when a pin is shown), More and Close. The pane remembers the
   list toggle (`goodboy:browser-tab-list:v1`).
+- **Loading** shows on the row. From the host's `started` event of the shown tab
+  to its `finished` event, a 2px `info` line breathes on the bottom edge of the
+  row (`BrowserLoadLine`) and Reload becomes Stop (`browser_tab_stop`, which
+  clears the line once the host answered; a refusal keeps the line and shows
+  the words). The host gives no percentage, so the line has none. A `finished`
+  whose address differs from the load that started is dropped, an event for a
+  tab the session does not hold is ignored, and a load with no `finished` for
+  30 seconds turns the line off and says the page did not finish loading
+  (`LOAD_STALL_MS`); a late `finished` clears that line of text.
+- **Back and Forward** read `browser_history_state` (`canGoBack`, `canGoForward`)
+  for the shown tab and disable for real. The state is read again when the shown
+  address changes and when a load ends. Where the platform cannot tell (Windows
+  and Linux), both stay on.
 - **The address pill** (`BrowserAddressPill`) shows the page, not its URL: the
-  favicon tile, the title (`model.titleOf`) and the host muted after it. A tab
+  favicon, the title (`model.titleOf`) and the host muted after it. The favicon
+  is the page's icon when the host found one, and a letter tile when it did not
+  (`BrowserFavicon`; most dev servers have no icon). Rust fetches it once per
+  origin (`browser/favicon.rs`, `browser_favicon`): `/favicon.ico` first, then
+  up to three `<link rel="icon">` addresses read from the page. An icon must be
+  an `http` or `https` address on the page's own host, an image type and under
+  64 KB; a redirect off that host is not followed. The answer, a miss included,
+  is kept for the run, so a host with no icon is not asked again. The request
+  carries no cookies and no profile, and the app page reads the icon as a data
+  URL. The same icon shows on every row of that origin. A tab
   with no title yet shows the host alone. A click, or ⌘L, swaps it for the
   address field with the whole URL selected; Esc (an escape layer) or leaving
   the field swaps it back and drops the draft, and a submit that went through
@@ -280,7 +302,10 @@ it; Esc inside the page goes to the page.
   screen. The pane reads the live address and title every 1.5 seconds and
   saves a session tab's row whenever they differ from the stored row, a page
   that comes back to an earlier address included. A failed save is tried
-  again at the next change.
+  again at the next change. A `browser://tab-load` `finished` event reads
+  them at once, so a title does not wait for the poll; the poll stays for the
+  moves a page makes with no load, such as a script changing the address or the
+  title.
 - **Placement**: one loop (`createNativePlacement`) owns show, hide and
   `set_bounds`. Every frame, with a `ResizeObserver` as backup, it measures the
   placeholder (`viewBoundsOf`) and wants the shown tab at that rect, or no tab
@@ -480,7 +505,12 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 - Back and forward are native on macOS: the host steps the WebKit view's own
   history, so a page cannot trap them. Tauri 2.12 exposes no
   native step, so on Windows and Linux they still run `history.back()` and
-  `history.forward()` inside the page, which the page can redefine.
+  `history.forward()` inside the page, which the page can redefine. The same
+  split holds for Stop (`stopLoading` on macOS, `window.stop()` elsewhere) and
+  for `canGoBack` and `canGoForward`, which only macOS reports.
+- The host reports a load's start and its finish, never a failure: a page that
+  fails or is cancelled sends no `finished`, so its line ends at the 30 second
+  limit, or when Stop is pressed.
 
 ## Errors
 
@@ -488,7 +518,7 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
 (`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
 `session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
-`profile-shared`, `profile-unavailable`, `tab-row-gone`, `tab-row-owner`,
+`profile-shared`, `profile-unavailable`, `history-unavailable`, `tab-row-gone`, `tab-row-owner`,
 `tab-rows-changed`, `tab-rows-failed`), never a sentence. The pane owns the
 words (`features/browser/browserFailureText.ts`).
 
@@ -496,12 +526,16 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  thirteen `browser_*` commands; `profile.rs` holds the profile id, the
+  sixteen `browser_*` commands; `load.rs` maps the page load callback to
+  `browser://tab-load` (`started`, `finished`, the tab id and the address) for
+  the owning window only; `favicon.rs` holds the icon rules and the per-origin
+  cache; `profile.rs` holds the profile id, the
   per-platform store, the switch and the clear; `registry.rs` holds the tabs, the popup seats
   (`MAX_HIDDEN_POPUPS`) and the pure picks of which tabs to close;
   `lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`), the
   sweep, show, hide and place, and `browser://tab-state`. The native back and forward step lives in
-  `src-tauri/src/platform/web_history.rs`, the only `unsafe` the host needs.
+  `src-tauri/src/platform/web_history.rs`, the only `unsafe` the host needs, with
+  the history state read and the stop.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
   `about:blank` and `about:srcdoc` frames and a page that sends itself to the
@@ -577,8 +611,15 @@ words (`features/browser/browserFailureText.ts`).
   the cover check for a popover with no role, for tooltips and for a page view
   under an overlay dock.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane`, `browser-pane-tabs`,
-  `browser-pane-address` (the field open) and `browser-pane-more` (the menu
-  open), each in light and dark, draw a stand in where the native view goes.
+  `browser-pane-address` (the field open), `browser-pane-more` (the menu
+  open) and `browser-pane-loading` (the load line, Stop, a fetched icon, Forward
+  off), each in light and dark, draw a stand in where the native view goes.
+  `BrowserPane/hostFacts.test.tsx` pins the load line from `started` to
+  `finished`, Reload turning into Stop, the older `finished` dropped, an
+  unknown tab ignored, the 30 second limit, a refused stop, Back and Forward
+  from the host's state, and the icon and the letter tile. The slice
+  `store/slices/browser-host/` holds the loads by live tab id and the icons by
+  origin.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
   `isOwnBrowserClick.ts` is the click rule, `sessionOfElement.ts` reads
   `data-browser-session`, `claimSessionLink.ts` takes a link from the shared
