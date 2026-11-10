@@ -5,8 +5,10 @@
 ## Studios
 
 Every studio (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Settings,
-Changelog, the guide, Add workspace) renders in the shell's studio slot, which
-covers the content area only, beside the column, as its own sheet. The column
+Changelog, the guide, Add workspace) is a page in the one main slot: it renders
+inside the content sheet, over the page it replaces, beside the column and with
+the drawer column beside the sheet. The page under it stays mounted and inert,
+and a session drawer parks until the studio closes. The column
 never changes for a studio: it stays live in both sidebar states, so another
 door or a session row is one click away, and ⌘B and the sidebar toggle fold it
 on every page (`shellArrangement` takes no studio). **Settings is a page with

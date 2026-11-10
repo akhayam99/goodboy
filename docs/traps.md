@@ -40,6 +40,11 @@ The Rust files with the most comments lost them in one pass. What a reader would
   move: it follows the page. A row never opens a tool: the tool is open already
   or the user did not ask for it.
 
+- A drawer parked under a studio is still in `state.drawer`. Anything that
+  shows or closes the drawer reads `selectDrawerPanel` (null under a studio);
+  `selectOpenDrawer` answers what the session holds, so a close path that reads
+  it would close a drawer nobody sees.
+
 - The macOS menu bar and the web view share every ⌘ key, and the web view sees
   the key first: a `preventDefault` in a shortcut handler stops the native menu
   item, and a key nothing handles falls through to it. So a key runs once

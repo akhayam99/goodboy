@@ -287,11 +287,16 @@ waits in a back chip at the left of the drawer head, one level deep, so a
 third open drops the oldest. The chip reads the kind and the title
 (`Plan · Add tax to the checkout total`, `Terminal`); a click swaps the two.
 Closing the drawer brings back what the chip holds, and closing that empties
-the slot. Esc in the session is one ladder: an open menu, popover or field
-takes it first, then the top of the slot closes, then the drawer from the
-chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS, File > Close the Drawer)
-closes the top of the slot from anywhere, a focused terminal or web page
-included; an open menu or dialog takes it first. The right rail stays at 44px
+the slot. **The dock follows the page.** A session drawer belongs to its
+session: while a page (a studio) replaces the session, the drawer parks, out of
+sight and out of reach of every close key, and Esc, Close or Back brings it
+back with the session (`selectDrawerPanel` shows nothing under a studio, and
+the history entry keeps the drawer). Esc in the session is one ladder: an open
+menu, popover or field takes it first, then the top of the slot closes, then
+the drawer from the chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS,
+File > Close the Drawer) closes the top of the slot from anywhere, a focused
+terminal or web page included; an open menu or dialog takes it first, and a
+parked drawer is never closed. The right rail stays at 44px
 and says the same thing: the tool in the slot is pressed, the tool in the chip
 wears a small ring and is named waiting, and a signal dot sits with either (see
 [session-rail.md](./session-rail.md), The session tools). The rules, the store and the navigation cases are in
@@ -410,11 +415,13 @@ hide animation or overlay can move it.
   comes back when the pane closes. The session rail keeps its own toggle at the
   left of its top row.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
-  work row, so it can hover over main without taking layout space. The studio
-  slot covers the content area only (`studioCoversLeft={false}`), as its own
-  sheet, so the column stays live beside every studio; the peek is drawn after
-  it, so a peeked column floats over a studio too. A studio never covers the
-  top bar.
+  work row, so it can hover over main without taking layout space. A studio is
+  a page in the one main slot: it draws inside the content sheet, over the page
+  it replaces (`AppShell`'s `studio`, `[data-studio-slot="content"]`), so the
+  column stays live beside every studio and the drawer column stays beside the
+  sheet. The page under it stays mounted and inert. The peek is drawn after
+  the sheet, so a peeked column floats over a studio too. A studio never covers
+  the top bar.
 
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.

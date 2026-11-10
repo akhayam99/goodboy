@@ -21,10 +21,10 @@ what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.
 
 Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
 column never changes its content: no page swaps it, and only the sidebar toggle
-and ⌘B fold it. A studio never covers it: `studioCoversLeft={false}` puts the
-studio slot in the `main` area as its own wrapped sheet (`bg-background`, the
-`wrapped` sheet edge), and `StudioFrame` with `placement="content"` draws its
-band on that sheet instead of on the chrome. Settings is such a page, with its
+and ⌘B fold it. A studio never covers it: a studio is a page in the one main
+slot, drawn inside the content sheet over the page it replaces, and
+`StudioFrame` with `placement="content"` draws its band on that sheet instead
+of on the chrome. Settings is such a page, with its
 scopes in a page rail beside its detail.
 
 **A session has its own rail, not a card.** The workspace list keeps every

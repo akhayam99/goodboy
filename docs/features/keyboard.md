@@ -43,7 +43,7 @@ The strip ends with the same controls on every scope.
 **Close a tab**
 
 - Typing `exit` closes the tab. The next New terminal is a new tab with a new id and an empty prompt.
-- **⌘W** closes one thing per press and never quits Goodboy. The order is a popover, the selected terminal tab, the drawer, then the session view.
+- **⌘W** closes one thing per press and never quits Goodboy. The order is a popover, the selected terminal tab, the drawer, a page such as Tasks, then the session view. It only closes what you can see: a session's drawer waits out of sight while a page is open, and comes back when you leave the page.
 - **⌘W** asks first while a command runs. The question names the tab and sits under its close button.
 - In the drawer, **⌘W** does not close the last idle shell. The drawer closes and the shell keeps running with its scrollback.
 

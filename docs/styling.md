@@ -136,7 +136,7 @@ chrome. `index.html` carries the light cover as a literal 15% and
 
 ## The window grid
 
-Columns, resize handles and the studio slot
+Columns and resize handles
 are areas of **one** CSS grid. Their
 widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and
@@ -153,9 +153,11 @@ bottom-left corners take `rounded-frame` (10px) and one uniform 1px
 the window square. With no sidebar, or while it is hidden, the sheet has no
 radius and only a top and bottom edge. The left resize handle draws no line at
 rest: on hover and drag its `data-left-resize` state turns the sheet's left
-edge to `border` in 120ms, so the sheet edge is the handle. A studio follows
-the same rule: `StudioRailLayout` puts its rail on the chrome and its detail on
-a wrapped sheet, and a studio without a rail is a flush sheet.
+edge to `border` in 120ms, so the sheet edge is the handle. A studio is drawn
+inside this sheet, over the page it replaces (`[data-studio-slot]`, `z-studio`),
+so it keeps the sheet's shape. A studio that draws its own sheets beside a
+panel (Tasks, Chat, Workflows, `data-studio-sheet-owner`) turns the outer
+sheet's border and background off while it is open, and back on as it leaves.
 
 The top bar is drawn outside the window grid. Its centred layout uses two
 equal flexible outer columns around the command center. Page breadcrumbs stay
