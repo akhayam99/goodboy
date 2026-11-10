@@ -88,6 +88,7 @@ const factsOf = ({ args }: OpenArgs): BrowserTabFacts => {
     sessionId: args.sessionId,
     url: args.url,
     title: '',
+    state: 'live',
     isShown: false,
     hiddenSinceMs: null,
     openerId: null,
@@ -355,9 +356,9 @@ describe('the browser page', () => {
 
     await waitFor(() =>
       expect(groupLabels()).toEqual([
+        'Pinned · payments-api',
         'Show tax in the checkout total',
         'Fix the rounding drift',
-        'Pinned for payments-api',
       ]),
     );
     const checkout = screen.getByRole('region', { name: 'Show tax in the checkout total' });
@@ -532,7 +533,7 @@ describe('the browser page', () => {
     openPage({ tabId: null, sessionId: null });
 
     await waitFor(() =>
-      expect(groupLabels()).toEqual(['Show tax in the checkout total', 'Pinned for payments-api']),
+      expect(groupLabels()).toEqual(['Pinned · payments-api', 'Show tax in the checkout total']),
     );
     expect(screen.queryByText('No browser tabs yet')).toBeNull();
     screen.getByRole('button', { name: 'API guides, pinned' });

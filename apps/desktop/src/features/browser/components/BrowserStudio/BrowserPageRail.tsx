@@ -71,6 +71,7 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
                       url={tab.url}
                       isSelected={isHere && tab.id === shownId}
                       isPin={group.isPins}
+                      isAsleep={isHere && model.isAsleep({ tab })}
                       onSelect={() => onPick({ group, tab })}
                       {...(isHere && !group.isPins && { onClose: () => model.close({ tab }) })}
                     />

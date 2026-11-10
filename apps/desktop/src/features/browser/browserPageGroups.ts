@@ -41,12 +41,12 @@ export const browserPageGroups = ({
     return [
       {
         key: `pins:${project.projectId}`,
-        label: `Pinned for ${project.projectName}`,
+        label: `Pinned · ${project.projectName}`,
         sessionId,
         tabs: project.pins,
         isPins: true,
       },
     ];
   });
-  return [...sessionGroups, ...pinGroups];
+  return [...pinGroups, ...sessionGroups];
 };

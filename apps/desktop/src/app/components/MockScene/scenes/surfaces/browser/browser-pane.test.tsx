@@ -68,6 +68,8 @@ describe('the browser pane scenes', () => {
       'browser-page-dark',
       'browser-pane',
       'browser-pane-dark',
+      'browser-pane-rail',
+      'browser-pane-rail-dark',
       'browser-pane-tabs',
       'browser-pane-tabs-dark',
       'browser-peek',
@@ -104,7 +106,7 @@ describe('the browser pane scenes', () => {
     const groups = Array.from(list.querySelectorAll('[data-browser-group]')).map((group) =>
       group.getAttribute('data-browser-group'),
     );
-    expect(groups).toEqual(['session', 'session', 'pins']);
+    expect(groups).toEqual(['pins', 'session', 'session']);
     expect(
       within(list).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
     ).toBe('page');
@@ -138,10 +140,21 @@ describe('the browser pane scenes', () => {
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
     const list = within(pane).getByRole('navigation', { name: 'Browser tabs' });
     within(list).getByText('This session');
-    within(list).getByText(/^Pinned for /);
-    within(list).getByText('Tabs close when the session is archived.');
+    within(list).getByText(/^Pinned · /);
+    expect(within(list).queryByText('Tabs close when the session is archived.')).toBeNull();
     expect(
       within(pane).getByRole('button', { name: 'Hide tab list' }).getAttribute('aria-pressed'),
     ).toBe('true');
+  });
+
+  it('marks the sleeping tab and folds the list to a rail of favicons', async () => {
+    mount({ id: 'browser-pane-rail' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const list = within(pane).getByRole('navigation', { name: 'Browser tabs' });
+    expect(list.getAttribute('data-tab-list')).toBe('rail');
+    await within(list).findByRole('button', { name: 'Tax rates, asleep' }, WAIT);
+    within(list).getByRole('button', { name: 'Staging checkout, pinned' });
+    expect(within(list).queryByText('Tax rates')).toBeNull();
   });
 });

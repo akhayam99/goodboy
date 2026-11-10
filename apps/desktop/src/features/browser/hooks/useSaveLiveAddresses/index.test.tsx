@@ -59,6 +59,7 @@ const factsAt = ({ url }: FactsParams): ReadonlyArray<BrowserTabFacts> => [
     sessionId: SESSION_ID,
     url,
     title: 'Checkout',
+    state: 'live',
     isShown: true,
     hiddenSinceMs: null,
     openerId: null,

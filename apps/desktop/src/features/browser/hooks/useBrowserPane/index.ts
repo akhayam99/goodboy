@@ -17,6 +17,7 @@ import type { BrowserPaneModel } from '../../types';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
+import { useTabStates } from '../useTabStates';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -73,6 +74,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     sessionId,
     onError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   });
+  const states = useTabStates({ facts });
   const [isDrafting, setIsDrafting] = useState(false);
   const [wakeAttempt, setWakeAttempt] = useState(0);
   const shown = isDrafting ? null : shownTabOf({ tabs, pins, activeId, pinId });
@@ -152,6 +154,11 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         return fact.title;
       }
       return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
+    },
+    isAsleep: ({ tab }) => {
+      const liveId = live?.[tab.id];
+      const state = liveId === undefined ? undefined : states.get(liveId);
+      return state === 'asleep' || state === 'closed';
     },
     error,
     isDrafting,
