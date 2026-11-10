@@ -91,6 +91,16 @@ fn open(app: &App<MockRuntime>, window_label: &str, session_id: &str) -> String 
     open_for(app, window_label, northwind(), session_id)
 }
 
+#[cfg(target_os = "macos")]
+#[test]
+fn builds_every_tab_with_a_current_safari_user_agent() {
+    use super::host::TAB_USER_AGENT;
+    assert!(TAB_USER_AGENT.contains("AppleWebKit/605.1.15"));
+    assert!(TAB_USER_AGENT.contains(" Version/26.0 "));
+    assert!(TAB_USER_AGENT.ends_with(" Safari/605.1.15"));
+    assert!(include_str!("host.rs").contains(".user_agent(TAB_USER_AGENT)"));
+}
+
 #[test]
 fn creates_no_webview_until_a_tab_opens() {
     let app = app_with_windows(&["main"]);
