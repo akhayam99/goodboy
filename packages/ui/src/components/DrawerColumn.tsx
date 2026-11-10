@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { cn } from '../cn';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
+import { DrawerParkedContext } from '../drawerParkedContext';
 import { dismissTopEscapeLayer } from '../escape';
 import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
 import { ResizeHandle } from './ResizeHandle';
@@ -22,29 +23,17 @@ import {
   DRAWER_TIERS,
   drawerAsideWidthOf,
   drawerLayoutOf,
-  type DrawerLayout,
   type DrawerMode,
   type DrawerPlacement,
   type DrawerSizing,
 } from '../drawerGeometry';
+import { unmeasuredLayoutOf } from '../unmeasuredLayoutOf';
 
 export const RIGHT_DRAWER_STORAGE_KEY = 'goodboy:right-drawer-width:v1';
 export const READER_DRAWER_STORAGE_KEY = 'goodboy:reader-drawer-width:v1';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
-
-type UnmeasuredParams = {
-  readonly savedWidth: number;
-  readonly sizing: DrawerSizing;
-  readonly placement: DrawerPlacement;
-};
-
-const unmeasuredLayoutOf = ({ savedWidth, sizing, placement }: UnmeasuredParams): DrawerLayout => ({
-  mode: placement === 'overlay' ? 'overlay' : 'push',
-  width: savedWidth,
-  dragMax: DRAWER_TIERS[sizing].max,
-});
 
 export type DrawerColumnFrame = 'sheet' | 'none';
 
@@ -177,11 +166,11 @@ export const DrawerColumn = ({
 
   useEffect(() => {
     const card = cardRef.current;
-    if (!isOverlayOpen || card === null || card.contains(document.activeElement)) {
+    if (!isOverlayOpen || isParked || card === null || card.contains(document.activeElement)) {
       return;
     }
     (card.querySelector<HTMLElement>(FOCUSABLE) ?? card).focus({ preventScroll: true });
-  }, [isOverlayOpen]);
+  }, [isOverlayOpen, isParked]);
 
   const isPushed = mode === 'push' && !isParked;
   const isSheet = frame === 'sheet';
@@ -189,7 +178,7 @@ export const DrawerColumn = ({
 
   return (
     <DrawerContentContext.Provider
-      value={{ columnWidth: column.width, savedWidth: resizable.width, setInset, mode, isParked }}
+      value={{ columnWidth: column.width, savedWidth: resizable.width, setInset, mode }}
     >
       <div
         ref={column.ref}
@@ -323,7 +312,9 @@ export const DrawerColumn = ({
                       !isExiting && 'motion-safe:animate-drawer-swap',
                     )}
                   >
-                    {isOpen ? drawer : null}
+                    <DrawerParkedContext.Provider value={isParked}>
+                      {isOpen ? drawer : null}
+                    </DrawerParkedContext.Provider>
                   </div>
                 </div>
               </div>

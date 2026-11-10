@@ -118,7 +118,7 @@ export const DrawerFrame = ({
       return;
     }
     onClose();
-  }, drawerContent?.isParked !== true);
+  });
 
   useEffect(() => {
     const section = sectionRef.current;
