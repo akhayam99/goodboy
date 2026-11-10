@@ -35,9 +35,23 @@ struct Tab {
     profile: ProfileId,
     rect: Rect,
     opened: u64,
+    was_passkey_asked: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct PasskeySeat {
+    pub(crate) session_id: String,
+    pub(crate) window_label: String,
 }
 
 impl Tab {
+    fn passkey_seat(&self) -> PasskeySeat {
+        PasskeySeat {
+            session_id: self.facts.session_id.clone(),
+            window_label: self.window_label.clone(),
+        }
+    }
+
     fn is_hidden_popup_of(&self, session_id: &str) -> bool {
         self.facts.session_id == session_id
             && self.facts.opener_id.is_some()
@@ -232,6 +246,7 @@ impl BrowserRegistry {
                 profile: tab.profile,
                 rect: tab.rect,
                 opened,
+                was_passkey_asked: false,
             },
         );
         facts
@@ -473,6 +488,26 @@ impl BrowserRegistry {
 
     pub(crate) fn set_title(&self, id: &str, title: &str) -> Option<TabFacts> {
         self.update(id, |facts| facts.title = title.to_string())
+    }
+
+    pub(crate) fn mark_passkey_asked(&self, id: &str) -> Option<PasskeySeat> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let tab = tabs.by_id.get_mut(id)?;
+        if tab.was_passkey_asked || tab.is_closed() {
+            return None;
+        }
+        tab.was_passkey_asked = true;
+        Some(tab.passkey_seat())
+    }
+
+    pub(crate) fn clear_passkey_asked(&self, id: &str) -> Option<PasskeySeat> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let tab = tabs.by_id.get_mut(id)?;
+        if !tab.was_passkey_asked {
+            return None;
+        }
+        tab.was_passkey_asked = false;
+        Some(tab.passkey_seat())
     }
 
     fn update(&self, id: &str, change: impl FnOnce(&mut TabFacts)) -> Option<TabFacts> {

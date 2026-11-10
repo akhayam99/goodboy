@@ -762,6 +762,7 @@ pub fn run() {
             browser::commands::browser_tab_close,
             browser::commands::browser_tab_list,
             browser::commands::browser_session_close,
+            browser::passkey::browser_passkey_asked,
             browser::tab_rows::browser_tab_rows_list,
             browser::tab_rows::browser_tab_row_save,
             browser::tab_rows::browser_tab_rows_reorder,

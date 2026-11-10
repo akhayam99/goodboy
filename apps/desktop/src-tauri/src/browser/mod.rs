@@ -2,6 +2,7 @@ pub(crate) mod commands;
 mod guard;
 mod host;
 mod lifecycle;
+pub(crate) mod passkey;
 mod profile;
 mod reason;
 mod registry;
@@ -24,7 +25,9 @@ where
     F: Fn(Invoke<R>) -> bool + Send + Sync,
 {
     move |invoke| {
-        if guard::is_browser_label(invoke.message.webview_ref().label()) {
+        if guard::is_browser_label(invoke.message.webview_ref().label())
+            && invoke.message.command() != passkey::PASSKEY_COMMAND
+        {
             invoke
                 .resolver
                 .reject(reason::refused(reason::BROWSER_CALLER));

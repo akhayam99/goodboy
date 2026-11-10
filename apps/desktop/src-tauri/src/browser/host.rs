@@ -9,6 +9,7 @@ use tauri::{
 
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
+use super::passkey;
 use super::profile::{self, ProfileId};
 use super::reason::{
     self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
@@ -216,7 +217,9 @@ fn builder_for<R: Runtime>(
     let title_tab = id.to_string();
     let builder = WebviewBuilder::new(guard::label_of(id), WebviewUrl::External(url.clone()));
     #[cfg(target_os = "macos")]
-    let builder = builder.user_agent(TAB_USER_AGENT);
+    let builder = builder
+        .user_agent(TAB_USER_AGENT)
+        .initialization_script(passkey::PASSKEY_SCRIPT);
     builder
         .on_navigation(move |target| guard::may_navigate(target, &navigation_origins))
         .on_new_window(move |target, _features| {
@@ -227,7 +230,8 @@ fn builder_for<R: Runtime>(
         })
         .on_download(|_webview, _event| false)
         .on_page_load(move |webview, payload| {
-            if payload.event() != PageLoadEvent::Finished {
+            if payload.event() == PageLoadEvent::Started {
+                passkey::clear_on_load(webview.app_handle(), &load_tab);
                 return;
             }
             let registry = webview.app_handle().state::<BrowserRegistry>();

@@ -80,6 +80,10 @@ pub(crate) fn label_of(tab_id: &str) -> String {
     format!("{LABEL_PREFIX}{tab_id}")
 }
 
+pub(crate) fn tab_id_of(label: &str) -> Option<&str> {
+    label.strip_prefix(LABEL_PREFIX).filter(|id| !id.is_empty())
+}
+
 pub(crate) fn is_web_address(url: &Url, origins: &AppOrigins) -> bool {
     WEB_SCHEMES.contains(&url.scheme()) && !origins.is_app_origin(url)
 }

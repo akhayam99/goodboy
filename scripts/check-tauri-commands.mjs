@@ -23,6 +23,10 @@ const ALLOWLIST_REASON_BY_COMMAND = new Map([
     'browser_profile_isolation',
     'the browser pane calls it to warn about a shared profile, docs/browser.md',
   ],
+  [
+    'browser_passkey_asked',
+    'the passkey probe in a macOS tab calls it, never the app document, docs/browser.md',
+  ],
 ]);
 const WINDOW_COMMANDS_PATH = resolve(ROOT_DIRECTORY, 'apps/desktop/src-tauri/window-commands.json');
 const RETIRED_COMMAND_PATTERN = /^skill_/;

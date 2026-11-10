@@ -18,6 +18,7 @@ use super::host::{
 use super::lifecycle::{
     close_switched, hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT,
 };
+use super::passkey::{clear_on_load, PASSKEY_COMMAND, PASSKEY_EVENT, PASSKEY_SCRIPT};
 use super::profile::{begin_clear, ProfileId};
 use super::reason::{
     BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY, PROFILE_LIVE,
@@ -1325,4 +1326,145 @@ fn keeps_the_running_workspace_when_the_new_one_has_no_folder() {
         .facts(&running)
         .expect("facts");
     assert!(facts.is_shown);
+}
+
+fn app_with_passkey_wall(labels: &[&str]) -> App<MockRuntime> {
+    let app = mock_builder()
+        .invoke_handler(refuse_browser_pages(tauri::generate_handler![
+            probe,
+            super::passkey::browser_passkey_asked
+        ]))
+        .build(mock_context(noop_assets()))
+        .expect("app builds");
+    app.manage(BrowserRegistry::default());
+    app.manage(BrowserProfiles::under(
+        std::env::temp_dir().join(format!("goodboy-browser-test-{}", uuid_v4())),
+    ));
+    for label in labels {
+        WebviewWindowBuilder::new(&app, *label, WebviewUrl::default())
+            .build()
+            .expect("window builds");
+    }
+    app
+}
+
+fn hear_passkeys(app: &App<MockRuntime>, label: &str) -> Arc<Mutex<Vec<serde_json::Value>>> {
+    let heard = Arc::new(Mutex::new(vec![]));
+    let sink = Arc::clone(&heard);
+    app.get_webview_window(label)
+        .expect("window")
+        .listen(PASSKEY_EVENT, move |event| {
+            sink.lock()
+                .expect("sink")
+                .push(serde_json::from_str(event.payload()).expect("payload is json"));
+        });
+    heard
+}
+
+fn report_passkey(app: &App<MockRuntime>, label: &str) -> Result<(), serde_json::Value> {
+    let caller = Caller(app.get_webview(label).expect("caller webview"));
+    get_ipc_response(&caller, local_request(PASSKEY_COMMAND)).map(|_| ())
+}
+
+#[test]
+fn lets_a_tab_report_a_passkey_ask_and_no_other_command() {
+    let app = app_with_passkey_wall(&["main"]);
+    let heard = hear_passkeys(&app, "main");
+    let id = open(&app, "main", "harborline");
+    let page = label_of(&id);
+
+    assert_eq!(report_passkey(&app, &page), Ok(()));
+    let refused = get_ipc_response(
+        &Caller(app.get_webview(&page).expect("page")),
+        local_request("probe"),
+    )
+    .expect_err("refused");
+    assert_eq!(refused["message"], BROWSER_CALLER);
+
+    let heard = heard.lock().expect("heard");
+    assert_eq!(heard.len(), 1);
+    assert_eq!(heard[0]["tabId"], id.as_str());
+    assert_eq!(heard[0]["sessionId"], "harborline");
+    assert_eq!(heard[0]["host"], "localhost");
+    assert_eq!(heard[0]["isAsked"], true);
+}
+
+#[test]
+fn tells_a_passkey_ask_once_per_load_and_clears_it_on_the_next_load() {
+    let app = app_with_passkey_wall(&["main"]);
+    let heard = hear_passkeys(&app, "main");
+    let id = open(&app, "main", "harborline");
+    let page = label_of(&id);
+
+    report_passkey(&app, &page).expect("first ask");
+    report_passkey(&app, &page).expect("second ask in the same load");
+    assert_eq!(heard.lock().expect("heard").len(), 1);
+
+    clear_on_load(app.handle(), &id);
+    clear_on_load(app.handle(), &id);
+    report_passkey(&app, &page).expect("ask after the next load");
+
+    let asked: Vec<bool> = heard
+        .lock()
+        .expect("heard")
+        .iter()
+        .map(|ask| ask["isAsked"].as_bool().expect("flag"))
+        .collect();
+    assert_eq!(asked, vec![true, false, true]);
+}
+
+#[test]
+fn tells_only_the_window_that_owns_the_asking_tab() {
+    let app = app_with_passkey_wall(&["main", "win-2"]);
+    let mine = hear_passkeys(&app, "main");
+    let theirs = hear_passkeys(&app, "win-2");
+    let id = open(&app, "main", "harborline");
+
+    report_passkey(&app, &label_of(&id)).expect("asks");
+
+    assert_eq!(mine.lock().expect("mine").len(), 1);
+    assert!(theirs.lock().expect("theirs").is_empty());
+}
+
+#[test]
+fn refuses_a_passkey_report_from_a_window_that_is_not_a_tab() {
+    let app = app_with_passkey_wall(&["main"]);
+    let heard = hear_passkeys(&app, "main");
+    open(&app, "main", "harborline");
+
+    let failed = report_passkey(&app, "main").expect_err("not a tab");
+    assert_eq!(failed["message"], TAB_GONE);
+    assert!(heard.lock().expect("heard").is_empty());
+}
+
+#[test]
+fn drops_a_passkey_report_from_a_tab_the_host_no_longer_holds() {
+    let app = app_with_passkey_wall(&["main"]);
+    let heard = hear_passkeys(&app, "main");
+    let id = open(&app, "main", "harborline");
+    let page = Caller(app.get_webview(&label_of(&id)).expect("page"));
+    app.state::<BrowserRegistry>().remove(&id);
+
+    assert!(get_ipc_response(&page, local_request(PASSKEY_COMMAND)).is_ok());
+    assert!(heard.lock().expect("heard").is_empty());
+}
+
+#[test]
+fn the_passkey_probe_only_reports_and_always_runs_the_page_call() {
+    assert!(PASSKEY_SCRIPT.contains("wrap('get')"));
+    assert!(PASSKEY_SCRIPT.contains("wrap('create')"));
+    assert!(PASSKEY_SCRIPT.contains("options.publicKey != null"));
+    assert!(PASSKEY_SCRIPT.contains("options.mediation !== 'conditional'"));
+    assert!(PASSKEY_SCRIPT.contains("return original.apply(this, arguments);"));
+    assert!(PASSKEY_SCRIPT.contains(&format!("invoke('{PASSKEY_COMMAND}')")));
+    assert!(!PASSKEY_SCRIPT.contains("await"));
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn installs_the_passkey_probe_on_every_macos_tab() {
+    assert!(include_str!("host.rs").contains(".initialization_script(passkey::PASSKEY_SCRIPT)"));
+    assert!(
+        include_str!("host.rs").contains("passkey::clear_on_load(webview.app_handle(), &load_tab)")
+    );
 }
