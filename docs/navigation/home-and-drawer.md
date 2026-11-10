@@ -126,18 +126,22 @@ the slot's top to its bottom; the slot's own sheet steps aside
 covers the left column) keeps `frame="none"`, which draws only the drawer
 container as a card inset 8px on its right, top and bottom.
 
-**Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
+**Three tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
 from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
-(the plan, report and wireframe document, an Explore file, a file diff, the
-browser) opens at
+(the plan, report and wireframe document, an Explore file, a file diff) opens at
 720px, resizes from 480 to `min(1000, room)` while it pushes and to
 `min(1000, page - 16)` over the page, and keeps its own
-`goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
-drag ends; a double click on the handle resets to the tier default (400 or 720);
-the two saved widths never bleed. There is no third tier: no drawer expands over
-the whole column, the reader tier is the large one. `selectDrawerSizing` reads
-the tier from the kind table. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+`goodboy:reader-drawer-width:v1`. The browser pane has the third tier: it opens
+at 720px and resizes from 480 to `room` while it pushes, with no 1000 cap, so on
+a wide window it takes everything the session column does not need. It keeps its
+own `goodboy:browser-drawer-width:v1`. Each width is clamped on read and written
+once when a drag ends; a double click on the handle resets to the tier default
+(400 or 720); the three saved widths never bleed. A saved browser width that no
+longer fits after a window resize shrinks to `room` and keeps pushing while 720
+fits; the saved value stays and comes back when the window grows. No drawer
+expands over the whole column. `selectDrawerSizing` reads the tier from the kind
+table. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
 **One push rule.** The drawer uses the content width after both rails and the
 reserve of its tier, as defined in [styling.md](../styling.md). It pushes at
@@ -172,8 +176,8 @@ centred column slides with it: the card grows leftward from the window edge,
 its content held at its final width on that edge so nothing reflows, and the
 content fades in once there is room; over the page it slides in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never writes the sidebar
-preference: a pane folds nothing but the session rail, and only a reader tier
-pane does that (`shellFoldsOf`, see Surfaces).
+preference: a pane folds nothing but the session rail, and only a reader or
+browser tier pane does that (`shellFoldsOf`, see Surfaces).
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the

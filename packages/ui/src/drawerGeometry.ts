@@ -6,6 +6,9 @@ export const RIGHT_DRAWER_DEFAULT = 400;
 export const READER_DRAWER_MIN = 480;
 export const READER_DRAWER_MAX = 1000;
 export const READER_DRAWER_DEFAULT = 720;
+export const BROWSER_DRAWER_MIN = READER_DRAWER_MIN;
+export const BROWSER_DRAWER_MAX = 5120;
+export const BROWSER_DRAWER_DEFAULT = READER_DRAWER_DEFAULT;
 export const COLUMN_MIN_PUSH = 464;
 const READER_COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
@@ -13,7 +16,7 @@ export const DRAWER_INSET = 8;
 export const DRAWER_EXIT_MS = DURATION_QUICK_MS;
 export const DRAWER_EXIT_MAX_ELEMENTS = 2000;
 
-export type DrawerSizing = 'side' | 'reader';
+export type DrawerSizing = 'side' | 'reader' | 'browser';
 
 export type DrawerMode = 'closed' | 'push' | 'overlay';
 
@@ -23,11 +26,18 @@ type TierBounds = {
   readonly min: number;
   readonly max: number;
   readonly fallback: number;
+  readonly isShrinkable?: boolean;
 };
 
 export const DRAWER_TIERS: Readonly<Record<DrawerSizing, TierBounds>> = {
   side: { min: RIGHT_DRAWER_MIN, max: RIGHT_DRAWER_MAX, fallback: RIGHT_DRAWER_DEFAULT },
   reader: { min: READER_DRAWER_MIN, max: READER_DRAWER_MAX, fallback: READER_DRAWER_DEFAULT },
+  browser: {
+    min: BROWSER_DRAWER_MIN,
+    max: BROWSER_DRAWER_MAX,
+    fallback: BROWSER_DRAWER_DEFAULT,
+    isShrinkable: true,
+  },
 };
 
 export const drawerTrackOf = (drawerWidthPx: number): number => drawerWidthPx + DRAWER_INSET * 2;
@@ -49,7 +59,7 @@ const pushRoomOf = ({ mainWidthPx, sizing }: RoomParams): number =>
   mainWidthPx -
   DRAWER_INSET * 2 -
   COLUMN_GUTTERS -
-  (sizing === 'reader' ? READER_COLUMN_MIN_PUSH : COLUMN_MIN_PUSH);
+  (sizing === 'side' ? COLUMN_MIN_PUSH : READER_COLUMN_MIN_PUSH);
 
 export const canDrawerPush = ({
   mainWidthPx,
@@ -82,10 +92,12 @@ export const drawerLayoutOf = ({
 }: LayoutParams): DrawerLayout => {
   const tier = DRAWER_TIERS[sizing];
   const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing });
-  if (placement === 'auto' && room >= savedWidth) {
+  const pushWidth =
+    tier.isShrinkable === true && room >= tier.fallback ? Math.min(savedWidth, room) : savedWidth;
+  if (placement === 'auto' && room >= pushWidth) {
     return {
       mode: 'push',
-      width: savedWidth,
+      width: pushWidth,
       dragMax: Math.min(tier.max, room),
     };
   }

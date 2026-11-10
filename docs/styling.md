@@ -189,7 +189,9 @@ close the drawer. The host is measured after every commit (and by a
 `ResizeObserver` after that), and `drawerLayoutOf` takes its width as
 `edgeWidth`: the overlay card plus the column always fit in the sheet, so the
 column never covers the card's primary or its Close. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
-(720, drag 480 to 1000); each tier has its own saved width and a handle. `placement="overlay"` skips the push
+(720, drag 480 to 1000) and `browser` (720, drag 480 to the room the session column leaves, so
+past 1000 on a wide window; it shrinks to the room on a narrower window while 720 fits); each tier
+has its own saved width and a handle. `placement="overlay"` skips the push
 rule for a drawer that always lies over the page; the thresholds (928 for
 `side`, 1344 for `reader`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,

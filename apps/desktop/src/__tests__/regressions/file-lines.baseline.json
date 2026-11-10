@@ -76,7 +76,7 @@
   "packages/db/src/queries/workflow.ts": 616,
   "packages/types/src/index.ts": 655,
   "packages/ui/src/components/ContextMenu/MenuList.tsx": 253,
-  "packages/ui/src/components/DrawerColumn.tsx": 344,
+  "packages/ui/src/components/DrawerColumn.tsx": 326,
   "packages/ui/src/components/Listbox/index.tsx": 359,
   "packages/ui/src/components/Markdown/index.tsx": 678,
   "packages/ui/src/components/ReportSheet/index.tsx": 306,

@@ -7,6 +7,9 @@ import {
   DRAWER_INSET,
   DRAWER_PUSH_RESERVE,
   MEASURE_FRAME,
+  BROWSER_DRAWER_DEFAULT,
+  BROWSER_DRAWER_MAX,
+  BROWSER_DRAWER_MIN,
   DRAWER_TIERS,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
@@ -88,6 +91,73 @@ describe('the constants of the drawer scale', () => {
   it('runs a reader drawer from 480 to 1000 and opens it at 720', () => {
     expect([READER_DRAWER_MIN, READER_DRAWER_DEFAULT, READER_DRAWER_MAX]).toEqual([480, 720, 1000]);
     expect(DRAWER_TIERS.reader).toEqual({ min: 480, max: 1000, fallback: 720 });
+  });
+});
+
+describe('the browser tier', () => {
+  it('opens at 720 and runs from 480 to the widest window', () => {
+    expect([BROWSER_DRAWER_MIN, BROWSER_DRAWER_DEFAULT, BROWSER_DRAWER_MAX]).toEqual([
+      480, 720, 5120,
+    ]);
+    expect(DRAWER_TIERS.browser).toEqual({
+      min: 480,
+      max: 5120,
+      fallback: 720,
+      isShrinkable: true,
+    });
+  });
+
+  it('pushes at the reader threshold: 1344 is the first main that fits 720', () => {
+    expect(drawerLayoutOf({ main: 1343, sizing: 'browser', savedWidth: 720 }).mode).toBe('overlay');
+    expect(drawerLayoutOf({ main: 1344, sizing: 'browser', savedWidth: 720 })).toEqual({
+      mode: 'push',
+      width: 720,
+      dragMax: 720,
+    });
+  });
+
+  it('keeps a saved width past 1000 while the session column keeps 560 and the gutters', () => {
+    expect(drawerLayoutOf({ main: 2100, sizing: 'browser', savedWidth: 1400 })).toEqual({
+      mode: 'push',
+      width: 1400,
+      dragMax: 1476,
+    });
+  });
+
+  it('shrinks a saved width to the room and stays pushing while the default fits', () => {
+    expect(drawerLayoutOf({ main: 1700, sizing: 'browser', savedWidth: 1400 })).toEqual({
+      mode: 'push',
+      width: 1076,
+      dragMax: 1076,
+    });
+    expect(drawerLayoutOf({ main: 1344, sizing: 'browser', savedWidth: 1400 })).toEqual({
+      mode: 'push',
+      width: 720,
+      dragMax: 720,
+    });
+  });
+
+  it('lies over the page once even the default does not fit', () => {
+    expect(drawerLayoutOf({ main: 1200, sizing: 'browser', savedWidth: 1400 })).toEqual({
+      mode: 'overlay',
+      width: 1184,
+      dragMax: 1184,
+    });
+  });
+
+  it('leaves the reader tier capped at 1000 over the same window', () => {
+    expect(drawerLayoutOf({ main: 2400, sizing: 'reader', savedWidth: 720 }).dragMax).toBe(1000);
+    expect(drawerLayoutOf({ main: 2400, sizing: 'browser', savedWidth: 720 }).dragMax).toBe(1776);
+  });
+
+  it('shrinks the page box beside a wide pane by the pane and its gutters', () => {
+    const box = pageBoxOf({
+      paneWidth: 2100,
+      tier: 'full',
+      drawerWidthPx: 1400,
+      sizing: 'browser',
+    });
+    expect(box.width).toBe(2100 - drawerTrackOf(1400));
   });
 });
 
