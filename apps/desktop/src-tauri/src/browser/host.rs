@@ -9,6 +9,7 @@ use tauri::{
 
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
+#[cfg(target_os = "macos")]
 use super::passkey;
 use super::profile::{self, ProfileId};
 use super::reason::{
@@ -369,6 +370,7 @@ pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<
         webview.close().map_err(failed)?;
     }
     registry.remove(tab_id);
+    #[cfg(target_os = "macos")]
     passkey::WATCHES.forget(tab_id);
     Ok(())
 }

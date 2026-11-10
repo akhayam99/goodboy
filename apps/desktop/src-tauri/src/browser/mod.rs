@@ -2,6 +2,7 @@ pub(crate) mod commands;
 mod guard;
 mod host;
 mod lifecycle;
+#[cfg(any(target_os = "macos", test))]
 mod passkey;
 mod profile;
 mod reason;

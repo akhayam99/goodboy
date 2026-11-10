@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{Arc, Mutex};
 
 use crate::util::lock_or_recover;
 
@@ -47,7 +47,9 @@ impl PasskeyWatch {
     }
 }
 
-pub(crate) static WATCHES: LazyLock<PasskeyWatch> = LazyLock::new(PasskeyWatch::default);
+#[cfg(target_os = "macos")]
+pub(crate) static WATCHES: std::sync::LazyLock<PasskeyWatch> =
+    std::sync::LazyLock::new(PasskeyWatch::default);
 
 #[cfg(target_os = "macos")]
 mod native {
