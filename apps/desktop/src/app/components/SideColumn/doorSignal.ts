@@ -124,10 +124,22 @@ export const doorSignalOf = ({
     const ports = downPins.map((port) => `:${port}`).join(', ');
     const fact =
       downPins.length === 1 ? `pinned port ${ports} is down` : `pinned ports ${ports} are down`;
-    return { count: inUse, isWarning: true, isUnread: false, fact };
+    return {
+      count: inUse,
+      isWarning: true,
+      isUnread: false,
+      fact,
+      ...(inUse > 0 && { countText: countTextOf({ count: inUse }) }),
+    };
   }
   if (inUse === 0) {
     return undefined;
   }
-  return { count: inUse, isWarning: false, isUnread: false, fact: `${inUse} in use` };
+  return {
+    count: inUse,
+    isWarning: false,
+    isUnread: false,
+    fact: `${inUse} in use`,
+    countText: countTextOf({ count: inUse }),
+  };
 };

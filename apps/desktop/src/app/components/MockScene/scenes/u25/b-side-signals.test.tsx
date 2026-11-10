@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -83,8 +83,24 @@ describe('the side column signal scenes', () => {
     async (name) => {
       await mount({ name });
 
-      screen.getByRole('button', { name: 'Monitoring, 3 in use' });
+      const row = screen.getByRole('button', { name: 'Monitoring, 3 in use' });
+      expect(row.querySelector('[data-door-count]')?.textContent).toBe('3');
       expect(document.querySelector('[data-column-tile]')).toBeNull();
+    },
+  );
+
+  it.each(['side-tiles-dark', 'side-tiles-light'] as const)(
+    '%s shows the running terminals as a count on the Terminal rail button',
+    async (name) => {
+      await mount({ name });
+
+      const tool = within(screen.getByRole('toolbar', { name: 'Tools' })).getByTestId(
+        'pane-toggle-terminal',
+      );
+      expect(
+        tool.closest('[data-slot="session-tool"]')?.querySelector('[data-testid="tool-count"]')
+          ?.textContent,
+      ).toBe('2');
     },
   );
 

@@ -116,6 +116,7 @@ describe('doorSignalOf', () => {
       isWarning: false,
       isUnread: false,
       fact: '3 in use',
+      countText: '3',
     });
   });
 
@@ -125,8 +126,12 @@ describe('doorSignalOf', () => {
       isWarning: true,
       isUnread: false,
       fact: 'pinned port :9000 is down',
+      countText: '3',
     });
     expect(doorSignalOf({ kind: 'monitoring', inUse: 0, downPins: [9000] })?.isWarning).toBe(true);
+    expect(
+      doorSignalOf({ kind: 'monitoring', inUse: 0, downPins: [9000] })?.countText,
+    ).toBeUndefined();
   });
 
   it('names every pinned port that is down', () => {
