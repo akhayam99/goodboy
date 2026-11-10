@@ -160,6 +160,67 @@ describe('AppShell studio in the main slot', () => {
     );
   });
 
+  it('paints the slot opaque, so the page never shows through while a studio fades in', () => {
+    render(
+      <AppShell
+        leftSidebar={<div>doors</div>}
+        main={<div>main</div>}
+        studio={<div>impact studio</div>}
+      />,
+    );
+    const slot = screen.getByText('impact studio').parentElement;
+
+    expect(slot?.className).toContain('bg-background');
+    expect(slot?.className).toContain('has-[[data-studio-sheet-owner]]:bg-chrome');
+  });
+
+  it('parks the drawer under a studio: mounted, hidden, inert, out of the flow, with no exit', () => {
+    const { rerender } = render(
+      <AppShell
+        leftSidebar={<div>doors</div>}
+        main={<div>main</div>}
+        drawer={<input aria-label="decision draft" />}
+      />,
+    );
+    const field = screen.getByRole<HTMLInputElement>('textbox', { name: 'decision draft' });
+    fireEvent.change(field, { target: { value: 'ship on Friday' } });
+
+    rerender(
+      <AppShell
+        leftSidebar={<div>doors</div>}
+        main={<div>main</div>}
+        drawer={<input aria-label="decision draft" />}
+        studio={<div>tasks studio</div>}
+      />,
+    );
+    const panel = screen.getByRole('complementary', { name: 'Side panel', hidden: true });
+
+    expect(panel.hasAttribute('data-drawer-parked')).toBe(true);
+    expect(panel.getAttribute('data-drawer-mode')).toBe('closed');
+    expect(panel.hasAttribute('data-drawer-exit')).toBe(false);
+    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(panel.className).toContain('invisible');
+    expect(panel.className).toContain('absolute');
+    expect(document.querySelector('[data-drawer-main]')?.getAttribute('data-sheet')).not.toBe(
+      'pushed',
+    );
+    expect(screen.getByRole('textbox', { name: 'decision draft', hidden: true })).toBe(field);
+
+    rerender(
+      <AppShell
+        leftSidebar={<div>doors</div>}
+        main={<div>main</div>}
+        drawer={<input aria-label="decision draft" />}
+      />,
+    );
+
+    expect(panel.hasAttribute('data-drawer-parked')).toBe(false);
+    expect(panel.hasAttribute('inert')).toBe(false);
+    expect(panel.className).not.toContain('invisible');
+    expect(screen.getByRole('textbox', { name: 'decision draft' })).toBe(field);
+    expect(field.value).toBe('ship on Friday');
+  });
+
   it('draws the peek after the studio, so the peeked column floats over a studio too', () => {
     render(
       <AppShell

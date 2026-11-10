@@ -3,6 +3,7 @@ import { createContext, type Dispatch, type SetStateAction } from 'react';
 
 type DrawerContentMetrics = {
   readonly mode: DrawerMode;
+  readonly isParked: boolean;
   readonly columnWidth: number | null;
   readonly savedWidth: number;
   readonly setInset: Dispatch<SetStateAction<number>>;

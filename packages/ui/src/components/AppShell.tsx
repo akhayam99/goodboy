@@ -111,7 +111,7 @@ export const AppShell = ({
   });
   const [leftResize, setLeftResize] = useState<ResizeActivity>('idle');
   const isSheetWrapped = hasLeftSidebar && !leftHidden;
-  const isPageShown = studio != null;
+  const isStudioShown = studio != null;
 
   const layout = buildLayout({
     leftCollapsed: leftSidebarCollapsed,
@@ -170,13 +170,13 @@ export const AppShell = ({
           <DrawerColumn
             main={
               <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col" inert={isPageShown}>
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col" inert={isStudioShown}>
                   {main}
                 </div>
-                {isPageShown ? (
+                {isStudioShown ? (
                   <div
                     data-studio-slot="content"
-                    className="absolute inset-0 z-studio flex min-h-0 min-w-0 flex-col overflow-hidden empty:hidden"
+                    className="absolute inset-0 z-studio flex min-h-0 min-w-0 flex-col overflow-hidden bg-background empty:hidden has-[[data-studio-sheet-owner]]:bg-chrome"
                   >
                     <StudioSlotContext.Provider value>{studio}</StudioSlotContext.Provider>
                   </div>
@@ -186,6 +186,7 @@ export const AppShell = ({
             drawer={drawer ?? null}
             sizing={drawerSizing}
             placement={drawerPlacement}
+            isParked={isStudioShown}
             frame="sheet"
             sheetEdge={isSheetWrapped ? 'wrapped' : 'flush'}
             className={STUDIO_SHEET_OWNED}
