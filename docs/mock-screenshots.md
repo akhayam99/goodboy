@@ -357,7 +357,9 @@ the same grid as the top of the rail, with narrow gutters, so the app is a bit
 bigger only because its box is.
 `#<group id>` in the URL opens a group the visitor may open, and anything else
 opens Bring your repositories (`defaultGroupId.ts`); a hash that names a locked
-group is rewritten in place (`replaceState`) to the first open group. Every
+group is rewritten in place (`replaceState`) to the first open group, and a
+hash that names no group is rewritten in place to the group shown (on load the
+one it opens, later the one already on screen). Every
 group the visitor picks adds a history entry (`pushState` in `useChapterHash`),
 so Back moves to the group before and never leaves the site.
 
@@ -554,9 +556,13 @@ done, in the authored order: it reports `anchor` (that step, with its rect, or
 `isOffscreen` when a scroll container or the viewport hides it) and `tried`
 (its done check held after its reveal check did). A new step, a step whose
 control goes from no rect to a rect, or a step that switches between its own
-control and its way back is reported only once the same rect was measured on two
-animation frames in a row (`STABLE_FRAMES` in `director/createHintEngine.ts`),
-so a hint appears once, in its final place; a step already shown follows its
+control and its way back is reported only once its control holds still: the
+same rect on two animation frames in a row (`STABLE_FRAMES` in
+`director/createHintEngine.ts`) and no finite animation or transition running on
+the control or a parent (`getAnimations()` on the frame document, so a drawer
+that slides in after its first paint is waited for). A looping animation never
+holds a hint, and after 1200 ms (`ARRIVAL_CAP_MS`) the hint shows anyway, so a
+hint appears once, in its final place; a step already shown follows its
 control on the next frame, so the ring tracks a scroll. A later step is never lit,
 never armed and never credited early, and a press on a later control counts for
 nothing. The done check compares against the store as it was when the reveal
@@ -588,7 +594,9 @@ so a hint never flips side after it lands; `DemoCoachMark` remembers the side
 per hint; otherwise the hint's side only breaks a tie, unless the hint
 sets `isSideLocked`: the side is kept while it fits and does not cover the
 control, as the plan and question steps do so the callout never sits on the text
-they talk about); only the callout takes clicks. The callout touches the 4px outline with a 6px gap and never
+they talk about; a hint with `align: 'end'` lines the callout up with the far
+end of its control, as the question step does so the callout above the wide
+answer row clears the question); only the callout takes clicks. The callout touches the 4px outline with a 6px gap and never
 overlaps the control or the rects the last press opened (`opened` on the anchor
 report, `avoid` in `placeCallout`); `hints/coachPlacement.test.ts` measures the
 callout against the target for every hint of every group. The note goes away as
@@ -598,8 +606,12 @@ it never covers what the control opens; a step with two presses names the
 second one in `progressCopy`. The press is reported from the click's own
 capture phase, before the control can go away, so the header shows the step's
 `progress` line while its work runs and drops a result still held from the step
-before. The press ends once the lit control is another one, so a step that
-points back at an earlier control lights it again. A control
+before. The press ends once the lit control is another one that is still on
+the page, so a step that points back at an earlier control lights it again. A
+pressed control that leaves the page keeps the press until the step is done or
+its way back is lit, so the note of a step whose press swaps the screen (Create
+workspace, Start fix) is never drawn again over the next screen; the working
+pill or the held result in the header carries the wait. A control
 scrolled out of view gets a note at the bottom of the stage with Show control,
 which sends `reveal` so the frame scrolls it into view once. The coach X and
 Escape dismiss only the open hint (`dismiss` in `useDemoHints`; the next step
@@ -620,10 +632,11 @@ seconds (`RESULT_DWELL_MS` in `hints/resultDwellMs.ts`; a hint may set its own
 `settle` runs once after the dwell, as closing the limits popover so the
 composer takes the first click) and until the control of
 the next step is on screen, so a result is never replaced by an instruction
-for a control the visitor cannot see yet; when the group is done, after its
-last result, "Done. Next: <next>." (the same on a revisit and below `xl`, since
-the done card carries the button). A group end holds no dwell: the done card is
-the ending. The one hold between beats is Push to the Storage beat, at the
+for a control the visitor cannot see yet; when the group is done,
+"Done. Next: <next>." at once, in the same tick as the done card, which
+carries the last outcome (the same on a revisit and below `xl`, since the done
+card carries the button). A group end holds no dwell: the done card is the
+ending. The one hold between beats is Push to the Storage beat, at the
 default 2 seconds, bridged by its result, which names the next step. Every step
 that waits on a script (the answer, the plan revision, the approval, Start fix,
 the rebase, the push and the removal) carries `progressCopy` and `progress`, so
