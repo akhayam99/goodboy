@@ -73,6 +73,25 @@ describe('useStudioRailFold', () => {
     expect(state()).toBe('docked can-dock');
   });
 
+  it('opens by hand on a narrow pane without saving, and forgets it once widened', () => {
+    localStorage.setItem(studioRailFoldKey({ surface: 'inbox' }), '1');
+    render(<Probe />);
+
+    resizeTo(700);
+    fireEvent.click(screen.getByRole('button', { name: 'dock' }));
+
+    expect(state()).toBe('docked cannot-dock');
+    expect(localStorage.getItem(studioRailFoldKey({ surface: 'inbox' }))).toBe('1');
+
+    resizeTo(1200);
+
+    expect(state()).toBe('collapsed can-dock');
+
+    resizeTo(700);
+
+    expect(state()).toBe('collapsed cannot-dock');
+  });
+
   it('remembers a fold per surface and reads it back on the next mount', () => {
     const first = render(<Probe />);
 

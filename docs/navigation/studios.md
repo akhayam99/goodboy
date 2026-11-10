@@ -60,9 +60,8 @@ in `studioMeta.ts`).
   crumb title, an icon or a subtitle; the page `h1` is the one title.
   `STUDIO_META[kind].close` places the exit: `none` for the studios beside the
   column (Tasks, Chat, Workflows, Terminal, Impact, Monitoring, Notifications:
-  no band, no Close, the door or Escape leaves them), `back` for the studios
-  that replace the column (Settings over the window, Help, Add workspace),
-  whose 40px band holds only `Back to app` with the Esc chip at the left
+  no band, no Close, the door or Escape leaves them), `back` for the app pages
+  (Settings, Help, Add workspace), whose 40px band holds only `Back to app` with the Esc chip at the left
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not
@@ -225,9 +224,10 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
 - **A page rail folds, and folds itself when there is no room.** A page may pass
   `onCollapsedChange`: the rail's first row then starts with a fold control
   ("Hide <rail name>", ⌥⌘B, pressed while the rail shows), a folded rail leaves
-  a 44px strip with "Show <rail name>" at the same x and height (none while the
-  pane is too narrow to dock, `canUnfold`), plus any `foldedActions` the page
-  passes under it, and `useStudioRailFold` remembers the choice per surface
+  a 44px strip with "Show <rail name>" at the same x and height, plus any
+  `foldedActions` the page passes under it (a page whose title row stands in
+  for the rail, like Notifications with its filter button, drops the strip
+  while the pane is too narrow to dock, `canUnfold`), and `useStudioRailFold` remembers the choice per surface
   (`goodboy:studio-rail-folded:<studio>:v1`). Chat, Terminal, the Guide, the
   changelog, Settings and Notifications fold this way.
   **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
@@ -237,7 +237,8 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   (`innerColumnStore.toggleCurrent`), the palette lists it under that
   column's name (Hide chat list, Show settings scopes) and leaves it out
   on a page with none, where the key does nothing. Under a pane of 880px the rail
-  folds without saving anything and docks again when the pane widens. A folded
+  folds without saving anything and docks again when the pane widens; Show on
+  that narrow pane opens it until the pane widens, and saves nothing either. A folded
   rail leaves the shared `FilterButton` (28px tall, the lines icon with the
   count of active filters; docking the rail again is the Show strip at the
   rail edge or ⌥⌘B, never a header button) in the title row, opening the same facets in a popover. The search field of

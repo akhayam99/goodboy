@@ -50,6 +50,14 @@ export const useStudioRailFold = ({
   const paneRef = useRef<HTMLDivElement | null>(null);
   const [isFolded, setIsFolded] = useState(() => readFolded({ surface }));
   const [paneWidth, setPaneWidth] = useState<number | null>(null);
+  const [isOpenedNarrow, setIsOpenedNarrow] = useState(false);
+  const isNarrow = paneWidth !== null && paneWidth < foldBelow;
+
+  useEffect(() => {
+    if (!isNarrow) {
+      setIsOpenedNarrow(false);
+    }
+  }, [isNarrow]);
 
   useEffect(() => {
     const node = paneRef.current;
@@ -68,13 +76,17 @@ export const useStudioRailFold = ({
 
   const setFolded = useCallback(
     (isNowFolded: boolean) => {
+      if (isNarrow) {
+        setIsOpenedNarrow(!isNowFolded);
+        return;
+      }
       setIsFolded(isNowFolded);
       writeFolded({ surface, isFolded: isNowFolded });
     },
-    [surface],
+    [surface, isNarrow],
   );
 
-  const isNarrow = paneWidth !== null && paneWidth < foldBelow;
+  const isCollapsed = isNarrow ? !isOpenedNarrow : isFolded;
 
-  return { paneRef, isCollapsed: isFolded || isNarrow, canDock: !isNarrow, setFolded };
+  return { paneRef, isCollapsed, canDock: !isNarrow, setFolded };
 };
