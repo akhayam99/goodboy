@@ -359,7 +359,8 @@ slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 (`UserMessageBubble`) and the Start work button
 (`StartWorkFromChatButton`, **Start work from this** in Ask) are the Chat ones, drawn from `shared/components`;
 the composer is the same `MessageComposer` (`shared/components`) that
-`ChatComposer` wraps, without images. Start work on a
+`ChatComposer` wraps, without images, with its model picker in the `model`
+slot beside Send. Start work on a
 finished answer adds a brief drafted from the thread to this session and opens
 Start a run there (`startWorkFromAsk`), with no new session. The questions stay
 in the session's `ask` threads and are never listed in the Chat door. Its header is **Ask** and a

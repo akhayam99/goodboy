@@ -99,6 +99,7 @@ describe('an image dropped on the agent page', () => {
       expect(
         await within(composer).findByRole('button', { name: 'Remove ledger-core-chart.png' }, WAIT),
       ).toBeDefined();
+      expect(within(composer).getByText('1 of 10 files')).toBeDefined();
       expect(screen.queryByText(MISSED)).toBeNull();
     },
     TEST_TIMEOUT_MS,

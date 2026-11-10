@@ -62,14 +62,12 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
       fieldRef={fieldRef}
       testId="ask-composer"
       footerStart={
-        <span className="flex min-w-0 items-center gap-2">
-          <AskRoutingPicker sessionId={sessionId} />
-          <span className="flex items-center gap-1 text-meta text-faint-foreground">
-            <Eye size={ICON_SIZE.row} aria-hidden />
-            Read only
-          </span>
+        <span className="flex items-center gap-1 text-meta text-faint-foreground">
+          <Eye size={ICON_SIZE.row} aria-hidden />
+          Read only
         </span>
       }
+      model={<AskRoutingPicker sessionId={sessionId} />}
       onSend={({ text: question }) => onSend(question)}
       onStop={onStop}
     />

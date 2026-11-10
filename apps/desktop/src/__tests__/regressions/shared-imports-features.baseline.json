@@ -15,7 +15,7 @@
   "apps/desktop/src/shared/components/ProjectLinkList/ProjectGroups.tsx": 1,
   "apps/desktop/src/shared/components/ProjectLinkList/ProjectRowEditor.tsx": 2,
   "apps/desktop/src/shared/components/PromptField/index.tsx": 2,
-  "apps/desktop/src/shared/components/PromptField/PromptAttachmentChip.tsx": 3,
+  "apps/desktop/src/shared/components/PromptField/PromptAttachmentChip.tsx": 2,
   "apps/desktop/src/shared/components/RoutingLabel/routingLabelModel.ts": 3,
   "apps/desktop/src/shared/components/RoutingPicker/autoLimitReason.ts": 1,
   "apps/desktop/src/shared/components/RoutingPicker/AxesSection.tsx": 2,

@@ -121,13 +121,13 @@ describe('the Chat composer when a send is refused', () => {
     await act(async () => {
       fireEvent.paste(field(), { clipboardData: { files: [png('cascadia-trace.png')] } });
     });
-    await screen.findByText('cascadia-trace.png');
+    await screen.findByRole('button', { name: 'Remove cascadia-trace.png' });
     fireEvent.keyDown(field(), { key: 'Enter' });
-    expect(screen.queryByText('cascadia-trace.png')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove cascadia-trace.png' })).toBeNull();
 
     await settle({ resolvers, isSent: false });
 
-    await screen.findByText('cascadia-trace.png');
+    await screen.findByRole('button', { name: 'Remove cascadia-trace.png' });
     expect(screen.getByRole('alert').textContent).toBe("Couldn't attach the images. Try again.");
   });
 });

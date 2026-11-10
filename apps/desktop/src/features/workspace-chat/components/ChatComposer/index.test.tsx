@@ -111,14 +111,14 @@ describe('ChatComposer', () => {
   it('turns a pasted image into a chip and sends it, even with no text', async () => {
     const { messages } = mount();
     await paste([png('acme-trace.png')]);
-    expect((await screen.findByText('acme-trace.png')).textContent).toBe('acme-trace.png');
+    expect(await screen.findByRole('button', { name: 'Remove acme-trace.png' })).toBeDefined();
     expect(screen.getByText('1 of 10 images').textContent).toBe('1 of 10 images');
     expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
 
     fireEvent.keyDown(field(), { key: 'Enter' });
     expect(messages.map((message) => message.text)).toEqual(['']);
     expect(messages[0]?.images.map((image) => image.fileName)).toEqual(['acme-trace.png']);
-    expect(screen.queryByText('acme-trace.png')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove acme-trace.png' })).toBeNull();
   });
 
   it('takes only images Chat can read', async () => {
@@ -127,7 +127,7 @@ describe('ChatComposer', () => {
       'image/png,image/jpeg,image/gif,image/webp',
     );
     await paste([new File(['%PDF'], 'runbook.pdf', { type: 'application/pdf' })]);
-    expect(screen.queryByText('runbook.pdf')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove runbook.pdf' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(true);
   });
 
@@ -135,10 +135,10 @@ describe('ChatComposer', () => {
     mount({ isSent: false });
     fireEvent.change(field(), { target: { value: 'Same 502 on Acme sandbox.' } });
     await paste([png('acme-trace.png')]);
-    await screen.findByText('acme-trace.png');
+    await screen.findByRole('button', { name: 'Remove acme-trace.png' });
     fireEvent.keyDown(field(), { key: 'Enter' });
     await waitFor(() => expect(field()).toHaveProperty('value', 'Same 502 on Acme sandbox.'));
-    expect(screen.getByText('acme-trace.png').textContent).toBe('acme-trace.png');
+    expect(screen.getByRole('button', { name: 'Remove acme-trace.png' })).toBeDefined();
     expect(screen.getByRole('alert').textContent).toBe("Couldn't attach the images. Try again.");
   });
 
@@ -147,7 +147,7 @@ describe('ChatComposer', () => {
     mount();
     expect(screen.queryByRole('button', { name: 'Attach images' })).toBeNull();
     await paste([png('acme-trace.png')]);
-    expect(screen.queryByText('acme-trace.png')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove acme-trace.png' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(true);
   });
 });

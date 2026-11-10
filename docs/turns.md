@@ -1491,7 +1491,8 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   sits above that, since it is a warning rather than composer content.
 - A message starting with `/` sends as plain text; no slash command is resolved.
 - Sending: the text box is a `PromptField` of kind `message` in its `bare`
-  variant (the shell, tray and toolbar stay `ChatInput`'s own): `Enter`
+  variant inside the shared `ComposerSurface`, with the dock and the gates
+  above it and the toolbar in a `ComposerFooter` below: `Enter`
   sends, `Shift+Enter` adds a line, `⌘Enter` sends now while a turn runs.
   The quick-actions popover blocks the send keys while it is open.
 
@@ -1520,6 +1521,16 @@ swaps the two kinds back on those fields for this release.
 says whether it talks to an agent and with which kind; a new agent field
 must be a `PromptField` of its kind. The workspace Chat bubble and the hint
 log read what you wrote as markdown.
+
+Every composer has one look, the one the agent page set. `ComposerSurface`
+(`shared/components/ComposerSurface`) is the box: soft border, `bg-subtle`,
+the strong border and shadow on focus, the tint and the drop overlay while a
+file is dragged, flat top under a tray. `ComposerAttachments` puts the file
+chips above the text, and `ComposerFooter` is the row under it: attach control,
+notes and the file count (`ComposerAttachmentCount`, "2 of 10 files") on the
+left, the model picker and Send on the right. `PromptField` in its `card`
+variant and `ChatInput` both draw from these; a variant is a prop (`drop`,
+`isJoinedAbove`, the `model` slot), never a second box.
 
 Files ride on `usePendingAttachments` (`shared/hooks`): paste, drop and
 **Attach files**, up to 10 files of 10 MB each, refused with a note in the
