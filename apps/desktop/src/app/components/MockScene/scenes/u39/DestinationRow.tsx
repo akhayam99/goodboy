@@ -1,7 +1,7 @@
 import { KeyHint } from '@goodboy/ui';
 import type { PaletteEntry } from '../../../../../features/palette/types';
 import { SHORTCUTS, shortcutGlyphs } from '../../../../../shared/keyboard/registry';
-import type { Destination } from '../../../../../shared/navigation/destinations';
+import type { Destination, DestinationHome } from '../../../../../shared/navigation/destinations';
 import { MENU_ACTIONS } from '../../../../hooks/useMenuCommands/menuActions';
 import { COLUMN_DOORS } from '../../../SideColumn/columnDoors';
 
@@ -13,6 +13,13 @@ type Props = {
 const MENU_LABELS: Readonly<Record<string, string>> = {
   ...Object.fromEntries(Object.entries(SHORTCUTS).map(([id, { label }]) => [id, label])),
   ...Object.fromEntries(Object.entries(MENU_ACTIONS).map(([id, { label }]) => [id, label])),
+};
+
+const HOME_LABELS: Readonly<Record<DestinationHome, string>> = {
+  column: 'column',
+  tile: 'tile',
+  topBar: 'top bar',
+  foot: 'foot',
 };
 
 export const DestinationRow = ({ destination, entry }: Props) => {
@@ -30,7 +37,9 @@ export const DestinationRow = ({ destination, entry }: Props) => {
         <span className="flex items-center gap-2">
           <ColumnIcon aria-hidden className="size-4 shrink-0" />
           {columnLabel}
-          {door === undefined && <span className="text-muted-foreground">{destination.home}</span>}
+          {door === undefined && (
+            <span className="text-muted-foreground">{HOME_LABELS[destination.home]}</span>
+          )}
         </span>
       </td>
       <td className="px-3 py-2">{menuId === undefined ? '' : (MENU_LABELS[menuId] ?? '')}</td>
