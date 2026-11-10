@@ -10,14 +10,16 @@ type Params = {
 export const openDestination = ({ id }: Params): void => {
   const state = useAppStore.getState();
   if (id === 'board') {
-    if (state.currentSessionId !== null || selectIsSessionDraftShown({ state })) {
+    if (
+      state.currentSessionId !== null ||
+      state.appStudio !== null ||
+      selectIsSessionDraftShown({ state })
+    ) {
       state.navigate({ to: BOARD_PLACE });
-      return;
-    }
-    if (state.appStudio !== null) {
-      state.closeStudio();
     }
     return;
   }
-  state.switchStudio({ studio: destinationStudioOf({ id, state }) });
+  state.switchStudio({
+    studio: destinationStudioOf({ id, sessionId: state.currentSessionId, state }),
+  });
 };

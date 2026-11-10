@@ -7,10 +7,11 @@ import type { StudioPlace } from './studio';
 
 type Params = {
   readonly id: StudioDestinationId;
-  readonly state: DoorState & { readonly currentSessionId: SessionId | null };
+  readonly sessionId: SessionId | null;
+  readonly state: DoorState;
 };
 
-export const destinationStudioOf = ({ id, state }: Params): StudioPlace => {
+export const destinationStudioOf = ({ id, sessionId, state }: Params): StudioPlace => {
   switch (id) {
     case 'inbox':
       return { kind: 'inbox', focus: null };
@@ -21,9 +22,9 @@ export const destinationStudioOf = ({ id, state }: Params): StudioPlace => {
     case 'impact':
       return { kind: 'impact', scope: null };
     case 'terminal':
-      return terminalStudioPlace({ sessionId: state.currentSessionId });
+      return terminalStudioPlace({ sessionId });
     case 'browser':
-      return browserStudioPlace({ sessionId: state.currentSessionId });
+      return browserStudioPlace({ sessionId });
     case 'monitoring':
       return { kind: 'monitoring' };
     case 'notifications':
