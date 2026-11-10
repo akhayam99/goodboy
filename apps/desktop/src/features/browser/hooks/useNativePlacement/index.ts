@@ -1,12 +1,16 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { createNativePlacement } from '../../createNativePlacement';
-import { createOverlayWatch } from '../../createOverlayWatch';
+import { createOverlayWatch, type CoverReason } from '../../createOverlayWatch';
 import { viewBoundsOf } from '../../viewBoundsOf';
 
 type ErrorParams = {
   readonly error: unknown;
+};
+
+type ShowParams = {
+  readonly next: CoverReason | null;
 };
 
 type Params = {
@@ -17,23 +21,61 @@ type Params = {
   readonly onError: (params: ErrorParams) => void;
 };
 
-export const useNativePlacement = ({ sessionId, view, tab, attempt, onError }: Params): void => {
+export const useNativePlacement = ({
+  sessionId,
+  view,
+  tab,
+  attempt,
+  onError,
+}: Params): CoverReason | null => {
   const tabRef = useRef(tab);
   tabRef.current = tab;
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
   const placementRef = useRef<ReturnType<typeof createNativePlacement> | null>(null);
+  const [cover, setCover] = useState<CoverReason | null>(null);
+  const coverRef = useRef<CoverReason | null>(null);
+  const isOverlaidRef = useRef(false);
+  const uncoverFrameRef = useRef(0);
 
   useEffect(() => {
+    const show = ({ next }: ShowParams): void => {
+      coverRef.current = next;
+      setCover(next);
+    };
+    const uncover = (): void => {
+      if (coverRef.current === null || isOverlaidRef.current) {
+        return;
+      }
+      window.cancelAnimationFrame(uncoverFrameRef.current);
+      uncoverFrameRef.current = window.requestAnimationFrame(() => {
+        if (!isOverlaidRef.current) {
+          show({ next: null });
+        }
+      });
+    };
     const placement = createNativePlacement({
       sessionId,
       onError: ({ error }) => onErrorRef.current({ error }),
+      onShown: uncover,
     });
     placementRef.current = placement;
     const overlays = createOverlayWatch();
     const sync = (): void => {
       const wantedTab = tabRef.current;
-      const bounds = wantedTab === null ? null : viewBoundsOf({ view: view.current, overlays });
+      const element = view.current;
+      const reason =
+        wantedTab === null || element === null || !element.isConnected
+          ? null
+          : overlays.coverOf({ view: element, rect: element.getBoundingClientRect() });
+      isOverlaidRef.current = reason !== null;
+      if (wantedTab === null && coverRef.current !== null) {
+        show({ next: null });
+      }
+      if (reason !== null && reason !== coverRef.current) {
+        show({ next: reason });
+      }
+      const bounds = wantedTab === null ? null : viewBoundsOf({ view: element, overlays });
       placement.want({
         view: wantedTab === null || bounds === null ? null : { tab: wantedTab, bounds },
       });
@@ -51,6 +93,7 @@ export const useNativePlacement = ({ sessionId, view, tab, attempt, onError }: P
     sync();
     return () => {
       window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(uncoverFrameRef.current);
       resize?.disconnect();
       overlays.stop();
       placement.stop();
@@ -64,4 +107,6 @@ export const useNativePlacement = ({ sessionId, view, tab, attempt, onError }: P
     }
     placementRef.current?.retry();
   }, [attempt]);
+
+  return cover;
 };

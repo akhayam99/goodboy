@@ -34,7 +34,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
   const isOnScreen = useAppStore((state) => state.appStudio?.kind === 'browser');
 
   useBrowserStudioTab({ sessionId, tabId, model });
-  useNativePlacement({
+  const cover = useNativePlacement({
     sessionId,
     view,
     tab: shownTab,
@@ -92,6 +92,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
                 view={view}
                 shown={model.shown}
                 title={title}
+                cover={cover}
                 emptyTitle="Open a page in this session"
               />
             </div>

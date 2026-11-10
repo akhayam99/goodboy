@@ -307,7 +307,13 @@ it; Esc inside the page goes to the page.
   a view inside that region is hidden, so the native view never paints over
   the dock. While
   one intersects the placeholder, the view is
-  hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
+  hidden; an overlay elsewhere in the window leaves it shown. While the view is
+  hidden under an overlay the placeholder shows a cover (`BrowserCover`) on the
+  subtle surface: favicon, title, host and the reason in one line
+  (`coverReasonText.ts`, from `createOverlayWatch().coverOf`: menu, dialog,
+  tooltip or page). The cover goes one frame after the host showed the view
+  again (`onShown` of `createNativePlacement`), so no frame has neither, and it
+  stays when the show fails. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they
   never sit under a view.
 - **Writes** name the session and the tab. A state change waits for the host:
@@ -579,7 +585,8 @@ words (`features/browser/browserFailureText.ts`).
   woken again by Reload, a revisited address saved, a failed save tried again
   and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
   the cover check for a popover with no role, for tooltips and for a page view
-  under an overlay dock.
+  under an overlay dock, and the reason per overlay kind. The mock scene
+  `browser-pane-cover` (light and dark) opens a menu over the page.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
   and dark) draw a stand in where the native view goes.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,

@@ -399,6 +399,60 @@ describe('the browser pane', () => {
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
   });
 
+  it('shows a cover with the title and the reason while a menu hides the page, and none after', async () => {
+    await openFirstPage();
+    expect(document.querySelector('[data-browser-cover]')).toBeNull();
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    giveRect({ element: menu, rect: { x: 900, y: 120, width: 240, height: 200 } });
+
+    act(() => {
+      document.body.append(menu);
+    });
+    const cover = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-browser-cover]');
+      if (found === null) {
+        throw new Error('The pane draws no cover yet.');
+      }
+      return found;
+    });
+    expect(cover.getAttribute('data-browser-cover')).toBe('menu');
+    expect(cover.textContent).toContain('Hidden while a menu is open');
+    expect(cover.textContent).toContain('localhost');
+
+    act(() => {
+      menu.remove();
+    });
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
+    await waitFor(() => expect(document.querySelector('[data-browser-cover]')).toBeNull());
+  });
+
+  it('keeps the cover when the host refuses to show the page again', async () => {
+    await openFirstPage();
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    giveRect({ element: menu, rect: { x: 900, y: 120, width: 240, height: 200 } });
+    act(() => {
+      document.body.append(menu);
+    });
+    await waitFor(() => expect(document.querySelector('[data-browser-cover]')).not.toBeNull());
+    const handler = storySpies.tauriInvoke.getMockImplementation();
+    storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+      if (name === 'browser_tab_show') {
+        throw { kind: 'refused', message: 'host-busy' };
+      }
+      return handler?.(name, args);
+    });
+
+    act(() => {
+      menu.remove();
+    });
+    await act(() => new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve())));
+    await act(() => new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve())));
+
+    expect(document.querySelector('[data-browser-cover]')).not.toBeNull();
+  });
+
   it('hides the view while a studio page covers the session', async () => {
     await openFirstPage();
     const studio = document.createElement('div');

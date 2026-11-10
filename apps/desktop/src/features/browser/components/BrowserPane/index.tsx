@@ -42,7 +42,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
   const isOnScreen = useAppStore((state) => selectDrawerPanel(state)?.kind === 'browser');
 
-  useNativePlacement({
+  const cover = useNativePlacement({
     sessionId,
     view,
     tab: shownTab,
@@ -76,7 +76,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
               onFold={() => changeMode({ next: isRail ? 'list' : 'rail' })}
             />
           ) : null}
-          <BrowserView view={view} shown={model.shown} title={title} />
+          <BrowserView view={view} shown={model.shown} title={title} cover={cover} />
         </div>
       </div>
     </DrawerFrame>
