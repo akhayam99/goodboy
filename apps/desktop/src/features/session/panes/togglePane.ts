@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectSlotBack } from '../../../store/slices/drawer/selectSlotBack';
+import { leaveStudio } from '../../../store/slices/navigation/leaveStudio';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
 import { toggleSessionTerminal } from '../../terminal/toggleSessionTerminal';
@@ -16,7 +17,7 @@ type Params = {
 export const togglePane = ({ sessionId, pane }: Params): void => {
   const isOnPage = useAppStore.getState().appStudio !== null;
   if (isOnPage) {
-    useAppStore.getState().closeStudio();
+    leaveStudio({ get: useAppStore.getState });
   }
   const state = useAppStore.getState();
   const isShown = openPaneOf({ state, sessionId }) === pane;

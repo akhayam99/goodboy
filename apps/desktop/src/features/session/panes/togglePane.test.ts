@@ -43,6 +43,17 @@ describe('togglePane under a page', () => {
     expect(shownKind()).toBe('context');
   });
 
+  it('leaves Impact opened from Guide in one press and shows the parked pane', () => {
+    togglePane({ sessionId: SESSION_ID, pane: 'context' });
+    store.getState().openStudio({ studio: { kind: 'guide' } });
+    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+
+    togglePane({ sessionId: SESSION_ID, pane: 'context' });
+
+    expect(store.getState().appStudio).toBeNull();
+    expect(shownKind()).toBe('context');
+  });
+
   it('closes the page and opens the pane when nothing was parked', () => {
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 

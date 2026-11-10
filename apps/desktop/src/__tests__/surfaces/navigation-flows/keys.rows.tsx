@@ -557,6 +557,22 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'lens.context',
+    note: "on What's new over Guide with Context parked leaves both pages and shows Context",
+    open: async (ctx) => {
+      useAppStore.getState().openContextDrawer({ sessionId: ctx.sessionId });
+      useAppStore.getState().openStudio({ studio: { kind: 'guide' } });
+      useAppStore.getState().openStudio({ studio: { kind: 'changelog' } });
+      await settle();
+      await press('lens.context')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
+      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
+      await drawerIs(null)(ctx);
+    },
+  }),
+  keyRow({
+    id: 'lens.context',
     note: 'on a page with nothing parked closes the page and opens Context',
     open: async () => {
       useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: null } });
