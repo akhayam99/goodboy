@@ -27,6 +27,7 @@ export const ComposerSurface = ({
 }: Props) => (
   <div
     ref={surfaceRef}
+    data-composer-surface=""
     data-drop-composer={drop === undefined ? undefined : true}
     data-prompt-field={kind}
     className={cn(
