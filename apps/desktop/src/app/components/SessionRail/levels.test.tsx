@@ -535,7 +535,7 @@ describe('the session rail top row and its menu', () => {
     const top = within(elementOf('[data-rail-top]', rail()));
 
     expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Fold session rail',
+      'Hide session pages',
       'Pin session',
       'Refresh session',
       'More session actions',
@@ -786,14 +786,14 @@ describe('the session rail as the inner column', () => {
   it('folds and unfolds the rail through the inner column key, remembered', () => {
     seed();
     mountColumn();
-    expect(innerColumnStore.current()?.label).toBe('Fold the session rail');
+    expect(innerColumnStore.current()?.label).toBe('Hide session pages');
 
     act(() => {
       innerColumnStore.toggleCurrent();
     });
 
     expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-    expect(innerColumnStore.current()?.label).toBe('Show the session rail');
+    expect(innerColumnStore.current()?.label).toBe('Show session pages');
     act(() => {
       innerColumnStore.toggleCurrent();
     });
@@ -802,6 +802,80 @@ describe('the session rail as the inner column', () => {
 });
 
 describe('the folded session rail', () => {
+  it('starts the page icons right under the top row, open and folded, so a fold moves none', () => {
+    seed();
+    mountColumn();
+    const openFrame = elementOf('[data-fold]', rail());
+    expect(openFrame.previousElementSibling).toBe(elementOf('[data-rail-top]', rail()));
+    expect(rail().querySelector('[data-rail-actions]')).toBeNull();
+    cleanup();
+
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    mountColumn();
+    const foldedFrame = elementOf('[data-fold]', rail());
+    expect(foldedFrame.previousElementSibling).toBe(elementOf('[data-rail-top]', rail()));
+    expect(foldedFrame.nextElementSibling).toBe(elementOf('[data-rail-actions]', rail()));
+  });
+
+  it('names itself Session pages and keeps More session actions at the foot', () => {
+    seed();
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    mountColumn();
+
+    expect(rail().getAttribute('aria-label')).toBe('Session pages');
+    const top = within(elementOf('[data-rail-top]', rail()));
+    expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Show session pages',
+    ]);
+    const actions = within(elementOf('[data-rail-actions]', rail()));
+    expect(
+      actions.getAllByRole('button').map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['More session actions']);
+    expect(within(rail()).queryByRole('button', { name: 'Pin session' })).toBeNull();
+    expect(within(rail()).queryByRole('button', { name: 'Refresh session' })).toBeNull();
+  });
+
+  it('opens the same session menu from the folded rail', () => {
+    seed();
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    mountColumn();
+
+    fireEvent.click(
+      within(elementOf('[data-rail-actions]', rail())).getByRole('button', {
+        name: 'More session actions',
+      }),
+    );
+    const labels = within(screen.getByRole('menu'))
+      .getAllByRole('menuitem')
+      .map((item) => item.textContent ?? '');
+    expect(labels.length).toBeLessThanOrEqual(5);
+    expect(labels.some((label) => label.startsWith('Archive'))).toBe(true);
+  });
+
+  it('keeps a failed action retryable after the rail folds', async () => {
+    seed();
+    const pinSession = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error('database is locked'))
+      .mockResolvedValueOnce(undefined);
+    useAppStore.setState({ pinSession });
+    mountColumn();
+    await act(async () => {
+      fireEvent.click(within(rail()).getByRole('button', { name: 'Pin session' }));
+    });
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
+    await act(async () => {
+      fireEvent.click(within(rail()).getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(pinSession).toHaveBeenCalledTimes(2);
+    expect(within(rail()).queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
   it('draws one branch icon per worktree with its project, branch and state in the tooltip', () => {
     seed();
     const payments = mountOf({ session: open, project: paymentsApi });

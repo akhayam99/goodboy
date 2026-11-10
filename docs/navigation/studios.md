@@ -236,10 +236,10 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   changelog, Settings and Notifications fold this way.
   **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
   on: each foldable column registers with `useInnerColumn` while its page
-  shows (the session rail while no studio covers it, a page rail through
+  shows (the session pages while no studio covers it, a page rail through
   `StudioRailLayout`), the key toggles the last one registered
   (`innerColumnStore.toggleCurrent`), the palette lists it under that
-  column's name (Hide chat list, Show settings scopes) and leaves it out
+  column's name (Hide chat list, Show session pages) and leaves it out
   on a page with none, where the key does nothing. Under a pane of 880px the rail
   folds without saving anything and docks again when the pane widens. A folded
   rail leaves the shared `FilterButton` (28px tall, the lines icon with the

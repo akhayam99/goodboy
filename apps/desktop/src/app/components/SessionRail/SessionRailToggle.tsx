@@ -9,7 +9,7 @@ type Props = {
 export const SessionRailToggle = ({ isFolded, onToggle }: Props) => (
   <IconButton
     icon={isFolded ? PanelLeftOpen : PanelLeftClose}
-    label={isFolded ? 'Show session rail' : 'Fold session rail'}
+    label={isFolded ? 'Show session pages' : 'Hide session pages'}
     shortcut={INNER_COLUMN_SHORTCUT}
     tooltipSide="right"
     size="md"

@@ -1,9 +1,9 @@
 import type { Session, SessionId } from '@goodboy/types';
 import { currentSignOf } from '../../../features/workspace/components/SessionActivityBar/currentSign';
-import { SessionPages } from '../../../features/workspace/components/SessionActivityBar/SessionPages';
 import { useCardPages } from '../../../features/workspace/hooks/useCardPages';
 import { useSessionRowFacts } from '../../../features/workspace/hooks/useSessionRowFacts';
 import { useSessionPageLens } from '../../../features/session/hooks/useSessionPageLens';
+import { SessionPages } from '../SessionRail/SessionPages';
 
 type Props = {
   readonly session: Session;

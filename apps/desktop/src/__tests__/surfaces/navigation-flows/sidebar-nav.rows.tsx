@@ -204,7 +204,7 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     name: 'rail: with the session rail folded, its session level icons open Runs',
     covers: ['navigate', 'rail:session-level'],
     open: async () => {
-      await clickButton(/^Fold session rail/);
+      await clickButton(/^Hide session pages/);
       const rail = await waitFor(() => {
         const found = document.querySelector<HTMLElement>('[data-session-rail="session"]');
         expect(found?.hasAttribute('data-rail-folded')).toBe(true);

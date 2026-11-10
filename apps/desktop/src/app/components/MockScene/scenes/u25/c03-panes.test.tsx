@@ -121,7 +121,7 @@ describe('c03 session tools scenes', () => {
 
   it('keeps the tools in a column right of the content, not in the rail, and no page header holds a pane toggle', async () => {
     await mount('c03-panes-closed');
-    const rail = screen.getByRole('navigation', { name: 'Session' });
+    const rail = screen.getByRole('navigation', { name: 'Session pages' });
     expect(within(rail).queryByRole('toolbar', { name: 'Session tools' })).toBeNull();
     const frame = rail.closest('[data-session-frame]');
     expect(frame?.lastElementChild?.getAttribute('aria-label')).toBe('Session tools');
@@ -157,7 +157,7 @@ describe('c03 session tools scenes', () => {
 
   it('keeps the same tools while a branch is open in the rail', async () => {
     await mount('c03-panes-drilled');
-    const rail = screen.getByRole('navigation', { name: 'Session' });
+    const rail = screen.getByRole('navigation', { name: 'Session pages' });
     expect(rail.getAttribute('data-session-rail')).toBe('session');
     expect(pressed()).toEqual(['Explore']);
     expect(within(cluster()).getAllByRole('button')).toHaveLength(7);
