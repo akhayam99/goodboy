@@ -23,7 +23,7 @@ import type { TerminalTabId } from '../../../../shared/types/terminal';
 import { ColumnRail } from '../ColumnRail';
 import { SideColumn } from '../index';
 import type { ColumnActions } from '../columnDoors';
-import type { ColumnPlace } from '../columnPlace';
+import type { ColumnPlace } from '../../../../shared/navigation/columnPlace';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
 const CHECKOUT = aSession({ workspaceId: WORKSPACE.id, goal: 'Show tax in the checkout total' });

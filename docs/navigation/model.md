@@ -80,13 +80,11 @@
   presence ("where do I go, what else is going on"): its doors and the sessions
   list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
-  Forward and Search or run, clustered in the centre. It never holds a
-  destination. Every chip opens the home of the number it shows: the Now chip
-  ends on Monitoring, the Spend chip opens Impact on its Spend tab (the bar
-  holds no Impact icon), and the Usage chips open the Providers menu. The only
-  control it holds for another container is the sidebar toggle. The bar never
-  edits a record in place.
-- **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
+  Forward and Search, clustered in the centre. It never holds a destination.
+  The spend chip is state that opens the studio that owns that number, on
+  Impact's Spend tab, and the Usage chips open the Providers menu. The bar
+  never edits a record in place.
+- **The column holds every door and never changes level.** New session comes first, then the doors Board (the board, ⌘⇧H),
   Tasks, Chat, Workflows and Impact as rows, then Terminal, Browser and Monitoring as one row of tiles; Chat ends in a plus
   (New chat) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
@@ -183,7 +181,7 @@
 - **One selected sign.** The open studio's door, New session while the draft is
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
-  `useColumnPlace`), so at most one door carries it; inside a session no door
+  `selectColumnPlace` and `useColumnPlace`), so at most one door carries it; inside a session no door
   does: the open session's row is the column's sign and the current page row is
   the session rail's (see Session rail), one sign per navigation column. A popover trigger (the
   Usage chips, the Goodboy row) is never selected: it only reports

@@ -1,5 +1,5 @@
-import type { StudioKind } from '../../../store';
-import type { DestinationId, FootDestinationId } from '../../../shared/navigation/destinations';
+import type { StudioKind } from '../../store';
+import type { DestinationId, FootDestinationId } from './destinations';
 
 export type ColumnDoorId = Exclude<DestinationId, 'notifications' | FootDestinationId>;
 
@@ -11,7 +11,11 @@ type Params = {
   readonly studio: StudioKind | null;
 };
 
-const studioPlace = ({ studio }: { readonly studio: StudioKind }): ColumnPlace => {
+type StudioParams = {
+  readonly studio: StudioKind;
+};
+
+const studioPlace = ({ studio }: StudioParams): ColumnPlace => {
   switch (studio) {
     case 'inbox':
       return 'inbox';

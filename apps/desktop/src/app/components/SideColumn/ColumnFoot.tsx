@@ -2,7 +2,9 @@ import { destinationOf } from '../../../shared/navigation/destinationOf';
 import { GoodboyChip } from '../GoodboyChip';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import type { ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
+
+const SETTINGS = destinationOf({ id: 'settings' });
 
 const SETTINGS = destinationOf({ id: 'settings' });
 

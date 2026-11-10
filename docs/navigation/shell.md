@@ -491,10 +491,9 @@ covered.
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
-  two, and a group with no rows is not drawn. The popover ends on **Open Monitoring**,
-  the page that owns those counts. Sessions that need you are not in the
-  bar, in the chip or in its panel: the Sessions door carries the count. Needs you counts three
-  units, and each tooltip names its own: sessions ("2 sessions need you") on the Sessions
+  two, and a group with no rows is not drawn. Sessions that need you are not in the
+  bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
+  units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
   door, the dock badge and the palette; questions ("3 questions") on the
   Questions entry of the session rail; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
@@ -657,13 +656,27 @@ its own.
 
 On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
 Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
-New Workspace, Close), Edit, View (sidebar, Search or Run, zoom, Reload, full
-screen), Go (Back, Forward, Sessions, Tasks, Chat, Workflows, Terminal,
-Impact, Notifications, Monitoring), Window and Help (Guide, What's New,
+New Workspace, Close), Edit, View (sidebar, Command Palette, zoom, Reload, full
+screen), Go (Back, Forward, then the destinations in the order of
+`DESTINATIONS`: Board, Tasks, Workflows, Chat, Impact, Terminal, Browser,
+Monitoring, Notifications), Window and Help (Guide, What's New,
 Keyboard Shortcuts, Report a Bug). One table lays all of them out
 (`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
 (About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)
-or a command with an id, a title-case label and an optional combo.
+or a command with an id, a title-case label and an optional combo. The native
+menu bar follows the macOS convention and is not bound to five rows. Every menu
+the app draws itself (a `⋯`, a header menu, a popover of actions) holds five
+rows at most. `menu-row-budget.test.ts` reads each hand written menu source and
+reports one line per file with its row count: literal rows, the choices of a
+radio group, and rows mapped from a constant list. Two menus in one file add
+up, which is stricter than the rule. A menu whose rows come from data (a picker
+over projects, people or branches, or rows built by `toMenuEntries`) is named
+in that test with its reason. The history menu of the back and forward arrows
+is such a list: it shows the last twelve stops of the history stack, so it is
+named there as a list and not as a menu of fixed rows. The registry menus are
+measured state by state in
+`overflowRows.test.ts` and `overflowRows.drawer.test.tsx`. Right click menus
+mirror the action catalog and are not bound.
 
 One rule runs the bar: a command row emits one event, `goodboy://menu` with
 `{ id }`, to the focused window, and `useMenuCommands` is the one listener
@@ -675,10 +688,15 @@ New Workspace, the Go doors, Guide, What's New). An id with neither warns once
 and does nothing. A new menu item therefore adds a row to the table and an id,
 never an event or a listener. Every Go door opens through `openDestination`,
 the same call as the column and the palette, and the doors that need a
-workspace do nothing without one. `menuBar.parity.test.ts` reads the Rust table
-and fails when an id has no registry entry or action, a combo differs from the
-registry's, a label is not title case, a key has two owners, or the Go rows
-differ from `DESTINATIONS` in order.
+workspace do nothing without one. `openDestination` does nothing when the
+destination is a page the column already shows as current (Tasks, Chat,
+Workflows, Impact, Terminal, Browser, Monitoring), read from the same
+`selectColumnPlace` as the column. A Go pick on the open page therefore adds no
+history entry, keeps a promoted Browser tab and keeps the scope of an open
+Impact page. `menuBar.parity.test.ts` reads the Rust table and fails when an id
+has no registry entry or action, a combo differs from the registry's, a label
+is not title case, a key has two owners, or the Go rows differ from
+`DESTINATIONS` in order or in name.
 
 ## Report sheet
 
