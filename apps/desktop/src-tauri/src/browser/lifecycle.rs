@@ -50,7 +50,7 @@ fn close_webviews<R: Runtime>(app: &AppHandle<R>, ids: &[String], _gate: &Gate<'
             continue;
         };
         let webview = app.get_webview(&guard::label_of(id));
-        if let Some(live) = webview.as_ref().and_then(|webview| webview.url().ok()) {
+        if let Some(live) = webview.as_ref().and_then(crate::platform::web_url::live_url_of) {
             registry.set_url(id, live.as_str());
         }
         let closed = match webview {
@@ -77,7 +77,7 @@ pub(crate) fn close_for_switch<R: Runtime>(
         ids,
         |id| {
             let webview = app.get_webview(&guard::label_of(id));
-            if let Some(live) = webview.as_ref().and_then(|webview| webview.url().ok()) {
+            if let Some(live) = webview.as_ref().and_then(crate::platform::web_url::live_url_of) {
                 registry.set_url(id, live.as_str());
             }
             match webview {

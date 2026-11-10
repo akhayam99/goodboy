@@ -191,7 +191,7 @@ pub(crate) fn refresh_urls<R: Runtime>(app: &AppHandle<R>, tabs: Vec<TabFacts>) 
         .map(|facts| {
             let Some(live) = webview_of(app, &facts.id)
                 .ok()
-                .and_then(|webview| webview.url().ok())
+                .and_then(|webview| crate::platform::web_url::live_url_of(&webview))
             else {
                 return facts;
             };
