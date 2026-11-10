@@ -13,6 +13,8 @@ export const sceneColumnPlace = ({ target }: { readonly target: FooterTarget }):
       return 'impact';
     case 'changelog':
       return 'whatsNew';
+    case 'guide':
+      return 'guide';
     case 'link':
     case null:
       return null;

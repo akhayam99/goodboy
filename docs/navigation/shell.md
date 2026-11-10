@@ -33,8 +33,8 @@ What holds today and is guarded:
   own state, in the column, the session rail, the session list, the Goodboy row
   and the bell; every one of them reads the one column place (`useColumnPlace`),
   New session included; the session rail reads the session pages sign
-  (`currentSignOf`). Every page names a place, so exactly one control is lit and
-  the open session is never lit under a page. `__tests__/navigation/oneDoor.test.ts`.
+  (`currentSignOf`). Every page except the New workspace flow names a place, so
+  exactly one control is lit, and the open session is never lit under a page. `__tests__/navigation/oneDoor.test.ts`.
 - **One door for moves.** Only `navigate`, `back`, `forward`, `up` and
   `amendFocus` move the user outside the navigation slice. Same test.
 - **Saved layouts load without loss.** A window layout and the fold choices

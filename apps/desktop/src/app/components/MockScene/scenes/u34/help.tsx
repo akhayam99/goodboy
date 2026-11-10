@@ -42,7 +42,7 @@ const HelpScene = ({ variant }: Props) => {
   }, [variant]);
 
   return (
-    <FramedStudioScene kind="guide" place="link">
+    <FramedStudioScene kind="guide" place="guide">
       <HelpStudio
         initialTab={variant === 'shortcuts' ? 'shortcuts' : 'guide'}
         onClose={NOOP}
