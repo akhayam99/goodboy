@@ -11,13 +11,21 @@ type ErrorParams = {
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly frame: RefObject<HTMLDivElement | null>;
   readonly view: RefObject<HTMLDivElement | null>;
   readonly tab: BrowserTab | null;
   readonly attempt: number;
   readonly onError: (params: ErrorParams) => void;
 };
 
-export const useNativePlacement = ({ sessionId, view, tab, attempt, onError }: Params): void => {
+export const useNativePlacement = ({
+  sessionId,
+  frame,
+  view,
+  tab,
+  attempt,
+  onError,
+}: Params): void => {
   const tabRef = useRef(tab);
   tabRef.current = tab;
   const onErrorRef = useRef(onError);
@@ -38,25 +46,25 @@ export const useNativePlacement = ({ sessionId, view, tab, attempt, onError }: P
         view: wantedTab === null || bounds === null ? null : { tab: wantedTab, bounds },
       });
     };
-    let frame = 0;
+    let frameId = 0;
     const tick = (): void => {
+      frameId = window.requestAnimationFrame(tick);
       sync();
-      frame = window.requestAnimationFrame(tick);
     };
-    frame = window.requestAnimationFrame(tick);
+    frameId = window.requestAnimationFrame(tick);
     const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(sync);
-    if (view.current !== null) {
-      resize?.observe(view.current);
+    if (frame.current !== null) {
+      resize?.observe(frame.current);
     }
     sync();
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(frameId);
       resize?.disconnect();
       overlays.stop();
       placement.stop();
       placementRef.current = null;
     };
-  }, [sessionId, view]);
+  }, [sessionId, frame, view]);
 
   useEffect(() => {
     if (attempt === 0) {
