@@ -123,7 +123,11 @@ const GO_ROWS: &[Row] = &[
     command("menu.monitoring", "Monitoring", None),
     command("menu.notifications", "Notifications", None),
     SEPARATOR,
-    command("terminal.studio", "Show or Hide Terminal", Some("ctrl+Backquote")),
+    command(
+        "terminal.studio",
+        "Show or Hide Terminal",
+        Some("ctrl+Backquote"),
+    ),
     command("menu.browser", "Show or Hide Browser", None),
 ];
 
