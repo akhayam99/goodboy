@@ -45,7 +45,11 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const renderPages = ({ variant }: { readonly variant: SessionPageVariant }) =>
+type RenderPagesParams = { readonly variant: SessionPageVariant };
+
+type HoverParams = { readonly target: Element };
+
+const renderPages = ({ variant }: RenderPagesParams) =>
   render(
     <SessionPages
       session={sessionOf({ goal: 'Reconcile the ledger export' })}
@@ -56,7 +60,7 @@ const renderPages = ({ variant }: { readonly variant: SessionPageVariant }) =>
     />,
   );
 
-const hover = async ({ target }: { readonly target: Element }) => {
+const hover = async ({ target }: HoverParams) => {
   fireEvent.mouseEnter(target);
   return (await screen.findByRole('tooltip')).textContent ?? '';
 };

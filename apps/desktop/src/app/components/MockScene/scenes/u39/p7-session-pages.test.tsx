@@ -1,9 +1,8 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
@@ -14,8 +13,9 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
 } from '../../../../../store/storyHarness';
-import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U39_P7_SCENES } from './p7-session-pages';
 
@@ -29,6 +29,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command, args) =>
+    sceneInvoke({ command: String(command), args }),
+  );
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
 });
 
@@ -77,7 +80,7 @@ describe('the ux39 P7 session pages scenes', () => {
     expect(rail().getAttribute('aria-label')).toBe('Session pages');
     expect(rail().hasAttribute('data-rail-folded')).toBe(false);
     expect(rail().querySelector('[data-rail-actions]')).toBeNull();
-    expect(within(rail()).getByRole('button', { name: 'Refresh session' })).toBeDefined();
+    expect(within(rail()).getByRole('button', { name: 'Refresh session' }).tagName).toBe('BUTTON');
     expect(rail().querySelector('[data-page-value="questions"]')?.getAttribute('data-tone')).toBe(
       'warning',
     );
@@ -87,7 +90,7 @@ describe('the ux39 P7 session pages scenes', () => {
     await mount('ux39-p7-open-branchless');
 
     expect(rail().hasAttribute('data-rail-folded')).toBe(false);
-    expect(within(rail()).getByRole('button', { name: /^Overview/ })).toBeDefined();
+    expect(within(rail()).getByRole('button', { name: /^Overview/ }).tagName).toBe('BUTTON');
   });
 
   it('ux39-p7-folded draws one icon per page with the menu at the foot', async () => {
@@ -98,7 +101,9 @@ describe('the ux39 P7 session pages scenes', () => {
     expect(actions).not.toBeNull();
     expect(rail().lastElementChild).toBe(actions);
     expect(pageLabelsOf()).toContain('Show session pages');
-    expect(within(rail()).getByRole('button', { name: 'More session actions' })).toBeDefined();
+    expect(within(rail()).getByRole('button', { name: 'More session actions' }).tagName).toBe(
+      'BUTTON',
+    );
     expect(
       rail().querySelector('[data-rail-page="page-questions"] span[aria-hidden]'),
     ).not.toBeNull();
