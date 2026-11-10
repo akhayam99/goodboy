@@ -1412,11 +1412,12 @@ avoided on `SendControl`'s own buttons.
   not the placeholder, and it also holds Attach files. It reads `CHAT_PREFIXES`
   so a new prefix group appears there on its own. Then `PermissionModePicker`,
   then an attachment count once files are staged (the attachment chips
-  themselves sit above the field, not in this row). On an agent or Auto page
-  the composer keeps only the message: `AgentDetailPane` passes
-  `controlSlots` and `ComposerToolbar` portals `PermissionModePicker` and
-  `ComposerRoutingPicker` into the page's settings line (`AgentSettingsLine`),
-  so the composer still owns the turn routing it sends with.
+  themselves sit above the field, not in this row). The right side is
+  `ComposerRoutingPicker` and Send on every surface: the model of the next
+  turn is picked in the box that sends it, and nowhere else on the page. On
+  an agent or Auto page `AgentDetailPane` passes `controlSlots` and
+  `ComposerToolbar` portals only `PermissionModePicker` into the page's
+  settings line (`AgentSettingsLine`).
 - The toolbar is a container (`@container` on `ComposerToolbar`), so it
   answers to the composer's width, not the window's, and a drawer composer
   holds at the narrowest drawer. Labels never wrap (`whitespace-nowrap`). It

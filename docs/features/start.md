@@ -87,7 +87,7 @@ Its last line says what a pick does.
 The settings line of a run names the model that runs it, next to the **Kind** chip.
 
 - An orchestrated run shows **Orchestrator** with its model, **Auto** while the run follows the default. A pick is for this run only, and **Auto** in the picker goes back to the default. The chip is fixed while the orchestrator decides and once the run is over. The hint box below holds the same control.
-- An Auto agent shows **Auto agent** in front of the model pill of its box. A pick there applies from the next turn of that agent.
+- An agent or an Auto agent has its model in its message box, beside **Send**. A pick there applies from the next turn of that agent.
 - The default of each is in **Settings › Models › Runs**.
 
 ### The New session page
@@ -209,7 +209,7 @@ This part is for contributors and agents who change the feature.
 - Kind to route: `runAsOfStartFormKind` turns a pressed kind into the `RunAs` that `runAsRouteOf` turns into the route Start uses, with a typed token ahead of the kind. `routeLineOf` builds the live "Starts as" line.
 - Edits: `StartEditsSetting` reads the draft, or the session on Runs. `applyStartEdits` calls `setSessionPermissionMode` before the first agent starts and does nothing when no mode was picked.
 - Model chip: `RunModelChip` is the one control on every door and kind, the Agent kind of the New session page included. There `useDraftAgentModel` wraps the `useRunModel` view so a pick lands in the draft's `agentRouting`. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
-- Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. `AgentSettingsLine` draws the Auto agent label in front of the composer's model slot, and hides it with the slot when the box has no pill.
+- Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. An agent page keeps its model in `ComposerToolbar` (`ComposerRoutingPicker`); `AgentSettingsLine` draws no model (`modelInComposer.test.tsx`).
 - Model pins: `startRoutedRun` takes `routing` for a lead and `orchestratorRouting` for a plan. `attachWorkflowToSession` stores the second as the run's `orchestratorRouting`. A start clears the pins.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.

@@ -50,7 +50,6 @@ export const ComposerToolbar = ({
   const asks = hasPermissionPicker ? (
     <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
   ) : null;
-  const models = <ComposerRoutingPicker routing={routing} />;
   const isInline = controlSlots === undefined;
   return (
     <div data-composer-toolbar="" className="@container min-w-0">
@@ -82,7 +81,7 @@ export const ComposerToolbar = ({
         }
         end={
           <>
-            {isInline ? models : null}
+            <ComposerRoutingPicker routing={routing} />
             <SendControl
               isRunning={isRunning}
               canSend={canSend}
@@ -97,9 +96,6 @@ export const ComposerToolbar = ({
       {controlSlots === undefined || controlSlots.asks === null || asks === null
         ? null
         : createPortal(asks, controlSlots.asks)}
-      {controlSlots === undefined || controlSlots.models === null
-        ? null
-        : createPortal(models, controlSlots.models)}
     </div>
   );
 };
