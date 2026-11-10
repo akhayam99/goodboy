@@ -178,26 +178,15 @@ describe('GoodboyChip on the rail', () => {
 });
 
 describe('GoodboyChip sizing in the column', () => {
-  it('sets the whole line in the meta size, as the version and Beta read the same', () => {
-    renderChip();
-
-    expect(screen.getByRole('button', { name: DOOR_LABEL }).className).toContain('text-meta');
-  });
-
-  it('keeps the lockup whole beside the pill so the pill is what truncates', () => {
-    useAppStore.setState({ updaterStatus: 'available' });
-    renderChip();
-
-    expect(screen.getByTestId('goodboy-chip').className).toContain('shrink-0');
-  });
-
-  it('falls to the mark under 13.5rem at rest and keeps the full lockup above it', () => {
+  it('holds the full lockup and the bare mark at rest, so a narrow column falls to the mark', () => {
     renderChip();
 
     const chip = screen.getByRole('button', { name: DOOR_LABEL });
-    expect(chip.querySelector('[data-lockup-wide]')?.className).toContain('@max-[13.5rem]:hidden');
-    expect(chip.querySelector('[data-lockup-narrow]')?.className).toContain(
-      '@max-[13.5rem]:contents',
+    expect(chip.querySelector('[data-lockup-wide]')?.textContent).toBe(
+      `GoodboyBetav${APP_VERSION}`,
     );
+    const narrow = chip.querySelector('[data-lockup-narrow]');
+    expect(narrow?.textContent).toBe('');
+    expect(narrow?.querySelector('[data-brand-chip]')).not.toBeNull();
   });
 });
