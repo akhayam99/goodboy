@@ -689,23 +689,45 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 
 ## The session tools
 
-One 44px column at the right edge of the session content holds Explore,
-Context, Ask, Agents, Scripts, Terminal and Browser (`SESSION_TOOLS`). Explore,
-Context and Ask form the reading group; one separator leads to the other tools.
-Two captions, Read and Work (`ToolGroupCaption`), sit over the two groups in
-the same `text-rail` role.
-Each tool keeps its pane id and shortcut; Browser has no shortcut yet. `SessionToolButton` names every
-tool below its icon in the 9px `text-rail` role: faint when closed, muted when
+The right rail is one 44px column at the sheet's right edge on every screen of
+a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
+the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
+Workflows). It holds two groups by scope. On a session page with no page open,
+the Session group holds Explore, Context, Ask, Agents and Scripts
+(`SESSION_TOOLS`). At its foot, on every screen, the Workspace group holds
+Terminal and Browser (`WORKSPACE_TOOLS`); a flexible gap keeps it anchored to
+the bottom, and one separator sits above it when the Session group shows. Two
+captions, Session and Workspace (`ToolGroupCaption`), sit over the two groups
+in the same `text-rail` role. A test scene or frame without the shell rail
+keeps the column inside `SessionFrame` (`ShellRailContext`).
+Each tool keeps its pane id and shortcut; Terminal shows ⌃`and Browser has no shortcut.`SessionToolButton`names every
+tool below its icon in the 9px`text-rail` role: faint when closed, muted when
 open. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
-A tool has three states (`toolStateOf`): at rest, pressed when it holds the
-slot, and waiting when it is the tool in the slot's back chip. Waiting draws a
+A tool has four states (`toolStateOf`): at rest, pressed when it holds the
+slot, waiting when it is the tool in the slot's back chip, and current when its
+page is open (Terminal and Browser only: selected, `aria-current="page"`, and a
+click does nothing). Waiting draws a
 small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
 `Terminal, waiting`; pressing it opens the saved request of the chip again
 (`togglePane`), so Context comes back on the same section and view, and the
-tool it replaces moves into the chip.
-`waitingPaneOf` reads the same `selectSlotBack` the drawer head's back chip
+tool it replaces moves into the chip. Terminal names the running terminals and
+wears a running dot while one runs (`Terminal, 2 running`), Browser names its
+tabs (`Browser, 3 tabs`); the words come from `toolFactOf` over
+`runningTerminalCount` and `browserTabCount`.
+
+Terminal and Browser are workspace tools: their dock opens with
+`toggleTerminalDock` and `toggleBrowserDock` from the rail, the palette, the Go
+menu, ⌃`and ⌘⌥T. On a session page the dock opens on the session's terminal
+or tabs; anywhere else on the workspace's (the workspace folder terminal, or
+the session the Browser page would pick, with an empty state when there is
+none). The drawer request may carry`sessionId: null`. Open as page in the dock
+header grows it into its page (`openTerminalOnPage`, `promoteBrowserTab`, a
+push); while that page is open the dock stays in the store but is not mounted,
+so Back brings it again on the same tab, and Dock on the page header moves it
+back (`dockTerminalPage`, `demoteBrowserTab`).
+`waitingPaneOf`reads the same`selectSlotBack` the drawer head's back chip
 reads, so the two never disagree: a reader or form in the chip rings nothing,
 and a tool that is pressed never rings. The signal dot keeps its meaning and
 sits with any state, on the other corner of the icon.
@@ -794,10 +816,9 @@ Folding the rail leaves the column in place.
   (`withoutRemovedPages` drops the retired `sidebar-level` key); a tool it had
   open stays open. The panel is per window: the drawer belongs to the window's store.
 
-- **Outside a session there is no tools group.** The workspace pages (the
-  board, the studios) already hold the two tools that make sense there as
-  column: the **Terminal** tile and the **Chat** door
-  (with New chat), the workspace conversation that answers what Ask answers
+- **Outside a session only the Workspace group shows.** On the Board, the draft
+  and every page the rail holds Terminal and Browser alone; the **Chat** door
+  (with New chat) is the workspace conversation that answers what Ask answers
   for one session. Ask, Explore, Context and Scripts read one session, so they
   exist only inside one, and ⌘L is bound only while a session is visible.
 

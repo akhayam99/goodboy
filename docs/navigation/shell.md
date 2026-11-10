@@ -13,7 +13,12 @@ true turns it into a **holds** line and adds its guard in the same change. A
 unit that changes the skeleton edits this section first.
 
 1. **Left is where you go. Target.** Owned by The column and The session rail.
-2. **Right is what you hold. Target.** Owned by The session tools
+2. **Right is what you hold. Holds.** The right rail sits at the sheet's right
+   edge on every screen of a workspace: the session tools on a session page,
+   Terminal and Browser at its foot everywhere. Terminal and Browser stay open
+   across every move, and on Tasks, Chat and Workflows the page's own panel and
+   the dock replace each other (`toolsStay.test.ts`, `useOneRightPanel`,
+   `p10-right-dock.test.tsx`). Owned by The session tools
    ([session-rail.md](./session-rail.md)).
 3. **One home, one name. Target.** Owned by Column doors.
 4. **A page replaces the page. Target.** Owned by Surfaces.
@@ -294,9 +299,17 @@ back with the session. A parked drawer stays mounted, hidden and inert
 (`DrawerColumn` `isParked`), out of the flow so the page takes its width, with
 no exit and no width change, so a draft, a scroll position or a running
 terminal survives the trip. The session under the page widens while the drawer
-is parked and narrows again on return, so its transcript re-wraps. Close keys
-read `selectDrawerPanel`, which is null under a studio, and the history entry
-keeps the drawer. Esc inside a parked drawer is suspended, so it reaches the
+is parked and narrows again on return, so its transcript re-wraps. Terminal
+and Browser are workspace tools and follow no session: they stay docked across
+every move, on another session, on the Board and beside every page but their
+own (`keptTool`, `selectDrawerPanel`). Under their own page they stay in the
+store but are not mounted (`useShellRight`), so no shortcut answers twice. On
+Tasks, Chat and Workflows the page's own panel and the dock are one slot:
+opening the dock closes the panel, and opening a panel closes the workspace
+tools (`useOneRightPanel`, `closeWorkspaceTools`). Close keys
+read `selectDrawerPanel`, which is null under a studio unless a workspace tool
+shows beside it, and the history entry keeps the drawer. A workspace switch
+empties the slot. Esc inside a parked drawer is suspended, so it reaches the
 page, and after the trip the drawer's inner step (a plan in Ask) answers first
 again. A drawer's own key (⌘⌥C, ⌘⌥X, ⌘⌥S) on a page leaves that page and every
 page stacked under it, and shows that drawer; it never closes a parked one,
@@ -313,16 +326,11 @@ wears a small ring and is named waiting, and a signal dot sits with either (see
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: no toggle of its own (the sidebar
-toggle sits in the top bar), the doors Sessions (the Board, ⌘⇧H), Tasks,
-Workflows, Chat and Impact as one 28px row each (row icon and word in
-`text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
-new chat, never the last one), always visible. The tools, Terminal (⌃`), Browser and Monitoring, are
-not rows: they share one row of 48px tiles under the doors (`ColumnToolTiles`), the icon with its
-word under it, each tile as wide as the others. A tile opens the
-tool's page, is pressed on that page, takes the same focus ring as a row and carries the count
-at its top right (`text-chip`, tabular, `9+` past nine) or the warning dot. New terminal lives on
-the Terminal page, in the palette and in the menu, not on the tile. Tools are tiles and doors are
-rows. Then one separator
+toggle sits in the top bar), the doors Board (⌘⇧H), Tasks, Workflows, Chat,
+Impact and Monitoring as one 28px row each (row icon and word in
+`text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Impact and Monitoring are quiet rows. Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
+new chat, never the last one), always visible. The column holds no tool: Terminal and Browser
+live on the right rail (The session tools), and the folded rail shows the same six doors. Then one separator
 (`h-px bg-border-soft`) with the same gap above and below; the Sessions list
 (`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
 session row, selected while the draft is open, a primary dot and `Draft in progress` while a
@@ -334,12 +342,12 @@ row (the plus sits in it on Chat). A running door draws no dot: what runs is in 
 tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
 dot means attention without a number. Chat with none running shows a primary dot for a new reply.
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
-Terminal counts the terminal tabs still alive, all owners, Browser counts the rows the Browser page
-lists (`browserTabCount`), and Monitoring counts the pinned ports
+Monitoring counts the pinned ports
 and the ports Goodboy started that are in use; the numbers come from `doorSignalOf`, which the
-rows, the tiles and the folded rail all read. A pinned port that is down swaps Monitoring's count
-for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's and the tile's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
-`Browser, 3 tabs`, `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
+rows and the folded rail both read. A pinned port that is down swaps Monitoring's count
+for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's accessible name carries the fact (`Chat, unread`,
+`Monitoring, 3 in use`), and all read the store (`useDoorSignals`). The running terminals and
+the browser tabs count on the right rail instead (`Terminal, 2 running`, `Browser, 3 tabs`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
 the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot
@@ -684,8 +692,9 @@ On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
 Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
 New Workspace, Close), Edit, View (sidebar, Command Palette, zoom, Reload, full
 screen), Go (Back, Forward, then the destinations in the order of
-`DESTINATIONS`: Board, Tasks, Workflows, Chat, Impact, Terminal, Browser,
-Monitoring, Notifications), Window and Help (Guide, What's New,
+`DESTINATIONS`: Board, Tasks, Workflows, Chat, Impact, Monitoring,
+Notifications, then after a separator the two right rail tools, Show or Hide
+Terminal and Browser, which open the dock), Window and Help (Guide, What's New,
 Keyboard Shortcuts, Report a Bug). One table lays all of them out
 (`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
 (About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)
@@ -699,9 +708,10 @@ through the dispatcher, so a scoped owner keeps its place; any other id runs
 its `MENU_ACTIONS` entry (`menuActions.ts`: Check for Updates, New Terminal,
 New Workspace, the Go doors, Guide, What's New). An id with neither warns once
 and does nothing. A new menu item therefore adds a row to the table and an id,
-never an event or a listener. Every Go door opens through `openDestination`,
-the same call as the column and the palette, and the doors that need a
-workspace do nothing without one. `menuBar.parity.test.ts` reads the Rust table
+never an event or a listener. Every Go page opens through `openDestination`,
+the same call as the column and the palette; Browser opens the dock through
+`toggleBrowserDock`, Terminal through its shortcut, and New Terminal always adds
+a tab in the dock. The doors that need a workspace do nothing without one. `menuBar.parity.test.ts` reads the Rust table
 and fails when an id has no registry entry or action, a combo differs from the
 registry's, a label is not title case, a key has two owners, or the Go rows
 differ from `DESTINATIONS` in order.

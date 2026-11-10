@@ -185,8 +185,8 @@ a reader at 720 pushes from 1344px. Below its threshold it
 lies over the page, full height, with a scrim and an `inert` page, never
 squeezed. While it lies over the page, `DrawerColumn` draws an edge host
 (`data-drawer-edge`) at the right edge above the scrim and hands it to the page
-through `DrawerEdgeContext`; the session tools column portals a live copy there
-(`SessionFrame`), and the card sits left of it, so a tool can still switch or
+through `DrawerEdgeContext`; the right rail portals a live copy there
+(`ShellToolRail`, or `SessionFrame` in a frame without the shell rail), and the card sits left of it, so a tool can still switch or
 close the drawer. The host is measured after every commit (and by a
 `ResizeObserver` after that), and `drawerLayoutOf` takes its width as
 `edgeWidth`: the overlay card plus the column always fit in the sheet, so the
@@ -269,7 +269,7 @@ mounts it directly. No page sets its own header padding: the Settings detail,
 the board frame and the terminal drop their own top rows.
 
 The columns beside the page share that header line: the session rail top row
-(`data-rail-top`, `data-header-line`), the first icon of the session tools column
+(`data-rail-top`, `data-header-line`), the first icon of the right rail
 and every drawer header row (`DrawerFrame`) take `PANE_RHYTHM.headerInset` and
 `PANE_RHYTHM.headerRow` (`h-8`), so their tops and centres match the page title
 row. `validate-scenes --only header-line` measures all four on
