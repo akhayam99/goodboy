@@ -47,6 +47,7 @@ const held = ({ wanted, branch, sha, message, isRetryable, tries }: HeldParams):
   message,
   isRetryable,
   isConfirmed: false,
+  startedAt: null,
   tries,
   reviewerReportId: wanted.reviewerReportId,
   isContentChanging: wanted.isContentChanging,

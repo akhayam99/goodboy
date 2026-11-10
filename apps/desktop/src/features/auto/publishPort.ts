@@ -9,6 +9,7 @@ export type PublishRowResult = Readonly<{
   delegationId: string;
   state: PublishRowState;
   message: string | null;
+  isStorageFailure?: boolean;
 }>;
 
 export type PublishResult = Readonly<{

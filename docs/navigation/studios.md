@@ -20,9 +20,13 @@ and the crumb (`StudioTrail`), and below it `SettingsScopesLayout` draws a
 the groups or the matching settings under it, and the page as the detail
 (`data-settings-detail`). The scopes rail folds like every page rail
 (`goodboy:studio-rail-folded:settings:v1`), but folds by itself only on a pane
-under 720px (`SETTINGS_RAIL_FOLD_BELOW`), so a 1100px window with the column
-open keeps it docked; its folded strip keeps Show and a
-Search icon that opens the rail on the field. The Settings row in the column
+under 720px (`SETTINGS_RAIL_FOLD_BELOW`); its folded strip keeps Show and a
+Search icon that opens the rail on the field. With no saved choice, the rail
+starts folded in a window under 1200px (`foldedByDefaultBelow`), so the page keeps
+room for its dense rows, and a saved choice wins either way: a docked rail stays
+docked in the sheet of a 1100px window with the column open. The detail wrapper
+is a container (`detailClassName="@container"`): under 600px a Models row drops its
+description and keeps the model, the effort and the Auto or Pinned chip. The Settings row in the column
 foot is lit while it is open. Back to app, Esc and Back land alike. A session
 key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and closes Settings on its way, and so
 does any column row. On close, `StudioFrame` gives focus back to what opened

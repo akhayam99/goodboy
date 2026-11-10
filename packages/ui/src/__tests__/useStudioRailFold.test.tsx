@@ -51,6 +51,15 @@ const Probe = () => {
   );
 };
 
+const DefaultProbe = () => {
+  const fold = useStudioRailFold({ surface: 'inbox', foldedByDefaultBelow: 1200 });
+  return (
+    <div ref={fold.paneRef}>
+      <p data-testid="state">{`${fold.isCollapsed ? 'collapsed' : 'docked'} ${fold.canDock ? 'can-dock' : 'cannot-dock'}`}</p>
+    </div>
+  );
+};
+
 const state = (): string => screen.getByTestId('state').textContent ?? '';
 
 describe('useStudioRailFold', () => {
@@ -109,6 +118,29 @@ describe('useStudioRailFold', () => {
 
     expect(state()).toBe('docked can-dock');
     expect(localStorage.getItem('goodboy:studio-rail-folded:inbox:v1')).toBe('0');
+  });
+
+  it('starts folded under the default width when nothing is saved, without saving it', () => {
+    vi.stubGlobal('innerWidth', 1100);
+    render(<DefaultProbe />);
+
+    expect(state()).toBe('collapsed can-dock');
+    expect(localStorage.getItem(studioRailFoldKey({ surface: 'inbox' }))).toBeNull();
+  });
+
+  it('lets a saved choice win over the default width', () => {
+    vi.stubGlobal('innerWidth', 1100);
+    localStorage.setItem(studioRailFoldKey({ surface: 'inbox' }), '0');
+    render(<DefaultProbe />);
+
+    expect(state()).toBe('docked can-dock');
+  });
+
+  it('starts docked from the default width', () => {
+    vi.stubGlobal('innerWidth', 1200);
+    render(<DefaultProbe />);
+
+    expect(state()).toBe('docked can-dock');
   });
 
   it('keeps the fold in memory when storage throws', () => {
