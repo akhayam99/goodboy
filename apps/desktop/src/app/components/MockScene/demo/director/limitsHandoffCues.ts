@@ -13,10 +13,11 @@ import { textCuesEndMs } from './textCuesEndMs';
 const CODEX = BRAND_MODELS.implement;
 const CLAUDE = BRAND_MODELS.scout;
 
-const NOTICE_AT_MS = 1500;
-const TOOL_START_AT_MS = 2400;
-const TOOL_END_AT_MS = 3900;
-const REPLY_AT_MS = 4600;
+const NOTICE_AT_MS = 900;
+const TOOL_START_AT_MS = 1500;
+const TOOL_END_AT_MS = 2400;
+const REPLY_AT_MS = 3000;
+const REPLY_SPAN_MS = 1800;
 
 type Params = {
   readonly sessionId: SessionId;
@@ -44,7 +45,7 @@ export const limitsHandoffCues = ({
   onDone,
 }: Params): ReadonlyArray<DemoCue> => {
   const toolUseId = `demo-limits-tool-${codexRun}`;
-  const replyEndAt = textCuesEndMs({ atMs: REPLY_AT_MS, text: reply });
+  const replyEndAt = textCuesEndMs({ atMs: REPLY_AT_MS, text: reply, maxSpanMs: REPLY_SPAN_MS });
   const doneAt = replyEndAt + 700;
   return [
     {
@@ -116,7 +117,13 @@ export const limitsHandoffCues = ({
         { kind: 'tool_call_end', runId: codexRun, toolUseId, output, isError: false, at },
       ],
     }),
-    ...textCues({ atMs: REPLY_AT_MS, agentId, runId: codexRun, text: reply }),
+    ...textCues({
+      atMs: REPLY_AT_MS,
+      agentId,
+      runId: codexRun,
+      text: reply,
+      maxSpanMs: REPLY_SPAN_MS,
+    }),
     eventCue({
       atMs: replyEndAt,
       agentId,

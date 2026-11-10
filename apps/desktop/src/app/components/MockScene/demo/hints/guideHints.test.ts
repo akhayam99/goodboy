@@ -227,6 +227,64 @@ describe('closing the plan drawer in the middle of chapter 3', () => {
   });
 });
 
+describe('closing the plan drawer with the comment composer open', () => {
+  const lastAnchor = (reports: ReadonlyArray<DemoHintReport>) =>
+    reports.filter((report) => report.type === 'anchor').at(-1);
+
+  const openDrawer = (): void => {
+    store.setState({
+      drawer: {
+        kind: 'artifact-document',
+        sessionId: STORY_SESSION_ID,
+        payload: { artifactId: STORY_PLAN_ID, revision: null },
+      },
+    });
+  };
+
+  it('asks to reopen the plan instead of crediting the comment, then credits it on return', async () => {
+    document.body.innerHTML = PLAN_ROW + DRAWER + COMPOSER;
+    openDrawer();
+    const reports: DemoHintReport[] = [];
+    const engine = createHintEngine({
+      store,
+      view: window,
+      generation: () => 0,
+      hintsOf: () => GUIDE_HINTS,
+      onReport: ({ report }) => reports.push(report),
+    });
+    engine.setTrack({ chapterId: 'guide', settledIds: ['plan-open', 'plan-mark'] });
+    settle();
+    expect(lastAnchor(reports)).toMatchObject({ hintId: 'plan-comment', isRecovering: false });
+    document.body.innerHTML = PLAN_ROW;
+    store.setState({ drawer: null });
+    await addDraft();
+    settle();
+    const tried = () =>
+      reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : []));
+    expect(tried()).toEqual([]);
+    expect(lastAnchor(reports)).toMatchObject({
+      hintId: 'plan-comment',
+      isRecovering: true,
+      rect: { x: 100, y: 200 },
+    });
+    document.body.insertAdjacentHTML('beforeend', DRAWER);
+    openDrawer();
+    settle();
+    expect(tried()).toEqual(['plan-comment']);
+    engine.dispose();
+  });
+
+  it('names the way back on every step that can lose the drawer', () => {
+    const recovering = GUIDE_HINTS.filter((hint) => hint.recovery !== undefined).map(
+      (hint) => hint.id,
+    );
+    expect(recovering).toEqual(['plan-mark', 'plan-comment', 'plan-send', 'plan-approve']);
+    for (const hint of GUIDE_HINTS.filter((entry) => entry.recovery !== undefined)) {
+      expect(hint.recovery?.copy).toBe('Reopen the plan');
+    }
+  });
+});
+
 describe('chapter 3 steps whose control is gone once they are passed', () => {
   it('credits every step the visitor already passed with the hints hidden', async () => {
     document.body.innerHTML = PLAN_ROW;

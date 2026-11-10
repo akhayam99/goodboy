@@ -40,6 +40,7 @@ type AnchorState = {
   readonly isOffscreen: boolean;
   readonly isClicked: boolean;
   readonly isPressed: boolean;
+  readonly isRecovering: boolean;
 };
 
 type Hold = {
@@ -71,6 +72,7 @@ export type DemoHints = Steps & {
   readonly tally: HintTally;
   readonly isHidden: boolean;
   readonly isDismissed: boolean;
+  readonly isRecovering: boolean;
   readonly tallyOf: (params: TallyParams) => HintTally;
   readonly onHintReport: (params: HintReportParams) => void;
   readonly hide: () => void;
@@ -81,7 +83,12 @@ export type DemoHints = Steps & {
   readonly restart: () => void;
 };
 
+type Warning = {
+  readonly hintId: string;
+};
+
 const HOLD_WAIT_MS = 20000;
+const WARNING_MS = 2400;
 
 export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints => {
   const {
@@ -97,6 +104,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const [actingId, setActingId] = useState<string | null>(null);
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [pulse, setPulse] = useState(0);
+  const [warning, setWarning] = useState<Warning | null>(null);
 
   const { hints } = chapter;
   const steps = stepsOf({ chapter, progress });
@@ -151,6 +159,17 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     return () => window.clearTimeout(timer);
   }, [hold, hints]);
 
+  useEffect(() => {
+    if (warning === null) {
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setWarning((previous) => (previous === warning ? null : previous)),
+      WARNING_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [warning]);
+
   const onHintReport = useCallback(
     ({ report }: HintReportParams) => {
       if (report.hintId !== null && !hints.some((hint) => hint.id === report.hintId)) {
@@ -168,6 +187,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
           return new Set([...previous].filter((id) => id !== blockedId));
         });
         setPulse((previous) => previous + 1);
+        setWarning({ hintId: blockedId });
         return;
       }
       if (report.type === 'tried') {
@@ -199,6 +219,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
         isOffscreen: report.isOffscreen,
         isClicked: report.isClicked === true,
         isPressed: report.isPressed === true,
+        isRecovering: report.isRecovering === true,
       });
     },
     [hints, chapter.id, markTried],
@@ -226,6 +247,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const isActive = current !== null && current.hintId === activeHint?.id;
   const isDismissed = activeHint !== undefined && dismissedIds.has(activeHint.id);
   const isOpen = activeHint !== undefined && isActive && isEnabled && !isDismissed;
+  const recovery = isActive && current.isRecovering ? activeHint?.recovery : undefined;
 
   const coach = useMemo((): CoachMark | undefined => {
     if (!isOpen || activeHint === undefined || current === null || current.rect === null) {
@@ -236,23 +258,26 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     }
     return {
       hintId: activeHint.id,
-      copy: acting?.progressCopy ?? activeHint.copy,
-      side: activeHint.side,
-      isSideLocked: activeHint.isSideLocked === true,
+      copy: recovery?.copy ?? acting?.progressCopy ?? activeHint.copy,
+      side: recovery === undefined ? activeHint.side : recovery.side,
+      isSideLocked:
+        recovery === undefined ? activeHint.isSideLocked === true : recovery.side !== undefined,
+      align: recovery === undefined ? activeHint.align : undefined,
       rect: current.rect,
       focus: current.focus,
       opened: current.opened,
       isDimmed: activeHint.isDimmed !== false,
       pulse,
+      isWarning: warning?.hintId === activeHint.id,
     };
-  }, [isOpen, activeHint, acting, current, pulse]);
+  }, [isOpen, activeHint, acting, recovery, current, pulse, warning]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
     if (!isOpen || activeHint === undefined || current === null || !current.isOffscreen) {
       return undefined;
     }
-    return { hintId: activeHint.id, copy: activeHint.copy };
-  }, [isOpen, activeHint, current]);
+    return { hintId: activeHint.id, copy: recovery?.copy ?? activeHint.copy };
+  }, [isOpen, activeHint, recovery, current]);
 
   const hide = useCallback(() => setEnabled({ isEnabled: false }), [setEnabled]);
 
@@ -282,6 +307,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     setHold(null);
     setActingId(null);
     setDismissedIds(new Set());
+    setWarning(null);
   }, [resetProgress, chapter.id]);
 
   const restart = useCallback(() => {
@@ -290,6 +316,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     setHold(null);
     setActingId(null);
     setDismissedIds(new Set());
+    setWarning(null);
   }, [resetAllProgress]);
 
   const tallyOf = useCallback(
@@ -311,6 +338,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     tally: hintTally({ chapter, progress }),
     isHidden: !isEnabled,
     isDismissed,
+    isRecovering: recovery !== undefined,
     tallyOf,
     onHintReport,
     hide,

@@ -153,4 +153,14 @@ describe('the step copy', () => {
     expect(start?.instruction).toContain(`**${NAMES.start}**`);
     expect(start?.instruction).not.toContain('Start workflow');
   });
+
+  it('asks for the recommended answer in one short line', () => {
+    const choose = DIRECTION_HINTS.find((hint) => hint.id === 'story-choose');
+    expect(choose?.copy).toBe('Pick the recommended answer');
+  });
+
+  it('lets the hand-off end the chapter without a long hold', () => {
+    const answer = DIRECTION_HINTS.find((hint) => hint.id === 'story-answer');
+    expect(answer?.dwellMs).toBeUndefined();
+  });
 });

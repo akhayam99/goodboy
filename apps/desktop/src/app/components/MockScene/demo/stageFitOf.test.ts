@@ -37,6 +37,11 @@ describe('stageFitOf', () => {
     },
   );
 
+  it('draws a 1280 by 800 app at 0.8125 in the stage of a 1440 by 813 laptop window', () => {
+    expect(APP_SIZE).toEqual({ width: 1280, height: 800 });
+    expect(stageFitOf({ box: { width: 1124, height: 650 } }).scale).toBeCloseTo(0.8125);
+  });
+
   it('never scales above one', () => {
     expect(stageFitOf({ box: { width: 4000, height: 3000 } }).scale).toBe(1);
   });

@@ -185,7 +185,11 @@ describe('coach placement for every hint', () => {
       },
     ];
 
-    it.each(CASES)('keeps the $id callout off the text it talks about', (scene) => {
+    type PlaceParams = {
+      readonly scene: CaseParams;
+    };
+
+    const placeScene = ({ scene }: PlaceParams) => {
       const hint = hints.find((entry) => entry.id === scene.id);
       const target = stageOf({ rect: scene.target });
       const placement = placeCallout({
@@ -201,9 +205,27 @@ describe('coach placement for every hint', () => {
         bounds: BOUNDS,
         side: hint?.side,
         isLocked: hint?.isSideLocked === true,
+        align: hint?.align,
         gap: GAP,
         margin: MARGIN,
       });
+      return { hint, placement };
+    };
+
+    it('puts the story-choose callout above the answer, clear of the whole question', () => {
+      const scene = CASES.find((entry) => entry.id === 'story-choose');
+      if (scene === undefined) {
+        throw new Error('missing story-choose case');
+      }
+      const { placement } = placeScene({ scene });
+      expect(placement.side).toBe('top');
+      for (const text of scene.text) {
+        expect(coveredShareOf({ rect: stageOf({ rect: text }), placement })).toBe(0);
+      }
+    });
+
+    it.each(CASES)('keeps the $id callout off the text it talks about', (scene) => {
+      const { hint, placement } = placeScene({ scene });
       expect(hint?.isSideLocked).toBe(true);
       expect(placement.side).toBe(hint?.side);
       for (const text of scene.text) {
