@@ -505,6 +505,31 @@ describe('the hint engine', () => {
       engine.dispose();
     });
 
+    it('waits for stillness again when a held control goes away and comes back later', async () => {
+      const { engine, reports } = engineFor({ hints: STORY });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      nextFrame();
+      expect(reports.at(-1)).toMatchObject({ type: 'anchor', hintId: null });
+      placeAt({ y: 40 });
+      document.body.innerHTML = BUTTONS;
+      await Promise.resolve();
+      nextFrame();
+      document.body.innerHTML = '';
+      await frame();
+      vi.advanceTimersByTime(1500);
+      placeAt({ y: 120 });
+      document.body.innerHTML = BUTTONS;
+      await Promise.resolve();
+      nextFrame();
+      placeAt({ y: 200 });
+      nextFrame();
+      expect(placed(reports)).toEqual([]);
+      nextFrame();
+      expect(placed(reports)).toHaveLength(1);
+      expect(placed(reports)[0]).toMatchObject({ hintId: 'open', rect: { y: 200 } });
+      engine.dispose();
+    });
+
     describe('while the page animates', () => {
       type SlideParams = {
         readonly target: Element | null;

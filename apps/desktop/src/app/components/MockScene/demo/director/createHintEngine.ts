@@ -461,6 +461,11 @@ export const createHintEngine = ({
     const isPressed =
       hintId !== null &&
       (spent.has(hintId) || (element !== null && clickedElements.get(hintId) === element));
+    if (rect === null) {
+      candidate = '';
+      stableFrames = 0;
+      arrivingId = null;
+    }
     const opened = rect === null ? [] : resultRects;
     const signature = JSON.stringify({
       hintId,
