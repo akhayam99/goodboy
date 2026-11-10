@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../../store';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { SidebarNavColumnScene } from '../u23/SidebarNavColumnScene';
 import type { SidebarNavConfig } from '../u23/sidebarNavSeed';
-import { seedSideSignals } from './b-side-signals';
+import { seedSideSignals } from './seedSideSignals';
 import { seedSideInfoValues } from './seedSideInfoValues';
 
 const MANY: Partial<SidebarNavConfig> = { lens: 'workflows', branches: 3, hasDiff: true };

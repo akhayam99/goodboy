@@ -1,4 +1,4 @@
-import { ICON_SIZE, IconButton, cn, selectedIconClass } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, TEXT_ROLE, cn, selectedIconClass } from '@goodboy/ui';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
@@ -68,7 +68,7 @@ export const SessionToolButton = ({
         data-tone={isLit ? 'open' : 'closed'}
         className={cn(
           'whitespace-nowrap text-rail [@media(max-height:480px)]:hidden',
-          isLit ? 'text-muted-foreground' : 'text-faint-foreground',
+          isLit ? TEXT_ROLE.label : TEXT_ROLE.secondary,
         )}
       >
         {tool.label}

@@ -11,6 +11,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { TEXT_ROLE } from '@goodboy/ui';
 import type { ExploreEntry } from '../../../explore/explore';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -166,7 +167,7 @@ describe('SessionTools', () => {
     }
   });
 
-  it('names every tool under its icon, faint when closed and muted when open', () => {
+  it('names every tool under its icon, secondary when closed and full strength when open', () => {
     renderCluster();
     const captions = ALL_TOOLS.map((tool) =>
       screen
@@ -183,6 +184,11 @@ describe('SessionTools', () => {
       .closest('[data-slot="session-tool"]')
       ?.querySelector('[data-slot="tool-caption"]');
     expect(open?.getAttribute('data-tone')).toBe('open');
+    expect(open?.className).toContain(TEXT_ROLE.label);
+    expect(captions[0]?.className).toContain(TEXT_ROLE.secondary);
+    expect(document.querySelector('[data-slot="tool-group-caption"]')?.className).toContain(
+      TEXT_ROLE.secondary,
+    );
     expect(
       captions.filter((caption) => caption?.getAttribute('data-tone') === 'closed'),
     ).toHaveLength(6);
@@ -609,6 +615,20 @@ describe('SessionTools', () => {
         ?.querySelector('[data-signal]')
         ?.getAttribute('data-signal'),
     ).toBe('running');
+  });
+
+  it('keeps focus on the same tool when the rail moves into a page and back', () => {
+    seedActivityRunScene();
+    const { rerender } = render(<SessionTools key="shell" sessionId={SESSION_ID} />);
+    act(() => toggle('browser').focus());
+
+    rerender(<SessionTools key="page" sessionId={null} />);
+    expect(document.activeElement).toBe(toggle('browser'));
+    expect(toggle('browser').tabIndex).toBe(0);
+
+    rerender(<SessionTools key="shell-again" sessionId={SESSION_ID} />);
+    expect(document.activeElement).toBe(toggle('browser'));
+    expect(toggle('explore').tabIndex).toBe(-1);
   });
 
   it('keeps only the Workspace group off a session, Terminal and Browser at the bottom', () => {

@@ -37,7 +37,10 @@
   lanes from 1159px; from 964px five lanes with Done above Archived in the
   fifth, each half with its own header, count, empty line and scroll; below
   that the five lanes scroll sideways, the title row stays, and the scroller
-  opens at its end so Done and Archived are on screen. Every lane always renders
+  opens at its end so Done and Archived are on screen. While scrolling, the
+  lanes narrow down to 11rem (`scrollLaneRemOf`, `BOARD_LANE_SCROLL_MIN_REM`) so
+  the last four lanes and the 32px edge fade (`BOARD_LANE_FADE_PX`) fit, and
+  Running opens whole beside the right rail at a 1100px window. Every lane always renders
   its header and, when empty, one line naming what is missing; Archived shows
   Loading until its list answers, and it is the list the sidebar shows under
   Show archived. There is no dock and no collapse: Done and Archived are never

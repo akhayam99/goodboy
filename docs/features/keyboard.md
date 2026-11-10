@@ -19,7 +19,7 @@ Open a real login shell in the workspace folder or any linked worktree.
 **The Terminal page**
 
 - **Open as page** in the dock makes the terminal full size, with every terminal of the workspace beside it. **Dock** puts it back on the same tab, and so does Back.
-- It says **No terminal yet** until you open one.
+- It says **No terminal yet** until you open one. **Dock** stays there too, and opens a terminal in the dock.
 - It groups terminals by session. Each group shows its row count from two.
 - One line per worktree shows the project, the branch and a dot while a shell runs a process.
 - The line names the command that runs. When it ends, the line says it passed, or that it failed with its exit code.
@@ -205,7 +205,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 
 This part is for contributors and agents who change the feature.
 
-- Terminal dock: ⌃` (`terminal.studio`) and ⌘⌥T (`session.terminal`) both run `toggleTerminalDock`; off a session page it opens `openWorkspaceTerminal`, a drawer with `sessionId: null`. `openTerminalOnPage`and`dockTerminalPage` move between dock and page, and [studios.md](../navigation/studios.md) owns the Terminal page.
+- Terminal dock: ``⌃` `` (`terminal.studio`) and ⌘⌥T (`session.terminal`) both run `toggleTerminalDock`; off a session page it opens `openWorkspaceTerminal`, a drawer with `sessionId: null`. `openTerminalOnPage` and `dockTerminalPage` move between dock and page, `dockEmptyTerminalPage` docks a terminal from the empty page, and [studios.md](../navigation/studios.md) owns the Terminal page.
 - Archived sessions group: `terminalGroups` and `CloseGroupButton` build the group and its **Close all**.
 - Process on a tab: `terminal_list_live` returns `foregroundCommand`, shaped by `foregroundLabelOf`. `terminalCommandOf` is the fallback.
 - Exit status: `terminal_shell_hook.rs` writes zsh startup files under the app data `shell-integration/zsh` and points `ZDOTDIR` there. They source the user's own files. The hook runs under `emulate -L zsh`, appends to `precmd_functions` and `preexec_functions` and survives `setopt nounset`. Preexec keeps the command line, precmd prints `ESC ] 633;D;<code>;<command> BEL`. `terminal_exit_mark.rs` reads the mark, `terminal_list_live` returns `lastExitCode` and `lastExitCommand`, `terminalActivityOf` words the row from them and never from typed keys. The setting is `terminal.exitStatus`, read by Rust when a terminal opens; only `false` turns it off.

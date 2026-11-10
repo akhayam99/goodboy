@@ -347,9 +347,10 @@ tooltip and accessible name, so unread (primary) and running never share a hue i
 dot means attention without a number. Chat with none running shows a primary dot for a new reply.
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
 Monitoring counts the pinned ports
-and the ports Goodboy started that are in use; the numbers come from `doorSignalOf`, which the
-rows and the folded rail both read. A pinned port that is down swaps Monitoring's count
-for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's accessible name carries the fact (`Chat, unread`,
+and the ports Goodboy started that are in use, as a muted number in the signal slot with no dot;
+the numbers come from `doorSignalOf`, which the
+rows and the folded rail both read. A pinned port that is down puts a warning dot beside that
+number (or alone when none is in use) and names the port (`Monitoring, pinned port :5173 is down`). The door's accessible name carries the fact (`Chat, unread`,
 `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). The running terminals and
 the browser tabs count on the right rail instead (`Terminal, 2 running`, `Browser, 3 tabs`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds

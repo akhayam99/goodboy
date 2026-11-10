@@ -1,5 +1,6 @@
 import { Button, PageHeader } from '@goodboy/ui';
 import type { TerminalTab } from '../../../../shared/types/terminal';
+import { dockEmptyTerminalPage } from '../../dockEmptyTerminalPage';
 import { dockTerminalPage } from '../../dockTerminalPage';
 
 type Props = {
@@ -11,20 +12,22 @@ export const TerminalPageHeader = ({ selected }: Props) => (
     page="terminal"
     title="Terminal"
     actions={
-      selected === null ? undefined : (
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() =>
-            dockTerminalPage({
-              terminalId: selected.id,
-              sessionId: selected.owner.kind === 'session' ? selected.owner.sessionId : null,
-            })
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => {
+          if (selected === null) {
+            dockEmptyTerminalPage({});
+            return;
           }
-        >
-          Dock
-        </Button>
-      )
+          dockTerminalPage({
+            terminalId: selected.id,
+            sessionId: selected.owner.kind === 'session' ? selected.owner.sessionId : null,
+          });
+        }}
+      >
+        Dock
+      </Button>
     }
   />
 );
