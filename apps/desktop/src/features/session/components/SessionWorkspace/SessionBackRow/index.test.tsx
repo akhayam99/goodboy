@@ -39,7 +39,6 @@ const MAIN = brandId<AgentId>({ value: 'agent-planner' });
 const CHILD = brandId<AgentId>({ value: 'agent-scout' });
 const GRANDCHILD = brandId<AgentId>({ value: 'agent-tester' });
 const RUN = brandId<WorkflowRunId>({ value: 'run-northwind' });
-const FLUSH_TICKS = 20;
 const TITLE = 'Stop retried webhooks posting a second credit';
 
 const OVERVIEW = sessionPlace({ sessionId: S1 });
@@ -113,9 +112,7 @@ beforeEach(async () => {
 afterEach(async () => {
   cleanup();
   await act(async () => {
-    for (let tick = 0; tick < FLUSH_TICKS; tick += 1) {
-      await new Promise<void>((resolve) => queueMicrotask(resolve));
-    }
+    await Promise.resolve();
   });
 });
 
