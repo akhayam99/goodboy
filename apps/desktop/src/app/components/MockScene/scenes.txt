@@ -557,8 +557,6 @@ onboarding-new-workspace-repo-dark
 onboarding-new-workspace-repo-light
 onboarding-new-workspace-scratch-dark
 onboarding-new-workspace-scratch-light
-onboarding-setup-menu-dark
-onboarding-setup-menu-light
 onboarding-splash-dark
 onboarding-splash-light
 onboarding-step-agents-error-dark

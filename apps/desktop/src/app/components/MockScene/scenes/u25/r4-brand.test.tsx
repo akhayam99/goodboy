@@ -68,14 +68,14 @@ describe('the brand lockup scenes', () => {
     }
   });
 
-  it.each(NAMES)('%s chips only the mark and the name, in the foot and the menu', async (name) => {
+  it.each(NAMES)('%s chips only the mark and the name, in the foot', async (name) => {
     await mount({ name });
 
     const chips = Array.from(document.querySelectorAll('[data-brand-chip]'));
-    expect(chips).toHaveLength(2);
-    expect(chips.map((chip) => chip.textContent)).toEqual(['Goodboy', 'Goodboy']);
-    const menu = screen.getByRole('dialog', { name: 'Goodboy' });
-    expect(menu.querySelector('header [data-brand-chip]')).not.toBeNull();
+    expect(chips).toHaveLength(1);
+    expect(chips.map((chip) => chip.textContent)).toEqual(['Goodboy']);
+    expect(chips[0]?.closest('[data-column-corner]')).not.toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 
   it.each(NAMES)('%s has no accessibility violation', async (name) => {

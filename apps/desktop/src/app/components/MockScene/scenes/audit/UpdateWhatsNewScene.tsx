@@ -5,6 +5,7 @@ import { HelpStudio } from '../../../HelpStudio';
 import { parseChangelog } from '../../../../../features/changelog/parseChangelog';
 import { UpdatePill } from '../../../../../features/updater/components/UpdatePill';
 import { useAppStore } from '../../../../../store';
+import { FramedStudioScene } from '../u23/FramedStudioScene';
 import { sceneParam } from './sceneParams';
 
 const noop = () => undefined;
@@ -98,11 +99,13 @@ export const UpdateWhatsNewScene = () => {
     <ToastProvider>
       <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         {isChangelogOpen ? (
-          <HelpStudio
-            tab="whatsNew"
-            onClose={() => setIsChangelogOpen(false)}
-            onOpenScreen={noop}
-          />
+          <FramedStudioScene kind="changelog" place="changelog">
+            <HelpStudio
+              tab="whatsNew"
+              onClose={() => setIsChangelogOpen(false)}
+              onOpenScreen={noop}
+            />
+          </FramedStudioScene>
         ) : (
           <div className="flex h-9 items-center justify-end px-3">
             <UpdatePill hasCard onOpenChangelog={() => setIsChangelogOpen(true)} />

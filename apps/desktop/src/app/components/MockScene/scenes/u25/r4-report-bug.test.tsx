@@ -61,12 +61,12 @@ describe('the round 4 report scene', () => {
     expect(MOCK_SCENES['r4-report-bug']).toBe(U25_R4_REPORT_SCENES['r4-report-bug']);
   });
 
-  it('r4-report-bug opens the report from the Goodboy menu, centred, with no bug icon in the foot', async () => {
+  it('r4-report-bug opens the report beside the bug icon in the foot', async () => {
     await mount();
 
     const sheet = screen.getByRole('dialog', { name: 'Report a bug' });
     expect(sheet.closest('[data-report-placement]')?.getAttribute('data-report-placement')).toBe(
-      'centered',
+      'beside-trigger',
     );
     expect(screen.getByRole('button', { name: /Open on GitHub/ })).toBeDefined();
   });

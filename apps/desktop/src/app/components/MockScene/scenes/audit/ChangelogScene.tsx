@@ -3,6 +3,7 @@ import { mockIPC } from '@tauri-apps/api/mocks';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { HelpStudio } from '../../../HelpStudio';
 import { useAppStore } from '../../../../../store';
+import { FramedStudioScene } from '../u23/FramedStudioScene';
 import { sceneParam } from './sceneParams';
 
 const noop = () => undefined;
@@ -44,9 +45,9 @@ export const ChangelogScene = () => {
   }
   return (
     <ToastProvider>
-      <main className="h-screen overflow-hidden bg-background text-foreground">
+      <FramedStudioScene kind="changelog" place="changelog">
         <HelpStudio tab="whatsNew" onClose={noop} onOpenScreen={noop} />
-      </main>
+      </FramedStudioScene>
     </ToastProvider>
   );
 };
