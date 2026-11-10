@@ -36,6 +36,8 @@ const withWriteHook = ({ ctx, beforeWrite }: BeforeWriteParams): AgentVerbContex
 
 const DB_BUSY = 'database is busy';
 
+const NETWORK_STEPS_MS = 3 * 30 * 60 * 1000;
+
 const failWritesFrom =
   ({ from, until }: { readonly from: number; readonly until: number }) =>
   async ({ call }: { readonly call: number }): Promise<void> => {
@@ -215,6 +217,23 @@ describe('the boot sweep of a push left pushing', () => {
 
     expect(late).toMatchObject({ swept: 1, live: 0 });
     expect(await recordOf(world)).toMatchObject({ state: 'failed', isRetryable: true });
+  });
+
+  it('leaves a push alone while its three network steps could still be running', async () => {
+    const world = await settle({ publishes: [LEDGER_FORCE] });
+    await leavePushing({ world, startedAt: nowOf({ world }) });
+    const booted = restartedWorld({ world, isLeaseLapsed: false });
+
+    world.state.world.clock.advance({ ms: NETWORK_STEPS_MS });
+    const during = await sweepStalePushing({ ctx: booted.state.ctx });
+
+    expect(during).toMatchObject({ swept: 0, live: 1 });
+    expect(await recordOf(world)).toMatchObject({ state: 'pushing', isConfirmed: true });
+
+    world.state.world.clock.advance({ ms: PUSH_LIVE_WINDOW_MS });
+    const after = await sweepStalePushing({ ctx: booted.state.ctx });
+
+    expect(after).toMatchObject({ swept: 1, live: 0 });
   });
 
   it('sweeps the rows after one that throws and reports the error', async () => {
