@@ -10,6 +10,7 @@ import { AppFrame } from '../audit/AppFrame';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { devServerLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 import { seedFrame, type FrameContext } from '../audit/frameSeed';
+import { seedBrowserTab } from './seedBrowserTab';
 
 export type RightDock = 'terminal' | 'browser' | null;
 
@@ -24,13 +25,22 @@ const DEV_SERVER = brandedId<TerminalTabId>({ value: 'ux39-harborline-dev' });
 
 type SeedParams = {
   readonly context: FrameContext;
+  readonly view: string;
   readonly held: RightDock;
 };
 
-const seedDock = ({ context, held }: SeedParams): void => {
+const seedDock = ({ context, view, held }: SeedParams): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId;
   const sessionId = context === 'session' ? state.currentSessionId : null;
+  if (sessionId !== null) {
+    useAppStore.setState((current) => ({
+      selectedAgentId: { ...current.selectedAgentId, [sessionId]: null },
+    }));
+  }
+  if (held === 'browser' || view === 'browser') {
+    seedBrowserTab({ sessionId });
+  }
   if (held === 'terminal' && workspaceId !== null) {
     mockSceneIpc((command) =>
       command === 'terminal_snapshot' ? terminalSnapshotAnswer({ lines: devServerLines }) : null,
@@ -68,9 +78,9 @@ export const P10RightDockScene = ({ context, view, held, isRailCollapsed = false
 
   useEffect(() => {
     seedFrame({ context });
-    seedDock({ context, held });
+    seedDock({ context, view, held });
     setIsReady(true);
-  }, [context, held]);
+  }, [context, view, held]);
 
   if (!isReady) {
     return null;
