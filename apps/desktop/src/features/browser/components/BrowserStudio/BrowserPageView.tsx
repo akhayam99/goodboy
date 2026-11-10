@@ -75,7 +75,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
         onCollapsedChange={fold.setFolded}
         rail={<BrowserPageRail groups={groups} sessionId={sessionId} model={model} onPick={pick} />}
         detail={
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 pb-2">
+          <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 pb-2">
             <BrowserAddressRow model={model} isAddressShortcutOn={isOnScreen} />
             {model.error === null ? null : (
               <p role="alert" className="px-4 text-meta text-danger">

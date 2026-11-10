@@ -24,7 +24,7 @@ export const LENS_ICON = {
   workflows: CONCEPT_ICONS.runs,
   orchestrated: CONCEPT_ICONS.orchestrator,
   review: CONCEPT_ICONS.review,
-  plans: CONCEPT_ICONS.artifacts,
+  plans: CONCEPT_ICONS.plans,
   pr: CONCEPT_ICONS.pr,
   branch: CONCEPT_ICONS.branch,
   files: CONCEPT_ICONS.diff,

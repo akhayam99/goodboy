@@ -39,7 +39,7 @@ describe('the destination list', () => {
     const doorIcons = new Set<unknown>(DESTINATIONS.map((destination) => destination.icon));
 
     expect(LENS_ICON.workflows).toBe(CONCEPT_ICONS.runs);
-    expect(LENS_ICON.plans).toBe(CONCEPT_ICONS.artifacts);
+    expect(LENS_ICON.plans).toBe(CONCEPT_ICONS.plans);
     expect(doorIcons.has(LENS_ICON.workflows)).toBe(false);
     expect(doorIcons.has(LENS_ICON.plans)).toBe(false);
     expect(LENS_ICON.workflows).not.toBe(destinationOf({ id: 'workflows' }).icon);

@@ -1361,7 +1361,17 @@ no migration, outcome still `completed`:
   no backup and no **Put back**. It refuses work whose tree differs from the start
   (`readCommittedFiles` start to sha) unless `changesContent` is set. It then waits as
   `awaiting_confirm`: one **Force push** / **Don't push** row per delegate batch
-  (`PublishConfirmRow` in `AutoDelegationLines`), one `publish` bridge call carrying every id.
+  (`PublishRunRow` in `AutoDelegationLines`, rows from `publishRowsOf`), one `publish` bridge call
+  carrying every id. The row stays for the life of the push: **Pushing** on the button while the
+  call runs, then one line per branch from `publishLineOf` (the same words and tone as the
+  `DelegationResult` chip): pushed with **Put back**, "Not pushed" when declined, put back, or a
+  danger notice with the reason and **Retry push**. A failed row raises no toast; a refused answer
+  whose saved record no longer waits for that act (`isPublishOpenOf`) is quiet too, because the
+  reloaded card already shows the state. That check reads the store after `loadAutoTrees`, so a
+  newer reload still in flight can swallow or add one toast until it applies. A failed force row
+  stays once the user has acted (`isConfirmed` or `tries > 0`), so a **Retry push** held again
+  (backup failure, red checks) keeps its notice and its button. A first plan held before anyone was
+  asked shows only the chip.
 - `executePublish` reads the online sha first (already the checked sha: pushed, nothing sent), then
   pushes the recorded sha itself, never the branch name or HEAD: `pushWithLease` sends
   `<sha>:refs/heads/<branch>` (`sourceSha`, `lease_push_args` in `github.rs`) with the lease on the
