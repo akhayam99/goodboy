@@ -21,6 +21,7 @@ export type ResultPublish = Readonly<{
   message: string | null;
   isRetryable: boolean;
   isConfirmed: boolean;
+  startedAt: number | null;
   tries: number;
   reviewerReportId: string | null;
   isContentChanging: boolean;
@@ -183,6 +184,7 @@ export const publishOfResult = ({ result }: ResultParams): ResultPublish | null 
     return null;
   }
   const tries = raw['tries'];
+  const startedAt = raw['startedAt'];
   return {
     mode,
     state,
@@ -193,6 +195,7 @@ export const publishOfResult = ({ result }: ResultParams): ResultPublish | null 
     message: textOf({ value: raw['message'] }),
     isRetryable: raw['isRetryable'] === true,
     isConfirmed: raw['isConfirmed'] === true,
+    startedAt: typeof startedAt === 'number' && Number.isFinite(startedAt) ? startedAt : null,
     tries: typeof tries === 'number' && Number.isInteger(tries) ? tries : 0,
     reviewerReportId: textOf({ value: raw['reviewerReportId'] }),
     isContentChanging: raw['isContentChanging'] === true,

@@ -8,9 +8,17 @@ type SavedParams = {
   readonly tries: number;
   readonly mode?: string;
   readonly isRetryable?: boolean;
+  readonly startedAt?: number | null;
 };
 
-const saved = ({ state, isConfirmed, tries, mode = 'force', isRetryable = true }: SavedParams) =>
+const saved = ({
+  state,
+  isConfirmed,
+  tries,
+  mode = 'force',
+  isRetryable = true,
+  startedAt = null,
+}: SavedParams) =>
   aDelegation({
     key: 'a',
     role: 'implementer',
@@ -30,6 +38,7 @@ const saved = ({ state, isConfirmed, tries, mode = 'force', isRetryable = true }
           isRetryable,
           isConfirmed,
           tries,
+          startedAt,
           reviewerReportId: null,
           isContentChanging: false,
         },
@@ -62,6 +71,16 @@ describe('which push rows the card keeps', () => {
     });
 
     expect(rows).toEqual([]);
+  });
+
+  it('keeps the failure and Retry of a first push that started and was never saved', () => {
+    const rows = publishRowsOf({
+      delegations: [saved({ state: 'failed', isConfirmed: false, tries: 0, startedAt: 5_000 })],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.line.state).toBe('failed');
+    expect(rows[0]?.line.canRetry).toBe(true);
   });
 
   it('shows no row for a plain push', () => {
