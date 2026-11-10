@@ -43,7 +43,7 @@ The strip ends with the same controls on every scope.
 **Close a tab**
 
 - Typing `exit` closes the tab. The next New terminal is a new tab with a new id and an empty prompt.
-- **⌘W** closes one thing per press and never quits Goodboy. The order is a popover, the selected terminal tab, the drawer, then the session view.
+- **⌘W** closes one thing per press and never quits Goodboy. The order is a popover, the selected terminal tab, the drawer, a page such as Tasks, then the session view. It only closes what you can see: a session's drawer waits out of sight while a page is open, and comes back when you leave the page.
 - **⌘W** asks first while a command runs. The question names the tab and sits under its close button.
 - In the drawer, **⌘W** does not close the last idle shell. The drawer closes and the shell keeps running with its scrollback.
 
@@ -89,7 +89,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 - Keys on this page are the Mac keys. On Linux, ⌘ reads as Ctrl, and a few chords differ: **⌘I** is **Ctrl+Shift+I**.
 - A **⌘⌥** key opens each view. On Linux the chord is **Ctrl+Shift+Alt** with the same letter or digit, since a bare Ctrl+Alt chord belongs to the desktop there.
-- **⌘⌥C** opens Context on Goal. The former Goal, Decisions and Summary chords are retired; section links still reach their card.
+- **⌘⌥C** opens Context on Goal. The former Goal, Decisions and Summary chords are retired; section links still reach their card. On a page such as Tasks, a drawer's key leaves the page and shows that drawer beside the session.
 - **⌘1** to **⌘9** switch workspaces.
 - **⌘[** and **⌘]** walk your history.
 - **⌘↑** goes up one level to the page that holds the one you are on.

@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
-import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
+import type { ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import type { DrawerPlacement, DrawerSizing } from '../drawerGeometry';
 import { ResizeHandle } from './ResizeHandle';
@@ -19,7 +19,6 @@ export type AppShellProps = {
   readonly drawerSizing?: DrawerSizing;
   readonly drawerPlacement?: DrawerPlacement;
   readonly studio?: ReactNode;
-  readonly studioCoversLeft?: boolean;
   readonly className?: string;
 };
 
@@ -33,7 +32,7 @@ export const COLLAPSED_RAIL_WIDTH = 44;
 const HANDLE_WIDTH = 6;
 
 const STUDIO_SHEET_OWNED =
-  'has-[[data-studio-sheet-owner]]:rounded-none has-[[data-studio-sheet-owner]]:border-0 has-[[data-studio-sheet-owner]]:bg-transparent';
+  '[&>[data-drawer-main]:has([data-studio-sheet-owner])]:rounded-none [&>[data-drawer-main]:has([data-studio-sheet-owner])]:border-0 [&>[data-drawer-main]:has([data-studio-sheet-owner])]:bg-transparent';
 
 const LEFT_WIDTH_VAR = '--goodboy-left-sidebar-width';
 
@@ -98,7 +97,6 @@ export const AppShell = ({
   drawerSizing,
   drawerPlacement,
   studio,
-  studioCoversLeft = true,
   className,
 }: AppShellProps) => {
   const hasFooter = footer != null;
@@ -113,6 +111,7 @@ export const AppShell = ({
   });
   const [leftResize, setLeftResize] = useState<ResizeActivity>('idle');
   const isSheetWrapped = hasLeftSidebar && !leftHidden;
+  const isStudioShown = studio != null;
 
   const layout = buildLayout({
     leftCollapsed: leftSidebarCollapsed,
@@ -169,44 +168,34 @@ export const AppShell = ({
         ) : null}
         <main className="flex min-h-0 min-w-0 flex-col" style={{ gridArea: 'main' }}>
           <DrawerColumn
-            main={main}
+            main={
+              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col" inert={isStudioShown}>
+                  {main}
+                </div>
+                {isStudioShown ? (
+                  <div
+                    data-studio-slot="content"
+                    className="absolute inset-0 z-studio flex min-h-0 min-w-0 flex-col overflow-hidden bg-background empty:hidden has-[[data-studio-sheet-owner]]:bg-chrome"
+                  >
+                    <StudioSlotContext.Provider value>{studio}</StudioSlotContext.Provider>
+                  </div>
+                ) : null}
+              </div>
+            }
             drawer={drawer ?? null}
             sizing={drawerSizing}
             placement={drawerPlacement}
+            isParked={isStudioShown}
             frame="sheet"
             sheetEdge={isSheetWrapped ? 'wrapped' : 'flush'}
+            className={STUDIO_SHEET_OWNED}
             leftResize={isLeftResizeDisabled ? 'idle' : leftResize}
             ariaLabel="Side panel"
             resizeLabel="Resize side panel"
           />
         </main>
-        {leftOverlay != null && studioCoversLeft ? (
-          <div
-            className="pointer-events-none relative z-20 flex min-h-0 min-w-0"
-            style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}
-          >
-            {leftOverlay}
-          </div>
-        ) : null}
-        {studio != null ? (
-          <div
-            data-studio-slot={studioCoversLeft ? 'cover' : 'content'}
-            className={cn(
-              'relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden empty:hidden',
-              !studioCoversLeft && 'bg-background',
-              !studioCoversLeft && SHEET_CLASSES.wrapped,
-              !studioCoversLeft && STUDIO_SHEET_OWNED,
-            )}
-            style={
-              studioCoversLeft ? { gridColumn: '1 / -1', gridRow: '1 / 2' } : { gridArea: 'main' }
-            }
-          >
-            <StudioSlotContext.Provider value={!studioCoversLeft}>
-              {studio}
-            </StudioSlotContext.Provider>
-          </div>
-        ) : null}
-        {leftOverlay != null && !studioCoversLeft ? (
+        {leftOverlay != null ? (
           <div
             className="pointer-events-none relative z-studio flex min-h-0 min-w-0"
             style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}

@@ -1,5 +1,5 @@
 {
-  "apps/desktop/src/App.tsx": 324,
+  "apps/desktop/src/App.tsx": 322,
   "apps/desktop/src/features/actions/kinds/artifact.ts": 688,
   "apps/desktop/src/features/actions/kinds/reviewComment.ts": 669,
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/index.tsx": 330,
@@ -74,7 +74,7 @@
   "packages/db/src/queries/workflow.ts": 616,
   "packages/types/src/index.ts": 655,
   "packages/ui/src/components/ContextMenu/MenuList.tsx": 253,
-  "packages/ui/src/components/DrawerColumn.tsx": 344,
+  "packages/ui/src/components/DrawerColumn.tsx": 316,
   "packages/ui/src/components/Listbox/index.tsx": 359,
   "packages/ui/src/components/Markdown/index.tsx": 678,
   "packages/ui/src/components/ReportSheet/index.tsx": 306,

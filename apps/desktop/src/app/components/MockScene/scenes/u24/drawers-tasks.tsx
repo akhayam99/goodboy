@@ -46,7 +46,6 @@ const DrawerSplitTasks = () => {
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={<div />}
-        studioCoversLeft={false}
         studio={
           <StudioFrame kind="inbox" placement="content" onClose={noop}>
             <InboxStudioLayout

@@ -14,7 +14,6 @@ import {
 import { openDestination } from '../../../shared/navigation/openDestination';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
 import { AppStudio } from '../../components/AppOverlayRouter/AppStudio';
-import type { StudioPlacement } from '../../components/StudioFrame/studioPlacement';
 import type { OpenPaletteParams, PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { useCommitDiff } from './useCommitDiff';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
@@ -25,7 +24,6 @@ type Params = {
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly isWorkspaceLauncherBranch: boolean;
-  readonly studioPlacement?: StudioPlacement;
 };
 
 type OpenParams = {
@@ -37,7 +35,6 @@ export const useAppOverlays = ({
   currentWorkspace,
   workspaceProjectRoot,
   isWorkspaceLauncherBranch,
-  studioPlacement = 'cover',
 }: Params) => {
   const overlay = useAppStore((state) => state.appStudio);
   const openStudio = useAppStore((state) => state.openStudio);
@@ -172,7 +169,7 @@ export const useAppOverlays = ({
           onOpenChangelogScreen,
           currentWorkspace,
           workspaceProjectRoot,
-          placement: studioPlacement,
+          placement: 'content',
         });
 
   const layers: ReactNode = createElement(AppOverlayRouter, {

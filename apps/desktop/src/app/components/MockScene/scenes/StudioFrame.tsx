@@ -55,7 +55,6 @@ export const StudioFrame = ({
         }
         main={main}
         {...(isSettingsOpen && { studio: shell.studio })}
-        studioCoversLeft={arrangement.studioCoversLeft}
       />
       {shell.layers}
     </ToastProvider>

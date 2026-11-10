@@ -17,7 +17,7 @@ import {
   useSessions,
 } from '../../../../../store';
 import { DrawerHost } from '../../../DrawerHost';
-import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
+import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { triggerFrameView } from './frameViews';
@@ -47,7 +47,7 @@ export const AppFrame = ({
   const isFoldLive = hasLiveToggle || isDirectedScene();
   const isMainCollapsed = isFoldLive ? isFoldPicked : isRailCollapsed;
   const toggleFold = () => setIsFoldPicked((isPicked) => !isPicked);
-  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const isDrawerOpen = useAppStore((state) => selectOpenDrawer(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   const currentWorkspace = useCurrentWorkspace();
@@ -67,7 +67,6 @@ export const AppFrame = ({
     currentWorkspace,
     workspaceProjectRoot: '/mock/root',
     isWorkspaceLauncherBranch: isLauncher,
-    studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
   });
   useSceneShortcuts({
     openPalette: overlays.openPalette,
@@ -136,7 +135,6 @@ export const AppFrame = ({
         }
         main={<div className="relative h-full w-full">{main}</div>}
         studio={overlays.studio}
-        studioCoversLeft={arrangement.studioCoversLeft}
         {...(hasPane && {
           drawer: isDrawerOpen ? <DrawerHost /> : null,
           drawerSizing,

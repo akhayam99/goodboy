@@ -15,6 +15,8 @@ const SETTINGS = destinationOf({ id: 'settings' });
 
 const SETTINGS = destinationOf({ id: 'settings' });
 
+const SETTINGS = destinationOf({ id: 'settings' });
+
 type Props = {
   readonly place: ColumnPlace;
   readonly isPrimary: boolean;
@@ -35,13 +37,21 @@ export const ColumnFoot = ({ place, isPrimary, actions, onNavigate }: Props) => 
         onNavigate?.();
       }}
     />
-    <GoodboyChip
-      variant="column"
-      isPrimary={isPrimary}
-      isCurrent={place === 'guide' || place === 'whatsNew'}
-      onOpenChangelog={actions.openChangelog}
-      onOpenGuide={actions.openGuide}
-      onOpenShortcuts={actions.openShortcuts}
-    />
+    <div data-column-corner="" className="@container flex min-w-0 items-center gap-1">
+      <GoodboyChip
+        variant="column"
+        isPrimary={isPrimary}
+        isCurrent={place === 'help'}
+        onOpenChangelog={() => {
+          actions.openChangelog();
+          onNavigate?.();
+        }}
+        onOpenHelp={() => {
+          actions.openGuide();
+          onNavigate?.();
+        }}
+      />
+      <ReportBugButton />
+    </div>
   </div>
 );

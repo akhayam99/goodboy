@@ -118,7 +118,7 @@ export const ColumnRail = ({
         <ReportBugButton variant="rail" />
         <GoodboyChip
           variant="rail"
-          isCurrent={place === 'guide' || place === 'whatsNew'}
+          isCurrent={place === 'help'}
           onOpenChangelog={actions.openChangelog}
           onOpenHelp={actions.openGuide}
         />

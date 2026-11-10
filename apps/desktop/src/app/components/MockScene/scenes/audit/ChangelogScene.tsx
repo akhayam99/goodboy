@@ -37,7 +37,9 @@ const seedChangelog = (): void => {
 };
 
 export const ChangelogScene = () => (
-  <FramedStudioScene kind="changelog" place="changelog" seed={seedChangelog}>
-    <HelpStudio initialTab="whatsNew" onClose={noop} onOpenScreen={noop} />
-  </FramedStudioScene>
+  <ToastProvider>
+    <FramedStudioScene kind="changelog" place="changelog" seed={seedChangelog}>
+      <HelpStudio tab="whatsNew" onClose={noop} onOpenScreen={noop} />
+    </FramedStudioScene>
+  </ToastProvider>
 );

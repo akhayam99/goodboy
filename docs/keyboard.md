@@ -16,13 +16,16 @@ shortcut, so the same dispatcher runs the press; elsewhere the chord is
 Ctrl+Shift+W.
 Each press closes one level: a popover or dialog, then the terminal tab (a
 running process asks first), then the open drawer, then a studio, then the
-session view back to the previous place. The Board does nothing.
+session view back to the previous place. It closes what you see: under a studio
+the session drawer is parked, so the studio closes first and the drawer comes
+back with the session. The Board does nothing.
 `terminal.closeTab` is the scoped entry that declines when a popover is open or
 no tab is selected, so `app.close` takes the press.
 
 ⌘⇧W (`slot.close`, Ctrl+F4 elsewhere) closes the top of the side slot and
 nothing else (`closeSlot`): the drawer in the back chip comes back, a second
-press empties the slot, and with no drawer open it does nothing. On macOS the
+press empties the slot, and with no drawer shown (none open, or one parked
+under a studio) it does nothing. On macOS the
 File menu item Close the Drawer owns the chord, so the press reaches the app
 even when a terminal or a web page has the keyboard.
 

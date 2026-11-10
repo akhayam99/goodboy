@@ -124,7 +124,6 @@ describe('the column draws what its saved fold says, on every page', () => {
       <AppShell
         leftSidebar={<div>column</div>}
         leftSidebarCollapsed={arrangement.isLeftRail}
-        studioCoversLeft={arrangement.studioCoversLeft}
         main={<div>content</div>}
       />,
     );

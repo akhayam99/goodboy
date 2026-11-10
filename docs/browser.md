@@ -279,8 +279,10 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   because the wrapper itself has no height, and an element with no area never
   counts. A tooltip (`[role="tooltip"]`) covers the view too, but stays out
   of `OVERLAY_SELECTOR`, which also gates shortcuts. A studio page counts as
-  well (`[data-studio-slot]`), because it sits over the session without
-  unmounting the pane. While one intersects the placeholder, the view is
+  well (`[data-studio-slot]`), because it sits over the session it replaces
+  while the session stays mounted; a pane in a parked drawer stays mounted
+  under the page, so the page covers its placeholder and hides its view. While
+  one intersects the placeholder, the view is
   hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they
   never sit under a view.

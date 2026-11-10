@@ -40,6 +40,23 @@ The Rust files with the most comments lost them in one pass. What a reader would
   move: it follows the page. A row never opens a tool: the tool is open already
   or the user did not ask for it.
 
+- A drawer parked under a studio is still in `state.drawer` and still mounted
+  (`DrawerHost` and the shell read `selectOpenDrawer`, and `DrawerColumn` hides
+  it with `isParked`). A close path reads `selectDrawerPanel` (null under a
+  studio): `selectOpenDrawer` answers what the session holds, so a close that
+  reads it closes a drawer nobody sees. A toggle (`togglePane`, `toggleDrawer`,
+  `toggleContextDrawer`) leaves every stacked page first (`leaveStudio`, since
+  one `closeStudio` only steps back to the page below), then shows the drawer,
+  and never closes one on a page. The session rail's fold (`useShellFolds`)
+  reads `selectOpenDrawer` on purpose, so the rail keeps its fold across the
+  trip. The session itself does not keep its width: the parked aside leaves the
+  flow, so the hidden session widens under the page and narrows on return, and
+  its transcript re-wraps. Every Escape layer inside a parked drawer is
+  suspended, not removed (`DrawerParkedContext`, read by `useEscapeLayer`), so
+  Esc reaches the page and, after the trip, an inner step such as a plan in Ask
+  still answers before the frame. `DrawerParkedContext` wraps only the drawer,
+  never `main`, so a frame drawn in a page keeps its Escape.
+
 - The macOS menu bar and the web view share every ⌘ key, and the web view sees
   the key first: a `preventDefault` in a shortcut handler stops the native menu
   item, and a key nothing handles falls through to it. So a key runs once

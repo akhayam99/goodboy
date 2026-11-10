@@ -5,8 +5,11 @@
 ## Studios
 
 Every studio (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Settings,
-Changelog, the guide, Add workspace) renders in the shell's studio slot, which
-covers the content area only, beside the column, as its own sheet. The column
+Changelog, the guide, Add workspace) is a page in the one main slot: it renders
+inside the content sheet, over the page it replaces, beside the column. The
+page under it stays mounted and inert. Every drawer belongs to a session today,
+so every drawer parks (mounted, hidden and inert) until the studio closes, and
+the sheet takes its width. The column
 never changes for a studio: it stays live in both sidebar states, so another
 door or a session row is one click away, and ⌘B and the sidebar toggle fold it
 on every page (`shellArrangement` takes no studio). **Settings is a page with
@@ -16,10 +19,12 @@ and the crumb (`StudioTrail`), and below it `SettingsScopesLayout` draws a
 `chrome` on Home) with the fold control and `Search settings` in its first row,
 the groups or the matching settings under it, and the page as the detail
 (`data-settings-detail`). The scopes rail folds like every page rail
-(`goodboy:studio-rail-folded:settings:v1`); its folded strip keeps Show and a
+(`goodboy:studio-rail-folded:settings:v1`), but folds by itself only on a pane
+under 720px (`SETTINGS_RAIL_FOLD_BELOW`); its folded strip keeps Show and a
 Search icon that opens the rail on the field. With no saved choice, the rail
 starts folded in a window under 1200px (`foldedByDefaultBelow`), so the page keeps
-room for its dense rows, and a saved choice wins either way. The detail wrapper
+room for its dense rows, and a saved choice wins either way: a docked rail stays
+docked in the sheet of a 1100px window with the column open. The detail wrapper
 is a container (`detailClassName="@container"`): under 600px a Models row drops its
 description and keeps the model, the effort and the Auto or Pinned chip. The Settings row in the column
 foot is lit while it is open. Back to app, Esc and Back land alike. A session
@@ -146,7 +151,9 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   the studio stays, and it gives focus back to its trigger. The image
   lightbox, the sidebar peek, a history drag, the quick actions popover and the
   artifact page's back-to-list Esc register the same way. A layer registered
-  later sits above one registered earlier. A key handler on a focused field may
+  later sits above one registered earlier. A layer inside a parked drawer is
+  suspended while the studio is open and keeps its place for the trip back. A
+  key handler on a focused field may
   claim Esc first with `preventDefault`, and the stack then leaves it alone.
   `useKeepFullScreenOnEscape` is the one raw Esc listener left, because it must
   see the key when no layer is open. A ratchet
@@ -243,7 +250,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   shows (the session pages while no studio covers it, a page rail through
   `StudioRailLayout`), the key toggles the last one registered
   (`innerColumnStore.toggleCurrent`), the palette lists it under that
-  column's name (Hide chat list, Show settings scopes) and leaves it out
+  column's name (Hide chat list, Show session pages) and leaves it out
   on a page with none, where the key does nothing. Under a pane of 880px the rail
   folds without saving anything and docks again when the pane widens; Show on
   that narrow pane opens it until the pane widens, and saves nothing either. A folded

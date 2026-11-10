@@ -6,7 +6,7 @@ import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { useAppStore } from '../../../../../store';
-import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
+import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
@@ -23,7 +23,7 @@ type Props = {
 };
 
 export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
-  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const isDrawerOpen = useAppStore((state) => selectOpenDrawer(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const rail = useSceneSidebar({ isCollapsed: sceneParam({ key: 'rail' }) === '1' });
   const arrangement = shellArrangement({
@@ -37,7 +37,6 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         drawerSizing={drawerSizing}
         studio={shell.studio}
-        studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
             sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}

@@ -24,7 +24,6 @@ const shell = ({ drawer }: { readonly drawer: string | null }) => (
   <AppShell
     leftSidebar={<div>sessions</div>}
     main={<div>board</div>}
-    studioCoversLeft={false}
     studio={
       <StudioFrame kind="inbox" placement="content" onClose={() => undefined}>
         <InboxStudioLayout main={<p>rows</p>} drawer={drawer === null ? null : <p>{drawer}</p>} />

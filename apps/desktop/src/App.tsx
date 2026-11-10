@@ -58,7 +58,7 @@ import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessi
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
-import { selectDrawerPanel } from './store/slices/drawer/selectDrawerPanel';
+import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
 import { selectDrawerPlacement } from './store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from './store/slices/drawer/selectDrawerSizing';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
@@ -71,7 +71,7 @@ export const App = () => {
   const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
-  const isDrawerOpen = useAppStore((s) => selectDrawerPanel(s) !== null);
+  const isDrawerOpen = useAppStore((s) => selectOpenDrawer(s) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   const bootPhase = useAppStore((s) => s.bootPhase);
@@ -124,7 +124,6 @@ export const App = () => {
     currentWorkspace,
     workspaceProjectRoot,
     isWorkspaceLauncherBranch,
-    studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
   });
   const columnActions = useColumnActions({
     openBoard: goToBoard,
@@ -314,7 +313,6 @@ export const App = () => {
               </SidebarPeekOverlay>
             ) : undefined
           }
-          studioCoversLeft={arrangement.studioCoversLeft}
           drawer={isDrawerOpen ? <DrawerHost /> : null}
           drawerSizing={drawerSizing}
           drawerPlacement={drawerPlacement}
