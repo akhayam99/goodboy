@@ -42,7 +42,6 @@ const Harness = () => {
     armDeleteConfirm: () => undefined,
     openPalette: () => undefined,
     openSettings: () => undefined,
-    openTerminalStudio: () => undefined,
     openNewChat: () => undefined,
     openShortcutHelp: () => undefined,
     toggleSidebar: () => undefined,

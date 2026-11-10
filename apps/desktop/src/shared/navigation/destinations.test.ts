@@ -17,10 +17,10 @@ describe('the destination list', () => {
       'Workflows',
       'Chat',
       'Impact',
-      'Terminal',
-      'Browser',
       'Monitoring',
       'Notifications',
+      'Terminal',
+      'Browser',
       'Settings',
       'Guide',
       "What's new",
@@ -75,14 +75,22 @@ describe('the destination list', () => {
     expect(app.map((destination) => destination.scope)).toEqual(app.map(() => 'workspace'));
   });
 
-  it('shows the same word in the shortcut sheet as in the list', () => {
+  it('names the destination in the shortcut sheet, and says Show or hide for a right rail tool', () => {
     const keyed = DESTINATIONS.filter((destination) => destination.shortcutId !== undefined);
 
     expect(keyed.map((destination) => destination.id)).toEqual(['board', 'terminal', 'settings']);
     keyed.forEach((destination) => {
       const id = destination.shortcutId;
-      expect(id === undefined ? null : SHORTCUTS[id].label).toBe(destination.label);
+      const expected =
+        destination.home === 'rail' ? `Show or hide ${destination.label}` : destination.label;
+      expect(id === undefined ? null : SHORTCUTS[id].label).toBe(expected);
     });
+  });
+
+  it('keeps Terminal and Browser on the right rail and every page in the column, the top bar or the foot', () => {
+    const rail = DESTINATIONS.filter((destination) => destination.home === 'rail');
+
+    expect(rail.map((destination) => destination.id)).toEqual(['terminal', 'browser']);
   });
 
   it('lists the keyed destinations of the Navigate group in the order of the list', () => {
@@ -97,9 +105,7 @@ describe('the destination list', () => {
   });
 
   it('draws the column doors from the list, in its order', () => {
-    const inColumn = DESTINATIONS.filter(
-      (destination) => destination.home === 'column' || destination.home === 'tile',
-    );
+    const inColumn = DESTINATIONS.filter((destination) => destination.home === 'column');
 
     expect(COLUMN_DOORS.map((door) => door.id)).toEqual(
       inColumn.map((destination) => destination.id),

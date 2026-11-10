@@ -1343,6 +1343,16 @@ update-card-long-version
 update-card-narrow
 update-confirm
 update-whats-new
+ux39-p10-board
+ux39-p10-session
+ux39-p10-tasks
+ux39-p11-browser-page
+ux39-p11-browser-session
+ux39-p11-terminal-board
+ux39-p11-terminal-page
+ux39-p11-terminal-session
+ux39-p12-tasks-terminal
+ux39-p4-column-folded
 ux39-p7-folded
 ux39-p7-folded-branchless
 ux39-p7-folded-menu

@@ -32,11 +32,27 @@ export const ShortcutGroupSurface = ({ group, overrides, recorder }: Props) => {
                 <span className="truncate text-meta text-faint-foreground">{row.where}</span>
               ) : null}
             </span>
-            <ShortcutRowKeys
-              row={row}
-              isOverridden={Object.hasOwn(overrides, row.first)}
-              recorder={recorder}
-            />
+            <span className="flex shrink-0 items-center gap-2">
+              <ShortcutRowKeys
+                row={row}
+                isOverridden={Object.hasOwn(overrides, row.first)}
+                recorder={recorder}
+              />
+              {row.also === null ? null : (
+                <ShortcutRowKeys
+                  row={{
+                    ...row,
+                    key: row.also,
+                    label: `${row.label}, other keys`,
+                    first: row.also,
+                    last: row.also,
+                    also: null,
+                  }}
+                  isOverridden={Object.hasOwn(overrides, row.also)}
+                  recorder={recorder}
+                />
+              )}
+            </span>
           </li>
         ))}
       </ul>

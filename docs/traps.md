@@ -35,15 +35,20 @@ The Rust files with the most comments lost them in one pass. What a reader would
 
 - `navigate` closes the open drawer unless it is a tool of the session it
   stays in (`keepToolDrawer` reads the `tool` rows of `DRAWER_KINDS` that light a
-  pane), because the drawer belongs to the history entry. A reader, an item or a
+  pane), because the drawer belongs to the history entry. Terminal and Browser
+  are the exception: `keptTool` keeps them on every place, and their drawer may
+  carry `sessionId: null`, so never index a session record by `drawer.sessionId`
+  without checking it, and never read it as the current session. A reader, an item or a
   form never survives a move. The Agents tool keeps no revealed agent through a
   move: it follows the page. A row never opens a tool: the tool is open already
   or the user did not ask for it.
 
 - A drawer parked under a studio is still in `state.drawer` and still mounted
   (`DrawerHost` and the shell read `selectOpenDrawer`, and `DrawerColumn` hides
-  it with `isParked`). A close path reads `selectDrawerPanel` (null under a
-  studio): `selectOpenDrawer` answers what the session holds, so a close that
+  it with `isParked`), except a workspace tool under its own page, which is not
+  mounted (`useShellRight`) so its shortcuts never answer twice. A close path
+  reads `selectDrawerPanel` (null under a studio unless a workspace tool shows
+  beside it): `selectOpenDrawer` answers what the session holds, so a close that
   reads it closes a drawer nobody sees. A toggle (`togglePane`, `toggleDrawer`,
   `toggleContextDrawer`) leaves every stacked page first (`leaveStudio`, since
   one `closeStudio` only steps back to the page below), then shows the drawer,

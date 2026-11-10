@@ -753,7 +753,6 @@
     "apps/desktop/src/features/session/components/SessionOverviewPane/SessionCostChip.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/UnassignedNote.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/UnassignedNotes.tsx": 1,
-    "apps/desktop/src/features/session/components/SessionTools/index.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx": 2,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/questionsLensModel.ts": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/RunIdentityCard.tsx": 2,

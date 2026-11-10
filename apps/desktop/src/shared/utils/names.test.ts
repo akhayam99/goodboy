@@ -125,6 +125,10 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.send)).toEqual(['Send message']);
   });
 
+  it('keeps Command palette as the former name of Search or run', () => {
+    expect(formerNamesOf(NAMES.searchOrRun)).toEqual(['Command palette']);
+  });
+
   it('names halting and picking up once, and every surface reads the same words', () => {
     expect([NAMES.stop, NAMES.stopRun, NAMES.forceStop, NAMES.continue, NAMES.continueAll]).toEqual(
       ['Stop', 'Stop run', 'Force stop', 'Continue', 'Continue all'],

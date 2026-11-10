@@ -4,6 +4,7 @@ import type { ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import type { DrawerPlacement, DrawerSizing } from '../drawerGeometry';
 import { ResizeHandle } from './ResizeHandle';
+import { ShellRailContext } from '../shellRailContext';
 import { StudioSlotContext } from '../studioSlotContext';
 import { useResizableWidth } from '../useResizableWidth';
 
@@ -19,6 +20,8 @@ export type AppShellProps = {
   readonly drawerSizing?: DrawerSizing;
   readonly drawerPlacement?: DrawerPlacement;
   readonly studio?: ReactNode;
+  readonly rightRail?: ReactNode;
+  readonly isDrawerParked?: boolean;
   readonly className?: string;
 };
 
@@ -97,6 +100,8 @@ export const AppShell = ({
   drawerSizing,
   drawerPlacement,
   studio,
+  rightRail,
+  isDrawerParked,
   className,
 }: AppShellProps) => {
   const hasFooter = footer != null;
@@ -169,24 +174,32 @@ export const AppShell = ({
         <main className="flex min-h-0 min-w-0 flex-col" style={{ gridArea: 'main' }}>
           <DrawerColumn
             main={
-              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col" inert={isStudioShown}>
-                  {main}
-                </div>
-                {isStudioShown ? (
-                  <div
-                    data-studio-slot="content"
-                    className="absolute inset-0 z-studio flex min-h-0 min-w-0 flex-col overflow-hidden bg-background empty:hidden has-[[data-studio-sheet-owner]]:bg-chrome"
-                  >
-                    <StudioSlotContext.Provider value>{studio}</StudioSlotContext.Provider>
+              <div className="flex min-h-0 min-w-0 flex-1">
+                <div
+                  data-studio-host=""
+                  className="relative isolate flex min-h-0 min-w-0 flex-1 flex-col"
+                >
+                  <div className="flex min-h-0 min-w-0 flex-1 flex-col" inert={isStudioShown}>
+                    <ShellRailContext.Provider value={rightRail != null || isStudioShown}>
+                      {main}
+                    </ShellRailContext.Provider>
                   </div>
-                ) : null}
+                  {isStudioShown ? (
+                    <div
+                      data-studio-slot="content"
+                      className="absolute inset-0 z-studio flex min-h-0 min-w-0 flex-col overflow-hidden bg-background empty:hidden has-[[data-studio-sheet-owner]]:bg-chrome"
+                    >
+                      <StudioSlotContext.Provider value>{studio}</StudioSlotContext.Provider>
+                    </div>
+                  ) : null}
+                </div>
+                {rightRail}
               </div>
             }
             drawer={drawer ?? null}
             sizing={drawerSizing}
             placement={drawerPlacement}
-            isParked={isStudioShown}
+            isParked={isDrawerParked ?? isStudioShown}
             frame="sheet"
             sheetEdge={isSheetWrapped ? 'wrapped' : 'flush'}
             className={STUDIO_SHEET_OWNED}

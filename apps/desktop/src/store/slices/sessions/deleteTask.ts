@@ -36,6 +36,7 @@ import { touchArchivedCache } from '../summaries/archivedCacheVersion';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
 import { projectById } from '../projects/projectIndex';
+import { slotAfterSessionGone } from '../drawer/slotAfterSessionGone';
 
 type RemovePersistedDirectoryParams = {
   readonly sessionId: SessionId;
@@ -241,6 +242,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         sessions: state.sessions.filter((s) => s.id !== sessionId),
         archivedSessions: nextArchived,
         currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
+        ...slotAfterSessionGone({ drawer: state.drawer, back: state.drawerBack, sessionId }),
       };
     });
     void get()

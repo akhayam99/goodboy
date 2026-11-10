@@ -168,15 +168,15 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
     expect(goIds).toEqual(['nav.back', 'nav.forward', ...paged.map(({ menuId }) => menuId)]);
   });
 
-  it('keeps a separator between the pages and the tools in the Go menu', () => {
-    const block = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/.exec(source)?.[1] ?? '';
-    const rows = block
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line !== '')
-      .map((line) => (line === 'SEPARATOR,' ? '-' : (/"([^"]+)"/.exec(line)?.[1] ?? '')));
-    const afterImpact = rows.indexOf('menu.impact') + 1;
-    expect(rows[afterImpact]).toBe('-');
+  it('keeps a separator between the pages and the right rail tools in the Go menu', () => {
+    const block = GO_SECTION.exec(source)?.[1] ?? '';
+    const rows = [...block.matchAll(/\bSEPARATOR\b|\bcommand\(\s*"([^"]+)"/g)].map(([token, id]) =>
+      token === 'SEPARATOR' ? '-' : (id ?? ''),
+    );
+    const tools = DESTINATIONS.filter(({ home }) => home === 'rail').map(({ menuId }) => menuId);
+    const firstTool = rows.indexOf(tools[0] ?? '');
+    expect(rows[firstTool - 1]).toBe('-');
+    expect(rows.slice(firstTool)).toEqual(tools);
   });
 
   it('lists the foot destinations in the Help and App menus', () => {
@@ -203,11 +203,10 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
     expect(labels.find(({ id }) => id === 'session.board')?.label).toBe(
       SHORTCUTS['session.board'].label,
     );
-    expect(labels.find(({ id }) => id === 'menu.browser')?.label).toBe(
-      MENU_ACTIONS['menu.browser'].label,
-    );
     const drift = DESTINATIONS.filter(({ home }) => home !== 'foot').filter(
-      ({ menuId, label }) => labels.find(({ id }) => id === menuId)?.label !== label,
+      ({ menuId, label, home }) =>
+        labels.find(({ id }) => id === menuId)?.label !==
+        (home === 'rail' ? `Show or Hide ${label}` : label),
     );
     expect(drift.map(({ id }) => id)).toEqual([]);
   });

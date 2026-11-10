@@ -248,7 +248,7 @@ const expectCentredColumns = (): void => {
 const expectAskInToolColumn = (): void => {
   const ask = shown('[data-testid="pane-toggle-ask"]');
   expect(
-    ask?.closest('[role="toolbar"][aria-label="Session tools"]'),
+    ask?.closest('[role="toolbar"][aria-label="Tools"]'),
     'Ask sits in the session tools column',
   ).not.toBeNull();
   expect(ask?.closest('nav[aria-label="Session pages"]') ?? null).toBeNull();

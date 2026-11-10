@@ -54,7 +54,7 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const cluster = (): HTMLElement => screen.getByRole('toolbar', { name: 'Session tools' });
+const cluster = (): HTMLElement => screen.getByRole('toolbar', { name: 'Tools' });
 
 const pressed = (): ReadonlyArray<string> =>
   within(cluster())
@@ -84,7 +84,7 @@ describe('c03 session tools scenes', () => {
   it('opens the terminal on the worktree this session last used, with the scope picker', async () => {
     await mount('c03-panes-terminal');
     expect(useAppStore.getState().drawer?.kind).toBe('terminal');
-    expect(pressed()).toEqual(['Terminal']);
+    expect(pressed()).toEqual(['Terminal, 2 running']);
     expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
       'payments-api · hl/fix-duplicate-credit',
     );
@@ -122,9 +122,11 @@ describe('c03 session tools scenes', () => {
   it('keeps the tools in a column right of the content, not in the rail, and no page header holds a pane toggle', async () => {
     await mount('c03-panes-closed');
     const rail = screen.getByRole('navigation', { name: 'Session pages' });
-    expect(within(rail).queryByRole('toolbar', { name: 'Session tools' })).toBeNull();
+    expect(within(rail).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
     const frame = rail.closest('[data-session-frame]');
-    expect(frame?.lastElementChild?.getAttribute('aria-label')).toBe('Session tools');
+    const tools = screen.getByRole('toolbar', { name: 'Tools' });
+    expect(frame?.contains(tools)).toBe(false);
+    expect(tools.closest('[data-drawer-main]')).toBe(frame?.closest('[data-drawer-main]'));
     const headers = [...document.querySelectorAll('[data-slot="pane-title-row"]')];
     expect(headers.length).toBeGreaterThan(0);
     expect(

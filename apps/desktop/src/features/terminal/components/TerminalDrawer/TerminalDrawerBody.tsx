@@ -13,6 +13,7 @@ import { useTerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { openSessionFolderTerminal } from '../../openSessionFolderTerminal';
 import { openSessionTerminal } from '../../openSessionTerminal';
 import { openTerminalOnPage } from '../../openTerminalOnPage';
+import { openWorkspaceTerminalAt } from '../../openWorkspaceTerminalAt';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
 import { allWorktrees } from '../../terminalWorktrees';
@@ -23,7 +24,7 @@ import { TerminalScopePicker } from './TerminalScopePicker';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly sessionId: SessionId;
+  readonly sessionId: SessionId | null;
   readonly worktreeKey: string;
   readonly onClose: () => void;
 };
@@ -39,8 +40,9 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
     scope: 'session',
     onSelect: keepSelection,
   });
-  const isBranchless = useAppStore((state) =>
-    isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
+  const isBranchless = useAppStore(
+    (state) =>
+      sessionId !== null && isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
   );
   const reportError = useAppStore((state) => state.reportError);
   const { worktree, selected, groups, busyIds, targets } = model;
@@ -90,15 +92,23 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
 
   const pickTarget = (target: TerminalTarget) => {
     const state = useAppStore.getState();
+    const owner = sessionId ?? (target.kind === 'session' ? target.sessionId : null);
+    if (owner === null) {
+      openWorkspaceTerminalAt({ state, workspaceId, cwd: target.path, isFresh: false });
+      return;
+    }
     openSessionTerminal({
       state,
-      sessionId,
+      sessionId: owner,
       cwd: target.path,
       ...(target.kind === 'workspace' && { owner: workspaceTerminalOwner({ workspaceId }) }),
     });
   };
 
   const pickSessionFolder = () => {
+    if (sessionId === null) {
+      return;
+    }
     void openSessionFolderTerminal({ sessionId }).catch((error: unknown) =>
       reportError({ recovery: CHECK_STATE, title: "Couldn't open the terminal", error, sessionId }),
     );
@@ -122,7 +132,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
         </span>
       }
       page={{
-        tooltip: 'Open on the Terminal page. Leaves this session',
+        label: 'Open as page',
         onOpen: () => openTerminalOnPage({ terminalId: selected.id, sessionId }),
       }}
       onClose={onClose}

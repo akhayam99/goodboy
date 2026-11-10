@@ -10,7 +10,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { DrawerHost } from '../../DrawerHost';
-import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { useShellRight } from '../../../hooks/useShellRight';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
@@ -108,7 +108,7 @@ export const ShellFrame = ({
   sidebar = 'collapsed',
   hasOwnTrail = false,
 }: ShellFrameProps) => {
-  const isDrawerOpen = useAppStore((state) => selectOpenDrawer(state) !== null);
+  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
   const rail = useSceneSidebar({ isCollapsed: sidebar === 'collapsed' });
   const arrangement = shellArrangement({
     hasWorkspace: true,
@@ -127,7 +127,9 @@ export const ShellFrame = ({
             onOpenScript={noop}
           />
         }
-        drawer={isDrawerOpen ? <DrawerHost /> : null}
+        drawer={isDrawerMounted ? <DrawerHost /> : null}
+        isDrawerParked={isDrawerParked}
+        rightRail={rightRail}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           <ShellLeft

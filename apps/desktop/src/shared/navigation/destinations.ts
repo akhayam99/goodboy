@@ -17,9 +17,13 @@ export type DestinationId =
   | 'notifications'
   | FootDestinationId;
 
+export type RailDestinationId = 'terminal' | 'browser';
+
 export type StudioDestinationId = Exclude<DestinationId, 'board'>;
 
-export type DestinationHome = 'column' | 'tile' | 'topBar' | 'foot';
+export type PageDestinationId = Exclude<StudioDestinationId, RailDestinationId>;
+
+export type DestinationHome = 'column' | 'rail' | 'topBar' | 'foot';
 
 export type DestinationScope = 'app' | 'workspace' | 'session';
 
@@ -84,32 +88,14 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     isReference: true,
   },
   {
-    id: 'terminal',
-    label: NAMES.terminal,
-    icon: CONCEPT_ICONS.terminal,
-    menuId: 'terminal.studio',
-    home: 'tile',
-    scope: 'workspace',
-    aliases: ['Go to Terminal', 'Terminals'],
-    shortcutId: 'terminal.studio',
-  },
-  {
-    id: 'browser',
-    label: NAMES.browser,
-    icon: CONCEPT_ICONS.browser,
-    menuId: 'menu.browser',
-    home: 'tile',
-    scope: 'workspace',
-    aliases: ['Go to Browser'],
-  },
-  {
     id: 'monitoring',
     label: NAMES.monitoring,
     icon: CONCEPT_ICONS.monitoring,
     menuId: 'menu.monitoring',
-    home: 'tile',
+    home: 'column',
     scope: 'workspace',
     aliases: ['Go to Monitoring', 'Ports'],
+    isReference: true,
   },
   {
     id: 'notifications',
@@ -119,6 +105,25 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     home: 'topBar',
     scope: 'workspace',
     aliases: [],
+  },
+  {
+    id: 'terminal',
+    label: NAMES.terminal,
+    icon: CONCEPT_ICONS.terminal,
+    menuId: 'terminal.studio',
+    home: 'rail',
+    scope: 'workspace',
+    aliases: ['Go to Terminal', 'Terminals', 'Show or hide Terminal'],
+    shortcutId: 'terminal.studio',
+  },
+  {
+    id: 'browser',
+    label: NAMES.browser,
+    icon: CONCEPT_ICONS.browser,
+    menuId: 'menu.browser',
+    home: 'rail',
+    scope: 'workspace',
+    aliases: ['Go to Browser'],
   },
   {
     id: 'settings',

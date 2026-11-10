@@ -62,7 +62,7 @@ describe('rail order and badge scenes', () => {
   it('session-tools-order reads files and context, then talk and work, then the terminal and the browser', () => {
     mount({ name: 'session-tools-order' });
 
-    const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
+    const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
     expect(
       within(toolbar)
         .getAllByRole('button')

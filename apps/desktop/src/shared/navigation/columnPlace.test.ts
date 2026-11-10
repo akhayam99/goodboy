@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { StudioKind } from '../../../store';
+import type { StudioKind } from '../../store';
 import { columnPlaceOf, isStudioOverSession, type ColumnPlace } from './columnPlace';
 
 describe('columnPlaceOf', () => {
@@ -24,8 +24,8 @@ describe('columnPlaceOf', () => {
       ['browser', 'browser'],
       ['monitoring', 'monitoring'],
       ['notifications', 'notifications'],
-      ['changelog', 'whatsNew'],
-      ['guide', 'guide'],
+      ['changelog', 'help'],
+      ['guide', 'help'],
       ['addWorkspace', 'addWorkspace'],
     ];
     for (const [studio, place] of cases) {
@@ -62,8 +62,7 @@ describe('columnPlaceOf', () => {
       'browser',
       'monitoring',
       'impact',
-      'guide',
-      'whatsNew',
+      'help',
       'notifications',
       'addWorkspace',
     ];

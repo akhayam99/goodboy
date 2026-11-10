@@ -61,8 +61,13 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
       <BrowserPageTrail sessionId={sessionId} />
       <BrowserPageHeader
         actions={
-          <Button variant="secondary" size="sm" onClick={() => demoteBrowserTab({ sessionId })}>
-            Back beside the session
+          <Button
+            variant="secondary"
+            size="sm"
+            title="Dock beside the session"
+            onClick={() => demoteBrowserTab({ sessionId })}
+          >
+            Dock
           </Button>
         }
       />

@@ -25,20 +25,46 @@ beforeEach(async () => {
 });
 
 describe('openTerminalOnPage', () => {
-  it('empties the slot with its chip when the terminal moves to its page', async () => {
+  it('parks the dock under the page it grew into, and Back brings the dock again', async () => {
     const { openSessionTerminal } = await import('./openSessionTerminal');
     const { openTerminalOnPage } = await import('./openTerminalOnPage');
+    const { selectDrawerPanel } = await import('../../store/slices/drawer/selectDrawerPanel');
     openSessionTerminal({ state: store.getState(), sessionId: SESSION_ID, cwd: '/wt/ledger-core' });
     const terminalId = store.getState().terminalTabs[SESSION_ID]?.[0]?.id;
-    store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
-    expect(store.getState().drawerBack?.kind).toBe('terminal');
     if (terminalId === undefined) {
       throw new Error('the terminal tab was not added');
     }
 
     openTerminalOnPage({ terminalId, sessionId: SESSION_ID });
 
-    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().appStudio?.kind).toBe('terminal');
+    expect(selectDrawerPanel(store.getState())).toBeNull();
+
+    store.getState().back();
+
+    expect(store.getState().appStudio).toBeNull();
+    expect(selectDrawerPanel(store.getState())).toEqual({
+      kind: 'terminal',
+      sessionId: SESSION_ID,
+      payload: { terminalId },
+    });
+  });
+
+  it('docks the page on the same tab, beside the place under it', async () => {
+    const { openSessionTerminal } = await import('./openSessionTerminal');
+    const { openTerminalOnPage } = await import('./openTerminalOnPage');
+    const { dockTerminalPage } = await import('./dockTerminalPage');
+    openSessionTerminal({ state: store.getState(), sessionId: SESSION_ID, cwd: '/wt/ledger-core' });
+    const terminalId = store.getState().terminalTabs[SESSION_ID]?.[0]?.id;
+    if (terminalId === undefined) {
+      throw new Error('the terminal tab was not added');
+    }
+    openTerminalOnPage({ terminalId, sessionId: SESSION_ID });
+
+    dockTerminalPage({ terminalId, sessionId: SESSION_ID });
+
+    expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().drawer?.kind).toBe('terminal');
     expect(store.getState().drawerBack).toBeNull();
   });
 });

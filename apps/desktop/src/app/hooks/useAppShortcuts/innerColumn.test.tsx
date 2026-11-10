@@ -51,7 +51,6 @@ const Harness = ({ toggleSidebar, columns }: Props) => {
     armDeleteConfirm: () => undefined,
     openPalette: () => undefined,
     openSettings: () => undefined,
-    openTerminalStudio: () => undefined,
     openNewChat: () => undefined,
     openShortcutHelp: () => undefined,
     toggleSidebar,

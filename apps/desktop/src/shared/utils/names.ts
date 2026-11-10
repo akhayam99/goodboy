@@ -203,6 +203,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.gitRepository]: ['Dev project'],
   [NAMES.providers]: ['Providers & models', 'Providers and models'],
   [NAMES.keyboardShortcuts]: ['Shortcuts'],
+  [NAMES.searchOrRun]: ['Command palette'],
   [NAMES.backupAndReset]: ['Backup', 'Reset'],
   [NAMES.storage]: ['Security findings'],
   [NAMES.branches]: ['After merge'],

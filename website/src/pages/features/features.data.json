@@ -281,7 +281,7 @@
         },
         {
           "title": "Sidebar",
-          "text": "One column on the left holds Board, Tasks, Workflows, Chat, a row of Terminal, Browser and Monitoring tiles, and your sessions, on every screen. An open session adds its own rail with its pages, projects and branches. Fold the sidebar with ⌘B and the icons stay.",
+          "text": "One column on the left holds Board, Tasks, Workflows, Chat, Impact, Monitoring and your sessions, on every screen. Terminal and Browser sit on the right rail of every page and stay open as you move. An open session adds its own rail with its pages, projects and branches. Fold the sidebar with ⌘B and the icons stay.",
           "group": "Search and navigation",
           "also": "sidebar"
         },

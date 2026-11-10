@@ -1,12 +1,15 @@
 import { leaveStudio } from '../navigation/leaveStudio';
 import { drawerKey } from './drawerKey';
+import { isWorkspaceTool } from './isWorkspaceTool';
 import { selectDrawerPanel } from './selectDrawerPanel';
 import type { DrawerRequest } from './state';
 import type { GetFn } from './types';
 
 export const toggleDrawer = (get: GetFn) => {
   return (request: DrawerRequest): void => {
-    const isOnPage = get().appStudio !== null;
+    const studio = get().appStudio;
+    const isOnPage =
+      studio !== null && (!isWorkspaceTool({ content: request }) || studio.kind === request.kind);
     if (isOnPage) {
       leaveStudio({ get });
     }
