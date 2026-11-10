@@ -126,7 +126,7 @@
   destinations in its Navigate group follow the order of the list. Board answers
   to Sessions in the palette and its page is titled Board. Each session page has
   its own glyph: Runs draws `CONCEPT_ICONS.runs`, not the Workflows door glyph,
-  and Artifacts draws `CONCEPT_ICONS.artifacts`. Moving a destination to another
+  and Artifacts keeps `CONCEPT_ICONS.plans`. Moving a destination to another
   home is a change of its `home` and its row in the table, nothing else.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity

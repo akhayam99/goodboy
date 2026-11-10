@@ -77,7 +77,7 @@ file names it. Size is `control` in the lens switcher. `lensDestinations` in
 | Runs                        | `runs`         | `Route`                 | primary | always                                     |
 | Agents                      | `agents`       | `Bot`                   | primary | always                                     |
 | Questions                   | `questions`    | `CircleHelp`            | warning | always                                     |
-| Artifacts                   | `artifacts`    | `Shapes`                | draft   | always                                     |
+| Artifacts                   | `plans`        | `ClipboardList`         | draft   | always                                     |
 | Review                      | `review`       | `MessageSquareQuote`    | primary | with a branch                              |
 | Diff                        | `diff`         | `FileDiff`              | info    | with a branch                              |
 | Explore                     | `explore`      | `FolderSearch`          | info    | always                                     |
@@ -86,10 +86,9 @@ file names it. Size is `control` in the lens switcher. `lensDestinations` in
 | Pull request                | `pr`           | `GitPullRequest`        | primary | with a branch, when the host is not GitHub |
 | Linear, GitLab, Jira, Slack | brand concepts | `@goodboy/ui` brand set | primary | with a branch, when that tool is connected |
 
-Runs reads `CONCEPT_ICONS.runs` (`Route`) and Artifacts reads
-`CONCEPT_ICONS.artifacts` (`Shapes`), so the switcher, the column and the
-palette draw one glyph for each. `Waypoints` stays the glyph of a workflow run
-row in the feed, and `ClipboardList` is no longer a lens glyph.
+Runs reads `CONCEPT_ICONS.runs` (`Route`), so the switcher, the column and the
+palette draw one glyph for it. `Waypoints` stays the glyph of a workflow run
+row in the feed. Artifacts keeps `CONCEPT_ICONS.plans` (`ClipboardList`).
 
 Goal (`goal`, `Target`), Decisions (`decisions`, `CheckCheck`) and Session
 summary (`sessionSummary`, `NotebookText`) are parts of the Context region:
