@@ -21,6 +21,7 @@ export const DetachedStudio = ({
   const isSlot = variant === 'slot';
   const hasAccessory = headerAccessory !== undefined && headerAccessory !== null;
   const isBandClose = !isSlot && !headerCloseClaim.isClaimed;
+  const isBandAccessory = hasAccessory && !headerCloseClaim.isClaimed;
 
   return (
     <div
@@ -32,7 +33,7 @@ export const DetachedStudio = ({
         !isSlot && (closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in'),
       )}
     >
-      {hasAccessory || isBandClose ? (
+      {isBandAccessory || isBandClose ? (
         <header aria-label={title} data-studio-band="" className="h-10 shrink-0">
           <PageColumn className="flex h-full items-center justify-end gap-3">
             {headerAccessory}
@@ -51,11 +52,14 @@ export const DetachedStudio = ({
         <PaneActionsContext.Provider
           value={
             isSlot ? null : (
-              <HeaderCloseButton
-                label={label}
-                onClose={requestClose}
-                onClaim={headerCloseClaim.claim}
-              />
+              <>
+                {headerAccessory}
+                <HeaderCloseButton
+                  label={label}
+                  onClose={requestClose}
+                  onClaim={headerCloseClaim.claim}
+                />
+              </>
             )
           }
         >
