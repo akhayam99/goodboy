@@ -238,7 +238,7 @@ describe('modelAxes', () => {
       { id: 'Haiku', label: 'Haiku', modelKey: 'haiku-5.5' },
       { id: 'Sonnet', label: 'Sonnet', modelKey: 'sonnet-5.5' },
       { id: 'Opus', label: 'Opus', modelKey: 'opus-5.5' },
-      { id: 'Fable', label: 'Fable', modelKey: 'fable-5.1' },
+      { id: 'Fable', label: 'Fable', modelKey: 'fable-5.2' },
       { id: 'GPT', label: 'GPT', modelKey: 'gpt-5.6' },
       { id: 'Grok', label: 'Grok', modelKey: 'grok-4.7' },
       { id: 'Gemini', label: 'Gemini', modelKey: 'gemini-4-argon' },

@@ -14,6 +14,18 @@ describe('computeCostUsd', () => {
     expect(computeCostUsd({ usage, model: 'claude-fable-5' })).toBeCloseTo(10 + 50);
   });
 
+  it('fable-5-2 pins 8 input, 40 output, 0.20 cache read and 10 cache write per Mtok', () => {
+    const model = 'claude-fable-5-2';
+    const empty: ProviderUsage = { ...usage, inputTokens: 0, outputTokens: 0 };
+    expect(computeCostUsd({ usage, model })).toBeCloseTo(8 + 40);
+    expect(
+      computeCostUsd({ usage: { ...empty, cachedInputTokens: 1_000_000 }, model }),
+    ).toBeCloseTo(0.2);
+    expect(
+      computeCostUsd({ usage: { ...empty, cacheCreationInputTokens: 1_000_000 }, model }),
+    ).toBeCloseTo(10);
+  });
+
   it('opus pricing', () => {
     expect(computeCostUsd({ usage, model: 'claude-opus-4-7' })).toBeCloseTo(5 + 25);
   });

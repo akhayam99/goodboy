@@ -2,6 +2,7 @@ export const ANTHROPIC_AGENT_MODEL_IDS = [
   'claude-opus-5',
   'claude-opus-5-5',
   'claude-opus-4-8',
+  'claude-fable-5-2',
   'claude-fable-5-1',
   'claude-fable-5',
   'claude-opus-4-7',
