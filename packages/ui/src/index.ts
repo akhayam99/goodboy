@@ -2,6 +2,7 @@ export { cn } from './cn';
 export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
+export { ShellRailContext } from './shellRailContext';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export { DrawerBackChipContext } from './drawerBackChipContext';
 export type { DrawerChip } from './drawerBackChipContext';
