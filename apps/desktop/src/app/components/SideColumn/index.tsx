@@ -10,7 +10,7 @@ import { ColumnFoot } from './ColumnFoot';
 import { ColumnToolTiles } from './ColumnToolTiles';
 import { COLUMN_ROW_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { useDoorSignals } from './useDoorSignals';
-import { isStudioOverSession, type ColumnPlace } from './columnPlace';
+import { isStudioOverSession, type ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 type Props = {
   readonly scope: ShellColumnScope;

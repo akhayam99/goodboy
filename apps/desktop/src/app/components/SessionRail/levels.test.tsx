@@ -42,7 +42,7 @@ import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { useCurrentSession } from '../../../store';
 import type { AppStore } from '../../../store/store';
 import type { ColumnActions } from '../SideColumn/columnDoors';
-import type { ColumnPlace } from '../SideColumn/columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 import { SideColumn } from '../SideColumn';
 import { SessionFrame } from './SessionFrame';
 import { CARD_INSET } from './SessionLevel/railInset';

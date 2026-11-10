@@ -30,25 +30,8 @@ type DestinationActionParams = {
   readonly isGuarded?: boolean;
 };
 
-const isBrowserShown = (): boolean => {
-  const { appStudio, currentSessionId } = useAppStore.getState();
-  return (
-    appStudio !== null && appStudio.kind === 'browser' && appStudio.sessionId === currentSessionId
-  );
-};
-
-const isMonitoringShown = (): boolean => useAppStore.getState().appStudio?.kind === 'monitoring';
-
 const destinationAction = ({ id, isGuarded = true }: DestinationActionParams): MenuAction => {
-  const run = (): void => {
-    if (id === 'browser' && isBrowserShown()) {
-      return;
-    }
-    if (id === 'monitoring' && isMonitoringShown()) {
-      return;
-    }
-    openDestination({ id });
-  };
+  const run = (): void => openDestination({ id });
   return {
     label: destinationOf({ id }).label,
     run: isGuarded ? inWorkspace({ run }) : run,

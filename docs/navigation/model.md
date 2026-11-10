@@ -181,7 +181,7 @@
 - **One selected sign.** The open studio's door, New session while the draft is
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
-  `useColumnPlace`), so at most one door carries it; inside a session no door
+  `selectColumnPlace` and `useColumnPlace`), so at most one door carries it; inside a session no door
   does: the open session's row is the column's sign and the current page row is
   the session rail's (see Session rail), one sign per navigation column. A popover trigger (the
   Usage chips, the Goodboy row) is never selected: it only reports

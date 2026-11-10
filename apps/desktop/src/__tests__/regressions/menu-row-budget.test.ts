@@ -19,6 +19,7 @@ const MENU_MARKERS: ReadonlyArray<string> = [
   '<OverflowMenu',
   '<MenuList',
   '<AppMenuList',
+  'toMenuEntries',
 ];
 
 const PENDING: Readonly<Record<string, string>> = {
@@ -27,7 +28,12 @@ const PENDING: Readonly<Record<string, string>> = {
 };
 
 const DATA_DRIVEN: Readonly<Record<string, string>> = {
-  'app/components/AppTopBar/NavCluster/HistoryArrow.tsx': 'one row per entry of the history stack',
+  'app/components/AppTopBar/NavCluster/HistoryArrow.tsx':
+    'a radio list of the last twelve stops of the history stack, a list and not a menu of fixed rows',
+  'features/branch/components/BranchHeader/BranchOverflow.tsx':
+    'rows built from registry actions, capped by branchMenuRows.test.ts',
+  'features/search/components/SearchMode/SearchHitActions.tsx':
+    'registry actions of one hit, capped at two by RELATED_LIMIT and pinned in SearchMode/index.test.tsx',
   'features/chat/components/ChatInput/parts/ComposerPlusMenu.tsx':
     'one row per prefix group the composer knows',
   'features/explore/components/ExplorePane/ExploreProjectChip.tsx':
@@ -66,12 +72,20 @@ describe('a menu the app draws holds at most five rows', () => {
     expect(rowsOfMenus.length).toBeGreaterThan(5);
   });
 
-  it('counts every row it can see: literal items, radio choices and mapped lists of a constant', () => {
+  it('counts every row it can see: literal items, radio choices and mapped lists of a constant, and names a menu built from data or from toMenuEntries', () => {
     const uncounted = report
       .filter(({ unresolved }) => unresolved.length > 0)
       .map(({ path }) => path)
       .filter((path) => DATA_DRIVEN[path] === undefined);
     expect(uncounted).toEqual([]);
+  });
+
+  it('keeps the history list at the twelve stops its reason names', () => {
+    const source = readFileSync(
+      join(DESKTOP_SRC, 'app/components/AppTopBar/NavCluster/index.tsx'),
+      'utf8',
+    );
+    expect(source).toContain('HISTORY_MENU_LIMIT = 12;');
   });
 
   it('keeps the data driven list shrinking: a listed menu still builds rows from data', () => {
@@ -82,7 +96,7 @@ describe('a menu the app draws holds at most five rows', () => {
   });
 
   it.each(rowsOfMenus.map(({ path, rows }) => [path, rows] as const))(
-    '%s holds %i rows',
+    '%s holds %i literal rows across all its menus',
     (path, rows) => {
       if (PENDING[path] !== undefined) {
         expect(rows).toBeGreaterThan(MAX_OVERFLOW_ROWS);

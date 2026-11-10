@@ -618,10 +618,14 @@ or a command with an id, a title-case label and an optional combo. The native
 menu bar follows the macOS convention and is not bound to five rows. Every menu
 the app draws itself (a `⋯`, a header menu, a popover of actions) holds five
 rows at most. `menu-row-budget.test.ts` reads each hand written menu source and
-reports one line per menu with its row count: literal rows, the choices of a
-radio group, and rows mapped from a constant list. A menu whose rows come from
-data (a picker over projects, people or branches) is named in that test with
-its reason. The registry menus are measured state by state in
+reports one line per file with its row count: literal rows, the choices of a
+radio group, and rows mapped from a constant list. Two menus in one file add
+up, which is stricter than the rule. A menu whose rows come from data (a picker
+over projects, people or branches, or rows built by `toMenuEntries`) is named
+in that test with its reason. The history menu of the back and forward arrows
+is such a list: it shows the last twelve stops of the history stack, so it is
+named there as a list and not as a menu of fixed rows. The registry menus are
+measured state by state in
 `overflowRows.test.ts` and `overflowRows.drawer.test.tsx`. Right click menus
 mirror the action catalog and are not bound.
 
@@ -635,12 +639,15 @@ New Workspace, the Go doors, Guide, What's New). An id with neither warns once
 and does nothing. A new menu item therefore adds a row to the table and an id,
 never an event or a listener. Every Go door opens through `openDestination`,
 the same call as the column and the palette, and the doors that need a
-workspace do nothing without one. Browser for the open session and Monitoring
-do nothing when their page is already open, as their tiles do, so the menu adds
-no history entry and keeps a promoted Browser tab. `menuBar.parity.test.ts` reads the Rust table
-and fails when an id has no registry entry or action, a combo differs from the
-registry's, a label is not title case, a key has two owners, or the Go rows
-differ from `DESTINATIONS` in order.
+workspace do nothing without one. `openDestination` does nothing when the
+destination is a page the column already shows as current (Tasks, Chat,
+Workflows, Impact, Terminal, Browser, Monitoring), read from the same
+`selectColumnPlace` as the column. A Go pick on the open page therefore adds no
+history entry, keeps a promoted Browser tab and keeps the scope of an open
+Impact page. `menuBar.parity.test.ts` reads the Rust table and fails when an id
+has no registry entry or action, a combo differs from the registry's, a label
+is not title case, a key has two owners, or the Go rows differ from
+`DESTINATIONS` in order or in name.
 
 ## Report sheet
 

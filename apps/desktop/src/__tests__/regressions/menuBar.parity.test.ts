@@ -175,8 +175,10 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
       .map((line) => line.trim())
       .filter((line) => line !== '')
       .map((line) => (line === 'SEPARATOR,' ? '-' : (/"([^"]+)"/.exec(line)?.[1] ?? '')));
-    const afterImpact = rows.indexOf('menu.impact') + 1;
-    expect(rows[afterImpact]).toBe('-');
+    const paged = DESTINATIONS.filter(({ home }) => home !== 'foot');
+    const lastPage = paged.filter(({ home }) => home === 'column').at(-1);
+    const afterPages = rows.indexOf(lastPage?.menuId ?? '') + 1;
+    expect(rows[afterPages]).toBe('-');
   });
 
   it('lists the foot destinations in the Help and App menus', () => {
@@ -206,7 +208,10 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
     expect(labels.find(({ id }) => id === 'menu.browser')?.label).toBe(
       MENU_ACTIONS['menu.browser'].label,
     );
-    expect(labels.some(({ label }) => label === 'Sessions')).toBe(false);
+    const drift = DESTINATIONS.filter(({ home }) => home !== 'foot').filter(
+      ({ menuId, label }) => labels.find(({ id }) => id === menuId)?.label !== label,
+    );
+    expect(drift.map(({ id }) => id)).toEqual([]);
   });
 
   it('leaves Undo and Redo to the predefined items', () => {

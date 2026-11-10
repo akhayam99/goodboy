@@ -8,7 +8,7 @@ import { useChatActivity } from '../../../../features/workspace-chat/hooks/useCh
 import { runningTerminalCount } from '../../../../features/terminal/runningTerminalCount';
 import { browserTabCount } from '../../../../features/browser/browserTabCount';
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
-import type { ColumnDoorId } from '../columnPlace';
+import type { ColumnDoorId } from '../../../../shared/navigation/columnPlace';
 import { doorSignalOf, type DoorSignal } from '../doorSignal';
 
 type Params = Record<never, never>;

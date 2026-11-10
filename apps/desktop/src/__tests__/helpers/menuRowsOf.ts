@@ -19,6 +19,23 @@ type NameParams = {
   readonly source: ts.SourceFile;
 };
 
+type PropertyParams = {
+  readonly literal: ts.ObjectLiteralExpression;
+  readonly name: string;
+};
+
+type LiteralParams = {
+  readonly literal: ts.ObjectLiteralExpression;
+};
+
+type MaybeExpressionParams = {
+  readonly node: ts.Expression | undefined;
+};
+
+type AnyNodeParams = {
+  readonly node: ts.Node;
+};
+
 type ModuleParams = {
   readonly from: string;
   readonly specifier: string;
@@ -51,13 +68,7 @@ const resolveModule = ({ from, specifier }: ModuleParams): string | null => {
   return found ?? null;
 };
 
-const propertyOf = ({
-  literal,
-  name,
-}: {
-  readonly literal: ts.ObjectLiteralExpression;
-  readonly name: string;
-}): ts.Expression | null => {
+const propertyOf = ({ literal, name }: PropertyParams): ts.Expression | null => {
   const found = literal.properties.find(
     (property): property is ts.PropertyAssignment =>
       ts.isPropertyAssignment(property) && property.name.getText() === name,
@@ -65,11 +76,7 @@ const propertyOf = ({
   return found === undefined ? null : found.initializer;
 };
 
-const unwrapped = ({
-  node,
-}: {
-  readonly node: ts.Expression | undefined;
-}): ts.Expression | undefined => {
+const unwrapped = ({ node }: MaybeExpressionParams): ts.Expression | undefined => {
   let current = node;
   while (
     current !== undefined &&
@@ -128,17 +135,22 @@ const choicesLength = ({ node, path, source }: NodeParams): number | null => {
   return null;
 };
 
-const kindOf = ({ literal }: { readonly literal: ts.ObjectLiteralExpression }): string | null => {
+const kindOf = ({ literal }: LiteralParams): string | null => {
   const kind = propertyOf({ literal, name: 'kind' });
   return kind !== null && ts.isStringLiteral(kind) ? kind.text : null;
 };
 
-const isMapCall = ({ node }: { readonly node: ts.Node }): boolean =>
+const isMapCall = ({ node }: AnyNodeParams): boolean =>
   ts.isCallExpression(node) &&
   ts.isPropertyAccessExpression(node.expression) &&
   (node.expression.name.text === 'map' || node.expression.name.text === 'flatMap');
 
-const mappingCallOf = ({ node }: { readonly node: ts.Node }): ts.CallExpression | null => {
+const isMenuEntriesCall = ({ node }: AnyNodeParams): boolean =>
+  ts.isCallExpression(node) &&
+  ts.isIdentifier(node.expression) &&
+  node.expression.text === 'toMenuEntries';
+
+const mappingCallOf = ({ node }: AnyNodeParams): ts.CallExpression | null => {
   let current: ts.Node | undefined = node.parent;
   while (current !== undefined) {
     if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
@@ -154,9 +166,12 @@ export const menuRowsOf = ({ path }: PathParams): MenuRows => {
   const source = parse({ path });
   let rows = 0;
   const unresolved: Array<string> = [];
-  const lineOf = ({ node }: { readonly node: ts.Node }): number =>
+  const lineOf = ({ node }: AnyNodeParams): number =>
     source.getLineAndCharacterOfPosition(node.getStart()).line + 1;
   const visit = (node: ts.Node): void => {
+    if (isMenuEntriesCall({ node })) {
+      unresolved.push(`toMenuEntries at line ${lineOf({ node })}`);
+    }
     if (ts.isObjectLiteralExpression(node)) {
       const kind = kindOf({ literal: node });
       if (kind === 'item') {

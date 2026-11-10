@@ -1,5 +1,5 @@
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
-import type { ColumnDoorId, ColumnPlace } from '../columnPlace';
+import type { ColumnDoorId, ColumnPlace } from '../../../../shared/navigation/columnPlace';
 import { COLUMN_TOOL_DOORS, openColumnDoor, type ColumnActions } from '../columnDoors';
 import type { DoorSignal } from '../doorSignal';
 import { ColumnToolTile } from './ColumnToolTile';
