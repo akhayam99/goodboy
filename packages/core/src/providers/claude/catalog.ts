@@ -42,6 +42,23 @@ export const ANTHROPIC_CATALOG = [
     minCliVersion: '2.1.280',
   },
   {
+    key: 'fable-5.2',
+    label: 'Fable 5.2',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'claude',
+      group: 'Fable',
+      version: '5.2',
+      order: 42,
+      costTier: 'expensive',
+    },
+    provider: 'anthropic',
+    cliId: 'claude-fable-5-2',
+    efforts: OPUS_EFFORTS,
+    defaultEffort: 'high',
+  },
+  {
     key: 'fable-5.1',
     label: 'Fable 5.1',
     tier: 'turn',

@@ -85,6 +85,7 @@ export const OPENCODE_CATALOG = [
   },
   {
     key: 'ling-3.0-flash-fin',
+    legacy: true,
     label: 'Ling 3.0 Flash Fin',
     tier: 'cheap',
     contextWindow: 262_144,
@@ -103,6 +104,7 @@ export const OPENCODE_CATALOG = [
   },
   {
     key: 'muse-spark-1.3',
+    legacy: true,
     label: 'Muse Spark 1.3',
     tier: 'cheap',
     contextWindow: 1_048_576,

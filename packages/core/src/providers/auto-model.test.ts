@@ -114,13 +114,16 @@ describe('autoModelForRole', () => {
       const anthropic = PROVIDER_CAPABILITIES.anthropic.models;
       const fable = anthropic.find((model) => model.id === 'fable-5');
       const fable51 = anthropic.find((model) => model.id === 'fable-5.1');
+      const fable52 = anthropic.find((model) => model.id === 'fable-5.2');
       const opus = anthropic.find((model) => model.id === 'opus-5');
       const opus55 = anthropic.find((model) => model.id === 'opus-5.5');
+      expect(fable52?.weight ?? 0).toBeGreaterThan(fable51?.weight ?? 0);
       expect(fable51?.weight ?? 0).toBeGreaterThan(fable?.weight ?? 0);
       expect(fable?.weight ?? 0).toBeGreaterThan(opus55?.weight ?? 0);
       expect(opus55?.weight ?? 0).toBeGreaterThan(opus?.weight ?? 0);
       expect(fable?.thinkerOnly).toBe(true);
       expect(fable51?.thinkerOnly).toBe(true);
+      expect(fable52?.thinkerOnly).toBe(true);
       expect(opus?.thinkerOnly).toBe(false);
       expect(opus55?.thinkerOnly).toBe(false);
     });

@@ -51,6 +51,11 @@ const FABLE_PRICE: ModelPrice = {
   outputPerMtok: 50,
   cachedInputPerMtok: 1,
 };
+const FABLE_52_PRICE: ModelPrice = {
+  inputPerMtok: 8,
+  outputPerMtok: 40,
+  cachedInputPerMtok: 0.2,
+};
 const FABLE_51_PRICE: ModelPrice = {
   inputPerMtok: 10,
   outputPerMtok: 50,
@@ -152,6 +157,11 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'claude-opus-5-low': OPUS_PRICE,
   'claude-opus-4-8-thinking-high': OPUS_PRICE,
   'claude-opus-4-7-thinking-high': OPUS_PRICE,
+  'claude-fable-5-2-low': FABLE_52_PRICE,
+  'claude-fable-5-2-medium': FABLE_52_PRICE,
+  'claude-fable-5-2-high': FABLE_52_PRICE,
+  'claude-fable-5-2-xhigh': FABLE_52_PRICE,
+  'claude-fable-5-2-max': FABLE_52_PRICE,
   'claude-fable-5-1-thinking-low': FABLE_51_PRICE,
   'claude-fable-5-1-thinking-medium': FABLE_51_PRICE,
   'claude-fable-5-1-thinking-high': FABLE_51_PRICE,
