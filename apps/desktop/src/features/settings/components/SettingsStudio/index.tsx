@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ScrollFade, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
+import type { StudioRailPlacement } from '@goodboy/ui';
 import type { ProviderId, Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
@@ -10,8 +10,7 @@ import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTra
 import { useAppStore } from '../../../../store';
 import { settingsTrail } from '../../trail/settingsTrail';
 import { AppScopePanel } from './AppScopePanel';
-import { SettingsRail } from './SettingsRail';
-import { SettingsColumnNav } from './SettingsColumnNav';
+import { SettingsScopesLayout } from './SettingsScopesLayout';
 import { isNestedScope, settingsScopeAvailable, type NestedScope } from './settingsScopes';
 import { appSectionOf } from './appSections';
 import type { ScopeFrame } from './types';
@@ -26,8 +25,7 @@ type Props = {
   readonly focus: SettingsFocus;
   readonly onScopeChange: (params: SettingsScopeChange) => void;
   readonly onClose: () => void;
-  readonly columnSlot?: HTMLElement | null;
-  readonly isInColumnShell?: boolean;
+  readonly railPlacement?: StudioRailPlacement;
 };
 
 type Slots = Readonly<Partial<Record<NestedScope, HTMLDivElement>>>;
@@ -85,15 +83,8 @@ export const SettingsStudio = ({
   focus: requestedFocus,
   onScopeChange,
   onClose,
-  columnSlot = null,
-  isInColumnShell = false,
+  railPlacement = 'chrome',
 }: Props) => {
-  const fold = useStudioRailFold({ surface: 'settings' });
-  const amendStudio = useAppStore((state) => state.amendStudio);
-  const openFocus = useCallback(
-    (next: SettingsFocus) => amendStudio({ studio: { kind: 'settings', focus: next } }),
-    [amendStudio],
-  );
   const hasWorkspace = currentWorkspace !== null;
   const workspaceId = currentWorkspace?.id ?? null;
   const workspaceName = currentWorkspace?.name ?? null;
@@ -192,49 +183,7 @@ export const SettingsStudio = ({
     );
   };
 
-  const renderRail = ({ isInColumn }: { readonly isInColumn: boolean }): ReactNode => (
-    <SettingsRail
-      pageKey={pageKey}
-      groups={groups}
-      workspaceName={workspaceName}
-      onSelect={onScopeChange}
-      isInColumn={isInColumn}
-    />
-  );
-
   const nested = isNestedScope(availableScope) ? renderScope(availableScope) : null;
-
-  if (isInColumnShell) {
-    return (
-      <StudioShell
-        icon={CONCEPT_ICONS.settings}
-        tone={CONCEPT_TONE.settings}
-        title="Settings"
-        closeLabel="Back to app"
-        onClose={onClose}
-      >
-        {(requestClose) => (
-          <>
-            {columnSlot === null
-              ? null
-              : createPortal(
-                  <SettingsColumnNav
-                    groups={groups}
-                    rail={renderRail({ isInColumn: true })}
-                    onBack={requestClose}
-                    onOpen={openFocus}
-                  />,
-                  columnSlot,
-                )}
-            <div data-settings-detail="" className="flex min-h-0 min-w-0 flex-1 flex-col">
-              {renderDetail(requestClose)}
-            </div>
-            {nested}
-          </>
-        )}
-      </StudioShell>
-    );
-  }
 
   return (
     <StudioShell
@@ -253,18 +202,17 @@ export const SettingsStudio = ({
             })}
           />
           <div className="relative flex min-h-0 min-w-0 flex-1">
-            <StudioRailLayout
-              railLabel="Settings scopes"
-              railWidth="narrow"
-              surface="settings"
-              isCollapsed={fold.isCollapsed}
-              onCollapsedChange={fold.setFolded}
-              rail={
-                <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
-                  {renderRail({ isInColumn: false })}
-                </ScrollFade>
+            <SettingsScopesLayout
+              pageKey={pageKey}
+              groups={groups}
+              workspaceName={workspaceName}
+              onScopeChange={onScopeChange}
+              placement={railPlacement}
+              detail={
+                <div data-settings-detail="" className="h-full min-h-0 min-w-0">
+                  {renderDetail(requestClose)}
+                </div>
               }
-              detail={renderDetail(requestClose)}
             />
           </div>
           {nested}

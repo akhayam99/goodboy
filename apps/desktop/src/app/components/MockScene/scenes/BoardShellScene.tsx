@@ -87,7 +87,6 @@ const BoardShellSceneContent = () => {
             currentSessionId={currentSession?.id ?? null}
             isDraftShown={false}
             actions={shell.actions}
-            settingsSlotRef={shell.settingsSlotRef}
             {...(shell.isStudioOpen || currentSession !== null
               ? {}
               : { placeOverride: 'board' as const })}

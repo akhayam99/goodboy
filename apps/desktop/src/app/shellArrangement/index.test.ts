@@ -54,98 +54,11 @@ describe('shellArrangement, the column', () => {
       leftOverlaySlot: 'none',
     });
   });
-});
 
-type Slot = 'rail' | 'column';
+  it('takes no page as input, so no page can open or fold the column', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf8');
 
-type Peek = 'none' | 'peek';
-
-type Row = readonly [
-  hasWorkspace: boolean,
-  isSidebarCollapsed: boolean,
-  isSettingsOpen: boolean,
-  leftSlot: Slot,
-  leftOverlaySlot: Peek,
-];
-
-const TABLE: ReadonlyArray<Row> = [
-  [false, false, false, 'column', 'none'],
-  [false, false, true, 'column', 'none'],
-  [false, true, false, 'rail', 'none'],
-  [false, true, true, 'column', 'none'],
-  [true, false, false, 'column', 'none'],
-  [true, false, true, 'column', 'none'],
-  [true, true, false, 'rail', 'peek'],
-  [true, true, true, 'column', 'none'],
-];
-
-type LabelParams = {
-  readonly row: Row;
-};
-
-const label = ({ row: [hasWorkspace, isSidebarCollapsed, isSettingsOpen] }: LabelParams) =>
-  [
-    hasWorkspace ? 'workspace' : 'no workspace',
-    isSidebarCollapsed ? 'collapsed' : 'pinned',
-    isSettingsOpen ? 'settings open' : 'settings closed',
-  ].join(', ');
-
-describe('shellArrangement, every combination of workspace, sidebar and Settings', () => {
-  it('covers each of the 8 combinations once', () => {
-    expect(new Set(TABLE.map((row) => label({ row }))).size).toBe(8);
-  });
-
-  it.each(TABLE.map((row) => [label({ row }), row] as const))(
-    '%s',
-    (_name, [hasWorkspace, isSidebarCollapsed, isSettingsOpen, leftSlot, leftOverlaySlot]) => {
-      expect(shellArrangement({ hasWorkspace, isSidebarCollapsed, isSettingsOpen })).toMatchObject({
-        leftSlot,
-        leftOverlaySlot,
-        studioCoversLeft: false,
-      });
-    },
-  );
-
-  it('hands the column to Settings on a collapsed sidebar without touching the stored collapse', () => {
-    expect(
-      shellArrangement({ hasWorkspace: true, isSidebarCollapsed: true, isSettingsOpen: true }),
-    ).toMatchObject({
-      leftSlot: 'column',
-      leftOverlaySlot: 'none',
-      leftSidebarCollapsed: true,
-      isLeftRail: false,
-    });
-  });
-
-  it('gives the rail back, with its peek, once Settings closes', () => {
-    expect(
-      shellArrangement({ hasWorkspace: true, isSidebarCollapsed: true, isSettingsOpen: false }),
-    ).toMatchObject({
-      leftSlot: 'rail',
-      leftOverlaySlot: 'peek',
-      leftSidebarCollapsed: true,
-      isLeftRail: true,
-    });
-  });
-
-  it('draws the column at its pinned width exactly while it is not the rail', () => {
-    for (const row of TABLE) {
-      const [hasWorkspace, isSidebarCollapsed, isSettingsOpen] = row;
-      const arrangement = shellArrangement({ hasWorkspace, isSidebarCollapsed, isSettingsOpen });
-
-      expect(arrangement.isLeftRail, label({ row })).toBe(arrangement.leftSlot === 'rail');
-    }
-  });
-
-  it('keeps the stored collapse as the sidebar preference on every row', () => {
-    for (const row of TABLE) {
-      const [hasWorkspace, isSidebarCollapsed, isSettingsOpen] = row;
-
-      expect(
-        shellArrangement({ hasWorkspace, isSidebarCollapsed, isSettingsOpen }).leftSidebarCollapsed,
-        label({ row }),
-      ).toBe(isSidebarCollapsed);
-    }
+    expect(source).not.toMatch(/settings|appStudio/i);
   });
 });
 

@@ -46,11 +46,15 @@ describe('the sidebar toggle axis', () => {
     ).toBe('Show sidebar');
   });
 
-  it('keeps one main sidebar toggle, in the top bar left of Back, and none in the column or its rail', () => {
+  it('keeps one main sidebar toggle, first in the top bar left zone, and none in the column or its rail', () => {
     expect(SIDE_COLUMN).not.toContain('<ColumnToggleButton');
     expect(COLUMN_RAIL).not.toContain('<ColumnToggleButton');
-    expect(TOGGLE).toContain('size="md"');
-    expect(TOP_BAR.indexOf('<ColumnToggleButton')).toBeGreaterThan(-1);
-    expect(TOP_BAR.indexOf('<ColumnToggleButton')).toBeLessThan(TOP_BAR.indexOf('<NavCluster'));
+    expect(TOGGLE).toContain('size="sm"');
+    const leftZone = TOP_BAR.indexOf('col-start-1');
+    const toggle = TOP_BAR.indexOf('<ColumnToggleButton');
+    expect(toggle).toBeGreaterThan(leftZone);
+    expect(toggle).toBeLessThan(TOP_BAR.indexOf('<WorkspaceIdentityRow'));
+    expect(toggle).toBeLessThan(TOP_BAR.indexOf('col-start-2'));
+    expect(toggle).toBeLessThan(TOP_BAR.indexOf('<NavCluster'));
   });
 });

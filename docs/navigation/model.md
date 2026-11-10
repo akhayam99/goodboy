@@ -105,8 +105,9 @@
   `doorSignalOf` names them). Inside a session the column stays the same and marks the open
   session's row; the session's own levels live in the session rail at the left
   of the page (see Session rail). The column is on every screen with a workspace: the board, a
-  session, the draft and every studio but Settings, which swaps the column's
-  content (see Studios).
+  session, the draft and every studio, Settings included. No page changes it:
+  Settings is a page with its own scopes rail beside the live column (see
+  Studios).
 - **One list names every destination.** `DESTINATIONS`
   (`shared/navigation/destinations.ts`) owns the name, the glyph, the shortcut,
   the menu id, the former names, the scope (`app` or `workspace`) and the home

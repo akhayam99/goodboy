@@ -99,7 +99,9 @@ describe('the rail scenes', () => {
     expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
     expect(
-      screen.getByRole('button', { name: 'Show the rail' }).closest('[data-studio-rail-unfold]'),
+      screen
+        .getByRole('button', { name: 'Show notification filters' })
+        .closest('[data-studio-rail-unfold]'),
     ).not.toBeNull();
   });
 

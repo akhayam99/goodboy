@@ -48,6 +48,7 @@ export const readStudioRailWidth = ({
 type Props = {
   readonly rail: ReactNode | null;
   readonly detail: ReactNode;
+  readonly detailClassName?: string;
   readonly railLabel: string;
   readonly railWidth: RailWidth;
   readonly surface: string;
@@ -58,11 +59,13 @@ type Props = {
   readonly isCollapsed?: boolean;
   readonly onCollapsedChange?: (isCollapsed: boolean) => void;
   readonly canUnfold?: boolean;
+  readonly foldedActions?: ReactNode;
 };
 
 export const StudioRailLayout = ({
   rail,
   detail,
+  detailClassName,
   railLabel,
   railWidth,
   surface,
@@ -73,6 +76,7 @@ export const StudioRailLayout = ({
   isCollapsed = false,
   onCollapsedChange,
   canUnfold = true,
+  foldedActions,
 }: Props) => {
   const resizable = useResizableWidth<HTMLDivElement>({
     storageKey: studioRailStorageKey({ surface }),
@@ -85,10 +89,12 @@ export const StudioRailLayout = ({
   const isPage = placement === 'page';
   const hasHeaderRow = railHeader !== undefined || onCollapsedChange !== undefined;
   const railName = railLabel.toLowerCase();
+  const hideLabel = `Hide ${railName}`;
+  const showLabel = `Show ${railName}`;
   const isRailShown = !isCollapsed && rail !== null;
   useInnerColumn({
     id: surface,
-    label: isCollapsed ? `Show the ${railName}` : `Fold the ${railName}`,
+    label: isCollapsed ? showLabel : hideLabel,
     toggle: () => {
       if (isCollapsed && !canUnfold) {
         return;
@@ -106,14 +112,19 @@ export const StudioRailLayout = ({
       className={cn('flex h-full min-h-0 flex-1', isPage ? 'bg-background' : 'bg-chrome')}
     >
       {isRailShown || onCollapsedChange === undefined || !canUnfold || rail === null ? null : (
-        <div data-studio-rail-unfold="" className="flex w-11 shrink-0 justify-center pt-3">
+        <div
+          data-studio-rail-unfold=""
+          className="flex w-11 shrink-0 flex-col items-center gap-1 pt-3"
+        >
           <IconButton
             icon={PanelLeftOpen}
-            label="Show the rail"
+            label={showLabel}
             shortcut={INNER_COLUMN_SHORTCUT}
             tooltipSide="right"
+            aria-pressed={false}
             onClick={() => onCollapsedChange(false)}
           />
+          {foldedActions}
         </div>
       )}
       {!isRailShown ? null : (
@@ -124,15 +135,16 @@ export const StudioRailLayout = ({
         >
           {hasHeaderRow ? (
             <div className="flex shrink-0 items-center gap-2 px-2 pt-3">
-              <div className="flex min-w-0 flex-1 items-center">{railHeader}</div>
               {onCollapsedChange === undefined ? null : (
                 <IconButton
                   icon={PanelLeftClose}
-                  label="Fold the rail"
+                  label={hideLabel}
                   shortcut={INNER_COLUMN_SHORTCUT}
+                  aria-pressed
                   onClick={() => onCollapsedChange(true)}
                 />
               )}
+              <div className="flex min-w-0 flex-1 items-center">{railHeader}</div>
             </div>
           ) : null}
           {rail}
@@ -151,6 +163,7 @@ export const StudioRailLayout = ({
         className={cn(
           'min-h-0 min-w-0 flex-1 overflow-hidden bg-background',
           !isPage && SHEET_CLASSES.wrapped,
+          detailClassName,
         )}
       >
         {detail}

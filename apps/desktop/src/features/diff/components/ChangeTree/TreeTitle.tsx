@@ -29,7 +29,7 @@ export const TreeTitle = ({ viewedCount, total, onNext, onFold }: Props) => (
     </div>
     <div className="flex shrink-0 items-center gap-1">
       <KeyHints />
-      <IconButton icon={PanelRightClose} size="xs" label="Fold the file list" onClick={onFold} />
+      <IconButton icon={PanelRightClose} size="xs" label="Hide file list" onClick={onFold} />
     </div>
   </div>
 );

@@ -12,7 +12,7 @@ what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.
 
 | part        | shape                                                                                                    |
 | ----------- | -------------------------------------------------------------------------------------------------------- |
-| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton` in the top bar, left of Back (⌘B)     |
+| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton`, first in the top bar left zone (⌘B)  |
 | New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
 | door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
 | current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
@@ -20,17 +20,12 @@ what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.
 | rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
 
 Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
-column swaps its content only for Settings, as two layers in place that
-cross-fade (opacity and a 6px slide, 160ms, `motion-safe` only); the hidden
-layer is `inert`. Settings takes the column in both sidebar states: over the
-44px rail the grid track grows to the saved width while the stored collapse
-stays untouched. A studio never covers it: `studioCoversLeft={false}` puts the
+column never changes its content: no page swaps it, and only the sidebar toggle
+and ⌘B fold it. A studio never covers it: `studioCoversLeft={false}` puts the
 studio slot in the `main` area as its own wrapped sheet (`bg-background`, the
 `wrapped` sheet edge), and `StudioFrame` with `placement="content"` draws its
-band on that sheet instead of on the chrome. A frame whose body is a bare
-page (Settings in the default shell) draws no band (`hasBand={false}`) and gives
-its page the band's 40px as top padding, so the title row lands where a session
-page's does under its trail.
+band on that sheet instead of on the chrome. Settings is such a page, with its
+scopes in a page rail beside its detail.
 
 **A session has its own rail, not a card.** The workspace list keeps every
 session a flat row and never changes level; the open one is set in medium
@@ -55,13 +50,15 @@ its filters (Tasks, Notifications) uses `StudioRailLayout` with
 `placement="page"`: the rail sits on the page background and the resize handle
 draws the only line between it and the detail. Every page rail is 288 wide
 (`standard`), resizes between 220 and 420 unless the page passes `min` and
-`max`, and can take `railHeader` (Tasks' search) plus `onCollapsedChange`, which
-adds the fold control to the first row; `isCollapsed` hides the rail, and
+`max`, and can take `railHeader` (Settings' search) plus `onCollapsedChange`,
+which puts the fold control first in the first row, at its top-left, named
+"Hide <rail name>"; `isCollapsed` hides the rail, and
 `rail={null}` draws no rail at all, for a page with nothing to list (Chat before
 its first chat, Terminal before its first terminal). Chat and Terminal rails
 fold like every page rail (⌥⌘B, `useInnerColumn`), and their first child is
 the full-width secondary New chat / New terminal button. A folded rail keeps a
-44px strip with Show the rail at the fold control's height. The page
+44px strip with "Show <rail name>" at the fold control's x and height, and the
+page's `foldedActions` under it (Settings' Search). The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
 forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
 title row: a 28px secondary button with the lines icon (`ListFilter`) and the count of active

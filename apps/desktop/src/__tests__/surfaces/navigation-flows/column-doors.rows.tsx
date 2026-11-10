@@ -232,18 +232,19 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: settings swaps the column',
+    name: 'column: settings opens a page and leaves the column live',
     covers: ['openSettings', 'studio:settings', 'scope:home'],
     door: 'visible',
     open: () => click(doorIn('settings')),
     lands: both(
-      () => visible('navigation', 'Settings scopes'),
+      () => visible('complementary', 'Settings scopes'),
       () => visible('button', /^Back to app/),
       () => visible('searchbox', 'Search settings'),
-      async () =>
-        expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-          true,
-        ),
+      async () => {
+        const nav = document.querySelector('[data-column-layer="nav"]');
+        expect(nav?.hasAttribute('inert')).toBe(false);
+        expect(doorIn('settings').getAttribute('aria-current')).toBe('page');
+      },
     ),
   },
   {

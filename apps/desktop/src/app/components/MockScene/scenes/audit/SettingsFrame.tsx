@@ -36,24 +36,17 @@ export const SettingsFrame = ({ focus, hasWorkspace = true, seed = noop }: Props
     <ToastProvider>
       <SceneStudioFrame
         target={{ place: 'settings', tool: null }}
-        main={(columnSlot) => (
-          <StudioFrame
-            kind="settings"
-            onClose={noop}
-            placement="content"
-            isClosable={false}
-            hasBand={false}
-          >
+        main={
+          <StudioFrame kind="settings" onClose={noop} placement="content">
             <SettingsStudio
               currentWorkspace={hasWorkspace ? SETTINGS_WORKSPACE : null}
               focus={current}
               onScopeChange={changeScope}
               onClose={noop}
-              columnSlot={columnSlot}
-              isInColumnShell
+              railPlacement="page"
             />
           </StudioFrame>
-        )}
+        }
       />
       <SettingsToastProbe />
     </ToastProvider>

@@ -1039,12 +1039,15 @@ label loses characters before a count disappears.
 
 **The top bar's left edge belongs to the window.** The collapsed rail is
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
-22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
-lights, so it no longer shares an axis with the rail:
-`collapsed-rail-width.test.tsx` pins both. The main sidebar has one toggle,
-`ColumnToggleButton` in the top bar left of Back and Forward (⌘B), the same
-button whether the column is open or folded, and neither the column nor its
-44px rail draws a toggle row (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
+22px. The top bar's left zone starts at `--titlebar-inset`, which clears the
+macOS traffic lights. The main sidebar has one toggle, `ColumnToggleButton`,
+the first control of that zone, above the column it folds and before the
+workspace identity (⌘B). It is a 28px top bar control (`TOP_BAR_CONTROL`), so
+in full screen, where the inset is 0, its center lands on the rail's 22px axis
+(`collapsed-rail-width.test.tsx`). It is the same button whether the column is
+open or folded, its label and `aria-pressed` read the column you see ("Hide
+sidebar" / "Show sidebar"), and neither the column nor its 44px rail draws a
+toggle row (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
 the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**

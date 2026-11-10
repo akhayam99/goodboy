@@ -744,12 +744,12 @@ describe('NotificationsStudio', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fold the rail' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide notification filters' }));
 
     expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
     expect(localStorage.getItem('goodboy:studio-rail-folded:notifications:v1')).toBe('1');
     expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
-    const unfold = screen.getByRole('button', { name: 'Show the rail' });
+    const unfold = screen.getByRole('button', { name: 'Show notification filters' });
     expect(unfold.closest('[data-studio-rail-unfold]')).not.toBeNull();
 
     fireEvent.click(unfold);

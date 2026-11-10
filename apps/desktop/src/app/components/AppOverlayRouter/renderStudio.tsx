@@ -56,8 +56,7 @@ export const renderStudio = ({
   onOpenChangelogScreen,
   currentWorkspace,
   workspaceProjectRoot,
-  settingsColumnSlot = null,
-  isInColumnShell,
+  railPlacement,
 }: RenderStudioParams): ReactNode => {
   switch (overlay.kind) {
     case 'settings':
@@ -67,8 +66,7 @@ export const renderStudio = ({
           focus={overlay.focus}
           onScopeChange={onSettingsScopeChange}
           onClose={close}
-          columnSlot={settingsColumnSlot}
-          isInColumnShell={isInColumnShell}
+          railPlacement={railPlacement}
         />
       );
     case 'guide':

@@ -28,7 +28,7 @@ export const RoleModelCells = ({
   const label = routingLabelParts({ provider, model, effort });
   const ProviderGlyph = PROVIDER_BRAND[provider].icon;
   return (
-    <span className="flex shrink-0 items-center gap-3 text-meta">
+    <span className="flex min-w-0 items-center gap-3 text-meta">
       <span data-role-summary className="flex w-44 min-w-0 items-center gap-2">
         <ProviderGlyph
           size={ICON_SIZE.row}

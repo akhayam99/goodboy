@@ -47,7 +47,6 @@ type MountParams = {
   readonly place?: ColumnPlace;
   readonly scope?: 'workspace' | 'app';
   readonly doors?: ColumnActions;
-  readonly settingsSlotRef?: (node: HTMLDivElement | null) => void;
   readonly isPeek?: boolean;
 };
 
@@ -55,7 +54,6 @@ const mountColumn = ({
   place = 'board',
   scope = 'workspace',
   doors = actions(),
-  settingsSlotRef,
   isPeek = false,
 }: MountParams = {}) =>
   render(
@@ -66,7 +64,6 @@ const mountColumn = ({
       place={place}
       actions={doors}
       isPeek={isPeek}
-      {...(settingsSlotRef !== undefined && { settingsSlotRef })}
     />,
   );
 
@@ -447,23 +444,19 @@ describe('SideColumn', () => {
     expect(within(nav).getByTestId('goodboy-chip')).toBeDefined();
   });
 
-  it('swaps its content for the settings layer while Settings is open', () => {
-    const slots: Array<HTMLDivElement | null> = [];
-    mountColumn({ place: 'settings', settingsSlotRef: (node) => slots.push(node) });
+  it('keeps its doors and sessions live while Settings is open, with Settings lit in the foot', () => {
+    const doors = actions();
+    mountColumn({ place: 'settings', doors });
 
-    const settings = document.querySelector('[data-column-layer="settings"]') as HTMLElement;
-    expect(slots.at(-1)).toBe(settings);
-    expect(settings.hasAttribute('inert')).toBe(false);
-    expect(navLayer().hasAttribute('inert')).toBe(true);
-  });
-
-  it('keeps the doors live under any other place, with the settings layer inert', () => {
-    mountColumn({ place: 'inbox', settingsSlotRef: () => undefined });
-
-    expect(document.querySelector('[data-column-layer="settings"]')?.hasAttribute('inert')).toBe(
-      true,
+    const nav = navLayer();
+    expect(nav.hasAttribute('inert')).toBe(false);
+    expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
+    expect(nav.querySelector('[data-column-sessions]')).not.toBeNull();
+    expect(nav.querySelector('[data-column-door="settings"]')?.getAttribute('aria-current')).toBe(
+      'page',
     );
-    expect(navLayer().hasAttribute('inert')).toBe(false);
+    fireEvent.click(within(nav).getByRole('button', { name: /^Tasks/ }));
+    expect(doors.openInbox).toHaveBeenCalledOnce();
   });
 
   it('leaves the Goodboy line effects to the pinned column when it peeks', () => {
@@ -471,7 +464,6 @@ describe('SideColumn', () => {
 
     expect(screen.queryByTestId('goodboy-chip')).toBeNull();
     expect(document.querySelector('[data-goodboy-chip="column"]')).not.toBeNull();
-    expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
   });
 });
 

@@ -178,19 +178,15 @@ describe('GoodboyChip on the rail', () => {
 });
 
 describe('GoodboyChip sizing in the column', () => {
-  it('draws the full lockup and the mark alone so the width picks one', () => {
+  it('holds the full lockup and the bare mark at rest, so a narrow column falls to the mark', () => {
     renderChip();
 
     const chip = screen.getByRole('button', { name: DOOR_LABEL });
-    expect(chip.querySelector('[data-lockup-wide]')).not.toBeNull();
-    expect(chip.querySelector('[data-lockup-narrow]')).not.toBeNull();
-  });
-
-  it('keeps the whole lockup in the door beside the update pill', () => {
-    useAppStore.setState({ updaterStatus: 'available' });
-    renderChip();
-
-    const chip = screen.getByTestId('goodboy-chip');
-    expect(chip.textContent).toContain('Goodboy');
+    expect(chip.querySelector('[data-lockup-wide]')?.textContent).toBe(
+      `GoodboyBetav${APP_VERSION}`,
+    );
+    const narrow = chip.querySelector('[data-lockup-narrow]');
+    expect(narrow?.textContent).toBe('');
+    expect(narrow?.querySelector('[data-brand-chip]')).not.toBeNull();
   });
 });

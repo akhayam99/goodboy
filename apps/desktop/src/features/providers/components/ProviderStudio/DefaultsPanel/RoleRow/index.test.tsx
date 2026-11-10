@@ -127,6 +127,13 @@ describe('RoleRow', () => {
     expect(screen.getByText('Writes the plan.')).toBeDefined();
   });
 
+  it('keeps the effort and the chip on a pinned row', () => {
+    const trigger = row({ preference: OPUS_PIN, policy: CLAUDE_ON });
+
+    expect(trigger.querySelector('[data-role-effort]')?.textContent).toBe('High');
+    expect(trigger.textContent).toContain('Pinned');
+  });
+
   it('calls a row with no pin Auto', () => {
     const trigger = row({ preference: null, policy: CODEX_ONLY });
 

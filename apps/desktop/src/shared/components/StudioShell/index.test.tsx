@@ -62,6 +62,32 @@ describe('StudioShell header', () => {
     expect(document.querySelector('[data-studio-band]')).toBeNull();
   });
 
+  it('puts the header accessory beside Close in the page header, with no band above', () => {
+    render(
+      <StudioShell {...defaults} headerAccessory={<a href="#sponsor">Sponsor</a>}>
+        {() => (
+          <PaneShell title="Test Studio">
+            <p>body</p>
+          </PaneShell>
+        )}
+      </StudioShell>,
+    );
+    const row = document.querySelector('[data-slot="pane-title-row"]');
+    expect(row?.contains(screen.getByRole('link', { name: 'Sponsor' }))).toBe(true);
+    expect(row?.contains(screen.getByRole('button', { name: 'close test studio' }))).toBe(true);
+    expect(document.querySelector('[data-studio-band]')).toBeNull();
+  });
+
+  it('keeps the header accessory in the band when the body draws no page header', () => {
+    render(
+      <StudioShell {...defaults} headerAccessory={<a href="#sponsor">Sponsor</a>}>
+        {() => <p>body</p>}
+      </StudioShell>,
+    );
+    const band = document.querySelector('[data-studio-band]');
+    expect(band?.contains(screen.getByRole('link', { name: 'Sponsor' }))).toBe(true);
+  });
+
   it('renders close button with correct aria-label', () => {
     render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
     expect(screen.getByRole('button', { name: 'close test studio' })).toBeDefined();
