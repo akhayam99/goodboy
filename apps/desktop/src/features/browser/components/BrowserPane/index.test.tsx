@@ -241,8 +241,19 @@ const renderPane = () =>
     </ToastProvider>,
   );
 
+const openPill = () => {
+  fireEvent.click(screen.getByRole('button', { name: /^Edit address/ }));
+  return screen.getByRole('textbox', { name: 'Address' });
+};
+
+const pageTitled = async ({ text }: TypeParams) => {
+  live = live.map((facts) => ({ ...facts, title: text }));
+  fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+  await screen.findByRole('button', { name: `Edit address, ${text}` });
+};
+
 const typeAddress = async ({ text }: TypeParams) => {
-  const field = screen.getByRole('textbox', { name: 'Address' });
+  const field = screen.queryByRole('textbox', { name: 'Address' }) ?? openPill();
   fireEvent.change(field, { target: { value: text } });
   const form = field.closest('form');
   if (form === null) {
@@ -597,6 +608,135 @@ describe('the browser pane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
 
     await waitFor(() => expect(storedUrl()).toBe('https://acme.example/billing'));
+  });
+
+  it('shows the page title and its host in the pill, and no address field', async () => {
+    await openFirstPage();
+
+    await pageTitled({ text: 'Checkout' });
+
+    const pill = screen.getByRole('button', { name: 'Edit address, Checkout' });
+    expect(pill.textContent).toContain('Checkout');
+    expect(pill.textContent).toContain('localhost:5173');
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+  });
+
+  it('shows the host once for a tab with no title yet', async () => {
+    await openFirstPage();
+
+    const pill = screen.getByRole('button', { name: 'Edit address, localhost:5173' });
+
+    expect(pill.textContent?.split('localhost:5173')).toHaveLength(2);
+  });
+
+  it('swaps the pill for the selected address on click and back on Escape', async () => {
+    await openFirstPage();
+
+    const field = openPill();
+
+    expect(field).toHaveProperty('value', 'http://localhost:5173/checkout');
+    expect(document.activeElement).toBe(field);
+    expect(field).toHaveProperty('selectionStart', 0);
+    expect(field).toHaveProperty('selectionEnd', 'http://localhost:5173/checkout'.length);
+    fireEvent.change(field, { target: { value: 'acme.example' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+
+    screen.getByRole('button', { name: /^Edit address/ });
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+    expect(openPill()).toHaveProperty('value', 'http://localhost:5173/checkout');
+  });
+
+  it('swaps the address back for the pill on blur', async () => {
+    await openFirstPage();
+
+    fireEvent.blur(openPill());
+
+    screen.getByRole('button', { name: /^Edit address/ });
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+  });
+
+  it('returns to the pill after a submit navigated the shown tab', async () => {
+    await openFirstPage();
+
+    await typeAddress({ text: 'harborline.dev/billing' });
+
+    expect(callsOf({ command: 'browser_tab_navigate' })).toEqual([
+      { tabId: 'live-1', url: 'https://harborline.dev/billing' },
+    ]);
+    screen.getByRole('button', { name: /^Edit address/ });
+  });
+
+  it('keeps the field and the refusal when a submit is refused', async () => {
+    await openFirstPage();
+
+    await typeAddress({ text: 'checkout total' });
+
+    expect(screen.getByRole('alert').textContent).toContain('Type a full address');
+    expect(screen.getByRole('textbox', { name: 'Address' })).toHaveProperty(
+      'value',
+      'checkout total',
+    );
+  });
+
+  it('lists five rows in the More menu', async () => {
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    const rows = await screen.findAllByRole('menuitem');
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'Open in your browser',
+      'Open as page',
+      'Copy address',
+      'Duplicate',
+      'Close tab',
+    ]);
+  });
+
+  it('copies the address from the More menu', async () => {
+    await openFirstPage();
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Copy address' }));
+
+    expect(writeText).toHaveBeenCalledWith('http://localhost:5173/checkout');
+  });
+
+  it('duplicates the shown address into a second tab from the More menu', async () => {
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Duplicate' }));
+
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(2));
+    expect(callsOf({ command: 'browser_tab_open' }).map((args) => args['url'])).toEqual([
+      'http://localhost:5173/checkout',
+      'http://localhost:5173/checkout',
+    ]);
+    await waitFor(() =>
+      expect(store.getState().browserSessionTabs[SESSION_ID]?.map((tab) => tab.id)).toEqual([
+        'live-1',
+        'live-2',
+      ]),
+    );
+  });
+
+  it('closes the shown tab from the More menu', async () => {
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Close tab' }));
+
+    await waitFor(() => expect(store.getState().browserSessionTabs[SESSION_ID]).toEqual([]));
+    expect(callsOf({ command: 'browser_tab_close' })).toEqual([{ tabId: 'live-1' }]);
+  });
+
+  it('focuses the address field when the pane has no tab', () => {
+    renderPane();
+
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Address' }));
   });
 
   it('hides the view when the pane closes', async () => {

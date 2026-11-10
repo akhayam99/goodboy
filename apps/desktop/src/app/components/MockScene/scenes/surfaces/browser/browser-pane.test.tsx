@@ -62,12 +62,16 @@ const mount = ({ id }: MountParams) => {
 };
 
 describe('the browser pane scenes', () => {
-  it('registers both states in light and dark for the capture', () => {
+  it('registers every state in light and dark for the capture', () => {
     expect(Object.keys(BROWSER_PANE_SCENES).sort()).toEqual([
       'browser-page',
       'browser-page-dark',
       'browser-pane',
+      'browser-pane-address',
+      'browser-pane-address-dark',
       'browser-pane-dark',
+      'browser-pane-more',
+      'browser-pane-more-dark',
       'browser-pane-tabs',
       'browser-pane-tabs-dark',
       'browser-peek',
@@ -82,10 +86,9 @@ describe('the browser pane scenes', () => {
     mount({ id: 'browser-pane' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    expect(within(pane).getByRole('textbox', { name: 'Address' })).toHaveProperty(
-      'value',
-      'http://localhost:5173/checkout',
-    );
+    const pill = within(pane).getByRole('button', { name: 'Edit address, Checkout' });
+    expect(pill.textContent).toContain('localhost:5173');
+    expect(within(pane).queryByRole('textbox', { name: 'Address' })).toBeNull();
     const strip = within(pane).getByRole('navigation', { name: 'Browser tabs' });
     expect(
       within(strip).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
@@ -115,10 +118,23 @@ describe('the browser pane scenes', () => {
     if (page === null) {
       throw new Error('The Browser page sits in no studio slot.');
     }
-    expect(within(page).getByRole('textbox', { name: 'Address' })).toHaveProperty(
-      'value',
-      'http://localhost:5173/checkout',
-    );
+    within(page).getByRole('button', { name: 'Edit address, Checkout' });
+  });
+
+  it('shows the address being edited, selected, under the pill', async () => {
+    mount({ id: 'browser-pane-address' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const field = await within(pane).findByRole('textbox', { name: 'Address' }, WAIT);
+    expect(field).toHaveProperty('value', 'http://localhost:5173/checkout');
+    expect(within(pane).queryByRole('button', { name: /^Edit address/ })).toBeNull();
+  });
+
+  it('opens the More menu with its five rows', async () => {
+    mount({ id: 'browser-pane-more' });
+
+    const menu = await screen.findByRole('menu', undefined, WAIT);
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(5);
   });
 
   it('peeks a localhost link in a decision with the title of its open tab', async () => {

@@ -59,6 +59,8 @@ export type BrowserPaneModel = {
   readonly togglePin: () => void;
   readonly startDraft: () => void;
   readonly openOutside: () => void;
+  readonly copyAddress: () => void;
+  readonly duplicate: () => void;
   readonly showError: (params: ErrorParams) => void;
 };
 

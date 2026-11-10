@@ -160,7 +160,11 @@ brand-tools
 browser-page
 browser-page-dark
 browser-pane
+browser-pane-address
+browser-pane-address-dark
 browser-pane-dark
+browser-pane-more
+browser-pane-more-dark
 browser-pane-tabs
 browser-pane-tabs-dark
 browser-peek

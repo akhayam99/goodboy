@@ -248,10 +248,20 @@ but the Browser page, and closes when the session it shows is archived or
 deleted (`slotAfterSessionGone`). Pressing the tool again, the X or Esc on the pane closes
 it; Esc inside the page goes to the page.
 
-- **The address row** holds Back, Forward and Reload, the address, Pin to the
-  session's project (Unpin when a pin is shown), Open in your browser, Open as
-  page (see Moves) and Close. The first button toggles the tab list, and the pane remembers the
-  choice (`goodboy:browser-tab-list:v1`).
+- **The address row** is one 36px row (`BrowserAddressRow`). It holds the tab
+  list toggle, Back, Forward and Reload, the address pill, Pin to the session's
+  project (Unpin when a pin is shown), More and Close. The pane remembers the
+  list toggle (`goodboy:browser-tab-list:v1`).
+- **The address pill** (`BrowserAddressPill`) shows the page, not its URL: the
+  favicon tile, the title (`model.titleOf`) and the host muted after it. A tab
+  with no title yet shows the host alone. A click, or ⌘L, swaps it for the
+  address field with the whole URL selected; Esc (an escape layer) or leaving
+  the field swaps it back and drops the draft, and a submit that went through
+  does too. A refused submit keeps the field and the reason under the row.
+- **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
+  browser, Open as page (see Moves, absent when the dock has no page to open),
+  Copy address, Duplicate (`model.duplicate` opens the shown address in a new
+  tab of the session) and Close tab (off for a pin).
 - **The address rule** (`addressOf`): a full `http` or `https` address loads
   as typed; a bare host loads on `https`, and on `http` when it is
   `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
@@ -350,8 +360,8 @@ open the Browser button on the right rail is selected and does nothing.
 A move never reloads the page: the same live webview, with the same id, gets
 new bounds or a new window. A form half typed and the scroll stay.
 
-- **Open as page** in the pane's address row, shown with or without a tab,
-  with the same arrow as the Terminal dock's header, pushes the Browser page
+- **Open as page** in the pane's More menu, shown with or without a tab,
+  pushes the Browser page
   on the session and the shown tab
   (`promoteBrowserTab`), so ⌘[ brings the dock back. The page's placement takes
   the view through the owner rule above and places it at the page's rect.
@@ -403,10 +413,10 @@ sits in and the address, and one function opens it (`openInBrowser`).
 - **Peek**: resting on or focusing a `localhost` link in a session shows a
   card with the title of its tab (or the host), the address and what a click
   does. The card never creates a tab, because every tab is a whole webview.
-- **⌘L** focuses the address row while the pane is on screen or the Browser
-  page is open. Elsewhere ⌘L stays Ask about this session, which held the
-  chord first (`browser.address` is scoped, so it wins only there). A page
-  that has focus keeps its keys, so ⌘L reaches the row only while Goodboy
+- **⌘L** opens the address pill for editing while the pane is on screen or the
+  Browser page is open. Elsewhere ⌘L stays Ask about this session, which held
+  the chord first (`browser.address` is scoped, so it wins only there). A page
+  that has focus keeps its keys, so ⌘L reaches the pill only while Goodboy
   has focus.
 - **⌘K** lists the browser tabs of the session Search or run is scoped to (the
   current session when it is not) and offers `Open <address>` first, beside
@@ -558,14 +568,17 @@ words (`features/browser/browserFailureText.ts`).
   `components/BrowserPane/index.test.tsx` drives it through `storyHarness` with a
   fake host: open and show at the placeholder, refused words with no host
   call, navigation and history by live id, a refused navigation, close before
-  the row delete, pin, an overlay over the view and one elsewhere, a late open
+  the row delete, pin, the pill (title and host, the host alone, the selected
+  address on click, Esc and blur back, the field kept on a refusal), the five
+  More rows with Copy, Duplicate and Close tab, an overlay over the view and one elsewhere, a late open
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again
   and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
   the cover check for a popover with no role, for tooltips and for a page view
   under an overlay dock.
-  `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
-  and dark) draw a stand in where the native view goes.
+  `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane`, `browser-pane-tabs`,
+  `browser-pane-address` (the field open) and `browser-pane-more` (the menu
+  open), each in light and dark, draw a stand in where the native view goes.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
   `isOwnBrowserClick.ts` is the click rule, `sessionOfElement.ts` reads
   `data-browser-session`, `claimSessionLink.ts` takes a link from the shared

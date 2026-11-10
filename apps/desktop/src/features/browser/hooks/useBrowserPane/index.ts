@@ -231,6 +231,24 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         setError(browserFailureText({ error: failure })),
       );
     },
+    copyAddress: () => {
+      if (address === '') {
+        return;
+      }
+      void navigator.clipboard
+        .writeText(address)
+        .catch((failure: unknown) => setError(browserFailureText({ error: failure })));
+    },
+    duplicate: () => {
+      if (address === '') {
+        return;
+      }
+      void run({ step: () => openNew({ url: address }) }).then((isDone) => {
+        if (isDone) {
+          setWakeAttempt((count) => count + 1);
+        }
+      });
+    },
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   };
 };
