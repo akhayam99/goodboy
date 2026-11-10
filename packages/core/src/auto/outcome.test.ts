@@ -21,6 +21,7 @@ const publish = (state: ResultPublish['state'], message: string | null = null): 
   message,
   isRetryable: false,
   isConfirmed: false,
+  startedAt: null,
   tries: 1,
   reviewerReportId: null,
   isContentChanging: false,
