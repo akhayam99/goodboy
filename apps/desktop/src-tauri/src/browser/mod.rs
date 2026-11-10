@@ -2,6 +2,7 @@ pub(crate) mod commands;
 mod guard;
 mod host;
 mod lifecycle;
+pub(crate) mod local;
 mod profile;
 mod reason;
 mod registry;

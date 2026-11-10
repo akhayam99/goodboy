@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
 use std::sync::{Mutex, MutexGuard};
 
 use serde::Serialize;
 use tauri::Rect;
 
+use super::local::{self, LocalFile, LocalGrant};
 use super::profile::ProfileId;
 use crate::util::lock_or_recover;
 
@@ -35,6 +37,7 @@ struct Tab {
     profile: ProfileId,
     rect: Rect,
     opened: u64,
+    grants: Vec<LocalGrant>,
 }
 
 impl Tab {
@@ -232,6 +235,7 @@ impl BrowserRegistry {
                 profile: tab.profile,
                 rect: tab.rect,
                 opened,
+                grants: Vec::new(),
             },
         );
         facts
@@ -465,6 +469,45 @@ impl BrowserRegistry {
         tab.facts.is_shown = is_shown;
         tab.facts.hidden_since_ms = hidden_since(is_shown, now_ms);
         Some(tab.facts.clone())
+    }
+
+    pub(crate) fn grant_local(&self, id: &str, file: &LocalFile) -> Option<String> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let tab = tabs.by_id.get_mut(id)?;
+        let same = tab
+            .grants
+            .iter()
+            .find(|grant| grant.folder == file.folder && grant.is_deep == file.is_deep);
+        if let Some(grant) = same {
+            return Some(grant.token.clone());
+        }
+        let token = crate::util::uuid_v4();
+        tab.grants.push(LocalGrant {
+            token: token.clone(),
+            folder: file.folder.clone(),
+            is_deep: file.is_deep,
+        });
+        Some(token)
+    }
+
+    pub(crate) fn local_grant(&self, id: &str, token: &str) -> Option<LocalGrant> {
+        lock_or_recover(&self.tabs)
+            .by_id
+            .get(id)?
+            .grants
+            .iter()
+            .find(|grant| grant.token == token)
+            .cloned()
+    }
+
+    pub(crate) fn grant_covering(&self, id: &str, path: &Path) -> Option<LocalGrant> {
+        lock_or_recover(&self.tabs)
+            .by_id
+            .get(id)?
+            .grants
+            .iter()
+            .find(|grant| local::grants_path(grant, path))
+            .cloned()
     }
 
     pub(crate) fn set_url(&self, id: &str, url: &str) -> Option<TabFacts> {

@@ -10,8 +10,16 @@ type OpenParams = {
   readonly isShown: boolean;
 };
 
+type OpenLocalParams = Omit<OpenParams, 'url'> & {
+  readonly path: string;
+};
+
 type TabParams = {
   readonly tabId: string;
+};
+
+type NavigateLocalParams = TabParams & {
+  readonly path: string;
 };
 
 type PlaceParams = TabParams & {
@@ -31,6 +39,10 @@ export const browserHost = {
     invokeCommand<BrowserTabFacts>('browser_tab_open', {
       args: { sessionId, workspaceId, url, bounds, isShown },
     }),
+  openLocal: ({ sessionId, workspaceId, path, bounds, isShown }: OpenLocalParams) =>
+    invokeCommand<BrowserTabFacts>('browser_tab_open_local', {
+      args: { sessionId, workspaceId, path, bounds, isShown },
+    }),
   place: ({ tabId, bounds }: PlaceParams) =>
     invokeCommand<null>('browser_tab_place', { args: { tabId, bounds } }),
   show: ({ tabId }: TabParams) =>
@@ -39,6 +51,8 @@ export const browserHost = {
     invokeCommand<BrowserTabFacts>('browser_tab_hide', { args: { tabId } }),
   navigate: ({ tabId, url }: NavigateParams) =>
     invokeCommand<null>('browser_tab_navigate', { args: { tabId, url } }),
+  navigateLocal: ({ tabId, path }: NavigateLocalParams) =>
+    invokeCommand<null>('browser_tab_navigate_local', { args: { tabId, path } }),
   reload: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_reload', { args: { tabId } }),
   back: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_back', { args: { tabId } }),
   forward: ({ tabId }: TabParams) =>

@@ -233,6 +233,10 @@ pub fn run() {
             frame_protocol::FRAME_SCHEME,
             frame_protocol::handle,
         )
+        .register_asynchronous_uri_scheme_protocol(
+            browser::local::LOCAL_SCHEME,
+            browser::local::handle,
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_notification::init());
@@ -752,10 +756,12 @@ pub fn run() {
             browser::commands::browser_profile_clear,
             browser::commands::browser_profile_isolation,
             browser::commands::browser_tab_open,
+            browser::commands::browser_tab_open_local,
             browser::commands::browser_tab_place,
             browser::commands::browser_tab_show,
             browser::commands::browser_tab_hide,
             browser::commands::browser_tab_navigate,
+            browser::commands::browser_tab_navigate_local,
             browser::commands::browser_tab_reload,
             browser::commands::browser_tab_back,
             browser::commands::browser_tab_forward,

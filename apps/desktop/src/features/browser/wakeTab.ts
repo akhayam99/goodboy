@@ -1,12 +1,13 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import type { BrowserTab } from '../../store/slices/browser/types';
-import { browserHost } from './browserHost';
 import { browserPaneRequests } from './browserPaneRequests';
 import { browserWorkspaceOf } from './browserWorkspaceOf';
 import { closeOrphanTab } from './closeOrphanTab';
+import { isFileAddress } from './isFileAddress';
 import { isTabKnown } from './isTabKnown';
-import type { BrowserBounds } from './types';
+import { openHostTab } from './openHostTab';
+import type { BrowserBounds, BrowserTarget } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -19,13 +20,10 @@ const openLive = async ({ sessionId, tab, bounds }: Params): Promise<string | nu
   if (workspaceId === null) {
     return null;
   }
-  const facts = await browserHost.open({
-    sessionId,
-    workspaceId,
-    url: tab.url,
-    bounds,
-    isShown: false,
-  });
+  const target: BrowserTarget = isFileAddress({ url: tab.url })
+    ? { kind: 'local', path: tab.url }
+    : { kind: 'web', url: tab.url };
+  const facts = await openHostTab({ sessionId, workspaceId, target, bounds });
   if (!isTabKnown({ state: useAppStore.getState(), sessionId, tabId: tab.id })) {
     await closeOrphanTab({ sessionId, liveId: facts.id });
     return null;
