@@ -13,12 +13,13 @@ const bellCountLabel = ({ count }: CountParams): string =>
 
 type Props = {
   readonly isOpen: boolean;
+  readonly isCurrent: boolean;
   readonly unread: number;
   readonly hasUnreadDebt: boolean;
   readonly onClick: () => void;
 };
 
-export const BellButton = ({ isOpen, unread, hasUnreadDebt, onClick }: Props) => (
+export const BellButton = ({ isOpen, isCurrent, unread, hasUnreadDebt, onClick }: Props) => (
   <Tooltip content={NAMES.notifications} side="top">
     <button
       type="button"
@@ -29,10 +30,11 @@ export const BellButton = ({ isOpen, unread, hasUnreadDebt, onClick }: Props) =>
         TOP_BAR_CONTROL.radius,
         FOCUS_RING,
         'flex shrink-0 items-center justify-center motion-safe:transition-colors',
-        isOpen
-          ? 'bg-muted text-foreground'
-          : 'text-muted-foreground hover:text-foreground hover:bg-hover',
+        isOpen && 'bg-muted text-foreground',
+        !isOpen && isCurrent && 'bg-selected text-foreground',
+        !isOpen && !isCurrent && 'text-muted-foreground hover:text-foreground hover:bg-hover',
       )}
+      aria-current={isCurrent ? 'page' : undefined}
       aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
     >
       <Bell size={ICON_SIZE.control} aria-hidden />

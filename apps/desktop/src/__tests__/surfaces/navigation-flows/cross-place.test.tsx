@@ -92,7 +92,7 @@ const lensOf = (): string | null => {
 const currentDoors = (): ReadonlyArray<string> =>
   Array.from(
     document.querySelectorAll(
-      '[data-side-column] [data-column-layer="nav"] [data-column-door][aria-current="page"], [data-column-rail] [data-column-door][aria-current="page"], [data-top-bar] [aria-current="page"]',
+      '[data-side-column] [data-column-layer="nav"] [data-column-door][aria-current="page"], [data-column-rail] [data-column-door][aria-current="page"], [data-goodboy-chip][aria-current="page"], [data-top-bar] [aria-current="page"]',
     ),
   ).map(
     (element) =>
@@ -550,13 +550,31 @@ describe('moving across every place keeps one frame', () => {
     await openPalette(/^Notifications$/, 'Notifications');
     expect(studio()).toBe('notifications');
     expectColumnBesideStudio();
-    expect(currentDoors()).toEqual([]);
+    expect(currentDoors()).toEqual(['Notifications']);
     await escape();
     expect(lensOf()).toBe('plans');
     expectHealthy();
   });
 
-  it('opens Settings beside the live column, and Back to app, Esc and Back all land on the same page', async () => {
+  it('lights the Goodboy line for Help and never the open session under it', async () => {
+    await boot({ seed: 'pr' });
+    await openCrumb(/^Artifacts/);
+
+    await clickButton(/^Goodboy beta/);
+    await click(await screen.findByRole('menuitem', { name: /^Guide/ }));
+    expect(studio()).toBe('guide');
+    expectColumnBesideStudio();
+    expect(currentDoors()).toHaveLength(1);
+    expect(currentDoors()[0]).toMatch(/^Goodboy/);
+
+    await escape();
+    expect(studio()).toBeNull();
+    expect(lensOf()).toBe('plans');
+    expect(currentDoors()).toEqual([]);
+    expectHealthy();
+  });
+
+  it('swaps the column for Settings, and Back to app, Esc and Back all land on the same page', async () => {
     await boot({ seed: 'pr' });
     await openCrumb(/^Artifacts/);
 

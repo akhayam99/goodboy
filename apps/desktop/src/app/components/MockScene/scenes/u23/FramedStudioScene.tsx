@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { StudioKind } from '../../../../../store';
 import { StudioFrame as AppStudioFrame } from '../../../StudioFrame';
 import { StudioFrame as ShellStudioFrame } from '../StudioFrame';
+import { FLOW_SESSION_ID } from '../flow-audit/fixtures';
 import { seedFlowSession } from '../flow-audit/seeds';
 import type { ColumnPlace } from '../../../SideColumn/columnPlace';
 import { seedStudioChrome } from '../shellChrome';
@@ -10,8 +11,7 @@ const noop = () => undefined;
 
 type Props = {
   readonly kind: StudioKind;
-  readonly place: 'inbox' | 'workflows' | 'impact' | 'changelog' | 'link';
-  readonly columnPlace?: ColumnPlace;
+  readonly place: 'inbox' | 'workflows' | 'impact' | 'changelog' | 'link' | 'guide';
   readonly seed?: () => void;
   readonly children: ReactNode;
 };
@@ -33,7 +33,7 @@ export const FramedStudioScene = ({ kind, place, columnPlace, seed, children }: 
   return (
     <ShellStudioFrame
       target={{ place, tool: null }}
-      {...(columnPlace !== undefined && { columnPlace })}
+      currentSessionId={FLOW_SESSION_ID}
       main={
         <AppStudioFrame kind={kind} onClose={noop}>
           {children}

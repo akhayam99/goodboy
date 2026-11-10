@@ -263,8 +263,8 @@ One primitive draws the top of every page: `PageHeader`
 row (`PaneTitleRow`), the gap under the header, the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
 page with its own frame (the Board, the Terminal, the chat room header)
-mounts it directly. No page sets its own header padding: the Settings detail,
-the board frame and the terminal drop their own top rows.
+mounts it directly. No page sets its own header padding: the Settings column, the
+board frame and the terminal drop their own top rows.
 
 The columns beside the page share that header line: the session rail top row
 (`data-rail-top`, `data-header-line`), the first icon of the session tools column
