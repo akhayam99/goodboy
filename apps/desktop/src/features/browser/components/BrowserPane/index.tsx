@@ -10,6 +10,7 @@ import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
+import { BrowserPasskeyBanner } from './BrowserPasskeyBanner';
 import { BrowserTabList } from './BrowserTabList';
 import { BrowserTabStrip } from './BrowserTabStrip';
 import { BrowserView } from './BrowserView';
@@ -67,6 +68,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
           </p>
         )}
         {hasTabs && !isListOpen ? <BrowserTabStrip model={model} /> : null}
+        <BrowserPasskeyBanner model={model} />
         <div ref={paneRef} className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
           {isListOpen ? (
             <BrowserTabList

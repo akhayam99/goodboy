@@ -16,6 +16,13 @@ export type BrowserTabFacts = {
   readonly openerId: string | null;
 };
 
+export type BrowserPasskeyEvent = {
+  readonly tabId: string;
+  readonly sessionId: SessionId;
+  readonly host: string;
+  readonly isAsked: boolean;
+};
+
 export type BrowserBounds = {
   readonly x: number;
   readonly y: number;
@@ -66,6 +73,8 @@ export type BrowserPaneModel = {
   readonly startDraft: () => void;
   readonly openOutside: () => void;
   readonly showError: (params: ErrorParams) => void;
+  readonly passkeyHost: string | null;
+  readonly dismissPasskey: () => void;
 };
 
 export type OpenOutcome = 'opened' | 'stale' | 'failed';

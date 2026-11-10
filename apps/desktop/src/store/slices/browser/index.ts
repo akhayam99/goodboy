@@ -3,9 +3,11 @@ import { bindLiveTab } from './bindLiveTab';
 import { closeBrowserSessionTabs } from './closeBrowserSessionTabs';
 import { closeStaleBrowserTabs } from './closeStaleBrowserTabs';
 import { closeTab } from './closeTab';
+import { dismissPasskeyAsk } from './dismissPasskeyAsk';
 import { endDraft } from './endDraft';
 import { loadProjectPins } from './loadProjectPins';
 import { loadSessionTabs } from './loadSessionTabs';
+import { notePasskeyAsk } from './notePasskeyAsk';
 import { openTab } from './openTab';
 import { pinTab } from './pinTab';
 import { reorderTabs } from './reorderTabs';
@@ -32,5 +34,7 @@ export const createBrowserSlice = ({ set, get }: SliceDeps) => {
     unbindBrowserLiveTab: unbindLiveTab({ set, get }),
     closeBrowserSessionTabs: closeBrowserSessionTabs({ set, get }),
     closeStaleBrowserTabs: closeStaleBrowserTabs({ set, get }),
+    noteBrowserPasskeyAsk: notePasskeyAsk({ set, get }),
+    dismissBrowserPasskeyAsk: dismissPasskeyAsk({ set, get }),
   };
 };

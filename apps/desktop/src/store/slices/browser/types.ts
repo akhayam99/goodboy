@@ -57,3 +57,20 @@ export type SessionParams = {
 export type ProjectParams = {
   readonly projectId: ProjectId;
 };
+
+export type BrowserPasskeyAsk = {
+  readonly host: string;
+  readonly isDismissed: boolean;
+};
+
+export type PasskeyAskParams = {
+  readonly sessionId: SessionId;
+  readonly liveId: string;
+  readonly host: string;
+  readonly isAsked: boolean;
+};
+
+export type SessionLiveParams = {
+  readonly sessionId: SessionId;
+  readonly liveId: string;
+};

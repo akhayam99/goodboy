@@ -16,6 +16,7 @@ import { shownTabOf } from '../../shownTabOf';
 import type { BrowserPaneModel } from '../../types';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
+import { usePasskeyAsks } from '../usePasskeyAsks';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
 import { useTabStates } from '../useTabStates';
 
@@ -82,9 +83,15 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const factOf = ({ liveId }: LiveParams) =>
     liveId === undefined ? undefined : facts.find((fact) => fact.id === liveId);
   const address = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
+  const passkeyHost = useAppStore((state) => {
+    const ask =
+      shownLiveId === undefined ? undefined : state.browserPasskeyAsks[sessionId]?.[shownLiveId];
+    return ask === undefined || ask.isDismissed ? null : ask.host;
+  });
 
   useSaveLiveAddresses({ sessionId, tabs, live, facts });
   useOpenedPopups({ sessionId });
+  usePasskeyAsks({ sessionId });
 
   useEffect(() => {
     void useAppStore.getState().loadBrowserSessionTabs({ sessionId });
@@ -239,5 +246,12 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       );
     },
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
+    passkeyHost,
+    dismissPasskey: () => {
+      if (shownLiveId === undefined) {
+        return;
+      }
+      useAppStore.getState().dismissBrowserPasskeyAsk({ sessionId, liveId: shownLiveId });
+    },
   };
 };
