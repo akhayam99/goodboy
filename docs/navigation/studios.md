@@ -147,7 +147,9 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   the studio stays, and it gives focus back to its trigger. The image
   lightbox, the sidebar peek, a history drag, the quick actions popover and the
   artifact page's back-to-list Esc register the same way. A layer registered
-  later sits above one registered earlier. A key handler on a focused field may
+  later sits above one registered earlier. A layer inside a parked drawer is
+  suspended while the studio is open and keeps its place for the trip back. A
+  key handler on a focused field may
   claim Esc first with `preventDefault`, and the stack then leaves it alone.
   `useKeepFullScreenOnEscape` is the one raw Esc listener left, because it must
   see the key when no layer is open. A ratchet
