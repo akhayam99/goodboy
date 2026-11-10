@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { StudioKind } from '../../../store';
+import type { StudioKind } from '../../store';
 import { columnPlaceOf } from './columnPlace';
 
 describe('columnPlaceOf', () => {

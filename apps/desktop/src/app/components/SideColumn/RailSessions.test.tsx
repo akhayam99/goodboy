@@ -32,7 +32,7 @@ import {
 } from '../../../features/workspace/testing/sessionColumn';
 import { ColumnRail } from './ColumnRail';
 import type { ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 let useAppStore: StoryStore;
 let realNavigate: ReturnType<StoryStore['getState']>['navigate'];

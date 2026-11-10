@@ -14,7 +14,7 @@ import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { useDoorSignals } from './useDoorSignals';
-import type { ColumnPlace } from './columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 type Props = {
   readonly scope: ShellColumnScope;
