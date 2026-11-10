@@ -67,8 +67,8 @@ export const MENU_ACTIONS = {
   'menu.notifications': destinationAction({ id: 'notifications' }),
   'menu.monitoring': destinationAction({ id: 'monitoring' }),
   'menu.browser': {
-    label: destinationOf({ id: 'browser' }).label,
-    run: inWorkspace({ run: () => toggleBrowserDock({ isToggle: false }) }),
+    label: 'Show or hide Browser',
+    run: inWorkspace({ run: () => toggleBrowserDock({ isToggle: true }) }),
   },
   'menu.guide': destinationAction({ id: 'guide', isGuarded: false }),
   'menu.whatsNew': destinationAction({ id: 'whatsNew' }),

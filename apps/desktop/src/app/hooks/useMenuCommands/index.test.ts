@@ -222,6 +222,10 @@ describe('useMenuCommands', () => {
 
     expect(useAppStore.getState().drawer?.kind).toBe('browser');
     expect(useAppStore.getState().appStudio).toBeNull();
+
+    pick({ payload: { id: 'menu.browser' } });
+
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 
   it('replaces the open page when Chat and Monitoring open from the menu', async () => {

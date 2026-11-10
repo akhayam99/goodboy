@@ -546,6 +546,18 @@ describe('the browser page', () => {
     expect(await screen.findByText('No browser tabs yet')).toBeDefined();
     expect(document.querySelector('[data-browser-view]')).toBeNull();
   });
+
+  it('docks the empty page back beside the screen it opened from', async () => {
+    rows = [];
+    store.setState({ sessions: [] });
+    openPage({ tabId: null, sessionId: null });
+    await screen.findByText('No browser tabs yet');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
+
+    expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().drawer).toEqual({ kind: 'browser', sessionId: null, payload: null });
+  });
 });
 
 describe('moving a tab between the pane and the page', () => {

@@ -224,8 +224,8 @@ moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode. Its repo rows
 (`sources/repoEntries.ts`) pull the base branch of the linked repos through
 `checkout_update_base`; each row and each toast line names the branch it
-updates and where the checkout stays. New terminal always opens a fresh tab
-in the Terminal dock; inside a session it reads "New terminal in this session"
+updates and where the checkout stays. New terminal opens a fresh tab
+in the Terminal dock, or on the Terminal page while it is open; inside a session it reads "New terminal in this session"
 and the tab opens on the session's folder.
 
 - **Scope first.** It opens on a scope chip that names the surface you can see:

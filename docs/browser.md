@@ -238,11 +238,14 @@ to a project is a pin that every session of the project shares.
 Browser at the foot of the right rail, on every screen, opens the pane in the
 one side slot, the dock, as a tool drawer in the reader tier
 (`DRAWER_KINDS.browser`, `toggleBrowserDock`), so the session rail folds to
-icons while it is open. The Go menu and the palette open it too. On a session
+icons while it is open. The palette opens it too, and Go › Show or Hide Browser
+shows or hides it like the rail button. On a session
 page it shows that session's tabs; anywhere else it shows the session the
 Browser page would pick (`WorkspaceBrowserDock`, drawer `sessionId: null`), or
-says there are no tabs yet. It stays open across every move, beside any page
-but the Browser page. Pressing the tool again, the X or Esc on the pane closes
+says there are no tabs yet, with no Open as page, since that page would be
+empty too. It stays open across every move, beside any page
+but the Browser page, and closes when the session it shows is archived or
+deleted (`slotAfterSessionGone`). Pressing the tool again, the X or Esc on the pane closes
 it; Esc inside the page goes to the page.
 
 - **The address row** holds Back, Forward and Reload, the address, Pin to the
@@ -286,7 +289,10 @@ it; Esc inside the page goes to the page.
   of `OVERLAY_SELECTOR`, which also gates shortcuts. A studio page counts as
   well (`[data-studio-slot]`), but only for a view under it in the sheet: a
   Browser dock floating over a page at a narrow width sits above the page and
-  keeps its view. While
+  keeps its view. The other way round, a Terminal dock floating over the
+  Browser page makes the page's region inert (`[data-drawer-main][inert]`), and
+  a view inside that region is hidden, so the native view never paints over
+  the dock. While
   one intersects the placeholder, the view is
   hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they
@@ -332,7 +338,8 @@ open the Browser button on the right rail is selected and does nothing.
   first tab, and names that session.
 - **Back to the session**: the band's trail names the picked session, and
   pressing it opens that session. Dock, in the header, moves the page back
-  into the dock on the tab (see Moves).
+  into the dock on the tab (see Moves). The empty page keeps Dock too, and it
+  opens the workspace dock, so the page is never a dead end.
 - **The count** on the Browser button is the number of rows the page lists: the tabs of
   the workspace's sessions plus the pins of their projects, named
   `Browser, 3 tabs`. A tab counts whether or not its page is open. A
@@ -344,7 +351,8 @@ A move never reloads the page: the same live webview, with the same id, gets
 new bounds or a new window. A form half typed and the scroll stay.
 
 - **Open as page** in the pane's address row, shown with or without a tab,
-  pushes the Browser page on the session and the shown tab
+  with the same arrow as the Terminal dock's header, pushes the Browser page
+  on the session and the shown tab
   (`promoteBrowserTab`), so ⌘[ brings the dock back. The page's placement takes
   the view through the owner rule above and places it at the page's rect.
 - **Dock** in the page's header closes the page and opens the dock on that
@@ -554,7 +562,8 @@ words (`features/browser/browserFailureText.ts`).
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again
   and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
-  the cover check for a popover with no role and for tooltips.
+  the cover check for a popover with no role, for tooltips and for a page view
+  under an overlay dock.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
   and dark) draw a stand in where the native view goes.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,

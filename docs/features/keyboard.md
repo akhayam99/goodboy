@@ -9,9 +9,9 @@ Open a real login shell in the workspace folder or any linked worktree.
 **Open a terminal**
 
 - **Terminal** at the foot of the right rail, **⌃** with the backtick key, or **⌘⌥T** shows or hides the Terminal dock, on any page. In a session it opens on the session's worktree. Anywhere else it opens in the workspace folder.
-- The dock stays open as you move between sessions and pages. The rail button names how many terminals run.
+- The dock stays open as you move between sessions and pages. The rail button shows how many terminals run.
 - The worktree menu and ⌘K **Open <repo · branch> in terminal** open that worktree in the dock.
-- **File › New Terminal** and ⌘K **New terminal** always add a fresh tab in the dock. In a session it uses the active worktree, or the workspace folder when the session has no branch.
+- **File › New Terminal** and ⌘K **New terminal** add a fresh tab in the dock. In a session it uses the active worktree, or the workspace folder when the session has no branch. On the Terminal page the new tab opens on the page.
 - **⌘T** adds a tab in place. **⌘N** opens a picker on the page and in the drawer. Type to filter, use the arrows and Enter.
 - The picker offers folders and existing worktrees, one row each with the project and the branch. The path is in the tooltip.
 - In the dock the header reads **Terminal** and one scope picker (project, then branch). ⌘N opens it. **+** adds a tab in the current scope.
@@ -133,7 +133,7 @@ On a Mac the menu bar carries the same keys.
 - File holds New Session, New Chat, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
 - Edit holds Search.
 - View holds the sidebar, the palette, zoom and Reload.
-- Go walks to Board, Tasks, Workflows, Chat, Impact, Terminal, Browser, Monitoring and Notifications.
+- Go walks to Board, Tasks, Workflows, Chat, Impact, Monitoring and Notifications, then Show or Hide Terminal and Show or Hide Browser.
 - Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
 <picture>
@@ -188,7 +188,7 @@ Browse the session folder as a file tree, with a preview of the selected file be
 
 Open your dev server, a port or a link beside the session or on a page of its own, without leaving Goodboy.
 
-- **Browser** at the foot of the right rail opens the browser beside the work, on any page. The Session pages fold to icons while it is open. The button counts the open tabs.
+- **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. The button counts the open tabs.
 - **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Dock** puts it back. The page never reloads, so a half-typed form stays.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.

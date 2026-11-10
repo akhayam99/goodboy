@@ -70,10 +70,7 @@ describe('the destination sheet scene', () => {
       const label = row.querySelector('th')?.textContent ?? '';
       const destination = DESTINATIONS.find((candidate) => candidate.label === label);
       expect(column.startsWith(label)).toBe(true);
-      const menuLabel =
-        destination?.home === 'rail' && destination.shortcutId !== undefined
-          ? `Show or hide ${label}`
-          : label;
+      const menuLabel = destination?.home === 'rail' ? `Show or hide ${label}` : label;
       expect(menuBar).toBe(destination?.menuId === undefined ? '' : menuLabel);
       expect(palette.startsWith(label)).toBe(true);
     });

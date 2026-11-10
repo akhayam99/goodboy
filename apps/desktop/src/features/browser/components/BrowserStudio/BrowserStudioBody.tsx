@@ -1,6 +1,7 @@
-import { EmptyState, PAGE_MEASURE, PageColumn } from '@goodboy/ui';
+import { Button, EmptyState, PAGE_MEASURE, PageColumn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { demoteBrowserTab } from '../../demoteBrowserTab';
 import { useBrowserPage } from '../../hooks/useBrowserPage';
 import { BrowserPageHeader } from './BrowserPageHeader';
 import { BrowserPageView } from './BrowserPageView';
@@ -15,14 +16,24 @@ export const BrowserStudioBody = ({ sessionId, tabId }: Props) => {
   if (page.selectedId === null) {
     return (
       <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-        <BrowserPageHeader />
+        <BrowserPageHeader
+          actions={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => demoteBrowserTab({ sessionId: null })}
+            >
+              Dock
+            </Button>
+          }
+        />
         <PageColumn width={PAGE_MEASURE.browser}>
           <EmptyState
             size="page"
             tone={CONCEPT_TONE.browser}
             icon={CONCEPT_ICONS.browser}
             title="No browser tabs yet"
-            description="Open Browser from the right rail. Its tabs show here, grouped by session."
+            description="Open Browser on a session. Its tabs show here, grouped by session."
           />
         </PageColumn>
       </div>

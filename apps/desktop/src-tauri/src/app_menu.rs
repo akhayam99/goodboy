@@ -124,7 +124,7 @@ const GO_ROWS: &[Row] = &[
     command("menu.notifications", "Notifications", None),
     SEPARATOR,
     command("terminal.studio", "Show or Hide Terminal", Some("ctrl+Backquote")),
-    command("menu.browser", "Browser", None),
+    command("menu.browser", "Show or Hide Browser", None),
 ];
 
 const WINDOW_ROWS: &[Row] = &[
