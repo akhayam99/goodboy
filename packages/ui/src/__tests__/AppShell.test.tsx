@@ -83,45 +83,81 @@ describe('AppShell', () => {
     expect(slot?.childElementCount).toBe(0);
   });
 
-  it('spans the studio across every column of the work row, above the peek', () => {
+  it('keeps the footer in its own row while a studio is open', () => {
     render(
       <AppShell
         leftSidebar={<div>sessions</div>}
-        leftOverlay={<div>peek</div>}
         footer={<div>status</div>}
         main={<div>main</div>}
         studio={<div>settings studio</div>}
       />,
     );
-    const slot = screen.getByText('settings studio').parentElement;
-    const peek = screen.getByText('peek').parentElement;
 
-    expect(slot?.style.gridColumn).toBe('1 / -1');
-    expect(slot?.style.gridRow).toBe('1 / 2');
-    expect(slot?.className).toContain('z-studio');
-    expect(peek?.className).toContain('z-20');
     expect(screen.getByText('status').parentElement?.style.gridArea).toBe('footer');
   });
 });
 
-describe('AppShell studio beside the column', () => {
-  it('puts the studio in the main area as its own sheet, leaving the column live', () => {
+describe('AppShell studio in the main slot', () => {
+  it('puts the studio inside the sheet over the page, leaving the column live', () => {
     render(
       <AppShell
         leftSidebar={<button type="button">doors</button>}
         main={<div>main</div>}
         studio={<div>inbox studio</div>}
-        studioCoversLeft={false}
       />,
     );
     const slot = screen.getByText('inbox studio').parentElement;
+    const sheet = document.querySelector<HTMLElement>('[data-drawer-main]');
 
-    expect(slot?.style.gridArea).toBe('main');
-    expect(slot?.style.gridColumn).toBe('');
     expect(slot?.dataset.studioSlot).toBe('content');
+    expect(slot?.className).toContain('z-studio');
+    expect(slot?.style.gridArea).toBe('');
+    expect(sheet?.contains(slot ?? null)).toBe(true);
+    expect(screen.getByText('main').parentElement?.hasAttribute('inert')).toBe(true);
     expect(
       screen.getByRole('button', { name: 'doors' }).closest('aside')?.hasAttribute('inert'),
     ).toBe(false);
+  });
+
+  it('keeps the page mounted and live once the studio closes', () => {
+    const { rerender } = render(
+      <AppShell
+        leftSidebar={<div>doors</div>}
+        main={<input aria-label="page field" />}
+        studio={<div>tasks studio</div>}
+      />,
+    );
+    const field = screen.getByRole('textbox', { name: 'page field', hidden: true });
+
+    rerender(
+      <AppShell
+        leftSidebar={<div>doors</div>}
+        main={<input aria-label="page field" />}
+        studio={null}
+      />,
+    );
+
+    expect(screen.getByRole('textbox', { name: 'page field' })).toBe(field);
+    expect(field.parentElement?.hasAttribute('inert')).toBe(false);
+    expect(document.querySelector('[data-studio-slot]')).toBeNull();
+  });
+
+  it('drops the sheet frame while a studio draws its own sheets', () => {
+    render(
+      <AppShell
+        leftSidebar={<div>doors</div>}
+        main={<div>main</div>}
+        studio={<div data-studio-sheet-owner="">chat studio</div>}
+      />,
+    );
+    const column = document.querySelector<HTMLElement>('[data-drawer-main]')?.parentElement;
+
+    expect(column?.className).toContain(
+      '[&>[data-drawer-main]:has([data-studio-sheet-owner])]:border-0',
+    );
+    expect(column?.className).toContain(
+      '[&>[data-drawer-main]:has([data-studio-sheet-owner])]:bg-transparent',
+    );
   });
 
   it('draws the peek after the studio, so the peeked column floats over a studio too', () => {
@@ -132,7 +168,6 @@ describe('AppShell studio beside the column', () => {
         leftOverlay={<div>peek</div>}
         main={<div>main</div>}
         studio={<div>chat studio</div>}
-        studioCoversLeft={false}
       />,
     );
     const studio = screen.getByText('chat studio').parentElement as HTMLElement;
