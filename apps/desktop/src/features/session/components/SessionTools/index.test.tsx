@@ -22,6 +22,7 @@ import type { TerminalTabId } from '../../../../shared/types/terminal';
 import type { OpenDrawer } from '../../../../store/slices/drawer/state';
 import { brandedId } from '../../../history/testing/brandedId';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { SESSION, WORKSPACE, sessionFixture } from '../../../../__tests__/helpers/actionFixtures';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
@@ -63,7 +64,7 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const toggle = (name: 'ask' | 'terminal' | 'explore' | 'context' | 'scripts') =>
+const toggle = (name: 'ask' | 'terminal' | 'browser' | 'explore' | 'context' | 'scripts') =>
   screen.getByTestId(`pane-toggle-${name}`);
 
 const drawerKind = () => useAppStore.getState().drawer?.kind ?? null;
@@ -439,7 +440,7 @@ describe('SessionTools', () => {
     expect(toggle('scripts').closest('.relative')?.querySelector('[data-signal]')).toBeNull();
   });
 
-  it('captions the two groups, Session above Explore and Workspace above Terminal', () => {
+  it('captions the Session group, and leaves Terminal and Browser under the separator', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
     const order = Array.from(
@@ -459,7 +460,6 @@ describe('SessionTools', () => {
       'spawned',
       'scripts',
       'session-tools-separator',
-      'caption:Workspace',
       'terminal',
       'browser',
     ]);
@@ -620,13 +620,11 @@ describe('SessionTools', () => {
         .getAllByRole('button')
         .map((button) => button.getAttribute('data-testid')),
     ).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
-    expect(toolbar.querySelector('[data-slot="tool-group-caption"]')?.textContent).toBe(
-      'Workspace',
-    );
+    expect(toolbar.querySelector('[data-slot="tool-group-caption"]')).toBeNull();
     expect(within(toolbar).queryByRole('separator')).toBeNull();
   });
 
-  it('names the running terminals and the tabs, and dots Terminal while one runs', () => {
+  it('names the running terminals and shows their count on Terminal', () => {
     useAppStore.setState({
       terminalTabs: {
         [SESSION_ID]: [
@@ -652,9 +650,42 @@ describe('SessionTools', () => {
     render(<SessionTools sessionId={null} />);
 
     expect(toggle('terminal').getAttribute('aria-label')).toBe('Terminal, 2 running');
+    const tool = toggle('terminal').closest('[data-slot="session-tool"]');
+    expect(tool?.querySelector('[data-testid="tool-count"]')?.textContent).toBe('2');
+    expect(tool?.querySelector('[data-signal]')).toBeNull();
     expect(
-      toggle('terminal').closest('[data-slot="session-tool"]')?.querySelector('[data-signal]'),
-    ).not.toBeNull();
+      toggle('browser')
+        .closest('[data-slot="session-tool"]')
+        ?.querySelector('[data-testid="tool-count"]'),
+    ).toBeNull();
+  });
+
+  it('shows the open browser tabs as a count on Browser', () => {
+    const titles = ['Harborline', 'Northwind', 'Acme', 'Cascadia'];
+    useAppStore.setState({
+      currentWorkspaceId: WORKSPACE,
+      sessions: [sessionFixture()],
+      browserSessionTabs: {
+        [SESSION]: titles.map((title, position) => ({
+          id: `tab-${position}`,
+          sessionId: SESSION,
+          projectId: null,
+          url: `https://${title.toLowerCase()}.test`,
+          title,
+          position,
+          createdAt: position,
+          updatedAt: position,
+        })),
+      },
+    });
+    render(<SessionTools sessionId={null} />);
+
+    expect(toggle('browser').getAttribute('aria-label')).toBe('Browser, 4 tabs');
+    expect(
+      toggle('browser')
+        .closest('[data-slot="session-tool"]')
+        ?.querySelector('[data-testid="tool-count"]')?.textContent,
+    ).toBe('4');
   });
 
   it('selects Terminal while its page is open and does nothing on click', () => {

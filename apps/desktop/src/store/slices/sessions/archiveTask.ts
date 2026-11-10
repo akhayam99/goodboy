@@ -6,6 +6,7 @@ import { touchArchivedCache } from '../summaries/archivedCacheVersion';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
 import { stopWork } from '../../runtime/live-work/stopWork';
+import { slotAfterSessionGone } from '../drawer/slotAfterSessionGone';
 
 const STILL_RUNNING_MESSAGE =
   'An agent did not stop, so the session stays where it was. Try Archive again.';
@@ -57,6 +58,9 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       });
       throw err;
     }
+    set((state) =>
+      slotAfterSessionGone({ drawer: state.drawer, back: state.drawerBack, sessionId }),
+    );
 
     void get()
       .loadDormantSpend(workspaceId)

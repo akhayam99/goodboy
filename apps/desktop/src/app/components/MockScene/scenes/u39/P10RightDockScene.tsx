@@ -7,6 +7,8 @@ import {
   workspaceTerminalOwner,
 } from '../../../../../store/slices/terminal/terminalOwner';
 import { AppFrame } from '../audit/AppFrame';
+import { mockSceneIpc } from '../mockSceneIpc';
+import { devServerLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 import { seedFrame, type FrameContext } from '../audit/frameSeed';
 
 export type RightDock = 'terminal' | 'browser' | null;
@@ -30,6 +32,9 @@ const seedDock = ({ context, held }: SeedParams): void => {
   const workspaceId = state.currentWorkspaceId;
   const sessionId = context === 'session' ? state.currentSessionId : null;
   if (held === 'terminal' && workspaceId !== null) {
+    mockSceneIpc((command) =>
+      command === 'terminal_snapshot' ? terminalSnapshotAnswer({ lines: devServerLines }) : null,
+    );
     const owner = workspaceTerminalOwner({ workspaceId });
     const key = terminalOwnerKey({ owner });
     useAppStore.setState({

@@ -131,8 +131,8 @@ in `studioMeta.ts`).
 right rail's Terminal button, the Go menu and Search or run all run `toggleTerminalDock`: on a
 session page it opens the session's terminal on its worktree, anywhere else the workspace
 folder terminal (`openWorkspaceTerminal`, owner `ws:<workspaceId>`, drawer `sessionId: null`).
-The dock stays open across every move. File > New Terminal adds a fresh tab there.
-`openSessionTerminal`adds a session terminal at
+The dock stays open across every move. File > New Terminal adds a fresh tab there, or on the Terminal page while it is open. A dock request that waits for the home folder is dropped when the dock, the page or the session changed meanwhile.
+`openSessionTerminal` adds a session terminal at
 the worktree (or reuses a running one there, never when it carries a`prefill`) and opens the `terminal` drawer over the session
 (`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer`in`DrawerHost`, side sizing, resizable like the others). **Run in terminal** (the command tool card and a shell block in a message,
 `useRunInTerminal`) is that same path with a `prefill`from`typedCommandOf`: one line as typed,

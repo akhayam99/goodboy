@@ -81,4 +81,34 @@ describe('openWorkspaceTerminal', () => {
 
     expect(terminalStudioCount()).toBe(0);
   });
+
+  it('drops the result when Browser opened while the home folder was pending', async () => {
+    const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
+    useAppStore.setState({ currentSessionId: null });
+    const gate = holdHome();
+    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: false });
+
+    useAppStore.getState().openDrawer({ kind: 'browser', sessionId: null, payload: null });
+    gate.resolve('/Users/mock');
+    await pending;
+
+    expect(terminalStudioCount()).toBe(0);
+    expect(useAppStore.getState().drawer?.kind).toBe('browser');
+  });
+
+  it('shows a new terminal on the Terminal page when it opens there', async () => {
+    const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
+    useAppStore.setState({ currentSessionId: null });
+    useAppStore
+      .getState()
+      .openStudio({ studio: { kind: 'terminal', terminalId: null, sessionId: null } });
+
+    await openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: true });
+
+    const [tab] = Object.values(useAppStore.getState().terminalTabs).flat();
+    const studio = useAppStore.getState().appStudio;
+    expect(studio?.kind === 'terminal' ? studio.terminalId : null).toBe(tab?.id);
+    expect(useAppStore.getState().terminalSelection?.terminalId).toBe(tab?.id);
+    expect(useAppStore.getState().drawer).toBeNull();
+  });
 });

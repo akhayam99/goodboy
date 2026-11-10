@@ -1,5 +1,5 @@
 import { needsYouText } from '../../../shared/utils/needsYouText';
-import { countTextOf } from './countTextOf';
+import { countTextOf } from '../../../shared/utils/countTextOf';
 type DoorTone = 'danger' | 'warning' | 'neutral';
 
 export type DoorSignal = {

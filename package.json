@@ -1,6 +1,6 @@
 {
   "name": "goodboy",
-  "version": "0.32.0",
+  "version": "0.32.1",
   "private": true,
   "description": "Agentic development environment for your coding agents, built in public",
   "license": "FSL-1.1-MIT",

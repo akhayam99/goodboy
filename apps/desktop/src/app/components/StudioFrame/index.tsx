@@ -33,7 +33,7 @@ import { STUDIO_META } from './studioMeta';
 import { captureStudioOpener } from './captureStudioOpener';
 import { restoreStudioOpener } from './restoreStudioOpener';
 import { StudioSkeleton } from './StudioSkeleton';
-import { ShellToolRail } from '../ShellToolRail';
+import { StudioRail } from './StudioRail';
 import { useOneRightPanel } from '../../hooks/useOneRightPanel';
 import type { StudioPlacement } from './studioPlacement';
 
@@ -98,6 +98,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
 
   const isPanelShown = useOneRightPanel({ spec: drawerSpec, isActive: isDrawerHost });
   const shellEdge = useContext(DrawerEdgeContext);
+  const motion = isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in';
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
   const bandNode = isBandDrawn ? (
     <StudioBand
@@ -156,7 +157,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
         className={cn(
           'relative flex h-full w-full min-h-0 flex-col',
           placement === 'cover' || isDrawerHost ? 'bg-chrome' : 'bg-background',
-          isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
+          !isDrawerHost && motion,
         )}
       >
         {isDrawerHost ? (
@@ -164,17 +165,25 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
             frame="sheet"
             main={
               <div className="flex min-h-0 min-w-0 flex-1">
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col">{framed}</div>
-                <DrawerEdgeContext.Provider value={shellEdge}>
-                  <ShellToolRail />
-                </DrawerEdgeContext.Provider>
+                <div
+                  data-studio-motion=""
+                  className={cn('flex min-h-0 min-w-0 flex-1 flex-col', motion)}
+                >
+                  {framed}
+                </div>
+                <StudioRail shellEdge={shellEdge} />
               </div>
             }
             drawer={
               drawerSpec?.node == null || !isPanelShown ? null : (
-                <UnderTrailContext.Provider value={isUnderTrail}>
-                  {drawerSpec.node}
-                </UnderTrailContext.Provider>
+                <div
+                  data-studio-motion=""
+                  className={cn('flex min-h-0 min-w-0 flex-1 flex-col', isClosing && motion)}
+                >
+                  <UnderTrailContext.Provider value={isUnderTrail}>
+                    {drawerSpec.node}
+                  </UnderTrailContext.Provider>
+                </div>
               )
             }
             ariaLabel={drawerSpec?.ariaLabel ?? 'Side panel'}

@@ -80,6 +80,14 @@ describe('the ux39 right dock scenes', () => {
     },
   );
 
+  it('ux39-p10-tasks keeps the rail still while the page fades in or out', async () => {
+    await mount('ux39-p10-tasks');
+
+    expect(document.querySelector('[data-studio="inbox"]')?.contains(rail())).toBe(true);
+    expect(document.querySelector('[data-studio-motion]')).not.toBeNull();
+    expect(rail().closest('[data-studio-motion]')).toBeNull();
+  });
+
   it('ux39-p10-session stacks the session tools above Terminal and Browser', async () => {
     await mount('ux39-p10-session');
 
@@ -101,6 +109,7 @@ describe('the ux39 right dock scenes', () => {
 
       expect(useAppStore.getState().drawer).toMatchObject({ kind: 'terminal', sessionId: null });
       screen.getByRole('button', { name: 'Open as page' });
+      expect(screen.queryByText("Couldn't open this terminal")).toBeNull();
       expect(within(rail()).getByTestId('pane-toggle-terminal').getAttribute('aria-pressed')).toBe(
         'true',
       );

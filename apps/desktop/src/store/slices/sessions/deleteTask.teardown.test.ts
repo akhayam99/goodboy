@@ -79,9 +79,10 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn, listLiveRunIds }));
 
+import { brandId, type SessionId } from '@goodboy/types';
 import { deleteTask } from './deleteTask';
 
-const SESSION_ID = 'sess-1' as never;
+const SESSION_ID = brandId<SessionId>({ value: 'sess-1' });
 
 const makeStore = (state: { kind: string; runId?: string } = { kind: 'idle' }) => ({
   sessions: [{ id: 'sess-1', workspaceId: 'ws-1', goal: 'ship it', state }],
@@ -117,11 +118,23 @@ beforeEach(() => {
 });
 
 describe('deleting a session', () => {
-  it('waits for the terminals to die before touching the folder', async () => {
+  it('waits for the terminals to die before touching the folder, then drops its dock', async () => {
     const store = makeStore();
+    const set = vi.fn();
+    const browser = { kind: 'browser', sessionId: SESSION_ID, payload: null };
+    const terminal = { kind: 'terminal', sessionId: null, payload: { terminalId: 'ws-1::t1' } };
 
-    await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
+    await deleteTask(set, (() => store) as never)(SESSION_ID);
+    const update = set.mock.calls.at(-1)?.[0] as (state: object) => Record<string, unknown>;
 
+    expect(update({ ...store, drawer: browser, drawerBack: null })).toMatchObject({
+      drawer: null,
+      drawerBack: null,
+    });
+    expect(update({ ...store, drawer: terminal, drawerBack: browser })).toMatchObject({
+      drawer: terminal,
+      drawerBack: null,
+    });
     expect(order).toEqual(['terminals closed', 'browser tabs closed', 'worktree removed']);
     expect(store.closeBrowserSessionTabs).toHaveBeenCalledWith({ sessionId: SESSION_ID });
     expect(detachSessionMounts).toHaveBeenCalledWith({

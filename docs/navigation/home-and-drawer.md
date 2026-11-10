@@ -213,7 +213,11 @@ or null; only Terminal and Browser, the workspace tools, may carry
 `drawerBack` (`slotAfterOpen`), so a third open drops the oldest; reopening the
 drawer in the slot, an artifact on another tab included (`slotKey`), keeps the
 chip; a drawer of another session clears it, unless one of the two is a
-workspace tool (`sharesSlot`). `closeDrawer` brings `drawerBack`
+workspace tool (`sharesSlot`). A second Terminal replaces the first in the
+slot and keeps the chip as it was, so hiding Terminal hides the dock and never
+brings back an older terminal. Archiving or deleting a session drops a
+Terminal or Browser dock opened on it from the slot and the chip
+(`slotAfterSessionGone`). `closeDrawer` brings `drawerBack`
 back and empties it, so Escape, the X, the trigger pressed again
 (`toggleDrawer`), a crashed drawer's leave and ⌘⇧W all walk the same two steps.
 `clearDrawer` empties both at once, for a caller whose work moved elsewhere (a

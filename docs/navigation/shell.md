@@ -303,7 +303,10 @@ is parked and narrows again on return, so its transcript re-wraps. Terminal
 and Browser are workspace tools and follow no session: they stay docked across
 every move, on another session, on the Board and beside every page but their
 own (`keptTool`, `selectDrawerPanel`). Under their own page they stay in the
-store but are not mounted (`useShellRight`), so no shortcut answers twice. On
+store but are not mounted (`useShellRight`), so no shortcut answers twice. At
+a narrow width the dock floats over the page: the page slot lives in its own
+layer (`data-studio-host`, `isolate`), so the dock and its scrim always paint
+above the page. On
 Tasks, Chat and Workflows the page's own panel and the dock are one slot:
 opening the dock closes the panel, and opening a panel closes the workspace
 tools (`useOneRightPanel`, `closeWorkspaceTools`). Close keys
@@ -715,8 +718,8 @@ New Workspace, the Go doors, Guide, What's New). An id with neither warns once
 and does nothing. A new menu item therefore adds a row to the table and an id,
 never an event or a listener. Every Go page opens through `openDestination`,
 the same call as the column and the palette; Browser opens the dock through
-`toggleBrowserDock`, Terminal through its shortcut, and New Terminal always adds
-a tab in the dock. The doors that need a workspace do nothing without one. `menuBar.parity.test.ts` reads the Rust table
+`toggleBrowserDock` (Show or Hide Browser, a toggle like the rail button), Terminal through its shortcut, and New Terminal adds
+a tab in the dock, or on the Terminal page while it is open (`openWorkspaceTerminal` switches the page to the new tab). The doors that need a workspace do nothing without one. `menuBar.parity.test.ts` reads the Rust table
 and fails when an id has no registry entry or action, a combo differs from the
 registry's, a label is not title case, a key has two owners, or the Go rows
 differ from `DESTINATIONS` in order.
@@ -925,6 +928,9 @@ be unique inside one scope and never to shadow a global one. Entries that share 
 workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A
 family is only for chords that do the same thing to a different index: the
 integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row each.
+Two chords that do the very same thing share one row instead (`SHARED_ROWS` in
+`shortcutRows.ts`): Show or hide Terminal lists ⌃\` and ⌘⌥T side by side, and
+each keeps its own Change and Reset.
 A few entries are keys a focused control answers, not global chords: Submit
 (⌘↵, `composer.submit`, the one id behind every composer, editor and the
 workspace switcher; `isSubmitChord` reads it and keeps the lenient match that

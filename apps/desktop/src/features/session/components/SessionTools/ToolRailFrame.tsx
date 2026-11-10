@@ -77,11 +77,11 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
         event.currentTarget.querySelectorAll<HTMLButtonElement>('button')[next]?.focus();
       }}
       className={cn(
-        'flex h-full shrink-0 flex-col items-center gap-2 bg-background px-0.5',
+        'flex h-full shrink-0 flex-col items-center gap-2 bg-background px-0.5 pb-3',
         PANE_RHYTHM.headerInset,
       )}
     >
-      {session === null ? null : <ToolGroupCaption group="session" />}
+      {session === null ? null : <ToolGroupCaption />}
       {session === null
         ? null
         : sessionTools.map((tool, index) => (
@@ -104,7 +104,6 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
           className="h-px w-5 shrink-0 bg-border-soft"
         />
       )}
-      <ToolGroupCaption group="workspace" />
       {WORKSPACE_TOOLS.map((tool, offset) => (
         <SessionToolButton
           key={tool.pane}
@@ -113,7 +112,7 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
           isWaiting={waitingKind === tool.pane}
           isCurrent={pageKind === tool.pane}
           fact={toolFactOf({ pane: tool.pane, runningCount, tabCount })}
-          isBusy={tool.pane === 'terminal' && runningCount > 0}
+          count={tool.pane === 'terminal' ? runningCount : tabCount}
           signal={tool.pane === 'terminal' ? terminalSignal : null}
           {...rovingOf({ index: sessionTools.length + offset })}
           onToggle={() => toggleWorkspaceTool({ tool })}

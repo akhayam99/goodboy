@@ -20,9 +20,14 @@ export const openSessionTerminalHere = async ({
     openSessionTerminal({ state: useAppStore.getState(), sessionId, cwd: mountPath, isFresh });
     return;
   }
+  const before = useAppStore.getState();
   const home = await homeFolder();
   const state = useAppStore.getState();
-  if (state.currentSessionId !== sessionId) {
+  if (
+    state.currentSessionId !== sessionId ||
+    state.drawer !== before.drawer ||
+    state.appStudio !== before.appStudio
+  ) {
     return;
   }
   const session = sessionById(state.sessions, sessionId);

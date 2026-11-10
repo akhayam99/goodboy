@@ -7,6 +7,8 @@ const COVER_SELECTOR = [
   '[data-studio-slot]',
 ].join(', ');
 
+const UNDER_OVERLAY_DRAWER = '[data-drawer-main][inert]';
+
 type CoversParams = {
   readonly view: HTMLElement;
   readonly rect: DOMRect;
@@ -51,6 +53,9 @@ export const createOverlayWatch = () => {
 
   return {
     covers: ({ view, rect }: CoversParams): boolean => {
+      if (view.closest(UNDER_OVERLAY_DRAWER) !== null) {
+        return true;
+      }
       if (isDirty || observer === null) {
         overlays = Array.from(document.querySelectorAll(COVER_SELECTOR));
         isDirty = false;
