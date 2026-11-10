@@ -12,7 +12,7 @@ const NOOP = () => undefined;
 
 const QUERY_OF: Readonly<Record<Variant, string>> = {
   shortcuts: '',
-  search: 'palette',
+  search: 'search or run',
 };
 
 const TYPE_AFTER_MS = 1_000;

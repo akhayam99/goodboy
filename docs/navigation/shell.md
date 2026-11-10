@@ -431,10 +431,14 @@ Overview notices slot ([mounts.md](../mounts.md#worktree-rows-and-the-overview-n
 
 The top bar says what is happening now. The column takes you to places.
 Preferences live in Settings. Each item has one home; anything else that shows
-it is a signal that links there.
+it is a signal that links there. Every chip on the right opens the home of the
+number it shows: Now ends on Monitoring, Usage opens the Providers menu and
+from it Settings > Providers, Spend opens Impact on its Spend tab. The bell
+opens its own popover.
 
 On macOS the window has no native title bar: the traffic lights sit inside the
-top bar, which carries a 72px inset (12px in full screen and on other systems).
+top bar, and the identity row starts 72px in (`--titlebar-inset`, 0 in full
+screen and on other systems).
 The bar is a deep drag region: any spot that is not a control moves the window,
 and a double click zooms it. Controls never drag.
 
@@ -444,11 +448,12 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: workspace identity. It has a 200px limit and truncates, with the full
-  name in its tooltip.
-- Centre: the movement cluster, then the command center. `Back` and `Forward`
-  (24px icons) name their destination in the tooltip (`Back to Comments`,
-  the session on a second line, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
+- Left: workspace identity and Repositories. The identity has a 200px limit and
+  truncates, with the full name in its tooltip.
+- Centre: the sidebar toggle, the movement cluster, then the command center.
+  `Back` and `Forward` (24px icons) name their destination in the label and the
+  tooltip (`Back: Comments`, the session on a second line, `Hold for history`
+  on a third, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
   Chat left the bar for the column. Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
@@ -474,7 +479,8 @@ covered.
   and fills the **Start a run** field (nothing starts until Start); Back returns
   to the same chat because `captureLocation` keeps `appStudio`.
 - Left of Back and Forward: the main sidebar toggle (`ColumnToggleButton`, ⌘B), the one
-  toggle of the column; the column itself has no toggle row.
+  toggle of the column; the column itself has no toggle row. It is the only
+  control the bar holds for another container.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
@@ -485,9 +491,10 @@ covered.
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
-  two, and a group with no rows is not drawn. Sessions that need you are not in the
-  bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
-  units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
+  two, and a group with no rows is not drawn. The popover ends on **Open Monitoring**,
+  the page that owns those counts. Sessions that need you are not in the
+  bar, in the chip or in its panel: the Sessions door carries the count. Needs you counts three
+  units, and each tooltip names its own: sessions ("2 sessions need you") on the Sessions
   door, the dock badge and the palette; questions ("3 questions") on the
   Questions entry of the session rail; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
@@ -521,7 +528,7 @@ The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
 1. Below `chrome-wide` the command center narrows (its label is `Search or run`
-   at every width; the workspace name lives in its tooltip) and
+   until `chrome-labels`; the workspace name lives in its tooltip) and
    Usage keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
    (`running`, `scripts`, `today`) drop and Usage keeps
@@ -650,10 +657,9 @@ its own.
 
 On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
 Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
-New Workspace, Close), Edit, View (sidebar, Command Palette, zoom, Reload, full
-screen), Go (Back, Forward, then the destinations in the order of
-`DESTINATIONS`: Board, Tasks, Workflows, Chat, Impact, Terminal, Browser,
-Monitoring, Notifications), Window and Help (Guide, What's New,
+New Workspace, Close), Edit, View (sidebar, Search or Run, zoom, Reload, full
+screen), Go (Back, Forward, Sessions, Tasks, Chat, Workflows, Terminal,
+Impact, Notifications, Monitoring), Window and Help (Guide, What's New,
 Keyboard Shortcuts, Report a Bug). One table lays all of them out
 (`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
 (About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)

@@ -17,6 +17,7 @@ import type { HistoryItem } from './historyItem';
 import type { HistoryLabel } from './historyLabel';
 
 const HOLD_MS = 400;
+const HOLD_HINT = 'Hold for history';
 
 type Props = {
   readonly direction: 'back' | 'forward';
@@ -38,13 +39,13 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
   const didHold = useRef(false);
   const isDisabled = target === null;
   const Icon = direction === 'back' ? ArrowLeft : ArrowRight;
-  const verb = direction === 'back' ? 'Previous' : 'Forward';
+  const verb = direction === 'back' ? 'Back' : 'Forward';
   const shortcut = direction === 'back' ? 'nav.back' : 'nav.forward';
   const tooltip = isDisabled
     ? direction === 'back'
       ? 'Nothing to go back to'
       : 'Nothing to go forward to'
-    : `${verb}: ${target.label}${target.context === null ? '' : `\n${target.context}`}`;
+    : `${verb}: ${target.label}${target.context === null ? '' : `\n${target.context}`}\n${HOLD_HINT}`;
 
   const clearHold = () => {
     if (holdTimer.current === null) {

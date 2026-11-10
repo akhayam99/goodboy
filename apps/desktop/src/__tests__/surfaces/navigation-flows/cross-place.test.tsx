@@ -56,7 +56,7 @@ const door = (id: string): HTMLElement => {
   return requireValue({ value: found });
 };
 
-const historyButton = (verb: 'Previous' | 'Forward'): HTMLElement => {
+const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
   const found = Array.from(
     document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
   ).find((button) => (button.getAttribute('aria-label') ?? '').startsWith(verb));
@@ -513,7 +513,7 @@ describe('moving across every place keeps one frame', () => {
     await heading('Board');
     expect(currentDoors()).toEqual(['board']);
 
-    await click(historyButton('Previous'));
+    await click(historyButton('Back'));
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
     expect(currentDoors()).toEqual([]);
 
@@ -522,9 +522,9 @@ describe('moving across every place keeps one frame', () => {
     await press('lens.review');
     expect(lensOf()).toBe('branch');
 
-    await click(historyButton('Previous'));
+    await click(historyButton('Back'));
     expect(lensOf()).toBe('plans');
-    await click(historyButton('Previous'));
+    await click(historyButton('Back'));
     expect(lensOf()).toBe('workflows');
     await click(historyButton('Forward'));
     expect(lensOf()).toBe('plans');
@@ -581,10 +581,10 @@ describe('moving across every place keeps one frame', () => {
       ],
       [
         async () => {
-          historyButton('Previous').focus();
-          await click(historyButton('Previous'));
+          historyButton('Back').focus();
+          await click(historyButton('Back'));
         },
-        () => historyButton('Previous'),
+        () => historyButton('Back'),
       ],
     ];
     for (const [exit, expectedFocus] of exits) {
@@ -875,7 +875,7 @@ describe('moving across every place keeps one frame', () => {
       expect(openDrawerKind()).toBe('ask');
       expect(lensOf()).toBe(chip.lens);
       expect(leftEdge().main).toBe(askEdge.main);
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       await escape();
       expect(openDrawerKind()).toBeNull();
@@ -903,11 +903,11 @@ describe('moving across every place keeps one frame', () => {
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
       expect(currentPage()).toBe('Overview');
 
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       await click(historyButton('Forward'));
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
 
       await press('column.toggle');
       expectColumn('rail');
@@ -922,9 +922,9 @@ describe('moving across every place keeps one frame', () => {
         requireValue({ value: peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) }),
       );
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       await press('column.toggle');
       expectColumn('column');
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
@@ -977,7 +977,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
 
@@ -988,7 +988,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       await openPage('Overview');
       expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });
       expect(useAppStore.getState().focusedArtifactId[sessionId]).toBe(JOURNEY_ARTIFACT);
       expectHealthy();
