@@ -1,16 +1,14 @@
 import { useRef } from 'react';
-import { Button, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
+import { StudioRailLayout, useInnerColumn, useStudioRailFold } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
-import { demoteBrowserTab } from '../../demoteBrowserTab';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import type { BrowserPageGroup } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
 import { BrowserView } from '../BrowserPane/BrowserView';
-import { BrowserPageHeader } from './BrowserPageHeader';
 import { BrowserPageRail } from './BrowserPageRail';
 import { BrowserPageTrail } from './BrowserPageTrail';
 
@@ -42,6 +40,17 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
     onError: model.showError,
   });
 
+  const toggleList = (): void => {
+    fold.setFolded(!fold.isCollapsed);
+  };
+
+  useInnerColumn({
+    id: 'browser',
+    label: fold.isCollapsed ? 'Show tabs by session' : 'Hide tabs by session',
+    toggle: toggleList,
+    isActive: true,
+  });
+
   const pick = ({ group, tab }: PickParams): void => {
     const state = useAppStore.getState();
     if (group.sessionId === sessionId) {
@@ -59,29 +68,21 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <BrowserPageTrail sessionId={sessionId} />
-      <BrowserPageHeader
-        actions={
-          <Button
-            variant="secondary"
-            size="sm"
-            title="Dock beside the session"
-            onClick={() => demoteBrowserTab({ sessionId })}
-          >
-            Dock
-          </Button>
-        }
-      />
       <StudioRailLayout
         railLabel="Tabs by session"
         railWidth="standard"
         surface="browser"
         placement="page"
         isCollapsed={fold.isCollapsed}
-        onCollapsedChange={fold.setFolded}
         rail={<BrowserPageRail groups={groups} sessionId={sessionId} model={model} onPick={pick} />}
         detail={
           <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 pb-2 pt-1">
-            <BrowserAddressRow model={model} isAddressShortcutOn={isOnScreen} />
+            <BrowserAddressRow
+              model={model}
+              isAddressShortcutOn={isOnScreen}
+              isListOpen={!fold.isCollapsed}
+              onToggleList={toggleList}
+            />
             {model.error === null ? null : (
               <p role="alert" className="px-4 text-meta text-danger">
                 {model.error}
