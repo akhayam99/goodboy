@@ -54,8 +54,12 @@ describe('the app content security policy', () => {
   it('leaves browser tabs unfrozen and freezes the app document before any app script', () => {
     expect(readConfig().app.security.freezePrototype).toBe(false);
     const html = readFileSync(join(DESKTOP, 'index.html'), 'utf8');
-    const scripts = Array.from(html.matchAll(/<script\b[^>]*>/g), (match) => match[0]);
-    expect(scripts[0]).toBe('<script src="/freeze-prototype.js">');
+    const lower = html.toLowerCase();
+    const firstScript = lower.indexOf('<script');
+    expect(firstScript).toBeGreaterThan(-1);
+    expect(html.slice(firstScript, lower.indexOf('>', firstScript) + 1)).toBe(
+      '<script src="/freeze-prototype.js">',
+    );
     expect(readFileSync(join(DESKTOP, 'public', 'freeze-prototype.js'), 'utf8').trim()).toBe(
       'Object.freeze(Object.prototype);',
     );
