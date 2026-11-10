@@ -9,12 +9,12 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
   storySpies,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
@@ -24,8 +24,10 @@ const SETTLE_MS = 2_000;
 
 type SceneName = keyof typeof U39_P9_SCENES;
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {

@@ -306,8 +306,8 @@ describe('the foot controls are doors that replace the open page', () => {
   );
 });
 
-describe('the Help pages swap under the Goodboy row', () => {
-  it('Guide then What is new then ⌘[ lands on the page under Guide', async () => {
+describe('the Help tabs stack under the Goodboy row', () => {
+  it('Guide then What is new then ⌘[ returns to Guide, and ⌘[ again lands under it', async () => {
     await boot({ seed: 'pr' });
     const startSession = useAppStore.getState().currentSessionId;
     const startIndex = stack()?.index ?? 0;
@@ -318,8 +318,12 @@ describe('the Help pages swap under the Goodboy row', () => {
 
     await click(await screen.findByRole('tab', { name: "What's new" }));
     expect(appStudioKind()).toBe('changelog');
-    expect(stack()?.entries.length).toBe(withOneStudio);
+    expect(stack()?.entries.length).toBe(withOneStudio + 1);
     expect(currentMarks()).toEqual([expect.stringMatching(/^Goodboy/)]);
+
+    await pressBack();
+
+    expect(appStudioKind()).toBe('guide');
 
     await pressBack();
 
