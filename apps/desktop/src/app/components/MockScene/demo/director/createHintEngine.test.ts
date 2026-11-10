@@ -358,6 +358,42 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  it('keeps the press once the pressed control is gone, so its coach never comes back', () => {
+    document.body.innerHTML =
+      '<div id="screen"><button type="button" id="open">Open</button></div>';
+    const { engine, reports } = engineFor({ hints: [step({ id: 'open', doneWhen: () => false })] });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    vi.advanceTimersByTime(40);
+    click({ selector: '#open' });
+    expect(reports.at(-1)).toMatchObject({ hintId: 'open', isPressed: true });
+    const screenRoot = document.querySelector('#screen');
+    if (screenRoot === null) {
+      throw new Error('missing screen');
+    }
+    screenRoot.innerHTML = '<button type="button" id="open">Creating</button>';
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'open', isClicked: true, isPressed: true });
+    engine.dispose();
+  });
+
+  it('lights the way back after the pressed control is gone, then its own control again', () => {
+    document.body.innerHTML = '<button type="button" id="keep">Keep</button>';
+    const { engine, reports } = engineFor({
+      hints: [step({ id: 'keep', recoveryAnchor: '#open', doneWhen: () => false })],
+    });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    vi.advanceTimersByTime(40);
+    click({ selector: '#keep' });
+    expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isPressed: true });
+    document.body.innerHTML = '<button type="button" id="open">Open</button>';
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isRecovering: true, isPressed: false });
+    document.body.innerHTML = '<button type="button" id="keep">Keep</button>';
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ hintId: 'keep', isRecovering: false, isPressed: false });
+    engine.dispose();
+  });
+
   it('flags a control scrolled out of view and scrolls it in on request', async () => {
     document.body.innerHTML = BUTTONS;
     const scrolled = vi.fn();
@@ -449,6 +485,105 @@ describe('the hint engine', () => {
       expect(placed(reports)).toHaveLength(1);
       expect(placed(reports)[0]).toMatchObject({ hintId: 'open', rect: { y: 200 } });
       engine.dispose();
+    });
+
+    it('holds a new hint while its control slides, and shows it once where it stops', () => {
+      document.body.innerHTML = BUTTONS;
+      const { engine, reports } = engineFor({ hints: STORY });
+      placeAt({ y: 40 });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      for (const y of [80, 140, 210, 290, 360, 400]) {
+        nextFrame();
+        placeAt({ y });
+      }
+      expect(placed(reports)).toEqual([]);
+      for (let frame = 0; frame < 6; frame += 1) {
+        nextFrame();
+      }
+      expect(placed(reports)).toHaveLength(1);
+      expect(placed(reports)[0]).toMatchObject({ hintId: 'open', rect: { y: 400 } });
+      engine.dispose();
+    });
+
+    describe('while the page animates', () => {
+      type SlideParams = {
+        readonly target: Element | null;
+        readonly iterations: number;
+      };
+
+      const slides: Array<SlideParams> = [];
+
+      beforeEach(() => {
+        slides.length = 0;
+        Object.defineProperty(document, 'getAnimations', {
+          configurable: true,
+          value: () =>
+            slides.map(({ target, iterations }) => ({
+              playState: 'running',
+              effect: { target, getTiming: () => ({ iterations }) },
+            })),
+        });
+      });
+
+      afterEach(() => {
+        Reflect.deleteProperty(document, 'getAnimations');
+      });
+
+      const DRAWER = '<aside id="drawer"><button type="button" id="open">Open</button></aside>';
+
+      it('waits for the drawer around the control to finish its slide', () => {
+        document.body.innerHTML = DRAWER;
+        slides.push({ target: document.querySelector('#drawer'), iterations: 1 });
+        const { engine, reports } = engineFor({ hints: STORY });
+        placeAt({ y: 200 });
+        engine.setTrack({ chapterId: 'test', settledIds: [] });
+        for (let frame = 0; frame < 10; frame += 1) {
+          nextFrame();
+        }
+        expect(placed(reports)).toEqual([]);
+        slides.length = 0;
+        nextFrame();
+        nextFrame();
+        expect(placed(reports)).toHaveLength(1);
+        engine.dispose();
+      });
+
+      it('does not wait for an animation outside the control and its parents', () => {
+        document.body.innerHTML = `${DRAWER}<span id="elsewhere"></span>`;
+        slides.push({ target: document.querySelector('#elsewhere'), iterations: 1 });
+        const { engine, reports } = engineFor({ hints: STORY });
+        placeAt({ y: 200 });
+        engine.setTrack({ chapterId: 'test', settledIds: [] });
+        nextFrame();
+        nextFrame();
+        expect(placed(reports)).toHaveLength(1);
+        engine.dispose();
+      });
+
+      it('never waits for a looping animation', () => {
+        document.body.innerHTML = DRAWER;
+        slides.push({ target: document.querySelector('#drawer'), iterations: Infinity });
+        const { engine, reports } = engineFor({ hints: STORY });
+        placeAt({ y: 200 });
+        engine.setTrack({ chapterId: 'test', settledIds: [] });
+        nextFrame();
+        nextFrame();
+        expect(placed(reports)).toHaveLength(1);
+        engine.dispose();
+      });
+
+      it('shows the hint after a short cap when the slide never ends', () => {
+        document.body.innerHTML = DRAWER;
+        slides.push({ target: document.querySelector('#drawer'), iterations: 1 });
+        const { engine, reports } = engineFor({ hints: STORY });
+        placeAt({ y: 200 });
+        engine.setTrack({ chapterId: 'test', settledIds: [] });
+        vi.advanceTimersByTime(1100);
+        expect(placed(reports)).toEqual([]);
+        vi.advanceTimersByTime(200);
+        expect(placed(reports)).toHaveLength(1);
+        engine.dispose();
+      });
     });
 
     it('follows a hint already shown on the very next frame', () => {

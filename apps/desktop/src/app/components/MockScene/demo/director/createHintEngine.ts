@@ -90,6 +90,7 @@ const MAX_DWELL_MS = 8000;
 const DWELL_SLACK_MS = 30;
 const POLL_MS = 250;
 const STABLE_FRAMES = 2;
+const ARRIVAL_CAP_MS = 1200;
 
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
 
@@ -112,6 +113,36 @@ const isTextField = ({ element }: FieldParams): boolean => element.matches(TEXT_
 
 const isOnControl = ({ target }: ControlParams): boolean =>
   target instanceof Element && target.closest(CONTROL) !== null;
+
+type MovingParams = {
+  readonly root: Document;
+  readonly element: Element;
+};
+
+const chainOf = ({ element }: FieldParams): ReadonlySet<unknown> => {
+  const chain = new Set<unknown>();
+  for (let node: Element | null = element; node !== null; node = node.parentElement) {
+    chain.add(node);
+  }
+  return chain;
+};
+
+const isMoving = ({ root, element }: MovingParams): boolean => {
+  if (!('getAnimations' in root)) {
+    return false;
+  }
+  const chain = chainOf({ element });
+  return root.getAnimations().some((animation) => {
+    const { effect } = animation;
+    if (effect === null || animation.playState !== 'running') {
+      return false;
+    }
+    if (effect.getTiming().iterations === Infinity) {
+      return false;
+    }
+    return 'target' in effect && chain.has(effect.target);
+  });
+};
 
 type Placement = {
   readonly element: Element | null;
@@ -203,6 +234,7 @@ export const createHintEngine = ({
   const armed = new Set<string>();
   const clicked = new Set<string>();
   const clickedElements = new Map<string, Element>();
+  const spent = new Set<string>();
   let settling: ReadonlyArray<DemoHint> = [];
   const scrolled = new Set<string>();
   const baselines = new Map<string, AppStore>();
@@ -212,6 +244,8 @@ export const createHintEngine = ({
   let isShownRecovering = false;
   let candidate = '';
   let stableFrames = 0;
+  let arrivingId: string | null = null;
+  let arrivingSince = 0;
   let pending: number | null = null;
   let isDisposed = false;
   let isGuarding = false;
@@ -412,13 +446,21 @@ export const createHintEngine = ({
     const hintId = current?.hint.id ?? null;
     const element = current?.placement.element ?? null;
     for (const [pressedId, pressed] of clickedElements) {
-      if (pressed !== element) {
-        clickedElements.delete(pressedId);
+      if (pressed === element) {
+        continue;
       }
+      clickedElements.delete(pressedId);
+      if (!pressed.isConnected) {
+        spent.add(pressedId);
+      }
+    }
+    if (hintId !== null && isRecovering) {
+      spent.delete(hintId);
     }
     const isClicked = hintId !== null && clicked.has(hintId);
     const isPressed =
-      hintId !== null && element !== null && clickedElements.get(hintId) === element;
+      hintId !== null &&
+      (spent.has(hintId) || (element !== null && clickedElements.get(hintId) === element));
     const opened = rect === null ? [] : resultRects;
     const signature = JSON.stringify({
       hintId,
@@ -439,15 +481,23 @@ export const createHintEngine = ({
       (shownId !== hintId || !isShownPlaced || isShownRecovering !== isRecovering);
     if (isArriving) {
       const key = JSON.stringify({ hintId, rect });
+      const now = Date.now();
+      if (arrivingId !== hintId) {
+        arrivingId = hintId;
+        arrivingSince = now;
+      }
       stableFrames = key === candidate ? stableFrames + 1 : 1;
       candidate = key;
-      if (stableFrames < STABLE_FRAMES) {
+      const isSettling =
+        stableFrames < STABLE_FRAMES || (element !== null && isMoving({ root, element }));
+      if (isSettling && now - arrivingSince < ARRIVAL_CAP_MS) {
         schedule();
         return;
       }
     }
     candidate = '';
     stableFrames = 0;
+    arrivingId = null;
     shownId = hintId;
     isShownPlaced = rect !== null;
     isShownRecovering = isRecovering;
@@ -604,6 +654,7 @@ export const createHintEngine = ({
       armed.clear();
       clicked.clear();
       clickedElements.clear();
+      spent.clear();
       settling = [];
       scrolled.clear();
       baselines.clear();
@@ -613,6 +664,7 @@ export const createHintEngine = ({
       isShownRecovering = false;
       candidate = '';
       stableFrames = 0;
+      arrivingId = null;
       dwellUntil = 0;
       results.reset();
       schedule();
