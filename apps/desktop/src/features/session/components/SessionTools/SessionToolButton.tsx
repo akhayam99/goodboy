@@ -2,12 +2,11 @@ import { ICON_SIZE, IconButton, cn, selectedIconClass } from '@goodboy/ui';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
+import { ToolCount } from './ToolCount';
 import { ToolSignalDot } from './ToolSignalDot';
 import { ToolWaitingRing } from './ToolWaitingRing';
 import { toolStateOf } from './toolStateOf';
 import type { ToolSignal } from './useToolSignal';
-
-const BUSY_DOT: ToolSignal = { kind: 'running', note: '' };
 
 type Props = {
   readonly tool: SessionTool;
@@ -15,7 +14,7 @@ type Props = {
   readonly isWaiting: boolean;
   readonly isCurrent?: boolean;
   readonly fact?: string | null;
-  readonly isBusy?: boolean;
+  readonly count?: number;
   readonly signal: ToolSignal | null;
   readonly tabIndex: number;
   readonly onFocus: () => void;
@@ -28,7 +27,7 @@ export const SessionToolButton = ({
   isWaiting,
   isCurrent = false,
   fact = null,
-  isBusy = false,
+  count = 0,
   signal,
   tabIndex,
   onFocus,
@@ -41,7 +40,6 @@ export const SessionToolButton = ({
   const label = signal === null ? stateName : `${stateName}, ${signal.note}`;
   const tone = navEntryToneOf({ icon: tool.icon });
   const isLit = isOpen || isCurrent;
-  const dot = signal ?? (isBusy ? BUSY_DOT : null);
   return (
     <span
       data-slot="session-tool"
@@ -76,7 +74,8 @@ export const SessionToolButton = ({
         {tool.label}
       </span>
       {state === 'waiting' ? <ToolWaitingRing /> : null}
-      {dot === null ? null : <ToolSignalDot signal={dot} />}
+      {signal === null ? null : <ToolSignalDot signal={signal} />}
+      {signal === null && count > 0 ? <ToolCount count={count} /> : null}
     </span>
   );
 };

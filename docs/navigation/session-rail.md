@@ -692,14 +692,19 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 The right rail is one 44px column at the sheet's right edge on every screen of
 a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
 the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
-Workflows). It holds two groups by scope. On a session page with no page open,
-the Session group holds Explore, Context, Ask, Agents and Scripts
-(`SESSION_TOOLS`). At its foot, on every screen, the Workspace group holds
-Terminal and Browser (`WORKSPACE_TOOLS`); a flexible gap keeps it anchored to
-the bottom, and one separator sits above it when the Session group shows. Two
-captions, Session and Workspace (`ToolGroupCaption`), sit over the two groups
-in the same `text-rail` role. A test scene or frame without the shell rail
-keeps the column inside `SessionFrame` (`ShellRailContext`).
+Workflows). Those three pages fade their content in and out while the rail
+stays still (`StudioFrame` animates its `data-studio-motion` nodes, never the
+`StudioRail`), and with a record panel shown as an overlay the rail copies
+itself above that panel's scrim, as it does above the shell's. It holds two
+groups by scope. On a session page with no page open, the Session group holds
+Explore, Context, Ask, Agents and Scripts (`SESSION_TOOLS`), under the caption
+Session (`ToolGroupCaption`, `text-rail`). At its foot, on every screen, the
+Workspace group holds Terminal and Browser (`WORKSPACE_TOOLS`) with no
+caption, since a 44px column cannot fit the word; a flexible gap keeps it
+anchored to the bottom, one separator sits above it when the Session group
+shows, and the column keeps the same inset at its foot as at its top. A test
+scene or frame without the shell rail keeps the column inside `SessionFrame`
+(`ShellRailContext`).
 Each tool keeps its pane id and shortcut; Terminal shows ⌃`and Browser has no shortcut.`SessionToolButton`names every
 tool below its icon in the 9px`text-rail` role: faint when closed, muted when
 open. On a window under 480px tall all captions hide together and the tooltips
@@ -712,10 +717,11 @@ click does nothing). Waiting draws a
 small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
 `Terminal, waiting`; pressing it opens the saved request of the chip again
 (`togglePane`), so Context comes back on the same section and view, and the
-tool it replaces moves into the chip. Terminal names the running terminals and
-wears a running dot while one runs (`Terminal, 2 running`), Browser names its
-tabs (`Browser, 3 tabs`); the words come from `toolFactOf` over
-`runningTerminalCount` and `browserTabCount`.
+tool it replaces moves into the chip. Terminal names the running terminals
+(`Terminal, 2 running`), Browser names its tabs (`Browser, 3 tabs`); the words
+come from `toolFactOf` over `runningTerminalCount` and `browserTabCount`, and
+the same two numbers show in the icon's corner (`ToolCount`, `countTextOf`,
+9+ past nine) unless a signal dot holds that corner.
 
 Terminal and Browser are workspace tools: their dock opens with
 `toggleTerminalDock` and `toggleBrowserDock` from the rail, the palette, the Go

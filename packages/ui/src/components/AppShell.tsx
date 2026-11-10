@@ -175,7 +175,10 @@ export const AppShell = ({
           <DrawerColumn
             main={
               <div className="flex min-h-0 min-w-0 flex-1">
-                <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+                <div
+                  data-studio-host=""
+                  className="relative isolate flex min-h-0 min-w-0 flex-1 flex-col"
+                >
                   <div className="flex min-h-0 min-w-0 flex-1 flex-col" inert={isStudioShown}>
                     <ShellRailContext.Provider value={rightRail != null || isStudioShown}>
                       {main}
