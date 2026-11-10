@@ -51,6 +51,9 @@ const NOT_READABLE = 'it could not be read.';
 const NOTHING_CHANGED = 'Nothing was put back, online or here:';
 const LOCAL_LEFT = 'The local branch was left as it is:';
 const NOT_SAVED = 'The push was not saved on the card because the result moved on.';
+const STORAGE_FAILED =
+  'The push ran but the card could not save its result. Goodboy keeps trying to save it';
+const SETTLE_RETRY_MS: ReadonlyArray<number> = [2_000, 10_000, 30_000, 120_000, 600_000];
 const UNKNOWN_RESULT =
   'The push ran but its result was not saved. Retry the push to check the branch online';
 
@@ -131,16 +134,55 @@ type SaveAgainParams = {
   readonly ctx: AgentVerbContext;
   readonly delegationId: AutoDelegationId;
   readonly record: ResultPublish;
+  readonly expectedState?: ResultPublish['state'];
 };
 
-const saveAgain = ({ ctx, delegationId, record }: SaveAgainParams): Promise<PublishRowResult> =>
+const saveAgain = ({
+  ctx,
+  delegationId,
+  record,
+  expectedState,
+}: SaveAgainParams): Promise<PublishRowResult> =>
   getAutoDelegation({ db: ctx.db, delegationId })
     .then((fresh): Promise<PublishRowResult> =>
       fresh === null
         ? Promise.resolve(refused({ delegationId, message: GONE }))
-        : writeRecord({ ctx, delegation: fresh, record }),
+        : writeRecord({ ctx, delegation: fresh, record, expectedState }),
     )
-    .catch((): PublishRowResult => refused({ delegationId, message: NOT_SAVED }));
+    .catch((): PublishRowResult => ({
+      ...refused({ delegationId, message: STORAGE_FAILED }),
+      isStorageFailure: true,
+    }));
+
+type SettleLaterParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegationId: AutoDelegationId;
+  readonly executed: ResultPublish;
+};
+
+type WaitParams = {
+  readonly ms: number;
+};
+
+const waitFor = ({ ms }: WaitParams): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const settleLater = async ({ ctx, delegationId, executed }: SettleLaterParams): Promise<void> => {
+  for (let attempt = 0; ; attempt += 1) {
+    await waitFor({ ms: SETTLE_RETRY_MS[Math.min(attempt, SETTLE_RETRY_MS.length - 1)] ?? 0 });
+    const saved = await saveAgain({
+      ctx,
+      delegationId,
+      record: executed,
+      expectedState: 'pushing',
+    });
+    if (saved.isStorageFailure !== true) {
+      return;
+    }
+  }
+};
 
 type SettleParams = {
   readonly ctx: AgentVerbContext;
@@ -161,7 +203,7 @@ const settleRow = async ({
       return saved;
     }
   }
-  return saveAgain({
+  const last = await saveAgain({
     ctx,
     delegationId,
     record: {
@@ -173,6 +215,10 @@ const settleRow = async ({
       tries: pending.tries,
     },
   });
+  if (last.isStorageFailure === true) {
+    void settleLater({ ctx, delegationId, executed });
+  }
+  return last;
 };
 
 const pushRow = async ({

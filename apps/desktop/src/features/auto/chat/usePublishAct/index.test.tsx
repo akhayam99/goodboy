@@ -175,6 +175,31 @@ describe('answering a push from the card', () => {
     expect(reportError).not.toHaveBeenCalled();
   });
 
+  it('reports a result the card could not save even while the push still reads pushing', async () => {
+    useAppStore.setState({
+      autoTreeViews: {
+        [SESSION]: [aView({ delegations: [savedPush({ key: 'a', state: 'pushing' })] })],
+      },
+    });
+    const port = vi.fn<PublishPort>(async () => ({
+      kind: 'done',
+      rows: [
+        {
+          delegationId: 'delegation-a',
+          state: 'refused',
+          message: 'The push ran but the card could not save it.',
+          isStorageFailure: true,
+        },
+      ],
+    }));
+
+    await actOnce(port);
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't finish the push" }),
+    );
+  });
+
   it('reports a refusal while the push still waits for the same answer', async () => {
     useAppStore.setState({
       autoTreeViews: {

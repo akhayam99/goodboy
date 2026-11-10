@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { publishRowsOf } from '../../../features/auto/chat/publishRowsOf';
 import { PUSH_LIVE_WINDOW_MS } from './settledPush/PUSH_LIVE_WINDOW_MS';
 import { PUSH_SWEEP_RETRY_MS } from './settledPush/PUSH_SWEEP_RETRY_MS';
@@ -40,6 +40,9 @@ const withWriteHook = ({ ctx, beforeWrite }: BeforeWriteParams): AgentVerbContex
 const DB_BUSY = 'database is busy';
 
 const NETWORK_STEPS_MS = 3 * 30 * 60 * 1000;
+
+const SETTLE_LATER_FIRST_MS = 2_000;
+const SETTLE_LATER_SECOND_MS = 10_000;
 
 const failWritesFrom =
   ({ from, until }: { readonly from: number; readonly until: number }) =>
@@ -184,6 +187,69 @@ describe('a push whose result could not be saved', () => {
     const rows = publishRowsOf({ delegations: await delegationsOf(world) });
     expect(rows).toHaveLength(1);
     expect(rows[0]?.line).toMatchObject({ state: 'failed', canRetry: true });
+  });
+});
+
+describe('a push whose result could not be saved at all', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('reports the storage failure and saves the real result once storage recovers', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    const world = await settle({ publishes: [LEDGER_FORCE] });
+    const failing = withWriteHook({
+      ctx: world.state.ctx,
+      beforeWrite: failWritesFrom({ from: 2, until: 4 }),
+    });
+
+    const result = await publishAct({
+      ctx: failing,
+      act: 'confirm',
+      delegationIds: await idsOf(world),
+    });
+
+    expect(result.rows[0]).toMatchObject({ state: 'refused', isStorageFailure: true });
+    expect(world.state.ports.pushes).toHaveLength(1);
+    expect(await recordOf(world)).toMatchObject({ state: 'pushing' });
+
+    await vi.advanceTimersByTimeAsync(SETTLE_LATER_FIRST_MS);
+
+    expect(await recordOf(world)).toMatchObject({ state: 'pushed', isConfirmed: true });
+    expect(await attemptPublishOf(world)).toMatchObject({ state: 'pushed' });
+  });
+
+  it('keeps trying while storage stays down and stops once a newer state is saved', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    const world = await settle({ publishes: [LEDGER_FORCE] });
+    const failing = withWriteHook({
+      ctx: world.state.ctx,
+      beforeWrite: failWritesFrom({ from: 2, until: 5 }),
+    });
+
+    await publishAct({ ctx: failing, act: 'confirm', delegationIds: await idsOf(world) });
+    await vi.advanceTimersByTimeAsync(SETTLE_LATER_FIRST_MS);
+    expect(await recordOf(world)).toMatchObject({ state: 'pushing' });
+
+    await vi.advanceTimersByTimeAsync(SETTLE_LATER_SECOND_MS);
+    expect(await recordOf(world)).toMatchObject({ state: 'pushed' });
+  });
+
+  it('does not overwrite a record that moved on while the save waited', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    const world = await settle({ publishes: [LEDGER_FORCE] });
+    const failing = withWriteHook({
+      ctx: world.state.ctx,
+      beforeWrite: failWritesFrom({ from: 2, until: 4 }),
+    });
+
+    await publishAct({ ctx: failing, act: 'confirm', delegationIds: await idsOf(world) });
+    const restarted = restartedWorld({ world });
+    world.state.world.clock.advance({ ms: PUSH_LIVE_WINDOW_MS + 1 });
+    await sweepStalePushing({ ctx: restarted.state.ctx });
+    await vi.advanceTimersByTimeAsync(SETTLE_LATER_FIRST_MS);
+
+    expect(await recordOf(world)).toMatchObject({ state: 'failed', isRetryable: true });
   });
 });
 
