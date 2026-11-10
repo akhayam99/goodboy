@@ -53,7 +53,7 @@ const isFileName = ({ host }: HostParams): boolean =>
 
 export const typedAddressOf = ({ text }: Params): string | null => {
   const parsed = addressOf({ text });
-  if (parsed.kind === 'refused') {
+  if (parsed.kind !== 'ok') {
     return null;
   }
   const lower = text.trim().toLowerCase();

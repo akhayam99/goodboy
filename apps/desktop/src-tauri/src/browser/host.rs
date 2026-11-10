@@ -9,9 +9,10 @@ use tauri::{
 
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
+use super::local::{self, LocalFile};
 use super::profile::{self, ProfileId};
 use super::reason::{
-    self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
+    self, INVALID_ADDRESS, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
 };
 use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts, TabState};
 use crate::platform::web_history::HistoryStep;
@@ -162,6 +163,24 @@ pub(crate) fn open_tab<R: Runtime>(
     }
 }
 
+pub(crate) fn load_local<R: Runtime>(
+    app: &AppHandle<R>,
+    tab_id: &str,
+    file: &LocalFile,
+) -> Result<TabFacts, MessageError> {
+    let registry = app.state::<BrowserRegistry>();
+    let token = registry
+        .grant_local(tab_id, file)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    let live =
+        local::live_url(&token, &file.path).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
+    let shown = local::shown_address(&live);
+    webview_of(app, tab_id)?.navigate(live).map_err(failed)?;
+    registry
+        .set_url(tab_id, &shown)
+        .ok_or_else(|| reason::failed(TAB_GONE))
+}
+
 pub(super) fn spawn_webview<R: Runtime>(
     window: &Window<R>,
     id: &str,
@@ -195,10 +214,11 @@ pub(crate) fn refresh_urls<R: Runtime>(app: &AppHandle<R>, tabs: Vec<TabFacts>) 
             else {
                 return facts;
             };
-            if live.as_str() == facts.url {
+            let shown = local::shown_address(&live);
+            if shown == facts.url {
                 return facts;
             }
-            registry.set_url(&facts.id, live.as_str()).unwrap_or(facts)
+            registry.set_url(&facts.id, &shown).unwrap_or(facts)
         })
         .collect()
 }
@@ -210,6 +230,8 @@ fn builder_for<R: Runtime>(
     origins: AppOrigins,
 ) -> WebviewBuilder<R> {
     let navigation_origins = origins.clone();
+    let navigation_app = app.clone();
+    let navigation_tab = id.to_string();
     let popup_app = app.clone();
     let popup_opener = id.to_string();
     let load_tab = id.to_string();
@@ -218,7 +240,14 @@ fn builder_for<R: Runtime>(
     #[cfg(target_os = "macos")]
     let builder = builder.user_agent(TAB_USER_AGENT);
     builder
-        .on_navigation(move |target| guard::may_navigate(target, &navigation_origins))
+        .on_navigation(move |target| {
+            guard::may_navigate(target, &navigation_origins)
+                || local::may_load(
+                    &navigation_app.state::<BrowserRegistry>(),
+                    &navigation_tab,
+                    target,
+                )
+        })
         .on_new_window(move |target, _features| {
             if let Some(target) = guard::popup_target(&target, &origins) {
                 open_popup(&popup_app, &popup_opener, target);
@@ -231,7 +260,7 @@ fn builder_for<R: Runtime>(
                 return;
             }
             let registry = webview.app_handle().state::<BrowserRegistry>();
-            registry.set_url(&load_tab, payload.url().as_str());
+            registry.set_url(&load_tab, &local::shown_address(payload.url()));
         })
         .on_document_title_changed(move |webview, title| {
             let registry = webview.app_handle().state::<BrowserRegistry>();

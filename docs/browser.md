@@ -16,8 +16,8 @@ shows, hides, navigates and closes that id.
 **A page in a tab reaches no Goodboy command.** Tauri decides whether a page
 may call a command by its address, not by the webview's name: a page on the
 app's own origin is local, and a local page may call every command. So the
-host refuses every navigation that would make a tab local. That refusal is
-the first wall. The label is the second: no capability grants a `browse-`
+host refuses every navigation that would make a tab local, except a local
+file the user typed (see Local files). That refusal is the first wall. The label is the second: no capability grants a `browse-`
 webview, and no app command runs for one (see Capabilities).
 
 ## The navigation rule
@@ -26,14 +26,16 @@ The rule lives in `apps/desktop/src-tauri/src/browser/guard.rs` and runs in
 `on_navigation`, in `on_new_window` and before every command that loads an
 address.
 
-- Only `http` and `https` load. `javascript:`, `data:`, `blob:`, `file:` and
-  every other scheme are refused.
+- Only `http` and `https` load, plus a local file the user typed (see Local
+  files). `javascript:`, `data:`, `blob:`, `file:` and every other scheme are
+  refused.
 - `about:blank` and `about:srcdoc` pass at any time. Such a page or frame
   takes its creator's origin, so it can never make a tab local. A new tab may
   start on `about:blank`, never on `about:srcdoc`.
 - The app's own origins are refused even on `http`: `tauri://localhost`,
   `http://tauri.localhost` and `https://tauri.localhost` (Windows), every
-  scheme Goodboy or Tauri registers (`tauri`, `ipc`, `asset`, `gbframe`) and
+  scheme Goodboy or Tauri registers (`tauri`, `ipc`, `asset`, `gbframe`,
+  `gblocal`) and
   its `<scheme>.localhost` form, and in a development build the `devUrl`
   origin. When the `devUrl` host is a loopback name, every loopback host on
   its port counts as that origin: `localhost`, any `*.localhost`,
@@ -58,6 +60,52 @@ address.
 Phase 0 spike S2 proved the wall: a page in a tab got none of six probe
 commands, and got all six once it navigated itself to the dev origin or to
 `tauri://localhost`, until this rule refused those navigations.
+
+## Local files
+
+Only an address the user types opens a local file: the address row, ⌘L, or
+⌘K Open. It is an absolute path, a `~/` path or a `file://` address, to a
+page, an image or a PDF. A link, a door, a page, a popup or a frame never
+opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
+
+- **The scheme.** The file is served by Rust on `gblocal`
+  (`browser/local.rs`), never loaded as `file:`. The pane calls
+  `browser_tab_open_local` or `browser_tab_navigate_local` with the typed
+  text. Rust expands `~/`, resolves links, and refuses a missing path
+  (`local-missing`), a folder (`local-folder`) or another type
+  (`local-type`). A new tab starts on `about:blank`, gets its grant, then
+  loads the file.
+- **The grant.** It belongs to one tab, lives in the registry beside the tab
+  and goes with it. It names the file's folder and a random token; the live
+  address is `gblocal://localhost/<token>/<absolute path>`
+  (`http://gblocal.localhost/...` on Windows). `on_navigation` lets a tab
+  move to a `gblocal` address only when the token is its own and the path is
+  inside the folder, so a web page that does not know the token can neither
+  navigate to, frame nor embed the file. A popup to a local address is
+  refused like any app origin.
+- **What a request reads.** The handler checks the requesting webview's
+  `browse-` label against the grant, then the path: under the folder, no `..`,
+  no hidden file or folder, links resolved and checked again, a known type
+  (pages, images, PDF, styles, scripts, fonts, data, text, video) and at most
+  64 MB. Anything else answers 404; nothing lists a folder. A folder that is
+  the home folder, sits at the top of the disk, or is the top of a mounted
+  disk (`/Volumes`, `/media`, `/mnt`) grants only the files beside the page. Responses carry `no-store`, `nosniff`, `no-referrer` and
+  `Cross-Origin-Resource-Policy: same-origin`.
+- **What the app sees.** Facts, listings and rows carry the `file://` address;
+  the token never leaves Rust. The address row shows the path, the title comes
+  from the document, Reload reads the file again. A closed tab comes back
+  through its grant; after a restart the row opens again through
+  `browser_tab_open_local`, since the user typed it. Open in your browser is
+  off for a local tab (`open_url` takes `http` and `https` only).
+- **Why a scheme and not a `file:` load.** WebKit's file load with read
+  access to a folder would give the web process read
+  access to the whole folder tree, hidden files included, with no check on
+  links, for as long as that process lives; it is macOS only and cannot be
+  tested headless. The scheme checks every request, works on every platform
+  and is a pure function under test. The cost: Tauri counts a page on a
+  scheme the app registers as its own origin (`is_local_url` in Tauri 2.12),
+  so for a local page the label wall in Capabilities is the only command
+  wall. A web page never gets there.
 
 ## Tabs and windows
 
@@ -201,7 +249,8 @@ to a project is a pin that every session of the project shares.
   `browser_stale_tab_sessions`. Every command names its owner and never reads
   the current session.
 - A save takes the address through the same rule as a live tab, so a row never
-  holds a local address, and keeps the first 512 characters of the title. It
+  holds an app address, and keeps the first 512 characters of the title. A
+  local file is stored as its `file://` address, never its `gblocal` one. It
   drops a username and password from the address and keeps the query and the
   fragment, so a token in the query still lands in the row. A second save of an
   id updates its address and title and keeps its position.
@@ -255,9 +304,10 @@ it; Esc inside the page goes to the page.
 - **The address rule** (`addressOf`): a full `http` or `https` address loads
   as typed; a bare host loads on `https`, and on `http` when it is
   `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
-  `0.0.0.0`. A name whose first label is `127` stays on `https`. Words,
-  a host with no dot and every other scheme are refused under the row. The
-  pane never sends text to a search engine.
+  `0.0.0.0`. A name whose first label is `127` stays on `https`. A path that
+  starts with `/` or `~/`, or a `file:` address, is a local file (see Local
+  files). Words, a host with no dot and every other scheme are refused under
+  the row. The pane never sends text to a search engine.
 - **Tabs**: the strip shows the session's tabs, then the project pins with
   their title and a pin mark, then New tab. The list shows This session and Pinned for the project, with
   the note that tabs close when the session is archived. With no tab the pane
@@ -272,15 +322,21 @@ it; Esc inside the page goes to the page.
   that comes back to an earlier address included. A failed save is tried
   again at the next change.
 - **Placement**: one loop (`createNativePlacement`) owns show, hide and
-  `set_bounds`. Every frame, with a `ResizeObserver` as backup, it measures the
-  placeholder (`viewBoundsOf`) and wants the shown tab at that rect, or no tab
+  `set_bounds`. Every frame, and whenever the view's frame changes size, it
+  measures the placeholder (`viewBoundsOf`) and wants the shown tab at that
+  rect, or no tab
   when the placeholder is gone, hidden or covered. It runs one host call at a
   time toward the latest wanted state, shows the new tab before hiding the old
   one, and drops a live id the host answers `tab-gone` for, so the next frame
   reopens the row. A view whose hide failed stays on its list and is hidden
   again on the next frame. A wake that answers after the wanted tab changed
   is never placed or shown. A failed wake stops trying that tab until Reload
-  or a new address. Closing the pane hides the view.
+  or a new address. Closing the pane hides the view. The `ResizeObserver`
+  watches the view's frame (`BrowserView`), which is mounted whenever the pane
+  is, never the placeholder inside it: the placeholder mounts later, once a tab
+  is shown, so an observer started at mount would watch nothing. An error row
+  or a tab strip that grows the chrome shrinks the frame and moves the native
+  view at once, even when no frame runs.
 - **Overlays**: a menu, a popover, a dialog or Search or run is any element that
   matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). For a
   popover the cover check measures the children of `[data-dropdown-portal]`,
@@ -411,7 +467,9 @@ sits in and the address, and one function opens it (`openInBrowser`).
 - **⌘K** lists the browser tabs of the session Search or run is scoped to (the
   current session when it is not) and offers `Open <address>` first, beside
   that same session, for an address with `http` or `https` or a localhost
-  name, or for a host with a port or a path. With no workspace open the entry
+  name, or for a host with a port or a path. A typed path to a page, an image
+  or a PDF gets `Open <path>` beside the session (`typedLocalPathOf`), and no
+  entry with no session. With no workspace open the entry
   reads `In your browser` and opens your browser. A file name such as
   `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
   (`typedAddressOf`).
@@ -475,7 +533,8 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 ## Errors
 
 A `browser_*` command fails with a reason code from `browser/reason.rs`
-(`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
+(`browser-caller`, `not-web-address`, `invalid-address`, `local-missing`,
+`local-folder`, `local-type`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
 `session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
 `profile-shared`, `profile-unavailable`, `tab-row-gone`, `tab-row-owner`,
@@ -486,7 +545,8 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  thirteen `browser_*` commands; `profile.rs` holds the profile id, the
+  fifteen `browser_*` commands; `local.rs` holds the `gblocal` scheme, the
+  path rule and the grant check; `profile.rs` holds the profile id, the
   per-platform store, the switch and the clear; `registry.rs` holds the tabs, the popup seats
   (`MAX_HIDDEN_POPUPS`) and the pure picks of which tabs to close;
   `lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`), the
@@ -498,6 +558,13 @@ words (`features/browser/browserFailureText.ts`).
   app, and walks redirect, form post, blank page and script sequences. It
   also fails when `lib.rs` registers a scheme the rule does not refuse. The
   rule is a pure function because no test can load a page headless.
+  `browser::local::tests` pins the typed forms, the missing, folder and type
+  refusals, the folder scope, a path that climbs, hidden files, a link out of
+  the folder and one inside it, the home folder limit, the token address and
+  that a tab loads only what its own grant covers. `browser::tests` loads a
+  typed file through its grant, drops the grant on close, brings a closed local
+  tab back through the same grant and refuses a `file:` address on the web
+  path.
 - `browser::tests` opens tabs on Tauri's mock runtime: the owning window, the
   refusals and their codes, an app command a `browse-` webview calls from a
   local address, the popup cap and its `browser://tab-opened` event, listing
@@ -561,7 +628,11 @@ words (`features/browser/browserFailureText.ts`).
   the row delete, pin, an overlay over the view and one elsewhere, a late open
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again
-  and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
+  and the view hidden when the pane closes. It also opens a typed local file
+  through `browser_tab_open_local` with its path in the row, moves the shown
+  tab with `browser_tab_navigate_local`, shows the words for a missing file,
+  and places the view lower when the address error grows the chrome with no
+  frame running. `createOverlayWatch.test.ts` pins
   the cover check for a popover with no role, for tooltips and for a page view
   under an overlay dock.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light

@@ -148,7 +148,8 @@ fn refuses_addresses_that_are_not_the_web() {
     let conn = seeded();
 
     for address in [
-        "file:///etc/passwd",
+        "file://acme.example/plan.html",
+        "gblocal://localhost/0f1e/work/harborline/plan.html",
         "javascript:alert(1)",
         "http://localhost:1421/",
     ] {
@@ -170,6 +171,25 @@ fn refuses_addresses_that_are_not_the_web() {
     .expect_err("garbage refused");
     assert_eq!(reason_of(error), INVALID_ADDRESS);
     assert!(listed(&conn, &session("s1")).is_empty());
+}
+
+#[test]
+fn stores_a_local_file_by_its_file_address_and_never_its_live_one() {
+    let conn = seeded();
+    let saved = save_row(
+        &conn,
+        &origins(),
+        &save_args(
+            "a",
+            session("s1"),
+            "file:///work/harborline/plan%20v2.html",
+            "Plan",
+        ),
+        10,
+    )
+    .expect("row saves");
+
+    assert_eq!(saved.url, "file:///work/harborline/plan%20v2.html");
 }
 
 #[test]
