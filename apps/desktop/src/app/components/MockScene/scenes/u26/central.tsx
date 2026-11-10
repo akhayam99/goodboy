@@ -16,6 +16,7 @@ export const U26_CENTRAL_SCENES: Readonly<Record<string, ComponentType>> = {
   'u26-central-agent-dark': () => <CentralColumnScene theme="dark" kind="agent" />,
   'u26-central-branches-light': () => <CentralColumnScene theme="light" kind="branches" />,
   'u26-central-branches-dark': () => <CentralColumnScene theme="dark" kind="branches" />,
+  'u26-central-log': () => <CentralColumnScene kind="mid" isLogOpen />,
   'u26-central-log-light': () => <CentralColumnScene theme="light" kind="mid" isLogOpen />,
   'u26-central-log-dark': () => <CentralColumnScene theme="dark" kind="mid" isLogOpen />,
   'u26-central-log-search-light': () => (
