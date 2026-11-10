@@ -9,22 +9,27 @@ const releaseHits: ReadonlyArray<HelpHit> = Array.from({ length: 11 }, (_, index
   version: `0.${index}.0`,
 }));
 
-const shortcutHit: HelpHit = {
-  kind: 'shortcut',
-  key: 'shortcut:palette',
-  label: 'Palette',
-  glyphs: '⌘K',
+const guideHit: HelpHit = {
+  kind: 'guide',
+  key: 'guide:palette',
+  hit: {
+    key: 'palette',
+    chapterId: 'palette',
+    chapterTitle: 'Palette',
+    term: null,
+    excerpt: 'Open it with a shortcut.',
+  },
 };
 
 describe('capReleaseHits', () => {
   it('keeps three release hits and counts the rest', () => {
     const { shown, hiddenCount } = capReleaseHits({
-      hits: [...releaseHits, shortcutHit],
+      hits: [...releaseHits, guideHit],
       isAllShown: false,
     });
 
     expect(shown.filter((hit) => hit.kind === 'release')).toHaveLength(RELEASE_HIT_CAP);
-    expect(shown).toContain(shortcutHit);
+    expect(shown).toContain(guideHit);
     expect(hiddenCount).toBe(8);
   });
 

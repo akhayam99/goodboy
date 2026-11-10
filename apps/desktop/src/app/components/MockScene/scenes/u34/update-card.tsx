@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../../../../../store';
 import { GoodboyChip } from '../../../GoodboyChip';
+import { ReportBugButton } from '../../../SideColumn/ReportBugButton';
 import { toggleUpdateCard } from '../../../../../features/updater/updateCardRequest';
 import { installSceneDatabase } from '../sceneDatabase';
 
@@ -35,13 +36,14 @@ const UpdateCardAvailableScene = () => {
         className="flex min-h-0 flex-col justify-end overflow-hidden border-r border-border bg-background p-2"
         style={{ width: SIDEBAR_WIDTH_PX }}
       >
-        <div className="flex min-w-0 items-center">
+        <div className="@container flex min-w-0 items-center gap-1">
           <GoodboyChip
             variant="column"
+            isCurrent={false}
             onOpenChangelog={noop}
-            onOpenGuide={noop}
-            onOpenShortcuts={noop}
+            onOpenHelp={noop}
           />
+          <ReportBugButton />
         </div>
       </aside>
     </main>

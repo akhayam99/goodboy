@@ -145,7 +145,6 @@ export const App = () => {
     openSettings,
     openChangelog,
     openGuide,
-    openShortcuts: openShortcutHelp,
   });
 
   useEffect(() => {

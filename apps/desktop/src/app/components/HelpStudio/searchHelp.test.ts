@@ -24,7 +24,7 @@ describe('searchHelp', () => {
     expect(searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: '  ' })).toEqual([]);
   });
 
-  it('lists guide hits first, then releases, then shortcuts', () => {
+  it('lists guide hits first, then releases', () => {
     const hits = searchHelp({
       chapters: GUIDE_CHAPTERS,
       releases: [release({ version: '0.30.0', markdown: 'search or run for Harborline' })],
@@ -34,9 +34,7 @@ describe('searchHelp', () => {
 
     expect(kinds).toContain('guide');
     expect(kinds).toContain('release');
-    expect(kinds).toContain('shortcut');
     expect(kinds.lastIndexOf('guide')).toBeLessThan(kinds.indexOf('release'));
-    expect(kinds.lastIndexOf('release')).toBeLessThan(kinds.indexOf('shortcut'));
   });
 
   it('ranks a guide hit whose title matches before one that only mentions the word', () => {

@@ -16,7 +16,6 @@ export const useColumnActions = ({
   openSettings,
   openChangelog,
   openGuide,
-  openShortcuts,
 }: Params): ColumnActions =>
   useMemo(
     () => ({
@@ -32,7 +31,6 @@ export const useColumnActions = ({
       openSettings,
       openChangelog,
       openGuide,
-      openShortcuts,
     }),
     [
       openBoard,
@@ -47,6 +45,5 @@ export const useColumnActions = ({
       openSettings,
       openChangelog,
       openGuide,
-      openShortcuts,
     ],
   );

@@ -42,7 +42,7 @@ const mount = (Scene: ComponentType) =>
     </ToastProvider>,
   );
 
-it('u34-u27-foot-board keeps Settings and the Goodboy row in the foot, no setup line and no bug button', async () => {
+it('u34-u27-foot-board keeps Settings, the Goodboy line and the bug icon in the foot, no setup line', async () => {
   mount(U34_SETUP_CARD_SCENES['u34-u27-foot-board']);
 
   await waitFor(() => expect(document.querySelector('[data-column-foot]')).not.toBeNull());
@@ -52,7 +52,7 @@ it('u34-u27-foot-board keeps Settings and the Goodboy row in the foot, no setup 
   }
   within(foot).getByRole('button', { name: 'Settings' });
   within(foot).getByTestId('goodboy-chip');
-  expect(within(foot).queryByRole('button', { name: 'Report a bug' })).toBeNull();
+  within(foot).getByRole('button', { name: 'Report a bug' });
   expect(foot.textContent).not.toContain('Setup');
 });
 

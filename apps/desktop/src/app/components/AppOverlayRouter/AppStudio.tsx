@@ -28,7 +28,11 @@ export const AppStudio = ({
       isClosable={!isColumnSettings}
       hasBand={!isColumnSettings}
     >
-      <PanelBoundary key={overlay.kind} leaveLabel="Close" onLeave={close}>
+      <PanelBoundary
+        key={overlay.kind === 'changelog' ? 'guide' : overlay.kind}
+        leaveLabel="Close"
+        onLeave={close}
+      >
         {renderStudio({
           overlay,
           close,

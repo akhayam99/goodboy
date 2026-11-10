@@ -23,7 +23,6 @@ const ACTIONS: ColumnActions = {
   openSettings: noop,
   openChangelog: noop,
   openGuide: noop,
-  openShortcuts: noop,
 };
 
 const HOVER_TARGET = '[data-rail-session][aria-current="page"]';

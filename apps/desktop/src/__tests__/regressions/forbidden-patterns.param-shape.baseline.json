@@ -5,7 +5,6 @@
     "apps/desktop/src/app/components/AppTopBar/NavCluster/index.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": 2,
     "apps/desktop/src/app/components/BootSplash/BootErrorRecovery.tsx": 1,
-    "apps/desktop/src/app/components/GoodboyChip/index.tsx": 1,
     "apps/desktop/src/app/components/MockScene/backends/ask/mockAskResponder.ts": 1,
     "apps/desktop/src/app/components/MockScene/registry/buildSceneRegistry.ts": 1,
     "apps/desktop/src/app/components/MockScene/scenes/activityQuestionSeed.ts": 1,

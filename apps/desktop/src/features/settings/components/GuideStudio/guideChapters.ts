@@ -252,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Board, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Board, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
@@ -723,7 +723,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Update ready',
-        desc: 'The version pill in the Goodboy row opens the update card: Update now downloads, then Restart now installs. With agents running, Restart when they finish waits for them. A failed update offers Retry.',
+        desc: 'The version pill in the Goodboy line opens the update card: Update now downloads, then Restart now installs. With agents running, Restart when they finish waits for them. A failed update offers Retry.',
       },
       {
         term: 'Check for Updates',

@@ -58,7 +58,6 @@ const actionsOf = ({ open }: ActionsParams): ColumnActions => ({
   openSettings: open,
   openChangelog: open,
   openGuide: open,
-  openShortcuts: open,
 });
 
 const ACTIONS = actionsOf({ open: noop });

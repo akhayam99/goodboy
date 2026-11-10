@@ -81,7 +81,7 @@ workspace) shows `Back to app` with the Esc chip at the top left
   at its right, a long title truncates and never wraps the row): Tasks the view's name,
   Workflows `Workflows` with its tab strip under the title and `New workflow` as the
   one primary at the right end of the tab row, Impact `Impact` with the period selector in the row and a meta line
-  under it (the band keeps the crumb and Back to app only), Help's three tabs and
+  under it (the band keeps the crumb and Back to app only), Help's two tabs and
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
 - **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)

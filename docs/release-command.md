@@ -224,7 +224,7 @@ pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
 
 ## Align the in-app Guide
 
-The Guide (Help in the menu bar, the Goodboy row, the palette) explains Goodboy chapter by
+The Guide (Help in the menu bar, the Goodboy line, the palette) explains Goodboy chapter by
 chapter, in the order a task lives. Its text is in
 `apps/desktop/src/features/settings/components/GuideStudio/guideChapters.ts`.
 

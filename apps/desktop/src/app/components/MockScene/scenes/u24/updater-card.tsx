@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentType } from 'react';
 import { useAppStore } from '../../../../../store';
 import { GoodboyChip } from '../../../GoodboyChip';
+import { ReportBugButton } from '../../../SideColumn/ReportBugButton';
 import { installSceneDatabase } from '../sceneDatabase';
 
 const SIDEBAR_WIDTH_PX = 240;
@@ -51,13 +52,14 @@ const UpdaterCardFrame = ({ version, size }: FrameProps) => {
             </li>
           ))}
         </ul>
-        <div className="flex min-w-0 items-center">
+        <div className="@container flex min-w-0 items-center gap-1">
           <GoodboyChip
             variant="column"
+            isCurrent={false}
             onOpenChangelog={noop}
-            onOpenGuide={noop}
-            onOpenShortcuts={noop}
+            onOpenHelp={noop}
           />
+          <ReportBugButton />
         </div>
       </aside>
     </main>

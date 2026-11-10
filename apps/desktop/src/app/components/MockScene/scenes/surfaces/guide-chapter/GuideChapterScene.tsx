@@ -51,7 +51,7 @@ const GuideChapterScene = ({ variant }: Props) => {
 
   return (
     <FramedStudioScene kind="guide" place="link" seed={SEED_OF[variant]}>
-      <HelpStudio initialTab="guide" onClose={NOOP} onOpenScreen={NOOP} />
+      <HelpStudio tab="guide" onClose={NOOP} onOpenScreen={NOOP} />
     </FramedStudioScene>
   );
 };

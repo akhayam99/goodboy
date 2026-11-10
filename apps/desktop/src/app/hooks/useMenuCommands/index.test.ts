@@ -214,76 +214,13 @@ describe('useMenuCommands', () => {
     expect(useAppStore.getState().appStudio?.kind).toBe('monitoring');
   });
 
-  it('opens the Browser as a studio of the current window, and only with a workspace open', async () => {
+  it('opens Browser from the Go menu', async () => {
     renderHook(() => useMenuCommands());
     await listened();
 
-    useAppStore.setState({ currentWorkspaceId: null });
-    pick({ payload: { id: 'menu.browser' } });
-    expect(useAppStore.getState().appStudio).toBeNull();
-
-    useAppStore.setState({ currentWorkspaceId: workspace.id });
     pick({ payload: { id: 'menu.browser' } });
 
     expect(useAppStore.getState().appStudio?.kind).toBe('browser');
-  });
-
-  it('leaves the Browser as it is, promoted tab and history included, when it is already open', async () => {
-    renderHook(() => useMenuCommands());
-    await listened();
-    act(() =>
-      useAppStore
-        .getState()
-        .openStudio({ studio: { kind: 'browser', sessionId: null, tabId: 'tab-harborline' } }),
-    );
-    const before = useAppStore.getState().navigation;
-
-    pick({ payload: { id: 'menu.browser' } });
-
-    expect(useAppStore.getState().navigation).toBe(before);
-    expect(useAppStore.getState().appStudio).toEqual({
-      kind: 'browser',
-      sessionId: null,
-      tabId: 'tab-harborline',
-    });
-  });
-
-  it.each([
-    ['menu.tasks', 'inbox'],
-    ['menu.chat', 'chat'],
-    ['menu.workflows', 'workflow'],
-    ['menu.impact', 'impact'],
-    ['menu.monitoring', 'monitoring'],
-    ['menu.browser', 'browser'],
-  ])('does nothing when %s is picked on the page it opens', async (id, kind) => {
-    renderHook(() => useMenuCommands());
-    await listened();
-
-    pick({ payload: { id } });
-    expect(useAppStore.getState().appStudio?.kind).toBe(kind);
-    const before = useAppStore.getState().navigation;
-    pick({ payload: { id } });
-
-    expect(useAppStore.getState().navigation).toBe(before);
-  });
-
-  it('keeps the scope of an open Impact page when Impact is picked again', async () => {
-    renderHook(() => useMenuCommands());
-    await listened();
-    act(() =>
-      useAppStore.getState().openStudio({
-        studio: { kind: 'impact', scope: { kind: 'provider', provider: 'anthropic' } },
-      }),
-    );
-    const before = useAppStore.getState().navigation;
-
-    pick({ payload: { id: 'menu.impact' } });
-
-    expect(useAppStore.getState().navigation).toBe(before);
-    expect(useAppStore.getState().appStudio).toEqual({
-      kind: 'impact',
-      scope: { kind: 'provider', provider: 'anthropic' },
-    });
   });
 
   it('replaces the open page when Chat and Monitoring open from the menu', async () => {

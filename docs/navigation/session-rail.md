@@ -540,8 +540,8 @@ lands on the next session that needs you, in the board's Needs you order, on its
 
 **Peek is a way of showing the column, not a second column.** The overlay
 renders the same `SideColumn` (through `ShellLeft`), and the codebase has one
-sessions list. Only the pinned column's Goodboy row opens its menu by itself
-and reports updates; the peeked copy is quiet. Peek is wider than the pinned
+sessions list. Only the pinned column's Goodboy line reports an update
+arrival; the peeked copy is quiet. Peek is wider than the pinned
 column. The extra width applies at read time, so widening the peek never moves
 the column. It opens after a short rest at the screen edge, so a graze does not
 open it.

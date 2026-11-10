@@ -328,7 +328,7 @@ The setup and Home scenes live in `scenes/onboarding/` and sit in one
 states, three tools states, two first session states),
 `onboarding-new-workspace-<state>-<theme>` for the one form,
 `onboarding-home-<state>-<theme>` (list, new, empty),
-`onboarding-setup-menu-<theme>` and `onboarding-brand-tile-<theme>`. The step
+and `onboarding-brand-tile-<theme>`. The step
 scenes share `wizardSceneSeed.ts` (Acme web, the plain Acme docs, four agent
 CLIs) and settle all motion, because a headless capture does not advance CSS
 motion. Two take params instead, for the guide figures, whose shots switch
@@ -731,11 +731,7 @@ or a switch. It says "Loading the demo"; a beat has no label of its own.
 The frame the next step needs is loaded in advance (`preloadBeat` in
 `useBeatPlayer`, from `nextBeatIndex` of `useDemoHints`), so a frame change after
 a result is a swap. Hovering, focusing or pressing an open group row preloads
-that group's opening frame instead. Once the first step of a group is
-credited, the next group's first frame takes the one preload slot (after the
-next beat of the same group), so it has the whole group to boot before Next.
-In the demo the Goodboy menu never opens itself after the first task, the chip
-stays at rest and the menu holds no setup checklist (`isDirectedScene`).
+that group's opening frame instead, and a finished group preloads the next one.
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
 answer, keeps the unsent draft and streams a short acknowledgment.
 

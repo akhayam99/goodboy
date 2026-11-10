@@ -175,10 +175,8 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
       .map((line) => line.trim())
       .filter((line) => line !== '')
       .map((line) => (line === 'SEPARATOR,' ? '-' : (/"([^"]+)"/.exec(line)?.[1] ?? '')));
-    const paged = DESTINATIONS.filter(({ home }) => home !== 'foot');
-    const lastPage = paged.filter(({ home }) => home === 'column').at(-1);
-    const afterPages = rows.indexOf(lastPage?.menuId ?? '') + 1;
-    expect(rows[afterPages]).toBe('-');
+    const afterImpact = rows.indexOf('menu.impact') + 1;
+    expect(rows[afterImpact]).toBe('-');
   });
 
   it('lists the foot destinations in the Help and App menus', () => {
