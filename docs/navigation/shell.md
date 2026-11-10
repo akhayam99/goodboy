@@ -29,10 +29,12 @@ unit that changes the skeleton edits this section first.
 
 What holds today and is guarded:
 
-- **One selected sign.** A row lights from `isCurrent` and never from its own
-  state, in the column, the session rail and the session list; every column
-  door reads the one column place (`useColumnPlace`); the session rail reads the
-  session pages sign (`currentSignOf`). `__tests__/navigation/oneDoor.test.ts`.
+- **One selected sign.** A control lights from `isCurrent` and never from its
+  own state, in the column, the session rail, the session list, the Goodboy row
+  and the bell; every one of them reads the one column place (`useColumnPlace`),
+  New session included; the session rail reads the session pages sign
+  (`currentSignOf`). Every page names a place, so exactly one control is lit and
+  the open session is never lit under a page. `__tests__/navigation/oneDoor.test.ts`.
 - **One door for moves.** Only `navigate`, `back`, `forward`, `up` and
   `amendFocus` move the user outside the navigation slice. Same test.
 - **Saved layouts load without loss.** A window layout and the fold choices
@@ -515,7 +517,7 @@ today. Open Impact`, opening the Impact studio on its Spend tab (it is never
   merged with a count). Impact itself is the last sidebar door, a page like
   Tasks with no band and no Close, and ⌘K reaches every tab. The bar holds no
   Impact icon. Last the bell, which opens the
-  notification popover.
+  notification popover and stays pressed while the Notifications page is open.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:

@@ -35,6 +35,7 @@ type Props = {
   readonly onOpenShortcuts: () => void;
   readonly variant?: GoodboyChipVariant;
   readonly isPrimary?: boolean;
+  readonly isCurrent?: boolean;
 };
 
 const REST_LABEL = 'Goodboy beta: version, help and sponsor';
@@ -56,6 +57,7 @@ export const GoodboyChip = ({
   onOpenShortcuts,
   variant = 'column',
   isPrimary = true,
+  isCurrent = false,
 }: Props) => {
   const update = useUpdateCardState();
   const version = useInstalledVersion();
@@ -126,13 +128,16 @@ export const GoodboyChip = ({
         aria-label={TRIGGER_LABEL[state]}
         aria-haspopup="menu"
         aria-expanded={isOpen}
+        aria-current={isCurrent ? 'page' : undefined}
         data-testid={isPrimary ? 'goodboy-chip' : undefined}
         data-goodboy-chip={variant}
         className={cn(
           'relative flex items-center rounded-md text-meta motion-safe:transition-colors',
           FOCUS_RING,
           TRIGGER_SHAPE[hasRowPill ? 'column-pill' : variant],
-          isOpen ? 'bg-muted' : 'hover:bg-hover',
+          isOpen && 'bg-muted',
+          !isOpen && isCurrent && 'bg-selected text-foreground',
+          !isOpen && !isCurrent && 'hover:bg-hover',
         )}
       >
         <GoodboyChipLabel

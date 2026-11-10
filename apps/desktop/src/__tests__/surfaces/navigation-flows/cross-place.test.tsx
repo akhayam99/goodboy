@@ -554,7 +554,7 @@ describe('moving across every place keeps one frame', () => {
     await openPalette(/^Notifications$/, 'Notifications');
     expect(studio()).toBe('notifications');
     expectColumnBesideStudio();
-    expect(currentDoors()).toEqual([]);
+    expect(currentDoors()).toEqual(['Notifications']);
     await escape();
     expect(lensOf()).toBe('plans');
     expectHealthy();

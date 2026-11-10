@@ -44,10 +44,14 @@ const unreadGroupKeys = ({ notifications }: UnreadKeysParams): ReadonlySet<strin
   );
 
 const openNotificationsStudio = () => {
-  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, { detail: { door: true } }));
 };
 
-export const NotificationCenter = () => {
+type Props = {
+  readonly isCurrent: boolean;
+};
+
+export const NotificationCenter = ({ isCurrent }: Props) => {
   const notifications = useAppStore((s) => s.notifications);
   const notificationsLoading = useAppStore((s) => s.notificationsLoading);
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
@@ -178,6 +182,7 @@ export const NotificationCenter = () => {
         trigger={
           <BellButton
             isOpen={open}
+            isCurrent={isCurrent}
             unread={unread}
             hasUnreadDebt={hasUnreadDebt}
             onClick={handleOpen}

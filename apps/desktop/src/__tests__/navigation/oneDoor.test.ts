@@ -8,7 +8,17 @@ const SCANNED_ROOTS = ['features', 'app', 'shared'];
 const COLUMN_ROOT = join(SRC, 'app', 'components', 'SideColumn');
 const SESSION_RAIL_ROOT = join(SRC, 'app', 'components', 'SessionRail');
 const SESSION_LIST_ROOT = join(SRC, 'features', 'workspace', 'components', 'SessionActivityBar');
-const SIGN_ROOTS = [COLUMN_ROOT, SESSION_RAIL_ROOT, SESSION_LIST_ROOT];
+const GOODBOY_CHIP_ROOT = join(SRC, 'app', 'components', 'GoodboyChip');
+const BELL_ROOT = join(SRC, 'features', 'notifications', 'components', 'NotificationCenter');
+const TOP_BAR_ROOT = join(SRC, 'app', 'components', 'AppTopBar');
+const SIGN_ROOTS = [
+  COLUMN_ROOT,
+  SESSION_RAIL_ROOT,
+  SESSION_LIST_ROOT,
+  GOODBOY_CHIP_ROOT,
+  BELL_ROOT,
+  TOP_BAR_ROOT,
+];
 const SESSION_RAIL_PREFIX = 'app/components/SessionRail/';
 
 const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
@@ -128,11 +138,30 @@ describe('one selected sign across the navigation surfaces', () => {
     expect(level?.source).toContain('sign === page.id');
   });
 
-  it('lights the New session row from the draft selector, never from its own state', () => {
+  it('lights the New session row from the place it is given, never from its own selector', () => {
     const row = signSources.find(({ path }) =>
       path.endsWith('SessionActivityBar/NewSessionRow.tsx'),
     );
-    expect(row?.source).toContain('selectIsSessionDraftShown(');
+    const column = signSources.find(({ path }) => path === 'app/components/SideColumn/index.tsx');
+
+    expect(row?.source).not.toContain('selectIsSessionDraftShown');
+    expect(column?.source).toMatch(/<NewSessionRow[^>]*isCurrent=\{place === 'new'\}/s);
+  });
+
+  it('lights the Goodboy line for Help and the bell for Notifications, from the same place', () => {
+    const foot = signSources.find(
+      ({ path }) => path === 'app/components/SideColumn/ColumnFoot.tsx',
+    );
+    const rail = signSources.find(
+      ({ path }) => path === 'app/components/SideColumn/ColumnRail.tsx',
+    );
+    const topBar = signSources.find(({ path }) => path === 'app/components/AppTopBar/index.tsx');
+    const help = "isCurrent={place === 'guide' || place === 'whatsNew'}";
+
+    expect(foot?.source).toContain(help);
+    expect(rail?.source).toContain(help);
+    expect(topBar?.source).toContain('useColumnPlace()');
+    expect(topBar?.source).toContain("isCurrent={place === 'notifications'}");
   });
 
   it('reads the place from one selector, the same one the rail and the peek read', () => {

@@ -3,7 +3,8 @@ import type { DestinationId, FootDestinationId } from '../../../shared/navigatio
 
 export type ColumnDoorId = Exclude<DestinationId, 'notifications' | FootDestinationId>;
 
-export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | null;
+export type ColumnPlace =
+  ColumnDoorId | FootDestinationId | 'new' | 'notifications' | 'addWorkspace' | null;
 
 type Params = {
   readonly hasSession: boolean;
@@ -30,10 +31,13 @@ const studioPlace = ({ studio }: { readonly studio: StudioKind }): ColumnPlace =
     case 'impact':
       return 'impact';
     case 'guide':
-    case 'addWorkspace':
+      return 'guide';
     case 'changelog':
+      return 'whatsNew';
     case 'notifications':
-      return null;
+      return 'notifications';
+    case 'addWorkspace':
+      return 'addWorkspace';
     default: {
       const unreachable: never = studio;
       return unreachable;
@@ -59,6 +63,10 @@ const STUDIO_OVER_SESSION: ReadonlySet<ColumnPlace> = new Set<ColumnPlace>([
   'browser',
   'monitoring',
   'impact',
+  'guide',
+  'whatsNew',
+  'notifications',
+  'addWorkspace',
 ]);
 
 type StudioOverSessionParams = {

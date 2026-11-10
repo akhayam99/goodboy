@@ -118,6 +118,7 @@ export const ColumnRail = ({
         <ReportBugButton variant="rail" />
         <GoodboyChip
           variant="rail"
+          isCurrent={place === 'guide' || place === 'whatsNew'}
           onOpenChangelog={actions.openChangelog}
           onOpenGuide={actions.openGuide}
           onOpenShortcuts={actions.openShortcuts}

@@ -29,6 +29,7 @@ export const ColumnFoot = ({ place, isPrimary, actions, onNavigate }: Props) => 
     <GoodboyChip
       variant="column"
       isPrimary={isPrimary}
+      isCurrent={place === 'guide' || place === 'whatsNew'}
       onOpenChangelog={actions.openChangelog}
       onOpenGuide={actions.openGuide}
       onOpenShortcuts={actions.openShortcuts}

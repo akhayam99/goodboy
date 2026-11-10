@@ -58,6 +58,7 @@ export const SideColumn = ({
             <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
               <NewSessionRow
                 workspaceId={workspaceId}
+                isCurrent={place === 'new'}
                 {...(onNavigate !== undefined && { onNavigate })}
               />
               {COLUMN_ROW_DOORS.map((door) => (
