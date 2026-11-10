@@ -127,7 +127,7 @@ Start a session from an issue in Tasks, with the issue linked and its goal writt
 
 A task is never a kind: **Pick from Tasks** works the same on every kind. Press Start. The session is created with the issue linked. The run starts as the kind you picked, or is routed like any other from Auto picks. If the start fails, the page keeps the issue and your text and Start becomes **Retry**.
 
-The Linked card in the session pages holds the linked work list, with older work under **Show history**. A row opens its record, with **Back to overview** above it. Unlink returns there after saving; a failure keeps the record open. Sentry rows open in **Tasks**, which their tooltip says, and name their issue, as in **Open PAYMENTS-42 in Tasks**. Work on any branch the session holds counts as current whichever branch is active; only work of a branch the session no longer holds, or already merged, goes under history. The palette and provider shortcuts open **Link work** on that provider, also when the session pages are folded, and are not offered on an archived session.
+The Linked card in the session pages holds the linked work list, with older work under **Show history**. A row opens its record, with **Back to overview** above it. Unlink returns there after saving; a failure keeps the record open. Sentry rows open in **Tasks**, which their tooltip says, and name their issue, as in **Open PAYMENTS-42 in Tasks**. Work on any branch the session holds counts as current whichever branch is active; only work of a branch the session no longer holds, or already merged, goes under history. Search or run and provider shortcuts open **Link work** on that provider, also when the session pages are folded, and are not offered on an archived session.
 
 ### Review a pull request
 
@@ -146,7 +146,7 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 **Tools beside the page**
 
-The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel. They stay put on every page of the session, and an open tool stays open when you move to another page.
+The tools sit as icons on the right rail, before any open panel. In a session, the **Session** group holds Explore, Context, Ask, Agents and Scripts. The **Workspace** group sits at the foot of every page and holds Terminal and Browser. An open tool stays open when you move to another page.
 
 | Tool         | Key |
 | ------------ | --- |
@@ -158,7 +158,7 @@ The tools you reach from anywhere in the session sit as icons in a thin column a
 | **Terminal** | ⌘⌥T |
 
 - **Context** opens on Goal; its cards share one menu for editing, versions and who reads them.
-- Hover one to read its name and key. The active tool shows its name below its icon.
+- Hover one to read its name and key. The active tool shows its name below its icon. **Browser** has no key.
 - **Agents** lists every agent of the session as a tree, the same set as the Runs page. Runs and Auto sit with their agents under them, and an agent you started yourself is a launch of one row with its state word.
 - The tree follows the run or Auto you have open, or shows only what is live when nothing is open. **All runs** goes to the Runs page.
 - Click an agent, or press Enter on it, to read it in the page beside the tree. The tree stays open with that agent selected.
