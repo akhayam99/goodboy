@@ -450,7 +450,7 @@ and the Needs you order follows it, falling back to the last edit. Mark as unrea
 stays the quiet ring and takes the row's 6px dot (`hasUnread`), and the dot
 also shows on any other node while a reply waits among the other reasons.
 
-The door pill. The Sessions door, the folded rail and the top bar say how many
+The door pill. The Board door, the folded rail and the top bar say how many
 sessions need you with one function, `attentionCountOf` (read through
 `useWorkspaceAttention`), over every session of the workspace and never the
 project filter. A session counts when its stage is needs you and one of its

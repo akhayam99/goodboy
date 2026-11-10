@@ -120,11 +120,11 @@ const GO_ROWS: &[Row] = &[
     command("menu.workflows", "Workflows", None),
     command("menu.chat", "Chat", None),
     command("menu.impact", "Impact", None),
-    command("menu.monitoring", "Monitoring", None),
-    command("menu.notifications", "Notifications", None),
     SEPARATOR,
     command("terminal.studio", "Terminal", Some("ctrl+Backquote")),
     command("menu.browser", "Browser", None),
+    command("menu.monitoring", "Monitoring", None),
+    command("menu.notifications", "Notifications", None),
 ];
 
 const WINDOW_ROWS: &[Row] = &[
@@ -515,7 +515,7 @@ mod tests {
     }
 
     #[test]
-    fn lists_the_doors_in_the_go_menu_in_the_order_of_the_sidebar() {
+    fn lists_the_go_menu_destinations_in_the_order_of_the_destination_list() {
         let ids: Vec<&str> = GO_ROWS
             .iter()
             .filter_map(|row| match row {
@@ -533,10 +533,10 @@ mod tests {
                 "menu.workflows",
                 "menu.chat",
                 "menu.impact",
-                "menu.monitoring",
-                "menu.notifications",
                 "terminal.studio",
                 "menu.browser",
+                "menu.monitoring",
+                "menu.notifications",
             ]
         );
     }
@@ -548,7 +548,7 @@ mod tests {
             .enumerate()
             .filter_map(|(index, row)| (*row == SEPARATOR).then_some(index))
             .collect();
-        assert_eq!(separators, vec![2, 10]);
+        assert_eq!(separators, vec![2, 8]);
     }
 
     #[test]

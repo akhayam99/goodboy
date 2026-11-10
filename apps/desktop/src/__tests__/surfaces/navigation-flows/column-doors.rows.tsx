@@ -71,7 +71,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     open: async () => undefined,
     lands: async () => {
       expect(doorIdsInColumn().filter((id) => DOOR_ORDER.includes(id))).toEqual(DOOR_ORDER);
-      expect(doorIn('board').textContent).toContain('Sessions');
+      expect(doorIn('board').textContent).toContain('Board');
       expect(doorIn('inbox').textContent).toContain('Tasks');
     },
   },
@@ -253,7 +253,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate'],
     open: () => click(doorIn('board')),
     lands: both(
-      () => heading('Sessions'),
+      () => heading('Board'),
       async () => expect(useAppStore.getState().currentSessionId).toBeNull(),
     ),
   },

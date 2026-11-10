@@ -11,9 +11,7 @@ import {
   type InboxStudioFocus,
   type StudioPlace,
 } from '../../../store';
-import { terminalStudioPlace } from '../../../features/terminal/terminalStudioPlace';
-import { browserStudioPlace } from '../../../features/browser/browserStudioPlace';
-import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
+import { openDestination } from '../../../shared/navigation/openDestination';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
 import { AppStudio } from '../../components/AppOverlayRouter/AppStudio';
 import type { StudioPlacement } from '../../components/StudioFrame/studioPlacement';
@@ -107,44 +105,26 @@ export const useAppOverlays = ({
     [open],
   );
 
-  const openWorkflows = useCallback(() => goTo({ overlay: { kind: 'workflow' } }), [goTo]);
+  const openWorkflows = useCallback(() => openDestination({ id: 'workflows' }), []);
 
   const openProviders = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'providers' } } }),
     [goTo],
   );
 
-  const openInbox = useCallback(() => goTo({ overlay: { kind: 'inbox', focus: null } }), [goTo]);
+  const openInbox = useCallback(() => openDestination({ id: 'inbox' }), []);
 
-  const openChat = useCallback(
-    () =>
-      goTo({
-        overlay: { kind: 'chat', chatId: selectChatDoor({ state: useAppStore.getState() }) },
-      }),
-    [goTo],
-  );
+  const openChat = useCallback(() => openDestination({ id: 'chat' }), []);
 
-  const openTerminalStudio = useCallback(
-    () =>
-      goTo({
-        overlay: terminalStudioPlace({ sessionId: useAppStore.getState().currentSessionId }),
-      }),
-    [goTo],
-  );
+  const openTerminalStudio = useCallback(() => openDestination({ id: 'terminal' }), []);
 
-  const openBrowserStudio = useCallback(
-    () =>
-      goTo({
-        overlay: browserStudioPlace({ sessionId: useAppStore.getState().currentSessionId }),
-      }),
-    [goTo],
-  );
+  const openBrowserStudio = useCallback(() => openDestination({ id: 'browser' }), []);
 
   const openNewChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
 
-  const openMonitoring = useCallback(() => goTo({ overlay: { kind: 'monitoring' } }), [goTo]);
+  const openMonitoring = useCallback(() => openDestination({ id: 'monitoring' }), []);
 
-  const openImpact = useCallback(() => goTo({ overlay: { kind: 'impact', scope: null } }), [goTo]);
+  const openImpact = useCallback(() => openDestination({ id: 'impact' }), []);
 
   const openShortcutHelp = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),

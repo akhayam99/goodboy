@@ -389,19 +389,19 @@ hands the rest of the summary to the hover card; the session header keeps its
 chips.
 
 **The user chooses what the list shows and in what order.** The sidebar list
-has no "Sessions" eyebrow and no filter row of its own: the Sessions door row
+has no "Sessions" eyebrow and no filter row of its own: the Board door row
 holds one funnel button in its action slot at the right, **Filter sessions**
 (`SidebarSessionsFilter` over `SessionFilterPopover`), with a primary 6px dot
 while a filter is on (a status, a project or Show archived; `displayStateOf`
 owns that count). The door row never regroups, so the popover stays open
-while the list under it changes grouping. The Sessions page header holds the
+while the list under it changes grouping. The Board header holds the
 same button. Its popover is a labelled dialog laid out like a display menu,
 in sections spaced by `gap-3` (no unlabeled line inside a floating surface, see
 docs/styling.md). On top, Display: two compact rows, **Sort**
 and **Group**, the label at the left and the current value at the right
 (`DisplayValueRow`); the value is a quiet `Listbox` that opens its choices.
 Sort offers Needs you first [default], Alphabetical, Last activity and Created;
-Group offers None [default], PR state, Stage and Project (the Sessions page
+Group offers None [default], PR state, Stage and Project (the Board
 drops Group). Then **Filter** (an `Eyebrow`), with the captions Status and
 Project over real `Checkbox` rows (`FilterCheckRow`), each named with its count
 ("Running, 3"). Status lists only the stages that have sessions, from Needs

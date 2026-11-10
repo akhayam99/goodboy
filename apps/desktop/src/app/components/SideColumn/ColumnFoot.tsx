@@ -1,8 +1,10 @@
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { destinationOf } from '../../../shared/navigation/destinationOf';
 import { GoodboyChip } from '../GoodboyChip';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import type { ColumnActions } from './columnDoors';
 import type { ColumnPlace } from './columnPlace';
+
+const SETTINGS = destinationOf({ id: 'settings' });
 
 type Props = {
   readonly place: ColumnPlace;
@@ -15,9 +17,9 @@ export const ColumnFoot = ({ place, isPrimary, actions, onNavigate }: Props) => 
   <div data-column-foot="" className="flex shrink-0 flex-col gap-0.5 px-2">
     <ColumnDoorRow
       id="settings"
-      icon={CONCEPT_ICONS.settings}
-      label="Settings"
-      shortcut="settings.open"
+      icon={SETTINGS.icon}
+      label={SETTINGS.label}
+      {...(SETTINGS.shortcutId !== undefined && { shortcut: SETTINGS.shortcutId })}
       isCurrent={place === 'settings'}
       onSelect={() => {
         actions.openSettings();

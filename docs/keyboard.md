@@ -16,7 +16,7 @@ shortcut, so the same dispatcher runs the press; elsewhere the chord is
 Ctrl+Shift+W.
 Each press closes one level: a popover or dialog, then the terminal tab (a
 running process asks first), then the open drawer, then a studio, then the
-session view back to the previous place. The Sessions page does nothing.
+session view back to the previous place. The Board does nothing.
 `terminal.closeTab` is the scoped entry that declines when a popover is open or
 no tab is selected, so `app.close` takes the press.
 

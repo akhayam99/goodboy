@@ -19,7 +19,7 @@ Press ⌘K and choose **Start a run**. On the New session page, write the goal i
 
 ### 3. Watch it on the board
 
-The Sessions page shows every session in lanes: **Building**, **Running**, **Needs you**, **In review**, **Done** and **Archived**. Your session sits in the lane that matches what is happening in it. When an agent needs an answer or an OK, the card moves to **Needs you** and says why. Press ⌥⌘↓ to jump to the next session that needs you.
+The Board shows every session in lanes: **Building**, **Running**, **Needs you**, **In review**, **Done** and **Archived**. Your session sits in the lane that matches what is happening in it. When an agent needs an answer or an OK, the card moves to **Needs you** and says why. Press ⌥⌘↓ to jump to the next session that needs you.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">

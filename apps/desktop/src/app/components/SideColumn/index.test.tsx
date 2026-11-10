@@ -260,7 +260,7 @@ describe('SideColumn', () => {
     const doors = actions();
     mountColumn({ place: 'inbox', doors });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sessions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Board' }));
     fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
     fireEvent.click(screen.getByRole('button', { name: 'Workflows' }));
     fireEvent.click(screen.getByRole('button', { name: 'Terminal' }));

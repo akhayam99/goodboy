@@ -326,7 +326,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'session.board',
-    lands: () => heading('Sessions'),
+    lands: () => heading('Board'),
   }),
   pressRow({
     id: 'terminal.studio',
@@ -366,7 +366,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'nav.up',
     note: 'on the Overview goes up to the board',
     open: press('nav.up'),
-    lands: () => heading('Sessions'),
+    lands: () => heading('Board'),
   }),
   keyRow({
     id: 'nav.up',
@@ -768,6 +768,20 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       expect(await screen.findAllByRole('dialog', { name: 'Report a bug' })).toHaveLength(1);
     },
   }),
+  {
+    name: 'menu: Go > Browser opens the Browser page and leaves it alone when it is open',
+    covers: ['menu:menu.browser'],
+    open: async () => {
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().appStudio?.kind).toBe('browser'));
+      const opened = useAppStore.getState().navigation;
+      await pickMenuItem({ id: 'menu.browser' });
+      expect(useAppStore.getState().navigation).toBe(opened);
+    },
+    lands: async () => {
+      expect(useAppStore.getState().appStudio?.kind).toBe('browser');
+    },
+  },
   keyRow({
     id: 'app.undo',
     note: 'the web view takes the undo key once, so the native Undo item never runs too',
@@ -1535,7 +1549,7 @@ let terminalTabCount = 0;
 
 const openBoardCard = async (): Promise<HTMLElement> => {
   await press('session.board')();
-  await heading('Sessions');
+  await heading('Board');
   const card = await waitFor(() => {
     const found = document.querySelector<HTMLElement>('[data-select-id]');
     expect(found).not.toBeNull();

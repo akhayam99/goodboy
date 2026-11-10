@@ -2,7 +2,7 @@ import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import type { ChatsState } from '../chats/state';
 import type { ChatLastOpenState } from './state';
 
-type DoorState = Pick<ChatsState, 'chatsByWorkspace'> &
+export type DoorState = Pick<ChatsState, 'chatsByWorkspace'> &
   ChatLastOpenState & {
     readonly currentWorkspaceId: WorkspaceId | null;
   };

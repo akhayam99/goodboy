@@ -1,13 +1,11 @@
 import { useAppStore } from '../../../store';
-import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
-import { NAMES } from '../../../shared/utils/names';
 import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
-import { openImpactStudio } from '../../../features/impact/openImpactStudio';
+import type { StudioDestinationId } from '../../../shared/navigation/destinations';
+import { destinationOf } from '../../../shared/navigation/destinationOf';
+import { openDestination } from '../../../shared/navigation/openDestination';
 import { checkForUpdatesNow } from '../../../features/updater/checkForUpdatesNow';
-import { openChangelogStudio } from '../../../features/changelog/changelogStudioEvent';
 import { openSessionTerminalHere } from '../../../features/terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
-import { browserStudioPlace } from '../../../features/browser/browserStudioPlace';
 
 type MenuAction = {
   readonly label: string;
@@ -27,8 +25,34 @@ const inWorkspace =
     run();
   };
 
-const openNotifications = (): void => {
-  dispatchWindowEvent({ name: 'goodboy:open-notifications-studio', detail: { door: true } });
+type DestinationActionParams = {
+  readonly id: StudioDestinationId;
+  readonly isGuarded?: boolean;
+};
+
+const isBrowserShown = (): boolean => {
+  const { appStudio, currentSessionId } = useAppStore.getState();
+  return (
+    appStudio !== null && appStudio.kind === 'browser' && appStudio.sessionId === currentSessionId
+  );
+};
+
+const isMonitoringShown = (): boolean => useAppStore.getState().appStudio?.kind === 'monitoring';
+
+const destinationAction = ({ id, isGuarded = true }: DestinationActionParams): MenuAction => {
+  const run = (): void => {
+    if (id === 'browser' && isBrowserShown()) {
+      return;
+    }
+    if (id === 'monitoring' && isMonitoringShown()) {
+      return;
+    }
+    openDestination({ id });
+  };
+  return {
+    label: destinationOf({ id }).label,
+    run: isGuarded ? inWorkspace({ run }) : run,
+  };
 };
 
 const openNewTerminal = (): void => {
@@ -52,53 +76,13 @@ export const MENU_ACTIONS = {
     label: 'New workspace',
     run: () => dispatchWindowEvent({ name: 'goodboy:add-workspace' }),
   },
-  'menu.tasks': {
-    label: NAMES.tasks,
-    run: inWorkspace({
-      run: () => dispatchWindowEvent({ name: 'goodboy:open-inbox', detail: { door: true } }),
-    }),
-  },
-  'menu.chat': {
-    label: 'Chat',
-    run: inWorkspace({
-      run: () => {
-        const state = useAppStore.getState();
-        state.openStudio({ studio: { kind: 'chat', chatId: selectChatDoor({ state }) } });
-      },
-    }),
-  },
-  'menu.workflows': {
-    label: 'Workflows',
-    run: inWorkspace({
-      run: () =>
-        dispatchWindowEvent({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
-    }),
-  },
-  'menu.impact': {
-    label: 'Impact',
-    run: inWorkspace({ run: () => openImpactStudio({ door: true }) }),
-  },
-  'menu.notifications': {
-    label: 'Notifications',
-    run: inWorkspace({
-      run: openNotifications,
-    }),
-  },
-  'menu.monitoring': {
-    label: 'Monitoring',
-    run: inWorkspace({
-      run: () => useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } }),
-    }),
-  },
-  'menu.browser': {
-    label: 'Browser',
-    run: inWorkspace({
-      run: () => {
-        const state = useAppStore.getState();
-        state.openStudio({ studio: browserStudioPlace({ sessionId: state.currentSessionId }) });
-      },
-    }),
-  },
-  'menu.guide': { label: 'Guide', run: () => dispatchWindowEvent({ name: 'goodboy:open-guide' }) },
-  'menu.whatsNew': { label: NAMES.whatsNew, run: inWorkspace({ run: openChangelogStudio }) },
+  'menu.tasks': destinationAction({ id: 'inbox' }),
+  'menu.chat': destinationAction({ id: 'chat' }),
+  'menu.workflows': destinationAction({ id: 'workflows' }),
+  'menu.impact': destinationAction({ id: 'impact' }),
+  'menu.notifications': destinationAction({ id: 'notifications' }),
+  'menu.monitoring': destinationAction({ id: 'monitoring' }),
+  'menu.browser': destinationAction({ id: 'browser' }),
+  'menu.guide': destinationAction({ id: 'guide', isGuarded: false }),
+  'menu.whatsNew': destinationAction({ id: 'whatsNew' }),
 } as const satisfies Readonly<Record<string, MenuAction>>;

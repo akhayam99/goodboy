@@ -163,6 +163,7 @@ describe('navigation flow table ratchet', () => {
         .flat()
         .map((agent) => agent.name),
     );
+    await screen.findByRole('combobox', { name: /search/i });
     const destinations = screen
       .getAllByRole('option')
       .map((option) => option.getAttribute('aria-label') ?? option.textContent ?? '')

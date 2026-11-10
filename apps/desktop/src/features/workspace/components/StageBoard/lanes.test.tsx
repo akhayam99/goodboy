@@ -421,7 +421,7 @@ describe('StageBoard header', () => {
     });
     mountBoard([building]);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Repositories/ })).toBeNull();
   });
 });

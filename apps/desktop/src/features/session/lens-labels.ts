@@ -21,10 +21,10 @@ export const LENS_LABEL: Record<LensKind, string> = {
 
 export const LENS_ICON = {
   questions: CONCEPT_ICONS.questions,
-  workflows: CONCEPT_ICONS.workflows,
+  workflows: CONCEPT_ICONS.runs,
   orchestrated: CONCEPT_ICONS.orchestrator,
   review: CONCEPT_ICONS.review,
-  plans: CONCEPT_ICONS.plans,
+  plans: CONCEPT_ICONS.artifacts,
   pr: CONCEPT_ICONS.pr,
   branch: CONCEPT_ICONS.branch,
   files: CONCEPT_ICONS.diff,

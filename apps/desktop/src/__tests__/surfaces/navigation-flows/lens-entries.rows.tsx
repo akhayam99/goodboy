@@ -61,7 +61,7 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     name: 'right click board card: Open',
     covers: ['navigate', 'rightclick:session:Open'],
     open: async (ctx) => {
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
       await openObjectMenu(await sessionRow(ctx));
       await runMenuItem(/^Open$/);
     },
