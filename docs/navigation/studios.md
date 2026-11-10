@@ -30,11 +30,11 @@ description and keeps the model, the effort and the Auto or Pinned chip. The Set
 foot is lit while it is open. Back to app, Esc and Back land alike. A session
 key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and closes Settings on its way, and so
 does any column row. On close, `StudioFrame` gives focus back to what opened
-the studio, or to the studio's door when that is gone (the palette), unless
+the studio, or to the studio's door when that is gone (Search or run), unless
 focus already sits outside the studio (`restoreStudioOpener`). On Home, which
 has no column, New workspace swaps the list for the form in place, and the app
 studios take the whole window: Settings (its corner gear, ⌘, or ⌘/ for
-shortcuts) and the guide. The palette opens there too.
+shortcuts) and the guide. Search or run opens there too.
 Studios are not part of the breadcrumb IA. They exit on Esc, and only one is
 open at a time. There is no Close button: a door page leaves by another door or
 Esc, and an app page (Settings, Help, New workspace) shows `Back to app` with
@@ -50,7 +50,7 @@ in `studioMeta.ts`).
   the side trip is over, Back means one step.
 - **Navigating closes the studio.** A forward move to a place (another
   session, a lens, an agent, the board) arrives with no studio, whether it came
-  from the palette, a needs-you row, a shortcut or a link inside the studio, so
+  from Search or run, a needs-you row, a shortcut or a link inside the studio, so
   the destination always lands in front. Switching workspace closes it too.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Tasks to Workflows
@@ -128,7 +128,7 @@ in `studioMeta.ts`).
   fresh tab in the dock) and, in a session with worktrees, `Open <repo · branch> in terminal`
   (`session.openWorktreeTerminal`, one choice per worktree).
 - **Terminal opens in the right dock.** ⌃` (`terminal.studio`), ⌘⌥T (`session.terminal`), the
-right rail's Terminal button, the Go menu and the palette all run `toggleTerminalDock`: on a
+right rail's Terminal button, the Go menu and Search or run all run `toggleTerminalDock`: on a
 session page it opens the session's terminal on its worktree, anywhere else the workspace
 folder terminal (`openWorkspaceTerminal`, owner `ws:<workspaceId>`, drawer `sessionId: null`).
 The dock stays open across every move. File > New Terminal adds a fresh tab there.
@@ -169,7 +169,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
 
 - **Not every studio earns a door.** Notifications opens from the bell
   popover (its footer's Open all notifications, a door: `door: true`, so it
-  replaces an open studio) and from the palette's Go to group, never from the
+  replaces an open studio) and from the Go to group of Search or run, never from the
   column, since the bell already shows the unread count. While the page is open
   the bell is its one lit control (`bg-selected`, `aria-current="page"`, read
   from the column place through `AppTopBar`) and the page has no exit control:
@@ -256,7 +256,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   on: each foldable column registers with `useInnerColumn` while its page
   shows (the session pages while no studio covers it, a page rail through
   `StudioRailLayout`), the key toggles the last one registered
-  (`innerColumnStore.toggleCurrent`), the palette lists it under that
+  (`innerColumnStore.toggleCurrent`), Search or run lists it under that
   column's name (Hide chat list, Show session pages) and leaves it out
   on a page with none, where the key does nothing. Under a pane of 880px the rail
   folds without saving anything and docks again when the pane widens; Show on
@@ -278,7 +278,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   so nothing renders and nothing is saved until the drag ends. Precedent: VS
   Code, Zed and Linear sidebars.
 - **Settings opens on a page, never on a grid.** The Settings door, ⌘, and the
-  palette's Settings land on the page opened last, held in memory only
+  the Settings entry of Search or run land on the page opened last, held in memory only
   (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
   app starts lands on General, and a remembered page that no longer exists
   (a workspace page with no workspace, a provider that was removed) falls
@@ -295,7 +295,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   (Update needed, Signed out, Can't check, Not confirmed, Refused your runs, Error, Claude is about to run out); a quiet
   row shows nothing. The sentence lives on the page: a provider about to run
   out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
-  the usage notice that used to close the Usage band). Every page is also a palette entry
+  the usage notice that used to close the Usage band). Every page is also an entry in Search or run
   (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`, `Workspace settings: Models`), built from
   the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
   rail (`SettingsSearchResults`) filters those same entries by name and former name, lists them in

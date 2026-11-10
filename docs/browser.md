@@ -238,7 +238,7 @@ to a project is a pin that every session of the project shares.
 Browser at the foot of the right rail, on every screen, opens the pane in the
 one side slot, the dock, as a tool drawer in the reader tier
 (`DRAWER_KINDS.browser`, `toggleBrowserDock`), so the session rail folds to
-icons while it is open. The Go menu and the palette open it too. On a session
+icons while it is open. The Go menu and Search or run open it too. On a session
 page it shows that session's tabs; anywhere else it shows the session the
 Browser page would pick (`WorkspaceBrowserDock`, drawer `sessionId: null`), or
 says there are no tabs yet. It stays open across every move, beside any page
@@ -278,7 +278,7 @@ it; Esc inside the page goes to the page.
   again on the next frame. A wake that answers after the wanted tab changed
   is never placed or shown. A failed wake stops trying that tab until Reload
   or a new address. Closing the pane hides the view.
-- **Overlays**: a menu, a popover, a dialog or the palette is any element that
+- **Overlays**: a menu, a popover, a dialog or Search or run is any element that
   matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). For a
   popover the cover check measures the children of `[data-dropdown-portal]`,
   because the wrapper itself has no height, and an element with no area never
@@ -400,7 +400,7 @@ sits in and the address, and one function opens it (`openInBrowser`).
   chord first (`browser.address` is scoped, so it wins only there). A page
   that has focus keeps its keys, so ⌘L reaches the row only while Goodboy
   has focus.
-- **⌘K** lists the browser tabs of the session the palette is scoped to (the
+- **⌘K** lists the browser tabs of the session Search or run is scoped to (the
   current session when it is not) and offers `Open <address>` first, beside
   that same session, for an address with `http` or `https` or a localhost
   name, or for a host with a port or a path. With no workspace open the entry

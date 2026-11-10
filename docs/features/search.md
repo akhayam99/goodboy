@@ -22,7 +22,7 @@ Click a session and its row stays selected. The session opens with its own rail 
 
 The **⋯** holds **Limit**, **Archive** and **Delete** with the session's other actions.
 
-At the right of every page, the right rail is a column of icons, each named with its shortcut on hover. In a session, **Session** holds **Explore**, **Context**, **Ask this session**, **Agents** and **Scripts**. At the foot, on every page, **Workspace** holds **Terminal** and **Browser**. They stay open as you move between pages. **Open as page** makes either one full size, and **Dock** puts it back. The active tool shows its name below its icon. A ring marks the tool waiting behind the drawer in the side slot.
+At the right of every page, a column of icons is named with its shortcut on hover. In a session, **Session** holds **Explore**, **Context**, **Ask this session**, **Agents** and **Scripts**. At the foot, on every page, **Workspace** holds **Terminal** and **Browser**. They stay open as you move between pages. **Open as page** makes either one full size, and **Dock** puts it back. The active tool shows its name below its icon. A ring marks the tool waiting behind the drawer in the side slot.
 
 A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
 
@@ -40,7 +40,7 @@ Reach any screen without the mouse. **⌘K** opens a window where a few letters 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-go-anywhere-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-go-anywhere-light.webp" alt="The palette after typing webhook: Ask about this session and Ask in chat, then Jump to with two sessions named Stop retried webhooks posting a second credit (payments-api and notify-relay) and the Replay a webhook event script, with the details of the first session on the right">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-go-anywhere-light.webp" alt="Search or run after typing webhook: Ask about this session and Ask in chat, then Jump to with two sessions named Stop retried webhooks posting a second credit (payments-api and notify-relay) and the Replay a webhook event script, with the details of the first session on the right">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -51,7 +51,7 @@ Press **⌘K**, or click **Search or run** in the top bar, to act on what you ar
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-command-palette-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-command-palette-light.webp" alt="The command palette on the agent Resolve review on payments-api#318: Next offers Answer open questions, For this agent lists Show its changes, Message this agent, Rename, Change model, Copy name and Delete agent, and For this session follows, with the Commands and Search switch at the top right">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-command-palette-light.webp" alt="Search or run on the agent Resolve review on payments-api#318: Next offers Answer open questions, For this agent lists Show its changes, Message this agent, Rename, Change model, Copy name and Delete agent, and For this session follows, with the Commands and Search switch at the top right">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

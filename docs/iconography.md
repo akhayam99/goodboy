@@ -86,8 +86,8 @@ file names it. Size is `control` in the lens switcher. `lensDestinations` in
 | Pull request                | `pr`           | `GitPullRequest`        | primary | with a branch, when the host is not GitHub |
 | Linear, GitLab, Jira, Slack | brand concepts | `@goodboy/ui` brand set | primary | with a branch, when that tool is connected |
 
-Runs reads `CONCEPT_ICONS.runs` (`Route`), so the switcher, the column and the
-palette draw one glyph for it. `Waypoints` stays the glyph of a workflow run
+Runs reads `CONCEPT_ICONS.runs` (`Route`), so the switcher, the column and
+Search or run draw one glyph for it. `Waypoints` stays the glyph of a workflow run
 row in the feed. Artifacts keeps `CONCEPT_ICONS.plans` (`ClipboardList`).
 
 Goal (`goal`, `Target`), Decisions (`decisions`, `CheckCheck`) and Session
@@ -114,7 +114,7 @@ The left column, the switcher and the hover card draw a session's state as a
 `WorkNode` mark, not as the stage glyph. The mark follows the reason that
 holds the session, from `ATTENTION_REASON_META` in
 `features/session/session-stage.ts`, which gives each reason a mark, a tone and
-a sentence that the Board card, the Now chip rows and the palette read too. Red
+a sentence that the Board card, the Now chip rows and Search or run read too. Red
 `!` (`failed`) is only an agent error, a push that failed (`push-failed`, "1 comment didn't go out") and failing checks. Amber is what you must
 answer, approve or act on: `?` for a question or a comment that needs you, the
 shield for a tool permission (Needs permission) or a held plan (the plan needs approval), and an amber `!` (`alert`) for changes
@@ -126,8 +126,8 @@ a failed status never reads ready. A pull request in the merge
 queue (`pr-queued`) is the `merging` mark: a ring in the `primary` teal around a
 half-filled core, calm and in progress, because nothing is left for you to do.
 It ranks below the needs-you reasons and above approved, and the session stays
-in review, so it never enters Needs you, the Now chip or the palette's Needs you
-rows. A finished session
+in review, so it never enters Needs you, the Now chip or the Needs you
+rows of Search or run. A finished session
 (`finished`) is the same solid disc in the `merged` violet with a white check,
 so a done session reads as complete beside the hollow rings; a session whose
 pull request closed unmerged keeps the muted check (`closed`). The check inside
@@ -230,7 +230,7 @@ section share one glyph.
 | `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                           |
 | `backup`     | `DatabaseBackup`            | neutral | Config export and import                     |
 | `storage`    | `Database`                  | neutral | Local database and archived sessions         |
-| `sessions`   | `SquareKanban`              | primary | A session: the Board door, search, palette   |
+| `sessions`   | `SquareKanban`              | primary | A session: the Board door and Search or run  |
 | `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback               |
 | `danger`     | `TriangleAlert`             | danger  | A danger zone                                |
 
@@ -305,7 +305,7 @@ The suggestion row and the Next card (`ActionCard`) above Activity
 both use it. They used to disagree on four of six kinds. A Next card whose
 primary starts an agent swaps this glyph for the role icon in the role color
 (`agentKindPalette`); the map stays the glyph of every other
-suggestion and of the palette.
+suggestion and of Search or run.
 
 | Kind                 | Concept     | Glyph                |
 | -------------------- | ----------- | -------------------- |

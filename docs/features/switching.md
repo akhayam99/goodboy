@@ -25,7 +25,7 @@ A session nobody touched for three days stays where it is and fades. Rest the po
 
 **Flip through recent sessions.** Hold **Control** and press **Tab** to flip through recent sessions without the list.
 
-**Sort, group and filter.** The funnel at the right of the **Sessions** row sorts, groups and filters the list, and the funnel on the Board is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
+**Sort, group and filter.** The funnel at the right of the **Board** row sorts, groups and filters the list, and the funnel on the Board page is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
 
 **Right click.** A right click on any session opens all its actions: pin, refresh, rename, archive and delete. Archive and delete ask first. An archived session comes back with Undo or Restore.
 

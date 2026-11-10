@@ -133,12 +133,12 @@ On a Mac the menu bar carries the same keys.
 - File holds New Session, New Chat, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
 - Edit holds Search.
 - View holds the sidebar, Search or Run, zoom and Reload.
-- Go holds Back and Forward, then Board, Tasks, Workflows, Chat, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Browser open the right rail tools.
+- Go holds Back and Forward, then Board, Tasks, Workflows, Chat, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Browser open those tools on the right rail.
 - Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Keyboard shortcuts page in Settings, every shortcut in the groups General, Workspaces, Views and Lists, with Command palette on ⌘K, Search on ⌘F, Report a bug on ⌘I and a ⌘⌥ key for each view from Overview to Slack threads">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Keyboard shortcuts page in Settings, every shortcut in the groups General, Workspaces, Views and Lists, with Search or run on ⌘K, Search on ⌘F, Report a bug on ⌘I and a ⌘⌥ key for each view from Overview to Slack threads">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
