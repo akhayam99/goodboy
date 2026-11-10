@@ -470,6 +470,32 @@ test or a release checks.
   measures it at each release (`docs/testing.md` → Manual release gate:
   browser memory); the phase 0 numbers are in the plan's spike S8.
 
+## Passkeys
+
+A passkey step cannot finish in a tab on macOS. WebKit answers a passkey
+request in an app's webview only for the domains the app is associated with,
+unless Apple grants the app its browser passkey entitlement, and Goodboy does
+not carry it. A security key and a phone code go through the same request.
+What the view does without the entitlement (an error or a request that never
+answers) is unverified, so the banner does not wait for either.
+
+- **Notice**: each macOS tab runs a small script at document start, in the main
+  frame. It wraps `navigator.credentials.get` and `create`, and when a call
+  carries `publicKey` and is not the quiet autofill kind
+  (`mediation: 'conditional'`), it tells the host once. The page's own call
+  always runs, unchanged.
+- **Say**: the host tells that tab's window once per load. The pane and the
+  page show one banner above that tab only: "Passkeys do not work in
+  Goodboy's browser", and the way out: finish in your browser, or choose
+  another way on the page. The words never name the entitlement.
+- **Hand over**: Open in your browser is the address row's own action, with
+  the same error line. Dismiss hides the banner until the next load of that
+  tab; the next load clears it either way.
+- After the hand-over the sign-in lives in your browser, not in the
+  workspace profile, so the tab stays signed out. Nothing is imported back.
+- Windows and Linux tabs carry no script: their engines answer passkeys
+  themselves.
+
 ## Capabilities
 
 `capabilities/default.json` grants by webview label (`webviews`: `main`,
@@ -480,7 +506,11 @@ page. No capability names a `browse-` label or grants a remote address.
 Capabilities gate plugin commands only. An app command runs for any local
 page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 `browser::refuse_browser_pages`, which answers every app command from a
-`browse-` webview with the `browser-caller` code before it runs.
+`browse-` webview with the `browser-caller` code before it runs. One command
+passes: `browser_passkey_asked`, the passkey report. It takes no argument,
+reads the tab from the caller's own label, and its only effect is one
+`browser://passkey` event to that tab's window per load. A page that calls it
+by hand can at worst show the banner above itself.
 
 ## Known limits
 
@@ -624,6 +654,25 @@ words (`features/browser/browserFailureText.ts`).
   old value on a failed save. `tabForAddress.test.ts` pins the tab match; the
   scenes are `browser-peek`, `browser-peek-dark`, `settings-links` and
   `settings-links-dark`.
+- Passkeys: `src-tauri/src/browser/passkey.rs` holds the script
+  (`PASSKEY_SCRIPT`), the `browser_passkey_asked` command and the
+  `browser://passkey` event; `host.rs` adds the script to every macOS tab and
+  clears the flag when a load starts; `registry.rs` keeps the once per load
+  flag. `browser::tests` pins that a tab may call that one command and no
+  other, the event's tab id, session and host, once per load and again after
+  the next load, only the owning window hearing it, a window that is not a tab
+  refused with `tab-gone`, a removed tab told nothing, and the script's text:
+  both calls wrapped, `publicKey` without `conditional`, the original always
+  called. The real WebKit answer without the entitlement is not tested.
+  `features/browser/listenPasskeyAsk.ts` and `hooks/usePasskeyAsks` hear the
+  event, `store/slices/browser` keeps `browserPasskeyAsks` by session and live
+  id, and `components/BrowserPane/BrowserPasskeyBanner.tsx` draws the
+  `Notice` with the words from `passkeyBannerText.ts`.
+  `components/BrowserPane/passkey.test.tsx` pins the banner above its tab
+  only, Open through the address row path, Dismiss until the next load, the
+  clear on the next load, an ask for an unknown tab or another session
+  dropped, and the ask forgotten when its tab closes. The scenes are
+  `browser-passkey` and `browser-passkey-dark`.
 - The budgets: `features/browser/browserBudgets.ts` holds the numbers.
   `browserBudgets.test.tsx` runs in the unit project and counts, never times:
   no `browser_*` command and no frame request while no tab was opened, the

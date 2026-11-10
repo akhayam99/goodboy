@@ -100,22 +100,23 @@ Terminal, script and provider lifecycle output follow the same rule: `terminal-o
 
 Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compiles and then fails silently in the webview, so `scripts/check-event-names.mjs` (part of `pnpm check:doc-refs`) compares them: every name below must be emitted in `src-tauri/src`, named by a frontend file, and listed here, and every name the frontend listens to must be emitted by Rust or by the frontend. An event whose listener lands in a later pull request goes in `UNHEARD_REASON_BY_EVENT` with a reason, and the check fails once the frontend names it, so the entry leaves with the listener. The wire names keep three styles for now (`snake_case`, `kebab-case`, `scheme://path`); a new event uses `kebab-case`, and a rename lands in Rust and in the frontend in one commit so the check stays green.
 
-| Event                                                  | Payload                                                       | Emitted by              | Listened in                             |
-| ------------------------------------------------------ | ------------------------------------------------------------- | ----------------------- | --------------------------------------- |
-| `turn_event`                                           | envelope with `runId`, `seq` and the turn event               | turn.rs                 | chat/createRunEventRouter.ts            |
-| `chat_event`                                           | envelope with `runId`, `chatId`, `seq` and the event          | chat.rs                 | chat/createRunEventRouter.ts            |
-| `worktree_writer_event`                                | `{ path, holder, reason }`                                    | worktree_writer.rs      | session/resolve/worktreeWriterBridge.ts |
-| `terminal-output`, `terminal-exit`                     | output chunk and exit of a terminal                           | terminal.rs             | shared/lib/createOutputStream.ts        |
-| `script-output`, `script-exit`                         | output chunk and exit of a script run                         | scripts.rs              | shared/lib/createOutputStream.ts        |
-| `provider-lifecycle-output`, `provider-lifecycle-exit` | output chunk and exit of an install, login or update          | provider_lifecycle.rs   | shared/lib/createOutputStream.ts        |
-| `orphans-swept`                                        | `{ count }`                                                   | lib.rs                  | monitoring/listenOrphansSwept.ts        |
-| `clone-progress`                                       | `{ requestId, phase, percent }` of a running clone            | repo_clone.rs           | shared/lib/repoClone.ts                 |
-| `goodboy://menu`                                       | `{ id }`, to the focused window only                          | app_menu.rs             | app/hooks/useMenuCommands               |
-| `query-bridge://mount-command`                         | `{ id, ... }`, answered by `mount_command_result`             | query_bridge/mount.rs   | session/mountQueryBridge                |
-| `query-bridge://project-materialize`                   | `{ id, runId, sessionId, projectId, projectName, reason }`    | query_bridge/project.rs | session/projectMaterializeBridge.ts     |
-| `bridge://command`                                     | a phone command to run (the phone work is paused)             | bridge/server.rs        | companion/commandExecutor.ts            |
-| `browser://tab-opened`                                 | the facts of a popup tab, to the opener's window only         | browser/host.rs         | the browser pane, once it lands         |
-| `browser://tab-state`                                  | the facts of a tab gone live, asleep or closed, to its window | browser/lifecycle.rs    | browser/listenTabState.ts               |
+| Event                                                  | Payload                                                          | Emitted by              | Listened in                             |
+| ------------------------------------------------------ | ---------------------------------------------------------------- | ----------------------- | --------------------------------------- |
+| `turn_event`                                           | envelope with `runId`, `seq` and the turn event                  | turn.rs                 | chat/createRunEventRouter.ts            |
+| `chat_event`                                           | envelope with `runId`, `chatId`, `seq` and the event             | chat.rs                 | chat/createRunEventRouter.ts            |
+| `worktree_writer_event`                                | `{ path, holder, reason }`                                       | worktree_writer.rs      | session/resolve/worktreeWriterBridge.ts |
+| `terminal-output`, `terminal-exit`                     | output chunk and exit of a terminal                              | terminal.rs             | shared/lib/createOutputStream.ts        |
+| `script-output`, `script-exit`                         | output chunk and exit of a script run                            | scripts.rs              | shared/lib/createOutputStream.ts        |
+| `provider-lifecycle-output`, `provider-lifecycle-exit` | output chunk and exit of an install, login or update             | provider_lifecycle.rs   | shared/lib/createOutputStream.ts        |
+| `orphans-swept`                                        | `{ count }`                                                      | lib.rs                  | monitoring/listenOrphansSwept.ts        |
+| `clone-progress`                                       | `{ requestId, phase, percent }` of a running clone               | repo_clone.rs           | shared/lib/repoClone.ts                 |
+| `goodboy://menu`                                       | `{ id }`, to the focused window only                             | app_menu.rs             | app/hooks/useMenuCommands               |
+| `query-bridge://mount-command`                         | `{ id, ... }`, answered by `mount_command_result`                | query_bridge/mount.rs   | session/mountQueryBridge                |
+| `query-bridge://project-materialize`                   | `{ id, runId, sessionId, projectId, projectName, reason }`       | query_bridge/project.rs | session/projectMaterializeBridge.ts     |
+| `bridge://command`                                     | a phone command to run (the phone work is paused)                | bridge/server.rs        | companion/commandExecutor.ts            |
+| `browser://passkey`                                    | a tab's passkey ask or its clear on the next load, to its window | browser/passkey.rs      | browser/listenPasskeyAsk.ts             |
+| `browser://tab-opened`                                 | the facts of a popup tab, to the opener's window only            | browser/host.rs         | the browser pane, once it lands         |
+| `browser://tab-state`                                  | the facts of a tab gone live, asleep or closed, to its window    | browser/lifecycle.rs    | browser/listenTabState.ts               |
 
 ## Git and request state is not on the bus
 

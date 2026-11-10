@@ -202,6 +202,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - Each workspace keeps its own cookies and site data, so a sign-in never shows in another workspace. Switching workspace closes the other one's tabs, and they reopen at their address when you show them.
 - A tab hidden for 10 minutes closes its page and keeps its address and title in the list. A window keeps four live tabs, and a fifth closes the one hidden longest. A tab you are looking at never closes.
 - **Open in your browser** hands the page to your own browser at any time.
+- Passkeys do not work in a tab on macOS. When a page asks for one, a banner above that tab says so and offers **Open in your browser** to finish the sign-in there. **Dismiss** hides it until the page loads again.
 
 ## Under the hood
 
@@ -217,6 +218,7 @@ This part is for contributors and agents who change the feature.
 - Stop the running agent: the registry id is `agent.stop`.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
+- Browser passkeys: [browser.md](../browser.md#passkeys) owns the probe, the one command a tab may call, `BrowserPasskeyBanner` and its words in `passkeyBannerText.ts`.
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
 
