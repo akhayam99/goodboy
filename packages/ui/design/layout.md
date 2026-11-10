@@ -16,7 +16,7 @@ what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.
 | New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
 | door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
 | current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
-| foot        | Settings as a door, then the Goodboy row (`flex-1`); no setup line, no bug icon                          |
+| foot        | Settings as a door, then the Goodboy line and the 24px bug icon in `[data-column-corner]`                |
 | rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
 
 Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
