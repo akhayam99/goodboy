@@ -48,9 +48,8 @@ type OpenStudioParams = {
 };
 
 const openNotificationsStudio = ({ isDoor }: OpenStudioParams) => {
-  window.dispatchEvent(
-    new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, isDoor ? { detail: { door: true } } : undefined),
-  );
+  const init = isDoor ? { detail: { door: true } } : undefined;
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, init));
 };
 
 type Props = {
