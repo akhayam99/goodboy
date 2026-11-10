@@ -1344,6 +1344,13 @@ update-card-long-version
 update-card-narrow
 update-confirm
 update-whats-new
+ux39-p7-folded
+ux39-p7-folded-branchless
+ux39-p7-folded-menu
+ux39-p7-open
+ux39-p7-open-branchless
+ux39-p7-runs-waiting
+ux39-p7-runs-waiting-folded
 wireframe-failed
 workflow
 workflow-run

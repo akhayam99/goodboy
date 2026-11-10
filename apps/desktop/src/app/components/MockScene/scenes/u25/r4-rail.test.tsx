@@ -55,7 +55,7 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const rail = (): HTMLElement => screen.getByRole('navigation', { name: 'Session' });
+const rail = (): HTMLElement => screen.getByRole('navigation', { name: 'Session pages' });
 
 const tools = (): HTMLElement => screen.getByRole('toolbar', { name: 'Session tools' });
 

@@ -985,7 +985,6 @@
     "apps/desktop/src/features/workspace/components/SessionActivityBar/groupPresentation.ts": 2,
     "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": 2,
     "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionFilterPopover/index.tsx": 2,
-    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionPages.tsx": 1,
     "apps/desktop/src/features/workspace/components/SessionSwitcher/useSessionSwitcher/index.ts": 3,
     "apps/desktop/src/features/workspace/components/SidebarPeekOverlay/index.tsx": 1,
     "apps/desktop/src/features/workspace/components/StageBoard/BoardLanes.tsx": 1,
