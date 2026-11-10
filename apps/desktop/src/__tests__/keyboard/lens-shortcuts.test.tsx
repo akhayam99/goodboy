@@ -291,11 +291,13 @@ describe('App lens shortcuts off darwin', () => {
     });
   });
 
-  it('reloads on ctrl', () => {
+  it('reloads Goodboy on ctrl and shift, never on ctrl alone', () => {
     render(<App />);
 
     press({ code: 'KeyR', key: 'r', ctrlKey: true });
+    expect(reload).not.toHaveBeenCalled();
 
+    press({ code: 'KeyR', key: 'r', ctrlKey: true, shiftKey: true });
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
@@ -505,18 +507,19 @@ describe('App lens shortcuts on darwin', () => {
     });
   });
 
-  it('reloads on the plain reload combo', () => {
-    render(<App />);
-
-    press({ code: 'KeyR', key: 'r', metaKey: true });
-
-    expect(reload).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not reload when the Resolve lens combo fires', () => {
+  it('reloads Goodboy on the shifted reload combo', () => {
     render(<App />);
 
     press({ code: 'KeyR', key: 'r', metaKey: true, shiftKey: true });
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(state.navigate).not.toHaveBeenCalled();
+  });
+
+  it('never reloads the window on the plain reload combo', () => {
+    render(<App />);
+
+    press({ code: 'KeyR', key: 'r', metaKey: true });
 
     expect(reload).not.toHaveBeenCalled();
     expect(state.navigate).not.toHaveBeenCalled();

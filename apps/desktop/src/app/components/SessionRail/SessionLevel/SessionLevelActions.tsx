@@ -88,7 +88,7 @@ export const SessionLevelActions = ({ session, controls }: Props) => {
         icon={CONCEPT_ICONS.refresh}
         label="Refresh session"
         tooltip={isRefreshing ? 'Refreshing' : 'Refresh session'}
-        shortcut="session.refresh"
+        shortcut="view.reload"
         busy={isRefreshing}
         data-session-action="refresh"
         onClick={() => void refresh({ sessionId })}

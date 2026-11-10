@@ -100,7 +100,7 @@ describe('shortcut dispatcher on darwin', () => {
     const onResolve = vi.fn();
     const onReload = vi.fn();
     bind('lens.review', onResolve);
-    bind('app.reload', onReload);
+    bind('view.reload', onReload);
 
     press({ key: 'r', code: 'KeyR', metaKey: true });
 
@@ -181,7 +181,7 @@ describe('shortcut dispatcher off darwin', () => {
     const onResolve = vi.fn();
     const onReload = vi.fn();
     bind('lens.review', onResolve);
-    bind('app.reload', onReload);
+    bind('view.reload', onReload);
 
     press({ key: 'r', code: 'KeyR', ctrlKey: true });
 

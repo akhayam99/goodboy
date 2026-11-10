@@ -53,7 +53,6 @@ import { linkedIssueSources } from '../../../store/slices/issue-briefs/linkedIss
 import { writeGoalFromWorkEvent } from '../../../store/slices/issue-briefs/writeGoalFromWorkEvent';
 import { NAMES } from '../../../shared/utils/names';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
-import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { behindBranchesOf } from '../../history/behindBranchesOf';
 import { SESSION_EXTERNAL_OPEN_ACTIONS, withGoToSubmenu } from './sessionGoToActions';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
@@ -375,10 +374,10 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.refresh',
-    label: SHORTCUTS['session.refresh'].label,
+    label: 'Refresh session',
     icon: CONCEPT_ICONS.refresh,
     group: 'act',
-    shortcut: 'session.refresh',
+    shortcut: 'view.reload',
     when: isUnarchived,
     blockedReason: ({ facts }) => (facts.isRefreshing ? REFRESHING_REASON : null),
     run: ({ facts, env }) => {
