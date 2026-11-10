@@ -151,8 +151,12 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   `'Escape'` literals and window key listeners per file and fails on growth.
 
 - **Not every studio earns a door.** Notifications opens from the bell
-  popover (its footer's Open all notifications) and from the palette's Go to
-  group, never from the column, since the bell already shows the unread count.
+  popover (its footer's Open all notifications, a door: `door: true`, so it
+  replaces an open studio) and from the palette's Go to group, never from the
+  column, since the bell already shows the unread count. While the page is open
+  the bell is its one lit control (`bg-selected`, `aria-current="page"`, read
+  from the column place through `AppTopBar`) and the page has no exit control:
+  Esc, Back or another door leaves it.
   The popover never deletes history. That lives in the studio, behind its
   confirm. Reporting a bug is not a studio: it is the report sheet above.
 - **Notifications have one row and one scope.** `NotificationRow` draws a

@@ -16,6 +16,11 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../store/storyHarness';
+import {
+  harborline,
+  seedColumn,
+  sessionOf,
+} from '../../../features/workspace/testing/sessionColumn';
 import { OPEN_REPORT_SHEET_EVENT } from '../../../features/bug-report/openReportSheet';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import type { TerminalTabId } from '../../../shared/types/terminal';
@@ -553,5 +558,78 @@ describe('ColumnRail', () => {
 
     expect(doorNames(container)).toEqual(['settings']);
     expect(screen.getByRole('button', { name: 'Report a bug' })).toBeDefined();
+  });
+});
+
+describe('one current sign', () => {
+  const SESSION = sessionOf({ goal: 'Add rate limits' });
+  const HELP_NAME = 'Goodboy, help';
+
+  const mountWithSession = ({ place }: { readonly place: ColumnPlace }) => {
+    seedColumn({ store: useAppStore, sessions: [SESSION], currentSessionId: SESSION.id });
+    return render(
+      <SideColumn
+        scope="workspace"
+        workspaceId={harborline.id}
+        currentSessionId={SESSION.id}
+        place={place}
+        actions={actions()}
+        isPeek={false}
+      />,
+    );
+  };
+
+  const lit = (root: HTMLElement): number => root.querySelectorAll('[aria-current="page"]').length;
+
+  it('lights the Goodboy line, and nothing else, for Help', () => {
+    const { container } = mountWithSession({ place: 'help' });
+
+    expect(screen.getByRole('button', { name: HELP_NAME }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(lit(container)).toBe(1);
+  });
+
+  it.each(['notifications', 'addWorkspace'] as const)(
+    'lights no column control for %s, and never the open session',
+    (place) => {
+      const { container } = mountWithSession({ place });
+
+      expect(lit(container)).toBe(0);
+    },
+  );
+
+  it('lights the open session only when no page is open', () => {
+    const { container } = mountWithSession({ place: null });
+
+    expect(lit(container)).toBe(1);
+    expect(container.querySelector('[data-column-sessions] [aria-current="page"]')).not.toBeNull();
+  });
+
+  it('lights New session alone while the draft is open, with the open session under it', () => {
+    const { container } = mountWithSession({ place: 'new' });
+
+    expect(screen.getByRole('button', { name: 'New session' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(lit(container)).toBe(1);
+  });
+
+  it('lights the Goodboy mark on the folded rail too', () => {
+    seedColumn({ store: useAppStore, sessions: [SESSION], currentSessionId: SESSION.id });
+    const { container } = render(
+      <ColumnRail
+        scope="workspace"
+        workspaceId={harborline.id}
+        currentSessionId={SESSION.id}
+        place="help"
+        actions={actions()}
+      />,
+    );
+
+    expect(
+      container.querySelector('[data-goodboy-chip="rail"]')?.getAttribute('aria-current'),
+    ).toBe('page');
+    expect(lit(container)).toBe(1);
   });
 });

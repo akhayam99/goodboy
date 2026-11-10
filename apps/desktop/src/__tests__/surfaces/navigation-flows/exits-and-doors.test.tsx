@@ -13,6 +13,7 @@ import { brandId } from '@goodboy/types';
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
+import { pressShortcut } from '../../helpers/pressKey';
 import {
   bridge,
   boot,
@@ -242,6 +243,89 @@ describe('exactly one door in the frame is marked current', () => {
     await clickButton(/^Board/);
 
     expect(currentMarks()).toEqual([expect.stringMatching(/^Board\b/)]);
+  });
+});
+
+const pressBack = async (): Promise<void> => {
+  const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
+  anchor.focus();
+  pressShortcut({ id: 'nav.back' });
+  await settle();
+};
+
+type FootDoor = {
+  readonly name: string;
+  readonly kind: string;
+  readonly open: () => Promise<void>;
+  readonly mark: RegExp;
+};
+
+const FOOT_DOORS: ReadonlyArray<FootDoor> = [
+  {
+    name: 'the bell foot Open all notifications',
+    kind: 'notifications',
+    open: async () => {
+      await clickButton(/^Notifications/);
+      await click(await screen.findByRole('button', { name: 'Open all notifications' }));
+    },
+    mark: /^Notifications/,
+  },
+  {
+    name: 'the Goodboy line',
+    kind: 'guide',
+    open: async () => {
+      await clickButton(/^Goodboy/);
+    },
+    mark: /^Goodboy/,
+  },
+];
+
+describe('the foot controls are doors that replace the open page', () => {
+  it.each(FOOT_DOORS.map((footDoor) => [footDoor.name, footDoor] as const))(
+    'Tasks then %s then ⌘[ lands on the page under Tasks, not on Tasks',
+    async (_name, footDoor) => {
+      await boot({ seed: 'pr' });
+      const startSession = useAppStore.getState().currentSessionId;
+      const startIndex = stack()?.index ?? 0;
+
+      await openDoor({ door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true } });
+      expect(appStudioKind()).toBe('inbox');
+      const withOneStudio = stack()?.entries.length ?? 0;
+
+      await footDoor.open();
+      expect(appStudioKind()).toBe(footDoor.kind);
+      expect(stack()?.entries.length).toBe(withOneStudio);
+      expect(currentMarks()).toEqual([expect.stringMatching(footDoor.mark)]);
+
+      await pressBack();
+
+      expect(appStudioKind()).toBeNull();
+      expect(useAppStore.getState().currentSessionId).toBe(startSession);
+      expect(stack()?.index ?? 0).toBe(startIndex);
+    },
+  );
+});
+
+describe('the Help pages swap under the Goodboy row', () => {
+  it('Guide then What is new then ⌘[ lands on the page under Guide', async () => {
+    await boot({ seed: 'pr' });
+    const startSession = useAppStore.getState().currentSessionId;
+    const startIndex = stack()?.index ?? 0;
+
+    await clickButton(/^Goodboy/);
+    expect(appStudioKind()).toBe('guide');
+    const withOneStudio = stack()?.entries.length ?? 0;
+
+    await click(await screen.findByRole('tab', { name: "What's new" }));
+    expect(appStudioKind()).toBe('changelog');
+    expect(stack()?.entries.length).toBe(withOneStudio);
+    expect(currentMarks()).toEqual([expect.stringMatching(/^Goodboy/)]);
+
+    await pressBack();
+
+    expect(appStudioKind()).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBe(startSession);
+    expect(stack()?.index ?? 0).toBe(startIndex);
   });
 });
 

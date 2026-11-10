@@ -17,6 +17,10 @@ mounted once for the open session by `SessionFrame` beside the kept-alive
 session pages. The rail is 240px by
 default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
 rows are the column's rows (28px, `SelectableRow`, the same type roles).
+Under any page that sits over the session (Tasks, Help, What's new,
+Notifications, New workspace and the rest) the rail is inactive: the fold key
+folds the column on the left, and the open session row is not lit
+(`SessionRail/innerColumn.test.tsx`).
 
 - **Level 1 reads top to bottom:** the pages, then the Projects card and the
   Linked card, then the foot. The session level has no identity row: the

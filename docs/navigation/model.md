@@ -168,25 +168,39 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), the Goodboy
+  line, the foot of the bell list, a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
   that opens Settings, a card that opens Impact) stacks (`openStudio`), so Back
-  returns to where the link was. Events from the bars carry `door: true`.
+  returns to where the link was. A notification row with no session is a link
+  too: it stacks the Notifications page, and only the foot of the list is a door.
+  Board is a door as well: opened over a studio it replaces that studio's entry
+  (`openDestination`), so Back from the board returns to the page below the
+  studio. Events from the bars carry `door: true`.
 - **One exit.** Close, Esc and Back leave a studio the same way: they land on
   the entry below it, and Forward brings the studio back. When nothing sits
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
-  studio itself.
-- **One selected sign.** The open studio's door, New session while the draft is
-  open, or Board on the board, takes `bg-selected` with `cursor-default` and
-  `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
-  `useColumnPlace`), so at most one door carries it; inside a session no door
-  does: the open session's row is the column's sign and the current page row is
-  the session rail's (see Session rail), one sign per navigation column. The Goodboy line is a door to Help and
-  is selected while a Help tab is open (`place` `help`). A popover trigger (the
-  Usage chips) is never selected: it only reports `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
+  studio itself. The exit follows the scope. An app page (Settings, Help, New
+  workspace) shows Back to app in its band and answers to Esc. A workspace page
+  (Tasks, Workflows, Chat, Impact, Terminal, Browser, Monitoring, Notifications)
+  shows no exit control: it leaves by another door, Back or Esc. Nothing has a
+  Close button.
+- **One selected sign.** Every page lights exactly one control, with
+  `bg-selected`, `cursor-default` and `aria-current="page"`, in the column and
+  on the rail alike: the open studio's door; New session while the draft is
+  open; Board on the board; the Goodboy line for Help, either tab (`place`
+  `help`); the bell for Notifications. New workspace is a flow and lights
+  nothing. Every control reads it from one place (`columnPlaceOf`, through
+  `useColumnPlace`), so no page leaves two lit. Inside a session no door does:
+  the open session's row is the column's sign and the current page row is the
+  session rail's (see Session rail), one sign per navigation column. Under any
+  page the session row is remembered, never current. A popover trigger that is
+  not the page's own control (the Usage chips) is never selected: it only
+  reports `aria-expanded`; the bell is selected only while its page is open, and
+  an open popover shows its own `bg-muted` over that. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
   `__tests__/navigation/oneDoor.test.ts` pins the rule.
 

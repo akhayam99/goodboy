@@ -146,7 +146,7 @@ describe('NotificationCenter scope', () => {
 
   it('has no scope to pick while there is one workspace', async () => {
     state.workspaces = [TWO_WORKSPACES[0]!];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.queryByRole('tab', { name: /all workspaces/i })).toBeNull();
@@ -154,7 +154,7 @@ describe('NotificationCenter scope', () => {
 
   it('offers this workspace and all workspaces once there are several', async () => {
     state.workspaces = TWO_WORKSPACES;
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getByRole('tab', { name: 'This workspace' }).getAttribute('aria-selected')).toBe(
@@ -168,7 +168,7 @@ describe('NotificationCenter scope', () => {
   it('puts the number of sessions that need you elsewhere on the all workspaces tab', async () => {
     state.workspaces = TWO_WORKSPACES;
     state.elsewhere = { count: 3, tone: 'warning' };
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     const tab = screen.getByRole('tab', { name: /all workspaces/i });
@@ -177,7 +177,7 @@ describe('NotificationCenter scope', () => {
 
   it('shows no number when nothing waits elsewhere', async () => {
     state.workspaces = TWO_WORKSPACES;
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getByRole('tab', { name: /all workspaces/i }).textContent).toBe('All workspaces');
@@ -185,7 +185,7 @@ describe('NotificationCenter scope', () => {
 
   it('widens the bell to every workspace on a click', async () => {
     state.workspaces = TWO_WORKSPACES;
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     await act(async () => {
@@ -198,7 +198,7 @@ describe('NotificationCenter scope', () => {
   it('names the failure when the scope cannot change', async () => {
     state.workspaces = TWO_WORKSPACES;
     state.setNotificationScope.mockRejectedValueOnce(new Error('database is locked'));
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     await act(async () => {
@@ -213,15 +213,42 @@ describe('NotificationCenter scope', () => {
 
 describe('NotificationCenter', () => {
   it('names the bell Notifications in its tooltip, capitalised', () => {
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
 
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: /notifications/i }) })).toBe(
       'Notifications',
     );
   });
 
+  it('shows the bell pressed and current while the Notifications page is open', () => {
+    render(<NotificationCenter isCurrent />);
+
+    const bell = screen.getByRole('button', { name: /notifications/i });
+    expect(bell.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('leaves the bell unmarked while another page is open', () => {
+    render(<NotificationCenter isCurrent={false} />);
+
+    const bell = screen.getByRole('button', { name: /notifications/i });
+    expect(bell.getAttribute('aria-current')).toBeNull();
+  });
+
+  it('opens the page as a door from the popover foot', async () => {
+    const listener = vi.fn();
+    window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+    render(<NotificationCenter isCurrent={false} />);
+    await openCenter();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open all notifications' }));
+
+    const event: unknown = listener.mock.calls[0]?.[0];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({ door: true });
+    window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+  });
+
   it('renders the specified empty state and marks nothing on open', async () => {
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getByText('No notifications yet')).toBeDefined();
@@ -229,7 +256,7 @@ describe('NotificationCenter', () => {
   });
 
   it('shows one line and no Unread or All tabs when there is nothing', async () => {
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getByText('No notifications yet')).toBeDefined();
@@ -242,7 +269,7 @@ describe('NotificationCenter', () => {
     state.notifications = [
       buildNotification({ id: 'n1', title: 'build failed', coalesceKey: 'build', read: true }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getByRole('tab', { name: 'All' })).toBeDefined();
@@ -252,7 +279,7 @@ describe('NotificationCenter', () => {
   it('closes on escape, and only the bell when a layer sits below it', async () => {
     const closeBelow = vi.fn();
     const offBelow = registerEscapeLayer(closeBelow);
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
     expect(screen.getByText('No notifications yet')).toBeDefined();
 
@@ -269,7 +296,7 @@ describe('NotificationCenter', () => {
     ];
     const listener = vi.fn();
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.queryByRole('button', { name: /clear all/i })).toBeNull();
@@ -287,7 +314,7 @@ describe('NotificationCenter', () => {
       buildNotification({ id: 'n2', title: 'middle title', coalesceKey: 'shared' }),
       buildNotification({ id: 'n1', title: 'oldest title', coalesceKey: 'shared' }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getByText('newest title')).toBeDefined();
@@ -306,7 +333,7 @@ describe('NotificationCenter', () => {
       }),
       buildNotification({ id: 'n3', title: 'seen one', coalesceKey: 'c', read: true }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
     fireEvent.click(screen.getByRole('tab', { name: 'All' }));
 
@@ -326,7 +353,7 @@ describe('NotificationCenter', () => {
         ts: new Date(Date.UTC(2026, 7, 31, 12, index)).toISOString(),
       }),
     );
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getByRole('tab', { name: /unread/i }).getAttribute('aria-selected')).toBe('true');
@@ -343,7 +370,7 @@ describe('NotificationCenter', () => {
         ts: new Date(Date.UTC(2026, 7, 31, 12, index)).toISOString(),
       }),
     );
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getAllByRole('listitem')).toHaveLength(12);
@@ -379,7 +406,7 @@ describe('NotificationCenter', () => {
 
     it('marks nothing while it opens and each row after one second on screen', async () => {
       state.notifications = unreadRows({ count: 3 });
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       showRows({ keys: ['key-0', 'key-1', 'key-2'] });
 
@@ -403,7 +430,7 @@ describe('NotificationCenter', () => {
 
     it('leaves a row unread when the bell closes before it was seen', async () => {
       state.notifications = unreadRows({ count: 2 });
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       showRows({ keys: ['key-0', 'key-1'] });
       await act(async () => {
@@ -420,7 +447,7 @@ describe('NotificationCenter', () => {
 
     it('marks only the rows on screen, counts all eleven and says 3 more unread', async () => {
       state.notifications = unreadRows({ count: 11 });
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       const onScreen = Array.from({ length: 8 }, (_, index) => `key-${10 - index}`);
       showRows({ keys: onScreen });
@@ -440,7 +467,7 @@ describe('NotificationCenter', () => {
 
     it('marks a row that scrolls into view after its own second', async () => {
       state.notifications = unreadRows({ count: 11 });
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       showRows({ keys: ['key-10'] });
       await act(async () => {
@@ -462,7 +489,7 @@ describe('NotificationCenter', () => {
 
     it('does not mark a row that scrolls away before its second', async () => {
       state.notifications = unreadRows({ count: 3 });
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       showRows({ keys: ['key-2', 'key-1'] });
       await act(async () => {
@@ -479,7 +506,7 @@ describe('NotificationCenter', () => {
     it('counts every row as on screen where the window cannot measure them', async () => {
       Reflect.deleteProperty(globalThis, 'IntersectionObserver');
       state.notifications = unreadRows({ count: 3 });
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       await act(async () => {
         vi.advanceTimersByTime(1_000);
@@ -493,7 +520,7 @@ describe('NotificationCenter', () => {
         buildNotification({ id: 'n2', title: 'build failed', coalesceKey: 'build' }),
         buildNotification({ id: 'n1', title: 'build failed', coalesceKey: 'build' }),
       ];
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       showRows({ keys: ['build'] });
       await act(async () => {
@@ -505,7 +532,7 @@ describe('NotificationCenter', () => {
 
     it('offers Mark all read while something is unread and marks every entry on press', async () => {
       state.notifications = unreadRows({ count: 11 });
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
 
       fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
@@ -515,7 +542,7 @@ describe('NotificationCenter', () => {
 
     it('marks nothing at once when the open request comes from the key', async () => {
       state.notifications = unreadRows({ count: 2 });
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
 
       await act(async () => {
         window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
@@ -533,7 +560,7 @@ describe('NotificationCenter', () => {
     it('says so when a row could not be marked, and does not try it again by itself', async () => {
       state.notifications = unreadRows({ count: 1 });
       state.markNotificationRead.mockRejectedValueOnce(new Error('database is locked'));
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       showRows({ keys: ['key-0'] });
 
@@ -551,7 +578,7 @@ describe('NotificationCenter', () => {
       state.notifications = [
         buildNotification({ id: 'n1', title: 'old', coalesceKey: 'old', read: true }),
       ];
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
 
       expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull();
@@ -562,7 +589,7 @@ describe('NotificationCenter', () => {
     state.notifications = [buildNotification({ id: 'n1', title: 'app wide', coalesceKey: 'app' })];
     const listener = vi.fn();
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     fireEvent.click(screen.getByRole('button', { name: 'app wide' }));
@@ -574,7 +601,7 @@ describe('NotificationCenter', () => {
   it('opens the studio from the footer with no notifications at all', async () => {
     const listener = vi.fn();
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open all notifications' }));
@@ -593,7 +620,7 @@ describe('NotificationCenter', () => {
         sessionId: 'session-1',
       }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     expect(screen.getByLabelText('Warning')).toBeDefined();
@@ -613,7 +640,7 @@ describe('NotificationCenter', () => {
         sessionId: 'session-1',
       }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'open session' }));
@@ -629,7 +656,7 @@ describe('NotificationCenter', () => {
       buildNotification({ id: 'n2', title: 'newest title', coalesceKey: 'shared' }),
       buildNotification({ id: 'n1', title: 'older title', coalesceKey: 'shared' }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
     fireEvent.click(screen.getByRole('button', { name: 'Delete "newest title"' }));
 
@@ -648,7 +675,7 @@ describe('NotificationCenter', () => {
         },
       },
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
 
     const slot = screen
@@ -671,7 +698,7 @@ describe('NotificationCenter', () => {
           action: OPEN_BUDGET,
         }),
       ];
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
 
       fireEvent.click(screen.getByRole('button', { name: 'Open spend' }));
@@ -695,7 +722,7 @@ describe('NotificationCenter', () => {
           action: OPEN_BUDGET,
         }),
       ];
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
 
       fireEvent.click(screen.getByRole('button', { name: 'Open spend' }));
@@ -716,7 +743,7 @@ describe('NotificationCenter', () => {
           },
         }),
       ];
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
 
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -736,7 +763,7 @@ describe('NotificationCenter', () => {
         }),
         buildNotification({ id: 'n1', title: 'new spend', coalesceKey: 'b', action: OPEN_BUDGET }),
       ];
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       fireEvent.click(screen.getByRole('tab', { name: 'All' }));
 
@@ -758,7 +785,7 @@ describe('NotificationCenter', () => {
           actedAt: isoDateTimeOf({ value: '2026-08-31T12:05:00.000Z' }),
         }),
       ];
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
       fireEvent.click(screen.getByRole('tab', { name: 'All' }));
 
@@ -777,7 +804,7 @@ describe('NotificationCenter', () => {
         }),
       ];
       state.markNotificationsActed.mockRejectedValueOnce(new Error('database is locked'));
-      render(<NotificationCenter />);
+      render(<NotificationCenter isCurrent={false} />);
       await openCenter();
 
       fireEvent.click(screen.getByRole('button', { name: 'Open spend' }));
@@ -796,7 +823,7 @@ describe('NotificationCenter', () => {
       buildNotification({ id: 'n2', title: 'same group read', coalesceKey: 'shared', read: true }),
       buildNotification({ id: 'n1', title: 'other group', coalesceKey: 'other', read: true }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
 
     expect(screen.getByRole('button', { name: 'Notifications, 1 unread' })).toBeDefined();
     await openCenter();
@@ -807,7 +834,7 @@ describe('NotificationCenter', () => {
     state.notifications = Array.from({ length: 4 }, (_, index) =>
       buildNotification({ id: `n${index}`, title: `row ${index}`, coalesceKey: `key-${index}` }),
     );
-    const { unmount } = render(<NotificationCenter />);
+    const { unmount } = render(<NotificationCenter isCurrent={false} />);
 
     expect(document.querySelector('[data-bell-count]')?.textContent).toBe('4');
     unmount();
@@ -815,7 +842,7 @@ describe('NotificationCenter', () => {
     state.notifications = Array.from({ length: 11 }, (_, index) =>
       buildNotification({ id: `n${index}`, title: `row ${index}`, coalesceKey: `key-${index}` }),
     );
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
 
     expect(document.querySelector('[data-bell-count]')?.textContent).toBe('9+');
   });
@@ -824,7 +851,7 @@ describe('NotificationCenter', () => {
     state.notifications = [
       buildNotification({ id: 'n1', title: 'open it', coalesceKey: 'a', action: OPEN_ACTIVITY }),
     ];
-    const { unmount } = render(<NotificationCenter />);
+    const { unmount } = render(<NotificationCenter isCurrent={false} />);
 
     expect(document.querySelector('[data-bell-dot]')?.getAttribute('data-bell-dot')).toBe('unread');
     unmount();
@@ -837,7 +864,7 @@ describe('NotificationCenter', () => {
         action: RETRY_PUBLICATION,
       }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
 
     expect(document.querySelector('[data-bell-dot]')?.getAttribute('data-bell-dot')).toBe(
       'warning',
@@ -848,10 +875,28 @@ describe('NotificationCenter', () => {
     state.notifications = [
       buildNotification({ id: 'n1', title: 'old', coalesceKey: 'old', read: true }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
 
     expect(document.querySelector('[data-bell-count]')).toBeNull();
     expect(document.querySelector('[data-bell-dot]')).toBeNull();
+  });
+
+  it('stacks the page from a row with no session, so Back returns to the page below', async () => {
+    state.notifications = [
+      buildNotification({ id: 'n1', title: 'app wide notice', coalesceKey: 'app-wide' }),
+    ];
+    const listener = vi.fn();
+    window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+    render(<NotificationCenter isCurrent={false} />);
+    await openCenter();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'app wide notice' }));
+    });
+
+    const event: unknown = listener.mock.calls[0]?.[0];
+    expect(event instanceof CustomEvent ? event.detail : 'missing').toBeNull();
+    window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
   });
 
   it('navigates from a single-entry group with a target', async () => {
@@ -864,7 +909,7 @@ describe('NotificationCenter', () => {
         sessionId: 'session-1',
       }),
     ];
-    render(<NotificationCenter />);
+    render(<NotificationCenter isCurrent={false} />);
     await openCenter();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'open session' }));
