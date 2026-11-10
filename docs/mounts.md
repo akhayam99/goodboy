@@ -529,7 +529,7 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   The command answers `updated`, `unchanged` or `failed` with git's message
   (credentials redacted): a failed fetch is never read as "nothing changed".
 - **Refresh re-reads a session on demand.** The header's Refresh button
-  (before Archive and Delete, hidden on an archived session), ⌘⇧R and the
+  (before Archive and Delete, hidden on an archived session), ⌘R and the
   palette's `Refresh session` run `resyncSession`: mounts and branches from
   disk, the local branch and worktree status caches, linked work items, and
   every provider request and the review threads of the open session forced,

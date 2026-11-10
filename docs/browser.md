@@ -244,6 +244,12 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   session's project (Unpin when a pin is shown), Open in your browser, Open as
   page (see Moves) and Close. The first button toggles the tab list, and the pane remembers the
   choice (`goodboy:browser-tab-list:v1`).
+- **⌘R reloads the shown tab** while the browser has the keyboard: a click or
+  focus in the pane, or the page webview itself. The pane and the page register
+  `model.reload` with `useReloadSurface` (the page as the main surface of its
+  screen), and the menu bar brings ⌘R to the window page even when the page
+  webview has focus, since a menu command never goes to a browser tab. ⌘⇧R
+  reloads Goodboy ([shell.md](navigation/shell.md)).
 - **The address rule** (`addressOf`): a full `http` or `https` address loads
   as typed; a bare host loads on `https`, and on `http` when it is
   `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
@@ -317,7 +323,7 @@ own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
   the view waits while the page owns it, and shows it again once the page
   lets it go.
 - **The route** names the session and the tab. Picking a row amends it, and a
-  close or a new tab moves it to the tab now shown. A reload or ⌘R reads the
+  close or a new tab moves it to the tab now shown. A reload of Goodboy (⌘⇧R) reads the
   route back, so the page comes back on the same tab, not the first one. A
   route with no session opens on the first session holding a tab, at its
   first tab, and names that session.

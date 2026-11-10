@@ -931,7 +931,7 @@ Each `DiffFile` body is `content-visibility: auto`, and its `contain-intrinsic-s
 
 ## Live mark for the text reveal
 
-The text reveal animates only text that came through `readTurnStream` in this window. `liveTextRegistry.mark` is called there and nowhere else: `appendTurnEvent` and `bufferTurnEvent` also run for a Cmd+R re-attach replay and know nothing about their source, so marking in them would write in a replayed answer word by word. The mark is keyed by run id, not item key, because the stored event has no item key; a host decides at mount time, and a text that was not live at mount grows live only when the registry is live again. The 1.5 s live window is the lag cap in `revealNumbers.ts`: a host that mounts later shows the text whole.
+The text reveal animates only text that came through `readTurnStream` in this window. `liveTextRegistry.mark` is called there and nowhere else: `appendTurnEvent` and `bufferTurnEvent` also run for a window reload re-attach replay and know nothing about their source, so marking in them would write in a replayed answer word by word. The mark is keyed by run id, not item key, because the stored event has no item key; a host decides at mount time, and a text that was not live at mount grows live only when the registry is live again. The 1.5 s live window is the lag cap in `revealNumbers.ts`: a host that mounts later shows the text whole.
 
 ## The reveal hold in the chat scroll
 

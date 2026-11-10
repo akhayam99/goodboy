@@ -95,6 +95,14 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **⌘↑** goes up one level to the page that holds the one you are on.
 - **⌥⌘↓** goes to the next session that needs you.
 - **⌘/** opens the full list.
+
+**Reload where you are**
+
+- **⌘R** reloads the place you are on, never the whole app.
+- With the keyboard in the Browser, its address, its tabs or the page itself, ⌘R reloads that tab.
+- In a session, ⌘R refreshes the session: its projects, branches and pull requests.
+- On a page with nothing to reload, ⌘R does nothing.
+- **⌘⇧R** reloads Goodboy. The window comes back on the same page.
 - The header of that page says that a right click or **Shift+F10** on a list row opens its actions. These are the same words as the tooltip of a row's **⋯**.
 - The first time the pointer enters a list, every row shows its **⋯** until the pointer leaves, once.
 
@@ -130,7 +138,7 @@ On a Mac the menu bar carries the same keys.
 
 - File holds New Session, New Chat, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
 - Edit holds Search.
-- View holds the sidebar, the palette, zoom and Reload.
+- View holds the sidebar, the palette, zoom, Reload (**⌘R**) and Reload Goodboy (**⌘⇧R**).
 - Go walks to Sessions, Tasks, Chat, Workflows, Terminal, Impact, Notifications and Monitoring.
 - Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
@@ -211,6 +219,7 @@ This part is for contributors and agents who change the feature.
 - Changed shortcuts: the local setting `shortcuts.overrides`, by registry id.
 - One spelling per key: hints read the shortcut registry through the `shortcut` prop or `shortcutGlyphs`.
 - Stop the running agent: the registry id is `agent.stop`.
+- Reload where you are: `view.reload` runs `reloadWhereYouAre`, which picks one surface registered with `useReloadSurface` (`pickReloadSurface`). `app.reload` reloads the window. `scopedReload.test.tsx` pins both.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.

@@ -41,7 +41,7 @@ An empty card is not drawn. An archived session keeps only **Done**.
 
 ### Refresh a session
 
-Pull requests opened outside Goodboy, by an agent or from a terminal, show up when a turn ends or when you come back to the window. **Refresh** in the session's `...` menu, or **⌘⇧R**, re-reads projects, branches and pull requests right away.
+Pull requests opened outside Goodboy, by an agent or from a terminal, show up when a turn ends or when you come back to the window. **Refresh** in the session's `...` menu, or **⌘R**, re-reads projects, branches and pull requests right away.
 
 ### Full log
 
