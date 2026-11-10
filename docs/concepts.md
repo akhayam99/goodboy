@@ -189,7 +189,7 @@ says no git word, held by
 `__tests__/regressions/documents-copy-has-no-git-words.test.ts`.
 
 Every door says **New workspace** (Home, the switcher, the palette, the
-Goodboy menu, the menu bar) and opens one form with no shape to choose; **Start
+menu bar) and opens one form with no shape to choose; **Start
 from scratch** lives inside it. The form sets up the folders of one workspace. They are not different kinds of workspace, and
 a workspace never links to another one
 ([ADR 001](adr/001-workspace-project-rename.md)).

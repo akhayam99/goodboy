@@ -87,7 +87,7 @@
 - **The column holds every door and never changes level.** New session comes first, then the doors Board (the board, ⌘⇧H),
   Tasks, Chat, Workflows and Impact as rows, then Terminal, Browser and Monitoring as one row of tiles; Chat ends in a plus
   (New chat) that is always visible. No separator: the Pinned and
-  Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
+  Sessions lists follow, and Settings and the Goodboy line, with the bug icon, sit at the foot, the app's corner. A
   door's trailing slot is a 6px dot (running, unread, warning); the count is in
   its tooltip and accessible name, never a colored number. Board is the one
   exception: it carries the number of sessions that need you, drawn like the
@@ -113,7 +113,7 @@
   (`column`, `tile`, `topBar` or `foot`) of Board, Tasks, Workflows, Chat,
   Impact, Terminal, Browser, Monitoring, Notifications, Settings, Guide and
   What's new, in one order. The column rows and tiles, the folded rail, the foot
-  of the column and the Goodboy menu, the Go menu, the palette rows and the
+  of the column, the Go menu, the palette rows and the
   shortcut sheet all read it, so a destination has one word and one glyph in
   every place. Settings, Guide and What's new have the `foot` home and the `app`
   scope; the nine others are `workspace` pages. `openDestination` is the one way
@@ -156,8 +156,8 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised column control. Doors, Board included, are neutral at
-  rest, and so is the column's Goodboy row, with one exception: a pending
-  update adds a version pill to the row until you act on it. An update is an
+  rest, and so is the column's Goodboy line, with one exception: a pending
+  update adds a version pill to the line until you act on it. An update is an
   event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
@@ -183,9 +183,9 @@
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
   does: the open session's row is the column's sign and the current page row is
-  the session rail's (see Session rail), one sign per navigation column. A popover trigger (the
-  Usage chips, the Goodboy row) is never selected: it only reports
-  `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
+  the session rail's (see Session rail), one sign per navigation column. The Goodboy line is a door to Help and
+  is selected while a Help tab is open (`place` `help`). A popover trigger (the
+  Usage chips) is never selected: it only reports `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
   `__tests__/navigation/oneDoor.test.ts` pins the rule.
 
