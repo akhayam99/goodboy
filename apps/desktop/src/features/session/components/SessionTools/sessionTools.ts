@@ -4,11 +4,11 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import type { ClusterPane } from '../../panes/clusterPane';
 
-type SessionToolGroup = 'read' | 'work';
+type ToolGroup = 'session' | 'workspace';
 
 export type SessionTool = {
   readonly pane: ClusterPane;
-  readonly group: SessionToolGroup;
+  readonly group: ToolGroup;
   readonly icon: LucideIcon;
   readonly label: string;
   readonly fullLabel?: string;
@@ -18,21 +18,21 @@ export type SessionTool = {
 export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
   {
     pane: 'explore',
-    group: 'read',
+    group: 'session',
     icon: CONCEPT_ICONS.explore,
     label: 'Explore',
     shortcut: 'lens.explore',
   },
   {
     pane: 'context',
-    group: 'read',
+    group: 'session',
     icon: CONCEPT_ICONS.context,
     label: NAMES.context,
     shortcut: 'lens.context',
   },
   {
     pane: 'ask',
-    group: 'read',
+    group: 'session',
     icon: CONCEPT_ICONS.ask,
     label: 'Ask',
     fullLabel: 'Ask this session',
@@ -40,29 +40,32 @@ export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
   },
   {
     pane: 'spawned',
-    group: 'work',
+    group: 'session',
     icon: CONCEPT_ICONS.agents,
     label: 'Agents',
     shortcut: 'session.spawned',
   },
   {
     pane: 'scripts',
-    group: 'work',
+    group: 'session',
     icon: CONCEPT_ICONS.scripts,
     label: 'Scripts',
     shortcut: 'lens.scripts',
   },
+];
+
+export const WORKSPACE_TOOLS: ReadonlyArray<SessionTool> = [
   {
     pane: 'terminal',
-    group: 'work',
+    group: 'workspace',
     icon: CONCEPT_ICONS.terminal,
-    label: 'Terminal',
-    shortcut: 'session.terminal',
+    label: NAMES.terminal,
+    shortcut: 'terminal.studio',
   },
   {
     pane: 'browser',
-    group: 'work',
+    group: 'workspace',
     icon: CONCEPT_ICONS.browser,
-    label: 'Browser',
+    label: NAMES.browser,
   },
 ];

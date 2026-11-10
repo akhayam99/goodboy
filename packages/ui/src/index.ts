@@ -2,6 +2,7 @@ export { cn } from './cn';
 export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
+export { ShellRailContext } from './shellRailContext';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export { DrawerBackChipContext } from './drawerBackChipContext';
 export type { DrawerChip } from './drawerBackChipContext';
@@ -21,8 +22,10 @@ export { ICON_SIZE, ICON_STROKE } from './iconSize';
 export { TEXT_ROLE } from './textRoles';
 export type { TextRole } from './textRoles';
 export {
+  BOARD_LANE_FADE_PX,
   BOARD_LANE_GAP_REM,
   BOARD_LANE_MIN_REM,
+  BOARD_LANE_SCROLL_MIN_REM,
   PANE_GROUPS_GAP_REM,
   PANE_RHYTHM,
 } from './paneRhythm';

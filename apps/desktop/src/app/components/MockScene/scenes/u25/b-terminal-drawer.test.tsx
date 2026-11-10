@@ -99,7 +99,7 @@ describe('the terminal drawer scenes', () => {
     );
     expect(within(drawer).queryByRole('heading', { name: 'Terminal' })).toBeNull();
     expect(within(drawer).queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
-    expect(within(drawer).getByRole('button', { name: 'Open page' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Open as page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
     const tabs = within(drawer).getAllByRole('tab');
@@ -118,8 +118,10 @@ describe('the terminal drawer scenes', () => {
     expect(picker.textContent).toBe('payments-api · hl/fix-webhook-idempotency');
     expect(picker.textContent).not.toContain('gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
-    expect(header?.contains(within(drawer).getByRole('button', { name: 'Open page' }))).toBe(true);
-    expect(within(drawer).queryByText('Open page')).toBeNull();
+    expect(header?.contains(within(drawer).getByRole('button', { name: 'Open as page' }))).toBe(
+      true,
+    );
+    expect(within(drawer).queryByText('Open as page')).toBeNull();
   });
 
   it('switches tabs inside the drawer without leaving the worktree', async () => {
@@ -186,9 +188,9 @@ describe('the terminal drawer scenes', () => {
     fireEvent.click(within(drawer).getByRole('tab', { name: 'dev server' }));
     await settle();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open as page' }));
 
-    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().drawer?.kind).toBe('terminal');
     const studio = store.getState().appStudio;
     expect(studio?.kind).toBe('terminal');
     expect(studio?.kind === 'terminal' ? studio.terminalId : null).toBe(`${SESSION_ID}::t3`);

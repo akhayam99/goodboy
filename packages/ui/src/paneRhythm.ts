@@ -1,6 +1,10 @@
 export const BOARD_LANE_MIN_REM = 12.25;
 
+export const BOARD_LANE_SCROLL_MIN_REM = 11;
+
 export const BOARD_LANE_GAP_REM = 0.75;
+
+export const BOARD_LANE_FADE_PX = 32;
 
 export const PANE_GROUPS_GAP_REM = 2;
 

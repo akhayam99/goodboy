@@ -10,7 +10,6 @@ import {
 } from '../../../../store';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
-import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { useActionControls } from '../../../actions/useActionControls';
 import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
@@ -25,8 +24,8 @@ import { BoardFactsFrame } from './BoardFactsFrame';
 import { BoardSkeleton } from './BoardSkeleton';
 import { BoardEmpty } from './BoardEmpty';
 import { BoardLanes } from './BoardLanes';
-import { boardLanesOf, rootRemPx } from './boardLanesOf';
 import { BOARD_STAGES } from './boardStages';
+import { useBoardLayout } from './useBoardLayout';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useArchivedSessionsLoad } from './useArchivedSessionsLoad';
 import { useBoardMotionKey } from './useBoardMotionKey';
@@ -43,8 +42,6 @@ const SELECTION_VERB_IDS = [
   'sessions.restore',
   'sessions.delete',
 ];
-
-const WIDTH_BEFORE_MEASURE = Number.POSITIVE_INFINITY;
 
 type OpenAttention = {
   readonly sessionId: SessionId;
@@ -118,9 +115,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const selection = useBoardSelection({ sessions: boardSessions });
   const { selectedIds } = selection;
   const boardRef = useRef<HTMLDivElement | null>(null);
-  const frame = useElementWidth();
-  const remPx = useMemo(() => rootRemPx(), []);
-  const layout = boardLanesOf({ width: frame.width ?? WIDTH_BEFORE_MEASURE, remPx });
+  const { ref: frameRef, layout, scrollLaneRem } = useBoardLayout();
   const selectionTarget = useMemo<ObjectTarget | null>(
     () => (selectedIds.length === 0 ? null : { kind: 'sessions', sessionIds: selectedIds }),
     [selectedIds],
@@ -181,7 +176,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   return (
     <div ref={boardRef} className={cn('relative flex h-full w-full', PANE_RHYTHM.board.pad)}>
       <div
-        ref={frame.ref}
+        ref={frameRef}
         className={cn('mx-auto flex h-full min-h-0 w-full flex-col', PANE_RHYTHM.board.maxWidth)}
       >
         <SessionsHeader
@@ -223,6 +218,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             <BoardFactsFrame workspaceId={workspaceId}>
               <BoardLanes
                 layout={layout}
+                scrollLaneRem={scrollLaneRem}
                 byStage={byStage}
                 archived={projectArchived}
                 isArchivedLoading={archivedList === undefined}

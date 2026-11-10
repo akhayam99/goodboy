@@ -97,6 +97,14 @@ const press = (id: ShortcutId) => async (): Promise<void> => {
   await pressed(id);
 };
 
+const openTerminalPage = async (): Promise<void> => {
+  await focusAnchor();
+  useAppStore.getState().openStudio({
+    studio: { kind: 'terminal', terminalId: null, sessionId: null },
+  });
+  await settle();
+};
+
 type MenuItemParams = {
   readonly id: string;
 };
@@ -330,7 +338,11 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'terminal.studio',
-    lands: () => visible('heading', 'No terminal yet'),
+    lands: async () => {
+      await screen.findByRole('button', { name: 'Open as page' });
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+      expect(useAppStore.getState().appStudio).toBeNull();
+    },
   }),
   keyRow({
     id: 'nav.back',
@@ -522,7 +534,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'session.terminal',
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open page' });
+      await screen.findByRole('button', { name: 'Open as page' });
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     },
   }),
@@ -812,17 +824,19 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   {
-    name: 'menu: Go > Browser opens the Browser page and leaves it alone when it is open',
+    name: 'menu: Go > Browser shows the Browser dock, hides it on a second pick, and opens no page',
     covers: ['menu:menu.browser'],
     open: async () => {
       await pickMenuItem({ id: 'menu.browser' });
-      await waitFor(() => expect(useAppStore.getState().appStudio?.kind).toBe('browser'));
-      const opened = useAppStore.getState().navigation;
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'));
       await pickMenuItem({ id: 'menu.browser' });
-      expect(useAppStore.getState().navigation).toBe(opened);
+      await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'));
     },
     lands: async () => {
-      expect(useAppStore.getState().appStudio?.kind).toBe('browser');
+      expect(useAppStore.getState().drawer?.kind).toBe('browser');
+      expect(useAppStore.getState().appStudio).toBeNull();
     },
   },
   keyRow({
@@ -881,7 +895,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.newHere',
     note: 'on the Terminal page the new chord opens a terminal, not a session',
     open: async () => {
-      await press('terminal.studio')();
+      await openTerminalPage();
       await screen.findByRole('heading', { name: 'No terminal yet' });
       await pressed('terminal.newHere', document.body);
     },
@@ -905,7 +919,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.closeTab',
     note: 'on the Terminal page the close chord closes the selected tab, not the page',
     open: async () => {
-      await press('terminal.studio')();
+      await openTerminalPage();
       await screen.findByRole('heading', { name: 'No terminal yet' });
       await pressed('terminal.newHere', document.body);
       await waitFor(() => expect(terminalRows().length).toBe(1));
@@ -1634,7 +1648,8 @@ const SELECTION_KEY_ROWS: ReadonlyArray<Row> = [
       await selectUnderPointer();
       await pressed('selection.clear', document.body);
     },
-    lands: async () => waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull()),
+    lands: async () =>
+      waitFor(() => expect(screen.queryByRole('toolbar', { name: /selected$/ })).toBeNull()),
   }),
   keyRow({
     id: 'selection.delete',
@@ -1669,7 +1684,7 @@ const focusSelectedTab = (): HTMLElement => {
 };
 
 const openTwoTerminalTabs = async (): Promise<void> => {
-  await press('terminal.studio')();
+  await openTerminalPage();
   await screen.findByRole('heading', { name: 'No terminal yet' });
   await pressed('terminal.newHere', document.body);
   await waitFor(() => expect(terminalRows().length).toBe(1));
@@ -1749,7 +1764,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'terminal.newTab',
     open: async () => {
-      await press('terminal.studio')();
+      await openTerminalPage();
       await screen.findByRole('heading', { name: 'No terminal yet' });
       const [newTerminal] = screen
         .getAllByRole('button', { name: /^New terminal$/ })

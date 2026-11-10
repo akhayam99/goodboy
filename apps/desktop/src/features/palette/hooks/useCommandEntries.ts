@@ -20,7 +20,7 @@ import {
   useWorkspaces,
 } from '../../../store';
 import { DESTINATIONS } from '../../../shared/navigation/destinations';
-import { openDestination } from '../../../shared/navigation/openDestination';
+import { runDestination } from '../runDestination';
 import { useUnreadSessionIds } from '../../../shared/hooks/useUnreadSessionIds';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES, formerNamesOf } from '../../../shared/utils/names';
@@ -240,7 +240,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
             group: null,
             icon: destination.icon,
             ...(destination.shortcutId !== undefined && { shortcut: destination.shortcutId }),
-            run: () => openDestination({ id: destination.id }),
+            run: () => runDestination({ id: destination.id }),
           }),
         ),
         {
@@ -306,7 +306,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           run: () =>
             isInSession && sessionId !== null
               ? void openSessionTerminalHere({ sessionId, isFresh: true })
-              : void openWorkspaceTerminal({ workspaceId }),
+              : void openWorkspaceTerminal({ workspaceId, isFresh: true }),
         },
       );
     }

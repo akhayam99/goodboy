@@ -15,6 +15,7 @@ export type StudioChrome = {
 export type StudioDrawerSpec = {
   readonly node: ReactNode | null;
   readonly drawerKey?: string;
+  readonly onClose?: () => void;
   readonly ariaLabel: string;
   readonly resizeLabel: string;
   readonly drawerRef?: Ref<HTMLElement>;

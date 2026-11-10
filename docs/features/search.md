@@ -9,8 +9,7 @@ Every place you go sits in one sidebar on the left. It looks the same on every s
 - **New session**
 - **Sessions** and **Tasks** (the work of your other tools)
 - **Workflows** and **Chat**. Chat has a **+** to start one.
-- the quieter **Impact**
-- one row of tiles for **Terminal**, **Browser** and **Monitoring**, each with a count or a warning dot
+- the quieter **Impact** and **Monitoring**. Monitoring shows a warning dot when a pinned port is down.
 - your pinned and recent sessions
 - **Settings**
 
@@ -23,7 +22,7 @@ Click a session and its row stays selected. The session opens with its own rail 
 
 The **⋯** holds **Limit**, **Archive** and **Delete** with the session's other actions.
 
-At the right of the page, the session tools are a column of icons, each named with its shortcut on hover. Under **Read** sit **Explore**, **Context** and **Ask this session**. Under **Work** sit **Agents**, **Scripts**, **Terminal** and **Browser**. The active tool shows its name below its icon. A ring marks the tool waiting behind the drawer in the side slot.
+At the right of every page, the right rail is a column of icons, each named with its shortcut on hover. In a session, **Session** holds **Explore**, **Context**, **Ask this session**, **Agents** and **Scripts**. At the foot, on every page, sit **Terminal** and **Browser**, for the whole workspace. They stay open as you move between pages. **Open as page** makes either one full size, and **Dock** puts it back. The active tool shows its name below its icon. A ring marks the tool waiting behind the drawer in the side slot.
 
 A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
 

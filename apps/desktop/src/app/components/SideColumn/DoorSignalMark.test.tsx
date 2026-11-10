@@ -53,6 +53,20 @@ describe('DoorSignalMark', () => {
     expect(one.querySelector('[data-door-pill]')).toBeNull();
   });
 
+  it('draws a bare muted number, no dot, for ports in use', () => {
+    const count = mark({
+      count: 3,
+      isWarning: false,
+      isUnread: false,
+      countText: '3',
+      fact: '3 in use',
+    }).querySelector('[data-door-count]');
+
+    expect(count?.textContent).toBe('3');
+    expect(count?.getAttribute('data-door-signal')).toBe('neutral');
+    expect(count?.querySelector('[aria-hidden]')).toBeNull();
+  });
+
   it('draws only the dot on the collapsed rail, where a number has no room', () => {
     const rail = render(
       <DoorSignalMark

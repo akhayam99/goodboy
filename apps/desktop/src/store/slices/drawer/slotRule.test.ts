@@ -197,11 +197,46 @@ describe('the side slot', () => {
     expect(slot()).toEqual({ top: 'artifact', back: null });
   });
 
-  it('never chips a drawer of another session', () => {
-    store.getState().openDrawer(TERMINAL);
+  it('never chips a session drawer of another session', () => {
+    store.getState().openDrawer(PLAN);
     store.getState().openDrawer({ ...EXPLORE, sessionId: OTHER_SESSION_ID });
 
     expect(store.getState().drawerBack).toBeNull();
+  });
+
+  it('chips Terminal over a tool of another session, a workspace tool has no session to leave', () => {
+    store.getState().openDrawer(TERMINAL);
+    store.getState().openDrawer({ ...EXPLORE, sessionId: OTHER_SESSION_ID });
+
+    expect(store.getState().drawerBack?.kind).toBe('terminal');
+  });
+
+  it('replaces Terminal with a second terminal, so hiding Terminal hides the dock', () => {
+    const second: DrawerRequest = {
+      kind: 'terminal',
+      sessionId: null,
+      payload: { terminalId: brandId<TerminalTabId>({ value: 'term-2' }) },
+    };
+    store.getState().openDrawer(TERMINAL);
+    store.getState().openDrawer(second);
+
+    expect(store.getState().drawer).toEqual(second);
+    expect(store.getState().drawerBack).toBeNull();
+    store.getState().closeDrawer();
+    expect(store.getState().drawer).toBeNull();
+  });
+
+  it('keeps another tool in the chip when a second terminal replaces the first', () => {
+    const second: DrawerRequest = {
+      ...TERMINAL,
+      payload: { terminalId: brandId<TerminalTabId>({ value: 'term-2' }) },
+    };
+    store.getState().openDrawer(PLAN);
+    store.getState().openDrawer(TERMINAL);
+    store.getState().openDrawer(second);
+
+    expect(store.getState().drawer).toEqual(second);
+    expect(store.getState().drawerBack).toEqual(PLAN);
   });
 
   it('gives a second window its own slot', async () => {

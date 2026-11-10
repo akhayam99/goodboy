@@ -248,11 +248,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'shell',
     group: 'daily',
     title: 'Sidebar and session pages',
-    lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the session tools sit in a thin column at the right.',
+    lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the tools sit in a thin column at the right.',
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Board, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Board, Tasks, Workflows, Chat, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
@@ -275,8 +275,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: `Agents, or ${shortcutGlyphs('session.spawned')}, shows the open run or Auto as a tree, else what is live. An agent opens beside it; j and k hop.`,
       },
       {
-        term: 'Session tools',
-        desc: `The icon column at the right of the session page holds Explore, Context and Ask under Read, then Agents, Scripts, Terminal and Browser under Work. A pane closes with ${shortcutGlyphs('overlay.close')}, and the one it replaced waits in a chip. Open as page moves a Browser tab to the Browser page.`,
+        term: 'Right rail',
+        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask, Agents and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open as page grows them into a page, Dock puts them back.',
       },
     ],
     links: [],
@@ -765,11 +765,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents, ${shortcutGlyphs('lens.scripts')} Scripts and ${shortcutGlyphs('session.terminal')} Terminal. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('slot.close')} closes the drawer.`,
+        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('slot.close')} closes the drawer.`,
       },
       {
         term: 'Terminal',
-        desc: `Control and backtick open Terminal, every terminal of the workspace in one list. ${shortcutGlyphs('terminal.newTab')} adds a tab while one has focus, and shells survive a reload. A zsh row shows its last command.`,
+        desc: `Control and backtick, or ${shortcutGlyphs('session.terminal')}, show or hide the Terminal dock on any screen. ${shortcutGlyphs('terminal.newTab')} adds a tab while one has focus, and shells survive a reload. A zsh row shows its last command.`,
       },
       {
         term: 'Right click',

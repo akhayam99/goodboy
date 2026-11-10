@@ -126,6 +126,8 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     );
   const isPaneHosted = useStudioDrawer({
     node: historyPane,
+    ...(historyWorkflowId !== null && { drawerKey: historyWorkflowId }),
+    onClose: () => setHistoryWorkflowId(null),
     ariaLabel: HISTORY_PANE_LABEL,
     resizeLabel: HISTORY_RESIZE_LABEL,
   });

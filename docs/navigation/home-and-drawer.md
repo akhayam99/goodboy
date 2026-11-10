@@ -208,14 +208,20 @@ Agents drawer on the run it came from.
 
 One drawer at a time, per window, plus one waiting in the chip. The `drawer`
 store slice holds `drawer` and `drawerBack`, each `{ kind, sessionId, payload }`
-or null: `openDrawer` puts the request in the slot and what it replaced in
+or null; only Terminal and Browser, the workspace tools, may carry
+`sessionId: null`. `openDrawer` puts the request in the slot and what it replaced in
 `drawerBack` (`slotAfterOpen`), so a third open drops the oldest; reopening the
 drawer in the slot, an artifact on another tab included (`slotKey`), keeps the
-chip; a drawer of another session clears it. `closeDrawer` brings `drawerBack`
+chip; a drawer of another session clears it, unless one of the two is a
+workspace tool (`sharesSlot`). A second Terminal replaces the first in the
+slot and keeps the chip as it was, so hiding Terminal hides the dock and never
+brings back an older terminal. Archiving or deleting a session drops a
+Terminal or Browser dock opened on it from the slot and the chip
+(`slotAfterSessionGone`). `closeDrawer` brings `drawerBack`
 back and empties it, so Escape, the X, the trigger pressed again
 (`toggleDrawer`), a crashed drawer's leave and ⌘⇧W all walk the same two steps.
 `clearDrawer` empties both at once, for a caller whose work moved elsewhere (a
-terminal opened on its page, a plan approved onto the run page, View transcript,
+plan approved onto the run page, View transcript,
 Write title and goal from linked work); the chip does not come back after it.
 A tool keeps its state while it waits: Terminal keeps its shell, Explore its
 open folders. A second window has its own store, so its own slot.
@@ -223,15 +229,21 @@ open folders. A second window has its own store, so its own slot.
 history entry's focus; the chip is not.** A forward move (crumb, sidebar, palette, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
 Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
-Scripts, Agents, Terminal, Browser): a forward move that stays in its session keeps it open
+Scripts, Agents): a forward move that stays in its session keeps it open
 (`keepToolDrawer` in `navigate`), so a chip in an answer changes the page beside
-it. A tool in the chip stays too: over a reader it comes back into the slot,
+it. Terminal and Browser stay open on every move, another session and the
+Board included, and on Back to an entry that had no drawer (`keptTool`). A
+tool in the chip stays too: over a reader it comes back into the slot,
 under a tool it stays in the chip (`backAfterPlace` in `applyLocation`). Leaving
-the session empties both, and Back brings the drawer back like any drawer. A
-studio over the session parks the drawer instead: the slot and the chip keep
+the session empties both of its session tools, and Back brings the drawer back
+like any drawer. A
+studio over the session parks a session drawer instead: the slot and the chip keep
 it, it stays mounted but hidden and inert, no close key reaches it
 (`selectDrawerPanel` is null under a studio), and it shows again, as it was,
-when the studio closes. Its own key on the studio leaves every studio stacked
+when the studio closes. A workspace tool shows beside any studio but its own
+page; under its own page it is kept in the store and not mounted. On Tasks,
+Chat and Workflows the page's own panel and the dock replace each other,
+latest wins (`useOneRightPanel`). Its own key on the studio leaves every studio stacked
 over the session and shows it. A reader, an item or a
 form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most

@@ -8,16 +8,18 @@ Open a real login shell in the workspace folder or any linked worktree.
 
 **Open a terminal**
 
-- **⌃** with the backtick key opens the Terminal page with every terminal, grouped by session.
-- **⌘⌥T**, the worktree menu and ⌘K **Open <repo · branch> in terminal** open a session terminal in a drawer, one click from the page.
-- Inside a session, ⌘K **New terminal in this session** adds a fresh tab in that drawer. It uses the active worktree, or the workspace folder when the session has no branch. The session stays open.
+- **Terminal** at the foot of the right rail, **⌃** with the backtick key, or **⌘⌥T** shows or hides the Terminal dock, on any page. In a session it opens on the session's worktree. Anywhere else it opens in the workspace folder.
+- The dock stays open as you move between sessions and pages. The rail button shows how many terminals run.
+- The worktree menu and ⌘K **Open <repo · branch> in terminal** open that worktree in the dock.
+- **File › New Terminal** and ⌘K **New terminal** add a fresh tab in the dock. In a session it uses the active worktree, or the workspace folder when the session has no branch. On the Terminal page the new tab opens on the page.
 - **⌘T** adds a tab in place. **⌘N** opens a picker on the page and in the drawer. Type to filter, use the arrows and Enter.
 - The picker offers folders and existing worktrees, one row each with the project and the branch. The path is in the tooltip.
-- In the drawer the header reads **Terminal** and one scope picker (project, then branch). ⌘N opens it. **+** adds a tab in the current scope.
+- In the dock the header reads **Terminal** and one scope picker (project, then branch). ⌘N opens it. **+** adds a tab in the current scope.
 
 **The Terminal page**
 
-- It says **No terminal yet** until you open one.
+- **Open as page** in the dock makes the terminal full size, with every terminal of the workspace beside it. **Dock** puts it back on the same tab, and so does Back.
+- It says **No terminal yet** until you open one. **Dock** stays there too, and opens a terminal in the dock.
 - It groups terminals by session. Each group shows its row count from two.
 - One line per worktree shows the project, the branch and a dot while a shell runs a process.
 - The line names the command that runs. When it ends, the line says it passed, or that it failed with its exit code.
@@ -62,7 +64,7 @@ The strip ends with the same controls on every scope.
 
 **Dot on Terminal**
 
-When a command that ran for more than ten seconds ends while the terminal drawer is closed, **Terminal** in the tools column gets a dot ("pnpm test finished after 42s"). The dot does not say whether the command passed; the Terminal page line does.
+When a command that ran for more than ten seconds ends while the terminal drawer is closed, **Terminal** in the right rail gets a dot ("pnpm test finished after 42s"). The dot does not say whether the command passed; the Terminal page line does.
 
 **File paths in output**
 
@@ -131,7 +133,7 @@ On a Mac the menu bar carries the same keys.
 - File holds New Session, New Chat, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
 - Edit holds Search.
 - View holds the sidebar, the palette, zoom and Reload.
-- Go walks to Board, Tasks, Workflows, Chat, Impact, Terminal, Browser, Monitoring and Notifications.
+- Go walks to Board, Tasks, Workflows, Chat, Impact, Monitoring and Notifications, then Show or Hide Terminal and Show or Hide Browser.
 - Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
 <picture>
@@ -145,7 +147,7 @@ On a Mac the menu bar carries the same keys.
 
 Pin the scripts you use and run them from the session.
 
-- Open the Scripts pane from **Scripts** in the tools column at the right of the session, or with ⌘⌥S.
+- Open the Scripts pane from **Scripts** in the right rail of the session, or with ⌘⌥S.
 - It groups scripts on one grid into **Services** (dev servers and watchers) and **Commands** (scripts that run and end).
 - A click on a row opens its output. The row's one control is **Run** or **Stop**. **Pin**, **Restart** and the rest live in the right click menu.
 - A running service shows its dot and uptime. CPU and memory are two rows in the card you get when you rest on its status.
@@ -186,10 +188,9 @@ Browse the session folder as a file tree, with a preview of the selected file be
 
 Open your dev server, a port or a link beside the session or on a page of its own, without leaving Goodboy.
 
-- **Browser** in the session tools opens the page beside the work. The Session pages fold to icons while it is open.
-- **Browser** in the sidebar opens the Browser page. It lists every tab, grouped by session, then the pins of each project. The tile counts the open tabs.
+- **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. The button counts the open tabs.
+- **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Dock** puts it back. The page never reloads, so a half-typed form stays.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
-- **Open as page** moves the shown tab from beside the session to the Browser page. **Back beside the session** moves it back. The page never reloads, so a half-typed form stays.
 - Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
 - A port chip, a running Service's port and a link in a conversation, a decision or an artifact open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
 - Rest on a localhost link to see its page title and address before you open it.
@@ -204,6 +205,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 
 This part is for contributors and agents who change the feature.
 
+- Terminal dock: ``⌃` `` (`terminal.studio`) and ⌘⌥T (`session.terminal`) both run `toggleTerminalDock`; off a session page it opens `openWorkspaceTerminal`, a drawer with `sessionId: null`. `openTerminalOnPage` and `dockTerminalPage` move between dock and page, `dockEmptyTerminalPage` docks a terminal from the empty page, and [studios.md](../navigation/studios.md) owns the Terminal page.
 - Archived sessions group: `terminalGroups` and `CloseGroupButton` build the group and its **Close all**.
 - Process on a tab: `terminal_list_live` returns `foregroundCommand`, shaped by `foregroundLabelOf`. `terminalCommandOf` is the fallback.
 - Exit status: `terminal_shell_hook.rs` writes zsh startup files under the app data `shell-integration/zsh` and points `ZDOTDIR` there. They source the user's own files. The hook runs under `emulate -L zsh`, appends to `precmd_functions` and `preexec_functions` and survives `setopt nounset`. Preexec keeps the command line, precmd prints `ESC ] 633;D;<code>;<command> BEL`. `terminal_exit_mark.rs` reads the mark, `terminal_list_live` returns `lastExitCode` and `lastExitCommand`, `terminalActivityOf` words the row from them and never from typed keys. The setting is `terminal.exitStatus`, read by Rust when a terminal opens; only `false` turns it off.

@@ -144,7 +144,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
   };
 
   const shown = messages ?? NO_MESSAGES;
-  const { drawerNode, drawerKey, openWork } = useChatWork({ chat, messages: shown });
+  const { drawerNode, drawerKey, openWork, closeWork } = useChatWork({ chat, messages: shown });
   const openSession = (sessionId: SessionId): void => navigate({ to: sessionPlace({ sessionId }) });
 
   const isEmpty = shown.length === 0;
@@ -228,6 +228,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
   const isHosted = useStudioDrawer({
     node: drawerNode,
     drawerKey,
+    onClose: closeWork,
     ariaLabel: TURN_INTO_WORK_LABEL,
     resizeLabel: RESIZE_LABEL,
   });

@@ -80,6 +80,46 @@ describe('createOverlayWatch', () => {
     expect(coversView()).toBe(true);
   });
 
+  it('hides a view under a page, and keeps a docked view that floats over the page', () => {
+    const sheet = document.createElement('div');
+    const slot = document.createElement('div');
+    slot.setAttribute('data-studio-slot', 'content');
+    giveRect({ element: slot, rect: { x: 0, y: 40, width: 1440, height: 860 } });
+    const under = document.createElement('div');
+    giveRect({ element: under, rect: VIEW_RECT });
+    sheet.append(under, slot);
+    const docked = placedView();
+    document.body.prepend(sheet);
+    const watch = createOverlayWatch();
+
+    expect(watch.covers({ view: under, rect: under.getBoundingClientRect() })).toBe(true);
+    expect(watch.covers({ view: docked, rect: docked.getBoundingClientRect() })).toBe(false);
+    watch.stop();
+  });
+
+  it('hides a page view under an overlay dock, and keeps the view inside the dock', () => {
+    const column = document.createElement('div');
+    const main = document.createElement('div');
+    main.setAttribute('data-drawer-main', '');
+    main.setAttribute('inert', '');
+    const page = document.createElement('div');
+    giveRect({ element: page, rect: VIEW_RECT });
+    main.append(page);
+    const aside = document.createElement('aside');
+    const docked = document.createElement('div');
+    giveRect({ element: docked, rect: { x: 900, y: 96, width: 480, height: 720 } });
+    aside.append(docked);
+    column.append(main, aside);
+    document.body.append(column);
+    const watch = createOverlayWatch();
+
+    expect(watch.covers({ view: page, rect: page.getBoundingClientRect() })).toBe(true);
+    expect(watch.covers({ view: docked, rect: docked.getBoundingClientRect() })).toBe(false);
+    main.removeAttribute('inert');
+    expect(watch.covers({ view: page, rect: page.getBoundingClientRect() })).toBe(false);
+    watch.stop();
+  });
+
   it('leaves the view alone for a tooltip parked off screen', () => {
     const tooltip = document.createElement('span');
     tooltip.setAttribute('role', 'tooltip');

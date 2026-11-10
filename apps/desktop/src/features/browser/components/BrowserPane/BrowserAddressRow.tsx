@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Maximize2, PanelLeft, Pin, RotateCw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, PanelLeft, Pin, RotateCw, X } from 'lucide-react';
 import { IconButton, Input, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
@@ -134,9 +134,9 @@ export const BrowserAddressRow = ({
         disabled={model.address === ''}
         onClick={model.openOutside}
       />
-      {onOpenAsPage === undefined || model.shown === null ? null : (
+      {onOpenAsPage === undefined ? null : (
         <IconButton
-          icon={Maximize2}
+          icon={ArrowUpRight}
           label="Open as page"
           variant="ghost"
           tooltipSide="top"

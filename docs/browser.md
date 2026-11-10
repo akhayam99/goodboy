@@ -235,10 +235,18 @@ to a project is a pin that every session of the project shares.
 
 ## The pane
 
-The Browser tool in a session's tools column opens the pane in the session's
-one side slot, as a tool drawer in the reader tier (`DRAWER_KINDS.browser`),
-so the session rail folds to icons while it is open. Pressing the tool again,
-the X or Esc on the pane closes it; Esc inside the page goes to the page.
+Browser at the foot of the right rail, on every screen, opens the pane in the
+one side slot, the dock, as a tool drawer in the reader tier
+(`DRAWER_KINDS.browser`, `toggleBrowserDock`), so the session rail folds to
+icons while it is open. The palette opens it too, and Go › Show or Hide Browser
+shows or hides it like the rail button. On a session
+page it shows that session's tabs; anywhere else it shows the session the
+Browser page would pick (`WorkspaceBrowserDock`, drawer `sessionId: null`), or
+says there are no tabs yet, with no Open as page, since that page would be
+empty too. It stays open across every move, beside any page
+but the Browser page, and closes when the session it shows is archived or
+deleted (`slotAfterSessionGone`). Pressing the tool again, the X or Esc on the pane closes
+it; Esc inside the page goes to the page.
 
 - **The address row** holds Back, Forward and Reload, the address, Pin to the
   session's project (Unpin when a pin is shown), Open in your browser, Open as
@@ -279,9 +287,12 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
   because the wrapper itself has no height, and an element with no area never
   counts. A tooltip (`[role="tooltip"]`) covers the view too, but stays out
   of `OVERLAY_SELECTOR`, which also gates shortcuts. A studio page counts as
-  well (`[data-studio-slot]`), because it sits over the session it replaces
-  while the session stays mounted; a pane in a parked drawer stays mounted
-  under the page, so the page covers its placeholder and hides its view. While
+  well (`[data-studio-slot]`), but only for a view under it in the sheet: a
+  Browser dock floating over a page at a narrow width sits above the page and
+  keeps its view. The other way round, a Terminal dock floating over the
+  Browser page makes the page's region inert (`[data-drawer-main][inert]`), and
+  a view inside that region is hidden, so the native view never paints over
+  the dock. While
   one intersects the placeholder, the view is
   hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they
@@ -298,8 +309,9 @@ the X or Esc on the pane closes it; Esc inside the page goes to the page.
 
 ## The page
 
-The Browser tile in the sidebar opens the Browser page, a studio kind of its
-own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
+Open as page in the dock opens the Browser page, a studio kind of its own
+(`{ kind: 'browser', sessionId, tabId }`), like the Terminal page. While it is
+open the Browser button on the right rail is selected and does nothing.
 
 - **The list** shows every tab of the workspace's sessions, one group per
   session in the workspace's session order, then one group of pins per
@@ -311,8 +323,9 @@ own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
   neither, the page says so.
 - **The view** is the pane's: the same address row (no list toggle and no
   Close, the band and Esc close the page), the same model for the picked
-  session and the same placement loop and overlay rule. The pane of that
-  session stays mounted under the page and is covered by it, so its view hides.
+  session and the same placement loop and overlay rule. The dock stays in the
+  store under its own page but is not mounted, so the page alone places the
+  view.
 - **One view, one place**: a placement owns the live ids it showed, and hides
   only a view it still owns, a hide tried again after a failure included. The
   pane's late hide cannot take the view off the page. A pane that still holds
@@ -324,9 +337,10 @@ own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
   route with no session opens on the first session holding a tab, at its
   first tab, and names that session.
 - **Back to the session**: the band's trail names the picked session, and
-  pressing it opens that session. Back beside the session, in the header,
-  also opens its pane on the tab (see Moves).
-- **The count** on the tile is the number of rows the page lists: the tabs of
+  pressing it opens that session. Dock, in the header, moves the page back
+  into the dock on the tab (see Moves). The empty page keeps Dock too, and it
+  opens the workspace dock, so the page is never a dead end.
+- **The count** on the Browser button is the number of rows the page lists: the tabs of
   the workspace's sessions plus the pins of their projects, named
   `Browser, 3 tabs`. A tab counts whether or not its page is open. A
   session's rows load when its pane or the page opens.
@@ -336,17 +350,19 @@ own (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page.
 A move never reloads the page: the same live webview, with the same id, gets
 new bounds or a new window. A form half typed and the scroll stay.
 
-- **Open as page** in the pane's address row opens the Browser page on the
-  session and the shown tab (`promoteBrowserTab`). The page's placement takes
-  the view through the owner rule above and places it at the page's rect; the
-  pane, now covered, lets it go.
-- **Back beside the session** in the page's header opens the session with its
-  browser pane (`demoteBrowserTab`). The page's placement hides the view and
-  lets it go, and the pane shows it at the pane's rect. The pane shows the tab
-  the page showed, because both read the session's shown tab in this window.
+- **Open as page** in the pane's address row, shown with or without a tab,
+  with the same arrow as the Terminal dock's header, pushes the Browser page
+  on the session and the shown tab
+  (`promoteBrowserTab`), so ⌘[ brings the dock back. The page's placement takes
+  the view through the owner rule above and places it at the page's rect.
+- **Dock** in the page's header closes the page and opens the dock on that
+  session (`demoteBrowserTab`), beside the place under the page. The page's
+  placement hides the view and lets it go, and the pane shows it at the pane's
+  rect. The pane shows the tab the page showed, because both read the
+  session's shown tab in this window.
 - A host failure while the page places the view shows under the page's
   address row, and the view stays with the pane, which shows it again on
-  Back beside the session. A page show that answers after the tab went back
+  Dock. A page show that answers after the tab went back
   is hidden again, and the pane takes the view.
 - **Another window**: moving a tab to another window comes later.
 
@@ -355,10 +371,10 @@ new bounds or a new window. A form half typed and the scroll stay.
 A door opens a page in a session's browser. Every door names the session it
 sits in and the address, and one function opens it (`openInBrowser`).
 
-- **Where it opens**: in the session view the door opens the pane; on a page
-  over the session (the Terminal page) it opens the Browser page on that
-  session. A door with no session, such as a terminal on a plain folder,
-  opens your browser.
+- **Where it opens**: the door opens the dock on that session, beside the
+  session view or beside a page over it (the Terminal page); on the Browser
+  page it switches the page to that session. A door with no session, such as
+  a terminal on a plain folder, opens your browser.
 - **Which tab**: a tab of the session already on the same address is shown.
   A bare server address (`http://localhost:5173`) takes any tab on that
   server. Otherwise a new tab opens. A host failure keeps the old tabs and
@@ -510,8 +526,8 @@ words (`features/browser/browserFailureText.ts`).
   `browserTabCount`. `BrowserStudio/index.test.tsx` pins the grouping, a tab
   of another session, the reload back to the named tab, a route with no
   session, the overlay hide, that only the workspace's sessions load and
-  the count matches the rows, and the moves: Open as page and Back beside the
-  session keep one live id with no open, navigate or reload, a failed place
+  the count matches the rows, and the moves: Open as page and Dock
+  keep one live id with no open, navigate or reload, a failed place
   on the page shows its words and leaves the view to the pane, and a late page
   show is hidden again; `createNativePlacement.test.ts` pins the owner
   rule both ways and a failed hide retried after the page took the view;
@@ -546,7 +562,8 @@ words (`features/browser/browserFailureText.ts`).
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again
   and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
-  the cover check for a popover with no role and for tooltips.
+  the cover check for a popover with no role, for tooltips and for a page view
+  under an overlay dock.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
   and dark) draw a stand in where the native view goes.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,

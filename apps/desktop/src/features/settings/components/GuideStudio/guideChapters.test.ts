@@ -288,11 +288,17 @@ describe('the shell chapter', () => {
     expect(branchPage).not.toContain('steps into');
   });
 
-  it('names the session tools in their column at the right of the page', () => {
-    const tools = pointOf('shell', 'Session tools');
-    ['Ask', 'Terminal', 'Explore', 'Context', 'Scripts', 'right of the session page'].forEach(
-      (tool) => expect(tools).toContain(tool),
-    );
+  it('names the tools in their column at the right of every screen', () => {
+    const tools = pointOf('shell', 'Right rail');
+    [
+      'Ask',
+      'Terminal',
+      'Browser',
+      'Explore',
+      'Context',
+      'Scripts',
+      'right of every screen',
+    ].forEach((tool) => expect(tools).toContain(tool));
   });
 });
 

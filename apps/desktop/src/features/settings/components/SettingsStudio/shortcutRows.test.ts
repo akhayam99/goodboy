@@ -12,6 +12,7 @@ describe('shortcutRows', () => {
         first: 'workspace.switcher',
         last: 'workspace.switcher',
         where: 'With a workspace open',
+        also: null,
       },
       {
         key: 'workspace-digit',
@@ -19,6 +20,7 @@ describe('shortcutRows', () => {
         first: 'workspace.1',
         last: 'workspace.9',
         where: null,
+        also: null,
       },
       {
         key: 'home.newWorkspace',
@@ -26,6 +28,7 @@ describe('shortcutRows', () => {
         first: 'home.newWorkspace',
         last: 'home.newWorkspace',
         where: 'On Home, where no workspace is open',
+        also: null,
       },
     ]);
   });
@@ -97,7 +100,17 @@ describe('shortcutRows', () => {
     expect(new Set(groups)).toEqual(registered);
   });
 
+  it('shows both Terminal keys on one row', () => {
+    const terminalRows = SHORTCUT_COLUMNS.flat()
+      .flatMap((group) => shortcutRows({ group }))
+      .filter((row) => row.label === SHORTCUTS['terminal.studio'].label);
+
+    expect(terminalRows.map((row) => [row.first, row.also])).toEqual([
+      ['terminal.studio', 'session.terminal'],
+    ]);
+  });
+
   it('counts the rows the page renders, not the registry entries', () => {
-    expect(SHORTCUT_ROW_COUNT).toBe(Object.keys(SHORTCUTS).length - 16);
+    expect(SHORTCUT_ROW_COUNT).toBe(Object.keys(SHORTCUTS).length - 17);
   });
 });

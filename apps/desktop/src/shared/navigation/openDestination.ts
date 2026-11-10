@@ -1,10 +1,12 @@
 import { BOARD_PLACE, useAppStore } from '../../store';
 import { destinationStudioOf } from '../../store/slices/navigation/destinationStudioOf';
 import { selectIsSessionDraftShown } from '../../store/slices/sessionDraft/selectIsSessionDraftShown';
-import type { DestinationId } from './destinations';
+import { isStudioOverSession } from './columnPlace';
+import type { PageDestinationId } from './destinations';
+import { selectColumnPlace } from './selectColumnPlace';
 
 type Params = {
-  readonly id: DestinationId;
+  readonly id: PageDestinationId | 'board';
 };
 
 export const openDestination = ({ id }: Params): void => {
@@ -19,7 +21,9 @@ export const openDestination = ({ id }: Params): void => {
     }
     return;
   }
-  state.switchStudio({
-    studio: destinationStudioOf({ id, sessionId: state.currentSessionId, state }),
-  });
+  const place = selectColumnPlace({ state });
+  if (isStudioOverSession({ place }) && place === id) {
+    return;
+  }
+  state.switchStudio({ studio: destinationStudioOf({ id, state }) });
 };

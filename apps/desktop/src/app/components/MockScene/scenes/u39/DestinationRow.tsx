@@ -17,7 +17,7 @@ const MENU_LABELS: Readonly<Record<string, string>> = {
 
 const HOME_LABELS: Readonly<Record<DestinationHome, string>> = {
   column: 'column',
-  tile: 'tile',
+  rail: 'right rail',
   topBar: 'top bar',
   foot: 'foot',
 };

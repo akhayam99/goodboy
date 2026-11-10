@@ -1,10 +1,20 @@
-import type { StudioKind } from '../../../store';
-import type { DestinationId, FootDestinationId } from '../../../shared/navigation/destinations';
+import type { StudioKind } from '../../store';
+import type { DestinationId, FootDestinationId, RailDestinationId } from './destinations';
 
-export type ColumnDoorId = Exclude<DestinationId, 'notifications' | FootDestinationId>;
+export type ColumnDoorId = Exclude<
+  DestinationId,
+  'notifications' | FootDestinationId | RailDestinationId
+>;
 
 export type ColumnPlace =
-  ColumnDoorId | 'new' | 'settings' | 'help' | 'notifications' | 'addWorkspace' | null;
+  | ColumnDoorId
+  | RailDestinationId
+  | 'new'
+  | 'settings'
+  | 'help'
+  | 'notifications'
+  | 'addWorkspace'
+  | null;
 
 type Params = {
   readonly hasSession: boolean;

@@ -57,8 +57,8 @@ import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
+import { useShellRight } from './app/hooks/useShellRight';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
-import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
 import { selectDrawerPlacement } from './store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from './store/slices/drawer/selectDrawerSizing';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
@@ -71,9 +71,9 @@ export const App = () => {
   const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
-  const isDrawerOpen = useAppStore((s) => selectOpenDrawer(s) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
+  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
   const bootPhase = useAppStore((s) => s.bootPhase);
   const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);
@@ -111,8 +111,6 @@ export const App = () => {
     openShortcutHelp,
     openSpend,
     openWorkflows,
-    openTerminalStudio,
-    openBrowserStudio,
     openNewChat,
     openMonitoring,
     openImpact,
@@ -130,8 +128,6 @@ export const App = () => {
     openInbox,
     openChat,
     openWorkflows,
-    openTerminalStudio,
-    openBrowserStudio,
     openNewChat,
     openMonitoring,
     openImpact,
@@ -196,7 +192,6 @@ export const App = () => {
     armDeleteConfirm,
     openPalette,
     openSettings,
-    openTerminalStudio,
     openNewChat,
     openShortcutHelp,
     toggleSidebar: sessionSidebar.toggle,
@@ -313,9 +308,11 @@ export const App = () => {
               </SidebarPeekOverlay>
             ) : undefined
           }
-          drawer={isDrawerOpen ? <DrawerHost /> : null}
+          drawer={isDrawerMounted ? <DrawerHost /> : null}
           drawerSizing={drawerSizing}
           drawerPlacement={drawerPlacement}
+          isDrawerParked={isDrawerParked}
+          rightRail={rightRail}
           main={
             <MainRegion
               workspaceId={currentWorkspace.id}

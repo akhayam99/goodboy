@@ -163,9 +163,13 @@ export type FileDiffSource =
   | { readonly kind: 'worktree'; readonly worktreePath: string }
   | { readonly kind: 'commit'; readonly repo: string; readonly sha: string };
 
-export type DrawerRequest = DrawerContent & {
-  readonly sessionId: SessionId;
-};
+export type WorkspaceToolKind = 'terminal' | 'browser';
+
+export type WorkspaceToolContent = Extract<DrawerContent, { readonly kind: WorkspaceToolKind }>;
+
+export type DrawerRequest =
+  | (DrawerContent & { readonly sessionId: SessionId })
+  | (WorkspaceToolContent & { readonly sessionId: null });
 
 export type OpenDrawer = DrawerRequest;
 

@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useContext } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { AppShell, LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_STORAGE_KEY } from '../components/AppShell';
+import { ShellRailContext } from '../shellRailContext';
 
 afterEach(() => {
   cleanup();
@@ -158,6 +160,62 @@ describe('AppShell studio in the main slot', () => {
     expect(column?.className).toContain(
       '[&>[data-drawer-main]:has([data-studio-sheet-owner])]:bg-transparent',
     );
+  });
+
+  it('keeps the right rail at the sheet edge beside the page, never under it', () => {
+    render(
+      <AppShell
+        leftSidebar={<div>doors</div>}
+        main={<div>main</div>}
+        rightRail={<div role="toolbar" aria-label="Tools" />}
+        studio={<div>impact studio</div>}
+      />,
+    );
+    const rail = screen.getByRole('toolbar', { name: 'Tools' });
+    const slot = document.querySelector('[data-studio-slot]');
+
+    expect(rail.closest('[data-drawer-main]')).not.toBeNull();
+    expect(slot?.contains(rail)).toBe(false);
+    expect(rail.parentElement?.contains(slot ?? null)).toBe(true);
+  });
+
+  it('tells the page whether the shell draws the right rail', () => {
+    const Probe = () => <span>{useContext(ShellRailContext) ? 'shell rail' : 'own rail'}</span>;
+    const { rerender } = render(<AppShell main={<Probe />} />);
+    screen.getByText('own rail');
+
+    rerender(<AppShell main={<Probe />} rightRail={<div>tools</div>} />);
+    screen.getByText('shell rail');
+  });
+
+  it('shows a drawer beside a page when the caller says it is not parked', () => {
+    render(
+      <AppShell
+        main={<div>main</div>}
+        studio={<div>tasks studio</div>}
+        drawer={<div>terminal dock</div>}
+        isDrawerParked={false}
+      />,
+    );
+    const aside = screen.getByText('terminal dock').closest('aside');
+
+    expect(aside?.hasAttribute('data-drawer-parked')).toBe(false);
+    expect(aside?.hasAttribute('inert')).toBe(false);
+  });
+
+  it('keeps the page layer under an overlay dock, so a narrow window still shows the dock', () => {
+    render(
+      <AppShell
+        main={<div>main</div>}
+        studio={<div>tasks studio</div>}
+        drawer={<div>terminal dock</div>}
+        isDrawerParked={false}
+      />,
+    );
+    const host = screen.getByText('tasks studio').closest('[data-studio-host]');
+
+    expect(host?.className.split(' ')).toContain('isolate');
+    expect(host?.contains(screen.getByText('terminal dock'))).toBe(false);
   });
 
   it('paints the slot opaque, so the page never shows through while a studio fades in', () => {

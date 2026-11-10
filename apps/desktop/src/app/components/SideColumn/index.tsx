@@ -7,8 +7,7 @@ import { SidebarSessionsFilter } from '../../../features/workspace/components/Se
 import type { ShellColumnScope } from '../../shellArrangement';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
-import { ColumnToolTiles } from './ColumnToolTiles';
-import { COLUMN_ROW_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { useDoorSignals } from './useDoorSignals';
 import { isStudioOverSession, type ColumnPlace } from '../../../shared/navigation/columnPlace';
 
@@ -51,7 +50,7 @@ export const SideColumn = ({
                 isCurrent={place === 'new'}
                 {...(onNavigate !== undefined && { onNavigate })}
               />
-              {COLUMN_ROW_DOORS.map((door) => (
+              {COLUMN_DOORS.map((door) => (
                 <Fragment key={door.id}>
                   <ColumnDoorRow
                     id={door.id}
@@ -75,12 +74,6 @@ export const SideColumn = ({
                   />
                 </Fragment>
               ))}
-              <ColumnToolTiles
-                place={place}
-                actions={actions}
-                signals={signals}
-                {...(onNavigate !== undefined && { onNavigate })}
-              />
             </div>
             <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
               <SessionNavSidebar

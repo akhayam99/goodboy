@@ -11,6 +11,7 @@ import {
 import {
   cn,
   DrawerColumn,
+  DrawerEdgeContext,
   PAGE_FRAME,
   readStudioRailWidth,
   SHEET_CLASSES,
@@ -32,6 +33,8 @@ import { STUDIO_META } from './studioMeta';
 import { captureStudioOpener } from './captureStudioOpener';
 import { restoreStudioOpener } from './restoreStudioOpener';
 import { StudioSkeleton } from './StudioSkeleton';
+import { StudioRail } from './StudioRail';
+import { useOneRightPanel } from '../../hooks/useOneRightPanel';
 import type { StudioPlacement } from './studioPlacement';
 
 type Props = {
@@ -45,6 +48,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
   const [chrome, setChrome] = useState<StudioChrome | null>(null);
   const [drawerSpec, setDrawerSpec] = useState<StudioDrawerSpec | null>(null);
   const [closingKind, setClosingKind] = useState<StudioKind | null>(null);
+  const [hasEntered, setHasEntered] = useState(false);
   const [opener] = useState(captureStudioOpener);
   const kindRef = useRef(kind);
   kindRef.current = kind;
@@ -93,6 +97,9 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
   const isBandDrawn = isBandClose || trailClaims > 0 || accessory !== null;
   const isUnderTrail = isBandDrawn || isOuterUnderTrail;
 
+  const isPanelShown = useOneRightPanel({ spec: drawerSpec, isActive: isDrawerHost });
+  const shellEdge = useContext(DrawerEdgeContext);
+  const motion = isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in';
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
   const bandNode = isBandDrawn ? (
     <StudioBand
@@ -151,18 +158,41 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
         className={cn(
           'relative flex h-full w-full min-h-0 flex-col',
           placement === 'cover' || isDrawerHost ? 'bg-chrome' : 'bg-background',
-          isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
+          !isDrawerHost && motion,
         )}
       >
         {isDrawerHost ? (
           <DrawerColumn
             frame="sheet"
-            main={framed}
+            main={
+              <div className="flex min-h-0 min-w-0 flex-1">
+                <div
+                  data-studio-motion={isClosing ? 'out' : 'in'}
+                  className={cn('flex min-h-0 min-w-0 flex-1 flex-col', motion)}
+                  onAnimationEnd={(event) => {
+                    if (event.target === event.currentTarget) {
+                      setHasEntered(true);
+                    }
+                  }}
+                >
+                  {framed}
+                </div>
+                <StudioRail shellEdge={shellEdge} />
+              </div>
+            }
             drawer={
-              drawerSpec?.node == null ? null : (
-                <UnderTrailContext.Provider value={isUnderTrail}>
-                  {drawerSpec.node}
-                </UnderTrailContext.Provider>
+              drawerSpec?.node == null || !isPanelShown ? null : (
+                <div
+                  data-studio-motion={isClosing ? 'out' : hasEntered ? 'settled' : 'in'}
+                  className={cn(
+                    'flex min-h-0 min-w-0 flex-1 flex-col',
+                    (isClosing || !hasEntered) && motion,
+                  )}
+                >
+                  <UnderTrailContext.Provider value={isUnderTrail}>
+                    {drawerSpec.node}
+                  </UnderTrailContext.Provider>
+                </div>
               )
             }
             ariaLabel={drawerSpec?.ariaLabel ?? 'Side panel'}

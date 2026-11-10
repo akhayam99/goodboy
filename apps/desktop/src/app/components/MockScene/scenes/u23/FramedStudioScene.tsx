@@ -4,7 +4,7 @@ import { StudioFrame as AppStudioFrame } from '../../../StudioFrame';
 import { StudioFrame as ShellStudioFrame } from '../StudioFrame';
 import { FLOW_SESSION_ID } from '../flow-audit/fixtures';
 import { seedFlowSession } from '../flow-audit/seeds';
-import type { ColumnPlace } from '../../../SideColumn/columnPlace';
+import type { ColumnPlace } from '../../../../../shared/navigation/columnPlace';
 import { seedStudioChrome } from '../shellChrome';
 
 const noop = () => undefined;

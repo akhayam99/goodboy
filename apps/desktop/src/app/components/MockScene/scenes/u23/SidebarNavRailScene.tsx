@@ -15,8 +15,6 @@ const ACTIONS: ColumnActions = {
   openInbox: noop,
   openChat: noop,
   openWorkflows: noop,
-  openTerminalStudio: noop,
-  openBrowserStudio: noop,
   openNewChat: noop,
   openMonitoring: noop,
   openImpact: noop,

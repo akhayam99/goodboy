@@ -1,7 +1,10 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertWorkspace } from '@goodboy/db';
 import { nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
+import { brandId } from '@goodboy/types';
 import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
+import type { TerminalTabId } from '../../../shared/types/terminal';
+import type { DrawerRequest } from '../drawer/state';
 import { summarizerQueues } from '../turn/turnHelpers';
 import {
   buildStoryWorkspace,
@@ -227,6 +230,32 @@ describe('archiveTask stops live work first', () => {
 
     expect(useAppStore.getState().browserSessionTabs).not.toHaveProperty(sessionId);
     expect(useAppStore.getState().browserActiveTab).not.toHaveProperty(sessionId);
+  });
+
+  it('closes a Browser dock opened on the session once the archive is stored', async () => {
+    useAppStore.setState({ currentSessionId: null });
+    useAppStore.getState().openDrawer({ kind: 'browser', sessionId, payload: null });
+
+    await useAppStore.getState().archiveTask(sessionId);
+
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().drawerBack).toBeNull();
+  });
+
+  it('keeps the workspace Terminal dock when another session is archived', async () => {
+    useAppStore.setState({ currentSessionId: null });
+    useAppStore.getState().openDrawer({ kind: 'browser', sessionId, payload: null });
+    const workspaceDock: DrawerRequest = {
+      kind: 'terminal',
+      sessionId: null,
+      payload: { terminalId: brandId<TerminalTabId>({ value: 'harborline::t1' }) },
+    };
+    useAppStore.getState().openDrawer(workspaceDock);
+
+    await useAppStore.getState().archiveTask(sessionId);
+
+    expect(useAppStore.getState().drawer).toEqual(workspaceDock);
+    expect(useAppStore.getState().drawerBack).toBeNull();
   });
 
   it('archives anyway when a browser tab does not close, and shows the error', async () => {
