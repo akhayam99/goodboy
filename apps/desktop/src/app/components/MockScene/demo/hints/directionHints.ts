@@ -75,7 +75,7 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'story-choose',
     label: 'Choose retry behavior',
-    copy: 'Choose the recommended answer',
+    copy: 'Pick the recommended answer',
     instruction:
       'Select **Return the original credit** so a retry succeeds without another credit.',
     result: 'Your answer is picked. The planner waits until you send it.',
@@ -83,8 +83,9 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     isDimmed: false,
     isBlocked: isOtherControl,
     anchor: OPTION,
-    side: 'left',
+    side: 'top',
     isSideLocked: true,
+    align: 'end',
     revealWhen: ({ root, state }) =>
       hasElement({ root, selector: OPTION }) || hasAnswered({ state }),
     doneWhen: ({ root, state }) => isOptionChecked({ root }) || hasAnswered({ state }),
@@ -98,7 +99,6 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     progress: 'Claude hit its limit. Codex is carrying on with the same task and writing the plan.',
     result: 'Claude hit its limit, so Codex picked up the same task and wrote the plan.',
     beat: 0,
-    dwellMs: 4500,
     isDimmed: false,
     isBlocked: isOtherControl,
     anchor: ANSWER,

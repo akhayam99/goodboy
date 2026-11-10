@@ -89,6 +89,7 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
   const isOffscreen: unknown = Reflect.get(envelope.data, 'isOffscreen');
   const isClicked: unknown = Reflect.get(envelope.data, 'isClicked');
   const isPressed: unknown = Reflect.get(envelope.data, 'isPressed');
+  const isRecovering: unknown = Reflect.get(envelope.data, 'isRecovering');
   const hasFocus = Reflect.has(envelope.data, 'focus');
   const focus = hasFocus ? rectOf({ value: Reflect.get(envelope.data, 'focus') }) : undefined;
   const hasOpened = Reflect.has(envelope.data, 'opened');
@@ -98,12 +99,14 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
   const hasValidOpened = !hasOpened || opened !== undefined;
   const hasValidClick = isClicked === undefined || typeof isClicked === 'boolean';
   const hasValidPress = isPressed === undefined || typeof isPressed === 'boolean';
+  const hasValidRecovery = isRecovering === undefined || typeof isRecovering === 'boolean';
   if (
     !hasValidHint ||
     !hasValidFocus ||
     !hasValidOpened ||
     !hasValidClick ||
     !hasValidPress ||
+    !hasValidRecovery ||
     rect === undefined ||
     typeof isOffscreen !== 'boolean'
   ) {
@@ -119,5 +122,6 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
     ...(opened === undefined ? {} : { opened }),
     ...(isClicked === undefined ? {} : { isClicked }),
     ...(isPressed === undefined ? {} : { isPressed }),
+    ...(isRecovering === undefined ? {} : { isRecovering }),
   };
 };

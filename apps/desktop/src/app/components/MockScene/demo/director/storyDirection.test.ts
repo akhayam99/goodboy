@@ -105,7 +105,7 @@ describe('answering the planner question', () => {
     ['Return 200 and log a warning', 'a repeated webhook that returns 200 and logs a warning'],
   ])('has the planner speak about the option %s', async (choice, sentence) => {
     await answer({ choice });
-    vi.advanceTimersByTime(15000);
+    vi.advanceTimersByTime(5500);
     expect(plannerSaid()).toContain(sentence);
     for (const other of STORY_QUESTION.options.filter((option) => option !== choice)) {
       expect(plannerSaid()).not.toContain(
@@ -116,14 +116,14 @@ describe('answering the planner question', () => {
 
   it('repeats a typed answer back to the visitor', async () => {
     await answer({ choice: 'Retry with a backoff' });
-    vi.advanceTimersByTime(15000);
+    vi.advanceTimersByTime(5500);
     expect(plannerSaid()).toContain('You said "Retry with a backoff"');
   });
 
   it('moves the planner from Claude to Codex when Claude is at its limit', async () => {
     await answer();
     expect(plannerEvents().some((event) => event.kind === 'decision_note')).toBe(false);
-    vi.advanceTimersByTime(1600);
+    vi.advanceTimersByTime(1000);
     expect(plannerEvents().some((event) => event.kind === 'decision_note')).toBe(true);
     const planner = (store.getState().sessionPhaseRuns[STORY_SESSION_ID] ?? []).find(
       (agent) => agent.id === STORY_PLANNER_ID,
@@ -134,7 +134,7 @@ describe('answering the planner question', () => {
 
   it('lets Codex finish the same task and return the plan with the answer kept', async () => {
     await answer();
-    vi.advanceTimersByTime(15000);
+    vi.advanceTimersByTime(5500);
     expect(store.getState().agentTurnState[STORY_PLANNER_ID]?.kind).toBe('idle');
     const plans = store.getState().sessionPlans[STORY_SESSION_ID] ?? [];
     expect(plans).toHaveLength(1);

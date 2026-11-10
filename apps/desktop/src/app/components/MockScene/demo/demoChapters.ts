@@ -6,7 +6,6 @@ import { SHIP_HINTS } from './hints/shipHints';
 import { DEMO_GROUPS, type DemoGroup } from './demoGroups';
 
 export type DemoBeat = {
-  readonly label: string;
   readonly scene: string;
   readonly params?: Readonly<Record<string, string>>;
 };
@@ -22,7 +21,6 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     hints: BRING_HINTS,
     beats: [
       {
-        label: 'Set up',
         scene: 'onboarding',
         params: { step: 'agents', pick: 'folder', github: 'none' },
       },
@@ -31,19 +29,16 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   {
     ...DEMO_GROUPS.direction,
     hints: DIRECTION_HINTS,
-    beats: [{ label: 'Issue session', scene: 'story-direction' }],
+    beats: [{ scene: 'story-direction' }],
   },
   {
     ...DEMO_GROUPS.guide,
     hints: GUIDE_HINTS,
-    beats: [{ label: 'Plan', scene: 'story-plan' }],
+    beats: [{ scene: 'story-plan' }],
   },
   {
     ...DEMO_GROUPS.ship,
     hints: SHIP_HINTS,
-    beats: [
-      { label: 'Review comment', scene: 'story-review' },
-      { label: 'Storage', scene: 'demo-storage' },
-    ],
+    beats: [{ scene: 'story-review' }, { scene: 'demo-storage' }],
   },
 ];

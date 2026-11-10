@@ -15,7 +15,6 @@ type Params = {
 export type StageFrame = {
   readonly key: string;
   readonly src: string;
-  readonly label: string;
 };
 
 export type FrameCommand = {
@@ -86,8 +85,7 @@ export const useBeatPlayer = ({
   const beat = chapter.beats[Math.min(beatIndex, chapter.beats.length - 1)];
   const src = beat === undefined ? '' : beatSrc({ beat, theme });
   const key = beat === undefined ? '' : frameKey({ beat, replayKey: current.replayKey });
-  const label = beat?.label ?? chapter.title;
-  const frame = useMemo(() => ({ key, src, label }), [key, src, label]);
+  const frame = useMemo(() => ({ key, src }), [key, src]);
   const preloadFrame = useMemo((): StageFrame | undefined => {
     if (preloadBeat === undefined) {
       return undefined;
@@ -95,7 +93,6 @@ export const useBeatPlayer = ({
     return {
       key: frameKey({ beat: preloadBeat, replayKey: 0 }),
       src: beatSrc({ beat: preloadBeat, theme }),
-      label: preloadBeat.label,
     };
   }, [preloadBeat, theme]);
   const keysRef = useRef<ReadonlyArray<string>>([]);

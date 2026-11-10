@@ -12,6 +12,7 @@ type HintsParams = {
 type Props = {
   readonly theme: DemoTheme;
   readonly isQuiet: boolean;
+  readonly isClosing: boolean;
   readonly isHintsEnabled: boolean;
   readonly isHintDismissed: boolean;
   readonly onShowHint: () => void;
@@ -25,6 +26,7 @@ const BRAND_TILE_PX = 24;
 export const DemoTopBar = ({
   theme,
   isQuiet,
+  isClosing,
   isHintsEnabled,
   isHintDismissed,
   onShowHint,
@@ -60,25 +62,27 @@ export const DemoTopBar = ({
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {isHintsEnabled && isHintDismissed ? (
+        {!isClosing && isHintsEnabled && isHintDismissed ? (
           <Button variant="secondary" size="sm" onClick={onShowHint}>
             <Lightbulb size={ICON_SIZE.control} aria-hidden />
             <span className="max-md:sr-only">Show hint</span>
           </Button>
         ) : null}
-        <Button
-          variant="quiet"
-          size="sm"
-          aria-pressed={isHintsEnabled}
-          onClick={() => onToggleHints({ isEnabled: !isHintsEnabled })}
-        >
-          {isHintsEnabled ? (
-            <Lightbulb size={ICON_SIZE.control} aria-hidden />
-          ) : (
-            <LightbulbOff size={ICON_SIZE.control} aria-hidden />
-          )}
-          <span className="max-md:sr-only">{isHintsEnabled ? 'Hide hints' : 'Show hints'}</span>
-        </Button>
+        {isClosing ? null : (
+          <Button
+            variant="quiet"
+            size="sm"
+            aria-pressed={isHintsEnabled}
+            onClick={() => onToggleHints({ isEnabled: !isHintsEnabled })}
+          >
+            {isHintsEnabled ? (
+              <Lightbulb size={ICON_SIZE.control} aria-hidden />
+            ) : (
+              <LightbulbOff size={ICON_SIZE.control} aria-hidden />
+            )}
+            <span className="max-md:sr-only">{isHintsEnabled ? 'Hide hints' : 'Show hints'}</span>
+          </Button>
+        )}
         <Button variant="quiet" size="sm" onClick={onRestart}>
           <RotateCcw size={ICON_SIZE.control} aria-hidden />
           <span className="max-md:sr-only">Restart</span>

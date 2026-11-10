@@ -39,6 +39,23 @@ describe('callout placement', () => {
     expect(place({ target })).toMatchObject({ side: 'right', x: 312 });
   });
 
+  it('lines a top callout up with the far end of a wide target when asked', () => {
+    const target = { x: 100, y: 300, width: 500, height: 28 };
+    const placement = placeCallout({
+      target,
+      avoid: [],
+      lit: null,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: 'top',
+      isLocked: true,
+      align: 'end',
+      gap: 12,
+      margin: 16,
+    });
+    expect(placement).toEqual({ side: 'top', x: 360, y: 198 });
+  });
+
   it('takes the side with the most room even when the preferred side fits', () => {
     const target = { x: 600, y: 200, width: 100, height: 32 };
     const placement = place({ target });
@@ -89,5 +106,40 @@ describe('callout placement', () => {
     const placement = place({ target });
     expect(placement.y).toBeGreaterThanOrEqual(16);
     expect(placement.x + CALLOUT.width).toBeLessThanOrEqual(BOUNDS.width - 16);
+  });
+
+  it('keeps the side it already had while that side still fits, even if another has more room', () => {
+    const target = { x: 300, y: 150, width: 422, height: 292 };
+    const base = {
+      target,
+      avoid: [],
+      lit: null,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: undefined,
+      gap: 12,
+      margin: 16,
+    };
+    expect(placeCallout(base).side).toBe('bottom');
+    expect(placeCallout({ ...base, previousSide: 'right' }).side).toBe('right');
+  });
+
+  it('leaves the side it had once that side has no room or covers an opened panel', () => {
+    const target = { x: 300, y: 150, width: 422, height: 292 };
+    const base = {
+      target,
+      lit: null,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: undefined,
+      gap: 12,
+      margin: 16,
+    };
+    const opened = { x: 740, y: 200, width: 200, height: 200 };
+    expect(placeCallout({ ...base, avoid: [opened], previousSide: 'right' }).side).toBe('bottom');
+    const wide = { ...target, width: 440 };
+    expect(placeCallout({ ...base, target: wide, avoid: [], previousSide: 'right' }).side).toBe(
+      'bottom',
+    );
   });
 });

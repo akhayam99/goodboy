@@ -72,3 +72,17 @@ describe('the setup group guard', () => {
     expect(isBlockedFor({ selector: '#skip' })).toEqual(BRING_HINTS.map(() => true));
   });
 });
+
+describe('the setup copy', () => {
+  it('keeps Claude as the default agent before Harborline is on screen', () => {
+    const agents = BRING_HINTS.find((hint) => hint.id === 'setup-agents');
+    expect(agents?.instruction).toBe('Press **Continue** to keep Claude as your default agent.');
+    expect(agents?.result).toBe('Claude stays your default agent.');
+  });
+
+  it('ends the chapter on the issue it unlocked and leaves the bridge to the done card', () => {
+    expect(BRING_HINTS.at(-1)?.result).toBe(
+      'Pick up an issue now lists HBL-412, the duplicate-credit bug.',
+    );
+  });
+});
