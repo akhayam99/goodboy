@@ -32,7 +32,6 @@ describe('shellArrangement, the column', () => {
       isLeftRail: false,
       leftSlot: 'column',
       leftOverlaySlot: 'none',
-      studioCoversLeft: false,
     });
   });
 

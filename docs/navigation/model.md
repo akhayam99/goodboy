@@ -105,15 +105,16 @@
   `doorSignalOf` names them). Inside a session the column stays the same and marks the open
   session's row; the session's own levels live in the session rail at the left
   of the page (see Session rail). The column is on every screen with a workspace: the board, a
-  session, the draft and every studio but Settings, which swaps the column's
-  content (see Studios).
+  session, the draft and every studio, Settings included. No page changes it:
+  Settings is a page with its own scopes rail beside the live column (see
+  Studios).
 - **One list names every destination.** `DESTINATIONS`
   (`shared/navigation/destinations.ts`) owns the name, the glyph, the shortcut,
   the menu id, the former names, the scope (`app` or `workspace`) and the home
   (`column`, `tile`, `topBar` or `foot`) of Board, Tasks, Workflows, Chat,
   Impact, Terminal, Browser, Monitoring, Notifications, Settings, Guide and
   What's new, in one order. The column rows and tiles, the folded rail, the foot
-  of the column and the Goodboy menu, the Go menu, the palette rows and the
+  of the column, the Go menu, the palette rows and the
   shortcut sheet all read it, so a destination has one word and one glyph in
   every place. Settings, Guide and What's new have the `foot` home and the `app`
   scope; the nine others are `workspace` pages. `openDestination` is the one way
@@ -162,20 +163,23 @@
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
-- **One studio slot.** Workspace and app studios share the shell's single
-  studio slot, one at a time. Scope decides the pattern. Session-scoped
-  editors layer over the session pane. Studios take the slot. Anything that
-  became a lens stays a lens.
+- **One main slot.** Board, the session, the draft and every studio are pages
+  in the one main slot, one at a time: a studio replaces the page in the sheet.
+  Scope decides the pattern. Session-scoped editors layer over the session
+  pane. Anything that became a lens stays a lens. Every drawer belongs to a
+  session today, so every drawer parks while a studio is open and the sheet
+  takes its width (see [shell.md](./shell.md), The dock follows the page).
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), a Goodboy
-  menu row (Guide, What's new), the foot of the bell list, a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), the Goodboy
+  line, the foot of the bell list, a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
   that opens Settings, a card that opens Impact) stacks (`openStudio`), so Back
-  returns to where the link was. A notification row with no session is a link
-  too: it stacks the Notifications page, and only the foot of the list is a door.
-  Board is a door as well: opened over a studio it replaces that studio's entry
+  returns to where the link was. The tabs of Help (Guide, What's new) stack
+  too. A notification row with no session is a link too: it stacks the
+  Notifications page, and only the foot of the list is a door. Board is a door
+  as well: opened over a studio it replaces that studio's entry
   (`openDestination`), so Back from the board returns to the page below the
   studio. Events from the bars carry `door: true`.
 - **One exit.** Close, Esc and Back leave a studio the same way: they land on
@@ -188,18 +192,18 @@
   shows no exit control: it leaves by another door, Back or Esc. Nothing has a
   Close button.
 - **One selected sign.** Every page lights exactly one control, with
-  `bg-selected` and `aria-current="page"`, in the column and on the rail alike:
-  the open studio's door; New session while the draft is open; Board on the
-  board; the Goodboy row for Help (the Guide and What's new); the bell for
-  Notifications. New workspace is a flow and lights nothing. Every control reads
-  it from one place (`columnPlaceOf`, through `useColumnPlace`), so no page
-  leaves two lit. Inside a session no door does: the open session's row is the
-  column's sign and the current page row is the session rail's (see Session
-  rail), one sign per navigation column. Under any page the session row is
-  remembered, never current. A popover trigger that is not the page's own
-  control (the Usage chips) is never selected: it only reports `aria-expanded`;
-  the Goodboy row and the bell are selected only while their page is open, and an
-  open popover shows its own `bg-muted` over that. A button's label, `aria-label` and tooltip name the same word
+  `bg-selected`, `cursor-default` and `aria-current="page"`, in the column and
+  on the rail alike: the open studio's door; New session while the draft is
+  open; Board on the board; the Goodboy line for Help, either tab (`place`
+  `help`); the bell for Notifications. New workspace is a flow and lights
+  nothing. Every control reads it from one place (`columnPlaceOf`, through
+  `useColumnPlace`), so no page leaves two lit. Inside a session no door does:
+  the open session's row is the column's sign and the current page row is the
+  session rail's (see Session rail), one sign per navigation column. Under any
+  page the session row is remembered, never current. A popover trigger that is
+  not the page's own control (the Usage chips) is never selected: it only
+  reports `aria-expanded`; the bell is selected only while its page is open, and
+  an open popover shows its own `bg-muted` over that. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
   `__tests__/navigation/oneDoor.test.ts` pins the rule.
 

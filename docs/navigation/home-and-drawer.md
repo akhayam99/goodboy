@@ -117,14 +117,15 @@ window's bottom edge. The drawer container is one step quieter than the page
 (`bg-drawer`, recessed between chrome and background in both themes): it reads
 as secondary, never louder, never tinted, and never a border to fake the
 difference. `AppShell` hosts it through `DrawerColumn`'s `frame="sheet"`. The
-Tasks and Chat studios do the same inside the studio slot: their body registers
+Tasks and Chat studios do the same inside the main slot: their body registers
 its drawer with the `StudioFrame` (`useStudioDrawer`), the frame draws one
 `DrawerColumn` with `frame="sheet"` around the band and the body, so the band and
 the list are the page container and the drawer container stands beside them from
-the slot's top to its bottom; the slot's own sheet steps aside
-(`data-studio-sheet-owner`). A studio body with no hosting frame (a studio that
-covers the left column) keeps `frame="none"`, which draws only the drawer
-container as a card inset 8px on its right, top and bottom.
+the slot's top to its bottom; the shell's own sheet steps aside
+(`data-studio-sheet-owner`) while the studio is open. A studio body with no
+hosting frame (a mock scene that draws the studio alone) keeps `frame="none"`,
+which draws only the drawer container as a card inset 8px on its right, top
+and bottom.
 
 **Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
@@ -227,7 +228,12 @@ Scripts, Agents, Terminal, Browser): a forward move that stays in its session ke
 it. A tool in the chip stays too: over a reader it comes back into the slot,
 under a tool it stays in the chip (`backAfterPlace` in `applyLocation`). Leaving
 the session empties both, and Back brings the drawer back like any drawer. A
-reader, an item or a form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
+studio over the session parks the drawer instead: the slot and the chip keep
+it, it stays mounted but hidden and inert, no close key reaches it
+(`selectDrawerPanel` is null under a studio), and it shows again, as it was,
+when the studio closes. Its own key on the studio leaves every studio stacked
+over the session and shows it. A reader, an item or a
+form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
@@ -483,7 +489,7 @@ tab last used; the drawer header switches between the two. It also closes when t
 artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
-A studio covers the whole window grid, so it cannot use that column. A Tasks
+A studio's own panel is not the session drawer. A Tasks
 record opens in the studio's `DrawerColumn` beside the list on the reader tier
 (`InboxStudioLayout` passes `sizing: 'reader'` through `useStudioDrawer`), with
 the same card and motion; a window too narrow for the list and the pane lifts

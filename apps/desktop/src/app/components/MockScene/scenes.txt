@@ -1336,6 +1336,8 @@ u37-monitoring-branch
 u37-running-here
 u37-running-here-idle
 u39-destinations
+u39-foot
+u39-foot-update
 update-card
 update-card-long-version
 update-card-narrow
@@ -1348,6 +1350,10 @@ ux39-p7-open
 ux39-p7-open-branchless
 ux39-p7-runs-waiting
 ux39-p7-runs-waiting-folded
+ux39-p9-impact-parked
+ux39-p9-session-drawer
+ux39-p9-tasks-parked
+ux39-p9-workflows-parked
 wireframe-failed
 workflow
 workflow-run

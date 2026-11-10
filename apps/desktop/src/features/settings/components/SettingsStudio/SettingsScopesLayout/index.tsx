@@ -14,6 +14,7 @@ import type { SettingsGroup } from '../settingsDirectory';
 import { SettingsRail } from '../SettingsRail';
 import { SettingsSearchResults } from '../SettingsSearchResults';
 
+const SETTINGS_RAIL_FOLD_BELOW = 720;
 const SETTINGS_RAIL_FOLDED_BY_DEFAULT_BELOW = 1200;
 
 type Props = {
@@ -35,6 +36,7 @@ export const SettingsScopesLayout = ({
 }: Props) => {
   const fold = useStudioRailFold({
     surface: 'settings',
+    foldBelow: SETTINGS_RAIL_FOLD_BELOW,
     foldedByDefaultBelow: SETTINGS_RAIL_FOLDED_BY_DEFAULT_BELOW,
   });
   const [query, setQuery] = useState('');

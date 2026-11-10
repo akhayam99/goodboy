@@ -287,11 +287,25 @@ waits in a back chip at the left of the drawer head, one level deep, so a
 third open drops the oldest. The chip reads the kind and the title
 (`Plan · Add tax to the checkout total`, `Terminal`); a click swaps the two.
 Closing the drawer brings back what the chip holds, and closing that empties
-the slot. Esc in the session is one ladder: an open menu, popover or field
-takes it first, then the top of the slot closes, then the drawer from the
-chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS, File > Close the Drawer)
-closes the top of the slot from anywhere, a focused terminal or web page
-included; an open menu or dialog takes it first. The right rail stays at 44px
+the slot. **The dock follows the page.** A session drawer belongs to its
+session: while a page (a studio) replaces the session, the drawer parks, out of
+sight and out of reach of every close key, and Esc, Close or Back brings it
+back with the session. A parked drawer stays mounted, hidden and inert
+(`DrawerColumn` `isParked`), out of the flow so the page takes its width, with
+no exit and no width change, so a draft, a scroll position or a running
+terminal survives the trip. The session under the page widens while the drawer
+is parked and narrows again on return, so its transcript re-wraps. Close keys
+read `selectDrawerPanel`, which is null under a studio, and the history entry
+keeps the drawer. Esc inside a parked drawer is suspended, so it reaches the
+page, and after the trip the drawer's inner step (a plan in Ask) answers first
+again. A drawer's own key (⌘⌥C, ⌘⌥X, ⌘⌥S) on a page leaves that page and every
+page stacked under it, and shows that drawer; it never closes a parked one,
+and an overlay drawer takes focus back. Esc in the session is one ladder: an open
+menu, popover or field takes it first, then the top of the slot closes, then
+the drawer from the chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS,
+File > Close the Drawer) closes the top of the slot from anywhere, a focused
+terminal or web page included; an open menu or dialog takes it first, and a
+parked drawer is never closed. The right rail stays at 44px
 and says the same thing: the tool in the slot is pressed, the tool in the chip
 wears a small ring and is named waiting, and a signal dot sits with either (see
 [session-rail.md](./session-rail.md), The session tools). The rules, the store and the navigation cases are in
@@ -410,11 +424,15 @@ hide animation or overlay can move it.
   comes back when the pane closes. The session rail keeps its own toggle at the
   left of its top row.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
-  work row, so it can hover over main without taking layout space. The studio
-  slot covers the content area only (`studioCoversLeft={false}`), as its own
-  sheet, so the column stays live beside every studio; the peek is drawn after
-  it, so a peeked column floats over a studio too. A studio never covers the
-  top bar.
+  work row, so it can hover over main without taking layout space. A studio is
+  a page in the one main slot: it draws inside the content sheet, over the page
+  it replaces (`AppShell`'s `studio`, `[data-studio-slot="content"]`), so the
+  column stays live beside every studio, and the drawer parks under it. The
+  slot is opaque (`bg-background`, `bg-chrome` for a studio that draws its own
+  sheets), so the page never shows through while a studio fades in or out. The
+  page under it stays mounted and inert. The peek is drawn after
+  the sheet, so a peeked column floats over a studio too. A studio never covers
+  the top bar.
 
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
@@ -449,8 +467,16 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: workspace identity. It has a 200px limit and truncates, with the full
-  name in its tooltip.
+- Left: the sidebar toggle, then the workspace identity. The toggle
+  (`ColumnToggleButton`, ⌘B, 28px like every top bar control) sits right of
+  the traffic lights, above the column it folds, and is the column's one
+  toggle; the column itself has no toggle row. It reads "Hide sidebar" while
+  the column is open and "Show sidebar" while it is the rail, and its
+  `aria-pressed` follows. The identity has a 200px limit and truncates, with
+  the full name in its tooltip. While the column is open, the whole left zone
+  is no wider than the column (`--goodboy-left-sidebar-width`, set on the shell
+  root by `AppShell`), so the identity and the repo entry never spill over the
+  page.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the tooltip (`Back to Comments`,
   the session on a second line, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
@@ -572,7 +598,7 @@ only drop under zoom.
   (`theme-switch-is-one-paint`). No shortcut is bound to it.
 - The top bar never edits. Reporting a bug, the update
   and the version are about Goodboy itself, so they live at the foot of the
-  column: the Goodboy row. The setup checklist is a card on the Board.
+  column: the Goodboy line. The setup checklist is a card on the Board.
 
 ## The column foot
 

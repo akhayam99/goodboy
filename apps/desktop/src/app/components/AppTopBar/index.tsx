@@ -31,6 +31,7 @@ type Props = {
 export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, sidebar }: Props) => {
   const workspace = useCurrentWorkspace();
   const place = useColumnPlace();
+  const isColumnOpen = sidebar?.isCollapsed === false;
   return (
     <>
       <div

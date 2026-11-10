@@ -103,8 +103,9 @@ const expectColumnBesideStudio = (): void => {
   const column = document.querySelector('[data-side-column], [data-column-rail]');
   expect(column).not.toBeNull();
   expect(column?.closest('aside')?.hasAttribute('inert')).toBe(false);
-  expect(document.querySelector('[data-studio-slot="content"]')).not.toBeNull();
-  expect(document.querySelector('[data-studio-slot="cover"]')).toBeNull();
+  const slot = document.querySelector('[data-drawer-main] [data-studio-slot="content"]');
+  expect(slot).not.toBeNull();
+  expect(slot?.previousElementSibling?.hasAttribute('inert')).toBe(true);
 };
 
 const expectHealthy = (): void => {
@@ -274,6 +275,10 @@ const expectDrawerBesideContent = ({
     `${kind} opens on the right of the page`,
   ).toBeTruthy();
 };
+
+const sidePanelMode = (): string | null =>
+  document.querySelector('main aside[aria-label="Side panel"]')?.getAttribute('data-drawer-mode') ??
+  null;
 
 const openDrawerKind = (): string | null => selectOpenDrawer(useAppStore.getState())?.kind ?? null;
 
@@ -560,8 +565,7 @@ describe('moving across every place keeps one frame', () => {
     await boot({ seed: 'pr' });
     await openCrumb(/^Artifacts/);
 
-    await clickButton(/^Goodboy beta/);
-    await click(await screen.findByRole('menuitem', { name: /^Guide/ }));
+    await clickButton(/^Goodboy/);
     expect(studio()).toBe('guide');
     expectColumnBesideStudio();
     expect(currentDoors()).toHaveLength(1);
@@ -574,7 +578,7 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('swaps the column for Settings, and Back to app, Esc and Back all land on the same page', async () => {
+  it('opens Settings beside the live column, and Back to app, Esc and Back all land on the same page', async () => {
     await boot({ seed: 'pr' });
     await openCrumb(/^Artifacts/);
 
@@ -693,7 +697,7 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('keeps a drawer with its page while a studio sits over it', async () => {
+  it('parks a session drawer under a page, and Esc brings it back with its page', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
     await press('lens.context');
@@ -701,11 +705,94 @@ describe('moving across every place keeps one frame', () => {
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
+    expect(document.querySelector('main [data-drawer-main] [data-studio-slot]')).not.toBeNull();
+    expect(sidePanelMode()).toBe('closed');
+    const parked = document.querySelector('main aside[aria-label="Side panel"]');
+    expect(parked?.hasAttribute('data-drawer-parked')).toBe(true);
+    expect(parked?.hasAttribute('inert')).toBe(true);
+    expect(parked?.hasAttribute('data-drawer-exit')).toBe(false);
     await escape();
 
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
     expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expect(parked?.hasAttribute('inert')).toBe(false);
+    expectHealthy();
+  });
+
+  it('keeps a parked Explore mounted as the same node through a Tasks round trip', async () => {
+    await boot({ seed: 'pr' });
+
+    await press('lens.explore');
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('explore'));
+    const explore = 'main aside section[aria-label="Explore"]';
+    const section = await waitFor(() =>
+      requireValue({ value: document.querySelector<HTMLElement>(explore) }),
+    );
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    expect(section.isConnected).toBe(true);
+    await escape();
+
+    expect(studio()).toBeNull();
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expect(document.querySelector(explore)).toBe(section);
+    expectHealthy();
+  });
+
+  it('shows a parked drawer on its key from a page instead of closing it unseen', async () => {
+    const { sessionId } = await boot({ seed: 'pr' });
+
+    await press('lens.context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+
+    await press('lens.context');
+
+    expect(studio()).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBe(sessionId);
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expectHealthy();
+  });
+
+  it('opens a drawer on its key from a page with nothing parked, beside the session', async () => {
+    await boot({ seed: 'pr' });
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
+
+    await press('lens.context');
+
+    expect(studio()).toBeNull();
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expectHealthy();
+  });
+
+  it('closes the page with ⌘W, never the drawer parked under it, and Back brings the drawer back', async () => {
+    await boot({ seed: 'pr' });
+
+    await press('lens.context');
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context'));
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    await press('app.close');
+
+    expect(studio()).toBeNull();
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+
+    await click(door('workflows'));
+    expect(studio()).toBe('workflow');
+    await press('nav.back');
+
+    expect(studio()).toBeNull();
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expectHealthy();
   });
 

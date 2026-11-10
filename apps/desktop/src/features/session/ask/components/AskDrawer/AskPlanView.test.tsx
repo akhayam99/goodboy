@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { anAgent } from '@goodboy/types/testing';
+import { DrawerColumn, DrawerFrame } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import {
   PLAN_FIXTURE_ID,
@@ -54,5 +55,50 @@ describe('the plan inside Ask', () => {
       payload: { artifactId: PLAN_FIXTURE_ID, revision: null },
     });
     expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+type ColumnParams = {
+  readonly isParked: boolean;
+  readonly isPlanShown: boolean;
+  readonly onClose: () => void;
+  readonly onBack: () => void;
+};
+
+const askColumn = ({ isParked, isPlanShown, onClose, onBack }: ColumnParams) => (
+  <DrawerColumn
+    main={<div>Tasks</div>}
+    drawer={
+      <DrawerFrame title="Ask" onClose={onClose}>
+        {isPlanShown ? (
+          <AskPlanView
+            sessionId={PLAN_FIXTURE_SESSION}
+            artifactId={PLAN_FIXTURE_ID}
+            onBack={onBack}
+          />
+        ) : (
+          <p>ledger-core thread</p>
+        )}
+      </DrawerFrame>
+    }
+    isParked={isParked}
+    ariaLabel="Side panel"
+    resizeLabel="Resize side panel"
+  />
+);
+
+describe('the plan inside Ask after a page round trip', () => {
+  it('goes back to the thread on Esc instead of closing Ask', () => {
+    const onClose = vi.fn();
+    const onBack = vi.fn();
+    const view = render(askColumn({ isParked: false, isPlanShown: false, onClose, onBack }));
+    view.rerender(askColumn({ isParked: false, isPlanShown: true, onClose, onBack }));
+    view.rerender(askColumn({ isParked: true, isPlanShown: true, onClose, onBack }));
+    view.rerender(askColumn({ isParked: false, isPlanShown: true, onClose, onBack }));
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

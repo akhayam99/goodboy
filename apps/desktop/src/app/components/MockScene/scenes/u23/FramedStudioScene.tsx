@@ -12,6 +12,7 @@ const noop = () => undefined;
 type Props = {
   readonly kind: StudioKind;
   readonly place: 'inbox' | 'workflows' | 'impact' | 'changelog' | 'link' | 'guide';
+  readonly columnPlace?: ColumnPlace;
   readonly seed?: () => void;
   readonly children: ReactNode;
 };
@@ -34,6 +35,7 @@ export const FramedStudioScene = ({ kind, place, columnPlace, seed, children }: 
     <ShellStudioFrame
       target={{ place, tool: null }}
       currentSessionId={FLOW_SESSION_ID}
+      {...(columnPlace !== undefined && { columnPlace })}
       main={
         <AppStudioFrame kind={kind} onClose={noop}>
           {children}

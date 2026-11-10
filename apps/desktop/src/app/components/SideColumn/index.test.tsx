@@ -563,7 +563,7 @@ describe('ColumnRail', () => {
 
 describe('one current sign', () => {
   const SESSION = sessionOf({ goal: 'Add rate limits' });
-  const HELP_NAME = 'Goodboy beta: version, help and sponsor';
+  const HELP_NAME = 'Goodboy, help';
 
   const mountWithSession = ({ place }: { readonly place: ColumnPlace }) => {
     seedColumn({ store: useAppStore, sessions: [SESSION], currentSessionId: SESSION.id });
@@ -581,17 +581,14 @@ describe('one current sign', () => {
 
   const lit = (root: HTMLElement): number => root.querySelectorAll('[aria-current="page"]').length;
 
-  it.each(['guide', 'whatsNew'] as const)(
-    'lights the Goodboy line, and nothing else, for %s',
-    (place) => {
-      const { container } = mountWithSession({ place });
+  it('lights the Goodboy line, and nothing else, for Help', () => {
+    const { container } = mountWithSession({ place: 'help' });
 
-      expect(screen.getByRole('button', { name: HELP_NAME }).getAttribute('aria-current')).toBe(
-        'page',
-      );
-      expect(lit(container)).toBe(1);
-    },
-  );
+    expect(screen.getByRole('button', { name: HELP_NAME }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(lit(container)).toBe(1);
+  });
 
   it.each(['notifications', 'addWorkspace'] as const)(
     'lights no column control for %s, and never the open session',
@@ -625,7 +622,7 @@ describe('one current sign', () => {
         scope="workspace"
         workspaceId={harborline.id}
         currentSessionId={SESSION.id}
-        place="guide"
+        place="help"
         actions={actions()}
       />,
     );

@@ -1,7 +1,7 @@
 import { dismissTopEscapeLayer } from '@goodboy/ui';
 import { isOverlayOpen } from '../../../shared/keyboard/isOverlayOpen';
 import { useAppStore } from '../../../store';
-import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
+import { selectDrawerPanel } from '../../../store/slices/drawer/selectDrawerPanel';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
 import { parentPlace } from '../../../store/slices/navigation/parentPlace';
 
@@ -13,7 +13,7 @@ export const closeCurrentLevel = ({}: Params): void => {
     return;
   }
   const state = useAppStore.getState();
-  const drawer = selectOpenDrawer(state);
+  const drawer = selectDrawerPanel(state);
   if (drawer !== null) {
     if (drawer.kind === 'question') {
       state.closeQuestion();

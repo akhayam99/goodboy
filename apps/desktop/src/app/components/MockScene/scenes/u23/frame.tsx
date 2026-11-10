@@ -64,7 +64,7 @@ export const U23_FRAME_SCENES = {
   ),
   'frame-studio-guide': () => (
     <FramedStudioScene kind="guide" place="guide">
-      <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
+      <HelpStudio tab="guide" onClose={noop} onOpenScreen={noop} />
     </FramedStudioScene>
   ),
   'frame-questions': OpenQuestionsScene,
