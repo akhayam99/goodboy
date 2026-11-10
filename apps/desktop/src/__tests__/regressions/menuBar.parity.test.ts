@@ -169,12 +169,10 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
   });
 
   it('keeps a separator between the pages and the right rail tools in the Go menu', () => {
-    const block = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/.exec(source)?.[1] ?? '';
-    const rows = block
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line !== '')
-      .map((line) => (line === 'SEPARATOR,' ? '-' : (/"([^"]+)"/.exec(line)?.[1] ?? '')));
+    const block = GO_SECTION.exec(source)?.[1] ?? '';
+    const rows = [...block.matchAll(/\bSEPARATOR\b|\bcommand\(\s*"([^"]+)"/g)].map(([token, id]) =>
+      token === 'SEPARATOR' ? '-' : (id ?? ''),
+    );
     const tools = DESTINATIONS.filter(({ home }) => home === 'rail').map(({ menuId }) => menuId);
     const firstTool = rows.indexOf(tools[0] ?? '');
     expect(rows[firstTool - 1]).toBe('-');

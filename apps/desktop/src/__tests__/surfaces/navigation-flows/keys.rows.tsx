@@ -824,17 +824,19 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   {
-    name: 'menu: Go > Browser opens the Browser page and leaves it alone when it is open',
+    name: 'menu: Go > Browser shows the Browser dock, hides it on a second pick, and opens no page',
     covers: ['menu:menu.browser'],
     open: async () => {
       await pickMenuItem({ id: 'menu.browser' });
-      await waitFor(() => expect(useAppStore.getState().appStudio?.kind).toBe('browser'));
-      const opened = useAppStore.getState().navigation;
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'));
       await pickMenuItem({ id: 'menu.browser' });
-      expect(useAppStore.getState().navigation).toBe(opened);
+      await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'));
     },
     lands: async () => {
-      expect(useAppStore.getState().appStudio?.kind).toBe('browser');
+      expect(useAppStore.getState().drawer?.kind).toBe('browser');
+      expect(useAppStore.getState().appStudio).toBeNull();
     },
   },
   keyRow({
