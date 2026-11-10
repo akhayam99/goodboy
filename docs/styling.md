@@ -375,7 +375,7 @@ never moves the column, with or without a drawer. The pure geometry is
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
 Overview to Review to a chat. `app/components/StudioFrame/columnContract.test.ts` fails under `features/` on any
-`max-w-[Nch]`, any `max-w-[Npx]` (the palette, the onboarding wizard and Home, on one 600px column, are the
+`max-w-[Nch]`, any `max-w-[Npx]` (Search or run, the onboarding wizard and Home, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
 and the test asserts it centres `column` and `measure` and not `full`), `PANE_RHYTHM.measure`,
@@ -596,7 +596,7 @@ content, never a boundary inside content. Allowed: a vertical divider inside
 the chrome (between top bar or footer groups), a pane's fixed header against its
 scrolling body (the chat composer in a `PaneShell` dock, the `DrawerFrame`
 header, the comment action bar under the Branch thread), and inside a
-floating surface (popover, palette) the seam between its header or input and
+floating surface (popover, Search or run) the seam between its header or input and
 its list, at most one per side. A page whose dock reads as the end of its
 document (the orchestrated run, its queued hints over the composer) passes
 `dockEdge="space"` to `PaneShell`: no divider, the composer's own surface and
@@ -653,10 +653,10 @@ styling belong to
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen
 viewer, a multi-step flow that owns the whole screen, and a blocking system
 prompt. Everything else is a popover or inline. A centred `Dialog` sits on
-`bg-floating`, like popovers, toasts and the command palette; the full-screen
+`bg-floating`, like popovers, toasts and Search or run; the full-screen
 viewer passes `size="full"` and `surface="screen"` to stay on the content surface.
 `ImageLightbox` is that viewer: the native dialog traps Tab, focuses Close on open and returns
-focus to the opener on close. Given several images it shows a rail of them in the `Dialog` panel. The command palette and the session switcher are not dialogs; they
+focus to the opener on close. Given several images it shows a rail of them in the `Dialog` panel. Search or run and the session switcher are not dialogs; they
 share `Scrim` from `@goodboy/ui` for their backdrop. Any line that
 sets a background on a `z-popover`, `z-toast` or `z-command-palette` layer uses
 `bg-floating`, and `no-token-bypass.test.ts` holds that.

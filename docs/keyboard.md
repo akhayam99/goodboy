@@ -37,7 +37,7 @@ adds a tab in place with no picker), inside the Ask panel (`ask.reset`, Reset
 chat) and on Home (`home.newWorkspace`, New workspace). Each contextual entry carries a `scope`, so the
 registry binds a chord once per place, and a contextual handler that declines
 (focus outside the Ask panel) hands the chord back to the global one. ⌘K is
-the way to go anywhere: every global new and go-to is a palette entry, and the
+the way to go anywhere: every global new and go-to is an entry in Search or run, and the
 Shortcuts page says so once.
 
 **Not now** on a Next suggestion adds no chord of its own: it is an `undoable` operation, so the global `app.undo` (⌘Z) restores it in stack order, and it yields to text fields like every undo.

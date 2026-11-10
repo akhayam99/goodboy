@@ -183,12 +183,12 @@ folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
 chat ends in a card with Open changes and Undo changes from this reply
 (`features/chat/components/TurnChangesCard/`). The git verbs are not
 registered for a session without a branch: Comments (`session.review`) and
-Files (`session.diff`) leave the menus and the palette, and **Changes**
+Files (`session.diff`) leave the menus and Search or run, and **Changes**
 (`session.changes`) opens the Changes page in their place. The Documents copy
 says no git word, held by
 `__tests__/regressions/documents-copy-has-no-git-words.test.ts`.
 
-Every door says **New workspace** (Home, the switcher, the palette, the
+Every door says **New workspace** (Home, the switcher, Search or run, the
 menu bar) and opens one form with no shape to choose; **Start
 from scratch** lives inside it. The form sets up the folders of one workspace. They are not different kinds of workspace, and
 a workspace never links to another one
@@ -291,7 +291,7 @@ meanings and the state maps against it.
 | Closed           | You closed a failed agent out.                                |
 
 Needs you counts three units, and each tooltip names its own: sessions ("2
-sessions need you") on the Board door, the dock badge and the palette; questions ("3 questions") on the Questions entry of the session rail;
+sessions need you") on the Board door, the dock badge and Search or run; questions ("3 questions") on the Questions entry of the session rail;
 items ("4 items need you") on the Overview card and the Runs group. The bell is
 unchanged. `needsYouText` and `countNoun` write every one of them.
 
@@ -299,7 +299,7 @@ unchanged. `needsYouText` and `countNoun` write every one of them.
 question, a tool waiting for your permission, a comment the fix run needs you for,
 or a plan waiting for your approval (a workflow run held at its plan). The
 session sits in needs you while its agents keep working, and the top bar chip,
-the board column, the palette and `⌥⌘↓` all count it there ("1 session needs you",
+the board column, Search or run and `⌥⌘↓` all count it there ("1 session needs you",
 "2 sessions need you"). An agent error also keeps its place above running. Failing
 checks, changes requested, comments the fix run could not fix, an approved pull
 request and an unread reply rank below running, because an agent may be working
@@ -697,7 +697,7 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   **Retry step**, which opens the step where Continue and
   Skip live. approve-tool opens the agent's
   chat rather than the permission card directly; sign-in dispatches the
-  same `goodboy:open-settings` event the palette's "Connect a provider"
+  same `goodboy:open-settings` event the "Connect a provider" entry of Search or run
   uses. continue-with-workflow always offers the workspace's first library
   workflow, not a goal-aware recommendation - `recommendPreset.ts` (design's
   name for that ranking) was not built, since nothing else in this pass
@@ -1242,8 +1242,8 @@ transcript, Open (the host logo, named Open on GitHub) and Copy link, and shows 
 next open comment. Apply fix never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the
 `review` and `reviewComment` kinds of the action registry
-(`features/actions/kinds/`), so the buttons, `…`, the right click and the
-palette list the same set.
+(`features/actions/kinds/`), so the buttons, `…`, the right click and
+Search or run list the same set.
 
 A comment turns to Comment changed only when the reviewer edits the original
 comment. Every refresh of the pull request compares the fingerprint of the root
@@ -1354,7 +1354,7 @@ for this session`, else `Resolver default`); launching does not turn the
   session pick or the role default); F is Retry in this run.
   `…` holds **Try another model** (the picker opens inline under the buttons,
   it sets the model of a new agent; the `reviewComment.anotherModel` verb, so
-  right click and the palette have it too), **Add a hint**, Reply, Skip
+  right click and Search or run have it too), **Add a hint**, Reply, Skip
   and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no
@@ -1868,14 +1868,14 @@ session up again in Goodboy.
   folder only, **session** is the goal, **agent** is the chat.
 - No screen may use a different word for any of these. Every surface that
   creates, adds, lists or manages a repository says project: the session
-  overview, Settings, palette labels, notices and aria-labels alike. The
+  overview, Settings, Search or run labels, notices and aria-labels alike. The
   session rail card, the Settings page and the switcher count read
   **Projects** (`NAMES.projects`, "3 projects, 1 plain folder"), and the door
   is **Add project** (`NAMES.addProject`) beside **Add a plain folder**.
   Folder stays in the file picker and for a plain folder. The old words stay
   findable as former names (`formerNamesOf` in `shared/utils/names.ts`:
   Folders and Workspace projects find the Projects page in Settings and the
-  palette, Add folder finds Add project, Dev project); a former name is a
+  Search or run, Add folder finds Add project, Dev project); a former name is a
   search alias, never a label drawn on a screen. The retired names guard fails
   `Folders` and `Add folder` as labels
 - One verb per move and one verb per act. A label is the verb plus the
@@ -1946,7 +1946,7 @@ session up again in Goodboy.
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
-- **Stop** is the one name for ending a running turn: the labeled button in the dock, the right click menu and the palette all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. A button that stops more or less than the open agent names its scope (**Stop Auto and 2 agents**, **Stop this reply** on a step page).
+- **Stop** is the one name for ending a running turn: the labeled button in the dock, the right click menu and Search or run all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. A button that stops more or less than the open agent names its scope (**Stop Auto and 2 agents**, **Stop this reply** on a step page).
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word
@@ -1972,7 +1972,7 @@ session up again in Goodboy.
   page, **Providers** is its group in the rail (it was Providers &
   models), and **Edit commits** is the one name for changing the commits of a
   branch (it was Rewrite history). **Disconnect** is the one verb for a
-  provider or tool (it was Sign out). The old words are palette aliases and
+  provider or tool (it was Sign out). The old words are Search or run aliases and
   `RETIRED_NAMES` keeps them out of copy. A dot on a settings row means only
   that something needs you; a connected, healthy provider or tool shows none.
 - **The Guide is one page per chapter**, in the app's voice: at most 60 words
@@ -2115,7 +2115,7 @@ needs you that an agent still works. `plan-approval` comes from a workflow run
 whose `orchestrationStop` is `plan-approval` (`isRunHeldForPlan`) and opens that
 run's page. `ATTENTION_REASON_META` gives each reason its mark, tone and words
 for the sidebar, the switcher, the hover card, the Board card, the Now chip and
-the palette; red is only an agent error, a run that stopped, a push that failed and failing checks. `pr-queued` ("In
+Search or run; red is only an agent error, a run that stopped, a push that failed and failing checks. `pr-queued` ("In
 merge queue", a pull request GitHub is set to merge) is not a needs-you reason:
 when it wins, the stage is `review` and `attention` still carries it, so the
 marks and words read it while the session stays out of Needs you. A queued pull

@@ -64,7 +64,7 @@ The strip ends with the same controls on every scope.
 
 **Dot on Terminal**
 
-When a command that ran for more than ten seconds ends while the terminal drawer is closed, **Terminal** in the right rail gets a dot ("pnpm test finished after 42s"). The dot does not say whether the command passed; the Terminal page line does.
+When a command that ran for more than ten seconds ends while the terminal dock is closed, **Terminal** on the right rail gets a dot ("pnpm test finished after 42s"). The dot does not say whether the command passed; the Terminal page line does.
 
 **File paths in output**
 
@@ -113,7 +113,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 - **⌘B** folds the sidebar. **⌥⌘B** folds the column inside the page you are on.
 - That column is the Session pages column, the Chat and Terminal lists, the Guide chapters, the changelog versions, the Settings scopes or the notification filters.
-- Each remembers it per page. On a page with no inner column the key does nothing and the palette leaves the entry out.
+- Each remembers it per page. On a page with no inner column the key does nothing and Search or run leaves the entry out.
 
 **Undo and Esc**
 
@@ -132,13 +132,13 @@ On a Mac the menu bar carries the same keys.
 
 - File holds New Session, New Chat, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
 - Edit holds Search.
-- View holds the sidebar, the palette, zoom and Reload.
-- Go walks to Board, Tasks, Workflows, Chat, Impact, Monitoring and Notifications, then Show or Hide Terminal and Show or Hide Browser.
+- View holds the sidebar, Search or Run, zoom and Reload.
+- Go holds Back and Forward, then Board, Tasks, Workflows, Chat, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Show or Hide Browser open those tools on the right rail.
 - Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Keyboard shortcuts page in Settings, every shortcut in the groups General, Workspaces, Views and Lists, with Command palette on ⌘K, Search on ⌘F, Report a bug on ⌘I and a ⌘⌥ key for each view from Overview to Slack threads">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Keyboard shortcuts page in Settings, every shortcut in the groups General, Workspaces, Views and Lists, with Search or run on ⌘K, Search on ⌘F, Report a bug on ⌘I and a ⌘⌥ key for each view from Overview to Slack threads">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -147,7 +147,7 @@ On a Mac the menu bar carries the same keys.
 
 Pin the scripts you use and run them from the session.
 
-- Open the Scripts pane from **Scripts** in the right rail of the session, or with ⌘⌥S.
+- Open the Scripts pane from **Scripts** on the right rail, or with ⌘⌥S.
 - It groups scripts on one grid into **Services** (dev servers and watchers) and **Commands** (scripts that run and end).
 - A click on a row opens its output. The row's one control is **Run** or **Stop**. **Pin**, **Restart** and the rest live in the right click menu.
 - A running service shows its dot and uptime. CPU and memory are two rows in the card you get when you rest on its status.

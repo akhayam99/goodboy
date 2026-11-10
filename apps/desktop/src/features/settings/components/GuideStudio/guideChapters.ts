@@ -248,7 +248,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'shell',
     group: 'daily',
     title: 'Sidebar and session pages',
-    lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the tools sit in a thin column at the right.',
+    lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the right rail holds the tools.',
     points: [
       {
         term: 'Sidebar',

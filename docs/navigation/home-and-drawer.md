@@ -20,8 +20,8 @@ it carries the lockup itself: the 40px `BrandTile`, the word and the version
   when it was last opened. A click opens it here, or in a new window while
   agents run here. The search field shows from five workspaces on.
 - **New workspace** (⌘N on Home, `home.newWorkspace`) fires
-  `goodboy:add-workspace` through `openNewWorkspace`, like the switcher, the
-  palette and the menu bar. On Home the `addWorkspace` place
+  `goodboy:add-workspace` through `openNewWorkspace`, like the switcher,
+  Search or run and the menu bar. On Home the `addWorkspace` place
   swaps the list for `NewWorkspaceForm` in place, the lockup stays put, Cancel
   or Escape goes back, and Create opens the new workspace and lands in it,
   whatever the folders are: a plain Code folder was already offered git on its
@@ -226,7 +226,7 @@ Write title and goal from linked work); the chip does not come back after it.
 A tool keeps its state while it waits: Terminal keeps its shell, Explore its
 open folders. A second window has its own store, so its own slot.
 **The open drawer is part of the
-history entry's focus; the chip is not.** A forward move (crumb, sidebar, palette, a child such
+history entry's focus; the chip is not.** A forward move (crumb, sidebar, Search or run, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
 Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
 Scripts, Agents): a forward move that stays in its session keeps it open
@@ -333,11 +333,11 @@ transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
 report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
 the wireframe stage, with Open page as its one header action). **A plan always opens
 in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
-inside Ask, a plan row in the palette, a plan hit in search and the plan chip in
+inside Ask, a plan row in Search or run, a plan hit in search and the plan chip in
 a chat open it over the page you are on, unless you are already on the
 Artifacts page, where they select the plan. From another session they land on
 that session with the drawer open (`openPlanAnywhere`). Reports and wireframes
-are transit from the palette and from search and keep navigating; the Artifacts
+are transit from Search or run and from search and keep navigating; the Artifacts
 page stays the library. Going to
 the Artifacts page from a drawer is a command of its own, **Open page**
 (`DrawerFrame` `page`, tooltip Open in Artifacts) in the drawer header, and it is the only page change. The `artifact-document` kind

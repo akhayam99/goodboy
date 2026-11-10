@@ -166,7 +166,7 @@
         },
         {
           "title": "Settings",
-          "text": "Settings opens on the page you used last, beside the sidebar, with its own list of pages and a search. Every page is also in the palette.",
+          "text": "Settings opens on the page you used last, beside the sidebar, with its own list of pages and a search. Every page is also in Search or run.",
           "group": "Set up",
           "also": "settings pages",
           "shown": true
@@ -307,7 +307,7 @@
         },
         {
           "title": "Right click menus",
-          "text": "Right click any row to see every action it has. The menu and the palette list the same actions in the same order.",
+          "text": "Right click any row to see every action it has. The menu and Search or run list the same actions in the same order.",
           "group": "Search and navigation",
           "also": "right click menus"
         },
@@ -841,7 +841,7 @@
         },
         {
           "title": "One trail to the Branch page",
-          "text": "Open a branch from the palette, a notification, a chat card or the board and the same Branch page opens. The session pages stay on the session, and Back is history.",
+          "text": "Open a branch from Search or run, a notification, a chat card or the board and the same Branch page opens. The session pages stay on the session, and Back is history.",
           "group": "Review and resolve on the Branch page",
           "also": "review layers"
         },
@@ -1467,7 +1467,7 @@
         },
         {
           "title": "Guide",
-          "text": "Learn how Goodboy works in short chapters, one page each, that follow a task. Open Guide from the Help menu or the palette.",
+          "text": "Learn how Goodboy works in short chapters, one page each, that follow a task. Open Guide from the Help menu or Search or run.",
           "group": "Security, backup and updates",
           "also": "guide"
         },

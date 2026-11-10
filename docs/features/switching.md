@@ -25,7 +25,7 @@ A session nobody touched for three days stays where it is and fades. Rest the po
 
 **Flip through recent sessions.** Hold **Control** and press **Tab** to flip through recent sessions without the list.
 
-**Sort, group and filter.** The funnel at the right of the **Sessions** row sorts, groups and filters the list, and the funnel on the Board is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
+**Sort, group and filter.** The funnel at the right of the **Board** row sorts, groups and filters the list, and the funnel on the Board page is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
 
 **Right click.** A right click on any session opens all its actions: pin, refresh, rename, archive and delete. Archive and delete ask first. An archived session comes back with Undo or Restore.
 
@@ -51,7 +51,7 @@ Keep the sessions you return to at the top of the list. **Pin session** in a row
 
 ### Now chip
 
-Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does, so the chips beside it stay put. A click opens a list where each row jumps to its session. Sessions that need you show as a number on **Sessions** in the sidebar, with a small amber dot and a muted number, the dot red when one of them is broken, 9+ above nine. The top bar does not repeat it; **⌥⌘↓** goes to the next one. Rest on the door for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and the board says **2 more need you in other projects** with a way to clear the filter. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
+Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does, so the chips beside it stay put. A click opens a list where each row jumps to its session. Sessions that need you show as a number on **Board** in the sidebar, with a small amber dot and a muted number, the dot red when one of them is broken, 9+ above nine. The top bar does not repeat it; **⌥⌘↓** goes to the next one. Rest on the door for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and the board says **2 more need you in other projects** with a way to clear the filter. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-dark.webp">
