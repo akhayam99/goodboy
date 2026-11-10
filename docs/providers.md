@@ -1102,6 +1102,9 @@ When a provider ships or retires a model, update these together:
    `@anthropic-ai/claude-code-<platform>` package of each version in a scratch
    folder, never a global install). One entry per provider carries
    `defaultTurn: true`; array order never decides a default.
+   A catalog past the folder rule splits into `<cli>/<name>Catalog.ts` files
+   spread into `catalog.ts` (cursor keeps its Claude block in
+   `frontierClaudeCatalog.ts`); the source scan treats them as catalog layer.
 2. `<cli>/agent-model-ids.ts`: the ids the CLI accepts, copied from its model
    listing (for cursor, `cursor-agent models`). Keep it hand-written. It is the
    independent check the catalog tests compare against.
