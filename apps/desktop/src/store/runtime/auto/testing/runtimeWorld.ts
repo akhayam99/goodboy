@@ -1,4 +1,4 @@
-import type { AutoTree } from '@goodboy/db';
+import type { AutoTree, Database } from '@goodboy/db';
 import { createAutoRuntime, type AutoRuntime } from '../createAutoRuntime';
 import { runAutoCommand } from '../runAutoCommand';
 import type { AgentCommand, ChildTurnEnded } from '../ports';
@@ -19,17 +19,20 @@ type RuntimeWorldParams = {
   readonly agentIds?: ReadonlyArray<string>;
   readonly planIds?: ReadonlyArray<Readonly<{ id: string; agentId: string }>>;
   readonly capUsd?: number;
+  readonly database?: Database;
 };
 
 export const makeRuntimeWorld = async ({
   capUsd,
   agentIds,
   planIds,
+  database,
 }: RuntimeWorldParams = {}): Promise<RuntimeWorld> => {
   const state = await makeDeliveryWorld({
     ...(capUsd === undefined ? {} : { capUsd }),
     ...(agentIds === undefined ? {} : { agentIds }),
     ...(planIds === undefined ? {} : { planIds }),
+    ...(database === undefined ? {} : { database }),
   });
   const errors: Array<unknown> = [];
   const runtime = createAutoRuntime({
