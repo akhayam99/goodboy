@@ -268,7 +268,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session actions and +',
-        desc: 'The + on the Projects card adds or connects a folder, and the + on a folder row starts a new branch in it. More session actions, next to Pin, holds Archive and Delete.',
+        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete; folded, it sits at the foot.',
       },
       {
         term: 'Agents panel',

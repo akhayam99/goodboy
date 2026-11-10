@@ -57,6 +57,7 @@ export const SessionLevelActions = ({ session, controls, isFolded = false }: Pro
           target={target}
           label="More session actions"
           size="control"
+          side={isFolded ? 'right' : 'bottom'}
           only={only}
           relabel={relabel}
           onArm={({ action }) => controls.trigger({ actionId: action.id })}
