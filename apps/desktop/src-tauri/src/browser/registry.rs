@@ -26,6 +26,7 @@ pub(crate) struct TabFacts {
     pub(crate) is_shown: bool,
     pub(crate) hidden_since_ms: Option<i64>,
     pub(crate) opener_id: Option<String>,
+    pub(crate) is_passkey_blocked: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -223,6 +224,7 @@ impl BrowserRegistry {
             is_shown: tab.is_shown,
             hidden_since_ms: hidden_since(tab.is_shown, tab.now_ms),
             opener_id: tab.opener_id.map(str::to_string),
+            is_passkey_blocked: false,
         };
         tabs.by_id.insert(
             tab.id.to_string(),
@@ -473,6 +475,10 @@ impl BrowserRegistry {
 
     pub(crate) fn set_title(&self, id: &str, title: &str) -> Option<TabFacts> {
         self.update(id, |facts| facts.title = title.to_string())
+    }
+
+    pub(crate) fn set_passkey_blocked(&self, id: &str, is_blocked: bool) -> Option<TabFacts> {
+        self.update(id, |facts| facts.is_passkey_blocked = is_blocked)
     }
 
     fn update(&self, id: &str, change: impl FnOnce(&mut TabFacts)) -> Option<TabFacts> {
@@ -782,6 +788,26 @@ mod tests {
     }
 
     #[test]
+    fn a_tab_starts_without_a_blocked_passkey() {
+        let registry = BrowserRegistry::default();
+        let facts = open(&registry, "a", "harborline", true);
+        assert!(!facts.is_passkey_blocked);
+    }
+
+    #[test]
+    fn marks_and_clears_a_blocked_passkey_on_its_own_tab_only() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "a", "harborline", true);
+        open(&registry, "b", "harborline", true);
+        let marked = registry.set_passkey_blocked("a", true).expect("tab exists");
+        assert!(marked.is_passkey_blocked);
+        assert!(!registry.facts("b").expect("tab exists").is_passkey_blocked);
+        registry.set_passkey_blocked("a", false);
+        assert!(!registry.facts("a").expect("tab exists").is_passkey_blocked);
+        assert_eq!(registry.set_passkey_blocked("gone", true), None);
+    }
+
+    #[test]
     fn forgets_a_removed_tab() {
         let registry = BrowserRegistry::default();
         open(&registry, "a", "harborline", true);
@@ -980,6 +1006,7 @@ mod tests {
                 is_shown: false,
                 hidden_since_ms: Some(3_000),
                 opener_id: Some("b".to_string()),
+                is_passkey_blocked: true,
             },
             json!({
                 "id": "a",
@@ -990,6 +1017,7 @@ mod tests {
                 "isShown": false,
                 "hiddenSinceMs": 3000,
                 "openerId": "b",
+                "isPasskeyBlocked": true,
             }),
         );
     }

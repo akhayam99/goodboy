@@ -68,6 +68,8 @@ describe('the browser pane scenes', () => {
       'browser-page-dark',
       'browser-pane',
       'browser-pane-dark',
+      'browser-pane-passkey',
+      'browser-pane-passkey-dark',
       'browser-pane-tabs',
       'browser-pane-tabs-dark',
       'browser-peek',
@@ -130,6 +132,27 @@ describe('the browser pane scenes', () => {
     expect(card.textContent).toContain('http://localhost:5173/checkout');
     expect(card.textContent).toContain('Shows its tab beside the session.');
     expect(screen.queryByRole('region', { name: 'Browser' })).toBeNull();
+  });
+
+  it('says a sign-in asked for a passkey above the tab it belongs to', async () => {
+    mount({ id: 'browser-pane-passkey' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    expect(within(pane).getByRole('textbox', { name: 'Address' })).toHaveProperty(
+      'value',
+      'https://id.cascadia.dev/signin',
+    );
+    const title = await within(pane).findByText(
+      "Passkeys don't work in Goodboy's browser",
+      {},
+      WAIT,
+    );
+    const notice = title.closest<HTMLElement>('[role="status"]');
+    if (notice === null) {
+      throw new Error('The passkey notice has no status region.');
+    }
+    within(notice).getByRole('button', { name: 'Open in your browser' });
+    within(notice).getByRole('button', { name: 'Dismiss' });
   });
 
   it('lists the session tabs and the project pins beside the page', async () => {

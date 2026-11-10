@@ -9,6 +9,7 @@ use tauri::{
 
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
+use super::passkey;
 use super::profile::{self, ProfileId};
 use super::reason::{
     self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
@@ -176,6 +177,8 @@ pub(super) fn spawn_webview<R: Runtime>(
     let webview = window
         .add_child(builder, rect.position, rect.size)
         .map_err(failed)?;
+    #[cfg(target_os = "macos")]
+    watch_passkeys(&webview, id);
     if !is_shown {
         if let Err(error) = webview.hide() {
             let _ = webview.close();
@@ -183,6 +186,23 @@ pub(super) fn spawn_webview<R: Runtime>(
         }
     }
     Ok(webview)
+}
+
+#[cfg(target_os = "macos")]
+fn watch_passkeys<R: Runtime>(webview: &Webview<R>, tab_id: &str) {
+    let app = webview.app_handle().clone();
+    let asked_tab = tab_id.to_string();
+    let on_ask: passkey::OnAsk = std::sync::Arc::new(move || {
+        app.state::<BrowserRegistry>()
+            .set_passkey_blocked(&asked_tab, true);
+    });
+    let watched_tab = tab_id.to_string();
+    let watched = webview.with_webview(move |platform| {
+        passkey::watch_wk_web_view(platform, &watched_tab, on_ask);
+    });
+    if let Err(error) = watched {
+        log::warn!("[browser] passkey_watch_failed reason={error}");
+    }
 }
 
 pub(crate) fn refresh_urls<R: Runtime>(app: &AppHandle<R>, tabs: Vec<TabFacts>) -> Vec<TabFacts> {
@@ -216,7 +236,9 @@ fn builder_for<R: Runtime>(
     let title_tab = id.to_string();
     let builder = WebviewBuilder::new(guard::label_of(id), WebviewUrl::External(url.clone()));
     #[cfg(target_os = "macos")]
-    let builder = builder.user_agent(TAB_USER_AGENT);
+    let builder = builder
+        .user_agent(TAB_USER_AGENT)
+        .initialization_script_for_all_frames(passkey::WATCH_SCRIPT);
     builder
         .on_navigation(move |target| guard::may_navigate(target, &navigation_origins))
         .on_new_window(move |target, _features| {
@@ -227,10 +249,11 @@ fn builder_for<R: Runtime>(
         })
         .on_download(|_webview, _event| false)
         .on_page_load(move |webview, payload| {
-            if payload.event() != PageLoadEvent::Finished {
+            let registry = webview.app_handle().state::<BrowserRegistry>();
+            if payload.event() == PageLoadEvent::Started {
+                registry.set_passkey_blocked(&load_tab, false);
                 return;
             }
-            let registry = webview.app_handle().state::<BrowserRegistry>();
             registry.set_url(&load_tab, payload.url().as_str());
         })
         .on_document_title_changed(move |webview, title| {
@@ -346,6 +369,7 @@ pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<
         webview.close().map_err(failed)?;
     }
     registry.remove(tab_id);
+    passkey::WATCHES.forget(tab_id);
     Ok(())
 }
 
