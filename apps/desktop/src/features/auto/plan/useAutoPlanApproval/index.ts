@@ -3,9 +3,10 @@ import {
   NOTHING_CHANGED,
   READ_FAILED,
 } from '../../../../store/slices/notifications/errorRecovery';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
+import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { artifactApprovalOf, type ArtifactApprovalView } from '../../chat/artifactApprovalOf';
 import { AUTO_BRIDGE_EVENT, type AutoArtifactsChanged } from '../../bridge/autoBridgeProtocol';
@@ -54,6 +55,11 @@ export const useAutoPlanApproval = ({
 
   const rootAgentId = found?.view.tree.rootAgentId ?? null;
   const version = found?.row.revision ?? 0;
+  const latest = useMemo(() => createLatestOnly(), []);
+
+  useEffect(() => {
+    latest.cancel({ key: artifactId });
+  }, [artifactId, latest, version]);
 
   const onWritten = useCallback(async (): Promise<void> => {
     const payload: AutoArtifactsChanged = { sessionId };
@@ -84,6 +90,7 @@ export const useAutoPlanApproval = ({
       return;
     }
     setIsBusy(true);
+    const claimed = latest.claim({ key: artifactId });
     try {
       const result = await approveAutoPlan({
         db: tauriDatabase,
@@ -96,6 +103,9 @@ export const useAutoPlanApproval = ({
         },
         onWritten,
       });
+      if (!claimed.isCurrent()) {
+        return;
+      }
       if (result.kind === 'refused') {
         await reportError({
           recovery: NOTHING_CHANGED,
@@ -117,12 +127,14 @@ export const useAutoPlanApproval = ({
         closeDrawer();
       }
     } catch (error) {
-      await reportError({
-        recovery: CHECK_STATE,
-        title: "Couldn't approve the plan",
-        error,
-        sessionId,
-      });
+      if (claimed.isCurrent()) {
+        await reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't approve the plan",
+          error,
+          sessionId,
+        });
+      }
     } finally {
       await loadAutoTrees({ sessionId }).catch((error: unknown) =>
         reportError({
@@ -138,6 +150,7 @@ export const useAutoPlanApproval = ({
     artifactId,
     closeDrawer,
     isBusy,
+    latest,
     loadAutoTrees,
     onWritten,
     reportError,

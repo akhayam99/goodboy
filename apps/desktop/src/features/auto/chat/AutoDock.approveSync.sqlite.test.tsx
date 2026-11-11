@@ -8,6 +8,7 @@ import {
   insertArtifact,
   insertWorkspace,
   registerAutoArtifact,
+  writeArtifactRevision,
 } from '@goodboy/db';
 import {
   brandId,
@@ -217,6 +218,98 @@ describe('approving an Auto plan, on the real store and database', () => {
       event: AUTO_BRIDGE_EVENT.artifactsChanged,
       payload: { sessionId: world.sessionId },
     });
+  });
+
+  it('tells Auto which plan the dock approved, once, however often it is pressed', async () => {
+    const world = await boot();
+    vi.spyOn(tauriAutoBridgeBus, 'emit').mockResolvedValue(undefined);
+    const focused: Array<string | undefined> = [];
+    registerAutoUserTurnPort({
+      port: async ({ text, focusArtifactId, onQueued }) => {
+        world.told.push(text);
+        focused.push(focusArtifactId);
+        onQueued?.({ rowId: `outbox-${world.told.length}` });
+        return 'queued';
+      },
+    });
+    render(
+      <>
+        <AutoDockFromStore
+          sessionId={world.sessionId}
+          rootAgent={world.rootAgent}
+          onOpenArtifact={vi.fn()}
+        />
+        <AutoPlanToolbarFromStore sessionId={world.sessionId} artifactId={PLAN_ID} />
+      </>,
+    );
+    await screen.findByText(WAITING);
+    const toolbarApprove = within(screen.getByTestId('auto-plan-toolbar')).getByRole(
+      'button',
+      APPROVE,
+    );
+    const dockApprove = screen
+      .getAllByRole('button', APPROVE)
+      .find((button) => button !== toolbarApprove);
+    if (dockApprove === undefined) {
+      throw new Error('the dock shows no approve');
+    }
+
+    fireEvent.click(dockApprove);
+    fireEvent.click(toolbarApprove);
+
+    await waitFor(() => expect(screen.queryByText(WAITING)).toBeNull());
+    expect(world.told).toEqual(['Approved plan v1.']);
+    expect(focused).toEqual([PLAN_ID]);
+  });
+
+  it('drops a late answer for a version that is no longer the one shown', async () => {
+    const world = await boot();
+    vi.spyOn(tauriAutoBridgeBus, 'emit').mockResolvedValue(undefined);
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+    const delivery: { fail: () => void; isAsked: boolean } = {
+      fail: () => undefined,
+      isAsked: false,
+    };
+    registerAutoUserTurnPort({
+      port: () =>
+        new Promise((resolve) => {
+          delivery.isAsked = true;
+          delivery.fail = () => resolve('lost');
+        }),
+    });
+    render(
+      <AutoDockFromStore
+        sessionId={world.sessionId}
+        rootAgent={world.rootAgent}
+        onOpenArtifact={vi.fn()}
+      />,
+    );
+    await screen.findByText(WAITING);
+
+    fireEvent.click(screen.getByRole('button', APPROVE));
+    await waitFor(() => expect(delivery.isAsked).toBe(true));
+    await writeArtifactRevision({
+      db: storySqlite(),
+      artifactId: PLAN_ID,
+      expectedRevision: 1,
+      author: 'user',
+      title: 'Plan for the ledger export',
+      sourceText: '# Plan v2\n',
+      metadata: {},
+      nowMs: Date.now(),
+    });
+    await useAppStore.getState().loadAutoTrees({ sessionId: world.sessionId });
+    await screen.findByText('Plan v2 needs approval');
+    delivery.fail();
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', APPROVE).hasAttribute('disabled')).toBe(false),
+    );
+    expect(screen.queryByText(/Auto did not hear it/)).toBeNull();
+    expect(reportError).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: "The plan is approved, but Auto wasn't told" }),
+    );
   });
 
   it('shows the approved plan before the turn to Auto is delivered', async () => {

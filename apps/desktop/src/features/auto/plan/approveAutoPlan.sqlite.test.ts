@@ -56,6 +56,7 @@ describe('approveAutoPlan', () => {
       sessionId: AUTO_SEED_SESSION,
       agentId: AUTO_SEED_ROOT,
       content: 'Approved plan v1.',
+      focusArtifactId: PLAN,
     });
     expect(await getAutoArtifact({ db: world.db, artifactId: PLAN })).toMatchObject({
       approvalState: 'approved',
@@ -63,7 +64,7 @@ describe('approveAutoPlan', () => {
     });
   });
 
-  it('refuses a stale version without telling Auto, and says a newer version arrived', async () => {
+  it('refuses a version that is no longer current without telling Auto, naming both versions', async () => {
     const world = await worldWithPlan();
     await writeArtifactRevision({
       db: world.db,
@@ -82,9 +83,13 @@ describe('approveAutoPlan', () => {
     expect(result).toMatchObject({
       kind: 'refused',
       code: 'stale_revision',
-      message: 'A newer version arrived. Review it before approving.',
+      message: 'Plan v1 is no longer current. Review v2 before approving.',
     });
     expect(send).not.toHaveBeenCalled();
+    expect(await getAutoArtifact({ db: world.db, artifactId: PLAN })).toMatchObject({
+      approvalState: 'needs_approval',
+      approvedRevision: null,
+    });
   });
 
   it('keeps the approval and says so when Auto could not be told', async () => {

@@ -165,6 +165,15 @@ describe('Auto in a window without the runtime', () => {
     expect(main.userTurn).toHaveBeenCalledWith(TURN);
   });
 
+  it('hands an approval to the main window with the plan it names', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+    const approval = { ...TURN, text: 'Approved plan v1.', focusArtifactId: 'plan-ledger-export' };
+
+    expect(await client.ports.userTurn(approval)).toBe('queued');
+    expect(main.userTurn).toHaveBeenCalledWith(approval);
+  });
+
   it('carries a refused Retry back with its reason', async () => {
     const main = mainPorts();
     const client = await windows({ bus: memoryBus(), ports: main.ports });

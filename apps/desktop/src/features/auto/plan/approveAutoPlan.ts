@@ -1,5 +1,5 @@
 import type { AutoRefusalCode } from '@goodboy/core/auto';
-import { getAutoArtifact, type Database } from '@goodboy/db';
+import type { Database } from '@goodboy/db';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { approveArtifact } from '../../../store/runtime/auto/approveArtifact';
 import { PLAN_REVISING_REASON } from '../../plans/planRevising';
@@ -15,6 +15,7 @@ type SendParams = Readonly<{
   sessionId: SessionId;
   agentId: AgentId;
   content: string;
+  focusArtifactId: ArtifactId;
 }>;
 
 type Params = {
@@ -29,6 +30,8 @@ type Params = {
 
 type RefusalParams = {
   readonly code: AutoRefusalCode;
+  readonly expectedRevision: number;
+  readonly latestRevision: number | null;
 };
 
 const REFUSAL_TEXT: Readonly<Partial<Record<AutoRefusalCode, string>>> = {
@@ -39,8 +42,12 @@ const REFUSAL_TEXT: Readonly<Partial<Record<AutoRefusalCode, string>>> = {
   artifact_unknown: "This plan isn't part of an Auto conversation.",
 };
 
-const refusalText = ({ code }: RefusalParams): string =>
-  REFUSAL_TEXT[code] ?? 'The plan could not be approved.';
+const refusalText = ({ code, expectedRevision, latestRevision }: RefusalParams): string => {
+  if (code === 'stale_revision' && latestRevision !== null) {
+    return `Plan v${expectedRevision} is no longer current. Review v${latestRevision} before approving.`;
+  }
+  return REFUSAL_TEXT[code] ?? 'The plan could not be approved.';
+};
 
 export const approveAutoPlan = async ({
   db,
@@ -51,22 +58,28 @@ export const approveAutoPlan = async ({
   send,
   onWritten,
 }: Params): Promise<AutoPlanApproval> => {
-  const before = await getAutoArtifact({ db, artifactId });
-  const isAlreadyApproved =
-    before?.approvalState === 'approved' && before.approvedRevision === expectedRevision;
   const outcome = await approveArtifact({ db, artifactId, expectedRevision });
   if (outcome.kind === 'refused') {
-    return { kind: 'refused', code: outcome.code, message: refusalText({ code: outcome.code }) };
+    return {
+      kind: 'refused',
+      code: outcome.code,
+      message: refusalText({
+        code: outcome.code,
+        expectedRevision,
+        latestRevision: outcome.latestRevision,
+      }),
+    };
   }
-  await onWritten();
-  if (isAlreadyApproved) {
+  if (outcome.kind === 'already_approved') {
     return { kind: 'already_approved', revision: outcome.revision };
   }
+  await onWritten();
   try {
     await send({
       sessionId,
       agentId: rootAgentId,
       content: approvedPlanTextOf({ revision: outcome.revision }),
+      focusArtifactId: artifactId,
     });
   } catch (error) {
     return { kind: 'told_failed', revision: outcome.revision, error };
