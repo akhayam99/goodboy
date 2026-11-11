@@ -89,6 +89,9 @@ describe('shortcut registry', () => {
       if (id === 'browser.closeTab' && shadowed === 'app.close') {
         continue;
       }
+      if (id === 'browser.find' && shadowed === 'search.open') {
+        continue;
+      }
       if (
         (id === 'terminal.prevTab' && shadowed === 'session.prev') ||
         (id === 'terminal.nextTab' && shadowed === 'session.next') ||

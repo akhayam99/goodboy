@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import { nextProjectId, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
@@ -45,6 +45,9 @@ type OpenArgs = {
   readonly args: { readonly sessionId: SessionId; readonly url: string };
 };
 type TabArgs = { readonly args: { readonly tabId: string } };
+type FindArgs = {
+  readonly args: { readonly tabId: string; readonly needle: string; readonly isBackwards: boolean };
+};
 type SaveArgs = {
   readonly args: {
     readonly id: string;
@@ -137,6 +140,7 @@ const stubHost = () => {
       live = live.filter((facts) => facts.id !== args.tabId);
       return null;
     },
+    browser_find: ({ args }: FindArgs) => ({ isFound: args.needle === 'retry' }),
   });
 };
 
@@ -322,5 +326,204 @@ describe('the browser keymap', () => {
 
     expect(callsOf({ command: 'browser_tab_close' })).toEqual([]);
     expect(tabIds()).toEqual(['live-1', 'live-2']);
+  });
+});
+
+const findField = () => screen.findByRole('textbox', { name: 'Find in page' });
+
+const findResult = () =>
+  within(screen.getByRole('search', { name: 'Find in page' })).getByRole('status');
+
+const typeFind = async ({ text }: TypeParams) => {
+  const field = await findField();
+  await act(async () => {
+    fireEvent.change(field, { target: { value: text } });
+  });
+};
+
+const openFind = async () => {
+  await openTwoPages();
+  await press({ id: 'browser.find' });
+  await findField();
+};
+
+describe('find in page', () => {
+  it('opens the bar on the find key and puts the cursor in it', async () => {
+    await openFind();
+
+    await waitFor(async () => expect(document.activeElement).toBe(await findField()));
+    expect(findResult().textContent).toBe('');
+  });
+
+  it('searches the shown tab as the user types and reads Found', async () => {
+    await openFind();
+
+    await typeFind({ text: 'retry' });
+
+    await waitFor(() => expect(findResult().textContent).toBe('Found'));
+    expect(callsOf({ command: 'browser_find' })).toEqual([
+      { tabId: 'live-2', needle: '', isBackwards: false },
+      { tabId: 'live-2', needle: 'retry', isBackwards: false },
+    ]);
+  });
+
+  it('reads Not found when the page has no such text', async () => {
+    await openFind();
+
+    await typeFind({ text: 'zebra' });
+
+    await waitFor(() => expect(findResult().textContent).toBe('Not found'));
+  });
+
+  it('steps to the next match on Enter and the previous one on Shift Enter', async () => {
+    await openFind();
+    await typeFind({ text: 'retry' });
+    const field = await findField();
+
+    await act(async () => {
+      fireEvent.keyDown(field, { key: 'Enter' });
+    });
+    await act(async () => {
+      fireEvent.keyDown(field, { key: 'Enter', shiftKey: true });
+    });
+
+    expect(callsOf({ command: 'browser_find' }).slice(-2)).toEqual([
+      { tabId: 'live-2', needle: 'retry', isBackwards: false },
+      { tabId: 'live-2', needle: 'retry', isBackwards: true },
+    ]);
+  });
+
+  it('steps with the previous and next buttons', async () => {
+    await openFind();
+    await typeFind({ text: 'retry' });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Previous match' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Next match' }));
+    });
+
+    expect(callsOf({ command: 'browser_find' }).slice(-2)).toEqual([
+      { tabId: 'live-2', needle: 'retry', isBackwards: true },
+      { tabId: 'live-2', needle: 'retry', isBackwards: false },
+    ]);
+  });
+
+  it('searches nothing on Enter while the field is empty', async () => {
+    await openFind();
+
+    await act(async () => {
+      fireEvent.keyDown(await findField(), { key: 'Enter' });
+    });
+
+    expect(callsOf({ command: 'browser_find' })).toEqual([]);
+  });
+
+  it('clears the highlight and closes the bar on Done', async () => {
+    await openFind();
+    await typeFind({ text: 'retry' });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    });
+
+    expect(screen.queryByRole('search', { name: 'Find in page' })).toBeNull();
+    expect(callsOf({ command: 'browser_find' }).at(-1)).toEqual({
+      tabId: 'live-2',
+      needle: '',
+      isBackwards: false,
+    });
+  });
+
+  it('clears the highlight and closes the bar on Escape', async () => {
+    await openFind();
+    await typeFind({ text: 'retry' });
+
+    await act(async () => {
+      fireEvent.keyDown(await findField(), { key: 'Escape' });
+    });
+
+    expect(screen.queryByRole('search', { name: 'Find in page' })).toBeNull();
+    expect(callsOf({ command: 'browser_find' }).at(-1)).toEqual({
+      tabId: 'live-2',
+      needle: '',
+      isBackwards: false,
+    });
+  });
+
+  it('clears the highlight and the result when the text is emptied', async () => {
+    await openFind();
+    await typeFind({ text: 'retry' });
+    await waitFor(() => expect(findResult().textContent).toBe('Found'));
+
+    await typeFind({ text: '' });
+
+    expect(findResult().textContent).toBe('');
+    expect(callsOf({ command: 'browser_find' }).at(-1)).toEqual({
+      tabId: 'live-2',
+      needle: '',
+      isBackwards: false,
+    });
+  });
+
+  it('says it could not search when the host fails, and keeps the bar open to try again', async () => {
+    await openFind();
+    const handler = storySpies.tauriInvoke.getMockImplementation();
+    storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+      if (name === 'browser_find' && argsOf({ payload: args }).needle === 'retry') {
+        throw { kind: 'failed', message: 'find-unavailable' };
+      }
+      return handler?.(name, args);
+    });
+
+    await typeFind({ text: 'retry' });
+
+    await waitFor(() => expect(findResult().textContent).toBe("Couldn't search this page"));
+    screen.getByRole('textbox', { name: 'Find in page' });
+  });
+
+  it('drops the answer for an older needle that arrives after the latest one', async () => {
+    await openFind();
+    let answerLate: (outcome: { isFound: boolean }) => void = () => undefined;
+    const handler = storySpies.tauriInvoke.getMockImplementation();
+    storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+      if (name === 'browser_find' && argsOf({ payload: args }).needle === 'retr') {
+        return new Promise((resolve) => {
+          answerLate = resolve;
+        });
+      }
+      return handler?.(name, args);
+    });
+
+    await typeFind({ text: 'retr' });
+    await typeFind({ text: 'retry' });
+    await waitFor(() => expect(findResult().textContent).toBe('Found'));
+    await act(async () => {
+      answerLate({ isFound: false });
+    });
+
+    expect(findResult().textContent).toBe('Found');
+  });
+
+  it('forgets the result when another tab is shown', async () => {
+    await openFind();
+    await typeFind({ text: 'retry' });
+    await waitFor(() => expect(findResult().textContent).toBe('Found'));
+
+    await press({ id: 'browser.prevTab' });
+
+    await waitFor(() => expect(findResult().textContent).toBe(''));
+  });
+
+  it('opens no bar while the browser is not on screen', async () => {
+    await openTwoPages();
+    act(() => {
+      store.getState().closeDrawer();
+    });
+
+    await press({ id: 'browser.find' });
+
+    expect(screen.queryByRole('search', { name: 'Find in page' })).toBeNull();
   });
 });

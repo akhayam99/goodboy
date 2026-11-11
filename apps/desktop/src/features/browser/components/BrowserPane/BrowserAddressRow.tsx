@@ -2,9 +2,11 @@ import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, Square, X } from 'luci
 import { IconButton } from '@goodboy/ui';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
+import { useFindInPage } from '../../hooks/useFindInPage';
 import type { BrowserPaneModel } from '../../types';
 import { BrowserAddressPill } from './BrowserAddressPill';
 import { BrowserCommandPanel } from './BrowserCommandPanel';
+import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
 
@@ -27,7 +29,8 @@ export const BrowserAddressRow = ({
 }: Props) => {
   const canStep = model.shown !== null;
   const field = useCommandField({ model });
-  useBrowserKeys({ model, isOn: isAddressShortcutOn });
+  const find = useFindInPage({ model });
+  useBrowserKeys({ model, isOn: isAddressShortcutOn, onFind: find.open });
   return (
     <>
       <div className="relative flex h-9 shrink-0 items-center gap-1 px-2">
@@ -85,6 +88,7 @@ export const BrowserAddressRow = ({
         {model.isLoading ? <BrowserLoadLine /> : null}
       </div>
       {field.isOpen ? <BrowserCommandPanel model={model} field={field} /> : null}
+      {find.isOpen ? <BrowserFindBar find={find} /> : null}
     </>
   );
 };

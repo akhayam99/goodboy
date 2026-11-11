@@ -302,6 +302,19 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         }
       });
     },
+    find: async ({ text, isBackwards }) => {
+      if (shownLiveId === undefined) {
+        throw new Error('tab-gone');
+      }
+      const outcome = await browserHost.find({ tabId: shownLiveId, needle: text, isBackwards });
+      return outcome.isFound;
+    },
+    clearFind: async () => {
+      if (shownLiveId === undefined) {
+        return;
+      }
+      await browserHost.find({ tabId: shownLiveId, needle: '', isBackwards: false });
+    },
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   };
 };

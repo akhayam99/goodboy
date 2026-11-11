@@ -305,6 +305,23 @@ it; Esc inside the page goes to the page.
   words that match nothing show one quiet line, "No tab or address matches".
   The arrows move the highlight and wrap, ↩ runs it, ⌘↩ opens its address in
   your browser. A tab of another session shows in that session's browser.
+- **Find in page** (`useFindInPage`, `BrowserFindBar`) is a second 32px row
+  under the address row, opened by ⌘F while the browser is on screen. It takes
+  room from the page like the command field, so the native view shrinks and
+  never sits under it. Each keystroke asks the host to search the shown tab
+  (`browser_find`, which runs `window.find` in the page through
+  `Webview::eval_with_callback` and answers `isFound`); the bar reads Found or
+  Not found. There is no count, because `window.find` gives none. The match
+  is highlighted by WebKit itself. ↩ goes to the next match and ⇧↩ to the
+  previous one, wrapping at the end; Esc or Done clears the highlight (an empty
+  needle, which only removes the selection) and closes the bar. Typing clears
+  the selection first, so a longer word is searched from the start of the page.
+  A failed search reads "Couldn't search this page" and keeps the bar for
+  another try. The latest request wins: an answer for an older needle, or for
+  a tab that is no longer shown, is dropped, and showing another tab empties
+  the result. A needle over 200 characters is refused by the host
+  (`needle-too-long`) and the field stops at 200. An asleep tab has no view to
+  search and reads the failure line.
 - **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
   browser, Open as page (see Moves, absent when the dock has no page to open),
   Copy address, Duplicate (`model.duplicate` opens the shown address in a new
@@ -463,11 +480,11 @@ sits in and the address, and one function opens it (`openInBrowser`).
 - **Peek**: resting on or focusing a `localhost` link in a session shows a
   card with the title of its tab (or the host), the address and what a click
   does. The card never creates a tab, because every tab is a whole webview.
-- **The keymap** is seven entries in `shared/keyboard/browserShortcuts.ts`, all
+- **The keymap** is eight entries in `shared/keyboard/browserShortcuts.ts`, all
   `scope: 'browser'`, registered by `useBrowserKeys` while the pane or the
   Browser page is on screen. Elsewhere each chord keeps its other meaning:
-  ⌘L Ask about this session, ⌘T a new terminal tab, ⌘W `app.close`, ⌘⇧[ and ⌘⇧]
-  the sessions. ⌘L opens the pill, ⌘T starts a draft (the command field opens
+  ⌘L Ask about this session, ⌘T a new terminal tab, ⌘W `app.close`, ⌘F Search,
+  ⌘⇧[ and ⌘⇧] the sessions. ⌘L opens the pill, ⌘T starts a draft (the command field opens
   empty), ⌘D toggles the pin, ⌘⇧[ and ⌘⇧] step `stepTab` order (tabs, then
   pins, wrapping). ⌘W closes the shown tab through `close`; a pin is never
   closed by it and consumes the key; with no tab shown the handler declines
@@ -477,7 +494,8 @@ sits in and the address, and one function opens it (`openInBrowser`).
   per session, in memory, five deep: `closeTab` pushes the closed row in the
   same commit (`pushClosedTab`), and `closeBrowserSessionTabs` and archive
   eviction clear it. The Browser rail entry, the pin button and the tab strip's
-  New tab teach their chord in the tooltip. Find in page (⌘F) is the next unit.
+  New tab teach their chord in the tooltip. ⌘F opens the find bar (see Find in
+  page).
 - **A focused page keeps its keys.** After a click inside a tab, the native view
   has focus and none of these chords fire until focus returns to Goodboy's
   chrome (a click on the address row, a tab or the rail). The find bar and the
@@ -676,8 +694,13 @@ words (`features/browser/browserFailureText.ts`).
   session, the peek, ⌘L beside Ask and the ⌘K entries.
   `tabForAddress.test.ts` pins the tab match; the scenes are `browser-peek`
   and `browser-peek-dark`. `components/BrowserPane/keys.test.tsx` pins the
-  keymap on the real store with a fake host, and the scenes `browser-pane-keys`
-  and `browser-pane-keys-dark` show ⌘K over every session.
+  keymap and the find bar on the real store with a fake host (the needle sent
+  to the shown tab, Found and Not found, ↩ and ⇧↩, Done and Esc clearing, a
+  failed search, a late answer dropped, another tab shown), and the scenes
+  `browser-pane-keys` and `browser-pane-keys-dark` show ⌘K over every
+  session. `browser/find.rs` builds the script and reads the answer, with its
+  Rust tests; the scenes `browser-pane-find` and `browser-pane-find-missing`,
+  each in light and dark, show the bar with a found and a missing word.
 - The budgets: `features/browser/browserBudgets.ts` holds the numbers.
   `browserBudgets.test.tsx` runs in the unit project and counts, never times:
   no `browser_*` command and no frame request while no tab was opened, the

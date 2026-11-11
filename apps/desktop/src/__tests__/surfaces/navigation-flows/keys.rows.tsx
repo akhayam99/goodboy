@@ -718,6 +718,19 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
+    id: 'browser.find',
+    note: 'with the browser on screen the chord opens its find bar, not workspace search',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.find')();
+    },
+    lands: async () => {
+      await screen.findByRole('search', { name: 'Find in page' });
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+      expect(screen.queryByRole('combobox', { name: 'Search' })).toBeNull();
+    },
+  }),
+  keyRow({
     id: 'browser.pin',
     note: 'pins the shown tab to the project of the session',
     open: async (ctx) => {
