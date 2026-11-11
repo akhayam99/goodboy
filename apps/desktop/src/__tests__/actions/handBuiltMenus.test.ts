@@ -23,6 +23,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
     'artifact files from deleted sessions: storage keep and delete',
+  'features/browser/components/BrowserPane/BrowserMoreMenu.tsx':
+    'browser address pill menu: acts on the shown tab, page chrome with no registry object',
   'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
     'task picker: chooses a linked task for a branch, a value picker',
 };
