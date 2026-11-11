@@ -772,6 +772,7 @@ pub fn run() {
             browser::tab_rows::browser_tab_row_delete,
             browser::tab_rows::browser_session_tab_rows_delete,
             browser::tab_rows::browser_stale_tab_sessions,
+            browser::visit_rows::browser_visits_list,
             browser::tab_rows::browser_tab_row_pin,
             browser::tab_rows::browser_tab_row_unpin,
         ]))

@@ -54,6 +54,7 @@ const EMPTY_LISTS: ReadonlyArray<string> = [
   'detect_editors',
   'detect_browsers',
   'browser_tab_rows_list',
+  'browser_visits_list',
   'explore_list',
   'process_ledger_list',
   'project_scripts_scan',

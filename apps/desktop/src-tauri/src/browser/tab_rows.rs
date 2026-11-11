@@ -8,6 +8,7 @@ use super::reason::{
     TAB_ROW_OWNER,
 };
 use super::registry::BrowserRegistry;
+use super::visit_rows;
 use crate::db::Db;
 use crate::util::{now_ms, MessageError};
 
@@ -268,11 +269,16 @@ pub(crate) fn delete_session_rows(
     conn: &Connection,
     session_id: &str,
 ) -> Result<usize, MessageError> {
-    conn.execute(
-        "DELETE FROM browser_tabs WHERE session_id = ?1",
-        params![session_id],
-    )
-    .map_err(db_failed)
+    let transaction = conn.unchecked_transaction().map_err(db_failed)?;
+    let deleted = transaction
+        .execute(
+            "DELETE FROM browser_tabs WHERE session_id = ?1",
+            params![session_id],
+        )
+        .map_err(db_failed)?;
+    visit_rows::delete_session_visits(&transaction, session_id).map_err(db_failed)?;
+    transaction.commit().map_err(db_failed)?;
+    Ok(deleted)
 }
 
 pub(crate) fn stale_session_ids(
@@ -281,8 +287,12 @@ pub(crate) fn stale_session_ids(
 ) -> Result<Vec<String>, MessageError> {
     let mut statement = conn
         .prepare(
-            "SELECT DISTINCT t.session_id FROM browser_tabs t
+            "SELECT t.session_id FROM browser_tabs t
              JOIN sessions s ON s.id = t.session_id
+             WHERE s.archived_at IS NOT NULL
+             UNION
+             SELECT v.session_id FROM browser_visits v
+             JOIN sessions s ON s.id = v.session_id
              WHERE s.archived_at IS NOT NULL",
         )
         .map_err(db_failed)?;
