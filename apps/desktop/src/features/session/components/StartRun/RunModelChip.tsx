@@ -35,7 +35,6 @@ export const RunModelChip = ({
   const settingsSection = model.slot.kind === 'orchestrator' ? 'workflow_orchestrator' : undefined;
   const isPill = variant === 'pill';
   const dropdown = useDropdown({
-    align: isPill ? 'end' : 'start',
     disabled: isDisabled,
     width: POPOVER_WIDTH_CLASS.wide,
     expectedWidth: POPOVER_WIDTH_PX.wide,
@@ -68,22 +67,19 @@ export const RunModelChip = ({
       anchorClassName="inline-flex min-w-0"
       trigger={
         isPill ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
             disabled={isDisabled}
             aria-haspopup="dialog"
             aria-expanded={dropdown.open}
             aria-label={`${label}: ${summary}, ${state}`}
             data-run-model={isPinned ? 'pinned' : 'auto'}
             onClick={dropdown.toggle}
-            className={cn(
-              ROUTING_PILL_CLASS,
-              dropdown.open && 'bg-selected',
-              isDisabled && 'cursor-not-allowed opacity-60',
-            )}
+            className={cn(ROUTING_PILL_CLASS, dropdown.open && 'bg-selected')}
           >
             {route}
-          </button>
+          </Button>
         ) : (
           <Button
             size="xs"

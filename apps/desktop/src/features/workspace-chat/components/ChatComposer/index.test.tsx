@@ -138,7 +138,7 @@ describe('ChatComposer', () => {
     await screen.findByRole('button', { name: 'Remove acme-trace.png' });
     fireEvent.keyDown(field(), { key: 'Enter' });
     await waitFor(() => expect(field()).toHaveProperty('value', 'Same 502 on Acme sandbox.'));
-    expect(screen.getByRole('button', { name: 'Remove acme-trace.png' })).toBeDefined();
+    screen.getByRole('button', { name: 'Remove acme-trace.png' });
     expect(screen.getByRole('alert').textContent).toBe("Couldn't attach the images. Try again.");
   });
 

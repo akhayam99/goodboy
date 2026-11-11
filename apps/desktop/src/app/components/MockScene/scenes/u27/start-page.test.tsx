@@ -83,7 +83,7 @@ describe('the u27 start page scenes', () => {
     expect(row.queryByRole('button', { name: /^Model: / })).toBeNull();
     const goal = screen.getByRole('textbox', { name: START_KIND_COPY.goal });
     const box = goal.closest<HTMLElement>('[data-prompt-field]');
-    expect(within(box ?? document.body).getByRole('button', { name: /^Model: / })).toBeDefined();
+    within(box ?? document.body).getByRole('button', { name: /^Model: / });
     row.getByRole('button', { name: /^Edits: / });
     expect(row.queryByText(/Limit/)).toBeNull();
     expect(row.queryByRole('button', { name: /^Asks you/ })).toBeNull();

@@ -1,5 +1,5 @@
 import type { ReactNode, Ref } from 'react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { DISABLED, cn, tintClasses } from '@goodboy/ui';
 import { PromptDropOverlay } from '../PromptField/PromptDropOverlay';
 
 type Drop = {
@@ -39,7 +39,7 @@ export const ComposerSurface = ({
             'border-border-soft bg-subtle hover:border-border',
             'focus-within:border-border-strong focus-within:shadow-xl',
           ),
-      isDisabled && 'opacity-60',
+      isDisabled && DISABLED,
       className,
     )}
   >

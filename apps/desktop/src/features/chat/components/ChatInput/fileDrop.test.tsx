@@ -92,14 +92,14 @@ describe('an image dropped on the agent page', () => {
         </ToastProvider>,
       );
       const composer = await composerOf();
-      expect(screen.getByRole('textbox', { name: 'Start a run', hidden: true })).toBeDefined();
+      screen.getByRole('textbox', { name: 'Start a run', hidden: true });
 
       await dropFile();
 
       expect(
         await within(composer).findByRole('button', { name: 'Remove ledger-core-chart.png' }, WAIT),
       ).toBeDefined();
-      expect(within(composer).getByText('1 of 10 files')).toBeDefined();
+      within(composer).getByText('1 of 10 files');
       expect(screen.queryByText(MISSED)).toBeNull();
     },
     TEST_TIMEOUT_MS,
