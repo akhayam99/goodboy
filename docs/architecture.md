@@ -899,7 +899,7 @@ query in the same commit:
   `session_external_tasks`, `session_workflows`, `session_worktrees`,
   `sessions`, `settings`, `steps`, `telemetry_records`, `turn_events`,
   `workflows`, `workspace_profiles`, `workspaces`, `worktree_roots`.
-- Owned by Rust, read by Rust and TypeScript: `browser_tabs`, `budget_alerts`, `budget_rules`,
+- Owned by Rust, read by Rust and TypeScript: `browser_tabs`, `browser_visits`, `budget_alerts`, `budget_rules`,
   `integration_bindings`, `integration_credentials`, `permission_audit_log`,
   `permission_audit_retry`, `permission_rules`, `project_relocations`,
   `session_budgets`, `skills`, `step_library`.
@@ -937,6 +937,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `auto_reservations`           | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `auto_trees`                  | ts     | Auto tree registry (`store/runtime/auto/`). Nothing in Rust writes it.                                                                                                                                                                                                                                                                 |
 | `browser_tabs`                | rust   | `browser/tab_rows.rs`. One row per browser tab a session or a project pin holds: only url and title, never cookies or page content. Rows of a session go with it; a pin goes with its project.                                                                                                                                         |
+| `browser_visits`              | rust   | `browser/visit_rows.rs`. One row per address a session's tab finished loading: only url, title and the last visit time, at most 200 per session. Rows go with the session, and with its tab rows on archive.                                                                                                                           |
 | `budget_alerts`               | rust   | `budget.rs`                                                                                                                                                                                                                                                                                                                            |
 | `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                                                                                                                                                                                                                                     |
 | `chat_message_attachments`    | ts     | Rows go in with their message through `insertChatMessage`. Rust reads them to build a turn's image root.                                                                                                                                                                                                                               |
