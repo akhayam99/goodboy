@@ -12,8 +12,8 @@ use tauri::{App, Listener, Manager, Url, Webview, WebviewUrl, WebviewWindowBuild
 use super::commands::{close_session, list_session, owned_tab};
 use super::guard::label_of;
 use super::host::{
-    close_each, close_tab, fill_popup, open_tab, reserve_popup, OpenTab, SessionClosed, TabBounds,
-    MAX_HIDDEN_POPUPS, TAB_OPENED_EVENT,
+    close_each, close_tab, fill_popup, open_tab, refresh_with, reserve_popup, OpenTab,
+    SessionClosed, TabBounds, MAX_HIDDEN_POPUPS, TAB_OPENED_EVENT,
 };
 use super::lifecycle::{
     close_switched, hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT,
@@ -1325,4 +1325,14 @@ fn keeps_the_running_workspace_when_the_new_one_has_no_folder() {
         .facts(&running)
         .expect("facts");
     assert!(facts.is_shown);
+}
+
+#[test]
+fn keeps_the_saved_address_when_a_page_has_none_yet() {
+    let registry = BrowserRegistry::default();
+    seed_tab(&registry, "ledger-core", northwind(), true);
+    let saved = registry.facts("ledger-core").expect("tab exists");
+    let listed = refresh_with(&registry, vec![saved.clone()], |_| None);
+    assert_eq!(listed, vec![saved.clone()]);
+    assert_eq!(registry.facts("ledger-core"), Some(saved));
 }

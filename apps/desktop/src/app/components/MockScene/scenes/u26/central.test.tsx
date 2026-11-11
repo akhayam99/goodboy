@@ -18,6 +18,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { useAppStore } from '../../../../../store';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
+import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
@@ -27,6 +28,7 @@ const KINDS = ['mid', 'finished', 'stuck', 'blocked', 'orchestrated', 'agent', '
 
 const KEYS = [
   ...KINDS.flatMap((kind) => [`u26-central-${kind}-light`, `u26-central-${kind}-dark`]),
+  'u26-central-log',
   'u26-central-log-light',
   'u26-central-log-dark',
   'u26-central-log-search-light',
@@ -80,6 +82,19 @@ describe('the central column scenes', () => {
 
     screen.getByRole('region', { name: 'Log' });
     screen.getByRole('region', { name: 'Running' });
+  });
+
+  it('opens the Log drawer on the scene that follows the theme of the page', async () => {
+    applyDocumentTheme({ theme: 'light' });
+    try {
+      await show({ name: 'u26-central-log' });
+
+      screen.getByRole('region', { name: 'Log' });
+      screen.getByRole('region', { name: 'Needs you' });
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    } finally {
+      applyDocumentTheme({ theme: 'dark' });
+    }
   });
 
   it('opens the log drawer on the search scene', async () => {
