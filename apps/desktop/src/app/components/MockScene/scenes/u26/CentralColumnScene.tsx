@@ -13,7 +13,7 @@ import { CentralColumnPane } from './CentralColumnPane';
 import { COLUMN_SESSION_ID, seedCentralColumn, type ColumnKind } from './centralColumnSeed';
 
 type Props = {
-  readonly theme: 'dark' | 'light';
+  readonly theme?: 'dark' | 'light';
   readonly kind: ColumnKind;
   readonly isLogOpen?: boolean;
   readonly isArchived?: boolean;
@@ -39,7 +39,9 @@ export const CentralColumnScene = ({
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   useEffect(() => {
-    applyDocumentTheme({ theme });
+    if (theme !== undefined) {
+      applyDocumentTheme({ theme });
+    }
     seedCentralColumn({ kind });
     useAppStore.setState((state) => ({
       sessions: state.sessions.map((session) =>
