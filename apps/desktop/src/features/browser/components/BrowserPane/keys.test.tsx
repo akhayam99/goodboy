@@ -307,6 +307,36 @@ describe('the browser keymap', () => {
     expect(closePage).not.toHaveBeenCalled();
   });
 
+  it('reloads the shown tab on the reload key and leaves the app alone', async () => {
+    await openTwoPages();
+    const reloadApp = vi.fn();
+    const stop = registerShortcut('app.reload', reloadApp);
+
+    await press({ id: 'browser.reload' });
+    stop();
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_reload' })).toEqual([{ tabId: 'live-2' }]),
+    );
+    expect(reloadApp).not.toHaveBeenCalled();
+  });
+
+  it('lets the reload key fall through to the app when no tab is shown', async () => {
+    const reloadApp = vi.fn();
+    const stop = registerShortcut('app.reload', reloadApp);
+    render(
+      <ToastProvider>
+        <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
+      </ToastProvider>,
+    );
+
+    await press({ id: 'browser.reload' });
+    stop();
+
+    expect(reloadApp).toHaveBeenCalledTimes(1);
+    expect(callsOf({ command: 'browser_tab_reload' })).toEqual([]);
+  });
+
   it('pins and unpins the shown tab with the pin key', async () => {
     await openTwoPages();
 

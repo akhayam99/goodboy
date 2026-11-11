@@ -92,6 +92,9 @@ describe('shortcut registry', () => {
       if (id === 'browser.find' && shadowed === 'search.open') {
         continue;
       }
+      if (id === 'browser.reload' && shadowed === 'app.reload') {
+        continue;
+      }
       if (
         (id === 'terminal.prevTab' && shadowed === 'session.prev') ||
         (id === 'terminal.nextTab' && shadowed === 'session.next') ||
