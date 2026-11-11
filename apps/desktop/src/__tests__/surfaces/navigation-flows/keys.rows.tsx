@@ -731,17 +731,6 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
-    id: 'browser.reload',
-    note: 'with a tab shown the reload chord reloads the tab, never the app',
-    open: async (ctx) => {
-      await openBrowserOnTabs(ctx);
-      await press('browser.reload')();
-    },
-    lands: async () => {
-      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
-    },
-  }),
-  keyRow({
     id: 'browser.pin',
     note: 'pins the shown tab to the project of the session',
     open: async (ctx) => {

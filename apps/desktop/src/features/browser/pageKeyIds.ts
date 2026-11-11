@@ -8,7 +8,7 @@ export const PAGE_KEY_IDS = [
   'browser.prevTab',
   'browser.nextTab',
   'browser.pin',
-  'browser.reload',
+  'app.reload',
   'browser.find',
   'palette.open',
 ] as const satisfies ReadonlyArray<ShortcutId>;

@@ -30,18 +30,6 @@ export const useBrowserKeys = ({ model, isOn, onFind }: Params): void => {
   useShortcut('browser.pin', model.togglePin, isOn);
   useShortcut('browser.find', onFind, isOn);
   useShortcut(
-    'browser.reload',
-    () => {
-      if (model.shown === null) {
-        return false;
-      }
-      model.reload();
-      return true;
-    },
-    isOn,
-    { canDecline: true },
-  );
-  useShortcut(
     'browser.closeTab',
     () => {
       if (model.shown === null) {

@@ -179,22 +179,18 @@ describe('usePageKeys', () => {
     stopApp();
   });
 
-  it('reloads the tab, never the app, on a chord from a page', async () => {
+  it('hands the reload chord from a page to whatever the app binds it to', async () => {
     const runs: Array<string> = [];
-    const stopApp = registerShortcut('app.reload', () => {
-      runs.push('reload app');
-    });
-    const stopTab = registerShortcut('browser.reload', () => {
-      runs.push('reload tab');
+    const stop = registerShortcut('app.reload', () => {
+      runs.push('reload');
     });
     renderHook(() => useWindowKeys());
     await listened();
 
     press({ payload: { tabId: TAB_ID, combo: 'cmd+KeyR' } });
 
-    expect(runs).toEqual(['reload tab']);
-    stopTab();
-    stopApp();
+    expect(runs).toEqual(['reload']);
+    stop();
   });
 
   it('drops a late chord from a tab that is already closed', async () => {

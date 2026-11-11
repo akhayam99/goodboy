@@ -55,13 +55,6 @@ export const BROWSER_SHORTCUTS = {
     group: 'session',
     scope: 'browser',
   },
-  'browser.reload': {
-    combo: 'cmd+KeyR',
-    label: 'Reload browser tab',
-    plane: 'app',
-    group: 'session',
-    scope: 'browser',
-  },
   'browser.find': {
     combo: 'cmd+KeyF',
     offMacCombo: 'ctrl+shift+KeyF',

@@ -63,7 +63,6 @@ export const BrowserAddressRow = ({
           <IconButton
             icon={RotateCw}
             label="Reload"
-            shortcut="browser.reload"
             tooltipSide="top"
             disabled={!canStep}
             onClick={model.reload}
