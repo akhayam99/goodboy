@@ -87,7 +87,7 @@ describe('the c08 preset run scenes', () => {
     }
   });
 
-  it('c08-runs lists the runs on one grid, grouped, with archived folded', async () => {
+  it('c08-runs lists the runs on one grid, grouped, without archived runs', async () => {
     await mount('c08-runs');
 
     expect(levelOf()).toBe('session');
@@ -96,7 +96,7 @@ describe('the c08 preset run scenes', () => {
     expect(within(grid).getByRole('heading', { name: 'Running' })).toBeDefined();
     within(grid).getByRole('heading', { name: 'Idle' });
     expect(within(grid).getByRole('heading', { name: 'Finished' })).toBeDefined();
-    expect(within(grid).getByRole('heading', { name: 'Archived' })).toBeDefined();
+    expect(within(grid).queryByRole('heading', { name: 'Archived' })).toBeNull();
     expect(
       within(grid).getByRole('button', {
         name: 'Open Fix flaky tests in the ledger export, Workflow, Running',

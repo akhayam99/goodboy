@@ -27,6 +27,7 @@ export const RunRowTitle = ({ sessionId, run, rowKey, suffix, onOpen }: Props) =
     <>
       <span
         data-run-row-title=""
+        data-finished={run.isFinished && !run.isUnread ? '' : undefined}
         className="flex min-w-0 shrink cursor-pointer select-none"
         onClick={onOpen}
       >

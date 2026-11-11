@@ -364,8 +364,8 @@ describe('Runs by branch order', () => {
       screen
         .getByRole('button', { name: new RegExp(`^Open ${name}`) })
         .closest('li')
-        ?.querySelector('[data-run-row-title] > *') ?? null;
-    expect(titleOf('Block double credits')?.className).toContain('text-muted-foreground');
-    expect(titleOf('Limit retries')?.className).not.toContain('text-muted-foreground');
+        ?.querySelector('[data-run-row-title]') ?? null;
+    expect(titleOf('Block double credits')?.hasAttribute('data-finished')).toBe(true);
+    expect(titleOf('Limit retries')?.hasAttribute('data-finished')).toBe(false);
   });
 });
