@@ -9,7 +9,8 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import type { DrawerRequest } from '../drawer/state';
-import { agentPlace, branchPlace, sessionPlace } from './place';
+import { BOARD_PLACE, agentPlace, branchPlace, sessionPlace } from './place';
+import { selectDrawerPanel } from '../drawer/selectDrawerPanel';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -148,5 +149,77 @@ describe('a tool stays open through a move inside its session', () => {
     state().openDrawer({ kind: 'spawned', sessionId: S2, payload: null });
     state().back();
     expect(state().drawer).toBeNull();
+  });
+});
+
+const TERMINAL: DrawerRequest = {
+  kind: 'terminal',
+  sessionId: null,
+  payload: { terminalId: brandId({ value: 'tab-harborline-dev' }) },
+};
+
+const BROWSER: DrawerRequest = { kind: 'browser', sessionId: S1, payload: null };
+
+describe('a workspace tool stays across every move inside the window', () => {
+  it.each([
+    ['Terminal', TERMINAL],
+    ['Browser', BROWSER],
+  ] as const)('keeps %s on another session, on the Board and on Back', (_name, tool) => {
+    state().openDrawer(tool);
+
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    expect(selectDrawerPanel(state())).toEqual(tool);
+    state().navigate({ to: BOARD_PLACE });
+    expect(selectDrawerPanel(state())).toEqual(tool);
+    state().back();
+    expect(selectDrawerPanel(state())).toEqual(tool);
+  });
+
+  it('shows Terminal beside a page, and parks it under its own page', () => {
+    state().openDrawer(TERMINAL);
+
+    state().openStudio({ studio: { kind: 'inbox', focus: null } });
+    expect(selectDrawerPanel(state())).toEqual(TERMINAL);
+
+    state().switchStudio({ studio: { kind: 'terminal', terminalId: null, sessionId: null } });
+    expect(selectDrawerPanel(state())).toBeNull();
+    expect(state().drawer).toEqual(TERMINAL);
+  });
+
+  it('parks a session tool under a page and keeps Terminal in its chip', () => {
+    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
+    state().openDrawer(TERMINAL);
+    state().openDrawer(explore);
+
+    state().openStudio({ studio: { kind: 'inbox', focus: null } });
+    expect(selectDrawerPanel(state())).toBeNull();
+
+    state().closeStudio();
+    expect(selectDrawerPanel(state())).toEqual(explore);
+    expect(state().drawerBack).toEqual(TERMINAL);
+  });
+
+  it('brings Terminal out of the chip when a session tool parks on the Board', () => {
+    state().openDrawer(TERMINAL);
+    state().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+
+    state().navigate({ to: BOARD_PLACE });
+
+    expect(state().drawer).toEqual(TERMINAL);
+    expect(state().drawerBack).toBeNull();
+    state().back();
+    expect(state().drawer?.kind).toBe('ask');
+    expect(state().drawerBack).toEqual(TERMINAL);
+  });
+
+  it('closes only the workspace tools when a page panel takes the right side', () => {
+    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
+    state().openDrawer(explore);
+    state().openDrawer(TERMINAL);
+
+    state().closeWorkspaceTools();
+
+    expect(state().drawer).toEqual(explore);
+    expect(state().drawerBack).toBeNull();
   });
 });

@@ -482,11 +482,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/app/components/AppTopBar/NavCluster/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
   "apps/desktop/src/app/components/AppTopBar/NavCluster/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -500,11 +495,6 @@
   "apps/desktop/src/app/components/AppTopBar/NowChip/counts.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/app/components/AppTopBar/NowChip/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
     }
   },
   "apps/desktop/src/app/components/AppTopBar/index.test.tsx": {
@@ -1399,7 +1389,7 @@
   },
   "apps/desktop/src/app/components/SideColumn/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     }
   },
   "apps/desktop/src/app/components/SideColumn/useRailPinned/index.ts": {
@@ -1449,7 +1439,7 @@
   },
   "apps/desktop/src/app/shellArrangement/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/actions/chatSelectionTarget.test.ts": {
@@ -5797,11 +5787,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/SettingsColumnNav.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/UpdatesSection.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -6831,11 +6816,6 @@
     },
     "@typescript-eslint/naming-convention": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionPages.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/bulkSelection.test.tsx": {
@@ -13124,7 +13104,7 @@
   },
   "packages/ui/src/components/AppShell.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 12
+      "count": 10
     }
   },
   "packages/ui/src/components/Avatar.tsx": {

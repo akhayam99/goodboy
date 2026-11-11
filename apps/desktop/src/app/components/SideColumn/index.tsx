@@ -7,10 +7,9 @@ import { SidebarSessionsFilter } from '../../../features/workspace/components/Se
 import type { ShellColumnScope } from '../../shellArrangement';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
-import { ColumnToolTiles } from './ColumnToolTiles';
-import { COLUMN_ROW_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { useDoorSignals } from './useDoorSignals';
-import { isStudioOverSession, type ColumnPlace } from './columnPlace';
+import { isStudioOverSession, type ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 type Props = {
   readonly scope: ShellColumnScope;
@@ -19,12 +18,8 @@ type Props = {
   readonly place: ColumnPlace;
   readonly actions: ColumnActions;
   readonly onNavigate?: () => void;
-  readonly settingsSlotRef?: (node: HTMLDivElement | null) => void;
   readonly isPeek?: boolean;
 };
-
-const LAYER =
-  'absolute inset-0 flex min-h-0 min-w-0 flex-col gap-1 pb-2 pt-1 motion-safe:transition-[opacity,transform] motion-safe:duration-160 motion-safe:ease-out';
 
 export const SideColumn = ({
   scope,
@@ -33,11 +28,9 @@ export const SideColumn = ({
   place,
   actions,
   onNavigate,
-  settingsSlotRef,
   isPeek = false,
 }: Props) => {
   const signals = useDoorSignals({});
-  const isSettingsShown = place === 'settings' && settingsSlotRef !== undefined;
   const go = (open: () => void) => () => {
     open();
     onNavigate?.();
@@ -47,20 +40,17 @@ export const SideColumn = ({
       <nav
         aria-label="Sidebar"
         data-column-layer="nav"
-        inert={isSettingsShown}
-        className={cn(
-          LAYER,
-          isSettingsShown ? 'pointer-events-none -translate-x-1.5 opacity-0' : 'opacity-100',
-        )}
+        className="absolute inset-0 flex min-h-0 min-w-0 flex-col gap-1 pb-2 pt-1"
       >
         {scope === 'workspace' && workspaceId !== null ? (
           <div className="flex min-h-0 flex-1 flex-col gap-1">
             <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
               <NewSessionRow
                 workspaceId={workspaceId}
+                isCurrent={place === 'new'}
                 {...(onNavigate !== undefined && { onNavigate })}
               />
-              {COLUMN_ROW_DOORS.map((door) => (
+              {COLUMN_DOORS.map((door) => (
                 <Fragment key={door.id}>
                   <ColumnDoorRow
                     id={door.id}
@@ -84,12 +74,6 @@ export const SideColumn = ({
                   />
                 </Fragment>
               ))}
-              <ColumnToolTiles
-                place={place}
-                actions={actions}
-                signals={signals}
-                {...(onNavigate !== undefined && { onNavigate })}
-              />
             </div>
             <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
               <SessionNavSidebar
@@ -111,18 +95,6 @@ export const SideColumn = ({
           {...(onNavigate !== undefined && { onNavigate })}
         />
       </nav>
-      {settingsSlotRef === undefined ? null : (
-        <div
-          ref={settingsSlotRef}
-          data-column-layer="settings"
-          inert={!isSettingsShown}
-          className={cn(
-            LAYER,
-            'px-2',
-            isSettingsShown ? 'opacity-100' : 'pointer-events-none translate-x-1.5 opacity-0',
-          )}
-        />
-      )}
     </div>
   );
 };

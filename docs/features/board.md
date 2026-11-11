@@ -1,17 +1,17 @@
 # The board
 
-The Sessions page shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. The list of sessions lives in the sidebar, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
+The Board shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. The list of sessions lives in the sidebar, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
 
 ### Stage board
 
-See where each task stands without moving cards around. Six lanes, **building**, **running**, **needs you**, **in review**, **done** and **archived**, always sit in that order, and each session sits in the lane that matches what is happening in it. A session waiting on your answer sits in **needs you**, and so does one with a run that stopped, paused at its limit or waits for you to continue, an Auto agent that needs your OK, or a Slack reply that waits for your approval. The lane lists the longest wait first, and its tooltip teaches **⌥⌘↓**, the key to the next session that needs you. When nothing needs you the key says so in the top bar for two seconds, and when the open session is the only one it says that instead. The **Sessions** title sits on the same header row, at the same height, as every other page. While the page loads it shows empty lanes, until it knows what needs you in every session, so a card never changes lane after it appears. If that read fails, one line says so above the lanes, with **Retry**. With no session yet, **No sessions yet** sits under the title at its left edge. It says a session holds one goal, its agents and, for code, a branch. It draws the five lanes muted with one sentence each. The only **New session** button sits in the first lane.
+See where each task stands without moving cards around. Six lanes, **building**, **running**, **needs you**, **in review**, **done** and **archived**, always sit in that order, and each session sits in the lane that matches what is happening in it. A session waiting on your answer sits in **needs you**, and so does one with a run that stopped, paused at its limit or waits for you to continue, an Auto agent that needs your OK, or a Slack reply that waits for your approval. The lane lists the longest wait first, and its tooltip teaches **⌥⌘↓**, the key to the next session that needs you. When nothing needs you the key says so in the top bar for two seconds, and when the open session is the only one it says that instead. The **Board** title sits on the same header row, at the same height, as every other page. While the page loads it shows empty lanes, until it knows what needs you in every session, so a card never changes lane after it appears. If that read fails, one line says so above the lanes, with **Retry**. With no session yet, **No sessions yet** sits under the title at its left edge. It says a session holds one goal, its agents and, for code, a branch. It draws the five lanes muted with one sentence each. The only **New session** button sits in the first lane.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with its sessions in six lanes: Building 3, Running 2, Needs you 4 with a question waiting on each card, In review 2 with #318 and #90, Done 2 with #198 and #205, and Archived 2">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Done and Archived lanes
 
@@ -23,10 +23,10 @@ Read a task at a glance: its title on two lines, its project in gray, and one si
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-light.webp" width="572" alt="Four session cards: Warn merchants before a payout hold in notify-relay and Fix the rounding drift in the settlement export in ledger-core, each with an open question mark at the right, and Stop retried webhooks posting a second credit in payments-api with pull request #318 and Reconcile the settlement export in ledger-core with pull request #90, each with its pull request in green">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-light.webp" width="572" alt="Four session cards: Warn merchants before a payout hold in notify-relay and Fix the rounding drift in the settlement export in ledger-core, each with a question mark and 1 question for you, and Stop retried webhooks posting a second credit in payments-api with pull request #318 and Reconcile the settlement export against the ledger snapshot in ledger-core with pull request #90">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Bulk select
 

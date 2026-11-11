@@ -132,7 +132,7 @@ describe('Overview capabilities from the session Overview', () => {
       header().queryByRole('button', { name: 'Write title and goal from linked work' }),
     ).toBeNull();
     fireEvent.click(
-      within(screen.getByRole('toolbar', { name: 'Session tools' })).getByRole('button', {
+      within(screen.getByRole('toolbar', { name: 'Tools' })).getByRole('button', {
         name: /^Context/,
       }),
     );

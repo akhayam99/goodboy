@@ -3,7 +3,6 @@ import { useDrawerColumnWidth } from '../useDrawerColumnWidth';
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -12,62 +11,25 @@ import {
 } from 'react';
 import { cn } from '../cn';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
+import { DrawerParkedContext } from '../drawerParkedContext';
 import { dismissTopEscapeLayer } from '../escape';
 import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
 import { ResizeHandle } from './ResizeHandle';
 import { useDrawerExit } from '../useDrawerExit';
+import { useEdgeHost } from '../useEdgeHost';
 import { mountExitSnapshot } from '../exitSnapshot';
 import { useDrawerTierWidths } from '../useDrawerTierWidths';
 import {
-  DRAWER_TIERS,
   drawerAsideWidthOf,
   drawerLayoutOf,
-  type DrawerLayout,
   type DrawerMode,
   type DrawerPlacement,
   type DrawerSizing,
 } from '../drawerGeometry';
+import { unmeasuredLayoutOf } from '../unmeasuredLayoutOf';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
-
-const useEdgeHost = () => {
-  const [host, setHost] = useState<HTMLDivElement | null>(null);
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    if (host === null || typeof ResizeObserver === 'undefined') {
-      setWidth(0);
-      return;
-    }
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry !== undefined) {
-        setWidth(entry.contentRect.width);
-      }
-    });
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, [host]);
-  useLayoutEffect(() => {
-    const measured = host === null ? 0 : host.getBoundingClientRect().width;
-    if (measured !== width) {
-      setWidth(measured);
-    }
-  }, [host, width]);
-  return { host, setHost, width };
-};
-
-type UnmeasuredParams = {
-  readonly savedWidth: number;
-  readonly sizing: DrawerSizing;
-  readonly placement: DrawerPlacement;
-};
-
-const unmeasuredLayoutOf = ({ savedWidth, sizing, placement }: UnmeasuredParams): DrawerLayout => ({
-  mode: placement === 'overlay' ? 'overlay' : 'push',
-  width: savedWidth,
-  dragMax: DRAWER_TIERS[sizing].max,
-});
 
 export type DrawerColumnFrame = 'sheet' | 'none';
 
@@ -93,6 +55,7 @@ export type DrawerColumnProps = {
   readonly frame?: DrawerColumnFrame;
   readonly sheetEdge?: Exclude<SheetEdge, 'pushed'>;
   readonly leftResize?: ResizeActivity;
+  readonly isParked?: boolean;
   readonly className?: string;
 };
 
@@ -108,6 +71,7 @@ export const DrawerColumn = ({
   frame = 'none',
   sheetEdge = 'wrapped',
   leftResize = 'idle',
+  isParked = false,
   className,
 }: DrawerColumnProps) => {
   const column = useDrawerColumnWidth();
@@ -152,7 +116,7 @@ export const DrawerColumn = ({
     width: layout.width,
     mode: isOverlayExit ? 'overlay' : mode,
   });
-  const isEdgeShown = isOverlayOpen || isOverlayExit;
+  const isEdgeShown = (isOverlayOpen || isOverlayExit) && !isParked;
   const asideStyle: CSSProperties & Readonly<Record<typeof TRACK_VAR, string>> = {
     width: asideWidth,
     [TRACK_VAR]: `${drawerAsideWidthOf({ width: layout.width, mode: 'push' })}px`,
@@ -182,13 +146,13 @@ export const DrawerColumn = ({
 
   useEffect(() => {
     const card = cardRef.current;
-    if (!isOverlayOpen || card === null || card.contains(document.activeElement)) {
+    if (!isOverlayOpen || isParked || card === null || card.contains(document.activeElement)) {
       return;
     }
     (card.querySelector<HTMLElement>(FOCUSABLE) ?? card).focus({ preventScroll: true });
-  }, [isOverlayOpen]);
+  }, [isOverlayOpen, isParked]);
 
-  const isPushed = mode === 'push';
+  const isPushed = mode === 'push' && !isParked;
   const isSheet = frame === 'sheet';
   const sheetState: SheetEdge = isPushed ? 'pushed' : sheetEdge;
 
@@ -207,7 +171,7 @@ export const DrawerColumn = ({
         <div
           data-container="page"
           data-drawer-main=""
-          inert={isOverlay}
+          inert={isOverlay && !isParked}
           {...(isSheet && { 'data-sheet': sheetState, 'data-left-resize': leftResize })}
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col',
@@ -219,7 +183,7 @@ export const DrawerColumn = ({
             {main}
           </DrawerEdgeContext.Provider>
         </div>
-        {isOverlayOpen || isOverlayExit ? (
+        {isEdgeShown ? (
           <div
             aria-hidden
             data-drawer-scrim=""
@@ -246,10 +210,11 @@ export const DrawerColumn = ({
         <aside
           ref={setAside}
           aria-label={ariaLabel}
-          data-drawer-mode={mode}
+          data-drawer-mode={isParked ? 'closed' : mode}
+          data-drawer-parked={isParked ? '' : undefined}
           data-drawer-exit={isExiting ? '' : undefined}
           data-drawer-sizing={sizing}
-          inert={!isOpen}
+          inert={!isOpen || isParked}
           style={asideStyle}
           className={cn(
             'flex min-h-0 shrink-0 justify-end',
@@ -260,6 +225,7 @@ export const DrawerColumn = ({
                 )
               : 'relative overflow-clip motion-safe:transition-[width]',
             'duration-200 ease-enter',
+            isParked && 'invisible absolute inset-y-0 right-0',
           )}
         >
           {isOpen || isExiting ? (
@@ -326,7 +292,9 @@ export const DrawerColumn = ({
                       !isExiting && 'motion-safe:animate-drawer-swap',
                     )}
                   >
-                    {isOpen ? drawer : null}
+                    <DrawerParkedContext.Provider value={isParked}>
+                      {isOpen ? drawer : null}
+                    </DrawerParkedContext.Provider>
                   </div>
                 </div>
               </div>

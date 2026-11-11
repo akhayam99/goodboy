@@ -40,7 +40,7 @@ it.each(Object.entries(U34_BOARD_PALETTE_SCENES))(
       expect(list.textContent).not.toMatch(/Delete/);
       return;
     }
-    expect(await screen.findByRole('heading', { name: 'Sessions' })).toBeDefined();
+    expect(await screen.findByRole('heading', { name: 'Board' })).toBeDefined();
     if (id === 'u34-u26-board') {
       const column = screen.getByLabelText('Sessions column');
       expect(column.style.width).toBe('244px');

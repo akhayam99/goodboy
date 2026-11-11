@@ -13,6 +13,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { BOARD_LANE_FADE_PX, BOARD_LANE_GAP_REM, BOARD_LANE_MIN_REM } from '@goodboy/ui';
 import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import type {
   AgentId,
@@ -345,6 +346,30 @@ describe('StageBoard sideways scroll', () => {
     expect(viewportOf().scrollLeft).toBe(400);
   });
 
+  it.each(['dark', 'light'] as const)(
+    'opens at 1100px beside the right rail in %s with the Running header whole after the fade',
+    (theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      const building = sessionOf('Add idempotency keys to the refund endpoint');
+      seed({ active: [building] });
+      const boardWidth = 760;
+      stubExtent({ scrollWidth: 960, clientWidth: boardWidth });
+      const observers = measureBoard({ width: boardWidth });
+      mountBoard([building]);
+      act(() => observers.resizeAll());
+
+      const lanes = lane('running').parentElement;
+      const laneRem = Number.parseFloat(
+        (lanes?.style.gridTemplateColumns ?? '').replace('repeat(5,', ''),
+      );
+      const runningAt = boardWidth - (4 * laneRem + 3 * BOARD_LANE_GAP_REM) * 15;
+      expect(laneRem).toBeLessThan(BOARD_LANE_MIN_REM);
+      expect(runningAt).toBeGreaterThanOrEqual(BOARD_LANE_FADE_PX - 0.001);
+      expect(viewportOf().scrollLeft).toBe(200);
+      document.documentElement.removeAttribute('data-theme');
+    },
+  );
+
   it('leaves the scroller alone when five lanes fit', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     seed({ active: [building] });
@@ -421,7 +446,7 @@ describe('StageBoard header', () => {
     });
     mountBoard([building]);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Repositories/ })).toBeNull();
   });
 });

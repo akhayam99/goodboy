@@ -1,8 +1,7 @@
-import { NAMES } from '../../../shared/utils/names';
 import type { LucideIcon } from 'lucide-react';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
-import type { ColumnDoorId } from './columnPlace';
+import { DESTINATIONS, type Destination } from '../../../shared/navigation/destinations';
+import type { ColumnDoorId } from '../../../shared/navigation/columnPlace';
 
 export type ColumnDoor = {
   readonly id: ColumnDoorId;
@@ -10,48 +9,37 @@ export type ColumnDoor = {
   readonly icon: LucideIcon;
   readonly shortcutId?: ShortcutId;
   readonly isReference?: boolean;
-  readonly isTool?: boolean;
 };
 
-export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
-  { id: 'board', label: 'Sessions', icon: CONCEPT_ICONS.sessions, shortcutId: 'session.board' },
-  { id: 'inbox', label: NAMES.tasks, icon: CONCEPT_ICONS.inbox },
-  { id: 'workflows', label: 'Workflows', icon: CONCEPT_ICONS.workflows },
-  { id: 'chat', label: 'Chat', icon: CONCEPT_ICONS.chat },
-  { id: 'impact', label: 'Impact', icon: CONCEPT_ICONS.impact, isReference: true },
-  {
-    id: 'terminal',
-    label: 'Terminal',
-    icon: CONCEPT_ICONS.terminal,
-    shortcutId: 'terminal.studio',
-    isTool: true,
-  },
-  { id: 'browser', label: 'Browser', icon: CONCEPT_ICONS.browser, isTool: true },
-  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring, isTool: true },
-];
+type DoorDestination = Destination & { readonly id: ColumnDoorId };
 
-export const COLUMN_ROW_DOORS: ReadonlyArray<ColumnDoor> = COLUMN_DOORS.filter(
-  (door) => door.isTool !== true,
-);
+type DoorParams = {
+  readonly destination: DoorDestination;
+};
 
-export const COLUMN_TOOL_DOORS: ReadonlyArray<ColumnDoor> = COLUMN_DOORS.filter(
-  (door) => door.isTool === true,
-);
+const doorOf = ({ destination }: DoorParams): ColumnDoor => ({
+  id: destination.id,
+  label: destination.label,
+  icon: destination.icon,
+  ...(destination.shortcutId !== undefined && { shortcutId: destination.shortcutId }),
+  ...(destination.isReference === true && { isReference: true }),
+});
+
+export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
+  (destination): destination is DoorDestination => destination.home === 'column',
+).map((destination) => doorOf({ destination }));
 
 export type ColumnActions = {
   readonly openBoard: () => void;
   readonly openInbox: () => void;
   readonly openChat: () => void;
   readonly openWorkflows: () => void;
-  readonly openTerminalStudio: () => void;
-  readonly openBrowserStudio: () => void;
   readonly openNewChat: () => void;
   readonly openMonitoring: () => void;
   readonly openImpact: () => void;
   readonly openSettings: () => void;
   readonly openChangelog: () => void;
   readonly openGuide: () => void;
-  readonly openShortcuts: () => void;
 };
 
 type OpenDoorParams = {
@@ -72,12 +60,6 @@ export const openColumnDoor = ({ id, actions }: OpenDoorParams): void => {
       return;
     case 'workflows':
       actions.openWorkflows();
-      return;
-    case 'terminal':
-      actions.openTerminalStudio();
-      return;
-    case 'browser':
-      actions.openBrowserStudio();
       return;
     case 'monitoring':
       actions.openMonitoring();

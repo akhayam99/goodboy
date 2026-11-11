@@ -10,6 +10,7 @@ import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
 import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';
 import { shellArrangement } from '../../../shellArrangement';
+import { useShellRight } from '../../../hooks/useShellRight';
 import { useSceneShell } from './useSceneShell';
 import { useSceneSidebar } from './useSceneSidebar';
 
@@ -66,12 +67,13 @@ const BoardShellSceneContent = () => {
     isSidebarCollapsed: rail.isCollapsed,
   });
   const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
+  const { rightRail } = useShellRight({});
 
   return (
     <>
       <AppShell
+        rightRail={rightRail}
         studio={shell.studio}
-        studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
             sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
@@ -87,7 +89,6 @@ const BoardShellSceneContent = () => {
             currentSessionId={currentSession?.id ?? null}
             isDraftShown={false}
             actions={shell.actions}
-            settingsSlotRef={shell.settingsSlotRef}
             {...(shell.isStudioOpen || currentSession !== null
               ? {}
               : { placeOverride: 'board' as const })}

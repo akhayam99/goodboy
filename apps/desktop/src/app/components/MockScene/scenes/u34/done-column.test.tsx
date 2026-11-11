@@ -54,7 +54,7 @@ const mount = (Scene: () => React.JSX.Element) =>
 it('u34-u19-column-done-closed shows the Board page and a shut Done group at the end of the column', async () => {
   mount(U34_DONE_COLUMN_SCENES['u34-u19-column-done-closed']);
 
-  await screen.findByRole('heading', { name: 'Sessions' });
+  await screen.findByRole('heading', { name: 'Board' });
   const done = doneToggle();
   expect(done.getAttribute('aria-expanded')).toBe('false');
   expect(screen.queryByRole('tablist', { name: 'Sessions view' })).toBeNull();
@@ -64,7 +64,7 @@ it('u34-u19-column-done-closed shows the Board page and a shut Done group at the
 it('u34-u19-column-done-open lists the finished sessions under the open Done group', async () => {
   mount(U34_DONE_COLUMN_SCENES['u34-u19-column-done-open']);
 
-  await screen.findByRole('heading', { name: 'Sessions' });
+  await screen.findByRole('heading', { name: 'Board' });
   const done = doneToggle();
   expect(done.getAttribute('aria-expanded')).toBe('true');
 });

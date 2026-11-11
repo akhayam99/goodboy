@@ -17,6 +17,7 @@ export type ChatWork = {
   readonly drawerNode: ReactNode;
   readonly drawerKey: string;
   readonly openWork: (params: Pick<WorkRequest, 'anchorMessageId'>) => void;
+  readonly closeWork: () => void;
 };
 
 export const useChatWork = ({ chat, messages }: Params): ChatWork => {
@@ -36,6 +37,7 @@ export const useChatWork = ({ chat, messages }: Params): ChatWork => {
         />
       ),
     drawerKey: String(work?.key ?? 0),
+    closeWork: close,
     openWork: ({ anchorMessageId }) =>
       setWork((current) => ({ anchorMessageId, key: (current?.key ?? 0) + 1 })),
   };

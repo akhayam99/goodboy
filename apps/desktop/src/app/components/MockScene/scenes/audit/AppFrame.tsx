@@ -17,7 +17,7 @@ import {
   useSessions,
 } from '../../../../../store';
 import { DrawerHost } from '../../../DrawerHost';
-import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
+import { useShellRight } from '../../../../hooks/useShellRight';
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { triggerFrameView } from './frameViews';
@@ -47,7 +47,7 @@ export const AppFrame = ({
   const isFoldLive = hasLiveToggle || isDirectedScene();
   const isMainCollapsed = isFoldLive ? isFoldPicked : isRailCollapsed;
   const toggleFold = () => setIsFoldPicked((isPicked) => !isPicked);
-  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   const currentWorkspace = useCurrentWorkspace();
@@ -57,23 +57,16 @@ export const AppFrame = ({
   const isDraftShown =
     hasDraft && draftWorkspaceId !== null && draftWorkspaceId === currentWorkspace?.id;
   const goToBoard = useGoToBoard();
-  const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
-  const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
   const isLauncher = view === 'launcher' || currentWorkspace === null;
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace !== null,
     isSidebarCollapsed: isMainCollapsed,
-    isSettingsOpen,
   });
   const overlays = useAppOverlays({
     currentSession,
     currentWorkspace,
     workspaceProjectRoot: '/mock/root',
-    isSessionSidebarCollapsed: isRailCollapsed,
     isWorkspaceLauncherBranch: isLauncher,
-    pinSessionSidebar: noop,
-    studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
-    settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsSlot : null,
   });
   useSceneShortcuts({
     openPalette: overlays.openPalette,
@@ -85,15 +78,12 @@ export const AppFrame = ({
       openInbox: overlays.openInbox,
       openChat: overlays.openChat,
       openWorkflows: overlays.openWorkflows,
-      openTerminalStudio: overlays.openTerminalStudio,
-      openBrowserStudio: overlays.openBrowserStudio,
       openNewChat: overlays.openNewChat,
       openMonitoring: overlays.openMonitoring,
       openImpact: overlays.openImpact,
       openSettings: overlays.openSettings,
       openChangelog: overlays.openChangelog,
       openGuide: overlays.openGuide,
-      openShortcuts: overlays.openShortcutHelp,
     }),
     [goToBoard, overlays],
   );
@@ -139,14 +129,14 @@ export const AppFrame = ({
             currentSessionId={isDraftShown ? null : (currentSession?.id ?? null)}
             isDraftShown={isDraftShown}
             actions={actions}
-            settingsSlotRef={setSettingsSlot}
           />
         }
         main={<div className="relative h-full w-full">{main}</div>}
         studio={overlays.studio}
-        studioCoversLeft={arrangement.studioCoversLeft}
+        rightRail={rightRail}
         {...(hasPane && {
-          drawer: isDrawerOpen ? <DrawerHost /> : null,
+          drawer: isDrawerMounted ? <DrawerHost /> : null,
+          isDrawerParked,
           drawerSizing,
           drawerPlacement,
         })}

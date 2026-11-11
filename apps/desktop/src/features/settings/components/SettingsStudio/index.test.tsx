@@ -107,6 +107,7 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     workspaceOverrides: {} as Record<string, unknown>,
     lastSettingsFocus: null as unknown,
     rememberSettingsFocus: vi.fn(),
+    amendStudio: vi.fn(),
   },
   toastMock: vi.fn(),
 }));
@@ -405,7 +406,7 @@ describe('SettingsStudio', () => {
 
     expect(screen.getByRole('heading', { name: 'Keyboard shortcuts' })).toBeDefined();
     expect(screen.getByText(`${SHORTCUT_ROW_COUNT} shortcuts`)).toBeDefined();
-    expect(screen.getByText('Command palette')).toBeDefined();
+    expect(screen.getByText('Search or run')).toBeDefined();
     expect(screen.getByText(shortcutGlyphs('session.spawned'))).toBeDefined();
     expect(screen.getAllByRole('button', { name: /keyboard shortcuts/i })).toHaveLength(1);
   });
@@ -558,55 +559,66 @@ describe('SettingsStudio', () => {
   });
 });
 
-describe('SettingsStudio, the frame it draws', () => {
-  const mountSlot = (): HTMLDivElement => {
-    const slot = document.createElement('div');
-    document.body.appendChild(slot);
-    return slot;
-  };
-
-  it('draws only the page in the default shell, with the navigation in the column slot', () => {
-    const slot = mountSlot();
+describe('SettingsStudio, the page it draws', () => {
+  const mountPage = () =>
     render(
       <SettingsStudio
         currentWorkspace={null}
         onScopeChange={vi.fn()}
         focus={{ scope: 'app' }}
         onClose={vi.fn()}
-        columnSlot={slot}
-        isInColumnShell
+        railPlacement="page"
       />,
     );
 
-    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
-    expect(document.querySelector('[data-studio-rail]')).toBeNull();
-    expect(screen.queryByRole('complementary', { name: 'Settings scopes' })).toBeNull();
-    const nav = within(slot).getByRole('navigation', { name: 'Settings scopes' });
-    expect(within(slot).getAllByRole('button')[0]?.textContent).toContain('Back to app');
-    expect(within(nav).getByRole('button', { name: 'General' })).toBeDefined();
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+  it('draws the trail, its own scopes rail and the page, with the fold then the search first', () => {
+    mountPage();
+
+    screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(document.querySelector('[data-studio-rail="page"]')).not.toBeNull();
+    const rail = screen.getByRole('complementary', { name: 'Settings scopes' });
+    const hide = within(rail).getByRole('button', { name: 'Hide settings scopes' });
+    const search = within(rail).getByRole('searchbox', { name: 'Search settings' });
+    expect(hide.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    within(rail).getByRole('button', { name: 'General' });
+    screen.getByRole('heading', { name: 'General' });
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
-    slot.remove();
   });
 
-  it('draws the page before its navigation arrives, never a rail of its own', () => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app' }}
-        onClose={vi.fn()}
-        isInColumnShell
-      />,
-    );
+  it('lists the matching settings in place of the scopes and clears the search on a pick', () => {
+    state.amendStudio.mockClear();
+    mountPage();
 
-    expect(document.querySelector('[data-studio-rail]')).toBeNull();
-    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    const search = screen.getByRole('searchbox', { name: 'Search settings' });
+    fireEvent.change(search, { target: { value: 'general' } });
+    const results = screen.getByRole('list', { name: 'Matching settings' });
     expect(screen.queryByRole('navigation', { name: 'Settings scopes' })).toBeNull();
-    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    within(results)
+      .getAllByRole('button')
+      .slice(0, 1)
+      .forEach((row) => fireEvent.click(row));
+
+    expect(state.amendStudio).toHaveBeenCalledOnce();
+    expect(search).toHaveProperty('value', '');
+    screen.getByRole('navigation', { name: 'Settings scopes' });
   });
 
-  it('keeps the trail and the rail layout outside the column, in the launcher', () => {
+  it('folds the scopes to a strip with Show and Search, and Search opens them on the field', async () => {
+    mountPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide settings scopes' }));
+    expect(screen.queryByRole('complementary', { name: 'Settings scopes' })).toBeNull();
+    expect(localStorage.getItem('goodboy:studio-rail-folded:settings:v1')).toBe('1');
+    screen.getByRole('heading', { name: 'General' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search settings' }));
+
+    const search = await screen.findByRole('searchbox', { name: 'Search settings' });
+    await waitFor(() => expect(document.activeElement).toBe(search));
+    expect(localStorage.getItem('goodboy:studio-rail-folded:settings:v1')).toBe('0');
+  });
+
+  it('keeps the chrome rail in the launcher', () => {
     render(
       <SettingsStudio
         currentWorkspace={null}
@@ -616,9 +628,8 @@ describe('SettingsStudio, the frame it draws', () => {
       />,
     );
 
-    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeDefined();
-    expect(document.querySelector('[data-studio-rail]')).not.toBeNull();
-    expect(screen.getByRole('complementary', { name: 'Settings scopes' })).toBeDefined();
+    expect(document.querySelector('[data-studio-rail="chrome"]')).not.toBeNull();
+    screen.getByRole('complementary', { name: 'Settings scopes' });
     expect(screen.queryByRole('button', { name: /^Back to app/ })).toBeNull();
   });
 });

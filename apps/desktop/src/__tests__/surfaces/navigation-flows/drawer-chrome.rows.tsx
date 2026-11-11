@@ -28,7 +28,7 @@ const openContextOverAsk = async (): Promise<void> => {
   await composer();
   const sessionId = selectOpenDrawer(useAppStore.getState())?.sessionId;
   expect(sessionId).toBeDefined();
-  if (sessionId === undefined) {
+  if (sessionId == null) {
     return;
   }
   useAppStore.getState().openDrawer({

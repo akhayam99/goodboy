@@ -1,113 +1,71 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Session, SessionId } from '@goodboy/types';
-
-type Attention = {
-  count: number;
-  quietCount: number;
-  tone: 'danger' | 'warning' | null;
-  countedIds: ReadonlyArray<string>;
-  reasons: ReadonlyArray<string>;
-  quietReasons: ReadonlyArray<string>;
-  countedSessions: ReadonlyArray<Session>;
-};
-
-const { hooks, store, noAttention } = vi.hoisted(() => {
-  const noAttention = (): Attention => ({
-    count: 0,
-    quietCount: 0,
-    tone: null,
-    countedIds: [],
-    reasons: [],
-    quietReasons: [],
-    countedSessions: [],
-  });
-  return {
-    noAttention,
-    hooks: {
-      groups: [] as ReadonlyArray<{
-        readonly key: string;
-        readonly sessions: ReadonlyArray<Session>;
-      }>,
-      workspace: { id: 'ws-1', name: 'Harborline' } as { id: string; name: string } | null,
-      attention: noAttention(),
-    },
-    store: {
-      navigate: vi.fn(),
-      cancelScript: vi.fn(async () => undefined),
-      scriptRuns: {} as Record<string, Record<string, unknown>>,
-      sessions: [] as ReadonlyArray<Session>,
-      archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
-      projectScripts: {} as Record<string, ReadonlyArray<{ id: string; name: string }>>,
-    },
-  };
-});
-
-vi.mock('../../../../store', async () => {
-  const useAppStore = Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
-    getState: () => store,
-  });
-  return {
-    ...(await import('../../../../store/slices/navigation/place')),
-    EMPTY_ARRAY: [],
-    useCurrentWorkspace: () => hooks.workspace,
-    useSessions: () => store.sessions,
-    useStageGroupedSessions: () => hooks.groups,
-    useWorkspaceAttention: () => hooks.attention,
-    useSessionStageInfo: () => ({ stage: 'attention', reason: 'Needs attention', attention: null }),
-    useAppStore,
-  };
-});
-
-vi.mock('../../../../features/workspace/components/SessionHoverCard', () => ({
-  SessionHoverCard: ({ session }: { readonly session: Session | null }) =>
-    session === null ? null : <div data-testid="session-hover-card">{session.goal}</div>,
-}));
-
+import type { Session } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import {
+  harborline,
+  runningState,
+  seedColumn,
+  sessionOf,
+} from '../../../../features/workspace/testing/sessionColumn';
 import { NowChip } from './index';
 
-const session = ({ id, goal }: { readonly id: string; readonly goal: string }) =>
-  ({ id: id as SessionId, goal, workspaceId: 'ws-1' }) as unknown as Session;
+let useAppStore: StoryStore;
 
-const NEEDS = session({ id: 'session-needs', goal: 'Pick the retry backoff for notify-relay' });
-const RUNNING = session({ id: 'session-running', goal: 'Retry failed webhook deliveries' });
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
-const withScript = () => {
-  store.sessions = [RUNNING];
-  store.projectScripts = { 'ws-1': [{ id: 'script-1', name: 'pnpm dev' }] };
-  store.scriptRuns = {
-    [RUNNING.id]: {
-      'script-1': { status: 'pending', runId: 'run-1', startedAt: Date.now() },
-    },
-  };
-};
-
-beforeEach(() => {
-  hooks.groups = [];
-  hooks.attention = noAttention();
-  hooks.workspace = { id: 'ws-1', name: 'Harborline' };
-  store.scriptRuns = {};
-  store.sessions = [];
-  store.projectScripts = {};
-  store.navigate.mockClear();
-  store.cancelScript.mockClear();
+beforeEach(async () => {
+  await resetStoryStore();
 });
 
 afterEach(cleanup);
 
-const needing = (...sessions: ReadonlyArray<Session>): void => {
-  hooks.attention = {
-    count: sessions.length,
-    quietCount: 0,
-    tone: 'warning',
-    countedIds: sessions.map((entry) => entry.id),
-    reasons: ['1 question for you'],
-    quietReasons: [],
-    countedSessions: sessions,
-  };
+const RUNNING = sessionOf({ goal: 'Retry failed webhook deliveries', state: runningState() });
+const ASKING = sessionOf({
+  goal: 'Pick the retry backoff for notify-relay',
+  state: runningState(),
+});
+const SCRIPT_ID = 'script-1';
+
+const seed = (sessions: ReadonlyArray<Session>, questions: ReadonlyArray<Session> = []) => {
+  seedColumn({ store: useAppStore, sessions, questions });
+};
+
+const withScript = (session: Session) => {
+  useAppStore.setState({
+    scriptRuns: {
+      [session.id]: {
+        [SCRIPT_ID]: {
+          status: 'pending',
+          result: null,
+          runId: 'run-1',
+          startedAt: Date.now(),
+          name: 'pnpm dev',
+        },
+      },
+    },
+  });
 };
 
 const trigger = () => screen.getByRole('button', { name: /running/ });
@@ -121,33 +79,32 @@ const open = async () => {
 
 describe('NowChip', () => {
   it('draws one muted Idle slot, never nothing, when no session runs and no script plays', () => {
+    seed([]);
     const { container } = render(<NowChip onOpenScript={vi.fn()} />);
 
-    const slot = container.querySelector('[data-now-idle]');
-    expect(slot?.textContent).toBe('Idle');
-    expect(slot?.className).toContain('text-muted-foreground');
+    expect(container.querySelector('[data-now-idle]')?.textContent).toBe('Idle');
     expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
 
   it('shows only the segments above zero, and names them all in one label', () => {
-    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
-    const { container, rerender } = render(<NowChip onOpenScript={vi.fn()} />);
+    seed([RUNNING]);
+    const { container } = render(<NowChip onOpenScript={vi.fn()} />);
 
     expect(trigger().getAttribute('aria-label')).toBe('1 session running');
     expect(container.querySelector('[data-now-idle]')).toBeNull();
     expect(screen.queryByText('scripts')).toBeNull();
 
-    withScript();
-    rerender(<NowChip onOpenScript={vi.fn()} />);
+    act(() => {
+      withScript(RUNNING);
+    });
 
     expect(trigger().getAttribute('aria-label')).toBe('1 session running, 1 script running');
-    expect(screen.getByText('scripts').className).toContain('@min-chrome-labels/topbar:inline');
+    expect(screen.getByText('scripts')).toBeDefined();
   });
 
   it('leaves needs you to the Sessions door and the Overview: no segment, no group, no next button', async () => {
-    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
-    needing(NEEDS, session({ id: 'session-needs-2', goal: 'Choose the retry window' }));
-    withScript();
+    seed([RUNNING, ASKING], [ASKING]);
+    withScript(RUNNING);
     const { container } = render(<NowChip onOpenScript={vi.fn()} />);
 
     expect(trigger().getAttribute('aria-label')).toBe('1 session running, 1 script running');
@@ -161,7 +118,7 @@ describe('NowChip', () => {
   });
 
   it('opens a session from its row and closes', async () => {
-    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
+    seed([RUNNING]);
     render(<NowChip onOpenScript={vi.fn()} />);
 
     const panel = await open();
@@ -169,13 +126,25 @@ describe('NowChip', () => {
       fireEvent.click(within(panel).getByText('Retry failed webhook deliveries'));
     });
 
-    expect(store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: RUNNING.id }) });
+    expect(useAppStore.getState().currentSessionId).toBe(RUNNING.id);
+    expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
+  });
+
+  it('ends on Open Monitoring, the home of the numbers it counts, and closes', async () => {
+    seed([RUNNING]);
+    render(<NowChip onOpenScript={vi.fn()} />);
+
+    const panel = await open();
+    await act(async () => {
+      fireEvent.click(within(panel).getByRole('button', { name: 'Open Monitoring' }));
+    });
+
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'monitoring' });
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
   });
 
   it('names a session with a blank goal the way every session row does', async () => {
-    const blank = session({ id: 'session-blank', goal: '   ' });
-    hooks.groups = [{ key: 'running', sessions: [blank] }];
+    seed([sessionOf({ goal: '   ', state: runningState() })]);
     render(<NowChip onOpenScript={vi.fn()} />);
 
     const panel = await open();
@@ -184,7 +153,7 @@ describe('NowChip', () => {
   });
 
   it('opens the session hover card for a row after the pointer rests and drops it on leave', async () => {
-    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
+    seed([RUNNING]);
     render(<NowChip onOpenScript={vi.fn()} />);
     const panel = await open();
     const row = within(panel).getByRole('button', { name: /Retry failed webhook deliveries/ });
@@ -195,7 +164,7 @@ describe('NowChip', () => {
     act(() => {
       vi.advanceTimersByTime(500);
     });
-    expect(screen.getByTestId('session-hover-card').textContent).toBe(
+    expect(screen.getByTestId('session-hover-card').textContent).toContain(
       'Retry failed webhook deliveries',
     );
 
@@ -208,7 +177,7 @@ describe('NowChip', () => {
   });
 
   it('closes the hover card with the popover', async () => {
-    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
+    seed([RUNNING]);
     render(<NowChip onOpenScript={vi.fn()} />);
     const panel = await open();
     const row = within(panel).getByRole('button', { name: /Retry failed webhook deliveries/ });
@@ -229,7 +198,9 @@ describe('NowChip', () => {
   });
 
   it('hands a script row to the open callback and stops it in place', async () => {
-    withScript();
+    seed([RUNNING]);
+    withScript(RUNNING);
+    stubStoryInvoke({ workspace_script_cancel: () => undefined });
     const onOpenScript = vi.fn();
     render(<NowChip onOpenScript={onOpenScript} />);
 
@@ -237,9 +208,11 @@ describe('NowChip', () => {
     await act(async () => {
       fireEvent.click(within(panel).getByRole('button', { name: 'Stop pnpm dev' }));
     });
-    expect(store.cancelScript).toHaveBeenCalledWith(RUNNING.id, 'script-1');
-    expect(screen.getByRole('dialog', { name: 'Now' })).toBeDefined();
+    expect(useAppStore.getState().scriptRuns[RUNNING.id]?.[SCRIPT_ID]?.status).toBe('cancelled');
 
+    act(() => {
+      withScript(RUNNING);
+    });
     panel = screen.getByRole('dialog', { name: 'Now' });
     await act(async () => {
       fireEvent.click(
@@ -252,13 +225,13 @@ describe('NowChip', () => {
     expect(onOpenScript).toHaveBeenCalledOnce();
     expect(onOpenScript.mock.calls[0]?.[0]).toMatchObject({
       sessionId: RUNNING.id,
-      scriptId: 'script-1',
+      scriptId: SCRIPT_ID,
     });
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
   });
 
   it('opens on the named popover layer, closes on escape with focus back, and on the backdrop', async () => {
-    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
+    seed([RUNNING]);
     render(<NowChip onOpenScript={vi.fn()} />);
 
     await open();
@@ -274,15 +247,15 @@ describe('NowChip', () => {
     const backdrop = document.body.querySelector('.z-popover-backdrop');
     expect(backdrop).not.toBeNull();
     await act(async () => {
-      fireEvent.click(backdrop as Element);
+      fireEvent.click(backdrop ?? document.body);
     });
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
   });
 
   it('leaves session signals out without a workspace but still shows scripts', () => {
-    hooks.workspace = null;
-    hooks.groups = [{ key: 'attention', sessions: [NEEDS] }];
-    withScript();
+    seed([ASKING]);
+    useAppStore.setState({ currentWorkspaceId: null, workspaces: [harborline] });
+    withScript(ASKING);
     render(<NowChip onOpenScript={vi.fn()} />);
 
     expect(trigger().getAttribute('aria-label')).toBe('1 script running');

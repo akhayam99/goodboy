@@ -28,10 +28,6 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx': {
     count: 1,

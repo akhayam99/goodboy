@@ -25,7 +25,7 @@ A session nobody touched for three days stays where it is and fades. Rest the po
 
 **Flip through recent sessions.** Hold **Control** and press **Tab** to flip through recent sessions without the list.
 
-**Sort, group and filter.** The funnel at the right of the **Sessions** row sorts, groups and filters the list, and the funnel on the Sessions page is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
+**Sort, group and filter.** The funnel at the right of the **Board** row sorts, groups and filters the list, and the funnel on the Board page is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
 
 **Right click.** A right click on any session opens all its actions: pin, refresh, rename, archive and delete. Archive and delete ask first. An archived session comes back with Undo or Restore.
 
@@ -34,14 +34,14 @@ A session nobody touched for three days stays where it is and fades. Rest the po
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="760" alt="The Northwind Sessions list in one-line rows with a state sign, Show 10 more, and a card over the open session Fix webhook retries">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Sessions options menu open in the left column of the Northwind workspace, with Status, Project, Archive with Show archived, Sort set to Needs you first, Alphabetical, Last activity and Created, and Group set to None, PR state, Stage and Project">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 The Sessions options menu ends with **Mark all as read**, which clears every reply you have not opened and is off when there is none. The session you are looking at counts as read, so **Mark as unread** is not offered on it while its last agent is the one on screen.
 
@@ -51,18 +51,18 @@ Keep the sessions you return to at the top of the list. **Pin session** in a row
 
 ### Now chip
 
-Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does, so the chips beside it stay put. A click opens a list where each row jumps to its session. Sessions that need you show as a number on **Sessions** in the sidebar, with a small amber dot and a muted number, the dot red when one of them is broken, 9+ above nine. The top bar does not repeat it; **⌥⌘↓** goes to the next one. Rest on the door for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and the board says **2 more need you in other projects** with a way to clear the filter. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
+Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does, so the chips beside it stay put. A click opens a list where each row jumps to its session. Sessions that need you show as a number on **Board** in the sidebar, with a small amber dot and a muted number, the dot red when one of them is broken, 9+ above nine. The top bar does not repeat it; **⌥⌘↓** goes to the next one. Rest on the door for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and the board says **2 more need you in other projects** with a way to clear the filter. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-light.webp" alt="The top bar chip 2 sessions need you, 2 running opened into the panel Now in Harborline over the Board: Needs you 2 with Warn merchants before a payout hold and Fix the rounding drift in the settlement export, Running 2 with Speed up the payout export for large merchants and Nightly reconciliation before the Monday close, and Open Monitoring">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Notifications
 
-Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its limit, lands in one list behind the bell, and **Needs action** shows only what you still owe: a retry or an update stays there until it resolves or you delete it, while a link such as Open spend or Open Checks is marked Opened, read and out of the list the moment you use it, from the row or from the toast. The bell, the toast and the Notifications page open the same place, and the button names it: Open Comments, Open Files (a fix that waits on a note only), Open Checks, Open branch, Open pull request (Open merge request on GitLab) or Open session. A fix notice stores note or comment, and the landing and the label follow it. A push failure keeps its mount. All three open the notification's own workspace first, in the window that shows it. Checks and Comments wait for the request data before they open. A notification from before this keeps no place and opens its session. An error from an action ends in its way out. A failed push offers Retry push and says your work is still on the branch. A rejected sign-in offers Reconnect with the tool's name. A missing editor opens Settings. A settings save that failed says nothing was changed. Opening the bell marks nothing read: the list scrolls instead of cutting off, a row is read after a second on screen, the rows out of sight stay unread and the list says how many, and **Mark all read** clears the rest. An unread row carries a small dot, amber when a retry waits on it, and the bell shows the number of unread rows (9+ above nine) beside its dot. With more than one workspace the bell has **This workspace** and **All workspaces**, and the second shows how many sessions need you in the other workspaces.
+Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its limit, lands in one list behind the bell, and **Needs action** shows only what you still owe: a retry or an update stays there until it resolves or you delete it, while a link such as Open spend or Open Checks is marked Opened, read and out of the list the moment you use it, from the row or from the toast. The bell, the toast and the Notifications page open the same place, and the button names it: Open Comments, Open Files (a fix that waits on a note only), Open Checks, Open branch, Open pull request (Open merge request on GitLab) or Open session. A fix notice stores note or comment, and the landing and the label follow it. A push failure keeps its mount. All three open the notification's own workspace first, in the window that shows it. Checks and Comments wait for the request data before they open. A notification from before this keeps no place and opens its session. An error from an action ends in its way out. A failed push offers Retry push and says your work is still on the branch. A rejected sign-in offers Reconnect with the tool's name. A missing editor opens Settings. A settings save that failed says nothing was changed. Opening the bell marks nothing read: the list scrolls instead of cutting off, a row is read after a second on screen, the rows out of sight stay unread and the list says how many, and **Mark all read** clears the rest. An unread row carries a small dot, amber when a retry waits on it, and the bell shows the number of unread rows (9+ above nine) beside its dot. **Open all notifications** at the foot of the list opens the Notifications page, and the bell stays pressed for as long as that page is open. The page has no Close button: Esc, Back or any other destination leaves it. With more than one workspace the bell has **This workspace** and **All workspaces**, and the second shows how many sessions need you in the other workspaces.
 
 Leave agents working and look away. While no Goodboy window is in front, the app icon shows the number of sessions that need you in all your workspaces, the count of the workspace you work in plus the others, and clears as they are answered. A system banner also appears when a session starts to wait on a question, a permission, a plan approval, an agent error, a failed push or failing checks: one per session and reason, titled with the session, with the sentence the board shows, and a click on it opens that session. Three or more within 30 seconds become one banner for the workspace. The first time something waits while you are away, a toast asks once whether to turn banners on. **Settings › General › Notifications** holds two switches, **Banner when you are away** and **Dock badge**. Both are local to this Mac: nothing is sent anywhere. A toast that arrives while the window is behind others waits until you come back before its timer starts.
 
@@ -71,7 +71,7 @@ Leave agents working and look away. While no Goodboy window is in front, the app
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-light.webp" alt="The Notifications page for Harborline filtered on Needs action: Session reached 80% of its limit, Handoff degraded and 1 session folder left on disk, with a More notification actions menu holding Mark all read and Delete all, and a left column of views, severity, source and workspace filters">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Open in new window
 

@@ -136,7 +136,7 @@ chrome. `index.html` carries the light cover as a literal 15% and
 
 ## The window grid
 
-Columns, resize handles and the studio slot
+Columns and resize handles
 are areas of **one** CSS grid. Their
 widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and
@@ -153,9 +153,11 @@ bottom-left corners take `rounded-frame` (10px) and one uniform 1px
 the window square. With no sidebar, or while it is hidden, the sheet has no
 radius and only a top and bottom edge. The left resize handle draws no line at
 rest: on hover and drag its `data-left-resize` state turns the sheet's left
-edge to `border` in 120ms, so the sheet edge is the handle. A studio follows
-the same rule: `StudioRailLayout` puts its rail on the chrome and its detail on
-a wrapped sheet, and a studio without a rail is a flush sheet.
+edge to `border` in 120ms, so the sheet edge is the handle. A studio is drawn
+inside this sheet, over the page it replaces (`[data-studio-slot]`, `z-studio`),
+so it keeps the sheet's shape. A studio that draws its own sheets beside a
+panel (Tasks, Chat, Workflows, `data-studio-sheet-owner`) turns the outer
+sheet's border and background off while it is open, and back on as it leaves.
 
 The top bar is drawn outside the window grid. Its centred layout uses two
 equal flexible outer columns around the command center. Page breadcrumbs stay
@@ -183,8 +185,8 @@ a reader at 720 pushes from 1344px. Below its threshold it
 lies over the page, full height, with a scrim and an `inert` page, never
 squeezed. While it lies over the page, `DrawerColumn` draws an edge host
 (`data-drawer-edge`) at the right edge above the scrim and hands it to the page
-through `DrawerEdgeContext`; the session tools column portals a live copy there
-(`SessionFrame`), and the card sits left of it, so a tool can still switch or
+through `DrawerEdgeContext`; the right rail portals a live copy there
+(`ShellToolRail`, or `SessionFrame` in a frame without the shell rail), and the card sits left of it, so a tool can still switch or
 close the drawer. The host is measured after every commit (and by a
 `ResizeObserver` after that), and `drawerLayoutOf` takes its width as
 `edgeWidth`: the overlay card plus the column always fit in the sheet, so the
@@ -264,12 +266,12 @@ One primitive draws the top of every page: `PageHeader`
 (`PANE_RHYTHM.headerInset`, 12px, none under a studio band), the 32px title
 row (`PaneTitleRow`), the gap under the header, the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
-page with its own frame (the Sessions board, the Terminal, the chat room header)
-mounts it directly. No page sets its own header padding: the Settings column, the
-board frame and the terminal drop their own top rows.
+page with its own frame (the Board, the Terminal, the chat room header)
+mounts it directly. No page sets its own header padding: the Settings detail,
+the board frame and the terminal drop their own top rows.
 
 The columns beside the page share that header line: the session rail top row
-(`data-rail-top`, `data-header-line`), the first icon of the session tools column
+(`data-rail-top`, `data-header-line`), the first icon of the right rail
 and every drawer header row (`DrawerFrame`) take `PANE_RHYTHM.headerInset` and
 `PANE_RHYTHM.headerRow` (`h-8`), so their tops and centres match the page title
 row. `validate-scenes --only header-line` measures all four on
@@ -282,7 +284,7 @@ A page root names its kind (`page="overview"`, `page="terminal"`) and
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | column  | Overview, Runs, a run, an agent, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
 | measure | the chat room (header, thread, composer)                                                                                                                  |
-| full    | the Sessions board, the Terminal                                                                                                                          |
+| full    | the Board, the Terminal                                                                                                                                   |
 
 A loading page draws `PageSkeleton` with the same kind, so its title bar and
 body start where the page will: `STUDIO_META[kind].skeleton` names the body shape
@@ -375,7 +377,7 @@ never moves the column, with or without a drawer. The pure geometry is
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
 Overview to Review to a chat. `app/components/StudioFrame/columnContract.test.ts` fails under `features/` on any
-`max-w-[Nch]`, any `max-w-[Npx]` (the palette, the onboarding wizard and Home, on one 600px column, are the
+`max-w-[Nch]`, any `max-w-[Npx]` (Search or run, the onboarding wizard and Home, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
 and the test asserts it centres `column` and `measure` and not `full`), `PANE_RHYTHM.measure`,
@@ -596,7 +598,7 @@ content, never a boundary inside content. Allowed: a vertical divider inside
 the chrome (between top bar or footer groups), a pane's fixed header against its
 scrolling body (the chat composer in a `PaneShell` dock, the `DrawerFrame`
 header, the comment action bar under the Branch thread), and inside a
-floating surface (popover, palette) the seam between its header or input and
+floating surface (popover, Search or run) the seam between its header or input and
 its list, at most one per side. A page whose dock reads as the end of its
 document (the orchestrated run, its queued hints over the composer) passes
 `dockEdge="space"` to `PaneShell`: no divider, the composer's own surface and
@@ -653,10 +655,10 @@ styling belong to
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen
 viewer, a multi-step flow that owns the whole screen, and a blocking system
 prompt. Everything else is a popover or inline. A centred `Dialog` sits on
-`bg-floating`, like popovers, toasts and the command palette; the full-screen
+`bg-floating`, like popovers, toasts and Search or run; the full-screen
 viewer passes `size="full"` and `surface="screen"` to stay on the content surface.
 `ImageLightbox` is that viewer: the native dialog traps Tab, focuses Close on open and returns
-focus to the opener on close. Given several images it shows a rail of them in the `Dialog` panel. The command palette and the session switcher are not dialogs; they
+focus to the opener on close. Given several images it shows a rail of them in the `Dialog` panel. Search or run and the session switcher are not dialogs; they
 share `Scrim` from `@goodboy/ui` for their backdrop. Any line that
 sets a background on a `z-popover`, `z-toast` or `z-command-palette` layer uses
 `bg-floating`, and `no-token-bypass.test.ts` holds that.

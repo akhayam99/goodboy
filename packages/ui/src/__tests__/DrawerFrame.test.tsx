@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
+import { DrawerColumn } from '../components/DrawerColumn';
 import { DrawerFrame } from '../components/DrawerFrame';
 import { dismissTopEscapeLayer } from '../escape';
 import { PANE_RHYTHM } from '../paneRhythm';
@@ -278,6 +279,40 @@ const Composer = ({ onClose, initial }: ComposerProps) => (
     <p>body</p>
   </DrawerFrame>
 );
+
+describe('DrawerFrame parked under a page', () => {
+  it('leaves Escape to the page while parked and answers it again once shown', () => {
+    const onClose = vi.fn();
+    const frame = (
+      <DrawerFrame title="Context" onClose={onClose}>
+        <p>ledger-core</p>
+      </DrawerFrame>
+    );
+    const { rerender } = render(
+      <DrawerColumn
+        main={<div>page</div>}
+        drawer={frame}
+        isParked
+        ariaLabel="Side panel"
+        resizeLabel="Resize"
+      />,
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+
+    rerender(
+      <DrawerColumn
+        main={<div>page</div>}
+        drawer={frame}
+        ariaLabel="Side panel"
+        resizeLabel="Resize"
+      />,
+    );
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('DrawerFrame Escape order', () => {
   it('blurs a non-empty field first and closes on the second press', () => {

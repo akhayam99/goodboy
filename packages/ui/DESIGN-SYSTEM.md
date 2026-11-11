@@ -293,7 +293,7 @@ state is a `StateDot` or a glyph in a 16px column.
 fill on every background. A running dot pulses (under `motion-safe`) only when
 the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
 chrome (top bar chips, doors, rail slots) stays static. A count next to a door
-lives in the dot's tooltip, never as colored text. The Sessions door is the one exception: it
+lives in the dot's tooltip, never as colored text. The Board door is the one exception: it
 says how many sessions need you as a number (see the door pill below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
 
 A session row carries one mark: the state of the node, or an empty 14px slot when the session is idle so titles keep one left edge (`StateNode` with `hasEmptySlot`). Unread is the title in `text-row-strong`, never a second dot on the mark (`UNREAD_TITLE`); only a row with no room for a title (the icon rail) or no 13px weighted role (the pinned and switcher rows at 12px) keeps the quiet dot (`isUnreadDot`).
@@ -836,19 +836,19 @@ Named tokens in `apps/desktop/src/styles.css` under `@theme`, with keys
 is a precedence chain (each layer must sit above the one below).
 `docs/styling.md` owns the reasoning. This table is only the registry.
 
-| token                        | value | who                                                                                |
-| ---------------------------- | ----- | ---------------------------------------------------------------------------------- |
-| `--z-index-studio`           | 50    | the `AppShell` studio slot and the app studios over Home, the floor: never lowered |
-| `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers                                       |
-| `--z-index-onboarding`       | 60    | the onboarding wizard over a studio                                                |
-| `--z-index-drag`             | 62    | the workflow studio drag ghost                                                     |
-| `--z-index-popover`          | 65    | the app-global popovers                                                            |
-| `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                                              |
-| `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette                                   |
-| `--z-index-toast`            | 85    | the toast stack                                                                    |
-| `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                     |
-| `--z-index-boot`             | 95    | the boot splash fade-out cover, above everything z-indexed                         |
-| (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                             |
+| token                        | value | who                                                                                   |
+| ---------------------------- | ----- | ------------------------------------------------------------------------------------- |
+| `--z-index-studio`           | 50    | the studio layer in the sheet, the peek, and the app studios over Home: never lowered |
+| `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers                                          |
+| `--z-index-onboarding`       | 60    | the onboarding wizard over a studio                                                   |
+| `--z-index-drag`             | 62    | the workflow studio drag ghost                                                        |
+| `--z-index-popover`          | 65    | the app-global popovers                                                               |
+| `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                                                 |
+| `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette                                      |
+| `--z-index-toast`            | 85    | the toast stack                                                                       |
+| `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                        |
+| `--z-index-boot`             | 95    | the boot splash fade-out cover, above everything z-indexed                            |
+| (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                                |
 
 A popover opened from inside the command palette does not need a higher token.
 `PopoverPortalProvider` gives `useDropdown` a portal target inside the
@@ -1039,12 +1039,15 @@ label loses characters before a count disappears.
 
 **The top bar's left edge belongs to the window.** The collapsed rail is
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
-22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
-lights, so it no longer shares an axis with the rail:
-`collapsed-rail-width.test.tsx` pins both. The main sidebar has one toggle,
-`ColumnToggleButton` in the top bar left of Back and Forward (⌘B), the same
-button whether the column is open or folded, and neither the column nor its
-44px rail draws a toggle row (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
+22px. The top bar's left zone starts at `--titlebar-inset`, which clears the
+macOS traffic lights. The main sidebar has one toggle, `ColumnToggleButton`,
+the first control of that zone, above the column it folds and before the
+workspace identity (⌘B). It is a 28px top bar control (`TOP_BAR_CONTROL`), so
+in full screen, where the inset is 0, its center lands on the rail's 22px axis
+(`collapsed-rail-width.test.tsx`). It is the same button whether the column is
+open or folded, its label and `aria-pressed` read the column you see ("Hide
+sidebar" / "Show sidebar"), and neither the column nor its 44px rail draws a
+toggle row (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
 the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**

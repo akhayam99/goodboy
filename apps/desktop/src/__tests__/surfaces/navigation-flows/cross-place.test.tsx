@@ -56,7 +56,7 @@ const door = (id: string): HTMLElement => {
   return requireValue({ value: found });
 };
 
-const historyButton = (verb: 'Previous' | 'Forward'): HTMLElement => {
+const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
   const found = Array.from(
     document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
   ).find((button) => (button.getAttribute('aria-label') ?? '').startsWith(verb));
@@ -92,7 +92,7 @@ const lensOf = (): string | null => {
 const currentDoors = (): ReadonlyArray<string> =>
   Array.from(
     document.querySelectorAll(
-      '[data-side-column] [data-column-layer="nav"] [data-column-door][aria-current="page"], [data-column-rail] [data-column-door][aria-current="page"], [data-top-bar] [aria-current="page"]',
+      '[data-side-column] [data-column-layer="nav"] [data-column-door][aria-current="page"], [data-column-rail] [data-column-door][aria-current="page"], [data-goodboy-chip][aria-current="page"], [data-top-bar] [aria-current="page"]',
     ),
   ).map(
     (element) =>
@@ -103,8 +103,9 @@ const expectColumnBesideStudio = (): void => {
   const column = document.querySelector('[data-side-column], [data-column-rail]');
   expect(column).not.toBeNull();
   expect(column?.closest('aside')?.hasAttribute('inert')).toBe(false);
-  expect(document.querySelector('[data-studio-slot="content"]')).not.toBeNull();
-  expect(document.querySelector('[data-studio-slot="cover"]')).toBeNull();
+  const slot = document.querySelector('[data-drawer-main] [data-studio-slot="content"]');
+  expect(slot).not.toBeNull();
+  expect(slot?.previousElementSibling?.hasAttribute('inert')).toBe(true);
 };
 
 const expectHealthy = (): void => {
@@ -174,13 +175,13 @@ const expectPlace = ({ session, lens, studio: kind, doors }: ExpectedPlace): voi
   expect(currentDoors()).toEqual(doors);
 };
 
-type ColumnState = 'column' | 'rail' | 'settings';
+type ColumnState = 'column' | 'rail';
 
 const expectColumn = (expected: ColumnState): void => {
   const column = document.querySelector('[data-side-column]');
   const rail = document.querySelector('[data-column-rail]');
   const nav = document.querySelector('[data-column-layer="nav"]');
-  const settings = document.querySelector('[data-column-layer="settings"]');
+  expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
   if (expected === 'rail') {
     expect(rail).not.toBeNull();
     expect(column).toBeNull();
@@ -188,11 +189,7 @@ const expectColumn = (expected: ColumnState): void => {
   }
   expect(column).not.toBeNull();
   expect(rail).toBeNull();
-  expect(nav?.hasAttribute('inert')).toBe(expected === 'settings');
-  if (expected === 'settings') {
-    expect(settings?.hasAttribute('inert')).toBe(false);
-    screen.getByRole('button', { name: /^Back to app/ });
-  }
+  expect(nav?.hasAttribute('inert')).toBe(false);
 };
 
 type FocusOwner = 'drawer' | 'column' | 'main' | 'studio' | 'none';
@@ -251,10 +248,10 @@ const expectCentredColumns = (): void => {
 const expectAskInToolColumn = (): void => {
   const ask = shown('[data-testid="pane-toggle-ask"]');
   expect(
-    ask?.closest('[role="toolbar"][aria-label="Session tools"]'),
+    ask?.closest('[role="toolbar"][aria-label="Tools"]'),
     'Ask sits in the session tools column',
   ).not.toBeNull();
-  expect(ask?.closest('nav[aria-label="Session"]') ?? null).toBeNull();
+  expect(ask?.closest('nav[aria-label="Session pages"]') ?? null).toBeNull();
   expect(ask?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
   expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
@@ -278,6 +275,10 @@ const expectDrawerBesideContent = ({
     `${kind} opens on the right of the page`,
   ).toBeTruthy();
 };
+
+const sidePanelMode = (): string | null =>
+  document.querySelector('main aside[aria-label="Side panel"]')?.getAttribute('data-drawer-mode') ??
+  null;
 
 const openDrawerKind = (): string | null => selectOpenDrawer(useAppStore.getState())?.kind ?? null;
 
@@ -510,10 +511,10 @@ describe('moving across every place keeps one frame', () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
     await click(door('board'));
-    await heading('Sessions');
+    await heading('Board');
     expect(currentDoors()).toEqual(['board']);
 
-    await click(historyButton('Previous'));
+    await click(historyButton('Back'));
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
     expect(currentDoors()).toEqual([]);
 
@@ -522,9 +523,9 @@ describe('moving across every place keeps one frame', () => {
     await press('lens.review');
     expect(lensOf()).toBe('branch');
 
-    await click(historyButton('Previous'));
+    await click(historyButton('Back'));
     expect(lensOf()).toBe('plans');
-    await click(historyButton('Previous'));
+    await click(historyButton('Back'));
     expect(lensOf()).toBe('workflows');
     await click(historyButton('Forward'));
     expect(lensOf()).toBe('plans');
@@ -554,13 +555,30 @@ describe('moving across every place keeps one frame', () => {
     await openPalette(/^Notifications$/, 'Notifications');
     expect(studio()).toBe('notifications');
     expectColumnBesideStudio();
-    expect(currentDoors()).toEqual([]);
+    expect(currentDoors()).toEqual(['Notifications']);
     await escape();
     expect(lensOf()).toBe('plans');
     expectHealthy();
   });
 
-  it('swaps the column for Settings, and Back to app, Esc and Back all land on the same page', async () => {
+  it('lights the Goodboy line for Help and never the open session under it', async () => {
+    await boot({ seed: 'pr' });
+    await openCrumb(/^Artifacts/);
+
+    await clickButton(/^Goodboy/);
+    expect(studio()).toBe('guide');
+    expectColumnBesideStudio();
+    expect(currentDoors()).toHaveLength(1);
+    expect(currentDoors()[0]).toMatch(/^Goodboy/);
+
+    await escape();
+    expect(studio()).toBeNull();
+    expect(lensOf()).toBe('plans');
+    expect(currentDoors()).toEqual([]);
+    expectHealthy();
+  });
+
+  it('opens Settings beside the live column, and Back to app, Esc and Back all land on the same page', async () => {
     await boot({ seed: 'pr' });
     await openCrumb(/^Artifacts/);
 
@@ -581,10 +599,10 @@ describe('moving across every place keeps one frame', () => {
       ],
       [
         async () => {
-          historyButton('Previous').focus();
-          await click(historyButton('Previous'));
+          historyButton('Back').focus();
+          await click(historyButton('Back'));
         },
-        () => historyButton('Previous'),
+        () => historyButton('Back'),
       ],
     ];
     for (const [exit, expectedFocus] of exits) {
@@ -592,7 +610,11 @@ describe('moving across every place keeps one frame', () => {
       await click(door('settings'));
       expect(studio()).toBe('settings');
       screen.getByRole('navigation', { name: 'Settings scopes' });
-      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(true);
+      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
+        false,
+      );
+      expectColumnBesideStudio();
+      expect(currentDoors()).toEqual(['settings']);
 
       await exit();
 
@@ -612,7 +634,7 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('finds a setting from the column search and opens its page in place', async () => {
+  it('finds a setting from the scopes rail search and opens its page in place', async () => {
     await boot({ seed: 'pr' });
     await click(door('settings'));
     const entriesBefore =
@@ -667,7 +689,7 @@ describe('moving across every place keeps one frame', () => {
 
     await backToApp();
     await click(door('board'));
-    await heading('Sessions');
+    await heading('Board');
     await press('column.toggle');
     expect(door('board').getAttribute('aria-current')).toBe('page');
     await press('column.toggle');
@@ -675,7 +697,7 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('keeps a drawer with its page while a studio sits over it', async () => {
+  it('parks a session drawer under a page, and Esc brings it back with its page', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
     await press('lens.context');
@@ -683,11 +705,94 @@ describe('moving across every place keeps one frame', () => {
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
+    expect(document.querySelector('main [data-drawer-main] [data-studio-slot]')).not.toBeNull();
+    expect(sidePanelMode()).toBe('closed');
+    const parked = document.querySelector('main aside[aria-label="Side panel"]');
+    expect(parked?.hasAttribute('data-drawer-parked')).toBe(true);
+    expect(parked?.hasAttribute('inert')).toBe(true);
+    expect(parked?.hasAttribute('data-drawer-exit')).toBe(false);
     await escape();
 
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
     expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expect(parked?.hasAttribute('inert')).toBe(false);
+    expectHealthy();
+  });
+
+  it('keeps a parked Explore mounted as the same node through a Tasks round trip', async () => {
+    await boot({ seed: 'pr' });
+
+    await press('lens.explore');
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('explore'));
+    const explore = 'main aside section[aria-label="Explore"]';
+    const section = await waitFor(() =>
+      requireValue({ value: document.querySelector<HTMLElement>(explore) }),
+    );
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    expect(section.isConnected).toBe(true);
+    await escape();
+
+    expect(studio()).toBeNull();
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expect(document.querySelector(explore)).toBe(section);
+    expectHealthy();
+  });
+
+  it('shows a parked drawer on its key from a page instead of closing it unseen', async () => {
+    const { sessionId } = await boot({ seed: 'pr' });
+
+    await press('lens.context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+
+    await press('lens.context');
+
+    expect(studio()).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBe(sessionId);
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expectHealthy();
+  });
+
+  it('opens a drawer on its key from a page with nothing parked, beside the session', async () => {
+    await boot({ seed: 'pr' });
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
+
+    await press('lens.context');
+
+    expect(studio()).toBeNull();
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
+    expectHealthy();
+  });
+
+  it('closes the page with ⌘W, never the drawer parked under it, and Back brings the drawer back', async () => {
+    await boot({ seed: 'pr' });
+
+    await press('lens.context');
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context'));
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    await press('app.close');
+
+    expect(studio()).toBeNull();
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+
+    await click(door('workflows'));
+    expect(studio()).toBe('workflow');
+    await press('nav.back');
+
+    expect(studio()).toBeNull();
+    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expectHealthy();
   });
 
@@ -834,7 +939,7 @@ describe('moving across every place keeps one frame', () => {
       seedShipAFix();
 
       await click(door('board'));
-      await heading('Sessions');
+      await heading('Board');
       expectPlace({ session: null, lens: 'board', studio: null, doors: ['board'] });
       expectColumn('column');
 
@@ -875,7 +980,7 @@ describe('moving across every place keeps one frame', () => {
       expect(openDrawerKind()).toBe('ask');
       expect(lensOf()).toBe(chip.lens);
       expect(leftEdge().main).toBe(askEdge.main);
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       await escape();
       expect(openDrawerKind()).toBeNull();
@@ -903,11 +1008,11 @@ describe('moving across every place keeps one frame', () => {
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
       expect(currentPage()).toBe('Overview');
 
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       await click(historyButton('Forward'));
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
 
       await press('column.toggle');
       expectColumn('rail');
@@ -922,9 +1027,9 @@ describe('moving across every place keeps one frame', () => {
         requireValue({ value: peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) }),
       );
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       await press('column.toggle');
       expectColumn('column');
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
@@ -932,7 +1037,13 @@ describe('moving across every place keeps one frame', () => {
       door('settings').focus();
       await click(door('settings'));
       expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
-      expectColumn('settings');
+      expectColumn('column');
+      expectColumnBesideStudio();
+      await press('column.toggle');
+      expectColumn('rail');
+      expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
+      await press('column.toggle');
+      expectColumn('column');
       screen.getByRole('button', { name: /^Back to app/ }).focus();
       await backToApp();
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
@@ -977,7 +1088,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
 
@@ -988,7 +1099,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       await openPage('Overview');
       expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
-      await click(historyButton('Previous'));
+      await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });
       expect(useAppStore.getState().focusedArtifactId[sessionId]).toBe(JOURNEY_ARTIFACT);
       expectHealthy();
@@ -1003,7 +1114,7 @@ describe('moving across every place keeps one frame', () => {
     expect(currentDoors()).toEqual(['inbox']);
     expectColumnBesideStudio();
 
-    await openPalette(/^Sessions$/, 'Back to board');
+    await openPalette(/^Board$/, 'Back to board');
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBeNull();
     expect(currentDoors()).toEqual(['board']);

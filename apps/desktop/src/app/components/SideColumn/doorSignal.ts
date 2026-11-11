@@ -1,5 +1,5 @@
 import { needsYouText } from '../../../shared/utils/needsYouText';
-import { countTextOf } from './countTextOf';
+import { countTextOf } from '../../../shared/utils/countTextOf';
 type DoorTone = 'danger' | 'warning' | 'neutral';
 
 export type DoorSignal = {
@@ -9,30 +9,6 @@ export type DoorSignal = {
   readonly fact: string;
   readonly tone?: DoorTone;
   readonly countText?: string;
-};
-
-type BrowserParams = {
-  readonly kind: 'browser';
-  readonly count: number;
-  readonly inUse?: undefined;
-  readonly downPins?: undefined;
-  readonly hasUnread?: undefined;
-  readonly reasons?: undefined;
-  readonly tone?: undefined;
-  readonly quietCount?: undefined;
-  readonly quietReasons?: undefined;
-};
-
-type TerminalParams = {
-  readonly kind: 'terminal';
-  readonly count: number;
-  readonly inUse?: undefined;
-  readonly downPins?: undefined;
-  readonly hasUnread?: undefined;
-  readonly reasons?: undefined;
-  readonly tone?: undefined;
-  readonly quietCount?: undefined;
-  readonly quietReasons?: undefined;
 };
 
 type InboxParams = {
@@ -83,8 +59,7 @@ type BoardParams = {
   readonly hasUnread?: undefined;
 };
 
-type Params =
-  TerminalParams | BrowserParams | InboxParams | ChatParams | MonitoringParams | BoardParams;
+type Params = InboxParams | ChatParams | MonitoringParams | BoardParams;
 
 type FactParams = {
   readonly lead: string;
@@ -130,23 +105,6 @@ export const doorSignalOf = ({
       fact: factOf({ lead: needsYouText({ count, unit: 'sessions' }), reasons }),
     };
   }
-  if (kind === 'terminal') {
-    if (count === 0) {
-      return undefined;
-    }
-    return { count, isWarning: false, isUnread: false, fact: `${count} running` };
-  }
-  if (kind === 'browser') {
-    if (count === 0) {
-      return undefined;
-    }
-    return {
-      count,
-      isWarning: false,
-      isUnread: false,
-      fact: count === 1 ? '1 tab' : `${count} tabs`,
-    };
-  }
   if (kind === 'inbox') {
     if (count === 0) {
       return undefined;
@@ -166,10 +124,22 @@ export const doorSignalOf = ({
     const ports = downPins.map((port) => `:${port}`).join(', ');
     const fact =
       downPins.length === 1 ? `pinned port ${ports} is down` : `pinned ports ${ports} are down`;
-    return { count: inUse, isWarning: true, isUnread: false, fact };
+    return {
+      count: inUse,
+      isWarning: true,
+      isUnread: false,
+      fact,
+      ...(inUse > 0 && { countText: countTextOf({ count: inUse }) }),
+    };
   }
   if (inUse === 0) {
     return undefined;
   }
-  return { count: inUse, isWarning: false, isUnread: false, fact: `${inUse} in use` };
+  return {
+    count: inUse,
+    isWarning: false,
+    isUnread: false,
+    fact: `${inUse} in use`,
+    countText: countTextOf({ count: inUse }),
+  };
 };

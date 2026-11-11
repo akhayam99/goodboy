@@ -125,7 +125,7 @@ describe('transient popover stacking above a full-page studio', () => {
   it('renders the notifications popover above an open full-page studio, mid animation', async () => {
     const { container } = render(
       <AppShell
-        topBar={<NotificationCenter />}
+        topBar={<NotificationCenter isCurrent={false} />}
         main={<p>board</p>}
         studio={
           <StudioShell title="GitHub" closeLabel="close github studio" onClose={() => {}}>

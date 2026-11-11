@@ -16,13 +16,16 @@ shortcut, so the same dispatcher runs the press; elsewhere the chord is
 Ctrl+Shift+W.
 Each press closes one level: a popover or dialog, then the terminal tab (a
 running process asks first), then the open drawer, then a studio, then the
-session view back to the previous place. The Sessions page does nothing.
+session view back to the previous place. It closes what you see: under a studio
+the session drawer is parked, so the studio closes first and the drawer comes
+back with the session. The Board does nothing.
 `terminal.closeTab` is the scoped entry that declines when a popover is open or
 no tab is selected, so `app.close` takes the press.
 
 ⌘⇧W (`slot.close`, Ctrl+F4 elsewhere) closes the top of the side slot and
 nothing else (`closeSlot`): the drawer in the back chip comes back, a second
-press empties the slot, and with no drawer open it does nothing. On macOS the
+press empties the slot, and with no drawer shown (none open, or one parked
+under a studio) it does nothing. On macOS the
 File menu item Close the Drawer owns the chord, so the press reaches the app
 even when a terminal or a web page has the keyboard.
 
@@ -34,7 +37,7 @@ adds a tab in place with no picker), inside the Ask panel (`ask.reset`, Reset
 chat) and on Home (`home.newWorkspace`, New workspace). Each contextual entry carries a `scope`, so the
 registry binds a chord once per place, and a contextual handler that declines
 (focus outside the Ask panel) hands the chord back to the global one. ⌘K is
-the way to go anywhere: every global new and go-to is a palette entry, and the
+the way to go anywhere: every global new and go-to is an entry in Search or run, and the
 Shortcuts page says so once.
 
 **Not now** on a Next suggestion adds no chord of its own: it is an `undoable` operation, so the global `app.undo` (⌘Z) restores it in stack order, and it yields to text fields like every undo.

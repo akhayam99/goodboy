@@ -62,13 +62,14 @@ describe('the Settings scenes', () => {
     expect(names).not.toContain('settings-general-rail');
   });
 
-  it('settings-general-pinned shows the column on the chrome with Back to app and the page as one sheet', async () => {
+  it('settings-general-pinned shows the live column, the Back to app band and the page with its scopes rail', async () => {
     await mount('settings-general-pinned');
 
     expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
     expect(document.querySelector('[data-column-rail]')).toBeNull();
-    expect(document.querySelector('[data-studio-band]')).toBeNull();
-    expect(document.querySelector('[data-studio-rail]')).toBeNull();
+    expect(document.querySelector('[data-studio-band]')).not.toBeNull();
+    expect(document.querySelector('[data-studio-rail="page"]')).not.toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Sidebar' }).hasAttribute('inert')).toBe(false);
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });

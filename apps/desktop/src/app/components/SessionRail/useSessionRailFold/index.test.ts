@@ -51,7 +51,31 @@ describe('useSessionRailFold', () => {
     rerender({ isNarrow: false });
     rerender({ isNarrow: true });
     expect(result.current.isFolded).toBe(true);
-    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('0');
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBeNull();
+  });
+
+  it('never writes the saved choice while it folds by itself, so a saved fold comes back', () => {
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    const { result, rerender } = renderHook((props) => useSessionRailFold(props), {
+      initialProps: { isNarrow: true, isDrawerOpen: true },
+    });
+
+    act(() => {
+      result.current.toggle();
+    });
+    expect(result.current.isFolded).toBe(false);
+    act(() => {
+      result.current.toggle();
+    });
+    expect(result.current.isFolded).toBe(true);
+    act(() => {
+      result.current.toggle();
+    });
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
+
+    rerender({ isNarrow: false, isDrawerOpen: false });
+    expect(result.current.isFolded).toBe(true);
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
   });
 });
 
@@ -68,6 +92,22 @@ it('keeps a manual unfold through resizing until the drawer closes', () => {
   rerender({ isNarrow: false, isDrawerOpen: false });
   rerender({ isNarrow: true, isDrawerOpen: true });
   expect(result.current.isFolded).toBe(true);
+});
+
+it('shows the saved fold on a wide pane even while a narrow unfold is still held', () => {
+  localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+  const { result, rerender } = renderHook((props) => useSessionRailFold(props), {
+    initialProps: { isNarrow: true, isDrawerOpen: true },
+  });
+  act(() => {
+    result.current.toggle();
+  });
+  expect(result.current.isFolded).toBe(false);
+
+  rerender({ isNarrow: false, isDrawerOpen: true });
+
+  expect(result.current.isFolded).toBe(true);
+  expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
 });
 
 it('restores a saved fold when a temporary drawer fold ends', () => {

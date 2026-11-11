@@ -26,10 +26,7 @@ const close = vi.fn();
 const Probe = () => {
   useSessionSurfaceEvents({
     close,
-    currentSession: null,
     currentWorkspace: null,
-    isSessionSidebarCollapsed: false,
-    pinSessionSidebar: () => undefined,
   });
   return null;
 };

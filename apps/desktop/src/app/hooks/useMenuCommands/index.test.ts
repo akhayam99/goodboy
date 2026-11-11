@@ -162,26 +162,47 @@ describe('useMenuCommands', () => {
   });
 
   it('runs a menu item that has no key from the menu action table', async () => {
-    const guides = detailsOf({ name: 'goodboy:open-guide' });
     renderHook(() => useMenuCommands());
     await listened();
 
     pick({ payload: { id: 'menu.guide' } });
 
-    expect(guides).toHaveLength(1);
+    expect(useAppStore.getState().appStudio?.kind).toBe('guide');
+  });
+
+  it('opens the Guide with no workspace and What is new only with one', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+    useAppStore.setState({ appStudio: null, currentWorkspaceId: null });
+
+    pick({ payload: { id: 'menu.whatsNew' } });
+    const withoutWorkspace = useAppStore.getState().appStudio;
+    pick({ payload: { id: 'menu.guide' } });
+
+    expect(withoutWorkspace).toBeNull();
+    expect(useAppStore.getState().appStudio?.kind).toBe('guide');
+  });
+
+  it('opens What is new as a page of the current window', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+
+    pick({ payload: { id: 'menu.whatsNew' } });
+
+    expect(useAppStore.getState().appStudio?.kind).toBe('changelog');
   });
 
   it('opens a place only when a workspace is open', async () => {
-    const inbox = detailsOf({ name: 'goodboy:open-inbox' });
     renderHook(() => useMenuCommands());
     await listened();
 
     pick({ payload: { id: 'menu.tasks' } });
-    useAppStore.setState({ currentWorkspaceId: null });
+    const opened = useAppStore.getState().appStudio?.kind;
+    useAppStore.setState({ appStudio: null, currentWorkspaceId: null });
     pick({ payload: { id: 'menu.tasks' } });
 
-    expect(inbox).toHaveLength(1);
-    expect(inbox[0]).toEqual({ door: true });
+    expect(opened).toBe('inbox');
+    expect(useAppStore.getState().appStudio).toBeNull();
   });
 
   it('opens Monitoring as a studio of the current window', async () => {
@@ -191,6 +212,74 @@ describe('useMenuCommands', () => {
     pick({ payload: { id: 'menu.monitoring' } });
 
     expect(useAppStore.getState().appStudio?.kind).toBe('monitoring');
+  });
+
+  it('opens the Browser dock from the Go menu, not a page, and only with a workspace open', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+
+    useAppStore.setState({ currentWorkspaceId: null });
+    pick({ payload: { id: 'menu.browser' } });
+    expect(useAppStore.getState().drawer).toBeNull();
+
+    useAppStore.setState({ currentWorkspaceId: workspace.id });
+    pick({ payload: { id: 'menu.browser' } });
+
+    expect(useAppStore.getState().drawer?.kind).toBe('browser');
+    expect(useAppStore.getState().appStudio).toBeNull();
+
+    pick({ payload: { id: 'menu.browser' } });
+
+    expect(useAppStore.getState().drawer).toBeNull();
+  });
+
+  it.each([
+    ['menu.tasks', 'inbox'],
+    ['menu.chat', 'chat'],
+    ['menu.workflows', 'workflow'],
+    ['menu.impact', 'impact'],
+    ['menu.monitoring', 'monitoring'],
+  ])('does nothing when %s is picked on the page it opens', async (id, kind) => {
+    renderHook(() => useMenuCommands());
+    await listened();
+
+    pick({ payload: { id } });
+    expect(useAppStore.getState().appStudio?.kind).toBe(kind);
+    const before = useAppStore.getState().navigation;
+    pick({ payload: { id } });
+
+    expect(useAppStore.getState().navigation).toBe(before);
+  });
+
+  it('keeps the scope of an open Impact page when Impact is picked again', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+    act(() =>
+      useAppStore.getState().openStudio({
+        studio: { kind: 'impact', scope: { kind: 'provider', provider: 'anthropic' } },
+      }),
+    );
+    const before = useAppStore.getState().navigation;
+
+    pick({ payload: { id: 'menu.impact' } });
+
+    expect(useAppStore.getState().navigation).toBe(before);
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'impact',
+      scope: { kind: 'provider', provider: 'anthropic' },
+    });
+  });
+
+  it('replaces the open page when Chat and Monitoring open from the menu', async () => {
+    renderHook(() => useMenuCommands());
+    await listened();
+
+    pick({ payload: { id: 'menu.tasks' } });
+    pick({ payload: { id: 'menu.chat' } });
+    pick({ payload: { id: 'menu.monitoring' } });
+    act(() => useAppStore.getState().closeStudio());
+
+    expect(useAppStore.getState().appStudio).toBeNull();
   });
 
   it('checks for updates once and opens where the result shows', async () => {

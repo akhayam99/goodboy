@@ -13,6 +13,7 @@ export type ShortcutRow = {
   readonly first: ShortcutId;
   readonly last: ShortcutId;
   readonly where: string | null;
+  readonly also: ShortcutId | null;
 };
 
 export const SHORTCUT_COLUMNS: ReadonlyArray<ReadonlyArray<ShortcutGroup>> = [
@@ -21,6 +22,10 @@ export const SHORTCUT_COLUMNS: ReadonlyArray<ReadonlyArray<ShortcutGroup>> = [
 ];
 
 const SHORTCUT_IDS = Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>;
+
+const SHARED_ROWS: Readonly<Partial<Record<ShortcutId, ShortcutId>>> = {
+  'session.terminal': 'terminal.studio',
+};
 
 type FamilyParams = {
   readonly id: ShortcutId;
@@ -40,6 +45,9 @@ const whereOf = ({ id }: FamilyParams): string | null => {
   return entry.scope === undefined ? null : SHORTCUT_SCOPE_LABEL[entry.scope];
 };
 
+const alsoOf = ({ id }: FamilyParams): ShortcutId | null =>
+  SHORTCUT_IDS.find((other) => SHARED_ROWS[other] === id) ?? null;
+
 export const groupWhere = ({ group }: RowsParams): string | null => {
   const places = new Set(
     SHORTCUT_IDS.filter((id) => SHORTCUTS[id].group === group).map((id) => whereOf({ id })),
@@ -49,11 +57,22 @@ export const groupWhere = ({ group }: RowsParams): string | null => {
 };
 
 export const shortcutRows = ({ group }: RowsParams): ReadonlyArray<ShortcutRow> => {
-  const ids = SHORTCUT_IDS.filter((id) => SHORTCUTS[id].group === group);
+  const ids = SHORTCUT_IDS.filter(
+    (id) => SHORTCUTS[id].group === group && SHARED_ROWS[id] === undefined,
+  );
   return ids.flatMap((id, index): ReadonlyArray<ShortcutRow> => {
     const family = familyOf({ id });
     if (family == null) {
-      return [{ key: id, label: SHORTCUTS[id].label, first: id, last: id, where: whereOf({ id }) }];
+      return [
+        {
+          key: id,
+          label: SHORTCUTS[id].label,
+          first: id,
+          last: id,
+          where: whereOf({ id }),
+          also: alsoOf({ id }),
+        },
+      ];
     }
     const previous = ids[index - 1];
     if (previous != null && familyOf({ id: previous }) === family) {
@@ -67,6 +86,7 @@ export const shortcutRows = ({ group }: RowsParams): ReadonlyArray<ShortcutRow> 
         first: id,
         last: members.at(-1) ?? id,
         where: null,
+        also: null,
       },
     ];
   });

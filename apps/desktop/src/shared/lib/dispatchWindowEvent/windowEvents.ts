@@ -12,7 +12,6 @@ export type WindowEventDetails = {
   readonly 'goodboy:reveal-chat': Payload | undefined;
   readonly 'goodboy:open-workspace-switcher': undefined;
   readonly 'goodboy:open-command-palette': undefined;
-  readonly 'goodboy:open-goodboy-menu': undefined;
   readonly 'goodboy:toggle-update-card': undefined;
   readonly 'goodboy:open-settings': OpenSettingsDetail;
   readonly 'goodboy:open-guide': Payload | undefined;

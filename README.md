@@ -5,7 +5,7 @@
   <img src="./docs/readme/readme-hero-light.webp" alt="The Overview of a Harborline session: Needs you 3, Running, Failed, Branches and Done, with the sessions rail and the Context drawer open on Decisions 5">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
@@ -35,7 +35,7 @@ Every task is a session, and the board shows where each one stands. Six lanes, *
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds four sessions, each with a question waiting">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ## Workflows
 

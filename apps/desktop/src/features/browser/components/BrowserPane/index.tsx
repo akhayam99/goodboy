@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { DrawerFrame } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { browserTabListPref } from '../../browserTabListPref';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
@@ -23,9 +24,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const shownTab = model.shown?.tab ?? null;
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
-  const isOnScreen = useAppStore(
-    (state) => state.currentSessionId === sessionId && state.appStudio === null,
-  );
+  const isOnScreen = useAppStore((state) => selectDrawerPanel(state)?.kind === 'browser');
 
   useNativePlacement({
     sessionId,
@@ -46,12 +45,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
             browserTabListPref.write(!isListOpen);
             setIsListOpen(!isListOpen);
           }}
-          onOpenAsPage={() => {
-            if (shownTab === null) {
-              return;
-            }
-            promoteBrowserTab({ sessionId, tabId: shownTab.id });
-          }}
+          onOpenAsPage={() => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null })}
           onClose={onClose}
         />
         {model.error === null ? null : (

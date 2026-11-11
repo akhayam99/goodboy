@@ -20,8 +20,8 @@ it carries the lockup itself: the 40px `BrandTile`, the word and the version
   when it was last opened. A click opens it here, or in a new window while
   agents run here. The search field shows from five workspaces on.
 - **New workspace** (⌘N on Home, `home.newWorkspace`) fires
-  `goodboy:add-workspace` through `openNewWorkspace`, like the switcher, the
-  palette, the Goodboy menu and the menu bar. On Home the `addWorkspace` place
+  `goodboy:add-workspace` through `openNewWorkspace`, like the switcher,
+  Search or run and the menu bar. On Home the `addWorkspace` place
   swaps the list for `NewWorkspaceForm` in place, the lockup stays put, Cancel
   or Escape goes back, and Create opens the new workspace and lands in it,
   whatever the folders are: a plain Code folder was already offered git on its
@@ -117,14 +117,15 @@ window's bottom edge. The drawer container is one step quieter than the page
 (`bg-drawer`, recessed between chrome and background in both themes): it reads
 as secondary, never louder, never tinted, and never a border to fake the
 difference. `AppShell` hosts it through `DrawerColumn`'s `frame="sheet"`. The
-Tasks and Chat studios do the same inside the studio slot: their body registers
+Tasks and Chat studios do the same inside the main slot: their body registers
 its drawer with the `StudioFrame` (`useStudioDrawer`), the frame draws one
 `DrawerColumn` with `frame="sheet"` around the band and the body, so the band and
 the list are the page container and the drawer container stands beside them from
-the slot's top to its bottom; the slot's own sheet steps aside
-(`data-studio-sheet-owner`). A studio body with no hosting frame (a studio that
-covers the left column) keeps `frame="none"`, which draws only the drawer
-container as a card inset 8px on its right, top and bottom.
+the slot's top to its bottom; the shell's own sheet steps aside
+(`data-studio-sheet-owner`) while the studio is open. A studio body with no
+hosting frame (a mock scene that draws the studio alone) keeps `frame="none"`,
+which draws only the drawer container as a card inset 8px on its right, top
+and bottom.
 
 **Three tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
@@ -211,27 +212,44 @@ Agents drawer on the run it came from.
 
 One drawer at a time, per window, plus one waiting in the chip. The `drawer`
 store slice holds `drawer` and `drawerBack`, each `{ kind, sessionId, payload }`
-or null: `openDrawer` puts the request in the slot and what it replaced in
+or null; only Terminal and Browser, the workspace tools, may carry
+`sessionId: null`. `openDrawer` puts the request in the slot and what it replaced in
 `drawerBack` (`slotAfterOpen`), so a third open drops the oldest; reopening the
 drawer in the slot, an artifact on another tab included (`slotKey`), keeps the
-chip; a drawer of another session clears it. `closeDrawer` brings `drawerBack`
+chip; a drawer of another session clears it, unless one of the two is a
+workspace tool (`sharesSlot`). A second Terminal replaces the first in the
+slot and keeps the chip as it was, so hiding Terminal hides the dock and never
+brings back an older terminal. Archiving or deleting a session drops a
+Terminal or Browser dock opened on it from the slot and the chip
+(`slotAfterSessionGone`). `closeDrawer` brings `drawerBack`
 back and empties it, so Escape, the X, the trigger pressed again
 (`toggleDrawer`), a crashed drawer's leave and ⌘⇧W all walk the same two steps.
 `clearDrawer` empties both at once, for a caller whose work moved elsewhere (a
-terminal opened on its page, a plan approved onto the run page, View transcript,
+plan approved onto the run page, View transcript,
 Write title and goal from linked work); the chip does not come back after it.
 A tool keeps its state while it waits: Terminal keeps its shell, Explore its
 open folders. A second window has its own store, so its own slot.
 **The open drawer is part of the
-history entry's focus; the chip is not.** A forward move (crumb, sidebar, palette, a child such
+history entry's focus; the chip is not.** A forward move (crumb, sidebar, Search or run, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
 Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
-Scripts, Agents, Terminal, Browser): a forward move that stays in its session keeps it open
+Scripts, Agents): a forward move that stays in its session keeps it open
 (`keepToolDrawer` in `navigate`), so a chip in an answer changes the page beside
-it. A tool in the chip stays too: over a reader it comes back into the slot,
+it. Terminal and Browser stay open on every move, another session and the
+Board included, and on Back to an entry that had no drawer (`keptTool`). A
+tool in the chip stays too: over a reader it comes back into the slot,
 under a tool it stays in the chip (`backAfterPlace` in `applyLocation`). Leaving
-the session empties both, and Back brings the drawer back like any drawer. A
-reader, an item or a form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
+the session empties both of its session tools, and Back brings the drawer back
+like any drawer. A
+studio over the session parks a session drawer instead: the slot and the chip keep
+it, it stays mounted but hidden and inert, no close key reaches it
+(`selectDrawerPanel` is null under a studio), and it shows again, as it was,
+when the studio closes. A workspace tool shows beside any studio but its own
+page; under its own page it is kept in the store and not mounted. On Tasks,
+Chat and Workflows the page's own panel and the dock replace each other,
+latest wins (`useOneRightPanel`). Its own key on the studio leaves every studio stacked
+over the session and shows it. A reader, an item or a
+form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
@@ -245,7 +263,8 @@ Opening a side drawer folds the session rail when its expanded width would
 leave too little content for the push rule. A reader folds it at every width.
 Closing restores the saved fold. Unfolding by hand keeps the rail open for
 that drawer, including through resize; the drawer overlays when it cannot
-push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold.
+push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold, and
+neither the fold nor that unfold ever writes the saved choice.
 
 **Header grammar.** The close control always reads `Close`, in every drawer: the
 region is already named by its title (`<section aria-label={title}>`), so no
@@ -306,7 +325,7 @@ card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
 off-scale widths a floating surface declares per file and never lets one
 grow.
 
-**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy row with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. It stays away while its row is inert, as when Settings covers the column (`useIsAnchorInert`), and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy line with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. It stays away while its row is inert (`useIsAnchorInert`) and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
 
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the
@@ -318,11 +337,11 @@ transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
 report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
 the wireframe stage, with Open page as its one header action). **A plan always opens
 in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
-inside Ask, a plan row in the palette, a plan hit in search and the plan chip in
+inside Ask, a plan row in Search or run, a plan hit in search and the plan chip in
 a chat open it over the page you are on, unless you are already on the
 Artifacts page, where they select the plan. From another session they land on
 that session with the drawer open (`openPlanAnywhere`). Reports and wireframes
-are transit from the palette and from search and keep navigating; the Artifacts
+are transit from Search or run and from search and keep navigating; the Artifacts
 page stays the library. Going to
 the Artifacts page from a drawer is a command of its own, **Open page**
 (`DrawerFrame` `page`, tooltip Open in Artifacts) in the drawer header, and it is the only page change. The `artifact-document` kind
@@ -486,7 +505,7 @@ tab last used; the drawer header switches between the two. It also closes when t
 artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
-A studio covers the whole window grid, so it cannot use that column. A Tasks
+A studio's own panel is not the session drawer. A Tasks
 record opens in the studio's `DrawerColumn` beside the list on the reader tier
 (`InboxStudioLayout` passes `sizing: 'reader'` through `useStudioDrawer`), with
 the same card and motion; a window too narrow for the list and the pane lifts

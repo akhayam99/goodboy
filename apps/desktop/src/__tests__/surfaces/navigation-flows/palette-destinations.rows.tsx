@@ -15,7 +15,7 @@ import {
   lens,
   openCrumb,
   openPalette,
-  settingsColumn,
+  settingsPage,
   useAppStore,
   visible,
   getSection,
@@ -84,16 +84,22 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'Refresh session'),
   },
   {
-    name: 'palette: Fold the session rail',
-    covers: ['palette:Fold the session rail'],
-    open: () => openPalette(/^Fold the session rail/, 'fold the session rail'),
-    lands: () => visible('button', 'Show session rail'),
+    name: 'palette: Hide session pages',
+    covers: ['palette:Hide session pages'],
+    open: () => openPalette(/^Hide session pages/, 'hide session pages'),
+    lands: () => visible('button', 'Show session pages'),
   },
   {
-    name: 'palette: Sessions',
-    covers: ['navigate', 'palette:Sessions'],
-    open: () => openPalette(/^Sessions$/),
-    lands: () => heading('Sessions'),
+    name: 'palette: Board',
+    covers: ['navigate', 'palette:Board'],
+    open: () => openPalette(/^Board$/),
+    lands: () => heading('Board'),
+  },
+  {
+    name: 'palette: Board, found by its former name Sessions',
+    covers: ['palette:Board'],
+    open: () => openPalette(/^Board$/, 'Sessions'),
+    lands: () => heading('Board'),
   },
   {
     name: 'palette: Chat',
@@ -103,11 +109,25 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => studio('Chat'),
   },
   {
-    name: 'palette: Terminal',
-    covers: ['studio:terminal', 'palette:Terminal'],
+    name: 'palette: Terminal opens the dock, not a page',
+    covers: ['palette:Terminal'],
     door: 'palette',
     open: () => openPalette(/^Terminal$/),
-    lands: () => studio('Terminal'),
+    lands: async () => {
+      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+      expect(useAppStore.getState().appStudio).toBeNull();
+    },
+  },
+  {
+    name: 'palette: Browser opens the dock, not a page',
+    covers: ['palette:Browser'],
+    door: 'palette',
+    open: () => openPalette(/^Browser$/),
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'), WAIT);
+      expect(useAppStore.getState().appStudio).toBeNull();
+    },
   },
   {
     name: 'palette: New terminal in this session',
@@ -115,7 +135,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^New terminal in this session$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -135,7 +155,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -267,7 +287,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^What's new/),
     lands: both(
-      () => studio('Help'),
+      () => studio("What's new"),
       () => heading(/^Goodboy \d/),
     ),
   },
@@ -287,7 +307,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Workspace settings: Projects/, 'workspace settings folders'),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => visible('textbox', 'Workspace name'),
     ),
   },
@@ -297,7 +317,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Settings$/),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => visible('navigation', 'Settings scopes'),
     ),
   },
@@ -307,7 +327,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Check for updates/),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => heading('Updates'),
     ),
   },
@@ -409,7 +429,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'scope:providers', 'palette:Connect a provider'],
     open: () => openPalette(/^Connect a provider/),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => visible('region', 'Providers'),
     ),
   },
@@ -419,7 +439,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Pair an iPhone/, 'iPhone'),
     lands: both(
-      () => settingsColumn(),
+      () => settingsPage(),
       () => heading('iPhone'),
     ),
   },
@@ -440,7 +460,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:guide', 'palette:Guide'],
     door: 'palette',
     open: () => openPalette(/^Guide/),
-    lands: () => studio('Help'),
+    lands: () => studio('Guide'),
   },
   {
     name: 'palette verb: Rename',

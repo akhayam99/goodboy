@@ -318,20 +318,31 @@ describe('a service row', () => {
 });
 
 describe('the door', () => {
-  it('opens the Browser page on the session when a page covers it', async () => {
+  it('opens the Browser dock beside a page that covers the session, the page stays', async () => {
     store
       .getState()
       .switchStudio({ studio: { kind: 'terminal', terminalId: null, sessionId: SESSION_ID } });
 
     await openInBrowser({ sessionId: SESSION_ID, url: 'http://localhost:5173' });
 
-    expect(store.getState().appStudio).toEqual({
+    expect(store.getState().appStudio?.kind).toBe('terminal');
+    expect(store.getState().drawer).toEqual({
       kind: 'browser',
       sessionId: SESSION_ID,
-      tabId: null,
+      payload: null,
     });
-    expect(store.getState().drawer).toBeNull();
     expect(store.getState().browserActiveTab[SESSION_ID]).toBe('live-1');
+  });
+
+  it('keeps the Browser page on the session when it is the page that is open', async () => {
+    store
+      .getState()
+      .switchStudio({ studio: { kind: 'browser', sessionId: SESSION_ID, tabId: null } });
+
+    await openInBrowser({ sessionId: SESSION_ID, url: 'http://localhost:5173' });
+
+    expect(store.getState().appStudio?.kind).toBe('browser');
+    expect(store.getState().drawer).toBeNull();
   });
 
   it('ends the New tab draft when it shows the tab that is already active', async () => {
@@ -541,6 +552,7 @@ describe('command L', () => {
   it('focuses the address of the pane on screen and leaves Ask alone', async () => {
     const ask = vi.fn();
     const release = registerShortcut('ask.open', ask);
+    store.getState().openDrawer({ kind: 'browser', sessionId: SESSION_ID, payload: null });
     render(
       <ToastProvider>
         <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />

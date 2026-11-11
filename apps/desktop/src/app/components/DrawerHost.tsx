@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { DrawerBackChipContext } from '@goodboy/ui';
 import { useAppStore } from '../../store';
-import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
+import { selectOpenDrawer } from '../../store/slices/drawer/selectOpenDrawer';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
@@ -211,13 +211,13 @@ const renderDrawer = ({
 };
 
 export const DrawerHost = () => {
-  const drawer = useAppStore(selectDrawerPanel);
+  const drawer = useAppStore(selectOpenDrawer);
   const backChip = useSlotBackChip({ back: useAppStore((state) => selectSlotBack({ state })) });
   const closeDrawer = useAppStore((s) => s.closeDrawer);
   const closeQuestion = useAppStore((s) => s.closeQuestion);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const isReading = useAppStore((s) => {
-    const open = selectDrawerPanel(s);
+    const open = selectOpenDrawer(s);
     return (
       open?.kind === 'artifact-document' &&
       readingArtifactOf({

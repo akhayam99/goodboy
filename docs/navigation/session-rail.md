@@ -7,8 +7,10 @@
 **The column never changes level; the session rail does.** The column always
 shows the workspace: New session, the doors, then the Pinned and Sessions
 lists. Clicking a session row selects that row, opens the session on its
-Overview and shows its session rail at the left of the page, inside the
-content sheet. The rail has one level, the session: its Projects tree holds every
+Overview and shows the session pages at the left of the page, inside the
+content sheet. **Session pages** is the one name of this rail: the navigation
+landmark, the toggle (**Hide session pages** and **Show session pages**), the
+palette entry for ⌥⌘B and the Guide all say it. The rail has one level, the session: its Projects tree holds every
 branch, and neither the open rail nor the folded rail drills. A branch's pages are the
 tab strip of the Branch page, so the rail never repeats them. A preset run and Auto
 never drill either: what they spawned lives in the Agents panel of the session tools
@@ -17,6 +19,10 @@ mounted once for the open session by `SessionFrame` beside the kept-alive
 session pages. The rail is 240px by
 default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
 rows are the column's rows (28px, `SelectableRow`, the same type roles).
+Under any page that sits over the session (Tasks, Help, What's new,
+Notifications, New workspace and the rest) the rail is inactive: the fold key
+folds the column on the left, and the open session row is not lit
+(`SessionRail/innerColumn.test.tsx`).
 
 - **Level 1 reads top to bottom:** the pages, then the Projects card and the
   Linked card, then the foot. The session level has no identity row: the
@@ -26,7 +32,7 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   F2 on the focused title, renames it in place with the same rename as the
   sidebar row (an archived session's title stays read only), and "Overview" is only the
   rail entry's label. The rail's top row holds the rail
-  toggle at the left and three buttons at the right
+  toggle at the left (with ⌥⌘B in its tooltip) and three buttons at the right
   (`SessionLevel/SessionLevelActions`): **Pin session**, a toggle that shows
   pressed while on and runs its registry action (`session.pin` / `unpin`; a
   failure keeps the old state and shows under the row with Retry,
@@ -123,8 +129,11 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   count under its title: Runs, Artifacts and a tracker list
   (Linear, Jira and the rest) carry their counts on their group rows or filter
   tabs only. Every number comes from
-  one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
-  its flyout read the same function; the Runs count is `sessionRunCountsOf`
+  one function, `pageSlotOf` over `usePageCountFacts`. One row draws a page in
+  all three places, the open list, the folded icons and the column flyout
+  (`SessionPageRow` under `SessionPages`, variant `row` or `icon`), so the
+  label, the count and the dot never differ, and its tooltip holds the label,
+  the count word and the page's shortcut (⌘⌥O, W, P, Q, F) in each of them; the Runs count is `sessionRunCountsOf`
   over the same `sessionRunsOf` rows the page lists, and a test pins it to the
   Now card (`sessionRunsOf.test.ts`); the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
@@ -297,13 +306,18 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   rail: a thin icon toolbar at the right edge of the session content, between
   the page and the open drawer (see The session tools), the same on every
   page of the session, folded rail or not.
-- **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
-  rail, ⌥⌘B) folds it to the current level as icons with right tooltips
-  (`SessionRailIcons`): one icon per page with its dot, then the pull request number per
-  worktree, with its state and dot reason in the tooltip. The folded rail has no foot and no top
-  row buttons; the tools column beside the content stays as it is.
+- **Folded (44px).** The rail's own toggle (`SessionRailToggle`, **Hide
+  session pages** or **Show session pages**, ⌥⌘B) folds it to the current level
+  as icons with right tooltips (`SessionRailIcons`): one icon per page with its
+  dot, then the pull request number per worktree, with its state and dot reason
+  in the tooltip. At its foot the folded rail keeps **More session
+  actions** (`⋯`, the same menu as open, `data-rail-actions`), with a **Retry**
+  icon above it after a failed action. The block sits below the icons, so a fold
+  moves no page or worktree icon. Pin and Refresh show only when open;
+  ⌘⇧R and the sidebar row's right click menu keep them. The folded rail has no
+  Projects foot; the right rail beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
-  nodes on every screen. Folding the session rail leaves the diff page's file
+  nodes on every screen. Folding the session pages leaves the diff page's file
   rail as it is.
 - **A preset run keeps the rail on the session.** Opening a run with a fixed
   step list (a saved workflow or Describe steps; `executionMode` not
@@ -347,7 +361,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   read" with Retry (`RunMetadataMissing`), never that it is gone.
 
 The tools (Explore, Context, Ask, Agents, Scripts, Terminal, Browser) are panes, not pages:
-they open from the session tools column at the right of the content (see The
+they open from the right rail at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
 
@@ -389,19 +403,19 @@ hands the rest of the summary to the hover card; the session header keeps its
 chips.
 
 **The user chooses what the list shows and in what order.** The sidebar list
-has no "Sessions" eyebrow and no filter row of its own: the Sessions door row
+has no "Sessions" eyebrow and no filter row of its own: the Board door row
 holds one funnel button in its action slot at the right, **Filter sessions**
 (`SidebarSessionsFilter` over `SessionFilterPopover`), with a primary 6px dot
 while a filter is on (a status, a project or Show archived; `displayStateOf`
 owns that count). The door row never regroups, so the popover stays open
-while the list under it changes grouping. The Sessions page header holds the
+while the list under it changes grouping. The Board header holds the
 same button. Its popover is a labelled dialog laid out like a display menu,
 in sections spaced by `gap-3` (no unlabeled line inside a floating surface, see
 docs/styling.md). On top, Display: two compact rows, **Sort**
 and **Group**, the label at the left and the current value at the right
 (`DisplayValueRow`); the value is a quiet `Listbox` that opens its choices.
 Sort offers Needs you first [default], Alphabetical, Last activity and Created;
-Group offers None [default], PR state, Stage and Project (the Sessions page
+Group offers None [default], PR state, Stage and Project (the Board
 drops Group). Then **Filter** (an `Eyebrow`), with the captions Status and
 Project over real `Checkbox` rows (`FilterCheckRow`), each named with its count
 ("Running, 3"). Status lists only the stages that have sessions, from Needs
@@ -530,8 +544,8 @@ lands on the next session that needs you, in the board's Needs you order, on its
 
 **Peek is a way of showing the column, not a second column.** The overlay
 renders the same `SideColumn` (through `ShellLeft`), and the codebase has one
-sessions list. Only the pinned column's Goodboy row opens its menu by itself
-and reports updates; the peeked copy is quiet. Peek is wider than the pinned
+sessions list. Only the pinned column's Goodboy line reports an update
+arrival; the peeked copy is quiet. Peek is wider than the pinned
 column. The extra width applies at read time, so widening the peek never moves
 the column. It opens after a short rest at the screen edge, so a graze does not
 open it.
@@ -650,11 +664,12 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
   is named with its reason. It also fails on a back arrow or chevron outside
   the back row, `DrawerFrame` and the history arrows, with a named allowlist
   for the backs that are not a way up. The history arrows in the top bar are
-  memory, not a way up, so they never say Back: the left one reads
-  `Previous: {place}` and the right one `Forward: {place}` (an agent's name, a
-  run's title, a page), with the session's title on a second line; a hold or a
-  right click opens the History menu with the same names. A test that wants an
-  arrow takes `[data-nav-arrow="back"]`.
+  memory, not a way up: the left one reads `Back: {place}` and the right one
+  `Forward: {place}` (an agent's name, a run's title, a page), with the
+  session's title on a second line and `Hold for history` on a third; a hold or a
+  right click opens the History menu with the same names. A way up reads
+  `Back to {place}`, so a test that wants the arrow takes
+  `[data-nav-arrow="back"]`.
 - **The header holds only its page.** `SessionWorkspace` hands no actions
   to the page headers: the session tools live in their column at the right of
   the content (see The session tools), so no header carries a second `⋯` (pinned by
@@ -675,23 +690,56 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 
 ## The session tools
 
-One 44px column at the right edge of the session content holds Explore,
-Context, Ask, Agents, Scripts, Terminal and Browser (`SESSION_TOOLS`). Explore,
-Context and Ask form the reading group; one separator leads to the other tools.
-Two captions, Read and Work (`ToolGroupCaption`), sit over the two groups in
-the same `text-rail` role.
-Each tool keeps its pane id and shortcut; Browser has no shortcut yet. `SessionToolButton` names every
-tool below its icon in the 9px `text-rail` role: faint when closed, muted when
-open. On a window under 480px tall all captions hide together and the tooltips
+The right rail is one 44px column at the sheet's right edge on every screen of
+a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
+the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
+Workflows). Those three pages fade their content in and out while the rail
+stays still (`StudioFrame` animates its `data-studio-motion` nodes, never the
+`StudioRail`); a record panel open with the page fades in with it, and one
+opened later keeps the drawer's own motion. Moving between the shell rail and
+a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
+record panel shown as an overlay the rail copies itself above that panel's
+scrim, as it does above the shell's. It holds two
+groups by scope. On a session page with no page open, the Session group holds
+Explore, Context, Ask, Agents and Scripts (`SESSION_TOOLS`), under the caption
+Session (`ToolGroupCaption`, `text-rail`). At its foot, on every screen, the
+Workspace group holds Terminal and Browser (`WORKSPACE_TOOLS`) with no
+caption, since a 44px column cannot fit the word; a flexible gap keeps it
+anchored to the bottom, one separator sits above it when the Session group
+shows, and the column keeps the same inset at its foot as at its top. A test
+scene or frame without the shell rail keeps the column inside `SessionFrame`
+(`ShellRailContext`).
+Each tool keeps its pane id and shortcut; Terminal shows ``⌃` `` and Browser
+has no shortcut. `SessionToolButton` names every tool below its icon in the
+9px `text-rail` caption role: secondary (`TEXT_ROLE.secondary`) when closed,
+label strength when open, and the Session caption is secondary too, so every
+caption keeps its contrast in light mode. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
-A tool has three states (`toolStateOf`): at rest, pressed when it holds the
-slot, and waiting when it is the tool in the slot's back chip. Waiting draws a
+A tool has four states (`toolStateOf`): at rest, pressed when it holds the
+slot, waiting when it is the tool in the slot's back chip, and current when its
+page is open (Terminal and Browser only: selected, `aria-current="page"`, and a
+click does nothing). Waiting draws a
 small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
 `Terminal, waiting`; pressing it opens the saved request of the chip again
 (`togglePane`), so Context comes back on the same section and view, and the
-tool it replaces moves into the chip.
-`waitingPaneOf` reads the same `selectSlotBack` the drawer head's back chip
+tool it replaces moves into the chip. Terminal names the running terminals
+(`Terminal, 2 running`), Browser names its tabs (`Browser, 3 tabs`); the words
+come from `toolFactOf` over `runningTerminalCount` and `browserTabCount`, and
+the same two numbers show in the icon's corner (`ToolCount`, `countTextOf`,
+9+ past nine) unless a signal dot holds that corner.
+
+Terminal and Browser are workspace tools: their dock opens with
+`toggleTerminalDock` and `toggleBrowserDock` from the rail, the palette, the Go
+menu, ⌃`and ⌘⌥T. On a session page the dock opens on the session's terminal
+or tabs; anywhere else on the workspace's (the workspace folder terminal, or
+the session the Browser page would pick, with an empty state when there is
+none). The drawer request may carry`sessionId: null`. Open as page in the dock
+header grows it into its page (`openTerminalOnPage`, `promoteBrowserTab`, a
+push); while that page is open the dock stays in the store but is not mounted,
+so Back brings it again on the same tab, and Dock on the page header moves it
+back (`dockTerminalPage`, `demoteBrowserTab`).
+`waitingPaneOf`reads the same`selectSlotBack` the drawer head's back chip
 reads, so the two never disagree: a reader or form in the chip rings nothing,
 and a tool that is pressed never rings. The signal dot keeps its meaning and
 sits with any state, on the other corner of the icon.
@@ -780,10 +828,9 @@ Folding the rail leaves the column in place.
   (`withoutRemovedPages` drops the retired `sidebar-level` key); a tool it had
   open stays open. The panel is per window: the drawer belongs to the window's store.
 
-- **Outside a session there is no tools group.** The workspace pages (the
-  board, the studios) already hold the two tools that make sense there as
-  column: the **Terminal** tile and the **Chat** door
-  (with New chat), the workspace conversation that answers what Ask answers
+- **Outside a session only the Workspace group shows.** On the Board, the draft
+  and every page the rail holds Terminal and Browser alone; the **Chat** door
+  (with New chat) is the workspace conversation that answers what Ask answers
   for one session. Ask, Explore, Context and Scripts read one session, so they
   exist only inside one, and ⌘L is bound only while a session is visible.
 
@@ -989,9 +1036,9 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   tree's.
 - **A fix run has no page of its own.** Its transcript is a drawer on the
   Comments tab, so the Branch page behind it keeps its own back row.
-- **Settings draws no band in the column.** On Home, where it covers the
-  window, it claims its studio band with Settings, the scope and the App
-  section. The scope segment lists App, the workspace, Providers and
+- **Settings claims its studio band** with Back to app, then Settings, the
+  scope and the App section, beside the column and on Home alike. The scope
+  segment lists App, the workspace, Providers and
   Integrations; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.

@@ -7,6 +7,8 @@ import { aDecision } from '../../../test/aDecision';
 import { decisionChangesSince, NO_DECISION_CHANGES } from './decisionChangesSince';
 import { selectContextBaseline } from './selectContextBaseline';
 import { selectHasContextChange } from './selectHasContextChange';
+import { selectDrawerPanel } from '../drawer/selectDrawerPanel';
+import { sessionPlace } from '../navigation/place';
 import { importStore, resetStoryStore, type StoryStore } from '../../storyHarness';
 
 const h = vi.hoisted(() => ({
@@ -117,6 +119,23 @@ describe('Context drawer state', () => {
     store.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'summary' });
     store.getState().toggleContextDrawer({ sessionId: SESSION_ID, section: 'decisions' });
     expect(store.getState().drawer).toMatchObject({ payload: { section: 'decisions' } });
+  });
+
+  it('closes the page and shows Context parked under it instead of closing it unseen', () => {
+    store.getState().navigate({ to: sessionPlace({ sessionId: SESSION_ID }) });
+    store.getState().openContextDrawer({ sessionId: SESSION_ID });
+    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+    store.getState().toggleContextDrawer({ sessionId: SESSION_ID });
+    expect(store.getState().appStudio).toBeNull();
+    expect(selectDrawerPanel(store.getState())?.kind).toBe('context');
+  });
+
+  it('closes the page and opens Context when nothing was parked under it', () => {
+    store.getState().navigate({ to: sessionPlace({ sessionId: SESSION_ID }) });
+    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+    store.getState().toggleContextDrawer({ sessionId: SESSION_ID });
+    expect(store.getState().appStudio).toBeNull();
+    expect(selectDrawerPanel(store.getState())?.kind).toBe('context');
   });
 
   it('keeps the first look as the baseline while open and takes the newer one on the next open', () => {

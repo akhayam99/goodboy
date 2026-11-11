@@ -12,6 +12,7 @@ import {
 } from '../../store/storyHarness';
 import type { BrowserTab } from '../../store/slices/browser/types';
 import { createNativePlacement } from './createNativePlacement';
+import { hideOwnedViews } from './hideOwnedViews';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../store/storyHarness')).tauriCoreModuleMock(),
@@ -59,6 +60,24 @@ const failHideOnce = () => {
     }
     return handler?.(name, args);
   });
+};
+
+const holdNextPlace = () => {
+  const handler = storySpies.tauriInvoke.getMockImplementation();
+  let isHeld = false;
+  let release: (error: unknown) => void = quiet;
+  storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
+    if (name === 'browser_tab_place' && !isHeld) {
+      isHeld = true;
+      return new Promise((_, reject) => {
+        release = reject;
+      });
+    }
+    return handler?.(name, args);
+  });
+  return {
+    fail: () => release({ kind: 'refused', message: 'host-busy' }),
+  };
 };
 
 beforeAll(async () => {
@@ -165,6 +184,48 @@ describe('one native view, two places', () => {
     expect(namesOf({ command: 'browser_tab_place' }).at(-1)).toEqual({
       args: { tabId: 'live-1', bounds: PANE_BOUNDS },
     });
+    pane.stop();
+  });
+});
+
+describe('a pane that goes away', () => {
+  it('hides its view when it leaves while a move of that view is still failing', async () => {
+    const pane = createNativePlacement({ sessionId: SESSION_ID, onError: quiet });
+    pane.want({ view: { tab: TAB, bounds: PANE_BOUNDS } });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(1));
+    const place = holdNextPlace();
+    pane.want({ view: { tab: TAB, bounds: { ...PANE_BOUNDS, width: 500 } } });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_place' })).toHaveLength(2));
+
+    pane.stop();
+    place.fail();
+
+    await waitFor(() =>
+      expect(namesOf({ command: 'browser_tab_hide' })).toEqual([{ args: { tabId: 'live-1' } }]),
+    );
+  });
+
+  it('tries the hide again after it left when the first hide failed', async () => {
+    const pane = createNativePlacement({ sessionId: SESSION_ID, onError: quiet });
+    pane.want({ view: { tab: TAB, bounds: PANE_BOUNDS } });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(1));
+    failHideOnce();
+
+    pane.stop();
+
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_hide' })).toHaveLength(2));
+    await settle();
+    expect(namesOf({ command: 'browser_tab_hide' })).toHaveLength(2);
+  });
+
+  it('hides every view it shows before the window reloads', async () => {
+    const pane = createNativePlacement({ sessionId: SESSION_ID, onError: quiet });
+    pane.want({ view: { tab: TAB, bounds: PANE_BOUNDS } });
+    await waitFor(() => expect(namesOf({ command: 'browser_tab_show' })).toHaveLength(1));
+
+    await hideOwnedViews();
+
+    expect(namesOf({ command: 'browser_tab_hide' })).toEqual([{ args: { tabId: 'live-1' } }]);
     pane.stop();
   });
 });

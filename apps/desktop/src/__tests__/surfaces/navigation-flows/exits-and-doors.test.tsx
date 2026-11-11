@@ -13,6 +13,7 @@ import { brandId } from '@goodboy/types';
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
+import { pressShortcut } from '../../helpers/pressKey';
 import {
   bridge,
   boot,
@@ -41,7 +42,7 @@ const DOORS: ReadonlyArray<Door> = [
   { name: 'Monitoring', kind: 'monitoring', isSidebarPage: true },
 ];
 
-const historyButton = (verb: 'Previous' | 'Forward'): HTMLElement => {
+const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
   const found = Array.from(
     document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
   ).find((button) => (button.getAttribute('aria-label') ?? '').startsWith(verb));
@@ -81,7 +82,7 @@ const EXITS: ReadonlyArray<Exit> = [
   },
   {
     name: 'Back',
-    run: () => click(historyButton('Previous')),
+    run: () => click(historyButton('Back')),
   },
 ];
 
@@ -157,10 +158,7 @@ describe('the Board door leaves an open studio for the board', () => {
       await boot({ seed: 'pr' });
 
       await openDoor({ door });
-      if (door.kind === 'settings') {
-        await click(screen.getByRole('button', { name: /^Back to app/ }));
-      }
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
 
       expect(appStudioKind()).toBeNull();
       expect(useAppStore.getState().currentSessionId).toBeNull();
@@ -203,7 +201,7 @@ describe('doors replace the open studio and content links stack', () => {
     expect(appStudioKind()).toBe('settings');
     expect(stack()?.entries.length).toBe(withOneStudio + 1);
 
-    await click(historyButton('Previous'));
+    await click(historyButton('Back'));
     expect(appStudioKind()).toBe('inbox');
   });
 });
@@ -217,21 +215,17 @@ describe('exactly one door in the frame is marked current', () => {
       await openDoor({ door });
 
       expect(currentMarks()).toEqual([door.name]);
-      if (door.kind === 'settings') {
-        expect(
-          document.querySelector('[data-column-layer="settings"]')?.hasAttribute('inert'),
-        ).toBe(false);
-        expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-          true,
-        );
-      }
+      expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
+      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
+        false,
+      );
     },
   );
 
   it('marks one door at a time while the doors replace each other', async () => {
     await boot({ seed: 'pr' });
 
-    for (const door of DOORS.filter((candidate) => candidate.kind !== 'settings')) {
+    for (const door of DOORS) {
       await openDoor({ door });
       expect(currentMarks()).toEqual([door.name]);
     }
@@ -246,9 +240,96 @@ describe('exactly one door in the frame is marked current', () => {
   it('marks Board once the board is shown', async () => {
     await boot({ seed: 'pr' });
 
-    await clickButton(/^Sessions/);
+    await clickButton(/^Board/);
 
-    expect(currentMarks()).toEqual([expect.stringMatching(/^Sessions\b/)]);
+    expect(currentMarks()).toEqual([expect.stringMatching(/^Board\b/)]);
+  });
+});
+
+const pressBack = async (): Promise<void> => {
+  const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
+  anchor.focus();
+  pressShortcut({ id: 'nav.back' });
+  await settle();
+};
+
+type FootDoor = {
+  readonly name: string;
+  readonly kind: string;
+  readonly open: () => Promise<void>;
+  readonly mark: RegExp;
+};
+
+const FOOT_DOORS: ReadonlyArray<FootDoor> = [
+  {
+    name: 'the bell foot Open all notifications',
+    kind: 'notifications',
+    open: async () => {
+      await clickButton(/^Notifications/);
+      await click(await screen.findByRole('button', { name: 'Open all notifications' }));
+    },
+    mark: /^Notifications/,
+  },
+  {
+    name: 'the Goodboy line',
+    kind: 'guide',
+    open: async () => {
+      await clickButton(/^Goodboy/);
+    },
+    mark: /^Goodboy/,
+  },
+];
+
+describe('the foot controls are doors that replace the open page', () => {
+  it.each(FOOT_DOORS.map((footDoor) => [footDoor.name, footDoor] as const))(
+    'Tasks then %s then ⌘[ lands on the page under Tasks, not on Tasks',
+    async (_name, footDoor) => {
+      await boot({ seed: 'pr' });
+      const startSession = useAppStore.getState().currentSessionId;
+      const startIndex = stack()?.index ?? 0;
+
+      await openDoor({ door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true } });
+      expect(appStudioKind()).toBe('inbox');
+      const withOneStudio = stack()?.entries.length ?? 0;
+
+      await footDoor.open();
+      expect(appStudioKind()).toBe(footDoor.kind);
+      expect(stack()?.entries.length).toBe(withOneStudio);
+      expect(currentMarks()).toEqual([expect.stringMatching(footDoor.mark)]);
+
+      await pressBack();
+
+      expect(appStudioKind()).toBeNull();
+      expect(useAppStore.getState().currentSessionId).toBe(startSession);
+      expect(stack()?.index ?? 0).toBe(startIndex);
+    },
+  );
+});
+
+describe('the Help tabs stack under the Goodboy row', () => {
+  it('Guide then What is new then ⌘[ returns to Guide, and ⌘[ again lands under it', async () => {
+    await boot({ seed: 'pr' });
+    const startSession = useAppStore.getState().currentSessionId;
+    const startIndex = stack()?.index ?? 0;
+
+    await clickButton(/^Goodboy/);
+    expect(appStudioKind()).toBe('guide');
+    const withOneStudio = stack()?.entries.length ?? 0;
+
+    await click(await screen.findByRole('tab', { name: "What's new" }));
+    expect(appStudioKind()).toBe('changelog');
+    expect(stack()?.entries.length).toBe(withOneStudio + 1);
+    expect(currentMarks()).toEqual([expect.stringMatching(/^Goodboy/)]);
+
+    await pressBack();
+
+    expect(appStudioKind()).toBe('guide');
+
+    await pressBack();
+
+    expect(appStudioKind()).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBe(startSession);
+    expect(stack()?.index ?? 0).toBe(startIndex);
   });
 });
 
@@ -300,13 +381,13 @@ const ROUTES: ReadonlyArray<Route> = [
 ];
 
 describe('every route has exactly one way back', () => {
-  it('shows no way back on a session page but the Previous arrow', async () => {
+  it('shows no way back on a session page but the Back arrow', async () => {
     await boot({ seed: 'pr' });
 
     expect(waysBack()).toEqual([]);
     expect(
       Array.from(document.querySelectorAll('[data-nav-cluster] button')).filter((button) =>
-        (button.getAttribute('aria-label') ?? '').startsWith('Previous'),
+        (button.getAttribute('aria-label') ?? '').startsWith('Back'),
       ),
     ).toHaveLength(1);
   });
@@ -324,7 +405,7 @@ describe('every route has exactly one way back', () => {
       const isSidebarPage = route.isSidebarPage === true;
       expect(ways).toHaveLength(isSidebarPage ? 0 : 1);
 
-      await click(isSidebarPage ? historyButton('Previous') : requireValue({ value: ways[0] }));
+      await click(isSidebarPage ? historyButton('Back') : requireValue({ value: ways[0] }));
       await settle(8);
 
       expect(route.isOpen()).toBe(false);

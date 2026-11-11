@@ -86,17 +86,17 @@ describe('StudioFrame', () => {
     expect(container.querySelector('[data-studio-skeleton="rows"]')).not.toBeNull();
   });
 
-  it('draws no band for a frame that is only a page, and its skeleton has no rail', () => {
+  it('draws Settings in the page slot with its Back to app band and a skeleton with its rail', () => {
     const Pending = lazy(() => new Promise<never>(() => undefined));
     const { container } = render(
-      <StudioFrame kind="settings" placement="content" hasBand={false} onClose={() => undefined}>
+      <StudioFrame kind="settings" placement="content" onClose={() => undefined}>
         <Pending />
       </StudioFrame>,
     );
 
-    expect(screen.queryByRole('banner')).toBeNull();
-    expect(container.querySelector('[data-studio-band]')).toBeNull();
-    expect(container.querySelector('[data-studio-skeleton-rail]')).toBeNull();
+    expect(container.querySelector('[data-studio-band]')).not.toBeNull();
+    screen.getByRole('button', { name: /^Back to app/ });
+    expect(container.querySelector('[data-studio-skeleton-rail]')).not.toBeNull();
     expect(container.querySelector('[data-studio-skeleton="rows"]')).not.toBeNull();
   });
 
@@ -134,11 +134,11 @@ describe('StudioFrame', () => {
     },
   );
 
-  it('still closes a bandless frame on Escape', () => {
+  it('closes the Settings page on Escape', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     render(
-      <StudioFrame kind="settings" placement="content" hasBand={false} onClose={onClose}>
+      <StudioFrame kind="settings" placement="content" onClose={onClose}>
         <Body />
       </StudioFrame>,
     );
@@ -419,8 +419,8 @@ describe('StudioFrame grid', () => {
 
   it('keeps the top inset of a frame that draws no band', () => {
     const { container } = render(
-      <StudioFrame kind="settings" placement="content" hasBand={false} onClose={() => undefined}>
-        <PaneShell title="Settings">
+      <StudioFrame kind="impact" placement="content" onClose={() => undefined}>
+        <PaneShell title="Impact">
           <p>body</p>
         </PaneShell>
       </StudioFrame>,

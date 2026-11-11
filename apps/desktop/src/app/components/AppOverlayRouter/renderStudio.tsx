@@ -56,8 +56,7 @@ export const renderStudio = ({
   onOpenChangelogScreen,
   currentWorkspace,
   workspaceProjectRoot,
-  settingsColumnSlot = null,
-  isInColumnShell,
+  railPlacement,
 }: RenderStudioParams): ReactNode => {
   switch (overlay.kind) {
     case 'settings':
@@ -67,12 +66,11 @@ export const renderStudio = ({
           focus={overlay.focus}
           onScopeChange={onSettingsScopeChange}
           onClose={close}
-          columnSlot={settingsColumnSlot}
-          isInColumnShell={isInColumnShell}
+          railPlacement={railPlacement}
         />
       );
     case 'guide':
-      return <HelpStudio initialTab="guide" onClose={close} onOpenScreen={onOpenChangelogScreen} />;
+      return <HelpStudio tab="guide" onClose={close} onOpenScreen={onOpenChangelogScreen} />;
     case 'addWorkspace':
       return <WorkspaceLinkStudio onClose={close} />;
     case 'workflow':
@@ -102,9 +100,7 @@ export const renderStudio = ({
         />
       );
     case 'changelog':
-      return currentWorkspace === null ? null : (
-        <HelpStudio initialTab="whatsNew" onClose={close} onOpenScreen={onOpenChangelogScreen} />
-      );
+      return <HelpStudio tab="whatsNew" onClose={close} onOpenScreen={onOpenChangelogScreen} />;
     case 'notifications':
       return currentWorkspace === null ? null : <NotificationsStudio onClose={close} />;
     case 'chat':

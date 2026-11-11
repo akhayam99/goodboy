@@ -190,3 +190,27 @@ describe('base layers', () => {
     expect(leave).toHaveBeenCalledOnce();
   });
 });
+
+describe('suspended layers', () => {
+  it('step aside while suspended and answer again from the same place in the stack', () => {
+    const closePage = vi.fn();
+    const closeDrawer = vi.fn();
+    const backToThread = vi.fn();
+    let isSuspended = true;
+    layer(closePage);
+    cleanups.push(registerEscapeLayer(closeDrawer, false, () => isSuspended));
+    cleanups.push(registerEscapeLayer(backToThread, false, () => isSuspended));
+
+    expect(transientEscapeLayerCount()).toBe(1);
+    press();
+    expect(closePage).toHaveBeenCalledOnce();
+    expect(backToThread).not.toHaveBeenCalled();
+
+    isSuspended = false;
+    press();
+
+    expect(backToThread).toHaveBeenCalledOnce();
+    expect(closeDrawer).not.toHaveBeenCalled();
+    expect(transientEscapeLayerCount()).toBe(3);
+  });
+});

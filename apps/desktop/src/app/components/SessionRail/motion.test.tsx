@@ -198,7 +198,7 @@ describe('the session tools column at the right of the content', () => {
   it('sits outside the rail and keeps its icons while the rail folds', () => {
     render(<Shell />);
     const before = tools();
-    expect(before?.closest('[aria-label="Session"]')).toBeNull();
+    expect(before?.closest('[aria-label="Session pages"]')).toBeNull();
 
     fireEvent.click(elementOf('[data-session-rail-toggle]'));
     advance(DURATION_BASE_MS);

@@ -27,6 +27,7 @@ export type ObjectOverflowTriggerProps = ActionMenuBehavior & {
   readonly triggerClassName?: string;
   readonly size?: MenuTriggerSize;
   readonly align?: 'left' | 'right';
+  readonly side?: 'bottom' | 'right';
   readonly anchorKey?: string | null;
   readonly omit?: ReadonlyArray<string>;
   readonly only?: ReadonlyArray<string> | null;
@@ -45,6 +46,7 @@ export const ObjectOverflowTrigger = ({
   triggerClassName,
   size = 'compact',
   align = 'right',
+  side = 'bottom',
   anchorKey = null,
   omit = NO_OMISSIONS,
   only = null,
@@ -59,6 +61,7 @@ export const ObjectOverflowTrigger = ({
 }: ObjectOverflowTriggerProps) => {
   const dropdown = useDropdown({
     disabled,
+    side,
     align: align === 'right' ? 'end' : 'start',
     width: 'min-w-[200px]',
     maxWidth: MENU_MAX_WIDTH,

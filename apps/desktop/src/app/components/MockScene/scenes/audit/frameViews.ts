@@ -38,16 +38,27 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
       openers.openChat();
       return;
     case 'terminal':
-      openers.openTerminalStudio();
+      useAppStore.getState().openStudio({
+        studio: { kind: 'terminal', terminalId: null, sessionId: null },
+      });
       return;
     case 'browser':
-      openers.openBrowserStudio();
+      useAppStore.getState().openStudio({
+        studio: {
+          kind: 'browser',
+          sessionId: useAppStore.getState().currentSessionId,
+          tabId: null,
+        },
+      });
       return;
     case 'monitoring':
       openers.openMonitoring();
       return;
     case 'spend':
       openers.openSpend();
+      return;
+    case 'impact':
+      openers.openImpact();
       return;
     case 'changelog':
       openers.openChangelog();

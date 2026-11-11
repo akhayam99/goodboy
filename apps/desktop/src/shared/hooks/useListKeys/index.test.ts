@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
+import { DrawerParkedContext } from '@goodboy/ui';
 import { cleanup, renderHook } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pressShortcut, pressKey } from '../../../__tests__/helpers/pressKey';
 import type { ShortcutId } from '../../keyboard/registry';
@@ -179,5 +181,19 @@ describe('useListKeys', () => {
     press({ id: 'list.next' });
 
     expect(handlers.onSelect).not.toHaveBeenCalled();
+  });
+
+  it('ignores keys while its drawer is parked under a page', () => {
+    const onSelect = vi.fn();
+    const wrapper = ({ children }: { readonly children: ReactNode }) =>
+      createElement(DrawerParkedContext.Provider, { value: true }, children);
+    renderHook(
+      () => useListKeys({ keys: ['a', 'b', 'c'], selectedKey: 'a', onSelect, onActivate: vi.fn() }),
+      { wrapper },
+    );
+
+    press({ id: 'list.next' });
+
+    expect(onSelect).not.toHaveBeenCalled();
   });
 });

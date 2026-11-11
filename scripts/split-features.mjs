@@ -33,7 +33,7 @@ const AREAS = [
   ],
   ['overview', 'Overview and activity', ['Session overview', 'Activity', 'Next']],
   ['switching', 'Switch between tasks', ['Activity bar', 'Now chip', 'Notifications']],
-  ['search', 'Search and navigation', ['Go anywhere', 'Command palette', 'Search']],
+  ['search', 'Search and navigation', ['Go anywhere', 'Search or run', 'Search']],
   [
     'workspace',
     'Workspaces and folders',

@@ -73,18 +73,25 @@ describe('the shell scene mounts the real session workspace', () => {
     }
   });
 
-  it('swaps the column for Settings and Back to app returns to the session', async () => {
+  it('opens Settings as a page beside the live column and Back to app returns to the session', async () => {
     await renderShell();
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     });
-    await waitFor(() => expect(document.querySelector('[data-settings-column]')).not.toBeNull());
+    await waitFor(() => screen.getByRole('complementary', { name: 'Settings scopes' }));
     expect(useAppStore.getState().appStudio?.kind).toBe('settings');
+    const column = screen.getByRole('navigation', { name: 'Sidebar' });
+    expect(column.hasAttribute('inert')).toBe(false);
+    expect(
+      column.querySelector('[data-column-door="settings"]')?.getAttribute('aria-current'),
+    ).toBe('page');
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /^Back to app/ }));
     });
-    await waitFor(() => expect(document.querySelector('[data-settings-column]')).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByRole('complementary', { name: 'Settings scopes' })).toBeNull(),
+    );
     expect(useAppStore.getState().appStudio).toBeNull();
     expect(screen.getByTestId('pane-toggle-ask')).toBeDefined();
   });

@@ -21,18 +21,11 @@ const BugReportBesideIconScene = () => {
   }, []);
   useEffect(() => {
     const timer = window.setInterval(() => {
-      const chip = document.querySelector<HTMLElement>('[data-testid="goodboy-chip"]');
-      if (chip === null) {
+      const bug = document.querySelector<HTMLElement>('[data-report-bug]');
+      if (bug === null) {
         return;
       }
-      chip.click();
-      const report = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
-        (item) => item.dataset['menuLabel'] === 'Report a bug',
-      );
-      if (report === undefined) {
-        return;
-      }
-      report.click();
+      bug.click();
       window.clearInterval(timer);
     }, CLICK_DELAY_MS);
     return () => window.clearInterval(timer);

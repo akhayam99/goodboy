@@ -24,7 +24,7 @@ export const GuideChapterScene = ({ chapter }: Props) => {
   return (
     <ToastProvider>
       <main className="h-screen overflow-hidden bg-background text-foreground">
-        <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
+        <HelpStudio tab="guide" onClose={noop} onOpenScreen={noop} />
       </main>
     </ToastProvider>
   );

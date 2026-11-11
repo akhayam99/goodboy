@@ -11,7 +11,7 @@ Catch a token pasted into a saved script before it travels. Each time you save a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-findings-light.webp" alt="Settings › App › Security findings: 1 saved script looks like it contains a token, seed-sandbox in payments-api, Token ending 9f2c, with Details and the Not a secret button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Findings kept out of the export
 
@@ -26,7 +26,7 @@ Move your setup to another Mac, or keep a copy. **Backup** exports in groups suc
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-light.webp" alt="Settings › App › Backup › Export: checkboxes for Workspaces, Projects, Folder paths (off), Your profile, Workflows you made, Workflows the orchestrator wrote (off), Saved scripts, Permission rules, Limits, Linked integrations and App preferences, a Never included box listing API keys and tokens, sign-ins, sessions, artifacts, worktree folders, usage history and notifications, and the Export button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Backup before a data update
 
@@ -37,7 +37,7 @@ Update without worrying about your data. Before an update changes it, Goodboy ma
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-backup-notice-light.webp" alt="The changelog entry for Goodboy 0.27.0, Installed, 22 features and 10 fixes, with the notice: This version updates your data in one direction. To go back to 0.26, restore the backup Goodboy made before updating">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Newer data guard
 
@@ -50,18 +50,18 @@ When the database cannot be opened at all, the start screen offers **Retry** fir
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-newer-data-light.webp" alt="The screen an older Goodboy shows on newer data: This database was upgraded by a newer Goodboy, with the buttons Restore backup and Quit">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Updates
 
-Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy row opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. **Settings › App › Updates** shows the installed version and **Check for updates**.
+Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy line opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. **Settings › App › Updates** shows the installed version and **Check for updates**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-light.webp" width="460" alt="The 0.24.1 ready chip at the foot of the sidebar with its card open: 0.24.1 is ready, and the buttons Later, What's new and Restart now">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Changelog in the app
 
@@ -72,7 +72,7 @@ Read release notes inside the app, in the **What's new** tab of Help, searchable
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-changelog-update-light.webp" alt="The Changelog with a search box and the releases from 0.27.0 down to 0.22 in a list, 0.27.0 marked installed, and Goodboy 0.27.0 open on the right with its notice about the data update and the new features, each linked to the screen it touched">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Before and after pictures
 
@@ -80,7 +80,7 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds three tabs, **Guide**, **What's new** and **Shortcuts**, with one search over all three. Results lead with title matches, show a line of context, and list three **What's new** versions with a button for the rest. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Shortcuts** is a read only sheet with a link to **Customize in Settings**. **Back to app** at the top left, or Esc, leaves Help. Open **Guide** from the Goodboy menu or the palette.
+Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds two tabs, **Guide** and **What's new**, with one search over both. Results lead with title matches, show a line of context, and list three **What's new** versions with a button for the rest. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Back to app** at the top left, or Esc, leaves Help. **Sponsor on GitHub** sits in its band. Open it from the Goodboy line at the foot of the sidebar, or from Search or run.
 
 **Also in this area**
 

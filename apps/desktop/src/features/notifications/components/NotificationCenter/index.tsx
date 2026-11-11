@@ -43,11 +43,20 @@ const unreadGroupKeys = ({ notifications }: UnreadKeysParams): ReadonlySet<strin
       .map((group) => notificationGroupKey({ group })),
   );
 
-const openNotificationsStudio = () => {
-  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+type OpenStudioParams = {
+  readonly isDoor: boolean;
 };
 
-export const NotificationCenter = () => {
+const openNotificationsStudio = ({ isDoor }: OpenStudioParams) => {
+  const init = isDoor ? { detail: { door: true } } : undefined;
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, init));
+};
+
+type Props = {
+  readonly isCurrent: boolean;
+};
+
+export const NotificationCenter = ({ isCurrent }: Props) => {
   const notifications = useAppStore((s) => s.notifications);
   const notificationsLoading = useAppStore((s) => s.notificationsLoading);
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
@@ -178,6 +187,7 @@ export const NotificationCenter = () => {
         trigger={
           <BellButton
             isOpen={open}
+            isCurrent={isCurrent}
             unread={unread}
             hasUnreadDebt={hasUnreadDebt}
             onClick={handleOpen}
@@ -202,7 +212,7 @@ export const NotificationCenter = () => {
           groups={shownGroups}
           viewportRef={viewportRef}
           close={close}
-          onOpenStudio={openNotificationsStudio}
+          onOpenStudio={() => openNotificationsStudio({ isDoor: false })}
           onDismiss={(ids) => {
             void dismissNotificationGroup({ ids });
           }}
@@ -221,7 +231,7 @@ export const NotificationCenter = () => {
           selected={false}
           onClick={() => {
             close();
-            openNotificationsStudio();
+            openNotificationsStudio({ isDoor: true });
           }}
           className="items-center justify-between gap-2 rounded-none px-3 py-2 text-meta"
         >

@@ -9,7 +9,7 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
-- **The Sessions page frame.** The header is one 44px row, no band above it,
+- **The Board frame.** The header is one 44px row, no band above it,
   with the pane title grade (`Sessions` alone, no total: each lane carries its
   own count), then on the right: "N hidden · Clear" while a filter hides
   sessions (`HiddenByFilters`), and **Filter sessions**
@@ -37,7 +37,10 @@
   lanes from 1159px; from 964px five lanes with Done above Archived in the
   fifth, each half with its own header, count, empty line and scroll; below
   that the five lanes scroll sideways, the title row stays, and the scroller
-  opens at its end so Done and Archived are on screen. Every lane always renders
+  opens at its end so Done and Archived are on screen. While scrolling, the
+  lanes narrow down to 11rem (`scrollLaneRemOf`, `BOARD_LANE_SCROLL_MIN_REM`) so
+  the last four lanes and the 32px edge fade (`BOARD_LANE_FADE_PX`) fit, and
+  Running opens whole beside the right rail at a 1100px window. Every lane always renders
   its header and, when empty, one line naming what is missing; Archived shows
   Loading until its list answers, and it is the list the sidebar shows under
   Show archived. There is no dock and no collapse: Done and Archived are never
@@ -63,7 +66,7 @@
   only its pull request. Age, issue chips, agent count, cost, the pin, Auto and
   draft review comments live in the session hover card, which opens on the
   board with facts only (no buttons). Restoring an archived card uses the
-  `restore` glyph. The Sessions door works from every place, the New session
+  `restore` glyph. The Board door works from every place, the New session
   draft included.
 - **An archived session is read-only until Restore.** Its Overview header holds
   Restore alone (no Archived chip, no New), and the notices, unassigned comments and
@@ -80,33 +83,58 @@
   presence ("where do I go, what else is going on"): its doors and the sessions
   list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
-  Forward and Search, clustered in the centre. It never holds a destination.
-  The spend chip is state that opens the studio that owns that number, on
-  Impact's Spend tab, and the Usage chips open the Providers menu. The bar
-  never edits a record in place.
-- **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
-  Tasks, Chat, Workflows and Impact as rows, then Terminal, Browser and Monitoring as one row of tiles; Chat ends in a plus
+  Forward and Search or run, clustered in the centre. It never holds a
+  destination. Every chip opens the home of the number it shows: the Now chip
+  ends on Monitoring, the Spend chip opens Impact on its Spend tab (the bar
+  holds no Impact icon), and the Usage chips open the Providers menu. The only
+  control it holds for another container is the sidebar toggle. The bar never
+  edits a record in place.
+- **The column holds every door and never changes level.** New session comes first, then the doors Board (the board, ⌘⇧H),
+  Tasks, Workflows, Chat, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
   (New chat) that is always visible. No separator: the Pinned and
-  Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
+  Sessions lists follow, and Settings and the Goodboy line, with the bug icon, sit at the foot, the app's corner. A
   door's trailing slot is a 6px dot (running, unread, warning); the count is in
-  its tooltip and accessible name, never a colored number. Sessions is the one
+  its tooltip and accessible name, never a colored number. Board is the one
   exception: it carries the number of sessions that need you, drawn like the
   count on the Runs page entry (a 6px dot in the tone, amber or red, and the
   number muted beside it, 9+ above nine, `TONE_COUNT_CLASS`; red only when one
-  of them is broken), named "Sessions, 2 need you: Checks failing, 1
+  of them is broken), named "Board, 2 sessions need you: Checks failing, 1
   question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
   Needs you rows read the attention group of `useStageGroupedSessions`.
-  Monitoring is the tile after Terminal, its page has no band and no Close, and
+  Monitoring is the row after Impact, its page has no band and no Close, and
   it is the one way to the page in the chrome: the top bar holds no Monitoring
-  icon. A pinned port that is down puts the warning dot on it, named "Monitoring,
+  icon. The column holds no tool: Terminal and Browser live on the right rail
+  (see The session tools), and the folded rail shows the same six doors. A pinned port that is down puts the warning dot on it, named "Monitoring,
   pinned port :5173 is down" (`monitoringSignal` lists the down pins,
   `doorSignalOf` names them). Inside a session the column stays the same and marks the open
   session's row; the session's own levels live in the session rail at the left
   of the page (see Session rail). The column is on every screen with a workspace: the board, a
-  session, the draft and every studio but Settings, which swaps the column's
-  content (see Studios).
+  session, the draft and every studio, Settings included. No page changes it:
+  Settings is a page with its own scopes rail beside the live column (see
+  Studios).
+- **One list names every destination.** `DESTINATIONS`
+  (`shared/navigation/destinations.ts`) owns the name, the glyph, the shortcut,
+  the menu id, the former names, the scope (`app` or `workspace`) and the home
+  (`column`, `rail`, `topBar` or `foot`) of Board, Tasks, Workflows, Chat,
+  Impact, Monitoring, Notifications, Terminal, Browser, Settings, Guide and
+  What's new, in one order. The column rows, the folded rail, the foot
+  of the column, the Go menu, the palette rows and the
+  shortcut sheet all read it, so a destination has one word and one glyph in
+  every place. Settings, Guide and What's new have the `foot` home and the `app`
+  scope; the nine others are `workspace` pages. `openDestination` is the one way
+  to open one, Board included: it replaces the open page and pushes only from a
+  place, whichever channel asked, so Back lands where you were before the first
+  page. A name changes in `NAMES` and the table moves with it; the Rust menu is
+  checked against the table by `menuBar.parity.test.ts`, and the Go menu keeps
+  a separator after Impact between the pages and the tools. The shortcut sheet
+  keeps its registry order, and `destinations.test.ts` checks that the keyed
+  destinations in its Navigate group follow the order of the list. Board answers
+  to Sessions in the palette and its page is titled Board. Each session page has
+  its own glyph: Runs draws `CONCEPT_ICONS.runs`, not the Workflows door glyph,
+  and Artifacts keeps `CONCEPT_ICONS.plans`. Moving a destination to another
+  home is a change of its `home` and its row in the table, nothing else.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar, followed by the Repositories
@@ -135,36 +163,54 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised column control. Doors, Board included, are neutral at
-  rest, and so is the column's Goodboy row, with one exception: a pending
-  update adds a version pill to the row until you act on it. An update is an
+  rest, and so is the column's Goodboy line, with one exception: a pending
+  update adds a version pill to the line until you act on it. An update is an
   event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
-- **One studio slot.** Workspace and app studios share the shell's single
-  studio slot, one at a time. Scope decides the pattern. Session-scoped
-  editors layer over the session pane. Studios take the slot. Anything that
-  became a lens stays a lens.
+- **One main slot.** Board, the session, the draft and every studio are pages
+  in the one main slot, one at a time: a studio replaces the page in the sheet.
+  Scope decides the pattern. Session-scoped editors layer over the session
+  pane. Anything that became a lens stays a lens. A session drawer parks while
+  a studio is open and the sheet takes its width; Terminal and Browser, the
+  workspace tools, stay docked beside any page but their own (see
+  [shell.md](./shell.md), The dock follows the page).
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Impact, Monitoring, Settings), the Goodboy
+  line, the foot of the bell list, a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
   that opens Settings, a card that opens Impact) stacks (`openStudio`), so Back
-  returns to where the link was. Events from the bars carry `door: true`.
+  returns to where the link was. The tabs of Help (Guide, What's new) stack
+  too. A notification row with no session is a link too: it stacks the
+  Notifications page, and only the foot of the list is a door. Board is a door
+  as well: opened over a studio it replaces that studio's entry
+  (`openDestination`), so Back from the board returns to the page below the
+  studio. Events from the bars carry `door: true`.
 - **One exit.** Close, Esc and Back leave a studio the same way: they land on
   the entry below it, and Forward brings the studio back. When nothing sits
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
-  studio itself.
-- **One selected sign.** The open studio's door, New session while the draft is
-  open, or Board on the board, takes `bg-selected` with `cursor-default` and
-  `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
-  `useColumnPlace`), so at most one door carries it; inside a session no door
-  does: the open session's row is the column's sign and the current page row is
-  the session rail's (see Session rail), one sign per navigation column. A popover trigger (the
-  Usage chips, the Goodboy row) is never selected: it only reports
-  `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
+  studio itself. The exit follows the scope. An app page (Settings, Help, New
+  workspace) shows Back to app in its band and answers to Esc. A workspace page
+  (Tasks, Workflows, Chat, Impact, Terminal, Browser, Monitoring, Notifications)
+  shows no exit control: it leaves by another door, Back or Esc. Nothing has a
+  Close button.
+- **One selected sign.** Every page lights exactly one control, with
+  `bg-selected`, `cursor-default` and `aria-current="page"`, in the column and
+  on the rail alike: the open studio's door; New session while the draft is
+  open; Board on the board; the Goodboy line for Help, either tab (`place`
+  `help`); the bell for Notifications. New workspace is a flow and lights
+  nothing. Every control reads it from one place (`columnPlaceOf`, through `selectColumnPlace` and
+  `useColumnPlace`), so no page leaves two lit. Inside a session no door does:
+  the open session's row is the column's sign and the current page row is the
+  session rail's (see Session rail), one sign per navigation column. Under any
+  page the session row is remembered, never current. A popover trigger that is
+  not the page's own control (the Usage chips) is never selected: it only
+  reports `aria-expanded`; the bell is selected only while its page is open, and
+  an open popover shows its own `bg-muted` over that. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
   `__tests__/navigation/oneDoor.test.ts` pins the rule.
 
@@ -183,9 +229,9 @@ moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode. Its repo rows
 (`sources/repoEntries.ts`) pull the base branch of the linked repos through
 `checkout_update_base`; each row and each toast line names the branch it
-updates and where the checkout stays. Inside a session, New terminal reads
-"New terminal in this session" and opens a fresh tab in the session terminal
-drawer instead of the Terminal page.
+updates and where the checkout stays. New terminal opens a fresh tab
+in the Terminal dock, or on the Terminal page while it is open; inside a session it reads "New terminal in this session"
+and the tab opens on the session's folder.
 
 - **Scope first.** It opens on a scope chip that names the surface you can see:
   the focused commit row on the Commits tab, else the focused row of the Explore
@@ -227,8 +273,10 @@ drawer instead of the Terminal page.
      with `~` and the preset name.
   4. **Recent**, agents of this session first; then four fixed groups, each
      entry in the one its `kind` names (`EMPTY_SECTION_KINDS` in
-     `commandList.ts`): **Go to** (`goto`: Sessions, Tasks, Chat, Workflows,
-     Terminal, Impact, Monitoring, Notifications, Settings), **Create**
+     `commandList.ts`): **Go to** (`goto`: one row per page destination of
+     `DESTINATIONS`, in its order, Board, Tasks, Workflows, Chat, Impact, Monitoring, Notifications, Terminal and Browser (these two open the dock),
+     then the Run defaults and Impact Spend pages, and Settings, whose row
+     is also a `goto` entry; Board answers to its former name Sessions), **Create**
      (`create`: New session, New chat, New terminal, New workspace), **App**
      (`action`: Resume setup while setup is unfinished in the main window,
      Theme: dark, Theme: light and Theme: system, Check for updates, Connect a provider, New question, the column
@@ -246,7 +294,7 @@ drawer instead of the Terminal page.
      (`PALETTE_MIN_HEIGHT_PX`), and a key chip with a minimum width so a glyph
      like the Terminal one is never clipped.
      On the Board the first section is **Needs you**: the sessions the
-     Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The bell, the toast and the
+     Board door dot counts (`useNowSessions`), each opening its `attentionPlace`. The bell, the toast and the
      Notifications page open through it too: a notification keeps a reason and a mount in its stored action
      (`open-place`, no migration), and a build that does not know the kind reads no action. The session pages (Open Overview,
      Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out

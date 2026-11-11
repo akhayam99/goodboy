@@ -13,22 +13,17 @@ export const AppStudio = ({
   currentWorkspace,
   workspaceProjectRoot,
   placement = 'cover',
-  settingsColumnSlot = null,
 }: AppStudioProps) => {
   if (overlay === null) {
     return null;
   }
-  const isInColumnShell = placement === 'content';
-  const isColumnSettings = overlay.kind === 'settings' && isInColumnShell;
   return (
-    <StudioFrame
-      kind={overlay.kind}
-      onClose={close}
-      placement={placement}
-      isClosable={!isColumnSettings}
-      hasBand={!isColumnSettings}
-    >
-      <PanelBoundary key={overlay.kind} leaveLabel="Close" onLeave={close}>
+    <StudioFrame kind={overlay.kind} onClose={close} placement={placement}>
+      <PanelBoundary
+        key={overlay.kind === 'changelog' ? 'guide' : overlay.kind}
+        leaveLabel="Close"
+        onLeave={close}
+      >
         {renderStudio({
           overlay,
           close,
@@ -38,8 +33,7 @@ export const AppStudio = ({
           onOpenChangelogScreen,
           currentWorkspace,
           workspaceProjectRoot,
-          settingsColumnSlot,
-          isInColumnShell,
+          railPlacement: placement === 'content' ? 'page' : 'chrome',
         })}
       </PanelBoundary>
     </StudioFrame>

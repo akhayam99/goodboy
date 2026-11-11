@@ -41,7 +41,7 @@ import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useHiddenWindowPause } from './shared/hooks/useHiddenWindowPause';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useProviderLimitsProbe } from './shared/hooks/useProviderLimitsProbe';
-import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
+import { useBrowserWindowShortcuts } from './features/browser/hooks/useBrowserWindowShortcuts';
 import { useKeepFullScreenOnEscape } from './shared/hooks/useKeepFullScreenOnEscape';
 import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
@@ -57,8 +57,8 @@ import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
+import { useShellRight } from './app/hooks/useShellRight';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
-import { selectDrawerPanel } from './store/slices/drawer/selectDrawerPanel';
 import { selectDrawerPlacement } from './store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from './store/slices/drawer/selectDrawerSizing';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
@@ -71,9 +71,9 @@ export const App = () => {
   const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
-  const isDrawerOpen = useAppStore((s) => selectDrawerPanel(s) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
+  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
   const bootPhase = useAppStore((s) => s.bootPhase);
   const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);
@@ -92,15 +92,12 @@ export const App = () => {
   );
   const currentSession = useCurrentSession();
   const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
-  const isSettingsOpen = useAppStore((s) => s.appStudio?.kind === 'settings');
   const sessionSidebar = useSessionSidebarVisibility({ hasSidebar: true });
-  const [settingsColumnSlot, setSettingsColumnSlot] = useState<HTMLDivElement | null>(null);
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = currentWorkspace === null;
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace != null,
     isSidebarCollapsed: sessionSidebar.isCollapsed,
-    isSettingsOpen,
   });
   const goToBoard = useGoToBoard();
   const {
@@ -114,8 +111,6 @@ export const App = () => {
     openShortcutHelp,
     openSpend,
     openWorkflows,
-    openTerminalStudio,
-    openBrowserStudio,
     openNewChat,
     openMonitoring,
     openImpact,
@@ -126,26 +121,19 @@ export const App = () => {
     currentSession,
     currentWorkspace,
     workspaceProjectRoot,
-    isSessionSidebarCollapsed: sessionSidebar.isCollapsed,
     isWorkspaceLauncherBranch,
-    pinSessionSidebar: sessionSidebar.pin,
-    studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
-    settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsColumnSlot : null,
   });
   const columnActions = useColumnActions({
     openBoard: goToBoard,
     openInbox,
     openChat,
     openWorkflows,
-    openTerminalStudio,
-    openBrowserStudio,
     openNewChat,
     openMonitoring,
     openImpact,
     openSettings,
     openChangelog,
     openGuide,
-    openShortcuts: openShortcutHelp,
   });
 
   useEffect(() => {
@@ -166,7 +154,7 @@ export const App = () => {
   useWindowPresence();
   useViewedOnReturn();
   useWindowLayout();
-  useWindowShortcuts();
+  useBrowserWindowShortcuts();
   useArtifactMirror({ isReady: hydrated });
   useMonitoringSignalRefresh({ isReady: hydrated });
   useTitlebarInset();
@@ -204,7 +192,6 @@ export const App = () => {
     armDeleteConfirm,
     openPalette,
     openSettings,
-    openTerminalStudio,
     openNewChat,
     openShortcutHelp,
     toggleSidebar: sessionSidebar.toggle,
@@ -279,7 +266,7 @@ export const App = () => {
         <AppShell
           topBar={
             <AppTopBar
-              sidebar={{ isCollapsed: sessionSidebar.isCollapsed, onToggle: sessionSidebar.toggle }}
+              sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: sessionSidebar.toggle }}
               onOpenSpend={openSpend}
               onOpenScript={(run) => void openRunningScript({ run })}
               openProviderId={settingsProviderId}
@@ -293,7 +280,6 @@ export const App = () => {
               currentSessionId={currentSession?.id ?? null}
               isDraftShown={isDraftShown}
               actions={columnActions}
-              settingsSlotRef={setSettingsColumnSlot}
             />
           }
           leftOverlay={
@@ -322,10 +308,11 @@ export const App = () => {
               </SidebarPeekOverlay>
             ) : undefined
           }
-          studioCoversLeft={arrangement.studioCoversLeft}
-          drawer={isDrawerOpen ? <DrawerHost /> : null}
+          drawer={isDrawerMounted ? <DrawerHost /> : null}
           drawerSizing={drawerSizing}
           drawerPlacement={drawerPlacement}
+          isDrawerParked={isDrawerParked}
+          rightRail={rightRail}
           main={
             <MainRegion
               workspaceId={currentWorkspace.id}

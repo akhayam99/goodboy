@@ -2,6 +2,7 @@ export { cn } from './cn';
 export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
+export { ShellRailContext } from './shellRailContext';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export { DrawerBackChipContext } from './drawerBackChipContext';
 export type { DrawerChip } from './drawerBackChipContext';
@@ -10,6 +11,8 @@ export { DISABLED } from './disabledStyle';
 export { FOCUS_RING } from './focusRing';
 export { dismissTopEscapeLayer, registerEscapeLayer, transientEscapeLayerCount } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
+export { DrawerParkedContext } from './drawerParkedContext';
+export { useIsDrawerParked } from './useIsDrawerParked';
 export { useHoverSurface } from './useHoverSurface';
 export { copyToClipboard } from './copyToClipboard';
 export { useCopyLink } from './useCopyLink';
@@ -21,8 +24,10 @@ export { ICON_SIZE, ICON_STROKE } from './iconSize';
 export { TEXT_ROLE } from './textRoles';
 export type { TextRole } from './textRoles';
 export {
+  BOARD_LANE_FADE_PX,
   BOARD_LANE_GAP_REM,
   BOARD_LANE_MIN_REM,
+  BOARD_LANE_SCROLL_MIN_REM,
   PANE_GROUPS_GAP_REM,
   PANE_RHYTHM,
 } from './paneRhythm';
@@ -122,6 +127,7 @@ export {
   readStudioRailWidth,
   studioRailStorageKey,
 } from './components/StudioRailLayout';
+export type { StudioRailPlacement } from './components/StudioRailLayout';
 export { readStoredWidth, useResizableWidth } from './useResizableWidth';
 export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
 export { INNER_COLUMN_SHORTCUT, innerColumnStore } from './innerColumnStore';

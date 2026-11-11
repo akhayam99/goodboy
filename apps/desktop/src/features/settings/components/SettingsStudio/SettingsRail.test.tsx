@@ -59,7 +59,6 @@ const mount = ({ pageKey = 'app:general', workspaceName = 'Harborline' }: MountP
       groups={groups}
       workspaceName={workspaceName}
       onSelect={onSelect}
-      isInColumn
     />,
   );
   const rerender = (next: Required<Pick<MountParams, 'pageKey'>>) =>
@@ -69,7 +68,6 @@ const mount = ({ pageKey = 'app:general', workspaceName = 'Harborline' }: MountP
         groups={groups}
         workspaceName={workspaceName}
         onSelect={onSelect}
-        isInColumn
       />,
     );
   return { onSelect, rerender };
@@ -90,6 +88,19 @@ describe('SettingsRail', () => {
     const headings = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent);
 
     expect(headings).toEqual(['App', 'Providers', 'This workspace · Harborline', 'Integrations']);
+  });
+
+  it('draws every page row as one line of text', () => {
+    mount();
+    const nav = screen.getByRole('navigation', { name: 'Settings scopes' });
+    const groups = settingsDirectory({ status: STATUS, workspaceName: 'Harborline' });
+    const labels = new Set(groups.flatMap((group) => group.pages.map((page) => page.label)));
+
+    const rows = within(nav)
+      .getAllByRole('listitem')
+      .map((item) => item.textContent ?? '');
+    expect(rows.length).toBeGreaterThan(10);
+    expect(rows.filter((row) => !labels.has(row))).toEqual([]);
   });
 
   it('puts Models and Integrations under This workspace, not under Providers', () => {

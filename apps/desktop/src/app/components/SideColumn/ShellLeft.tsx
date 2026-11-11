@@ -4,7 +4,7 @@ import { useColumnPlace } from '../../hooks/useColumnPlace';
 import type { ShellArrangement } from '../../shellArrangement';
 import { ColumnRail } from './ColumnRail';
 import type { ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 import { SideColumn } from './index';
 
 type Props = {
@@ -15,7 +15,6 @@ type Props = {
   readonly actions: ColumnActions;
   readonly variant?: 'pinned' | 'peek';
   readonly onNavigate?: () => void;
-  readonly settingsSlotRef?: (node: HTMLDivElement | null) => void;
   readonly placeOverride?: ColumnPlace;
 };
 
@@ -29,7 +28,6 @@ export const ShellLeft = ({
   actions,
   variant = 'pinned',
   onNavigate,
-  settingsSlotRef,
   placeOverride,
 }: Props) => {
   const storePlace = useColumnPlace();
@@ -44,7 +42,6 @@ export const ShellLeft = ({
       actions={actions}
       isPeek={isPeek}
       {...(onNavigate !== undefined && { onNavigate })}
-      {...(!isPeek && settingsSlotRef !== undefined && { settingsSlotRef })}
     />
   );
   if (isPeek) {

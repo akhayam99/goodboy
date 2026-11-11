@@ -32,7 +32,7 @@ import {
 } from '../../../features/workspace/testing/sessionColumn';
 import { ColumnRail } from './ColumnRail';
 import type { ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 let useAppStore: StoryStore;
 let realNavigate: ReturnType<StoryStore['getState']>['navigate'];
@@ -42,15 +42,12 @@ const actions = (): ColumnActions => ({
   openInbox: vi.fn(),
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
-  openTerminalStudio: vi.fn(),
-  openBrowserStudio: vi.fn(),
   openNewChat: vi.fn(),
   openMonitoring: vi.fn(),
   openImpact: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
-  openShortcuts: vi.fn(),
 });
 
 beforeAll(async () => {
@@ -212,8 +209,6 @@ describe('the open session on the rail', () => {
       'workflows',
       'chat',
       'impact',
-      'terminal',
-      'browser',
       'monitoring',
       'settings',
     ]);

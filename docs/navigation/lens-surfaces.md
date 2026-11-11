@@ -190,7 +190,7 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   space on the right, so the list and the thread stay where they are: from the
   run status line (**Open transcript** opens the drawer in place and is gone while that run's drawer is open), from `…` →
   Agent transcript on a thread, from the thread crumb menu, from a fix run row
-  in Activity, from a notification, the agent-started toast and the palette.
+  in Activity, from a notification, the agent-started toast and Search or run.
   `fixRunTranscript({ sessionId, agentId, threadId })` builds the move (the
   Branch Comments place with that thread, and the drawer), and
   `canonicalLocation` rewrites every older address to it: an `agentPlace` for a
@@ -252,9 +252,9 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and a fix run transcript come back through Back.
-- **The switcher and the palette list only destinations the session can
-  use.** One function feeds both. Context is a drawer, not a destination: the
-  palette offers **Show context** (⌘⌥C) and neither lists a Context page.
+- **The switcher and Search or run list only destinations the session can
+  use.** One function feeds both. Context is a drawer, not a destination:
+  Search or run offers **Show context** (⌘⌥C) and neither lists a Context page.
   Provider entries open **Link work** on that provider (the event carries the source), unfold a folded session rail first, and are not offered on an archived session; a provider list address restores to Overview.
   Explore is always listed, opens as a pane (see The session tools), and
   browses one project of the session at a time as a tree (`role="tree"`). It
@@ -339,7 +339,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   Diff and the other branch lenses need a
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
-- **A lens surface is reached from the overview or from the palette, never
+- **A lens surface is reached from the overview or from Search or run, never
   from a rail, and the page it opens has one back row, no trail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts
   and dots are read-only signals on the row that routes there. Session

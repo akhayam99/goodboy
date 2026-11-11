@@ -21,6 +21,7 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import type { StudioPlace } from '../../../store/slices/navigation/studio';
+import { sessionPlace } from '../../../store/slices/navigation/place';
 import { useGoToBoard } from './index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -114,6 +115,31 @@ describe('useGoToBoard', () => {
     expect(state.appStudio).toBeNull();
     expect(state.currentSessionId).toBeNull();
     expect(state.openSessionDraftWorkspaceId).toBeNull();
+  });
+
+  it('lands on the board from a stack of two studios, not on the first studio', () => {
+    act(() => useAppStore.getState().openStudio({ studio: CHANGELOG }));
+    act(() => useAppStore.getState().openStudio({ studio: SETTINGS }));
+
+    goToBoard();
+
+    const state = useAppStore.getState();
+    expect(state.appStudio).toBeNull();
+    expect(state.currentSessionId).toBeNull();
+  });
+
+  it('replaces the studio entry, so Back from the board returns to the session', () => {
+    act(() => useAppStore.getState().navigate({ to: sessionPlace({ sessionId: session.id }) }));
+    act(() => useAppStore.getState().switchStudio({ studio: CHANGELOG }));
+    expect(useAppStore.getState().appStudio).toEqual(CHANGELOG);
+
+    goToBoard();
+    expect(useAppStore.getState().currentSessionId).toBeNull();
+
+    act(() => useAppStore.getState().back());
+    const state = useAppStore.getState();
+    expect(state.currentSessionId).toBe(session.id);
+    expect(state.appStudio).toBeNull();
   });
 
   it('adds one history entry from the draft, and Back returns to the draft', () => {

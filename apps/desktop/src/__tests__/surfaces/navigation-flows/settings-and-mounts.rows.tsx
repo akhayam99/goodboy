@@ -102,7 +102,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
       await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
     },
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     },
   },

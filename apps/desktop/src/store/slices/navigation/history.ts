@@ -53,11 +53,22 @@ type DropParams = {
   readonly sessionId: SessionId;
 };
 
+type EntryParams = {
+  readonly entry: Location;
+  readonly sessionId: SessionId;
+};
+
+const withoutSessionDrawer = ({ entry, sessionId }: EntryParams): Location =>
+  entry.focus.drawer?.sessionId === sessionId
+    ? { ...entry, focus: { ...entry.focus, drawer: null } }
+    : entry;
+
 export const dropSession = ({ stack, sessionId }: DropParams): NavigationStack => {
   const kept: Array<Location> = [];
   let index = -1;
-  stack.entries.forEach((entry, position) => {
-    const isGone = entry.place.at === 'session' && entry.place.sessionId === sessionId;
+  stack.entries.forEach((original, position) => {
+    const isGone = original.place.at === 'session' && original.place.sessionId === sessionId;
+    const entry = withoutSessionDrawer({ entry: original, sessionId });
     const previous = kept[kept.length - 1];
     const isDuplicate = previous !== undefined && isSameEntry(previous, entry);
     if (!isGone && !isDuplicate) {

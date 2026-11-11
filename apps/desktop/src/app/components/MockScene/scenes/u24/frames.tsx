@@ -13,15 +13,15 @@ const WIDE_WIDTH_PX = 1920;
 export const U24_FRAMES_SCENES = {
   'frames-guide-rail': () => (
     <FrameStage id="frames-guide-rail" width={RAIL_WIDTH_PX}>
-      <FramedStudioScene kind="guide" place="link">
-        <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
+      <FramedStudioScene kind="guide" place="guide">
+        <HelpStudio tab="guide" onClose={noop} onOpenScreen={noop} />
       </FramedStudioScene>
     </FrameStage>
   ),
   'frames-guide-pinned': () => (
     <FrameStage id="frames-guide-pinned" width={PINNED_WIDTH_PX}>
-      <FramedStudioScene kind="guide" place="link">
-        <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
+      <FramedStudioScene kind="guide" place="guide">
+        <HelpStudio tab="guide" onClose={noop} onOpenScreen={noop} />
       </FramedStudioScene>
     </FrameStage>
   ),

@@ -187,10 +187,7 @@ const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['addWorkspace']);
 const FULL_BLEED_PLACES: ReadonlySet<string> = new Set(['studio terminal']);
 
 const SPLIT_DETAIL_FILES: Readonly<Partial<Record<StudioKind, ReadonlyArray<string>>>> = {
-  guide: [
-    'features/settings/components/GuideStudio/GuideTab.tsx',
-    'app/components/HelpStudio/ShortcutsTab.tsx',
-  ],
+  guide: ['features/settings/components/GuideStudio/GuideTab.tsx'],
   changelog: ['features/changelog/components/ChangelogStudio/WhatsNewTab.tsx'],
   chat: ['features/workspace-chat/components/ChatStudio.tsx'],
   inbox: ['features/inbox/components/InboxStudio/InboxStudioLayout.tsx'],

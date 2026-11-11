@@ -77,7 +77,7 @@ export const SHORTCUTS = {
     group: 'general',
     yieldsToText: true,
   },
-  'palette.open': { combo: 'cmd+KeyK', label: 'Command palette', plane: 'app', group: 'general' },
+  'palette.open': { combo: 'cmd+KeyK', label: 'Search or run', plane: 'app', group: 'general' },
   'search.open': { combo: 'cmd+KeyF', label: 'Search', plane: 'app', group: 'general' },
   'settings.open': { combo: 'cmd+Comma', label: 'Settings', plane: 'app', group: 'general' },
   'settings.shortcuts': {
@@ -206,7 +206,7 @@ export const SHORTCUTS = {
   'session.board': { combo: 'cmd+shift+KeyH', label: 'Board', plane: 'session', group: 'navigate' },
   'terminal.studio': {
     combo: 'ctrl+Backquote',
-    label: 'Terminal',
+    label: 'Show or hide Terminal',
     plane: 'app',
     group: 'navigate',
   },
@@ -420,7 +420,7 @@ export const SHORTCUTS = {
   'session.terminal': {
     combo: 'cmd+alt+KeyT',
     offMacCombo: 'ctrl+shift+alt+KeyT',
-    label: 'Session terminal',
+    label: 'Show or hide Terminal',
     plane: 'lens',
     group: 'session',
   },

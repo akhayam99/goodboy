@@ -96,7 +96,7 @@ describe('the browser pane scenes', () => {
     );
   });
 
-  it('opens the Browser page with every tab grouped by session and the Browser tile pressed', async () => {
+  it('opens the Browser page with every tab grouped by session and the Browser tool selected', async () => {
     mount({ id: 'browser-page' });
 
     const list = await screen.findByRole('navigation', { name: 'Tabs by session' }, WAIT);
@@ -109,7 +109,7 @@ describe('the browser pane scenes', () => {
       within(list).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
     ).toBe('page');
     expect(
-      document.querySelector('[data-column-tile="browser"]')?.getAttribute('aria-current'),
+      document.querySelector('[data-testid="pane-toggle-browser"]')?.getAttribute('aria-current'),
     ).toBe('page');
     const page = list.closest<HTMLElement>('[data-studio-slot]');
     if (page === null) {

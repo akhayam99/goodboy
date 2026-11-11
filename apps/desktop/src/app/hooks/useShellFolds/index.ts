@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { DrawerContentContext, RIGHT_DRAWER_DEFAULT } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { selectDrawerPanel } from '../../../store/slices/drawer/selectDrawerPanel';
+import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { selectDrawerSizing } from '../../../store/slices/drawer/selectDrawerSizing';
 import { shellFoldsOf, type ShellFolds } from '../../shellArrangement/shellFoldsOf';
 
@@ -10,7 +10,7 @@ type Params = { readonly railWidth: number; readonly toolsWidth: number };
 export const useShellFolds = ({ railWidth, toolsWidth }: Params): ShellFolds => {
   const context = useContext(DrawerContentContext);
   const paneSizing = useAppStore((state) =>
-    selectDrawerPanel(state) === null ? null : selectDrawerSizing(state),
+    selectOpenDrawer(state) === null ? null : selectDrawerSizing(state),
   );
   return shellFoldsOf({
     paneSizing,

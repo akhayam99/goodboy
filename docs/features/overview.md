@@ -37,7 +37,7 @@ An empty card is not drawn. An archived session keeps only **Done**.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of Stop retried webhooks posting a second credit, with the goal, a Needs you block and the projects payments-api and notify-relay">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Refresh a session
 
@@ -55,10 +55,10 @@ Follow what happened in a session in one list. **Full log** on the **Done** card
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" width="821" alt="The Activity timeline of a session: a Needs you block with #318 and Which failures should count toward a stuck delivery, a Next row with Fix and Not now, and below Now the steps, each row with a role icon, its title, its model and its time, a Fix run on #318 with 4 need you and 4 working, and Add the stuck-delivery banner on Kimi K3">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" width="821" alt="The overview of Per-tenant limits on payouts with the Full log drawer open beside it: the Needs you, Running, Next and Done cards on the left, with Full log on the Done card, and the Log on the right, with a search box and below Now a question to answer, the Build workflow with steps 3, 2 and 1, each with its role icon and title, then Summarise the plan, a rebase and Plan the payout limits">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Cards
 
@@ -234,7 +234,7 @@ A click on a row's title opens its place.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-light.webp" width="821" alt="The Needs you and Next blocks of a session: Split the reconciliation rewrite into six parts, Ready to implement, with a Start button, and under Next Merge Ledger reconciliation rewrite in order, 2 parts, part 3/6 first, with Merge in order, and Remove the ledger-core worktree, #418 merged, 412 MB, with Remove, each row with a ⋯ menu">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Time left
 
@@ -245,7 +245,7 @@ See how long a step has left, estimated from your own past runs. Queued steps sh
 See and undo what agents changed in a session without a branch.
 
 - In a plain folder agents edit in place. Every writing turn saves what it may change first, shell commands such as `rm` and `mv` and new files included.
-- **Changes** in the session rail lists each turn, newest first, with the files it added, changed or removed and their line counts.
+- **Changes** in the Session pages list shows each turn, newest first, with the files it added, changed or removed and their line counts.
 - Pick a file to see its text before and after, with the changed words marked.
 - **Restore to before reply 3** puts one file back. **Undo changes from this reply** puts back the whole reply. **Remove this new file** takes out a file the agent created.
 - Each restore first saves the text you have now, so **Undo restore** puts it back.

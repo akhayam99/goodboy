@@ -33,7 +33,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^What's new/, 'Changelog'),
     lands: both(
-      () => studio('Help'),
+      () => studio("What's new"),
       () => heading(/^Goodboy \d/),
     ),
   },
@@ -58,7 +58,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     covers: ['studio:guide', 'palette:Guide: Commits'],
     door: 'palette',
     open: () => openPalette(/^Guide: Commits/, 'Guide: Commits'),
-    lands: () => studio('Help'),
+    lands: () => studio('Guide'),
   },
   {
     name: 'searching Inbox finds Tasks',

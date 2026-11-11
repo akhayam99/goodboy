@@ -97,6 +97,14 @@ const press = (id: ShortcutId) => async (): Promise<void> => {
   await pressed(id);
 };
 
+const openTerminalPage = async (): Promise<void> => {
+  await focusAnchor();
+  useAppStore.getState().openStudio({
+    studio: { kind: 'terminal', terminalId: null, sessionId: null },
+  });
+  await settle();
+};
+
 type MenuItemParams = {
   readonly id: string;
 };
@@ -236,7 +244,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       reloads.length = 0;
       await press('app.reload')();
     },
-    lands: async () => expect(reloads).toHaveLength(1),
+    lands: async () => waitFor(() => expect(reloads).toHaveLength(1)),
   }),
   keyRow({
     id: 'zoom.in',
@@ -299,7 +307,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'innerColumn.toggle',
     note: 'folds the session rail, the inner column of a session page',
-    lands: () => visible('button', 'Show session rail'),
+    lands: () => visible('button', 'Show session pages'),
   }),
   keyRow({
     id: 'chat.new',
@@ -326,11 +334,15 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'session.board',
-    lands: () => heading('Sessions'),
+    lands: () => heading('Board'),
   }),
   pressRow({
     id: 'terminal.studio',
-    lands: () => visible('heading', 'No terminal yet'),
+    lands: async () => {
+      await screen.findByRole('button', { name: 'Open as page' });
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+      expect(useAppStore.getState().appStudio).toBeNull();
+    },
   }),
   keyRow({
     id: 'nav.back',
@@ -366,7 +378,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'nav.up',
     note: 'on the Overview goes up to the board',
     open: press('nav.up'),
-    lands: () => heading('Sessions'),
+    lands: () => heading('Board'),
   }),
   keyRow({
     id: 'nav.up',
@@ -522,7 +534,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'session.terminal',
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open page' });
+      await screen.findByRole('button', { name: 'Open as page' });
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     },
   }),
@@ -541,6 +553,49 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       expect(await screen.findByRole('textbox', { name: 'Pull request title' })).toBeDefined(),
   }),
   pressRow({ id: 'lens.context', lands: drawerIs(null) }),
+  keyRow({
+    id: 'lens.context',
+    note: 'on a page with Context parked closes the page and shows Context',
+    open: async (ctx) => {
+      useAppStore.getState().openContextDrawer({ sessionId: ctx.sessionId });
+      useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+      await settle();
+      await press('lens.context')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
+      await drawerIs(null)(ctx);
+    },
+  }),
+  keyRow({
+    id: 'lens.context',
+    note: "on What's new over Guide with Context parked leaves both pages and shows Context",
+    open: async (ctx) => {
+      useAppStore.getState().openContextDrawer({ sessionId: ctx.sessionId });
+      useAppStore.getState().openStudio({ studio: { kind: 'guide' } });
+      useAppStore.getState().openStudio({ studio: { kind: 'changelog' } });
+      await settle();
+      await press('lens.context')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
+      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
+      await drawerIs(null)(ctx);
+    },
+  }),
+  keyRow({
+    id: 'lens.context',
+    note: 'on a page with nothing parked closes the page and opens Context',
+    open: async () => {
+      useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+      await settle();
+      await press('lens.context')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
+      await drawerIs(null)(ctx);
+    },
+  }),
   pressRow({
     id: 'ask.open',
     lands: async (ctx) => {
@@ -768,6 +823,22 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       expect(await screen.findAllByRole('dialog', { name: 'Report a bug' })).toHaveLength(1);
     },
   }),
+  {
+    name: 'menu: Go > Browser shows the Browser dock, hides it on a second pick, and opens no page',
+    covers: ['menu:menu.browser'],
+    open: async () => {
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'));
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+      await pickMenuItem({ id: 'menu.browser' });
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('browser'));
+    },
+    lands: async () => {
+      expect(useAppStore.getState().drawer?.kind).toBe('browser');
+      expect(useAppStore.getState().appStudio).toBeNull();
+    },
+  },
   keyRow({
     id: 'app.undo',
     note: 'the web view takes the undo key once, so the native Undo item never runs too',
@@ -824,7 +895,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.newHere',
     note: 'on the Terminal page the new chord opens a terminal, not a session',
     open: async () => {
-      await press('terminal.studio')();
+      await openTerminalPage();
       await screen.findByRole('heading', { name: 'No terminal yet' });
       await pressed('terminal.newHere', document.body);
     },
@@ -848,7 +919,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.closeTab',
     note: 'on the Terminal page the close chord closes the selected tab, not the page',
     open: async () => {
-      await press('terminal.studio')();
+      await openTerminalPage();
       await screen.findByRole('heading', { name: 'No terminal yet' });
       await pressed('terminal.newHere', document.body);
       await waitFor(() => expect(terminalRows().length).toBe(1));
@@ -1535,7 +1606,7 @@ let terminalTabCount = 0;
 
 const openBoardCard = async (): Promise<HTMLElement> => {
   await press('session.board')();
-  await heading('Sessions');
+  await heading('Board');
   const card = await waitFor(() => {
     const found = document.querySelector<HTMLElement>('[data-select-id]');
     expect(found).not.toBeNull();
@@ -1577,7 +1648,8 @@ const SELECTION_KEY_ROWS: ReadonlyArray<Row> = [
       await selectUnderPointer();
       await pressed('selection.clear', document.body);
     },
-    lands: async () => waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull()),
+    lands: async () =>
+      waitFor(() => expect(screen.queryByRole('toolbar', { name: /selected$/ })).toBeNull()),
   }),
   keyRow({
     id: 'selection.delete',
@@ -1612,7 +1684,7 @@ const focusSelectedTab = (): HTMLElement => {
 };
 
 const openTwoTerminalTabs = async (): Promise<void> => {
-  await press('terminal.studio')();
+  await openTerminalPage();
   await screen.findByRole('heading', { name: 'No terminal yet' });
   await pressed('terminal.newHere', document.body);
   await waitFor(() => expect(terminalRows().length).toBe(1));
@@ -1692,7 +1764,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'terminal.newTab',
     open: async () => {
-      await press('terminal.studio')();
+      await openTerminalPage();
       await screen.findByRole('heading', { name: 'No terminal yet' });
       const [newTerminal] = screen
         .getAllByRole('button', { name: /^New terminal$/ })

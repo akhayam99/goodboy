@@ -16,7 +16,7 @@ import {
   click,
   clickButton,
   heading,
-  settingsColumn,
+  settingsPage,
   settle,
   useAppStore,
   visible,
@@ -37,8 +37,8 @@ const collapse = async (): Promise<void> => {
 
 const openFromRail = async (): Promise<void> => {
   await clickButton('Settings');
-  await settingsColumn();
-  await waitFor(() => expect(hasRail()).toBe(false), WAIT);
+  await settingsPage();
+  expect(hasRail()).toBe(true);
 };
 
 const goToClaude = async (): Promise<void> => {
@@ -67,7 +67,7 @@ const backToApp = async (): Promise<void> => {
 };
 
 const railAndSessionBack =
-  (collapsed: '1' | null) =>
+  (collapsed: '1' | '0' | null) =>
   async (ctx: Ctx): Promise<void> => {
     await waitFor(() => expect(studioKind()).toBeNull(), WAIT);
     await waitFor(() => expect(hasRail()).toBe(collapsed === '1'), WAIT);
@@ -129,7 +129,7 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
     covers: ['openSettings', 'scope:home'],
     open: async () => {
       await clickButton('Settings');
-      await settingsColumn();
+      await settingsPage();
       expect(hasRail()).toBe(false);
       await backToApp();
     },
@@ -143,60 +143,71 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
     covers: ['openSettings', 'scope:home'],
     open: async () => {
       await clickButton('Settings');
-      await settingsColumn();
+      await settingsPage();
       await escape();
     },
     lands: railAndSessionBack(null),
   },
   {
-    name: 'settings frame: Cmd+, from the rail opens the same column and Back to app folds it back',
+    name: 'settings frame: Cmd+, from the rail opens the page beside the rail and Back to app keeps it',
     covers: ['openSettings', 'scope:home', 'key:settings.open'],
     open: async () => {
       await collapse();
       await pressKey('settings.open');
-      await settingsColumn();
+      await settingsPage();
+      expect(hasRail()).toBe(true);
       await backToApp();
     },
     lands: railAndSessionBack('1'),
   },
   {
-    name: 'settings frame: Cmd+B waits while Settings holds the column on a folded sidebar',
+    name: 'settings frame: Cmd+B unfolds and folds the sidebar while Settings stays open',
     covers: ['openSettings', 'key:column.toggle'],
     open: async () => {
       await collapse();
       await openFromRail();
       await pressKey('column.toggle');
+      await waitFor(() => expect(hasRail()).toBe(false), WAIT);
+      expect(storedCollapse()).toBe('0');
+      expect(studioKind()).toBe('settings');
+      expect(
+        screen.getByRole('button', { name: /^Hide sidebar/ }).getAttribute('aria-pressed'),
+      ).toBe('true');
       await pressKey('column.toggle');
-      await settingsColumn();
-      expect(hasRail()).toBe(false);
+      await waitFor(() => expect(hasRail()).toBe(true), WAIT);
       expect(storedCollapse()).toBe('1');
+      await settingsPage();
       await backToApp();
     },
     lands: railAndSessionBack('1'),
   },
   {
-    name: 'settings frame: Cmd+B waits while Settings holds the column on a pinned sidebar',
+    name: 'settings frame: the sidebar toggle folds the column while Settings stays open',
     covers: ['openSettings', 'key:column.toggle'],
     open: async () => {
-      const before = storedCollapse();
       await clickButton('Settings');
-      await settingsColumn();
-      await pressKey('column.toggle');
-      await settingsColumn();
-      expect(hasRail()).toBe(false);
-      expect(storedCollapse()).toBe(before);
+      await settingsPage();
+      await clickButton(/^Hide sidebar/);
+      await waitFor(() => expect(hasRail()).toBe(true), WAIT);
+      expect(storedCollapse()).toBe('1');
+      expect(
+        screen.getByRole('button', { name: /^Show sidebar/ }).getAttribute('aria-pressed'),
+      ).toBe('false');
+      await settingsPage();
+      await clickButton(/^Show sidebar/);
+      await waitFor(() => expect(hasRail()).toBe(false), WAIT);
       await backToApp();
     },
-    lands: railAndSessionBack(null),
+    lands: railAndSessionBack('0'),
   },
   {
-    name: 'settings frame: the sessions peek is off while Settings is open and comes back after',
+    name: 'settings frame: the sessions peek stays on the folded rail while Settings is open',
     covers: ['openSettings'],
     open: async () => {
       await collapse();
       expect(screen.queryByTestId('sidebar-peek-edge')).not.toBeNull();
       await openFromRail();
-      expect(screen.queryByTestId('sidebar-peek-edge')).toBeNull();
+      expect(screen.queryByTestId('sidebar-peek-edge')).not.toBeNull();
       await backToApp();
     },
     lands: async (ctx) => {
@@ -205,21 +216,40 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'settings frame: no band, no crumb and no nested rail around the page in the default shell',
+    name: 'settings frame: a page with its band, its crumb and its own scopes rail beside the live column',
     covers: ['openSettings', 'scope:home'],
     open: async () => {
-      await collapse();
-      await openFromRail();
+      await clickButton('Settings');
+      await settingsPage();
     },
     lands: async () => {
       await heading('Appearance');
-      expect(document.querySelector('[data-studio-band]')).toBeNull();
-      expect(document.querySelector('[data-studio-rail]')).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Close settings' })).toBeNull();
+      expect(document.querySelector('[data-studio-band]')).not.toBeNull();
+      expect(document.querySelector('[data-studio-rail="page"]')).not.toBeNull();
+      expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeDefined();
+      const rail = screen.getByRole('complementary', { name: 'Settings scopes' });
+      expect(within(rail).getByRole('searchbox', { name: 'Search settings' })).toBeDefined();
       const detail = document.querySelector('[data-settings-detail]');
       expect(detail).not.toBeNull();
       expect(within(detail as HTMLElement).queryByRole('navigation')).toBeNull();
       expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
+      const column = screen.getByRole('navigation', { name: 'Sidebar' });
+      expect(column.hasAttribute('inert')).toBe(false);
+      expect(within(column).getByRole('button', { name: /^Tasks/ })).toBeDefined();
+    },
+  },
+  {
+    name: 'settings frame: a column row leaves Settings in one click',
+    covers: ['openSettings', 'door:inbox'],
+    open: async () => {
+      await clickButton('Settings');
+      await settingsPage();
+      const column = screen.getByRole('navigation', { name: 'Sidebar' });
+      await click(within(column).getByRole('button', { name: /^Tasks/ }));
+    },
+    lands: async () => {
+      await waitFor(() => expect(studioKind()).toBe('inbox'), WAIT);
+      expect(screen.queryByRole('complementary', { name: 'Settings scopes' })).toBeNull();
     },
   },
   sessionKeyRow({ id: 'session.prev' }),
@@ -273,7 +303,7 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       seedPolicyScene({ workspaceId: useAppStore.getState().currentWorkspaceId as WorkspaceId });
       await clickButton('Settings');
-      await settingsColumn();
+      await settingsPage();
       await goToClaude();
     },
     lands: async () => {

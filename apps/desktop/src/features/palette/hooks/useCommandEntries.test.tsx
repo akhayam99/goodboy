@@ -186,13 +186,13 @@ describe('the palette entry for the inner column', () => {
 
     const toggle = vi.fn();
     const key = innerColumnStore.add({
-      column: { id: 'chat', label: 'Fold the chat list', toggle },
+      column: { id: 'chat', label: 'Hide chat list', toggle },
     });
     const { result } = renderHook(() => useCommandEntries(), { wrapper });
     const entry = result.current.find((candidate) => candidate.key === 'action:inner-column');
     innerColumnStore.remove({ key });
 
-    expect(entry?.label).toBe('Fold the chat list');
+    expect(entry?.label).toBe('Hide chat list');
     expect(entry?.shortcut).toBe('innerColumn.toggle');
     entry?.run();
     expect(toggle).toHaveBeenCalledTimes(1);
