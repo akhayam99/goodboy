@@ -54,6 +54,7 @@
     "browser_favicon",
     "browser_find",
     "browser_history_state",
+    "browser_page_keys",
     "browser_profile_clear",
     "browser_profile_isolation",
     "browser_session_close",

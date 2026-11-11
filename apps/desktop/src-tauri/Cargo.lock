@@ -1640,6 +1640,7 @@ name = "goodboy-desktop"
 version = "0.32.1"
 dependencies = [
  "base64 0.22.1",
+ "block2",
  "core-foundation-sys",
  "dirs",
  "keyring",

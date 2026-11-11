@@ -10,6 +10,7 @@ use tauri::{
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
 use super::load;
+use super::page_keys;
 use super::profile::{self, ProfileId};
 #[cfg(target_os = "macos")]
 use super::reason::HISTORY_UNAVAILABLE;
@@ -185,6 +186,7 @@ pub(super) fn spawn_webview<R: Runtime>(
     let webview = window
         .add_child(builder, rect.position, rect.size)
         .map_err(failed)?;
+    page_keys::mark_tab_view(&webview);
     if !is_shown {
         if let Err(error) = webview.hide() {
             let _ = webview.close();

@@ -9,7 +9,7 @@ use tauri::test::{
 use tauri::webview::InvokeRequest;
 use tauri::{App, Listener, Manager, Url, Webview, WebviewUrl, WebviewWindowBuilder, Window};
 
-use super::commands::{close_session, list_session, owned_tab};
+use super::commands::{close_session, list_session, owned_tab, set_page_keys};
 use super::find::{find_in_page, MAX_NEEDLE_CHARS};
 use super::guard::label_of;
 use super::host::{
@@ -20,6 +20,7 @@ use super::lifecycle::{
     close_switched, hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT,
 };
 use super::load::{report_load, LoadPhase, TAB_LOAD_EVENT};
+use super::page_keys::{route_page_key, PageKeys, PAGE_KEY_EVENT};
 use super::profile::{begin_clear, ProfileId};
 use super::reason::{
     BROWSER_CALLER, INVALID_ADDRESS, NEEDLE_TOO_LONG, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY,
@@ -42,6 +43,7 @@ const PANE: TabBounds = TabBounds {
 fn app_with_windows(labels: &[&str]) -> App<MockRuntime> {
     let app = mock_app();
     app.manage(BrowserRegistry::default());
+    app.manage(PageKeys::default());
     app.manage(BrowserProfiles::under(
         std::env::temp_dir().join(format!("goodboy-browser-test-{}", uuid_v4())),
     ));
@@ -1434,4 +1436,65 @@ fn keeps_the_running_workspace_when_the_new_one_has_no_folder() {
         .facts(&running)
         .expect("facts");
     assert!(facts.is_shown);
+}
+
+fn hear_page_keys(app: &App<MockRuntime>, label: &str) -> Arc<Mutex<Vec<(String, String)>>> {
+    let heard = Arc::new(Mutex::new(vec![]));
+    let sink = Arc::clone(&heard);
+    app.get_webview_window(label)
+        .expect("window that holds no tab yet")
+        .listen(PAGE_KEY_EVENT, move |event| {
+            let payload: serde_json::Value =
+                serde_json::from_str(event.payload()).expect("payload is json");
+            sink.lock().expect("sink").push((
+                payload["tabId"].as_str().expect("tab id").to_string(),
+                payload["combo"].as_str().expect("combo").to_string(),
+            ));
+        });
+    heard
+}
+
+#[test]
+fn sends_a_page_key_only_to_the_window_that_owns_the_focused_tab() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let main = hear_page_keys(&app, "main");
+    let second = hear_page_keys(&app, "win-2");
+    let id = open(&app, "win-2", "harborline");
+    assert!(route_page_key(app.handle(), &label_of(&id), "cmd+KeyW"));
+    assert_eq!(
+        *second.lock().expect("heard"),
+        vec![(id.clone(), "cmd+KeyW".to_string())]
+    );
+    assert!(main.lock().expect("heard").is_empty());
+}
+
+#[test]
+fn leaves_the_key_to_the_page_for_a_gone_tab_or_a_view_that_is_not_a_tab() {
+    let app = app_with_windows(&["main"]);
+    let heard = hear_page_keys(&app, "main");
+    let id = open(&app, "main", "harborline");
+    close_tab(app.handle(), &id).expect("closes");
+    assert!(!route_page_key(app.handle(), &label_of(&id), "cmd+KeyW"));
+    assert!(!route_page_key(app.handle(), "main", "cmd+KeyW"));
+    assert!(heard.lock().expect("heard").is_empty());
+}
+
+#[test]
+fn takes_the_page_keys_from_the_app_and_refuses_them_from_a_browser_page() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let combos = vec!["cmd+KeyW".to_string(), "cmd+KeyC".to_string()];
+    assert!(matches!(
+        set_page_keys(&webview(&app, "main"), &combos),
+        Ok(1)
+    ));
+    let page = webview(&app, &label_of(&id));
+    assert!(matches!(
+        set_page_keys(&page, &[]),
+        Err(MessageError::Refused(code)) if code == BROWSER_CALLER
+    ));
+    assert_eq!(
+        app.state::<PageKeys>().combo_for(0x0D, 1 << 20),
+        Some("cmd+KeyW".to_string())
+    );
 }

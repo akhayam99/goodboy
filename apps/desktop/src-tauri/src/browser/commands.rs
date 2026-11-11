@@ -6,6 +6,7 @@ use super::find::{self, FindOutcome};
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::lifecycle;
+use super::page_keys::PageKeys;
 use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
     self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_CLOSED, TAB_GONE,
@@ -50,6 +51,12 @@ pub(crate) struct TabFindArgs {
     tab_id: String,
     needle: String,
     is_backwards: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PageKeysArgs {
+    combos: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -237,6 +244,22 @@ pub async fn browser_session_close(
     args: SessionArgs,
 ) -> Result<SessionClosed, MessageError> {
     close_session(&webview, &args.session_id)
+}
+
+#[tauri::command]
+pub async fn browser_page_keys(
+    webview: Webview,
+    args: PageKeysArgs,
+) -> Result<usize, MessageError> {
+    set_page_keys(&webview, &args.combos)
+}
+
+pub(super) fn set_page_keys<R: Runtime>(
+    caller: &Webview<R>,
+    combos: &[String],
+) -> Result<usize, MessageError> {
+    refuse_browser_caller(caller)?;
+    Ok(caller.state::<PageKeys>().replace(combos))
 }
 
 pub(super) fn list_session<R: Runtime>(
