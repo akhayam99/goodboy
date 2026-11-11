@@ -20,6 +20,7 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly mounts: ReadonlyArray<SessionMountView>;
   readonly projects: ReadonlyArray<WorkBranchProject>;
+  readonly isDetachedIncluded?: boolean;
 };
 
 type MountParams = {
@@ -34,15 +35,17 @@ type MountBranchParams = {
   readonly mountId: MountId;
   readonly mounts: ReadonlyArray<SessionMountView>;
   readonly projects: ReadonlyArray<WorkBranchProject>;
+  readonly isDetachedIncluded?: boolean;
 };
 
 export const workBranchOf = ({
   mountId,
   mounts,
   projects,
+  isDetachedIncluded,
 }: MountBranchParams): WorkBranch | null => {
   const mount = mounts.find((candidate) => candidate.id === mountId);
-  if (mount === undefined || !mount.isAttached) {
+  if (mount === undefined || (!mount.isAttached && isDetachedIncluded !== true)) {
     return null;
   }
   const project = projectById(projects, mount.projectId);
@@ -60,6 +63,7 @@ export const workBranchesOf = ({
   agents,
   mounts,
   projects,
+  isDetachedIncluded,
 }: Params): ReadonlyArray<WorkBranch> => {
   const members = new Set<string>(agentIds);
   const found = new Map<string, WorkBranch>();
@@ -71,7 +75,7 @@ export const workBranchesOf = ({
     if (mountId === null || found.has(mountId)) {
       continue;
     }
-    const branch = workBranchOf({ mountId, mounts, projects });
+    const branch = workBranchOf({ mountId, mounts, projects, isDetachedIncluded });
     if (branch === null) {
       continue;
     }

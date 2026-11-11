@@ -71,9 +71,10 @@ export type SessionRun = Readonly<{
   open: SessionRunOpen;
   verb: SessionRunVerb | null;
   branches: ReadonlyArray<WorkBranch>;
+  goneBranches: ReadonlyArray<WorkBranch>;
 }>;
 
-type SessionRunRow = Omit<SessionRun, 'branches'>;
+type SessionRunRow = Omit<SessionRun, 'branches' | 'goneBranches'>;
 
 type Params = {
   readonly attachedRuns: ReadonlyArray<AttachedRun>;
@@ -409,9 +410,22 @@ export const sessionRunsOf = ({
     ...autoRows,
     ...agentRows,
   ]
-    .map((row) => ({
-      ...row,
-      branches: workBranchesOf({ agentIds: row.agentIds, agents, mounts, projects }),
-    }))
+    .map((row) => {
+      const branches = workBranchesOf({ agentIds: row.agentIds, agents, mounts, projects });
+      const touched = workBranchesOf({
+        agentIds: row.agentIds,
+        agents,
+        mounts,
+        projects,
+        isDetachedIncluded: true,
+      });
+      return {
+        ...row,
+        branches,
+        goneBranches: touched.filter(
+          (branch) => !branches.some((attached) => attached.mountId === branch.mountId),
+        ),
+      };
+    })
     .sort(compareRuns);
 };

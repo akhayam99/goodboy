@@ -10,6 +10,7 @@ type Params = {
   readonly isFinished?: boolean;
   readonly isArchived?: boolean;
   readonly branches?: ReadonlyArray<WorkBranch>;
+  readonly goneBranches?: ReadonlyArray<WorkBranch>;
   readonly startedAt?: number;
   readonly verb?: SessionRun['verb'];
 };
@@ -22,6 +23,7 @@ export const aSessionRun = ({
   isFinished = false,
   isArchived = false,
   branches = [],
+  goneBranches = [],
   startedAt = 0,
   verb = null,
 }: Params): SessionRun => ({
@@ -45,4 +47,5 @@ export const aSessionRun = ({
   open: { kind: 'auto', agentId: brandId<AgentId>({ value: `agent-${id}` }) },
   verb,
   branches,
+  goneBranches,
 });
