@@ -88,7 +88,9 @@ const callsOf = ({ command }: CommandParams) =>
   storySpies.tauriInvoke.mock.calls.filter(([name]) => name === command);
 
 const renderWorld = ({ isBrowserOpen }: WorldParams) => {
-  store.setState({ drawer: isBrowserOpen ? { kind: 'browser', payload: null } : null });
+  store.setState({
+    drawer: isBrowserOpen ? { kind: 'browser', sessionId: SESSION_ID, payload: null } : null,
+  });
   return render(
     <ToastProvider>
       <WindowShortcuts />
