@@ -7,9 +7,7 @@ import {
   DRAWER_INSET,
   DRAWER_PUSH_RESERVE,
   MEASURE_FRAME,
-  BROWSER_DRAWER_DEFAULT,
   BROWSER_DRAWER_MAX,
-  BROWSER_DRAWER_MIN,
   DRAWER_TIERS,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
@@ -96,7 +94,7 @@ describe('the constants of the drawer scale', () => {
 
 describe('the browser tier', () => {
   it('opens at 720 and runs from 480 to the widest window', () => {
-    expect([BROWSER_DRAWER_MIN, BROWSER_DRAWER_DEFAULT, BROWSER_DRAWER_MAX]).toEqual([
+    expect([READER_DRAWER_MIN, READER_DRAWER_DEFAULT, BROWSER_DRAWER_MAX]).toEqual([
       480, 720, 5120,
     ]);
     expect(DRAWER_TIERS.browser).toEqual({

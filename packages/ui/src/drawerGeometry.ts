@@ -6,9 +6,7 @@ export const RIGHT_DRAWER_DEFAULT = 400;
 export const READER_DRAWER_MIN = 480;
 export const READER_DRAWER_MAX = 1000;
 export const READER_DRAWER_DEFAULT = 720;
-export const BROWSER_DRAWER_MIN = READER_DRAWER_MIN;
 export const BROWSER_DRAWER_MAX = 5120;
-export const BROWSER_DRAWER_DEFAULT = READER_DRAWER_DEFAULT;
 export const COLUMN_MIN_PUSH = 464;
 const READER_COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
@@ -33,9 +31,9 @@ export const DRAWER_TIERS: Readonly<Record<DrawerSizing, TierBounds>> = {
   side: { min: RIGHT_DRAWER_MIN, max: RIGHT_DRAWER_MAX, fallback: RIGHT_DRAWER_DEFAULT },
   reader: { min: READER_DRAWER_MIN, max: READER_DRAWER_MAX, fallback: READER_DRAWER_DEFAULT },
   browser: {
-    min: BROWSER_DRAWER_MIN,
+    min: READER_DRAWER_MIN,
     max: BROWSER_DRAWER_MAX,
-    fallback: BROWSER_DRAWER_DEFAULT,
+    fallback: READER_DRAWER_DEFAULT,
     isShrinkable: true,
   },
 };
