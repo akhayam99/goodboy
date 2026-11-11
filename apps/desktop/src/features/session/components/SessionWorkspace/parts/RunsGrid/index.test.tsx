@@ -560,22 +560,6 @@ describe('RunsGrid by branch', () => {
     within(retry).getByText('Also on fix/duplicate-credit');
   });
 
-  it('puts a run without a branch last in No branch', () => {
-    const explain = aNowAgent({
-      key: 'explain',
-      name: 'Explain the retry flow',
-      status: 'running',
-    });
-    renderWorld({
-      agents: [explain, onDup('block', 'Block double credits'), onRetry('limit', 'Limit retries')],
-    });
-
-    const headings = screen
-      .getAllByRole('heading', { level: 2 })
-      .map((heading) => heading.textContent);
-    expect(headings.at(-1)).toBe('No branch');
-  });
-
   it('switches to By state, remembers it for the session and lists each run once', () => {
     renderWorld({
       agents: [onDup('block', 'Block double credits'), onRetry('limit', 'Limit retries')],
@@ -677,66 +661,6 @@ describe('RunsGrid by branch', () => {
           .every((button) => !button.hasAttribute('disabled')),
       ).toBe(true),
     );
-  });
-
-  it('folds archived runs apart in a branch group and never shows them inline', () => {
-    const old = aNowRun({
-      key: 'old',
-      title: 'Old layout fix',
-      workflow: aNowWorkflow({ key: 'old', name: 'Fix a layout', stepNames: ['Find'] }),
-      overrides: { discardedAt: NOW_STARTED_AT },
-    });
-    const oldStep: Agent = {
-      ...aNowStepAgent({ attached: old, stepIndex: 0, status: 'completed', name: 'Find' }),
-      mountId: DUP.id,
-    };
-    const agents = [onRetry('limit', 'Limit retries'), oldStep];
-    useAppStore.setState({
-      sessionPhaseRuns: { [NOW_SESSION]: agents },
-      sessionMounts: { [NOW_SESSION]: [DUP, RETRY] },
-      projects: [PAYMENTS, NOTIFY],
-    });
-
-    renderGrid({ runs: runsOf({ agents, attached: [old], mounts: [DUP, RETRY] }) });
-
-    const group = screen.getByRole('list', { name: 'fix/duplicate-credit' });
-    expect(within(group).queryByRole('button', { name: /Old layout fix/ })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '1 archived' }));
-    within(group).getByRole('button', { name: /Old layout fix/ });
-    screen.getByRole('button', { name: 'Hide archived' });
-  });
-
-  it('puts the archived runs of a group after its finished ones', () => {
-    const old = aNowRun({
-      key: 'old',
-      title: 'Old layout fix',
-      workflow: aNowWorkflow({ key: 'old', name: 'Fix a layout', stepNames: ['Find'] }),
-      overrides: { discardedAt: NOW_STARTED_AT },
-    });
-    const oldStep: Agent = {
-      ...aNowStepAgent({ attached: old, stepIndex: 0, status: 'completed', name: 'Find' }),
-      mountId: DUP.id,
-    };
-    const finished: Agent = {
-      ...aNowAgent({ key: 'fin', name: 'Finished one', status: 'completed' }),
-      mountId: DUP.id,
-    };
-    const agents = [onRetry('limit', 'Limit retries'), oldStep, finished];
-    useAppStore.setState({
-      sessionPhaseRuns: { [NOW_SESSION]: agents },
-      sessionMounts: { [NOW_SESSION]: [DUP, RETRY] },
-      projects: [PAYMENTS, NOTIFY],
-    });
-
-    renderGrid({ runs: runsOf({ agents, attached: [old], mounts: [DUP, RETRY] }) });
-    fireEvent.click(screen.getByRole('button', { name: '1 archived' }));
-
-    const group = screen.getByRole('list', { name: 'fix/duplicate-credit' });
-    const names = within(group)
-      .getAllByRole('button', { name: /^Open / })
-      .map((row) => row.getAttribute('aria-label'));
-    expect(names.at(-1)).toMatch(/^Open Old layout fix/);
-    expect(names[0]).toMatch(/^Open Finished one/);
   });
 
   it('opens on the remembered choice after a reload and writes the choice down', () => {

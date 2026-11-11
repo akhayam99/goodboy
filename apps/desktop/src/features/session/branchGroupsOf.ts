@@ -30,6 +30,7 @@ export type BranchGroup = Readonly<{
   head: BranchGroupHead;
   runs: ReadonlyArray<SessionRun>;
   counts: BranchGroupCounts;
+  isGone: boolean;
 }>;
 
 type Params = {
@@ -180,22 +181,20 @@ export const branchKeyedGroupsOf = <T>({
   }));
 };
 
-export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGroup> => {
-  const groups = branchKeyedGroupsOf({
-    entries: runs.map((run) => ({ item: run, branches: run.branches })),
+export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGroup> =>
+  branchKeyedGroupsOf({
+    entries: runs.map((run) => ({
+      item: run,
+      branches: run.branches.length > 0 ? run.branches : run.goneBranches,
+    })),
     mounts,
   }).map((group) => ({
     key: group.key,
     head: group.head,
     runs: group.items,
     counts: countsOf({ runs: group.items }),
+    isGone: group.key !== NO_BRANCH_KEY && group.items.every((run) => run.branches.length === 0),
   }));
-  const named = groups.filter((group) => group.key !== NO_BRANCH_KEY);
-  const none = groups.filter((group) => group.key === NO_BRANCH_KEY);
-  const needing = named.filter((group) => group.counts.needsYou > 0);
-  const rest = named.filter((group) => group.counts.needsYou === 0);
-  return [...needing, ...rest, ...none];
-};
 
 type AlsoBranchesParams = {
   readonly branches: ReadonlyArray<WorkBranch>;

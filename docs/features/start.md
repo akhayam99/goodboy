@@ -173,7 +173,11 @@ All the work of a session lives in one rail entry, **Runs**: preset runs, orches
 
 - Each row says what it was, in the same words as the New session page: "Workflow · Preset Fix a layout", "Workflow · Orchestrated", "Agent · Auto agent" and "Agent · Scout".
 - The page says what it holds in one gray line under its title, whether it is empty or full.
-- Groups read **In progress**, **Finished** and **Archived** in bold with their count in gray, 32px apart. A run's name leads its row; the kind, state, progress, cost and age after it are one step smaller and gray.
+- Groups read their name in bold with their count in gray, 32px apart. A run's name leads its row; the kind, state, progress, cost and age after it are one step smaller and gray.
+- **By branch** puts what needs you first, then what is running, then open branches with the newest work on top. **No branch** follows the same rules.
+- A branch whose pull request is merged or closed, or whose worktree is gone, folds under one **Finished** row at the bottom once its runs are done. The row is closed until you press **Show**.
+- A finished run's name is gray. A live run keeps full weight and its state.
+- Archived runs never show on Runs. The timeline keeps them, and the run's page restores them.
 - An empty Runs page is the Start a run field alone.
 
 ### Start blank
@@ -226,7 +230,8 @@ This part is for contributors and agents who change the feature.
 - Auto guidance: `autoSystemPromptOf` adds a guidance block to the system prompt on every turn. `resolveDelegateChild` puts a `**Guidance**` section before the `**Task**` of each child.
 - Unset guidance leaves every prompt as it was. `changeRunRoute`, `continueWithRole` and `moveToAuto` carry it to the run they start.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
-- Branch arrival: `openBranchWork` carries the requested group to `useRunsFolds`, which unfolds its finished and archived rows in either grouping. `rowControls.test.tsx` covers bare state rows past the cap, focus and scrolling.
+- Branch arrival: `openBranchWork` carries the requested group to `useRunsFolds`, which unfolds its finished rows in either grouping, and **Finished** when the group sits there. `rowControls.test.tsx` covers bare state rows past the cap, a merged branch, focus and scrolling.
+- Runs order: `branchGroupOrderOf` orders the By branch groups and splits off the finished ones, which `FinishedBranches` folds. A removed worktree keeps its branch in `SessionRun.goneBranches`. `RunsGrid/index.tsx` drops archived runs. `RunsGrid/order.test.tsx` and the `u37-runs-order` scenes cover it.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.
 
 `StartFailure` owns the recovery line shared by `StartForm`.

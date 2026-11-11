@@ -112,27 +112,34 @@ describe('branchGroupsOf', () => {
     ]);
   });
 
-  it('puts a run without a branch last, in No branch', () => {
+  it('puts a run without a branch in No branch', () => {
     const explain = aSessionRun({ id: 'explain' });
     const block = aSessionRun({ id: 'block', branches: [DUP] });
     const groups = branchGroupsOf({ runs: [explain, block], mounts: MOUNTS });
 
-    expect(keysOf(groups)).toEqual([`mount:${DUP.mountId}`, NO_BRANCH_KEY]);
-    expect(groups[1]?.head).toEqual({ kind: 'none' });
+    expect(keysOf(groups)).toEqual([NO_BRANCH_KEY, `mount:${DUP.mountId}`]);
+    expect(groups[0]?.head).toEqual({ kind: 'none' });
   });
 
-  it('lifts a group that holds something waiting for you above the others', () => {
-    const quiet = aSessionRun({ id: 'quiet', branches: [DUP] });
+  it('counts what waits for you in the group', () => {
     const waiting = aSessionRun({
       id: 'waiting',
       branches: [RETRY],
       dot: 'needsYou',
       stateWord: 'Needs you',
     });
-    const groups = branchGroupsOf({ runs: [quiet, waiting], mounts: MOUNTS });
+    const groups = branchGroupsOf({ runs: [waiting], mounts: MOUNTS });
 
-    expect(keysOf(groups)[0]).toBe(`mount:${RETRY.mountId}`);
     expect(groups[0]?.counts).toEqual({ needsYou: 1, running: 0, finished: 0 });
+  });
+
+  it('files a run whose worktree was removed under its old branch, marked gone', () => {
+    const run = aSessionRun({ id: 'gone', goneBranches: [DUP] });
+    const [group] = branchGroupsOf({ runs: [run], mounts: MOUNTS });
+
+    expect(group?.key).toBe(`mount:${DUP.mountId}`);
+    expect(group?.isGone).toBe(true);
+    expect(group?.head).toMatchObject({ kind: 'branch', fact: '#318 Open' });
   });
 
   it('counts finished runs in the group and keeps the run list one row per run', () => {

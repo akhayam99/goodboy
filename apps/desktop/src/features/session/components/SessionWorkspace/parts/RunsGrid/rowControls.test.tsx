@@ -35,6 +35,7 @@ import { RENAME_REQUEST_EVENT } from '../../../../../../shared/utils/renameReque
 import { ObjectMenuProvider } from '../../../../../actions/components/ObjectMenuProvider';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
 import { aSessionRun } from '../../../../testing/aSessionRun';
+import { mountGithubOf } from '../../../../../workspace/testing/sessionColumn';
 import { RunsGrid } from './index';
 
 const session = aSession({ id: NOW_SESSION });
@@ -318,31 +319,27 @@ describe('from a branch to its runs', () => {
     expect(scrolled.mock.contexts).toContain(row);
   });
 
-  it('unfolds archived branch runs in the state view before scrolling to their bare row', () => {
+  it('opens Finished and focuses the run of a merged branch it arrives from', () => {
     useAppStore.getState().navigate({ to: sessionPlace({ sessionId: NOW_SESSION }) });
-    const archived = aSessionRun({
-      id: 'ledger-core',
-      isFinished: true,
-      isArchived: true,
-      branches: [
-        {
-          mountId: DUP.id,
-          projectId: PAYMENTS.id,
-          projectName: 'payments-api',
-          branch: DUP.branch,
-          worktreePath: DUP.worktreePath,
-        },
-      ],
-    });
+    const github = mountGithubOf({ mount: aProjectMountOf({ view: DUP }), number: 10198 });
+    const done: Agent = {
+      ...aNowAgent({ key: 'done', name: 'Older pass', status: 'completed' }),
+      mountId: DUP.id,
+    };
     const scrolled = vi.fn();
     vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(scrolled);
-    const runs = [archived];
-    render(
-      <ToastProvider>
-        <RunsGrid session={session} runs={runs} />
-      </ToastProvider>,
+    renderWorld({ agents: [done, onMount({ key: 'limit', name: 'Limit retries', mount: RETRY })] });
+    act(() =>
+      useAppStore.setState({
+        mountGithub: {
+          [DUP.id]: {
+            ...github,
+            pr: github.pr === null ? null : { ...github.pr, state: 'merged' },
+          },
+        },
+      }),
     );
-    expect(screen.queryByRole('button', { name: /^Open ledger-core/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Open Older pass/ })).toBeNull();
 
     act(() =>
       openBranchWork({
@@ -353,8 +350,7 @@ describe('from a branch to its runs', () => {
       }),
     );
 
-    const row = screen.getByRole('button', { name: /^Open ledger-core/ });
-    expect(row.getAttribute('data-row-key')).toBe(archived.id);
+    const row = screen.getByRole('button', { name: /^Open Older pass/ });
     expect(document.activeElement).toBe(row);
     expect(scrolled.mock.contexts).toContain(row);
   });
