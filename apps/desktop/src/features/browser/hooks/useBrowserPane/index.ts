@@ -244,6 +244,19 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         },
       });
     },
+    reopen: () => {
+      const closed = useAppStore.getState().browserClosedTabs[sessionId]?.[0];
+      if (closed === undefined) {
+        return;
+      }
+      void run({ step: () => openNew({ url: closed.url }) }).then((isDone) => {
+        if (!isDone) {
+          return;
+        }
+        useAppStore.getState().forgetClosedBrowserTab({ sessionId });
+        setWakeAttempt((count) => count + 1);
+      });
+    },
     togglePin: () => {
       if (shown === null || projectId === null) {
         return;

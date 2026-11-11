@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
+import { PaletteOverlay } from '../../../../../../features/palette/components/PaletteOverlay';
 import { AppFrame } from '../../audit/AppFrame';
 import { useSceneRailFold } from '../../useSceneRailFold';
 import { seedBrowserPane, type BrowserPaneSceneState } from './browserPaneSeed';
 import { useOpenedChrome } from './useOpenedChrome';
 import { usePeekedLink } from './usePeekedLink';
+
+const noop = () => undefined;
 
 type Props = {
   readonly state: BrowserPaneSceneState;
@@ -25,6 +28,9 @@ export const BrowserPaneScene = ({ state, theme }: Props) => {
     return null;
   }
   return (
-    <AppFrame view={state === 'page' ? 'browser' : 'session'} isRailCollapsed={false} hasPane />
+    <>
+      <AppFrame view={state === 'page' ? 'browser' : 'session'} isRailCollapsed={false} hasPane />
+      {state === 'keys' ? <PaletteOverlay initialQuery="dev" onClose={noop} /> : null}
+    </>
   );
 };

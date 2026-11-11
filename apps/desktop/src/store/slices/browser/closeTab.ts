@@ -2,6 +2,7 @@ import { browserTabCommands } from './browserTabCommands';
 import { browserWrite } from './browserWrite';
 import { browserWrites } from './browserWrites';
 import { neighborAfterClose } from './neighborAfterClose';
+import { pushClosedTab } from './pushClosedTab';
 import { withoutLiveTab } from './withoutLiveTab';
 import type { SliceDeps } from '../../slice-types';
 import type { SessionTabParams } from './types';
@@ -27,6 +28,13 @@ export const closeTab = ({ set, get }: SliceDeps) => {
               ? { ...state.browserActiveTab, [sessionId]: neighborAfterClose({ tabs, tabId }) }
               : state.browserActiveTab,
             browserLiveTabs: withoutLiveTab({ live: state.browserLiveTabs, sessionId, tabId }),
+            browserClosedTabs: {
+              ...state.browserClosedTabs,
+              [sessionId]: pushClosedTab({
+                closed: state.browserClosedTabs[sessionId] ?? [],
+                tab: tabs.find((tab) => tab.id === tabId),
+              }),
+            },
           };
         });
       },

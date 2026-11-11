@@ -86,9 +86,14 @@ describe('shortcut registry', () => {
       if (id === 'browser.address' && shadowed === 'ask.open') {
         continue;
       }
+      if (id === 'browser.closeTab' && shadowed === 'app.close') {
+        continue;
+      }
       if (
         (id === 'terminal.prevTab' && shadowed === 'session.prev') ||
-        (id === 'terminal.nextTab' && shadowed === 'session.next')
+        (id === 'terminal.nextTab' && shadowed === 'session.next') ||
+        (id === 'browser.prevTab' && shadowed === 'session.prev') ||
+        (id === 'browser.nextTab' && shadowed === 'session.next')
       ) {
         continue;
       }

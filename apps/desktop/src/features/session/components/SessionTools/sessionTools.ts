@@ -67,5 +67,6 @@ export const WORKSPACE_TOOLS: ReadonlyArray<SessionTool> = [
     group: 'workspace',
     icon: CONCEPT_ICONS.browser,
     label: NAMES.browser,
+    shortcut: 'browser.address',
   },
 ];

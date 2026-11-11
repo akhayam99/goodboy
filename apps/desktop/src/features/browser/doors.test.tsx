@@ -40,7 +40,7 @@ import { BrowserPane } from './components/BrowserPane';
 import { claimSessionLink } from './claimSessionLink';
 import { useBrowserPane } from './hooks/useBrowserPane';
 import { openInBrowser } from './openInBrowser';
-import type { BrowserTabFacts } from './types';
+import type { BrowserPageGroup, BrowserTabFacts } from './types';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../store/storyHarness')).tauriCoreModuleMock(),
@@ -127,6 +127,26 @@ const rowOf = ({ id, url, title }: RowParams): BrowserTab => ({
   position: rows.length,
   createdAt: 1,
   updatedAt: 1,
+});
+
+type GroupParams = {
+  readonly tabs: ReadonlyArray<BrowserTab>;
+  readonly sessionId?: SessionId;
+  readonly label?: string;
+  readonly isPins?: boolean;
+};
+
+const groupOf = ({
+  tabs,
+  sessionId = SESSION_ID,
+  label = 'Fix duplicate credit',
+  isPins = false,
+}: GroupParams): BrowserPageGroup => ({
+  key: `group:${sessionId}:${isPins}`,
+  label,
+  sessionId,
+  tabs,
+  isPins,
 });
 
 const stubHost = () => {
@@ -632,7 +652,7 @@ describe('command K', () => {
       rowOf({ id: 'tab-second', url: 'http://localhost:5173/checkout', title: 'Checkout again' }),
     ];
     store.setState({ browserSessionTabs: { [SESSION_ID]: tabs } });
-    const entries = browserTabEntries({ sessionId: SESSION_ID, tabs });
+    const entries = browserTabEntries({ groups: [groupOf({ tabs })] });
 
     entries[1]?.run();
 
@@ -652,15 +672,43 @@ describe('command K', () => {
       rowOf({ id: 'tab-docs', url: 'https://docs.harborline.dev/tax', title: '' }),
     ];
     store.setState({ browserSessionTabs: { [SESSION_ID]: tabs } });
-    const entries = browserTabEntries({ sessionId: SESSION_ID, tabs });
+    const entries = browserTabEntries({ groups: [groupOf({ tabs })] });
 
-    expect(entries.map((entry) => [entry.label, entry.detail])).toEqual([
-      ['Checkout', 'localhost:5173'],
-      ['docs.harborline.dev', 'docs.harborline.dev'],
+    expect(entries.map((entry) => [entry.label, entry.detail, entry.tag])).toEqual([
+      ['Checkout', 'Fix duplicate credit', 'Browser tab'],
+      ['docs.harborline.dev', 'Fix duplicate credit', 'Browser tab'],
     ]);
     entries[1]?.run();
 
     expect(store.getState().browserActiveTab[SESSION_ID]).toBe('tab-docs');
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
+  it('lists the tabs of another session and shows the one picked there', () => {
+    const tabs = [
+      rowOf({ id: 'tab-other', url: 'http://localhost:5173/payouts', title: 'Payouts' }),
+    ];
+    store.setState({ browserSessionTabs: { [OTHER_SESSION_ID]: tabs } });
+    const entries = browserTabEntries({
+      groups: [groupOf({ tabs, sessionId: OTHER_SESSION_ID, label: 'Payout hold copy' })],
+    });
+
+    expect(entries.map((entry) => [entry.label, entry.detail])).toEqual([
+      ['Payouts', 'Payout hold copy'],
+    ]);
+    entries[0]?.run();
+
+    expect(store.getState().browserActiveTab[OTHER_SESSION_ID]).toBe('tab-other');
+    expect(store.getState().drawer?.sessionId).toBe(OTHER_SESSION_ID);
+  });
+
+  it('lists a pin with the Pinned tag and shows it', () => {
+    const pins = [rowOf({ id: 'pin-docs', url: 'https://docs.harborline.dev/tax', title: 'Tax' })];
+    const entries = browserTabEntries({ groups: [groupOf({ tabs: pins, isPins: true })] });
+
+    expect(entries.map((entry) => [entry.label, entry.tag])).toEqual([['Tax', 'Pinned']]);
+    entries[0]?.run();
+
+    expect(store.getState().browserShownPin[SESSION_ID]).toBe('pin-docs');
   });
 });

@@ -50,6 +50,7 @@ export const BrowserTabStrip = ({ model }: Props) => {
       <IconButton
         icon={Plus}
         label="New tab"
+        shortcut="browser.newTab"
         size="xs"
         variant="ghost"
         tooltipSide="top"
