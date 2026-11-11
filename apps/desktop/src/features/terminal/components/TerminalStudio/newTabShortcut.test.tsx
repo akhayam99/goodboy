@@ -120,7 +120,7 @@ describe('the terminal list fold', () => {
 
     expect(screen.queryByRole('complementary', { name: 'Terminals' })).toBeNull();
     expect(localStorage.getItem('goodboy:studio-rail-folded:terminal:v1')).toBe('1');
-    expect(screen.getByRole('button', { name: 'Show the rail' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Show terminals' })).toBeDefined();
   });
 });
 

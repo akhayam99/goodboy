@@ -12,25 +12,20 @@ what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.
 
 | part        | shape                                                                                                    |
 | ----------- | -------------------------------------------------------------------------------------------------------- |
-| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton` in the top bar, left of Back (⌘B)     |
+| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton`, first in the top bar left zone (⌘B)  |
 | New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
 | door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
 | current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
-| foot        | Settings as a door, then the Goodboy row (`flex-1`); no setup line, no bug icon                          |
+| foot        | Settings as a door, then the Goodboy line and the 24px bug icon in `[data-column-corner]`                |
 | rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
 
 Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
-column swaps its content only for Settings, as two layers in place that
-cross-fade (opacity and a 6px slide, 160ms, `motion-safe` only); the hidden
-layer is `inert`. Settings takes the column in both sidebar states: over the
-44px rail the grid track grows to the saved width while the stored collapse
-stays untouched. A studio never covers it: `studioCoversLeft={false}` puts the
-studio slot in the `main` area as its own wrapped sheet (`bg-background`, the
-`wrapped` sheet edge), and `StudioFrame` with `placement="content"` draws its
-band on that sheet instead of on the chrome. A frame whose body is a bare
-page (Settings in the default shell) draws no band (`hasBand={false}`) and gives
-its page the band's 40px as top padding, so the title row lands where a session
-page's does under its trail.
+column never changes its content: no page swaps it, and only the sidebar toggle
+and ⌘B fold it. A studio never covers it: a studio is a page in the one main
+slot, drawn inside the content sheet over the page it replaces, and
+`StudioFrame` with `placement="content"` draws its band on that sheet instead
+of on the chrome. Settings is such a page, with its
+scopes in a page rail beside its detail.
 
 **A session has its own rail, not a card.** The workspace list keeps every
 session a flat row and never changes level; the open one is set in medium
@@ -55,19 +50,21 @@ its filters (Tasks, Notifications) uses `StudioRailLayout` with
 `placement="page"`: the rail sits on the page background and the resize handle
 draws the only line between it and the detail. Every page rail is 288 wide
 (`standard`), resizes between 220 and 420 unless the page passes `min` and
-`max`, and can take `railHeader` (Tasks' search) plus `onCollapsedChange`, which
-adds the fold control to the first row; `isCollapsed` hides the rail, and
+`max`, and can take `railHeader` (Settings' search) plus `onCollapsedChange`,
+which puts the fold control first in the first row, at its top-left, named
+"Hide <rail name>"; `isCollapsed` hides the rail, and
 `rail={null}` draws no rail at all, for a page with nothing to list (Chat before
 its first chat, Terminal before its first terminal). Chat and Terminal rails
 fold like every page rail (⌥⌘B, `useInnerColumn`), and their first child is
 the full-width secondary New chat / New terminal button. A folded rail keeps a
-44px strip with Show the rail at the fold control's height. The page
+44px strip with "Show <rail name>" at the fold control's x and height, and the
+page's `foldedActions` under it (Settings' Search). The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
 forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
 title row: a 28px secondary button with the lines icon (`ListFilter`) and the count of active
 filters, opening the same facets in a popover. Every filter trigger renders
 through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only
-the two icon-only `xs` triggers (the Sessions header and the file tree), and
+the two icon-only `xs` triggers (the Board header and the file tree), and
 that list only falls.
 
 ## Pane anatomy
@@ -268,7 +265,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../../DESIGN.md#act
 - An overflow menu that has to confirm one of its items in place gives the entry a `confirm` (`MenuList` swaps the list for a plain `InlineConfirm` in its own popover) and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". A page header holds no switch: the session's autorun is a menu verb, Turn on Autopilot or Turn off Autopilot, in the session `⋯`.
 
-**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete asks in a `ConfirmPopover` anchored to the overflow trigger (focus lands on Cancel, Escape and Cancel close it and give focus back to the trigger). When a page has no second rare verb, so its overflow would hold one item, the verb stays a quiet text button instead (`ObjectActionVerb` over its registry kind, which keeps the confirm, now anchored to the word): Notifications' **Delete all** after **Mark all read**, and **Discard request** in the Auto project ask. A row or strip whose registry kind may resolve to one action wraps its `⋯` in `ObjectMenuOrVerb`, which draws the menu from two actions and the lone action as a quiet word: the diff file header and the terminal tab strip. A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
+**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. An overflow, like every menu the app draws, holds five rows at most in any state; more becomes a page, a submenu or a list (`overflowRows.test.ts` and `overflowRows.drawer.test.tsx` measure each state, `menu-row-budget.test.ts` counts the rows of the hand written menus). The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete asks in a `ConfirmPopover` anchored to the overflow trigger (focus lands on Cancel, Escape and Cancel close it and give focus back to the trigger). When a page has no second rare verb, so its overflow would hold one item, the verb stays a quiet text button instead (`ObjectActionVerb` over its registry kind, which keeps the confirm, now anchored to the word): Notifications' **Delete all** after **Mark all read**, and **Discard request** in the Auto project ask. A row or strip whose registry kind may resolve to one action wraps its `⋯` in `ObjectMenuOrVerb`, which draws the menu from two actions and the lone action as a quiet word: the diff file header and the terminal tab strip. A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
 
 **Run headers and Close.** A run page (a preset step, the preset overview, the
 orchestrated document) shows Pause run or Resume run and Stop run (which

@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
 import { backAfterPlace } from '../drawer/backAfterPlace';
+import { keptTool } from '../drawer/keptTool';
 import { foldedLensOf } from './foldedLensOf';
 import type { BranchTab, GetFn, Location, SessionView, SetFn } from './types';
 
@@ -81,11 +82,12 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   }
   if (place.at === 'board' || place.at === 'session-draft') {
     void get().setCurrentSession(null);
-    set({
-      drawer: null,
-      drawerBack: null,
+    const tool = keptTool({ drawer, place });
+    set((state) => ({
+      drawer: tool,
+      drawerBack: backAfterPlace({ state, place, drawer: tool }),
       openSessionDraftWorkspaceId: place.at === 'board' ? null : get().currentWorkspaceId,
-    });
+    }));
     return;
   }
   const { sessionId, view } = place;

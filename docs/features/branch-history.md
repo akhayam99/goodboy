@@ -143,18 +143,18 @@ On a conflict or a commit hook, the panel does three things.
 **While a stop is open**
 
 - Whatever its reason, the pull request's Merge says **Conflicts with main. Resolve them in the banner.** The Branch header drops its primary and push.
-- The header, the banner, the action registry and the rail all read one test. The palette's Merge belongs to the registry. It reads the write destination's mount when it names none.
+- The header, the banner, the action registry and the rail all read one test. Merge in Search or run belongs to the registry. It reads the write destination's mount when it names none.
 - The test finds a Goodboy stop in the phase stopped, or a rebase in progress in the worktree. It reads the page's live status or the status cache.
 - **Keep branch as it was** closes the panel, leaves the branch where it was and records it. The stop leaves Next in every window, and Activity reads **Kept hl/fix-duplicate-credit as it was**. A later rebase that stops again brings a new row.
 - A stop also leaves Next once its pull request merged or closed or its branch left the session. A newer stop on the same branch replaces it, so the older History rewriter stops asking under Needs you.
-- The palette has the same verb as **Resolve rebase conflicts with Auto**.
+- Search or run has the same verb as **Resolve rebase conflicts with Auto**.
 - The panel does not depend on the window that ran the rebase. After a restart, a reload or in a second window, it comes back from the saved stop with the same verbs. **Resolve with Auto** reads the rebase plan again before it starts.
 - In Next the stop is one row titled by the branch, with the panel's main verb (see Overview).
 - **Open rebase** on the stop's row in Activity, a click on its title in Next, and **Open rebase** on the transcript of a finished History rewriter all do the same. They open the branch the rebase stopped on, with this panel in view, by its mount, never the branch on screen.
 
 **Rebase all**
 
-**Rebase all** rebases every clean branch of a session with git, one at a time. It sits on the session Projects card when two or more branches are behind their base. The palette has **Rebase all behind branches**.
+**Rebase all** rebases every clean branch of a session with git, one at a time. It sits on the session Projects card when two or more branches are behind their base. Search or run has **Rebase all behind branches**.
 
 A branch that conflicts goes to one Auto run. Auto resolves the conflicts one by one and asks only when one is ambiguous.
 

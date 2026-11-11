@@ -6,18 +6,22 @@ import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDe
 type Props = {
   readonly main: ReactNode;
   readonly drawer: ReactNode;
+  readonly drawerKey?: string;
   readonly drawerRef?: Ref<HTMLElement>;
+  readonly onCloseDrawer?: () => void;
 };
 
 const ARIA_LABEL = 'Task';
 const RESIZE_LABEL = 'Resize the task pane';
 
-export const InboxStudioLayout = ({ main, drawer, drawerRef }: Props) => {
+export const InboxStudioLayout = ({ main, drawer, drawerKey, drawerRef, onCloseDrawer }: Props) => {
   const isHosted = useStudioDrawer({
     node: drawer ?? null,
     ariaLabel: ARIA_LABEL,
     resizeLabel: RESIZE_LABEL,
     sizing: 'reader',
+    ...(drawerKey !== undefined && { drawerKey }),
+    ...(onCloseDrawer !== undefined && { onClose: onCloseDrawer }),
     ...(drawerRef !== undefined && { drawerRef }),
   });
   const page = <StudioDetail>{main}</StudioDetail>;

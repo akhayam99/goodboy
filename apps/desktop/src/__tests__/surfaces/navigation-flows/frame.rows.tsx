@@ -115,10 +115,10 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     name: 'frame: the Board title sits on one header row, no band above it',
     covers: ['navigate'],
     open: async () => {
-      await clickButton(/^Sessions/);
+      await clickButton(/^Board/);
     },
     lands: async () => {
-      await heading('Sessions');
+      await heading('Board');
       const title = onlyH1({ scope: document });
       const row = titleRowOf(title);
       expect(row).not.toBeNull();
@@ -210,9 +210,18 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'frame: the Terminal page sits on the page header inset',
-    covers: ['openTerminalStudio', 'studio:terminal'],
+    covers: ['studio:terminal'],
     door: 'visible',
-    open: () => click(doorOf('terminal')),
+    open: async () => {
+      const [terminal] = screen
+        .getAllByTestId('pane-toggle-terminal')
+        .filter((button) => button.closest('[data-drawer-edge]') === null);
+      if (terminal === undefined) {
+        throw new Error('No Terminal button on the right rail');
+      }
+      await click(terminal);
+      await clickButton(/^Open as page$/);
+    },
     lands: async () => {
       await studio('Terminal');
       await heading('Terminal');

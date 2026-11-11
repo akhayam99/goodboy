@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { COLUMN_DOORS, COLUMN_ROW_DOORS, COLUMN_TOOL_DOORS } from './columnDoors';
+import { COLUMN_DOORS } from './columnDoors';
 
 describe('the column doors', () => {
   it('names the tracker door Tasks and keeps its id', () => {
@@ -16,45 +16,27 @@ describe('the column doors', () => {
     expect(COLUMN_DOORS.filter((entry) => !registry.has(entry.icon))).toEqual([]);
   });
 
-  it('keeps the running stage glyph off the Sessions door', () => {
+  it('keeps the running stage glyph off the Board door', () => {
     const door = COLUMN_DOORS.find((entry) => entry.id === 'board');
 
     expect(door?.icon).toBe(CONCEPT_ICONS.sessions);
     expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists Sessions, Tasks, Workflows, Chat and Impact, then the Terminal, Browser and Monitoring tools', () => {
+  it('lists the six destinations and no tool', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
-      'Sessions',
+      'Board',
       'Tasks',
       'Workflows',
       'Chat',
       'Impact',
-      'Terminal',
-      'Browser',
       'Monitoring',
     ]);
   });
 
-  it('marks only Impact as a reference door', () => {
+  it('marks Impact and Monitoring as quiet reference doors', () => {
     expect(
       COLUMN_DOORS.filter((entry) => entry.isReference === true).map((entry) => entry.id),
-    ).toEqual(['impact']);
-  });
-
-  it('splits the doors into rows and tools, keeping the rail order', () => {
-    expect(COLUMN_ROW_DOORS.map((entry) => entry.id)).toEqual([
-      'board',
-      'inbox',
-      'workflows',
-      'chat',
-      'impact',
-    ]);
-    expect(COLUMN_TOOL_DOORS.map((entry) => entry.id)).toEqual([
-      'terminal',
-      'browser',
-      'monitoring',
-    ]);
-    expect([...COLUMN_ROW_DOORS, ...COLUMN_TOOL_DOORS]).toEqual(COLUMN_DOORS);
+    ).toEqual(['impact', 'monitoring']);
   });
 });

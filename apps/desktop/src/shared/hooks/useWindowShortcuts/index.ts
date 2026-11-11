@@ -19,7 +19,11 @@ const safeCapture = ({
   }
 };
 
-export const useWindowShortcuts = (): void => {
+type Params = {
+  readonly onBeforeReload: () => Promise<void>;
+};
+
+export const useWindowShortcuts = ({ onBeforeReload }: Params): void => {
   useEffect(() => {
     void applyStoredZoom();
   }, []);
@@ -37,8 +41,8 @@ export const useWindowShortcuts = (): void => {
         ...(location !== undefined && { location }),
       });
     }
-    window.location.reload();
-  }, []);
+    void onBeforeReload().finally(() => window.location.reload());
+  }, [onBeforeReload]);
 
   useShortcut('zoom.in', () => void zoomIn());
   useShortcut('zoom.out', () => void zoomOut());

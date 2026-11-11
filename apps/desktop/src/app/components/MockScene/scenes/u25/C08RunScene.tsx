@@ -50,15 +50,12 @@ const actionsOf = ({ open }: ActionsParams): ColumnActions => ({
   openInbox: open,
   openChat: open,
   openWorkflows: open,
-  openTerminalStudio: open,
-  openBrowserStudio: open,
   openNewChat: open,
   openMonitoring: open,
   openImpact: open,
   openSettings: open,
   openChangelog: open,
   openGuide: open,
-  openShortcuts: open,
 });
 
 const ACTIONS = actionsOf({ open: noop });

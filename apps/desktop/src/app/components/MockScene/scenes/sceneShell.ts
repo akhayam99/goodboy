@@ -1,4 +1,4 @@
-import type { ColumnPlace } from '../../SideColumn/columnPlace';
+import type { ColumnPlace } from '../../../../shared/navigation/columnPlace';
 import type { FooterTarget } from '../../../hooks/useAppOverlays/overlayState';
 
 export const sceneColumnPlace = ({ target }: { readonly target: FooterTarget }): ColumnPlace => {
@@ -11,8 +11,10 @@ export const sceneColumnPlace = ({ target }: { readonly target: FooterTarget }):
       return 'settings';
     case 'impact':
       return 'impact';
-    case 'link':
     case 'changelog':
+    case 'guide':
+      return 'help';
+    case 'link':
     case null:
       return null;
     default: {

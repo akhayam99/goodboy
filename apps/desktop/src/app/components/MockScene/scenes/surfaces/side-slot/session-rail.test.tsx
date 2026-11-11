@@ -63,7 +63,11 @@ describe('the right rail scenes', () => {
   it('waiting: the plan holds the slot and the rail rings Terminal', async () => {
     renderScene('session-rail-waiting');
 
-    const terminal = await screen.findByRole('button', { name: 'Terminal, waiting' }, WAIT);
+    const terminal = await screen.findByRole(
+      'button',
+      { name: /^Terminal(, \d+ running)?, waiting$/ },
+      WAIT,
+    );
     expect(terminal.closest('[data-slot="session-tool"]')?.getAttribute('data-state')).toBe(
       'waiting',
     );

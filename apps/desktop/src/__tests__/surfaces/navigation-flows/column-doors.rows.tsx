@@ -10,10 +10,8 @@ import {
   both,
   click,
   clickButton,
-  clickMenuItem,
   heading,
   openPalette,
-  settingsColumn,
   settle,
   useAppStore,
   visible,
@@ -45,9 +43,18 @@ const DOOR_ORDER: ReadonlyArray<string> = [
   'workflows',
   'chat',
   'impact',
-  'terminal',
   'monitoring',
 ];
+
+const railTool = (name: 'terminal' | 'browser'): HTMLElement => {
+  const [button] = screen
+    .getAllByTestId(`pane-toggle-${name}`)
+    .filter((candidate) => candidate.closest('[data-drawer-edge]') === null);
+  if (button === undefined) {
+    throw new Error(`No ${name} button on the right rail`);
+  }
+  return button;
+};
 
 const doorIdsInColumn = (): ReadonlyArray<string> =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-side-column] [data-column-door]')).map(
@@ -71,7 +78,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     open: async () => undefined,
     lands: async () => {
       expect(doorIdsInColumn().filter((id) => DOOR_ORDER.includes(id))).toEqual(DOOR_ORDER);
-      expect(doorIn('board').textContent).toContain('Sessions');
+      expect(doorIn('board').textContent).toContain('Board');
       expect(doorIn('inbox').textContent).toContain('Tasks');
     },
   },
@@ -172,25 +179,52 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'New workflow'),
   },
   {
-    name: 'column: terminal',
-    covers: ['openTerminalStudio', 'studio:terminal'],
+    name: 'right rail: Terminal docks beside the place and its button is pressed',
+    covers: ['rail:terminal'],
     door: 'visible',
-    open: () => click(doorIn('terminal')),
+    open: () => click(railTool('terminal')),
     lands: both(
-      () => studio('Terminal'),
-      () => visible('heading', 'No terminal yet'),
-      async () => expect(doorIn('terminal').getAttribute('aria-current')).toBe('page'),
+      () => visible('button', 'Open as page'),
+      async () => expect(railTool('terminal').getAttribute('aria-pressed')).toBe('true'),
+      async () => expect(useAppStore.getState().appStudio).toBeNull(),
     ),
   },
   {
-    name: 'column: browser',
-    covers: ['openBrowserStudio', 'studio:browser'],
+    name: 'right rail: Terminal grows into its page from the dock, the button selected',
+    covers: ['studio:terminal'],
     door: 'visible',
-    open: () => click(doorIn('browser')),
+    open: async () => {
+      await click(railTool('terminal'));
+      await clickButton(/^Open as page$/);
+    },
+    lands: both(
+      () => studio('Terminal'),
+      async () => expect(railTool('terminal').getAttribute('aria-current')).toBe('page'),
+      async () => expect(doorIdsInColumn()).not.toContain('terminal'),
+    ),
+  },
+  {
+    name: 'right rail: Browser docks beside the place',
+    covers: ['rail:browser'],
+    door: 'visible',
+    open: () => click(railTool('browser')),
+    lands: both(
+      async () => expect(useAppStore.getState().drawer?.kind).toBe('browser'),
+      async () => expect(railTool('browser').getAttribute('aria-pressed')).toBe('true'),
+      async () => expect(useAppStore.getState().appStudio).toBeNull(),
+    ),
+  },
+  {
+    name: 'right rail: Browser grows into its page from the dock, the button selected',
+    covers: ['studio:browser'],
+    door: 'visible',
+    open: async () => {
+      await click(railTool('browser'));
+      await clickButton(/^Open as page$/);
+    },
     lands: both(
       () => studio('Browser'),
-      async () => expect(doorIn('browser').getAttribute('aria-current')).toBe('page'),
-      async () => expect(useAppStore.getState().appStudio?.kind).toBe('browser'),
+      async () => expect(railTool('browser').getAttribute('aria-current')).toBe('page'),
     ),
   },
   {
@@ -234,18 +268,19 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: settings swaps the column',
+    name: 'column: settings opens a page and leaves the column live',
     covers: ['openSettings', 'studio:settings', 'scope:home'],
     door: 'visible',
     open: () => click(doorIn('settings')),
     lands: both(
-      () => visible('navigation', 'Settings scopes'),
+      () => visible('complementary', 'Settings scopes'),
       () => visible('button', /^Back to app/),
       () => visible('searchbox', 'Search settings'),
-      async () =>
-        expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-          true,
-        ),
+      async () => {
+        const nav = document.querySelector('[data-column-layer="nav"]');
+        expect(nav?.hasAttribute('inert')).toBe(false);
+        expect(doorIn('settings').getAttribute('aria-current')).toBe('page');
+      },
     ),
   },
   {
@@ -253,7 +288,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate'],
     open: () => click(doorIn('board')),
     lands: both(
-      () => heading('Sessions'),
+      () => heading('Board'),
       async () => expect(useAppStore.getState().currentSessionId).toBeNull(),
     ),
   },
@@ -292,15 +327,10 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: the terminal tile opens the studio and its page starts a fresh terminal',
-    covers: ['openTerminalStudio'],
-    open: async () => {
-      await click(doorIn('terminal'));
-      await clickButton(/^New terminal$/);
-    },
+    name: 'right rail: the Terminal button docks a terminal and counts it in its label',
+    covers: ['toggleTerminalDock'],
+    open: () => click(railTool('terminal')),
     lands: both(
-      () => studio('Terminal'),
-      () => visible('complementary', 'Terminals'),
       async () =>
         waitFor(
           () =>
@@ -309,48 +339,40 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
             ).toBeGreaterThan(0),
           WAIT,
         ),
+      async () =>
+        waitFor(
+          () =>
+            expect(railTool('terminal').getAttribute('aria-label')).toMatch(
+              /^Terminal, \d+ running/,
+            ),
+          WAIT,
+        ),
     ),
   },
   {
-    name: 'column: goodboy chip to the changelog',
+    name: "column: goodboy line, then the What's new tab",
     covers: ['openChangelog', 'studio:changelog'],
     door: 'visible',
     open: async () => {
-      await clickButton(/^Goodboy beta/);
-      await clickMenuItem(/^What's new/);
-    },
-    lands: () => heading(/^Goodboy \d/),
-  },
-  {
-    name: 'column: goodboy chip to the guide',
-    covers: ['openGuide', 'studio:guide'],
-    door: 'visible',
-    open: async () => {
-      await clickButton(/^Goodboy beta/);
-      await clickMenuItem(/^Guide/);
-    },
-    lands: () => studio('Help'),
-  },
-  {
-    name: 'column: goodboy chip to pair an iPhone',
-    covers: ['studio:settings', 'scope:app', 'settings:iphone'],
-    door: 'visible',
-    open: async () => {
-      await clickButton(/^Goodboy beta/);
-      await clickMenuItem(/^Pair an iPhone/);
+      await clickButton(/^Goodboy, help/);
+      await click(await screen.findByRole('tab', { name: "What's new" }));
     },
     lands: both(
-      () => settingsColumn(),
-      () => heading('iPhone'),
+      () => studio("What's new"),
+      () => heading(/^Goodboy \d/),
     ),
   },
   {
-    name: 'column: report a bug from the Goodboy menu opens the sheet',
+    name: 'column: goodboy line to the guide',
+    covers: ['openGuide', 'studio:guide'],
+    door: 'visible',
+    open: () => clickButton(/^Goodboy, help/),
+    lands: () => studio('Guide'),
+  },
+  {
+    name: 'column: the bug icon beside the goodboy line opens the sheet',
     covers: ['column:report'],
-    open: async () => {
-      await clickButton(/^Goodboy beta/);
-      await clickMenuItem(/^Report a bug/);
-    },
+    open: () => clickButton(/^Report a bug/),
     lands: () => visible('dialog', 'Report a bug'),
   },
   {

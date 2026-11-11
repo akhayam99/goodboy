@@ -2,6 +2,56 @@
 
 > **Read this when** you change the frame of the window: a context menu, a surface, the top bar, the column foot, the menu bar, the report sheet, the column doors or a shortcut. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
 
+## Skeleton
+
+The window is one strip of chrome (the top bar), a left column, one main slot
+and, inside a workspace, a right rail with a dock. Eight principles say where
+each thing lives. A principle marked **holds** is true in the code today and is
+guarded by a test. A principle marked **target** is the direction of the
+skeleton: it is not true yet, no test fails on it, and the unit that makes it
+true turns it into a **holds** line and adds its guard in the same change. A
+unit that changes the skeleton edits this section first.
+
+1. **Left is where you go. Target.** Owned by The column and The session rail.
+2. **Right is what you hold. Holds.** The right rail sits at the sheet's right
+   edge on every screen of a workspace: the session tools on a session page,
+   Terminal and Browser at its foot everywhere. Terminal and Browser stay open
+   across every move, and on Tasks, Chat and Workflows the page's own panel and
+   the dock replace each other (`toolsStay.test.ts`, `useOneRightPanel`,
+   `p10-right-dock.test.tsx`). Owned by The session tools
+   ([session-rail.md](./session-rail.md)).
+3. **One home, one name. Target.** Owned by Column doors.
+4. **A page replaces the page. Target.** Owned by Surfaces.
+5. **The top bar is identity, movement and live state. Holds for the toggle.**
+   The sidebar toggle sits in the top bar, left of Back and Forward, and is the
+   only control the bar holds for another container. Every chip opening the
+   home of its number is target.
+6. **The bottom-left is the app's corner. Target.** Owned by The column foot.
+7. **A menu shows five rows at most. Target.** Right-click menus are exempt:
+   they mirror the action catalog (Context menus).
+8. **Each column folds one way. Target.** Owned by the rail paragraphs under
+   Surfaces.
+
+What holds today and is guarded:
+
+- **One selected sign.** A control lights from `isCurrent` and never from its
+  own state, in the column, the session rail, the session list, the Goodboy row
+  and the bell; every one of them reads the one column place (`useColumnPlace`),
+  New session included; the session rail reads the session pages sign
+  (`currentSignOf`). Every page except the New workspace flow names a place, so
+  exactly one control is lit, and the open session is never lit under a page. `__tests__/navigation/oneDoor.test.ts`.
+- **One door for moves.** Only `navigate`, `back`, `forward`, `up` and
+  `amendFocus` move the user outside the navigation slice. Same test.
+- **Saved layouts load without loss.** A window layout and the fold choices
+  written by 0.32.0 restore: every studio kind, every drawer kind, the board,
+  a session, and a Terminal dock without a session.
+  `__tests__/navigation/restore-previous-build.test.ts`.
+- **Every route has a row.** `__tests__/surfaces/navigation-flows/`.
+
+A persisted key, a studio kind, a drawer kind and a lens id keep their names:
+the fixtures above are the proof that a build can still read what the last one
+wrote.
+
 ## Context menus
 
 Every object's actions are written once, in the action registry
@@ -242,55 +292,76 @@ waits in a back chip at the left of the drawer head, one level deep, so a
 third open drops the oldest. The chip reads the kind and the title
 (`Plan · Add tax to the checkout total`, `Terminal`); a click swaps the two.
 Closing the drawer brings back what the chip holds, and closing that empties
-the slot. Esc in the session is one ladder: an open menu, popover or field
-takes it first, then the top of the slot closes, then the drawer from the
-chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS, File > Close the Drawer)
-closes the top of the slot from anywhere, a focused terminal or web page
-included; an open menu or dialog takes it first. The right rail stays at 44px
+the slot. **The dock follows the page.** A session drawer belongs to its
+session: while a page (a studio) replaces the session, the drawer parks, out of
+sight and out of reach of every close key, and Esc, Close or Back brings it
+back with the session. A parked drawer stays mounted, hidden and inert
+(`DrawerColumn` `isParked`), out of the flow so the page takes its width, with
+no exit and no width change, so a draft, a scroll position or a running
+terminal survives the trip. The session under the page widens while the drawer
+is parked and narrows again on return, so its transcript re-wraps. Terminal
+and Browser are workspace tools and follow no session: they stay docked across
+every move, on another session, on the Board and beside every page but their
+own (`keptTool`, `selectDrawerPanel`). Under their own page they stay in the
+store but are not mounted (`useShellRight`), so no shortcut answers twice. At
+a narrow width the dock floats over the page: the page slot lives in its own
+layer (`data-studio-host`, `isolate`), so the dock and its scrim always paint
+above the page. On
+Tasks, Chat and Workflows the page's own panel and the dock are one slot:
+opening the dock closes the panel, and opening a panel closes the workspace
+tools (`useOneRightPanel`, `closeWorkspaceTools`). Close keys
+read `selectDrawerPanel`, which is null under a studio unless a workspace tool
+shows beside it, and the history entry keeps the drawer. A workspace switch
+empties the slot. Esc inside a parked drawer is suspended, so it reaches the
+page, and so are the list keys and the Scripts run and stop keys
+(`useIsDrawerParked`), so a hidden list never moves or runs a script. After the trip the drawer's inner step (a plan in Ask) answers first
+again. A drawer's own key (⌘⌥C, ⌘⌥X, ⌘⌥S) on a page leaves that page and every
+page stacked under it, and shows that drawer; it never closes a parked one,
+and an overlay drawer takes focus back. Esc in the session is one ladder: an open
+menu, popover or field takes it first, then the top of the slot closes, then
+the drawer from the chip, then the page goes up. ⌘⇧W (Ctrl+F4 off macOS,
+File > Close the Drawer) closes the top of the slot from anywhere, a focused
+terminal or web page included; an open menu or dialog takes it first, and a
+parked drawer is never closed. The right rail stays at 44px
 and says the same thing: the tool in the slot is pressed, the tool in the chip
 wears a small ring and is named waiting, and a signal dot sits with either (see
 [session-rail.md](./session-rail.md), The session tools). The rules, the store and the navigation cases are in
 [home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
-workspace, in the same shape everywhere: the toggle on the traffic-light axis,
-the doors Board
-(⌘⇧H), Tasks, Chat, Workflows and Impact as one 28px row each (row icon and word in
-`text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
-new chat, never the last one), always visible. The tools, Terminal (⌃`), Browser and Monitoring, are
-not rows: they share one row of 48px tiles under the doors (`ColumnToolTiles`), the icon with its
-word under it, each tile as wide as the others. A tile opens the
-tool's page, is pressed on that page, takes the same focus ring as a row and carries the count
-at its top right (`text-chip`, tabular, `9+` past nine) or the warning dot. New terminal lives on
-the Terminal page, in the palette and in the menu, not on the tile. Tools are tiles and doors are
-rows. Then one separator
+workspace, in the same shape everywhere: no toggle of its own (the sidebar
+toggle sits in the top bar), the doors Board (⌘⇧H), Tasks, Workflows, Chat,
+Impact and Monitoring as one 28px row each (row icon and word in
+`text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Impact and Monitoring are quiet rows. Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
+new chat, never the last one), always visible. The column holds no tool: Terminal and Browser
+live on the right rail (The session tools), and the folded rail shows the same six doors. Then one separator
 (`h-px bg-border-soft`) with the same gap above and below; the Sessions list
 (`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
 session row, selected while the draft is open, a primary dot and `Draft in progress` while a
 draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
-doors' gap) spaces the groups; then at the foot Settings (⌘,) and the Goodboy row.
+doors' gap) spaces the groups; then at the foot Settings (⌘,) and the Goodboy line with the bug icon.
 Every door row has one trailing grid
 (`ColumnDoorRow`): a 20px signal slot right aligned, then a 24px action slot reserved on every
 row (the plus sits in it on Chat). A running door draws no dot: what runs is in its
 tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
 dot means attention without a number. Chat with none running shows a primary dot for a new reply.
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
-Terminal counts the terminal tabs still alive, all owners, Browser counts the rows the Browser page
-lists (`browserTabCount`), and Monitoring counts the pinned ports
-and the ports Goodboy started that are in use; the numbers come from `doorSignalOf`, which the
-rows, the tiles and the folded rail all read. A pinned port that is down swaps Monitoring's count
-for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's and the tile's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
-`Browser, 3 tabs`, `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
+Monitoring counts the pinned ports
+and the ports Goodboy started that are in use, as a muted number in the signal slot with no dot;
+the numbers come from `doorSignalOf`, which the
+rows and the folded rail both read. A pinned port that is down puts a warning dot beside that
+number (or alone when none is in use) and names the port (`Monitoring, pinned port :5173 is down`). The door's accessible name carries the fact (`Chat, unread`,
+`Monitoring, 3 in use`), and all read the store (`useDoorSignals`). The running terminals and
+the browser tabs count on the right rail instead (`Terminal, 2 running`, `Browser, 3 tabs`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
 the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot
 (no number) on those two doors, with the fact in the tooltip. Before any workspace exists the column keeps only its app
-half: Settings, the Goodboy row and the bug. The column is 240px by default and
+half: Settings, the Goodboy line and the bug. The column is 240px by default and
 resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
-width resets once). Its first button or ⌘B folds it, on every screen, into the
-rail; the choice is saved and peek never touches it. Settings is the one
-exception: it opens at the column's width over a folded sidebar, and ⌘B waits
-until Back to app (see Studios).
+width resets once). The sidebar toggle or ⌘B folds it, on every screen,
+Settings included, into the rail; the choice is saved, only those two write it
+(`goodboy:sessions-sidebar-collapsed`), and peek and New session never touch it.
 
 **Header actions.** One grammar draws the actions of every page header and
 drawer header (`HeaderActions`): secondary controls, at most one secondary
@@ -335,7 +406,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): on the workspace level the toggle, New, Sessions, Tasks, Workflows, Chat and Terminal as icons
+  (`ColumnRail`): on the workspace level the toggle, New, Board, Tasks, Workflows, Chat and Terminal as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below; a pin that
   does not own the flyout opens the facts-only session hover card after a
@@ -354,22 +425,27 @@ hide animation or overlay can move it.
   (`FoldLayers`, [styling.md](../styling.md#the-window-grid)): the width eases, the
   words fade, and the 44px rail's icons sit on the open rows' lines.
 - **The main sidebar never folds by itself; a pane folds by its tier.** Only
-  its toggle folds the column: the one toggle sits in the top bar, left of Back
-  and Forward (`ColumnToggleButton` in `AppTopBar`, ⌘B), and no pane and no
-  window width folds it. `shellFoldsOf` (read through `useShellFolds`) reads the
+  its toggle folds the column: the one toggle is the first control of the top
+  bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⌘B),
+  and no pane, no page and no window width folds or unfolds it. `shellFoldsOf` (read through `useShellFolds`) reads the
   open pane's tier: a reader tier pane (720: a file, a diff, a document, New,
   the browser) folds the session rail to its 44px icons while it is open; a side tier pane
   (416: Explore, Context, Ask, Agents, Scripts, Terminal and the transcripts
-  Agents opens) folds nothing. The saved
-  choices are untouched, and the rail toggle opens a rail folded this way for
-  as long as the pane stays open. The session rail keeps its own toggle at the
+  Agents opens) folds nothing. A fold of this kind never writes a saved
+  choice (`useSessionRailFold`), and the rail toggle opens a rail folded this
+  way for as long as the pane stays open, also without saving; the saved fold
+  comes back when the pane closes. The session rail keeps its own toggle at the
   left of its top row.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
-  work row, so it can hover over main without taking layout space. The studio
-  slot covers the content area only (`studioCoversLeft={false}`), as its own
-  sheet, so the column stays live beside every studio; the peek is drawn after
-  it, so a peeked column floats over a studio too. A studio never covers the
-  top bar.
+  work row, so it can hover over main without taking layout space. A studio is
+  a page in the one main slot: it draws inside the content sheet, over the page
+  it replaces (`AppShell`'s `studio`, `[data-studio-slot="content"]`), so the
+  column stays live beside every studio, and the drawer parks under it. The
+  slot is opaque (`bg-background`, `bg-chrome` for a studio that draws its own
+  sheets), so the page never shows through while a studio fades in or out. The
+  page under it stays mounted and inert. The peek is drawn after
+  the sheet, so a peeked column floats over a studio too. A studio never covers
+  the top bar.
 
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
@@ -388,10 +464,14 @@ Overview notices slot ([mounts.md](../mounts.md#worktree-rows-and-the-overview-n
 
 The top bar says what is happening now. The column takes you to places.
 Preferences live in Settings. Each item has one home; anything else that shows
-it is a signal that links there.
+it is a signal that links there. Every chip on the right opens the home of the
+number it shows: Now ends on Monitoring, Usage opens the Providers menu and
+from it Settings > Providers, Spend opens Impact on its Spend tab. The bell
+opens its own popover.
 
 On macOS the window has no native title bar: the traffic lights sit inside the
-top bar, which carries a 78px inset (12px in full screen and on other systems).
+top bar, and its left zone starts 72px in (`--titlebar-inset`, 0 in full
+screen and on other systems).
 The bar is a deep drag region: any spot that is not a control moves the window,
 and a double click zooms it. Controls never drag.
 
@@ -401,11 +481,20 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: workspace identity. It has a 200px limit and truncates, with the full
-  name in its tooltip. The sidebar toggle lives in the column, not here.
+- Left: the sidebar toggle, the workspace identity, then Repositories. The toggle
+  (`ColumnToggleButton`, ⌘B, 28px like every top bar control) sits right of
+  the traffic lights, above the column it folds, and is the column's one
+  toggle; the column itself has no toggle row. It reads "Hide sidebar" while
+  the column is open and "Show sidebar" while it is the rail, and its
+  `aria-pressed` follows. The identity has a 200px limit and truncates, with
+  the full name in its tooltip. While the column is open, the whole left zone
+  is no wider than the column (`--goodboy-left-sidebar-width`, set on the shell
+  root by `AppShell`), so the identity and the repo entry never spill over the
+  page.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
-  (24px icons) name their destination in the tooltip (`Back to Comments`,
-  the session on a second line, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
+  (24px icons) name their destination in the label and the tooltip
+  (`Back: Comments`, the session on a second line, `Hold for history` on a
+  third, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
   Chat left the bar for the column. Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
@@ -430,8 +519,6 @@ covered.
   navigates to that session's Runs as a new history entry after the chat's own
   and fills the **Start a run** field (nothing starts until Start); Back returns
   to the same chat because `captureLocation` keeps `appStudio`.
-- Left of Back and Forward: the main sidebar toggle (`ColumnToggleButton`, ⌘B), the one
-  toggle of the column; the column itself has no toggle row.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
@@ -442,10 +529,11 @@ covered.
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
-  two, and a group with no rows is not drawn. Sessions that need you are not in the
-  bar, in the chip or in its panel: the Sessions door carries the count. Needs you counts three
-  units, and each tooltip names its own: sessions ("2 sessions need you") on the Sessions
-  door, the dock badge and the palette; questions ("3 questions") on the
+  two, and a group with no rows is not drawn. The popover ends on **Open Monitoring**,
+  the page that owns those counts. Sessions that need you are not in the
+  bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
+  units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
+  door, the dock badge and Search or run; questions ("3 questions") on the
   Questions entry of the session rail; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
@@ -472,13 +560,13 @@ today. Open Impact`, opening the Impact studio on its Spend tab (it is never
   merged with a count). Impact itself is the last sidebar door, a page like
   Tasks with no band and no Close, and ⌘K reaches every tab. The bar holds no
   Impact icon. Last the bell, which opens the
-  notification popover.
+  notification popover and stays pressed while the Notifications page is open.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-wide` the command center narrows (its label is `Search`
-   at every width; the workspace name lives in its tooltip) and
+1. Below `chrome-wide` the command center narrows (its `Search or run` label
+   shows from `chrome-labels` up; the workspace name lives in its tooltip) and
    Usage keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
    (`running`, `scripts`, `today`) drop and Usage keeps
@@ -526,44 +614,50 @@ only drop under zoom.
   (`theme-switch-is-one-paint`). No shortcut is bound to it.
 - The top bar never edits. Reporting a bug, the update
   and the version are about Goodboy itself, so they live at the foot of the
-  column: the Goodboy row. The setup checklist is a card on the Sessions page.
+  column: the Goodboy line. The setup checklist is a card on the Board.
 
 ## The column foot
 
-Settings (⌘,) sits above the Goodboy row. There is no setup line and no bug icon:
-Report a bug (⌘I) is in the Goodboy menu. The rail, with no room for a menu row, keeps the three
-in their place at the bottom: the Settings icon, the bug and the Goodboy mark, which
-carries a dot while an update waits.
+The foot is the app's corner. It holds three things and nothing that goes to a
+page of the workspace: Settings, Help and Report a bug. It has no menu. The open
+column draws two lines. Line one is Settings (⌘,). Line two is the Goodboy line, a
+door to Help, with the update pill beside it when an update waits and, at the end
+of the line, a 24px bug icon, Report a bug (⌘I), which says "Draft saved" in its
+name while a report is half written. The folded rail keeps the same three in the
+same order: the Settings icon, the bug and the Goodboy mark, which carries a dot
+while an update waits.
 
-The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
-menu or Linear's help menu does. Its label says one thing, in this order: an
-update is pending (the bare lockup, then the version pill), or the brand lockup
-with the installed version. The lockup
+The Goodboy line (`app/components/GoodboyChip`, variants `column` and `rail`) is
+a door like the rows above it: it opens Help on the Guide, it is selected
+(`bg-selected`, `aria-current="page"`) while a Help tab is open, and a click on
+it then does nothing. Its label says one thing, in this order: an update is
+pending (the bare lockup, then the version pill), or the brand lockup with
+"Beta" and the installed version. The lockup
 (`GoodboyChip/BrandLockup.tsx`) is one dark chip holding only the dog mark and
 "Goodboy", the same in light and dark; "Beta" and "v<version>" sit after it in
-theme text. The popover header and the rail mark draw the same lockup. The version is
+theme text. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
 and shows in mock scenes too. The update pill (`features/updater/components/UpdatePill`)
 is soft, enters once and holds still. It is its own button beside the lockup and
 shows only the new version and a state icon; the state ("is ready", "did not
-install") lives in its tooltip and accessible name. It stays on one line at
-every column width: when the lockup and the pill have under 168px, the lockup
-drops to the dog mark (a container query on the row), and only a version too
-long for the row truncates.
-`validate-scenes.mjs --only update-pill` pins this at 200, 240 and 400px. The
-pill opens the update card; the column menu holds no update. On the rail, which
-has no room for a pill, the menu's first row is the same pill label and opens
-the same card (`railUpdate` in `GoodboyChip/index.tsx`). The popover header is the
-lockup and "<version> · Beta", and the version opens What's new. Below it sit two
-labelled groups on the shared
-`MenuList` rows of `@goodboy/ui`: **Help** (Guide, What's new, Keyboard shortcuts
-with ⌘/, Report a bug last with ⌘I, and Draft saved when a draft waits) and
-**Goodboy** (`NAMES.pairIphone` and Sponsor on GitHub, the last
-with the external mark). There is no paragraph under the groups. Guide opens the
-guide studio and Pair an iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
-`{ scope: 'app', section: 'iphone' }`), so neither waits behind the palette. Every
-studio keeps a door you can see: the flow table in
+install") lives in its tooltip and accessible name. The lockup drops to the dog
+mark when a pill sits beside it and the line is too narrow for both (a container
+query on `[data-column-corner]`, under 12.25rem), so the pill and the bug icon
+stay on one line at every column width; the pill truncates before the lockup
+does. At rest the lockup drops to the mark under 13.5rem, so the bug icon keeps
+its room, and above that only a version too long for the row truncates. The whole line is set in the meta size. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
+400px. The pill opens the update card. On the rail, which has no room for a
+pill, the mark carries the update dot, and a click opens Help on What's new
+(also while the Guide is open),
+where the release that is the pending update carries the update verbs. The pinned column
+also owns the update arrival card and the restart when idle; a peeked column
+leaves both to it (`isPrimary`).
+
+Pair an iPhone lives in Settings, iPhone (`goodboy:open-pair-device` lands on
+`{ scope: 'app', section: 'iphone' }`) and in the palette. Keyboard shortcuts
+lives in Settings, Shortcuts (⌘/). Neither is in the foot. Every studio keeps a
+door you can see: the flow table in
 `__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
 `door` of `visible` or `palette`, and `studio-doors.test.ts` fails when a studio
 kind has no `visible` row. Three links open the Guide on a chapter and Back
@@ -578,24 +672,24 @@ page on the `guideChapter` reader frame, with Previous and Next; the Help search
 opens the first hit and flashes its point, Escape clears it. The chapter
 "Listens" holds one table of prefixes (`PrefixTable`, read from
 `quick-actions/grammar.ts`): `$` means Scripts in the palette and the composer. The chapter
-"Sidebar and session rail" restates this shell in `guideChapters.ts`, and
+"Sidebar and session pages" restates this shell in `guideChapters.ts`, and
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
 registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
 `sessionNodeOf`, so a new mark appears there without a second table. The addresses live in
-`shared/lib/productLinks.ts`. Report a bug closes the
-popover and opens the report sheet. The popover opens by itself once, when the
-first agent finishes a turn, and never while the setup wizard is open; the
-checklist has no floating card. Only the pinned row does that (and reports the
-update arrival); the copy inside a peeked column is quiet.
+`shared/lib/productLinks.ts`. Report a bug opens the report sheet.
 
-**Help** is one studio (`app/components/HelpStudio`) with three tabs, Guide,
-What's new and Shortcuts, and one search (`RailSearch`, "Search help") over all
-three: a result opens its tab and its chapter, release or shortcut group. The
-Guide and What's new doors open it on their tab (`initialTab`); it replaces the
-column like Settings, so its band holds `Back to app` with the Esc chip at the
-top left and there is no Close (`close: 'back'`, `StudioFrame/index.test.tsx`
-pins it). The Shortcuts tab is the read only sheet with one link, "Customize in
-Settings", because the recorder stays in Settings. The What's new tab is a rail
+**Help** is one page (`app/components/HelpStudio`) with two tabs, Guide and
+What's new, and one search (`RailSearch`, "Search help") over both: a result
+opens its tab and its chapter or release. A tab is a studio kind, `guide` or
+`changelog`, so switching tabs is a `switchStudio` between the two and the tab
+you read is the history entry; the band title reads "Guide" or "What's new". The
+page's one other control is "Sponsor on GitHub", which leaves the app
+(`SponsorLink`): beside Back to app in the band, or, when Help takes the whole
+window on Home, at the end of the title row beside Close, with no strip of its
+own (`DetachedStudio`). The page's band holds `Back to app` with the Esc chip at the top
+left and there is no Close (`close: 'back'`, `StudioFrame/index.test.tsx` pins
+it). The Goodboy line opens it on the Guide and the palette rows open either
+tab. The What's new tab is a rail
 of releases grouped by minor, with an Older group below 0.4 (`ChangelogRail`),
 and a reader beside it. `CatchUpReader` (`page="whatsNew"`) opens first and sums
 up everything since the version you last read; `ReleaseReader`
@@ -607,13 +701,28 @@ its own.
 
 On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
 Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
-New Workspace, Close), Edit, View (sidebar, Command Palette, zoom, Reload, full
-screen), Go (Back, Forward, Sessions, Tasks, Chat, Workflows, Terminal,
-Impact, Notifications, Monitoring), Window and Help (Guide, What's New,
+New Workspace, Close), Edit, View (sidebar, Search or Run, zoom, Reload, full
+screen), Go (Back, Forward, then the destinations in the order of
+`DESTINATIONS`: Board, Tasks, Workflows, Chat, Impact, Monitoring,
+Notifications, then after a separator the two right rail tools, Show or Hide
+Terminal and Browser, which open the dock), Window and Help (Guide, What's New,
 Keyboard Shortcuts, Report a Bug). One table lays all of them out
 (`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
 (About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)
-or a command with an id, a title-case label and an optional combo.
+or a command with an id, a title-case label and an optional combo. The native
+menu bar follows the macOS convention and is not bound to five rows. Every menu
+the app draws itself (a `⋯`, a header menu, a popover of actions) holds five
+rows at most. `menu-row-budget.test.ts` reads each hand written menu source and
+reports one line per file with its row count: literal rows, the choices of a
+radio group, and rows mapped from a constant list. Two menus in one file add
+up, which is stricter than the rule. A menu whose rows come from data (a picker
+over projects, people or branches, or rows built by `toMenuEntries`) is named
+in that test with its reason. The history menu of the back and forward arrows
+is such a list: it shows the last twelve stops of the history stack, so it is
+named there as a list and not as a menu of fixed rows. The registry menus are
+measured state by state in
+`overflowRows.test.ts` and `overflowRows.drawer.test.tsx`. Right click menus
+mirror the action catalog and are not bound.
 
 One rule runs the bar: a command row emits one event, `goodboy://menu` with
 `{ id }`, to the focused window, and `useMenuCommands` is the one listener
@@ -623,19 +732,26 @@ through the dispatcher, so a scoped owner keeps its place; any other id runs
 its `MENU_ACTIONS` entry (`menuActions.ts`: Check for Updates, New Terminal,
 New Workspace, the Go doors, Guide, What's New). An id with neither warns once
 and does nothing. A new menu item therefore adds a row to the table and an id,
-never an event or a listener. The menu labels the registry's Board as
-Sessions (`session.board`), and the Go doors that need a workspace do nothing
-without one. `menuBar.parity.test.ts` reads the Rust table and fails when an id
-has no registry entry or action, a combo differs from the registry's, a label
-is not title case, or a key has two owners.
+never an event or a listener. Every Go page opens through `openDestination`,
+the same call as the column and the palette; Browser opens the dock through
+`toggleBrowserDock` (Show or Hide Browser, a toggle like the rail button), Terminal through its shortcut, and New Terminal adds
+a tab in the dock, or on the Terminal page while it is open (`openWorkspaceTerminal` switches the page to the new tab). The doors that need a workspace do nothing without one. `openDestination` does nothing when the
+destination is the page the column already shows as current (Tasks, Workflows,
+Chat, Impact, Monitoring, Notifications), read from the same
+`selectColumnPlace` as the column. A Go pick on the open page therefore adds no
+history entry and keeps the scope of an open Impact page.
+`menuBar.parity.test.ts` reads the Rust table and fails when an id has no
+registry entry or action, a combo differs from the registry's, a label is not
+title case, a key has two owners, or the Go rows differ from `DESTINATIONS` in
+order or in name (the two dock tools read Show or Hide and their name).
 
 ## Report sheet
 
 One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
 the window, centred, with no overlay: the page under it stays live. Every door
-lands there: ⌘I from anywhere, Report a bug in
-the Goodboy menu, Report a bug in the
+lands there: ⌘I from anywhere, the bug icon in the column foot and on the folded
+rail, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
 `goodboy://menu` with `report.open` to the focused window; `useMenuCommands`
@@ -698,7 +814,7 @@ nothing, and it never ends setup. Set up later writes `onboarding.wizard =
 later`; entering a step writes `onboarding.step`. A relaunch with setup still
 open reopens at that step (`resumeStep` falls back to Workspace when the step
 needs a workspace that is gone), in the main window only, on Home (see Home
-below); the Goodboy menu offers Resume setup while it is
+below); the palette offers Resume setup while it is
 paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
 `nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
 `finish`, `later` and `setBusy`. There is no splash step: the first step is
@@ -740,7 +856,7 @@ draft (`startSessionFromDraft`); setup is done only once that resolves, and a
 failure keeps the prompt and reads Retry. With a task source connected, Pick up
 an issue lists assigned issues and Draft the brief opens the session draft with
 that issue picked. The draft carries the first folder, so the session lands in
-it. The setup card on the Sessions page (`features/onboarding/SetupCard`, drawn on the
+it. The setup card on the Board (`features/onboarding/SetupCard`, drawn on the
 board and the empty board until setup is finished or hidden) has the stepper's three
 rows, counted by `setupProgress()` in `features/onboarding/setupProgress.ts`, the one
 function the card reads ("Setup · 2 of 3"). About you is not counted: it is suggested under Next
@@ -768,7 +884,8 @@ state from `autoFactsByAgentId`.
 Settings (the foot door and ⌘,) always opens the last settings page (General
 at first), with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
-destination, so it has a door, the icon beside the bell; it opens its Overview
+destination, so it has a quiet reference row in the column (`isReference`), not
+a top bar icon; it opens its Overview
 tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
 open its Spend tab. The **Providers menu** is not a door to the Providers and
 models page: it changes things in place (`app/components/ProvidersMenu`, opened
@@ -778,8 +895,8 @@ providers and usage; the menu holds no usage figure and sends there with
 Models row When a provider is out, writing through the same
 `setProviderPolicy`, then Connect for each CLI provider that is not connected,
 then Manage providers. It reads the cached providers and never refreshes them
-on open. Changelog opens from the Goodboy menu and the palette, so it earns no
-door. The connected tools have no glyph strip any more: Tasks' Source
+on open. What's new is a tab of Help and a palette row, so it earns no
+door here. The connected tools have no glyph strip any more: Tasks' Source
 filter is the tool door, and Connect a tool lives in Settings > Integrations.
 
 - **The release notice answers "have you read the notes for what you're
@@ -788,7 +905,7 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
   fresh install shows none, and dismissing it marks that version as read.
 - Opening any studio closes the others. A door that is current does nothing.
 - **Before any workspace exists, the column keeps its app half**: Settings,
-  the Goodboy row and the bug. New session, the doors and the sessions belong
+  the Goodboy line and the bug. New session, the doors and the sessions belong
   to a workspace and wait for one. Settings then opens its home with only the
   App and Providers groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and
@@ -837,6 +954,9 @@ be unique inside one scope and never to shadow a global one. Entries that share 
 workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A
 family is only for chords that do the same thing to a different index: the
 integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row each.
+Two chords that do the very same thing share one row instead (`SHARED_ROWS` in
+`shortcutRows.ts`): Show or hide Terminal lists ⌃\` and ⌘⌥T side by side, and
+each keeps its own Change and Reset.
 A few entries are keys a focused control answers, not global chords: Submit
 (⌘↵, `composer.submit`, the one id behind every composer, editor and the
 workspace switcher; `isSubmitChord` reads it and keeps the lenient match that

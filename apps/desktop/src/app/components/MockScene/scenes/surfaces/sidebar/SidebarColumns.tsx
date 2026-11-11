@@ -24,7 +24,6 @@ export const SidebarColumns = ({ session }: Props) => {
           currentSessionId={session.id}
           isDraftShown={false}
           actions={shell.actions}
-          settingsSlotRef={shell.settingsSlotRef}
         />
       </div>
       <div style={{ width: COLUMN_WIDTH }}>

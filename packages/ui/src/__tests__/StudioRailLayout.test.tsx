@@ -161,7 +161,7 @@ describe('StudioRailLayout', () => {
 
     const rail = screen.getByRole('complementary', { name: 'Project navigation' });
 
-    expect(screen.queryByRole('button', { name: 'Fold the rail' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Hide project navigation' })).toBeNull();
     expect(rail.firstElementChild?.textContent).toBe('Rail content');
   });
 
@@ -191,38 +191,56 @@ describe('StudioRailLayout', () => {
     expect(screen.getByText('Detail content')).toBeDefined();
   });
 
-  it('puts the header and a fold control in the first row and reports the fold', () => {
+  it('puts the fold control first in the header row, then the header, and reports the fold', () => {
     const onCollapsedChange = vi.fn();
     renderLayout({ railHeader: <p>Header content</p>, onCollapsedChange });
 
     const rail = screen.getByRole('complementary', { name: 'Project navigation' });
     const row = rail.firstElementChild;
+    const hide = screen.getByRole('button', { name: 'Hide project navigation' });
 
     expect(row?.textContent).toContain('Header content');
-    expect(row?.contains(screen.getByRole('button', { name: 'Fold the rail' }))).toBe(true);
+    expect(row?.firstElementChild?.contains(hide)).toBe(true);
+    expect(hide.getAttribute('aria-pressed')).toBe('true');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fold the rail' }));
+    fireEvent.click(hide);
 
     expect(onCollapsedChange).toHaveBeenCalledWith(true);
   });
 
-  it('keeps a Show the rail control at the rail edge while folded, unless it cannot dock', () => {
+  it('keeps a Show control at the rail edge while folded, unless it cannot dock', () => {
     const onCollapsedChange = vi.fn();
     const { unmount } = renderLayout({ isCollapsed: true, onCollapsedChange });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show the rail' }));
+    const show = screen.getByRole('button', { name: 'Show project navigation' });
+    expect(show.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(show);
     expect(onCollapsedChange).toHaveBeenCalledWith(false);
     unmount();
 
     renderLayout({ isCollapsed: true, onCollapsedChange, canUnfold: false });
-    expect(screen.queryByRole('button', { name: 'Show the rail' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show project navigation' })).toBeNull();
+  });
+
+  it('draws the folded actions under the Show control', () => {
+    renderLayout({
+      isCollapsed: true,
+      onCollapsedChange: vi.fn(),
+      foldedActions: <button type="button">Search project navigation</button>,
+    });
+
+    const strip = document.querySelector('[data-studio-rail-unfold]');
+    const buttons = Array.from(strip?.querySelectorAll('button') ?? []).map(
+      (button) => button.getAttribute('aria-label') ?? button.textContent,
+    );
+    expect(buttons).toEqual(['Show project navigation', 'Search project navigation']);
   });
 
   it('offers its fold to the inner column key only while it can fold', () => {
     const onCollapsedChange = vi.fn();
     const { unmount } = renderLayout({ onCollapsedChange });
 
-    expect(innerColumnStore.current()?.label).toBe('Fold the project navigation');
+    expect(innerColumnStore.current()?.label).toBe('Hide project navigation');
     innerColumnStore.toggleCurrent();
     expect(onCollapsedChange).toHaveBeenCalledWith(true);
     unmount();

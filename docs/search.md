@@ -1,7 +1,7 @@
 # Search
 
 > **Read this when** you change what ⌘F finds, how the local search index is
-> kept, or how a hit lands in its view. **Not for** the ⌘K palette (see
+> kept, or how a hit lands in its view. **Not for** ⌘K Search or run (see
 > [navigation.md](navigation.md)) or code search inside a repository (the
 > editor and the Explore pane).
 
@@ -137,7 +137,7 @@ it takes 15 MB. `readSearchIndexStatus` reads the real size from `dbstat`.
 
 ## The surface
 
-⌘F (`search.open`, app plane) opens the palette overlay in its Search mode,
+⌘F (`search.open`, app plane) opens the Search or run overlay in its Search mode,
 the second entry of `PALETTE_MODES` (`features/palette/paletteModes.ts`).
 The overlay shell owns the scrim, the width (920px for search), the text and
 the mode; ⇥ or the mode switch moves between Commands and Search and keeps

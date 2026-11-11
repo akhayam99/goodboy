@@ -14,8 +14,8 @@ if (CHAPTER !== null) {
 
 export const GuideScene = () => (
   <ToastProvider>
-    <FramedStudioScene kind="guide" place="link">
-      <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
+    <FramedStudioScene kind="guide" place="guide">
+      <HelpStudio tab="guide" onClose={noop} onOpenScreen={noop} />
     </FramedStudioScene>
   </ToastProvider>
 );

@@ -53,7 +53,7 @@ describe('openWorkspaceTerminal', () => {
   it('opens a terminal for the workspace and the session it started from', async () => {
     const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
 
-    await openWorkspaceTerminal({ workspaceId: WORKSPACE_ID });
+    await openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: false });
 
     expect(terminalStudioCount()).toBe(1);
   });
@@ -61,7 +61,7 @@ describe('openWorkspaceTerminal', () => {
   it('drops the result when the session changed while the home folder was pending', async () => {
     const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
     const gate = holdHome();
-    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID });
+    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: false });
 
     useAppStore.setState({ currentSessionId: SECOND_SESSION });
     gate.resolve('/Users/mock');
@@ -73,12 +73,66 @@ describe('openWorkspaceTerminal', () => {
   it('drops the result when the workspace changed while the home folder was pending', async () => {
     const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
     const gate = holdHome();
-    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID });
+    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: false });
 
     useAppStore.setState({ currentWorkspaceId: nextWorkspaceId() });
     gate.resolve('/Users/mock');
     await pending;
 
     expect(terminalStudioCount()).toBe(0);
+  });
+
+  it('drops the result when Browser opened while the home folder was pending', async () => {
+    const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
+    useAppStore.setState({ currentSessionId: null });
+    const gate = holdHome();
+    const pending = openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: false });
+
+    useAppStore.getState().openDrawer({ kind: 'browser', sessionId: null, payload: null });
+    gate.resolve('/Users/mock');
+    await pending;
+
+    expect(terminalStudioCount()).toBe(0);
+    expect(useAppStore.getState().drawer?.kind).toBe('browser');
+  });
+
+  it('shows a new terminal on the Terminal page when it opens there', async () => {
+    const { openWorkspaceTerminal } = await import('./openWorkspaceTerminal');
+    useAppStore.setState({ currentSessionId: null });
+    useAppStore
+      .getState()
+      .openStudio({ studio: { kind: 'terminal', terminalId: null, sessionId: null } });
+
+    await openWorkspaceTerminal({ workspaceId: WORKSPACE_ID, isFresh: true });
+
+    const [tab] = Object.values(useAppStore.getState().terminalTabs).flat();
+    const studio = useAppStore.getState().appStudio;
+    expect(studio?.kind === 'terminal' ? studio.terminalId : null).toBe(tab?.id);
+    expect(useAppStore.getState().terminalSelection?.terminalId).toBe(tab?.id);
+    expect(useAppStore.getState().drawer).toBeNull();
+  });
+
+  it('makes the reused tab the active one when its folder is opened again', async () => {
+    const { openWorkspaceTerminalAt } = await import('./openWorkspaceTerminalAt');
+    const { terminalOwnerKey, workspaceTerminalOwner } =
+      await import('../../store/slices/terminal/terminalOwner');
+    const key = terminalOwnerKey({ owner: workspaceTerminalOwner({ workspaceId: WORKSPACE_ID }) });
+    const open = (cwd: string) =>
+      openWorkspaceTerminalAt({
+        state: useAppStore.getState(),
+        workspaceId: WORKSPACE_ID,
+        cwd,
+        isFresh: false,
+      });
+
+    open('/Users/mock/ledger-core');
+    open('/Users/mock/notify-relay');
+    const [first, second] = Object.values(useAppStore.getState().terminalTabs).flat();
+    expect(useAppStore.getState().activeTerminalTab[key]).toBe(second?.id);
+
+    open('/Users/mock/ledger-core');
+
+    expect(useAppStore.getState().activeTerminalTab[key]).toBe(first?.id);
+    expect(terminalStudioCount()).toBe(2);
   });
 });

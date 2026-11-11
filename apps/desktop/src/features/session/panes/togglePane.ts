@@ -1,9 +1,11 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectSlotBack } from '../../../store/slices/drawer/selectSlotBack';
+import { leaveStudio } from '../../../store/slices/navigation/leaveStudio';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
-import { toggleSessionTerminal } from '../../terminal/toggleSessionTerminal';
+import { toggleBrowserDock } from '../../browser/toggleBrowserDock';
+import { toggleTerminalDock } from '../../terminal/toggleTerminalDock';
 import type { ClusterPane } from './clusterPane';
 import { openPaneOf } from './openPaneOf';
 import { waitingPaneOf } from './waitingPaneOf';
@@ -14,8 +16,24 @@ type Params = {
 };
 
 export const togglePane = ({ sessionId, pane }: Params): void => {
+  if (pane === 'terminal') {
+    toggleTerminalDock({ isToggle: true });
+    return;
+  }
+  if (pane === 'browser') {
+    toggleBrowserDock({ isToggle: true });
+    return;
+  }
+  const isOnPage = useAppStore.getState().appStudio !== null;
+  if (isOnPage) {
+    leaveStudio({ get: useAppStore.getState });
+  }
   const state = useAppStore.getState();
-  if (openPaneOf({ state, sessionId }) === pane) {
+  const isShown = openPaneOf({ state, sessionId }) === pane;
+  if (isShown && isOnPage) {
+    return;
+  }
+  if (isShown) {
     state.closeDrawer();
     return;
   }
@@ -27,9 +45,6 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
   switch (pane) {
     case 'ask':
       state.openAsk({ sessionId });
-      return;
-    case 'terminal':
-      toggleSessionTerminal({ sessionId });
       return;
     case 'explore':
       openExplorePane({ state, sessionId, mountPath: null });
@@ -45,9 +60,6 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
       return;
     case 'spawned':
       state.openDrawer({ kind: 'spawned', sessionId, payload: null });
-      return;
-    case 'browser':
-      state.openDrawer({ kind: 'browser', sessionId, payload: null });
       return;
     default: {
       const exhaustive: never = pane;

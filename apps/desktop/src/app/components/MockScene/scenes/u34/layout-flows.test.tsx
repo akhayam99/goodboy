@@ -59,7 +59,7 @@ it.each(Object.entries(U34_LAYOUT_FLOW_SCENES))('mounts %s', async (id, Scene) =
     screen.getByRole('button', { name: '4 more branches' });
   }
   if (id === 'u34-u30-active-tool') {
-    const rail = screen.getByRole('toolbar', { name: 'Session tools' });
+    const rail = screen.getByRole('toolbar', { name: 'Tools' });
     expect(rail.querySelector('[data-slot="tool-caption"][data-tone="open"]')?.textContent).toBe(
       'Agents',
     );
@@ -80,17 +80,17 @@ it('opens Agents at 1280, folds the rail, respects a manual unfold, and restores
       <Scene />
     </ToastProvider>,
   );
-  await screen.findByRole('toolbar', { name: 'Session tools' });
+  await screen.findByRole('toolbar', { name: 'Tools' });
   act(() => {
     observers.resizeAll();
   });
-  const rail = screen.getByRole('navigation', { name: 'Session' });
+  const rail = screen.getByRole('navigation', { name: 'Session pages' });
   expect(rail.hasAttribute('data-rail-folded')).toBe(false);
   fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
   expect(rail.hasAttribute('data-rail-folded')).toBe(true);
   expect(container.querySelector('[data-drawer-mode="push"]')).not.toBeNull();
   expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('0');
-  fireEvent.click(screen.getByRole('button', { name: 'Show session rail' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show session pages' }));
   expect(rail.hasAttribute('data-rail-folded')).toBe(false);
   expect(container.querySelector('[data-drawer-mode="overlay"]')).not.toBeNull();
   expect(container.querySelector('[data-drawer-scrim]')).not.toBeNull();

@@ -8,7 +8,8 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { SHORTCUTS, shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { NAMES } from '../../../shared/utils/names';
 import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { CommandCenter } from './CommandCenter';
 
@@ -43,5 +44,9 @@ describe('CommandCenter', () => {
     expect(tip).toContain('Search or run in ');
     expect(tip).toContain(shortcutGlyphs('palette.open'));
     expect(screen.queryByText(/Search or ask/)).toBeNull();
+  });
+
+  it('gives the palette one name in the field and in the shortcut registry', () => {
+    expect(SHORTCUTS['palette.open'].label).toBe(NAMES.searchOrRun);
   });
 });

@@ -22,6 +22,7 @@ export default defineConfig({
       'src/test/failOnConsole.ts',
       'src/test/failOnUnexpectedCalls.ts',
       'src/test/dbBootDouble.ts',
+      'src/test/wideWindow.ts',
     ],
     globalSetup: ['src/test/consoleBaselineReport.ts'],
     css: { include: [/\.css\?raw$/] },

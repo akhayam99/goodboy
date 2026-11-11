@@ -18,7 +18,7 @@ import { doorMountPath } from '../../../store/slices/navigation/doorMountPath';
 import { foldedLensOf } from '../../../store/slices/navigation/foldedLensOf';
 import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
-import { toggleSessionTerminal } from '../../../features/terminal/toggleSessionTerminal';
+import { toggleTerminalDock } from '../../../features/terminal/toggleTerminalDock';
 import { openLens } from '../../../features/session/openLens';
 import { togglePane } from '../../../features/session/panes/togglePane';
 import type { ClusterPane } from '../../../features/session/panes/clusterPane';
@@ -42,7 +42,6 @@ type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
   readonly openPalette: (params?: OpenPaletteParams) => void;
   readonly openSettings: () => void;
-  readonly openTerminalStudio: () => void;
   readonly openNewChat: () => void;
   readonly openShortcutHelp: () => void;
   readonly toggleSidebar: () => void;
@@ -77,7 +76,6 @@ export const useAppShortcuts = ({
   armDeleteConfirm,
   openPalette,
   openSettings,
-  openTerminalStudio,
   openNewChat,
   openShortcutHelp,
   toggleSidebar,
@@ -212,16 +210,9 @@ export const useAppShortcuts = ({
   useShortcut('workspace.switcher', () =>
     dispatchWindowEvent({ name: 'goodboy:open-workspace-switcher' }),
   );
-  const toggleVisibleSidebar = useCallback(() => {
-    const state = useAppStore.getState();
-    if (state.appStudio?.kind === 'settings') {
-      return;
-    }
-    toggleSidebar();
-  }, [toggleSidebar]);
   const goToBoard = useGoToBoard();
 
-  useShortcut('column.toggle', toggleVisibleSidebar);
+  useShortcut('column.toggle', toggleSidebar);
   useShortcut('innerColumn.toggle', () => {
     innerColumnStore.toggleCurrent();
   });
@@ -245,7 +236,7 @@ export const useAppShortcuts = ({
   useShortcut('session.prev', () => navigateSession({ delta: -1 }));
   useShortcut('session.next', () => navigateSession({ delta: 1 }));
   useShortcut('session.board', goToBoard);
-  useShortcut('terminal.studio', openTerminalStudio);
+  useShortcut('terminal.studio', () => toggleTerminalDock({ isToggle: true }));
   useShortcut('app.close', () => closeCurrentLevel({}));
   useShortcut('slot.close', () => closeSlot({}));
   useMenuCommands();
@@ -260,7 +251,7 @@ export const useAppShortcuts = ({
   useShortcut('lens.plans', () => goToLens({ kind: 'plans' }));
   useShortcut('lens.scripts', () => toggleCurrentPane({ pane: 'scripts' }));
   useShortcut('session.spawned', () => toggleCurrentPane({ pane: 'spawned' }));
-  useShortcut('session.terminal', () => toggleSessionTerminal({}));
+  useShortcut('session.terminal', () => toggleTerminalDock({ isToggle: true }));
   useShortcut('lens.pr', () => goToLens({ kind: 'pr' }));
   useShortcut('lens.linear', () => goToLens({ kind: 'linear' }));
   useShortcut('lens.gitlab_issues', () => goToLens({ kind: 'gitlab_issues' }));

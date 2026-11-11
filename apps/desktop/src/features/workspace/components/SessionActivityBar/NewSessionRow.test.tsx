@@ -41,21 +41,27 @@ describe('the New session row', () => {
     const listener = vi.fn();
     const onNavigate = vi.fn();
     window.addEventListener('goodboy:new-session', listener);
-    render(<NewSessionRow workspaceId={harborline.id} onNavigate={onNavigate} />);
+    render(<NewSessionRow workspaceId={harborline.id} isCurrent={false} onNavigate={onNavigate} />);
     fireEvent.click(screen.getByRole('button', { name: 'New session' }));
     expect(listener).toHaveBeenCalledOnce();
     expect(onNavigate).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:new-session', listener);
   });
 
-  it('is the current place while the draft is open, without a dot', () => {
-    act(() => {
-      useAppStore.setState({ openSessionDraftWorkspaceId: harborline.id, currentSessionId: null });
-    });
-    render(<NewSessionRow workspaceId={harborline.id} />);
+  it('is the current place when the column place says so, without a dot', () => {
+    render(<NewSessionRow workspaceId={harborline.id} isCurrent />);
     const row = screen.getByRole('button', { name: 'New session' });
     expect(row.getAttribute('aria-current')).toBe('page');
     expect(document.querySelector('[data-slot="draft-dot"]')).toBeNull();
+  });
+
+  it('reads current from the place it is given, not from the open draft', () => {
+    act(() => {
+      useAppStore.setState({ openSessionDraftWorkspaceId: harborline.id, currentSessionId: null });
+    });
+    render(<NewSessionRow workspaceId={harborline.id} isCurrent={false} />);
+    const row = screen.getByRole('button', { name: 'New session' });
+    expect(row.getAttribute('aria-current')).toBeNull();
   });
 
   it('shows a dot while a written draft waits elsewhere', () => {
@@ -66,7 +72,7 @@ describe('the New session row', () => {
         },
       });
     });
-    render(<NewSessionRow workspaceId={harborline.id} />);
+    render(<NewSessionRow workspaceId={harborline.id} isCurrent={false} />);
     const row = screen.getByRole('button', { name: /Draft in progress/ });
     expect(row.getAttribute('aria-current')).toBeNull();
     expect(document.querySelector('[data-slot="draft-dot"]')).not.toBeNull();

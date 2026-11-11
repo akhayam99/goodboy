@@ -19,7 +19,7 @@ export const START_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'This Guide',
-        desc: 'One chapter per page. Search the rail, press Enter to land on a point. The Guide opens from the Goodboy row, Help in the menu bar or the palette.',
+        desc: 'One chapter per page. Search the rail, press Enter to land on a point. The Guide opens from the Goodboy line, Help in the menu bar or the palette.',
       },
     ],
     links: [],

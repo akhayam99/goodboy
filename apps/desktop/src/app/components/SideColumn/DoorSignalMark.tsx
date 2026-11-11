@@ -11,8 +11,15 @@ export const DoorSignalMark = ({ signal, isDotOnly = false }: Props) => {
   const tone = signal.tone ?? 'warning';
   if (signal.countText !== undefined && !isDotOnly) {
     return (
-      <span aria-hidden data-door-signal={tone} data-door-count="" className={TONE_COUNT_CLASS}>
-        <StatusDot tone={tone === 'danger' ? 'danger' : 'warning'} size="sm" />
+      <span
+        aria-hidden
+        data-door-signal={signal.isWarning ? tone : 'neutral'}
+        data-door-count=""
+        className={TONE_COUNT_CLASS}
+      >
+        {signal.isWarning ? (
+          <StatusDot tone={tone === 'danger' ? 'danger' : 'warning'} size="sm" />
+        ) : null}
         <span>{signal.countText}</span>
       </span>
     );

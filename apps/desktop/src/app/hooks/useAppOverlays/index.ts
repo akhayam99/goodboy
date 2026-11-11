@@ -11,12 +11,9 @@ import {
   type InboxStudioFocus,
   type StudioPlace,
 } from '../../../store';
-import { terminalStudioPlace } from '../../../features/terminal/terminalStudioPlace';
-import { browserStudioPlace } from '../../../features/browser/browserStudioPlace';
-import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
+import { openDestination } from '../../../shared/navigation/openDestination';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
 import { AppStudio } from '../../components/AppOverlayRouter/AppStudio';
-import type { StudioPlacement } from '../../components/StudioFrame/studioPlacement';
 import type { OpenPaletteParams, PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { useCommitDiff } from './useCommitDiff';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
@@ -26,11 +23,7 @@ type Params = {
   readonly currentSession: Session | null;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
-  readonly isSessionSidebarCollapsed: boolean;
   readonly isWorkspaceLauncherBranch: boolean;
-  readonly pinSessionSidebar: () => void;
-  readonly studioPlacement?: StudioPlacement;
-  readonly settingsColumnSlot?: HTMLElement | null;
 };
 
 type OpenParams = {
@@ -41,11 +34,7 @@ export const useAppOverlays = ({
   currentSession,
   currentWorkspace,
   workspaceProjectRoot,
-  isSessionSidebarCollapsed,
   isWorkspaceLauncherBranch,
-  pinSessionSidebar,
-  studioPlacement = 'cover',
-  settingsColumnSlot = null,
 }: Params) => {
   const overlay = useAppStore((state) => state.appStudio);
   const openStudio = useAppStore((state) => state.openStudio);
@@ -73,13 +62,7 @@ export const useAppOverlays = ({
   }, []);
 
   useStudioEvents({ open, goTo, close, openPalette });
-  useSessionSurfaceEvents({
-    close,
-    currentSession,
-    currentWorkspace,
-    isSessionSidebarCollapsed,
-    pinSessionSidebar,
-  });
+  useSessionSurfaceEvents({ close, currentWorkspace });
 
   const dismissDelete = useCallback(() => setDeleteOpen(false), []);
   useEscapeLayer(dismissDelete, deleteOpen);
@@ -107,44 +90,22 @@ export const useAppOverlays = ({
     [open],
   );
 
-  const openWorkflows = useCallback(() => goTo({ overlay: { kind: 'workflow' } }), [goTo]);
+  const openWorkflows = useCallback(() => openDestination({ id: 'workflows' }), []);
 
   const openProviders = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'providers' } } }),
     [goTo],
   );
 
-  const openInbox = useCallback(() => goTo({ overlay: { kind: 'inbox', focus: null } }), [goTo]);
+  const openInbox = useCallback(() => openDestination({ id: 'inbox' }), []);
 
-  const openChat = useCallback(
-    () =>
-      goTo({
-        overlay: { kind: 'chat', chatId: selectChatDoor({ state: useAppStore.getState() }) },
-      }),
-    [goTo],
-  );
-
-  const openTerminalStudio = useCallback(
-    () =>
-      goTo({
-        overlay: terminalStudioPlace({ sessionId: useAppStore.getState().currentSessionId }),
-      }),
-    [goTo],
-  );
-
-  const openBrowserStudio = useCallback(
-    () =>
-      goTo({
-        overlay: browserStudioPlace({ sessionId: useAppStore.getState().currentSessionId }),
-      }),
-    [goTo],
-  );
+  const openChat = useCallback(() => openDestination({ id: 'chat' }), []);
 
   const openNewChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
 
-  const openMonitoring = useCallback(() => goTo({ overlay: { kind: 'monitoring' } }), [goTo]);
+  const openMonitoring = useCallback(() => openDestination({ id: 'monitoring' }), []);
 
-  const openImpact = useCallback(() => goTo({ overlay: { kind: 'impact', scope: null } }), [goTo]);
+  const openImpact = useCallback(() => openDestination({ id: 'impact' }), []);
 
   const openShortcutHelp = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),
@@ -204,8 +165,7 @@ export const useAppOverlays = ({
           onOpenChangelogScreen,
           currentWorkspace,
           workspaceProjectRoot,
-          placement: studioPlacement,
-          settingsColumnSlot,
+          placement: 'content',
         });
 
   const layers: ReactNode = createElement(AppOverlayRouter, {
@@ -240,8 +200,6 @@ export const useAppOverlays = ({
     openSettings,
     openShortcutHelp,
     openSpend,
-    openTerminalStudio,
-    openBrowserStudio,
     openNewChat,
     openMonitoring,
     openImpact,

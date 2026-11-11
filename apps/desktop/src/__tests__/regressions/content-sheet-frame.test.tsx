@@ -84,14 +84,8 @@ describe('the content is a sheet on the chrome', () => {
     render(
       <AppShell
         leftSidebar={<div>column</div>}
-        studioCoversLeft={false}
         studio={
-          <StudioFrame
-            kind="settings"
-            placement="content"
-            hasBand={false}
-            onClose={() => undefined}
-          >
+          <StudioFrame kind="impact" placement="content" onClose={() => undefined}>
             <p>page</p>
           </StudioFrame>
         }

@@ -4,36 +4,42 @@
 
 ## Studios
 
-Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
-the guide, Add workspace) render in the shell's studio slot, which
-covers the content area only, beside the column, as its own sheet; the page
-title is its one header (no title band). The column stays live, so another door or a session row is
-one click away. **Settings is the one studio that takes the column**, in
-both sidebar states: `shellArrangement` takes `isSettingsOpen` and returns
-`leftSlot: 'column'` with no peek, so a folded sidebar shows the column at its
-saved width while Settings is open and the rail returns when it closes. The
-stored collapse is never written (`leftSidebarCollapsed` reports it as it is,
-`isLeftRail` says what is drawn), and ⌘B waits. The column's content
-cross-fades (160ms) to `‹ Back to app` (with its Esc hint), `Search settings`
-and the settings groups, on the chrome like the sessions list, and the page
-fills the content area as the one sheet. There is no band, no crumb and no
-second sheet: `StudioFrame` draws no band (`hasBand={false}`), `SettingsStudio`
-draws no `StudioTrail` and no `StudioRailLayout`, and the page's title row sits
-where Overview's does (`UnderTrailContext` drops the 12px a bare page adds, and
-the 40px a band would take is the top padding). There is no Close: Back to app,
-Esc and Back land alike. A session key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and
-closes Settings on its way. On close, `StudioFrame` gives focus back to what
-opened the studio, or to the studio's door when that is gone (the palette),
-unless focus already sits outside the studio (`restoreStudioOpener`). The
-exception is Home, which has no column to give. On Home, New workspace swaps
-the list for the form in place, and the app studios take the whole window:
-Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette
-opens there too.
+Every studio (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Settings,
+Changelog, the guide, Add workspace) is a page in the one main slot: it renders
+inside the content sheet, over the page it replaces, beside the column. The
+page under it stays mounted and inert. Every drawer belongs to a session today,
+so every drawer parks (mounted, hidden and inert) until the studio closes, and
+the sheet takes its width. The column
+never changes for a studio: it stays live in both sidebar states, so another
+door or a session row is one click away, and ⌘B and the sidebar toggle fold it
+on every page (`shellArrangement` takes no studio). **Settings is a page with
+its own scopes rail**: the 40px band holds `‹ Back to app` (with its Esc hint)
+and the crumb (`StudioTrail`), and below it `SettingsScopesLayout` draws a
+`StudioRailLayout` named Settings scopes (`placement="page"` beside the column,
+`chrome` on Home) with the fold control and `Search settings` in its first row,
+the groups or the matching settings under it, and the page as the detail
+(`data-settings-detail`). The scopes rail folds like every page rail
+(`goodboy:studio-rail-folded:settings:v1`), but folds by itself only on a pane
+under 720px (`SETTINGS_RAIL_FOLD_BELOW`); its folded strip keeps Show and a
+Search icon that opens the rail on the field. With no saved choice, the rail
+starts folded in a window under 1200px (`foldedByDefaultBelow`), so the page keeps
+room for its dense rows, and a saved choice wins either way: a docked rail stays
+docked in the sheet of a 1100px window with the column open. The detail wrapper
+is a container (`detailClassName="@container"`): under 600px a Models row drops its
+description and keeps the model, the effort and the Auto or Pinned chip. The Settings row in the column
+foot is lit while it is open. Back to app, Esc and Back land alike. A session
+key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and closes Settings on its way, and so
+does any column row. On close, `StudioFrame` gives focus back to what opened
+the studio, or to the studio's door when that is gone (Search or run), unless
+focus already sits outside the studio (`restoreStudioOpener`). On Home, which
+has no column, New workspace swaps the list for the form in place, and the app
+studios take the whole window: Settings (its corner gear, ⌘, or ⌘/ for
+shortcuts) and the guide. Search or run opens there too.
 Studios are not part of the breadcrumb IA. They exit on Esc, and only one is
-open at a time. There is no Close button: a studio beside the column leaves by
-its door or Esc, and a studio that replaces the column (Settings, Help, New
-workspace) shows `Back to app` with the Esc chip at the top left
-(`StudioBackButton`, `close: 'back'` in `studioMeta.ts`).
+open at a time. There is no Close button: a door page leaves by another door or
+Esc, and an app page (Settings, Help, New workspace) shows `Back to app` with
+the Esc chip at the top left of its band (`StudioBackButton`, `close: 'back'`
+in `studioMeta.ts`).
 
 - **An open studio is a history entry.** Opening a studio, or switching from
   one studio to another, pushes an entry over the page underneath
@@ -44,13 +50,12 @@ workspace) shows `Back to app` with the Esc chip at the top left
   the side trip is over, Back means one step.
 - **Navigating closes the studio.** A forward move to a place (another
   session, a lens, an agent, the board) arrives with no studio, whether it came
-  from the palette, a needs-you row, a shortcut or a link inside the studio, so
+  from Search or run, a needs-you row, a shortcut or a link inside the studio, so
   the destination always lands in front. Switching workspace closes it too.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Tasks to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle, Back to app; Settings in the default shell has no band at all,
-  so `hasBand` is off and its skeleton has no rail), the Esc layer and the motion: `studio-in` when
+  subtitle, Back to app), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
@@ -64,9 +69,8 @@ workspace) shows `Back to app` with the Esc chip at the top left
   crumb title, an icon or a subtitle; the page `h1` is the one title.
   `STUDIO_META[kind].close` places the exit: `none` for the studios beside the
   column (Tasks, Chat, Workflows, Terminal, Impact, Monitoring, Notifications:
-  no band, no Close, the door or Escape leaves them), `back` for the studios
-  that replace the column (Settings over the window, Help, Add workspace),
-  whose 40px band holds only `Back to app` with the Esc chip at the left
+  no band, no Close, the door or Escape leaves them), `back` for the app pages
+  (Settings, Help, Add workspace), whose 40px band holds only `Back to app` with the Esc chip at the left
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not
@@ -81,63 +85,71 @@ workspace) shows `Back to app` with the Esc chip at the top left
   at its right, a long title truncates and never wraps the row): Tasks the view's name,
   Workflows `Workflows` with its tab strip under the title and `New workflow` as the
   one primary at the right end of the tab row, Impact `Impact` with the period selector in the row and a meta line
-  under it (the band keeps the crumb and Back to app only), Help's three tabs and
+  under it (the band keeps the crumb and Back to app only), Help's two tabs and
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
-- **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)
-opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`TerminalStudio`:
-`StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
-child is `New terminal`, a split secondary control: the button opens a tab in the selected
-worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminalPickerClusters`)
-opens to the right of the chevron (`useDropdown` `side: 'right'`) in clusters: `Workspace folder`first, then one cluster per session with attached worktrees, headed by the session title alone
-(issue chips and diff stat stay off this page, cut C3); a row is the project, the branch, the short
-worktree chip and the path on one line, and`Open project`opens the project settings. The
-`Workspace folder` row is named by the folder (`harborline`), since the cluster title says the
-rest; a worktree path keeps its project folder and its `gb-` folder whole (`pathTail`), and the
-head of the path truncates first.
-With no terminal at all the page has no rail: the empty state owns the single`New terminal`.
-The rail is one `ListGrid`named`Terminals`with one`ListGridGroup`per session that has
-terminals: the session title, a visible arrow button (`Open session`) beside it and the number of terminals in
-the last column; the`Workspace folder` group comes last and has no action. Inside a group, one
-28px row per worktree (`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when
-no mount matches) on the shared columns: branch or folder icon, project and branch, the first
-port (hidden on the selected row, whose ports sit at the tab strip's right edge) and a running
-dot while a shell runs a process; the folder path and every port live in the row tooltip, never
-on screen (`TerminalWorktreeRow`). Selecting a row shows its terminals as tabs
-(`TerminalTabStrip`) with a `+`that adds a tab in that worktree. There is no terminal header:
-the tab strip's right end carries `TerminalStripActions`, a `⋯`with`Open session`and`Copy worktree path`(or`Copy folder path`) from the `terminalTab` kind of the action registry, a single word when only one applies. A new terminal is
-always a tab of its worktree, titled`shell`, then `shell 2` (`nextTerminalTitle`); a tab is
-renamed by double click, Enter saves, Esc cancels. When the shell exits, whatever the code, the
-tab closes and the studio selects a neighbour of the same worktree: the watch lives in the
-terminal slice (`watchTerminalExits`, started by `reattachTerminalTabs`), so it works with the
-page closed. Only a terminal that failed to start stays, as a `failed`chip with a restart
-button, and it is never opened again on its own. The close x is 28px, always visible: an idle
-shell closes at once, a busy one asks in a`ConfirmPopover` (`Keep`, danger `Close`). The detail
-is a location row (the cwd trimmed to the workspace folder, middle truncated, and the `cd`menu, only while the shell is idle), the tab strip, then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
-(`terminalOwner.ts`). A session has no Terminal page of its own: the session terminal lens is
-gone, and a saved location that still names it lands on the session overview
-(`withoutRemovedPages`). `⌘T` (`terminal.newTab`) adds a tab to the selected worktree while one
-has focus. ⌘K has `Terminal` (`goto:terminal`), `New terminal` (`action:new-terminal`, the
-workspace folder) and, in a session with worktrees, `Open <repo · branch> in terminal`
-(`session.openWorktreeTerminal`, one choice per worktree).
-- **A session terminal opens in a right drawer.** `openSessionTerminal` adds a session terminal at
-  the worktree (or reuses a running one there, never when it carries a `prefill`) and opens the `terminal` drawer over the session
-  (`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer` in
-  `DrawerHost`, side sizing, resizable like the others). **Run in terminal** (the command tool card and a shell block in a message,
-  `useRunInTerminal`) is that same path with a `prefill` from `typedCommandOf`: one line as typed,
-  several lines as one bracketed paste, every control character dropped, no line end. It never
-  presses Enter; the session must be live, so an archived session hides the verb. The mount row and diff `Open terminal`,
-  the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
-terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active worktree) all go
-  through it. The header holds the project name, the short worktree chip (it truncates before the
-  buttons), two icon buttons (`Open page`, whose tooltip says it leaves the session, and `Close`)
-  and the same tab strip as the page: drawer and page show the same tabs of the same
-  worktree. The head repeats no name: the folder picker stands where the title would be. Closing
-  the drawer never kills the shell: the tabs stay in the Terminal list under the
-  session's group, and the drawer closes by itself when its worktree has no terminal left.
-  `Open page` closes the drawer and selects the same tab on the page; the pane
-  remounts on the same pty and replays its scrollback. The page group title is the session title,
-  cut at the end, never in the middle; the group's `aria-label` keeps the full
+- **One Terminal studio for every terminal.** Terminal lives in the dock (see
+  the session terminal below); its page is the large size of the same object,
+  opened from the dock's `Open as page` (`openTerminalOnPage`, a push, so ⌘[
+  brings the dock back on the same tab) and left by `Dock` in its header
+  (`dockTerminalPage`). With no terminal yet, `Dock` stays and opens one in the
+  dock (`dockEmptyTerminalPage`), as the empty Browser page does. The page is `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`TerminalStudio`:
+  `StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
+  child is `New terminal`, a split secondary control: the button opens a tab in the selected
+  worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminalPickerClusters`)
+  opens to the right of the chevron (`useDropdown` `side: 'right'`) in clusters: `Workspace folder`first, then one cluster per session with attached worktrees, headed by the session title alone
+  (issue chips and diff stat stay off this page, cut C3); a row is the project, the branch, the short
+  worktree chip and the path on one line, and`Open project`opens the project settings. The
+  `Workspace folder` row is named by the folder (`harborline`), since the cluster title says the
+  rest; a worktree path keeps its project folder and its `gb-` folder whole (`pathTail`), and the
+  head of the path truncates first.
+  With no terminal at all the page has no rail: the empty state owns the single`New terminal`.
+  The rail is one `ListGrid`named`Terminals`with one`ListGridGroup`per session that has
+  terminals: the session title, a visible arrow button (`Open session`) beside it and the number of terminals in
+  the last column; the`Workspace folder` group comes last and has no action. Inside a group, one
+  28px row per worktree (`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when
+  no mount matches) on the shared columns: branch or folder icon, project and branch, the first
+  port (hidden on the selected row, whose ports sit at the tab strip's right edge) and a running
+  dot while a shell runs a process; the folder path and every port live in the row tooltip, never
+  on screen (`TerminalWorktreeRow`). Selecting a row shows its terminals as tabs
+  (`TerminalTabStrip`) with a `+`that adds a tab in that worktree. There is no terminal header:
+  the tab strip's right end carries `TerminalStripActions`, a `⋯`with`Open session`and`Copy worktree path`(or`Copy folder path`) from the `terminalTab` kind of the action registry, a single word when only one applies. A new terminal is
+  always a tab of its worktree, titled`shell`, then `shell 2` (`nextTerminalTitle`); a tab is
+  renamed by double click, Enter saves, Esc cancels. When the shell exits, whatever the code, the
+  tab closes and the studio selects a neighbour of the same worktree: the watch lives in the
+  terminal slice (`watchTerminalExits`, started by `reattachTerminalTabs`), so it works with the
+  page closed. Only a terminal that failed to start stays, as a `failed`chip with a restart
+  button, and it is never opened again on its own. The close x is 28px, always visible: an idle
+  shell closes at once, a busy one asks in a`ConfirmPopover` (`Keep`, danger `Close`). The detail
+  is a location row (the cwd trimmed to the workspace folder, middle truncated, and the `cd`menu, only while the shell is idle), the tab strip, then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
+  (`terminalOwner.ts`). A session has no Terminal page of its own: the session terminal lens is
+  gone, and a saved location that still names it lands on the session overview
+  (`withoutRemovedPages`). `⌘T` (`terminal.newTab`) adds a tab to the selected worktree while one
+  has focus. ⌘K has `Terminal` (`goto:terminal`, opens the dock), `New terminal` (`action:new-terminal`, a
+  fresh tab in the dock) and, in a session with worktrees, `Open <repo · branch> in terminal`
+  (`session.openWorktreeTerminal`, one choice per worktree).
+- **Terminal opens in the right dock.** ⌃` (`terminal.studio`), ⌘⌥T (`session.terminal`), the
+right rail's Terminal button, the Go menu and Search or run all run `toggleTerminalDock`: on a
+session page it opens the session's terminal on its worktree, anywhere else the workspace
+folder terminal (`openWorkspaceTerminal`, owner `ws:<workspaceId>`, drawer `sessionId: null`).
+The dock stays open across every move. File > New Terminal adds a fresh tab there, or on the Terminal page while it is open. A dock request that waits for the home folder is dropped when the dock, the page or the session changed meanwhile.
+`openSessionTerminal` adds a session terminal at
+the worktree (or reuses a running one there, never when it carries a`prefill`) and opens the `terminal` drawer over the session
+(`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer`in`DrawerHost`, side sizing, resizable like the others). **Run in terminal** (the command tool card and a shell block in a message,
+`useRunInTerminal`) is that same path with a `prefill`from`typedCommandOf`: one line as typed,
+several lines as one bracketed paste, every control character dropped, no line end. It never
+presses Enter; the session must be live, so an archived session hides the verb. The mount row and diff `Open terminal`,
+the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
+  terminal`and`⌘⌥T` (`session.terminal`, toggles the dock on the active worktree) all go
+through it. The header holds the project name, the short worktree chip (it truncates before the
+buttons), two icon buttons (`Open as page`and`Close`)
+and the same tab strip as the page: drawer and page show the same tabs of the same
+worktree. The head repeats no name: the folder picker stands where the title would be. Closing
+the drawer never kills the shell: the tabs stay in the Terminal list under the
+session's group, and the drawer closes by itself when its worktree has no terminal left.
+`Open page`closes the drawer and selects the same tab on the page; the pane
+remounts on the same pty and replays its scrollback. The page group title is the session title,
+cut at the end, never in the middle; the group's`aria-label` keeps the full
   title.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
@@ -147,7 +159,9 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   the studio stays, and it gives focus back to its trigger. The image
   lightbox, the sidebar peek, a history drag, the quick actions popover and the
   artifact page's back-to-list Esc register the same way. A layer registered
-  later sits above one registered earlier. A key handler on a focused field may
+  later sits above one registered earlier. A layer inside a parked drawer is
+  suspended while the studio is open and keeps its place for the trip back. A
+  key handler on a focused field may
   claim Esc first with `preventDefault`, and the stack then leaves it alone.
   `useKeepFullScreenOnEscape` is the one raw Esc listener left, because it must
   see the key when no layer is open. A ratchet
@@ -155,8 +169,12 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   `'Escape'` literals and window key listeners per file and fails on growth.
 
 - **Not every studio earns a door.** Notifications opens from the bell
-  popover (its footer's Open all notifications) and from the palette's Go to
-  group, never from the column, since the bell already shows the unread count.
+  popover (its footer's Open all notifications, a door: `door: true`, so it
+  replaces an open studio) and from the Go to group of Search or run, never from the
+  column, since the bell already shows the unread count. While the page is open
+  the bell is its one lit control (`bg-selected`, `aria-current="page"`, read
+  from the column place through `AppTopBar`) and the page has no exit control:
+  Esc, Back or another door leaves it.
   The popover never deletes history. That lives in the studio, behind its
   confirm. Reporting a bug is not a studio: it is the report sheet above.
 - **Notifications have one row and one scope.** `NotificationRow` draws a
@@ -227,26 +245,29 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   edge as the only line. Tasks' and Notifications' filters are the same frame. Every page rail opens at
   288px (`standard`); the skeleton reads the same constant.
 - **A page rail folds, and folds itself when there is no room.** A page may pass
-  `onCollapsedChange`: the rail's first row then holds a fold control (tooltip
-  "Fold the rail" with ⌥⌘B), a folded rail leaves a 44px strip with "Show the
-  rail" at the same height (none while the pane is too narrow to dock,
-  `canUnfold`), and `useStudioRailFold` remembers the choice per surface
+  `onCollapsedChange`: the rail's first row then starts with a fold control
+  ("Hide <rail name>", ⌥⌘B, pressed while the rail shows), a folded rail leaves
+  a 44px strip with "Show <rail name>" at the same x and height, plus any
+  `foldedActions` the page passes under it (a page whose title row stands in
+  for the rail, like Notifications with its filter button, drops the strip
+  while the pane is too narrow to dock, `canUnfold`), and `useStudioRailFold` remembers the choice per surface
   (`goodboy:studio-rail-folded:<studio>:v1`). Chat, Terminal, the Guide, the
-  changelog, Settings in its studio frame and Notifications fold this way.
+  changelog, Settings and Notifications fold this way.
   **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
   on: each foldable column registers with `useInnerColumn` while its page
-  shows (the session rail while no studio covers it, a page rail through
+  shows (the session pages while no studio covers it, a page rail through
   `StudioRailLayout`), the key toggles the last one registered
-  (`innerColumnStore.toggleCurrent`), the palette lists it under that
-  column's name (Fold the chat list, Show the session rail) and leaves it out
+  (`innerColumnStore.toggleCurrent`), Search or run lists it under that
+  column's name (Hide chat list, Show session pages) and leaves it out
   on a page with none, where the key does nothing. Under a pane of 880px the rail
-  folds without saving anything and docks again when the pane widens. A folded
+  folds without saving anything and docks again when the pane widens; Show on
+  that narrow pane opens it until the pane widens, and saves nothing either. A folded
   rail leaves the shared `FilterButton` (28px tall, the lines icon with the
-  count of active filters; docking the rail again is the Show the rail strip
-  at the rail edge or ⌥⌘B, never a header button) in the title row, opening the same facets in a popover. The search field of
+  count of active filters; docking the rail again is the Show strip at the
+  rail edge or ⌥⌘B, never a header button) in the title row, opening the same facets in a popover. The search field of
   Tasks moves into the title row with it.
-- **Every studio list resizes.** `StudioRailLayout` (Settings in the legacy
-  layout, Guide, Chat, Changelog, Bitbucket, Tasks, Notifications) drags from
+- **Every studio list resizes.** `StudioRailLayout` (Settings, Guide, Chat,
+  Changelog, Bitbucket, Tasks, Notifications) drags from
   its right edge between 220 and 420px (a page may pass `min` and `max`), step
   8px (32 with Shift) with the arrow keys, and goes
   back to its default (256 narrow, 288 standard) on a double click. Each studio
@@ -258,17 +279,16 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   so nothing renders and nothing is saved until the drag ends. Precedent: VS
   Code, Zed and Linear sidebars.
 - **Settings opens on a page, never on a grid.** The Settings door, ⌘, and the
-  palette's Settings land on the page opened last, held in memory only
+  the Settings entry of Search or run land on the page opened last, held in memory only
   (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
   app starts lands on General, and a remembered page that no longer exists
   (a workspace page with no workspace, a provider that was removed) falls
   back to General (`resolveSettingsFocus`). A link that names a page (a scope,
   a section, a provider or a tool) opens that page. `scope: 'home'` stays as
   the alias for "the last page" and `SettingsStudio` resolves it once, then
-  amends the history entry to the concrete page. The rail is the only index,
-  portaled into the column (`SettingsColumnNav`, `Back to app` first, then
-  `Search settings`, then the groups) in both sidebar states, or drawn beside
-  the page on Home: its three scopes (App, Providers, This workspace, with Integrations nested under it) come from `settingsDirectory`. Every row is one 28px
+  amends the history entry to the concrete page. The scopes rail is the only
+  index, drawn beside the page (its fold control and `Search settings` first,
+  then the groups): its three scopes (App, Providers, This workspace, with Integrations nested under it) come from `settingsDirectory`. Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
@@ -276,10 +296,10 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   (Update needed, Signed out, Can't check, Not confirmed, Refused your runs, Error, Claude is about to run out); a quiet
   row shows nothing. The sentence lives on the page: a provider about to run
   out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
-  the usage notice that used to close the Usage band). Every page is also a palette entry
+  the usage notice that used to close the Usage band). Every page is also an entry in Search or run
   (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`, `Workspace settings: Models`), built from
   the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
-  column filters those same entries by name and former name, lists them in
+  rail (`SettingsSearchResults`) filters those same entries by name and former name, lists them in
   place of the groups, and opens the one picked on the same history entry; with
   no match it says `No settings match`. The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);

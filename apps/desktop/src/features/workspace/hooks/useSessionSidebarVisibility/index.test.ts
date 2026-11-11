@@ -161,16 +161,17 @@ describe('useSessionSidebarVisibility', () => {
     vi.useRealTimers();
   });
 
-  it('pins the column open and drops the peek', () => {
+  it('unfolds only through its toggle, which drops the peek and saves the choice', () => {
     vi.useFakeTimers();
     const { result } = renderCollapsed();
 
+    expect(Object.keys(result.current)).not.toContain('pin');
     act(() => {
       result.current.requestPeek();
       vi.advanceTimersByTime(150);
     });
     act(() => {
-      result.current.pin();
+      result.current.toggle();
     });
 
     expect(result.current.isPeeking).toBe(false);

@@ -635,7 +635,7 @@ export const CommandsBody = ({
         inputRef={inputRef}
         value={level === null ? query : filter}
         placeholder={placeholder}
-        ariaLabel="Command palette search"
+        ariaLabel={NAMES.searchOrRun}
         listboxId={listboxId}
         activeDescendant={selected === null ? undefined : optionId({ id: selected.item.key })}
         chip={chip}

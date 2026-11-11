@@ -109,7 +109,7 @@ describe('the chapter list', () => {
         'Providers and limits',
         'New session',
         'Board',
-        'Sidebar and session rail',
+        'Sidebar and session pages',
         'Agents and roles',
         'Workflows',
         'Shared context',
@@ -256,10 +256,12 @@ describe('the shell chapter', () => {
     expect(sidebar).toContain('pinned port is down');
   });
 
-  it('lists every page of the session rail by its registry label', () => {
-    const rail = pointOf('shell', 'Session rail');
+  it('lists every page of the session pages by its registry label', () => {
+    const rail = pointOf('shell', 'Session pages');
     columnPagesOf({ isBranchless: false }).forEach((page) => expect(rail).toContain(page.label));
-    [NAMES.projects, 'Linked'].forEach((word) => expect(rail).toContain(word));
+    [NAMES.projects, 'Linked', 'Hide session pages'].forEach((word) =>
+      expect(rail).toContain(word),
+    );
   });
 
   it('puts both adds on the rows they act on and Archive and Delete in the session menu', () => {
@@ -286,12 +288,17 @@ describe('the shell chapter', () => {
     expect(branchPage).not.toContain('steps into');
   });
 
-  it('names the session tools in their column at the right of the page', () => {
-    const tools = pointOf('shell', 'Session tools');
-    ['Ask', 'Terminal', 'Explore', 'Context', 'Scripts', 'right of the session page'].forEach(
-      (tool) => expect(tools).toContain(tool),
-    );
-    expect(tools).toContain('Fold session rail');
+  it('names the tools in their column at the right of every screen', () => {
+    const tools = pointOf('shell', 'Right rail');
+    [
+      'Ask',
+      'Terminal',
+      'Browser',
+      'Explore',
+      'Context',
+      'Scripts',
+      'right of every screen',
+    ].forEach((tool) => expect(tools).toContain(tool));
   });
 });
 

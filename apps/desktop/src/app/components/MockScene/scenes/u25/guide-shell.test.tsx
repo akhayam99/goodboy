@@ -63,10 +63,10 @@ describe('the guide shell scenes', () => {
 
     const rail = within(screen.getByRole('navigation', { name: 'Guide chapters' }));
     expect(
-      rail.getByRole('button', { name: 'Sidebar and session rail' }).getAttribute('aria-current'),
+      rail.getByRole('button', { name: 'Sidebar and session pages' }).getAttribute('aria-current'),
     ).toBe('true');
-    const chapter = within(screen.getByRole('region', { name: 'Sidebar and session rail' }));
-    ['Sidebar', 'Session rail', 'Agents panel', 'Session tools'].forEach((term) =>
+    const chapter = within(screen.getByRole('region', { name: 'Sidebar and session pages' }));
+    ['Sidebar', 'Session pages', 'Agents panel', 'Right rail'].forEach((term) =>
       expect(chapter.getByText(term)).toBeDefined(),
     );
   });

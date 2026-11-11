@@ -597,9 +597,12 @@ export const studio = async (title: string): Promise<void> => {
   );
 };
 
-export const settingsColumn = async (): Promise<void> => {
+export const settingsPage = async (): Promise<void> => {
   await visible('button', /^Back to app/);
-  expect(document.querySelector('[data-studio-band]')).toBeNull();
+  expect(document.querySelector('[data-studio-frame][data-studio="settings"]')).not.toBeNull();
+  expect(document.querySelector('[data-studio-band]')).not.toBeNull();
+  expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
+  expect(document.querySelector('[data-column-layer="nav"][inert]')).toBeNull();
 };
 
 export const lens = (lensName: string | null) => async (ctx: Ctx) => {

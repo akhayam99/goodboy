@@ -33,9 +33,9 @@ Point at a part, a paragraph or a few words and leave a comment. Comments stay d
 
 While comments wait, **Send to planner** is the one filled button. **Run plan** and **Approve** ask before they go on without them. Text you typed and did not add is kept as a draft. It is saved when you leave the box, press Esc, press a button, close the page or reload.
 
-**Send to planner**, **Send to** the agent, **Copy**, **Run plan**, **Approve** and **Start implementer** wait for that save, from the header, the menu, the palette and the chat row. If it made a new comment, they ask again instead of starting. A comment that failed to save keeps its text and place and comes back as an open box. Those buttons stay off until you save it or press Cancel.
+**Send to planner**, **Send to** the agent, **Copy**, **Run plan**, **Approve** and **Start implementer** wait for that save, from the header, the menu, Search or run and the chat row. If it made a new comment, they ask again instead of starting. A comment that failed to save keeps its text and place and comes back as an open box. Those buttons stay off until you save it or press Cancel.
 
-Drafts load when the session opens, so a restart keeps them in the chat row, the list and the palette too.
+Drafts load when the session opens, so a restart keeps them in the chat row, the list and Search or run too.
 
 After the plan ran, the bar reads **Not sent**, with **Send to** the agent and **Copy**. A stopped agent, or a plan with no known agent, leaves only **Copy**. An agent that is still writing takes the comments in its queue, as a chat message does, and they read Sent once the turn starts or the queue is saved. A second batch goes through once the first was taken. Comments sent this way are never read back as a plan revision.
 

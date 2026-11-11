@@ -181,8 +181,8 @@ vi.mock('../features/impact/components/ImpactStudio', () => ({
   ),
 }));
 vi.mock('../app/components/HelpStudio', () => ({
-  HelpStudio: ({ initialTab }: { readonly initialTab: string }) =>
-    initialTab === 'whatsNew' ? <div data-testid="changelog-studio">Changelog</div> : null,
+  HelpStudio: ({ tab }: { readonly tab: string }) =>
+    tab === 'whatsNew' ? <div data-testid="changelog-studio">Changelog</div> : null,
 }));
 vi.mock('../features/integrations/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({

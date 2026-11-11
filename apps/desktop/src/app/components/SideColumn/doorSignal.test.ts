@@ -106,19 +106,6 @@ describe('doorSignalOf', () => {
     expect(signal?.countText).toBe('1');
   });
 
-  it('says nothing for a terminal row with no live terminal', () => {
-    expect(doorSignalOf({ kind: 'terminal', count: 0 })).toBeUndefined();
-  });
-
-  it('counts the live terminals', () => {
-    expect(doorSignalOf({ kind: 'terminal', count: 2 })).toEqual({
-      count: 2,
-      isWarning: false,
-      isUnread: false,
-      fact: '2 running',
-    });
-  });
-
   it('says nothing for a monitoring row with no port in use and no pin down', () => {
     expect(doorSignalOf({ kind: 'monitoring', inUse: 0, downPins: [] })).toBeUndefined();
   });
@@ -129,6 +116,7 @@ describe('doorSignalOf', () => {
       isWarning: false,
       isUnread: false,
       fact: '3 in use',
+      countText: '3',
     });
   });
 
@@ -138,8 +126,12 @@ describe('doorSignalOf', () => {
       isWarning: true,
       isUnread: false,
       fact: 'pinned port :9000 is down',
+      countText: '3',
     });
     expect(doorSignalOf({ kind: 'monitoring', inUse: 0, downPins: [9000] })?.isWarning).toBe(true);
+    expect(
+      doorSignalOf({ kind: 'monitoring', inUse: 0, downPins: [9000] })?.countText,
+    ).toBeUndefined();
   });
 
   it('names every pinned port that is down', () => {

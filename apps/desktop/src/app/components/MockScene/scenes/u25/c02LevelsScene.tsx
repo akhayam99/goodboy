@@ -8,7 +8,7 @@ import { SessionWorkspace } from '../../../../../features/session/components/Ses
 import { SideColumn } from '../../../SideColumn';
 import { ColumnRail } from '../../../SideColumn/ColumnRail';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
-import type { ColumnPlace } from '../../../SideColumn/columnPlace';
+import type { ColumnPlace } from '../../../../../shared/navigation/columnPlace';
 import { sceneClock } from '../../sceneClock';
 import { SIDEBAR_NAV_DEFAULTS, seedSidebarNav, type SidebarNavSeed } from '../u23/sidebarNavSeed';
 import { seedSideInfoValues } from './seedSideInfoValues';
@@ -24,15 +24,12 @@ const ACTIONS: ColumnActions = {
   openInbox: noop,
   openChat: noop,
   openWorkflows: noop,
-  openTerminalStudio: noop,
-  openBrowserStudio: noop,
   openNewChat: noop,
   openMonitoring: noop,
   openImpact: noop,
   openSettings: noop,
   openChangelog: noop,
   openGuide: noop,
-  openShortcuts: noop,
 };
 
 export type LevelsSceneConfig = {

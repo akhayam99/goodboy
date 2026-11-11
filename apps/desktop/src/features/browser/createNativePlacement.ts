@@ -4,6 +4,7 @@ import { browserHost } from './browserHost';
 import { isTabGone } from './isTabGone';
 import { sameBounds } from './sameBounds';
 import type { BrowserBounds, WantedView } from './types';
+import { VIEW_OWNERS } from './viewOwners';
 import { wakeTab } from './wakeTab';
 
 type ErrorParams = {
@@ -43,7 +44,9 @@ type StaleParams = {
 
 const MAX_STEPS = 6;
 
-const VIEW_OWNERS = new Map<string, object>();
+const STOP_RETRIES = 5;
+
+const STOP_RETRY_MS = 120;
 
 export const createNativePlacement = ({ sessionId, onError }: Params) => {
   const owner = {};
@@ -58,6 +61,8 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
   let shown: ShownView | null = null;
   let blockedTabId: string | null = null;
   let isRunning = false;
+  let isStopped = false;
+  let stopRetries = 0;
   const stuck = new Map<string, boolean>();
 
   const liveOf = ({ tab }: WantedView): string | undefined =>
@@ -175,6 +180,10 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
       }
     } finally {
       isRunning = false;
+      if (isStopped && !isSettled() && stopRetries < STOP_RETRIES) {
+        stopRetries += 1;
+        setTimeout(() => void drain(), STOP_RETRY_MS);
+      }
     }
   };
 
@@ -198,6 +207,7 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
       void drain();
     },
     stop: (): void => {
+      isStopped = true;
       wanted = null;
       blockedTabId = null;
       void drain();

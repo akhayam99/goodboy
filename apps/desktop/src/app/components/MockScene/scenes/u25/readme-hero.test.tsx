@@ -62,7 +62,7 @@ describe('readme hero scene', () => {
   it('opens the session with its projects, the shared context and runs on three providers', async () => {
     await mount();
 
-    const rail = screen.getByRole('navigation', { name: 'Session' });
+    const rail = screen.getByRole('navigation', { name: 'Session pages' });
     const projects = within(rail).getByRole('group', { name: 'Projects' });
     const labels = [...projects.querySelectorAll('[data-worktree-entries] [data-entry-label]')].map(
       (label) => label.textContent ?? '',

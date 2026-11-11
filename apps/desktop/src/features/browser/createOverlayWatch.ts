@@ -7,6 +7,8 @@ const COVER_SELECTOR = [
   '[data-studio-slot]',
 ].join(', ');
 
+const UNDER_OVERLAY_DRAWER = '[data-drawer-main][inert]';
+
 type CoversParams = {
   readonly view: HTMLElement;
   readonly rect: DOMRect;
@@ -16,6 +18,14 @@ type IntersectParams = {
   readonly a: DOMRect;
   readonly b: DOMRect;
 };
+
+type ReachParams = {
+  readonly overlay: Element;
+  readonly view: HTMLElement;
+};
+
+const isUnderSlot = ({ overlay, view }: ReachParams): boolean =>
+  !overlay.matches('[data-studio-slot]') || overlay.parentElement?.contains(view) === true;
 
 const intersects = ({ a, b }: IntersectParams): boolean =>
   a.width > 0 &&
@@ -43,6 +53,9 @@ export const createOverlayWatch = () => {
 
   return {
     covers: ({ view, rect }: CoversParams): boolean => {
+      if (view.closest(UNDER_OVERLAY_DRAWER) !== null) {
+        return true;
+      }
       if (isDirty || observer === null) {
         overlays = Array.from(document.querySelectorAll(COVER_SELECTOR));
         isDirty = false;
@@ -51,6 +64,7 @@ export const createOverlayWatch = () => {
         (overlay) =>
           overlay.isConnected &&
           !overlay.contains(view) &&
+          isUnderSlot({ overlay, view }) &&
           intersects({ a: overlay.getBoundingClientRect(), b: rect }),
       );
     },

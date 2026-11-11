@@ -59,6 +59,17 @@ describe('closeCurrentLevel', () => {
     expect(store.getState().appStudio).toBeNull();
   });
 
+  it('closes the page, never the drawer parked under it', () => {
+    store.setState({ currentSessionId: SESSION_ID });
+    store.getState().openDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
+
+    closeCurrentLevel({});
+
+    expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().drawer?.kind).toBe('explore');
+  });
+
   it('does nothing on the Sessions page', () => {
     const before = store.getState().currentSessionId;
 

@@ -107,10 +107,12 @@ export const RoleRow = ({
       onOpenChange={setIsOpen}
       trigger={
         <span className="flex min-w-0 items-center gap-3">
-          <span className="w-32 shrink-0 truncate text-body text-foreground">{label}</span>
+          <span className="min-w-0 flex-1 truncate text-body text-foreground @[600px]:w-32 @[600px]:flex-none">
+            {label}
+          </span>
           <TruncatedText
             className={cn(
-              'min-w-0 flex-1 truncate text-meta',
+              'hidden min-w-0 flex-1 truncate text-meta @[600px]:block',
               isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
           >

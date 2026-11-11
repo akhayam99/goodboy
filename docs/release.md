@@ -155,7 +155,7 @@ and one hook gives every surface the same verbs (`useUpdateCard`, state from
 | Failed         | Goodboy 0.27.2 did not install, with the reason | Later, **Retry** (downloads or installs again, without a new check)                                 |
 | Queued         | Restarts when 2 agents finish                   | Later, Cancel restart, **Restart now**                                                              |
 
-The version pill in the Goodboy row, and in the corner of Home
+The version pill in the Goodboy line, and in the corner of Home
 (`WorkspaceLauncher`), opens and closes the card (`toggleUpdateCard`). The card
 also opens by itself once an update is ready, runs into agents or fails. Later
 and Esc close it and snooze that version for three days (`updateSnoozeGate`);

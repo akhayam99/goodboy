@@ -11,7 +11,7 @@ Go from install to a merged pull request in one session. The steps use Harborlin
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-light.webp" alt="The Workspace step of setup with a drop area for a folder">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### 2. Write the ask
 
@@ -19,14 +19,14 @@ Press ⌘K and choose **Start a run**. On the New session page, write the goal i
 
 ### 3. Watch it on the board
 
-The Sessions page shows every session in lanes: **Building**, **Running**, **Needs you**, **In review**, **Done** and **Archived**. Your session sits in the lane that matches what is happening in it. When an agent needs an answer or an OK, the card moves to **Needs you** and says why. Press ⌥⌘↓ to jump to the next session that needs you.
+The Board shows every session in lanes: **Building**, **Running**, **Needs you**, **In review**, **Done** and **Archived**. Your session sits in the lane that matches what is happening in it. When an agent needs an answer or an OK, the card moves to **Needs you** and says why. Press ⌥⌘↓ to jump to the next session that needs you.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds four sessions, each with a question waiting">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### 4. Review in place
 

@@ -10,7 +10,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { DrawerHost } from '../../DrawerHost';
-import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
+import { useShellRight } from '../../../hooks/useShellRight';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
@@ -108,7 +108,7 @@ export const ShellFrame = ({
   sidebar = 'collapsed',
   hasOwnTrail = false,
 }: ShellFrameProps) => {
-  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
   const rail = useSceneSidebar({ isCollapsed: sidebar === 'collapsed' });
   const arrangement = shellArrangement({
     hasWorkspace: true,
@@ -120,7 +120,6 @@ export const ShellFrame = ({
     <ToastProvider>
       <AppShell
         studio={shell.studio}
-        studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
             sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
@@ -128,7 +127,9 @@ export const ShellFrame = ({
             onOpenScript={noop}
           />
         }
-        drawer={isDrawerOpen ? <DrawerHost /> : null}
+        drawer={isDrawerMounted ? <DrawerHost /> : null}
+        isDrawerParked={isDrawerParked}
+        rightRail={rightRail}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           <ShellLeft
@@ -137,7 +138,6 @@ export const ShellFrame = ({
             currentSessionId={session.id}
             isDraftShown={false}
             actions={shell.actions}
-            settingsSlotRef={shell.settingsSlotRef}
           />
         }
         main={

@@ -284,8 +284,8 @@ README images always show the app around the feature. Two frames wrap them:
 Every frame (these two, `audit/WorkspaceFrame` and the board shell) takes its
 column actions, studio and overlay layers from `scenes/useSceneShell`, which
 runs the app's own `useAppOverlays`: Board, Tasks, Chat, Workflows and Settings
-in the column work as in the app, Settings swaps the column and **Back to app**
-returns. A scene that installs its own IPC answers goes through
+in the column work as in the app, Settings opens as a page beside the column and
+**Back to app** returns. A scene that installs its own IPC answers goes through
 `scenes/mockSceneIpc.ts`, which answers editor and browser detection, `db_select`,
 the workflow and budget rule lists and the unread list with an empty list, and
 `db_execute` with no rows touched, when the scene has nothing, so Settings and
@@ -328,7 +328,7 @@ The setup and Home scenes live in `scenes/onboarding/` and sit in one
 states, three tools states, two first session states),
 `onboarding-new-workspace-<state>-<theme>` for the one form,
 `onboarding-home-<state>-<theme>` (list, new, empty),
-`onboarding-setup-menu-<theme>` and `onboarding-brand-tile-<theme>`. The step
+and `onboarding-brand-tile-<theme>`. The step
 scenes share `wizardSceneSeed.ts` (Acme web, the plain Acme docs, four agent
 CLIs) and settle all motion, because a headless capture does not advance CSS
 motion. Two take params instead, for the guide figures, whose shots switch
@@ -770,10 +770,10 @@ the key form, the way Sign in works for agents.
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens
 Settings through the store, so the column, the rail and the page behave as in
-the app. Settings replaces the sidebar with its own column, so the General page
-has one scene, not one per sidebar state. `settings-providers-rail` folds the
-sidebar first and seeds Claude near its limit to show the dot and the notice on
-its page.
+the app: `settings-general-pinned` shows the page with the column open, and
+`settings-providers-rail` folds the sidebar to its rail, which stays beside
+Settings, and seeds Claude near its limit to show the dot and the notice on its
+page.
 
 The dense capture fixtures are `rules-teleport`,
 `rules-no-limits`, `rail-ticket-ids`, and `activity-groups` (it opens the finished

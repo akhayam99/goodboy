@@ -59,6 +59,20 @@ describe('DrawerFrame head', () => {
     expect(container.querySelector('[data-drawer-header-row]')?.className).toBe(plain);
   });
 
+  it('names the page button with its own words when the drawer gives them', () => {
+    const onOpen = vi.fn();
+    render(
+      <DrawerFrame title="Terminal" page={{ label: 'Open as page', onOpen }} onClose={vi.fn()}>
+        body
+      </DrawerFrame>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open as page' }));
+
+    expect(onOpen).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
+  });
+
   it('leads the head with the back chip and drops the back row while the chip holds one', () => {
     const onBack = vi.fn();
     render(

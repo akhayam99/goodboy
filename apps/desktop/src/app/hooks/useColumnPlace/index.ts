@@ -1,12 +1,6 @@
 import { useAppStore } from '../../../store';
-import { selectIsSessionDraftShown } from '../../../store/slices/sessionDraft/selectIsSessionDraftShown';
-import { columnPlaceOf, type ColumnPlace } from '../../components/SideColumn/columnPlace';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
+import { selectColumnPlace } from '../../../shared/navigation/selectColumnPlace';
 
 export const useColumnPlace = (): ColumnPlace =>
-  useAppStore((state) =>
-    columnPlaceOf({
-      hasSession: state.currentSessionId !== null,
-      isDraftShown: selectIsSessionDraftShown({ state }),
-      studio: state.appStudio?.kind ?? null,
-    }),
-  );
+  useAppStore((state) => selectColumnPlace({ state }));

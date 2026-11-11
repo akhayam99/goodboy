@@ -147,13 +147,13 @@ type Mark = {
 };
 
 const columnMarks = (): ReadonlyArray<Mark> => {
-  const tile = document.querySelector('[aria-label^="Switch workspace"] > span[aria-hidden]');
+  const toggle = document.querySelector('[data-sidebar-toggle]');
   const slots = Array.from(document.querySelectorAll('nav[aria-label="Sidebar"] [data-nav-icon]'));
   const nodes = Array.from(
     document.querySelectorAll('nav[aria-label="Sidebar"] [data-rail-session]'),
   );
   return [
-    ...(tile === null ? [] : [{ name: 'workspace tile', x: centerOf({ element: tile }) }]),
+    ...(toggle === null ? [] : [{ name: 'sidebar toggle', x: centerOf({ element: toggle }) }]),
     ...slots.map((slot) => ({
       name: slot.closest('[aria-label]')?.getAttribute('aria-label') ?? 'slot',
       x: centerOf({ element: slot }),
@@ -173,18 +173,19 @@ const expectOneColumn = ({ marks }: ExpectParams): void => {
 
 describe('the main sidebar keeps one icon column', () => {
   it.each(['r4-column-dark', 'r4-column-light'] as const)(
-    '%s centers the workspace tile, New session, the doors and Settings on one x, with the session state on the right of its row',
+    '%s centers the sidebar toggle, New session, the doors and Settings on one x, with the session state on the right of its row',
     async (name) => {
       await mount({ name });
 
       const marks = columnMarks();
       const names = marks.map((mark) => mark.name);
-      expect(names).toContain('workspace tile');
+      expect(names).toContain('sidebar toggle');
       expect(names).toContain('New session');
-      expect(names.some((entry) => entry.startsWith('Sessions'))).toBe(true);
+      expect(names.some((entry) => entry.startsWith('Board'))).toBe(true);
       expect(names).toContain('Impact');
+      expect(names).toContain('Monitoring');
       expect(names).not.toContain('Terminal');
-      expect(document.querySelectorAll('[data-column-tile]')).toHaveLength(3);
+      expect(document.querySelectorAll('[data-column-tile]')).toHaveLength(0);
       expect(names).toContain('Settings');
       expect(document.querySelectorAll('button[data-select-id] [data-nav-icon]').length).toBe(0);
       expectOneColumn({ marks });

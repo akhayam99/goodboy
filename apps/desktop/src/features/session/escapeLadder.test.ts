@@ -124,6 +124,17 @@ describe('the Esc ladder', () => {
     expect(keyNow()).toBe(`s/${SESSION}/workflows`);
   });
 
+  it('leaves a drawer parked under a page alone', () => {
+    useAppStore.getState().navigate({ to: RUNS });
+    useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
+    useAppStore.getState().openStudio({ studio: { kind: 'workflow' } });
+
+    escapeLadder({});
+
+    expect(useAppStore.getState().drawer?.kind).toBe('ask');
+    expect(useAppStore.getState().appStudio?.kind).toBe('workflow');
+  });
+
   it('does what the back row does on a list page', () => {
     useAppStore.getState().navigate({ to: RUNS });
 

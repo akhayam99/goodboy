@@ -55,9 +55,9 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const rail = (): HTMLElement => screen.getByRole('navigation', { name: 'Session' });
+const rail = (): HTMLElement => screen.getByRole('navigation', { name: 'Session pages' });
 
-const tools = (): HTMLElement => screen.getByRole('toolbar', { name: 'Session tools' });
+const tools = (): HTMLElement => screen.getByRole('toolbar', { name: 'Tools' });
 
 const card = (name: string): HTMLElement => within(rail()).getByRole('group', { name });
 
@@ -126,7 +126,7 @@ describe('r4 session rail scenes', () => {
     expect(entryLabels(projects)).toEqual([]);
     expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(card('Linked')).toBeDefined();
-    expect(within(rail()).queryByRole('toolbar', { name: 'Session tools' })).toBeNull();
+    expect(within(rail()).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
     expect(within(tools()).getAllByRole('button')).toHaveLength(7);
     const top = within(rail().querySelector<HTMLElement>('[data-rail-top]') ?? rail());
     top.getByRole('button', { name: 'More session actions' });

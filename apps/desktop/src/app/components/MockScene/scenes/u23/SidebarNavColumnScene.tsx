@@ -3,7 +3,7 @@ import { useAppStore, useCurrentSession } from '../../../../../store';
 import { SessionRail } from '../../../SessionRail';
 import { SideColumn } from '../../../SideColumn';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
-import type { ColumnPlace } from '../../../SideColumn/columnPlace';
+import type { ColumnPlace } from '../../../../../shared/navigation/columnPlace';
 import {
   SIDEBAR_NAV_DEFAULTS,
   seedSidebarNav,
@@ -18,15 +18,12 @@ const ACTIONS: ColumnActions = {
   openInbox: noop,
   openChat: noop,
   openWorkflows: noop,
-  openTerminalStudio: noop,
-  openBrowserStudio: noop,
   openNewChat: noop,
   openMonitoring: noop,
   openImpact: noop,
   openSettings: noop,
   openChangelog: noop,
   openGuide: noop,
-  openShortcuts: noop,
 };
 
 type Props = {

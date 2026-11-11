@@ -72,12 +72,12 @@
     "height": 1230
   },
   "features/board-card-dark.webp": {
-    "width": 1716,
-    "height": 948
+    "width": 1866,
+    "height": 942
   },
   "features/board-card-light.webp": {
-    "width": 1716,
-    "height": 948
+    "width": 1866,
+    "height": 942
   },
   "features/board-stage-dark.webp": {
     "width": 4000,
@@ -232,20 +232,20 @@
     "height": 2640
   },
   "features/overview-activity-dark.webp": {
-    "width": 2463,
-    "height": 2991
+    "width": 4080,
+    "height": 2940
   },
   "features/overview-activity-light.webp": {
-    "width": 2463,
-    "height": 2991
+    "width": 4080,
+    "height": 2940
   },
   "features/overview-next-dark.webp": {
-    "width": 2463,
-    "height": 756
+    "width": 2415,
+    "height": 1224
   },
   "features/overview-next-light.webp": {
-    "width": 2463,
-    "height": 756
+    "width": 2415,
+    "height": 1224
   },
   "features/overview-session-dark.webp": {
     "width": 3342,
@@ -384,12 +384,12 @@
     "height": 2640
   },
   "features/security-backup-notice-dark.webp": {
-    "width": 3180,
-    "height": 945
+    "width": 2400,
+    "height": 1020
   },
   "features/security-backup-notice-light.webp": {
-    "width": 3180,
-    "height": 945
+    "width": 2400,
+    "height": 1020
   },
   "features/security-changelog-update-dark.webp": {
     "width": 4080,
@@ -425,11 +425,11 @@
   },
   "features/security-updates-dark.webp": {
     "width": 1380,
-    "height": 690
+    "height": 870
   },
   "features/security-updates-light.webp": {
     "width": 1380,
-    "height": 690
+    "height": 870
   },
   "features/setup-about-you-dark.webp": {
     "width": 4080,
@@ -472,12 +472,12 @@
     "height": 2640
   },
   "features/setup-permissions-dark.webp": {
-    "width": 3240,
-    "height": 1080
+    "width": 2487,
+    "height": 1044
   },
   "features/setup-permissions-light.webp": {
-    "width": 3240,
-    "height": 1080
+    "width": 2487,
+    "height": 1044
   },
   "features/setup-provider-page-dark.webp": {
     "width": 4080,
@@ -552,11 +552,11 @@
     "height": 2040
   },
   "features/switch-rail-dark.webp": {
-    "width": 2280,
+    "width": 2160,
     "height": 2400
   },
   "features/switch-rail-light.webp": {
-    "width": 2280,
+    "width": 2160,
     "height": 2400
   },
   "features/workflow-hints-dark.webp": {
@@ -585,19 +585,19 @@
   },
   "features/workflow-recap-dark.webp": {
     "width": 4080,
-    "height": 2640
+    "height": 2940
   },
   "features/workflow-recap-light.webp": {
     "width": 4080,
-    "height": 2640
+    "height": 2940
   },
   "features/workflow-run-dark.webp": {
     "width": 3160,
-    "height": 1800
+    "height": 2160
   },
   "features/workflow-run-light.webp": {
     "width": 3160,
-    "height": 1800
+    "height": 2160
   },
   "features/workflow-studio-steps-dark.webp": {
     "width": 4080,

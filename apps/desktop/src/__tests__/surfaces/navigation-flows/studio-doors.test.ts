@@ -40,16 +40,16 @@ describe('every studio has a door you can see', () => {
     expect(withoutVisibleDoor).toEqual([]);
   });
 
-  it('puts the Guide and the iPhone page in the Goodboy menu', () => {
+  it('puts the Guide and the What is new tab behind the Goodboy line', () => {
     const rows = ALL_ROWS;
     const visibleRowsOf = (kind: string) =>
       rows.filter((row) => row.door === 'visible' && row.covers.includes(`studio:${kind}`));
 
     expect(visibleRowsOf('guide').map((row) => row.name)).toContain(
-      'column: goodboy chip to the guide',
+      'column: goodboy line to the guide',
     );
-    expect(visibleRowsOf('settings').map((row) => row.name)).toContain(
-      'column: goodboy chip to pair an iPhone',
+    expect(visibleRowsOf('changelog').map((row) => row.name)).toContain(
+      "column: goodboy line, then the What's new tab",
     );
   });
 });

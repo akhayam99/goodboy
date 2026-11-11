@@ -3,7 +3,8 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { AppShell, COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
+import { AppShell, COLLAPSED_RAIL_WIDTH, TOP_BAR_CONTROL } from '@goodboy/ui';
+import { ColumnToggleButton } from '../../app/components/SideColumn/ColumnToggleButton';
 import { shellArrangement } from '../../app/shellArrangement';
 
 const SOURCE_ROOT = join(__dirname, '..', '..');
@@ -41,6 +42,10 @@ const RAIL_SESSION_LEVEL = readFileSync(
   join(SOURCE_ROOT, 'app', 'components', 'SessionRail', 'RailSessionLevel.tsx'),
   'utf8',
 );
+const SESSION_PAGE_ROW = readFileSync(
+  join(SOURCE_ROOT, 'app', 'components', 'SessionRail', 'SessionPageRow.tsx'),
+  'utf8',
+);
 afterEach(cleanup);
 
 const classNameContaining = ({ source, marker }: { source: string; marker: string }): string => {
@@ -65,21 +70,29 @@ const spacingOf = ({ className, prefix }: SpacingParams): number => {
 };
 
 describe('workspace tile and collapsed rail axis', () => {
-  it('lands the workspace tile center on the rail button axis', () => {
+  it('lands the sidebar toggle center on the rail button axis, with the identity after it', () => {
     const bar = classNameContaining({ source: TOP_BAR, marker: 'grid h-9' });
+    const leftZone = classNameContaining({ source: TOP_BAR, marker: 'col-start-1' });
     const row = classNameContaining({ source: IDENTITY_ROW, marker: 'flex w-full' });
-    const trigger = classNameContaining({ source: IDENTITY_ROW, marker: 'group flex w-full' });
-    const tile = classNameContaining({ source: TILE, marker: 'flex size-5' });
+    const { container } = render(
+      <ColumnToggleButton isCollapsed={false} onToggle={() => undefined} />,
+    );
+    const toggle = container.querySelector('[data-sidebar-toggle]')?.getAttribute('class') ?? '';
 
-    const tileCenter =
+    const toggleCenter =
       spacingOf({ className: bar, prefix: 'px' }) +
       Number.parseFloat('0px') +
-      spacingOf({ className: trigger, prefix: 'px' }) +
-      spacingOf({ className: tile, prefix: 'size' }) / 2;
+      spacingOf({ className: toggle, prefix: 'size' }) / 2;
 
-    expect(tileCenter).toBe(22);
-    expect(tileCenter).toBe(COLLAPSED_RAIL_WIDTH / 2);
-    expect(row).toContain('ml-(--titlebar-inset)');
+    expect(toggleCenter).toBe(22);
+    expect(toggleCenter).toBe(COLLAPSED_RAIL_WIDTH / 2);
+    expect(toggle.split(/\s+/)).toContain(TOP_BAR_CONTROL.square);
+    expect(TOP_BAR.indexOf('<ColumnToggleButton')).toBeLessThan(
+      TOP_BAR.indexOf('<WorkspaceIdentityRow'),
+    );
+    expect(leftZone).toContain('pl-(--titlebar-inset)');
+    expect(row).not.toContain('--titlebar-inset');
+    expect(TILE).toContain('flex size-5');
     expect(STYLES).toContain(`--titlebar-inset: 0px;`);
   });
 
@@ -95,23 +108,22 @@ describe('workspace tile and collapsed rail axis', () => {
   it('draws a rail button as its open row without the word, so a fold moves no icon', () => {
     expect(RAIL_BUTTON).toContain("cn('h-7 w-full justify-start px-2', RAIL_BUTTON_BASE)");
     expect(RAIL_SESSION_LEVEL).toContain('className="flex flex-col gap-1 px-2"');
-    expect(RAIL_SESSION_LEVEL).toContain('iconSize={ICON_SIZE.row}');
+    expect(SESSION_PAGE_ROW).toContain('iconSize={ICON_SIZE.row}');
     expect(RAIL_SESSION_LEVEL).not.toContain('<RailIdentityNode');
   });
 });
 
-describe('the column keeps its pinned width while Settings holds it', () => {
-  const columnWidthOf = ({ isSettingsOpen }: { readonly isSettingsOpen: boolean }): string => {
-    const arrangement = shellArrangement({
-      hasWorkspace: true,
-      isSidebarCollapsed: true,
-      isSettingsOpen,
-    });
+describe('the column draws what its saved fold says, on every page', () => {
+  const columnWidthOf = ({
+    isSidebarCollapsed,
+  }: {
+    readonly isSidebarCollapsed: boolean;
+  }): string => {
+    const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed });
     const { container } = render(
       <AppShell
         leftSidebar={<div>column</div>}
         leftSidebarCollapsed={arrangement.isLeftRail}
-        studioCoversLeft={arrangement.studioCoversLeft}
         main={<div>content</div>}
       />,
     );
@@ -119,11 +131,31 @@ describe('the column keeps its pinned width while Settings holds it', () => {
     return grid.style.gridTemplateColumns.split(' ')[0] ?? '';
   };
 
-  it('draws the 44px rail on a folded sidebar while Settings is closed', () => {
-    expect(columnWidthOf({ isSettingsOpen: false })).toBe(`${COLLAPSED_RAIL_WIDTH}px`);
+  it('draws the 44px rail on a folded sidebar', () => {
+    expect(columnWidthOf({ isSidebarCollapsed: true })).toBe(`${COLLAPSED_RAIL_WIDTH}px`);
   });
 
-  it('draws the column at its saved width on the same folded sidebar while Settings is open', () => {
-    expect(columnWidthOf({ isSettingsOpen: true })).toBe('var(--goodboy-left-sidebar-width)');
+  it('draws the column at its saved width on an open sidebar', () => {
+    expect(columnWidthOf({ isSidebarCollapsed: false })).toBe('var(--goodboy-left-sidebar-width)');
+  });
+});
+
+describe('the top bar left zone stays above the column it folds', () => {
+  it('caps the left zone at the column width while the column is open', () => {
+    expect(TOP_BAR).toContain("isColumnOpen && 'max-w-(--goodboy-left-sidebar-width)'");
+    expect(TOP_BAR).toContain('const isColumnOpen = sidebar?.isCollapsed === false;');
+  });
+
+  it('sets the column width on the shell root, so the top bar reads the same value', () => {
+    const { container } = render(
+      <AppShell
+        topBar={<div>bar</div>}
+        leftSidebar={<div>column</div>}
+        main={<div>content</div>}
+      />,
+    );
+    const root = container.querySelector<HTMLElement>('[data-app-backdrop]');
+
+    expect(root?.style.getPropertyValue('--goodboy-left-sidebar-width')).not.toBe('');
   });
 });

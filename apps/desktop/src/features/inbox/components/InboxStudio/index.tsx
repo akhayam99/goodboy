@@ -305,9 +305,7 @@ export const InboxStudio = ({
     await restoreStarredIssues({ workspaceId, issues }).catch(() => undefined);
   };
 
-  const deselect = (): void => {
-    setOpenKey(null);
-  };
+  const deselect = (): void => setOpenKey(null);
 
   const closeFull = (): void => {
     setFullKey(null);
@@ -642,6 +640,8 @@ export const InboxStudio = ({
         <InboxStudioLayout
           main={fullPage(requestClose) ?? list}
           drawerRef={detailRef}
+          {...(openRecord != null && { drawerKey: openRecord.key })}
+          onCloseDrawer={deselect}
           drawer={
             openRecord == null || fullRecord !== null ? null : (
               <InboxDetail

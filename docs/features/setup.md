@@ -4,14 +4,14 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 ### Welcome to Goodboy
 
-Three short steps take you from install to a first agent reading your code. The steps are **Agents**, **Workspace** and **First session**, and the first one opens with the welcome and the line that nothing is pushed until you say so. Nothing is saved until you create a workspace. **Set up later** sits in the header, Escape goes back one step and never ends setup, and the next launch opens at the step you left. If one step of the launch takes ten seconds, the splash says so and offers **Restart**. If making the workspace fails, the reason shows in the action row of the Workspace step and the buttons stay. A setup card on the Sessions page counts the three steps, **Setup · 2 of 3** beside a small meter, folds finished steps into one line, gives the open step the one button, and offers **Resume setup** while setup is paused. The last step is the same **Start a run** field a session uses, filled with a starter and set to Scout, which reads the folder and changes nothing. A Scout run has no Limit chip. With a task tool connected and an open issue it opens on **Pick up an issue** with the first issue selected, and **Draft the brief** takes it to the New session page; with a tool and no open issue, or no tool, it stays on **Ask about the code**, with a **Connect Linear or Jira** link that opens the tools and brings you back.
+Three short steps take you from install to a first agent reading your code. The steps are **Agents**, **Workspace** and **First session**, and the first one opens with the welcome and the line that nothing is pushed until you say so. Nothing is saved until you create a workspace. **Set up later** sits in the header, Escape goes back one step and never ends setup, and the next launch opens at the step you left. If one step of the launch takes ten seconds, the splash says so and offers **Restart**. If making the workspace fails, the reason shows in the action row of the Workspace step and the buttons stay. A setup card on the Board counts the three steps, **Setup · 2 of 3** beside a small meter, folds finished steps into one line, gives the open step the one button, and offers **Resume setup** while setup is paused. The last step is the same **Start a run** field a session uses, filled with a starter and set to Scout, which reads the folder and changes nothing. A Scout run has no Limit chip. With a task tool connected and an open issue it opens on **Pick up an issue** with the first issue selected, and **Draft the brief** takes it to the New session page; with a tool and no open issue, or no tool, it stays on **Ask about the code**, with a **Connect Linear or Jira** link that opens the tools and brings you back.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-light.webp" alt="The Welcome to Goodboy screen: the Goodboy tile above the line Goodboy runs coding agents side by side on your own repositories, one session for each goal, Found Claude and Codex on this Mac, and the steps Agents, Workspace and First session with Set up later along the top">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Your agents
 
@@ -22,7 +22,7 @@ Goodboy runs the coding agents already on this Mac, and one ready agent is enoug
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-light.webp" alt="The Your agents step of setup: Claude Ready and marked Default with Claude Code 2.1.280 and its account, Codex Not signed in with Sign in, Cursor and Gemini Not installed with Install and Set up, the Use an API key instead row, the line 1 ready, checks again when you come back, and Back and Continue">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Your first workspace
 
@@ -33,7 +33,7 @@ A workspace is what you work on: one repository, or a folder that holds several.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-light.webp" alt="The Workspace step of setup, Your first workspace: the line A workspace is what you work on, one repository or a folder that holds several, a drop area reading Drop a folder here, the link Start from scratch, and Back and Choose folder">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Home
 
@@ -44,7 +44,7 @@ A window with no workspace open shows Home, which lists your workspaces with the
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-light.webp" alt="Home with the Goodboy tile and its version, the Workspaces list with Harborline 3 projects, Northwind 2 projects, Acme web 1 project and Cascadia 4 projects, each with where it lives and when it was last opened, a New workspace button, and the switch Reopen the last workspace on launch">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### One page per provider
 
@@ -55,7 +55,7 @@ Each provider has its own page in **Providers** with its usage, the models shown
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-light.webp" alt="The Claude page in Settings › Providers: a warning that Claude is about to run out, Usage with a 5-hour window at 85% used and a Weekly bar at 48% used, Models in the picker showing Haiku, Sonnet, Opus and Fable, and Permissions with Claude">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Update the provider CLI
 
@@ -66,7 +66,7 @@ When a model needs a newer provider CLI, the provider page says so and one butto
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-light.webp" alt="The Account group at the foot of the Claude page: the signed in account with Claude CLI 2.1.260, and a banner reading Opus 5.5 and Sonnet 5.5 need a newer Claude CLI, You have Claude CLI 2.1.260, Update to 2.1.284 or newer, with an Update Claude CLI button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Permissions for each provider
 
@@ -77,7 +77,7 @@ See which permission modes a provider can honor before you pick one, from **Read
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-permissions-light.webp" alt="The Permissions with Codex table on a provider page: Read only Works, Ask first Not available, Edits allowed Partly, Full access Partly, Rules Not followed and Role limits Asked, not locked, each with its reason in words">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Integrations
 
@@ -88,7 +88,7 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page,
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-integrations-light.webp" alt="Settings › Integrations: GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack in the left list with a status dot each, and the GitHub page open showing the all-workspaces account connected as harborline-bot with a personal API key, This workspace and Open in Tasks">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### About you
 
@@ -99,11 +99,11 @@ Tell agents once who you are and how you like to work, in four short fields. **S
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-light.webp" alt="The About you page of workspace settings with the Profile card: Your job (Tech Lead, Backend Engineer), About your work, How agents should work with you, Explain more when it touches (Rust, Database migrations, Idempotency), the Explanations count with Open and a See who reads what link">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.33.0</sub>
 
 ### Settings
 
-Settings opens from the foot of the sidebar or with **⌘,**, on the page you used last. **Search settings** finds any setting, every page is also in the command palette, and a dot marks a page that needs you. Under App, General, **Appearance** holds the theme (the palette has it too: type Theme for **Theme: dark**, **Theme: light** and **Theme: system**; the top bar has no theme switch) and **More contrast**: stronger borders, hover marks and quiet text, on its own when your system asks for more contrast and on request with the switch, which is remembered on this Mac. Below it, **Notifications** holds **Banner when you are away** and **Dock badge**: the banner asks once, the badge starts on, and both are remembered on this Mac and shared by its windows. A setting you save in one window shows in the other windows at once, without a reload. When folders hold a value of their own for a setting, its row says how many ("2 folders use their own"), and a folder's own After merge rule is marked **From project**, so you stop wondering why one folder behaves differently.
+Settings opens from the foot of the sidebar or with **⌘,**, on the page you used last. It is a page like the others: the sidebar stays as it was, and **⌘B** still folds it. Its pages sit in their own list at its left, which folds too. **Search settings**, at the top of that list, finds any setting, every page is also in Search or run (**⌘K**), and a dot marks a page that needs you. Under App, General, **Appearance** holds the theme (Search or run has it too: type Theme for **Theme: dark**, **Theme: light** and **Theme: system**; the top bar has no theme switch) and **More contrast**: stronger borders, hover marks and quiet text, on its own when your system asks for more contrast and on request with the switch, which is remembered on this Mac. Below it, **Notifications** holds **Banner when you are away** and **Dock badge**: the banner asks once, the badge starts on, and both are remembered on this Mac and shared by its windows. A setting you save in one window shows in the other windows at once, without a reload. When folders hold a value of their own for a setting, its row says how many ("2 folders use their own"), and a folder's own After merge rule is marked **From project**, so you stop wondering why one folder behaves differently.
 
 **Also in this area**
 

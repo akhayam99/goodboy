@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -74,5 +74,28 @@ describe('the Tasks drawer split scene', () => {
     expect(page?.textContent).toContain('Tasks');
     expect(drawer?.textContent).toContain('CAS-231');
     expect(page?.contains(drawer ?? null)).toBe(false);
+  });
+
+  it('fades the record panel in with the page, then leaves a later panel to the drawer motion', async () => {
+    stubColumnWidth(1600);
+    const Scene = U24_DRAWERS_TASKS_SCENES['drawer-split-tasks'];
+    const { container } = render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    const panel = await screen.findByRole('complementary', { name: 'Task' });
+    const motions = Array.from(container.querySelectorAll<HTMLElement>('[data-studio-motion]'));
+    const pageMotion = motions.find((node) => !node.contains(panel) && !panel.contains(node));
+    const panelMotion = motions.find((node) => panel.contains(node));
+
+    expect(pageMotion?.getAttribute('data-studio-motion')).toBe('in');
+    expect(panelMotion?.getAttribute('data-studio-motion')).toBe('in');
+
+    if (pageMotion !== undefined) {
+      fireEvent.animationEnd(pageMotion);
+    }
+    expect(panelMotion?.getAttribute('data-studio-motion')).toBe('settled');
   });
 });

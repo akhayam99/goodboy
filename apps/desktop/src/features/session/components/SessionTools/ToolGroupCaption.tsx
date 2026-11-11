@@ -1,20 +1,16 @@
-import type { SessionTool } from './sessionTools';
+import { TEXT_ROLE, cn } from '@goodboy/ui';
 
-type Props = {
-  readonly group: SessionTool['group'];
-};
+type Props = Record<never, never>;
 
-const GROUP_CAPTION = {
-  read: 'Read',
-  work: 'Work',
-} as const satisfies Record<SessionTool['group'], string>;
-
-export const ToolGroupCaption = ({ group }: Props) => (
+export const ToolGroupCaption = ({}: Props) => (
   <span
     aria-hidden
     data-slot="tool-group-caption"
-    className="whitespace-nowrap text-rail text-faint-foreground [@media(max-height:480px)]:hidden"
+    className={cn(
+      'whitespace-nowrap text-rail [@media(max-height:480px)]:hidden',
+      TEXT_ROLE.secondary,
+    )}
   >
-    {GROUP_CAPTION[group]}
+    Session
   </span>
 );

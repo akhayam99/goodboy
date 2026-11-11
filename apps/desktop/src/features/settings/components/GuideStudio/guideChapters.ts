@@ -210,7 +210,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Sessions page of the sidebar. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
+    lead: 'The Board of the sidebar. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
     points: [
       {
         term: 'Session card',
@@ -218,7 +218,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Board and sidebar list',
-        desc: 'Lanes on the Sessions page. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
+        desc: 'Lanes on the Board. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
       },
       {
         term: 'Done and archived',
@@ -234,7 +234,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Now chip',
-        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber dot on Sessions in the sidebar.',
+        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber dot on Board in the sidebar.',
       },
       {
         term: 'Top bar',
@@ -247,36 +247,36 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'shell',
     group: 'daily',
-    title: 'Sidebar and session rail',
-    lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the session tools sit in a thin column at the right.',
+    title: 'Sidebar and session pages',
+    lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the right rail holds the tools.',
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Sessions, Tasks, Workflows, Chat and Impact, one row of Terminal, Browser and Monitoring tiles, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Board, Tasks, Workflows, Chat, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
-        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived.',
+        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Board holds Sort, Group, Filter and Show archived.',
       },
       {
         term: 'Pin a session',
         desc: "Pin session, in a row's right click menu, keeps it in a Pinned group on top, and Move up and Move down reorder it.",
       },
       {
-        term: 'Session rail',
-        desc: 'Overview, Runs, Artifacts and Questions, with counts; Runs holds plans, presets, Auto and agents. Then the Projects card, one tree of folders and branches, and the Linked card.',
+        term: 'Session pages',
+        desc: `Overview, Runs, Artifacts and Questions, with counts; Runs holds plans, presets, Auto and agents. Then the Projects card, one tree of folders and branches, and the Linked card. Hide session pages, or ${shortcutGlyphs('innerColumn.toggle')}, folds it to icons.`,
       },
       {
         term: 'Session actions and +',
-        desc: 'The + on the Projects card adds or connects a folder, and the + on a folder row starts a new branch in it. More session actions, next to Pin, holds Archive and Delete.',
+        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete; folded, at the foot.',
       },
       {
         term: 'Agents panel',
         desc: `Agents, or ${shortcutGlyphs('session.spawned')}, shows the open run or Auto as a tree, else what is live. An agent opens beside it; j and k hop.`,
       },
       {
-        term: 'Session tools',
-        desc: `The icon column at the right of the session page holds Explore, Context and Ask under Read, then Agents, Scripts, Terminal and Browser under Work. A pane closes with ${shortcutGlyphs('overlay.close')}, and the one it replaced waits in a chip. Open as page moves a Browser tab to the Browser page. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
+        term: 'Right rail',
+        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask, Agents and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open as page grows them into a page, Dock puts them back.',
       },
     ],
     links: [],
@@ -678,7 +678,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
@@ -723,7 +723,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Update ready',
-        desc: 'The version pill in the Goodboy row opens the update card: Update now downloads, then Restart now installs. With agents running, Restart when they finish waits for them. A failed update offers Retry.',
+        desc: 'The version pill in the Goodboy line opens the update card: Update now downloads, then Restart now installs. With agents running, Restart when they finish waits for them. A failed update offers Retry.',
       },
       {
         term: 'Check for Updates',
@@ -731,7 +731,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.whatsNew,
-        desc: 'Release notes in the Help window. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
+        desc: 'Release notes in the second tab of Help, beside the Guide. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
       },
       {
         term: 'Report a bug',
@@ -752,7 +752,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Most of Goodboy works from the keyboard. One list drives the keys, the shortcut page, the menu bar and the tooltips.',
     points: [
       {
-        term: 'Command palette',
+        term: 'Search or run',
         desc: 'Opens on what you look at: in a session, Next steps first, then its actions. A few letters find sessions, agents, plans, pages, scripts and actions, and any text can go to Ask in chat.',
       },
       {
@@ -765,11 +765,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents, ${shortcutGlyphs('lens.scripts')} Scripts and ${shortcutGlyphs('session.terminal')} Terminal. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('slot.close')} closes the drawer.`,
+        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('slot.close')} closes the drawer.`,
       },
       {
         term: 'Terminal',
-        desc: `Control and backtick open Terminal, every terminal of the workspace in one list. ${shortcutGlyphs('terminal.newTab')} adds a tab while one has focus, and shells survive a reload. A zsh row shows its last command.`,
+        desc: `Control and backtick, or ${shortcutGlyphs('session.terminal')}, show or hide the Terminal dock on any screen. ${shortcutGlyphs('terminal.newTab')} adds a tab while one has focus, and shells survive a reload. A zsh row shows its last command.`,
       },
       {
         term: 'Right click',
@@ -781,7 +781,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
     ],
     links: [
-      { label: 'Open the command palette', target: { kind: 'palette' } },
+      { label: 'Open Search or run', target: { kind: 'palette' } },
       {
         label: 'See all shortcuts',
         target: {

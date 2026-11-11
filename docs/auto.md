@@ -115,7 +115,7 @@ started keeps a route in `runs.routes.<sessionId>` and never offers it. It is in
 of an Implementer, Tester, Scout, Planner, Reviewer, Debugger or docs agent and
 of an old Generalist (the registry verbs `agent.moveToAuto` and
 `agent.detachFromAuto` in `features/actions/kinds/agent.ts`, so the header menu,
-the right click and the palette agree). It is blocked with "Wait for the turn to
+the right click and Search or run agree). It is blocked with "Wait for the turn to
 end first." while the agent works.
 
 - The verb opens the chat of the agent and replaces its composer with a panel,
@@ -518,7 +518,7 @@ writing to it reopens it to **Deciding**.
   waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
 - **A child opens on its page, from every door** (`useAutoChildChat`, `AgentDetailPane`):
-  a tree row, a delegation line, the Overview, a notification and the palette land on one
+  a tree row, a delegation line, the Overview, a notification and Search or run land on one
   page with one box, and the back row reads **Back to Auto**. A saved window that held the
   old panel opens this page (`withoutRemovedPages`). The page title is the task
   Auto gave it (the first line of the brief when the task is missing); on top, the line
