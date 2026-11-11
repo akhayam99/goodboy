@@ -896,6 +896,7 @@ u26-central-branches-dark
 u26-central-branches-light
 u26-central-finished-dark
 u26-central-finished-light
+u26-central-log
 u26-central-log-dark
 u26-central-log-light
 u26-central-log-search-light
