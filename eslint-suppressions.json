@@ -5297,11 +5297,6 @@
       "count": 12
     }
   },
-  "apps/desktop/src/features/session/components/SessionRefreshBridge.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/SessionWorkspace/index.test.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
