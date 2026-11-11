@@ -3,11 +3,11 @@ import {
   AnchoredPopover,
   ICON_SIZE,
   MENU_MAX_WIDTH,
-  MenuList,
   MenuTriggerButton,
   useDropdown,
   type MenuEntry,
 } from '@goodboy/ui';
+import { AppMenuList } from '../../../actions/AppMenuList';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { BrowserPaneModel } from '../../types';
 import { browserMoreOffOf } from './browserMoreRows';
@@ -98,7 +98,7 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
         </MenuTriggerButton>
       }
     >
-      <MenuList label={MENU_LABEL} entries={entries} onClose={dropdown.close} />
+      <AppMenuList label={MENU_LABEL} entries={entries} onClose={dropdown.close} />
     </AnchoredPopover>
   );
 };
