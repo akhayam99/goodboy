@@ -6,10 +6,14 @@ const READ_WAIT: Duration = Duration::from_millis(500);
 
 #[cfg(target_os = "macos")]
 fn read_wk_web_view_url(platform: tauri::webview::PlatformWebview) -> Option<String> {
+    read_view_url(platform.inner().cast::<objc2::runtime::AnyObject>())
+}
+
+#[cfg(target_os = "macos")]
+fn read_view_url(view: *mut objc2::runtime::AnyObject) -> Option<String> {
     use objc2::msg_send;
     use objc2::runtime::AnyObject;
     use std::ffi::{c_char, CStr};
-    let view = platform.inner().cast::<AnyObject>();
     if view.is_null() {
         return None;
     }
@@ -49,4 +53,12 @@ pub(crate) fn live_url_of<R: Runtime>(webview: &Webview<R>) -> Option<Url> {
 pub(crate) fn live_url_of<R: Runtime>(webview: &Webview<R>) -> Option<Url> {
     let _ = READ_WAIT;
     webview.url().ok()
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod tests {
+    #[test]
+    fn reads_no_address_from_a_view_that_is_gone() {
+        assert_eq!(super::read_view_url(std::ptr::null_mut()), None);
+    }
 }
