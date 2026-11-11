@@ -72,6 +72,10 @@ describe('the browser pane scenes', () => {
       'browser-pane-dark',
       'browser-pane-field',
       'browser-pane-field-dark',
+      'browser-pane-find',
+      'browser-pane-find-dark',
+      'browser-pane-find-missing',
+      'browser-pane-find-missing-dark',
       'browser-pane-keys',
       'browser-pane-keys-dark',
       'browser-pane-loading',
@@ -153,6 +157,34 @@ describe('the browser pane scenes', () => {
     ).toEqual(['Tabs', 'Visited']);
     expect(within(list).getByRole('option', { name: 'Staging checkout' }).textContent).toContain(
       'Pinned',
+    );
+  });
+
+  it('opens the find bar under the row with a typed word that the page has', async () => {
+    mount({ id: 'browser-pane-find' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const bar = await within(pane).findByRole('search', { name: 'Find in page' }, WAIT);
+    await waitFor(
+      () =>
+        expect(within(bar).getByRole('textbox', { name: 'Find in page' })).toHaveProperty(
+          'value',
+          'retry',
+        ),
+      WAIT,
+    );
+    await waitFor(() => expect(within(bar).getByRole('status').textContent).toBe('Found'), WAIT);
+    within(bar).getByRole('button', { name: 'Done' });
+  });
+
+  it('opens the find bar with a typed word that the page does not have', async () => {
+    mount({ id: 'browser-pane-find-missing' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const bar = await within(pane).findByRole('search', { name: 'Find in page' }, WAIT);
+    await waitFor(
+      () => expect(within(bar).getByRole('status').textContent).toBe('Not found'),
+      WAIT,
     );
   });
 

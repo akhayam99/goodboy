@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { SHORTCUTS, platformCombo } from '../../../../../../../shared/keyboard/registry';
+import { currentPlatform } from '../../../../../../../shared/platform';
 import type { BrowserPaneSceneState } from '../browserPaneSeed';
 
 type Params = {
@@ -14,6 +16,7 @@ type TypeParams = {
 const PANE = '[aria-label="Browser"]';
 const PILL = `${PANE} button[aria-label^="Edit address"]`;
 const FIELD = `${PANE} input[role="combobox"]`;
+const FIND_FIELD = `${PANE} input[aria-label="Find in page"]`;
 
 const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   address: PILL,
@@ -21,9 +24,18 @@ const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   more: `${PANE} button[aria-label="More"]`,
 };
 
+const FIELDS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
+  find: FIND_FIELD,
+  'find-missing': FIND_FIELD,
+};
+
 const TYPED: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   field: 'check',
+  find: 'retry',
+  'find-missing': 'zebra',
 };
+
+const FIND_STATES: ReadonlyArray<BrowserPaneSceneState> = ['find', 'find-missing'];
 
 const typeInto = ({ field, text }: TypeParams): void => {
   const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
@@ -31,16 +43,35 @@ const typeInto = ({ field, text }: TypeParams): void => {
   field.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
+const pressFind = (): void => {
+  const parts = platformCombo({ entry: SHORTCUTS['browser.find'] }).split('+');
+  const isMac = currentPlatform() === 'darwin';
+  const isModWanted = parts.includes('cmd');
+  document.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      code: parts[parts.length - 1] ?? '',
+      key: 'f',
+      metaKey: isMac && isModWanted,
+      ctrlKey: parts.includes('ctrl') || (!isMac && isModWanted),
+      shiftKey: parts.includes('shift'),
+      altKey: parts.includes('alt'),
+      bubbles: true,
+    }),
+  );
+};
+
 export const useOpenedChrome = ({ isOn, state }: Params): void => {
   useEffect(() => {
     const selector = SELECTORS[state];
-    if (!isOn || selector === undefined) {
+    const isFind = FIND_STATES.includes(state);
+    if (!isOn || (selector === undefined && !isFind)) {
       return;
     }
     const text = TYPED[state];
+    const fieldSelector = FIELDS[state] ?? FIELD;
     let frame = 0;
     const typeText = () => {
-      const field = document.querySelector<HTMLInputElement>(FIELD);
+      const field = document.querySelector<HTMLInputElement>(fieldSelector);
       if (field === null) {
         frame = window.requestAnimationFrame(typeText);
         return;
@@ -48,7 +79,17 @@ export const useOpenedChrome = ({ isOn, state }: Params): void => {
       typeInto({ field, text: text ?? '' });
     };
     const look = () => {
-      const button = document.querySelector<HTMLButtonElement>(selector);
+      if (isFind) {
+        if (document.querySelector(fieldSelector) === null) {
+          pressFind();
+          frame = window.requestAnimationFrame(look);
+          return;
+        }
+        typeText();
+        return;
+      }
+      const button =
+        selector === undefined ? null : document.querySelector<HTMLButtonElement>(selector);
       if (button === null) {
         frame = window.requestAnimationFrame(look);
         return;
