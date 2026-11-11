@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.33.1
+
+Goodboy stays open when a browser tab has no address yet.
+
+### Fixed
+
+- Goodboy no longer crashes at launch, or while it is open, when a browser tab has no address yet, for example a tab restored at launch. <!-- gb area=sessions pr=2210 -->
+
 ## Goodboy v0.33.0
 
 Every section opens as a page in one place, Settings sits beside the sidebar, and Terminal and Browser dock on the right of every screen.

@@ -206,12 +206,21 @@ pub(super) fn spawn_webview<R: Runtime>(
 
 pub(crate) fn refresh_urls<R: Runtime>(app: &AppHandle<R>, tabs: Vec<TabFacts>) -> Vec<TabFacts> {
     let registry = app.state::<BrowserRegistry>();
+    refresh_with(&registry, tabs, |id| {
+        webview_of(app, id)
+            .ok()
+            .and_then(|webview| crate::platform::web_url::live_url_of(&webview))
+    })
+}
+
+pub(crate) fn refresh_with(
+    registry: &BrowserRegistry,
+    tabs: Vec<TabFacts>,
+    read: impl Fn(&str) -> Option<Url>,
+) -> Vec<TabFacts> {
     tabs.into_iter()
         .map(|facts| {
-            let Some(live) = webview_of(app, &facts.id)
-                .ok()
-                .and_then(|webview| webview.url().ok())
-            else {
+            let Some(live) = read(&facts.id) else {
                 return facts;
             };
             let shown = local::shown_address(&live);
