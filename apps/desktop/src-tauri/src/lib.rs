@@ -759,6 +759,7 @@ pub fn run() {
             browser::commands::browser_tab_navigate,
             browser::commands::browser_tab_reload,
             browser::commands::browser_tab_stop,
+            browser::commands::browser_find,
             browser::commands::browser_history_state,
             browser::commands::browser_favicon,
             browser::commands::browser_tab_back,

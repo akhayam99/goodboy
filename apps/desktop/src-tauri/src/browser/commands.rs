@@ -2,6 +2,7 @@ use serde::Deserialize;
 use tauri::{Manager, Runtime, Webview};
 
 use super::favicon::{self, BrowserFavicons, TabFavicon};
+use super::find::{self, FindOutcome};
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::lifecycle;
@@ -41,6 +42,14 @@ pub(crate) struct TabNavigateArgs {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TabArgs {
     tab_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TabFindArgs {
+    tab_id: String,
+    needle: String,
+    is_backwards: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -173,6 +182,18 @@ pub async fn browser_history_state(
 }
 
 #[tauri::command]
+pub async fn browser_find(
+    webview: Webview,
+    args: TabFindArgs,
+) -> Result<FindOutcome, MessageError> {
+    find::find_in_page(
+        &owned_tab(&webview, &args.tab_id)?,
+        &args.needle,
+        args.is_backwards,
+    )
+}
+
+#[tauri::command]
 pub async fn browser_favicon(
     webview: Webview,
     args: TabArgs,
@@ -274,6 +295,15 @@ mod tests {
     #[test]
     fn wire_shape_tab_args() {
         assert_wire_reads::<TabArgs>(json!({ "tabId": "0f1e" }));
+    }
+
+    #[test]
+    fn wire_shape_tab_find_args() {
+        assert_wire_reads::<TabFindArgs>(json!({
+            "tabId": "0f1e",
+            "needle": "retry",
+            "isBackwards": false,
+        }));
     }
 
     #[test]
