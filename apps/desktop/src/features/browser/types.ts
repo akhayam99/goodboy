@@ -57,6 +57,7 @@ type ErrorParams = {
 };
 
 export type BrowserPaneModel = {
+  readonly sessionId: SessionId;
   readonly tabs: ReadonlyArray<BrowserTab>;
   readonly pins: ReadonlyArray<BrowserTab>;
   readonly projectName: string | null;
@@ -110,3 +111,45 @@ export type BrowserPageGroup = {
 export type BrowserAddress =
   | { readonly kind: 'ok'; readonly url: string }
   | { readonly kind: 'refused'; readonly reason: string };
+
+export type CommandTabRow = {
+  readonly kind: 'tab';
+  readonly key: string;
+  readonly tab: BrowserTab;
+  readonly sessionId: SessionId;
+  readonly title: string;
+  readonly address: string;
+  readonly place: string | null;
+  readonly isPin: boolean;
+  readonly isHere: boolean;
+};
+
+type CommandAddressRow<Kind extends 'open' | 'outside'> = {
+  readonly kind: Kind;
+  readonly key: string;
+  readonly url: string;
+  readonly label: string;
+};
+
+export type CommandRow =
+  | CommandAddressRow<'open'>
+  | CommandAddressRow<'outside'>
+  | CommandTabRow
+  | {
+      readonly kind: 'visit';
+      readonly key: string;
+      readonly url: string;
+      readonly title: string;
+      readonly address: string;
+    };
+
+export type CommandGroup = {
+  readonly key: 'open' | 'tabs' | 'visited';
+  readonly label: string;
+  readonly rows: ReadonlyArray<CommandRow>;
+};
+
+export type CommandRows = {
+  readonly groups: ReadonlyArray<CommandGroup>;
+  readonly hasNoMatch: boolean;
+};

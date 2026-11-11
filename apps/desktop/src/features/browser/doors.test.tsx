@@ -560,7 +560,7 @@ describe('command L', () => {
         <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
       </ToastProvider>,
     );
-    const field = screen.getByRole('textbox', { name: 'Address' });
+    const field = screen.getByRole('combobox', { name: 'Address or search' });
     field.blur();
 
     act(() => {

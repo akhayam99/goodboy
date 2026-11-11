@@ -70,6 +70,8 @@ describe('the browser pane scenes', () => {
       'browser-pane-address',
       'browser-pane-address-dark',
       'browser-pane-dark',
+      'browser-pane-field',
+      'browser-pane-field-dark',
       'browser-pane-loading',
       'browser-pane-loading-dark',
       'browser-pane-more',
@@ -90,7 +92,7 @@ describe('the browser pane scenes', () => {
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
     const pill = within(pane).getByRole('button', { name: 'Edit address, Checkout' });
     expect(pill.textContent).toContain('localhost:5173');
-    expect(within(pane).queryByRole('textbox', { name: 'Address' })).toBeNull();
+    expect(within(pane).queryByRole('combobox', { name: 'Address or search' })).toBeNull();
     const strip = within(pane).getByRole('navigation', { name: 'Browser tabs' });
     expect(
       within(strip).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
@@ -127,9 +129,29 @@ describe('the browser pane scenes', () => {
     mount({ id: 'browser-pane-address' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    const field = await within(pane).findByRole('textbox', { name: 'Address' }, WAIT);
+    const field = await within(pane).findByRole('combobox', { name: 'Address or search' }, WAIT);
     expect(field).toHaveProperty('value', 'http://localhost:5173/checkout');
     expect(within(pane).queryByRole('button', { name: /^Edit address/ })).toBeNull();
+  });
+
+  it('opens the command field under the row with a typed word, its tabs and a visit', async () => {
+    mount({ id: 'browser-pane-field' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const list = await within(pane).findByRole('listbox', { name: 'Suggestions' }, WAIT);
+    await within(list).findByRole('option', { name: 'Confirm order' }, WAIT);
+    expect(within(pane).getByRole('combobox', { name: 'Address or search' })).toHaveProperty(
+      'value',
+      'check',
+    );
+    expect(
+      within(list)
+        .getAllByRole('group')
+        .map((group) => group.getAttribute('aria-label')),
+    ).toEqual(['Tabs', 'Visited']);
+    expect(within(list).getByRole('option', { name: 'Staging checkout' }).textContent).toContain(
+      'Pinned',
+    );
   });
 
   it('shows the page loading with a line under the row, Stop, a fetched icon and a Forward that is off', async () => {
