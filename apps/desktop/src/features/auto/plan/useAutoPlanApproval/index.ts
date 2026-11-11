@@ -8,6 +8,8 @@ import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { artifactApprovalOf, type ArtifactApprovalView } from '../../chat/artifactApprovalOf';
+import { AUTO_BRIDGE_EVENT, type AutoArtifactsChanged } from '../../bridge/autoBridgeProtocol';
+import { tauriAutoBridgeBus } from '../../bridge/tauriAutoBridgeBus';
 import { useAutoTreeViews } from '../../useAutoTreeViews';
 import { approveAutoPlan } from '../approveAutoPlan';
 
@@ -53,6 +55,30 @@ export const useAutoPlanApproval = ({
   const rootAgentId = found?.view.tree.rootAgentId ?? null;
   const version = found?.row.revision ?? 0;
 
+  const onWritten = useCallback(async (): Promise<void> => {
+    const payload: AutoArtifactsChanged = { sessionId };
+    await Promise.all([
+      loadAutoTrees({ sessionId }).catch((error: unknown) =>
+        reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't read the Auto agents",
+          error,
+          sessionId,
+        }),
+      ),
+      tauriAutoBridgeBus
+        .emit({ event: AUTO_BRIDGE_EVENT.artifactsChanged, payload })
+        .catch((error: unknown) =>
+          reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't tell the other windows about the plan",
+            error,
+            sessionId,
+          }),
+        ),
+    ]);
+  }, [loadAutoTrees, reportError, sessionId]);
+
   const approve = useCallback(async (): Promise<void> => {
     if (rootAgentId === null || isBusy) {
       return;
@@ -68,6 +94,7 @@ export const useAutoPlanApproval = ({
         send: async (params) => {
           await sendTurn({ ...params });
         },
+        onWritten,
       });
       if (result.kind === 'refused') {
         await reportError({
@@ -112,6 +139,7 @@ export const useAutoPlanApproval = ({
     closeDrawer,
     isBusy,
     loadAutoTrees,
+    onWritten,
     reportError,
     rootAgentId,
     sendTurn,

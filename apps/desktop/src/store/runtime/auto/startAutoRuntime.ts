@@ -248,9 +248,15 @@ export const startAutoRuntime = async ({
       });
     },
   });
+  const unfollow = await followArtifactAnnouncements({
+    bus,
+    get: getState,
+    set: useAppStore.setState,
+  });
   const unregister = (): void => {
     stopLimitFold();
     unserve();
+    unfollow();
     registerChecksRerunPort({ port: null });
     registerPublishPort({ port: null });
     registerTreeRetryPort({ port: null });

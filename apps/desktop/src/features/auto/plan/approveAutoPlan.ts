@@ -24,6 +24,7 @@ type Params = {
   readonly artifactId: ArtifactId;
   readonly expectedRevision: number;
   readonly send: (params: SendParams) => Promise<void>;
+  readonly onWritten: () => Promise<void>;
 };
 
 type RefusalParams = {
@@ -48,6 +49,7 @@ export const approveAutoPlan = async ({
   artifactId,
   expectedRevision,
   send,
+  onWritten,
 }: Params): Promise<AutoPlanApproval> => {
   const before = await getAutoArtifact({ db, artifactId });
   const isAlreadyApproved =
@@ -56,6 +58,7 @@ export const approveAutoPlan = async ({
   if (outcome.kind === 'refused') {
     return { kind: 'refused', code: outcome.code, message: refusalText({ code: outcome.code }) };
   }
+  await onWritten();
   if (isAlreadyApproved) {
     return { kind: 'already_approved', revision: outcome.revision };
   }

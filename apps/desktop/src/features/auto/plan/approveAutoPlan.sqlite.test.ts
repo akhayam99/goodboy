@@ -25,9 +25,15 @@ type ApproveParams = {
   readonly world: AutoWorld;
   readonly revision?: number;
   readonly send?: () => Promise<void>;
+  readonly onWritten?: () => Promise<void>;
 };
 
-const approve = ({ world, revision = 1, send = async () => undefined }: ApproveParams) =>
+const approve = ({
+  world,
+  revision = 1,
+  send = async () => undefined,
+  onWritten = async () => undefined,
+}: ApproveParams) =>
   approveAutoPlan({
     db: world.db,
     sessionId: AUTO_SEED_SESSION,
@@ -35,6 +41,7 @@ const approve = ({ world, revision = 1, send = async () => undefined }: ApproveP
     artifactId: PLAN,
     expectedRevision: revision,
     send,
+    onWritten,
   });
 
 describe('approveAutoPlan', () => {
@@ -120,11 +127,33 @@ describe('approveAutoPlan', () => {
       artifactId: brandId<ArtifactId>({ value: 'plan-unknown' }),
       expectedRevision: 1,
       send: async () => undefined,
+      onWritten: async () => undefined,
     });
 
     expect(result).toMatchObject({
       kind: 'refused',
       message: "This plan isn't part of an Auto conversation.",
     });
+  });
+
+  it('announces the write before it tells Auto, and not when the approve is refused', async () => {
+    const world = await worldWithPlan();
+    const order: Array<string> = [];
+
+    await approve({
+      world,
+      onWritten: async () => {
+        order.push('written');
+      },
+      send: async () => {
+        order.push('told');
+      },
+    });
+    const onWritten = vi.fn(async () => undefined);
+    const refused = await approve({ world, revision: 9, onWritten });
+
+    expect(order).toEqual(['written', 'told']);
+    expect(refused.kind).toBe('refused');
+    expect(onWritten).not.toHaveBeenCalled();
   });
 });
