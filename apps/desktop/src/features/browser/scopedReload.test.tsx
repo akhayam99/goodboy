@@ -13,12 +13,12 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 import { ToastProvider } from '../../shared/components/Toast';
-import { useWindowShortcuts } from '../../shared/hooks/useWindowShortcuts';
 import { replayShortcut } from '../../shared/keyboard/replayShortcut';
 import { pressShortcut } from '../../__tests__/helpers/pressKey';
 import { SessionRefreshBridge } from '../session/components/SessionRefreshBridge';
 import type { BrowserTabFacts } from './types';
 import { BrowserPane } from './components/BrowserPane';
+import { useBrowserWindowShortcuts } from './hooks/useBrowserWindowShortcuts';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../store/storyHarness')).tauriCoreModuleMock(),
@@ -48,7 +48,7 @@ let windowReloads: number;
 const resyncSession = vi.fn(async () => undefined);
 
 const WindowShortcuts = () => {
-  useWindowShortcuts();
+  useBrowserWindowShortcuts();
   return null;
 };
 
@@ -87,14 +87,16 @@ const stubHost = () => {
 const callsOf = ({ command }: CommandParams) =>
   storySpies.tauriInvoke.mock.calls.filter(([name]) => name === command);
 
-const renderWorld = ({ isBrowserOpen }: WorldParams) =>
-  render(
+const renderWorld = ({ isBrowserOpen }: WorldParams) => {
+  store.setState({ drawer: isBrowserOpen ? { kind: 'browser', payload: null } : null });
+  return render(
     <ToastProvider>
       <WindowShortcuts />
       <SessionRefreshBridge />
       {isBrowserOpen ? <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} /> : null}
     </ToastProvider>,
   );
+};
 
 const openPage = async () => {
   const field = screen.getByRole('textbox', { name: 'Address' });
@@ -219,7 +221,7 @@ describe('cmd+R reloads where you are', () => {
 
     pressShortcut({ id: 'app.reload', target: document.body });
 
-    expect(windowReloads).toBe(1);
+    await waitFor(() => expect(windowReloads).toBe(1));
     expect(resyncSession).not.toHaveBeenCalled();
   });
 });
