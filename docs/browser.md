@@ -233,6 +233,19 @@ to a project is a pin that every session of the project shares.
   the retry of a close that failed, because after the archive or delete nothing
   else calls it.
 
+**Visits.** `browser_visits` keeps what a session's tabs loaded, for Visited in
+the command field. Rust writes it (`browser/visit_rows.rs`) when a tab's page
+load finishes, under the session the registry holds for that tab, so a tab an
+agent opened counts too and no reply travels back. One row per address and
+session: a new visit moves it to the top, a document title change renames the
+row of the address the webview shows, and the oldest rows past 200 per session
+go. Only `http` and `https` addresses outside the app's own origins land, with
+the username, password and fragment dropped. The row goes with the session's
+tab rows (`browser_session_tab_rows_delete`), the stale sweep also names an
+archived session that holds only visits, and a deleted session takes its rows
+with it. `browser_visits_list` answers the 20 newest; the `browser-visits`
+store slice keeps them per session and drops a load that a newer one passed.
+
 ## The pane
 
 Browser at the foot of the right rail, on every screen, opens the pane in the
@@ -277,9 +290,21 @@ it; Esc inside the page goes to the page.
   carries no cookies and no profile, and the app page reads the icon as a data
   URL. The same icon shows on every row of that origin. A tab
   with no title yet shows the host alone. A click, or ⌘L, swaps it for the
-  address field with the whole URL selected; Esc (an escape layer) or leaving
-  the field swaps it back and drops the draft, and a submit that went through
-  does too. A refused submit keeps the field and the reason under the row.
+  command field with the whole URL selected; Esc (an escape layer) or leaving
+  the field swaps it back and drops the draft, and a row that went through
+  does too. A refused address keeps the field and the reason under the row.
+- **The command field** (`useCommandField`, `BrowserCommandPanel`) opens a
+  panel between the row and the page while the field has focus. It takes room
+  from the page instead of floating over it, so the native view shrinks and
+  never sits under the panel. Its groups, in order and only when they have
+  rows (`commandRowsOf`): Open (a typed address, Beside this session on ↩, In
+  your browser on ⌘↩), Tabs (every session of the workspace and the project
+  pins, this session first, pins tagged, another session named;
+  `matchTabs`), Visited (this session's last 20 addresses). Every typed word
+  must match a row's title, host or path. Nothing typed lists Visited only;
+  words that match nothing show one quiet line, "No tab or address matches".
+  The arrows move the highlight and wrap, ↩ runs it, ⌘↩ opens its address in
+  your browser. A tab of another session shows in that session's browser.
 - **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
   browser, Open as page (see Moves, absent when the dock has no page to open),
   Copy address, Duplicate (`model.duplicate` opens the shown address in a new
@@ -287,9 +312,9 @@ it; Esc inside the page goes to the page.
 - **The address rule** (`addressOf`): a full `http` or `https` address loads
   as typed; a bare host loads on `https`, and on `http` when it is
   `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
-  `0.0.0.0`. A name whose first label is `127` stays on `https`. Words,
-  a host with no dot and every other scheme are refused under the row. The
-  pane never sends text to a search engine.
+  `0.0.0.0`. A name whose first label is `127` stays on `https`. Words and a
+  host with no dot are matched against tabs and visits instead, and every
+  other scheme gets no Open row. The pane never sends text to a search engine.
 - **Tabs**: the strip shows the session's tabs, then the project pins with
   their title and a pin mark, then New tab. The list shows This session and Pinned for the project, with
   the note that tabs close when the session is archived. With no tab the pane
