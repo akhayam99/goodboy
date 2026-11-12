@@ -164,7 +164,10 @@ ease-out move (`DURATION_BASE_MS`, none under reduced motion). A full tier work 
 left edge and only gives up its right. One rule decides the mode: with
 `room = main - 16 - 48 - 560`, the drawer pushes while `room` covers its saved
 width (side tier 400 by default, reader and browser tiers 720) and otherwise lies over the
-page at `min(saved, main - 16)`; it is never squeezed. Pushing, the drawer is
+page at `min(saved, main - 16)`; it is never squeezed. The browser tier is the one
+exception: while `room` is at least 720 it pushes at `min(saved, room)`, so a saved
+1400 in a 1700px main shrinks to 1076 and stays pushed, and it lies over the page only
+below 720 (`drawerLayoutOf`, `isShrinkable`). Pushing, the drawer is
 its own container beside the page container: both rounded on all four corners
 with `frame-edge`, 8px apart, the drawer 8px from the window's right edge, the
 drawer on `bg-drawer`. Over the page it spends no pixels on an inset: the
