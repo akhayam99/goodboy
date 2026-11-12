@@ -30,6 +30,7 @@ const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
 const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
   side: [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX],
   reader: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
+  browser: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
 };
 
 const EVERY_KIND: ReadonlyArray<DrawerRequest> = [

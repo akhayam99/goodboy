@@ -428,8 +428,9 @@ hide animation or overlay can move it.
   its toggle folds the column: the one toggle is the first control of the top
   bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⌘B),
   and no pane, no page and no window width folds or unfolds it. `shellFoldsOf` (read through `useShellFolds`) reads the
-  open pane's tier: a reader tier pane (720: a file, a diff, a document, New,
-  the browser) folds the session rail to its 44px icons while it is open; a side tier pane
+  open pane's tier: a reader tier pane (720: a file, a diff, a document, New)
+  or the browser pane (720, wider on a wide window) folds the session rail to
+  its 44px icons while it is open; a side tier pane
   (416: Explore, Context, Ask, Agents, Scripts, Terminal and the transcripts
   Agents opens) folds nothing. A fold of this kind never writes a saved
   choice (`useSessionRailFold`), and the rail toggle opens a rail folded this

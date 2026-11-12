@@ -43,11 +43,8 @@ export {
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
-export {
-  DrawerColumn,
-  READER_DRAWER_STORAGE_KEY,
-  RIGHT_DRAWER_STORAGE_KEY,
-} from './components/DrawerColumn';
+export { DrawerColumn } from './components/DrawerColumn';
+export { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from './drawerWidthKeys';
 export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';
 export {
   COLUMN_FRAME,

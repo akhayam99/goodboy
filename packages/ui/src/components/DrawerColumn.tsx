@@ -18,9 +18,8 @@ import { ResizeHandle } from './ResizeHandle';
 import { useDrawerExit } from '../useDrawerExit';
 import { useEdgeHost } from '../useEdgeHost';
 import { mountExitSnapshot } from '../exitSnapshot';
-import { useResizableWidth } from '../useResizableWidth';
+import { useDrawerTierWidths } from '../useDrawerTierWidths';
 import {
-  DRAWER_TIERS,
   drawerAsideWidthOf,
   drawerLayoutOf,
   type DrawerMode,
@@ -28,9 +27,6 @@ import {
   type DrawerSizing,
 } from '../drawerGeometry';
 import { unmeasuredLayoutOf } from '../unmeasuredLayoutOf';
-
-export const RIGHT_DRAWER_STORAGE_KEY = 'goodboy:right-drawer-width:v1';
-export const READER_DRAWER_STORAGE_KEY = 'goodboy:reader-drawer-width:v1';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
@@ -95,23 +91,7 @@ export const DrawerColumn = ({
       trackRef.current?.style.setProperty('min-width', track);
     }
   };
-  const side = useResizableWidth<HTMLElement>({
-    storageKey: RIGHT_DRAWER_STORAGE_KEY,
-    defaultWidth: DRAWER_TIERS.side.fallback,
-    min: DRAWER_TIERS.side.min,
-    max: DRAWER_TIERS.side.max,
-    cssVar: '--goodboy-drawer-width',
-    onPreview,
-  });
-  const reader = useResizableWidth<HTMLElement>({
-    storageKey: READER_DRAWER_STORAGE_KEY,
-    defaultWidth: DRAWER_TIERS.reader.fallback,
-    min: DRAWER_TIERS.reader.min,
-    max: DRAWER_TIERS.reader.max,
-    cssVar: '--goodboy-reader-drawer-width',
-    onPreview,
-  });
-  const resizable = sizing === 'reader' ? reader : side;
+  const resizable = useDrawerTierWidths({ sizing, onPreview });
   const layout =
     column.width === null
       ? unmeasuredLayoutOf({ savedWidth: resizable.width, sizing, placement })

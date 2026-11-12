@@ -236,7 +236,7 @@ to a project is a pin that every session of the project shares.
 ## The pane
 
 Browser at the foot of the right rail, on every screen, opens the pane in the
-one side slot, the dock, as a tool drawer in the reader tier
+one side slot, the dock, as a tool drawer in the browser tier
 (`DRAWER_KINDS.browser`, `toggleBrowserDock`), so the session rail folds to
 icons while it is open. Search or Run opens it too, and Go › Show or Hide Browser
 shows or hides it like the rail button. On a session
@@ -247,6 +247,15 @@ empty too. It stays open across every move, beside any page
 but the Browser page, and closes when the session it shows is archived or
 deleted (`slotAfterSessionGone`). Pressing the tool again, the X or Esc on the pane closes
 it; Esc inside the page goes to the page.
+
+- **The width**: the pane opens at 720 and its edge drags from 480 to the room
+  the session column leaves (it keeps 560 and the gutters), so on a wide window
+  it goes well past the 1000 cap of the reader tier. It keeps its own saved
+  width (`goodboy:browser-drawer-width:v1`). When a window resize leaves less
+  room than the saved width, the pane shrinks to the room and keeps pushing
+  while 720 fits; below that it lies over the page. The saved width is not
+  rewritten by a resize and comes back when the window grows. The page follows
+  the pane because the placement loop measures the placeholder every frame.
 
 - **The address row** holds Back, Forward and Reload, the address, Pin to the
   session's project (Unpin when a pin is shown), Open in your browser, Open as
