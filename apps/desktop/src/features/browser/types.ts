@@ -9,6 +9,7 @@ export type BrowserTabFacts = {
   readonly isShown: boolean;
   readonly hiddenSinceMs: number | null;
   readonly openerId: string | null;
+  readonly isPasskeyBlocked: boolean;
 };
 
 export type BrowserBounds = {
@@ -59,6 +60,8 @@ export type BrowserPaneModel = {
   readonly togglePin: () => void;
   readonly startDraft: () => void;
   readonly openOutside: () => void;
+  readonly isPasskeyBlocked: boolean;
+  readonly dismissPasskey: () => void;
   readonly showError: (params: ErrorParams) => void;
 };
 

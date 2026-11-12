@@ -10,6 +10,7 @@ import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import type { BrowserPageGroup } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
+import { BrowserPasskeyNotice } from '../BrowserPane/BrowserPasskeyNotice';
 import { BrowserView } from '../BrowserPane/BrowserView';
 import { BrowserPageHeader } from './BrowserPageHeader';
 import { BrowserPageRail } from './BrowserPageRail';
@@ -96,6 +97,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
                 {model.error}
               </p>
             )}
+            <BrowserPasskeyNotice model={model} />
             <div className="flex min-h-0 flex-1 px-2">
               <BrowserView
                 view={view}

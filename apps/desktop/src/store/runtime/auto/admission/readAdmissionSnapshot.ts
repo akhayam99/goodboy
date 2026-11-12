@@ -2,6 +2,8 @@ import {
   autoRemainingForGates,
   DEFAULT_AUTO_LEVEL,
   delegationDepthOf,
+  isAutoWriterRole,
+  parseAutoDelegationRole,
   substepLinkOf,
   type AdmissionChild,
   type AdmissionParentFacts,
@@ -16,9 +18,11 @@ import {
   listOpenAutoDelegations,
   readAutoArtifactLiveState,
   readAutoTreeSpend,
+  type AutoDelegation,
   type Database,
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoTreeId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { isAutoPlanApprovalRequired } from '../../../../features/auto/isAutoPlanApprovalRequired';
 import { SETTING_AUTO_PLAN_APPROVAL } from '../../../../features/settings/settings';
 import { readAutoLevel } from '../level/readAutoLevel';
@@ -48,6 +52,25 @@ const referencedArtifactIds = ({
   ]);
   return [...new Set(ids)];
 };
+
+type OpenWriterRolesParams = {
+  readonly open: ReadonlyArray<AutoDelegation>;
+  readonly artifactId: string;
+};
+
+const openWriterRolesOf = ({ open, artifactId }: OpenWriterRolesParams): ReadonlyArray<string> =>
+  open
+    .filter((delegation) => {
+      const refs = delegation.request['inputArtifacts'];
+      const role = parseAutoDelegationRole({ role: delegation.role });
+      return (
+        role !== null &&
+        isAutoWriterRole({ role }) &&
+        Array.isArray(refs) &&
+        refs.some((ref) => isRecord(ref) && ref['artifactId'] === artifactId)
+      );
+    })
+    .map((delegation) => delegation.role);
 
 type ParentFactsParams = {
   readonly db: Database;
@@ -114,7 +137,12 @@ export const readAdmissionSnapshot = async ({
       const artifactId = brandId<ArtifactId>({ value: id });
       const registered = await getAutoArtifact({ db, artifactId });
       const live = await readAutoArtifactLiveState({ db, artifactId });
-      return { artifactId: id, registered, live };
+      return {
+        artifactId: id,
+        registered,
+        live,
+        openWriterRoles: openWriterRolesOf({ open, artifactId: id }),
+      };
     }),
   );
   const parents = await parentFactsOf({ db, treeId, children });
