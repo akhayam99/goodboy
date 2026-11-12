@@ -1,19 +1,22 @@
+import { Popover, type MenuEntry } from '@goodboy/ui';
 import { createPortal } from 'react-dom';
 
-const ROWS = ['Reload', 'Copy address', 'Open in your browser'];
+import { AppMenuList } from '../../../../../../features/actions/AppMenuList';
+
+const noop = () => undefined;
+
+const ENTRIES: ReadonlyArray<MenuEntry> = [
+  { kind: 'item', key: 'reload', label: 'Reload', onSelect: noop },
+  { kind: 'item', key: 'copy-address', label: 'Copy address', onSelect: noop },
+  { kind: 'item', key: 'open-external', label: 'Open in your browser', onSelect: noop },
+];
 
 export const BrowserCoverMenu = () =>
   createPortal(
-    <div
-      role="menu"
-      aria-label="Page actions"
-      className="fixed right-6 top-32 z-dropdown flex w-56 flex-col gap-1 rounded-lg border border-border-soft bg-background p-1"
-    >
-      {ROWS.map((row) => (
-        <span key={row} role="menuitem" className="rounded-md px-3 py-2 text-row text-foreground">
-          {row}
-        </span>
-      ))}
+    <div className="fixed right-6 top-32 z-dropdown w-56">
+      <Popover>
+        <AppMenuList label="Page actions" entries={ENTRIES} onClose={noop} isAutoFocus={false} />
+      </Popover>
     </div>,
     document.body,
   );
