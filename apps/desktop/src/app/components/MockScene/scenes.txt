@@ -161,6 +161,8 @@ browser-page
 browser-page-dark
 browser-pane
 browser-pane-dark
+browser-pane-passkey
+browser-pane-passkey-dark
 browser-pane-tabs
 browser-pane-tabs-dark
 browser-peek

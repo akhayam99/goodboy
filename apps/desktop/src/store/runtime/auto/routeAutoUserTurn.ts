@@ -175,6 +175,7 @@ export const routeAutoUserTurn = async ({
     ...(images.length > 0 && { images }),
     ...(denial.grants.length > 0 && { permissionOnceAllows: denial.grants }),
     ...(input.deliveryId !== undefined && { deliveryId: input.deliveryId }),
+    ...(input.focusArtifactId !== undefined && { focusArtifactId: input.focusArtifactId }),
     onQueued: ({ rowId, isRepeat = false }) => {
       queued.outboxId = rowId;
       queued.isRepeat = isRepeat;

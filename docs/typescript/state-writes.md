@@ -77,6 +77,8 @@ A response applies only while it is the answer to the newest request.
   one for the artifacts of each session, shared by every loader that writes
   `sessionPlans` or `sessionArtifacts`. A new loader of either claims right
   before its read and applies only while `isCurrent()`.
+  `useAutoPlanApproval` claims one token per plan for an approve and cancels it
+  when the shown version moves, so an answer for an older version is dropped.
   `selectAgent` in `store/slices/agents/` claims one token per agent for its
   two transcript reads and drops either answer, or a failure, once a newer
   open of the same agent started.
