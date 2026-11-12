@@ -735,13 +735,26 @@ fn shows_a_closed_local_tab_again_at_its_file_through_the_same_grant() {
     let app = app_with_windows(&["main"]);
     let (root, file) = local_plan();
     let id = open_local(&app, &file);
+    let page = webview(&app, &label_of(&id));
+    let moved = local::routed(
+        page.url().expect("live url"),
+        Some("step=2"),
+        Some("/checkout"),
+    );
+    page.navigate(moved).expect("same document move");
     let before = webview(&app, &label_of(&id)).url().expect("live url");
+    let shown = local::routed(
+        Url::from_file_path(&file.path).expect("file address"),
+        Some("step=2"),
+        Some("/checkout"),
+    );
+    let listed = list_session(&webview(&app, "main"), "harborline").expect("lists");
+    assert_eq!(listed[0].url, shown.as_str());
     hide_tab(app.handle(), &id, 100).expect("hides");
     sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
     assert!(!is_live_webview(&app, &id));
 
     let facts = show_tab(&window(&app, "main"), &id, 900_000).expect("shows");
-    let shown = Url::from_file_path(&file.path).expect("file address");
     assert_eq!(facts.url, shown.as_str());
     let after = webview(&app, &label_of(&id)).url().expect("live url");
     assert_eq!(after, before);

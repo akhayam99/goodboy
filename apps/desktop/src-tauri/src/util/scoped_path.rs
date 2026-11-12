@@ -52,7 +52,7 @@ pub(crate) fn open_file_within(root: &Path, path: &Path) -> Result<File, ScopedP
 }
 
 #[cfg(unix)]
-fn open_relative(root: &Path, relative: &Path) -> Result<File, ScopedPathError> {
+pub(crate) fn open_relative(root: &Path, relative: &Path) -> Result<File, ScopedPathError> {
     use std::ffi::CString;
     use std::os::fd::{AsRawFd, FromRawFd};
     use std::os::unix::ffi::OsStrExt;
@@ -93,7 +93,7 @@ fn open_relative(root: &Path, relative: &Path) -> Result<File, ScopedPathError> 
 }
 
 #[cfg(not(unix))]
-fn open_relative(_root: &Path, _relative: &Path) -> Result<File, ScopedPathError> {
+pub(crate) fn open_relative(_root: &Path, _relative: &Path) -> Result<File, ScopedPathError> {
     Err(ScopedPathError::Unsupported)
 }
 

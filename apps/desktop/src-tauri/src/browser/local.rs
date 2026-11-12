@@ -1,4 +1,5 @@
-use std::fs;
+use std::fs::{self, File};
+use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
 use tauri::http::{header, Method, Request, Response, StatusCode};
@@ -7,6 +8,7 @@ use tauri::{Manager, Runtime, Url};
 use super::guard::LABEL_PREFIX;
 use super::reason::{INVALID_ADDRESS, LOCAL_FOLDER, LOCAL_MISSING, LOCAL_TYPE};
 use super::registry::BrowserRegistry;
+use crate::util::scoped_path::{self, ScopedPathError};
 
 pub(crate) const LOCAL_SCHEME: &str = "gblocal";
 
@@ -63,6 +65,8 @@ pub(crate) struct LocalFile {
     pub(crate) path: PathBuf,
     pub(crate) folder: PathBuf,
     pub(crate) is_deep: bool,
+    pub(crate) query: Option<String>,
+    pub(crate) fragment: Option<String>,
 }
 
 fn extension_of(path: &Path) -> String {
@@ -84,10 +88,44 @@ fn content_type(path: &Path) -> Option<&'static str> {
     type_in(path, PAGE_TYPES).or_else(|| type_in(path, PART_TYPES))
 }
 
+#[cfg(windows)]
+fn plain(path: PathBuf) -> PathBuf {
+    use std::path::Prefix;
+    let is_verbatim_disk = matches!(
+        path.components().next(),
+        Some(Component::Prefix(prefix)) if matches!(prefix.kind(), Prefix::VerbatimDisk(_))
+    );
+    if !is_verbatim_disk {
+        return path;
+    }
+    let stripped = path
+        .to_str()
+        .and_then(|text| text.strip_prefix(r"\\?\"))
+        .map(PathBuf::from);
+    stripped.unwrap_or(path)
+}
+
+#[cfg(not(windows))]
+fn plain(path: PathBuf) -> PathBuf {
+    path
+}
+
+fn canonical(path: &Path) -> Option<PathBuf> {
+    fs::canonicalize(path).ok().map(plain)
+}
+
+fn typed_file_address(typed: &str) -> Option<Url> {
+    let trimmed = typed.trim();
+    if !trimmed.to_ascii_lowercase().starts_with("file:") {
+        return None;
+    }
+    Url::parse(trimmed).ok()
+}
+
 fn typed_path(typed: &str, home: Option<&Path>) -> Option<PathBuf> {
     let trimmed = typed.trim();
     if trimmed.to_ascii_lowercase().starts_with("file:") {
-        let url = Url::parse(trimmed).ok()?;
+        let url = typed_file_address(trimmed)?;
         if url
             .host_str()
             .is_some_and(|host| !host.is_empty() && host != LOCAL_HOST)
@@ -106,10 +144,25 @@ fn typed_path(typed: &str, home: Option<&Path>) -> Option<PathBuf> {
     }
 }
 
+#[cfg(unix)]
+fn is_mount_root(folder: &Path) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    let Some(parent) = folder.parent() else {
+        return true;
+    };
+    match (fs::metadata(folder), fs::metadata(parent)) {
+        (Ok(own), Ok(above)) => own.dev() != above.dev(),
+        _ => false,
+    }
+}
+
+#[cfg(not(unix))]
+fn is_mount_root(_folder: &Path) -> bool {
+    false
+}
+
 fn is_wide(folder: &Path, home: Option<&Path>) -> bool {
-    let is_home = home
-        .and_then(|home| fs::canonicalize(home).ok())
-        .is_some_and(|home| home == folder);
+    let is_home = home.and_then(canonical).is_some_and(|home| home == folder);
     let depth = folder
         .components()
         .filter(|part| matches!(part, Component::Normal(_)))
@@ -117,12 +170,12 @@ fn is_wide(folder: &Path, home: Option<&Path>) -> bool {
     let is_disk = folder
         .parent()
         .is_some_and(|parent| DISK_ROOTS.iter().any(|root| parent == Path::new(root)));
-    is_home || is_disk || depth < 2
+    is_home || is_disk || depth < 2 || is_mount_root(folder)
 }
 
 pub(crate) fn resolve(typed: &str, home: Option<&Path>) -> Result<LocalFile, &'static str> {
     let path = typed_path(typed, home).ok_or(INVALID_ADDRESS)?;
-    let path = fs::canonicalize(path).map_err(|_| LOCAL_MISSING)?;
+    let path = canonical(&path).ok_or(LOCAL_MISSING)?;
     let meta = fs::metadata(&path).map_err(|_| LOCAL_MISSING)?;
     if meta.is_dir() {
         return Err(LOCAL_FOLDER);
@@ -135,11 +188,24 @@ pub(crate) fn resolve(typed: &str, home: Option<&Path>) -> Result<LocalFile, &'s
     }
     let folder = path.parent().ok_or(LOCAL_MISSING)?.to_path_buf();
     let is_deep = !is_wide(&folder, home);
+    let address = typed_file_address(typed);
     Ok(LocalFile {
         path,
         folder,
         is_deep,
+        query: address
+            .as_ref()
+            .and_then(|url| url.query().map(str::to_string)),
+        fragment: address
+            .as_ref()
+            .and_then(|url| url.fragment().map(str::to_string)),
     })
+}
+
+pub(crate) fn routed(mut url: Url, query: Option<&str>, fragment: Option<&str>) -> Url {
+    url.set_query(query);
+    url.set_fragment(fragment);
+    url
 }
 
 pub(crate) fn is_local_address(url: &Url) -> bool {
@@ -179,7 +245,7 @@ pub(crate) fn split_live(url: &Url) -> Option<(String, PathBuf)> {
 pub(crate) fn shown_address(url: &Url) -> String {
     split_live(url)
         .and_then(|(_, path)| Url::from_file_path(path).ok())
-        .map(|file| file.to_string())
+        .map(|file| routed(file, url.query(), url.fragment()).to_string())
         .unwrap_or_else(|| url.to_string())
 }
 
@@ -205,19 +271,43 @@ pub(crate) fn grants_path(grant: &LocalGrant, path: &Path) -> bool {
     path.is_absolute() && is_inside(grant, path)
 }
 
-fn readable(grant: &LocalGrant, path: &Path) -> Option<PathBuf> {
+fn checked(grant: &LocalGrant, path: &Path) -> Option<PathBuf> {
     if !grants_path(grant, path) {
         return None;
     }
-    let real = fs::canonicalize(path).ok()?;
-    if !is_inside(grant, &real) {
-        return None;
+    let real = canonical(path)?;
+    match is_inside(grant, &real) {
+        true => Some(real),
+        false => None,
     }
-    let meta = fs::metadata(&real).ok()?;
+}
+
+fn open_checked(grant: &LocalGrant, real: &Path) -> Option<File> {
+    let relative = real.strip_prefix(&grant.folder).ok()?;
+    let file = match scoped_path::open_relative(&grant.folder, relative) {
+        Err(ScopedPathError::Unsupported) => File::open(real).ok()?,
+        opened => opened.ok()?,
+    };
+    let meta = file.metadata().ok()?;
     if !meta.is_file() || meta.len() > MAX_FILE_BYTES {
         return None;
     }
-    Some(real)
+    Some(file)
+}
+
+fn read_capped(file: File) -> Option<Vec<u8>> {
+    let mut body = Vec::new();
+    file.take(MAX_FILE_BYTES + 1).read_to_end(&mut body).ok()?;
+    match body.len() as u64 > MAX_FILE_BYTES {
+        true => None,
+        false => Some(body),
+    }
+}
+
+fn readable(grant: &LocalGrant, path: &Path) -> Option<(PathBuf, File)> {
+    let real = checked(grant, path)?;
+    let file = open_checked(grant, &real)?;
+    Some((real, file))
 }
 
 fn not_found() -> Response<Vec<u8>> {
@@ -230,13 +320,13 @@ fn not_found() -> Response<Vec<u8>> {
 }
 
 pub(crate) fn serve(grant: Option<&LocalGrant>, path: &Path) -> Response<Vec<u8>> {
-    let Some(real) = grant.and_then(|grant| readable(grant, path)) else {
+    let Some((real, file)) = grant.and_then(|grant| readable(grant, path)) else {
         return not_found();
     };
     let Some(kind) = content_type(&real) else {
         return not_found();
     };
-    let Ok(body) = fs::read(&real) else {
+    let Some(body) = read_capped(file) else {
         return not_found();
     };
     Response::builder()
@@ -262,7 +352,7 @@ pub(crate) fn may_load(registry: &BrowserRegistry, tab_id: &str, target: &Url) -
 pub(crate) fn reopen_url(registry: &BrowserRegistry, tab_id: &str, address: &Url) -> Option<Url> {
     let path = address.to_file_path().ok()?;
     let grant = registry.grant_covering(tab_id, &path)?;
-    live_url(&grant.token, &path)
+    live_url(&grant.token, &path).map(|live| routed(live, address.query(), address.fragment()))
 }
 
 pub(crate) fn handle<R: Runtime>(
@@ -306,7 +396,7 @@ mod tests {
                 std::env::temp_dir().join(format!("goodboy-local-{}", crate::util::uuid_v4()));
             fs::create_dir_all(&root).expect("folder");
             Self {
-                root: fs::canonicalize(&root).expect("canonical folder"),
+                root: canonical(&root).expect("canonical folder"),
             }
         }
 
@@ -321,6 +411,16 @@ mod tests {
     impl Drop for Folder {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    fn plan_file() -> LocalFile {
+        LocalFile {
+            path: PathBuf::from("/work/harborline/plan.html"),
+            folder: PathBuf::from("/work/harborline"),
+            is_deep: true,
+            query: None,
+            fragment: None,
         }
     }
 
@@ -466,6 +566,85 @@ mod tests {
         assert_eq!(status(&grant, &in_link), StatusCode::OK);
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn refuses_a_file_swapped_for_a_link_after_it_was_checked() {
+        let folder = Folder::new();
+        let plan = folder.write("harborline/plan.html", "x");
+        let styles = folder.write("harborline/plan.css", "p {}");
+        let env = folder.write("harborline/.env", "TOKEN=x");
+        let grant = grant_of(&resolve(plan.to_str().expect("utf8"), None).expect("plan"));
+        let real = checked(&grant, &styles).expect("checked");
+        fs::remove_file(&styles).expect("remove");
+        std::os::unix::fs::symlink(&env, &styles).expect("swap");
+        assert!(open_checked(&grant, &real).is_none());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn refuses_a_folder_swapped_for_a_link_after_it_was_checked() {
+        let folder = Folder::new();
+        let plan = folder.write("harborline/plan.html", "x");
+        let styles = folder.write("harborline/mocks/plan.css", "p {}");
+        folder.write("northwind/plan.css", "secret");
+        let grant = grant_of(&resolve(plan.to_str().expect("utf8"), None).expect("plan"));
+        let real = checked(&grant, &styles).expect("checked");
+        let mocks = folder.root.join("harborline/mocks");
+        fs::rename(&mocks, folder.root.join("harborline/moved")).expect("move");
+        std::os::unix::fs::symlink(folder.root.join("northwind"), &mocks).expect("swap");
+        assert!(open_checked(&grant, &real).is_none());
+    }
+
+    #[test]
+    fn reads_no_more_than_the_limit_from_the_open_file() {
+        let folder = Folder::new();
+        let page = folder.write("harborline/plan.html", "<title>Plan</title>");
+        let file = File::open(&page).expect("open");
+        assert_eq!(read_capped(file), Some(b"<title>Plan</title>".to_vec()));
+    }
+
+    #[test]
+    fn keeps_the_query_and_fragment_of_a_typed_file_address() {
+        let folder = Folder::new();
+        let plan = folder.write("harborline/plan.html", "x");
+        let address = Url::from_file_path(&plan).expect("file address");
+        let typed = format!("{address}?step=2#/checkout");
+        let file = resolve(&typed, None).expect("routed file");
+        assert_eq!(file.path, plan);
+        assert_eq!(file.query.as_deref(), Some("step=2"));
+        assert_eq!(file.fragment.as_deref(), Some("/checkout"));
+        let plain_file = resolve(plan.to_str().expect("utf8"), None).expect("plain");
+        assert_eq!(plain_file.query, None);
+        assert_eq!(plain_file.fragment, None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn keeps_a_page_at_the_top_of_a_mounted_volume_to_the_files_beside_it() {
+        let folder = Folder::new();
+        folder.write("harborline/plan.html", "x");
+        let inner = folder.root.join("harborline");
+        assert!(!is_mount_root(&inner));
+        assert!(!is_wide(&inner, None));
+        assert!(is_mount_root(Path::new("/dev")));
+        assert!(is_mount_root(Path::new("/")));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn compares_a_drive_path_the_way_a_file_address_gives_it_back() {
+        let verbatim = PathBuf::from(r"\\?\C:\work\harborline");
+        assert_eq!(plain(verbatim), PathBuf::from(r"C:\work\harborline"));
+        let grant = LocalGrant {
+            token: "0f1e".to_string(),
+            folder: PathBuf::from(r"C:\work\harborline"),
+            is_deep: true,
+        };
+        let live = live_url("0f1e", Path::new(r"C:\work\harborline\plan.html")).expect("live");
+        let (_, path) = split_live(&live).expect("split");
+        assert!(grants_path(&grant, &path));
+    }
+
     #[test]
     fn keeps_a_page_in_the_home_folder_to_the_files_beside_it() {
         let folder = Folder::new();
@@ -528,11 +707,7 @@ mod tests {
         let registry = BrowserRegistry::default();
         crate::browser::tests::seed_local_tab(&registry, "tab-a");
         crate::browser::tests::seed_local_tab(&registry, "tab-b");
-        let file = LocalFile {
-            path: PathBuf::from("/work/harborline/plan.html"),
-            folder: PathBuf::from("/work/harborline"),
-            is_deep: true,
-        };
+        let file = plan_file();
         let token = registry.grant_local("tab-a", &file).expect("grant");
         let page = live_url(&token, &file.path).expect("live");
         let sibling = live_url(&token, Path::new("/work/harborline/mocks/a.html")).expect("live");
@@ -554,11 +729,7 @@ mod tests {
     fn reuses_one_grant_per_folder_and_forgets_it_with_the_tab() {
         let registry = BrowserRegistry::default();
         crate::browser::tests::seed_local_tab(&registry, "tab-a");
-        let file = LocalFile {
-            path: PathBuf::from("/work/harborline/plan.html"),
-            folder: PathBuf::from("/work/harborline"),
-            is_deep: true,
-        };
+        let file = plan_file();
         let first = registry.grant_local("tab-a", &file).expect("grant");
         let second = registry.grant_local("tab-a", &file).expect("grant");
         assert_eq!(first, second);
@@ -567,6 +738,11 @@ mod tests {
             reopen_url(&registry, "tab-a", &address),
             live_url(&first, &file.path)
         );
+        let routed_address = routed(address, Some("step=2"), Some("/checkout"));
+        let reopened = reopen_url(&registry, "tab-a", &routed_address).expect("reopens");
+        assert_eq!(reopened.query(), Some("step=2"));
+        assert_eq!(reopened.fragment(), Some("/checkout"));
+        assert_eq!(shown_address(&reopened), routed_address.to_string());
         registry.remove("tab-a");
         assert_eq!(registry.local_grant("tab-a", &first), None);
         assert_eq!(registry.grant_local("tab-a", &file), None);

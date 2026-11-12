@@ -177,8 +177,9 @@ pub(crate) fn load_local<R: Runtime>(
     let token = registry
         .grant_local(tab_id, file)
         .ok_or_else(|| reason::failed(TAB_GONE))?;
-    let live =
-        local::live_url(&token, &file.path).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
+    let live = local::live_url(&token, &file.path)
+        .map(|live| local::routed(live, file.query.as_deref(), file.fragment.as_deref()))
+        .ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
     let shown = local::shown_address(&live);
     webview_of(app, tab_id)?.navigate(live).map_err(failed)?;
     registry
