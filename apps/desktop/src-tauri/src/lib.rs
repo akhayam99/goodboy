@@ -265,6 +265,7 @@ pub fn run() {
         .manage(window_heartbeat::Heartbeats::default())
         .manage(browser::BrowserRegistry::default())
         .manage(browser::BrowserFavicons::default())
+        .manage(browser::PageKeys::default())
         .setup(move |app| {
             use tauri::Manager;
             logging::init(app.handle());
@@ -277,6 +278,7 @@ pub fn run() {
                 }
             });
             browser::start_lifecycle(app.handle().clone());
+            browser::start_page_keys(app.handle().clone());
             if !cfg!(debug_assertions) {
                 window_heartbeat::start(
                     app.handle().clone(),
@@ -761,6 +763,7 @@ pub fn run() {
             browser::commands::browser_tab_stop,
             browser::commands::browser_find,
             browser::commands::browser_history_state,
+            browser::commands::browser_page_keys,
             browser::commands::browser_favicon,
             browser::commands::browser_tab_back,
             browser::commands::browser_tab_forward,

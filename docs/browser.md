@@ -516,12 +516,24 @@ sits in and the address, and one function opens it (`openInBrowser`).
   eviction clear it. The Browser rail entry, the pin button and the tab strip's
   New tab teach their chord in the tooltip. ⌘F opens the find bar (see Find in
   page).
-- **A focused page keeps its keys.** After a click inside a tab, the native view
-  has focus and none of these chords fire until focus returns to Goodboy's
-  chrome (a click on the address row, a tab or the rail). The find bar and the
-  command field keep focus in the chrome on purpose, so the daily flows work.
-  Reading the keys from the native view needs a key monitor on the webview, a
-  separate platform unit.
+- **A focused page and the app's keys.** After a click inside a tab, the native
+  view has focus. On macOS one `NSEvent` local monitor
+  (`platform/key_monitor.rs`) catches a key down whose first responder sits
+  inside a tab view (every tab view carries its `browse-<id>` label as its
+  identifier). When the chord is one of the page keys it swallows the event,
+  emits `browser://page-key` `{ tabId, combo }` to the window that owns the tab
+  and gives native focus back to that window's app view. The page keys are every
+  `browser.*` entry and ⌘K, pushed by the frontend through
+  `browser_page_keys` as `platformCombo` strings, so a rebound shortcut moves
+  with it. Only chords holding ⌘ count: a plain key always belongs to the page,
+  and ⌘C, ⌘V, ⌘A and ⌘Z are never pushed. `usePageKeys` replays the combo on
+  `window` through `replayCombo`, so the dispatcher and the scopes decide what it
+  does; a chord from a tab that is already closed is dropped. ⌘R and ⌘⇧R are
+  never page keys: the menu bar brings them to the window (see ⌘R above).
+  On Linux and Windows there is no monitor: after a click inside a tab none of
+  these chords fire until focus returns to Goodboy's chrome (a click on the
+  address row, a tab or the rail). The find bar and the command field keep focus
+  in the chrome on purpose, so the daily flows work.
 - **⌘K** lists the browser tabs of every session in the workspace and every
   project pin (`useBrowserEntries`, `browserPageData`): the session title is the
   detail and `Pinned` the tag of a pin. Picking one shows that exact tab, on
@@ -632,7 +644,9 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  sixteen `browser_*` commands; `load.rs` maps the page load callback to
+  nineteen `browser_*` commands (`browser_page_keys` sets the page keys); `page_keys.rs`
+  holds the chord parse, the key codes, the `PageKeys` state and
+  `route_page_key`; `load.rs` maps the page load callback to
   `browser://tab-load` (`started`, `finished`, the tab id and the address) for
   the owning window only, and clears the passkey mark on a page start;
   `favicon.rs` holds the icon rules and the per-origin cache; `profile.rs`
@@ -648,8 +662,9 @@ words (`features/browser/browserFailureText.ts`).
   `browser/passkey.js`; `host.rs` adds the script to every frame,
   registers the handler after the view is made and forgets the handler when
   the tab closes, when its open is refused late and when its window is
-  destroyed (`forget_window`). The two `platform/` files are the only `unsafe`
-  the host needs, which the unsafe ratchet in `proc/signal.rs` enforces.
+  destroyed (`forget_window`). These two `platform/` files and the key monitor
+  in `platform/key_monitor.rs` are the only `unsafe` the host needs, which the
+  unsafe ratchet in `proc/signal.rs` enforces.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
   `about:blank` and `about:srcdoc` frames and a page that sends itself to the

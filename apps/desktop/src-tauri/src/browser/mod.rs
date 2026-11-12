@@ -5,6 +5,7 @@ mod guard;
 mod host;
 mod lifecycle;
 mod load;
+mod page_keys;
 #[cfg(any(target_os = "macos", test))]
 mod passkey;
 mod profile;
@@ -18,6 +19,8 @@ use tauri::{AppHandle, Manager, Runtime};
 
 pub(crate) use favicon::BrowserFavicons;
 pub(crate) use lifecycle::start as start_lifecycle;
+pub(crate) use page_keys::start as start_page_keys;
+pub(crate) use page_keys::PageKeys;
 pub(crate) use profile::BrowserProfiles;
 pub(crate) use registry::BrowserRegistry;
 

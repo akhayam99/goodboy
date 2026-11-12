@@ -37,6 +37,10 @@ type SessionParams = {
   readonly sessionId: SessionId;
 };
 
+type PageKeysParams = {
+  readonly combos: ReadonlyArray<string>;
+};
+
 export const browserHost = {
   open: ({ sessionId, workspaceId, url, bounds, isShown }: OpenParams) =>
     invokeCommand<BrowserTabFacts>('browser_tab_open', {
@@ -66,4 +70,6 @@ export const browserHost = {
   close: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_close', { args: { tabId } }),
   list: ({ sessionId }: SessionParams) =>
     invokeCommand<ReadonlyArray<BrowserTabFacts>>('browser_tab_list', { args: { sessionId } }),
+  pageKeys: ({ combos }: PageKeysParams) =>
+    invokeCommand<number>('browser_page_keys', { args: { combos } }),
 };

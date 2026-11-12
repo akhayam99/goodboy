@@ -117,6 +117,7 @@ Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compile
 | `browser://tab-opened`                                 | the facts of a popup tab, to the opener's window only                        | browser/host.rs         | the browser pane, once it lands         |
 | `browser://tab-state`                                  | the facts of a tab gone live, asleep or closed, to its window                | browser/lifecycle.rs    | the browser pane, once it lands         |
 | `browser://tab-load`                                   | a tab's load `started` or `finished`, with its id and address, to its window | browser/load.rs         | the browser pane (`useTabLoad`)         |
+| `browser://page-key`                                   | `{ tabId, combo }` of an app chord pressed in a focused page, to its window  | browser/page_keys.rs    | browser/hooks/usePageKeys               |
 
 ## Git and request state is not on the bus
 

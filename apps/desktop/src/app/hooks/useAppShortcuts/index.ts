@@ -30,6 +30,7 @@ import type { BranchTab } from '../../../store/slices/navigation/types';
 import { providerOfListLens } from '../../../store/slices/navigation/providerOfListLens';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useMenuCommands } from '../useMenuCommands';
+import { usePageKeys } from '../../../features/browser/hooks/usePageKeys';
 import { closeCurrentLevel } from './closeCurrentLevel';
 import { closeSlot } from './closeSlot';
 import { goUp } from './goUp';
@@ -240,6 +241,7 @@ export const useAppShortcuts = ({
   useShortcut('app.close', () => closeCurrentLevel({}));
   useShortcut('slot.close', () => closeSlot({}));
   useMenuCommands();
+  usePageKeys();
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => toggleContext({}));

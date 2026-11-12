@@ -10,6 +10,7 @@ use tauri::{
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
 use super::load;
+use super::page_keys;
 #[cfg(target_os = "macos")]
 use super::passkey;
 use super::profile::{self, ProfileId};
@@ -192,6 +193,7 @@ pub(super) fn spawn_webview<R: Runtime>(
         .map_err(failed)?;
     #[cfg(target_os = "macos")]
     watch_passkeys(&webview, id);
+    page_keys::mark_tab_view(&webview);
     if !is_shown {
         if let Err(error) = webview.hide() {
             let _ = webview.close();
