@@ -1,4 +1,6 @@
 pub(crate) mod detach;
+#[cfg(windows)]
+pub(crate) mod final_path;
 pub(crate) mod git;
 pub(crate) mod git_head;
 pub(crate) mod kernel;

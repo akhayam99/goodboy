@@ -112,7 +112,7 @@ pub(crate) fn open_confined(root: &Path, relative: &Path) -> Result<File, Scoped
     }
     let expected = root.join(relative);
     let file = File::open(&expected).map_err(|_| ScopedPathError::Unavailable)?;
-    let opened = final_path(&file).ok_or(ScopedPathError::Unavailable)?;
+    let opened = crate::proc::final_path::of_handle(&file).ok_or(ScopedPathError::Unavailable)?;
     if without_verbatim_disk(opened) != without_verbatim_disk(expected) {
         return Err(ScopedPathError::Escapes);
     }
@@ -122,40 +122,6 @@ pub(crate) fn open_confined(root: &Path, relative: &Path) -> Result<File, Scoped
 #[cfg(not(any(unix, windows)))]
 pub(crate) fn open_confined(_root: &Path, _relative: &Path) -> Result<File, ScopedPathError> {
     Err(ScopedPathError::Unsupported)
-}
-
-#[cfg(windows)]
-fn final_path(file: &File) -> Option<PathBuf> {
-    use std::ffi::{c_void, OsString};
-    use std::os::windows::ffi::OsStringExt;
-    use std::os::windows::io::AsRawHandle;
-
-    #[link(name = "kernel32")]
-    extern "system" {
-        fn GetFinalPathNameByHandleW(
-            file: *mut c_void,
-            path: *mut u16,
-            size: u32,
-            flags: u32,
-        ) -> u32;
-    }
-
-    let mut buffer: Vec<u16> = vec![0; 512];
-    loop {
-        let size = u32::try_from(buffer.len()).ok()?;
-        let written = unsafe {
-            GetFinalPathNameByHandleW(file.as_raw_handle(), buffer.as_mut_ptr(), size, 0)
-        };
-        let written = usize::try_from(written).ok()?;
-        if written == 0 {
-            return None;
-        }
-        if written < buffer.len() {
-            buffer.truncate(written);
-            return Some(PathBuf::from(OsString::from_wide(&buffer)));
-        }
-        buffer.resize(written, 0);
-    }
 }
 
 #[cfg(windows)]
