@@ -411,7 +411,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   the row they open into `focus.returnRows` (its id) and `focus.scroll` (its
   index) with `amendFocus` first (`useRowReturn`), so Back scrolls to that row
   again even when a new row landed above it; the index is only the fallback
-  for a place saved before ids were kept. Runs unfolds Earlier or Archived when
+  for a place saved before ids were kept. Runs unfolds Earlier or Finished when
   the row sits there. A reload keeps a
   session it can still show, archived ones included (`selectSessionById` in
   `restoreLocation`). A workspace load empties the archived list, so when the

@@ -19,9 +19,7 @@ type OpenParams = {
 type Props = {
   readonly groups: ReadonlyArray<RunGroup>;
   readonly isEarlierShown: boolean;
-  readonly isArchivedShown: boolean;
   readonly onToggleEarlier: () => void;
-  readonly onToggleArchived: () => void;
   readonly onOpenBranch: (params: OpenParams) => void;
   readonly canOpenBranch: (params: OpenParams) => boolean;
   readonly renderRow: (params: StateRowParams) => ReactNode;
@@ -30,9 +28,7 @@ type Props = {
 export const RunsByState = ({
   groups,
   isEarlierShown,
-  isArchivedShown,
   onToggleEarlier,
-  onToggleArchived,
   onOpenBranch,
   canOpenBranch,
   renderRow,
@@ -51,45 +47,31 @@ export const RunsByState = ({
           label={group.label}
           count={group.runs.length}
           action={
-            <>
-              {group.key === 'finished' && earlierCount > 0 ? (
-                <Button
-                  variant="quiet"
-                  size="xs"
-                  aria-expanded={isEarlierShown}
-                  onClick={onToggleEarlier}
-                >
-                  {isEarlierShown ? 'Show fewer' : 'Show all'}
-                </Button>
-              ) : null}
-              {group.key === 'archived' ? (
-                <Button
-                  variant="quiet"
-                  size="xs"
-                  aria-expanded={isArchivedShown}
-                  onClick={onToggleArchived}
-                >
-                  {isArchivedShown ? 'Hide' : 'Show'}
-                </Button>
-              ) : null}
-            </>
+            group.key === 'finished' && earlierCount > 0 ? (
+              <Button
+                variant="quiet"
+                size="xs"
+                aria-expanded={isEarlierShown}
+                onClick={onToggleEarlier}
+              >
+                {isEarlierShown ? 'Show fewer' : 'Show all'}
+              </Button>
+            ) : null
           }
         >
-          {group.key === 'archived' && !isArchivedShown
-            ? null
-            : rows.map((run) =>
-                renderRow({
-                  run,
-                  rowKey: run.id,
-                  titleSuffix: (
-                    <RunBranchChip
-                      branches={run.branches}
-                      onOpenBranch={onOpenBranch}
-                      canOpenBranch={canOpenBranch}
-                    />
-                  ),
-                }),
-              )}
+          {rows.map((run) =>
+            renderRow({
+              run,
+              rowKey: run.id,
+              titleSuffix: (
+                <RunBranchChip
+                  branches={run.branches}
+                  onOpenBranch={onOpenBranch}
+                  canOpenBranch={canOpenBranch}
+                />
+              ),
+            }),
+          )}
         </ListGridGroup>
       );
     })}

@@ -669,4 +669,13 @@ describe('the branches a run works on', () => {
     expect(branchesOf('auto')).toEqual(['rec/2-backfill']);
     expect(branchesOf('agent')).toEqual([]);
   });
+
+  it('keeps the branch of a removed worktree apart as a gone branch', () => {
+    const agents = [{ ...autoRoot({ status: 'completed' }), mountId: NOW_MOUNT_LEDGER }];
+    const runs = runsOf({ agents, mounts: [API, { ...LEDGER, isAttached: false }] });
+    const auto = runs.find((run) => run.kind === 'auto');
+
+    expect(auto?.branches).toEqual([]);
+    expect(auto?.goneBranches.map((branch) => branch.branch)).toEqual(['rec/2-backfill']);
+  });
 });

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { TruncatedText, UNREAD_TITLE, cn } from '@goodboy/ui';
+import { TEXT_ROLE, TruncatedText, UNREAD_TITLE, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import { RunRowTitleInput } from './RunRowTitleInput';
@@ -27,10 +27,17 @@ export const RunRowTitle = ({ sessionId, run, rowKey, suffix, onOpen }: Props) =
     <>
       <span
         data-run-row-title=""
+        data-finished={run.isFinished && !run.isUnread ? '' : undefined}
         className="flex min-w-0 shrink cursor-pointer select-none"
         onClick={onOpen}
       >
-        <TruncatedText className={cn('min-w-0', run.isUnread && UNREAD_TITLE)}>
+        <TruncatedText
+          className={cn(
+            'min-w-0',
+            run.isUnread && UNREAD_TITLE,
+            run.isFinished && !run.isUnread && TEXT_ROLE.secondary,
+          )}
+        >
           {run.title}
         </TruncatedText>
       </span>
