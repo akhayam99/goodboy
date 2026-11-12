@@ -72,6 +72,8 @@ describe('the browser pane scenes', () => {
       'browser-pane-dark',
       'browser-pane-field',
       'browser-pane-field-dark',
+      'browser-pane-keys',
+      'browser-pane-keys-dark',
       'browser-pane-loading',
       'browser-pane-loading-dark',
       'browser-pane-more',
@@ -228,5 +230,16 @@ describe('the browser pane scenes', () => {
     expect(
       within(pane).getByRole('button', { name: 'Hide tab list' }).getAttribute('aria-pressed'),
     ).toBe('true');
+  });
+
+  it('lists the tabs of every session and the pins in the palette, each with its place', async () => {
+    mount({ id: 'browser-pane-keys' });
+
+    const dialog = await screen.findByRole('dialog', {}, WAIT);
+    await within(dialog).findByText('PR #318', {}, WAIT);
+    within(dialog).getByText('Tax rates');
+    within(dialog).getByText('Staging checkout');
+    within(dialog).getByText('Pinned');
+    expect(within(dialog).getAllByText('Browser tab')).toHaveLength(2);
   });
 });

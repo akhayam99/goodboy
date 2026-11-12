@@ -483,13 +483,32 @@ sits in and the address, and one function opens it (`openInBrowser`).
 - **Peek**: resting on or focusing a `localhost` link in a session shows a
   card with the title of its tab (or the host), the address and what a click
   does. The card never creates a tab, because every tab is a whole webview.
-- **⌘L** opens the address pill for editing while the pane is on screen or the
-  Browser page is open. Elsewhere ⌘L stays Ask about this session, which held
-  the chord first (`browser.address` is scoped, so it wins only there). A page
-  that has focus keeps its keys, so ⌘L reaches the pill only while Goodboy
-  has focus.
-- **⌘K** lists the browser tabs of the session Search or run is scoped to (the
-  current session when it is not) and offers `Open <address>` first, beside
+- **The keymap** is seven entries in `shared/keyboard/browserShortcuts.ts`, all
+  `scope: 'browser'`, registered by `useBrowserKeys` while the pane or the
+  Browser page is on screen. Elsewhere each chord keeps its other meaning:
+  ⌘L Ask about this session, ⌘T a new terminal tab, ⌘W `app.close`, ⌘⇧[ and ⌘⇧]
+  the sessions. ⌘L opens the pill, ⌘T starts a draft (the command field opens
+  empty), ⌘D toggles the pin, ⌘⇧[ and ⌘⇧] step `stepTab` order (tabs, then
+  pins, wrapping). ⌘W closes the shown tab through `close`; a pin is never
+  closed by it and consumes the key; with no tab shown the handler declines
+  (`canDecline`) and `app.close` closes the pane. ⌘⇧T takes the newest entry of
+  `browserClosedTabs[sessionId]`, opens it with `openPage` and drops the entry
+  only once the open succeeded, so a failure leaves it for a retry. The stack is
+  per session, in memory, five deep: `closeTab` pushes the closed row in the
+  same commit (`pushClosedTab`), and `closeBrowserSessionTabs` and archive
+  eviction clear it. The Browser rail entry, the pin button and the tab strip's
+  New tab teach their chord in the tooltip. Find in page (⌘F) is the next unit.
+- **A focused page keeps its keys.** After a click inside a tab, the native view
+  has focus and none of these chords fire until focus returns to Goodboy's
+  chrome (a click on the address row, a tab or the rail). The find bar and the
+  command field keep focus in the chrome on purpose, so the daily flows work.
+  Reading the keys from the native view needs a key monitor on the webview, a
+  separate platform unit.
+- **⌘K** lists the browser tabs of every session in the workspace and every
+  project pin (`useBrowserEntries`, `browserPageData`): the session title is the
+  detail and `Pinned` the tag of a pin. Picking one shows that exact tab, on
+  the session it belongs to (`showBrowserTab`, `showBrowserPinTab`). It offers
+  `Open <address>` first, beside
   that same session, for an address with `http` or `https` or a localhost
   name, or for a host with a port or a path. With no workspace open the entry
   reads `In your browser` and opens your browser. A file name such as
@@ -724,7 +743,9 @@ words (`features/browser/browserFailureText.ts`).
   a service row, a door on a page, a host failure, links in and out of a
   session, the peek, ⌘L beside Ask and the ⌘K entries.
   `tabForAddress.test.ts` pins the tab match; the scenes are `browser-peek`
-  and `browser-peek-dark`.
+  and `browser-peek-dark`. `components/BrowserPane/keys.test.tsx` pins the
+  keymap on the real store with a fake host, and the scenes `browser-pane-keys`
+  and `browser-pane-keys-dark` show ⌘K over every session.
 - The budgets: `features/browser/browserBudgets.ts` holds the numbers.
   `browserBudgets.test.tsx` runs in the unit project and counts, never times:
   no `browser_*` command and no frame request while no tab was opened, the

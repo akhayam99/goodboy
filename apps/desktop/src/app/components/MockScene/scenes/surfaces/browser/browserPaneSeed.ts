@@ -9,7 +9,7 @@ import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed
 import { mockSceneIpc } from '../../mockSceneIpc';
 
 export type BrowserPaneSceneState =
-  'pane' | 'tabs' | 'page' | 'peek' | 'address' | 'field' | 'more' | 'passkey' | 'loading';
+  'pane' | 'tabs' | 'page' | 'peek' | 'address' | 'field' | 'more' | 'passkey' | 'loading' | 'keys';
 
 const VISITS: ReadonlyArray<BrowserVisit> = [
   { url: 'http://localhost:5173/checkout/confirm', title: 'Confirm order', visitedAt: 3 },
@@ -218,7 +218,7 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         ? { 'mock-live-mock-browser-checkout': { url: tabs[0]?.url ?? '', startedAt: 1 } }
         : {},
   });
-  if (state === 'page') {
+  if (state === 'page' || state === 'keys') {
     useAppStore.setState((current) => ({
       sessions: [
         ...current.sessions,

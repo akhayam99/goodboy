@@ -1,6 +1,7 @@
 import { registerShortcutGlyphs } from '@goodboy/ui';
 import { currentPlatform } from '../platform';
 import { NAMES } from '../utils/names';
+import { BROWSER_SHORTCUTS } from './browserShortcuts';
 import { overrideState } from './overrides/overrideState';
 
 type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
@@ -463,14 +464,6 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'session',
   },
-  'browser.address': {
-    combo: 'cmd+KeyL',
-    offMacCombo: 'ctrl+shift+KeyL',
-    label: 'Browser address',
-    plane: 'app',
-    group: 'session',
-    scope: 'browser',
-  },
   'ask.reset': {
     combo: 'cmd+KeyN',
     label: NAMES.newQuestion,
@@ -879,6 +872,7 @@ export const SHORTCUTS = {
     group: 'window',
     scope: 'terminalPage',
   },
+  ...BROWSER_SHORTCUTS,
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },

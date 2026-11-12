@@ -78,6 +78,7 @@ export type BrowserPaneModel = {
   readonly stop: () => void;
   readonly select: (params: TabParams) => void;
   readonly close: (params: TabParams) => void;
+  readonly reopen: () => void;
   readonly togglePin: () => void;
   readonly startDraft: () => void;
   readonly openOutside: () => void;

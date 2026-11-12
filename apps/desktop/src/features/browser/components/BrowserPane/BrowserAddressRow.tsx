@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, Square, X } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
+import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
 import type { BrowserPaneModel } from '../../types';
 import { BrowserAddressPill } from './BrowserAddressPill';
@@ -26,6 +27,7 @@ export const BrowserAddressRow = ({
 }: Props) => {
   const canStep = model.shown !== null;
   const field = useCommandField({ model });
+  useBrowserKeys({ model, isOn: isAddressShortcutOn });
   return (
     <>
       <div className="relative flex h-9 shrink-0 items-center gap-1 px-2">
@@ -71,6 +73,7 @@ export const BrowserAddressRow = ({
               model.shown.isPin ? `Unpin from ${model.projectName}` : `Pin to ${model.projectName}`
             }
             aria-pressed={model.shown.isPin}
+            shortcut="browser.pin"
             tooltipSide="top"
             onClick={model.togglePin}
           />
