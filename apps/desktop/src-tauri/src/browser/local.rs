@@ -53,6 +53,11 @@ const PART_TYPES: &[(&str, &str)] = &[
     ("webm", "video/webm"),
 ];
 
+const ASSET_TYPES: &[&str] = &[
+    "css", "js", "mjs", "map", "woff", "woff2", "ttf", "otf", "ico", "svg", "png", "jpg", "jpeg",
+    "gif", "webp", "avif",
+];
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct LocalGrant {
     pub(crate) token: String,
@@ -152,17 +157,44 @@ fn is_mount_root(folder: &Path) -> bool {
     };
     match (fs::metadata(folder), fs::metadata(parent)) {
         (Ok(own), Ok(above)) => own.dev() != above.dev(),
-        _ => false,
+        _ => true,
     }
 }
 
-#[cfg(not(unix))]
+#[cfg(windows)]
+fn is_mount_root(folder: &Path) -> bool {
+    use std::os::windows::fs::MetadataExt;
+    const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
+    if folder.parent().is_none() {
+        return true;
+    }
+    match fs::symlink_metadata(folder) {
+        Ok(own) => own.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0,
+        Err(_) => true,
+    }
+}
+
+#[cfg(not(any(unix, windows)))]
 fn is_mount_root(_folder: &Path) -> bool {
-    false
+    true
+}
+
+fn is_home_or_under_it(folder: &Path, home: Option<&Path>) -> bool {
+    let Some(home) = home else {
+        return false;
+    };
+    let Some(home) = canonical(home) else {
+        return true;
+    };
+    folder == home || folder.parent() == Some(home.as_path())
 }
 
 fn is_wide(folder: &Path, home: Option<&Path>) -> bool {
-    let is_home = home.and_then(canonical).is_some_and(|home| home == folder);
+    is_wide_place(folder, home) || is_mount_root(folder)
+}
+
+fn is_wide_place(folder: &Path, home: Option<&Path>) -> bool {
+    let is_home = is_home_or_under_it(folder, home);
     let depth = folder
         .components()
         .filter(|part| matches!(part, Component::Normal(_)))
@@ -170,7 +202,7 @@ fn is_wide(folder: &Path, home: Option<&Path>) -> bool {
     let is_disk = folder
         .parent()
         .is_some_and(|parent| DISK_ROOTS.iter().any(|root| parent == Path::new(root)));
-    is_home || is_disk || depth < 2 || is_mount_root(folder)
+    is_home || is_disk || depth < 2
 }
 
 pub(crate) fn resolve(typed: &str, home: Option<&Path>) -> Result<LocalFile, &'static str> {
@@ -264,7 +296,10 @@ fn is_inside(grant: &LocalGrant, path: &Path) -> bool {
     if parts.is_empty() || parts.iter().any(is_hidden) {
         return false;
     }
-    grant.is_deep || parts.len() == 1
+    if parts.len() == 1 {
+        return true;
+    }
+    grant.is_deep && ASSET_TYPES.contains(&extension_of(path).as_str())
 }
 
 pub(crate) fn grants_path(grant: &LocalGrant, path: &Path) -> bool {
@@ -658,12 +693,72 @@ mod tests {
     }
 
     #[test]
+    fn serves_only_static_assets_from_the_folders_below_the_page() {
+        let folder = Folder::new();
+        let plan = folder.write("harborline/index.html", "x");
+        let grant = grant_of(&resolve(plan.to_str().expect("utf8"), None).expect("plan"));
+        for asset in ["css/site.css", "js/app.js", "img/logo.png", "fonts/a.woff2"] {
+            let path = folder.write(&format!("harborline/{asset}"), "x");
+            assert_eq!(status(&grant, &path), StatusCode::OK, "{asset}");
+        }
+        for kept in [
+            "ledger/ledger.json",
+            "docs/guide.html",
+            "scans/spec.pdf",
+            "notes/plan.md",
+            "clips/demo.mp4",
+        ] {
+            let path = folder.write(&format!("harborline/{kept}"), "x");
+            assert_eq!(status(&grant, &path), StatusCode::NOT_FOUND, "{kept}");
+        }
+        let beside = folder.write("harborline/ledger.json", "{}");
+        assert_eq!(status(&grant, &beside), StatusCode::OK);
+    }
+
+    #[test]
+    fn keeps_a_page_in_a_folder_right_under_home_to_the_files_beside_it() {
+        let folder = Folder::new();
+        let plan = folder.write("downloads/plan.html", "x");
+        let beside = folder.write("downloads/ledger.json", "{}");
+        let below = folder.write("downloads/northwind/site.css", "p {}");
+        let file = resolve("~/downloads/plan.html", Some(&folder.root)).expect("page");
+        assert!(!file.is_deep);
+        let grant = grant_of(&file);
+        assert_eq!(status(&grant, &plan), StatusCode::OK);
+        assert_eq!(status(&grant, &beside), StatusCode::OK);
+        assert_eq!(status(&grant, &below), StatusCode::NOT_FOUND);
+        let nested = folder.write("downloads/acme/plan.html", "x");
+        let file = resolve(nested.to_str().expect("utf8"), Some(&folder.root)).expect("nested");
+        assert!(file.is_deep);
+    }
+
+    #[test]
+    fn treats_a_folder_it_cannot_check_as_wide() {
+        let folder = Folder::new();
+        let gone = folder.root.join("gone/harborline");
+        assert!(is_mount_root(&gone));
+        assert!(is_wide(&gone, None));
+        assert!(is_wide(&folder.root.join("harborline"), Some(&gone)));
+    }
+
+    #[test]
+    fn revokes_the_grants_of_a_tab_while_it_stays_open() {
+        let registry = BrowserRegistry::default();
+        crate::browser::tests::seed_local_tab(&registry, "tab-a");
+        let file = plan_file();
+        let token = registry.grant_local("tab-a", &file).expect("grant");
+        registry.revoke_local("tab-a");
+        assert_eq!(registry.local_grant("tab-a", &token), None);
+        assert!(registry.facts("tab-a").is_some());
+    }
+
+    #[test]
     fn keeps_a_page_at_the_top_of_a_disk_or_the_root_to_the_files_beside_it() {
-        assert!(is_wide(Path::new("/Volumes/acme"), None));
-        assert!(is_wide(Path::new("/mnt/acme"), None));
-        assert!(is_wide(Path::new("/work"), None));
-        assert!(!is_wide(Path::new("/Volumes/acme/harborline"), None));
-        assert!(!is_wide(Path::new("/work/harborline"), None));
+        assert!(is_wide_place(Path::new("/Volumes/acme"), None));
+        assert!(is_wide_place(Path::new("/mnt/acme"), None));
+        assert!(is_wide_place(Path::new("/work"), None));
+        assert!(!is_wide_place(Path::new("/Volumes/acme/harborline"), None));
+        assert!(!is_wide_place(Path::new("/work/harborline"), None));
     }
 
     #[test]
@@ -710,11 +805,15 @@ mod tests {
         let file = plan_file();
         let token = registry.grant_local("tab-a", &file).expect("grant");
         let page = live_url(&token, &file.path).expect("live");
-        let sibling = live_url(&token, Path::new("/work/harborline/mocks/a.html")).expect("live");
+        let sibling = live_url(&token, Path::new("/work/harborline/a.html")).expect("live");
+        let asset = live_url(&token, Path::new("/work/harborline/mocks/a.css")).expect("live");
+        let sub_page = live_url(&token, Path::new("/work/harborline/mocks/a.html")).expect("live");
         let outside = live_url(&token, Path::new("/work/northwind/a.html")).expect("live");
         let forged = live_url("0f1e", &file.path).expect("live");
         assert!(may_load(&registry, "tab-a", &page));
         assert!(may_load(&registry, "tab-a", &sibling));
+        assert!(may_load(&registry, "tab-a", &asset));
+        assert!(!may_load(&registry, "tab-a", &sub_page));
         assert!(!may_load(&registry, "tab-a", &outside));
         assert!(!may_load(&registry, "tab-a", &forged));
         assert!(!may_load(&registry, "tab-b", &page));

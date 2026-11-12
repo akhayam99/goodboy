@@ -91,11 +91,21 @@ opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
   with no link followed (`scoped_path::open_relative`), and the type, size and
   bytes come from that one handle, so a file or folder swapped for a link
   after the check answers 404. Windows has no such open yet and reads the
-  checked path. Anything else answers 404; nothing lists a folder. A folder
-  that is the home folder, sits at the top of the disk, is the top of a
-  mounted volume (its device differs from its parent's, on macOS and Linux)
-  or sits right under `/Volumes`, `/media` or `/mnt` grants only the files
-  beside the page. Responses carry `no-store`, `nosniff`, `no-referrer` and
+  checked path. Anything else answers 404; nothing lists a folder.
+- **How far a grant reaches.** A grant serves every known type in the page's
+  own folder, one level, no recursion. Below that folder it serves only
+  static assets (`ASSET_TYPES`: styles, scripts, source maps, fonts, icons and
+  images), never a page, a PDF, data, text or video, so a site with
+  `index.html` beside `css/`, `js/` and `img/` loads whole, while a page
+  saved into a busy folder can not read the documents under it. A link from
+  the page to another page in a subfolder does not load; type its path to
+  open it. A wide folder gets no subfolders at all: the home folder and every
+  folder right under it (Downloads, Documents, Desktop), the top of the disk
+  or a folder one level down, a folder right under `/Volumes`, `/media` or
+  `/mnt`, and the top of a mounted volume (its device differs from its
+  parent's on macOS and Linux, a reparse point on Windows). A check that
+  can not read the folder or its parent counts as wide.
+- **Headers.** Responses carry `no-store`, `nosniff`, `no-referrer` and
   `Cross-Origin-Resource-Policy: same-origin`.
 - **What the app sees.** Facts, listings and rows carry the `file://` address,
   query and fragment included; the token never leaves Rust. The address row
