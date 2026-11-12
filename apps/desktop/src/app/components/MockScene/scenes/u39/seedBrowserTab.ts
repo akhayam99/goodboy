@@ -33,6 +33,7 @@ export const seedBrowserTab = ({ sessionId }: Params): void => {
     url: TAB_URL,
     title: TAB_TITLE,
     isShown: false,
+    isPasskeyBlocked: false,
     hiddenSinceMs: null,
     openerId: null,
   };
