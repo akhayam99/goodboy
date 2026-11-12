@@ -23,6 +23,6 @@ export const BrowserCover = ({ tab, title, reason }: Props) => (
     <span className="max-w-full truncate text-meta text-muted-foreground">
       {hostOf({ url: tab.url })}
     </span>
-    <span className="text-meta text-faint">{coverReasonText({ reason })}</span>
+    <span className="text-meta text-faint-foreground">{coverReasonText({ reason })}</span>
   </div>
 );
