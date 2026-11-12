@@ -67,6 +67,8 @@ describe('the browser pane scenes', () => {
       'browser-page',
       'browser-page-dark',
       'browser-pane',
+      'browser-pane-cover',
+      'browser-pane-cover-dark',
       'browser-pane-dark',
       'browser-pane-passkey',
       'browser-pane-passkey-dark',
@@ -173,6 +175,14 @@ describe('the browser pane scenes', () => {
     expect(
       within(pane).getByRole('button', { name: 'Hide tab list' }).getAttribute('aria-pressed'),
     ).toBe('true');
+  });
+
+  it('opens a menu over the page for the cover capture', async () => {
+    mount({ id: 'browser-pane-cover' });
+
+    await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const menu = await screen.findByRole('menu', { name: 'Page actions' }, WAIT);
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(3);
   });
 
   it('marks the sleeping tab and folds the list to a rail of favicons', async () => {

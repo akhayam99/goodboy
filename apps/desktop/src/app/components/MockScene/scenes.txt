@@ -160,6 +160,8 @@ brand-tools
 browser-page
 browser-page-dark
 browser-pane
+browser-pane-cover
+browser-pane-cover-dark
 browser-pane-dark
 browser-pane-passkey
 browser-pane-passkey-dark

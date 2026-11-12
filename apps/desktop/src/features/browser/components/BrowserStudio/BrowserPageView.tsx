@@ -44,7 +44,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
     root,
     reload: model.reload,
   });
-  useNativePlacement({
+  const cover = useNativePlacement({
     sessionId,
     view,
     tab: shownTab,
@@ -103,6 +103,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
                 view={view}
                 shown={model.shown}
                 title={title}
+                cover={cover}
                 emptyTitle="Open a page in this session"
               />
             </div>

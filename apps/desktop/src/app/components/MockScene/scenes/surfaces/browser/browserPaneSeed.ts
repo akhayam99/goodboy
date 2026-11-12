@@ -7,7 +7,8 @@ import type { BrowserTab } from '../../../../../../store/slices/browser/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 
-export type BrowserPaneSceneState = 'pane' | 'tabs' | 'rail' | 'page' | 'peek' | 'passkey';
+export type BrowserPaneSceneState =
+  'pane' | 'tabs' | 'rail' | 'page' | 'peek' | 'passkey' | 'cover';
 
 const PEEK_DECISION =
   'Check the tax line on [localhost:5173/checkout](http://localhost:5173/checkout) before the PR goes up';
