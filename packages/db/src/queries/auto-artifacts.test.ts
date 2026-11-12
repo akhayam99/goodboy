@@ -90,6 +90,17 @@ describe('auto artifacts', () => {
     });
   });
 
+  it('writes nothing when the same revision is approved again', async () => {
+    const db = await world();
+    await approveAutoArtifact({ db, artifactId: planId, expectedRevision: 1 });
+    const before = await getAutoArtifact({ db, artifactId: planId });
+
+    const again = await approveAutoArtifact({ db, artifactId: planId, expectedRevision: 1 });
+
+    expect(again).toEqual({ kind: 'already_approved', revision: 1 });
+    expect(await getAutoArtifact({ db, artifactId: planId })).toEqual(before);
+  });
+
   it('refuses to approve while a revise is open, after a discard, and for an unknown artifact', async () => {
     const db = await world();
     await db.execute(

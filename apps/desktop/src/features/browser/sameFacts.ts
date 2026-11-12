@@ -13,6 +13,7 @@ export const sameFacts = ({ a, b }: Params): boolean =>
       other !== undefined &&
       other.id === fact.id &&
       other.url === fact.url &&
-      other.title === fact.title
+      other.title === fact.title &&
+      other.isPasskeyBlocked === fact.isPasskeyBlocked
     );
   });

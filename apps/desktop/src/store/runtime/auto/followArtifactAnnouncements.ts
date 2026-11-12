@@ -1,4 +1,5 @@
 import { brandId, type SessionId } from '@goodboy/types';
+import { READ_FAILED } from '../../slices/notifications/errorRecovery';
 import {
   AUTO_BRIDGE_EVENT,
   type AutoBridgeBus,
@@ -33,6 +34,16 @@ export const followArtifactAnnouncements = ({ bus, get, set }: Params): Promise<
         return;
       }
       const state = get();
+      if (state.autoTreeViews[sessionId] !== undefined) {
+        void state.loadAutoTrees({ sessionId }).catch((error: unknown) =>
+          state.reportError({
+            recovery: READ_FAILED,
+            title: "Couldn't read the Auto agents",
+            error,
+            sessionId,
+          }),
+        );
+      }
       const isLoaded =
         state.sessionPlans[sessionId] !== undefined ||
         state.sessionArtifacts[sessionId] !== undefined;

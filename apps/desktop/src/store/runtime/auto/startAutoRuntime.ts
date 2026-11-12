@@ -248,9 +248,15 @@ export const startAutoRuntime = async ({
       });
     },
   });
+  const unfollow = await followArtifactAnnouncements({
+    bus,
+    get: getState,
+    set: useAppStore.setState,
+  });
   const unregister = (): void => {
     stopLimitFold();
     unserve();
+    unfollow();
     registerChecksRerunPort({ port: null });
     registerPublishPort({ port: null });
     registerTreeRetryPort({ port: null });
@@ -304,6 +310,7 @@ export const startAutoRuntime = async ({
       images,
       permissionOnceAllows,
       deliveryId,
+      focusArtifactId,
       onQueued,
     }) => {
       const started = await startAutoTree({
@@ -317,6 +324,7 @@ export const startAutoRuntime = async ({
         ...(images !== undefined && { images }),
         ...(permissionOnceAllows !== undefined && { permissionOnceAllows }),
         ...(deliveryId !== undefined && { deliveryId }),
+        ...(focusArtifactId !== undefined && { facts: { focusArtifactId } }),
       });
       if (outcome.kind !== 'queued') {
         return 'lost';
