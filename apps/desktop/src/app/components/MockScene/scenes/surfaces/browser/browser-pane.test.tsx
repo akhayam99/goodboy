@@ -154,10 +154,8 @@ describe('the browser pane scenes', () => {
     mount({ id: 'browser-pane-passkey' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    expect(within(pane).getByRole('textbox', { name: 'Address' })).toHaveProperty(
-      'value',
-      'https://id.cascadia.dev/signin',
-    );
+    const pill = await within(pane).findByRole('button', { name: /^Edit address/ }, WAIT);
+    expect(pill.textContent).toContain('id.cascadia.dev');
     const title = await within(pane).findByText(
       "Passkeys don't work in Goodboy's browser",
       {},
