@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { applyStoredZoom, zoomIn, zoomOut, zoomReset } from '../../lib/zoom';
 import { writeReloadIntent } from '../../../features/workspace/windowView';
+import { reloadWhereYouAre } from '../../keyboard/reload/reloadWhereYouAre';
 import { useShortcut } from '../../keyboard/useShortcut';
 import { useAppStore } from '../../../store';
 import { captureWindowLocation } from '../../../store/slices/navigation/captureWindowLocation';
@@ -46,5 +47,6 @@ export const useWindowShortcuts = ({ onBeforeReload }: Params): void => {
   useShortcut('zoom.in', () => void zoomIn());
   useShortcut('zoom.out', () => void zoomOut());
   useShortcut('zoom.reset', () => void zoomReset());
+  useShortcut('view.reload', reloadWhereYouAre);
   useShortcut('app.reload', reload);
 };

@@ -25,9 +25,23 @@ type DropTargetResult = {
   readonly isHit: boolean;
 };
 
+type ElementParams = {
+  readonly element: HTMLElement;
+};
+
+const isShownToUser = ({ element }: ElementParams): boolean => {
+  if (element.offsetParent === null || element.closest('[inert]') !== null) {
+    return false;
+  }
+  if (typeof element.checkVisibility !== 'function') {
+    return true;
+  }
+  return element.checkVisibility({ visibilityProperty: true });
+};
+
 const visibleDropTargets = (): HTMLElement[] =>
-  Array.from(document.querySelectorAll<HTMLElement>('[data-drop-composer]')).filter(
-    (element) => element.offsetParent !== null,
+  Array.from(document.querySelectorAll<HTMLElement>('[data-drop-composer]')).filter((element) =>
+    isShownToUser({ element }),
   );
 
 const isInside = ({

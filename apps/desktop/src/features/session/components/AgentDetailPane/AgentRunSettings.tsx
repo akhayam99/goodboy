@@ -16,16 +16,9 @@ type Props = {
   readonly agent: Agent;
   readonly autoView: AutoView | null;
   readonly asksSlotRef: RefCallback<HTMLElement>;
-  readonly modelsSlotRef: RefCallback<HTMLElement>;
 };
 
-export const AgentRunSettings = ({
-  session,
-  agent,
-  autoView,
-  asksSlotRef,
-  modelsSlotRef,
-}: Props) => {
+export const AgentRunSettings = ({ session, agent, autoView, asksSlotRef }: Props) => {
   const agentSpendUsd = useAgentSpend({ sessionId: session.id, agentId: agent.id });
   const line = (
     <AgentSettingsLine
@@ -37,7 +30,6 @@ export const AgentRunSettings = ({
           : { treeId: autoView.tree.id, facts: autoView.budget }
       }
       asksSlotRef={asksSlotRef}
-      modelsSlotRef={modelsSlotRef}
     />
   );
   const budget = autoView?.budget ?? null;

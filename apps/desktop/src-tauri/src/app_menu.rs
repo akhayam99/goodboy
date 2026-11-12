@@ -107,7 +107,8 @@ const VIEW_ROWS: &[Row] = &[
     command("zoom.out", "Zoom Out", Some("cmd+Minus")),
     command("zoom.reset", "Actual Size", Some("cmd+Digit0")),
     SEPARATOR,
-    command("app.reload", "Reload", Some("cmd+KeyR")),
+    command("view.reload", "Reload", Some("cmd+KeyR")),
+    command("app.reload", "Reload Goodboy", Some("cmd+shift+KeyR")),
     native(Native::FullScreen),
 ];
 
@@ -436,6 +437,20 @@ mod tests {
         assert_eq!(combo_of("slot.close"), Some("cmd+shift+KeyW"));
         assert_eq!(combo_of("report.open"), Some("cmd+KeyI"));
         assert_eq!(combo_of("settings.open"), Some("cmd+Comma"));
+    }
+
+    #[test]
+    fn reloads_where_you_are_on_command_r_and_goodboy_on_command_shift_r() {
+        let row_of = |id: &str| commands().find(|command| command.id == id);
+        let view = row_of("view.reload").expect("view.reload row");
+        let app = row_of("app.reload").expect("app.reload row");
+        assert_eq!((view.label, view.combo), ("Reload", Some("cmd+KeyR")));
+        assert_eq!(
+            (app.label, app.combo),
+            ("Reload Goodboy", Some("cmd+shift+KeyR"))
+        );
+        assert!(VIEW_ROWS.contains(&Row::Command(view)));
+        assert!(VIEW_ROWS.contains(&Row::Command(app)));
     }
 
     #[test]

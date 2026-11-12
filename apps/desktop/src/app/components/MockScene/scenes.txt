@@ -1327,6 +1327,18 @@ u36-states-overview-timed-out-child-light
 u37-artifact-report-scrolled
 u37-artifact-report-scrolled-light
 u37-branch-work
+u37-composer-agent-dark
+u37-composer-agent-light
+u37-composer-ask-dark
+u37-composer-ask-light
+u37-composer-auto-dark
+u37-composer-auto-light
+u37-composer-chat-dark
+u37-composer-chat-light
+u37-composer-new-session-dark
+u37-composer-new-session-light
+u37-composer-start-run-dark
+u37-composer-start-run-light
 u37-header-reveal
 u37-header-reveal-agent
 u37-header-reveal-back
@@ -1340,6 +1352,8 @@ u37-header-reveal-runs
 u37-monitoring-branch
 u37-running-here
 u37-running-here-idle
+u37-runs-order
+u37-runs-order-light
 u39-destinations
 u39-foot
 u39-foot-update

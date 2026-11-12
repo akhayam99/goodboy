@@ -2,7 +2,7 @@ import type { StartKind, StartShape } from '../../../../store/slices/sessionDraf
 
 export type StartFormKind = 'auto' | 'agent' | 'orchestrated' | 'preset';
 
-export type StartSettingKey = 'where' | 'role' | 'model' | 'asks' | 'edits' | 'limit' | 'guidance';
+export type StartSettingKey = 'where' | 'role' | 'asks' | 'edits' | 'limit' | 'guidance';
 
 export const START_FORM_KINDS: ReadonlyArray<StartFormKind> = [
   'auto',
@@ -12,15 +12,14 @@ export const START_FORM_KINDS: ReadonlyArray<StartFormKind> = [
 ];
 
 const START_KIND_SETTINGS = {
-  auto: ['where', 'model', 'asks', 'edits', 'limit', 'guidance'],
-  agent: ['where', 'role', 'model', 'edits', 'guidance'],
-  orchestrated: ['where', 'model', 'asks', 'edits', 'limit', 'guidance'],
-  preset: ['where', 'model', 'asks', 'edits', 'limit', 'guidance'],
+  auto: ['where', 'asks', 'edits', 'limit', 'guidance'],
+  agent: ['where', 'role', 'edits', 'guidance'],
+  orchestrated: ['where', 'asks', 'edits', 'limit', 'guidance'],
+  preset: ['where', 'asks', 'edits', 'limit', 'guidance'],
 } as const satisfies Record<StartFormKind, ReadonlyArray<StartSettingKey>>;
 
 const START_PICK_SETTINGS = [
   'where',
-  'model',
   'asks',
   'edits',
   'limit',

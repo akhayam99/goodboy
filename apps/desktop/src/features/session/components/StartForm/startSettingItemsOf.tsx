@@ -13,7 +13,6 @@ import { openRunDefaults } from '../../../settings/openRunDefaults';
 import type { AgentKind } from '../../agent-kind';
 import { StartAsksSetting } from '../SessionKickoff/StartAsksSetting';
 import { StartRoleField } from '../SessionKickoff/StartRoleField';
-import { RunModelChip } from '../StartRun/RunModelChip';
 import type { RunModelView } from '../StartRun/useRunModel';
 import { StartEditsSetting } from './StartEditsSetting';
 import { StartGuidanceSetting } from './StartGuidanceSetting';
@@ -97,7 +96,6 @@ export const startSettingItemsOf = ({
             onChange={(next) => role.onChange({ next })}
           />
         ),
-      model: <RunModelChip model={model} isDisabled={isDisabled} />,
       asks:
         asks === 'level' ? (
           <AutoLevelChip

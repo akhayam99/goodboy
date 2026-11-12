@@ -7,7 +7,7 @@ describe('changelogSource', () => {
   it('loads the packaged CHANGELOG.md at build time', () => {
     const headings = rawChangelog.split('\n').filter((line) => line.startsWith('## Goodboy v'));
     expect(CHANGELOG_RELEASES.length).toBe(headings.length);
-    expect(CHANGELOG_RELEASES[0]?.version).toBe('0.33.1');
+    expect(CHANGELOG_RELEASES[0]?.version).toBe('0.33.2');
     expect(CHANGELOG_RELEASES[0]?.shape).toBe('v2');
   });
 });

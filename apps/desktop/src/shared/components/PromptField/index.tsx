@@ -11,16 +11,18 @@ import {
   type RefObject,
 } from 'react';
 import { Paperclip } from 'lucide-react';
-import { cn, ICON_SIZE, IconButton, SegmentedTabs, Textarea, tintClasses } from '@goodboy/ui';
+import { cn, IconButton, SegmentedTabs, Textarea } from '@goodboy/ui';
 import { ATTACHMENT_ACCEPT } from '../../../features/chat/attachment-kinds';
 import {
   ATTACHMENT_LIMIT,
   type PendingAttachment,
 } from '../../../features/attachments/pendingAttachment';
 import { useComposerClassicKeys } from '../../hooks/useComposerClassicKeys';
+import { ComposerSurface } from '../ComposerSurface';
+import { ComposerAttachmentCount } from '../ComposerSurface/ComposerAttachmentCount';
+import { ComposerAttachments } from '../ComposerSurface/ComposerAttachments';
+import { ComposerFooter } from '../ComposerSurface/ComposerFooter';
 
-import { PromptAttachmentChip } from './PromptAttachmentChip';
-import { PromptDropOverlay } from './PromptDropOverlay';
 import { PromptKeysHint, type PromptKeyHint } from './PromptKeysHint';
 import { effectiveKind, promptKeyAction, type PromptFieldKind } from './promptKeyAction';
 
@@ -70,6 +72,7 @@ type Props = {
   readonly variant?: 'card' | 'bare';
   readonly header?: ReactNode;
   readonly footerStart?: ReactNode;
+  readonly model?: ReactNode;
   readonly actions?: ReactNode;
   readonly onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   readonly onBlur?: (event: FocusEvent<HTMLTextAreaElement>) => void;
@@ -135,6 +138,7 @@ export const PromptField = ({
   variant = 'card',
   header,
   footerStart,
+  model,
   actions,
   onKeyDown,
   onBlur,
@@ -259,11 +263,15 @@ export const PromptField = ({
   const hints =
     onSubmit === undefined ? [] : keyHints({ kind: keys, labels: keyLabels, canSendNow });
   const hasFooter =
-    files !== undefined || footerStart != null || actions != null || hints.length > 0;
+    files !== undefined ||
+    footerStart != null ||
+    model != null ||
+    actions != null ||
+    hints.length > 0;
 
   return (
-    <div
-      ref={(node) => {
+    <ComposerSurface
+      surfaceRef={(node) => {
         if (files !== undefined) {
           files.composerRef.current = node;
         }
@@ -271,73 +279,63 @@ export const PromptField = ({
           fieldRef.current = node;
         }
       }}
-      data-drop-composer={files === undefined ? undefined : true}
-      data-prompt-field={kind}
-      className={cn(
-        '@container/prompt relative flex min-w-0 flex-col rounded-lg border transition-colors',
-        files?.isDragging === true
-          ? cn(tintClasses('primary').bgSoft, 'border-primary')
-          : 'border-border-soft bg-subtle hover:border-border focus-within:border-border-strong',
-        disabled && 'opacity-60',
-        className,
-      )}
+      drop={files === undefined ? undefined : { isDragging: files.isDragging }}
+      isDisabled={disabled}
+      kind={kind}
+      className={className}
     >
-      {files !== undefined ? <PromptDropOverlay isDragging={files.isDragging} /> : null}
       {header}
+      <ComposerAttachments attachments={attachments} onRemove={(id) => files?.onRemove(id)} />
       {tabs}
       {body}
-      {attachments.length > 0 ? (
-        <div className="flex flex-wrap gap-2 px-3 pb-2 pt-0.5">
-          {attachments.map((attachment) => (
-            <PromptAttachmentChip
-              key={attachment.id}
-              attachment={attachment}
-              onRemove={() => files?.onRemove(attachment.id)}
-            />
-          ))}
-        </div>
-      ) : null}
       {notice !== null && notice !== '' ? (
         <p role="alert" className="px-3 pb-1 text-meta text-warning">
           {notice}
         </p>
       ) : null}
       {hasFooter ? (
-        <div className="flex min-h-8 min-w-0 items-center gap-2 px-2 pb-2">
-          {files !== undefined ? (
+        <ComposerFooter
+          start={
             <>
-              <IconButton
-                icon={Paperclip}
-                label={`Attach ${noun}`}
-                {...(files.note !== undefined && { tooltip: files.note })}
-                variant="ghost"
-                iconSize={ICON_SIZE.control}
-                disabled={disabled || attachments.length >= ATTACHMENT_LIMIT}
-                onClick={() => files.fileInputRef.current?.click()}
+              {files !== undefined ? (
+                <>
+                  <IconButton
+                    icon={Paperclip}
+                    label={`Attach ${noun}`}
+                    {...(files.note !== undefined && { tooltip: files.note })}
+                    variant="ghost"
+                    disabled={disabled || attachments.length >= ATTACHMENT_LIMIT}
+                    onClick={() => files.fileInputRef.current?.click()}
+                  />
+                  <input
+                    ref={files.fileInputRef}
+                    type="file"
+                    accept={files.accept ?? ATTACHMENT_ACCEPT}
+                    multiple
+                    aria-label={`Choose ${noun} to attach`}
+                    tabIndex={-1}
+                    className="hidden"
+                    onChange={files.onFileInputChange}
+                  />
+                </>
+              ) : null}
+              {footerStart}
+              <ComposerAttachmentCount
+                count={attachments.length}
+                limit={ATTACHMENT_LIMIT}
+                noun={noun}
               />
-              <input
-                ref={files.fileInputRef}
-                type="file"
-                accept={files.accept ?? ATTACHMENT_ACCEPT}
-                multiple
-                aria-label={`Choose ${noun} to attach`}
-                tabIndex={-1}
-                className="hidden"
-                onChange={files.onFileInputChange}
-              />
+              <PromptKeysHint hints={hints} />
             </>
-          ) : null}
-          {footerStart}
-          <PromptKeysHint hints={hints} />
-          <span className="flex-1" />
-          {attachments.length > 0 ? (
-            <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
-              {`${attachments.length} of ${ATTACHMENT_LIMIT} ${noun}`}
-            </span>
-          ) : null}
-          {actions}
-        </div>
+          }
+          end={
+            <>
+              {model}
+              {actions}
+            </>
+          }
+        />
       ) : null}
-    </div>
+    </ComposerSurface>
   );
 };

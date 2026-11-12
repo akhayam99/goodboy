@@ -240,6 +240,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'app.reload',
+    note: 'reloads Goodboy, the window and all',
     open: async () => {
       reloads.length = 0;
       await press('app.reload')();
@@ -995,10 +996,16 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
-    id: 'session.refresh',
-    open: press('session.refresh'),
-    lands: async (ctx) =>
-      waitFor(() => expect(useAppStore.getState().sessionSyncing[ctx.sessionId]).toBe(true)),
+    id: 'view.reload',
+    note: 'in a session it refreshes that session and never reloads the window',
+    open: async () => {
+      reloads.length = 0;
+      await press('view.reload')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().sessionSyncing[ctx.sessionId]).toBe(true));
+      expect(reloads).toHaveLength(0);
+    },
   }),
   keyRow({
     id: 'overview.newHere',

@@ -85,7 +85,6 @@ const show = ({ capUsd }: ShowParams) => {
       kind={null}
       auto={{ treeId: TREE_ID, facts: { ...FACTS, capUsd, remainingUsd: capUsd - FACTS.spentUsd } }}
       asksSlotRef={() => undefined}
-      modelsSlotRef={() => undefined}
     />,
   );
   return screen.getByRole('button', { name: /^Limit: / });
@@ -151,46 +150,6 @@ describe('the Auto limit chip under a session budget', () => {
   });
 });
 
-describe('the model slot of the settings line', () => {
-  const MODELS_SLOT = 'span[data-settings-slot="models"]';
-
-  type SlotParams = {
-    readonly isFilled: boolean;
-    readonly isAuto: boolean;
-  };
-
-  const showSlot = ({ isFilled, isAuto }: SlotParams) =>
-    render(
-      <AgentSettingsLine
-        session={SESSION}
-        kind={null}
-        auto={isAuto ? { treeId: TREE_ID, facts: FACTS } : null}
-        asksSlotRef={() => undefined}
-        modelsSlotRef={(node) => {
-          if (node !== null && isFilled) {
-            const pill = document.createElement('button');
-            pill.textContent = 'Model routing';
-            node.replaceChildren(pill);
-          }
-        }}
-      />,
-    );
-
-  it('names the Auto agent in front of the model pill of an Auto page', () => {
-    const { container } = showSlot({ isFilled: true, isAuto: true });
-
-    const wrapper = container.querySelector('[data-settings-models]');
-    expect(wrapper?.textContent).toBe('Auto agentModel routing');
-    expect(wrapper?.querySelector(MODELS_SLOT)?.textContent).toBe('Model routing');
-  });
-
-  it('draws no label on a page that is not an Auto agent', () => {
-    const { container } = showSlot({ isFilled: true, isAuto: false });
-
-    expect(container.querySelector('[data-settings-models]')?.textContent).toBe('Model routing');
-  });
-});
-
 describe('the Auto level chip of the settings line', () => {
   const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
   const target = { sessionId: AUTO_SEED_SESSION };
@@ -206,7 +165,6 @@ describe('the Auto level chip of the settings line', () => {
         kind={null}
         auto={isAuto ? { treeId: TREE_ID, facts: FACTS } : null}
         asksSlotRef={() => undefined}
-        modelsSlotRef={() => undefined}
       />,
     );
 

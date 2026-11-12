@@ -26,8 +26,8 @@ type Props = {
   readonly isAutoFocused?: boolean;
   readonly minRows: number;
   readonly maxRows: number;
-  readonly footerStart: ReactNode;
-  readonly hint?: ReactNode;
+  readonly footerStart?: ReactNode;
+  readonly model: ReactNode;
   readonly fieldRef?: RefObject<HTMLDivElement | null>;
   readonly testId?: string;
   readonly onSend: (message: MessageComposerMessage) => Promise<boolean>;
@@ -55,7 +55,7 @@ export const MessageComposer = ({
   minRows,
   maxRows,
   footerStart,
-  hint,
+  model,
   fieldRef,
   testId,
   onSend,
@@ -103,15 +103,13 @@ export const MessageComposer = ({
       className="w-full"
       textClassName="text-prose"
       footerStart={footerStart}
+      model={model}
       actions={
-        <>
-          {hint}
-          <SendStopControl
-            canSend={canSend}
-            stop={isStreaming ? { isStopping, onStop } : undefined}
-            onSend={send}
-          />
-        </>
+        <SendStopControl
+          canSend={canSend}
+          stop={isStreaming ? { isStopping, onStop } : undefined}
+          onSend={send}
+        />
       }
     />
   );

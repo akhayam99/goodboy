@@ -10,6 +10,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { startSettingsRowOf } from '../../../../../__tests__/helpers/startSettingsRowOf';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { START_KIND_COPY } from '../../../../../features/session/startKind/startKindCopy';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -72,14 +73,17 @@ describe('the u27 start page scenes', () => {
     );
   });
 
-  it('gives the agent a role and a model, Edits, and no limit', async () => {
+  it('gives the agent a role, Edits and no limit, and its model in the message box', async () => {
     mount({ id: 'u27-start-page-after-agent-form' });
 
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }, WAIT),
     });
     expect(row.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
-    row.getByRole('button', { name: /^Model: / });
+    expect(row.queryByRole('button', { name: /^Model: / })).toBeNull();
+    const goal = screen.getByRole('textbox', { name: START_KIND_COPY.goal });
+    const box = goal.closest<HTMLElement>('[data-prompt-field]');
+    within(box ?? document.body).getByRole('button', { name: /^Model: / });
     row.getByRole('button', { name: /^Edits: / });
     expect(row.queryByText(/Limit/)).toBeNull();
     expect(row.queryByRole('button', { name: /^Asks you/ })).toBeNull();
