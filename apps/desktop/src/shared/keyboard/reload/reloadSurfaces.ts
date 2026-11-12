@@ -14,7 +14,12 @@ let lastTouched: Element | null = null;
 let isListening = false;
 
 const noteTouch = ({ target }: TouchParams): void => {
-  lastTouched = target instanceof Element ? target : null;
+  if (!(target instanceof Element)) {
+    lastTouched = null;
+    return;
+  }
+  const owner = [...surfaces.values()].find((surface) => surface.root()?.contains(target) === true);
+  lastTouched = owner?.root() ?? target;
 };
 
 const listen = (): void => {

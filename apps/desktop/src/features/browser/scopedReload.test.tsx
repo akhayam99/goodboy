@@ -6,6 +6,7 @@ import { nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
   buildStorySession,
   importStore,
+  openStorySqlite,
   resetStoryStore,
   storySpies,
   stubStoryInvoke,
@@ -45,7 +46,6 @@ type WorldParams = { readonly isBrowserOpen: boolean };
 let store: StoryStore;
 let live: BrowserTabFacts[];
 let windowReloads: number;
-const resyncSession = vi.fn(async () => undefined);
 
 const WindowShortcuts = () => {
   useBrowserWindowShortcuts();
@@ -87,6 +87,8 @@ const stubHost = () => {
 
 const callsOf = ({ command }: CommandParams) =>
   storySpies.tauriInvoke.mock.calls.filter(([name]) => name === command);
+
+const isSessionRefreshed = () => store.getState().sessionExternalTasks[SESSION_ID] !== undefined;
 
 const renderWorld = ({ isBrowserOpen }: WorldParams) => {
   store.setState({
@@ -133,13 +135,12 @@ beforeAll(async () => {
 beforeEach(async () => {
   live = [];
   windowReloads = 0;
-  resyncSession.mockClear();
+  await openStorySqlite();
   await resetStoryStore();
   store.setState({
     currentWorkspaceId: WORKSPACE_ID,
     currentSessionId: SESSION_ID,
     sessions: [buildStorySession({ id: SESSION_ID, workspaceId: WORKSPACE_ID })],
-    resyncSession,
   });
   stubHost();
   Object.defineProperty(window, 'location', {
@@ -161,10 +162,12 @@ afterEach(() => {
 describe('cmd+R reloads where you are', () => {
   it('refreshes the session on screen and never reloads the window', async () => {
     renderWorld({ isBrowserOpen: false });
+    expect(isSessionRefreshed()).toBe(false);
 
     pressShortcut({ id: 'view.reload', target: document.body });
 
-    await waitFor(() => expect(resyncSession).toHaveBeenCalledWith({ sessionId: SESSION_ID }));
+    await waitFor(() => expect(isSessionRefreshed()).toBe(true));
+    expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([]);
     expect(windowReloads).toBe(0);
   });
 
@@ -181,7 +184,7 @@ describe('cmd+R reloads where you are', () => {
         ['browser_tab_reload', { args: { tabId: 'live-1' } }],
       ]),
     );
-    expect(resyncSession).not.toHaveBeenCalled();
+    expect(isSessionRefreshed()).toBe(false);
     expect(windowReloads).toBe(0);
   });
 
@@ -194,7 +197,7 @@ describe('cmd+R reloads where you are', () => {
     replayShortcut({ id: 'view.reload' });
 
     await waitFor(() => expect(callsOf({ command: 'browser_tab_reload' })).toHaveLength(1));
-    expect(resyncSession).not.toHaveBeenCalled();
+    expect(isSessionRefreshed()).toBe(false);
     expect(windowReloads).toBe(0);
   });
 
@@ -205,7 +208,7 @@ describe('cmd+R reloads where you are', () => {
     fireEvent.pointerDown(document.body);
     pressShortcut({ id: 'view.reload', target: document.body });
 
-    await waitFor(() => expect(resyncSession).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(isSessionRefreshed()).toBe(true));
     expect(callsOf({ command: 'browser_tab_reload' })).toEqual([]);
   });
 
@@ -215,7 +218,7 @@ describe('cmd+R reloads where you are', () => {
 
     pressShortcut({ id: 'view.reload', target: document.body });
 
-    expect(resyncSession).not.toHaveBeenCalled();
+    expect(isSessionRefreshed()).toBe(false);
     expect(windowReloads).toBe(0);
   });
 
@@ -225,6 +228,6 @@ describe('cmd+R reloads where you are', () => {
     pressShortcut({ id: 'app.reload', target: document.body });
 
     await waitFor(() => expect(windowReloads).toBe(1));
-    expect(resyncSession).not.toHaveBeenCalled();
+    expect(isSessionRefreshed()).toBe(false);
   });
 });
