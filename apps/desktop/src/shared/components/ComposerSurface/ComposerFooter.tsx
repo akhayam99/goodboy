@@ -11,6 +11,6 @@ export const ComposerFooter = ({ start, end }: Props) => (
     className="flex min-h-8 min-w-0 items-center justify-between gap-2 px-3 pb-2"
   >
     <div className="flex min-w-0 items-center gap-2">{start}</div>
-    <div className="flex min-w-0 shrink-0 items-center gap-2">{end}</div>
+    <div className="flex min-w-0 items-center gap-2">{end}</div>
   </div>
 );
