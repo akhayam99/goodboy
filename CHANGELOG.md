@@ -12,6 +12,42 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.33.2
+
+Every message box holds its model picker, ⌘R reloads what you're looking at, and Runs puts live work first.
+
+### Improved
+
+#### The model picker in every message box
+<!-- gb area=agents image=composer pr=2208 -->
+
+Every box that talks to an agent has one look, with the model picker beside Send: the agent and Auto pages, Chat, Ask, Start a run and New session. The Settings line above the box no longer has a model picker of its own.
+
+Attached files sit above the text in every box, with the same file count under it.
+
+#### ⌘R reloads where you are
+<!-- gb area=app pr=2195 -->
+
+⌘R reloads the browser tab when the browser has your keyboard or your last click, and refreshes the session on a session page. It never reloads the whole window. Reload Goodboy moves to ⌘⇧R in the View menu, and Refresh session now uses ⌘R.
+
+#### Runs puts live work first
+<!-- gb area=sessions pr=2219 -->
+
+By branch lists the branches that need you first, then the running ones, then open branches by latest activity. No branch follows the same order instead of sitting last. Branches whose pull requests are all merged or closed, or whose worktree is gone, fold under one Finished row at the bottom, and Show opens it.
+
+Finished runs read in lighter text, and archived runs no longer show on Runs. The run page still restores them.
+
+#### The browser pane widens to the window
+<!-- gb area=sessions pr=2194 -->
+
+The browser pane beside a session drags as wide as the window allows, past its old limit of 1000 pixels. It opens at 720 pixels and keeps the width you choose.
+
+### Fixed
+
+- Dropping an image on the agent page lands in its message box again, instead of asking you to drop the file on a message box. <!-- gb area=agents pr=2208 -->
+- Approving a plan from Auto starts Build, and a second approve no longer starts a second implementer on the same plan. <!-- gb area=agents pr=2217 -->
+- A passkey sign-in in a Browser tab shows a notice with Open in your browser, instead of a page stuck on its passkey step. <!-- gb area=sessions pr=2197 -->
+
 ## Goodboy v0.33.1
 
 Goodboy stays open when a browser tab has no address yet.
