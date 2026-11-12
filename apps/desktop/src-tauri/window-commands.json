@@ -64,6 +64,7 @@
     "browser_tab_close",
     "browser_tab_forward",
     "browser_tab_hide",
+    "browser_tab_inspectable",
     "browser_tab_list",
     "browser_tab_navigate",
     "browser_tab_open",

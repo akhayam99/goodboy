@@ -74,6 +74,7 @@ export type BrowserPaneModel = {
   readonly address: string;
   readonly titleOf: (params: TabParams) => string;
   readonly error: string | null;
+  readonly notice: string | null;
   readonly isDrafting: boolean;
   readonly isLoading: boolean;
   readonly canGoBack: boolean;
@@ -96,6 +97,7 @@ export type BrowserPaneModel = {
   readonly dismissPasskey: () => void;
   readonly find: (params: FindParams) => Promise<boolean>;
   readonly clearFind: () => Promise<void>;
+  readonly inspect: () => void;
   readonly showError: (params: ErrorParams) => void;
 };
 

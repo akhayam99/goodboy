@@ -19,6 +19,7 @@ pub(crate) const PROFILE_UNAVAILABLE: &str = "profile-unavailable";
 pub(crate) const HISTORY_UNAVAILABLE: &str = "history-unavailable";
 pub(crate) const FIND_UNAVAILABLE: &str = "find-unavailable";
 pub(crate) const NEEDLE_TOO_LONG: &str = "needle-too-long";
+pub(crate) const UNSUPPORTED_PLATFORM: &str = "unsupported-platform";
 pub(crate) const TAB_ROW_GONE: &str = "tab-row-gone";
 pub(crate) const TAB_ROW_OWNER: &str = "tab-row-owner";
 pub(crate) const TAB_ROWS_CHANGED: &str = "tab-rows-changed";

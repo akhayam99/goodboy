@@ -11,6 +11,7 @@ const WORDS: ReadonlyMap<string, string> = new Map([
   ['tab-closed', 'This tab was put to sleep. Open it again.'],
   ['window-gone', 'This window lost the tab. Open the page again.'],
   ['other-window', 'This tab is open in another window.'],
+  ['unsupported-platform', 'Inspect needs macOS 13.3 or later.'],
   ['session-closing', 'This session is closing.'],
   ['tab-row-gone', 'This tab is gone. Reload the session.'],
   ['tab-row-owner', 'This tab moved. Reload the session.'],

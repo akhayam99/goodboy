@@ -1,4 +1,4 @@
-import { ArrowUpRight, Copy, CopyPlus, X } from 'lucide-react';
+import { ArrowUpRight, Code, Copy, CopyPlus, X } from 'lucide-react';
 import {
   AnchoredPopover,
   ICON_SIZE,
@@ -9,6 +9,7 @@ import {
 } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { currentPlatform } from '../../../../shared/platform';
 import type { BrowserPaneModel } from '../../types';
 import { browserMoreOffOf } from './browserMoreRows';
 
@@ -23,7 +24,7 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
   const dropdown = useDropdown({
     width: 'min-w-[200px]',
     maxWidth: MENU_MAX_WIDTH,
-    expectedHeight: 200,
+    expectedHeight: 240,
     expectedWidth: 220,
   });
   const shown = model.shown;
@@ -68,6 +69,18 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
       isDisabled: isOff.isDuplicateOff,
       onSelect: model.duplicate,
     },
+    ...(currentPlatform() === 'darwin'
+      ? [
+          {
+            kind: 'item' as const,
+            key: 'inspect',
+            label: 'Inspect in Safari',
+            icon: Code,
+            isDisabled: isOff.isInspectOff,
+            onSelect: model.inspect,
+          },
+        ]
+      : []),
     {
       kind: 'item',
       key: 'closeTab',

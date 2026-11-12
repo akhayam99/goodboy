@@ -768,6 +768,7 @@ pub fn run() {
             browser::commands::browser_tab_back,
             browser::commands::browser_tab_forward,
             browser::commands::browser_tab_passkey_dismiss,
+            browser::commands::browser_tab_inspectable,
             browser::commands::browser_tab_close,
             browser::commands::browser_tab_list,
             browser::commands::browser_session_close,

@@ -225,6 +225,11 @@ pub async fn browser_tab_forward(webview: Webview, args: TabArgs) -> Result<(), 
 }
 
 #[tauri::command]
+pub async fn browser_tab_inspectable(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
+    host::make_inspectable(&owned_tab(&webview, &args.tab_id)?)
+}
+
+#[tauri::command]
 pub async fn browser_tab_close(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     check_owner(&webview, &args.tab_id)?;
     host::close_tab(webview.app_handle(), &args.tab_id)

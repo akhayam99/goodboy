@@ -134,6 +134,7 @@ const stubHost = () => {
     },
     browser_tab_back: null,
     browser_tab_forward: null,
+    browser_tab_inspectable: null,
     browser_tab_reload: null,
     browser_tab_close: ({ args }: TabArgs) => {
       live = live.filter((facts) => facts.id !== args.tabId);
@@ -732,6 +733,67 @@ describe('the browser pane', () => {
       'Duplicate',
       'Close tab',
     ]);
+  });
+
+  it('adds Inspect in Safari to the More menu on macOS only', async () => {
+    const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
+    agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    const rows = await screen.findAllByRole('menuitem');
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'Open in your browser',
+      'Open as page',
+      'Copy address',
+      'Duplicate',
+      'Inspect in Safari',
+      'Close tab',
+    ]);
+    agent.mockRestore();
+  });
+
+  it('keeps Inspect in Safari out of the More menu off macOS', async () => {
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    await screen.findAllByRole('menuitem');
+    expect(screen.queryByRole('menuitem', { name: 'Inspect in Safari' })).toBeNull();
+  });
+
+  it('makes the shown tab inspectable and says where to look', async () => {
+    const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
+    agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_inspectable' })).toEqual([{ tabId: 'live-1' }]),
+    );
+    expect((await screen.findByRole('status')).textContent).toBe(
+      'Open the Develop menu in Safari and pick this tab.',
+    );
+    agent.mockRestore();
+  });
+
+  it('shows the reason and no hint when the tab cannot be made inspectable', async () => {
+    const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
+    agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
+    await openFirstPage();
+    failCommand({ command: 'browser_tab_inspectable', reason: 'unsupported-platform' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Inspect needs macOS 13.3 or later.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+    agent.mockRestore();
   });
 
   it('copies the address from the More menu', async () => {

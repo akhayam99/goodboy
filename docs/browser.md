@@ -334,7 +334,21 @@ it; Esc inside the page goes to the page.
 - **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
   browser, Open as page (see Moves, absent when the dock has no page to open),
   Copy address, Duplicate (`model.duplicate` opens the shown address in a new
-  tab of the session) and Close tab (off for a pin).
+  tab of the session), Inspect in Safari (macOS only, see Inspect in Safari)
+  and Close tab (off for a pin).
+- **Inspect in Safari** makes the shown tab visible in Safari's Develop menu,
+  to see why a page renders differently here than in another browser.
+  `model.inspect` calls `browser_tab_inspectable`, which sends the public
+  `setInspectable:` selector to the tab's `WKWebView` through `with_webview`
+  (`platform/web_inspect.rs`). It works on macOS 13.3 and later; the host
+  checks that the class answers the selector and refuses with
+  `unsupported-platform` otherwise, and on every other platform. The row is
+  absent off macOS and off when no tab is shown. A line under the row says to
+  open Safari's Develop menu and pick the tab (Safari shows Develop once it is
+  turned on in its settings). The property stays on until the tab closes. The
+  `devtools` cargo feature stays off and no private selector is used, so there
+  is no in-app inspector and a release build is not made inspectable as a
+  whole: only a tab the person chose is.
 - **⌘R reloads the shown tab** while the browser has the keyboard: a click or
   focus in the pane, or the page webview itself. The pane and the page register
   `model.reload` with `useReloadSurface` (the page as the main surface of its
@@ -644,7 +658,7 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  nineteen `browser_*` commands (`browser_page_keys` sets the page keys); `page_keys.rs`
+  twenty `browser_*` commands (`browser_page_keys` sets the page keys); `page_keys.rs`
   holds the chord parse, the key codes, the `PageKeys` state and
   `route_page_key`; `load.rs` maps the page load callback to
   `browser://tab-load` (`started`, `finished`, the tab id and the address) for
@@ -662,9 +676,14 @@ words (`features/browser/browserFailureText.ts`).
   `browser/passkey.js`; `host.rs` adds the script to every frame,
   registers the handler after the view is made and forgets the handler when
   the tab closes, when its open is refused late and when its window is
-  destroyed (`forget_window`). These two `platform/` files and the key monitor
-  in `platform/key_monitor.rs` are the only `unsafe` the host needs, which the
-  unsafe ratchet in `proc/signal.rs` enforces.
+  destroyed (`forget_window`). These two `platform/` files, the key monitor in
+  `platform/key_monitor.rs` and `platform/web_inspect.rs` are the only `unsafe`
+  the host needs, which the unsafe ratchet in `proc/signal.rs` enforces.
+  `web_inspect.rs` sends `setInspectable:` and nothing
+  else; `browser::tests` fails if production code names `open_devtools`,
+  `_inspector` or `developerExtrasEnabled`, or if `Cargo.toml` names `devtools`.
+  No test can attach Safari headless, so the manual gate lists it
+  (`docs/testing.md` → Manual release gate: inspect in Safari).
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
   `about:blank` and `about:srcdoc` frames and a page that sends itself to the
@@ -749,7 +768,8 @@ words (`features/browser/browserFailureText.ts`).
   call, navigation and history by live id, a refused navigation, close before
   the row delete, pin, the pill (title and host, the host alone, the selected
   address on click, Esc and blur back, the field kept on a refusal), the five
-  More rows with Copy, Duplicate and Close tab, an overlay over the view and one elsewhere, a late open
+  More rows with Copy, Duplicate and Close tab, the sixth row Inspect in Safari
+  on macOS only with its line and its refusal, an overlay over the view and one elsewhere, a late open
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again
   and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
