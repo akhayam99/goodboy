@@ -1443,6 +1443,16 @@ CREATE TABLE browser_tabs (
   CHECK ((session_id IS NULL) <> (project_id IS NULL))
 );
 
+CREATE TABLE browser_visits (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE (session_id, url)
+);
+
 CREATE INDEX idx_permission_audit_retry_created ON permission_audit_retry(created_at);
 
 CREATE INDEX idx_turn_events_agent_created ON turn_events(agent_id, created_at);
@@ -1856,6 +1866,8 @@ CREATE INDEX idx_turn_file_sets_session ON turn_file_sets(session_id, recorded_a
 CREATE INDEX idx_browser_tabs_session ON browser_tabs(session_id, position);
 
 CREATE INDEX idx_browser_tabs_project ON browser_tabs(project_id, position);
+
+CREATE INDEX idx_browser_visits_session ON browser_visits(session_id, updated_at);
 
 CREATE VIEW live_agents AS SELECT * FROM agents WHERE deleted_at IS NULL;
 

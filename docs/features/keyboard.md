@@ -203,7 +203,8 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Beside the session**, at the right of the trail, puts it back. The page never reloads, so a half-typed form stays.
 - The page has no title band: the trail, the address row, then the page. The first button of the address row folds the tab list, and **New tab** is the last row of the list.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
-- Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
+- The address is a command field. Type an address and press **Enter** to open it beside the session, or **⌘Enter** to open it in your browser. A localhost address opens your dev server.
+- Type a word to find a tab of any session, a project pin or a page this session visited. Words are never searched on the web; when nothing matches, one quiet line says so. The arrows move between rows.
 - A port chip, a running Service's port and a link in a conversation, a decision or an artifact open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
 - Rest on a localhost link to see its page title and address before you open it.
 - **⌘L** goes to the address while the browser is on screen. Elsewhere it stays Ask.

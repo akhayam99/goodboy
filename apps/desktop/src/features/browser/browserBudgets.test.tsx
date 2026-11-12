@@ -168,7 +168,7 @@ const renderPane = () =>
   );
 
 const openPage = async ({ text }: TextParams) => {
-  const field = screen.getByRole('textbox', { name: 'Address' });
+  const field = screen.getByRole('combobox', { name: 'Address or search' });
   fireEvent.change(field, { target: { value: text } });
   const form = field.closest('form');
   if (form === null) {

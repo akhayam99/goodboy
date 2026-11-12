@@ -96,6 +96,7 @@ import { m237TurnFileSets } from './m237-turn-file-sets';
 import { m238NotificationActedAt } from './m238-notification-acted-at';
 import { m239ThreadReads } from './m239-thread-reads';
 import { m240BrowserTabs } from './m240-browser-tabs';
+import { m241BrowserVisits } from './m241-browser-visits';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -485,4 +486,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 238, sql: m238NotificationActedAt },
   { version: 239, sql: m239ThreadReads },
   { version: 240, sql: m240BrowserTabs },
+  { version: 241, sql: m241BrowserVisits },
 ];

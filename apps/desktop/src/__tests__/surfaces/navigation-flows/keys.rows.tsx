@@ -614,11 +614,11 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       useAppStore
         .getState()
         .openDrawer({ kind: 'browser', sessionId: ctx.sessionId, payload: null });
-      await screen.findByRole('textbox', { name: 'Address' });
+      await screen.findByRole('combobox', { name: 'Address or search' });
       await press('browser.address')();
     },
     lands: async (ctx) => {
-      const field = await screen.findByRole('textbox', { name: 'Address' });
+      const field = await screen.findByRole('combobox', { name: 'Address or search' });
       await waitFor(() => expect(document.activeElement).toBe(field));
       expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
       expect(selectOpenDrawer(useAppStore.getState())?.sessionId).toBe(ctx.sessionId);

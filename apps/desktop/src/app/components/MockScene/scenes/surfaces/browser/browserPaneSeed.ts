@@ -4,11 +4,18 @@ import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
 import type { BrowserTabFacts } from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab } from '../../../../../../store/slices/browser/types';
+import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 
 export type BrowserPaneSceneState =
-  'pane' | 'tabs' | 'page' | 'peek' | 'address' | 'more' | 'passkey' | 'loading';
+  'pane' | 'tabs' | 'page' | 'peek' | 'address' | 'field' | 'more' | 'passkey' | 'loading';
+
+const VISITS: ReadonlyArray<BrowserVisit> = [
+  { url: 'http://localhost:5173/checkout/confirm', title: 'Confirm order', visitedAt: 3 },
+  { url: 'http://localhost:5173/checkout', title: 'Checkout', visitedAt: 2 },
+  { url: 'https://docs.harborline.dev/tax', title: 'Tax rates', visitedAt: 1 },
+];
 
 const CHECKOUT_ORIGIN = 'http://localhost:5173';
 const CHECKOUT_FAVICON =
@@ -174,6 +181,8 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return { origin: CHECKOUT_ORIGIN, src: CHECKOUT_FAVICON };
       case 'browser_tab_stop':
         return null;
+      case 'browser_visits_list':
+        return VISITS;
       case 'browser_tab_open':
         opened += 1;
         return factsOf({

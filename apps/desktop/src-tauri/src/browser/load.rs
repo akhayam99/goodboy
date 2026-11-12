@@ -3,6 +3,7 @@ use tauri::webview::PageLoadEvent;
 use tauri::{AppHandle, Emitter, EventTarget, Manager, Runtime};
 
 use super::registry::BrowserRegistry;
+use super::visit_rows;
 
 pub(crate) const TAB_LOAD_EVENT: &str = "browser://tab-load";
 
@@ -39,7 +40,9 @@ pub(crate) fn report_load<R: Runtime>(
         registry.set_passkey_blocked(tab_id, false);
     }
     if phase == LoadPhase::Finished {
-        registry.set_url(tab_id, url);
+        if let Some(facts) = registry.set_url(tab_id, url) {
+            visit_rows::save_visit(app, &facts.session_id, url, &facts.title);
+        }
     }
     let Some(window_label) = registry.window_of(tab_id) else {
         return;

@@ -283,7 +283,7 @@ const renderPane = () =>
 
 const openPill = () => {
   fireEvent.click(screen.getByRole('button', { name: /^Edit address/ }));
-  return screen.getByRole('textbox', { name: 'Address' });
+  return screen.getByRole('combobox', { name: 'Address or search' });
 };
 
 const pageTitled = async ({ text }: TypeParams) => {
@@ -293,7 +293,7 @@ const pageTitled = async ({ text }: TypeParams) => {
 };
 
 const typeAddress = async ({ text }: TypeParams) => {
-  const field = screen.queryByRole('textbox', { name: 'Address' }) ?? openPill();
+  const field = screen.queryByRole('combobox', { name: 'Address or search' }) ?? openPill();
   fireEvent.change(field, { target: { value: text } });
   const form = field.closest('form');
   if (form === null) {
@@ -362,14 +362,13 @@ describe('the browser pane', () => {
     expect(callsOf({ command: 'browser_tab_show' })).toEqual([{ tabId: 'live-1' }]);
   });
 
-  it('refuses words inline and never asks the host to load them', async () => {
+  it('shows one quiet line for words that match nothing and never asks the host to load them', async () => {
     renderPane();
 
     await typeAddress({ text: 'checkout total' });
 
-    expect(screen.getByRole('alert').textContent).toBe(
-      "Type a full address, like harborline.dev. Search isn't available here.",
-    );
+    expect(screen.getByRole('status').textContent).toBe('No tab or address matches');
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
   });
 
@@ -658,7 +657,7 @@ describe('the browser pane', () => {
     const pill = screen.getByRole('button', { name: 'Edit address, Checkout' });
     expect(pill.textContent).toContain('Checkout');
     expect(pill.textContent).toContain('localhost:5173');
-    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
   });
 
   it('shows the host once for a tab with no title yet', async () => {
@@ -682,7 +681,7 @@ describe('the browser pane', () => {
     fireEvent.keyDown(field, { key: 'Escape' });
 
     screen.getByRole('button', { name: /^Edit address/ });
-    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
     expect(openPill()).toHaveProperty('value', 'http://localhost:5173/checkout');
   });
 
@@ -692,7 +691,7 @@ describe('the browser pane', () => {
     fireEvent.blur(openPill());
 
     screen.getByRole('button', { name: /^Edit address/ });
-    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
   });
 
   it('returns to the pill after a submit navigated the shown tab', async () => {
@@ -706,16 +705,18 @@ describe('the browser pane', () => {
     screen.getByRole('button', { name: /^Edit address/ });
   });
 
-  it('keeps the field and the refusal when a submit is refused', async () => {
+  it('keeps the field and the refusal when the host refuses a typed address', async () => {
     await openFirstPage();
+    failCommand({ command: 'browser_tab_navigate', reason: 'not-web-address' });
 
-    await typeAddress({ text: 'checkout total' });
+    await typeAddress({ text: 'acme.example' });
 
-    expect(screen.getByRole('alert').textContent).toContain('Type a full address');
-    expect(screen.getByRole('textbox', { name: 'Address' })).toHaveProperty(
+    expect(screen.getByRole('alert').textContent).toBe("That address can't open here.");
+    expect(screen.getByRole('combobox', { name: 'Address or search' })).toHaveProperty(
       'value',
-      'checkout total',
+      'acme.example',
     );
+    screen.getByRole('listbox', { name: 'Suggestions' });
   });
 
   it('lists five rows in the More menu', async () => {
@@ -776,7 +777,9 @@ describe('the browser pane', () => {
   it('focuses the address field when the pane has no tab', () => {
     renderPane();
 
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Address' }));
+    expect(document.activeElement).toBe(
+      screen.getByRole('combobox', { name: 'Address or search' }),
+    );
   });
 
   it('says a passkey is blocked on the shown tab and opens its address in your browser', async () => {

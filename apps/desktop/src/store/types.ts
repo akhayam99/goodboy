@@ -37,6 +37,7 @@ import type { SlackThreadsSliceState } from './slices/slack-threads/state';
 import type { BudgetSliceState } from './slices/budget/state';
 import type { BrowserState } from './slices/browser/state';
 import type { BrowserHostState } from './slices/browser-host/state';
+import type { BrowserVisitsState } from './slices/browser-visits/state';
 import type { MonitoringSliceState } from './slices/monitoring/state';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { OrchestratorHintDraftsState } from './slices/orchestratorHintDrafts/state';
@@ -138,6 +139,7 @@ type AppSliceState = ArtifactsState &
   BudgetSliceState &
   BrowserState &
   BrowserHostState &
+  BrowserVisitsState &
   MonitoringSliceState &
   ResolveState &
   ReviewNavigationState &

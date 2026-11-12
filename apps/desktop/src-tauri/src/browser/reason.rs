@@ -21,6 +21,7 @@ pub(crate) const TAB_ROW_GONE: &str = "tab-row-gone";
 pub(crate) const TAB_ROW_OWNER: &str = "tab-row-owner";
 pub(crate) const TAB_ROWS_CHANGED: &str = "tab-rows-changed";
 pub(crate) const TAB_ROWS_FAILED: &str = "tab-rows-failed";
+pub(crate) const VISITS_FAILED: &str = "visits-failed";
 
 pub(crate) fn refused(code: &str) -> MessageError {
     MessageError::Refused(code.to_string())

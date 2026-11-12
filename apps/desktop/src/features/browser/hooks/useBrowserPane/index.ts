@@ -166,6 +166,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   };
 
   return {
+    sessionId,
     tabs,
     pins,
     projectName,

@@ -19,6 +19,7 @@ use super::reason::{
     self, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
 };
 use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts, TabState};
+use super::visit_rows;
 use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::util::{now_ms, uuid_v4, MessageError};
 
@@ -278,8 +279,15 @@ fn builder_for<R: Runtime>(
             );
         })
         .on_document_title_changed(move |webview, title| {
-            let registry = webview.app_handle().state::<BrowserRegistry>();
-            registry.set_title(&title_tab, &title);
+            let app = webview.app_handle();
+            let registry = app.state::<BrowserRegistry>();
+            let Some(facts) = registry.set_title(&title_tab, &title) else {
+                return;
+            };
+            let Ok(live) = webview.url() else {
+                return;
+            };
+            visit_rows::save_visit_title(app, &facts.session_id, live.as_str(), &title);
         })
 }
 
