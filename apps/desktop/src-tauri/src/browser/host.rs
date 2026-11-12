@@ -408,6 +408,7 @@ pub(crate) fn step_history<R: Runtime>(
 pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<(), MessageError> {
     let registry = app.state::<BrowserRegistry>();
     let _gate = registry.gate();
+    registry.revoke_local(tab_id);
     if let Some(webview) = app.get_webview(&guard::label_of(tab_id)) {
         webview.close().map_err(failed)?;
     }

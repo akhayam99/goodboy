@@ -76,7 +76,8 @@ opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
   (`local-type`). A new tab starts on `about:blank`, gets its grant, then
   loads the file.
 - **The grant.** It belongs to one tab, lives in the registry beside the tab
-  and goes with it. It names the file's folder and a random token; the live
+  and goes with it: closing the tab revokes its grants before the webview
+  closes, so a close that fails still leaves no grant. It names the file's folder and a random token; the live
   address is `gblocal://localhost/<token>/<absolute path>`
   (`http://gblocal.localhost/...` on Windows). `on_navigation` lets a tab
   move to a `gblocal` address only when the token is its own and the path is

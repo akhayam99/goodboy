@@ -499,6 +499,12 @@ impl BrowserRegistry {
         Some(token)
     }
 
+    pub(crate) fn revoke_local(&self, id: &str) {
+        if let Some(tab) = lock_or_recover(&self.tabs).by_id.get_mut(id) {
+            tab.grants.clear();
+        }
+    }
+
     pub(crate) fn local_grant(&self, id: &str, token: &str) -> Option<LocalGrant> {
         lock_or_recover(&self.tabs)
             .by_id
