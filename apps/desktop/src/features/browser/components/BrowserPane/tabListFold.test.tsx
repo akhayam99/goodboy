@@ -71,6 +71,7 @@ const factsOf = ({ id, state }: { readonly id: string; readonly state: BrowserTa
   state,
   isShown: false,
   hiddenSinceMs: null,
+  isPasskeyBlocked: false,
   openerId: null,
 });
 

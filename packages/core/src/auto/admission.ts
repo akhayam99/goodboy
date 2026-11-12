@@ -28,6 +28,7 @@ export type AdmissionLiveArtifact = Readonly<{
 export type AdmissionArtifactFacts = Readonly<{
   registered: AutoArtifact | null;
   live: AdmissionLiveArtifact | null;
+  openWriterRoles?: ReadonlyArray<string>;
 }>;
 
 export type AdmissionSnapshot = Readonly<{

@@ -7,7 +7,7 @@ import type { BrowserTab } from '../../../../../../store/slices/browser/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 
-export type BrowserPaneSceneState = 'pane' | 'tabs' | 'rail' | 'page' | 'peek';
+export type BrowserPaneSceneState = 'pane' | 'tabs' | 'rail' | 'page' | 'peek' | 'passkey';
 
 const PEEK_DECISION =
   'Check the tax line on [localhost:5173/checkout](http://localhost:5173/checkout) before the PR goes up';
@@ -58,6 +58,8 @@ const ownerSessionOf = ({ payload }: PayloadParams): unknown => {
   return typeof owner === 'object' && owner !== null ? Reflect.get(owner, 'sessionId') : null;
 };
 
+const SIGN_IN_URL = 'https://id.cascadia.dev/signin';
+
 const ROUNDING_ID = brandId<SessionId>({ value: 'mock-browser-rounding' });
 
 const rowOf = ({ id, url, title, sessionId, projectId, position }: RowParams): BrowserTab => ({
@@ -95,6 +97,7 @@ const factsOf = ({
   isShown: false,
   hiddenSinceMs: null,
   openerId: null,
+  isPasskeyBlocked: false,
 });
 
 const seedPeek = ({ tabs }: PeekParams): void => {
@@ -113,11 +116,12 @@ const seedPeek = ({ tabs }: PeekParams): void => {
 export const seedBrowserPane = ({ state }: SeedParams): void => {
   seedActivityRunScene();
   const projectId = pinProjectOf({ state: useAppStore.getState(), sessionId: SESSION_ID });
+  const isPasskey = state === 'passkey';
   const tabs = [
     rowOf({
       id: 'mock-browser-checkout',
-      url: 'http://localhost:5173/checkout',
-      title: 'Checkout',
+      url: isPasskey ? SIGN_IN_URL : 'http://localhost:5173/checkout',
+      title: isPasskey ? 'Sign in to Cascadia' : 'Checkout',
       sessionId: SESSION_ID,
       projectId: null,
       position: 0,
@@ -154,7 +158,9 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
       position: 0,
     }),
   ];
-  const live = tabs.map(factsOf);
+  let live = tabs
+    .map(factsOf)
+    .map((facts, index) => ({ ...facts, isPasskeyBlocked: isPasskey && index === 0 }));
   let opened = 0;
   if (state === 'peek') {
     seedPeek({ tabs });
@@ -176,6 +182,13 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
           url: textOf({ payload, field: 'url' }),
           title: '',
         });
+      case 'browser_tab_passkey_dismiss': {
+        const tabId = textOf({ payload, field: 'tabId' });
+        live = live.map((facts) =>
+          facts.id === tabId ? { ...facts, isPasskeyBlocked: false } : facts,
+        );
+        return live.find((facts) => facts.id === tabId) ?? null;
+      }
       case 'browser_tab_show':
       case 'browser_tab_hide':
         return live.find((facts) => facts.id === textOf({ payload, field: 'tabId' })) ?? live[0];

@@ -26,6 +26,7 @@ pub(crate) struct TabFacts {
     pub(crate) is_shown: bool,
     pub(crate) hidden_since_ms: Option<i64>,
     pub(crate) opener_id: Option<String>,
+    pub(crate) is_passkey_blocked: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -57,6 +58,7 @@ struct Tabs {
     pending_popups: HashMap<String, usize>,
     closings: HashMap<(String, String), u64>,
     clearing: HashSet<ProfileId>,
+    held_passkeys: HashSet<String>,
 }
 
 impl Tabs {
@@ -214,6 +216,7 @@ impl BrowserRegistry {
     fn insert_locked(tabs: &mut Tabs, tab: NewTab<'_>) -> TabFacts {
         let opened = tabs.next_opened;
         tabs.next_opened += 1;
+        let is_passkey_blocked = tabs.held_passkeys.remove(tab.id);
         let facts = TabFacts {
             id: tab.id.to_string(),
             session_id: tab.session_id.to_string(),
@@ -223,6 +226,7 @@ impl BrowserRegistry {
             is_shown: tab.is_shown,
             hidden_since_ms: hidden_since(tab.is_shown, tab.now_ms),
             opener_id: tab.opener_id.map(str::to_string),
+            is_passkey_blocked,
         };
         tabs.by_id.insert(
             tab.id.to_string(),
@@ -314,10 +318,9 @@ impl BrowserRegistry {
     }
 
     pub(crate) fn remove(&self, id: &str) -> Option<TabFacts> {
-        lock_or_recover(&self.tabs)
-            .by_id
-            .remove(id)
-            .map(|tab| tab.facts)
+        let mut tabs = lock_or_recover(&self.tabs);
+        tabs.held_passkeys.remove(id);
+        tabs.by_id.remove(id).map(|tab| tab.facts)
     }
 
     pub(crate) fn list(&self, session_id: &str, window_label: &str) -> Vec<TabFacts> {
@@ -331,13 +334,19 @@ impl BrowserRegistry {
         found.into_iter().map(|tab| tab.facts.clone()).collect()
     }
 
-    pub(crate) fn remove_window(&self, window_label: &str) -> usize {
+    pub(crate) fn remove_window(&self, window_label: &str) -> Vec<String> {
         let mut tabs = lock_or_recover(&self.tabs);
-        let before = tabs.by_id.len();
+        let mut removed: Vec<String> = tabs
+            .by_id
+            .iter()
+            .filter(|(_, tab)| tab.window_label == window_label)
+            .map(|(id, _)| id.clone())
+            .collect();
+        removed.sort();
         tabs.by_id.retain(|_, tab| tab.window_label != window_label);
         tabs.closings
             .retain(|(_, window), _| window != window_label);
-        before - tabs.by_id.len()
+        removed
     }
 
     pub(crate) fn session_ids(&self) -> Vec<String> {
@@ -473,6 +482,21 @@ impl BrowserRegistry {
 
     pub(crate) fn set_title(&self, id: &str, title: &str) -> Option<TabFacts> {
         self.update(id, |facts| facts.title = title.to_string())
+    }
+
+    #[cfg(any(target_os = "macos", test))]
+    pub(crate) fn mark_passkey_blocked(&self, id: &str) -> Option<TabFacts> {
+        let mut tabs = lock_or_recover(&self.tabs);
+        let Some(tab) = tabs.by_id.get_mut(id) else {
+            tabs.held_passkeys.insert(id.to_string());
+            return None;
+        };
+        tab.facts.is_passkey_blocked = true;
+        Some(tab.facts.clone())
+    }
+
+    pub(crate) fn set_passkey_blocked(&self, id: &str, is_blocked: bool) -> Option<TabFacts> {
+        self.update(id, |facts| facts.is_passkey_blocked = is_blocked)
     }
 
     fn update(&self, id: &str, change: impl FnOnce(&mut TabFacts)) -> Option<TabFacts> {
@@ -782,6 +806,45 @@ mod tests {
     }
 
     #[test]
+    fn a_tab_starts_without_a_blocked_passkey() {
+        let registry = BrowserRegistry::default();
+        let facts = open(&registry, "a", "harborline", true);
+        assert!(!facts.is_passkey_blocked);
+    }
+
+    #[test]
+    fn holds_a_passkey_ask_that_arrives_before_its_tab_is_registered() {
+        let registry = BrowserRegistry::default();
+        assert_eq!(registry.mark_passkey_blocked("a"), None);
+        let facts = open(&registry, "a", "harborline", true);
+        assert!(facts.is_passkey_blocked);
+        let other = open(&registry, "b", "harborline", true);
+        assert!(!other.is_passkey_blocked);
+    }
+
+    #[test]
+    fn drops_a_held_passkey_ask_when_its_tab_is_removed_unregistered() {
+        let registry = BrowserRegistry::default();
+        registry.mark_passkey_blocked("a");
+        registry.remove("a");
+        let facts = open(&registry, "a", "harborline", true);
+        assert!(!facts.is_passkey_blocked);
+    }
+
+    #[test]
+    fn marks_and_clears_a_blocked_passkey_on_its_own_tab_only() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "a", "harborline", true);
+        open(&registry, "b", "harborline", true);
+        let marked = registry.set_passkey_blocked("a", true).expect("tab exists");
+        assert!(marked.is_passkey_blocked);
+        assert!(!registry.facts("b").expect("tab exists").is_passkey_blocked);
+        registry.set_passkey_blocked("a", false);
+        assert!(!registry.facts("a").expect("tab exists").is_passkey_blocked);
+        assert_eq!(registry.set_passkey_blocked("gone", true), None);
+    }
+
+    #[test]
     fn forgets_a_removed_tab() {
         let registry = BrowserRegistry::default();
         open(&registry, "a", "harborline", true);
@@ -798,7 +861,7 @@ mod tests {
         let registry = BrowserRegistry::default();
         open(&registry, "a", "harborline", true);
         open_in(&registry, "b", "win-2");
-        assert_eq!(registry.remove_window("win-2"), 1);
+        assert_eq!(registry.remove_window("win-2"), vec!["b".to_string()]);
         assert_eq!(registry.ids_of_session("harborline", "main"), vec!["a"]);
         assert!(registry.ids_of_session("harborline", "win-2").is_empty());
     }
@@ -980,6 +1043,7 @@ mod tests {
                 is_shown: false,
                 hidden_since_ms: Some(3_000),
                 opener_id: Some("b".to_string()),
+                is_passkey_blocked: true,
             },
             json!({
                 "id": "a",
@@ -990,6 +1054,7 @@ mod tests {
                 "isShown": false,
                 "hiddenSinceMs": 3000,
                 "openerId": "b",
+                "isPasskeyBlocked": true,
             }),
         );
     }

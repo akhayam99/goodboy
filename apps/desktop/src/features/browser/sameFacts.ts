@@ -14,6 +14,7 @@ export const sameFacts = ({ a, b }: Params): boolean =>
       other.id === fact.id &&
       other.url === fact.url &&
       other.state === fact.state &&
-      other.title === fact.title
+      other.title === fact.title &&
+      other.isPasskeyBlocked === fact.isPasskeyBlocked
     );
   });

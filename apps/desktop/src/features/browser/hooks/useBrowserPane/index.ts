@@ -238,6 +238,8 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         setError(browserFailureText({ error: failure })),
       );
     },
+    isPasskeyBlocked: factOf({ liveId: shownLiveId })?.isPasskeyBlocked === true,
+    dismissPasskey: () => onShown({ command: browserHost.dismissPasskey }),
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   };
 };

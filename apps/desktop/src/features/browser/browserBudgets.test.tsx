@@ -102,6 +102,7 @@ const stubHost = () => {
         isShown: false,
         hiddenSinceMs: null,
         openerId: null,
+        isPasskeyBlocked: false,
       };
       live = [...live, facts];
       return facts;

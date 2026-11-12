@@ -153,6 +153,7 @@ const stubHost = () => {
         isShown: false,
         hiddenSinceMs: null,
         openerId: null,
+        isPasskeyBlocked: false,
       };
     },
     browser_tab_list: () => [],

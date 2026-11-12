@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { installFakeResizeObserver } from '../../../../../../test/fakeResizeObserver';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../../test/sceneInvoke';
@@ -68,6 +68,8 @@ describe('the browser pane scenes', () => {
       'browser-page-dark',
       'browser-pane',
       'browser-pane-dark',
+      'browser-pane-passkey',
+      'browser-pane-passkey-dark',
       'browser-pane-rail',
       'browser-pane-rail-dark',
       'browser-pane-tabs',
@@ -132,6 +134,32 @@ describe('the browser pane scenes', () => {
     expect(card.textContent).toContain('http://localhost:5173/checkout');
     expect(card.textContent).toContain('Shows its tab beside the session.');
     expect(screen.queryByRole('region', { name: 'Browser' })).toBeNull();
+  });
+
+  it('says a sign-in asked for a passkey above the tab it belongs to', async () => {
+    mount({ id: 'browser-pane-passkey' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    expect(within(pane).getByRole('textbox', { name: 'Address' })).toHaveProperty(
+      'value',
+      'https://id.cascadia.dev/signin',
+    );
+    const title = await within(pane).findByText(
+      "Passkeys don't work in Goodboy's browser",
+      {},
+      WAIT,
+    );
+    const notice = title.closest<HTMLElement>('[role="status"]');
+    if (notice === null) {
+      throw new Error('The passkey notice has no status region.');
+    }
+    within(notice).getByRole('button', { name: 'Open in your browser' });
+    fireEvent.click(within(notice).getByRole('button', { name: 'Dismiss' }));
+
+    await waitFor(
+      () => expect(screen.queryByText("Passkeys don't work in Goodboy's browser")).toBeNull(),
+      WAIT,
+    );
   });
 
   it('lists the session tabs and the project pins beside the page', async () => {
