@@ -8,6 +8,7 @@ import { NAMES } from '../../../../../../shared/utils/names';
 import { branchGroupOrderOf } from '../../../../branchGroupOrderOf';
 import { branchGroupsOf, namedBranchGroupCountOf } from '../../../../branchGroupsOf';
 import { openBranchWorkTab } from '../../../../openBranchWorkTab';
+import { runBranchMembershipOf } from '../../../../runBranchMembershipOf';
 import { runGroupsOf } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import { useMountRows } from '../../../../../../shared/hooks/useMountRows';
@@ -48,7 +49,11 @@ export const RunsGrid = ({ session, runs: sessionRuns }: Props) => {
     [mountGroups],
   );
   const branchCount = useMemo(
-    () => namedBranchGroupCountOf({ branchLists: runs.map((run) => run.branches), mounts }),
+    () =>
+      namedBranchGroupCountOf({
+        branchLists: runs.map((run) => runBranchMembershipOf({ run })),
+        mounts,
+      }),
     [runs, mounts],
   );
   const groupBy = useGroupBy({ sessionId, branchCount });

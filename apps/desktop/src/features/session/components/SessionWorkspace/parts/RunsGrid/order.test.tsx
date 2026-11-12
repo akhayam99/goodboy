@@ -300,6 +300,36 @@ describe('Runs by branch order', () => {
     within(gone).getByRole('button', { name: /^Open Block double credits/ });
   });
 
+  it('groups by branch when the second branch is one whose worktree was removed', () => {
+    renderWorld({
+      mounts: [{ ...DUP, isAttached: false, diskState: 'removed' }, RETRY],
+      agents: [
+        agentOf({
+          key: 'gone',
+          name: 'Block double credits',
+          status: 'completed',
+          mount: DUP,
+          at: '2026-10-13T12:00:00.000Z',
+        }),
+        agentOf({
+          key: 'limit',
+          name: 'Limit retries',
+          status: 'running',
+          mount: RETRY,
+          at: '2026-10-13T10:00:00.000Z',
+        }),
+      ],
+    });
+
+    screen.getByRole('tab', { name: 'By state' });
+    expect(topHeadings()).toEqual(['feat/retry-budget', 'Finished']);
+
+    fireEvent.click(finishedToggle());
+
+    const gone = screen.getByRole('list', { name: 'fix/duplicate-credit' });
+    within(gone).getByRole('button', { name: /^Open Block double credits/ });
+  });
+
   it('never lists an archived run, by branch or by state', () => {
     const old = aNowRun({
       key: 'old',
