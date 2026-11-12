@@ -40,6 +40,7 @@ export type CommandRun = (params: RunParams) => void;
 
 export type CommandField = {
   readonly fieldRef: RefObject<HTMLInputElement | null>;
+  readonly pillRef: RefObject<HTMLButtonElement | null>;
   readonly keysRef: RefObject<CommandKeys | null>;
   readonly runRef: RefObject<CommandRun | null>;
   readonly submit: () => Promise<void>;
@@ -67,6 +68,8 @@ export const useCommandField = ({ model }: Params): CommandField => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const listId = useId();
   const fieldRef = useRef<HTMLInputElement | null>(null);
+  const pillRef = useRef<HTMLButtonElement | null>(null);
+  const shouldFocusPillRef = useRef(false);
   const keysRef = useRef<CommandKeys | null>(null);
   const runRef = useRef<CommandRun | null>(null);
   const isEmpty = model.shown === null;
@@ -89,6 +92,14 @@ export const useCommandField = ({ model }: Params): CommandField => {
     fieldRef.current?.focus({ preventScroll: true });
   }, [isFieldShown, isEmpty, model.isDrafting]);
 
+  useEffect(() => {
+    if (isFieldShown || !shouldFocusPillRef.current) {
+      return;
+    }
+    shouldFocusPillRef.current = false;
+    pillRef.current?.focus({ preventScroll: true });
+  }, [isFieldShown]);
+
   const leave = (): void => {
     setDraft(null);
     setIsEditing(false);
@@ -102,12 +113,18 @@ export const useCommandField = ({ model }: Params): CommandField => {
     fieldRef.current?.blur();
   };
 
-  useEscapeLayer(close, isOpen || (isEditing && !isEmpty));
+  const escape = (): void => {
+    shouldFocusPillRef.current = !isEmpty;
+    close();
+  };
+
+  useEscapeLayer(escape, isOpen || (isEditing && !isEmpty));
 
   const value = draft ?? model.address;
 
   return {
     fieldRef,
+    pillRef,
     keysRef,
     runRef,
     submit: async () => {

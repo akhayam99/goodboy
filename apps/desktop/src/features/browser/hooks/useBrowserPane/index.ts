@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { copyToClipboard } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
@@ -292,9 +293,9 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       if (address === '') {
         return;
       }
-      void navigator.clipboard
-        .writeText(address)
-        .catch((failure: unknown) => setError(browserFailureText({ error: failure })));
+      void copyToClipboard({ text: address }).catch((failure: unknown) =>
+        setError(browserFailureText({ error: failure })),
+      );
     },
     duplicate: () => {
       if (address === '') {

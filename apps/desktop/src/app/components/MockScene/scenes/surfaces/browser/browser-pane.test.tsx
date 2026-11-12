@@ -98,7 +98,9 @@ describe('the browser pane scenes', () => {
     mount({ id: 'browser-pane' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    const pill = within(pane).getByRole('button', { name: 'Edit address, Checkout' });
+    const pill = within(pane).getByRole('button', {
+      name: 'Edit address, Checkout, localhost:5173',
+    });
     expect(pill.textContent).toContain('localhost:5173');
     expect(within(pane).queryByRole('combobox', { name: 'Address or search' })).toBeNull();
     const strip = within(pane).getByRole('navigation', { name: 'Browser tabs' });
@@ -130,7 +132,7 @@ describe('the browser pane scenes', () => {
     if (page === null) {
       throw new Error('The Browser page sits in no studio slot.');
     }
-    within(page).getByRole('button', { name: 'Edit address, Checkout' });
+    within(page).getByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
   });
 
   it('shows the address being edited, selected, under the pill', async () => {
@@ -197,7 +199,9 @@ describe('the browser pane scenes', () => {
     within(pane).getByRole('progressbar', { name: 'Loading page' });
     within(pane).getByRole('button', { name: 'Stop' });
     expect(within(pane).queryByRole('button', { name: 'Reload' })).toBeNull();
-    const pill = within(pane).getByRole('button', { name: 'Edit address, Checkout' });
+    const pill = within(pane).getByRole('button', {
+      name: 'Edit address, Checkout, localhost:5173',
+    });
     await waitFor(() => expect(pill.querySelector('img')).not.toBeNull(), WAIT);
     await waitFor(
       () =>

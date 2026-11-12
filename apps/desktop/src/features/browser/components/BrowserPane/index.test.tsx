@@ -290,7 +290,7 @@ const openPill = () => {
 const pageTitled = async ({ text }: TypeParams) => {
   live = live.map((facts) => ({ ...facts, title: text }));
   fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
-  await screen.findByRole('button', { name: `Edit address, ${text}` });
+  await screen.findByRole('button', { name: `Edit address, ${text}, localhost:5173` });
 };
 
 const typeAddress = async ({ text }: TypeParams) => {
@@ -655,7 +655,7 @@ describe('the browser pane', () => {
 
     await pageTitled({ text: 'Checkout' });
 
-    const pill = screen.getByRole('button', { name: 'Edit address, Checkout' });
+    const pill = screen.getByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
     expect(pill.textContent).toContain('Checkout');
     expect(pill.textContent).toContain('localhost:5173');
     expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
@@ -681,9 +681,21 @@ describe('the browser pane', () => {
     fireEvent.change(field, { target: { value: 'acme.example' } });
     fireEvent.keyDown(field, { key: 'Escape' });
 
-    screen.getByRole('button', { name: /^Edit address/ });
+    const pill = screen.getByRole('button', { name: /^Edit address/ });
+    expect(document.activeElement).toBe(pill);
     expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
     expect(openPill()).toHaveProperty('value', 'http://localhost:5173/checkout');
+  });
+
+  it('leaves focus where the user moved it when the field blurs', async () => {
+    await openFirstPage();
+    const reload = screen.getByRole('button', { name: 'Reload' });
+
+    openPill();
+    act(() => reload.focus());
+
+    expect(document.activeElement).toBe(reload);
+    expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
   });
 
   it('swaps the address back for the pill on blur', async () => {
@@ -805,6 +817,20 @@ describe('the browser pane', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Copy address' }));
 
     expect(writeText).toHaveBeenCalledWith('http://localhost:5173/checkout');
+  });
+
+  it('copies the address without the clipboard API and says so when the copy fails', async () => {
+    await openFirstPage();
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    const execCommand = vi.fn(() => false);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Copy address' }));
+
+    await screen.findByRole('alert');
+    expect(execCommand).toHaveBeenCalledWith('copy');
+    Reflect.deleteProperty(document, 'execCommand');
   });
 
   it('duplicates the shown address into a second tab from the More menu', async () => {

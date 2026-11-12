@@ -17,6 +17,8 @@ export const BrowserAddressPill = ({ model, field, isAddressShortcutOn }: Props)
   const title = model.shown === null ? '' : model.titleOf({ tab: model.shown.tab });
   const host = hostOf({ url: model.address });
   const hasError = model.error !== null;
+  const isHostShown = title !== host;
+  const name = isHostShown ? `${title}, ${host}` : title;
 
   useShortcut('browser.address', field.edit, isAddressShortcutOn);
 
@@ -29,8 +31,9 @@ export const BrowserAddressPill = ({ model, field, isAddressShortcutOn }: Props)
         anchorClassName="flex min-w-0 flex-1"
       >
         <Button
+          ref={field.pillRef}
           variant="secondary"
-          aria-label={`Edit address, ${title}`}
+          aria-label={`Edit address, ${name}`}
           onClick={field.edit}
           className={cn(
             'w-full min-w-0 justify-start px-2 text-left font-normal',
@@ -39,9 +42,9 @@ export const BrowserAddressPill = ({ model, field, isAddressShortcutOn }: Props)
         >
           <BrowserFavicon url={model.address} isPin={model.shown?.isPin === true} />
           <span className="min-w-0 truncate text-row text-foreground">{title}</span>
-          {title === host ? null : (
-            <span className="shrink-0 truncate text-meta text-muted-foreground">{host}</span>
-          )}
+          {isHostShown ? (
+            <span className="min-w-0 truncate text-meta text-muted-foreground">{host}</span>
+          ) : null}
         </Button>
       </Tooltip>
     );

@@ -91,7 +91,7 @@ const renderPane = async () => {
       <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
     </ToastProvider>,
   );
-  await screen.findByRole('button', { name: 'Edit address, Checkout' });
+  await screen.findByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
   await waitFor(() => expect(handlers.has(LOAD_EVENT)).toBe(true));
 };
 
@@ -276,7 +276,7 @@ describe('the browser pane host facts', () => {
     favicon = { origin: 'http://localhost:5173', src: 'data:image/png;base64,AAAA' };
     await renderPane();
 
-    const pill = screen.getByRole('button', { name: 'Edit address, Checkout' });
+    const pill = screen.getByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
     await waitFor(() =>
       expect(pill.querySelector('img')?.getAttribute('src')).toBe('data:image/png;base64,AAAA'),
     );
@@ -294,7 +294,7 @@ describe('the browser pane host facts', () => {
     heardLoad({ tabId: 'live-1', phase: 'started', url: CHECKOUT_URL });
     heardLoad({ tabId: 'live-1', phase: 'finished', url: CHECKOUT_URL });
 
-    const pill = screen.getByRole('button', { name: 'Edit address, Checkout' });
+    const pill = screen.getByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
     expect(pill.querySelector('img')).toBeNull();
     expect(pill.textContent).toContain('L');
     expect(callsOf({ command: 'browser_favicon' })).toHaveLength(1);
