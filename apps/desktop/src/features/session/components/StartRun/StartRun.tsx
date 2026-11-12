@@ -9,6 +9,7 @@ import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { startRunFileOf } from '../../startRun/startRunFileOf';
 import { RunsStartForm } from '../StartForm/RunsStartForm';
+import { RunModelChip } from './RunModelChip';
 import { StartRunFileChip } from './StartRunFileChip';
 import { useRunPrefixMenu } from './useRunPrefixMenu';
 import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
@@ -116,6 +117,7 @@ export const StartRun = ({
           keyLabels={{ send: 'start' }}
           files={run.files}
           notice={run.filesNotice}
+          model={<RunModelChip model={run.model} isDisabled={run.isStarting} variant="pill" />}
         />
       </div>
       <RunsStartForm

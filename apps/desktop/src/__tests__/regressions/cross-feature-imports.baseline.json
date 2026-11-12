@@ -18,7 +18,6 @@
     "branch -> session": 1,
     "budget -> providers": 2,
     "changelog -> updater": 1,
-    "chat -> attachments": 1,
     "chat -> context": 4,
     "chat -> integrations": 1,
     "chat -> permissions": 1,

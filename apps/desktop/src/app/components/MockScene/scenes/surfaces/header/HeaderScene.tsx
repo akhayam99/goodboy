@@ -26,7 +26,6 @@ export const HeaderScene = () => {
           kind={<AgentRunRoute session={session} agentId={CHROME_AGENT_ID} />}
           auto={null}
           asksSlotRef={noop}
-          modelsSlotRef={noop}
         />
       </div>
     </div>

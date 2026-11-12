@@ -840,13 +840,8 @@ describe('New session settings row', () => {
     await pickKind({ name: /^Orchestrated/ });
 
     const row = within(screen.getByRole('group', { name: 'Run settings' }));
-    const chips: ReadonlyArray<RegExp> = [
-      /^Model:/,
-      /^Asks you:/,
-      /^Edits:/,
-      /^Limit: /,
-      /^Guidance:/,
-    ];
+    expect(row.queryByRole('button', { name: /^Model:/ })).toBeNull();
+    const chips: ReadonlyArray<RegExp> = [/^Asks you:/, /^Edits:/, /^Limit: /, /^Guidance:/];
     for (const name of chips) {
       fireEvent.click(row.getByRole('button', { name }));
       await settle();

@@ -17,7 +17,6 @@ describe('StartSettingsRow', () => {
       <StartSettingsRow
         items={[
           itemOf('where', false),
-          itemOf('model', false),
           itemOf('asks', false),
           itemOf('edits', false),
           itemOf('limit', false),

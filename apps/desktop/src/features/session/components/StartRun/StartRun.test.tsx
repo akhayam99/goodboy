@@ -673,7 +673,7 @@ describe('StartRun attachments', () => {
     renderField({ sessionId: SESSION.id });
 
     fireEvent.paste(field(), { clipboardData: { files: [image({ name: 'shot.png' })] } });
-    await screen.findByText('shot.png');
+    await screen.findByRole('button', { name: 'Remove shot.png' });
     ask({ text: QUESTION });
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
@@ -683,7 +683,9 @@ describe('StartRun attachments', () => {
     expect(addGoalAttachments.mock.invocationCallOrder[0]).toBeLessThan(
       spawnAgent.mock.invocationCallOrder[0] ?? 0,
     );
-    await waitFor(() => expect(screen.queryByText('shot.png')).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Remove shot.png' })).toBeNull(),
+    );
   });
 
   it('hands attachments to an orchestrated run too', async () => {
@@ -698,7 +700,7 @@ describe('StartRun attachments', () => {
     fireEvent.change(screen.getByLabelText('Choose files to attach'), {
       target: { files: [image({ name: 'layout.png' })] },
     });
-    await screen.findByText('layout.png');
+    await screen.findByRole('button', { name: 'Remove layout.png' });
     ask({ text: 'center every member page' });
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
@@ -716,13 +718,13 @@ describe('StartRun attachments', () => {
     useAppStore.setState({ spawnAgent, addGoalAttachments });
     renderField({ sessionId: SESSION.id });
     fireEvent.paste(field(), { clipboardData: { files: [image({ name: 'shot.png' })] } });
-    await screen.findByText('shot.png');
+    await screen.findByRole('button', { name: 'Remove shot.png' });
 
     ask({ text: QUESTION });
 
     await screen.findByText(/worktree not available/);
     expect(spawnAgent).not.toHaveBeenCalled();
-    screen.getByText('shot.png');
+    screen.getByRole('button', { name: 'Remove shot.png' });
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(addGoalAttachments).toHaveBeenCalledTimes(2);

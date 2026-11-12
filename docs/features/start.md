@@ -44,9 +44,9 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - Auto is picked by default and picks by the table above. Pick the same kind again to give the choice back to Auto.
 - **Preset** is off until the workspace has a preset. A pressed Preset shows the picker with its steps and **Keep steps** or **May change steps**.
 - One row of chips holds the settings, each written "Label: value". Each chip opens its own popover, anchored to it, so it stays inside the window. The source of a value ("from Harborline") sits in the popover header, and a chip is tinted when its value is not the default.
-- **Projects**, **Model** and **Edits** are always in the row. **Asks you**, **Limit** and **Guidance** sit under **More** until they differ from their default.
+- **Projects** and **Edits** are always in the row. **Asks you**, **Limit** and **Guidance** sit under **More** until they differ from their default.
 - A kind shows only the settings it uses. **Projects** shows on the New session page only, **Role** on Agent only. **Limit** and **Asks you** do not show on Agent: a plain agent has no limit to enforce and no step to stop at.
-- **Model** names the orchestrator or the agent for this run, **Auto** until you pick one. A pick is for this run only.
+- The model sits in the message box, beside **Start**. It names the orchestrator or the agent for this run, **Auto** until you pick one. A pick is for this run only.
 - **Asks you** is Every step, After the plan or Never for a workflow, and the Auto level for an Auto agent.
 - **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts. The chat box picker reads **Edits: Ask first**, the same label.
 - **Limit** reads "Limit: $5.00" ("Limit: none" without one), with a quiet "default" while the amount is the one the kind starts from. Every kind, and a start with no kind pressed, starts from the **Run defaults** limit. Switching kind shows the new kind's default and keeps an amount you typed. Its popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
@@ -87,7 +87,7 @@ Its last line says what a pick does.
 The settings line of a run names the model that runs it, next to the **Kind** chip.
 
 - An orchestrated run shows **Orchestrator** with its model, **Auto** while the run follows the default. A pick is for this run only, and **Auto** in the picker goes back to the default. The chip is fixed while the orchestrator decides and once the run is over. The hint box below holds the same control.
-- An Auto agent shows **Auto agent** in front of the model pill of its box. A pick there applies from the next turn of that agent.
+- An agent or an Auto agent has its model in its message box, beside **Send**. A pick there applies from the next turn of that agent.
 - The default of each is in **Settings › Models › Runs**.
 
 ### The New session page
@@ -212,8 +212,8 @@ This part is for contributors and agents who change the feature.
 - Start form: `StartForm` draws the kinds, the fields, the settings row and the actions. `NewSessionStartForm` feeds it from the session draft and `RunsStartForm` from `useStartRun`. A kind declares the settings it uses in `START_KIND_SETTINGS`, and `startSettingsOf` keeps the order and drops a setting nothing supplies.
 - Kind to route: `runAsOfStartFormKind` turns a pressed kind into the `RunAs` that `runAsRouteOf` turns into the route Start uses, with a typed token ahead of the kind. `routeLineOf` builds the live "Starts as" line.
 - Edits: `StartEditsSetting` reads the draft, or the session on Runs. `applyStartEdits` calls `setSessionPermissionMode` before the first agent starts and does nothing when no mode was picked.
-- Model chip: `RunModelChip` is the one control on every door and kind, the Agent kind of the New session page included. There `useDraftAgentModel` wraps the `useRunModel` view so a pick lands in the draft's `agentRouting`. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
-- Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. `AgentSettingsLine` draws the Auto agent label in front of the composer's model slot, and hides it with the slot when the box has no pill.
+- Model chip: `RunModelChip` is the one control on every door and kind, the Agent kind of the New session page included. Its `pill` variant sits in the `model` slot of the start box (`StartRun`, `StartTaskField`) with the composer pill look (`ROUTING_PILL_CLASS`); `START_KIND_SETTINGS` has no model key. `SessionKickoff` picks the view once and hands it to the box and to `NewSessionStartForm`. There `useDraftAgentModel` wraps the `useRunModel` view so a pick lands in the draft's `agentRouting`. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
+- Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. An agent page keeps its model in `ComposerToolbar` (`ComposerRoutingPicker`); `AgentSettingsLine` draws no model (`modelInComposer.test.tsx`).
 - Model pins: `startRoutedRun` takes `routing` for a lead and `orchestratorRouting` for a plan. `attachWorkflowToSession` stores the second as the run's `orchestratorRouting`. A start clears the pins.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.
