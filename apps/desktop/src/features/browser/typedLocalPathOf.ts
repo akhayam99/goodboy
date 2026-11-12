@@ -22,7 +22,7 @@ export const typedLocalPathOf = ({ text }: Params): string | null => {
   if (parsed.kind !== 'local') {
     return null;
   }
-  const name = parsed.path.split('/').pop() ?? '';
+  const name = parsed.path.split(/[\\/]/).pop() ?? '';
   const extension = name.includes('.') ? (name.split('.').pop() ?? '') : '';
   return PAGE_EXTENSIONS.has(extension.toLowerCase()) ? parsed.path : null;
 };

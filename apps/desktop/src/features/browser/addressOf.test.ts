@@ -65,6 +65,8 @@ describe('addressOf', () => {
       '~/harborline/plan v2.html',
       'file:///work/harborline/plan.html',
       '  ~/harborline/plan.html  ',
+      'C:\\work\\harborline\\plan.html',
+      'c:/work/harborline/plan.html',
     ]) {
       expect(addressOf({ text })).toEqual({ kind: 'local', path: text.trim() });
     }
@@ -74,6 +76,7 @@ describe('addressOf', () => {
     expect(addressOf({ text: 'harborline/plan.html' }).kind).not.toBe('local');
     expect(addressOf({ text: '//acme.example/plan.html' }).kind).not.toBe('local');
     expect(addressOf({ text: '~harborline/plan.html' }).kind).toBe('refused');
+    expect(addressOf({ text: 'C:plan.html' }).kind).toBe('refused');
   });
 
   it('asks for an address when the field is empty', () => {

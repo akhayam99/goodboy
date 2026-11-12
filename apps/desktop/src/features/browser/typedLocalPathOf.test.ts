@@ -9,6 +9,9 @@ describe('typedLocalPathOf', () => {
     expect(typedLocalPathOf({ text: 'file:///work/acme/spec.pdf' })).toBe(
       'file:///work/acme/spec.pdf',
     );
+    expect(typedLocalPathOf({ text: 'C:\\work.v2\\acme\\plan.html' })).toBe(
+      'C:\\work.v2\\acme\\plan.html',
+    );
   });
 
   it('leaves a folder, a source file and a bare name to the search', () => {

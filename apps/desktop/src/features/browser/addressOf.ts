@@ -12,6 +12,7 @@ type HostParams = {
 const OTHER_SCHEME = /^[a-z][a-z0-9+.-]*:(?!\d)/i;
 const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
 const SPACE = /\s/;
+const DRIVE_PATH = /^[a-z]:[\\/]/i;
 
 const NOT_AN_ADDRESS =
   "Type a full address, like harborline.dev, or a file path. Search isn't available here.";
@@ -28,6 +29,9 @@ const hasWebScheme = ({ text }: Params): boolean => {
 };
 
 const isLocalPath = ({ text }: Params): boolean => {
+  if (DRIVE_PATH.test(text)) {
+    return true;
+  }
   const lower = text.toLowerCase();
   return (
     !lower.startsWith(NETWORK_PATH) && LOCAL_PREFIXES.some((prefix) => lower.startsWith(prefix))

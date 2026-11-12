@@ -64,8 +64,8 @@ commands, and got all six once it navigated itself to the dev origin or to
 ## Local files
 
 Only an address the user types opens a local file: the address row, ⌘L, or
-⌘K Open. It is an absolute path, a `~/` path or a `file://` address, to a
-page, an image or a PDF. A link, a door, a page, a popup or a frame never
+⌘K Open. It is an absolute path (a drive path such as `C:\work\plan.html` on
+Windows), a `~/` path or a `file://` address, to a page, an image or a PDF. A link, a door, a page, a popup or a frame never
 opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
 
 - **The scheme.** The file is served by Rust on `gblocal`
@@ -87,15 +87,26 @@ opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
   `browse-` label against the grant, then the path: under the folder, no `..`,
   no hidden file or folder, links resolved and checked again, a known type
   (pages, images, PDF, styles, scripts, fonts, data, text, video) and at most
-  64 MB. Anything else answers 404; nothing lists a folder. A folder that is
-  the home folder, sits at the top of the disk, or is the top of a mounted
-  disk (`/Volumes`, `/media`, `/mnt`) grants only the files beside the page. Responses carry `no-store`, `nosniff`, `no-referrer` and
+  64 MB. The checked path is then opened one part at a time from the folder
+  with no link followed (`scoped_path::open_relative`), and the type, size and
+  bytes come from that one handle, so a file or folder swapped for a link
+  after the check answers 404. Windows has no such open yet and reads the
+  checked path. Anything else answers 404; nothing lists a folder. A folder
+  that is the home folder, sits at the top of the disk, is the top of a
+  mounted volume (its device differs from its parent's, on macOS and Linux)
+  or sits right under `/Volumes`, `/media` or `/mnt` grants only the files
+  beside the page. Responses carry `no-store`, `nosniff`, `no-referrer` and
   `Cross-Origin-Resource-Policy: same-origin`.
-- **What the app sees.** Facts, listings and rows carry the `file://` address;
-  the token never leaves Rust. The address row shows the path, the title comes
-  from the document, Reload reads the file again. A closed tab comes back
-  through its grant; after a restart the row opens again through
-  `browser_tab_open_local`, since the user typed it. Open in your browser is
+- **What the app sees.** Facts, listings and rows carry the `file://` address,
+  query and fragment included; the token never leaves Rust. The address row
+  shows the path (`C:/work/plan.html` for a Windows drive, which opens again),
+  the title comes from the document, Reload reads the file again. A closed tab
+  comes back through its grant at the same query and fragment; after a restart
+  the row opens again through `browser_tab_open_local`, since the user typed
+  it. ⌘K Open shows a tab already on the same file instead of opening another:
+  `fileKeyOf` gives a `file://` address, its path, a `~/` path and a drive
+  path in either slash the same key. On Windows the grant and the request
+  compare paths without the `\\?\` prefix. Open in your browser is
   off for a local tab (`open_url` takes `http` and `https` only).
 - **Why a scheme and not a `file:` load.** WebKit's file load with read
   access to a folder would give the web process read
@@ -598,11 +609,12 @@ words (`features/browser/browserFailureText.ts`).
   rule is a pure function because no test can load a page headless.
   `browser::local::tests` pins the typed forms, the missing, folder and type
   refusals, the folder scope, a path that climbs, hidden files, a link out of
-  the folder and one inside it, the home folder limit, the token address and
-  that a tab loads only what its own grant covers. `browser::tests` loads a
-  typed file through its grant, drops the grant on close, brings a closed local
-  tab back through the same grant and refuses a `file:` address on the web
-  path.
+  the folder and one inside it, a file or folder swapped for a link after the
+  check, the home folder and mounted volume limits, the token address, a
+  typed query and fragment, and that a tab loads only what its own grant
+  covers. `browser::tests` loads a typed file through its grant, drops the
+  grant on close, brings a closed local tab back through the same grant at its
+  query and fragment and refuses a `file:` address on the web path.
 - `browser::tests` opens tabs on Tauri's mock runtime: the owning window, the
   refusals and their codes, an app command a `browse-` webview calls from a
   local address, the popup cap and its `browser://tab-opened` event, listing
