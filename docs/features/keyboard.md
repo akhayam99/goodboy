@@ -199,7 +199,8 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. The button counts the open tabs.
 - The address bar shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back.
 - **More** holds Open in your browser, **Open as page**, Copy address, Duplicate and Close tab.
-- **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Dock** puts it back. The page never reloads, so a half-typed form stays.
+- **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Beside the session**, at the right of the trail, puts it back. The page never reloads, so a half-typed form stays.
+- The page has no title band: the trail, the address row, then the page. The first button of the address row folds the tab list, and **New tab** is the last row of the list.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
 - A port chip, a running Service's port and a link in a conversation, a decision or an artifact open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.

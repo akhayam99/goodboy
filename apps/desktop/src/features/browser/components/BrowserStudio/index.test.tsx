@@ -377,7 +377,20 @@ describe('the browser page', () => {
     ).toEqual(expect.arrayContaining(['Checkout', 'Tax rates']));
     screen.getByRole('button', { name: 'PR #318' });
     screen.getByRole('button', { name: 'API guides, pinned' });
-    screen.getByRole('heading', { name: 'Browser' });
+    expect(screen.queryByRole('heading', { name: 'Browser' })).toBeNull();
+    screen.getByRole('button', { name: 'Beside the session' });
+    screen.getByRole('button', { name: 'New tab' });
+  });
+
+  it('folds and shows the tab list from the address row', async () => {
+    openPage({ tabId: null });
+    await waitFor(() => screen.getByRole('region', { name: 'Show tax in the checkout total' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide tab list' }));
+    expect(screen.queryByRole('region', { name: 'Show tax in the checkout total' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show tab list' }));
+    screen.getByRole('region', { name: 'Show tax in the checkout total' });
   });
 
   it('shows the first tab of the session it opened for, in the native view over the page', async () => {
@@ -619,7 +632,7 @@ describe('moving a tab between the pane and the page', () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Beside the session' }));
 
     expect(store.getState().appStudio).toBeNull();
     expect(store.getState().drawer).toEqual({
@@ -650,7 +663,7 @@ describe('moving a tab between the pane and the page', () => {
     );
     expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Beside the session' }));
 
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
     expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']);
@@ -667,7 +680,7 @@ describe('moving a tab between the pane and the page', () => {
     await promote();
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Beside the session' }));
     await act(async () => {
       held.release();
     });
