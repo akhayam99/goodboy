@@ -397,7 +397,7 @@ pub(crate) fn step_history<R: Runtime>(
 #[cfg(target_os = "macos")]
 pub(crate) fn stop_load<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
     webview
-        .with_webview(|platform| crate::platform::web_history::stop_live_wk_web_view(platform))
+        .with_webview(crate::platform::web_history::stop_live_wk_web_view)
         .map_err(failed)
 }
 

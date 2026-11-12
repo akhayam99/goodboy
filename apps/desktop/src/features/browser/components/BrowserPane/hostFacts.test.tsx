@@ -65,6 +65,7 @@ const facts: BrowserTabFacts = {
   isShown: true,
   hiddenSinceMs: null,
   openerId: null,
+  isPasskeyBlocked: false,
 };
 
 const argsOf = ({ payload }: PayloadParams): Readonly<Record<string, unknown>> => {

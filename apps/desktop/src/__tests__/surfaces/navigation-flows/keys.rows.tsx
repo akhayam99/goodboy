@@ -665,7 +665,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       const field = await screen.findByRole('combobox', { name: 'Address or search' });
       await waitFor(() => expect(document.activeElement).toBe(field));
-      expect((field as HTMLInputElement).value).toBe('');
+      expect(field).toHaveProperty('value', '');
     },
   }),
   keyRow({
