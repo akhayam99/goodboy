@@ -10,6 +10,8 @@ export const BROWSER_PANE_SCENES: Readonly<Record<string, ComponentType>> = {
   'browser-pane-more-dark': () => <BrowserPaneScene state="more" theme="dark" />,
   'browser-pane-passkey': () => <BrowserPaneScene state="passkey" theme="light" />,
   'browser-pane-passkey-dark': () => <BrowserPaneScene state="passkey" theme="dark" />,
+  'browser-pane-loading': () => <BrowserPaneScene state="loading" theme="light" />,
+  'browser-pane-loading-dark': () => <BrowserPaneScene state="loading" theme="dark" />,
   'browser-pane-tabs': () => <BrowserPaneScene state="tabs" theme="light" />,
   'browser-pane-tabs-dark': () => <BrowserPaneScene state="tabs" theme="dark" />,
   'browser-page': () => <BrowserPaneScene state="page" theme="light" />,

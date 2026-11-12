@@ -1,7 +1,8 @@
-import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, Square, X } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
 import type { BrowserPaneModel } from '../../types';
 import { BrowserAddressPill } from './BrowserAddressPill';
+import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
 
 type Props = {
@@ -23,7 +24,7 @@ export const BrowserAddressRow = ({
 }: Props) => {
   const canStep = model.shown !== null;
   return (
-    <div className="flex h-9 shrink-0 items-center gap-1 px-2">
+    <div className="relative flex h-9 shrink-0 items-center gap-1 px-2">
       {onToggleList === undefined ? null : (
         <IconButton
           icon={PanelLeft}
@@ -37,23 +38,27 @@ export const BrowserAddressRow = ({
         icon={ArrowLeft}
         label="Back"
         tooltipSide="top"
-        disabled={!canStep}
+        disabled={!canStep || !model.canGoBack}
         onClick={model.back}
       />
       <IconButton
         icon={ArrowRight}
         label="Forward"
         tooltipSide="top"
-        disabled={!canStep}
+        disabled={!canStep || !model.canGoForward}
         onClick={model.forward}
       />
-      <IconButton
-        icon={RotateCw}
-        label="Reload"
-        tooltipSide="top"
-        disabled={!canStep}
-        onClick={model.reload}
-      />
+      {model.isLoading ? (
+        <IconButton icon={Square} label="Stop" tooltipSide="top" onClick={model.stop} />
+      ) : (
+        <IconButton
+          icon={RotateCw}
+          label="Reload"
+          tooltipSide="top"
+          disabled={!canStep}
+          onClick={model.reload}
+        />
+      )}
       <BrowserAddressPill model={model} isAddressShortcutOn={isAddressShortcutOn} />
       {model.shown === null || model.projectName === null ? null : (
         <IconButton
@@ -70,6 +75,7 @@ export const BrowserAddressRow = ({
       {onClose === undefined ? null : (
         <IconButton icon={X} label="Close" tooltipSide="top" onClick={onClose} />
       )}
+      {model.isLoading ? <BrowserLoadLine /> : null}
     </div>
   );
 };

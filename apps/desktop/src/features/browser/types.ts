@@ -12,6 +12,22 @@ export type BrowserTabFacts = {
   readonly isPasskeyBlocked: boolean;
 };
 
+export type BrowserHistoryState = {
+  readonly canGoBack: boolean;
+  readonly canGoForward: boolean;
+};
+
+export type BrowserTabFavicon = {
+  readonly origin: string;
+  readonly src: string | null;
+};
+
+export type BrowserTabLoad = {
+  readonly tabId: string;
+  readonly phase: 'started' | 'finished';
+  readonly url: string;
+};
+
 export type BrowserBounds = {
   readonly x: number;
   readonly y: number;
@@ -50,11 +66,15 @@ export type BrowserPaneModel = {
   readonly titleOf: (params: TabParams) => string;
   readonly error: string | null;
   readonly isDrafting: boolean;
+  readonly isLoading: boolean;
+  readonly canGoBack: boolean;
+  readonly canGoForward: boolean;
   readonly wakeAttempt: number;
   readonly submit: (params: TextParams) => Promise<boolean>;
   readonly back: () => void;
   readonly forward: () => void;
   readonly reload: () => void;
+  readonly stop: () => void;
   readonly select: (params: TabParams) => void;
   readonly close: (params: TabParams) => void;
   readonly togglePin: () => void;

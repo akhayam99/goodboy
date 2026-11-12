@@ -123,6 +123,8 @@ const stubHost = () => {
     },
     browser_tab_open: ({ args }: OpenArgs) => factsOf({ args }),
     browser_tab_list: () => live,
+    browser_history_state: null,
+    browser_favicon: null,
     browser_tab_place: null,
     browser_tab_show: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_hide: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),

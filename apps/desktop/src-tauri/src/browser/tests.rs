@@ -18,6 +18,7 @@ use super::host::{
 use super::lifecycle::{
     close_switched, hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT,
 };
+use super::load::{report_load, LoadPhase, TAB_LOAD_EVENT};
 use super::profile::{begin_clear, ProfileId};
 use super::reason::{
     BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY, PROFILE_LIVE,
@@ -1317,6 +1318,101 @@ fn a_popup_whose_opener_was_switched_out_fails_and_leaves_no_view() {
             .ids_of_session("cascadia", "main"),
         vec![opener]
     );
+}
+
+fn hear_loads(app: &App<MockRuntime>, label: &str) -> Arc<Mutex<Vec<(String, String, String)>>> {
+    let heard = Arc::new(Mutex::new(vec![]));
+    let sink = Arc::clone(&heard);
+    app.get_webview_window(label)
+        .expect("window that holds the tab")
+        .listen(TAB_LOAD_EVENT, move |event| {
+            let payload: serde_json::Value =
+                serde_json::from_str(event.payload()).expect("payload is json");
+            sink.lock().expect("sink").push((
+                payload["tabId"].as_str().expect("tabId").to_string(),
+                payload["phase"].as_str().expect("phase").to_string(),
+                payload["url"].as_str().expect("url").to_string(),
+            ));
+        });
+    heard
+}
+
+#[test]
+fn tells_the_owning_window_when_a_load_starts_and_when_it_finishes() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let main_heard = hear_loads(&app, "main");
+    let other_heard = hear_loads(&app, "win-2");
+    let id = open(&app, "main", "harborline");
+    report_load(
+        app.handle(),
+        &id,
+        LoadPhase::Started,
+        "http://localhost:5173/checkout",
+    );
+    report_load(
+        app.handle(),
+        &id,
+        LoadPhase::Finished,
+        "http://localhost:5173/checkout",
+    );
+    let at = "http://localhost:5173/checkout".to_string();
+    assert_eq!(
+        *main_heard.lock().expect("sink"),
+        vec![
+            (id.clone(), "started".to_string(), at.clone()),
+            (id, "finished".to_string(), at),
+        ]
+    );
+    assert!(other_heard.lock().expect("sink").is_empty());
+}
+
+#[test]
+fn keeps_the_address_of_a_started_load_until_it_finishes() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let registry = app.state::<BrowserRegistry>();
+    report_load(
+        app.handle(),
+        &id,
+        LoadPhase::Started,
+        "http://localhost:5173/pricing",
+    );
+    let before = registry.facts(&id).expect("facts").url;
+    assert_ne!(before, "http://localhost:5173/pricing");
+    report_load(
+        app.handle(),
+        &id,
+        LoadPhase::Finished,
+        "http://localhost:5173/pricing",
+    );
+    assert_eq!(
+        registry.facts(&id).expect("facts").url,
+        "http://localhost:5173/pricing"
+    );
+}
+
+#[test]
+fn says_nothing_about_a_load_of_a_tab_that_is_gone() {
+    let app = app_with_windows(&["main"]);
+    let heard = hear_loads(&app, "main");
+    report_load(
+        app.handle(),
+        "gone",
+        LoadPhase::Started,
+        "http://localhost:5173/",
+    );
+    assert!(heard.lock().expect("sink").is_empty());
+}
+
+#[test]
+fn refuses_to_stop_or_read_history_of_a_tab_the_caller_does_not_own() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let id = open(&app, "win-2", "harborline");
+    let caller = app.get_webview("main").expect("main webview");
+    assert!(matches!(
+        owned_tab(&caller, &id),
+        Err(MessageError::Refused(code)) if code == OTHER_WINDOW
+    ));
 }
 
 #[cfg(not(target_os = "macos"))]

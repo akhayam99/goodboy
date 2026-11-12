@@ -1,7 +1,9 @@
 pub(crate) mod commands;
+mod favicon;
 mod guard;
 mod host;
 mod lifecycle;
+mod load;
 #[cfg(any(target_os = "macos", test))]
 mod passkey;
 mod profile;
@@ -12,6 +14,7 @@ pub(crate) mod tab_rows;
 use tauri::ipc::Invoke;
 use tauri::{AppHandle, Manager, Runtime};
 
+pub(crate) use favicon::BrowserFavicons;
 pub(crate) use lifecycle::start as start_lifecycle;
 pub(crate) use profile::BrowserProfiles;
 pub(crate) use registry::BrowserRegistry;
