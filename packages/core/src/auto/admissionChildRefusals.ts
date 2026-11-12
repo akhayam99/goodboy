@@ -89,11 +89,26 @@ const reviseRefusal = ({
   return null;
 };
 
-type InputCheckParams = ArtifactCheckParams & {
-  readonly child: AdmissionChild;
+type WriterPlanKeyParams = {
+  readonly artifactId: string;
+  readonly role: string;
 };
 
-const inputRefusal = ({ snapshot, ref, tree, child }: InputCheckParams): ArtifactCheck | null => {
+const writerPlanKeyOf = ({ artifactId, role }: WriterPlanKeyParams): string =>
+  `${artifactId}:${role}`;
+
+type InputCheckParams = ArtifactCheckParams & {
+  readonly child: AdmissionChild;
+  readonly seenWriterPlanKeys: ReadonlyArray<string>;
+};
+
+const inputRefusal = ({
+  snapshot,
+  ref,
+  tree,
+  child,
+  seenWriterPlanKeys,
+}: InputCheckParams): ArtifactCheck | null => {
   const missing = artifactExists({ snapshot, ref, tree });
   if (missing !== null) {
     return missing;
@@ -109,6 +124,13 @@ const inputRefusal = ({ snapshot, ref, tree, child }: InputCheckParams): Artifac
   }
   if (live.status === 'discarded' || live.status === 'superseded') {
     return { code: 'artifact_discarded', latestRevision: live.revision };
+  }
+  const isPlanForWriter = registered.kind === 'plan' && isAutoWriterRole({ role: child.role });
+  const isTaken =
+    (facts?.openWriterRoles ?? []).includes(child.role) ||
+    seenWriterPlanKeys.includes(writerPlanKeyOf({ artifactId: ref.artifactId, role: child.role }));
+  if (isPlanForWriter && isTaken) {
+    return { code: 'artifact_busy', latestRevision: live.revision };
   }
   const isApprovalNeeded =
     snapshot.isPlanApprovalRequired &&
@@ -137,6 +159,7 @@ export const admissionChildRefusals = ({
   const refusals: AdmissionChildRefusal[] = [];
   const seenChildAgentIds: string[] = [];
   const seenRevisedIds: string[] = [];
+  const seenWriterPlanKeys: string[] = [];
   const substepsSeen = new Map<string, number>();
   for (const [slot, child] of children.entries()) {
     const substep = child.substep ?? null;
@@ -171,8 +194,15 @@ export const admissionChildRefusals = ({
       seenRevisedIds.push(child.reviseOf.artifactId);
     }
     const inputFound = child.inputArtifacts
-      .map((ref) => inputRefusal({ snapshot, ref, tree, child }))
+      .map((ref) => inputRefusal({ snapshot, ref, tree, child, seenWriterPlanKeys }))
       .find((check) => check !== null);
+    if (isAutoWriterRole({ role: child.role })) {
+      seenWriterPlanKeys.push(
+        ...child.inputArtifacts.map((ref) =>
+          writerPlanKeyOf({ artifactId: ref.artifactId, role: child.role }),
+        ),
+      );
+    }
     const check = found ?? inputFound ?? null;
     if (check !== null) {
       refusals.push({ slot, code: check.code, latestRevision: check.latestRevision });

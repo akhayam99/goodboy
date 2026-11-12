@@ -13,7 +13,8 @@ const isTurn = (value: unknown): boolean =>
   typeof value['text'] === 'string' &&
   (value['images'] === undefined || Array.isArray(value['images'])) &&
   (value['permissionOnceAllows'] === undefined || Array.isArray(value['permissionOnceAllows'])) &&
-  (value['deliveryId'] === undefined || isText(value['deliveryId']));
+  (value['deliveryId'] === undefined || isText(value['deliveryId'])) &&
+  (value['focusArtifactId'] === undefined || isText(value['focusArtifactId']));
 
 const isCall = (value: unknown): value is AutoBridgeCall => {
   if (!isRecord(value)) {

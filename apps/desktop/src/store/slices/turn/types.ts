@@ -48,6 +48,7 @@ export type SendTurnInput = Readonly<{
   confinedRole?: string;
   runId?: ProviderRunId;
   deliveryId?: string;
+  focusArtifactId?: string;
   outboxIds?: ReadonlyArray<string>;
   onSettled?: (settled: TurnSettledInfo) => void;
   captureMode?: 'new' | 'revise';

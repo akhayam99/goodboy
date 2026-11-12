@@ -156,6 +156,7 @@ export const registerAutoArtifact = async ({
 
 export type AutoApproveOutcome =
   | Readonly<{ kind: 'approved'; revision: number }>
+  | Readonly<{ kind: 'already_approved'; revision: number }>
   | Readonly<{ kind: 'unknown' }>
   | Readonly<{ kind: 'revising'; revision: number }>
   | Readonly<{ kind: 'stale_revision'; revision: number }>
@@ -202,11 +203,12 @@ export const approveAutoArtifact = async ({
         sql: `UPDATE auto_artifacts
           SET approval_state = 'approved', approved_revision = ?, rev = rev + 1
           WHERE artifact_id = ?
-            AND approval_state IN ('needs_approval', 'approved')
+            AND (approval_state = 'needs_approval'
+              OR (approval_state = 'approved' AND approved_revision IS NOT ?))
             AND open_revise_delegation_id IS NULL
             AND (SELECT revision FROM session_artifacts WHERE id = auto_artifacts.artifact_id) = ?
             AND (SELECT status FROM session_artifacts WHERE id = auto_artifacts.artifact_id) = 'active'`,
-        params: [expectedRevision, artifactId, expectedRevision],
+        params: [expectedRevision, artifactId, expectedRevision, expectedRevision],
         abortWhen: 'noChanges',
         abortCode: 'approve_refused',
       },
@@ -222,6 +224,14 @@ export const approveAutoArtifact = async ({
   }
   if (registered.openReviseDelegationId !== null) {
     return { kind: 'revising', revision: live.revision };
+  }
+  const isApprovedHere =
+    registered.approvalState === 'approved' &&
+    registered.approvedRevision === expectedRevision &&
+    live.revision === expectedRevision &&
+    (live.status === 'active' || live.status === 'consumed');
+  if (isApprovedHere) {
+    return { kind: 'already_approved', revision: expectedRevision };
   }
   if (live.status === 'discarded') {
     return { kind: 'discarded', revision: live.revision };

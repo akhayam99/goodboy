@@ -366,3 +366,121 @@ describe('approval belongs to a revision', () => {
     ]);
   });
 });
+
+describe('one implementer per plan', () => {
+  const writerBatch = ({
+    key,
+    role = 'implementer',
+    requestId,
+  }: {
+    readonly key: string;
+    readonly role?: 'implementer' | 'tester';
+    readonly requestId: string;
+  }) =>
+    batchInput({
+      requestId,
+      children: [
+        childInput({
+          key,
+          role,
+          isConfirmForced: true,
+          inputArtifacts: [planRef({ id: 'plan-1', revision: 1 })],
+        }),
+      ],
+    });
+
+  it('refuses a second implementer on a plan an open implementer already took', async () => {
+    const world = await worldWithPlans();
+    await approveArtifact({ db: world.db, artifactId: plan1, expectedRevision: 1 });
+    const first = await world.scheduler.admit(writerBatch({ key: 'impl', requestId: 'request-a' }));
+    await startNewTurn({ world, expectedPhaseRev: 2, from: ['delegating'] });
+
+    const second = await world.scheduler.admit(
+      writerBatch({ key: 'impl-again', requestId: 'request-b' }),
+    );
+
+    expect(first.kind).toBe('accepted');
+    expect(second).toMatchObject({ kind: 'refused', code: 'artifact_busy' });
+    const delegations = await listAutoDelegations({ db: world.db, treeId: WORLD_TREE });
+    expect(delegations.map((delegation) => delegation.id)).toEqual(['delegation-impl']);
+  });
+
+  it('refuses two implementers on the same plan in one batch', async () => {
+    const world = await worldWithPlans();
+    await approveArtifact({ db: world.db, artifactId: plan1, expectedRevision: 1 });
+
+    const outcome = await world.scheduler.admit(
+      batchInput({
+        requestId: 'request-twice',
+        children: [
+          childInput({
+            key: 'impl',
+            role: 'implementer',
+            inputArtifacts: [planRef({ id: 'plan-1', revision: 1 })],
+          }),
+          childInput({
+            key: 'impl-again',
+            role: 'implementer',
+            inputArtifacts: [planRef({ id: 'plan-1', revision: 1 })],
+          }),
+        ],
+      }),
+    );
+
+    expect(outcome).toMatchObject({
+      kind: 'refused',
+      perChild: [expect.objectContaining({ slot: 1, code: 'artifact_busy' })],
+    });
+  });
+
+  it('still lets a tester work from the plan the implementer took', async () => {
+    const world = await worldWithPlans();
+    await approveArtifact({ db: world.db, artifactId: plan1, expectedRevision: 1 });
+    await world.scheduler.admit(writerBatch({ key: 'impl', requestId: 'request-a' }));
+    await startNewTurn({ world, expectedPhaseRev: 2, from: ['delegating'] });
+
+    const tester = await world.scheduler.admit(
+      writerBatch({ key: 'test', role: 'tester', requestId: 'request-b' }),
+    );
+
+    expect(tester.kind).toBe('accepted');
+  });
+
+  it('lets a new implementer take the plan once the first one settled', async () => {
+    const world = await worldWithPlans();
+    await approveArtifact({ db: world.db, artifactId: plan1, expectedRevision: 1 });
+    await world.scheduler.admit(writerBatch({ key: 'impl', requestId: 'request-a' }));
+    await world.db.execute(
+      `UPDATE auto_delegations SET state = 'settled', outcome = 'stopped', reason = 'declined',
+        settled_at = ? WHERE id = 'delegation-impl'`,
+      [WORLD_NOW],
+    );
+    await startNewTurn({ world, expectedPhaseRev: 2, from: ['delegating'] });
+
+    const again = await world.scheduler.admit(
+      writerBatch({ key: 'impl-again', requestId: 'request-b' }),
+    );
+
+    expect(again.kind).toBe('accepted');
+  });
+
+  it('never lets the approval of an old version start a writer once a newer version exists', async () => {
+    const world = await worldWithPlans();
+    await approveArtifact({ db: world.db, artifactId: plan1, expectedRevision: 1 });
+    await writeArtifactRevision({
+      db: world.db,
+      artifactId: plan1,
+      expectedRevision: 1,
+      author: 'user',
+      title: 'Plan for notify-relay',
+      sourceText: '# Plan v2\n',
+      metadata: {},
+      nowMs: WORLD_NOW,
+    });
+
+    const old = await world.scheduler.admit(writerBatch({ key: 'impl', requestId: 'request-a' }));
+
+    expect(old).toMatchObject({ kind: 'refused', code: 'stale_revision' });
+    expect(await listAutoDelegations({ db: world.db, treeId: WORLD_TREE })).toEqual([]);
+  });
+});
