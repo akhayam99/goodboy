@@ -16,6 +16,7 @@ import {
 import { mountFixture } from '../../../../__tests__/helpers/actionFixtures';
 import type { BrowserTab, TabOwner } from '../../../../store/slices/browser/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import type { BrowserTabFacts } from '../../types';
 import { BrowserPane } from './index';
 
@@ -38,12 +39,17 @@ const PAYMENTS_API = buildStoryProject({
   rootPath: '/work/payments-api',
 });
 const VIEW_RECT = { x: 480, y: 96, width: 640, height: 720 };
+const LOCAL_PLAN = 'file:///work/harborline/plan.html';
 
 type OpenArgs = {
   readonly args: { readonly sessionId: SessionId; readonly url: string };
 };
 type TabArgs = { readonly args: { readonly tabId: string } };
 type NavigateArgs = { readonly args: { readonly tabId: string; readonly url: string } };
+type OpenLocalArgs = {
+  readonly args: { readonly sessionId: SessionId; readonly path: string };
+};
+type NavigateLocalArgs = { readonly args: { readonly tabId: string; readonly path: string } };
 type SaveArgs = {
   readonly args: {
     readonly id: string;
@@ -122,6 +128,12 @@ const stubHost = () => {
       return moved;
     },
     browser_tab_open: ({ args }: OpenArgs) => factsOf({ args }),
+    browser_tab_open_local: ({ args }: OpenLocalArgs) =>
+      factsOf({ args: { sessionId: args.sessionId, url: LOCAL_PLAN } }),
+    browser_tab_navigate_local: ({ args }: NavigateLocalArgs) => {
+      live = live.map((facts) => (facts.id === args.tabId ? { ...facts, url: LOCAL_PLAN } : facts));
+      return null;
+    },
     browser_tab_list: () => live,
     browser_tab_place: null,
     browser_tab_show: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
@@ -355,9 +367,89 @@ describe('the browser pane', () => {
     await typeAddress({ text: 'checkout total' });
 
     expect(screen.getByRole('alert').textContent).toBe(
-      "Type a full address, like harborline.dev. Search isn't available here.",
+      "Type a full address, like harborline.dev, or a file path. Search isn't available here.",
     );
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
+  it('opens a typed local file through the local command and shows its path', async () => {
+    renderPane();
+
+    await typeAddress({ text: '~/harborline/plan.html' });
+    await placeView();
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(1));
+
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+    expect(callsOf({ command: 'browser_tab_open_local' })).toEqual([
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        workspaceId: WORKSPACE_ID,
+        path: '~/harborline/plan.html',
+        isShown: false,
+      }),
+    ]);
+    expect(storedUrl()).toBe(LOCAL_PLAN);
+    await waitFor(() =>
+      expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Address' }).value).toBe(
+        '/work/harborline/plan.html',
+      ),
+    );
+    screen.getByRole('button', { name: 'Close plan.html' });
+    expect(
+      screen.getByRole<HTMLButtonElement>('button', { name: 'Open in your browser' }).disabled,
+    ).toBe(true);
+  });
+
+  it('moves the shown tab to a typed local file by its live id', async () => {
+    await openFirstPage();
+
+    await typeAddress({ text: '/work/harborline/plan.html' });
+
+    expect(callsOf({ command: 'browser_tab_navigate_local' })).toEqual([
+      { tabId: 'live-1', path: '/work/harborline/plan.html' },
+    ]);
+    expect(callsOf({ command: 'browser_tab_navigate' })).toEqual([]);
+  });
+
+  it('says why a local file cannot open and keeps the old address', async () => {
+    await openFirstPage();
+    failCommand({ command: 'browser_tab_navigate_local', reason: 'local-missing' });
+
+    await typeAddress({ text: '~/harborline/gone.html' });
+
+    expect(screen.getByRole('alert').textContent).toBe('No file at that path.');
+    expect(storedUrl()).toBe('http://localhost:5173/checkout');
+  });
+
+  it('moves the view down when the address error grows the chrome, with no frame loop', async () => {
+    const observers = installFakeResizeObserver();
+    const frames = vi.spyOn(window, 'requestAnimationFrame');
+    try {
+      await openFirstPage();
+      frames.mockImplementation(() => 0);
+      const scheduled = frames.mock.calls.length;
+      await waitFor(() => expect(frames.mock.calls.length).toBeGreaterThan(scheduled));
+      const placed = callsOf({ command: 'browser_tab_place' }).length;
+
+      await typeAddress({ text: 'checkout total' });
+      screen.getByRole('alert');
+      const lower = { ...VIEW_RECT, y: VIEW_RECT.y + 24, height: VIEW_RECT.height - 24 };
+      const view = document.querySelector('[data-browser-view]');
+      if (view === null) {
+        throw new Error('The pane draws no view placeholder.');
+      }
+      giveRect({ element: view, rect: lower });
+      act(() => observers.resizeAll());
+
+      await waitFor(() =>
+        expect(callsOf({ command: 'browser_tab_place' }).slice(placed)).toEqual([
+          { tabId: 'live-1', bounds: lower },
+        ]),
+      );
+    } finally {
+      frames.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it('navigates the shown tab and steps its history by its live id', async () => {

@@ -47,6 +47,7 @@ export type BrowserPaneModel = {
   readonly projectName: string | null;
   readonly shown: ShownTab | null;
   readonly address: string;
+  readonly canOpenOutside: boolean;
   readonly titleOf: (params: TabParams) => string;
   readonly error: string | null;
   readonly isDrafting: boolean;
@@ -88,6 +89,11 @@ export type BrowserPageGroup = {
   readonly isPins: boolean;
 };
 
+export type BrowserTarget =
+  | { readonly kind: 'web'; readonly url: string }
+  | { readonly kind: 'local'; readonly path: string };
+
 export type BrowserAddress =
   | { readonly kind: 'ok'; readonly url: string }
+  | { readonly kind: 'local'; readonly path: string }
   | { readonly kind: 'refused'; readonly reason: string };

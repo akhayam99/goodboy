@@ -131,7 +131,7 @@ export const BrowserAddressRow = ({
         label="Open in your browser"
         variant="ghost"
         tooltipSide="top"
-        disabled={model.address === ''}
+        disabled={!model.canOpenOutside}
         onClick={model.openOutside}
       />
       {onOpenAsPage === undefined ? null : (

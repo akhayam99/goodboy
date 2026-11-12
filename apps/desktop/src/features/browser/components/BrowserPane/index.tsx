@@ -21,6 +21,7 @@ type Props = {
 
 export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const model = useBrowserPane({ sessionId });
+  const frame = useRef<HTMLDivElement | null>(null);
   const view = useRef<HTMLDivElement | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
   const [isListOpen, setIsListOpen] = useState(browserTabListPref.read);
@@ -39,6 +40,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
 
   useNativePlacement({
     sessionId,
+    frame,
     view,
     tab: shownTab,
     attempt: model.wakeAttempt,
@@ -68,7 +70,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
         {hasTabs && !isListOpen ? <BrowserTabStrip model={model} /> : null}
         <div className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
           {isListOpen ? <BrowserTabList model={model} /> : null}
-          <BrowserView view={view} shown={model.shown} title={title} />
+          <BrowserView frame={frame} view={view} shown={model.shown} title={title} />
         </div>
       </div>
     </DrawerFrame>

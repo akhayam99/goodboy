@@ -1,18 +1,18 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { browserHost } from './browserHost';
 import { browserPaneRequests } from './browserPaneRequests';
 import { browserWorkspaceOf } from './browserWorkspaceOf';
 import { closeOrphanTab } from './closeOrphanTab';
-import type { BrowserBounds, OpenOutcome } from './types';
+import { openHostTab } from './openHostTab';
+import type { BrowserBounds, BrowserTarget, OpenOutcome } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly url: string;
+  readonly target: BrowserTarget;
   readonly bounds: BrowserBounds;
 };
 
-export const openPage = async ({ sessionId, url, bounds }: Params): Promise<OpenOutcome> => {
+export const openPage = async ({ sessionId, target, bounds }: Params): Promise<OpenOutcome> => {
   const workspaceId = browserWorkspaceOf({ sessionId });
   if (workspaceId === null) {
     return 'failed';
@@ -20,7 +20,7 @@ export const openPage = async ({ sessionId, url, bounds }: Params): Promise<Open
   const claimed = browserPaneRequests.opens.claim({
     key: browserPaneRequests.openKey({ sessionId }),
   });
-  const facts = await browserHost.open({ sessionId, workspaceId, url, bounds, isShown: false });
+  const facts = await openHostTab({ sessionId, workspaceId, target, bounds });
   if (!claimed.isCurrent()) {
     await closeOrphanTab({ sessionId, liveId: facts.id });
     return 'stale';
