@@ -948,6 +948,11 @@ Confirm or Cancel. At **Never**, an unapproved plan may be consumed by a
 writer, while revision and artifact checks still apply. Changing the level
 never starts a child already waiting for confirmation. An explicit child
 `confirm: true` or an ambiguous revise still requires confirmation at any level.
+A plan feeds one writer per role: a second writer of the same role on a plan
+that an unsettled writer already took is refused `artifact_busy`, in the same
+batch or a later one, while a tester or docs writer may still read it. A
+writer whose plan version is no longer current is refused `stale_revision`,
+whatever approval the older version had.
 
 The storage helpers in `store/runtime/auto/level/` keep session overrides
 and a separate default in the workspace value `auto.level`, whose key is

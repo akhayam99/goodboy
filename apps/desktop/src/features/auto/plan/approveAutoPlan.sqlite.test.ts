@@ -25,9 +25,15 @@ type ApproveParams = {
   readonly world: AutoWorld;
   readonly revision?: number;
   readonly send?: () => Promise<void>;
+  readonly onWritten?: () => Promise<void>;
 };
 
-const approve = ({ world, revision = 1, send = async () => undefined }: ApproveParams) =>
+const approve = ({
+  world,
+  revision = 1,
+  send = async () => undefined,
+  onWritten = async () => undefined,
+}: ApproveParams) =>
   approveAutoPlan({
     db: world.db,
     sessionId: AUTO_SEED_SESSION,
@@ -35,6 +41,7 @@ const approve = ({ world, revision = 1, send = async () => undefined }: ApproveP
     artifactId: PLAN,
     expectedRevision: revision,
     send,
+    onWritten,
   });
 
 describe('approveAutoPlan', () => {
@@ -49,6 +56,7 @@ describe('approveAutoPlan', () => {
       sessionId: AUTO_SEED_SESSION,
       agentId: AUTO_SEED_ROOT,
       content: 'Approved plan v1.',
+      focusArtifactId: PLAN,
     });
     expect(await getAutoArtifact({ db: world.db, artifactId: PLAN })).toMatchObject({
       approvalState: 'approved',
@@ -56,7 +64,7 @@ describe('approveAutoPlan', () => {
     });
   });
 
-  it('refuses a stale version without telling Auto, and says a newer version arrived', async () => {
+  it('refuses a version that is no longer current without telling Auto, naming both versions', async () => {
     const world = await worldWithPlan();
     await writeArtifactRevision({
       db: world.db,
@@ -75,9 +83,13 @@ describe('approveAutoPlan', () => {
     expect(result).toMatchObject({
       kind: 'refused',
       code: 'stale_revision',
-      message: 'A newer version arrived. Review it before approving.',
+      message: 'Plan v1 is no longer current. Review v2 before approving.',
     });
     expect(send).not.toHaveBeenCalled();
+    expect(await getAutoArtifact({ db: world.db, artifactId: PLAN })).toMatchObject({
+      approvalState: 'needs_approval',
+      approvedRevision: null,
+    });
   });
 
   it('keeps the approval and says so when Auto could not be told', async () => {
@@ -120,11 +132,33 @@ describe('approveAutoPlan', () => {
       artifactId: brandId<ArtifactId>({ value: 'plan-unknown' }),
       expectedRevision: 1,
       send: async () => undefined,
+      onWritten: async () => undefined,
     });
 
     expect(result).toMatchObject({
       kind: 'refused',
       message: "This plan isn't part of an Auto conversation.",
     });
+  });
+
+  it('announces the write before it tells Auto, and not when the approve is refused', async () => {
+    const world = await worldWithPlan();
+    const order: Array<string> = [];
+
+    await approve({
+      world,
+      onWritten: async () => {
+        order.push('written');
+      },
+      send: async () => {
+        order.push('told');
+      },
+    });
+    const onWritten = vi.fn(async () => undefined);
+    const refused = await approve({ world, revision: 9, onWritten });
+
+    expect(order).toEqual(['written', 'told']);
+    expect(refused.kind).toBe('refused');
+    expect(onWritten).not.toHaveBeenCalled();
   });
 });

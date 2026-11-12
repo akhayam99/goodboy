@@ -63,6 +63,7 @@
     "browser_tab_list",
     "browser_tab_navigate",
     "browser_tab_open",
+    "browser_tab_passkey_dismiss",
     "browser_tab_place",
     "browser_tab_reload",
     "browser_tab_row_delete",
