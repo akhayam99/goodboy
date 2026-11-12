@@ -183,6 +183,25 @@ describe('the browser tab list', () => {
     await within(list).findByRole('button', { name: 'Tax rates' });
   });
 
+  it('drops the asleep mark on the next poll when the wake event never came', async () => {
+    renderPane();
+    const list = await listOf();
+
+    tell({ facts: factsOf({ id: 'tax', state: 'asleep' }) });
+    await within(list).findByRole('button', { name: 'Tax rates, asleep' });
+
+    await within(list).findByRole('button', { name: 'Tax rates' }, { timeout: 4000 });
+  }, 8000);
+
+  it('explains the session label in a tooltip the label itself opens', async () => {
+    renderPane();
+    const list = await listOf();
+
+    fireEvent.mouseEnter(within(list).getByText('This session'));
+
+    expect(await screen.findByText('Tabs close when the session is archived.')).toBeDefined();
+  });
+
   it('folds to a rail and back, and keeps the width for the next time', async () => {
     renderPane();
     const list = await listOf();

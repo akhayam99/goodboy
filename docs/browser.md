@@ -356,8 +356,10 @@ it; Esc inside the page goes to the page.
   first, then This session, then New tab; the note that tabs close when the
   session is archived is the tooltip of the This session label. A tab the
   engine put to sleep or closed (`browser://tab-state`, read by
-  `useTabStates`, corrected by the 1.5 second poll) shows its favicon faint and
-  a moon mark, "Asleep, reloads when opened". The list has three widths in
+  `useTabStates`, corrected by every successful 1.5 second poll, and keyed by
+  the engine's tab id so the Browser page marks tabs of every session) shows its favicon faint and
+  a moon mark, "Asleep, may reload when opened" (an asleep webview comes back
+  as it was, a closed one loads again). The list has three widths in
   `browserTabListPref`: `list` (192px), `rail` (36px of favicons, titles in
   tooltips) and `hidden`; the fold button cycles `list` and `rail`, and a pane
   under 560px wide shows the rail. The old boolean value reads as `list` or

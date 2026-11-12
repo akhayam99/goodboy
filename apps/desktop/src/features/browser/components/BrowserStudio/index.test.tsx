@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { listen } from '@tauri-apps/api/event';
 import type { SessionId } from '@goodboy/types';
 import { nextProjectId, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
@@ -356,6 +357,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
 });
 
 describe('the browser page', () => {
@@ -378,6 +380,42 @@ describe('the browser page', () => {
     screen.getByRole('button', { name: 'PR #318' });
     screen.getByRole('button', { name: 'API guides, pinned' });
     screen.getByRole('heading', { name: 'Browser' });
+  });
+
+  it('marks a tab asleep in a session the page is not showing', async () => {
+    Object.defineProperty(window, '__TAURI_INTERNALS__', { configurable: true, value: {} });
+    store.setState({ browserLiveTabs: { [ROUNDING_SESSION]: { 'tab-pr': 'live-pr' } } });
+    openPage({ tabId: null });
+    await screen.findByRole('button', { name: 'PR #318' });
+
+    const handler = vi
+      .mocked(listen)
+      .mock.calls.filter(([name]) => name === 'browser://tab-state')
+      .map(([, callback]) => callback)
+      .at(-1);
+    if (handler === undefined) {
+      throw new Error('Nothing listens to browser://tab-state.');
+    }
+    act(() => {
+      handler({
+        event: 'browser://tab-state',
+        id: 1,
+        payload: {
+          id: 'live-pr',
+          sessionId: ROUNDING_SESSION,
+          url: 'https://git.northwind.dev/ledger-core/pull/318',
+          title: '',
+          state: 'asleep',
+          isShown: false,
+          hiddenSinceMs: 1,
+          openerId: null,
+          isPasskeyBlocked: false,
+        },
+      });
+    });
+
+    await screen.findByRole('button', { name: 'PR #318, asleep' });
+    screen.getByRole('button', { name: 'Tax rates' });
   });
 
   it('shows the first tab of the session it opened for, in the native view over the page', async () => {

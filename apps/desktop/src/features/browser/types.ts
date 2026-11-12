@@ -38,6 +38,10 @@ type TabParams = {
   readonly tab: BrowserTab;
 };
 
+type LiveIdParams = {
+  readonly liveId: string | undefined;
+};
+
 type TextParams = {
   readonly text: string;
 };
@@ -55,6 +59,7 @@ export type BrowserPaneModel = {
   readonly canOpenOutside: boolean;
   readonly titleOf: (params: TabParams) => string;
   readonly isAsleep: (params: TabParams) => boolean;
+  readonly isLiveAsleep: (params: LiveIdParams) => boolean;
   readonly error: string | null;
   readonly isDrafting: boolean;
   readonly wakeAttempt: number;

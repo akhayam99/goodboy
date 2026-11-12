@@ -46,11 +46,11 @@ export const useNativePlacement = ({
       setCover(next);
     };
     const uncover = (): void => {
-      if (coverRef.current === null || isOverlaidRef.current) {
+      if (coverRef.current === null || isOverlaidRef.current || uncoverFrameRef.current !== 0) {
         return;
       }
-      window.cancelAnimationFrame(uncoverFrameRef.current);
       uncoverFrameRef.current = window.requestAnimationFrame(() => {
+        uncoverFrameRef.current = 0;
         if (!isOverlaidRef.current) {
           show({ next: null });
         }
@@ -96,6 +96,7 @@ export const useNativePlacement = ({
     return () => {
       window.cancelAnimationFrame(frameId);
       window.cancelAnimationFrame(uncoverFrameRef.current);
+      uncoverFrameRef.current = 0;
       resize?.disconnect();
       overlays.stop();
       placement.stop();

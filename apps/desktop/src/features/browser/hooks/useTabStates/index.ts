@@ -1,28 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { listenTabState } from '../../listenTabState';
 import type { BrowserTabFacts, BrowserTabState } from '../../types';
 
-type Params = {
+type ReconcileParams = {
   readonly facts: ReadonlyArray<BrowserTabFacts>;
 };
 
 type TabStates = ReadonlyMap<string, BrowserTabState>;
 
+type TabStatesModel = {
+  readonly states: TabStates;
+  readonly reconcile: (params: ReconcileParams) => void;
+};
+
 const NO_STATES: TabStates = new Map();
 
-export const useTabStates = ({ facts }: Params): TabStates => {
+export const useTabStates = (): TabStatesModel => {
   const [states, setStates] = useState<TabStates>(NO_STATES);
 
-  useEffect(() => {
-    setStates(new Map(facts.map((fact) => [fact.id, fact.state])));
-  }, [facts]);
+  const reconcile = useCallback(({ facts }: ReconcileParams) => {
+    setStates((current) => {
+      if (facts.every((fact) => current.get(fact.id) === fact.state)) {
+        return current;
+      }
+      const next = new Map(current);
+      facts.forEach((fact) => next.set(fact.id, fact.state));
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     let isLive = true;
     let unlisten: (() => void) | null = null;
     void listenTabState({
-      onState: ({ facts: told }) =>
-        setStates((current) => new Map(current).set(told.id, told.state)),
+      onState: ({ facts: told }) => reconcile({ facts: [told] }),
     }).then((stop) => {
       if (!isLive) {
         stop();
@@ -34,7 +45,7 @@ export const useTabStates = ({ facts }: Params): TabStates => {
       isLive = false;
       unlisten?.();
     };
-  }, []);
+  }, [reconcile]);
 
-  return states;
+  return { states, reconcile };
 };

@@ -1,6 +1,8 @@
 import { Plus } from 'lucide-react';
 import { Button, ICON_SIZE, RevealRegion, ScrollFade, SectionLabel } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { useShallow } from 'zustand/react/shallow';
+import { useAppStore } from '../../../../store';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { hostOf } from '../../hostOf';
 import type { BrowserPageGroup, BrowserPaneModel } from '../../types';
@@ -31,6 +33,9 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
     }
     return tab.title === '' ? hostOf({ url: tab.url }) : tab.title;
   };
+  const bindings = useAppStore(
+    useShallow((state) => groups.map((group) => state.browserLiveTabs[group.sessionId])),
+  );
   return (
     <nav aria-label="Tabs by session" className="flex min-h-0 flex-1 flex-col px-2 pt-2">
       <RevealRegion
@@ -49,7 +54,7 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
         }
       >
         <ScrollFade viewportClassName="flex flex-col gap-4 pb-2">
-          {groups.map((group) => {
+          {groups.map((group, index) => {
             const isHere = group.sessionId === sessionId;
             return (
               <section
@@ -71,7 +76,7 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
                       url={tab.url}
                       isSelected={isHere && tab.id === shownId}
                       isPin={group.isPins}
-                      isAsleep={isHere && model.isAsleep({ tab })}
+                      isAsleep={model.isLiveAsleep({ liveId: bindings[index]?.[tab.id] })}
                       onSelect={() => onPick({ group, tab })}
                       {...(isHere && !group.isPins && { onClose: () => model.close({ tab }) })}
                     />

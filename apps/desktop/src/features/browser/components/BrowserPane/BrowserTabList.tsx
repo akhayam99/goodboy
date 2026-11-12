@@ -1,5 +1,6 @@
 import { ChevronsLeft, ChevronsRight, Plus } from 'lucide-react';
 import {
+  FOCUS_RING,
   ICON_SIZE,
   IconButton,
   ScrollFade,
@@ -56,7 +57,9 @@ export const BrowserTabList = ({ model, isRail, canFold, onFold }: Props) => {
         <section className="flex flex-col gap-1">
           {isRail ? null : (
             <Tooltip content={SESSION_NOTE} side="right">
-              <SectionLabel label="This session" />
+              <span tabIndex={0} className={cn('flex min-w-0 rounded-sm', FOCUS_RING)}>
+                <SectionLabel label="This session" />
+              </span>
             </Tooltip>
           )}
           <div className="flex flex-col gap-0.5">
