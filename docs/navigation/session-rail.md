@@ -37,7 +37,7 @@ folds the column on the left, and the open session row is not lit
   pressed while on and runs its registry action (`session.pin` / `unpin`; a
   failure keeps the old state and shows under the row with Retry,
   `ActionStatusLine`),
-  **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
+  **Refresh session** (⌘R, `useSessionRefresh`, the same call as the key and
   the palette) and **More session actions** (`⋯`, `ObjectOverflowMenu` over
   the `session` registry kind), which holds five rows at most:
   **Limit: none** or **Limit: $5.00** (`session.spend`), **Autopilot: on** or

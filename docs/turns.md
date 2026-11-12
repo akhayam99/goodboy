@@ -619,7 +619,7 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   message is still on screen about 1.5 s after it arrived. `freshenNode` gives
   each body `tr` a `--reveal-delay` from its index; only opacity animates.
 - `liveTextRegistry.ts` marks a run when an `assistant_text` event reaches the
-  store through `readTurnStream`. Load, a Cmd+R re-attach replay and another
+  store through `readTurnStream`. Load, a window reload re-attach replay and another
   window never mark. A text whose host mounts more than 1.5 s after the last
   mark shows whole.
 - `useRevealedText` gives a host the
@@ -782,10 +782,10 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   share one stream core (`features/chat/turn.ts`). After every event it hands
   on, it writes a cursor (`seq`, index inside that line, and the turn's owner:
   span fields, working directory, mount) to session storage
-  (`features/chat/turnCursor.ts`). Session storage survives Cmd+R and nothing
+  (`features/chat/turnCursor.ts`). Session storage survives a window reload (Cmd+Shift+R) and nothing
   else, so a cursor means "this window was streaming this run before it
   reloaded".
-- **Cmd+R re-attaches.** When a workspace loads, `reconcileLoadedAgent` keeps
+- **A window reload re-attaches.** When a workspace loads, `reconcileLoadedAgent` keeps
   a running agent whose run has a cursor here (or a stream still open in this
   window) instead of cancelling it, and `reattachLiveTurn` asks Rust for what
   came after the cursor, skips the events it already stored, drops live lines

@@ -11,6 +11,7 @@ export const MENU_BOUND_IDS: ReadonlyArray<string> = [
   'zoom.in',
   'zoom.out',
   'zoom.reset',
+  'view.reload',
   'app.reload',
   'nav.back',
   'nav.forward',

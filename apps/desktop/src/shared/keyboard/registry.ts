@@ -94,7 +94,13 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'general',
   },
-  'app.reload': { combo: 'cmd+KeyR', label: 'Reload', plane: 'app', group: 'general' },
+  'view.reload': { combo: 'cmd+KeyR', label: 'Reload', plane: 'app', group: 'general' },
+  'app.reload': {
+    combo: 'cmd+shift+KeyR',
+    label: 'Reload Goodboy',
+    plane: 'session',
+    group: 'general',
+  },
 
   'workspace.switcher': {
     combo: 'cmd+KeyO',
@@ -449,12 +455,6 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'session',
     scope: 'overview',
-  },
-  'session.refresh': {
-    combo: 'cmd+shift+KeyR',
-    label: 'Refresh session',
-    plane: 'session',
-    group: 'session',
   },
   'ask.open': {
     combo: 'cmd+KeyL',
