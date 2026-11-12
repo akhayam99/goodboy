@@ -10,6 +10,7 @@ use tauri::webview::InvokeRequest;
 use tauri::{App, Listener, Manager, Url, Webview, WebviewUrl, WebviewWindowBuilder, Window};
 
 use super::commands::{close_session, list_session, owned_tab};
+use super::find::{find_in_page, MAX_NEEDLE_CHARS};
 use super::guard::label_of;
 use super::host::{
     close_each, close_tab, fill_popup, open_tab, refresh_with, reserve_popup, OpenTab,
@@ -21,8 +22,8 @@ use super::lifecycle::{
 use super::load::{report_load, LoadPhase, TAB_LOAD_EVENT};
 use super::profile::{begin_clear, ProfileId};
 use super::reason::{
-    BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY, PROFILE_LIVE,
-    SESSION_CLOSING, TAB_CLOSED, TAB_GONE, TOO_MANY_POPUPS,
+    BROWSER_CALLER, INVALID_ADDRESS, NEEDLE_TOO_LONG, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY,
+    PROFILE_LIVE, SESSION_CLOSING, TAB_CLOSED, TAB_GONE, TOO_MANY_POPUPS,
 };
 use super::registry::{NewTab, TabState};
 use super::{
@@ -1412,6 +1413,18 @@ fn refuses_to_stop_or_read_history_of_a_tab_the_caller_does_not_own() {
     assert!(matches!(
         owned_tab(&caller, &id),
         Err(MessageError::Refused(code)) if code == OTHER_WINDOW
+    ));
+}
+
+#[test]
+fn refuses_a_needle_over_the_cap_before_any_script_runs() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = app.get_webview(&label_of(&id)).expect("tab webview");
+    let needle = "a".repeat(MAX_NEEDLE_CHARS + 1);
+    assert!(matches!(
+        find_in_page(&tab, &needle, false),
+        Err(MessageError::Refused(code)) if code == NEEDLE_TOO_LONG
     ));
 }
 

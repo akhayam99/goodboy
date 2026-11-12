@@ -1,5 +1,6 @@
 pub(crate) mod commands;
 mod favicon;
+mod find;
 mod guard;
 mod host;
 mod lifecycle;

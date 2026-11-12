@@ -55,4 +55,12 @@ export const BROWSER_SHORTCUTS = {
     group: 'session',
     scope: 'browser',
   },
+  'browser.find': {
+    combo: 'cmd+KeyF',
+    offMacCombo: 'ctrl+shift+KeyF',
+    label: 'Find in page',
+    plane: 'app',
+    group: 'session',
+    scope: 'browser',
+  },
 } as const satisfies Record<string, ShortcutEntry>;

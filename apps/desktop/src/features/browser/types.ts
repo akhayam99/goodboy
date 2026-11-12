@@ -17,6 +17,10 @@ export type BrowserHistoryState = {
   readonly canGoForward: boolean;
 };
 
+export type BrowserFindOutcome = {
+  readonly isFound: boolean;
+};
+
 export type BrowserTabFavicon = {
   readonly origin: string;
   readonly src: string | null;
@@ -57,6 +61,10 @@ type ErrorParams = {
   readonly error: unknown;
 };
 
+export type FindParams = TextParams & {
+  readonly isBackwards: boolean;
+};
+
 export type BrowserPaneModel = {
   readonly sessionId: SessionId;
   readonly tabs: ReadonlyArray<BrowserTab>;
@@ -86,6 +94,8 @@ export type BrowserPaneModel = {
   readonly duplicate: () => void;
   readonly isPasskeyBlocked: boolean;
   readonly dismissPasskey: () => void;
+  readonly find: (params: FindParams) => Promise<boolean>;
+  readonly clearFind: () => Promise<void>;
   readonly showError: (params: ErrorParams) => void;
 };
 

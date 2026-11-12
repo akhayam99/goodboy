@@ -165,6 +165,10 @@ browser-pane-address-dark
 browser-pane-dark
 browser-pane-field
 browser-pane-field-dark
+browser-pane-find
+browser-pane-find-dark
+browser-pane-find-missing
+browser-pane-find-missing-dark
 browser-pane-keys
 browser-pane-keys-dark
 browser-pane-loading

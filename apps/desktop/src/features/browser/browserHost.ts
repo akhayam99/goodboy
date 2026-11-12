@@ -2,6 +2,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type {
   BrowserBounds,
+  BrowserFindOutcome,
   BrowserHistoryState,
   BrowserTabFacts,
   BrowserTabFavicon,
@@ -27,6 +28,11 @@ type NavigateParams = TabParams & {
   readonly url: string;
 };
 
+type FindParams = TabParams & {
+  readonly needle: string;
+  readonly isBackwards: boolean;
+};
+
 type SessionParams = {
   readonly sessionId: SessionId;
 };
@@ -46,6 +52,8 @@ export const browserHost = {
     invokeCommand<null>('browser_tab_navigate', { args: { tabId, url } }),
   reload: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_reload', { args: { tabId } }),
   stop: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_stop', { args: { tabId } }),
+  find: ({ tabId, needle, isBackwards }: FindParams) =>
+    invokeCommand<BrowserFindOutcome>('browser_find', { args: { tabId, needle, isBackwards } }),
   historyState: ({ tabId }: TabParams) =>
     invokeCommand<BrowserHistoryState | null>('browser_history_state', { args: { tabId } }),
   favicon: ({ tabId }: TabParams) =>

@@ -5,13 +5,14 @@ import type { BrowserPaneModel } from '../../types';
 type Params = {
   readonly model: BrowserPaneModel;
   readonly isOn: boolean;
+  readonly onFind: () => void;
 };
 
 type StepParams = {
   readonly step: 1 | -1;
 };
 
-export const useBrowserKeys = ({ model, isOn }: Params): void => {
+export const useBrowserKeys = ({ model, isOn, onFind }: Params): void => {
   const currentId = model.shown?.tab.id ?? null;
 
   const go = ({ step }: StepParams): void => {
@@ -27,6 +28,7 @@ export const useBrowserKeys = ({ model, isOn }: Params): void => {
   useShortcut('browser.prevTab', () => go({ step: -1 }), isOn);
   useShortcut('browser.nextTab', () => go({ step: 1 }), isOn);
   useShortcut('browser.pin', model.togglePin, isOn);
+  useShortcut('browser.find', onFind, isOn);
   useShortcut(
     'browser.closeTab',
     () => {

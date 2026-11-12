@@ -20,6 +20,10 @@ export const BROWSER_PANE_SCENES: Readonly<Record<string, ComponentType>> = {
   'browser-page-dark': () => <BrowserPaneScene state="page" theme="dark" />,
   'browser-pane-keys': () => <BrowserPaneScene state="keys" theme="light" />,
   'browser-pane-keys-dark': () => <BrowserPaneScene state="keys" theme="dark" />,
+  'browser-pane-find': () => <BrowserPaneScene state="find" theme="light" />,
+  'browser-pane-find-dark': () => <BrowserPaneScene state="find" theme="dark" />,
+  'browser-pane-find-missing': () => <BrowserPaneScene state="find-missing" theme="light" />,
+  'browser-pane-find-missing-dark': () => <BrowserPaneScene state="find-missing" theme="dark" />,
   'browser-peek': () => <BrowserPaneScene state="peek" theme="light" />,
   'browser-peek-dark': () => <BrowserPaneScene state="peek" theme="dark" />,
 };

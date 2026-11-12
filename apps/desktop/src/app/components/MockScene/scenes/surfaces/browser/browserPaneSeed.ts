@@ -9,7 +9,18 @@ import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed
 import { mockSceneIpc } from '../../mockSceneIpc';
 
 export type BrowserPaneSceneState =
-  'pane' | 'tabs' | 'page' | 'peek' | 'address' | 'field' | 'more' | 'passkey' | 'loading' | 'keys';
+  | 'pane'
+  | 'tabs'
+  | 'page'
+  | 'peek'
+  | 'address'
+  | 'field'
+  | 'more'
+  | 'passkey'
+  | 'loading'
+  | 'keys'
+  | 'find'
+  | 'find-missing';
 
 const VISITS: ReadonlyArray<BrowserVisit> = [
   { url: 'http://localhost:5173/checkout/confirm', title: 'Confirm order', visitedAt: 3 },
@@ -181,6 +192,8 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return { origin: CHECKOUT_ORIGIN, src: CHECKOUT_FAVICON };
       case 'browser_tab_stop':
         return null;
+      case 'browser_find':
+        return { isFound: textOf({ payload, field: 'needle' }) === 'retry' };
       case 'browser_visits_list':
         return VISITS;
       case 'browser_tab_open':
