@@ -483,10 +483,11 @@ impl BrowserRegistry {
     pub(crate) fn grant_local(&self, id: &str, file: &LocalFile) -> Option<String> {
         let mut tabs = lock_or_recover(&self.tabs);
         let tab = tabs.by_id.get_mut(id)?;
+        let wide_page = local::wide_page_of(file);
         let same = tab
             .grants
             .iter()
-            .find(|grant| grant.folder == file.folder && grant.is_deep == file.is_deep);
+            .find(|grant| grant.folder == file.folder && grant.wide_page == wide_page);
         if let Some(grant) = same {
             return Some(grant.token.clone());
         }
@@ -494,7 +495,7 @@ impl BrowserRegistry {
         tab.grants.push(LocalGrant {
             token: token.clone(),
             folder: file.folder.clone(),
-            is_deep: file.is_deep,
+            wide_page,
         });
         Some(token)
     }

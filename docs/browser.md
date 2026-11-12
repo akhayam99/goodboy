@@ -97,17 +97,21 @@ opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
   nothing. Anything else answers 404; nothing lists a folder.
 - **How far a grant reaches.** A grant serves every known type in the page's
   own folder, one level, no recursion. Below that folder it serves only
-  static assets (`ASSET_TYPES`: styles, scripts, source maps, fonts, icons and
-  images), never a page, a PDF, data, text or video, so a site with
+  static assets (`ASSET_TYPES`: styles, scripts, source maps, fonts, icons,
+  images, wasm and video), never a page, a PDF, data or text, so a site with
   `index.html` beside `css/`, `js/` and `img/` loads whole, while a page
   saved into a busy folder can not read the documents under it. A link from
   the page to another page in a subfolder does not load; type its path to
-  open it. A wide folder gets no subfolders at all: the home folder and every
-  folder right under it (Downloads, Documents, Desktop), the top of the disk
-  or a folder one level down, a folder right under `/Volumes`, `/media` or
-  `/mnt`, and the top of a mounted volume (its device differs from its
-  parent's on macOS and Linux, a reparse point on Windows). A check that
-  can not read the folder or its parent counts as wide.
+  open it. A wide folder is the home folder and every folder right under it
+  (Downloads, Documents, Desktop), the top of the disk or a folder one level
+  down, a folder right under `/Volumes`, `/media` or `/mnt`, and the top of a
+  mounted volume (its device differs from its parent's on macOS and Linux, a
+  reparse point on Windows). A check that can not read the folder or its
+  parent counts as wide. A page in a wide folder gets a grant of its own
+  (`wide_page`) that serves the page itself and the static assets beside it,
+  nothing else: no subfolder, no other page, and no PDF, data or text file
+  next to it, so a page saved to Downloads can not read the documents saved
+  there. Each file opened in a wide folder gets its own token.
 - **Headers.** Responses carry `no-store`, `nosniff`, `no-referrer` and
   `Cross-Origin-Resource-Policy: same-origin`.
 - **What the app sees.** Facts, listings and rows carry the `file://` address,

@@ -51,18 +51,19 @@ const PART_TYPES: &[(&str, &str)] = &[
     ("md", "text/plain; charset=utf-8"),
     ("mp4", "video/mp4"),
     ("webm", "video/webm"),
+    ("wasm", "application/wasm"),
 ];
 
 const ASSET_TYPES: &[&str] = &[
     "css", "js", "mjs", "map", "woff", "woff2", "ttf", "otf", "ico", "svg", "png", "jpg", "jpeg",
-    "gif", "webp", "avif",
+    "gif", "webp", "avif", "wasm", "mp4", "webm",
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct LocalGrant {
     pub(crate) token: String,
     pub(crate) folder: PathBuf,
-    pub(crate) is_deep: bool,
+    pub(crate) wide_page: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -284,10 +285,18 @@ fn is_inside(grant: &LocalGrant, path: &Path) -> bool {
     if parts.is_empty() || parts.iter().any(is_hidden) {
         return false;
     }
-    if parts.len() == 1 {
-        return true;
+    let is_asset = ASSET_TYPES.contains(&extension_of(path).as_str());
+    if let Some(page) = &grant.wide_page {
+        return parts.len() == 1 && (path == page || is_asset);
     }
-    grant.is_deep && ASSET_TYPES.contains(&extension_of(path).as_str())
+    parts.len() == 1 || is_asset
+}
+
+pub(crate) fn wide_page_of(file: &LocalFile) -> Option<PathBuf> {
+    match file.is_deep {
+        true => None,
+        false => Some(file.path.clone()),
+    }
 }
 
 pub(crate) fn grants_path(grant: &LocalGrant, path: &Path) -> bool {
@@ -448,7 +457,7 @@ mod tests {
         LocalGrant {
             token: "0f1e".to_string(),
             folder: file.folder.clone(),
-            is_deep: file.is_deep,
+            wide_page: wide_page_of(file),
         }
     }
 
@@ -658,7 +667,7 @@ mod tests {
         let grant = LocalGrant {
             token: "0f1e".to_string(),
             folder: PathBuf::from(r"C:\work\harborline"),
-            is_deep: true,
+            wide_page: None,
         };
         let live = live_url("0f1e", Path::new(r"C:\work\harborline\plan.html")).expect("live");
         let (_, path) = split_live(&live).expect("split");
@@ -682,7 +691,14 @@ mod tests {
         let folder = Folder::new();
         let plan = folder.write("harborline/index.html", "x");
         let grant = grant_of(&resolve(plan.to_str().expect("utf8"), None).expect("plan"));
-        for asset in ["css/site.css", "js/app.js", "img/logo.png", "fonts/a.woff2"] {
+        for asset in [
+            "css/site.css",
+            "js/app.js",
+            "img/logo.png",
+            "fonts/a.woff2",
+            "wasm/core.wasm",
+            "clips/demo.mp4",
+        ] {
             let path = folder.write(&format!("harborline/{asset}"), "x");
             assert_eq!(status(&grant, &path), StatusCode::OK, "{asset}");
         }
@@ -691,7 +707,8 @@ mod tests {
             "docs/guide.html",
             "scans/spec.pdf",
             "notes/plan.md",
-            "clips/demo.mp4",
+            "notes/plan.txt",
+            "exports/ledger.csv",
         ] {
             let path = folder.write(&format!("harborline/{kept}"), "x");
             assert_eq!(status(&grant, &path), StatusCode::NOT_FOUND, "{kept}");
@@ -704,7 +721,7 @@ mod tests {
     fn keeps_a_page_in_a_folder_right_under_home_to_the_files_beside_it() {
         let folder = Folder::new();
         let plan = folder.write("downloads/plan.html", "x");
-        let beside = folder.write("downloads/ledger.json", "{}");
+        let beside = folder.write("downloads/site.css", "p {}");
         let below = folder.write("downloads/northwind/site.css", "p {}");
         let file = resolve("~/downloads/plan.html", Some(&folder.root)).expect("page");
         assert!(!file.is_deep);
@@ -715,6 +732,49 @@ mod tests {
         let nested = folder.write("downloads/acme/plan.html", "x");
         let file = resolve(nested.to_str().expect("utf8"), Some(&folder.root)).expect("nested");
         assert!(file.is_deep);
+    }
+
+    #[test]
+    fn keeps_a_page_in_a_wide_folder_to_itself_and_its_assets() {
+        let folder = Folder::new();
+        let plan = folder.write("downloads/plan.html", "x");
+        let file = resolve("~/downloads/plan.html", Some(&folder.root)).expect("page");
+        assert!(!file.is_deep);
+        let grant = grant_of(&file);
+        assert_eq!(status(&grant, &plan), StatusCode::OK);
+        for asset in ["site.css", "app.js", "logo.png", "a.woff2", "core.wasm"] {
+            let path = folder.write(&format!("downloads/{asset}"), "x");
+            assert_eq!(status(&grant, &path), StatusCode::OK, "{asset}");
+        }
+        for kept in [
+            "statement.pdf",
+            "ledger.json",
+            "notes.txt",
+            "notes.md",
+            "ledger.csv",
+            "other.html",
+        ] {
+            let path = folder.write(&format!("downloads/{kept}"), "x");
+            assert_eq!(status(&grant, &path), StatusCode::NOT_FOUND, "{kept}");
+        }
+    }
+
+    #[test]
+    fn gives_each_page_in_a_wide_folder_its_own_grant() {
+        let folder = Folder::new();
+        folder.write("downloads/plan.html", "x");
+        let spec = folder.write("downloads/spec.pdf", "x");
+        let registry = BrowserRegistry::default();
+        crate::browser::tests::seed_local_tab(&registry, "tab-a");
+        let plan = resolve("~/downloads/plan.html", Some(&folder.root)).expect("plan");
+        let opened = resolve("~/downloads/spec.pdf", Some(&folder.root)).expect("spec");
+        let plan_token = registry.grant_local("tab-a", &plan).expect("grant");
+        let spec_token = registry.grant_local("tab-a", &opened).expect("grant");
+        assert_ne!(plan_token, spec_token);
+        let from_plan = live_url(&plan_token, &spec).expect("live");
+        let from_spec = live_url(&spec_token, &spec).expect("live");
+        assert!(!may_load(&registry, "tab-a", &from_plan));
+        assert!(may_load(&registry, "tab-a", &from_spec));
     }
 
     #[test]
