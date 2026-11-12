@@ -46,6 +46,7 @@ type Props = {
   readonly onRevealRun: (params: RevealParams) => void;
   readonly renderRow: (params: BranchRowParams) => ReactNode;
   readonly heading?: BranchWorkHeading;
+  readonly headingLevel?: 2 | 3;
 };
 
 type PartParams = {
@@ -99,6 +100,7 @@ export const RunsByBranch = ({
   onRevealRun,
   renderRow,
   heading,
+  headingLevel = 2,
 }: Props) => (
   <>
     {groups.map((group) => {
@@ -121,7 +123,7 @@ export const RunsByBranch = ({
       return (
         <ListGridGroup
           key={group.key}
-          headingLevel={2}
+          headingLevel={headingLevel}
           label={heading?.label ?? branchHeadLabelOf({ head: group.head })}
           mark={heading?.mark ?? (mark === null ? undefined : <span>{mark}</span>)}
           count={branchGroupShownCountOf({ group })}

@@ -5,12 +5,8 @@ import { createPortal } from 'react-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
-import {
-  DrawerColumn,
-  READER_DRAWER_STORAGE_KEY,
-  RIGHT_DRAWER_STORAGE_KEY,
-  type DrawerColumnFrame,
-} from '../components/DrawerColumn';
+import { DrawerColumn, type DrawerColumnFrame } from '../components/DrawerColumn';
+import { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from '../drawerWidthKeys';
 import {
   DRAWER_INSET,
   READER_DRAWER_DEFAULT,

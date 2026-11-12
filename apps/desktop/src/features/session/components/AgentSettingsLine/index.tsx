@@ -5,7 +5,6 @@ import { useAppStore } from '../../../../store';
 import { AutoLevelSetting } from '../../../auto/level/AutoLevelSetting';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { pausingSessionCapOf } from '../../../budget/pausingSessionCapOf';
-import { RUN_MODEL_COPY } from '../../startRun/runModelCopy';
 import { AutoLimitSetting } from './AutoLimitSetting';
 import { autoLimitWordsOf } from './autoLimitWordsOf';
 import { SessionLimitSetting } from './SessionLimitSetting';
@@ -20,10 +19,9 @@ type Props = {
   readonly kind: ReactNode;
   readonly auto: AutoBudget | null;
   readonly asksSlotRef: RefCallback<HTMLElement>;
-  readonly modelsSlotRef: RefCallback<HTMLElement>;
 };
 
-export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef, modelsSlotRef }: Props) => {
+export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef }: Props) => {
   const sessionId = session.id;
   const workspaceId = session.workspaceId;
   const workspaceName = useAppStore(
@@ -60,17 +58,6 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef, modelsSlot
           })}
         />
       )}
-      <span
-        data-settings-models=""
-        className="inline-flex items-center gap-1 has-[[data-settings-slot=models]:empty]:hidden"
-      >
-        {auto === null ? null : (
-          <span className="shrink-0 text-meta text-faint-foreground">
-            {RUN_MODEL_COPY.autoAgent}
-          </span>
-        )}
-        <span ref={modelsSlotRef} data-settings-slot="models" className="inline-flex" />
-      </span>
     </div>
   );
 };

@@ -619,7 +619,7 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   message is still on screen about 1.5 s after it arrived. `freshenNode` gives
   each body `tr` a `--reveal-delay` from its index; only opacity animates.
 - `liveTextRegistry.ts` marks a run when an `assistant_text` event reaches the
-  store through `readTurnStream`. Load, a Cmd+R re-attach replay and another
+  store through `readTurnStream`. Load, a window reload re-attach replay and another
   window never mark. A text whose host mounts more than 1.5 s after the last
   mark shows whole.
 - `useRevealedText` gives a host the
@@ -782,10 +782,10 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   share one stream core (`features/chat/turn.ts`). After every event it hands
   on, it writes a cursor (`seq`, index inside that line, and the turn's owner:
   span fields, working directory, mount) to session storage
-  (`features/chat/turnCursor.ts`). Session storage survives Cmd+R and nothing
+  (`features/chat/turnCursor.ts`). Session storage survives a window reload (Cmd+Shift+R) and nothing
   else, so a cursor means "this window was streaming this run before it
   reloaded".
-- **Cmd+R re-attaches.** When a workspace loads, `reconcileLoadedAgent` keeps
+- **A window reload re-attaches.** When a workspace loads, `reconcileLoadedAgent` keeps
   a running agent whose run has a cursor here (or a stream still open in this
   window) instead of cancelling it, and `reattachLiveTurn` asks Rust for what
   came after the cursor, skips the events it already stored, drops live lines
@@ -1412,11 +1412,12 @@ avoided on `SendControl`'s own buttons.
   not the placeholder, and it also holds Attach files. It reads `CHAT_PREFIXES`
   so a new prefix group appears there on its own. Then `PermissionModePicker`,
   then an attachment count once files are staged (the attachment chips
-  themselves sit above the field, not in this row). On an agent or Auto page
-  the composer keeps only the message: `AgentDetailPane` passes
-  `controlSlots` and `ComposerToolbar` portals `PermissionModePicker` and
-  `ComposerRoutingPicker` into the page's settings line (`AgentSettingsLine`),
-  so the composer still owns the turn routing it sends with.
+  themselves sit above the field, not in this row). The right side is
+  `ComposerRoutingPicker` and Send on every surface: the model of the next
+  turn is picked in the box that sends it, and nowhere else on the page. On
+  an agent or Auto page `AgentDetailPane` passes `controlSlots` and
+  `ComposerToolbar` portals only `PermissionModePicker` into the page's
+  settings line (`AgentSettingsLine`).
 - The toolbar is a container (`@container` on `ComposerToolbar`), so it
   answers to the composer's width, not the window's, and a drawer composer
   holds at the narrowest drawer. Labels never wrap (`whitespace-nowrap`). It
@@ -1491,7 +1492,8 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   sits above that, since it is a warning rather than composer content.
 - A message starting with `/` sends as plain text; no slash command is resolved.
 - Sending: the text box is a `PromptField` of kind `message` in its `bare`
-  variant (the shell, tray and toolbar stay `ChatInput`'s own): `Enter`
+  variant inside the shared `ComposerSurface`, with the dock and the gates
+  above it and the toolbar in a `ComposerFooter` below: `Enter`
   sends, `Shift+Enter` adds a line, `⌘Enter` sends now while a turn runs.
   The quick-actions popover blocks the send keys while it is open.
 
@@ -1520,6 +1522,16 @@ swaps the two kinds back on those fields for this release.
 says whether it talks to an agent and with which kind; a new agent field
 must be a `PromptField` of its kind. The workspace Chat bubble and the hint
 log read what you wrote as markdown.
+
+Every composer has one look, the one the agent page set. `ComposerSurface`
+(`shared/components/ComposerSurface`) is the box: soft border, `bg-subtle`,
+the strong border and shadow on focus, the tint and the drop overlay while a
+file is dragged, flat top under a tray. `ComposerAttachments` puts the file
+chips above the text, and `ComposerFooter` is the row under it: attach control,
+notes and the file count (`ComposerAttachmentCount`, "2 of 10 files") on the
+left, the model picker and Send on the right. `PromptField` in its `card`
+variant and `ChatInput` both draw from these; a variant is a prop (`drop`,
+`isJoinedAbove`, the `model` slot), never a second box.
 
 Files ride on `usePendingAttachments` (`shared/hooks`): paste, drop and
 **Attach files**, up to 10 files of 10 MB each, refused with a note in the

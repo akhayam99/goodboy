@@ -79,7 +79,6 @@ export const AgentDetailPane = ({
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [hasNextAction, setHasNextAction] = useState(false);
   const [asksSlot, setAsksSlot] = useState<HTMLElement | null>(null);
-  const [modelsSlot, setModelsSlot] = useState<HTMLElement | null>(null);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const events = useTranscript(agent.id);
   const briefLine = useMemo(() => agentBriefOf({ events }), [events]);
@@ -181,7 +180,6 @@ export const AgentDetailPane = ({
         agent={agent}
         autoView={isAutoRoot ? (autoChat.tree?.view ?? null) : null}
         asksSlotRef={setAsksSlot}
-        modelsSlotRef={setModelsSlot}
       />
     ) : null;
   const lead = (
@@ -244,7 +242,7 @@ export const AgentDetailPane = ({
         mode="conversation"
         onOpenTranscript={openTranscript}
         hasAdvanceRow={runStep === undefined}
-        {...(runStep === undefined && { controlSlots: { asks: asksSlot, models: modelsSlot } })}
+        {...(runStep === undefined && { controlSlots: { asks: asksSlot } })}
         {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
         {...(runStep?.liveSentence !== undefined && { liveSentence: runStep.liveSentence })}
         composerStop={autoChat.stop}

@@ -541,11 +541,15 @@ when the run has no known total), cost and age, every row the same columns. A ro
 `workBranchesOf` (`features/session`) reads it: the agents of the run through
 `Agent.mountId`, the mount a step inherits from the step before it
 (`inheritedMountIdOf`, shared with `selectRunStepMountId`) and the Auto tree.
-A read only agent counts, and a detached mount leaves the run without a branch.
-`SessionRun.branches` carries the result, and every row, group and count reads
-it. Under two branches the page groups **By state**: **Needs you**,
-**Running**, **Idle** (stopped, paused, ready), **Finished** (the first 30, then
-**Show all**) and **Archived** folded behind **Show** (`runGroupsOf`). The row
+A read only agent counts. A detached mount or a removed worktree moves its
+branch to `SessionRun.goneBranches`, so the run keeps its branch group on Runs.
+`SessionRun.branches` carries the attached result, which the row chips read. The
+branch groups, the branch count behind the switch and the **Also on** chip read
+both lists (`runBranchMembershipOf`), so a removed branch keeps its group even
+when the run also works on an attached one. The Runs page drops archived runs (`RunsGrid`); the timeline keeps
+them and the run page restores them. Under two branches the page groups **By
+state**: **Needs you**, **Running**, **Idle** (stopped, paused, ready) and
+**Finished** (the first 30, then **Show all**) (`runGroupsOf`). The row
 shows its first branch before the cut of the title and the rest as `+N`, with a
 tooltip that lists project and branch. With two or more branches a switch, **By
 branch** or **By state**, is remembered for the session, also after a reload
@@ -554,9 +558,16 @@ branch** or **By state**, is remembered for the session, also after a reload
 `selectGroupBy`, which Questions and Artifacts read too), and starts on **By
 branch**. **By branch** (`branchGroupsOf`) draws one group per branch, one per
 pull request series from `store/slices/pr-series` with its parts as rows,
-and **No branch** last. A group that holds something that needs you goes
-first, its finished runs fold into **N finished**, its archived runs fold apart
-behind **N archived** and come last (`branchGroupRunsOf`), and a run that touches
+and **No branch**. `branchGroupOrderOf` orders them: what needs you, then what
+runs, then open branches (no pull request or an open one) by latest activity,
+and **No branch** follows the same rules. A group whose pull requests are all
+merged or closed, or whose branch is gone (no mount of the branch or series is
+still attached), with no live run, folds under one
+**Finished** row at the bottom with its count, closed until **Show**
+(`FinishedBranches`). Inside a group live runs come first, newest first, and its
+finished runs fold into **N finished**; a finished run's title is muted
+(`RunRowTitle`). On the Branch page Work tab archived runs fold apart behind
+**N archived** and come last (`branchGroupRunsOf`). A run that touches
 several branches stands in each of them, keyed by group and run, with the chip
 **Also on feat/retry-budget** (**Also on 2 branches** for more). The chip reveals
 the same run in its next group, and the branch chip opens the Branch page. The
@@ -568,7 +579,7 @@ never the session's. The Branch page draws the same group on its **Work** tab
 (`RunsByBranch` with a `heading`, see [branch-page.md](navigation/branch-page.md)), and
 its **All runs** lands on Runs with that group open in the grouping you chose, or
 reveals its runs under By state (`openBranchWork`, which never calls `setGroupBy`;
-`useRunsFolds` unfolds finished and archived rows before scrolling and focusing
+`useRunsFolds` unfolds **Finished** and the finished rows before scrolling and focusing
 the first matching row); Back returns to the Work tab (`Focus.runGroup` on the history entry) and to the
 row you left, not to the top of the group. The tab counts what the group header
 counts (`branchGroupShownCountOf`: archived runs are left out, a series group counts

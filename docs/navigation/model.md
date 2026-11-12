@@ -411,7 +411,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   the row they open into `focus.returnRows` (its id) and `focus.scroll` (its
   index) with `amendFocus` first (`useRowReturn`), so Back scrolls to that row
   again even when a new row landed above it; the index is only the fallback
-  for a place saved before ids were kept. Runs unfolds Earlier or Archived when
+  for a place saved before ids were kept. Runs unfolds Earlier or Finished when
   the row sits there. A reload keeps a
   session it can still show, archived ones included (`selectSessionById` in
   `restoreLocation`). A workspace load empties the archived list, so when the
@@ -487,7 +487,7 @@ overview`); a sub agent's parent is the agent that spawned it.
 - **A window comes back where it was.** `captureWindowLocation` reads the
   current entry, focus included, and `restoreLocation({ location })` replaces
   the top entry with it and applies it as a restore (a session that is gone
-  falls back to the board, an agent that is gone to its lens). Cmd+R writes
+  falls back to the board, an agent that is gone to its lens). Reload Goodboy (Cmd+Shift+R) writes
   it into the reload intent in session storage. Each window also saves it as
   `window.layout.<window label>` in the settings table half a second after it
   moves (`useWindowLayout`), and forgets it when you close that window.

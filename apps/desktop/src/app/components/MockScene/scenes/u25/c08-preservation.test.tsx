@@ -213,7 +213,7 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(countOf('Running')).toBeUndefined();
     expect(countOf('Idle')).toBeUndefined();
     expect(countOf('Finished')).toBeUndefined();
-    expect(countOf('Archived')).toBeUndefined();
+    expect(screen.queryByRole('heading', { name: 'Archived' })).toBeNull();
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
   });
 
@@ -223,13 +223,6 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(tail().getByText('Ready to start')).toBeDefined();
     expect(header().getByRole('button', { name: 'Start run' })).toBeDefined();
     expect(tail().queryByRole('button', { name: 'Start run' })).toBeNull();
-  });
-
-  it('Archived runs fold in the list and restore from their header', async () => {
-    await mount('c08-runs');
-    await press(screen.getByRole('button', { name: 'Show' }));
-    await press(screen.getByRole('button', { name: /^Open First try at the flaky export tests/ }));
-    expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
   });
 
   it('Run name edit: the identity row renames inline', async () => {

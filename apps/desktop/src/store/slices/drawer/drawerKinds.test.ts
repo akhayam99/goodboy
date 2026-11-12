@@ -31,21 +31,21 @@ describe('the drawer kind table', () => {
     }
   });
 
-  it('lays only forms, wide readers and the browser in the reader tier', () => {
+  it('lays only forms and wide readers in the reader tier', () => {
     const wide = Object.entries(DRAWER_KINDS)
       .filter(([, row]) => row.sizing === 'reader')
       .map(([kind]) => kind)
       .sort();
     expect(wide).toEqual(
-      [
-        'artifact-document',
-        'browser',
-        'explore-file',
-        'file-diff',
-        'identifier-peek',
-        'new',
-      ].sort(),
+      ['artifact-document', 'explore-file', 'file-diff', 'identifier-peek', 'new'].sort(),
     );
+  });
+
+  it('gives the browser a tier of its own', () => {
+    const own = Object.entries(DRAWER_KINDS)
+      .filter(([, row]) => row.sizing === 'browser')
+      .map(([kind]) => kind);
+    expect(own).toEqual(['browser']);
   });
 });
 
