@@ -760,8 +760,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Finds sessions, messages, agents, plans, decisions, issues, pull requests and branches, by type, folder or provider, and in a focused terminal its scrollback.',
       },
       {
-        term: 'Menu bar',
-        desc: 'The macOS menu bar holds the Goodboy menu, then File, Edit, View, Go, Window and Help, each item with the key the app uses.',
+        term: 'Menu bar and reload',
+        desc: `The macOS menu bar carries every key. ${shortcutGlyphs('view.reload')} reloads where you are: the Browser tab when it has the keyboard, else the session. ${shortcutGlyphs('app.reload')} reloads Goodboy.`,
       },
       {
         term: 'Sidebar, rail and panes',

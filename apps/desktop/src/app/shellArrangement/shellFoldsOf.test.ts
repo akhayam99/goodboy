@@ -13,6 +13,7 @@ describe('shellFoldsOf', () => {
 
   it('folds the session rail to its icons for a reader tier pane, never the main sidebar', () => {
     expect(shellFoldsOf({ paneSizing: 'reader' })).toEqual({ isRailNarrow: true });
+    expect(shellFoldsOf({ paneSizing: 'browser' })).toEqual({ isRailNarrow: true });
   });
 });
 

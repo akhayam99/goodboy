@@ -108,7 +108,9 @@ Six rules, written so you can check a diff against them directly.
   resolved, dismissed or discarded never show inline by default. Use a header
   toggle with a count, or a collapsed disclosure row. On a session page the
   finished group is the exception: it sits last and is always open, with no
-  chevron (Questions "Answered" like Artifacts "Consumed").
+  chevron (Questions "Answered" like Artifacts "Consumed"). Runs by branch
+  keeps the rule instead: finished branches fold under one closed **Finished**
+  row with its count, since a branch holds a whole body of work.
 - **The row is the button.** A list row opens its object; it carries no faint
   `⋯` at rest, icon wall or bordered button. Its verbs live in the right click
   menu and Shift+F10 (the action registry), in the opened object's header or pane, and on a `⋯` in a `row-actions` cell that is empty at rest and shown on hover, focus, an open menu and the current row (the Folders tree branch rows). At most

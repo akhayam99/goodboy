@@ -37,7 +37,7 @@ folds the column on the left, and the open session row is not lit
   pressed while on and runs its registry action (`session.pin` / `unpin`; a
   failure keeps the old state and shows under the row with Retry,
   `ActionStatusLine`),
-  **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
+  **Refresh session** (⌘R, `useSessionRefresh`, the same call as the key and
   the palette) and **More session actions** (`⋯`, `ObjectOverflowMenu` over
   the `session` registry kind), which holds five rows at most:
   **Limit: none** or **Limit: $5.00** (`session.spend`), **Autopilot: on** or
@@ -98,7 +98,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   run of the session, one row per request, from `sessionRunsOf`
   (`features/session/sessionRunsOf.ts`): workflow runs (preset and
   orchestrated), Auto conversations and the agents you started by hand, newest
-  first, In progress above Finished, archived runs folded. A row draws its
+  first, In progress above Finished, archived runs left out. A row draws its
   state dot, a shape glyph (Workflow or Agent), the title, where it came from
   ("Workflow · Preset Fix a layout", "Workflow · Orchestrated", "Agent · Auto
   agent", "Agent · Scout"), its state word, progress, cost and

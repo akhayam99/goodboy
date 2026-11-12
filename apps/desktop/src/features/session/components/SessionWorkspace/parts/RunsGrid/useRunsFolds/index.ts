@@ -4,16 +4,16 @@ import { useAppStore } from '../../../../../../../store';
 import { runGroupFocusOf } from '../../../../../../../store/slices/navigation/runGroupFocusOf';
 import type { GroupBy } from '../../../../../../../store/slices/session-grouping/state';
 import { useRowReturn } from '../../../../../../../shared/hooks/useRowReturn';
-import type { BranchGroup } from '../../../../../branchGroupsOf';
+import type { BranchGroupOrder } from '../../../../../branchGroupOrderOf';
 import { VISIBLE_FINISHED_COUNT } from '../../../../../finishedRunsCap';
 import type { SessionRun } from '../../../../../sessionRunsOf';
-import { archivedFoldKeyOf } from '../branchGroupRunsOf';
+import { FINISHED_FOLD_KEY } from '../finishedFoldKey';
 import { returnFoldKeyOf } from '../returnFoldKeyOf';
 
 type Params = {
   readonly groupBy: GroupBy;
   readonly runs: ReadonlyArray<SessionRun>;
-  readonly branchGroups: ReadonlyArray<BranchGroup>;
+  readonly branchOrder: BranchGroupOrder;
 };
 
 type GroupParams = {
@@ -25,13 +25,27 @@ type RevealParams = {
   readonly fromGroupKey: string;
 };
 
-export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
+type FoldKeysParams = {
+  readonly groupKey: string;
+  readonly finishedKeys: ReadonlySet<string>;
+};
+
+const foldKeysOf = ({ groupKey, finishedKeys }: FoldKeysParams): ReadonlyArray<string> =>
+  finishedKeys.has(groupKey) ? [groupKey, FINISHED_FOLD_KEY] : [groupKey];
+
+export const useRunsFolds = ({ groupBy, runs, branchOrder }: Params) => {
   const [isEarlierShown, setIsEarlierShown] = useState(false);
-  const [isArchivedShown, setIsArchivedShown] = useState(false);
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(() => new Set());
   const [revealRowKey, setRevealRowKey] = useState<string | null>(null);
-  const finished = useMemo(() => runs.filter((run) => run.isFinished && !run.isArchived), [runs]);
-  const archived = runs.filter((run) => run.isArchived);
+  const branchGroups = useMemo(
+    () => [...branchOrder.shown, ...branchOrder.finished],
+    [branchOrder],
+  );
+  const finishedKeys = useMemo(
+    () => new Set(branchOrder.finished.map((group) => group.key)),
+    [branchOrder],
+  );
+  const finished = useMemo(() => runs.filter((run) => run.isFinished), [runs]);
   const rowIds = useMemo(
     () =>
       groupBy === 'branch'
@@ -45,12 +59,17 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
     groupBy === 'state' &&
     returnRowId !== null &&
     finished.slice(VISIBLE_FINISHED_COUNT).some((run) => run.id === returnRowId);
-  const isReturnArchived =
-    groupBy === 'state' && returnRowId !== null && archived.some((run) => run.id === returnRowId);
+  const returnGroupKey =
+    groupBy === 'branch' && returnRowId !== null
+      ? (branchGroups.find((group) =>
+          group.runs.some((run) => `${group.key}/${run.id}` === returnRowId),
+        )?.key ?? null)
+      : null;
   const foldKeyOfReturn = returnFoldKeyOf({
     returnRowId: groupBy === 'branch' ? returnRowId : null,
     branchGroups,
   });
+  const isReturnInFinished = returnGroupKey !== null && finishedKeys.has(returnGroupKey);
   const unfoldedFor = useRef<string | null>(null);
   const arrivedGroupKey = useAppStore((state) => runGroupFocusOf({ state })?.groupKey ?? null);
   const revealedArrival = useRef<string | null>(null);
@@ -63,15 +82,15 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
       unfoldedFor.current = returnRowId;
       setIsEarlierShown(true);
     }
-    if (isReturnArchived) {
+    const keys = [
+      ...(foldKeyOfReturn === undefined ? [] : [foldKeyOfReturn]),
+      ...(isReturnInFinished ? [FINISHED_FOLD_KEY] : []),
+    ];
+    if (keys.length > 0) {
       unfoldedFor.current = returnRowId;
-      setIsArchivedShown(true);
+      setOpenGroups((open) => new Set([...open, ...keys]));
     }
-    if (foldKeyOfReturn !== undefined) {
-      unfoldedFor.current = returnRowId;
-      setOpenGroups((open) => new Set([...open, foldKeyOfReturn]));
-    }
-  }, [returnRowId, isReturnEarlier, isReturnArchived, foldKeyOfReturn]);
+  }, [returnRowId, isReturnEarlier, foldKeyOfReturn, isReturnInFinished]);
 
   useEffect(() => {
     if (revealRowKey === null) {
@@ -100,18 +119,15 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
       return;
     }
     revealedArrival.current = arrivalKey;
-    if (groupBy === 'state') {
-      if (finished.slice(VISIBLE_FINISHED_COUNT).some((run) => group.runs.includes(run))) {
-        setIsEarlierShown(true);
-      }
-      if (group.runs.some((run) => run.isArchived)) {
-        setIsArchivedShown(true);
-      }
+    if (
+      groupBy === 'state' &&
+      finished.slice(VISIBLE_FINISHED_COUNT).some((run) => group.runs.includes(run))
+    ) {
+      setIsEarlierShown(true);
     }
     if (groupBy === 'branch') {
       setOpenGroups(
-        (open) =>
-          new Set([...open, arrivedGroupKey, archivedFoldKeyOf({ groupKey: arrivedGroupKey })]),
+        (open) => new Set([...open, ...foldKeysOf({ groupKey: arrivedGroupKey, finishedKeys })]),
       );
     }
     if (returnRowId !== null) {
@@ -121,7 +137,7 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
     if (firstRun !== undefined) {
       setRevealRowKey(groupBy === 'branch' ? `${arrivedGroupKey}/${firstRun.id}` : firstRun.id);
     }
-  }, [arrivedGroupKey, groupBy, branchGroups, returnRowId, finished]);
+  }, [arrivedGroupKey, groupBy, branchGroups, finishedKeys, returnRowId, finished]);
 
   const toggleGroup = useCallback(({ key }: GroupParams) => {
     setOpenGroups((open) => {
@@ -140,18 +156,16 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
     if (groupKey === undefined || groupKey === fromGroupKey) {
       return;
     }
-    setOpenGroups((open) => new Set([...open, groupKey, archivedFoldKeyOf({ groupKey })]));
+    setOpenGroups((open) => new Set([...open, ...foldKeysOf({ groupKey, finishedKeys })]));
     setRevealRowKey(`${groupKey}/${run.id}`);
   };
 
   return {
     rowReturn,
     isEarlierShown,
-    isArchivedShown,
     openGroups,
     toggleGroup,
     toggleEarlier: () => setIsEarlierShown((isShown) => !isShown),
-    toggleArchived: () => setIsArchivedShown((isShown) => !isShown),
     revealRun,
   };
 };

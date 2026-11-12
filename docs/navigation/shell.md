@@ -80,7 +80,7 @@ never exists on one surface only.
   with Open, Comments, Changes, Open in editor and Open in terminal app; a verb
   that cannot run stays in it with its reason as a tooltip), Open the full log,
   Limit, Rename, Pin session or Unpin session, **Refresh session** (`session.refresh`, the
-  same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
+  same `refreshSession` `⌘R` runs in a session, blocked while a refresh is in
   flight), Autopilot, Start a run, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is
   `select-none`, like every row that carries `ROW_HOVER` or `ROW_INTERACTIVE`
@@ -428,8 +428,9 @@ hide animation or overlay can move it.
   its toggle folds the column: the one toggle is the first control of the top
   bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⌘B),
   and no pane, no page and no window width folds or unfolds it. `shellFoldsOf` (read through `useShellFolds`) reads the
-  open pane's tier: a reader tier pane (720: a file, a diff, a document, New,
-  the browser) folds the session rail to its 44px icons while it is open; a side tier pane
+  open pane's tier: a reader tier pane (720: a file, a diff, a document, New)
+  or the browser pane (720, wider on a wide window) folds the session rail to
+  its 44px icons while it is open; a side tier pane
   (416: Explore, Context, Ask, Agents, Scripts, Terminal and the transcripts
   Agents opens) folds nothing. A fold of this kind never writes a saved
   choice (`useSessionRailFold`), and the rail toggle opens a rail folded this
@@ -925,9 +926,14 @@ would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
 elsewhere, where Ctrl+T belongs to the shell. Report a bug (`report.open`) is
 ⌘I on macOS and Ctrl+Shift+I elsewhere, because Ctrl+I is Tab in a terminal;
 it fires from anywhere, the terminal included. Ask (`ask.open`) is ⌘L on
-macOS and Ctrl+Shift+L elsewhere, where Ctrl+L clears a terminal. Refresh session
-(`session.refresh`, ⌘⇧R) sits on the session plane beside Archive (⌘⇧A) and
-Delete (⌘⇧⌫), because it acts on the open session; ⌘R stays the app reload.
+macOS and Ctrl+Shift+L elsewhere, where Ctrl+L clears a terminal. Reload
+(`view.reload`, ⌘R) reloads where you are: `reloadWhereYouAre` picks one
+surface registered with `useReloadSurface`. A surface with a native view (the
+Browser pane and page) wins while the window page has no focus, because the
+keyboard is in its webview and the key reached the page through the menu bar.
+Then the surface that holds the last click or focus wins, then the main
+surface on screen (the session, or the Browser page); with none, nothing
+happens. Reload Goodboy (`app.reload`, ⌘⇧R) is the only window reload.
 The plane is for the dispatcher.
 A plain key (no ⌘, Ctrl or Alt) yields on its own: the dispatcher skips it
 while a field, a select or the terminal has focus, while a modal dialog is

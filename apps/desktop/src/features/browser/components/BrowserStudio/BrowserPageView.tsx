@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Button, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useReloadSurface } from '../../../../shared/hooks/useReloadSurface';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { demoteBrowserTab } from '../../demoteBrowserTab';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
@@ -31,11 +32,19 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
   const fold = useStudioRailFold({ surface: 'browser' });
   const frame = useRef<HTMLDivElement | null>(null);
   const view = useRef<HTMLDivElement | null>(null);
+  const root = useRef<HTMLDivElement | null>(null);
   const shownTab = model.shown?.tab ?? null;
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const isOnScreen = useAppStore((state) => state.appStudio?.kind === 'browser');
 
   useBrowserStudioTab({ sessionId, tabId, model });
+  useReloadSurface({
+    isEnabled: isOnScreen,
+    isMain: true,
+    hasNativeView: true,
+    root,
+    reload: model.reload,
+  });
   useNativePlacement({
     sessionId,
     frame,
@@ -60,7 +69,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
   };
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+    <div ref={root} className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <BrowserPageTrail sessionId={sessionId} />
       <BrowserPageHeader
         actions={

@@ -1215,7 +1215,6 @@ describe('ChatInput, composer flows', () => {
 
     expect(await screen.findByAltText('pic.png')).toBeTruthy();
     expect(textarea.value).toBe('');
-    expect(screen.getByText('1 file')).toBeDefined();
   });
 
   it('attaches a queued output handoff as a text file, focuses the composer and sends nothing', async () => {

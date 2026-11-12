@@ -36,7 +36,7 @@ export const WorkflowsPane = ({ session }: Props) => {
   const isRunGone =
     focusedWorkflowRunId !== null &&
     !session.workflowRuns.some((run) => run.id === focusedWorkflowRunId);
-  const hasRuns = runs.length > 0;
+  const hasRuns = runs.some((run) => !run.isArchived);
   const isListShown = focusedRun == null && !isRunGone;
   const isFormShown = !hasRuns || isStartOpen;
 

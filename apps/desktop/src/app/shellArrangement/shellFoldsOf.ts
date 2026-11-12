@@ -20,6 +20,7 @@ export const shellFoldsOf = ({
 }: Params): ShellFolds => ({
   isRailNarrow:
     paneSizing === 'reader' ||
+    paneSizing === 'browser' ||
     (paneSizing === 'side' &&
       columnWidth !== null &&
       isRailFoldNeeded({

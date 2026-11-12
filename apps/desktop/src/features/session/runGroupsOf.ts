@@ -14,7 +14,6 @@ const GROUPS: ReadonlyArray<Pick<RunGroup, 'key' | 'label'>> = [
   { key: 'running', label: NAMES.running },
   { key: 'idle', label: 'Idle' },
   { key: 'finished', label: 'Finished' },
-  { key: 'archived', label: 'Archived' },
 ];
 
 type RunParams = {

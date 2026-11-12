@@ -26,12 +26,11 @@ import { useBlockedStepAnswer } from './hooks/useBlockedStepAnswer';
 import { composerKeyDown } from './composerKeyDown';
 import { composerView } from './composerView';
 import { focusComposerTextarea } from './focusComposerTextarea';
-import { ComposerAttachmentChips } from './parts/ComposerAttachmentChips';
-import { ComposerBox } from './parts/ComposerBox';
 import { ComposerGates } from './parts/ComposerGates';
 import { ComposerDispatchError } from './parts/ComposerDispatchError';
+import { ComposerSurface } from '../../../../shared/components/ComposerSurface';
+import { ComposerAttachments } from '../../../../shared/components/ComposerSurface/ComposerAttachments';
 import { PromptField } from '../../../../shared/components/PromptField';
-import { PromptDropOverlay } from '../../../../shared/components/PromptField/PromptDropOverlay';
 import { ComposerToolbar } from './parts/ComposerToolbar';
 import { ComposerRoutingHint } from './parts/ComposerRoutingHint';
 import { ComposerTray } from './parts/ComposerTray';
@@ -233,8 +232,7 @@ export const ChatInput = ({
             isDenying={deniedAgentId !== null}
           />
         )}
-        <ComposerBox composerRef={composerRef} isDragging={isDragging} hasTray={hasTray}>
-          <PromptDropOverlay isDragging={isDragging} />
+        <ComposerSurface surfaceRef={composerRef} drop={{ isDragging }} isJoinedAbove={hasTray}>
           <ConversationDock
             session={session}
             agentId={selectedAgentId}
@@ -248,7 +246,7 @@ export const ChatInput = ({
             step={blockedStep}
           />
           <ComposerGates sessionId={session.id} agentId={selectedAgentId} routing={routing} />
-          <ComposerAttachmentChips attachments={attachments} onRemove={removeAttachment} />
+          <ComposerAttachments attachments={attachments} onRemove={removeAttachment} />
           <div className="relative" ref={wrapperRef} data-composer-field="">
             {popoverOpen ? (
               <QuickActionsPopover
@@ -292,7 +290,7 @@ export const ChatInput = ({
             onSend={sendDraft}
             onSendNow={() => void onSendNow()}
           />
-        </ComposerBox>
+        </ComposerSurface>
       </div>
       <ComposerDispatchError dispatch={dispatch} providerId={routing.effectiveProvider} />
     </ConversationColumn>

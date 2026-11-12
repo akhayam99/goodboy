@@ -54,13 +54,11 @@ export const ChatComposer = ({
       minRows={2}
       maxRows={14}
       footerStart={
-        <ChatRoutingPicker workspaceId={workspaceId} routing={routing} onChange={onRouting} />
-      }
-      hint={
         <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
           Read only. Nothing is changed.
         </span>
       }
+      model={<ChatRoutingPicker workspaceId={workspaceId} routing={routing} onChange={onRouting} />}
       onSend={onSend}
       onStop={onStop}
     />

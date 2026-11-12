@@ -85,7 +85,7 @@ describe('the u36 runs list scenes', () => {
     const headings = within(grid)
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent);
-    expect(headings).toEqual(['Running', 'Idle', 'Finished', 'Archived']);
+    expect(headings).toEqual(['Running', 'Idle', 'Finished']);
     screen.getByRole('button', { name: 'Continue' });
     screen.getByRole('button', { name: 'Start' });
     screen.getByRole('button', { name: 'Open Replay the failed webhooks, Agent, Stopped' });
