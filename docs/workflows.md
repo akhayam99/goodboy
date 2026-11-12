@@ -543,8 +543,10 @@ when the run has no known total), cost and age, every row the same columns. A ro
 (`inheritedMountIdOf`, shared with `selectRunStepMountId`) and the Auto tree.
 A read only agent counts. A detached mount or a removed worktree moves its
 branch to `SessionRun.goneBranches`, so the run keeps its branch group on Runs.
-`SessionRun.branches` carries the attached result, and every row, chip and count
-reads it. The Runs page drops archived runs (`RunsGrid`); the timeline keeps
+`SessionRun.branches` carries the attached result, which the row chips read. The
+branch groups, the branch count behind the switch and the **Also on** chip read
+both lists (`runBranchMembershipOf`), so a removed branch keeps its group even
+when the run also works on an attached one. The Runs page drops archived runs (`RunsGrid`); the timeline keeps
 them and the run page restores them. Under two branches the page groups **By
 state**: **Needs you**, **Running**, **Idle** (stopped, paused, ready) and
 **Finished** (the first 30, then **Show all**) (`runGroupsOf`). The row
@@ -559,7 +561,8 @@ pull request series from `store/slices/pr-series` with its parts as rows,
 and **No branch**. `branchGroupOrderOf` orders them: what needs you, then what
 runs, then open branches (no pull request or an open one) by latest activity,
 and **No branch** follows the same rules. A group whose pull requests are all
-merged or closed, or whose branch is gone, with no live run, folds under one
+merged or closed, or whose branch is gone (no mount of the branch or series is
+still attached), with no live run, folds under one
 **Finished** row at the bottom with its count, closed until **Show**
 (`FinishedBranches`). Inside a group live runs come first, newest first, and its
 finished runs fold into **N finished**; a finished run's title is muted

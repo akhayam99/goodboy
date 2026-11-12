@@ -1,6 +1,8 @@
 import type { MountId } from '@goodboy/types';
 import type { MountRowView } from '../../store/slices/project-mounts/mountRowModel';
 import { pullRequestStateWordOf } from '../branch/pullRequestStateWordOf';
+import { branchHeadMountIdsOf } from './branchHeadMountIdsOf';
+import { runBranchMembershipOf } from './runBranchMembershipOf';
 import { runGroupKeyOf } from './runGroupsOf';
 import type { SessionRun } from './sessionRunsOf';
 import type { WorkBranch } from './workBranchesOf';
@@ -181,19 +183,34 @@ export const branchKeyedGroupsOf = <T>({
   }));
 };
 
+type GoneParams = {
+  readonly group: BranchKeyedGroup<SessionRun>;
+  readonly mounts: ReadonlyArray<MountRowView>;
+};
+
+const isGroupGoneOf = ({ group, mounts }: GoneParams): boolean => {
+  if (group.key === NO_BRANCH_KEY) {
+    return false;
+  }
+  const hasAttachedRun = group.items.some((run) =>
+    run.branches.some((branch) => keyOfBranch({ branch, mounts }) === group.key),
+  );
+  const hasAttachedMount = branchHeadMountIdsOf({ head: group.head }).some(
+    (mountId) => mounts.find((row) => row.mountId === mountId)?.isAttached === true,
+  );
+  return !hasAttachedRun && !hasAttachedMount;
+};
+
 export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGroup> =>
   branchKeyedGroupsOf({
-    entries: runs.map((run) => ({
-      item: run,
-      branches: run.branches.length > 0 ? run.branches : run.goneBranches,
-    })),
+    entries: runs.map((run) => ({ item: run, branches: runBranchMembershipOf({ run }) })),
     mounts,
   }).map((group) => ({
     key: group.key,
     head: group.head,
     runs: group.items,
     counts: countsOf({ runs: group.items }),
-    isGone: group.key !== NO_BRANCH_KEY && group.items.every((run) => run.branches.length === 0),
+    isGone: isGroupGoneOf({ group, mounts }),
   }));
 
 type AlsoBranchesParams = {
@@ -225,4 +242,4 @@ type AlsoParams = {
 };
 
 export const alsoOnOf = ({ run, groupKey, mounts }: AlsoParams): ReadonlyArray<WorkBranch> =>
-  alsoOnBranchesOf({ branches: run.branches, groupKey, mounts });
+  alsoOnBranchesOf({ branches: runBranchMembershipOf({ run }), groupKey, mounts });

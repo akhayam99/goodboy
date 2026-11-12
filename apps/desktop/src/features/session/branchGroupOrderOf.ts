@@ -1,6 +1,6 @@
-import type { MountId } from '@goodboy/types';
 import type { MountRowView } from '../../store/slices/project-mounts/mountRowModel';
-import type { BranchGroup, BranchGroupHead } from './branchGroupsOf';
+import { branchHeadMountIdsOf } from './branchHeadMountIdsOf';
+import type { BranchGroup } from './branchGroupsOf';
 
 export type BranchGroupOrder = Readonly<{
   shown: ReadonlyArray<BranchGroup>;
@@ -10,10 +10,6 @@ export type BranchGroupOrder = Readonly<{
 type Params = {
   readonly groups: ReadonlyArray<BranchGroup>;
   readonly mounts: ReadonlyArray<MountRowView>;
-};
-
-type HeadParams = {
-  readonly head: BranchGroupHead;
 };
 
 type GroupParams = {
@@ -29,18 +25,8 @@ type RankedGroup = Readonly<{
 
 const FINISHED_TIER = 3;
 
-const headMountIdsOf = ({ head }: HeadParams): ReadonlyArray<MountId> => {
-  if (head.kind === 'branch') {
-    return [head.branch.mountId];
-  }
-  if (head.kind === 'series') {
-    return head.parts.map((part) => part.mountId);
-  }
-  return [];
-};
-
 const isRequestClosedOf = ({ group, mounts }: GroupParams): boolean => {
-  const mountIds = headMountIdsOf({ head: group.head });
+  const mountIds = branchHeadMountIdsOf({ head: group.head });
   return (
     mountIds.length > 0 &&
     mountIds.every((mountId) => mounts.find((row) => row.mountId === mountId)?.isFinished === true)

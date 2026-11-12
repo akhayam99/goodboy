@@ -41,6 +41,7 @@ const MERGED = branchOf({ key: 'merged', project: PAYMENTS, branch: 'fix/duplica
 const CLOSED = branchOf({ key: 'closed', project: LEDGER, branch: 'rec/old-backfill' });
 const OPEN = branchOf({ key: 'open', project: NOTIFY, branch: 'feat/retry-budget' });
 const FRESH = branchOf({ key: 'fresh', project: LEDGER, branch: 'rec/1-schema' });
+const GONE = branchOf({ key: 'gone', project: PAYMENTS, branch: 'fix/refund-window' });
 
 const MOUNTS: ReadonlyArray<MountRowView> = [
   {
@@ -68,6 +69,10 @@ const MOUNTS: ReadonlyArray<MountRowView> = [
     request: aRequest({ provider: 'github', number: 10240 }),
   }),
   aMountRow({ key: 'fresh', projectName: 'ledger-core', branch: 'rec/1-schema' }),
+  {
+    ...aMountRow({ key: 'gone', projectName: 'payments-api', branch: 'fix/refund-window' }),
+    isAttached: false,
+  },
 ];
 
 type DoneParams = {
@@ -175,12 +180,12 @@ describe('branchGroupOrderOf', () => {
   it('files a branch whose worktree was removed as finished once its runs are done', () => {
     const order = orderOf({
       runs: [
-        doneRun({ id: 'gone', startedAt: 500, goneBranches: [FRESH] }),
+        doneRun({ id: 'gone', startedAt: 500, goneBranches: [GONE] }),
         doneRun({ id: 'open', startedAt: 100, branches: [OPEN] }),
       ],
     });
 
     expect(order.shown).toEqual([`mount:${OPEN.mountId}`]);
-    expect(order.finished).toEqual([`mount:${FRESH.mountId}`]);
+    expect(order.finished).toEqual([`mount:${GONE.mountId}`]);
   });
 });

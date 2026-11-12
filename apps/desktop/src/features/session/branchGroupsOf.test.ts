@@ -74,6 +74,15 @@ const MOUNTS: ReadonlyArray<MountRowView> = [
 
 const keysOf = (groups: ReturnType<typeof branchGroupsOf>) => groups.map((group) => group.key);
 
+type RemovedParams = {
+  readonly branches: ReadonlyArray<typeof DUP>;
+};
+
+const removedMounts = ({ branches }: RemovedParams): ReadonlyArray<MountRowView> =>
+  MOUNTS.map((row) =>
+    branches.some((branch) => branch.mountId === row.mountId) ? { ...row, isAttached: false } : row,
+  );
+
 describe('branchGroupsOf', () => {
   it('puts a run on one branch in the group of that branch with its pull request', () => {
     const block = aSessionRun({ id: 'block', branches: [DUP] });
@@ -135,11 +144,33 @@ describe('branchGroupsOf', () => {
 
   it('files a run whose worktree was removed under its old branch, marked gone', () => {
     const run = aSessionRun({ id: 'gone', goneBranches: [DUP] });
-    const [group] = branchGroupsOf({ runs: [run], mounts: MOUNTS });
+    const [group] = branchGroupsOf({ runs: [run], mounts: removedMounts({ branches: [DUP] }) });
 
     expect(group?.key).toBe(`mount:${DUP.mountId}`);
     expect(group?.isGone).toBe(true);
     expect(group?.head).toMatchObject({ kind: 'branch', fact: '#318 Open' });
+  });
+
+  it('keeps a removed branch in its own gone group when the run also works on an attached one', () => {
+    const run = aSessionRun({ id: 'both', branches: [DUP], goneBranches: [RETRY] });
+    const mounts = removedMounts({ branches: [RETRY] });
+    const groups = branchGroupsOf({ runs: [run], mounts });
+
+    expect(groups.map((group) => [group.key, group.isGone])).toEqual([
+      [`mount:${DUP.mountId}`, false],
+      [`mount:${RETRY.mountId}`, true],
+    ]);
+    expect(alsoOnOf({ run, groupKey: `mount:${DUP.mountId}`, mounts })).toEqual([RETRY]);
+    expect(alsoOnOf({ run, groupKey: `mount:${RETRY.mountId}`, mounts })).toEqual([DUP]);
+  });
+
+  it('keeps a series live while one of its parts is still attached', () => {
+    const run = aSessionRun({ id: 'schema', goneBranches: [REC1] });
+    const live = branchGroupsOf({ runs: [run], mounts: removedMounts({ branches: [REC1] }) });
+    const gone = branchGroupsOf({ runs: [run], mounts: removedMounts({ branches: [REC1, REC2] }) });
+
+    expect(live.map((group) => [group.key, group.isGone])).toEqual([['series:series-rec', false]]);
+    expect(gone.map((group) => [group.key, group.isGone])).toEqual([['series:series-rec', true]]);
   });
 
   it('counts finished runs in the group and keeps the run list one row per run', () => {
