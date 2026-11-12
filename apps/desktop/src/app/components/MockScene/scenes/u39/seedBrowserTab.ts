@@ -36,6 +36,7 @@ export const seedBrowserTab = ({ sessionId }: Params): void => {
     isPasskeyBlocked: false,
     hiddenSinceMs: null,
     openerId: null,
+    isPasskeyBlocked: false,
   };
   mockSceneIpc((command) => {
     switch (command) {
