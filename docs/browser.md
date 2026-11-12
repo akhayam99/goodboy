@@ -466,6 +466,30 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 `browser::refuse_browser_pages`, which answers every app command from a
 `browse-` webview with the `browser-caller` code before it runs.
 
+## Passkeys
+
+A tab can't finish a passkey sign-in on macOS. Answering a passkey request for
+any site needs Apple's managed browser entitlement
+(`com.apple.developer.web-browser.public-key-credential`), which Apple grants
+only to an organization account whose app can be the default browser. Goodboy
+has neither, so WebKit refuses the request at once.
+Security keys and a phone go through the same request and fail the same way.
+
+So the host watches for the request instead. On macOS every frame of a tab
+runs a small script at document start that wraps `navigator.credentials.get`
+and `create`: a call that asks for a passkey, unless it is only the quiet
+autofill offer, posts to a native message handler
+and then runs unchanged. A request whose options or bridge throw on read still
+runs. The handler is added just after the view is made, so a request from the
+first document looks for it again every 100 ms for two seconds. The handler
+marks the tab's facts `isPasskeyBlocked`; an ask that lands before the tab is
+registered is held and applied when it is. The pane and the page show a notice above that tab only,
+with Open in your browser (the same action as the address row) and Dismiss.
+Dismiss clears the mark on the host (`browser_tab_passkey_dismiss`); a new
+document load clears it too. A refused dismiss keeps the notice and shows the
+reason. After the hand-over the sign-in lives in the default browser: the tab's
+workspace profile stays signed out.
+
 ## Known limits
 
 - Tauri gives a tab the same initialization scripts as a window, and 2.12
@@ -501,12 +525,20 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  thirteen `browser_*` commands; `profile.rs` holds the profile id, the
+  fourteen `browser_*` commands; `profile.rs` holds the profile id, the
   per-platform store, the switch and the clear; `registry.rs` holds the tabs, the popup seats
   (`MAX_HIDDEN_POPUPS`) and the pure picks of which tabs to close;
   `lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`), the
   sweep, show, hide and place, and `browser://tab-state`. The native back and forward step lives in
-  `src-tauri/src/platform/web_history.rs`, the only `unsafe` the host needs.
+  `src-tauri/src/platform/web_history.rs`. The passkey watch keeps its
+  handler-to-tab map in `browser/passkey.rs`, its native handler class in
+  `src-tauri/src/platform/passkey_handler.rs` and its script in
+  `browser/passkey.js`; `host.rs` adds the script to every frame,
+  registers the handler after the view is made, clears the mark on a page
+  start and forgets the handler when the tab closes, when its open is refused
+  late and when its window is destroyed (`forget_window`). The two `platform/`
+  files are the only `unsafe` the host needs, which the unsafe ratchet in
+  `proc/signal.rs` enforces.
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
   `about:blank` and `about:srcdoc` frames and a page that sends itself to the
@@ -551,6 +583,19 @@ words (`features/browser/browserFailureText.ts`).
   checks that the view stays in the visible dock or is hidden when Chat or
   Settings opens and when the dock closes; `restoreLocation.test.ts` pins the route across a reload; the scenes are
   `browser-page` and `browser-page-dark`.
+- `passkey::tests` pins that an ask reaches only its own tab, that a
+  respawned tab or a reused handler address belongs to the newest tab and
+  that a closed tab is forgotten; `registry.rs` pins the mark and its clear
+  per tab and an ask held until its tab registers; `browser::tests` pins that
+  a destroyed window forgets its tabs' handlers. `features/browser/passkeyWatchScript.test.ts` runs the script on a
+  fake page: a passkey `get` or `create` is reported and still runs, a
+  conditional or non-passkey request stays quiet, a handler that arrives late
+  is still told and one that never arrives is given up on, and throwing
+  options, a throwing bridge or a broken handler never break the page. `BrowserPane/index.test.tsx` and
+  `BrowserStudio/index.test.tsx` pin the notice on its tab, Open in your
+  browser, Dismiss on the host and a refused dismiss; the scenes are
+  `browser-pane-passkey` and `browser-pane-passkey-dark`. The native handler
+  cannot run headless.
 - `apps/desktop/src/__tests__/regressions/browser-isolation.test.ts` fails
   when a capability could match a `browse-` label, grants by window or grants
   a remote address. `csp-img-src.test.ts` pins `frame-ancestors 'none'`.

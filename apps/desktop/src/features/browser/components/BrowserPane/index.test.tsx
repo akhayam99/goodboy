@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { nextProjectId, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
@@ -89,6 +89,7 @@ const factsOf = ({ args }: OpenArgs): BrowserTabFacts => {
     isShown: false,
     hiddenSinceMs: null,
     openerId: null,
+    isPasskeyBlocked: false,
   };
   live = [...live, facts];
   return facts;
@@ -136,6 +137,13 @@ const stubHost = () => {
       live = live.filter((facts) => facts.id !== args.tabId);
       return null;
     },
+    browser_tab_passkey_dismiss: ({ args }: TabArgs) => {
+      live = live.map((facts) =>
+        facts.id === args.tabId ? { ...facts, isPasskeyBlocked: false } : facts,
+      );
+      return live.find((facts) => facts.id === args.tabId);
+    },
+    open_url: null,
   });
 };
 
@@ -201,6 +209,36 @@ const pageGoesTo = ({ text }: TypeParams) => {
   live = live.map((facts) => (facts.id === 'live-1' ? { ...facts, url: text } : facts));
   fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
 };
+
+const pageAsksForPasskey = () => {
+  live = live.map((facts) =>
+    facts.id === 'live-1' ? { ...facts, isPasskeyBlocked: true } : facts,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+};
+
+const passkeyNotice = () =>
+  waitFor(() => {
+    const notice = screen
+      .queryAllByRole('status')
+      .find((candidate) => candidate.textContent?.includes('Passkeys') === true);
+    if (notice === undefined) {
+      throw new Error('The pane shows no passkey notice.');
+    }
+    return notice;
+  });
+
+const hasPasskeyNotice = () =>
+  screen
+    .queryAllByRole('status')
+    .some((candidate) => candidate.textContent?.includes('Passkeys') === true);
+
+const openedUrls = () =>
+  storySpies.tauriInvoke.mock.calls
+    .filter(([name]) => name === 'open_url')
+    .map(([, payload]) =>
+      typeof payload === 'object' && payload !== null ? Reflect.get(payload, 'url') : null,
+    );
 
 const storedUrl = () => store.getState().browserSessionTabs[SESSION_ID]?.[0]?.url;
 
@@ -737,6 +775,44 @@ describe('the browser pane', () => {
     renderPane();
 
     expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Address' }));
+  });
+
+  it('says a passkey is blocked on the shown tab and opens its address in your browser', async () => {
+    await openFirstPage();
+    expect(hasPasskeyNotice()).toBe(false);
+
+    pageAsksForPasskey();
+    const notice = await passkeyNotice();
+    expect(notice.textContent).toContain("Passkeys don't work in Goodboy's browser");
+    fireEvent.click(within(notice).getByRole('button', { name: 'Open in your browser' }));
+
+    await waitFor(() => expect(openedUrls()).toEqual(['http://localhost:5173/checkout']));
+    expect(callsOf({ command: 'browser_tab_passkey_dismiss' })).toEqual([]);
+  });
+
+  it('dismisses the passkey notice on the host for its own tab', async () => {
+    await openFirstPage();
+    pageAsksForPasskey();
+    const notice = await passkeyNotice();
+
+    fireEvent.click(within(notice).getByRole('button', { name: 'Dismiss' }));
+
+    await waitFor(() => expect(hasPasskeyNotice()).toBe(false));
+    expect(callsOf({ command: 'browser_tab_passkey_dismiss' })).toEqual([{ tabId: 'live-1' }]);
+  });
+
+  it('keeps the passkey notice and says why when the host refuses a dismiss', async () => {
+    await openFirstPage();
+    pageAsksForPasskey();
+    const notice = await passkeyNotice();
+    failCommand({ command: 'browser_tab_passkey_dismiss', reason: 'other-window' });
+
+    fireEvent.click(within(notice).getByRole('button', { name: 'Dismiss' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toBe('This tab is open in another window.'),
+    );
+    expect(hasPasskeyNotice()).toBe(true);
   });
 
   it('hides the view when the pane closes', async () => {
