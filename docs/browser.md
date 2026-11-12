@@ -89,10 +89,12 @@ opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
   no hidden file or folder, links resolved and checked again, a known type
   (pages, images, PDF, styles, scripts, fonts, data, text, video) and at most
   64 MB. The checked path is then opened one part at a time from the folder
-  with no link followed (`scoped_path::open_relative`), and the type, size and
+  with no link followed (`scoped_path::open_confined`), and the type, size and
   bytes come from that one handle, so a file or folder swapped for a link
-  after the check answers 404. Windows has no such open yet and reads the
-  checked path. Anything else answers 404; nothing lists a folder.
+  after the check answers 404. On Windows the file is opened, then the final
+  path of that open handle must equal the checked path, so a folder swapped
+  for a junction answers 404 too. A platform with neither open serves
+  nothing. Anything else answers 404; nothing lists a folder.
 - **How far a grant reaches.** A grant serves every known type in the page's
   own folder, one level, no recursion. Below that folder it serves only
   static assets (`ASSET_TYPES`: styles, scripts, source maps, fonts, icons and

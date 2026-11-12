@@ -8,7 +8,7 @@ use tauri::{Manager, Runtime, Url};
 use super::guard::LABEL_PREFIX;
 use super::reason::{INVALID_ADDRESS, LOCAL_FOLDER, LOCAL_MISSING, LOCAL_TYPE};
 use super::registry::BrowserRegistry;
-use crate::util::scoped_path::{self, ScopedPathError};
+use crate::util::scoped_path;
 
 pub(crate) const LOCAL_SCHEME: &str = "gblocal";
 
@@ -95,19 +95,7 @@ fn content_type(path: &Path) -> Option<&'static str> {
 
 #[cfg(windows)]
 fn plain(path: PathBuf) -> PathBuf {
-    use std::path::Prefix;
-    let is_verbatim_disk = matches!(
-        path.components().next(),
-        Some(Component::Prefix(prefix)) if matches!(prefix.kind(), Prefix::VerbatimDisk(_))
-    );
-    if !is_verbatim_disk {
-        return path;
-    }
-    let stripped = path
-        .to_str()
-        .and_then(|text| text.strip_prefix(r"\\?\"))
-        .map(PathBuf::from);
-    stripped.unwrap_or(path)
+    scoped_path::without_verbatim_disk(path)
 }
 
 #[cfg(not(windows))]
@@ -319,10 +307,7 @@ fn checked(grant: &LocalGrant, path: &Path) -> Option<PathBuf> {
 
 fn open_checked(grant: &LocalGrant, real: &Path) -> Option<File> {
     let relative = real.strip_prefix(&grant.folder).ok()?;
-    let file = match scoped_path::open_relative(&grant.folder, relative) {
-        Err(ScopedPathError::Unsupported) => File::open(real).ok()?,
-        opened => opened.ok()?,
-    };
+    let file = scoped_path::open_confined(&grant.folder, relative).ok()?;
     let meta = file.metadata().ok()?;
     if !meta.is_file() || meta.len() > MAX_FILE_BYTES {
         return None;

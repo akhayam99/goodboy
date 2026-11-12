@@ -97,6 +97,84 @@ pub(crate) fn open_relative(_root: &Path, _relative: &Path) -> Result<File, Scop
     Err(ScopedPathError::Unsupported)
 }
 
+#[cfg(unix)]
+pub(crate) fn open_confined(root: &Path, relative: &Path) -> Result<File, ScopedPathError> {
+    open_relative(root, relative)
+}
+
+#[cfg(windows)]
+pub(crate) fn open_confined(root: &Path, relative: &Path) -> Result<File, ScopedPathError> {
+    if relative
+        .components()
+        .any(|part| !matches!(part, Component::Normal(_)))
+    {
+        return Err(ScopedPathError::Escapes);
+    }
+    let expected = root.join(relative);
+    let file = File::open(&expected).map_err(|_| ScopedPathError::Unavailable)?;
+    let opened = final_path(&file).ok_or(ScopedPathError::Unavailable)?;
+    if without_verbatim_disk(opened) != without_verbatim_disk(expected) {
+        return Err(ScopedPathError::Escapes);
+    }
+    Ok(file)
+}
+
+#[cfg(not(any(unix, windows)))]
+pub(crate) fn open_confined(_root: &Path, _relative: &Path) -> Result<File, ScopedPathError> {
+    Err(ScopedPathError::Unsupported)
+}
+
+#[cfg(windows)]
+fn final_path(file: &File) -> Option<PathBuf> {
+    use std::ffi::{c_void, OsString};
+    use std::os::windows::ffi::OsStringExt;
+    use std::os::windows::io::AsRawHandle;
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetFinalPathNameByHandleW(
+            file: *mut c_void,
+            path: *mut u16,
+            size: u32,
+            flags: u32,
+        ) -> u32;
+    }
+
+    let mut buffer: Vec<u16> = vec![0; 512];
+    loop {
+        let size = u32::try_from(buffer.len()).ok()?;
+        let written = unsafe {
+            GetFinalPathNameByHandleW(file.as_raw_handle(), buffer.as_mut_ptr(), size, 0)
+        };
+        let written = usize::try_from(written).ok()?;
+        if written == 0 {
+            return None;
+        }
+        if written < buffer.len() {
+            buffer.truncate(written);
+            return Some(PathBuf::from(OsString::from_wide(&buffer)));
+        }
+        buffer.resize(written, 0);
+    }
+}
+
+#[cfg(windows)]
+pub(crate) fn without_verbatim_disk(path: PathBuf) -> PathBuf {
+    use std::path::Prefix;
+    let is_verbatim_disk = matches!(
+        path.components().next(),
+        Some(Component::Prefix(prefix)) if matches!(prefix.kind(), Prefix::VerbatimDisk(_))
+    );
+    if !is_verbatim_disk {
+        return path;
+    }
+    let stripped = path
+        .to_str()
+        .and_then(|text| text.strip_prefix(r"\\?\"))
+        .map(PathBuf::from);
+    stripped.unwrap_or(path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{open_within, resolve_within, ScopedPathError};
@@ -200,6 +278,41 @@ mod tests {
         fs::rename(root.join("out"), root.join("original")).unwrap();
         std::os::unix::fs::symlink(root.join("original"), root.join("out")).unwrap();
         assert!(super::open_relative(&root, relative).is_err());
+    }
+
+    #[cfg(any(unix, windows))]
+    #[test]
+    fn opens_a_file_inside_the_root_through_the_confined_open() {
+        let fixture = Fixture::new();
+        let root = fs::canonicalize(&fixture.0).unwrap();
+        let mut file = super::open_confined(&root, &PathBuf::from("out/file.txt")).unwrap();
+        let mut body = String::new();
+        std::io::Read::read_to_string(&mut file, &mut body).unwrap();
+        assert_eq!(body, "data");
+        assert!(super::open_confined(&root, &PathBuf::from("out/../out/file.txt")).is_err());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn refuses_a_folder_swapped_for_a_junction_after_canonicalization() {
+        let fixture = Fixture::new();
+        let outside = Fixture::new();
+        let root = super::without_verbatim_disk(fs::canonicalize(&fixture.0).unwrap());
+        fs::rename(root.join("out"), root.join("original")).unwrap();
+        let made = std::process::Command::new("cmd")
+            .arg("/C")
+            .arg("mklink")
+            .arg("/J")
+            .arg(root.join("out"))
+            .arg(outside.0.join("out"))
+            .status()
+            .unwrap();
+        assert!(made.success());
+        assert!(matches!(
+            super::open_confined(&root, &PathBuf::from("out/file.txt")),
+            Err(ScopedPathError::Escapes)
+        ));
+        fs::remove_dir(root.join("out")).unwrap();
     }
 
     #[cfg(not(unix))]
