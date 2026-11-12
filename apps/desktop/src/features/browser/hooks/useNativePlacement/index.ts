@@ -15,6 +15,7 @@ type ShowParams = {
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly frame: RefObject<HTMLDivElement | null>;
   readonly view: RefObject<HTMLDivElement | null>;
   readonly tab: BrowserTab | null;
   readonly attempt: number;
@@ -23,6 +24,7 @@ type Params = {
 
 export const useNativePlacement = ({
   sessionId,
+  frame,
   view,
   tab,
   attempt,
@@ -80,26 +82,26 @@ export const useNativePlacement = ({
         view: wantedTab === null || bounds === null ? null : { tab: wantedTab, bounds },
       });
     };
-    let frame = 0;
+    let frameId = 0;
     const tick = (): void => {
+      frameId = window.requestAnimationFrame(tick);
       sync();
-      frame = window.requestAnimationFrame(tick);
     };
-    frame = window.requestAnimationFrame(tick);
+    frameId = window.requestAnimationFrame(tick);
     const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(sync);
-    if (view.current !== null) {
-      resize?.observe(view.current);
+    if (frame.current !== null) {
+      resize?.observe(frame.current);
     }
     sync();
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(frameId);
       window.cancelAnimationFrame(uncoverFrameRef.current);
       resize?.disconnect();
       overlays.stop();
       placement.stop();
       placementRef.current = null;
     };
-  }, [sessionId, view]);
+  }, [sessionId, frame, view]);
 
   useEffect(() => {
     if (attempt === 0) {

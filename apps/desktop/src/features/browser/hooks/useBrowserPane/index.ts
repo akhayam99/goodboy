@@ -5,15 +5,17 @@ import { projectById } from '../../../../store/slices/projects/projectIndex';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { openUrl } from '../../../../shared/lib/editor';
 import { addressOf } from '../../addressOf';
+import { addressTextOf } from '../../addressTextOf';
 import { browserFailureText } from '../../browserFailureText';
 import { browserHost } from '../../browserHost';
 import { browserPaneRequests } from '../../browserPaneRequests';
 import { hostOf } from '../../hostOf';
+import { isFileAddress } from '../../isFileAddress';
 import { isTabGone } from '../../isTabGone';
 import { openPage } from '../../openPage';
 import { pinProjectOf } from '../../pinProjectOf';
 import { shownTabOf } from '../../shownTabOf';
-import type { BrowserPaneModel } from '../../types';
+import type { BrowserPaneModel, BrowserTarget } from '../../types';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
@@ -23,8 +25,8 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-type UrlParams = {
-  readonly url: string;
+type TargetParams = {
+  readonly target: BrowserTarget;
 };
 
 type LiveParams = {
@@ -81,7 +83,9 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const shownLiveId = shown === null ? undefined : live?.[shown.tab.id];
   const factOf = ({ liveId }: LiveParams) =>
     liveId === undefined ? undefined : facts.find((fact) => fact.id === liveId);
-  const address = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
+  const url = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
+  const address = addressTextOf({ url });
+  const canOpenOutside = url !== '' && !isFileAddress({ url });
 
   useSaveLiveAddresses({ sessionId, tabs, live, facts });
   useOpenedPopups({ sessionId });
@@ -123,22 +127,27 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     void run({ step: () => command({ tabId: shownLiveId }) });
   };
 
-  const openNew = async ({ url }: UrlParams): Promise<void> => {
-    const outcome = await openPage({ sessionId, url, bounds: FALLBACK_BOUNDS });
+  const openNew = async ({ target }: TargetParams): Promise<void> => {
+    const outcome = await openPage({ sessionId, target, bounds: FALLBACK_BOUNDS });
     mustBeDone({ isDone: outcome !== 'failed' });
     setIsDrafting(false);
   };
 
-  const navigate = ({ url }: UrlParams): Promise<unknown> => {
+  const navigate = ({ target }: TargetParams): Promise<unknown> => {
     if (shown === null || (shown.isPin && shownLiveId === undefined)) {
-      return openNew({ url });
+      return openNew({ target });
     }
     if (shownLiveId !== undefined) {
-      return browserHost.navigate({ tabId: shownLiveId, url });
+      return target.kind === 'local'
+        ? browserHost.navigateLocal({ tabId: shownLiveId, path: target.path })
+        : browserHost.navigate({ tabId: shownLiveId, url: target.url });
+    }
+    if (target.kind === 'local') {
+      return openNew({ target });
     }
     return useAppStore
       .getState()
-      .updateBrowserTab({ sessionId, tabId: shown.tab.id, url, title: shown.tab.title })
+      .updateBrowserTab({ sessionId, tabId: shown.tab.id, url: target.url, title: shown.tab.title })
       .then((isDone) => mustBeDone({ isDone }));
   };
 
@@ -148,6 +157,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     projectName,
     shown,
     address,
+    canOpenOutside,
     titleOf: ({ tab }) => {
       const fact = factOf({ liveId: live?.[tab.id] });
       if (fact !== undefined && fact.title !== '') {
@@ -169,7 +179,11 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         setError(parsed.reason);
         return false;
       }
-      const isDone = await run({ step: () => navigate({ url: parsed.url }) });
+      const target: BrowserTarget =
+        parsed.kind === 'local'
+          ? { kind: 'local', path: parsed.path }
+          : { kind: 'web', url: parsed.url };
+      const isDone = await run({ step: () => navigate({ target }) });
       if (isDone) {
         setWakeAttempt((count) => count + 1);
       }
@@ -231,10 +245,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       setIsDrafting(true);
     },
     openOutside: () => {
-      if (address === '') {
+      if (!canOpenOutside) {
         return;
       }
-      void openUrl(address).catch((failure: unknown) =>
+      void openUrl(url).catch((failure: unknown) =>
         setError(browserFailureText({ error: failure })),
       );
     },

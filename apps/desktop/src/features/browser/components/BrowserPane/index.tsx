@@ -29,6 +29,7 @@ type Props = {
 
 export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const model = useBrowserPane({ sessionId });
+  const frame = useRef<HTMLDivElement | null>(null);
   const view = useRef<HTMLDivElement | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = useState<BrowserTabListMode>(browserTabListPref.read);
@@ -55,6 +56,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
 
   const cover = useNativePlacement({
     sessionId,
+    frame,
     view,
     tab: shownTab,
     attempt: model.wakeAttempt,
@@ -88,7 +90,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
               onFold={() => changeMode({ next: isRail ? 'list' : 'rail' })}
             />
           ) : null}
-          <BrowserView view={view} shown={model.shown} title={title} cover={cover} />
+          <BrowserView frame={frame} view={view} shown={model.shown} title={title} cover={cover} />
         </div>
       </div>
     </DrawerFrame>

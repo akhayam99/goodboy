@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 use super::guard::{self, AppOrigins};
+use super::local;
 use super::reason::{
     self, INVALID_ADDRESS, NOT_WEB_ADDRESS, TAB_ROWS_CHANGED, TAB_ROWS_FAILED, TAB_ROW_GONE,
     TAB_ROW_OWNER,
@@ -155,6 +156,9 @@ fn storable_address(address: &str, origins: &AppOrigins) -> Result<String, Messa
         return Err(reason::refused(INVALID_ADDRESS));
     }
     let mut url = guard::parse_address(address).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
+    if local::is_file_address(&url) {
+        return Ok(url.to_string());
+    }
     if !guard::may_open(&url, origins) {
         return Err(reason::refused(NOT_WEB_ADDRESS));
     }

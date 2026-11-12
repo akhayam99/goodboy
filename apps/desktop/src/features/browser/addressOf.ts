@@ -12,16 +12,30 @@ type HostParams = {
 const OTHER_SCHEME = /^[a-z][a-z0-9+.-]*:(?!\d)/i;
 const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
 const SPACE = /\s/;
+const DRIVE_PATH = /^[a-z]:[\\/]/i;
 
-const NOT_AN_ADDRESS = "Type a full address, like harborline.dev. Search isn't available here.";
-const NOT_WEB = 'Only http and https addresses open here.';
+const NOT_AN_ADDRESS =
+  "Type a full address, like harborline.dev, or a file path. Search isn't available here.";
+const NOT_WEB = 'Only web addresses and local files open here.';
 const EMPTY = 'Type an address.';
 
 const WEB_PREFIXES = ['http://', 'https://'];
+const LOCAL_PREFIXES = ['/', '~/', 'file:'];
+const NETWORK_PATH = '//';
 
 const hasWebScheme = ({ text }: Params): boolean => {
   const lower = text.toLowerCase();
   return WEB_PREFIXES.some((prefix) => lower.startsWith(prefix));
+};
+
+const isLocalPath = ({ text }: Params): boolean => {
+  if (DRIVE_PATH.test(text)) {
+    return true;
+  }
+  const lower = text.toLowerCase();
+  return (
+    !lower.startsWith(NETWORK_PATH) && LOCAL_PREFIXES.some((prefix) => lower.startsWith(prefix))
+  );
 };
 
 const isHostName = ({ host }: HostParams): boolean => {
@@ -44,6 +58,9 @@ export const addressOf = ({ text }: Params): BrowserAddress => {
   const trimmed = text.trim();
   if (trimmed === '') {
     return { kind: 'refused', reason: EMPTY };
+  }
+  if (isLocalPath({ text: trimmed })) {
+    return { kind: 'local', path: trimmed };
   }
   if (SPACE.test(trimmed)) {
     return { kind: 'refused', reason: NOT_AN_ADDRESS };

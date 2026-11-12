@@ -43,24 +43,40 @@ describe('addressOf', () => {
   it('refuses words, never sending them to a search engine', () => {
     expect(addressOf({ text: 'checkout total' })).toEqual({
       kind: 'refused',
-      reason: "Type a full address, like harborline.dev. Search isn't available here.",
+      reason:
+        "Type a full address, like harborline.dev, or a file path. Search isn't available here.",
     });
     expect(urlOf({ text: 'payments' })).toBeNull();
     expect(urlOf({ text: 'harborline.' })).toBeNull();
   });
 
-  it('refuses every scheme but http and https', () => {
-    for (const text of [
-      'javascript:alert(1)',
-      'file:///etc/hosts',
-      'about:blank',
-      'data:text/html,x',
-    ]) {
+  it('refuses every scheme but http, https and file', () => {
+    for (const text of ['javascript:alert(1)', 'about:blank', 'data:text/html,x', 'blob:x']) {
       expect(addressOf({ text })).toEqual({
         kind: 'refused',
-        reason: 'Only http and https addresses open here.',
+        reason: 'Only web addresses and local files open here.',
       });
     }
+  });
+
+  it('takes an absolute path, a home path and a file address as a local file', () => {
+    for (const text of [
+      '/work/harborline/plan.html',
+      '~/harborline/plan v2.html',
+      'file:///work/harborline/plan.html',
+      '  ~/harborline/plan.html  ',
+      'C:\\work\\harborline\\plan.html',
+      'c:/work/harborline/plan.html',
+    ]) {
+      expect(addressOf({ text })).toEqual({ kind: 'local', path: text.trim() });
+    }
+  });
+
+  it('never reads a relative path or a network path as a local file', () => {
+    expect(addressOf({ text: 'harborline/plan.html' }).kind).not.toBe('local');
+    expect(addressOf({ text: '//acme.example/plan.html' }).kind).not.toBe('local');
+    expect(addressOf({ text: '~harborline/plan.html' }).kind).toBe('refused');
+    expect(addressOf({ text: 'C:plan.html' }).kind).toBe('refused');
   });
 
   it('asks for an address when the field is empty', () => {

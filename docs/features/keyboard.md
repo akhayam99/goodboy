@@ -200,16 +200,17 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Dock** puts it back. The page never reloads, so a half-typed form stays.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - Type an address and press Enter. A localhost address opens your dev server. Text that isn't an address is refused, never searched.
+- Type the path of a local page, image or PDF, like `~/harborline/plan.html`, to open it in a tab. The tab shows the path, takes the page's title, and Reload reads the file again. The page reads only the files in its folder and the folders under it. A missing file, a folder or another kind of file says why under the address. A link or a page never opens a local file.
 - A port chip, a running Service's port, a link in a conversation, a decision or an artifact and a web address in a terminal open beside the session. The tab already on that page is shown when there is one. **⌘-click** opens your own browser instead. Sign-in and connect links keep opening your own browser.
 - **Settings → App → General → Open with → Links** picks where a plain click goes: **In Goodboy** or **In your browser**. **⌘-click** always opens your own browser.
 - A terminal with no session sends its links to your own browser.
 - Rest on a localhost link, or on a web address in a terminal, to see where a click goes before you open it.
 - **⌘L** goes to the address while the browser is on screen. Elsewhere it stays Ask.
-- **⌘K** lists the session's tabs. Type an address there and **Open** it beside the session.
+- **⌘K** lists the session's tabs. Type an address or the path of a local page there and **Open** it beside the session.
 - Tabs belong to the session. Pin a tab to keep it in every session of the project. Tabs close when the session is archived.
 - Each workspace keeps its own cookies and site data, so a sign-in never shows in another workspace. Switching workspace closes the other one's tabs, and they reopen at their address when you show them.
 - A tab hidden for 10 minutes closes its page and keeps its address and title in the list. A window keeps four live tabs, and a fifth closes the one hidden longest. A tab you are looking at never closes.
-- **Open in your browser** hands the page to your own browser at any time.
+- **Open in your browser** hands a web page to your own browser at any time.
 
 ## Under the hood
 
