@@ -3,6 +3,8 @@ mod guard;
 mod host;
 mod lifecycle;
 pub(crate) mod local;
+#[cfg(any(target_os = "macos", test))]
+mod passkey;
 mod profile;
 mod reason;
 mod registry;
@@ -16,8 +18,19 @@ pub(crate) use profile::BrowserProfiles;
 pub(crate) use registry::BrowserRegistry;
 
 pub(crate) fn forget_window<R: Runtime>(app: &AppHandle<R>, window_label: &str) {
-    app.state::<BrowserRegistry>().remove_window(window_label);
+    let removed = app.state::<BrowserRegistry>().remove_window(window_label);
+    forget_passkey_watches(&removed);
 }
+
+#[cfg(target_os = "macos")]
+fn forget_passkey_watches(tab_ids: &[String]) {
+    for tab_id in tab_ids {
+        passkey::WATCHES.forget(tab_id);
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn forget_passkey_watches(_tab_ids: &[String]) {}
 
 pub(crate) fn refuse_browser_pages<R, F>(commands: F) -> impl Fn(Invoke<R>) -> bool + Send + Sync
 where

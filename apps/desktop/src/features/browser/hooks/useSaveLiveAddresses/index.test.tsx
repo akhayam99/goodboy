@@ -62,6 +62,7 @@ const factsAt = ({ url }: FactsParams): ReadonlyArray<BrowserTabFacts> => [
     isShown: true,
     hiddenSinceMs: null,
     openerId: null,
+    isPasskeyBlocked: false,
   },
 ];
 

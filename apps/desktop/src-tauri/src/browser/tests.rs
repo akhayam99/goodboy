@@ -514,6 +514,29 @@ fn forgets_the_tabs_of_a_destroyed_window() {
     );
 }
 
+#[cfg(target_os = "macos")]
+#[test]
+fn forgets_the_passkey_watch_of_a_destroyed_window_tab() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    let app = app_with_windows(&["main", "win-2"]);
+    let id = open(&app, "win-2", "harborline");
+    let calls = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&calls);
+    let handler = 0x5eed_0001;
+    super::passkey::WATCHES.watch(
+        handler,
+        &id,
+        Arc::new(move || {
+            counted.fetch_add(1, Ordering::SeqCst);
+        }),
+    );
+    forget_window(app.handle(), "win-2");
+    assert!(!super::passkey::WATCHES.ask(handler));
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+}
+
 fn state_of(app: &App<MockRuntime>, id: &str) -> Option<TabState> {
     app.state::<BrowserRegistry>().state_of(id)
 }

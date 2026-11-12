@@ -10,6 +10,7 @@ export type ApproveArtifactParams = Readonly<{
 
 export type ApproveArtifactOutcome =
   | Readonly<{ kind: 'approved'; revision: number }>
+  | Readonly<{ kind: 'already_approved'; revision: number }>
   | Readonly<{ kind: 'refused'; code: AutoRefusalCode; latestRevision: number | null }>;
 
 export const approveArtifact = async ({
@@ -21,6 +22,8 @@ export const approveArtifact = async ({
   switch (outcome.kind) {
     case 'approved':
       return { kind: 'approved', revision: outcome.revision };
+    case 'already_approved':
+      return { kind: 'already_approved', revision: outcome.revision };
     case 'unknown':
       return { kind: 'refused', code: 'artifact_unknown', latestRevision: null };
     case 'revising':

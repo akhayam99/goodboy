@@ -229,6 +229,18 @@ pub async fn browser_tab_close(webview: Webview, args: TabArgs) -> Result<(), Me
 }
 
 #[tauri::command]
+pub async fn browser_tab_passkey_dismiss(
+    webview: Webview,
+    args: TabArgs,
+) -> Result<TabFacts, MessageError> {
+    check_owner(&webview, &args.tab_id)?;
+    webview
+        .state::<BrowserRegistry>()
+        .set_passkey_blocked(&args.tab_id, false)
+        .ok_or_else(|| reason::failed(TAB_GONE))
+}
+
+#[tauri::command]
 pub async fn browser_tab_list(
     webview: Webview,
     args: SessionArgs,

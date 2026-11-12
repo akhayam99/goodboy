@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import { nextProjectId, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import {
@@ -91,6 +91,7 @@ const factsOf = ({ args }: OpenArgs): BrowserTabFacts => {
     isShown: false,
     hiddenSinceMs: null,
     openerId: null,
+    isPasskeyBlocked: false,
   };
   live = [...live, facts];
   return facts;
@@ -109,6 +110,13 @@ const stubHost = () => {
     browser_tab_place: null,
     browser_tab_show: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_hide: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
+    browser_tab_reload: null,
+    browser_tab_passkey_dismiss: ({ args }: TabArgs) => {
+      live = live.map((facts) =>
+        facts.id === args.tabId ? { ...facts, isPasskeyBlocked: false } : facts,
+      );
+      return live.find((facts) => facts.id === args.tabId);
+    },
   });
 };
 
@@ -414,6 +422,26 @@ describe('the browser page', () => {
       tabId: 'live-1',
       bounds: VIEW_RECT,
     });
+  });
+
+  it('says on the page when the shown tab asked for a passkey, and dismisses it for that tab', async () => {
+    openPage({ tabId: null });
+    await placeView();
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(1));
+
+    live = live.map((facts) => ({ ...facts, isPasskeyBlocked: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+    const notice = await screen.findByText("Passkeys don't work in Goodboy's browser");
+    const region = notice.closest('[role="status"]');
+    if (!(region instanceof HTMLElement)) {
+      throw new Error('The passkey notice has no status region.');
+    }
+    fireEvent.click(within(region).getByRole('button', { name: 'Dismiss' }));
+
+    await waitFor(() =>
+      expect(screen.queryByText("Passkeys don't work in Goodboy's browser")).toBeNull(),
+    );
+    expect(callsOf({ command: 'browser_tab_passkey_dismiss' })).toEqual([{ tabId: 'live-1' }]);
   });
 
   it('opens a tab of another session in place and names it in the route', async () => {
