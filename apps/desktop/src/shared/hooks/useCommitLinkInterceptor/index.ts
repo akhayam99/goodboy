@@ -8,6 +8,7 @@ export type CommitDiffTarget = { repo: string; sha: string };
 type ClaimParams = {
   readonly href: string;
   readonly anchor: Element;
+  readonly event: MouseEvent;
 };
 
 type Params = {
@@ -40,7 +41,7 @@ export const useCommitLinkInterceptor = ({ claimLink = NO_CLAIM }: Params = {}) 
       }
       if (/^https?:/i.test(href)) {
         e.preventDefault();
-        if (anchor != null && claimRef.current({ href, anchor })) {
+        if (anchor != null && claimRef.current({ href, anchor, event: e })) {
           return;
         }
         openUrl(href).catch((error: unknown) => {

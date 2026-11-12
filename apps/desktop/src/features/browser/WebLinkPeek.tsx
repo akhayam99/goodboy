@@ -1,16 +1,25 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import type { SessionId } from '@goodboy/types';
 import { FLOATING_SURFACE, FactCardFootnote, FactCardHeader, ICON_SIZE, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { useAppStore } from '../../../../store';
-import { BROWSER_SESSION_ATTRIBUTE } from '../../browserSessionAttribute';
-import { hostOf } from '../../hostOf';
-import { ownBrowserClickWord } from '../../ownBrowserClickWord';
-import type { SessionLink } from '../../sessionLinkOf';
-import { tabForAddress } from '../../tabForAddress';
+import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { useLinksOpen } from '../../shared/hooks/useLinksOpen';
+import { useAppStore } from '../../store';
+import { hostOf } from './hostOf';
+import { tabForAddress } from './tabForAddress';
+import { webLinkPeekWords } from './webLinkPeekWords';
+
+type Rect = Pick<DOMRect, 'top' | 'left' | 'bottom' | 'right'>;
+
+export type PeekTarget = {
+  readonly url: string;
+  readonly sessionId: SessionId | null;
+  readonly anchorOf: () => Rect;
+  readonly roomOf: () => DOMRect | null;
+};
 
 type Props = {
-  readonly link: SessionLink;
+  readonly target: PeekTarget;
 };
 
 type Spot = {
@@ -19,7 +28,7 @@ type Spot = {
 };
 
 type PlaceParams = {
-  readonly anchor: DOMRect;
+  readonly anchor: Rect;
   readonly card: DOMRect;
   readonly room: DOMRect | null;
 };
@@ -37,22 +46,24 @@ const placeCard = ({ anchor, card, room }: PlaceParams): Spot => {
   return { top, left: Math.min(Math.max(anchor.left, left + EDGE), most) };
 };
 
-const roomOf = ({ link }: Props): DOMRect | null => {
-  const box = link.anchor.closest(`[${BROWSER_SESSION_ATTRIBUTE}]`)?.getBoundingClientRect();
-  return box === undefined || box.width === 0 ? null : box;
-};
-
-export const BrowserLinkPeek = ({ link }: Props) => {
+export const WebLinkPeek = ({ target }: Props) => {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [spot, setSpot] = useState<Spot | null>(null);
-  const tabTitle = useAppStore(
-    (state) =>
-      tabForAddress({ tabs: state.browserSessionTabs[link.sessionId] ?? [], url: link.url })
-        ?.title ?? null,
+  const mode = useLinksOpen();
+  const tabTitle = useAppStore((state) =>
+    target.sessionId === null
+      ? null
+      : (tabForAddress({
+          tabs: state.browserSessionTabs[target.sessionId] ?? [],
+          url: target.url,
+        })?.title ?? null),
   );
-  const title = tabTitle === null || tabTitle === '' ? hostOf({ url: link.url }) : tabTitle;
-  const lead =
-    tabTitle === null ? 'Opens beside the session.' : 'Shows its tab beside the session.';
+  const title = tabTitle === null || tabTitle === '' ? hostOf({ url: target.url }) : tabTitle;
+  const words = webLinkPeekWords({
+    sessionId: target.sessionId,
+    mode,
+    hasTab: tabTitle !== null,
+  });
 
   useLayoutEffect(() => {
     const card = cardRef.current;
@@ -61,12 +72,12 @@ export const BrowserLinkPeek = ({ link }: Props) => {
     }
     setSpot(
       placeCard({
-        anchor: link.anchor.getBoundingClientRect(),
+        anchor: target.anchorOf(),
         card: card.getBoundingClientRect(),
-        room: roomOf({ link }),
+        room: target.roomOf(),
       }),
     );
-  }, [link]);
+  }, [target]);
 
   return createPortal(
     <div
@@ -89,8 +100,8 @@ export const BrowserLinkPeek = ({ link }: Props) => {
         glyph={<CONCEPT_ICONS.browser size={ICON_SIZE.row} className="text-info" />}
         title={title}
       />
-      <span className="truncate text-code text-muted-foreground">{link.url}</span>
-      <FactCardFootnote text={`${lead} ${ownBrowserClickWord()} opens your browser.`} />
+      <span className="truncate text-code text-muted-foreground">{target.url}</span>
+      <FactCardFootnote text={words} />
     </div>,
     document.body,
   );

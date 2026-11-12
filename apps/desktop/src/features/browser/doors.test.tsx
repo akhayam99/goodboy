@@ -500,6 +500,40 @@ describe('a link', () => {
   });
 });
 
+describe('the Links setting set to your browser', () => {
+  beforeEach(() => {
+    store.setState({ settings: { 'links.open': 'browser' } });
+  });
+
+  it('sends a plain click on a chip to your browser, with a session', async () => {
+    render(<PortChip port={5173} sessionId={SESSION_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open localhost:5173' }));
+
+    await waitFor(() => expect(outside).toEqual(['http://localhost:5173']));
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
+  it('sends a plain click on a session link to your browser', async () => {
+    const link = renderLink({ href: 'https://docs.harborline.dev/tax', sessionId: SESSION_ID });
+
+    fireEvent.click(link);
+
+    await waitFor(() => expect(outside).toEqual(['https://docs.harborline.dev/tax']));
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
+  it('says the click opens your browser in the peek', async () => {
+    const link = renderLink({ href: 'http://localhost:5173/checkout', sessionId: SESSION_ID });
+
+    fireEvent.focusIn(link);
+
+    const card = await screen.findByTestId('browser-link-peek');
+    expect(card.textContent).toContain('Opens your browser.');
+    expect(card.textContent).not.toContain('beside the session');
+  });
+});
+
 describe('the peek', () => {
   it('names a localhost link and what a click does when the link takes focus', async () => {
     const link = renderLink({ href: 'http://localhost:5173/checkout', sessionId: SESSION_ID });

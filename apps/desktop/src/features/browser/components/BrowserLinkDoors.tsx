@@ -1,12 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useEscapeLayer, useRestHover } from '@goodboy/ui';
-import { useOwnBrowserLinkClicks } from '../../hooks/useOwnBrowserLinkClicks';
-import { isLoopbackHost } from '../../isLoopbackHost';
-import { sessionLinkOf, type SessionLink } from '../../sessionLinkOf';
-import { BrowserLinkPeek } from './BrowserLinkPeek';
+import { useOwnBrowserLinkClicks } from '../hooks/useOwnBrowserLinkClicks';
+import { isLoopbackHost } from '../isLoopbackHost';
+import { sessionLinkOf, type SessionLink } from '../sessionLinkOf';
+import { BROWSER_SESSION_ATTRIBUTE } from '../browserSessionAttribute';
+import { WebLinkPeek, type PeekTarget } from '../WebLinkPeek';
 
 type TargetParams = {
   readonly target: EventTarget | null;
+};
+
+type LinkParams = {
+  readonly link: SessionLink;
 };
 
 type UrlParams = {
@@ -26,10 +31,21 @@ const peekLinkOf = ({ target }: TargetParams): SessionLink | null => {
   return link !== null && isLoopbackUrl({ url: link.url }) ? link : null;
 };
 
+const peekTargetOf = ({ link }: LinkParams): PeekTarget => ({
+  url: link.url,
+  sessionId: link.sessionId,
+  anchorOf: () => link.anchor.getBoundingClientRect(),
+  roomOf: () => {
+    const box = link.anchor.closest(`[${BROWSER_SESSION_ATTRIBUTE}]`)?.getBoundingClientRect();
+    return box === undefined || box.width === 0 ? null : box;
+  },
+});
+
 export const BrowserLinkDoors = () => {
   const { target, enter, openNow, leave, close } = useRestHover<SessionLink>({
     hasWarmWindow: true,
   });
+  const peek = useMemo(() => (target === null ? null : peekTargetOf({ link: target })), [target]);
   const isPointerFocus = useRef(false);
   useOwnBrowserLinkClicks();
   useEscapeLayer(close, target !== null);
@@ -91,5 +107,5 @@ export const BrowserLinkDoors = () => {
     return () => listening.abort();
   }, [enter, leave, openNow, close]);
 
-  return target === null ? null : <BrowserLinkPeek link={target} />;
+  return peek === null ? null : <WebLinkPeek target={peek} />;
 };
