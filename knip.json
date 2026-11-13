@@ -2,7 +2,12 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["package.json", "eslint.strict.config.mjs"],
+      "entry": [
+        "package.json",
+        "eslint.strict.config.mjs",
+        "scripts/boot-timing.mjs",
+        "scripts/make-perf-fixture.mjs"
+      ],
       "ignore": ["scripts/rules/forbiddenPatterns.d.mts"],
       "ignoreBinaries": ["cwebp", "vite", "preview"]
     },

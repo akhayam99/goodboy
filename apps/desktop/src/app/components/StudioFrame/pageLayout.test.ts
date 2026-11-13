@@ -299,10 +299,12 @@ describe('every page steps its header aside while you read', () => {
   it('draws the shell and every drawer on the one reveal region', () => {
     const shell = readFileSync(join(UI, 'components/PaneShell/RevealPane.tsx'), 'utf8');
     const drawer = readFileSync(join(UI, 'components/DrawerFrame.tsx'), 'utf8');
+    const drawerRegion = readFileSync(join(UI, 'components/DrawerRegion.tsx'), 'utf8');
     const paneShell = readFileSync(join(UI, 'components/PaneShell/index.tsx'), 'utf8');
 
     expect(shell).toContain('<RevealRegion');
-    expect(drawer).toContain('<RevealRegion');
+    expect(drawer).toContain('<DrawerRegion');
+    expect(drawerRegion).toContain('<RevealRegion');
     expect(paneShell).not.toContain('headerMode');
   });
 

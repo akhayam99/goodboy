@@ -61,11 +61,6 @@ export const checksGroupsOf = ({ checks }: Params): ReadonlyArray<ChecksGroupRun
     runs: checks.filter((check) => groupOf({ conclusion: check.conclusion }) === group),
   })).filter((entry) => entry.runs.length > 0);
 
-export const checksRollup = ({ checks }: Params): string =>
-  checksGroupsOf({ checks })
-    .map((entry) => `${entry.runs.length} ${entry.label.toLowerCase()}`)
-    .join(' · ');
-
 export type ChecksCounts = {
   readonly failing: number;
   readonly running: number;

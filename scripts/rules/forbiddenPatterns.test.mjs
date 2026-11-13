@@ -550,6 +550,11 @@ const FIXTURES = {
     allowed: '<h1 className="text-heading">',
   },
   'half-step-spacing': { path: TS, flagged: "'p-1.5'", allowed: "'p-2'" },
+  'hand-written-age': {
+    path: TS,
+    flagged: 'const label = `${minutes} minutes ago`;',
+    allowed: 'const label = formatAge({ at });',
+  },
   'role-weight-override': { path: TS, flagged: "'text-row font-medium'", allowed: "'text-row'" },
   'if-without-braces': {
     path: TS,

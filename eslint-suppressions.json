@@ -7718,11 +7718,6 @@
       "count": 22
     }
   },
-  "apps/desktop/src/store/sessionEviction.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/agentQueue/enqueueAgentMessage.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
