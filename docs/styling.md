@@ -458,8 +458,10 @@ A page that draws its own `PageHeader` (Board, Chat) wraps the header
 and the body in `RevealRegion`, the same region `PaneShell` uses, with any
 composer below it. `DrawerFrame` pins its title row (the close is its way
 back) and steps its meta line, overlay hint and toolbar aside; the back link
-rides at the top of the body, so it stays too. A drawer with none of those draws
-no region. The first vertical `ScrollFade` of the body to
+rides at the top of the body, so it stays too. In a region the title row is the
+pinned row (`DrawerRegion`, on `sticky-surface-subtle`), so text passes under it.
+A drawer whose body scrolls itself always draws the region; any other drawer with
+none of those draws no region. The first vertical `ScrollFade` of the body to
 mount is the page scroller: it finds the header through `HeaderRevealContext`
 (`packages/ui/src/useHeaderReveal`) and claims the role, so a nested scroller or
 a later sibling never drives the header and a page adds nothing. A scroller that
@@ -580,9 +582,11 @@ sharp.
 **A sticky header blurs what passes under it; it never casts a shadow.** The
 pinned back row, the artifact page's pinned zone (back row and status bar
 together), the sliding header of a `RevealRegion` and the sticky rows of a
-list or a diff take `sticky-surface` (`sticky-surface-subtle` on `subtle`): the
-surface role at 90% with `blur(3px) saturate(1.2)`, opaque under
-`prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
+list take `sticky-surface`: the background at 80% with `blur(12px) saturate(1.4)`.
+A header on `subtle`, a drawer's title row and a diff file header take
+`sticky-surface-subtle`, the light frost at 90% with `blur(3px) saturate(1.2)`,
+so a row that parks under the pinned zone never stacks two strong frosts. Both
+are opaque under `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
 `bg-background` on the header itself. Its block padding leans down: the pinned zone
 is `pt-3 pb-5` (`PANE_RHYTHM.pinnedInset`), more room below than above, because
 the back row's 24px line already holds 4px above its text, and a header under or inside it adds no

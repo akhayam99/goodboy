@@ -127,7 +127,7 @@ content that passes under it shows through frosted. Page content scrolls under
 the pinned back row of every `PaneShell`, a self-scrolling one included, so the
 frosted row is what the reader sees there. `sticky-surface-subtle` is the light
 frost (the role at 90% over `blur(3px) saturate(1.2)`) for a header on `subtle`
-and for a diff file header, which parks right under the pinned zone, so a long
+(a drawer's pinned title row included) and for a diff file header, which parks right under the pinned zone, so a long
 diff never stacks two strong frosts on every scroll frame. Text on
 the frost holds 4.5:1 over any surface or half-inked text under it
 (`sticky-surface.test.ts`). Under `prefers-reduced-transparency: reduce` both
