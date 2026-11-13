@@ -98,6 +98,7 @@ mod thread_git;
 mod turn;
 mod turn_backlog;
 mod turn_delivery;
+mod turn_live;
 mod turn_quiet;
 mod usage_probe;
 mod util;
@@ -186,6 +187,7 @@ pub fn run() {
     };
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
     let turn_registry = turn::TurnRegistry::new();
+    turn_live::install(turn_registry.live_turns());
     let chat_registry = chat::ChatRegistry::new();
     let summarize_registry = summarize::SummarizeRegistry::new();
     let planner_registry = planner::PlannerRegistry::new();
@@ -519,6 +521,7 @@ pub fn run() {
             restart_marker::restart_prepare,
             restart_marker::restart_abort,
             turn::turn_list_live,
+            turn::turn_launch_id,
             turn::turn_quiet,
             window_close::window_close_claim,
             window_heartbeat::window_heartbeat,

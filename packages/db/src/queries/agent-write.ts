@@ -26,6 +26,7 @@ import {
   isWorkflowTaskProfile,
   stringifyRoutingJson,
 } from './workflowRoutingCodec';
+import { releaseAdmissionStatement } from './turn-admission';
 
 export type AgentInsertInput = {
   readonly id?: AgentId;
@@ -287,59 +288,29 @@ export const revertAgentStart = async ({
 }: RevertAgentStartParams): Promise<void> => {
   const status =
     agentBefore === null || agentBefore.status === 'running' ? 'pending' : agentBefore.status;
-  await db.execute(
-    `UPDATE agents SET
-       status          = ?,
-       provider_run_id = ?,
-       started_at      = ?,
-       stopped_at      = ?,
-       stopped_by      = ?
-     WHERE id = ? AND status = 'running' AND provider_run_id = ?`,
-    [
-      status,
-      agentBefore?.runId ?? null,
-      isoToMs(agentBefore?.startedAt),
-      isoToMs(agentBefore?.stoppedAt),
-      agentBefore?.stoppedBy ?? null,
-      agentId,
-      runId,
+  await db.transaction({
+    statements: [
+      {
+        sql: `UPDATE agents SET
+           status          = ?,
+           provider_run_id = ?,
+           started_at      = ?,
+           stopped_at      = ?,
+           stopped_by      = ?
+         WHERE id = ? AND status = 'running' AND provider_run_id = ?`,
+        params: [
+          status,
+          agentBefore?.runId ?? null,
+          isoToMs(agentBefore?.startedAt),
+          isoToMs(agentBefore?.stoppedAt),
+          agentBefore?.stoppedBy ?? null,
+          agentId,
+          runId,
+        ],
+      },
+      releaseAdmissionStatement({ agentId, runId }),
     ],
-  );
-};
-
-type StopGhostAgentsParams = {
-  readonly db: Database;
-  readonly keepRunIds: ReadonlyArray<string>;
-};
-
-export const stopGhostAgents = async ({
-  db,
-  keepRunIds,
-}: StopGhostAgentsParams): Promise<number> => {
-  const keep =
-    keepRunIds.length === 0
-      ? ''
-      : ` AND provider_run_id NOT IN (${keepRunIds.map(() => '?').join(', ')})`;
-  const { rowsAffected } = await db.execute(
-    `UPDATE agents SET status = 'stopped', stopped_at = ?, stopped_by = 'app'
-     WHERE status = 'running' AND provider_run_id IS NOT NULL${keep}
-       AND NOT EXISTS (
-         SELECT 1 FROM turn_events ask
-         WHERE ask.agent_id = agents.id
-           AND json_extract(ask.payload, '$.kind') = 'permission_request'
-           AND json_extract(ask.payload, '$.runId') = agents.provider_run_id
-           AND NOT EXISTS (
-             SELECT 1 FROM turn_events decision
-             WHERE decision.agent_id = agents.id
-               AND json_extract(decision.payload, '$.kind') = 'permission_decision'
-               AND json_extract(decision.payload, '$.runId') = agents.provider_run_id
-               AND json_extract(decision.payload, '$.toolUseId') =
-                 json_extract(ask.payload, '$.toolUseId')
-           )
-       )`,
-    [Date.now(), ...keepRunIds],
-  );
-  return rowsAffected;
+  });
 };
 
 export const setAgentVerbosity = async (

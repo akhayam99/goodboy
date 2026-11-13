@@ -203,6 +203,7 @@ const storyInvokeHandlers = {
   workspace_script_snapshot: { data: '', offset: 0, exitCode: null },
   terminal_snapshot: { data: '', offset: 0, exitCode: null },
   turn_list_live: [],
+  turn_launch_id: 'launch-story',
   worktree_list_registered: ({ worktreePaths }: ListRegisteredArgs) =>
     worktreePaths.map((path) => ({
       kind: 'registered',
@@ -488,10 +489,7 @@ export const storySpies = {
     async (_args: { readonly repoPath: string }): Promise<string | null> => null,
   ),
   worktreeGitDirectory: vi.fn(async (_args: WorktreeBaseArgs): Promise<string | null> => null),
-  worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => ({
-    files: [],
-    numstat: '',
-  })),
+  worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => ({ files: [], numstat: '' })),
   listBranchCommits: vi.fn(
     async (
       _worktreePath: string,

@@ -284,13 +284,11 @@ export {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
   isWorkflowTaskProfile,
-  legacyAgentRoutingDecision,
   legacyStepRoutingLock,
   parseRoutingJson,
   stringifyRoutingJson,
 } from './queries/workflowRoutingCodec';
 export {
-  agentInsertStatement,
   insertAgent,
   insertAgentBatch,
   markAgentUnviewed,
@@ -300,13 +298,18 @@ export {
   setAgentDone,
   setAgentProviderSession,
   setAgentVerbosity,
-  stopGhostAgents,
   updateWorkflowNodeRouting,
   type AgentBatchOutcome,
   type AgentInsertInput,
   type AgentStatusFields,
   type WorkflowNodeRouting,
 } from './queries/agent-write';
+export {
+  isTurnAdmissionHeld,
+  releaseTurnAdmission,
+  stopGhostAgent,
+  stopGhostAgents,
+} from './queries/turn-admission';
 export {
   listAgentsForSessions,
   listProviderSessionIds,
@@ -718,7 +721,6 @@ export {
   AUTO_ADOPT_ABORT,
   AUTO_DETACH_ABORT,
   adoptAgentStatements,
-  autoAdoptionJoinKey,
   detachAdoptionStatements,
   getAdoptionOfAgent,
   type AdoptAgentStatementsParams,
@@ -782,7 +784,6 @@ export {
   autoRemainingUsdSql,
   autoReservedUsdSql,
   autoSettledUsdSql,
-  getAutoReservation,
   insertAutoReservationStatement,
   listAutoReservations,
   readAutoTreeSpend,
@@ -802,7 +803,6 @@ export {
   autoTreePhaseStatement,
   casAutoTreePhase,
   claimAutoTree,
-  diagnoseAutoTreeLoss,
   getAutoTree,
   getAutoTreeByRootAgent,
   insertAutoTree,

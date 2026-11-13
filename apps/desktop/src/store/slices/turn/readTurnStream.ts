@@ -22,6 +22,7 @@ import { copilotTurnUsage } from './copilotTurnUsage';
 import type { GetFn, SetFn } from './types';
 import { confinedRoleOf, READ_ONLY_ANSWER_ROLE } from './confinedRoleOf';
 import { isAutoChildTurn } from './isAutoChildTurn';
+import { publishTurnSpawn } from './childTurn/publishTurnSpawn';
 import type { TurnContext } from './turnContext';
 
 type Params = Readonly<{
@@ -68,6 +69,9 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
   const confinedRole = ctx.isReadOnlyAnswer
     ? READ_ONLY_ANSWER_ROLE
     : confinedRoleOf({ input: ctx.input, agent: agentRowEarly, childTurn: ctx.childTurn });
+  if (ctx.hasAdmission) {
+    await publishTurnSpawn({ agentId: activeAgentId, runId, nowMs: Date.now() });
+  }
   for await (const rawEvent of runTurn(
     {
       runId,
@@ -90,6 +94,7 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
       ...(writeSetLease !== undefined && { writeSetLease }),
       ...(confinedRole !== undefined && { confinedRole }),
       ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
+      ...(ctx.hasAdmission && { hasAdmission: true }),
       ...((isolatedCopyPath !== null || isScribeTurn) && { blocksPush: true }),
       ...(isAutoChildTurn({ input: ctx.input, confinedRole, childTurn: ctx.childTurn }) && {
         isAutoChild: true,

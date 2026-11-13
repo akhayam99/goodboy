@@ -1,3 +1,5 @@
+import { releaseTurnAdmission } from '@goodboy/db';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { CHECK_STATE } from '../notifications/errorRecovery';
 import { releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { cancelledRunIds } from '../sessions/sessionMutators';
@@ -84,7 +86,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await discardInPlaceCapture({ capture: startCtx.inPlaceCapture });
       return started.result;
     }
-    const { runId, resolvedAgentId, agentBefore } = started.value;
+    const { runId, resolvedAgentId, agentBefore, hasAdmission } = started.value;
+    const releaseAdmission = async (): Promise<void> => {
+      if (!hasAdmission) {
+        return;
+      }
+      await releaseTurnAdmission({
+        db: tauriDatabase,
+        agentId: startCtx.activeAgentId,
+        runId,
+      }).catch((error: unknown) => console.warn('release the turn admission failed', error));
+    };
     const closeThenDiscard = async ({ error }: DiscardParams): Promise<never> => {
       await closeUnspawnedRun({
         set,
@@ -122,6 +134,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         return;
       }
       ctx.progress.hasSpawned = true;
+      void releaseAdmission();
       input.onStarted?.();
     };
     try {
@@ -135,6 +148,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         return recovered;
       }
     } finally {
+      if (!ctx.progress.hasSpawned) {
+        await releaseAdmission();
+      }
       await closeTurnCapture({ get, ctx });
     }
     return await settleTurn({ set, get, ctx });
