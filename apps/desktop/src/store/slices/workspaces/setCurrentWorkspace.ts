@@ -147,6 +147,11 @@ type VerifiedPatch = {
   readonly hydration: SessionMountHydration;
 };
 
+type SwitchParams = {
+  readonly id: WorkspaceId | null;
+  readonly launch?: LaunchReads;
+};
+
 const SWITCH_KEY = 'workspace-switch';
 
 const unverifiedRows = ({ candidates }: UnverifiedParams): ReadonlyArray<SessionWorktree> =>
@@ -406,7 +411,7 @@ const loadWorkspaceSnapshot = async ({
 
 export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
   const latest = createLatestOnly();
-  return async (id: WorkspaceId | null, launch?: LaunchReads) => {
+  return async ({ id, launch }: SwitchParams) => {
     const claimed = latest.claim({ key: SWITCH_KEY });
     switchEpoch.value += 1;
     const isOpeningAnother = id != null && id !== get().currentWorkspaceId;

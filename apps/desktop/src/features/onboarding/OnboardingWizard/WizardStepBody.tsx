@@ -32,7 +32,7 @@ export const WizardStepBody = ({ step, nav, wizard }: Props) => {
   const onWorkspaceCreated = ({ workspaceId }: CreatedParams) => {
     nav.setBusy(true);
     setStepError(null);
-    void setCurrentWorkspace(workspaceId)
+    void setCurrentWorkspace({ id: workspaceId })
       .then(() => applyDefaultAgent({ workspaceId }))
       .then(() => nav.goNext())
       .catch((error: unknown) => setStepError(formatError(error)))
