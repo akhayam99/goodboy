@@ -19,6 +19,7 @@ import { mountFixture } from '../../../../__tests__/helpers/actionFixtures';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 import type { BrowserTab, TabOwner } from '../../../../store/slices/browser/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { pageSendKeyOf } from '../../sendPageToAgent';
 import type { BrowserPageText, BrowserTabFacts } from '../../types';
 import { BrowserPane } from './index';
@@ -173,7 +174,9 @@ const queued = ({ agentId }: AgentParams) => store.getState().outputHandoffs[age
 const openCheckout = async () => {
   render(
     <ToastProvider>
-      <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
+      <ObjectMenuProvider>
+        <BrowserPane sessionId={SESSION_ID} onClose={() => undefined} />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
   await typeAddress({ text: 'localhost:5173/checkout' });

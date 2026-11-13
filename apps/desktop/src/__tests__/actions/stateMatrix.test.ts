@@ -615,7 +615,7 @@ const seedPullRequest = (
           reviewDecision: fields.reviewDecision ?? null,
           body: '',
           updatedAt: FIXTURE_NOW,
-          author: fields.author ?? 'mara-l',
+          author: { login: fields.author ?? 'mara-l', avatarUrl: null },
         },
         detail: {
           prNumber: 482,

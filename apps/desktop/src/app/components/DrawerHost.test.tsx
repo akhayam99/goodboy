@@ -421,7 +421,8 @@ describe('the comment drawer the Comments page portals into the host', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
 
-    const region = screen.getByRole('region', { name: /retryPolicy\.ts:42/ });
+    const region = screen.getByRole('region', { name: 'Comment' });
+    expect(region.textContent).toContain('retryPolicy.ts:42');
     expect(region.closest('[data-slot="review-comment-drawer"]')).not.toBeNull();
     const close = within(region).getByRole('button', { name: 'Close' });
     expect(within(region).queryAllByRole('button', { name: /^Close .+/ })).toHaveLength(0);

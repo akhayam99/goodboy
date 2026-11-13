@@ -18,6 +18,7 @@ import { PLAN_PART_KIND } from './kinds/planPart';
 import { QUESTION_KIND } from './kinds/question';
 import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
+import { BROWSER_TAB_KIND } from './kinds/browserTab';
 import { NEW_FORM_KIND } from './kinds/newForm';
 import { TASK_LIST_KIND } from './kinds/taskList';
 import { RUN_ROW_KIND } from './kinds/runRow';
@@ -172,6 +173,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: PORT_KIND, state, target });
     case 'terminalTab':
       return bind({ definition: TERMINAL_TAB_KIND, state, target });
+    case 'browserTab':
+      return bind({ definition: BROWSER_TAB_KIND, state, target });
     case 'newForm':
       return bind({ definition: NEW_FORM_KIND, state, target });
     case 'taskList':

@@ -23,6 +23,7 @@ import type { ChatFacts } from './kinds/chat';
 import type { ChatsFacts } from './kinds/chats';
 import type { PortFacts } from './kinds/port';
 import type { TerminalTabFacts } from './kinds/terminalTab';
+import type { BrowserTabFacts } from './kinds/browserTab';
 import type { NewFormFacts } from './kinds/newForm';
 import type { TaskListFacts } from './kinds/taskList';
 import type { WorkflowListFacts } from './kinds/workflowList';
@@ -409,6 +410,11 @@ export type TerminalTabActionTarget = {
   readonly facts: TerminalTabFacts;
 };
 
+export type BrowserTabActionTarget = {
+  readonly kind: 'browserTab';
+  readonly facts: BrowserTabFacts;
+};
+
 export type NewFormActionTarget = {
   readonly kind: 'newForm';
   readonly facts: NewFormFacts;
@@ -568,6 +574,7 @@ export type ObjectTarget =
   | ChatsActionTarget
   | PortActionTarget
   | TerminalTabActionTarget
+  | BrowserTabActionTarget
   | NewFormActionTarget
   | TaskListActionTarget
   | WorkflowListActionTarget

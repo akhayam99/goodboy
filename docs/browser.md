@@ -633,7 +633,8 @@ sits in and the address, and one function opens it (`openInBrowser`).
   a terminal on a plain folder, opens your browser.
 - **Send to agent** is a door in the other direction: the text of a tab goes
   to the session's agent. The entries are the first row of More, a row in the
-  tab list's right-click menu and `browser.sendToAgent` (⌘⇧S); all call
+  tab list's right-click menu (the `browserTab` kind of the action registry)
+  and `browser.sendToAgent` (⌘⇧S); all call
   `sendPageToAgent`. The press names the tab, the session, its host and the
   agent the composer would send to (`useHandOutputToAgent`). Rust reads the
   tab only for that press (`browser_page_text`): the tab must belong to the
