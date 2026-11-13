@@ -23,7 +23,7 @@ const PR: PullRequestState = {
   reviewDecision: 'approved',
   body: '',
   updatedAt: '2026-09-20T10:00:00Z',
-  author: 'nadia-p',
+  author: { login: 'nadia-p', avatarUrl: null },
   headSha: '6c20f48a9e1d',
 };
 

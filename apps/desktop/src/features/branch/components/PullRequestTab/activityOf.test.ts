@@ -105,6 +105,48 @@ describe('pullRequestActivityOf', () => {
     });
   });
 
+  it('carries the picture address of the author on the opened, push and merged rows', () => {
+    const items = pullRequestActivityOf({
+      view: { ...VIEW, state: 'merged', mergedAt: '2026-10-04T08:00:00Z' },
+      detail: detail({
+        comments: [
+          comment({
+            author: 'nadia-p',
+            authorAvatarUrl: 'https://avatars.harborline.test/nadia.png',
+          }),
+        ],
+      }),
+      runs: null,
+      threads: NO_THREADS,
+      entries: [],
+      edits: [],
+    });
+
+    const avatars = items.flatMap((item) =>
+      item.kind === 'opened' || item.kind === 'push' || item.kind === 'merged'
+        ? [item.avatarUrl]
+        : [],
+    );
+    expect(avatars).toEqual(Array(4).fill('https://avatars.harborline.test/nadia.png'));
+  });
+
+  it('prefers the address the host sent with the author', () => {
+    const items = pullRequestActivityOf({
+      view: {
+        ...VIEW,
+        author: { login: 'nadia-p', name: null, avatarUrl: 'https://gitlab.test/nadia.png' },
+      },
+      detail: null,
+      runs: null,
+      threads: NO_THREADS,
+      entries: [],
+      edits: [],
+    });
+
+    expect(items[0]).toMatchObject({ kind: 'opened', avatarUrl: 'https://gitlab.test/nadia.png' });
+    expect(items[1]).toMatchObject({ kind: 'push', avatarUrl: 'https://gitlab.test/nadia.png' });
+  });
+
   it('keeps the pushes apart when another author pushed in between', () => {
     const items = pullRequestActivityOf({
       view: {

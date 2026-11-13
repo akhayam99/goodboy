@@ -55,6 +55,49 @@ describe('listPrsForBranches', () => {
     expect(result?.get('ak/two')).toEqual([]);
   });
 
+  it('carries the author as a login and a picture address, and asks the host for both', async () => {
+    const runner = runnerOf(
+      payload({
+        b0: {
+          nodes: [
+            node({
+              number: 1,
+              author: {
+                login: 'kenji-w',
+                avatarUrl: 'https://avatars.harborline.test/kenji-w.png',
+              },
+            }),
+          ],
+        },
+      }),
+    );
+
+    const result = await listPrsForBranches({
+      runner,
+      repo: 'harborline/ledger-core',
+      branches: ['ak/one'],
+    });
+
+    expect(result?.get('ak/one')?.[0]?.author).toEqual({
+      login: 'kenji-w',
+      avatarUrl: 'https://avatars.harborline.test/kenji-w.png',
+    });
+    const args = vi.mocked(runner.run).mock.calls[0]?.[0] ?? [];
+    expect(args.join(' ')).toContain('author{ login avatarUrl }');
+  });
+
+  it('keeps an author without an address as a login and no picture', async () => {
+    const runner = runnerOf(payload({ b0: { nodes: [node({ number: 1 })] } }));
+
+    const result = await listPrsForBranches({
+      runner,
+      repo: 'harborline/ledger-core',
+      branches: ['ak/one'],
+    });
+
+    expect(result?.get('ak/one')?.[0]?.author).toEqual({ login: 'kenji-w', avatarUrl: null });
+  });
+
   it('puts open requests first and reads checks and the merge queue from the same answer', async () => {
     const runner = runnerOf(
       payload({

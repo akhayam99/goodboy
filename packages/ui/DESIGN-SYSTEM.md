@@ -784,6 +784,12 @@ degrees so a person never reads as danger or warning. One login keeps one hue
 in every surface. The app wires `loadAvatarImage`, which keeps one request per
 address per run.
 
+`Person` (in the app's `shared/components/Person`) is the one chip for a person:
+the picture and the login, `Someone` when the login is missing, said once.
+Three sizes: `xs` at 16 in a meta line, `sm` at 20 in the properties rail, `md`
+at 24 in a timeline row or a comment. A bot is a square glyph tile of the same
+size, never a round picture.
+
 ### Identity palettes
 
 Identity colour names an object instead of describing its state. Two workflows

@@ -1,6 +1,7 @@
-import { Bot, PenLine } from 'lucide-react';
-import { Avatar, cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
+import { ICON_SIZE } from '@goodboy/ui';
 
+import { Person } from '../../../../shared/components/Person';
+import { isBot } from '../../../integrations/github/comment-threads';
 import { HOST_GLYPH } from './threadKind';
 import type { DiffThread } from './types';
 
@@ -19,26 +20,14 @@ export const ThreadWho = ({ thread }: Props) => {
         >
           <Glyph size={ICON_SIZE.control} />
         </span>
-        <Avatar url={thread.authorAvatarUrl ?? null} alt={thread.author} size="xs" />
-        <span className="min-w-0 truncate text-row text-foreground">{thread.author}</span>
+        <Person
+          login={thread.author}
+          avatarUrl={thread.authorAvatarUrl ?? null}
+          size="md"
+          isBot={isBot(thread.author)}
+        />
       </>
     );
   }
-  const tint = tintClasses('primary');
-  const Icon = thread.isAgent ? Bot : PenLine;
-  return (
-    <>
-      <span
-        aria-hidden
-        className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-md',
-          tint.bg,
-          tint.text,
-        )}
-      >
-        <Icon size={ICON_SIZE.row} />
-      </span>
-      <span className="min-w-0 truncate text-row text-foreground">{thread.author}</span>
-    </>
-  );
+  return <Person login={thread.author} avatarUrl={null} size="md" isBot={thread.isAgent} />;
 };

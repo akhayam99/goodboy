@@ -136,6 +136,18 @@ describe('Avatar', () => {
   });
 });
 
+describe('Avatar sizes', () => {
+  it.each([
+    ['xs', 'h-4 w-4'],
+    ['sm', 'h-5 w-5'],
+    ['md', 'h-6 w-6'],
+  ] as const)('draws %s at %s', (size, dimension) => {
+    render(<Avatar url={null} alt="Bo" size={size} />);
+
+    expect(screen.getByText('B').className).toContain(dimension);
+  });
+});
+
 describe('personHueOf', () => {
   it('gives one login the same hue every time', () => {
     expect(personHueOf({ login: 'mara-l' })).toBe(personHueOf({ login: 'mara-l' }));

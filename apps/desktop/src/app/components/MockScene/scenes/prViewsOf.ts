@@ -18,7 +18,7 @@ const prViewEntryOf = ({ pr, mountId, commits }: Params): PullRequestViewEntry =
     url: pr.url,
     state: pr.state,
     isDraft: pr.isDraft,
-    author: pr.author == null ? null : { login: pr.author, name: null, avatarUrl: null },
+    author: pr.author == null ? null : { ...pr.author, name: null },
     baseBranch: pr.baseBranch,
     headBranch: pr.headBranch,
     headSha: pr.headSha ?? null,

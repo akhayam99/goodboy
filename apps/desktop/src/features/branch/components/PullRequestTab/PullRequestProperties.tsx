@@ -7,6 +7,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { ThreadEntry } from '../../../resolve/commentGroupsView';
+import { Person } from '../../../../shared/components/Person';
 import { BotsProperty } from './BotsProperty';
 import { PROPERTY_ROW as ROW } from './propertyRow';
 import { PropertyField } from './PropertyField';
@@ -70,7 +71,7 @@ export const PullRequestProperties = ({
     {pr.author == null ? null : (
       <PropertyField label="Author">
         <div className={ROW}>
-          <span className="min-w-0 truncate text-foreground">{pr.author}</span>
+          <Person login={pr.author.login} avatarUrl={pr.author.avatarUrl} size="sm" />
         </div>
       </PropertyField>
     )}

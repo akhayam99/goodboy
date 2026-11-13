@@ -18,7 +18,7 @@ const PR: PullRequestState = {
   reviewDecision: null,
   body: '',
   updatedAt: '2026-09-20T10:00:00Z',
-  author: 'mara-l',
+  author: { login: 'mara-l', avatarUrl: null },
 };
 
 const facts = (overrides: Partial<PullRequestFacts>): PullRequestFacts => ({
