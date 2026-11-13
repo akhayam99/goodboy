@@ -11,6 +11,7 @@ import type { BrowserPageGroup } from '../../types';
 import { BrowserAddressRow } from '../BrowserPane/BrowserAddressRow';
 import { BrowserNotice } from '../BrowserPane/BrowserNotice';
 import { BrowserPasskeyNotice } from '../BrowserPane/BrowserPasskeyNotice';
+import { BrowserSendLine } from '../BrowserPane/BrowserSendLine';
 import { BrowserView } from '../BrowserPane/BrowserView';
 import { BrowserPageRail } from './BrowserPageRail';
 import { BrowserPageTrail } from './BrowserPageTrail';
@@ -102,6 +103,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
               </p>
             )}
             <BrowserNotice notice={model.notice} />
+            <BrowserSendLine pageSend={model.pageSend} />
             <BrowserPasskeyNotice model={model} />
             <div className="flex min-h-0 flex-1 px-2">
               <BrowserView

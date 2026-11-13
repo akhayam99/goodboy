@@ -1,4 +1,4 @@
-import { ArrowUpRight, Code, Copy, CopyPlus, X } from 'lucide-react';
+import { ArrowUpRight, Bot, Code, Copy, CopyPlus, X } from 'lucide-react';
 import {
   AnchoredPopover,
   ICON_SIZE,
@@ -9,6 +9,7 @@ import {
 } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { currentPlatform } from '../../../../shared/platform';
 import type { BrowserPaneModel } from '../../types';
 import { browserMoreOffOf } from './browserMoreRows';
@@ -24,7 +25,7 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
   const dropdown = useDropdown({
     width: 'min-w-[200px]',
     maxWidth: MENU_MAX_WIDTH,
-    expectedHeight: 240,
+    expectedHeight: 280,
     expectedWidth: 220,
   });
   const shown = model.shown;
@@ -35,6 +36,15 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
     canOpenOutside: model.canOpenOutside,
   });
   const entries: ReadonlyArray<MenuEntry> = [
+    {
+      kind: 'item',
+      key: 'sendToAgent',
+      label: model.pageSend.isBusy ? 'Reading the page' : model.pageSend.label,
+      icon: Bot,
+      hint: shortcutGlyphs('browser.sendToAgent'),
+      isDisabled: model.pageSend.isBusy || !model.pageSend.canSend,
+      onSelect: model.pageSend.sendShown,
+    },
     {
       kind: 'item',
       key: 'openOutside',

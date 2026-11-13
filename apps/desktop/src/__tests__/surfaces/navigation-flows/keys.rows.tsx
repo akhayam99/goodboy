@@ -742,6 +742,18 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
     },
   }),
+  keyRow({
+    id: 'browser.sendToAgent',
+    note: 'reads the shown page for the agent of the session and reads nothing from a tab with no live page',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.sendToAgent')();
+    },
+    lands: async () => {
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+      expect(useAppStore.getState().outputHandoffs).toEqual({});
+    },
+  }),
 ];
 
 const STARRED_TITLES = [

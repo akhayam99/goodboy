@@ -26,6 +26,24 @@ export type BrowserFindOutcome = {
   readonly isFound: boolean;
 };
 
+export type BrowserPageText = {
+  readonly title: string;
+  readonly url: string;
+  readonly text: string;
+  readonly isCut: boolean;
+};
+
+export type BrowserPageSend = {
+  readonly label: string;
+  readonly canSend: boolean;
+  readonly canSendTab: (params: TabParams) => boolean;
+  readonly isBusy: boolean;
+  readonly runKey: string;
+  readonly send: (params: TabParams) => void;
+  readonly sendShown: () => void;
+  readonly retry: () => void;
+};
+
 export type BrowserTabFavicon = {
   readonly origin: string;
   readonly src: string | null;
@@ -110,6 +128,7 @@ export type BrowserPaneModel = {
   readonly find: (params: FindParams) => Promise<boolean>;
   readonly clearFind: () => Promise<void>;
   readonly inspect: () => void;
+  readonly pageSend: BrowserPageSend;
   readonly showError: (params: ErrorParams) => void;
 };
 

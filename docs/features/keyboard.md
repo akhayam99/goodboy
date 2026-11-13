@@ -199,7 +199,11 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. The button counts the open tabs.
 - The address bar shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back. The icon is the site's own when it has one, and a letter when it has none.
 - While a page loads, a thin line breathes under the address row and Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
-- **More** holds Open in your browser, **Open as page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
+- **More** holds **Send to the agent**, Open in your browser, **Open as page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
+- **Send to the agent** puts the text you see on the page on the message box as a chip with the title, the site and the word count. It also sits in the right-click menu of a tab, and **⌘⇧S** does the same for the shown tab.
+- The page is read when you press it, never before. Nothing goes to the agent until you send the message, and the × on the chip takes it away.
+- A page over 60,000 characters is cut, and the text says so at the end. A key or a token in the text is hidden.
+- A page that moved to another site since you pressed is not read. A failure says why under the address row, with **Retry**.
 - **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Beside the session**, at the right of the trail, puts it back. The page never reloads, so a half-typed form stays.
 - The page has no title band: the trail, the address row, then the page. The first button of the address row folds the tab list, and **New tab** is the last row of the list.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
@@ -210,7 +214,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Settings → App → General → Open with → Links** picks where a plain click goes: **In Goodboy** or **In your browser**. **⌘-click** always opens your own browser.
 - A terminal with no session sends its links to your own browser.
 - Rest on a localhost link, or on a web address in a terminal, to see where a click goes before you open it.
-- While the browser is on screen, its keys are the ones every browser uses. **⌘L** goes to the address. **⌘T** opens a new tab. **⌘W** closes the shown tab, and with no tab left it closes the browser. **⌘⇧T** reopens the last tab you closed, up to five. **⌘⇧[** and **⌘⇧]** step through the tabs. **⌘D** pins or unpins the shown tab. **⌘F** finds text in the page. Elsewhere these keep their other meaning, so ⌘L stays Ask and ⌘F stays Search.
+- While the browser is on screen, its keys are the ones every browser uses. **⌘L** goes to the address. **⌘T** opens a new tab. **⌘W** closes the shown tab, and with no tab left it closes the browser. **⌘⇧T** reopens the last tab you closed, up to five. **⌘⇧[** and **⌘⇧]** step through the tabs. **⌘D** pins or unpins the shown tab. **⌘⇧S** sends the page to the agent. **⌘F** finds text in the page. Elsewhere these keep their other meaning, so ⌘L stays Ask and ⌘F stays Search.
 - The find bar sits under the address row and never covers the page. It says **Found** or **Not found**, and the page highlights the match. **Enter** goes to the next match and **⇧Enter** to the previous one. **Esc** or **Done** clears the highlight and closes the bar.
 - A pin is never closed by **⌘W**. Unpin it first.
 - Click into the page and the page keeps the keys. Click the address row or a tab to give them back.
@@ -236,6 +240,7 @@ This part is for contributors and agents who change the feature.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
+- Send to the agent: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
 - Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
 
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.

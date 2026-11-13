@@ -55,6 +55,14 @@ export const BROWSER_SHORTCUTS = {
     group: 'session',
     scope: 'browser',
   },
+  'browser.sendToAgent': {
+    combo: 'cmd+shift+KeyS',
+    offMacCombo: 'ctrl+alt+shift+KeyS',
+    label: 'Send page to the agent',
+    plane: 'session',
+    group: 'session',
+    scope: 'browser',
+  },
   'browser.find': {
     combo: 'cmd+KeyF',
     offMacCombo: 'ctrl+shift+KeyF',

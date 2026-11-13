@@ -17,6 +17,7 @@ export type BrowserPaneSceneState =
   | 'address'
   | 'field'
   | 'more'
+  | 'handoff'
   | 'passkey'
   | 'loading'
   | 'keys'

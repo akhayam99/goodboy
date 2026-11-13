@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { ActionRun } from '../../../../store/slices/action-runs/types';
 import type { ActionControls } from '../../useActionControls';
 import { ActionFollowButton } from './ActionFollowButton';
-import { ActionRunLine } from './ActionRunLine';
+import { ActionRunLine } from '../../../../shared/components/ActionRunLine';
 
 type Props = {
   readonly controls: ActionControls;

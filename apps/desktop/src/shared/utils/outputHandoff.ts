@@ -1,3 +1,4 @@
+import type { PageSource } from '../types/pageSource';
 import { redactSecrets } from './redactSecrets';
 
 const OUTPUT_HANDOFF_MAX_CHARS = 24_000;
@@ -12,6 +13,8 @@ export type OutputHandoff = {
   readonly fileName: string;
   readonly text: string;
   readonly isTruncated: boolean;
+  readonly mimeType?: string;
+  readonly source?: PageSource;
 };
 
 type TitleParams = {

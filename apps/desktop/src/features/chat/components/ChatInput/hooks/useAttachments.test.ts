@@ -60,6 +60,30 @@ const draft = {
   relPath: 'attachments/a.png',
 };
 
+const PAGE_SOURCE = {
+  kind: 'page',
+  title: 'Checkout',
+  host: 'localhost:5173',
+  url: 'http://localhost:5173/checkout',
+  wordCount: 1_200,
+  readAt: 1,
+  iconSrc: null,
+} as const;
+
+type PageHandoffParams = {
+  readonly id: string;
+};
+
+const pageHandoff = ({ id }: PageHandoffParams) => ({
+  id,
+  title: 'Checkout',
+  fileName: 'Checkout.md',
+  text: 'http://localhost:5173/checkout\n\nTotal\n',
+  isTruncated: false,
+  mimeType: 'text/markdown',
+  source: PAGE_SOURCE,
+});
+
 type MountParams = {
   readonly worktree: string | null;
   readonly providerDisconnected?: boolean;
@@ -251,5 +275,47 @@ describe('useAttachments', () => {
     });
     expect(isApplied).toBe(false);
     expect(result.current.attachments).toEqual([]);
+  });
+
+  it('adds a page as a markdown file that keeps its source and survives a draft restore', async () => {
+    const { result, rerender } = mount({ worktree: '/tmp/wt' });
+    rerender({ selectedAgentId: AGENT_A });
+    await waitFor(() => {
+      expect(result.current.isRestored).toBe(true);
+    });
+    await act(async () => {
+      await result.current.attachOutputHandoffs({
+        agentId: AGENT_A,
+        handoffs: [pageHandoff({ id: 'page-1' })],
+      });
+    });
+    const [attachment] = result.current.attachments;
+    expect(attachment?.mimeType).toBe('text/markdown');
+    expect(attachment?.fileName).toBe('Checkout.md');
+    expect(attachment?.source).toEqual(PAGE_SOURCE);
+    await waitFor(() => {
+      expect(useAppStore.getState().setAgentAttachments).toHaveBeenLastCalledWith(AGENT_A, [
+        expect.objectContaining({ fileName: 'Checkout.md', source: PAGE_SOURCE }),
+      ]);
+    });
+  });
+
+  it('keeps ten attachments at most and says so when a page would be the eleventh', async () => {
+    const { result, rerender } = mount({ worktree: '/tmp/wt' });
+    rerender({ selectedAgentId: AGENT_A });
+    await waitFor(() => {
+      expect(result.current.isRestored).toBe(true);
+    });
+    await act(async () => {
+      await result.current.attachOutputHandoffs({
+        agentId: AGENT_A,
+        handoffs: Array.from({ length: 11 }, (_, index) => pageHandoff({ id: `page-${index}` })),
+      });
+    });
+    expect(result.current.attachments).toHaveLength(10);
+    expect(showToast).toHaveBeenCalledWith({
+      kind: 'warning',
+      message: 'Up to 10 files per message.',
+    });
   });
 });
