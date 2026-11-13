@@ -10335,11 +10335,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/turn/recoverTurnFailure.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/turn/resolveErrorTurnMessage.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -12216,9 +12211,6 @@
   "packages/db/src/queries/agent-summary.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 14
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 7
     }
   },
   "packages/db/src/queries/agent-turn-span.test.ts": {
@@ -13267,7 +13259,7 @@
       "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 11
+      "count": 8
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
