@@ -2,15 +2,14 @@ import type { PullRequestPort, PullRequestReviewerGroups } from '@goodboy/core/r
 import type {
   MountId,
   PrComment,
+  PrReview,
   PullRequestState,
   PullRequestView,
   SessionId,
 } from '@goodboy/types';
-import type { ThreadEntry } from '../../../resolve/commentGroupsView';
-import { Person } from '../../../../shared/components/Person';
-import { BotsProperty } from './BotsProperty';
-import { PROPERTY_ROW as ROW } from './propertyRow';
-import { PropertyField } from './PropertyField';
+import type { ChecksSummary } from '../../../integrations/github/checksRollup';
+import { ChecksProperty } from './ChecksProperty';
+import { PeopleProperty } from './PeopleProperty';
 import { ResolvesProperty } from './ResolvesProperty';
 import { ReviewersProperty, type ReviewerRequest } from './ReviewersProperty';
 
@@ -22,8 +21,9 @@ type Props = {
   readonly port: PullRequestPort | null;
   readonly request: ReviewerRequest;
   readonly reviewers: PullRequestReviewerGroups;
+  readonly checks: ChecksSummary | null;
   readonly comments: ReadonlyArray<PrComment> | null;
-  readonly entries: ReadonlyArray<ThreadEntry>;
+  readonly reviews: ReadonlyArray<Pick<PrReview, 'author' | 'state' | 'body'>>;
   readonly isLoaded: boolean;
   readonly canEdit: boolean;
   readonly onMutated: () => void;
@@ -37,8 +37,9 @@ export const PullRequestProperties = ({
   port,
   request,
   reviewers,
+  checks,
   comments,
-  entries,
+  reviews,
   isLoaded,
   canEdit,
   onMutated,
@@ -47,7 +48,7 @@ export const PullRequestProperties = ({
     aria-label="Properties"
     role="group"
     data-slot="side-column"
-    className="flex min-w-0 flex-wrap gap-x-8 gap-y-4 @[880px]:flex-col @[880px]:flex-nowrap @[880px]:gap-6"
+    className="flex min-w-0 flex-wrap gap-x-8 gap-y-6 @[880px]:flex-col @[880px]:flex-nowrap"
   >
     <ReviewersProperty
       sessionId={sessionId}
@@ -60,7 +61,13 @@ export const PullRequestProperties = ({
       request={request}
       onMutated={onMutated}
     />
-    <BotsProperty bots={reviewers.bots} comments={comments} entries={entries} />
+    <ChecksProperty summary={checks} />
+    <PeopleProperty
+      author={pr.author}
+      bots={reviewers.bots}
+      comments={comments}
+      reviews={reviews}
+    />
     <ResolvesProperty
       sessionId={sessionId}
       mountId={mountId}
@@ -68,12 +75,5 @@ export const PullRequestProperties = ({
       view={view}
       canEdit={canEdit}
     />
-    {pr.author == null ? null : (
-      <PropertyField label="Author">
-        <div className={ROW}>
-          <Person login={pr.author.login} avatarUrl={pr.author.avatarUrl} size="sm" />
-        </div>
-      </PropertyField>
-    )}
   </div>
 );

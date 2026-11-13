@@ -37,35 +37,58 @@ app below it has crashed.
 
 ## Pull request page
 
-The Overview of the Branch page is a document on the 960px column with
-a properties column, the page example of the split frame: a rail of sections on the left
-(the pages under the current branch row of the Projects tree, `aria-current="page"` on the section on screen) and,
-on its right, the crumb band, the header with its state chip and one 640 + 296 grid with a 24px gap
-that ends at the column's right edge: Linear's pull request page in our register. The main column
-is the description (`SectionHeader` with `Edit` beside it, a markdown editor with
-Write and Preview and `Save`, `Cancel` at its end) and the Activity: plain rows
-of a 20px glyph on a round `bg-subtle` dot joined by a 1px `border-soft` spine, comments as
-`bg-subtle` cards clamped to two lines, one muted line with the person in `text-row`, and the age at the
-right in `tabular-nums`; a row that opens something takes `ROW_INTERACTIVE` and
-says what it opens (`Open Comments`, `View checks`), a row that opens nothing has
-no hover. The title is the page's `h1` in the fixed 32px title row
-(`PaneTitleRow`): editing swaps its content for an input of the same height, so
-the page never jumps. The side column is 224px beside a reading column of at most a prose measure (`max-w-prose`, 65ch) from an 880px page
-container (`@container` query, not the window); below it the side column sits above the
-reading column as one wrapping row. Each block is a faint `text-meta` label over its value rows
-of 28px or more and nothing else: Reviewers (people only, the verdict right after the name, not pinned to
-the edge), Bots (each with one word: `1 issue`, `2 resolved` or its review state), Linked issues with their relation and Author.
-The state is the chip in the line under the title, never a block, and the merge box sits
-between the header and the columns: one `rounded-lg` `bg-subtle` frame with a `border-soft`
-hairline, a verdict (a 32px `bg-fill` round glyph in the verdict's tone, a `text-heading`
-sentence and one muted `text-meta` line that says the next steps or what the header button will do), then
-one 36px row per thing that holds the merge, worst tone first (danger, warning, info, neutral), each
-a tone glyph, a `text-ui` title, a muted detail and the faint name of where it leads, and last one
-quiet line that folds everything that passes and opens in place. The box never holds a button that
-acts: the header keeps the page's one primary. Tones come from the branch state map (conflicts
-`warning`, a failing check `danger`). The description folds after five lines of prose behind
-`Show all`. Labels are not headings, so the outline reads `h1`, then
-the `h2`s of Description and Activity.
+The Overview of the Branch page is a document on the 960px column, the page
+example of the split frame: a rail of sections on the left (the pages under the
+current branch row of the Projects tree, `aria-current="page"` on the section on
+screen) and, on its right, the header with its state chip and one grid that ends
+at the column's right edge: a reading column of at most 680px, a 32px gap and a
+280px rail, from an 880px page container (`@container` query, not the window).
+Below it the rail sits above the reading column. The reading column holds, top to
+bottom, the merge box, the description card and the Activity.
+
+The description is a card (`border-soft`, `rounded-lg`): an author row (a 24px
+picture, the name in `text-row-strong`, "opened" and the age, `Edit` at the right),
+the body, a markdown editor with Write and Preview, `Save` and `Cancel` at its
+end, and a fold at 320px behind `Show the full description`. The Activity is one
+timeline on a 2px `border-soft` spine: each item a 24px picture (a square glyph
+tile for a bot, a round tile with a glyph for a thing nobody did), "name verb" in
+`text-ui` with the name in `text-row-strong`, the age at the right in
+`tabular-nums`, and a quoted body in a card at `text-body`. Pushes by one person in
+a row fold into one line (`pushed 5 commits in 2 pushes`), and every bot folds into
+one row behind the Bots filter (`left 1 comment`). The filter is All, People and
+Bots, with the pushes and the checks under All only. A row that opens something
+takes `ROW_INTERACTIVE` and says what it opens (`Open comments`, `Open checks`), a
+row that opens nothing has no hover.
+
+The rail is four sections in one style: a `text-row` muted label, 8px under it,
+rows of 28px. Reviewers (a 20px picture, the name, the state in words at the right:
+`Not yet reviewed`, `Asked for changes`, `Approved`), Checks (`6 of 7 passed` at the
+label's right, a 4px segmented bar, at most three failing names), People (the
+author, and each bot with `Bot · 1 comment`) and Linked issues (a state dot, the
+number in mono, the title, cut with the full title in a tooltip). The state is the
+chip in the line under the title, never a rail section. The check count of the rail
+and of the merge box both come from `checksSummaryOf`, and the comment count of a
+bot in the rail and in the timeline from `botCommentCountOf`. The rail sections, the
+description card and the timeline take a view model and no host, so the other hosts
+adopt them as they are.
+
+Type on the page is three roles: `text-body` for running text and quoted bodies,
+`text-row` and `text-row-strong` for labels and names, `text-meta` for ages, states
+and notes. Mono (`text-code`) is for numbers of requests, branches and code only.
+The title is the page's `h1` in the fixed 32px title row (`PaneTitleRow`): editing
+swaps its content for an input of the same height, so the page never jumps.
+
+The merge box sits at the head of the reading column: one `rounded-lg` `bg-subtle`
+frame with a `border-soft` hairline, a verdict (a 32px `bg-fill` round glyph in the
+verdict's tone, a `text-heading` sentence and one muted `text-meta` line that says
+the next steps or what the header button will do), then one 36px row per thing that
+holds the merge, worst tone first (danger, warning, info, neutral), each a tone
+glyph, a `text-ui` title, a muted detail and the faint name of where it leads, and
+last one quiet line that folds everything that passes and opens in place. A true
+"No conflicts" is a passing line, never a row. The box never holds a button that
+acts: the header keeps the page's one primary. Tones come from the branch state map
+(conflicts `warning`, a failing check `danger`). Labels are not headings, so the
+outline reads `h1`, then the `h2` of Activity.
 
 **The capability rule.** The page never branches on the host. It reads the
 `ReviewSourceCapabilities` of the active source: a control the host cannot do on

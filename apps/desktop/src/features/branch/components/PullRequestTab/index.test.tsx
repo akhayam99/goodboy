@@ -216,7 +216,7 @@ describe('the description', () => {
     screen.getByRole('textbox', { name: 'Description, markdown' });
   });
 
-  it('reads body headings as bold lead-ins under the one Description heading', async () => {
+  it('reads body headings as bold lead-ins, with no heading of its own in the card', async () => {
     await show();
     act(() => {
       patchShownPr({
@@ -228,7 +228,7 @@ describe('the description', () => {
     });
 
     await waitFor(() => expect(within(description()).getByText('Scope').tagName).toBe('STRONG'));
-    expect(within(description()).getAllByRole('heading')).toHaveLength(1);
+    expect(within(description()).queryAllByRole('heading')).toHaveLength(0);
     within(description()).getByText('Splits the route.');
   });
 
@@ -437,19 +437,19 @@ describe('the Overview grid', () => {
   };
 
   it.each(['github', 'draft', 'merged'] as const)(
-    'puts the merge box on top, then the reading column and the side column in the %s state',
+    'puts the merge box above the description in the reading column, beside the rail, in the %s state',
     async (variant) => {
       await show({ variant });
 
       const children = [...grid().children];
-      expect(children[0]).toBe(screen.getByRole('region', { name: 'Merge status' }));
-      const columns = children.find((child) => child.getAttribute('data-slot') === 'page-columns');
-      expect(children.at(-1)).toBe(columns);
-      const reading = columns?.querySelector('[data-slot="reading-column"]');
+      expect(children).toHaveLength(2);
+      const reading = children.find(
+        (child) => child.getAttribute('data-slot') === 'reading-column',
+      );
+      expect(reading?.firstElementChild).toBe(screen.getByRole('region', { name: 'Merge status' }));
       expect(reading?.contains(description())).toBe(true);
       const side = screen.getByRole('group', { name: 'Properties' });
-      expect(columns?.getAttribute('data-slot')).toBe('page-columns');
-      expect(columns?.contains(side)).toBe(true);
+      expect(children[0]?.contains(side)).toBe(true);
       expect(side.getAttribute('data-slot')).toBe('side-column');
       expect(side.compareDocumentPosition(description()) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
         Node.DOCUMENT_POSITION_FOLLOWING,
@@ -457,16 +457,17 @@ describe('the Overview grid', () => {
     },
   );
 
-  it('keeps Reviewers, Linked issues and Author on the side, with no State, Base, Checks or Readiness', async () => {
+  it('keeps Reviewers, Checks, People and Linked issues on the side in one style, with no State, Base, Author or Readiness', async () => {
     await show();
 
     const properties = screen.getByRole('group', { name: 'Properties' });
-    const names = [...properties.querySelectorAll('section')].map((field) =>
+    const names = [...properties.querySelectorAll(':scope > section')].map((field) =>
       field.getAttribute('aria-label'),
     );
     expect(names[0]).toBe('Reviewers');
-    expect(names.at(-1)).toBe('Author');
-    for (const name of ['State', 'Base', 'Checks', 'Readiness']) {
+    expect(names).toContain('People');
+    expect(names.at(-1)).toBe('Linked issues');
+    for (const name of ['State', 'Base', 'Author', 'Bots', 'Readiness']) {
       expect(names).not.toContain(name);
     }
     expect(within(properties).queryByRole('button', { name: /Rebase/ })).toBeNull();
@@ -516,7 +517,8 @@ describe('the Overview grid', () => {
     expect(botRows[2]?.textContent).toContain('acme-review');
     expect(within(activity).queryByText(/bots commented/)).toBeNull();
     const rows = activity.querySelectorAll('[data-activity]');
-    expect(activity.querySelectorAll('[data-slot="activity-spine"]')).toHaveLength(rows.length - 1);
+    expect(rows.length).toBeGreaterThan(3);
+    expect(activity.querySelectorAll('[data-slot="activity-spine"]')).toHaveLength(1);
 
     const filter = within(activity).getByRole('tablist', { name: 'Activity filter' });
     within(filter).getByRole('tab', { name: /Bots/ });
@@ -636,13 +638,13 @@ describe('the Overview grid', () => {
     const reviewers = await screen.findByRole('region', { name: 'Reviewers' });
     const rows = within(reviewers).getAllByRole('listitem');
     expect(rows[0]?.getAttribute('data-reviewer-state')).toBe('pending');
-    expect(rows[0]?.textContent).toContain('Asked');
+    expect(rows[0]?.textContent).toContain('Not yet reviewed');
     expect(within(reviewers).queryByText('portal-preview[bot]')).toBeNull();
-    const bots = screen.getByRole('region', { name: 'Bots' });
-    const portal = within(bots).getByText('portal-preview[bot]').closest('li');
-    expect(portal?.textContent).toBe('portal-preview[bot]Commented');
-    expect(within(bots).getByText('acme-review').closest('li')?.textContent).toBe(
-      'acme-reviewCommented',
+    const people = screen.getByRole('region', { name: 'People' });
+    const portal = within(people).getByText('portal-preview[bot]').closest('li');
+    expect(portal?.textContent).toBe('portal-preview[bot]Bot · 1 comment');
+    expect(within(people).getByText('acme-review').closest('li')?.textContent).toMatch(
+      /^acme-reviewBot( · \d+ comments?)?$/,
     );
   });
 
@@ -719,13 +721,15 @@ describe('the Overview grid', () => {
     await waitFor(() => expect(useAppStore.getState().branchTab[SESSION.id]).toBe('checks'));
   });
 
-  it('folds a long description after about five lines and opens it in place', async () => {
+  it('folds a long description after 320 pixels and opens it in place', async () => {
     const tall = vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockReturnValue(400);
     const short = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(120);
     try {
       await show();
 
-      const toggle = await within(description()).findByRole('button', { name: 'Show all' });
+      const toggle = await within(description()).findByRole('button', {
+        name: 'Show the full description',
+      });
       expect(description().querySelector('[data-folded="true"]')).not.toBeNull();
       fireEvent.click(toggle);
 
@@ -741,7 +745,9 @@ describe('the Overview grid', () => {
   it('keeps a short description whole, with nothing to unfold', async () => {
     await show();
 
-    expect(within(description()).queryByRole('button', { name: 'Show all' })).toBeNull();
+    expect(
+      within(description()).queryByRole('button', { name: 'Show the full description' }),
+    ).toBeNull();
   });
 
   it('names the state, the number and the base once, in the line under the title', async () => {

@@ -1,18 +1,28 @@
 import type { ReactNode } from 'react';
-import { CircleAlert, Bot, Check, MessageSquare, Pencil, CircleX } from 'lucide-react';
+import { Check, MessageSquare, Pencil, CircleX } from 'lucide-react';
 import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { countNoun } from '../../../../shared/utils/countNoun';
 import type { ActivityItem } from './activityOf';
 import { ActivityWho as Who } from './ActivityWho';
+import { pushLineOf } from './pushLineOf';
 
 type RowComment = {
   readonly text: string;
 };
 
+export type ActivityLead =
+  | {
+      readonly kind: 'person';
+      readonly login: string | null;
+      readonly avatarUrl: string | null;
+      readonly isBot: boolean;
+    }
+  | { readonly kind: 'glyph'; readonly glyph: ReactNode };
+
 export type ActivityRow = {
-  readonly glyph: ReactNode;
+  readonly lead: ActivityLead;
   readonly line: ReactNode;
   readonly comments: ReadonlyArray<RowComment>;
   readonly notes?: ReadonlyArray<string>;
@@ -44,6 +54,19 @@ const commentsLine = ({ item }: CommentsWordParams): string => {
   return `${open}, ${countNoun({ count: item.needYou, one: 'needs', many: 'need' })} you`;
 };
 
+type PersonParams = {
+  readonly login: string | null;
+  readonly avatarUrl: string | null | undefined;
+  readonly isBot?: boolean;
+};
+
+const personLeadOf = ({ login, avatarUrl, isBot = false }: PersonParams): ActivityLead => ({
+  kind: 'person',
+  login,
+  avatarUrl: avatarUrl ?? null,
+  isBot,
+});
+
 export const activityRowOf = ({
   item,
   nouns,
@@ -54,11 +77,10 @@ export const activityRowOf = ({
   switch (item.kind) {
     case 'opened':
       return {
-        glyph: <CONCEPT_ICONS.pr size={GLYPH_SIZE} aria-hidden />,
+        lead: personLeadOf({ login: item.who, avatarUrl: item.avatarUrl }),
         line: (
           <>
-            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} /> opened this{' '}
-            {item.isDraft ? 'draft ' : ''}
+            <Who login={item.who} /> opened this {item.isDraft ? 'draft ' : ''}
             {nouns.long}
           </>
         ),
@@ -67,12 +89,10 @@ export const activityRowOf = ({
       };
     case 'push':
       return {
-        glyph: <CONCEPT_ICONS.commits size={GLYPH_SIZE} aria-hidden />,
+        lead: personLeadOf({ login: item.who, avatarUrl: item.avatarUrl }),
         line: (
           <>
-            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} /> pushed{' '}
-            {countNoun({ count: item.count, one: 'commit', many: 'commits' })}{' '}
-            <span className="text-code">{item.sha}</span>
+            <Who login={item.who} /> {pushLineOf({ item })}
           </>
         ),
         comments: [],
@@ -80,21 +100,18 @@ export const activityRowOf = ({
       };
     case 'review':
       return {
-        glyph:
-          item.verdict === 'approved' ? (
-            <Check size={GLYPH_SIZE} aria-hidden className="text-success" />
-          ) : item.verdict === 'changes_requested' ? (
-            <CircleAlert size={GLYPH_SIZE} aria-hidden className="text-danger" />
-          ) : (
-            <MessageSquare size={GLYPH_SIZE} aria-hidden />
-          ),
+        lead: personLeadOf({
+          login: item.who,
+          avatarUrl: item.avatarUrl,
+          isBot: item.isBot === true,
+        }),
         line: (
           <>
-            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} isBot={item.isBot === true} />{' '}
+            <Who login={item.who} />{' '}
             {item.verdict === 'approved'
               ? 'approved'
               : item.verdict === 'changes_requested'
-                ? 'requested changes'
+                ? 'asked for changes'
                 : 'commented'}
           </>
         ),
@@ -103,18 +120,17 @@ export const activityRowOf = ({
       };
     case 'bot':
       return {
-        glyph: <Bot size={GLYPH_SIZE} aria-hidden />,
+        lead: personLeadOf({ login: item.who, avatarUrl: item.avatarUrl, isBot: true }),
         line: (
           <>
-            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} isBot />{' '}
-            <span
-              data-bot-tone={item.tone}
-              className={cn(
-                item.tone === 'neutral' ? 'text-muted-foreground' : tintClasses(item.tone).text,
-              )}
-            >
-              {item.word}
-            </span>
+            <Who login={item.who} /> left{' '}
+            {countNoun({ count: item.count, one: 'comment', many: 'comments' })}
+            {item.tone === 'neutral' ? null : (
+              <span data-bot-tone={item.tone} className={cn(tintClasses(item.tone).text)}>
+                {' '}
+                · {item.word}
+              </span>
+            )}
           </>
         ),
         comments: [],
@@ -123,30 +139,33 @@ export const activityRowOf = ({
       };
     case 'comments':
       return {
-        glyph: <MessageSquare size={GLYPH_SIZE} aria-hidden />,
+        lead: { kind: 'glyph', glyph: <MessageSquare size={GLYPH_SIZE} aria-hidden /> },
         line: commentsLine({ item }),
         comments: [],
         open: { label: 'Open comments', run: onOpenComments },
       };
     case 'checks':
       return {
-        glyph: item.isFailing ? (
-          <CircleX size={GLYPH_SIZE} aria-hidden className="text-danger" />
-        ) : item.isRunning ? (
-          <CONCEPT_ICONS.checks size={GLYPH_SIZE} aria-hidden className="text-info" />
-        ) : (
-          <Check size={GLYPH_SIZE} aria-hidden className="text-success" />
-        ),
+        lead: {
+          kind: 'glyph',
+          glyph: item.isFailing ? (
+            <CircleX size={GLYPH_SIZE} aria-hidden className="text-danger" />
+          ) : item.isRunning ? (
+            <CONCEPT_ICONS.checks size={GLYPH_SIZE} aria-hidden className="text-info" />
+          ) : (
+            <Check size={GLYPH_SIZE} aria-hidden className="text-success" />
+          ),
+        },
         line: <>{item.text}</>,
         comments: [],
         open: { label: 'Open checks', run: onOpenChecks },
       };
     case 'edit':
       return {
-        glyph: <Pencil size={GLYPH_SIZE} aria-hidden />,
+        lead: { kind: 'glyph', glyph: <Pencil size={GLYPH_SIZE} aria-hidden /> },
         line: (
           <>
-            <Who login="You" avatarUrl={null} /> edited the {item.what}
+            <Who login="You" /> edited the {item.what}
           </>
         ),
         comments: [],
@@ -154,11 +173,11 @@ export const activityRowOf = ({
       };
     case 'merged':
       return {
-        glyph: <CONCEPT_ICONS.merge size={GLYPH_SIZE} aria-hidden className="text-merged" />,
+        lead: personLeadOf({ login: item.who, avatarUrl: item.avatarUrl }),
         line: (
           <>
-            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} /> merged this {nouns.long}{' '}
-            into <span className="text-code">{baseBranch}</span>
+            <Who login={item.who} /> merged this {nouns.long} into{' '}
+            <span className="text-code">{baseBranch}</span>
           </>
         ),
         comments: [],
@@ -166,7 +185,7 @@ export const activityRowOf = ({
       };
     case 'closed':
       return {
-        glyph: <CircleX size={GLYPH_SIZE} aria-hidden />,
+        lead: { kind: 'glyph', glyph: <CircleX size={GLYPH_SIZE} aria-hidden /> },
         line: <>This {nouns.long} was closed</>,
         comments: [],
         open: null,

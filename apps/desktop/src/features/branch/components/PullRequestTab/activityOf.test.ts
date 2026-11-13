@@ -100,6 +100,7 @@ describe('pullRequestActivityOf', () => {
     expect(items[1]).toMatchObject({
       kind: 'push',
       count: 3,
+      pushes: 2,
       sha: 'a41c9e2',
       at: '2026-10-03T12:00:00Z',
     });

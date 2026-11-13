@@ -136,8 +136,8 @@ describe('the Bitbucket scenes', () => {
     );
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.getByText('Approved')).toBeDefined();
-    expect(side.getByText('Changes')).toBeDefined();
-    expect(side.getByText('Asked')).toBeDefined();
+    expect(side.getByText('Asked for changes')).toBeDefined();
+    expect(side.getByText('Not yet reviewed')).toBeDefined();
     expect(side.queryByRole('region', { name: 'Base' })).toBeNull();
     expect(side.queryByRole('region', { name: 'Files changed' })).toBeNull();
   });

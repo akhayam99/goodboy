@@ -1,8 +1,9 @@
-import { ClampedProse, SectionHeader, SegmentedTabs, SelectableRow } from '@goodboy/ui';
+import { ClampedProse, SegmentedTabs, SelectableRow } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ActivityBotNotes } from './ActivityBotNotes';
+import { ActivityLeadMark } from './ActivityLeadMark';
 import { activityFilterOptionsOf, activityItemsFor, type ActivityFilter } from './activityFilters';
 import type { ActivityItem } from './activityOf';
 import { activityRowOf } from './activityRowOf';
@@ -16,6 +17,8 @@ type Props = {
   readonly chosen: ActivityFilter;
   readonly onChoose: (filter: ActivityFilter) => void;
 };
+
+const ROW = 'grid min-w-0 grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2';
 
 export const PullRequestActivity = ({
   items: allItems,
@@ -31,89 +34,77 @@ export const PullRequestActivity = ({
   const filter = options.some((option) => option.value === chosen) ? chosen : 'all';
   const items = activityItemsFor({ items: allItems, filter });
   return (
-    <section aria-label="Activity" className="flex min-w-0 flex-col gap-3">
-      <SectionHeader
-        label="Activity"
-        headingLevel={2}
-        action={
-          options.length > 2 ? (
-            <SegmentedTabs
-              size="xs"
-              ariaLabel="Activity filter"
-              value={filter}
-              onChange={onChoose}
-              options={options.map((option) => ({
-                value: option.value,
-                label: option.label,
-                badge: option.count,
-              }))}
-            />
-          ) : null
-        }
-      />
-      <ol className="flex min-w-0 flex-col">
-        {items.map((item, index) => {
+    <section aria-label="Activity" className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
+        <h2 className="text-row text-muted-foreground">Activity</h2>
+        {options.length > 2 ? (
+          <SegmentedTabs
+            size="xs"
+            ariaLabel="Activity filter"
+            value={filter}
+            onChange={onChoose}
+            options={options.map((option) => ({
+              value: option.value,
+              label: option.label,
+              badge: option.count,
+            }))}
+          />
+        ) : null}
+      </div>
+      <ol className="relative flex min-w-0 flex-col gap-3">
+        <span
+          aria-hidden
+          data-slot="activity-spine"
+          className="absolute inset-y-1 left-[11px] w-0.5 bg-border-soft"
+        />
+        {items.map((item) => {
           const row = activityRowOf({ item, nouns, baseBranch, onOpenComments, onOpenChecks });
           const age = formatAge({ from: item.at, now });
-          const content = (
+          const head = (
             <>
-              <span className="relative flex size-5 shrink-0 items-center justify-center rounded-full bg-subtle text-muted-foreground">
-                {row.glyph}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
-                  <span className="min-w-0 flex-1">{row.line}</span>
-                  {row.open !== null && (
-                    <span className="shrink-0 text-meta text-faint-foreground">
-                      {row.open.label}
-                    </span>
-                  )}
-                  {age !== '' && (
-                    <time
-                      dateTime={item.at}
-                      className="shrink-0 text-meta tabular-nums text-faint-foreground"
-                    >
-                      {age}
-                    </time>
-                  )}
-                </span>
-                {row.notes === undefined ? null : <ActivityBotNotes notes={row.notes} />}
-                {row.comments.length === 0 ? null : (
-                  <ul className="flex min-w-0 flex-col gap-2">
-                    {row.comments.map((comment, position) => (
-                      <li
-                        key={position}
-                        className="flex min-w-0 flex-col gap-1 rounded-md bg-subtle px-3 py-2"
-                      >
-                        <span className="min-w-0 text-meta text-foreground">
-                          <ClampedProse text={comment.text} lines={2} />
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+              <ActivityLeadMark lead={row.lead} />
+              <span className="min-w-0 py-0.5 text-ui text-muted-foreground">{row.line}</span>
+              <span className="flex shrink-0 items-center gap-2 py-0.5">
+                {row.open === null ? null : (
+                  <span className="text-meta text-faint-foreground">{row.open.label}</span>
+                )}
+                {age === '' ? null : (
+                  <time dateTime={item.at} className="text-meta tabular-nums text-faint-foreground">
+                    {age}
+                  </time>
                 )}
               </span>
             </>
           );
           return (
-            <li key={item.key} data-activity={item.kind} className="relative min-w-0">
-              {index === items.length - 1 ? null : (
-                <span
-                  aria-hidden
-                  data-slot="activity-spine"
-                  className="absolute bottom-0 left-4.5 top-6 w-px bg-border-soft"
-                />
-              )}
+            <li
+              key={item.key}
+              data-activity={item.kind}
+              className="relative flex min-w-0 flex-col gap-2"
+            >
               {row.open === null ? (
-                <div className="flex min-h-8 min-w-0 items-start gap-2 px-2 py-1">{content}</div>
+                <div className={ROW}>{head}</div>
               ) : (
-                <SelectableRow
-                  selected={false}
-                  onClick={row.open.run}
-                  className="min-h-8 min-w-0 items-start gap-2 px-2 py-1"
-                >
-                  {content}
+                <SelectableRow selected={false} onClick={row.open.run} className={ROW}>
+                  {head}
                 </SelectableRow>
+              )}
+              {row.notes === undefined ? null : (
+                <div className="min-w-0 pl-8">
+                  <ActivityBotNotes notes={row.notes} />
+                </div>
+              )}
+              {row.comments.length === 0 ? null : (
+                <ul className="flex min-w-0 flex-col gap-2 pl-8">
+                  {row.comments.map((comment, position) => (
+                    <li
+                      key={position}
+                      className="min-w-0 rounded-lg border border-border-soft bg-background px-3 py-2 text-body text-foreground"
+                    >
+                      <ClampedProse text={comment.text} lines={4} />
+                    </li>
+                  ))}
+                </ul>
               )}
             </li>
           );

@@ -17,6 +17,12 @@ export const foldPushes = ({ items }: Params): ReadonlyArray<ActivityItem> =>
     }
     return [
       ...folded.slice(0, -1),
-      { ...last, at: item.at, sha: item.sha, count: last.count + item.count },
+      {
+        ...last,
+        at: item.at,
+        sha: item.sha,
+        count: last.count + item.count,
+        pushes: last.pushes + item.pushes,
+      },
     ];
   }, []);

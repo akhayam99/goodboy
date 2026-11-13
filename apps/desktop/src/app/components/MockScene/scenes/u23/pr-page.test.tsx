@@ -130,7 +130,6 @@ describe('the pull request page scenes', () => {
     ].map((row) => row.getAttribute('data-testid'));
     expect(order).toEqual(['merge-row-checks', 'merge-row-review', 'merge-row-branch']);
     expect(side.getByText('#412')).toBeDefined();
-    expect(side.getByText('Closes')).toBeDefined();
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.queryByRole('region', { name: 'Base' })).toBeNull();
     expect(side.queryByRole('region', { name: 'Readiness' })).toBeNull();
@@ -154,7 +153,7 @@ describe('the pull request page scenes', () => {
     const rows = within(activity).getAllByRole('listitem');
     expect(rows[0]?.textContent).toMatch(/nadia-p opened this pull request/);
     expect(within(activity).getByText(/omar-t/)).toBeDefined();
-    expect(within(activity).getByText(/requested changes/)).toBeDefined();
+    expect(within(activity).getByText(/asked for changes/)).toBeDefined();
     expect(within(activity).getByRole('button', { name: /Open checks/ })).toBeDefined();
   });
 
@@ -171,7 +170,12 @@ describe('the pull request page scenes', () => {
     expect(activity.querySelectorAll('[data-activity="review"]')).toHaveLength(1);
 
     const filter = within(activity).getByRole('tablist', { name: 'Activity filter' });
-    expect(within(filter).getByRole('tab', { name: /Pushes/ })).toBeDefined();
+    expect(within(filter).queryByRole('tab', { name: /Pushes|Checks/ })).toBeNull();
+    expect(
+      within(filter)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent?.replace(/\d+$/, '')),
+    ).toEqual(['All', 'People', 'Bots']);
     fireEvent.click(within(filter).getByRole('tab', { name: /Bots/ }));
     expect(
       [...activity.querySelectorAll('[data-activity]')].map((row) =>

@@ -19,7 +19,7 @@ describe('DescriptionFold', () => {
           <a href="https://example.com/ledger-core/issues/412">Closes ledger-core 412</a>
         </DescriptionFold>,
       );
-      await screen.findByRole('button', { name: 'Show all' });
+      await screen.findByRole('button', { name: 'Show the full description' });
       expect(container.querySelector('[data-folded="true"]')).not.toBeNull();
 
       await user.tab();

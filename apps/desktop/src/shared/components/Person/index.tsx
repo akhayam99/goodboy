@@ -8,6 +8,7 @@ type Props = {
   readonly avatarUrl: string | null;
   readonly size?: PersonSize;
   readonly isBot?: boolean;
+  readonly isNameHidden?: boolean;
 };
 
 const MISSING_LOGIN = 'Someone';
@@ -24,7 +25,13 @@ const NAME_CLASS: Record<PersonSize, string> = {
   md: 'text-row',
 };
 
-export const Person = ({ login, avatarUrl, size = 'sm', isBot = false }: Props) => {
+export const Person = ({
+  login,
+  avatarUrl,
+  size = 'sm',
+  isBot = false,
+  isNameHidden = false,
+}: Props) => {
   const name = login === null || login === '' ? MISSING_LOGIN : login;
   const tint = tintClasses('neutral');
 
@@ -55,7 +62,9 @@ export const Person = ({ login, avatarUrl, size = 'sm', isBot = false }: Props) 
           initialsSource={login ?? ''}
         />
       )}
-      <span className={cn('min-w-0 truncate text-foreground', NAME_CLASS[size])}>{name}</span>
+      {isNameHidden ? null : (
+        <span className={cn('min-w-0 truncate text-foreground', NAME_CLASS[size])}>{name}</span>
+      )}
     </span>
   );
 };

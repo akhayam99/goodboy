@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { cn, EmptyLine, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
+import { cn, EmptyLine, ROW_INTERACTIVE, StatusDot, TruncatedText } from '@goodboy/ui';
 import type {
   LinkedIssue,
   MountId,
@@ -7,7 +7,6 @@ import type {
   PullRequestView,
   SessionId,
 } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
@@ -104,18 +103,18 @@ export const ResolvesProperty = ({ sessionId, mountId, pr, view, canEdit }: Prop
                   openGithubIssue({ sessionId, issueNumber: row.number });
                 }}
                 className={cn(
-                  'flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-1 text-left text-meta',
+                  'flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md text-left text-ui',
                   row.number === null ? 'cursor-default' : ROW_INTERACTIVE,
                 )}
               >
-                <CONCEPT_ICONS.issues
-                  size={ICON_SIZE.control}
-                  aria-hidden
-                  className="shrink-0 text-faint-foreground"
+                <StatusDot
+                  tone={row.relation === 'Closes' ? 'success' : 'neutral'}
+                  title={row.relation}
                 />
-                <span className="shrink-0 text-muted-foreground">{row.relation}</span>
                 <span className="shrink-0 text-code text-foreground">{row.label}</span>
-                <span className="min-w-0 flex-1 truncate text-muted-foreground">{row.title}</span>
+                <TruncatedText className="min-w-0 flex-1 text-foreground" tooltip={row.title}>
+                  {row.title}
+                </TruncatedText>
               </button>
             </li>
           ))}
