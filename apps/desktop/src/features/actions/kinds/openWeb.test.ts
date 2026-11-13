@@ -235,6 +235,11 @@ type TabOpenArgs = {
   readonly args: { readonly sessionId: SessionId; readonly url: string };
 };
 
+type RowSaveArgs = {
+  readonly args: { readonly id: string; readonly url: string; readonly title: string };
+};
+
+let isTabOpenRefused: boolean;
 let store: StoryStore;
 let outside: string[];
 let tabs: TabOpenArgs['args'][];
@@ -260,8 +265,20 @@ const stubHost = () => {
       return null;
     },
     browser_tab_rows_list: () => [],
-    browser_tab_row_save: null,
+    browser_tab_row_save: ({ args }: RowSaveArgs) => ({
+      id: args.id,
+      sessionId: SESSION_ID,
+      projectId: null,
+      url: args.url,
+      title: args.title,
+      position: 0,
+      createdAt: 0,
+      updatedAt: 0,
+    }),
     browser_tab_open: ({ args }: TabOpenArgs) => {
+      if (isTabOpenRefused) {
+        throw new Error('the page host is gone');
+      }
       tabs = [...tabs, args];
       return {
         id: `live-${tabs.length}`,
@@ -291,6 +308,7 @@ beforeEach(async () => {
   outside = [];
   tabs = [];
   isOutsideRefused = false;
+  isTabOpenRefused = false;
   reportError.mockClear();
   await resetStoryStore();
   store.setState({
@@ -315,6 +333,16 @@ describe.each(ROWS)('$name', ({ url, run }) => {
     expect(tabs).toHaveLength(1);
     expect(tabs[0]).toMatchObject({ sessionId: SESSION_ID });
     expect(tabs[0]?.url).toBe(url);
+    expect(outside).toEqual([]);
+  });
+
+  it('returns the failure to the run line when the page does not open beside the session', async () => {
+    store.setState({ settings: { [SETTING_LINKS_OPEN]: 'goodboy' } });
+    isTabOpenRefused = true;
+
+    await expect(Promise.resolve(run({ env: envOf() }))).rejects.toThrow('the page host is gone');
+
+    expect(reportError).not.toHaveBeenCalled();
     expect(outside).toEqual([]);
   });
 

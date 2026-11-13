@@ -108,7 +108,7 @@ describe('PAGE_FRAME', () => {
 
   it('keeps the split frame to the pages with a rail', () => {
     expect([...pagesOf({ type: 'split' })].sort()).toEqual(
-      ['branch', 'chat', 'guide', 'inbox', 'notifications', 'whatsNew'].sort(),
+      ['branch', 'chat', 'guide', 'inbox', 'notifications', 'settings', 'whatsNew'].sort(),
     );
   });
 

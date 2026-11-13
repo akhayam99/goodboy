@@ -18,19 +18,25 @@ describe('PageTabs', () => {
 
     const list = screen.getByRole('tablist', { name: 'Pages' });
     expect(list.className).toContain('h-9');
-    expect(list.className).toContain('border-b');
+    expect(list.className).toContain('after:bottom-0');
+    expect(list.className).toContain('after:h-px');
+    expect(list.className).toContain('after:bg-border-soft');
+    expect(list.className).not.toContain('border-b');
     expect(list.className).not.toContain('rounded');
     expect(screen.getByRole('tab', { name: /Comments/ }).textContent).toBe('Comments9');
   });
 
-  it('marks the selected tab with the primary underline and no fill', () => {
+  it('marks the selected tab with a primary after underline and no fill', () => {
     render(<PageTabs ariaLabel="Pages" options={OPTIONS} value="comments" onChange={vi.fn()} />);
 
     const selected = screen.getByRole('tab', { name: /Comments/ });
     expect(selected.getAttribute('aria-selected')).toBe('true');
-    expect(selected.className).toContain('border-primary');
+    expect(selected.className).toContain('after:bg-primary');
+    expect(selected.className).toContain('after:h-0.5');
     expect(selected.className).not.toContain('bg-selected');
-    expect(screen.getByRole('tab', { name: 'Overview' }).className).toContain('border-transparent');
+    expect(screen.getByRole('tab', { name: 'Overview' }).className).not.toContain(
+      'after:bg-primary',
+    );
   });
 
   it('selects on click and moves with the arrow keys', () => {
