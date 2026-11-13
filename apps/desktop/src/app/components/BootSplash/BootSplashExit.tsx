@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { BootCover } from './BootCover';
 import { BootStage } from './BootStage';
+import { markBoot } from '../../../shared/lib/bootMarks';
+import { BOOT_SPLASH_TIMINGS } from '../../../shared/lib/bootSplashTimings';
 import { prefersReducedMotion } from './prefersReducedMotion';
 
-const FADE_MS = 200;
-const FADE_SLACK_MS = 40;
+const FADE_MS = BOOT_SPLASH_TIMINGS.fadeMs;
+const FADE_SLACK_MS = BOOT_SPLASH_TIMINGS.fadeSlackMs;
 
 type Props = {
   readonly onDone: () => void;
@@ -14,12 +16,16 @@ export const BootSplashExit = ({ onDone }: Props) => {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
-    if (prefersReducedMotion()) {
+    const finish = () => {
+      markBoot({ name: 'splash' });
       onDone();
+    };
+    if (prefersReducedMotion()) {
+      finish();
       return;
     }
     const frame = window.requestAnimationFrame(() => setIsFading(true));
-    const timer = window.setTimeout(onDone, FADE_MS + FADE_SLACK_MS);
+    const timer = window.setTimeout(finish, FADE_MS + FADE_SLACK_MS);
     return () => {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);

@@ -140,6 +140,20 @@ describe('constants that Rust and TypeScript each spell out', () => {
     expect(ts.filter((phase) => !rust.includes(phase))).toEqual([]);
   });
 
+  it('lets Rust accept every launch mark the frontend can take', () => {
+    const rust = rustList({
+      source: read({ root: RUST_SRC, path: 'boot_breadcrumb.rs' }),
+      name: 'MARK_KEYS',
+    });
+    const ts = tsList({
+      source: read({ root: DESKTOP_SRC, path: 'shared/lib/bootMarkNames.ts' }),
+      name: 'BOOT_MARK_NAMES',
+    });
+
+    expect(ts.length).toBeGreaterThan(0);
+    expect(rust).toEqual(ts);
+  });
+
   it('reads a value from Rust and TypeScript text and stops at a changed one', () => {
     const rust = 'const KEY: &str = "a.b";\nconst LIST: [&str; 2] = ["x", "y"];\nconst N: u32 = 4;';
     const ts = "export const KEY = 'a.c';\nexport const LIST = ['x', 'z'] as const;";

@@ -29,6 +29,7 @@ import { useBoardLayout } from './useBoardLayout';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useArchivedSessionsLoad } from './useArchivedSessionsLoad';
 import { useBoardMotionKey } from './useBoardMotionKey';
+import { useMarkBoardShown } from './useMarkBoardShown';
 import { useBoardSelection } from './useBoardSelection';
 import { useNeedsYouElsewhere } from './useNeedsYouElsewhere';
 import { SessionsHeader } from './SessionsHeader';
@@ -143,6 +144,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
   const empty = sessions.length === 0 && archived.length === 0;
   const pending = !boardReady || (sessions.length === 0 && archivedList === undefined);
+  useMarkBoardShown({ isShown: !pending && sessions.length > 0 });
   const hasUsableProject =
     workspaceProjects.some((project) => project.kind === 'folder') ||
     projectGitStatuses.some(({ status }) => status?.state === 'ready');
