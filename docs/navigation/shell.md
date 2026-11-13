@@ -842,10 +842,10 @@ Agents, headed "Welcome to Goodboy" with the one sentence and the trust line,
 and agent detection starts there. The boot splash is the tile, the name, a 160 px
 determinate bar and the phase word on that same backdrop. The bar moves one
 sixth per real `bootPhase` write (`BOOT_PHASE_ORDER`, `bootProgressPercent`),
-never on a timer, and jumps under reduced motion. On `ready` the bar fills for
-200 ms, then `App` mounts the app or the setup underneath and `BootSplashExit`
-crossfades the splash out over 200 ms on top of it (same `BootStage`, so the tile
-does not move); reduced motion skips both waits. The window opens hidden and
+never on a timer, and jumps under reduced motion. On `ready` `App` mounts the app or
+the setup at once and `BootSplashExit` crossfades the splash out over 200 ms on
+top of it (same `BootStage`, so the tile does not move); there is no fixed wait
+after ready, and reduced motion removes the splash at once. The window opens hidden and
 `useRevealWindow` shows it after the first paint (Rust shows it after 3 s if the
 page never does), so a light theme never flashes dark. Before React, `index.html`
 paints the same chrome, 6% backdrop and tile in both themes, and the native

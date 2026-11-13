@@ -156,8 +156,7 @@ describe('a cold launch stays inside its budget', () => {
   });
 
   it('waits after ready for the splash as long as the budget allows', () => {
-    const { barFillMs, fadeMs, fadeSlackMs } = BOOT_SPLASH_TIMINGS;
-
-    expect(barFillMs + fadeMs + fadeSlackMs).toBe(BOOT_BUDGETS.fixedWaitAfterReadyMs);
+    expect(Object.keys(BOOT_SPLASH_TIMINGS)).not.toContain('barFillMs');
+    expect(BOOT_BUDGETS.fixedWaitAfterReadyMs).toBe(0);
   });
 });
