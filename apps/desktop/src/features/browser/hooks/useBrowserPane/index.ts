@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { copyToClipboard } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
@@ -12,13 +13,17 @@ import { browserPaneRequests } from '../../browserPaneRequests';
 import { hostOf } from '../../hostOf';
 import { isFileAddress } from '../../isFileAddress';
 import { isTabGone } from '../../isTabGone';
+import { LOAD_STALLED_TEXT } from '../../loadStalledText';
 import { openPage } from '../../openPage';
 import { pinProjectOf } from '../../pinProjectOf';
 import { shownTabOf } from '../../shownTabOf';
 import type { BrowserPaneModel, BrowserTarget } from '../../types';
+import { useFavicon } from '../useFavicon';
+import { useHistoryState } from '../useHistoryState';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
+import { useTabLoad } from '../useTabLoad';
 import { useTabStates } from '../useTabStates';
 
 type Params = {
@@ -49,6 +54,11 @@ type DoneParams = {
   readonly isDone: boolean;
 };
 
+type UrlParams = {
+  readonly url: string;
+};
+
+const INSPECT_NOTICE = 'Open the Develop menu in Safari and pick this tab.';
 const NO_TABS: ReadonlyArray<BrowserTab> = [];
 const FALLBACK_BOUNDS = { x: 0, y: 0, width: 1, height: 1 };
 
@@ -57,6 +67,9 @@ const mustBeDone = ({ isDone }: DoneParams): void => {
     throw new Error('tab-not-saved');
   }
 };
+
+const targetOfUrl = ({ url }: UrlParams): BrowserTarget =>
+  isFileAddress({ url }) ? { kind: 'local', path: addressTextOf({ url }) } : { kind: 'web', url };
 
 export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const tabs = useAppStore((state) => state.browserSessionTabs[sessionId] ?? NO_TABS);
@@ -72,6 +85,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const live = useAppStore((state) => state.browserLiveTabs[sessionId]);
   const draftEnds = useAppStore((state) => state.browserDraftEnds[sessionId] ?? 0);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const { states, reconcile } = useTabStates();
   const { facts, refresh } = useLiveTabFacts({
     sessionId,
@@ -91,9 +105,30 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const url = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
   const address = addressTextOf({ url });
   const canOpenOutside = url !== '' && !isFileAddress({ url });
+  const shownLiveIdRef = useRef(shownLiveId);
+  shownLiveIdRef.current = shownLiveId;
+  const isLoading = useAppStore(
+    (state) => shownLiveId !== undefined && state.browserLoads[shownLiveId] !== undefined,
+  );
+  const history = useHistoryState({ tabId: shownLiveId, signal: `${url}|${isLoading}` });
 
   useSaveLiveAddresses({ sessionId, tabs, live, facts });
   useOpenedPopups({ sessionId });
+  useFavicon({ liveId: shownLiveId, url });
+  useTabLoad({
+    sessionId,
+    onFinished: ({ tabId }) => {
+      refresh();
+      if (tabId === shownLiveIdRef.current) {
+        setError((current) => (current === LOAD_STALLED_TEXT ? null : current));
+      }
+    },
+    onStalled: ({ tabId }) => {
+      if (tabId === shownLiveIdRef.current) {
+        setError(LOAD_STALLED_TEXT);
+      }
+    },
+  });
 
   useEffect(() => {
     void useAppStore.getState().loadBrowserSessionTabs({ sessionId });
@@ -115,6 +150,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
 
   const run = async ({ step }: StepParams): Promise<boolean> => {
     setError(null);
+    setNotice(null);
     try {
       await step();
       refresh();
@@ -157,6 +193,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   };
 
   return {
+    sessionId,
     tabs,
     pins,
     projectName,
@@ -173,7 +210,11 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     isAsleep: ({ tab }) => isLiveAsleep({ liveId: live?.[tab.id] }),
     isLiveAsleep,
     error,
+    notice,
     isDrafting,
+    isLoading,
+    canGoBack: history.canGoBack,
+    canGoForward: history.canGoForward,
     wakeAttempt,
     submit: async ({ text }) => {
       const parsed = addressOf({ text });
@@ -201,6 +242,17 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       }
       onShown({ command: browserHost.reload });
     },
+    stop: () => {
+      if (shownLiveId === undefined) {
+        return;
+      }
+      void run({
+        step: async () => {
+          await browserHost.stop({ tabId: shownLiveId });
+          useAppStore.getState().forgetBrowserLoad({ tabId: shownLiveId });
+        },
+      });
+    },
     select: ({ tab }) => {
       setIsDrafting(false);
       setError(null);
@@ -225,6 +277,20 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
           const isDone = await useAppStore.getState().closeBrowserTab({ sessionId, tabId: tab.id });
           mustBeDone({ isDone });
         },
+      });
+    },
+    reopen: () => {
+      const closed = useAppStore.getState().browserClosedTabs[sessionId]?.[0];
+      if (closed === undefined) {
+        return;
+      }
+      const target = targetOfUrl({ url: closed.url });
+      void run({ step: () => openNew({ target }) }).then((isDone) => {
+        if (!isDone) {
+          return;
+        }
+        useAppStore.getState().forgetClosedBrowserTab({ sessionId });
+        setWakeAttempt((count) => count + 1);
       });
     },
     togglePin: () => {
@@ -254,8 +320,50 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         setError(browserFailureText({ error: failure })),
       );
     },
+    copyAddress: () => {
+      if (address === '') {
+        return;
+      }
+      void copyToClipboard({ text: address }).catch((failure: unknown) =>
+        setError(browserFailureText({ error: failure })),
+      );
+    },
+    duplicate: () => {
+      if (url === '') {
+        return;
+      }
+      const target = targetOfUrl({ url });
+      void run({ step: () => openNew({ target }) }).then((isDone) => {
+        if (isDone) {
+          setWakeAttempt((count) => count + 1);
+        }
+      });
+    },
     isPasskeyBlocked: factOf({ liveId: shownLiveId })?.isPasskeyBlocked === true,
     dismissPasskey: () => onShown({ command: browserHost.dismissPasskey }),
+    find: async ({ text, isBackwards }) => {
+      if (shownLiveId === undefined) {
+        throw new Error('tab-gone');
+      }
+      const outcome = await browserHost.find({ tabId: shownLiveId, needle: text, isBackwards });
+      return outcome.isFound;
+    },
+    clearFind: async () => {
+      if (shownLiveId === undefined) {
+        return;
+      }
+      await browserHost.find({ tabId: shownLiveId, needle: '', isBackwards: false });
+    },
+    inspect: () => {
+      if (shownLiveId === undefined) {
+        return;
+      }
+      void run({ step: () => browserHost.inspectable({ tabId: shownLiveId }) }).then((isDone) => {
+        if (isDone) {
+          setNotice(INSPECT_NOTICE);
+        }
+      });
+    },
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   };
 };

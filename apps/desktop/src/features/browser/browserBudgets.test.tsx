@@ -108,6 +108,8 @@ const stubHost = () => {
       return facts;
     },
     browser_tab_list: () => live,
+    browser_history_state: null,
+    browser_favicon: null,
     browser_tab_place: null,
     browser_tab_show: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_hide: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
@@ -167,7 +169,7 @@ const renderPane = () =>
   );
 
 const openPage = async ({ text }: TextParams) => {
-  const field = screen.getByRole('textbox', { name: 'Address' });
+  const field = screen.getByRole('combobox', { name: 'Address or search' });
   fireEvent.change(field, { target: { value: text } });
   const form = field.closest('form');
   if (form === null) {

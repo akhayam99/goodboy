@@ -9,7 +9,8 @@ use tauri::test::{
 use tauri::webview::InvokeRequest;
 use tauri::{App, Listener, Manager, Url, Webview, WebviewUrl, WebviewWindowBuilder, Window};
 
-use super::commands::{close_session, list_session, owned_tab};
+use super::commands::{close_session, list_session, owned_tab, set_page_keys};
+use super::find::{find_in_page, MAX_NEEDLE_CHARS};
 use super::guard::label_of;
 use super::host::{
     close_each, close_tab, fill_popup, load_local, open_tab, refresh_with, reserve_popup, OpenTab,
@@ -18,11 +19,13 @@ use super::host::{
 use super::lifecycle::{
     close_switched, hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT,
 };
+use super::load::{report_load, LoadPhase, TAB_LOAD_EVENT};
 use super::local::{self, LocalFile};
+use super::page_keys::{route_page_key, PageKeys, PAGE_KEY_EVENT};
 use super::profile::{begin_clear, ProfileId};
 use super::reason::{
-    BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY, PROFILE_LIVE,
-    SESSION_CLOSING, TAB_CLOSED, TAB_GONE, TOO_MANY_POPUPS,
+    BROWSER_CALLER, INVALID_ADDRESS, NEEDLE_TOO_LONG, NOT_WEB_ADDRESS, OTHER_WINDOW, PROFILE_BUSY,
+    PROFILE_LIVE, SESSION_CLOSING, TAB_CLOSED, TAB_GONE, TOO_MANY_POPUPS,
 };
 use super::registry::{NewTab, TabState};
 use super::{
@@ -41,6 +44,7 @@ const PANE: TabBounds = TabBounds {
 fn app_with_windows(labels: &[&str]) -> App<MockRuntime> {
     let app = mock_app();
     app.manage(BrowserRegistry::default());
+    app.manage(PageKeys::default());
     app.manage(BrowserProfiles::under(
         std::env::temp_dir().join(format!("goodboy-browser-test-{}", uuid_v4())),
     ));
@@ -180,6 +184,43 @@ fn refuses_a_browser_page_that_tries_to_drive_a_tab() {
         owned_tab(&page, &id),
         Err(MessageError::Refused(code)) if code == BROWSER_CALLER
     ));
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn makes_a_live_tab_inspectable_through_the_public_selector() {
+    use super::host::make_inspectable;
+    use crate::platform::web_inspect::is_inspect_supported;
+    assert!(is_inspect_supported());
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = owned_tab(&webview(&app, "main"), &id).expect("owned tab");
+    assert!(make_inspectable(&tab).is_ok());
+}
+
+#[cfg(not(target_os = "macos"))]
+#[test]
+fn refuses_to_make_a_tab_inspectable_off_macos() {
+    use super::host::make_inspectable;
+    use super::reason::UNSUPPORTED_PLATFORM;
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = owned_tab(&webview(&app, "main"), &id).expect("owned tab");
+    assert!(matches!(
+        make_inspectable(&tab),
+        Err(MessageError::Refused(code)) if code == UNSUPPORTED_PLATFORM
+    ));
+}
+
+#[test]
+fn keeps_the_inspector_to_the_public_selector() {
+    let offenders = production_hits(
+        &["open_devtools", "_inspector", "developerExtrasEnabled"],
+        &[],
+    );
+    assert!(offenders.is_empty(), "{offenders:?}");
+    let manifest = include_str!("../../Cargo.toml");
+    assert!(!manifest.contains("devtools"));
 }
 
 #[tauri::command]
@@ -1411,6 +1452,113 @@ fn a_popup_whose_opener_was_switched_out_fails_and_leaves_no_view() {
     );
 }
 
+fn hear_loads(app: &App<MockRuntime>, label: &str) -> Arc<Mutex<Vec<(String, String, String)>>> {
+    let heard = Arc::new(Mutex::new(vec![]));
+    let sink = Arc::clone(&heard);
+    app.get_webview_window(label)
+        .expect("window that holds the tab")
+        .listen(TAB_LOAD_EVENT, move |event| {
+            let payload: serde_json::Value =
+                serde_json::from_str(event.payload()).expect("payload is json");
+            sink.lock().expect("sink").push((
+                payload["tabId"].as_str().expect("tabId").to_string(),
+                payload["phase"].as_str().expect("phase").to_string(),
+                payload["url"].as_str().expect("url").to_string(),
+            ));
+        });
+    heard
+}
+
+#[test]
+fn tells_the_owning_window_when_a_load_starts_and_when_it_finishes() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let main_heard = hear_loads(&app, "main");
+    let other_heard = hear_loads(&app, "win-2");
+    let id = open(&app, "main", "harborline");
+    report_load(
+        app.handle(),
+        &id,
+        LoadPhase::Started,
+        "http://localhost:5173/checkout",
+    );
+    report_load(
+        app.handle(),
+        &id,
+        LoadPhase::Finished,
+        "http://localhost:5173/checkout",
+    );
+    let at = "http://localhost:5173/checkout".to_string();
+    assert_eq!(
+        *main_heard.lock().expect("sink"),
+        vec![
+            (id.clone(), "started".to_string(), at.clone()),
+            (id, "finished".to_string(), at),
+        ]
+    );
+    assert!(other_heard.lock().expect("sink").is_empty());
+}
+
+#[test]
+fn keeps_the_address_of_a_started_load_until_it_finishes() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let registry = app.state::<BrowserRegistry>();
+    report_load(
+        app.handle(),
+        &id,
+        LoadPhase::Started,
+        "http://localhost:5173/pricing",
+    );
+    let before = registry.facts(&id).expect("facts").url;
+    assert_ne!(before, "http://localhost:5173/pricing");
+    report_load(
+        app.handle(),
+        &id,
+        LoadPhase::Finished,
+        "http://localhost:5173/pricing",
+    );
+    assert_eq!(
+        registry.facts(&id).expect("facts").url,
+        "http://localhost:5173/pricing"
+    );
+}
+
+#[test]
+fn says_nothing_about_a_load_of_a_tab_that_is_gone() {
+    let app = app_with_windows(&["main"]);
+    let heard = hear_loads(&app, "main");
+    report_load(
+        app.handle(),
+        "gone",
+        LoadPhase::Started,
+        "http://localhost:5173/",
+    );
+    assert!(heard.lock().expect("sink").is_empty());
+}
+
+#[test]
+fn refuses_to_stop_or_read_history_of_a_tab_the_caller_does_not_own() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let id = open(&app, "win-2", "harborline");
+    let caller = app.get_webview("main").expect("main webview");
+    assert!(matches!(
+        owned_tab(&caller, &id),
+        Err(MessageError::Refused(code)) if code == OTHER_WINDOW
+    ));
+}
+
+#[test]
+fn refuses_a_needle_over_the_cap_before_any_script_runs() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = app.get_webview(&label_of(&id)).expect("tab webview");
+    let needle = "a".repeat(MAX_NEEDLE_CHARS + 1);
+    assert!(matches!(
+        find_in_page(&tab, &needle, false),
+        Err(MessageError::Refused(code)) if code == NEEDLE_TOO_LONG
+    ));
+}
+
 #[cfg(not(target_os = "macos"))]
 #[test]
 fn keeps_the_running_workspace_when_the_new_one_has_no_folder() {
@@ -1450,4 +1598,65 @@ fn keeps_the_saved_address_when_a_page_has_none_yet() {
     let listed = refresh_with(&registry, vec![saved.clone()], |_| None);
     assert_eq!(listed, vec![saved.clone()]);
     assert_eq!(registry.facts("ledger-core"), Some(saved));
+}
+
+fn hear_page_keys(app: &App<MockRuntime>, label: &str) -> Arc<Mutex<Vec<(String, String)>>> {
+    let heard = Arc::new(Mutex::new(vec![]));
+    let sink = Arc::clone(&heard);
+    app.get_webview_window(label)
+        .expect("window that holds no tab yet")
+        .listen(PAGE_KEY_EVENT, move |event| {
+            let payload: serde_json::Value =
+                serde_json::from_str(event.payload()).expect("payload is json");
+            sink.lock().expect("sink").push((
+                payload["tabId"].as_str().expect("tab id").to_string(),
+                payload["combo"].as_str().expect("combo").to_string(),
+            ));
+        });
+    heard
+}
+
+#[test]
+fn sends_a_page_key_only_to_the_window_that_owns_the_focused_tab() {
+    let app = app_with_windows(&["main", "win-2"]);
+    let main = hear_page_keys(&app, "main");
+    let second = hear_page_keys(&app, "win-2");
+    let id = open(&app, "win-2", "harborline");
+    assert!(route_page_key(app.handle(), &label_of(&id), "cmd+KeyW"));
+    assert_eq!(
+        *second.lock().expect("heard"),
+        vec![(id.clone(), "cmd+KeyW".to_string())]
+    );
+    assert!(main.lock().expect("heard").is_empty());
+}
+
+#[test]
+fn leaves_the_key_to_the_page_for_a_gone_tab_or_a_view_that_is_not_a_tab() {
+    let app = app_with_windows(&["main"]);
+    let heard = hear_page_keys(&app, "main");
+    let id = open(&app, "main", "harborline");
+    close_tab(app.handle(), &id).expect("closes");
+    assert!(!route_page_key(app.handle(), &label_of(&id), "cmd+KeyW"));
+    assert!(!route_page_key(app.handle(), "main", "cmd+KeyW"));
+    assert!(heard.lock().expect("heard").is_empty());
+}
+
+#[test]
+fn takes_the_page_keys_from_the_app_and_refuses_them_from_a_browser_page() {
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let combos = vec!["cmd+KeyW".to_string(), "cmd+KeyC".to_string()];
+    assert!(matches!(
+        set_page_keys(&webview(&app, "main"), &combos),
+        Ok(1)
+    ));
+    let page = webview(&app, &label_of(&id));
+    assert!(matches!(
+        set_page_keys(&page, &[]),
+        Err(MessageError::Refused(code)) if code == BROWSER_CALLER
+    ));
+    assert_eq!(
+        app.state::<PageKeys>().combo_for(0x0D, 1 << 20),
+        Some("cmd+KeyW".to_string())
+    );
 }

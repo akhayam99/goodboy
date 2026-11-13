@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { Button, ICON_SIZE, RevealRegion, ScrollFade, SectionLabel } from '@goodboy/ui';
+import { ICON_SIZE, ScrollFade, SectionLabel, SelectableRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
@@ -38,55 +38,47 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
   );
   return (
     <nav aria-label="Tabs by session" className="flex min-h-0 flex-1 flex-col px-2 pt-2">
-      <RevealRegion
-        header={
-          <div className="flex min-w-0 flex-col pb-2">
-            <Button
-              variant="secondary"
-              aria-pressed={model.isDrafting}
-              className="min-w-0 justify-start"
-              onClick={model.startDraft}
+      <ScrollFade viewportClassName="flex flex-col gap-4 pb-2">
+        {groups.map((group, index) => {
+          const isHere = group.sessionId === sessionId;
+          return (
+            <section
+              key={group.key}
+              aria-label={group.label}
+              data-browser-group={group.isPins ? 'pins' : 'session'}
+              className="flex flex-col gap-1"
             >
-              <Plus size={ICON_SIZE.control} aria-hidden />
-              New tab
-            </Button>
-          </div>
-        }
-      >
-        <ScrollFade viewportClassName="flex flex-col gap-4 pb-2">
-          {groups.map((group, index) => {
-            const isHere = group.sessionId === sessionId;
-            return (
-              <section
-                key={group.key}
-                aria-label={group.label}
-                data-browser-group={group.isPins ? 'pins' : 'session'}
-                className="flex flex-col gap-1"
-              >
-                <SectionLabel
-                  label={group.label}
-                  headingLevel={2}
-                  {...(group.tabs.length > 1 && { count: group.tabs.length })}
-                />
-                <div className="flex flex-col gap-0.5">
-                  {group.tabs.map((tab) => (
-                    <BrowserTabRow
-                      key={tab.id}
-                      label={labelOf({ group, tab })}
-                      url={tab.url}
-                      isSelected={isHere && tab.id === shownId}
-                      isPin={group.isPins}
-                      isAsleep={model.isLiveAsleep({ liveId: bindings[index]?.[tab.id] })}
-                      onSelect={() => onPick({ group, tab })}
-                      {...(isHere && !group.isPins && { onClose: () => model.close({ tab }) })}
-                    />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </ScrollFade>
-      </RevealRegion>
+              <SectionLabel
+                label={group.label}
+                headingLevel={2}
+                {...(group.tabs.length > 1 && { count: group.tabs.length })}
+              />
+              <div className="flex flex-col gap-0.5">
+                {group.tabs.map((tab) => (
+                  <BrowserTabRow
+                    key={tab.id}
+                    label={labelOf({ group, tab })}
+                    url={tab.url}
+                    isSelected={isHere && tab.id === shownId}
+                    isPin={group.isPins}
+                    isAsleep={model.isLiveAsleep({ liveId: bindings[index]?.[tab.id] })}
+                    onSelect={() => onPick({ group, tab })}
+                    {...(isHere && !group.isPins && { onClose: () => model.close({ tab }) })}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+        <SelectableRow
+          selected={model.isDrafting}
+          onClick={model.startDraft}
+          className="h-7 items-center gap-2 px-2"
+        >
+          <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+          <span className="text-row">New tab</span>
+        </SelectableRow>
+      </ScrollFade>
     </nav>
   );
 };

@@ -272,6 +272,21 @@ the `memoryMbOverNoTabsWithFourTabs`, `memoryMbPerLiveTab`,
 Record each footprint and the build's commit. A step that fails blocks the
 release, however green the suites are.
 
+## Manual release gate: inspect in Safari
+
+`setInspectable:` needs a live `WKWebView` and Safari, so no unit test runs it.
+Every release that touches `platform/web_inspect.rs` or the More menu runs this
+by hand on macOS 13.3 or later, and again on macOS 13.2 or earlier if one is at
+hand.
+
+1. Turn on Develop in Safari's settings. Open a Harborline preview in a browser
+   tab and choose More, Inspect in Safari. The line under the address row
+   names Safari's Develop menu.
+2. In Safari, Develop lists this Mac with Goodboy, and the tab's page under it.
+   Open it: the Web Inspector attaches and shows the page's DOM.
+3. Another tab that was not inspected is not listed.
+4. On macOS 13.2 or earlier the row answers "Inspect needs macOS 13.3 or later."
+
 ## Reaching a state that only exists in memory
 
 The orchestrator "stopping" state lives only in the store while a decision is

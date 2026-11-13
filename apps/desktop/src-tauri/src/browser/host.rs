@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
-use tauri::webview::{NewWindowResponse, PageLoadEvent};
+use tauri::webview::NewWindowResponse;
 use tauri::{
     AppHandle, Emitter, EventTarget, LogicalPosition, LogicalSize, Manager, Position, Rect,
     Runtime, Size, Url, Webview, WebviewBuilder, WebviewUrl, Window,
@@ -9,18 +9,27 @@ use tauri::{
 
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
+use super::load;
 use super::local::{self, LocalFile};
+use super::page_keys;
 #[cfg(target_os = "macos")]
 use super::passkey;
 use super::profile::{self, ProfileId};
+#[cfg(target_os = "macos")]
+use super::reason::HISTORY_UNAVAILABLE;
 use super::reason::{
-    self, INVALID_ADDRESS, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS, WINDOW_GONE,
+    self, INVALID_ADDRESS, NOT_WEB_ADDRESS, SESSION_CLOSING, TAB_GONE, TOO_MANY_POPUPS,
+    UNSUPPORTED_PLATFORM, WINDOW_GONE,
 };
 use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts, TabState};
-use crate::platform::web_history::HistoryStep;
+use super::visit_rows;
+use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::util::{now_ms, uuid_v4, MessageError};
 
 const MIN_SIDE: f64 = 1.0;
+
+#[cfg(target_os = "macos")]
+const HISTORY_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(1);
 
 pub(crate) const MAX_HIDDEN_POPUPS: usize = 4;
 pub(crate) const TAB_OPENED_EVENT: &str = "browser://tab-opened";
@@ -28,6 +37,8 @@ pub(crate) const TAB_OPENED_EVENT: &str = "browser://tab-opened";
 #[cfg(target_os = "macos")]
 pub(crate) const TAB_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15";
 
+#[cfg(not(target_os = "macos"))]
+const STOP_SCRIPT: &str = "window.stop()";
 #[cfg(not(target_os = "macos"))]
 const BACK_SCRIPT: &str = "history.back()";
 #[cfg(not(target_os = "macos"))]
@@ -203,6 +214,7 @@ pub(super) fn spawn_webview<R: Runtime>(
         .map_err(failed)?;
     #[cfg(target_os = "macos")]
     watch_passkeys(&webview, id);
+    page_keys::mark_tab_view(&webview);
     if !is_shown {
         if let Err(error) = webview.hide() {
             let _ = webview.close();
@@ -292,16 +304,28 @@ fn builder_for<R: Runtime>(
         })
         .on_download(|_webview, _event| false)
         .on_page_load(move |webview, payload| {
-            let registry = webview.app_handle().state::<BrowserRegistry>();
-            if payload.event() == PageLoadEvent::Started {
-                registry.set_passkey_blocked(&load_tab, false);
-                return;
-            }
-            registry.set_url(&load_tab, &local::shown_address(payload.url()));
+            load::report_load(
+                webview.app_handle(),
+                &load_tab,
+                load::phase_of(payload.event()),
+                &local::shown_address(payload.url()),
+            );
         })
         .on_document_title_changed(move |webview, title| {
-            let registry = webview.app_handle().state::<BrowserRegistry>();
-            registry.set_title(&title_tab, &title);
+            let app = webview.app_handle();
+            let registry = app.state::<BrowserRegistry>();
+            let Some(facts) = registry.set_title(&title_tab, &title) else {
+                return;
+            };
+            let Ok(live) = webview.url() else {
+                return;
+            };
+            visit_rows::save_visit_title(
+                app,
+                &facts.session_id,
+                &local::shown_address(&live),
+                &title,
+            );
         })
 }
 
@@ -403,6 +427,64 @@ pub(crate) fn step_history<R: Runtime>(
         HistoryStep::Forward => FORWARD_SCRIPT,
     };
     webview.eval(script).map_err(failed)
+}
+
+#[cfg(target_os = "macos")]
+pub(crate) fn stop_load<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
+    webview
+        .with_webview(crate::platform::web_history::stop_live_wk_web_view)
+        .map_err(failed)
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn stop_load<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
+    webview.eval(STOP_SCRIPT).map_err(failed)
+}
+
+#[cfg(target_os = "macos")]
+pub(crate) fn history_state<R: Runtime>(
+    webview: &Webview<R>,
+) -> Result<Option<HistoryState>, MessageError> {
+    let (sender, receiver) = std::sync::mpsc::channel();
+    webview
+        .with_webview(move |platform| {
+            let _ = sender.send(crate::platform::web_history::read_live_wk_web_view(
+                platform,
+            ));
+        })
+        .map_err(failed)?;
+    receiver
+        .recv_timeout(HISTORY_READ_TIMEOUT)
+        .map(Some)
+        .map_err(|_| reason::failed(HISTORY_UNAVAILABLE))
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn history_state<R: Runtime>(
+    _webview: &Webview<R>,
+) -> Result<Option<HistoryState>, MessageError> {
+    Ok(None)
+}
+
+pub(crate) fn make_inspectable<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
+    if !crate::platform::web_inspect::is_inspect_supported() {
+        return Err(reason::refused(UNSUPPORTED_PLATFORM));
+    }
+    set_inspectable(webview)
+}
+
+#[cfg(target_os = "macos")]
+fn set_inspectable<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError> {
+    webview
+        .with_webview(|platform| {
+            crate::platform::web_inspect::make_live_wk_web_view_inspectable(platform)
+        })
+        .map_err(failed)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn set_inspectable<R: Runtime>(_webview: &Webview<R>) -> Result<(), MessageError> {
+    Err(reason::refused(UNSUPPORTED_PLATFORM))
 }
 
 pub(crate) fn close_tab<R: Runtime>(app: &AppHandle<R>, tab_id: &str) -> Result<(), MessageError> {

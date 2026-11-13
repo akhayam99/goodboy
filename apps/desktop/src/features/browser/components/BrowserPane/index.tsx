@@ -11,6 +11,7 @@ import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
+import { BrowserNotice } from './BrowserNotice';
 import { BrowserPasskeyNotice } from './BrowserPasskeyNotice';
 import { BrowserTabList } from './BrowserTabList';
 import { BrowserTabStrip } from './BrowserTabStrip';
@@ -65,7 +66,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
 
   return (
     <DrawerFrame title="Browser" isHeaderless onClose={onClose}>
-      <div ref={root} className="flex min-h-0 flex-1 flex-col gap-2">
+      <div ref={root} className="flex min-h-0 flex-1 flex-col gap-2 pt-1">
         <BrowserAddressRow
           model={model}
           isAddressShortcutOn={isOnScreen}
@@ -79,6 +80,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
             {model.error}
           </p>
         )}
+        <BrowserNotice notice={model.notice} />
         <BrowserPasskeyNotice model={model} />
         {hasTabs && !isListOpen ? <BrowserTabStrip model={model} /> : null}
         <div ref={paneRef} className="flex min-h-0 flex-1 gap-2 px-2 pb-2">

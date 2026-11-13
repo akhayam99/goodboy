@@ -62,14 +62,28 @@ const mount = ({ id }: MountParams) => {
 };
 
 describe('the browser pane scenes', () => {
-  it('registers both states in light and dark for the capture', () => {
+  it('registers every state in light and dark for the capture', () => {
     expect(Object.keys(BROWSER_PANE_SCENES).sort()).toEqual([
       'browser-page',
       'browser-page-dark',
       'browser-pane',
+      'browser-pane-address',
+      'browser-pane-address-dark',
       'browser-pane-cover',
       'browser-pane-cover-dark',
       'browser-pane-dark',
+      'browser-pane-field',
+      'browser-pane-field-dark',
+      'browser-pane-find',
+      'browser-pane-find-dark',
+      'browser-pane-find-missing',
+      'browser-pane-find-missing-dark',
+      'browser-pane-keys',
+      'browser-pane-keys-dark',
+      'browser-pane-loading',
+      'browser-pane-loading-dark',
+      'browser-pane-more',
+      'browser-pane-more-dark',
       'browser-pane-passkey',
       'browser-pane-passkey-dark',
       'browser-pane-rail',
@@ -88,10 +102,11 @@ describe('the browser pane scenes', () => {
     mount({ id: 'browser-pane' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    expect(within(pane).getByRole('textbox', { name: 'Address' })).toHaveProperty(
-      'value',
-      'http://localhost:5173/checkout',
-    );
+    const pill = within(pane).getByRole('button', {
+      name: 'Edit address, Checkout, localhost:5173',
+    });
+    expect(pill.textContent).toContain('localhost:5173');
+    expect(within(pane).queryByRole('combobox', { name: 'Address or search' })).toBeNull();
     const strip = within(pane).getByRole('navigation', { name: 'Browser tabs' });
     expect(
       within(strip).getByRole('button', { name: 'Checkout' }).getAttribute('aria-current'),
@@ -121,10 +136,92 @@ describe('the browser pane scenes', () => {
     if (page === null) {
       throw new Error('The Browser page sits in no studio slot.');
     }
-    expect(within(page).getByRole('textbox', { name: 'Address' })).toHaveProperty(
+    within(page).getByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
+  });
+
+  it('shows the address being edited, selected, under the pill', async () => {
+    mount({ id: 'browser-pane-address' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const field = await within(pane).findByRole('combobox', { name: 'Address or search' }, WAIT);
+    expect(field).toHaveProperty('value', 'http://localhost:5173/checkout');
+    expect(within(pane).queryByRole('button', { name: /^Edit address/ })).toBeNull();
+  });
+
+  it('opens the command field under the row with a typed word, its tabs and a visit', async () => {
+    mount({ id: 'browser-pane-field' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const list = await within(pane).findByRole('listbox', { name: 'Suggestions' }, WAIT);
+    await within(list).findByRole('option', { name: 'Confirm order' }, WAIT);
+    expect(within(pane).getByRole('combobox', { name: 'Address or search' })).toHaveProperty(
       'value',
-      'http://localhost:5173/checkout',
+      'check',
     );
+    expect(
+      within(list)
+        .getAllByRole('group')
+        .map((group) => group.getAttribute('aria-label')),
+    ).toEqual(['Tabs', 'Visited']);
+    expect(within(list).getByRole('option', { name: 'Staging checkout' }).textContent).toContain(
+      'Pinned',
+    );
+  });
+
+  it('opens the find bar under the row with a typed word that the page has', async () => {
+    mount({ id: 'browser-pane-find' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const bar = await within(pane).findByRole('search', { name: 'Find in page' }, WAIT);
+    await waitFor(
+      () =>
+        expect(within(bar).getByRole('textbox', { name: 'Find in page' })).toHaveProperty(
+          'value',
+          'retry',
+        ),
+      WAIT,
+    );
+    await waitFor(() => expect(within(bar).getByRole('status').textContent).toBe('Found'), WAIT);
+    within(bar).getByRole('button', { name: 'Done' });
+  });
+
+  it('opens the find bar with a typed word that the page does not have', async () => {
+    mount({ id: 'browser-pane-find-missing' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const bar = await within(pane).findByRole('search', { name: 'Find in page' }, WAIT);
+    await waitFor(
+      () => expect(within(bar).getByRole('status').textContent).toBe('Not found'),
+      WAIT,
+    );
+  });
+
+  it('shows the page loading with a line under the row, Stop, a fetched icon and a Forward that is off', async () => {
+    mount({ id: 'browser-pane-loading' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    within(pane).getByRole('progressbar', { name: 'Loading page' });
+    within(pane).getByRole('button', { name: 'Stop' });
+    expect(within(pane).queryByRole('button', { name: 'Reload' })).toBeNull();
+    const pill = within(pane).getByRole('button', {
+      name: 'Edit address, Checkout, localhost:5173',
+    });
+    await waitFor(() => expect(pill.querySelector('img')).not.toBeNull(), WAIT);
+    await waitFor(
+      () =>
+        expect(within(pane).getByRole('button', { name: 'Forward' }).hasAttribute('disabled')).toBe(
+          true,
+        ),
+      WAIT,
+    );
+    expect(within(pane).getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('opens the More menu with its five rows', async () => {
+    mount({ id: 'browser-pane-more' });
+
+    const menu = await screen.findByRole('menu', undefined, WAIT);
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(5);
   });
 
   it('peeks a localhost link in a decision with the title of its open tab', async () => {
@@ -142,10 +239,8 @@ describe('the browser pane scenes', () => {
     mount({ id: 'browser-pane-passkey' });
 
     const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
-    expect(within(pane).getByRole('textbox', { name: 'Address' })).toHaveProperty(
-      'value',
-      'https://id.cascadia.dev/signin',
-    );
+    const pill = await within(pane).findByRole('button', { name: /^Edit address/ }, WAIT);
+    expect(pill.textContent).toContain('id.cascadia.dev');
     const title = await within(pane).findByText(
       "Passkeys don't work in Goodboy's browser",
       {},
@@ -175,6 +270,17 @@ describe('the browser pane scenes', () => {
     expect(
       within(pane).getByRole('button', { name: 'Hide tab list' }).getAttribute('aria-pressed'),
     ).toBe('true');
+  });
+
+  it('lists the tabs of every session and the pins in the palette, each with its place', async () => {
+    mount({ id: 'browser-pane-keys' });
+
+    const dialog = await screen.findByRole('dialog', {}, WAIT);
+    await within(dialog).findByText('PR #318', {}, WAIT);
+    within(dialog).getByText('Tax rates');
+    within(dialog).getByText('Staging checkout');
+    within(dialog).getByText('Pinned');
+    expect(within(dialog).getAllByText('Browser tab')).toHaveLength(2);
   });
 
   it('opens a menu over the page for the cover capture', async () => {

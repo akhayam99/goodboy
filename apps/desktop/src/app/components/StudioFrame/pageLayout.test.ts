@@ -147,7 +147,10 @@ const REVEAL_ROOT_OF: Readonly<Partial<Record<FramePage, string>>> = {
   board: 'features/workspace/components/StageBoard/SessionsHeader.tsx',
   chat: 'features/workspace-chat/components/ChatRoom/ChatHeader.tsx',
   terminal: 'features/terminal/components/TerminalStudio/TerminalRail.tsx',
-  browser: 'features/browser/components/BrowserStudio/BrowserPageRail.tsx',
+};
+
+const HEADERLESS_VIEW_OF: Readonly<Partial<Record<FramePage, string>>> = {
+  browser: 'features/browser/components/BrowserStudio/BrowserPageView.tsx',
 };
 
 const SIDE_SCROLLER_FILES: ReadonlyArray<string> = [
@@ -280,6 +283,10 @@ describe('every page steps its header aside while you read', () => {
         }
         const shell = REVEAL_ROOT_OF[root.page];
         if (shell !== undefined && /<RevealRegion\b/.test(read(shell))) {
+          return [];
+        }
+        const view = HEADERLESS_VIEW_OF[root.page];
+        if (view !== undefined && !/<\w*PageHeader\b/.test(read(view))) {
           return [];
         }
         return [`${root.page}: ${file} draws a header that never steps aside`];

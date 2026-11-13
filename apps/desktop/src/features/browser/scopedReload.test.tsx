@@ -83,6 +83,8 @@ const stubHost = () => {
     browser_tab_show: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_hide: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_reload: null,
+    browser_history_state: null,
+    browser_favicon: null,
   });
 };
 
@@ -105,7 +107,12 @@ const renderWorld = ({ isBrowserOpen }: WorldParams) => {
 };
 
 const openPage = async () => {
-  const field = screen.getByRole('textbox', { name: 'Address' });
+  const field =
+    screen.queryByRole('combobox', { name: 'Address or search' }) ??
+    (() => {
+      fireEvent.click(screen.getByRole('button', { name: /^Edit address/ }));
+      return screen.getByRole('combobox', { name: 'Address or search' });
+    })();
   fireEvent.change(field, { target: { value: 'localhost:5173/checkout' } });
   const form = field.closest('form');
   if (form === null) {
@@ -176,8 +183,7 @@ describe('cmd+R reloads where you are', () => {
     renderWorld({ isBrowserOpen: true });
     await openPage();
 
-    const field = screen.getByRole('textbox', { name: 'Address' });
-    field.focus();
+    screen.getByRole('button', { name: /^Edit address/ }).focus();
     pressShortcut({ id: 'view.reload' });
 
     await waitFor(() =>

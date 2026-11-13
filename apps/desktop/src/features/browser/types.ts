@@ -17,6 +17,26 @@ export type BrowserTabFacts = {
   readonly isPasskeyBlocked: boolean;
 };
 
+export type BrowserHistoryState = {
+  readonly canGoBack: boolean;
+  readonly canGoForward: boolean;
+};
+
+export type BrowserFindOutcome = {
+  readonly isFound: boolean;
+};
+
+export type BrowserTabFavicon = {
+  readonly origin: string;
+  readonly src: string | null;
+};
+
+export type BrowserTabLoad = {
+  readonly tabId: string;
+  readonly phase: 'started' | 'finished';
+  readonly url: string;
+};
+
 export type BrowserBounds = {
   readonly x: number;
   readonly y: number;
@@ -50,7 +70,12 @@ type ErrorParams = {
   readonly error: unknown;
 };
 
+export type FindParams = TextParams & {
+  readonly isBackwards: boolean;
+};
+
 export type BrowserPaneModel = {
+  readonly sessionId: SessionId;
   readonly tabs: ReadonlyArray<BrowserTab>;
   readonly pins: ReadonlyArray<BrowserTab>;
   readonly projectName: string | null;
@@ -61,19 +86,30 @@ export type BrowserPaneModel = {
   readonly isAsleep: (params: TabParams) => boolean;
   readonly isLiveAsleep: (params: LiveIdParams) => boolean;
   readonly error: string | null;
+  readonly notice: string | null;
   readonly isDrafting: boolean;
+  readonly isLoading: boolean;
+  readonly canGoBack: boolean;
+  readonly canGoForward: boolean;
   readonly wakeAttempt: number;
   readonly submit: (params: TextParams) => Promise<boolean>;
   readonly back: () => void;
   readonly forward: () => void;
   readonly reload: () => void;
+  readonly stop: () => void;
   readonly select: (params: TabParams) => void;
   readonly close: (params: TabParams) => void;
+  readonly reopen: () => void;
   readonly togglePin: () => void;
   readonly startDraft: () => void;
   readonly openOutside: () => void;
+  readonly copyAddress: () => void;
+  readonly duplicate: () => void;
   readonly isPasskeyBlocked: boolean;
   readonly dismissPasskey: () => void;
+  readonly find: (params: FindParams) => Promise<boolean>;
+  readonly clearFind: () => Promise<void>;
+  readonly inspect: () => void;
   readonly showError: (params: ErrorParams) => void;
 };
 
@@ -108,3 +144,45 @@ export type BrowserAddress =
   | { readonly kind: 'ok'; readonly url: string }
   | { readonly kind: 'local'; readonly path: string }
   | { readonly kind: 'refused'; readonly reason: string };
+
+export type CommandTabRow = {
+  readonly kind: 'tab';
+  readonly key: string;
+  readonly tab: BrowserTab;
+  readonly sessionId: SessionId;
+  readonly title: string;
+  readonly address: string;
+  readonly place: string | null;
+  readonly isPin: boolean;
+  readonly isHere: boolean;
+};
+
+type CommandAddressRow<Kind extends 'open' | 'outside'> = {
+  readonly kind: Kind;
+  readonly key: string;
+  readonly url: string;
+  readonly label: string;
+};
+
+export type CommandRow =
+  | CommandAddressRow<'open'>
+  | CommandAddressRow<'outside'>
+  | CommandTabRow
+  | {
+      readonly kind: 'visit';
+      readonly key: string;
+      readonly url: string;
+      readonly title: string;
+      readonly address: string;
+    };
+
+export type CommandGroup = {
+  readonly key: 'open' | 'tabs' | 'visited';
+  readonly label: string;
+  readonly rows: ReadonlyArray<CommandRow>;
+};
+
+export type CommandRows = {
+  readonly groups: ReadonlyArray<CommandGroup>;
+  readonly hasNoMatch: boolean;
+};

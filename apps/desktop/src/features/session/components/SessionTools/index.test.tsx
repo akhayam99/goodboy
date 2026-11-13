@@ -120,7 +120,7 @@ describe('SessionTools', () => {
     ]);
     expect(WORKSPACE_TOOLS.map((tool) => [tool.pane, tool.shortcut])).toEqual([
       ['terminal', 'terminal.studio'],
-      ['browser', undefined],
+      ['browser', 'browser.address'],
     ]);
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
     for (const pane of ['explore', 'context', 'ask', 'spawned', 'scripts', 'terminal', 'browser']) {

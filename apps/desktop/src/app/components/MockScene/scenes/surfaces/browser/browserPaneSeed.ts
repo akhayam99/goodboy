@@ -4,11 +4,35 @@ import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
 import type { BrowserTabFacts, BrowserTabListMode } from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab } from '../../../../../../store/slices/browser/types';
+import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 
 export type BrowserPaneSceneState =
-  'pane' | 'tabs' | 'rail' | 'page' | 'peek' | 'passkey' | 'cover';
+  | 'pane'
+  | 'tabs'
+  | 'rail'
+  | 'page'
+  | 'peek'
+  | 'address'
+  | 'field'
+  | 'more'
+  | 'passkey'
+  | 'loading'
+  | 'keys'
+  | 'find'
+  | 'find-missing'
+  | 'cover';
+
+const VISITS: ReadonlyArray<BrowserVisit> = [
+  { url: 'http://localhost:5173/checkout/confirm', title: 'Confirm order', visitedAt: 3 },
+  { url: 'http://localhost:5173/checkout', title: 'Checkout', visitedAt: 2 },
+  { url: 'https://docs.harborline.dev/tax', title: 'Tax rates', visitedAt: 1 },
+];
+
+const CHECKOUT_ORIGIN = 'http://localhost:5173';
+const CHECKOUT_FAVICON =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23e8590c'/%3E%3Ccircle cx='8' cy='8' r='3' fill='white'/%3E%3C/svg%3E";
 
 const PEEK_DECISION =
   'Check the tax line on [localhost:5173/checkout](http://localhost:5173/checkout) before the PR goes up';
@@ -176,6 +200,16 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return ownerSessionOf({ payload }) === ROUNDING_ID ? roundingTabs : tabs;
       case 'browser_tab_list':
         return live;
+      case 'browser_history_state':
+        return { canGoBack: true, canGoForward: false };
+      case 'browser_favicon':
+        return { origin: CHECKOUT_ORIGIN, src: CHECKOUT_FAVICON };
+      case 'browser_tab_stop':
+        return null;
+      case 'browser_find':
+        return { isFound: textOf({ payload, field: 'needle' }) === 'retry' };
+      case 'browser_visits_list':
+        return VISITS;
       case 'browser_tab_open':
         opened += 1;
         return factsOf({
@@ -206,8 +240,12 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
       [SESSION_ID]: Object.fromEntries(tabs.map((tab) => [tab.id, `mock-live-${tab.id}`])),
     },
     ...(projectId === null ? {} : { browserProjectPins: { [projectId]: pins } }),
+    browserLoads:
+      state === 'loading'
+        ? { 'mock-live-mock-browser-checkout': { url: tabs[0]?.url ?? '', startedAt: 1 } }
+        : {},
   });
-  if (state === 'page') {
+  if (state === 'page' || state === 'keys') {
     useAppStore.setState((current) => ({
       sessions: [
         ...current.sessions,

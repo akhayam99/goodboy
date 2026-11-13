@@ -188,6 +188,8 @@ export const SESSION_EVICTION = [
   { key: 'browserShownPin', keyedBy: 'session', evictOn: 'archive' },
   { key: 'browserLiveTabs', keyedBy: 'session', evictOn: 'archive' },
   { key: 'browserDraftEnds', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserClosedTabs', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'browserVisits', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [
@@ -391,6 +393,8 @@ export const NON_SESSION_STATE_KEYS = [
   'taskNewKeys',
   'endedWork',
   'planStarts',
+  'browserLoads',
+  'browserFavicons',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

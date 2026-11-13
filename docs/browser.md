@@ -310,6 +310,19 @@ to a project is a pin that every session of the project shares.
   the retry of a close that failed, because after the archive or delete nothing
   else calls it.
 
+**Visits.** `browser_visits` keeps what a session's tabs loaded, for Visited in
+the command field. Rust writes it (`browser/visit_rows.rs`) when a tab's page
+load finishes, under the session the registry holds for that tab, so a tab an
+agent opened counts too and no reply travels back. One row per address and
+session: a new visit moves it to the top, a document title change renames the
+row of the address the webview shows, and the oldest rows past 200 per session
+go. Only `http` and `https` addresses outside the app's own origins land, with
+the username, password and fragment dropped. The row goes with the session's
+tab rows (`browser_session_tab_rows_delete`), the stale sweep also names an
+archived session that holds only visits, and a deleted session takes its rows
+with it. `browser_visits_list` answers the 20 newest; the `browser-visits`
+store slice keeps them per session and drops a load that a newer one passed.
+
 ## The pane
 
 Browser at the foot of the right rail, on every screen, opens the pane in the
@@ -334,10 +347,85 @@ it; Esc inside the page goes to the page.
   rewritten by a resize and comes back when the window grows. The page follows
   the pane because the placement loop measures the placeholder every frame.
 
-- **The address row** holds Back, Forward and Reload, the address, Pin to the
-  session's project (Unpin when a pin is shown), Open in your browser, Open as
-  page (see Moves) and Close. The first button toggles the tab list, and the pane remembers the
-  choice (`goodboy:browser-tab-list:v1`).
+- **The address row** is one 36px row (`BrowserAddressRow`). It holds the tab
+  list toggle, Back, Forward and Reload, the address pill, Pin to the session's
+  project (Unpin when a pin is shown), More and Close. The pane remembers the
+  list toggle (`goodboy:browser-tab-list:v1`).
+- **Loading** shows on the row. From the host's `started` event of the shown tab
+  to its `finished` event, a 2px `info` line breathes on the bottom edge of the
+  row (`BrowserLoadLine`) and Reload becomes Stop (`browser_tab_stop`, which
+  clears the line once the host answered; a refusal keeps the line and shows
+  the words). The host gives no percentage, so the line has none. A `finished`
+  whose address differs from the load that started is dropped, an event for a
+  tab the session does not hold is ignored, and a load with no `finished` for
+  30 seconds turns the line off and says the page did not finish loading
+  (`LOAD_STALL_MS`); a late `finished` clears that line of text.
+- **Back and Forward** read `browser_history_state` (`canGoBack`, `canGoForward`)
+  for the shown tab and disable for real. The state is read again when the shown
+  address changes and when a load ends. Where the platform cannot tell (Windows
+  and Linux), both stay on.
+- **The address pill** (`BrowserAddressPill`) shows the page, not its URL: the
+  favicon, the title (`model.titleOf`) and the host muted after it. The favicon
+  is the page's icon when the host found one, and a letter tile when it did not
+  (`BrowserFavicon`; most dev servers have no icon). Rust fetches it once per
+  origin (`browser/favicon.rs`, `browser_favicon`): `/favicon.ico` first, then
+  up to three `<link rel="icon">` addresses read from the page. An icon must be
+  an `http` or `https` address on the page's own host, an image type and under
+  64 KB; a redirect off that host is not followed. The answer, a miss included,
+  is kept for the run, so a host with no icon is not asked again. The request
+  carries no cookies and no profile, and the app page reads the icon as a data
+  URL. The same icon shows on every row of that origin. A tab
+  with no title yet shows the host alone. A click, or ⌘L, swaps it for the
+  command field with the whole URL selected; Esc (an escape layer) or leaving
+  the field swaps it back and drops the draft, and a row that went through
+  does too. A refused address keeps the field and the reason under the row.
+- **The command field** (`useCommandField`, `BrowserCommandPanel`) opens a
+  panel between the row and the page while the field has focus. It takes room
+  from the page instead of floating over it, so the native view shrinks and
+  never sits under the panel. Its groups, in order and only when they have
+  rows (`commandRowsOf`): Open (a typed address, Beside this session on ↩, In
+  your browser on ⌘↩), Tabs (every session of the workspace and the project
+  pins, this session first, pins tagged, another session named;
+  `matchTabs`), Visited (this session's last 20 addresses). Every typed word
+  must match a row's title, host or path. Nothing typed lists Visited only;
+  words that match nothing show one quiet line, "No tab or address matches".
+  The arrows move the highlight and wrap, ↩ runs it, ⌘↩ opens its address in
+  your browser. A tab of another session shows in that session's browser.
+- **Find in page** (`useFindInPage`, `BrowserFindBar`) is a second 32px row
+  under the address row, opened by ⌘F while the browser is on screen. It takes
+  room from the page like the command field, so the native view shrinks and
+  never sits under it. Each keystroke asks the host to search the shown tab
+  (`browser_find`, which runs `window.find` in the page through
+  `Webview::eval_with_callback` and answers `isFound`); the bar reads Found or
+  Not found. There is no count, because `window.find` gives none. The match
+  is highlighted by WebKit itself. ↩ goes to the next match and ⇧↩ to the
+  previous one, wrapping at the end; Esc or Done clears the highlight (an empty
+  needle, which only removes the selection) and closes the bar. Typing clears
+  the selection first, so a longer word is searched from the start of the page.
+  A failed search reads "Couldn't search this page" and keeps the bar for
+  another try. The latest request wins: an answer for an older needle, or for
+  a tab that is no longer shown, is dropped, and showing another tab empties
+  the result. A needle over 200 characters is refused by the host
+  (`needle-too-long`) and the field stops at 200. An asleep tab has no view to
+  search and reads the failure line.
+- **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
+  browser, Open as page (see Moves, absent when the dock has no page to open),
+  Copy address, Duplicate (`model.duplicate` opens the shown address in a new
+  tab of the session), Inspect in Safari (macOS only, see Inspect in Safari)
+  and Close tab (off for a pin).
+- **Inspect in Safari** makes the shown tab visible in Safari's Develop menu,
+  to see why a page renders differently here than in another browser.
+  `model.inspect` calls `browser_tab_inspectable`, which sends the public
+  `setInspectable:` selector to the tab's `WKWebView` through `with_webview`
+  (`platform/web_inspect.rs`). It works on macOS 13.3 and later; the host
+  checks that the class answers the selector and refuses with
+  `unsupported-platform` otherwise, and on every other platform. The row is
+  absent off macOS and off when no tab is shown. A line under the row says to
+  open Safari's Develop menu and pick the tab (Safari shows Develop once it is
+  turned on in its settings). The property stays on until the tab closes. The
+  `devtools` cargo feature stays off and no private selector is used, so there
+  is no in-app inspector and a release build is not made inspectable as a
+  whole: only a tab the person chose is.
 - **⌘R reloads the shown tab** while the browser has the keyboard: a click or
   focus in the pane, or the page webview itself. The pane and the page register
   `model.reload` with `useReloadSurface` (the page as the main surface of its
@@ -349,8 +437,9 @@ it; Esc inside the page goes to the page.
   `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
   `0.0.0.0`. A name whose first label is `127` stays on `https`. A path that
   starts with `/` or `~/`, or a `file:` address, is a local file (see Local
-  files). Words, a host with no dot and every other scheme are refused under
-  the row. The pane never sends text to a search engine.
+  files). Words and a host with no dot are matched against tabs and visits
+  instead, and every other scheme gets no Open row. The pane never sends text
+  to a search engine.
 - **Tabs**: the strip shows the session's tabs, then the project pins with
   their title and a pin mark, then New tab. The list shows `Pinned · <project>`
   first, then This session, then New tab; the note that tabs close when the
@@ -373,7 +462,10 @@ it; Esc inside the page goes to the page.
   screen. The pane reads the live address and title every 1.5 seconds and
   saves a session tab's row whenever they differ from the stored row, a page
   that comes back to an earlier address included. A failed save is tried
-  again at the next change.
+  again at the next change. A `browser://tab-load` `finished` event reads
+  them at once, so a title does not wait for the poll; the poll stays for the
+  moves a page makes with no load, such as a script changing the address or the
+  title.
 - **Placement**: one loop (`createNativePlacement`) owns show, hide and
   `set_bounds`. Every frame, and whenever the view's frame changes size, it
   measures the placeholder (`viewBoundsOf`) and wants the shown tab at that
@@ -471,8 +563,8 @@ open the Browser button on the right rail is selected and does nothing.
 A move never reloads the page: the same live webview, with the same id, gets
 new bounds or a new window. A form half typed and the scroll stay.
 
-- **Open as page** in the pane's address row, shown with or without a tab,
-  with the same arrow as the Terminal dock's header, pushes the Browser page
+- **Open as page** in the pane's More menu, shown with or without a tab,
+  pushes the Browser page
   on the session and the shown tab
   (`promoteBrowserTab`), so ⌘[ brings the dock back. The page's placement takes
   the view through the owner rule above and places it at the page's rect.
@@ -536,13 +628,45 @@ sits in and the address, and one function opens it (`openInBrowser`).
   its tab (or the host), the address and what a click does, in the words of
   `webLinkPeekWords.ts`, which read the same place `openWebLink` picks. The card
   never creates a tab, because every tab is a whole webview.
-- **⌘L** focuses the address row while the pane is on screen or the Browser
-  page is open. Elsewhere ⌘L stays Ask about this session, which held the
-  chord first (`browser.address` is scoped, so it wins only there). A page
-  that has focus keeps its keys, so ⌘L reaches the row only while Goodboy
-  has focus.
-- **⌘K** lists the browser tabs of the session Search or run is scoped to (the
-  current session when it is not) and offers `Open <address>` first, beside
+- **The keymap** is eight entries in `shared/keyboard/browserShortcuts.ts`, all
+  `scope: 'browser'`, registered by `useBrowserKeys` while the pane or the
+  Browser page is on screen. Elsewhere each chord keeps its other meaning:
+  ⌘L Ask about this session, ⌘T a new terminal tab, ⌘W `app.close`, ⌘F Search,
+  ⌘⇧[ and ⌘⇧] the sessions. ⌘L opens the pill, ⌘T starts a draft (the command field opens
+  empty), ⌘D toggles the pin, ⌘⇧[ and ⌘⇧] step `stepTab` order (tabs, then
+  pins, wrapping). ⌘W closes the shown tab through `close`; a pin is never
+  closed by it and consumes the key; with no tab shown the handler declines
+  (`canDecline`) and `app.close` closes the pane. ⌘⇧T takes the newest entry of
+  `browserClosedTabs[sessionId]`, opens it with `openPage` and drops the entry
+  only once the open succeeded, so a failure leaves it for a retry. The stack is
+  per session, in memory, five deep: `closeTab` pushes the closed row in the
+  same commit (`pushClosedTab`), and `closeBrowserSessionTabs` and archive
+  eviction clear it. The Browser rail entry, the pin button and the tab strip's
+  New tab teach their chord in the tooltip. ⌘F opens the find bar (see Find in
+  page).
+- **A focused page and the app's keys.** After a click inside a tab, the native
+  view has focus. On macOS one `NSEvent` local monitor
+  (`platform/key_monitor.rs`) catches a key down whose first responder sits
+  inside a tab view (every tab view carries its `browse-<id>` label as its
+  identifier). When the chord is one of the page keys it swallows the event,
+  emits `browser://page-key` `{ tabId, combo }` to the window that owns the tab
+  and gives native focus back to that window's app view. The page keys are every
+  `browser.*` entry and ⌘K, pushed by the frontend through
+  `browser_page_keys` as `platformCombo` strings, so a rebound shortcut moves
+  with it. Only chords holding ⌘ count: a plain key always belongs to the page,
+  and ⌘C, ⌘V, ⌘A and ⌘Z are never pushed. `usePageKeys` replays the combo on
+  `window` through `replayCombo`, so the dispatcher and the scopes decide what it
+  does; a chord from a tab that is already closed is dropped. ⌘R and ⌘⇧R are
+  never page keys: the menu bar brings them to the window (see ⌘R above).
+  On Linux and Windows there is no monitor: after a click inside a tab none of
+  these chords fire until focus returns to Goodboy's chrome (a click on the
+  address row, a tab or the rail). The find bar and the command field keep focus
+  in the chrome on purpose, so the daily flows work.
+- **⌘K** lists the browser tabs of every session in the workspace and every
+  project pin (`useBrowserEntries`, `browserPageData`): the session title is the
+  detail and `Pinned` the tag of a pin. Picking one shows that exact tab, on
+  the session it belongs to (`showBrowserTab`, `showBrowserPinTab`). It offers
+  `Open <address>` first, beside
   that same session, for an address with `http` or `https` or a localhost
   name, or for a host with a port or a path. A typed path to a page, an image
   or a PDF gets `Open <path>` beside the session (`typedLocalPathOf`), and no
@@ -629,7 +753,12 @@ workspace profile stays signed out.
 - Back and forward are native on macOS: the host steps the WebKit view's own
   history, so a page cannot trap them. Tauri 2.12 exposes no
   native step, so on Windows and Linux they still run `history.back()` and
-  `history.forward()` inside the page, which the page can redefine.
+  `history.forward()` inside the page, which the page can redefine. The same
+  split holds for Stop (`stopLoading` on macOS, `window.stop()` elsewhere) and
+  for `canGoBack` and `canGoForward`, which only macOS reports.
+- The host reports a load's start and its finish, never a failure: a page that
+  fails or is cancelled sends no `finished`, so its line ends at the 30 second
+  limit, or when Stop is pressed.
 
 ## Errors
 
@@ -638,7 +767,7 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
 `local-folder`, `local-type`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
 `session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
-`profile-shared`, `profile-unavailable`, `tab-row-gone`, `tab-row-owner`,
+`profile-shared`, `profile-unavailable`, `history-unavailable`, `tab-row-gone`, `tab-row-owner`,
 `tab-rows-changed`, `tab-rows-failed`), never a sentence. The pane owns the
 words (`features/browser/browserFailureText.ts`).
 
@@ -646,21 +775,33 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  sixteen `browser_*` commands; `local.rs` holds the `gblocal` scheme, the
-  path rule and the grant check; `profile.rs` holds the profile id, the
+  twenty-two `browser_*` commands (`browser_page_keys` sets the page keys);
+  `local.rs` holds the `gblocal` scheme, the path rule and the grant check; `page_keys.rs`
+  holds the chord parse, the key codes, the `PageKeys` state and
+  `route_page_key`; `load.rs` maps the page load callback to
+  `browser://tab-load` (`started`, `finished`, the tab id and the address) for
+  the owning window only, and clears the passkey mark on a page start;
+  `favicon.rs` holds the icon rules and the per-origin cache; `profile.rs`
+  holds the profile id, the
   per-platform store, the switch and the clear; `registry.rs` holds the tabs, the popup seats
   (`MAX_HIDDEN_POPUPS`) and the pure picks of which tabs to close;
   `lifecycle.rs` holds the limits (`SLEEP_LIMIT_MS`, `MAX_LIVE_TABS`), the
   sweep, show, hide and place, and `browser://tab-state`. The native back and forward step lives in
-  `src-tauri/src/platform/web_history.rs`. The passkey watch keeps its
+  `src-tauri/src/platform/web_history.rs`, with the history state read and the
+  stop. The passkey watch keeps its
   handler-to-tab map in `browser/passkey.rs`, its native handler class in
   `src-tauri/src/platform/passkey_handler.rs` and its script in
   `browser/passkey.js`; `host.rs` adds the script to every frame,
-  registers the handler after the view is made, clears the mark on a page
-  start and forgets the handler when the tab closes, when its open is refused
-  late and when its window is destroyed (`forget_window`). The two `platform/`
-  files are the only `unsafe` the host needs, which the unsafe ratchet in
-  `proc/signal.rs` enforces.
+  registers the handler after the view is made and forgets the handler when
+  the tab closes, when its open is refused late and when its window is
+  destroyed (`forget_window`). These two `platform/` files, the key monitor in
+  `platform/key_monitor.rs` and `platform/web_inspect.rs` are the only `unsafe`
+  the host needs, which the unsafe ratchet in `proc/signal.rs` enforces.
+  `web_inspect.rs` sends `setInspectable:` and nothing
+  else; `browser::tests` fails if production code names `open_devtools`,
+  `_inspector` or `developerExtrasEnabled`, or if `Cargo.toml` names `devtools`.
+  No test can attach Safari headless, so the manual gate lists it
+  (`docs/testing.md` → Manual release gate: inspect in Safari).
 - `guard::tests` pins every refused origin, the loopback aliases of the dev
   origin, `http` and `https` pages, `javascript:`, `data:`, `file:`,
   `about:blank` and `about:srcdoc` frames and a page that sends itself to the
@@ -751,7 +892,10 @@ words (`features/browser/browserFailureText.ts`).
   `components/BrowserPane/index.test.tsx` drives it through `storyHarness` with a
   fake host: open and show at the placeholder, refused words with no host
   call, navigation and history by live id, a refused navigation, close before
-  the row delete, pin, an overlay over the view and one elsewhere, a late open
+  the row delete, pin, the pill (title and host, the host alone, the selected
+  address on click, Esc and blur back, the field kept on a refusal), the five
+  More rows with Copy, Duplicate and Close tab, the sixth row Inspect in Safari
+  on macOS only with its line and its refusal, an overlay over the view and one elsewhere, a late open
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again
   and the view hidden when the pane closes. It also opens a typed local file
@@ -762,8 +906,16 @@ words (`features/browser/browserFailureText.ts`).
   the cover check for a popover with no role, for tooltips and for a page view
   under an overlay dock, and the reason per overlay kind. The mock scene
   `browser-pane-cover` (light and dark) opens a menu over the page.
-  `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
-  and dark) draw a stand in where the native view goes.
+  `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane`, `browser-pane-tabs`,
+  `browser-pane-address` (the field open), `browser-pane-more` (the menu
+  open) and `browser-pane-loading` (the load line, Stop, a fetched icon, Forward
+  off), each in light and dark, draw a stand in where the native view goes.
+  `BrowserPane/hostFacts.test.tsx` pins the load line from `started` to
+  `finished`, Reload turning into Stop, the older `finished` dropped, an
+  unknown tab ignored, the 30 second limit, a refused stop, Back and Forward
+  from the host's state, and the icon and the letter tile. The slice
+  `store/slices/browser-host/` holds the loads by live tab id and the icons by
+  origin.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
   `openWebLink.ts` is the click rule (`webLinkPlace.ts` is its pure answer,
   `isOwnBrowserClick.ts` reads the modifier, `shared/lib/linksOpenOf.ts` and
@@ -786,7 +938,14 @@ words (`features/browser/browserFailureText.ts`).
   `LinksOpenField/index.test.tsx` pins the row reading, saving and keeping the
   old value on a failed save. `tabForAddress.test.ts` pins the tab match; the
   scenes are `browser-peek`, `browser-peek-dark`, `settings-links` and
-  `settings-links-dark`.
+  `settings-links-dark`. `components/BrowserPane/keys.test.tsx` pins the
+  keymap and the find bar on the real store with a fake host (the needle sent
+  to the shown tab, Found and Not found, ↩ and ⇧↩, Done and Esc clearing, a
+  failed search, a late answer dropped, another tab shown), and the scenes
+  `browser-pane-keys` and `browser-pane-keys-dark` show ⌘K over every
+  session. `browser/find.rs` builds the script and reads the answer, with its
+  Rust tests; the scenes `browser-pane-find` and `browser-pane-find-missing`,
+  each in light and dark, show the bar with a found and a missing word.
 - The budgets: `features/browser/browserBudgets.ts` holds the numbers.
   `browserBudgets.test.tsx` runs in the unit project and counts, never times:
   no `browser_*` command and no frame request while no tab was opened, the

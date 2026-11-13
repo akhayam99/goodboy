@@ -27,6 +27,11 @@ export type SessionClosed = {
   readonly failed: ReadonlyArray<TabCloseFailure>;
 };
 
+export type ClosedBrowserTab = {
+  readonly url: string;
+  readonly title: string;
+};
+
 export type SessionTabParams = {
   readonly sessionId: SessionId;
   readonly tabId: string;

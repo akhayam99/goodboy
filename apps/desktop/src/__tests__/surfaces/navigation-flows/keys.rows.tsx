@@ -22,6 +22,7 @@ import {
 import { isRecord } from '@goodboy/types/helpers';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
 import { agentPlace, sessionPlace } from '../../../store';
+import type { BrowserTab } from '../../../store/slices/browser/types';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { currentStack } from '../../../store/slices/navigation/currentStack';
 import { locationKey } from '../../../store/slices/navigation/locationKey';
@@ -95,6 +96,36 @@ const press = (id: ShortcutId) => async (): Promise<void> => {
   hydrateBranches();
   await focusAnchor();
   await pressed(id);
+};
+
+const browserTabOf = (ctx: Ctx, id: string, title: string): BrowserTab => ({
+  id,
+  sessionId: ctx.sessionId,
+  projectId: null,
+  url: `https://acme.example/${id}`,
+  title,
+  position: 0,
+  createdAt: 1,
+  updatedAt: 1,
+});
+
+const openBrowserOnTabs = async (ctx: Ctx): Promise<void> => {
+  useAppStore.getState().openDrawer({ kind: 'browser', sessionId: ctx.sessionId, payload: null });
+  await screen.findByRole('combobox', { name: 'Address or search' });
+  useAppStore.setState({
+    browserSessionTabs: {
+      ...useAppStore.getState().browserSessionTabs,
+      [ctx.sessionId]: [
+        browserTabOf(ctx, 'tab-checkout', 'Checkout'),
+        browserTabOf(ctx, 'tab-docs', 'Docs'),
+      ],
+    },
+    browserActiveTab: {
+      ...useAppStore.getState().browserActiveTab,
+      [ctx.sessionId]: 'tab-checkout',
+    },
+  });
+  await screen.findByRole('button', { name: 'Edit address, Checkout, acme.example' });
 };
 
 const openTerminalPage = async (): Promise<void> => {
@@ -614,14 +645,101 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       useAppStore
         .getState()
         .openDrawer({ kind: 'browser', sessionId: ctx.sessionId, payload: null });
-      await screen.findByRole('textbox', { name: 'Address' });
+      await screen.findByRole('combobox', { name: 'Address or search' });
       await press('browser.address')();
     },
     lands: async (ctx) => {
-      const field = await screen.findByRole('textbox', { name: 'Address' });
+      const field = await screen.findByRole('combobox', { name: 'Address or search' });
       await waitFor(() => expect(document.activeElement).toBe(field));
       expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
       expect(selectOpenDrawer(useAppStore.getState())?.sessionId).toBe(ctx.sessionId);
+    },
+  }),
+  keyRow({
+    id: 'browser.newTab',
+    note: 'with the browser on screen the chord opens an empty address field, not a terminal tab',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.newTab')();
+    },
+    lands: async () => {
+      const field = await screen.findByRole('combobox', { name: 'Address or search' });
+      await waitFor(() => expect(document.activeElement).toBe(field));
+      expect(field).toHaveProperty('value', '');
+    },
+  }),
+  keyRow({
+    id: 'browser.closeTab',
+    note: 'with a tab shown the close chord stays in the browser and never closes the pane',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.closeTab')();
+    },
+    lands: async (ctx) => {
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+      expect(selectOpenDrawer(useAppStore.getState())?.sessionId).toBe(ctx.sessionId);
+    },
+  }),
+  keyRow({
+    id: 'browser.reopenTab',
+    note: 'puts the last closed tab on the stack back, keeping it when the host cannot open it',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      useAppStore.setState({
+        browserClosedTabs: {
+          [ctx.sessionId]: [{ url: 'https://acme.example/', title: 'Acme' }],
+        },
+      });
+      await press('browser.reopenTab')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() =>
+        expect(useAppStore.getState().browserClosedTabs[ctx.sessionId]?.length).toBeLessThanOrEqual(
+          1,
+        ),
+      );
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+    },
+  }),
+  keyRow({
+    id: 'browser.nextTab',
+    also: ['browser.prevTab'],
+    note: 'with the browser on screen the bracket chords step its tabs, not the sessions',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.nextTab')();
+      await press('browser.prevTab')();
+      await press('browser.nextTab')();
+    },
+    lands: async (ctx) => {
+      await waitFor(() =>
+        expect(useAppStore.getState().browserActiveTab[ctx.sessionId]).toBe('tab-docs'),
+      );
+      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
+    },
+  }),
+  keyRow({
+    id: 'browser.find',
+    note: 'with the browser on screen the chord opens its find bar, not workspace search',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.find')();
+    },
+    lands: async () => {
+      await screen.findByRole('search', { name: 'Find in page' });
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+      expect(screen.queryByRole('combobox', { name: 'Search' })).toBeNull();
+    },
+  }),
+  keyRow({
+    id: 'browser.pin',
+    note: 'pins the shown tab to the project of the session',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.pin')();
+    },
+    lands: async () => {
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
     },
   }),
 ];

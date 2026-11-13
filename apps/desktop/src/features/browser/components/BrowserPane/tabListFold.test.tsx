@@ -142,6 +142,8 @@ beforeEach(async () => {
     browser_tab_place: null,
     browser_tab_show: null,
     browser_tab_hide: null,
+    browser_history_state: null,
+    browser_favicon: null,
   });
 });
 

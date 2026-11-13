@@ -136,6 +136,8 @@ const stubHost = () => {
       return null;
     },
     browser_tab_list: () => live,
+    browser_history_state: null,
+    browser_favicon: null,
     browser_tab_place: null,
     browser_tab_show: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
     browser_tab_hide: ({ args }: TabArgs) => live.find((facts) => facts.id === args.tabId),
@@ -145,6 +147,7 @@ const stubHost = () => {
     },
     browser_tab_back: null,
     browser_tab_forward: null,
+    browser_tab_inspectable: null,
     browser_tab_reload: null,
     browser_tab_close: ({ args }: TabArgs) => {
       live = live.filter((facts) => facts.id !== args.tabId);
@@ -292,8 +295,19 @@ const renderPane = () =>
     </ToastProvider>,
   );
 
+const openPill = () => {
+  fireEvent.click(screen.getByRole('button', { name: /^Edit address/ }));
+  return screen.getByRole('combobox', { name: 'Address or search' });
+};
+
+const pageTitled = async ({ text }: TypeParams) => {
+  live = live.map((facts) => ({ ...facts, title: text }));
+  fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+  await screen.findByRole('button', { name: `Edit address, ${text}, localhost:5173` });
+};
+
 const typeAddress = async ({ text }: TypeParams) => {
-  const field = screen.getByRole('textbox', { name: 'Address' });
+  const field = screen.queryByRole('combobox', { name: 'Address or search' }) ?? openPill();
   fireEvent.change(field, { target: { value: text } });
   const form = field.closest('form');
   if (form === null) {
@@ -362,14 +376,13 @@ describe('the browser pane', () => {
     expect(callsOf({ command: 'browser_tab_show' })).toEqual([{ tabId: 'live-1' }]);
   });
 
-  it('refuses words inline and never asks the host to load them', async () => {
+  it('shows one quiet line for words that match nothing and never asks the host to load them', async () => {
     renderPane();
 
     await typeAddress({ text: 'checkout total' });
 
-    expect(screen.getByRole('alert').textContent).toBe(
-      "Type a full address, like harborline.dev, or a file path. Search isn't available here.",
-    );
+    expect(screen.getByRole('status').textContent).toBe('No tab or address matches');
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
   });
 
@@ -390,15 +403,13 @@ describe('the browser pane', () => {
       }),
     ]);
     expect(storedUrl()).toBe(LOCAL_PLAN);
-    await waitFor(() =>
-      expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Address' }).value).toBe(
-        '/work/harborline/plan.html',
-      ),
-    );
+    await screen.findByRole('button', {
+      name: /^Edit address, .*\/work\/harborline\/plan\.html$/,
+    });
     screen.getByRole('button', { name: 'Close plan.html' });
-    expect(
-      screen.getByRole<HTMLButtonElement>('button', { name: 'Open in your browser' }).disabled,
-    ).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const outside = await screen.findByRole('menuitem', { name: 'Open in your browser' });
+    expect(outside.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('moves the shown tab to a typed local file by its live id', async () => {
@@ -431,8 +442,9 @@ describe('the browser pane', () => {
       const scheduled = frames.mock.calls.length;
       await waitFor(() => expect(frames.mock.calls.length).toBeGreaterThan(scheduled));
       const placed = callsOf({ command: 'browser_tab_place' }).length;
+      failCommand({ command: 'browser_tab_navigate_local', reason: 'local-missing' });
 
-      await typeAddress({ text: 'checkout total' });
+      await typeAddress({ text: '~/harborline/gone.html' });
       screen.getByRole('alert');
       const lower = { ...VIEW_RECT, y: VIEW_RECT.y + 24, height: VIEW_RECT.height - 24 };
       const view = document.querySelector('[data-browser-view]');
@@ -782,6 +794,226 @@ describe('the browser pane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
 
     await waitFor(() => expect(storedUrl()).toBe('https://acme.example/billing'));
+  });
+
+  it('shows the page title and its host in the pill, and no address field', async () => {
+    await openFirstPage();
+
+    await pageTitled({ text: 'Checkout' });
+
+    const pill = screen.getByRole('button', { name: 'Edit address, Checkout, localhost:5173' });
+    expect(pill.textContent).toContain('Checkout');
+    expect(pill.textContent).toContain('localhost:5173');
+    expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
+  });
+
+  it('shows the host once for a tab with no title yet', async () => {
+    await openFirstPage();
+
+    const pill = screen.getByRole('button', { name: 'Edit address, localhost:5173' });
+
+    expect(pill.textContent?.split('localhost:5173')).toHaveLength(2);
+  });
+
+  it('swaps the pill for the selected address on click and back on Escape', async () => {
+    await openFirstPage();
+
+    const field = openPill();
+
+    expect(field).toHaveProperty('value', 'http://localhost:5173/checkout');
+    expect(document.activeElement).toBe(field);
+    expect(field).toHaveProperty('selectionStart', 0);
+    expect(field).toHaveProperty('selectionEnd', 'http://localhost:5173/checkout'.length);
+    fireEvent.change(field, { target: { value: 'acme.example' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+
+    const pill = screen.getByRole('button', { name: /^Edit address/ });
+    expect(document.activeElement).toBe(pill);
+    expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
+    expect(openPill()).toHaveProperty('value', 'http://localhost:5173/checkout');
+  });
+
+  it('leaves focus where the user moved it when the field blurs', async () => {
+    await openFirstPage();
+    const reload = screen.getByRole('button', { name: 'Reload' });
+
+    openPill();
+    act(() => reload.focus());
+
+    expect(document.activeElement).toBe(reload);
+    expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
+  });
+
+  it('swaps the address back for the pill on blur', async () => {
+    await openFirstPage();
+
+    fireEvent.blur(openPill());
+
+    screen.getByRole('button', { name: /^Edit address/ });
+    expect(screen.queryByRole('combobox', { name: 'Address or search' })).toBeNull();
+  });
+
+  it('returns to the pill after a submit navigated the shown tab', async () => {
+    await openFirstPage();
+
+    await typeAddress({ text: 'harborline.dev/billing' });
+
+    expect(callsOf({ command: 'browser_tab_navigate' })).toEqual([
+      { tabId: 'live-1', url: 'https://harborline.dev/billing' },
+    ]);
+    screen.getByRole('button', { name: /^Edit address/ });
+  });
+
+  it('keeps the field and the refusal when the host refuses a typed address', async () => {
+    await openFirstPage();
+    failCommand({ command: 'browser_tab_navigate', reason: 'not-web-address' });
+
+    await typeAddress({ text: 'acme.example' });
+
+    expect(screen.getByRole('alert').textContent).toBe("That address can't open here.");
+    expect(screen.getByRole('combobox', { name: 'Address or search' })).toHaveProperty(
+      'value',
+      'acme.example',
+    );
+    screen.getByRole('listbox', { name: 'Suggestions' });
+  });
+
+  it('lists five rows in the More menu', async () => {
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    const rows = await screen.findAllByRole('menuitem');
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'Open in your browser',
+      'Open as page',
+      'Copy address',
+      'Duplicate',
+      'Close tab',
+    ]);
+  });
+
+  it('adds Inspect in Safari to the More menu on macOS only', async () => {
+    const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
+    agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    const rows = await screen.findAllByRole('menuitem');
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'Open in your browser',
+      'Open as page',
+      'Copy address',
+      'Duplicate',
+      'Inspect in Safari',
+      'Close tab',
+    ]);
+    agent.mockRestore();
+  });
+
+  it('keeps Inspect in Safari out of the More menu off macOS', async () => {
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    await screen.findAllByRole('menuitem');
+    expect(screen.queryByRole('menuitem', { name: 'Inspect in Safari' })).toBeNull();
+  });
+
+  it('makes the shown tab inspectable and says where to look', async () => {
+    const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
+    agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_inspectable' })).toEqual([{ tabId: 'live-1' }]),
+    );
+    expect((await screen.findByRole('status')).textContent).toBe(
+      'Open the Develop menu in Safari and pick this tab.',
+    );
+    agent.mockRestore();
+  });
+
+  it('shows the reason and no hint when the tab cannot be made inspectable', async () => {
+    const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
+    agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
+    await openFirstPage();
+    failCommand({ command: 'browser_tab_inspectable', reason: 'unsupported-platform' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Inspect needs macOS 13.3 or later.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+    agent.mockRestore();
+  });
+
+  it('copies the address from the More menu', async () => {
+    await openFirstPage();
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Copy address' }));
+
+    expect(writeText).toHaveBeenCalledWith('http://localhost:5173/checkout');
+  });
+
+  it('copies the address without the clipboard API and says so when the copy fails', async () => {
+    await openFirstPage();
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    const execCommand = vi.fn(() => false);
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Copy address' }));
+
+    await screen.findByRole('alert');
+    expect(execCommand).toHaveBeenCalledWith('copy');
+    Reflect.deleteProperty(document, 'execCommand');
+  });
+
+  it('duplicates the shown address into a second tab from the More menu', async () => {
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Duplicate' }));
+
+    await waitFor(() => expect(callsOf({ command: 'browser_tab_open' })).toHaveLength(2));
+    expect(callsOf({ command: 'browser_tab_open' }).map((args) => args['url'])).toEqual([
+      'http://localhost:5173/checkout',
+      'http://localhost:5173/checkout',
+    ]);
+    await waitFor(() =>
+      expect(store.getState().browserSessionTabs[SESSION_ID]?.map((tab) => tab.id)).toEqual([
+        'live-1',
+        'live-2',
+      ]),
+    );
+  });
+
+  it('closes the shown tab from the More menu', async () => {
+    await openFirstPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Close tab' }));
+
+    await waitFor(() => expect(store.getState().browserSessionTabs[SESSION_ID]).toEqual([]));
+    expect(callsOf({ command: 'browser_tab_close' })).toEqual([{ tabId: 'live-1' }]);
+  });
+
+  it('focuses the address field when the pane has no tab', () => {
+    renderPane();
+
+    expect(document.activeElement).toBe(
+      screen.getByRole('combobox', { name: 'Address or search' }),
+    );
   });
 
   it('says a passkey is blocked on the shown tab and opens its address in your browser', async () => {

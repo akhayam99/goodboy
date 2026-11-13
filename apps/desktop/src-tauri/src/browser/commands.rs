@@ -1,16 +1,19 @@
 use serde::Deserialize;
 use tauri::{Manager, Runtime, Webview};
 
+use super::favicon::{self, BrowserFavicons, TabFavicon};
+use super::find::{self, FindOutcome};
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::lifecycle;
 use super::local::{self, LocalFile};
+use super::page_keys::PageKeys;
 use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
     self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_CLOSED, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts, TabState};
-use crate::platform::web_history::HistoryStep;
+use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::util::{now_ms, MessageError};
 
 const BLANK_ADDRESS: &str = "about:blank";
@@ -60,6 +63,20 @@ pub(crate) struct TabNavigateArgs {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TabArgs {
     tab_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TabFindArgs {
+    tab_id: String,
+    needle: String,
+    is_backwards: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PageKeysArgs {
+    combos: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -213,6 +230,45 @@ pub async fn browser_tab_reload(webview: Webview, args: TabArgs) -> Result<(), M
 }
 
 #[tauri::command]
+pub async fn browser_tab_stop(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
+    host::stop_load(&owned_tab(&webview, &args.tab_id)?)
+}
+
+#[tauri::command]
+pub async fn browser_history_state(
+    webview: Webview,
+    args: TabArgs,
+) -> Result<Option<HistoryState>, MessageError> {
+    host::history_state(&owned_tab(&webview, &args.tab_id)?)
+}
+
+#[tauri::command]
+pub async fn browser_find(
+    webview: Webview,
+    args: TabFindArgs,
+) -> Result<FindOutcome, MessageError> {
+    find::find_in_page(
+        &owned_tab(&webview, &args.tab_id)?,
+        &args.needle,
+        args.is_backwards,
+    )
+}
+
+#[tauri::command]
+pub async fn browser_favicon(
+    webview: Webview,
+    args: TabArgs,
+) -> Result<Option<TabFavicon>, MessageError> {
+    let page = owned_tab(&webview, &args.tab_id)?.url().map_err(failed)?;
+    let Some(origin) = favicon::host_key(&page) else {
+        return Ok(None);
+    };
+    let cache = webview.state::<BrowserFavicons>();
+    let src = favicon::favicon_of(&cache, &page, favicon::find_icon).await;
+    Ok(Some(TabFavicon { origin, src }))
+}
+
+#[tauri::command]
 pub async fn browser_tab_back(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     host::step_history(&owned_tab(&webview, &args.tab_id)?, HistoryStep::Back)
 }
@@ -220,6 +276,11 @@ pub async fn browser_tab_back(webview: Webview, args: TabArgs) -> Result<(), Mes
 #[tauri::command]
 pub async fn browser_tab_forward(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     host::step_history(&owned_tab(&webview, &args.tab_id)?, HistoryStep::Forward)
+}
+
+#[tauri::command]
+pub async fn browser_tab_inspectable(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
+    host::make_inspectable(&owned_tab(&webview, &args.tab_id)?)
 }
 
 #[tauri::command]
@@ -254,6 +315,22 @@ pub async fn browser_session_close(
     args: SessionArgs,
 ) -> Result<SessionClosed, MessageError> {
     close_session(&webview, &args.session_id)
+}
+
+#[tauri::command]
+pub async fn browser_page_keys(
+    webview: Webview,
+    args: PageKeysArgs,
+) -> Result<usize, MessageError> {
+    set_page_keys(&webview, &args.combos)
+}
+
+pub(super) fn set_page_keys<R: Runtime>(
+    caller: &Webview<R>,
+    combos: &[String],
+) -> Result<usize, MessageError> {
+    refuse_browser_caller(caller)?;
+    Ok(caller.state::<PageKeys>().replace(combos))
 }
 
 pub(super) fn list_session<R: Runtime>(
@@ -331,6 +408,15 @@ mod tests {
     #[test]
     fn wire_shape_tab_args() {
         assert_wire_reads::<TabArgs>(json!({ "tabId": "0f1e" }));
+    }
+
+    #[test]
+    fn wire_shape_tab_find_args() {
+        assert_wire_reads::<TabFindArgs>(json!({
+            "tabId": "0f1e",
+            "needle": "retry",
+            "isBackwards": false,
+        }));
     }
 
     #[test]
