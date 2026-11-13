@@ -8,12 +8,13 @@ import { DatabaseRecovery } from './DatabaseRecovery';
 import { NewerDatabaseScreen } from './NewerDatabaseScreen';
 import { BootSlowNotice } from './BootSlowNotice';
 import { BootStage } from './BootStage';
+import { BOOT_SPLASH_TIMINGS } from '../../../shared/lib/bootSplashTimings';
 import { prefersReducedMotion } from './prefersReducedMotion';
 import { useElapsedSincePhase } from './useElapsedSincePhase';
 import { useRevealWindow } from './useRevealWindow';
 
 const BOOT_SLOW_AFTER_MS = 10_000;
-const BAR_FILL_MS = 200;
+const BAR_FILL_MS = BOOT_SPLASH_TIMINGS.barFillMs;
 
 type BootSplashProps = {
   phase: BootPhase;

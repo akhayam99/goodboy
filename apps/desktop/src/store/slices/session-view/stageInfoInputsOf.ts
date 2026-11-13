@@ -1,3 +1,5 @@
+import { countPerf } from '../../../shared/lib/countPerf';
+import { PERF_COUNT_NAMES } from '../../../shared/lib/perfCountNames';
 import type { StageInfoState } from './stageInfoOf';
 
 const STAGE_INPUT_KEYS = [
@@ -40,5 +42,7 @@ type Params = {
   readonly state: StageInfoState;
 };
 
-export const stageInfoInputsOf = ({ state }: Params): Readonly<Record<string, unknown>> =>
-  Object.fromEntries(STAGE_INPUT_KEYS.map((key) => [key, state[key]]));
+export const stageInfoInputsOf = ({ state }: Params): Readonly<Record<string, unknown>> => {
+  countPerf({ name: PERF_COUNT_NAMES.stageInputsBuilt });
+  return Object.fromEntries(STAGE_INPUT_KEYS.map((key) => [key, state[key]]));
+};

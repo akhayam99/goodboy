@@ -1,4 +1,6 @@
 import type { AppState } from '../../store/types';
+import { countPerf } from '../../shared/lib/countPerf';
+import { PERF_COUNT_NAMES } from '../../shared/lib/perfCountNames';
 import { browserPinProjectIds } from './browserPinProjectIds';
 import { browserScopeSessions } from './browserScopeSessions';
 import { pinProjectOf } from './pinProjectOf';
@@ -16,6 +18,7 @@ type Params = {
 };
 
 export const browserTabCount = ({ state }: Params): number => {
+  countPerf({ name: PERF_COUNT_NAMES.browserTabCount });
   const sessions = browserScopeSessions({ state });
   const projectIds = browserPinProjectIds({
     projectOf: sessions.map((session) => pinProjectOf({ state, sessionId: session.id })),

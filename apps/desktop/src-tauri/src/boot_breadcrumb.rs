@@ -7,7 +7,7 @@ use thiserror::Error;
 
 const BREADCRUMB_FILE: &str = "boot-breadcrumbs.log";
 const MAX_FILE_SIZE: u64 = 64 * 1024;
-const PHASES: [&str; 13] = [
+const PHASES: [&str; 14] = [
     "process-start",
     "window-created",
     "webview-attached",
@@ -21,8 +21,22 @@ const PHASES: [&str; 13] = [
     "error",
     "retry",
     "slow",
+    "marks",
 ];
 const OUTCOMES: [&str; 5] = ["start", "ok", "error", "slow", "timeout"];
+const MARK_KEYS: [&str; 11] = [
+    "script",
+    "pending",
+    "migrating",
+    "loading-settings",
+    "detecting-cli",
+    "loading-workspaces",
+    "restoring-session",
+    "ready",
+    "hydrated",
+    "board",
+    "splash",
+];
 
 static LAUNCH_ID: OnceLock<String> = OnceLock::new();
 static WRITE_LOCK: Mutex<()> = Mutex::new(());
@@ -84,10 +98,13 @@ fn sanitize_detail(detail: Option<&str>) -> Option<&str> {
         if OUTCOMES.contains(&token) {
             return true;
         }
-        let Some(digits) = token.strip_prefix("ms=") else {
+        let Some((key, digits)) = token.split_once('=') else {
             return false;
         };
-        !digits.is_empty() && digits.len() <= 9 && digits.bytes().all(|byte| byte.is_ascii_digit())
+        (key == "ms" || MARK_KEYS.contains(&key))
+            && !digits.is_empty()
+            && digits.len() <= 9
+            && digits.bytes().all(|byte| byte.is_ascii_digit())
     });
     if is_valid {
         return Some(value);
@@ -223,6 +240,17 @@ mod tests {
     #[test]
     fn valid_detail_survives() {
         assert_eq!(sanitize_detail(Some("ms=1234,ok")), Some("ms=1234,ok"));
+    }
+
+    #[test]
+    fn marks_detail_survives_for_known_keys_only() {
+        assert!(validate_phase("marks").is_ok());
+        assert_eq!(
+            sanitize_detail(Some("script=12,ready=840,board=910,splash=1290")),
+            Some("script=12,ready=840,board=910,splash=1290")
+        );
+        assert_eq!(sanitize_detail(Some("script=12,home=3")), None);
+        assert_eq!(sanitize_detail(Some("board=")), None);
     }
 
     #[test]
