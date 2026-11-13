@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react';
 import { SquareArrowOutUpRight } from 'lucide-react';
-import { openUrl } from '../../lib/editor';
+import { requestOpenLink } from '../../lib/requestOpenLink';
 import { CopyButton, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
 export const ExternalRefActions = ({ url, label, hostLabel }: Props) => {
   const onOpen = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    void openUrl(url);
+    requestOpenLink({ url, event });
   };
 
   return (

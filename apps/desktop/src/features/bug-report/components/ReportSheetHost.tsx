@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, useDropdownDirection } from '@goodboy/ui';
 import { useToast } from '../../../shared/components/Toast';
-import { openUrl } from '../../../shared/lib/editor';
+import { openLink } from '../../open/openLink';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { redactReport } from '../../../shared/utils/redactReport';
 import { useAppStore } from '../../../store';
@@ -160,7 +160,7 @@ export const ReportSheetHost = () => {
             ? undefined
             : {
                 label: filed.kind === 'comment' ? 'View comment' : 'View issue',
-                onClick: () => void openUrl(url),
+                onClick: () => openLink({ url, sessionId: null, place: 'outside' }),
               },
       });
     },

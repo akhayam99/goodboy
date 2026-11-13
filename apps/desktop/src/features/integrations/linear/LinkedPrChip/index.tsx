@@ -7,7 +7,7 @@ import {
   type PullRequestPresentation,
 } from '../../../../shared/utils/pullRequestPresentation';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { useAppStore } from '../../../../store';
 import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import { selectSessionForPr } from '../../../../store/slices/github/selectSessionForPr';
@@ -26,7 +26,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
     const sessionMatch =
       workspaceId == null ? null : selectSessionForPr({ state, workspaceId, url: pr.url });
     if (sessionMatch == null || state.appStudio !== null) {
-      void openUrl(pr.url);
+      openLink({ url: pr.url });
       return;
     }
     const { sessionId, number } = sessionMatch;

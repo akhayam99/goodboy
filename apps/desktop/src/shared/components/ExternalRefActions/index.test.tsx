@@ -1,17 +1,24 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-
-const h = vi.hoisted(() => ({ openUrl: vi.fn() }));
-
-vi.mock('../../lib/editor', () => ({ openUrl: h.openUrl }));
-
 import { ExternalRefActions } from './index';
+
+const opened = vi.fn<(event: Event) => void>();
+
+const lastDetail = (): unknown => {
+  const event = opened.mock.calls.at(-1)?.[0];
+  return event instanceof CustomEvent ? event.detail : undefined;
+};
+
+beforeEach(() => {
+  window.addEventListener('goodboy:open-link', opened);
+});
 
 afterEach(() => {
   cleanup();
-  h.openUrl.mockClear();
+  window.removeEventListener('goodboy:open-link', opened);
+  opened.mockClear();
 });
 
 describe('ExternalRefActions', () => {
@@ -23,11 +30,16 @@ describe('ExternalRefActions', () => {
     expect(screen.getByRole('button', { name: 'Copy issue link' })).toBeDefined();
   });
 
-  it('opens the url through the host shell instead of the webview', () => {
+  it('hands the url to the open router instead of the webview', () => {
     render(<ExternalRefActions url="https://linear.app/GB-12" label="issue" hostLabel="Linear" />);
 
     fireEvent.click(screen.getByRole('link', { name: 'Open in Linear' }));
 
-    expect(h.openUrl).toHaveBeenCalledWith('https://linear.app/GB-12');
+    expect(opened).toHaveBeenCalledTimes(1);
+    expect(lastDetail()).toEqual({
+      url: 'https://linear.app/GB-12',
+      hasMetaKey: false,
+      hasCtrlKey: false,
+    });
   });
 });

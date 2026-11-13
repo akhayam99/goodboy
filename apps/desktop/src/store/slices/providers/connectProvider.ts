@@ -15,7 +15,7 @@ import {
   resolveLifecycleCommand,
   type LifecycleExitPayload,
 } from '../../../features/providers/provider-lifecycle';
-import { openUrl } from '../../../shared/lib/editor';
+import { requestOpenLink } from '../../../shared/lib/requestOpenLink';
 import { clearStallTimer, disposeConnectRun, getConnectRun, openConnectRun } from './connectRuns';
 import type { ConnectRun } from './connectRuns';
 import { detectAuthUrl } from './detectAuthUrl';
@@ -361,7 +361,7 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
     const isUpgrade = run.authScore > 0;
     run.authScore = match.score;
     if (capability.browserOwner === 'goodboy' && !isUpgrade) {
-      void openUrl(match.url);
+      requestOpenLink({ url: match.url, sessionId: null, place: 'outside' });
     }
     if (isUpgrade) {
       patchConnect({ set, providerId, patch: { authUrl: match.url } });

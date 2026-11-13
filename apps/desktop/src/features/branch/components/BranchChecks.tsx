@@ -5,7 +5,7 @@ import { Button, EmptyState, ICON_SIZE, PageColumn } from '@goodboy/ui';
 import type { MountId, PrCheckRun, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
-import { openUrl } from '../../../shared/lib/editor';
+import { openLink } from '../../open/openLink';
 import { useAppStore } from '../../../store';
 import { branchGithubOf } from '../../../store/slices/github/branchGithubOf';
 import { selectedReviewEntryOf } from '../../../store/slices/review-source/activeReviewSource';
@@ -140,7 +140,7 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
                 variant="ghost"
                 size="sm"
                 aria-label={`Open on ${label}`}
-                onClick={() => void openUrl(url)}
+                onClick={() => openLink({ url, sessionId })}
               >
                 <HostLogo size={ICON_SIZE.row} aria-hidden />
                 Open
@@ -209,7 +209,7 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
                     />
                   ) : (
                     renderRow({
-                      onOpen: () => void openUrl(check.detailsUrl ?? fallbackUrl),
+                      onOpen: () => openLink({ url: check.detailsUrl ?? fallbackUrl, sessionId }),
                     })
                   )
           }
@@ -217,7 +217,7 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
           fallbackUrl={fallbackUrl}
           host={isPortHost ? host.kind : 'github'}
           isLoading={view.kind === 'loading'}
-          onOpenUrl={(url) => void openUrl(url)}
+          onOpenUrl={(url) => openLink({ url, sessionId })}
         />
       ) : (
         <section aria-label="Checks" className="flex flex-col gap-3">

@@ -3,7 +3,7 @@ import { SquareArrowOutUpRight } from 'lucide-react';
 import type { GhTokenStatus } from '@goodboy/types';
 import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
 
-import { openUrl } from '../../../shared/lib/editor';
+import { openLink } from '../../open/openLink';
 import { ghStatus, tauriGhRunner } from '../../integrations/github/github';
 import { DEFAULT_ISSUE_TYPE } from '../reportIssueTypes';
 import { collectCrashContext } from '../crashReport';
@@ -71,7 +71,11 @@ export const CrashReport = ({ heading, initialLine, errorPart }: Props) => {
         body="Thanks. Try again above when you are ready."
         actions={
           url == null ? undefined : (
-            <Button variant="secondary" size="sm" onClick={() => void openUrl(url)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openLink({ url, sessionId: null, place: 'outside' })}
+            >
               View issue
               <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
             </Button>

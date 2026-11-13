@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
     mocks.exitHandler = handler;
     return vi.fn();
   }),
-  openUrl: vi.fn(async () => undefined),
+  requestOpenLink: vi.fn(),
   checkProviderAuth: vi.fn(async (): Promise<{ state: string; identity: string | null }> => ({
     state: 'disconnected',
     identity: null,
@@ -44,9 +44,13 @@ vi.mock('../../../features/providers/providers', async (importOriginal) => {
   };
 });
 
-vi.mock('../../../shared/lib/editor', () => ({ openUrl: mocks.openUrl }));
+vi.mock('../../../shared/lib/requestOpenLink', () => ({
+  requestOpenLink: mocks.requestOpenLink,
+}));
 
 const AUTH_URL = 'https://claude.ai/oauth/authorize?code=1';
+
+const outside = (url: string) => ({ url, sessionId: null, place: 'outside' });
 
 type Harness = {
   readonly phase: () => ProviderConnectPhase;
@@ -161,8 +165,8 @@ describe('connectProvider', () => {
     await h.connect('cursor');
     h.emitOutput(`visit ${AUTH_URL} to continue\n`);
     h.emitOutput(`still waiting, open ${AUTH_URL}\n`);
-    expect(mocks.openUrl).toHaveBeenCalledTimes(1);
-    expect(mocks.openUrl).toHaveBeenCalledWith(AUTH_URL);
+    expect(mocks.requestOpenLink).toHaveBeenCalledTimes(1);
+    expect(mocks.requestOpenLink).toHaveBeenCalledWith(outside(AUTH_URL));
     expect(h.phase()).toBe('handoff');
   });
 
@@ -172,7 +176,7 @@ describe('connectProvider', () => {
       const h = harness();
       await h.connect(providerId);
       h.emitOutput(`visit ${AUTH_URL} to continue\n`);
-      expect(mocks.openUrl).not.toHaveBeenCalled();
+      expect(mocks.requestOpenLink).not.toHaveBeenCalled();
       expect(h.phase()).toBe('handoff');
       expect(h.authUrl()).toBe(AUTH_URL);
     },
@@ -182,9 +186,9 @@ describe('connectProvider', () => {
     const h = harness();
     await h.connect('cursor');
     h.emitOutput('see https://docs.cursor.com/en/cli/installation\n');
-    expect(mocks.openUrl).not.toHaveBeenCalled();
+    expect(mocks.requestOpenLink).not.toHaveBeenCalled();
     h.emitOutput(`open ${AUTH_URL}\n`);
-    expect(mocks.openUrl).toHaveBeenCalledWith(AUTH_URL);
+    expect(mocks.requestOpenLink).toHaveBeenCalledWith(outside(AUTH_URL));
     expect(h.phase()).toBe('handoff');
   });
 
@@ -192,9 +196,9 @@ describe('connectProvider', () => {
     const h = harness();
     await h.connect('cursor');
     h.emitOutput('trouble? https://cursor.com/login\n');
-    expect(mocks.openUrl).toHaveBeenCalledWith('https://cursor.com/login');
+    expect(mocks.requestOpenLink).toHaveBeenCalledWith(outside('https://cursor.com/login'));
     h.emitOutput(`open ${AUTH_URL}\n`);
-    expect(mocks.openUrl).toHaveBeenCalledTimes(1);
+    expect(mocks.requestOpenLink).toHaveBeenCalledTimes(1);
     expect(h.authUrl()).toBe(AUTH_URL);
   });
 
@@ -202,9 +206,9 @@ describe('connectProvider', () => {
     const h = harness();
     await h.connect('cursor');
     h.emitOutput('open https://claude.ai/oauth/authoriz');
-    expect(mocks.openUrl).not.toHaveBeenCalled();
+    expect(mocks.requestOpenLink).not.toHaveBeenCalled();
     h.emitOutput('e?code=1 to continue\n');
-    expect(mocks.openUrl).toHaveBeenCalledWith(AUTH_URL);
+    expect(mocks.requestOpenLink).toHaveBeenCalledWith(outside(AUTH_URL));
     expect(h.phase()).toBe('handoff');
   });
 
@@ -212,7 +216,7 @@ describe('connectProvider', () => {
     const h = harness();
     await h.connect('cursor');
     h.emitOutput(`open ${AUTH_URL}`);
-    expect(mocks.openUrl).not.toHaveBeenCalled();
+    expect(mocks.requestOpenLink).not.toHaveBeenCalled();
   });
 
   it('passes NO_OPEN_BROWSER to the cursor login so only goodboy opens the tab', async () => {

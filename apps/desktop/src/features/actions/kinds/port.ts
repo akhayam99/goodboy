@@ -9,7 +9,7 @@ import {
   Zap,
 } from 'lucide-react';
 import type { HiddenPortSource } from '@goodboy/core/monitoring';
-import { openUrl } from '../../../shared/lib/editor';
+import { openWebAction } from '../openWebAction';
 import type { StopProgress } from '../../../store/slices/monitoring/types';
 import type { ActionEnv, ObjectKindDefinition, PortActionTarget } from '../types';
 
@@ -112,11 +112,11 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
       icon: SquareArrowOutUpRight,
       group: 'open',
       when: isListening,
-      run: ({ facts }) => {
+      run: ({ facts, env }) => {
         if (facts.port === null) {
           return;
         }
-        return openUrl(`http://${addressOf({ port: facts.port })}`);
+        return openWebAction({ url: `http://${addressOf({ port: facts.port })}`, env });
       },
     },
     {

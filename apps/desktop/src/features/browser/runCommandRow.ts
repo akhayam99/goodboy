@@ -1,5 +1,5 @@
 import { useAppStore } from '../../store';
-import { openUrl } from '../../shared/lib/editor';
+import { openLinkOrThrow } from '../open/openLinkOrThrow';
 import { addressOf } from './addressOf';
 import { showBrowser } from './showBrowser';
 import { showBrowserTab } from './showBrowserTab';
@@ -41,7 +41,9 @@ export const runCommandRow = async ({ row, isAlternate, model, onDone }: Params)
   const isLocal = addressOf({ text: url }).kind === 'local';
   if (row.kind === 'outside' || (isAlternate && !isLocal)) {
     onDone();
-    await openUrl(url).catch((failure: unknown) => model.showError({ error: failure }));
+    await openLinkOrThrow({ url, sessionId: null, place: 'outside' }).catch((failure: unknown) =>
+      model.showError({ error: failure }),
+    );
     return;
   }
   if (row.kind === 'tab') {

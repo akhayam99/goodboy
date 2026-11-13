@@ -243,6 +243,7 @@
     "apps/desktop/src/features/resolve/learnWorkspaceReplyStyle.ts": 1,
     "apps/desktop/src/shared/lib/db.ts": 1
   },
+  "raw-open": {},
   "stringified-error": {
     "packages/core/src/github/gh.ts": 1,
     "packages/core/src/planner/parser.ts": 1,

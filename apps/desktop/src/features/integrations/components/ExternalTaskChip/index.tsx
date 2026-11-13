@@ -3,7 +3,7 @@ import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/
 import { IntegrationGlyph } from '../IntegrationGlyph';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../LinkedWorkRow';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 
 type ExternalTaskChipTask = Pick<SessionExternalTask, 'provider' | 'identifier' | 'title' | 'url'>;
 
@@ -84,7 +84,7 @@ export const ExternalTaskChip = ({
       if (task.url === '') {
         return;
       }
-      void openUrl(task.url);
+      openLink({ url: task.url });
     });
 
   if (appearance === 'row') {

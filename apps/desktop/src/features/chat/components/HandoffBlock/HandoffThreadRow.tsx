@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { GhostActionButton } from '@goodboy/ui';
 import type { HandoffRef, SessionId } from '@goodboy/types';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { ConversationThread } from '../../../integrations/github/components/PullRequest/ConversationThread';
 import { openReviewThread } from '../../../review/openReviewThread';
 import { TranscriptChevron } from '../TranscriptChevron';
@@ -52,7 +52,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
           <GhostActionButton
             icon={ArrowUpRight}
             label="Open on GitHub"
-            onClick={() => void openUrl(link)}
+            onClick={() => openLink({ url: link })}
           />
         ) : null}
       </div>
@@ -60,7 +60,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
         <span className="text-meta text-muted-foreground">{entry.author}</span>
       )}
       {open && docked !== null ? (
-        <ConversationThread thread={docked} onOpenUrl={(url) => void openUrl(url)} />
+        <ConversationThread thread={docked} onOpenUrl={(url) => openLink({ url })} />
       ) : entry.label === '' ? null : (
         <span className="text-meta text-foreground">{entry.label}</span>
       )}

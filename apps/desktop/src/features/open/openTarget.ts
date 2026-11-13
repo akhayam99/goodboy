@@ -9,13 +9,14 @@ import { openBesideSession } from './openBesideSession';
 import { openOutside } from './openOutside';
 import { openPlaceOf } from './openPlaceOf';
 import { readLinksOpen } from './readLinksOpen';
-import type { OpenClick, OpenPlace, OpenResult, OpenTarget } from './types';
+import type { OpenClick, OpenForcedPlace, OpenPlace, OpenResult, OpenTarget } from './types';
 
 type Params = {
   readonly target: OpenTarget;
   readonly sessionId: SessionId | null;
   readonly event: OpenClick;
   readonly shouldReport?: boolean;
+  readonly place?: OpenForcedPlace;
 };
 
 type GoParams = {
@@ -46,9 +47,11 @@ export const openTarget = async ({
   sessionId,
   event,
   shouldReport = true,
+  place: forced,
 }: Params): Promise<OpenResult> => {
-  const isOwnClick = isOwnBrowserClick({ event });
-  const mode = await readLinksOpen();
+  const isOutside = forced === 'outside';
+  const isOwnClick = isOutside || isOwnBrowserClick({ event });
+  const mode = isOutside ? 'browser' : await readLinksOpen();
   const place = openPlaceOf({ target, mode, isOwnClick, sessionId });
   try {
     await go({ target, sessionId, place });

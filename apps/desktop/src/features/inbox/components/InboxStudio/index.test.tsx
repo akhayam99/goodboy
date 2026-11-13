@@ -33,7 +33,7 @@ const h = vi.hoisted(() => ({
     bitbucket: null as string | null,
   },
   refetch: vi.fn(),
-  openUrl: vi.fn(async () => undefined),
+  openLink: vi.fn(),
   isEscapeEnabled: true as boolean,
   closeLabel: '' as string,
   toggleStar: vi.fn<(record: InboxRecord) => Promise<void>>(async () => undefined),
@@ -61,7 +61,7 @@ vi.mock('../../../../shared/components/StudioShell', () => ({
   },
 }));
 
-vi.mock('../../../../shared/lib/editor', () => ({ openUrl: h.openUrl }));
+vi.mock('../../../open/openLink', () => ({ openLink: h.openLink }));
 
 vi.mock('../../../../store', () => ({
   useSessionById: (id: SessionId | null) =>
@@ -361,7 +361,7 @@ beforeEach(() => {
     bitbucket: null,
   };
   h.refetch.mockReset();
-  h.openUrl.mockClear();
+  h.openLink.mockClear();
   h.toggleStar.mockClear();
   h.orderCalls = 0;
   h.newKeys = new Set();
@@ -571,7 +571,7 @@ describe('InboxStudio', () => {
 
     press('list.openInTool');
 
-    expect(h.openUrl).toHaveBeenCalledWith('https://example.invalid/linear/ENG-1');
+    expect(h.openLink).toHaveBeenCalledWith({ url: 'https://example.invalid/linear/ENG-1' });
     expect(screen.queryByTestId('detail')).toBeNull();
   });
 
@@ -606,7 +606,7 @@ describe('InboxStudio', () => {
     pressKey({ code: 'KeyO', target: search });
 
     expect(next.defaultPrevented).toBe(false);
-    expect(h.openUrl).not.toHaveBeenCalled();
+    expect(h.openLink).not.toHaveBeenCalled();
     expect(cursorKeys()).toEqual([sentryError.key]);
   });
 

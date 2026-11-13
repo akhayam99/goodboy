@@ -1858,7 +1858,7 @@ with more it is a list. The browser starts at **System default**, and a
 ⌘-click on a link, wireframes and anything opened outside a session open there. A fourth row,
 **Links**, picks where a plain click on a web link, a plan or a report goes: **In Goodboy**
 (the default, in a tab beside the session) or **In your browser**. One function, `openTarget`,
-decides where each target opens (see [browser.md](browser.md#the-click-rule)). If the browser you picked is removed,
+decides where each target opens (see [browser.md](browser.md#the-click-rule)); the Open verbs of the action registry (`features/actions/kinds/`) go through it, and a failed open shows on the run line with Retry. If the browser you picked is removed,
 links open in the system browser and a note in Settings says so. When you are done, you pick the
 session up again in Goodboy.
 
