@@ -18,7 +18,7 @@ import {
 } from '@goodboy/core/review-source';
 import type { PrMergeMethod, PullRequestState, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { openUrl } from '../../../shared/lib/editor';
+import { openWebAction } from '../openWebAction';
 import { selectActiveProjectPrs } from '../../../store/slices/github/activeProjectPrs';
 import { pullRequestViewOf } from '../../../store/slices/pull-request-view/pullRequestViewOf';
 import { branchGithubOf } from '../../../store/slices/github/branchGithubOf';
@@ -226,11 +226,8 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     group: 'open',
     when: hasPr,
     slot: () => 'secondary',
-    run: ({ facts }) => {
-      if (facts.pr !== null) {
-        void openUrl(facts.pr.url);
-      }
-    },
+    run: ({ facts, env }) =>
+      openWebAction({ url: facts.pr?.url ?? null, env, sessionId: facts.sessionId }),
   },
   {
     id: 'pullRequest.checkLog',
@@ -241,7 +238,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     group: 'open',
     when: isPullRequestLive,
     slot: () => 'hover',
-    run: ({ facts }) => {
+    run: ({ facts, env }) => {
       const fallback =
         facts.pr === null
           ? null
@@ -251,9 +248,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
               ? `${facts.pr.url}/pipelines`
               : facts.pr.url;
       const url = facts.failingLogUrl ?? fallback;
-      if (url !== null) {
-        void openUrl(url);
-      }
+      return openWebAction({ url, env, sessionId: facts.sessionId });
     },
   },
   {

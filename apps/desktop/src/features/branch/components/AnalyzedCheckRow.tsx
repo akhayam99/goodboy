@@ -11,7 +11,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { openUrl } from '../../../shared/lib/editor';
+import { openLink } from '../../open/openLink';
 import { useAppStore } from '../../../store';
 import type { CheckChainState } from '../../../store/slices/agents/selectCheckChain';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
@@ -128,7 +128,7 @@ export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, rende
   const AgentsIcon = CONCEPT_ICONS.agents;
   return renderRow({
     ...(chain.state === 'none' ? {} : { footnote: 'Click to open the Debugger' }),
-    onOpen: chain.state === 'none' ? () => void openUrl(url) : openAnalysis,
+    onOpen: chain.state === 'none' ? () => openLink({ url, sessionId }) : openAnalysis,
     status:
       chain.state === 'none' ? null : (
         <>

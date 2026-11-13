@@ -3,7 +3,7 @@ import { SquareArrowOutUpRight, SquareTerminal } from 'lucide-react';
 import { Button, CopyButton, ICON_SIZE, Reveal, useEscapeLayer } from '@goodboy/ui';
 import { InlineTerminal } from '../../../providers/components/InlineTerminal';
 
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import type { AgentRow } from '../agentRowOf';
 import { TerminalLines } from './TerminalLines';
 
@@ -54,7 +54,11 @@ export const AgentRowPanel = ({ row, isLocked, onRun }: Props) => {
           window.
         </span>
         {docsUrl === null ? null : (
-          <Button size="xs" variant="ghost" onClick={() => void openUrl(docsUrl)}>
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={() => openLink({ url: docsUrl, sessionId: null, place: 'outside' })}
+          >
             <SquareArrowOutUpRight size={ICON_SIZE.control} aria-hidden />
             How to install
           </Button>

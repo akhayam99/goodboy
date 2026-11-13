@@ -1,6 +1,6 @@
 import { TriangleAlert, Check } from 'lucide-react';
 import { ICON_SIZE } from '@goodboy/ui';
-import { openUrl } from '../../lib/editor';
+import { requestOpenLink } from '../../lib/requestOpenLink';
 import type { ScribeProposalState } from '../../hooks/useScribeProposal';
 
 type Props = {
@@ -23,7 +23,11 @@ export const ScribeProposalChip = ({ state }: Props) => {
         {url === null ? (
           label
         ) : (
-          <button type="button" className="hover:underline" onClick={() => void openUrl(url)}>
+          <button
+            type="button"
+            className="hover:underline"
+            onClick={() => requestOpenLink({ url })}
+          >
             {label}
           </button>
         )}

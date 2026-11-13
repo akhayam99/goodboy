@@ -24,6 +24,8 @@ export type LaunchTarget = Exclude<OpenTarget, { readonly kind: 'file' }>;
 
 export type OpenPlace = 'beside-session' | 'your-browser' | 'editor';
 
+export type OpenForcedPlace = 'outside';
+
 export type OpenResult =
   | { readonly status: 'opened'; readonly place: OpenPlace }
   | { readonly status: 'failed'; readonly reason: string };

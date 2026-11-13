@@ -33,7 +33,7 @@
   "apps/desktop/src/features/resolve/components/ReviewFlow/index.tsx": 654,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 418,
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 715,
-  "apps/desktop/src/features/search/components/SearchMode/index.tsx": 313,
+  "apps/desktop/src/features/search/components/SearchMode/index.tsx": 311,
   "apps/desktop/src/features/session/agent-kind.ts": 725,
   "apps/desktop/src/features/session/components/AgentDetailPane/index.tsx": 270,
   "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": 386,

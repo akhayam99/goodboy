@@ -5,7 +5,7 @@ import { useAppStore } from '../../../../store';
 import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLinkOrThrow } from '../../../open/openLinkOrThrow';
 import { addressOf } from '../../addressOf';
 import { addressTextOf } from '../../addressTextOf';
 import { browserFailureText } from '../../browserFailureText';
@@ -318,7 +318,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       if (!canOpenOutside) {
         return;
       }
-      void openUrl(url).catch((failure: unknown) =>
+      openLinkOrThrow({ url, sessionId: null, place: 'outside' }).catch((failure: unknown) =>
         setError(browserFailureText({ error: failure })),
       );
     },

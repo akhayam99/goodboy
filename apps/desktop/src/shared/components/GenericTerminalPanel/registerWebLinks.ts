@@ -1,7 +1,7 @@
 import type { MutableRefObject } from 'react';
 import type { Terminal } from '@xterm/xterm';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { openUrl } from '../../lib/editor';
+import { requestOpenLink } from '../../lib/requestOpenLink';
 import { webLinkHoverOf } from './webLinkHoverOf';
 import { webLinkRectOf, type TerminalLinkRect } from './webLinkRectOf';
 
@@ -27,7 +27,7 @@ export const registerWebLinks = ({ term, openRef, hoverRef }: Params): void => {
       (event, uri) => {
         const open = openRef.current;
         if (open === undefined) {
-          void openUrl(uri);
+          requestOpenLink({ url: uri, event });
           return;
         }
         open({ url: uri, event });

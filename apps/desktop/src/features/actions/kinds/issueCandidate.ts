@@ -1,5 +1,5 @@
 import { CircleCheck, Copy, Link, ListChecks, SquareArrowOutUpRight } from 'lucide-react';
-import { openUrl } from '../../../shared/lib/editor';
+import { openWebAction } from '../openWebAction';
 import type { IssueCandidateActionTarget, ObjectKindDefinition } from '../types';
 
 export type IssueCandidateFacts = {
@@ -23,7 +23,7 @@ export const ISSUE_CANDIDATE_KIND: ObjectKindDefinition<
       icon: SquareArrowOutUpRight,
       group: 'open',
       when: ({ facts }) => facts.url !== '',
-      run: ({ facts }) => openUrl(facts.url),
+      run: ({ facts, env }) => openWebAction({ url: facts.url, env }),
     },
     {
       id: 'issueCandidate.pickAlone',

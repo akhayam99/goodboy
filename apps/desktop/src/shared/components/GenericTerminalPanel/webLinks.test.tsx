@@ -79,12 +79,6 @@ vi.mock('@xterm/addon-search', () => ({
     }
   },
 }));
-vi.mock('../../lib/editor', () => ({
-  openUrl: async (url: string) => {
-    h.opened.push(url);
-  },
-}));
-
 import { GenericTerminalPanel, type TerminalDriver } from './index';
 
 const driver: TerminalDriver = {
@@ -96,14 +90,23 @@ const driver: TerminalDriver = {
 
 const ADDRESS = 'http://localhost:5173/';
 
+const onOpenLink = (event: Event): void => {
+  const url = event instanceof CustomEvent ? Reflect.get(event.detail, 'url') : null;
+  if (typeof url === 'string') {
+    h.opened.push(url);
+  }
+};
+
 beforeEach(() => {
   h.handler = null;
   h.options = null;
   h.opened = [];
+  window.addEventListener('goodboy:open-link', onOpenLink);
 });
 
 afterEach(() => {
   cleanup();
+  window.removeEventListener('goodboy:open-link', onOpenLink);
 });
 
 describe('the terminal panel web links', () => {
@@ -125,7 +128,7 @@ describe('the terminal panel web links', () => {
     expect(h.opened).toEqual([]);
   });
 
-  it('keeps opening your browser when no opener was given', () => {
+  it('asks the open router for the link when no opener was given', () => {
     render(<GenericTerminalPanel terminalId="ledger-core::t2" driver={driver} isActive />);
 
     h.handler?.(new MouseEvent('click'), ADDRESS);

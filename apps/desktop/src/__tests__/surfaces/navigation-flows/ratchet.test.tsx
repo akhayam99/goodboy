@@ -60,8 +60,6 @@ const EXEMPT: Readonly<Record<string, string>> = {
   openShortcutHelp: 'same page as the shortcuts settings row',
   openArtifactConversation: 'an effect of the artifact studio, no control calls it',
   openDiffLens: 'only resolver thread cards and the resolve publish strip call it',
-  openStorageArtifact:
-    'storage rows list artifacts read from disk, which the bridge mock has none of',
   openScribePullRequest: 'the engine pushing and opening the pull request, not a page',
   openMountRequest:
     'the registry verb behind the pull request link of the retired Overview mount rows; the worktree level entry opens the page through navigate',

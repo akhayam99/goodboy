@@ -1,6 +1,6 @@
 import type { SearchHit, WorkspaceId } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../store';
-import { openUrl } from '../../shared/lib/editor';
+import { openLinkOrThrow } from '../open/openLinkOrThrow';
 import { openPlanAnywhere } from '../plans/openPlanAnywhere';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
 import { isNoteOnBranch, isUnassignedNote } from '../resolve/notes/noteThread';
@@ -34,7 +34,7 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
     return false;
   }
   if (target.kind === 'url') {
-    await openUrl(target.url);
+    await openLinkOrThrow({ url: target.url });
     return true;
   }
   if (target.kind === 'inbox') {

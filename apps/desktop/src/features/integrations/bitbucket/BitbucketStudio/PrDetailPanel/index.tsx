@@ -10,7 +10,7 @@ import { Notice, PaneShell } from '@goodboy/ui';
 import type { BitbucketIntegrationBinding, FileDiff, SessionId, WorkspaceId } from '@goodboy/types';
 import { bitbucketPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { checksRollup } from '../../../github/checksRollup';
-import { openUrl } from '../../../../../shared/lib/editor';
+import { openLink } from '../../../../open/openLink';
 import { PrChecks } from '../../../github/components/PullRequest/PrChecks';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
@@ -168,7 +168,7 @@ export const PrDetailPanel = ({
           checks={detail.checks}
           fallbackUrl={webUrl}
           host="bitbucket"
-          onOpenUrl={(url) => void openUrl(url)}
+          onOpenUrl={(url) => openLink({ url })}
         />
       ),
     },

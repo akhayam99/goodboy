@@ -704,6 +704,17 @@ page on disk) or a file. Folders join it later.
   help text says "in a session". A wireframe always opens your browser: it is
   agent-written HTML with scripts, and it waits for the wall audit before it
   opens in a tab.
+- **The outside list.** A link that must leave the app passes
+  `place: 'outside'` and opens your browser whatever Links says: the
+  sponsor link, the bug report and crash links, the connect steps of Jira,
+  Linear, Sentry and Slack, the provider connect and reset links, and a
+  saved copy opened from the Storage page.
+- **No raw open.** Nothing outside `features/open/` imports `openUrl` or
+  `openArtifactMirror`; the `raw-open` guard in `forbidden-patterns` counts
+  them and stays at zero. A link calls `openLink`, which reports a failure
+  through `reportError`. An action control calls `openLinkOrThrow` through
+  the runner, so the failure comes back to the run line with Retry and is
+  never reported twice.
 - **One decision.** `openPlaceOf` is the pure answer: the kind of target,
   Links, the command key and the session. `webLinkPeekWords.ts` reads the same
   answer for the peek card. `openWebLink` is a thin caller for a web address;

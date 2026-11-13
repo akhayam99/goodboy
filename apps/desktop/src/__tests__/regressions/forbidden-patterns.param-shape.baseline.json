@@ -1768,7 +1768,6 @@
     "apps/desktop/src/store/slices/storage/loadStorage.ts": 2,
     "apps/desktop/src/store/slices/storage/loadStorageArtifacts.ts": 2,
     "apps/desktop/src/store/slices/storage/measureStorageSizes.ts": 2,
-    "apps/desktop/src/store/slices/storage/openStorageArtifact.ts": 1,
     "apps/desktop/src/store/slices/storage/pruneArchivedTranscripts.ts": 1,
     "apps/desktop/src/store/slices/storage/removeStorageFolders.ts": 2,
     "apps/desktop/src/store/slices/storage/scanStorageRepository.ts": 1,

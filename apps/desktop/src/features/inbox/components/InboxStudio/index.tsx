@@ -8,7 +8,7 @@ import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { useAppStore, useSessionById, type InboxStudioFocus } from '../../../../store';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
@@ -383,7 +383,7 @@ export const InboxStudio = ({
     if (url === '') {
       return;
     }
-    void openUrl(url);
+    openLink({ url });
   }, []);
 
   const activeCursorKeyRef = useRef(activeCursorKey);

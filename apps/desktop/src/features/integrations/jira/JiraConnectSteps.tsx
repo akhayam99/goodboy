@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeftRight, Check, SquareArrowOutUpRight, MessageSquare } from 'lucide-react';
 import { Button, formatError, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
-import { openUrl } from '../../../shared/lib/editor';
+import { openLink } from '../../open/openLink';
 import { useAppStore } from '../../../store';
 
 import { ConnectSteps, type ConnectStepDef } from '../components/ConnectSteps';
@@ -97,7 +97,7 @@ export const JiraConnectSteps = ({ workspaceId, shouldAutoFocus = false, onConne
           size="sm"
           onClick={() => {
             setHasOpenedLink(true);
-            void openUrl(TOKEN_URL);
+            openLink({ url: TOKEN_URL, sessionId: null, place: 'outside' });
           }}
         >
           Open Atlassian

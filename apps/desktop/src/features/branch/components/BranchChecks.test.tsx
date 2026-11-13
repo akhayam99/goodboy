@@ -12,7 +12,7 @@ vi.mock('../../../shared/lib/editor', async (importOriginal) => ({
 import { bitbucketMountsOf } from '../../../store/slices/mount-request/requestOf';
 import { invoke } from '@tauri-apps/api/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import { brandId } from '@goodboy/types';
 import type {
@@ -37,6 +37,7 @@ import type { SessionGithubState } from '../../../store/types';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { withPullRequestViewEntry } from '../../../store/slices/pull-request-view/pullRequestViewAt';
 import { openUrl } from '../../../shared/lib/editor';
+import { SETTING_LINKS_OPEN } from '../../../shared/lib/linksOpenSetting';
 import { seedResolveBitbucketScene } from '../../../app/components/MockScene/scenes/resolveBitbucketSeed';
 import { seedResolveGitlabScene } from '../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import { SESSION, seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
@@ -55,6 +56,7 @@ beforeEach(async () => {
   seedResolveScene({ expandedThreadId: null });
   refresh = vi.fn(async () => undefined);
   useAppStore.setState({ refreshSessionPrDetail: refresh });
+  useAppStore.setState({ settings: { [SETTING_LINKS_OPEN]: 'browser' } });
   vi.mocked(openUrl).mockClear();
 });
 
@@ -197,7 +199,7 @@ describe('Checks tab with runs', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /unit tests/ }));
 
-    expect(openUrl).toHaveBeenCalledWith('https://ci.invalid/3');
+    await waitFor(() => expect(openUrl).toHaveBeenCalledWith('https://ci.invalid/3'));
   });
 });
 
@@ -256,7 +258,7 @@ describe('Checks tab when nothing has reported', () => {
     expect(screen.getByText('No checks have reported on this pull request.')).toBeDefined();
     expect(screen.queryByText(/runs no checks/i)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Open on GitHub/ }));
-    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('/pull/318'));
+    await waitFor(() => expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('/pull/318')));
   });
 });
 

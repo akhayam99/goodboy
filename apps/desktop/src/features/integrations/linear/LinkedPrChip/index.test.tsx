@@ -30,7 +30,7 @@ const h = vi.hoisted(() => ({
     selectSessionPr: vi.fn(async () => undefined),
     navigate: vi.fn(),
   } as Store,
-  openUrl: vi.fn(async () => undefined),
+  openLink: vi.fn(),
 }));
 
 vi.mock('../../../../store', async () => ({
@@ -40,8 +40,8 @@ vi.mock('../../../../store', async () => ({
   }),
 }));
 
-vi.mock('../../../../shared/lib/editor', () => ({
-  openUrl: h.openUrl,
+vi.mock('../../../open/openLink', () => ({
+  openLink: h.openLink,
 }));
 
 import { LinkedPrChip } from '.';
@@ -68,7 +68,7 @@ beforeEach(() => {
   h.store.sessionGithub = {};
   h.store.selectSessionPr.mockClear();
   h.store.navigate.mockClear();
-  h.openUrl.mockClear();
+  h.openLink.mockClear();
 });
 
 afterEach(cleanup);
@@ -88,7 +88,7 @@ describe('LinkedPrChip', () => {
     expect(h.store.navigate).toHaveBeenCalledWith({
       to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'pr' }),
     });
-    expect(h.openUrl).not.toHaveBeenCalled();
+    expect(h.openLink).not.toHaveBeenCalled();
   });
 
   it('switches to another session of the workspace that holds the pull request', () => {
@@ -105,7 +105,7 @@ describe('LinkedPrChip', () => {
     expect(h.store.navigate).toHaveBeenCalledWith({
       to: branchPlace({ sessionId: 'session-2' as SessionId, tab: 'pr' }),
     });
-    expect(h.openUrl).not.toHaveBeenCalled();
+    expect(h.openLink).not.toHaveBeenCalled();
   });
 
   it('opens the browser for a pull request no session in the workspace tracks', () => {
@@ -123,7 +123,7 @@ describe('LinkedPrChip', () => {
     );
     fireEvent.click(screen.getByRole('button'));
 
-    expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/other/pull/9');
+    expect(h.openLink).toHaveBeenCalledWith({ url: 'https://github.com/acme/other/pull/9' });
     expect(h.store.navigate).not.toHaveBeenCalled();
   });
 
@@ -138,7 +138,7 @@ describe('LinkedPrChip', () => {
     );
     fireEvent.click(screen.getByRole('button'));
 
-    expect(h.openUrl).toHaveBeenCalledWith(SESSION_PR.url);
+    expect(h.openLink).toHaveBeenCalledWith({ url: SESSION_PR.url });
     expect(h.store.navigate).not.toHaveBeenCalled();
     expect(h.store.selectSessionPr).not.toHaveBeenCalled();
     h.store.appStudio = null;

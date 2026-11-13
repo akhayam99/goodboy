@@ -1,5 +1,5 @@
 import { Link, SquareArrowOutUpRight } from 'lucide-react';
-import { openUrl } from '../../../shared/lib/editor';
+import { openWebAction } from '../openWebAction';
 import type { LinkActionTarget, ObjectKindDefinition } from '../types';
 
 export type LinkFacts = {
@@ -16,7 +16,7 @@ export const LINK_KIND: ObjectKindDefinition<LinkActionTarget, LinkFacts> = {
       icon: SquareArrowOutUpRight,
       group: 'open',
       when: () => true,
-      run: ({ facts }) => openUrl(facts.href),
+      run: ({ facts, env }) => openWebAction({ url: facts.href, env }),
     },
     {
       id: 'link.copy',

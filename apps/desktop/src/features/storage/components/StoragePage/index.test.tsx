@@ -134,7 +134,7 @@ beforeEach(() => {
     loadFolderHistorySize: vi.fn(async () => undefined),
     storageArtifacts: [unusedReport, openedReport, freshPlan],
     storageDeletingArtifacts: {},
-    openStorageArtifact: vi.fn(async () => undefined),
+    markStorageArtifactOpened: vi.fn(async () => undefined),
     keepStorageArtifact: vi.fn(async () => undefined),
     deleteStorageArtifacts: vi.fn(async () => ({ deleted: 1, failed: [] })),
     storageStats: {

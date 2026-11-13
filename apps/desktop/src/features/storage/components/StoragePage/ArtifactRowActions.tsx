@@ -3,6 +3,7 @@ import { Bookmark, ChevronDown, Clock, Eye } from 'lucide-react';
 import { Button, cn, ICON_SIZE, OverflowMenu, tintClasses, type MenuEntry } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
+import { openStorageArtifact } from '../../openStorageArtifact';
 
 import { KEEP_DAYS } from '../../../actions/kinds/worktree';
 
@@ -19,7 +20,7 @@ type AttemptParams = {
 };
 
 export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props) => {
-  const openStorageArtifact = useAppStore((state) => state.openStorageArtifact);
+  const markStorageArtifactOpened = useAppStore((state) => state.markStorageArtifactOpened);
   const keepStorageArtifact = useAppStore((state) => state.keepStorageArtifact);
   const reportError = useAppStore((state) => state.reportError);
 
@@ -60,7 +61,10 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
         onClick={() =>
           attempt({
             title: "Couldn't open this artifact",
-            action: () => openStorageArtifact({ id: artifact.id }),
+            action: async () => {
+              await openStorageArtifact({ artifact });
+              await markStorageArtifactOpened({ id: artifact.id });
+            },
           })
         }
       >

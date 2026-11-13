@@ -180,6 +180,9 @@ const INVOKE_OWNER = 'apps/desktop/src/shared/lib/invokeCommand.ts';
 const CAUGHT_SOURCE = /^(?:apps[/]desktop[/]src|packages[/]ui[/]src|packages[/]core[/]src)[/]/;
 export const TAURI_CORE_IMPORT =
   /import\s+\{[^}]*\binvoke\b[^}]*\}\s*from\s*['"]@tauri-apps\/api\/core['"]|import\s+\*\s+as\s+\w+\s+from\s*['"]@tauri-apps\/api\/core['"]|import\(\s*['"]@tauri-apps\/api\/core['"]\s*\)|require\(\s*['"]@tauri-apps\/api\/core['"]\s*\)/g;
+const OPEN_OWNER = 'apps/desktop/src/features/open/';
+const RAW_OPEN_IMPORT =
+  /import\s+\{[^}]*\b(?:openUrl|openArtifactMirror)\b[^}]*\}\s*from\s*['"][^'"]+['"]/g;
 const CATCH_BINDING = /\bcatch\s*\(\s*(\w+)|\.catch\(\s*\(?\s*(\w+)/;
 const CATCH_CONTINUATION_BINDING = /^\s*\(?\s*(\w+)\s*(?::[^)=]*)?\)?\s*=>/;
 
@@ -368,6 +371,15 @@ export const RULES = [
         ? 0
         : (file.lines.join('\n').match(TAURI_CORE_IMPORT) ?? []).length,
     hint: 'call invokeCommand from shared/lib/invokeCommand.ts, never invoke: it gives every rejection a kind and a message',
+  },
+  {
+    id: 'raw-open',
+    kinds: ['ts'],
+    count: (file) =>
+      file.path.startsWith(OPEN_OWNER)
+        ? 0
+        : (file.lines.join('\n').match(RAW_OPEN_IMPORT) ?? []).length,
+    hint: 'open a target with openTarget from features/open, and say place: outside for a page that must leave the app; never import openUrl or openArtifactMirror',
   },
   {
     id: 'stringified-error',

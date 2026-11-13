@@ -1,4 +1,4 @@
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { PR_URL } from '../../releasePrs';
 
 type Props = {
@@ -15,7 +15,9 @@ export const PrRef = ({ prs }: Props) => {
         <button
           key={pr}
           type="button"
-          onClick={() => void openUrl(PR_URL({ number: pr }))}
+          onClick={() =>
+            openLink({ url: PR_URL({ number: pr }), sessionId: null, place: 'outside' })
+          }
           className="text-meta text-faint-foreground hover:text-muted-foreground hover:underline"
         >
           #{pr}
