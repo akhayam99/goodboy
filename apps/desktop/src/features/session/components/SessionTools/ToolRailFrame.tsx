@@ -141,6 +141,7 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
           isCurrent={pageKind === tool.pane}
           fact={toolFactOf({ pane: tool.pane, runningCount, tabCount })}
           count={tool.pane === 'terminal' ? runningCount : (tabCount ?? 0)}
+          isCountLoading={tool.pane === 'browser' && workspaceId !== null && tabCount === null}
           signal={tool.pane === 'terminal' ? terminalSignal : null}
           {...rovingOf({ index: sessionTools.length + offset })}
           onToggle={() => toggleWorkspaceTool({ tool })}

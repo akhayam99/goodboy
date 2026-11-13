@@ -24,8 +24,7 @@ import {
   type StoryStore,
 } from '../store/storyHarness';
 import type { AppState } from '../store/types';
-import { useSessionCost } from '../store/slices/sessions/selectors';
-import { useNonResolverStandaloneAgents } from '../store/slices/agents/selectors';
+import { useSessionSummary } from '../features/workspace/hooks/useSessionSummary';
 import { ToastProvider } from '../shared/components/Toast';
 import { perfSeam } from '../shared/lib/perfSeam';
 import { PERF_COUNT_NAMES } from '../shared/lib/perfCountNames';
@@ -302,20 +301,21 @@ describe('the Browser page stays inside its budget', () => {
 });
 
 describe('numbers appear before their data', () => {
-  it('shows a number for the cost and the agent count, and none for the tab count, while nothing has loaded', () => {
+  it('shows no number for the cost, the agent count or the tab count while nothing has loaded', () => {
     const workspaceId = nextWorkspaceId();
     const session = buildStorySession({ id: nextSessionId(), workspaceId });
     act(() => {
       useAppStore.setState({ sessions: [session], currentWorkspaceId: workspaceId });
     });
-    const cost = renderHook(() => useSessionCost(session.id)).result.current;
-    const agents = renderHook(() => useNonResolverStandaloneAgents(session.id)).result.current;
+    const summary = renderHook(() => useSessionSummary({ session })).result.current;
     const tabs = selectBrowserTabCount({
       state: useAppStore.getState(),
       workspaceId,
     });
 
-    const shown = [tabs, cost, agents.length].filter((value) => typeof value === 'number');
+    const shown = [tabs, summary.cost, summary.agentCount].filter(
+      (value) => typeof value === 'number',
+    );
 
     expect(shown.length).toBe(SHELL_BUDGETS.numbersShownBeforeTheirData);
   });

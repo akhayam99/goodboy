@@ -1024,3 +1024,13 @@ second layer the window class (`src-tauri/src/fullscreen_escape.rs`) replaces
 `cancelOperation:`, `keyDown:` and `toggleFullScreen:`, keeping any original
 implementation for other keys, and drops an Esc in full screen. Leave full
 screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
+
+**A number that has not loaded is a skeleton, never 0.** The Browser tool count
+in the rail (`selectBrowserTabCount` is `null` until the tab rows land), and the
+agent count and cost in the session hover card (`useSessionSummary` returns
+`null` and `isCountsLoading` until the phase runs and the telemetry are in the
+store) draw a skeleton labelled Loading. The palette (`PaletteSkeleton`), a lazy
+studio (`StudioSkeleton`) and the artifact viewer in the reading drawer
+(`ArtifactSkeleton`) show their shape while their chunk loads. The router keeps
+`fallback={null}` only around the onboarding wizard, which draws nothing when it
+is not needed.

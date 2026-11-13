@@ -8,5 +8,5 @@ export const SHELL_BUDGETS = {
   browserListCallsPerIdleMinute: 0,
   mainThreadHopsPerIdleMinutePerTab: 0,
   commandsToListTabsOnBrowserPage: 1,
-  numbersShownBeforeTheirData: 2,
+  numbersShownBeforeTheirData: 0,
 } as const;
