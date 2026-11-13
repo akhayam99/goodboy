@@ -11,7 +11,7 @@ import { DrawerBackLink } from './DrawerBackLink';
 import { DrawerHeaderMore } from './DrawerHeaderMore';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
-import { RevealRegion } from './RevealRegion';
+import { DrawerRegion } from './DrawerRegion';
 import { HeaderRevealContext } from '../useHeaderReveal/headerRevealContext';
 import { PANE_RHYTHM } from '../paneRhythm';
 import { ICON_SIZE } from '../iconSize';
@@ -202,6 +202,25 @@ export const DrawerFrame = ({
       </ScrollFade>
     );
 
+  const hasRegion = !isHeaderless && (hasStepAside || scroll === 'self');
+  const header = isHeaderless ? null : (
+    <header
+      data-drawer-header=""
+      className={cn('flex shrink-0 flex-col', PANE_RHYTHM.headerInset, !hasStepAside && 'pb-2')}
+    >
+      <div
+        data-drawer-header-row=""
+        className={cn(
+          'flex min-w-0 gap-2 pl-4 pr-2',
+          hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,
+          hasToolbar ? 'items-start' : 'items-center',
+        )}
+      >
+        {titleRow}
+      </div>
+    </header>
+  );
+
   return (
     <section
       ref={sectionRef}
@@ -209,43 +228,31 @@ export const DrawerFrame = ({
       tabIndex={-1}
       className="flex h-full min-h-0 min-w-0 flex-col bg-subtle outline-none motion-safe:animate-nav-step-in"
     >
-      {isHeaderless ? null : (
-        <header
-          data-drawer-header=""
-          className={cn('flex shrink-0 flex-col', PANE_RHYTHM.headerInset, !hasStepAside && 'pb-2')}
-        >
-          <div
-            data-drawer-header-row=""
-            className={cn(
-              'flex min-w-0 gap-2 pl-4 pr-2',
-              hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,
-              hasToolbar ? 'items-start' : 'items-center',
-            )}
-          >
-            {titleRow}
-          </div>
-        </header>
-      )}
-      {hasStepAside ? (
-        <RevealRegion
-          surface="subtle"
-          header={
-            <DrawerHeaderMore
-              isOverlay={isOverlay}
-              meta={meta}
-              metaInsetPx={Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX}
-              toolbar={toolbar}
-            />
+      {hasRegion ? (
+        <DrawerRegion
+          header={header}
+          stepAside={
+            hasStepAside ? (
+              <DrawerHeaderMore
+                isOverlay={isOverlay}
+                meta={meta}
+                metaInsetPx={Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX}
+                toolbar={toolbar}
+              />
+            ) : null
           }
         >
           {backLink}
           {body}
-        </RevealRegion>
+        </DrawerRegion>
       ) : (
-        <HeaderRevealContext.Provider value={null}>
-          {backLink}
-          {body}
-        </HeaderRevealContext.Provider>
+        <>
+          {header}
+          <HeaderRevealContext.Provider value={null}>
+            {backLink}
+            {body}
+          </HeaderRevealContext.Provider>
+        </>
       )}
       {dock != null ? (
         <div ref={dockRef} className="shrink-0 px-4 py-3">

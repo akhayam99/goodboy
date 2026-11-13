@@ -488,8 +488,12 @@ never shows through the frosted row). The `PaneShell` body scroller
 (`ScrollFade` `isUnderPinned`) runs from the bottom of the shown header, or
 from the top of the region once the header steps aside or is pinned, with the
 inset as its top padding and `scroll-padding-top`, so text scrolls under the back row and
-an anchor lands below it. A self-scrolling body pads the inset instead and stays
-below the row. A sticky row inside the scroller (a list group label, a diff file
+an anchor lands below it. A self-scrolling body works the same way: the pane
+does not pad, and every vertical `ScrollFade` at the top of the body (the
+reader, and a side scroller beside it such as the Changes file tree) reads
+`PinnedInsetContext` and takes the inset itself, so text passes under the
+frosted row there too. A side scroller still never drives the header, and a
+scroller nested inside one that took the inset does not take it twice. A sticky row inside the scroller (a list group label, a diff file
 header, the report outline) sits at `top: 0`: a sticky box parks at the
 scroller's padding edge, so the inset padding already puts it right under the
 pinned zone, and `top: var(--reveal-inset)` would count the inset twice. A page whose header is a

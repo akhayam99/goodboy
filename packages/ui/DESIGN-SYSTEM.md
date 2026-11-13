@@ -121,13 +121,17 @@ drawer container at 1.2:1 or more on chrome and background, and
 `scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
 background, panel and floating.
 
-A sticky header is a surface, never a shadow. `sticky-surface` (and
-`sticky-surface-subtle` for a header on `subtle`) paints the role at 90% over a
-`backdrop-filter` of `blur(3px) saturate(1.2)`, so content that passes under it
-shows through frosted. Page content scrolls under the pinned back row of a
-`PaneShell`, so the frosted row is what the reader sees there. Under
-`prefers-reduced-transparency: reduce` it is the
-opaque role and the blur is off. A sticky header draws no `shadow-*` and no
+A sticky header is a surface, never a shadow. `sticky-surface` paints the
+background at 80% over a `backdrop-filter` of `blur(12px) saturate(1.4)`, so
+content that passes under it shows through frosted. Page content scrolls under
+the pinned back row of every `PaneShell`, a self-scrolling one included, so the
+frosted row is what the reader sees there. `sticky-surface-subtle` is the light
+frost (the role at 90% over `blur(3px) saturate(1.2)`) for a header on `subtle`
+and for a diff file header, which parks right under the pinned zone, so a long
+diff never stacks two strong frosts on every scroll frame. Text on
+the frost holds 4.5:1 over any surface or half-inked text under it
+(`sticky-surface.test.ts`). Under `prefers-reduced-transparency: reduce` both
+are the opaque role and the blur is off. A sticky header draws no `shadow-*` and no
 gradient band; the only edge is the 1px `border-soft` hairline of
 `ScrollFade edge="line"`, lit once content is scrolled under it. Its block
 padding leaves more room below than above, from the spacing scale (`PANE_RHYTHM.pinnedInset`

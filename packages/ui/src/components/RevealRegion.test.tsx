@@ -201,7 +201,9 @@ describe('DrawerFrame header reveal', () => {
 
     expect(stepAside.contains(screen.getByText('src/webhooks/retryPolicy.ts'))).toBe(true);
     expect(stepAside.contains(screen.getByRole('button', { name: 'Display' }))).toBe(true);
-    expect(region().contains(screen.getByRole('button', { name: 'Close' }))).toBe(false);
+    const pinned = nodeOf({ selector: '[data-slot="reveal-pinned"]' });
+    expect(pinned.contains(screen.getByRole('button', { name: 'Close' }))).toBe(true);
+    expect(stepAside.contains(screen.getByRole('button', { name: 'Close' }))).toBe(false);
     expect(stepAside.contains(screen.getByRole('button', { name: /Back to comments/ }))).toBe(
       false,
     );
@@ -210,7 +212,8 @@ describe('DrawerFrame header reveal', () => {
 
     const close = screen.getByRole('button', { name: 'Close' });
     expect(headerState()).toBe('hidden');
-    expect(region().contains(close)).toBe(false);
+    expect(pinned.contains(close)).toBe(true);
+    expect(pinned.className).toContain('sticky-surface-subtle');
   });
 
   it('draws no reveal region when the drawer has nothing to step aside', () => {
