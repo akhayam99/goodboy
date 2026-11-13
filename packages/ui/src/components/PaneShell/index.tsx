@@ -26,8 +26,10 @@ type BaseProps = {
 
 type TitleHeaderProps = {
   readonly title: ReactNode;
+  readonly badge?: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
+  readonly toolbar?: ReactNode;
   readonly subheader?: ReactNode;
   readonly header?: undefined;
 };
@@ -35,8 +37,10 @@ type TitleHeaderProps = {
 type CustomHeaderProps = {
   readonly header: ReactElement;
   readonly title?: undefined;
+  readonly badge?: undefined;
   readonly meta?: undefined;
   readonly actions?: undefined;
+  readonly toolbar?: undefined;
   readonly subheader?: undefined;
 };
 
@@ -94,8 +98,10 @@ export const PaneShell = (props: Props) => {
         tabs={tabs}
         animationClassName={headerAnimation}
         title={props.title}
+        badge={props.badge}
         meta={props.meta}
         actions={props.actions}
+        toolbar={props.toolbar}
         subheader={props.subheader}
         {...(page !== undefined && { page })}
       />

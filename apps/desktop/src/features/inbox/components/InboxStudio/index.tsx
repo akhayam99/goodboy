@@ -21,7 +21,7 @@ import { useInboxLinkedSessions } from '../../useInboxLinkedSessions';
 import { orderInboxRecords } from '../../orderInboxRecords';
 import { isForMeRecord } from '../../isForMeRecord';
 import { shownTaskRecords } from '../../shownTaskRecords';
-import { openCountWord } from '../../openCountWord';
+import { TasksCountChip } from './TasksCountChip';
 import { taskGroupTotalsOf } from '../../taskGroupTotalsOf';
 import { sourceFailureOf } from '../../sourceFailureOf';
 import { taskGroupsOf, type TaskGroup } from '../../taskGroups';
@@ -489,8 +489,8 @@ export const InboxStudio = ({
       page="inbox"
       scroll="body"
       title={NAMES.tasks}
-      meta={openCountWord({ records: inScope, newKeys })}
-      actions={
+      badge={<TasksCountChip records={inScope} newKeys={newKeys} />}
+      toolbar={
         <InboxListHeader
           query={query}
           onQueryChange={setQuery}

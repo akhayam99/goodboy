@@ -77,4 +77,24 @@ describe('PageHeader', () => {
     const body = screen.getByText('Body copy');
     expect(body.closest('[data-page-column]')).not.toBeNull();
   });
+
+  it('puts a badge beside the title and a toolbar row of 36 under it with no meta line', () => {
+    render(
+      <PageHeader
+        page="inbox"
+        title="Tasks"
+        badge={<span>12 open</span>}
+        toolbar={<button type="button">Filter</button>}
+      />,
+    );
+
+    const header = headerOf('Tasks');
+    const row = header.querySelector('[data-slot="pane-title-row"]');
+    const toolbar = header.querySelector('[data-slot="pane-toolbar"]');
+    expect(row?.contains(screen.getByText('12 open'))).toBe(true);
+    expect(toolbar?.className.split(' ')).toContain('h-9');
+    expect(toolbar?.contains(screen.getByRole('button', { name: 'Filter' }))).toBe(true);
+    expect(header.querySelector('[data-slot="pane-meta"]')).toBeNull();
+    expect(header.firstElementChild?.className.split(' ')).toContain('gap-0');
+  });
 });

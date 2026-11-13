@@ -552,7 +552,11 @@ and whose output must never resize, so only its rail reveals
 The title band of every page is 48px: 8 above (`PANE_RHYTHM.headerInset`), a
 32px row (`headerRow`) and 8 below (`below.title`, the same for a section page). A
 meta line adds 16 (`headerMeta`), so a band is 40, 48 or 64 and a tab row or a
-toolbar adds 36. `PaneTitleRow` is the only title row and its `h1` the only one at
+toolbar adds 36 (`PaneShell`'s `toolbar` prop draws the 36 row, and its `badge` prop
+puts a quiet count chip beside the title, so Tasks is 84). `PageColumn` is 960 wide
+plus its gutter and centred on every reading page; the Board, the diff and the
+Terminal use `width="full"` with the same 24 gutter and the title's left edge is the
+column's. `PaneTitleRow` is the only title row and its `h1` the only one at
 `text-title`; a document's own heading is content, not a page title
 (`page-title-row` in `forbidden-patterns.test.ts` holds it at zero, and
 `validate-scenes --only title-band` measures the band on the Board, the session
