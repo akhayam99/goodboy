@@ -17,6 +17,7 @@ import { convertPrToDraft } from './convertPrToDraft';
 import { editPr } from './editPr';
 import { markPrReady } from './markPrReady';
 import { mergePr } from './mergePr';
+import type { PrWriteOptions } from './prWriteOptions';
 import { reopenPr } from './reopenPr';
 import { requestReview } from './requestReview';
 import { isReportedError } from '../notifications/reportedError';
@@ -417,7 +418,11 @@ describe('merge pinned to the head the user reviewed', () => {
   });
 });
 
-type Verb = (params: { readonly state: State; readonly prNumber?: number }) => Promise<void>;
+type Verb = (params: {
+  readonly state: State;
+  readonly prNumber?: number;
+  readonly options?: PrWriteOptions;
+}) => Promise<void>;
 
 const asGet = (state: State) => (() => state) as never;
 
@@ -431,31 +436,36 @@ const VERBS: ReadonlyArray<{
     name: 'markPrReady',
     title: "Couldn't mark #12 ready",
     hasOptionalNumber: true,
-    call: ({ state, prNumber }) => markPrReady(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+    call: ({ state, prNumber, options }) =>
+      markPrReady(vi.fn(), asGet(state))(SESSION_ID, prNumber, options),
   },
   {
     name: 'convertPrToDraft',
     title: "Couldn't convert #12 to a draft",
     hasOptionalNumber: true,
-    call: ({ state, prNumber }) => convertPrToDraft(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+    call: ({ state, prNumber, options }) =>
+      convertPrToDraft(vi.fn(), asGet(state))(SESSION_ID, prNumber, options),
   },
   {
     name: 'mergePr',
     title: "Couldn't merge #12",
     hasOptionalNumber: true,
-    call: ({ state, prNumber }) => mergePr(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+    call: ({ state, prNumber, options }) =>
+      mergePr(vi.fn(), asGet(state))(SESSION_ID, prNumber, 'squash', options),
   },
   {
     name: 'closePr',
     title: "Couldn't close #12",
     hasOptionalNumber: true,
-    call: ({ state, prNumber }) => closePr(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+    call: ({ state, prNumber, options }) =>
+      closePr(vi.fn(), asGet(state))(SESSION_ID, prNumber, options),
   },
   {
     name: 'reopenPr',
     title: "Couldn't reopen #12",
     hasOptionalNumber: true,
-    call: ({ state, prNumber }) => reopenPr(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+    call: ({ state, prNumber, options }) =>
+      reopenPr(vi.fn(), asGet(state))(SESSION_ID, prNumber, options),
   },
   {
     name: 'editPr',
@@ -567,6 +577,53 @@ describe.each(VERBS)('$name when the host refuses', ({ title, call }) => {
     expect(state.refreshSessionPr).not.toHaveBeenCalled();
   });
 });
+
+describe.each(VERBS.filter(({ hasOptionalNumber }) => hasOptionalNumber))(
+  '$name failure row',
+  ({ call }) => {
+    const refuse = () =>
+      h.run.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'Pull request is not mergeable' });
+
+    it('is born unread when no surface shows the failure', async () => {
+      const state = makeState();
+      refuse();
+
+      await call({ state, prNumber: 12 }).catch(() => undefined);
+
+      expect(state.emitNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ isRead: false }),
+      );
+    });
+
+    it('is born read when a surface shows the failure at the time it fails', async () => {
+      const state = makeState();
+      refuse();
+
+      await call({ state, prNumber: 12, options: { hasFailureSurface: () => true } }).catch(
+        () => undefined,
+      );
+
+      expect(state.emitNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ isRead: true }),
+      );
+    });
+
+    it('asks again at failure time, so a surface that left in between does not count', async () => {
+      const state = makeState();
+      refuse();
+      let isShown = true;
+      const hasFailureSurface = () => isShown;
+      const running = call({ state, prNumber: 12, options: { hasFailureSurface } });
+      isShown = false;
+
+      await running.catch(() => undefined);
+
+      expect(state.emitNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ isRead: false }),
+      );
+    });
+  },
+);
 
 describe('pull request writes on a host without a port', () => {
   it('fails loudly instead of running gh when GitLab is not connected', async () => {

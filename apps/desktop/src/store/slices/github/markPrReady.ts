@@ -5,11 +5,15 @@ import { mountPrEventPayload } from './mountPrEventPayload';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
-import type { PrWriteOptions } from './prWriteOptions';
+import { noFailureSurface, type PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
 
 export const markPrReady = (_set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, prNumber?: number, { mountId }: PrWriteOptions = {}) => {
+  return async (
+    sessionId: SessionId,
+    prNumber?: number,
+    { mountId, hasFailureSurface = noFailureSurface }: PrWriteOptions = {},
+  ) => {
     const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
@@ -28,6 +32,7 @@ export const markPrReady = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
+          hasFailureSurface,
           title: prLifecycleFailureTitle({ action: 'ready', prNumber: num, nouns: port.nouns }),
           run: () => port.setDraft({ isDraft: false }),
         });

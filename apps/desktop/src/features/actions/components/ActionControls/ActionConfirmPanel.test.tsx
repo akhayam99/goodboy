@@ -70,6 +70,7 @@ const controlsOf = ({
   actions: [],
   inSlot: () => [],
   pendingId: null,
+  pendingSeconds: null,
   confirming,
   failure: null,
   outcome: null,

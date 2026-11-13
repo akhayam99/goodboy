@@ -226,6 +226,21 @@ describe('store contract', () => {
       expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
     });
 
+    it('emitNotification stores a row born read when the caller says the screen shows it', async () => {
+      const store = useAppStore;
+      await store.getState().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: 'Merge failed',
+        isRead: true,
+      });
+      expect(store.getState().notifications.map((n) => n.read)).toEqual([true]);
+      expect(storySpies.insertNotification).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ read: true }),
+      );
+    });
+
     it('emitNotification keys two unrelated failures in one session apart', async () => {
       const store = useAppStore;
       await store.getState().emitNotification({
