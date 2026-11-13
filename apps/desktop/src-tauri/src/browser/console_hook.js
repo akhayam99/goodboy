@@ -331,19 +331,26 @@
   if (typeof originalFetch === 'function') {
     window.fetch = function (input, init) {
       const answer = originalFetch.apply(this, arguments);
+      let method = 'GET';
+      let address = '';
       quietly(() => {
-        const method = methodOf(input, init);
-        const address = addressOfInput(input);
-        answer.then(
-          (response) => {
+        method = methodOf(input, init);
+        address = addressOfInput(input);
+      });
+      return answer.then(
+        (response) => {
+          quietly(() => {
             if (response != null && response.status >= 400) {
               recordNetwork(method, response.status, address);
             }
-          },
-          () => recordNetwork(method, 0, address),
-        );
-      });
-      return answer;
+          });
+          return response;
+        },
+        (reason) => {
+          recordNetwork(method, 0, address);
+          throw reason;
+        },
+      );
     };
   }
 

@@ -955,9 +955,13 @@ that shadows it, so the chord follows Chrome's J.
   `history.forward()` inside the page, which the page can redefine. The same
   split holds for Stop (`stopLoading` on macOS, `window.stop()` elsewhere) and
   for `canGoBack` and `canGoForward`, which only macOS reports.
-- The console hook watches every `fetch` it wraps, so a rejected `fetch` the
-  page never handles shows in the console as a failed request and no longer
-  reaches the page's own `unhandledrejection` listeners.
+- The console hook observes `fetch` and never changes what the page sees: it
+  returns the one promise that records the failure and then passes the same
+  value or the same reason on, so a rejected `fetch` the page never handles
+  still reaches its own `unhandledrejection` listeners once, and one it
+  handles never raises one. The page does get a new promise object in place of
+  the native one, so a page that compares or subclasses it sees the
+  difference.
 - The host reports a load's start and its finish, never a failure: a page that
   fails or is cancelled sends no `finished`, so its line ends at the 30 second
   limit, or when Stop is pressed.
