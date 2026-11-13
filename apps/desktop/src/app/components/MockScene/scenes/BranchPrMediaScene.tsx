@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import {
   Markdown,
   RemoteImageLoaderProvider,
@@ -51,21 +52,37 @@ const isAttachment = ({ url }: AutoLoadParams): boolean => url.startsWith(ATTACH
 
 const onOpen = (): void => undefined;
 
-export const BranchPrMediaScene = () => (
-  <RemoteImageLoaderProvider
-    load={load}
-    shouldAutoLoad={(url) => isAttachment({ url })}
-    probe={probe}
-    loadVideo={loadVideo}
-    onOpen={onOpen}
-  >
-    <div className="flex max-w-[var(--measure)] flex-col gap-6 p-6">
-      <section aria-label="Description" className="flex flex-col gap-3">
-        <Markdown text={DESCRIPTION} className="text-prose" />
-      </section>
-      <section aria-label="Comment" className="flex flex-col gap-2">
-        <Markdown text={COMMENT} variant="preview" className="text-body text-foreground" />
-      </section>
-    </div>
-  </RemoteImageLoaderProvider>
-);
+export const BranchPrMediaScene = () => {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const play = bodyRef.current?.querySelector<HTMLButtonElement>(
+        '[data-block="video-poster"] button',
+      );
+      if (play === null || play === undefined || play.textContent !== 'Play') {
+        return;
+      }
+      clearInterval(timer);
+      play.click();
+    }, 200);
+    return () => clearInterval(timer);
+  }, []);
+  return (
+    <RemoteImageLoaderProvider
+      load={load}
+      shouldAutoLoad={(url) => isAttachment({ url })}
+      probe={probe}
+      loadVideo={loadVideo}
+      onOpen={onOpen}
+    >
+      <div ref={bodyRef} className="flex max-w-[var(--measure)] flex-col gap-6 p-6">
+        <section aria-label="Description" className="flex flex-col gap-3">
+          <Markdown text={DESCRIPTION} className="text-prose" />
+        </section>
+        <section aria-label="Comment" className="flex flex-col gap-2">
+          <Markdown text={COMMENT} variant="preview" className="text-body text-foreground" />
+        </section>
+      </div>
+    </RemoteImageLoaderProvider>
+  );
+};
