@@ -1,7 +1,8 @@
-import { useContext, type ReactNode } from 'react';
+import { useContext, useState, type ReactNode } from 'react';
 import { cn } from '../../cn';
 import { PANE_RHYTHM } from '../../paneRhythm';
 import { HeaderRevealContext } from '../../useHeaderReveal/headerRevealContext';
+import { PinnedInsetContext } from '../../useHeaderReveal/pinnedInsetContext';
 import { PageColumn, type PageColumnWidth } from '../PageColumn';
 import { RevealRegion } from '../RevealRegion';
 import { ScrollFade } from '../ScrollFade';
@@ -33,6 +34,7 @@ export const RevealPane = ({
   animationClassName,
   children,
 }: Props) => {
+  const [fill, setFill] = useState<HTMLDivElement | null>(null);
   const trail = useContext(PageTrailContext);
   const isOuterUnderTrail = useContext(UnderTrailContext);
   const hasTrail = trail != null;
@@ -75,42 +77,48 @@ export const RevealPane = ({
 
   return (
     <HeaderRevealContext.Provider value={null}>
-      <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
-        <RevealRegion
-          resetKey={resetKey}
-          pinned={pinned}
-          header={
-            isHeaderPinned ? null : (
-              <PageColumn width={width}>
-                {headerBlock}
-                {banner === null ? null : (
-                  <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
-                )}
-              </PageColumn>
-            )
-          }
-        >
-          {isSelfScroll ? (
-            <div
-              data-slot="pane-body"
-              className="flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-inset,0px)]"
-            >
-              <div data-slot="pane-fill" className="flex min-h-0 min-w-0 flex-1 flex-col">
-                {children}
-              </div>
-            </div>
-          ) : (
-            <ScrollFade className="min-h-0 flex-1" fadeSize={24} isUnderPinned>
-              <PageColumn width={width} className="pb-5">
-                <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
-                  {children}
+      <PinnedInsetContext.Provider value={null}>
+        <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
+          <RevealRegion
+            resetKey={resetKey}
+            pinned={pinned}
+            header={
+              isHeaderPinned ? null : (
+                <PageColumn width={width}>
+                  {headerBlock}
+                  {banner === null ? null : (
+                    <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
+                  )}
+                </PageColumn>
+              )
+            }
+          >
+            {isSelfScroll ? (
+              <div
+                data-slot="pane-body"
+                className="flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-inset,0px)]"
+              >
+                <div
+                  ref={setFill}
+                  data-slot="pane-fill"
+                  className="flex min-h-0 min-w-0 flex-1 flex-col"
+                >
+                  <PinnedInsetContext.Provider value={fill}>{children}</PinnedInsetContext.Provider>
                 </div>
-              </PageColumn>
-            </ScrollFade>
-          )}
-        </RevealRegion>
-        {dockBlock}
-      </div>
+              </div>
+            ) : (
+              <ScrollFade className="min-h-0 flex-1" fadeSize={24} isUnderPinned>
+                <PageColumn width={width} className="pb-5">
+                  <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
+                    {children}
+                  </div>
+                </PageColumn>
+              </ScrollFade>
+            )}
+          </RevealRegion>
+          {dockBlock}
+        </div>
+      </PinnedInsetContext.Provider>
     </HeaderRevealContext.Provider>
   );
 };

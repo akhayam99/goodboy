@@ -3,12 +3,15 @@ import {
   useContext,
   useLayoutEffect,
   useRef,
+  useState,
+  type CSSProperties,
   type ReactNode,
   type RefObject,
 } from 'react';
 import { cn } from '../../cn';
 import { ClaimedScrollerContext } from '../../useHeaderReveal/claimedScrollerContext';
 import { HeaderRevealContext } from '../../useHeaderReveal/headerRevealContext';
+import { PinnedInsetContext } from '../../useHeaderReveal/pinnedInsetContext';
 import { OverlayThumb } from './OverlayThumb';
 
 export type ScrollFadeProps = {
@@ -28,6 +31,7 @@ export type ScrollFadeProps = {
 };
 
 const SPACING_CLASS_PATTERN = /^[wh]-(\d+(?:\.\d+)?)$/;
+const TOP_PADDING_CLASS_PATTERN = /^p[ty]?-(\d+(?:\.\d+)?)$/;
 const DEFAULT_FADE_PX = 32;
 const LINE_EDGE_FADE_PX = 8;
 
@@ -42,6 +46,27 @@ const fadeSizeToPx = (fadeSize: number | string): number => {
   return Number(match[1]) * 4;
 };
 
+type TopPaddingParams = {
+  readonly className: string | undefined;
+};
+
+type InsetPaddingParams = {
+  readonly ownTopPx: number;
+};
+
+const topPaddingPxOf = ({ className }: TopPaddingParams): number => {
+  const tokens = (className ?? '').split(/\s+/);
+  return tokens.reduce((px, token) => {
+    const match = TOP_PADDING_CLASS_PATTERN.exec(token);
+    return match === null ? px : Number(match[1]) * 4;
+  }, 0);
+};
+
+const insetPaddingOf = ({ ownTopPx }: InsetPaddingParams): CSSProperties => {
+  const padding = `calc(var(--reveal-inset, 0px) + ${ownTopPx}px)`;
+  return { paddingTop: padding, scrollPaddingTop: padding };
+};
+
 export const ScrollFade = ({
   children,
   className,
@@ -54,7 +79,7 @@ export const ScrollFade = ({
   fadeEdges = 'both',
   edge: edgeProp,
   isPageScroller: canBePageScroller = true,
-  isUnderPinned = false,
+  isUnderPinned: isUnderPinnedProp = false,
 }: ScrollFadeProps) => {
   const ownRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -62,6 +87,12 @@ export const ScrollFade = ({
   const horizontal = orientation === 'horizontal';
   const reveal = useContext(HeaderRevealContext);
   const isClaimed = useContext(ClaimedScrollerContext);
+  const insetTop = useContext(PinnedInsetContext);
+  const canReachUnder = insetTop !== null && !horizontal && !isUnderPinnedProp;
+  const [isAtInsetTop, setAtInsetTop] = useState(false);
+  const isReachingUnder = canReachUnder && isAtInsetTop;
+  const isUnderPinned = isUnderPinnedProp || isReachingUnder;
+  const ownTopPx = isUnderPinned ? topPaddingPxOf({ className: viewportClassName }) : 0;
   const isPageScroller = canBePageScroller && reveal !== null && !isClaimed && !horizontal;
   const edge = edgeProp ?? (isPageScroller && fadeEdges !== 'end' ? 'line' : 'fade');
   const isLineEdge = edge === 'line';
@@ -130,6 +161,21 @@ export const ScrollFade = ({
 
   useLayoutEffect(() => {
     const root = rootRef.current;
+    if (!canReachUnder || insetTop === null || root === null) {
+      return;
+    }
+    const measure = () => {
+      const offset = root.getBoundingClientRect().top - insetTop.getBoundingClientRect().top;
+      setAtInsetTop(Math.abs(offset) < 1);
+    };
+    measure();
+    const resize = new ResizeObserver(measure);
+    resize.observe(root);
+    return () => resize.disconnect();
+  }, [canReachUnder, insetTop]);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
     const viewport = ref.current;
     if (!isPageScroller || reveal === null || root === null || viewport === null) {
       return;
@@ -151,11 +197,17 @@ export const ScrollFade = ({
             : 'mask-fade-y h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           isUnderPinned && 'pt-[var(--reveal-inset,0px)] scroll-pt-[var(--reveal-inset,0px)]',
           viewportClassName,
+          isReachingUnder &&
+            'relative -top-[var(--reveal-inset,0px)] h-[calc(100%+var(--reveal-inset,0px))]',
         )}
+        style={ownTopPx > 0 ? insetPaddingOf({ ownTopPx }) : undefined}
         data-page-scroller={isPageScroller ? '' : undefined}
+        data-under-pinned={isReachingUnder ? '' : undefined}
       >
         <ClaimedScrollerContext.Provider value={isClaimed || isPageScroller || !canBePageScroller}>
-          {children}
+          <PinnedInsetContext.Provider value={horizontal ? insetTop : null}>
+            {children}
+          </PinnedInsetContext.Provider>
         </ClaimedScrollerContext.Provider>
       </div>
       {isLineEdge && !horizontal ? (
@@ -164,7 +216,7 @@ export const ScrollFade = ({
           data-slot="scroll-edge"
           className={cn(
             'pointer-events-none absolute inset-x-0 z-10 h-px bg-border-soft opacity-0',
-            isUnderPinned ? 'top-[var(--reveal-inset,0px)]' : 'top-0',
+            isUnderPinnedProp ? 'top-[var(--reveal-inset,0px)]' : 'top-0',
             'motion-safe:transition-opacity motion-safe:duration-120 group-data-[scrolled=true]/edge:opacity-100',
           )}
         />

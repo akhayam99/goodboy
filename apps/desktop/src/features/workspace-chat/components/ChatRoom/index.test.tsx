@@ -529,7 +529,8 @@ describe('ChatRoom', () => {
     const close = within(drawer).getByRole('button', { name: 'Close' });
     const drafter = within(drawer).getByRole('button', { name: /^Drafted by: / });
     const cancel = within(drawer).getByRole('button', { name: /Cancel/ });
-    expect(close.closest('[data-slot="reveal-region"]')).toBeNull();
+    expect(close.closest('[data-slot="reveal-pinned"]')).not.toBeNull();
+    expect(close.closest('[data-slot="reveal-header"]')).toBeNull();
     expect(drafter.closest('[data-slot="reveal-header"]')).not.toBeNull();
     expect(cancel.closest('[data-page-scroller]')).not.toBeNull();
   });

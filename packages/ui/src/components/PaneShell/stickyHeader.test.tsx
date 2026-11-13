@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { PANE_RHYTHM } from '../../paneRhythm';
 import { ListGrid } from '../ListGrid/ListGrid';
@@ -10,7 +10,10 @@ import { ScrollFade } from '../ScrollFade';
 import { PageTrailContext } from './pageTrailContext';
 import { PaneShell } from '.';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const classesOf = (node: Element | null): string[] => (node?.className ?? '').split(' ');
 
@@ -156,6 +159,152 @@ describe('sticky page header surface', () => {
     const scrollers = [...container.querySelectorAll('.overflow-y-auto')];
     expect(scrollers).toHaveLength(2);
     expect(scrollers[1]?.className).not.toContain('--reveal-inset');
+  });
+
+  it('pads the body scroller with the inset from the top of the region', () => {
+    const { container } = renderTrailPane();
+
+    const scroller = container.querySelector('[data-page-scroller]');
+    expect(classesOf(scroller)).toEqual(
+      expect.arrayContaining([
+        'pt-[var(--reveal-inset,0px)]',
+        'scroll-pt-[var(--reveal-inset,0px)]',
+      ]),
+    );
+    expect(scroller?.closest('[data-slot="pane-body"]')).toBeNull();
+  });
+
+  it('runs a self scrolling reader up under the pinned row and pads it there', () => {
+    const { container } = render(
+      <PageTrailContext.Provider value={<span>Back to the branch</span>}>
+        <PaneShell title="ledger-core" scroll="self">
+          <ScrollFade className="min-h-0 flex-1">
+            <p>Diff body</p>
+          </ScrollFade>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+
+    const scroller = container.querySelector('[data-page-scroller]');
+    expect(scroller?.hasAttribute('data-under-pinned')).toBe(true);
+    expect(classesOf(scroller)).toEqual(
+      expect.arrayContaining([
+        'pt-[var(--reveal-inset,0px)]',
+        'scroll-pt-[var(--reveal-inset,0px)]',
+        '-top-[var(--reveal-inset,0px)]',
+        'h-[calc(100%+var(--reveal-inset,0px))]',
+      ]),
+    );
+    expect(classesOf(scroller)).not.toContain('h-full');
+    expect(classesOf(container.querySelector('[data-slot="pane-body"]'))).toContain(
+      'pt-[var(--reveal-inset,0px)]',
+    );
+    expect(classesOf(container.querySelector('[data-slot="scroll-edge"]'))).toContain('top-0');
+  });
+
+  it('keeps a reader below a toolbar where the toolbar meets the pinned row', () => {
+    const toolbarPx = 36;
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      const top = this.classList.contains('basis-0') ? toolbarPx : 0;
+      return DOMRect.fromRect({ x: 0, y: top, width: 0, height: 0 });
+    });
+    const { container } = render(
+      <PageTrailContext.Provider value={<span>Back to the branch</span>}>
+        <PaneShell title="ledger-core" scroll="self">
+          <div className="h-9">Compared with main</div>
+          <ScrollFade className="min-h-0 flex-1 basis-0">
+            <p>Diff body</p>
+          </ScrollFade>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+
+    const scroller = container.querySelector('[data-page-scroller]');
+    expect(scroller?.hasAttribute('data-under-pinned')).toBe(false);
+    expect(scroller?.className).not.toContain('--reveal-inset');
+    expect(classesOf(container.querySelector('[data-slot="pane-body"]'))).toContain(
+      'pt-[var(--reveal-inset,0px)]',
+    );
+  });
+
+  it('adds a reader own top padding to the inset instead of dropping either', () => {
+    const { container } = render(
+      <PageTrailContext.Provider value={<span>Back to the branch</span>}>
+        <PaneShell title="Agent" scroll="self">
+          <ScrollFade className="min-h-0 flex-1" viewportClassName="pt-6">
+            <p>Transcript</p>
+          </ScrollFade>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+
+    const scroller = container.querySelector<HTMLElement>('[data-page-scroller]');
+    expect(scroller?.style.paddingTop).toBe('calc(var(--reveal-inset, 0px) + 24px)');
+    expect(scroller?.style.scrollPaddingTop).toBe('calc(var(--reveal-inset, 0px) + 24px)');
+  });
+
+  it('pads a side scroller beside a self scrolling reader without letting it lead', () => {
+    const { container } = render(
+      <PageTrailContext.Provider value={<span>Back to the branch</span>}>
+        <PaneShell title="ledger-core" scroll="self">
+          <div className="flex min-h-0 flex-1">
+            <ScrollFade className="min-h-0 flex-1">
+              <p>Diff body</p>
+              <ScrollFade className="max-h-40">
+                <p>Hunk list</p>
+              </ScrollFade>
+            </ScrollFade>
+            <ScrollFade className="min-h-0 w-64" isPageScroller={false}>
+              <p>notify-relay/src/credit.ts</p>
+            </ScrollFade>
+          </div>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+
+    const [reader, nested, tree] = [...container.querySelectorAll('.overflow-y-auto')];
+    expect(reader?.hasAttribute('data-page-scroller')).toBe(true);
+    expect(classesOf(reader ?? null)).toContain('pt-[var(--reveal-inset,0px)]');
+    expect(nested?.className).not.toContain('--reveal-inset');
+    expect(tree?.hasAttribute('data-page-scroller')).toBe(false);
+    expect(tree?.hasAttribute('data-under-pinned')).toBe(true);
+    expect(classesOf(tree ?? null)).toEqual(
+      expect.arrayContaining([
+        'pt-[var(--reveal-inset,0px)]',
+        'scroll-pt-[var(--reveal-inset,0px)]',
+      ]),
+    );
+  });
+
+  it('hands the inset through a horizontal scroller to the reader inside it', () => {
+    const { container } = render(
+      <PageTrailContext.Provider value={<span>Back to the branch</span>}>
+        <PaneShell title="ledger-core" scroll="self">
+          <ScrollFade orientation="horizontal" className="min-h-0 flex-1">
+            <ScrollFade className="min-h-0 flex-1">
+              <p>Wide diff</p>
+            </ScrollFade>
+          </ScrollFade>
+        </PaneShell>
+      </PageTrailContext.Provider>,
+    );
+
+    expect(container.querySelector('.overflow-x-auto')?.className).not.toContain('--reveal-inset');
+    expect(classesOf(container.querySelector('[data-page-scroller]'))).toContain(
+      'pt-[var(--reveal-inset,0px)]',
+    );
+  });
+
+  it('pads no scroller outside a pane', () => {
+    const { container } = render(
+      <ScrollFade className="min-h-0 flex-1">
+        <p>Free list</p>
+      </ScrollFade>,
+    );
+
+    expect(container.querySelector('.overflow-y-auto')?.className).not.toContain('--reveal-inset');
   });
 
   it('paints the sliding header with the same surface and no shadow', () => {

@@ -33,6 +33,7 @@ import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
 import { titleBandFailures } from './validateScenesTitleBand.mjs';
+import { frostFailures } from './validateScenesFrost.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerRevealFailures } from './validateScenesDrawerReveal.mjs';
 import { readingHoldFailures } from './validateScenesReadingHold.mjs';
@@ -1020,6 +1021,45 @@ describe('titleBandFailures', () => {
       [],
     );
     assert.equal(titleBandFailures({ scene: 'fixture', width: 1440, measured: null }).length, 1);
+  });
+});
+
+describe('frostFailures', () => {
+  const read = ({ inset = 32, scrollTop = 360, hasContentUnder = true } = {}) => ({
+    inset,
+    scrollTop,
+    isHeaderHidden: true,
+    hasContentUnder,
+  });
+
+  it('passes a reader whose text runs under the pinned row after a wheel', () => {
+    assert.deepEqual(frostFailures({ scene: 'fixture', width: 1440, measured: read() }), []);
+  });
+
+  it('fails a reader cut at the pinned row, a wheel that never scrolled and a missing reader', () => {
+    const cut = frostFailures({
+      scene: 'fixture',
+      width: 1440,
+      measured: read({ hasContentUnder: false }),
+    });
+    assert.equal(cut.length, 1);
+    assert.equal(cut[0]?.inset, 32);
+    assert.equal(
+      frostFailures({ scene: 'fixture', width: 1440, measured: read({ scrollTop: 0 }) }).length,
+      1,
+    );
+    assert.equal(frostFailures({ scene: 'fixture', width: 1440, measured: null }).length, 1);
+  });
+
+  it('leaves a region with no pinned row alone', () => {
+    assert.deepEqual(
+      frostFailures({
+        scene: 'fixture',
+        width: 1440,
+        measured: read({ inset: 0, hasContentUnder: false }),
+      }),
+      [],
+    );
   });
 });
 

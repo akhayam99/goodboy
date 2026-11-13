@@ -212,13 +212,17 @@ describe('PaneShell header reveal', () => {
     expect(region().style.getPropertyValue('--reveal-top')).toBe('0px');
   });
 
-  it('keeps a self scrolling body below the pinned row', () => {
-    mountPage();
+  it('runs a self scrolling reader under the pinned row and keeps the reveal', () => {
+    const viewport = mountPage();
+    sizePinned({ height: PINNED_PX });
 
-    expect(nodeOf({ selector: '[data-slot="pane-body"]' }).className).toContain(
-      'pt-[var(--reveal-inset,0px)]',
-    );
-    expect(pageViewport().className).not.toContain('pt-[var(--reveal-inset,0px)]');
+    expect(pageViewport().hasAttribute('data-under-pinned')).toBe(true);
+    expect(pageViewport().className).toContain('-top-[var(--reveal-inset,0px)]');
+    expect(pageViewport().className).toContain('pt-[var(--reveal-inset,0px)]');
+    expect(pageViewport().className).toContain('scroll-pt-[var(--reveal-inset,0px)]');
+    scrollTo({ viewport, top: 100 });
+    expect(headerState()).toBe('hidden');
+    expect(region().style.getPropertyValue('--reveal-inset')).toBe(`${PINNED_PX}px`);
   });
 
   it('runs the body scroller under the pinned row and keeps the reveal', () => {
