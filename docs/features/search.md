@@ -22,7 +22,7 @@ Click a session and its row stays selected. The session opens with its own rail 
 
 The **⋯** holds **Limit**, **Archive** and **Delete** with the session's other actions.
 
-At the right of every page, a column of icons is named with its shortcut on hover. In a session, **Session** holds **Explore**, **Context**, **Ask this session**, **Agents** and **Scripts**. At the foot, on every page, **Workspace** holds **Terminal** and **Browser**. They stay open as you move between pages. **Open as page** makes either one full size, and **Dock** puts it back. The active tool shows its name below its icon. A ring marks the tool waiting behind the drawer in the side slot.
+At the right of every page, a column of icons is named with its shortcut on hover. In a session, **Session** holds **Explore**, **Context**, **Ask this session**, **Agents** and **Scripts**. At the foot, on every page, **Workspace** holds **Terminal** and **Browser**. They stay open as you move between pages. **Open as page** makes either one full size. **Dock** puts the Terminal back, and **Beside the session** puts the Browser back. The active tool shows its name below its icon. A ring marks the tool waiting behind the drawer in the side slot.
 
 A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
 
