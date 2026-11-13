@@ -131,6 +131,10 @@ beforeEach(async () => {
     buildStorySession({ id: RELAY_ID, workspaceId: NORTHWIND_ID, goal: 'Tune notify-relay' }),
   );
   stubStoryInvoke({ turn_list_live: () => [] });
+  vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+    queueMicrotask(callback);
+    return 0;
+  });
   realSelect = db.select.bind(db);
   vi.spyOn(db, 'select');
   vi.spyOn(db, 'execute');
@@ -138,6 +142,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('the launch keeps its order', () => {

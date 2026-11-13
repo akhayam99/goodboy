@@ -115,6 +115,10 @@ beforeEach(async () => {
   stubStoryInvoke({ turn_list_live: () => [] });
   vi.spyOn(db, 'select');
   stepsBeforeHydrated = [];
+  vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+    queueMicrotask(callback);
+    return 0;
+  });
   perfSeam.counter = ({ name, detail }) => {
     if (name === PERF_COUNT_NAMES.bootStep && !useAppStore.getState().hydrated) {
       stepsBeforeHydrated.push(detail ?? '');
@@ -128,6 +132,7 @@ beforeEach(async () => {
 afterEach(() => {
   perfSeam.counter = null;
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('a cold launch stays inside its budget', () => {
@@ -153,6 +158,28 @@ describe('a cold launch stays inside its budget', () => {
     const reads = WORKSPACES.map(({ id }) => projectReadsOf({ workspaceId: id }));
     expect(Math.max(...reads)).toBe(BOOT_BUDGETS.listProjectsCallsPerWorkspace);
     expect(reads.every((count) => count >= 1)).toBe(true);
+  });
+
+  it('commits to the store no more often than the budget before idle work starts', async () => {
+    const idleCallbacks: Array<() => void> = [];
+    vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+      idleCallbacks.push(callback);
+      return idleCallbacks.length;
+    });
+    let commits = 0;
+    const unsubscribe = useAppStore.subscribe(() => {
+      commits += 1;
+    });
+
+    await useAppStore.getState().hydrate();
+    for (let tick = 0; tick < 100; tick += 1) {
+      await Promise.resolve();
+    }
+    unsubscribe();
+
+    expect(useAppStore.getState().hydrated).toBe(true);
+    expect(idleCallbacks.length).toBeGreaterThan(0);
+    expect(commits).toBeLessThanOrEqual(BOOT_BUDGETS.storeCommitsBeforeIdle);
   });
 
   it('waits after ready for the splash as long as the budget allows', () => {

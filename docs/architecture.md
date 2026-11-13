@@ -225,7 +225,7 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   terminals whose shell had a foreground job (id and the `ps` command line) and
   every live script run (script id, session, name, cwd). An empty drain keeps
   the previous record, because the exit events call drain twice. The store reads
-  it once at boot (`loadEndedWork`) and stores the record's `at` in
+  it once after launch, on idle (`loadEndedWork`), and stores the record's `at` in
   `restart.ended_work_seen`, so the strips show on the first launch only.
 
 - **External terminals come from a table.** `open_in_external_terminal` takes a
@@ -277,7 +277,8 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   this window can reattach to and runs whose permission ask nobody answered
   (a `NOT EXISTS` on `turn_events` inside `stopGhostAgents`) are kept. The
   sweep is one statement, so if it fails it stops nothing and each workspace
-  load reconciles its own agents.
+  load reconciles its own agents. It finishes before the launch reads any
+  agent, and the first workspace load reuses its `turn_list_live` answer.
 
 ### Terminal and script output
 
@@ -493,6 +494,27 @@ baseline names `config_export/apply.rs`.
   providers.** Providers start as `unknown` and are detected after boot,
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
+- **Launch order.** `hydrate` (`store/slices/boot/hydrate.ts`) awaits six steps
+  in a row (`BOOT_BUDGETS.awaitedStepsBeforeHydrated`). Migrations come first:
+  `runDbMigrations` (`shared/lib/dbBoot.ts`) also purges the step agents a
+  deleted workflow left behind, with their slot questions, and seeds missing
+  built-in workflows. Then one group runs together: the boot settings with the
+  onboarding and the four settings hydrations, provider credentials,
+  workspaces with their projects, the integration keys, staged file version
+  recovery, the ghost reconcile and the QA preview. Then the workspace and
+  session restore, then `ready`. The ghost reconcile reads `turn_list_live`
+  once; that set and the projects reach `setCurrentWorkspace` as `LaunchReads`,
+  so the first workspace load reads neither again. A failed member names its
+  own phase in `bootFailedPhase`, and the launch error screen shows as before.
+- **After ready, on idle.** `runEachOnIdle` starts one task per idle slot
+  (`waitForIdle`): ended work, orphan worktrees, provider limits and their
+  probe, the audit retry drain, stale browser tabs, then `runDbHygiene`
+  (retention pruning and orphan attachments, which used to hold the one
+  database connection before the first paint). A hygiene failure is a warning
+  notification, never the launch error screen. The shell's first pull request
+  sweep (`sweepRequests({ isCurrentFirst: true })` from `useGithubPolling`)
+  refreshes the open session at once and the other sessions on idle.
+  `bootBudgets.test.ts` holds the store commits before idle work starts.
 
 ### Where commands run
 

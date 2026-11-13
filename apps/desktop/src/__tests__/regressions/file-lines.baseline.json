@@ -1,5 +1,5 @@
 {
-  "apps/desktop/src/App.tsx": 319,
+  "apps/desktop/src/App.tsx": 317,
   "apps/desktop/src/features/actions/kinds/artifact.ts": 688,
   "apps/desktop/src/features/actions/kinds/reviewComment.ts": 669,
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/index.tsx": 330,

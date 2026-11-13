@@ -129,8 +129,13 @@ export const readBackendRunIds = async (): Promise<ReadonlyArray<string> | null>
   }
 };
 
-export const reconcileGhostAgents = async (): Promise<number> => {
-  const liveRunIds = await readBackendRunIds();
+type ReconcileGhostAgentsParams = Readonly<{
+  liveRunIds: ReadonlyArray<string> | null;
+}>;
+
+export const reconcileGhostAgents = async ({
+  liveRunIds,
+}: ReconcileGhostAgentsParams): Promise<number> => {
   if (liveRunIds === null) {
     return 0;
   }
