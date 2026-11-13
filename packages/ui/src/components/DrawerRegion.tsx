@@ -12,20 +12,22 @@ export const DrawerRegion = ({ header, stepAside, children }: Props) => {
   const [fill, setFill] = useState<HTMLDivElement | null>(null);
 
   return (
-    <RevealRegion
-      surface="subtle"
-      pinned={
-        <div data-slot="reveal-pinned" className="sticky-surface-subtle">
-          {header}
+    <PinnedInsetContext.Provider value={null}>
+      <RevealRegion
+        surface="subtle"
+        pinned={
+          <div data-slot="reveal-pinned" className="sticky-surface-subtle">
+            {header}
+          </div>
+        }
+        header={stepAside}
+      >
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-inset,0px)]">
+          <div ref={setFill} className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <PinnedInsetContext.Provider value={fill}>{children}</PinnedInsetContext.Provider>
+          </div>
         </div>
-      }
-      header={stepAside}
-    >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-inset,0px)]">
-        <div ref={setFill} className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <PinnedInsetContext.Provider value={fill}>{children}</PinnedInsetContext.Provider>
-        </div>
-      </div>
-    </RevealRegion>
+      </RevealRegion>
+    </PinnedInsetContext.Provider>
   );
 };
