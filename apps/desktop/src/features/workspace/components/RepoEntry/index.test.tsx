@@ -110,8 +110,13 @@ type MountParams = {
 };
 
 const mount = async ({ projects, answers, status, extra = {} }: MountParams): Promise<void> => {
-  useAppStore.setState({ projects, currentWorkspaceId: WORKSPACE });
+  useAppStore.setState({
+    projects,
+    currentWorkspaceId: WORKSPACE,
+    detectedEditors: [{ binary: 'code', label: 'VS Code' }],
+  });
   stubStoryInvoke({
+    detect_editors: [{ binary: 'code', label: 'VS Code' }],
     project_git_status: status ?? statusOf({}),
     repo_identity: null,
     worktree_repo_default_base_branch: 'main',

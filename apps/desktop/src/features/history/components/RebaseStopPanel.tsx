@@ -3,7 +3,7 @@ import { Undo2 } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE, Notice, Tooltip, type NoticeTone } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
+import { openFile } from '../../open/openFile';
 import { NAMES } from '../../../shared/utils/names';
 import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import { StartHint } from '../../../shared/components/StartHint';
@@ -111,11 +111,8 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
   const registry = useActionControls({ target });
   const pushAction = registry.actions.find((action) => action.id === PUSH_ID);
   const isBusy = actions.pendingKeys.size > 0 || registry.pendingId !== null;
-  const openFile = ({ path }: OpenFileParams): void => {
-    void openInConfiguredEditor({
-      path: `${worktreePath}/${path}`,
-      state: useAppStore.getState(),
-    });
+  const openStopFile = ({ path }: OpenFileParams): void => {
+    void openFile({ path, root: worktreePath, sessionId });
   };
   const state = job.state;
   const left = files?.left ?? null;
@@ -379,7 +376,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             mountId={mountId}
             files={conflictFiles}
             isHintDisabled={isBusy}
-            onOpenFile={openFile}
+            onOpenFile={openStopFile}
           />
         );
       case 'rebasing-here':
@@ -388,7 +385,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           <RebaseStopFiles
             label={FILES_LABEL[state] ?? 'Files'}
             files={conflictFiles}
-            onOpen={state === 'rebasing-here' ? openFile : null}
+            onOpen={state === 'rebasing-here' ? openStopFile : null}
           />
         );
       case 'origin-moved':

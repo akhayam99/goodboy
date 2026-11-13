@@ -2,8 +2,7 @@ import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecover
 import { useAppStore } from '../../../../store';
 import { storageFolderBucket } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
-import { openInEditor } from '../../../../shared/lib/editor';
-import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
+import { openFolder } from '../../../open/openFolder';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { openGuideChapter } from '../../../settings/openGuideChapter';
 import type { WorktreeActionTarget } from '../../../actions/types';
@@ -40,16 +39,11 @@ const removeIntentOf = ({
 export const useWorktreeActionTarget = ({ folder, status, onRemove }: Params) => {
   const keepStorageFolder = useAppStore((state) => state.keepStorageFolder);
   const reportError = useAppStore((state) => state.reportError);
-  const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
 
   const attempt = ({ title, action }: AttemptParams) =>
     void action().catch((error: unknown) => reportError({ recovery: CHECK_STATE, title, error }));
 
-  const onEditor = () =>
-    attempt({
-      title: "Couldn't open the editor",
-      action: () => openInEditor({ path: folder.path, editor }),
-    });
+  const onEditor = () => void openFolder({ path: folder.path });
 
   const target: WorktreeActionTarget = {
     kind: 'worktree',

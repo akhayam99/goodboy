@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { brandId, type SessionId } from '@goodboy/types';
 import type { OpenLinkDetail } from '../../../../shared/lib/dispatchWindowEvent/windowEvents';
+import { openFolder } from '../../openFolder';
 import { openLink } from '../../openLink';
 
 type EventParams = {
@@ -44,10 +45,22 @@ const onOpenLink = ({ event }: EventParams): void => {
   });
 };
 
+const onOpenFolder = ({ event }: EventParams): void => {
+  const detail: unknown = event instanceof CustomEvent ? event.detail : null;
+  const path = typeof detail === 'object' && detail !== null ? Reflect.get(detail, 'path') : null;
+  if (typeof path !== 'string') {
+    return;
+  }
+  void openFolder({ path });
+};
+
 export const useOpenLinkEvent = (): void => {
   useEffect(() => {
     const controller = new AbortController();
     window.addEventListener('goodboy:open-link', (event) => onOpenLink({ event }), {
+      signal: controller.signal,
+    });
+    window.addEventListener('goodboy:open-folder', (event) => onOpenFolder({ event }), {
       signal: controller.signal,
     });
     return () => controller.abort();

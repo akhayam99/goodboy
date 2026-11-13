@@ -182,7 +182,7 @@ export const TAURI_CORE_IMPORT =
   /import\s+\{[^}]*\binvoke\b[^}]*\}\s*from\s*['"]@tauri-apps\/api\/core['"]|import\s+\*\s+as\s+\w+\s+from\s*['"]@tauri-apps\/api\/core['"]|import\(\s*['"]@tauri-apps\/api\/core['"]\s*\)|require\(\s*['"]@tauri-apps\/api\/core['"]\s*\)/g;
 const OPEN_OWNER = 'apps/desktop/src/features/open/';
 const RAW_OPEN_IMPORT =
-  /import\s+\{[^}]*\b(?:openUrl|openArtifactMirror)\b[^}]*\}\s*from\s*['"][^'"]+['"]/g;
+  /import\s+\{[^}]*\b(?:openUrl|openArtifactMirror|openInEditor)\b[^}]*\}\s*from\s*['"][^'"]+['"]/g;
 const CATCH_BINDING = /\bcatch\s*\(\s*(\w+)|\.catch\(\s*\(?\s*(\w+)/;
 const CATCH_CONTINUATION_BINDING = /^\s*\(?\s*(\w+)\s*(?::[^)=]*)?\)?\s*=>/;
 
@@ -379,7 +379,7 @@ export const RULES = [
       file.path.startsWith(OPEN_OWNER)
         ? 0
         : (file.lines.join('\n').match(RAW_OPEN_IMPORT) ?? []).length,
-    hint: 'open a target with openTarget from features/open, and say place: outside for a page that must leave the app; never import openUrl or openArtifactMirror',
+    hint: "open a target with openTarget from features/open, and say place: outside for a page that must leave the app; never import openUrl, openArtifactMirror or openInEditor; a folder is { kind: 'folder' } and a file is { kind: 'file' }",
   },
   {
     id: 'stringified-error',

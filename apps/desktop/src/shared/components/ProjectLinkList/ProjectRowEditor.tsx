@@ -3,8 +3,7 @@ import { SquareArrowOutUpRight, FolderOpen, Unplug } from 'lucide-react';
 import type { Project } from '@goodboy/types';
 import { Button, CopyButton, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { openInEditor } from '../../lib/editor';
-import { resolveEditorBinary } from '../../lib/editorSettings';
+import { dispatchWindowEvent } from '../../lib/dispatchWindowEvent';
 import { revealInFileManager } from '../../lib/reveal';
 
 import { NAMES } from '../../utils/names';
@@ -12,11 +11,7 @@ import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
 import { ProjectAfterMergeField } from './ProjectAfterMergeField';
 import { ProjectDescriptionField } from './ProjectDescriptionField';
-import {
-  CHECK_STATE,
-  OPEN_APP_SETTINGS_GENERAL,
-  OPEN_FAILED,
-} from '../../../store/slices/notifications/errorRecovery';
+import { CHECK_STATE, OPEN_FAILED } from '../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly project: Project;
@@ -28,21 +23,11 @@ type Props = {
 
 export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scriptsField }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
-  const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
   const isRepo = project.kind === 'repo';
 
-  const openProject = async () => {
-    try {
-      await openInEditor({ path: project.rootPath, editor });
-    } catch (error) {
-      void reportError({
-        title: `Couldn't open ${project.name}`,
-        error,
-        recovery: OPEN_APP_SETTINGS_GENERAL,
-      });
-    }
-  };
+  const openProject = () =>
+    dispatchWindowEvent({ name: 'goodboy:open-folder', detail: { path: project.rootPath } });
 
   const reveal = async () => {
     try {
@@ -105,7 +90,7 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
       </div>
       {scriptsField}
       <div className="flex items-center justify-between">
-        <Button variant="secondary" size="sm" onClick={() => void openProject()} disabled={busy}>
+        <Button variant="secondary" size="sm" onClick={openProject} disabled={busy}>
           <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
           Open in editor
         </Button>

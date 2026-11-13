@@ -6,6 +6,7 @@ import { isOwnBrowserClick } from '../browser/isOwnBrowserClick';
 import { openFileLink } from '../explore/openFileLink';
 import { nameOfTarget } from './nameOfTarget';
 import { openBesideSession } from './openBesideSession';
+import { openFolderLink } from './openFolderLink';
 import { openOutside } from './openOutside';
 import { openPlaceOf } from './openPlaceOf';
 import { readLinksOpen } from './readLinksOpen';
@@ -33,6 +34,10 @@ const go = async ({ target, sessionId, place }: GoParams): Promise<void> => {
       baseDir: target.root,
       link: { path: target.path, line: target.line, column: null },
     });
+    return;
+  }
+  if (target.kind === 'folder') {
+    await openFolderLink({ path: target.path, editor: target.editor });
     return;
   }
   if (place === 'beside-session' && sessionId !== null) {

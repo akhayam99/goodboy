@@ -63,19 +63,23 @@ describe('openFileLink', () => {
     ]);
   });
 
-  it('opens nothing for a path outside the worktree', async () => {
-    await openFileLink({
-      sessionId: SESSION,
-      root: ROOT,
-      baseDir: ROOT,
-      link: { path: '../notify-relay/queue.ts', line: 3, column: null },
-    });
-    await openFileLink({
-      sessionId: SESSION,
-      root: ROOT,
-      baseDir: ROOT,
-      link: { path: '/etc/hosts', line: 1, column: null },
-    });
+  it('opens nothing for a path outside the worktree and says why', async () => {
+    await expect(
+      openFileLink({
+        sessionId: SESSION,
+        root: ROOT,
+        baseDir: ROOT,
+        link: { path: '../notify-relay/queue.ts', line: 3, column: null },
+      }),
+    ).rejects.toThrow('../notify-relay/queue.ts is outside this folder.');
+    await expect(
+      openFileLink({
+        sessionId: SESSION,
+        root: ROOT,
+        baseDir: ROOT,
+        link: { path: '/etc/hosts', line: 1, column: null },
+      }),
+    ).rejects.toThrow('/etc/hosts is outside this folder.');
 
     expect(invokes('explore_open')).toHaveLength(0);
     expect(useAppStore.getState().drawer).toBeNull();
@@ -103,17 +107,62 @@ describe('openFileLink', () => {
     stubStoryInvoke({
       detect_editors: [CODE],
       explore_open: () => {
-        throw new Error('editor binary not found');
+        throw new Error('editor binary refused');
       },
     });
+    await expect(
+      openFileLink({
+        sessionId: SESSION,
+        root: ROOT,
+        baseDir: ROOT,
+        link: { path: 'src/rounding.ts', line: 1, column: null },
+      }),
+    ).rejects.toThrow('editor binary refused');
+
+    expect(invokes('explore_open')).toHaveLength(1);
+    expect(useAppStore.getState().drawer).toBeNull();
+  });
+
+  it('names the path when the file is gone', async () => {
+    stubStoryInvoke({
+      detect_editors: [CODE],
+      explore_open: () => {
+        throw { kind: 'not_file', message: 'path is not a file' };
+      },
+    });
+
+    await expect(
+      openFileLink({
+        sessionId: SESSION,
+        root: ROOT,
+        baseDir: ROOT,
+        link: { path: 'src/rounding.ts', line: null, column: null },
+      }),
+    ).rejects.toThrow('src/rounding.ts is missing');
+  });
+
+  it.each([
+    { name: 'a file with a line', editors: [CODE], line: 7, isDrawer: false },
+    { name: 'a file with no line', editors: [CODE], line: null, isDrawer: false },
+    { name: 'a file with no editor set', editors: [], line: 7, isDrawer: true },
+  ])('table: $name', async ({ editors, line, isDrawer }) => {
+    stubStoryInvoke({ detect_editors: editors, explore_open: null });
+    useAppStore.setState({ detectedEditors: editors });
+
     await openFileLink({
       sessionId: SESSION,
       root: ROOT,
       baseDir: ROOT,
-      link: { path: 'src/rounding.ts', line: 1, column: null },
+      link: { path: 'src/rounding.ts', line, column: null },
     });
 
-    expect(invokes('explore_open')).toHaveLength(1);
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(invokes('explore_open')).toHaveLength(isDrawer ? 0 : 1);
+    expect(useAppStore.getState().drawer !== null).toBe(isDrawer);
+    if (!isDrawer) {
+      expect(invokes('explore_open')[0]).toMatchObject({
+        editor: 'code',
+        ...(line === null ? {} : { line }),
+      });
+    }
   });
 });

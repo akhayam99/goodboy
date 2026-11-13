@@ -5,8 +5,7 @@ import type { BaseDivergence, Project, ProjectId, WorkspaceId } from '@goodboy/t
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
 
-import { openInEditor } from '../../../../shared/lib/editor';
-import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
+import { openFolder } from '../../../open/openFolder';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { pullBaseSummary } from '../../pullBase/pullBaseSummary';
@@ -14,10 +13,7 @@ import { ProjectGitDetail } from '../ProjectGitPill/ProjectGitDetail';
 import { RepoEntryRow } from './RepoEntryRow';
 import { repoGroupsOf } from './repoGroupsOf';
 import { repoRowFactsOf, type RepoRowFacts } from './repoRowFactsOf';
-import {
-  OPEN_APP_SETTINGS_GENERAL,
-  OPEN_FAILED,
-} from '../../../../store/slices/notifications/errorRecovery';
+import { OPEN_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Entry = {
   readonly project: Project;
@@ -69,7 +65,6 @@ export const RepoEntryPanel = ({ workspaceId, entries }: Props) => {
   const openStatus = useAppStore((state) =>
     openProjectId === null ? null : (state.projectGitStatus[openProjectId] ?? null),
   );
-  const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
   const checkRepoDivergence = useAppStore((state) => state.checkRepoDivergence);
   const pullRepoBases = useAppStore((state) => state.pullRepoBases);
   const reportError = useAppStore((state) => state.reportError);
@@ -114,16 +109,7 @@ export const RepoEntryPanel = ({ workspaceId, entries }: Props) => {
   };
 
   const openEditor = async ({ project }: ProjectParams): Promise<void> => {
-    try {
-      await openInEditor({ path: project.rootPath, editor });
-    } catch (error) {
-      void reportError({
-        title: `Couldn't open ${project.name} in the editor`,
-        error,
-        workspaceId,
-        recovery: OPEN_APP_SETTINGS_GENERAL,
-      });
-    }
+    await openFolder({ path: project.rootPath });
   };
 
   const rowOf = ({ row }: RowParams) => (

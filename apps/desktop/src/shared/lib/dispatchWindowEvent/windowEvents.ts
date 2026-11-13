@@ -11,6 +11,10 @@ export type OpenLinkDetail = {
   readonly hasCtrlKey?: boolean;
 };
 
+export type OpenFolderDetail = {
+  readonly path: string;
+};
+
 type DoorFlag = Partial<Record<'door', true>>;
 
 export type OpenSettingsDetail = SettingsFocus & DoorFlag;
@@ -25,6 +29,7 @@ export type WindowEventDetails = {
   readonly 'goodboy:open-settings': OpenSettingsDetail;
   readonly 'goodboy:open-guide': Payload | undefined;
   readonly 'goodboy:open-link': OpenLinkDetail;
+  readonly 'goodboy:open-folder': OpenFolderDetail;
   readonly 'goodboy:open-report-sheet': Payload | undefined;
   readonly 'goodboy:open-notifications-studio': Payload | undefined;
   readonly 'goodboy:open-notifications': undefined;

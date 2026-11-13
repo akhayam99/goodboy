@@ -9,5 +9,8 @@ export const nameOfTarget = ({ target }: Params): string => {
   if (target.kind === 'web') {
     return hostOf({ url: target.url });
   }
-  return target.kind === 'file' ? target.path : target.name;
+  if (target.kind === 'file' || target.kind === 'folder') {
+    return target.path;
+  }
+  return target.name;
 };

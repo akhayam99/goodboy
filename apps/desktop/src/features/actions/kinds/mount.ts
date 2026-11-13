@@ -15,7 +15,7 @@ import type { AppStore } from '../../../store/store';
 import type { RemoteHostKind } from '../../../shared/utils/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { dirtyTreeSentence } from '../../../shared/lib/dirtyTreeCopy';
-import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
+import { openFolderAction } from '../openFolderAction';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import { NAMES } from '../../../shared/utils/names';
 import { openExplorePane } from '../../explore/openExplorePane';
@@ -193,16 +193,8 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     when: isOpen,
     choices: ({ facts }) =>
       facts.editors.map((editor) => ({ id: editor.binary, label: editor.label, isCurrent: false })),
-    run: async ({ facts, env, choice }) => {
-      if (facts.worktreePath === null) {
-        return;
-      }
-      await openInConfiguredEditor({
-        path: facts.worktreePath,
-        state: env.getState(),
-        ...(choice !== null && { editor: choice }),
-      });
-    },
+    run: ({ facts, choice }) =>
+      openFolderAction({ path: facts.worktreePath, sessionId: facts.sessionId, editor: choice }),
   },
   {
     id: 'mount.openInTerminalApp',

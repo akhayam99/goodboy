@@ -522,6 +522,11 @@ const FIXTURES = {
     flagged: `import { invoke } from '${TAURI_CORE}';`,
     allowed: "import { listen } from '@tauri-apps/api/event';",
   },
+  'raw-open': {
+    path: TS,
+    flagged: "import { openInEditor } from '../../shared/lib/editor';",
+    allowed: "import { openTarget } from '../open/openTarget';",
+  },
   'stringified-error': {
     path: TS,
     flagged: 'try {\n  run();\n} catch (error) {\n  show(String(error));\n}',

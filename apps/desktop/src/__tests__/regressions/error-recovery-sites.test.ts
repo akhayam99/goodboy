@@ -73,13 +73,7 @@ const SITES: ReadonlyArray<Site> = [
   { file: 'store/slices/turn/settleTurn.ts', title: "Couldn't push the fix." },
   { file: 'store/slices/history/settleBranchPushFix.ts', title: "Couldn't push the fix." },
   { file: 'features/branch/hooks/useCheckFixPush/index.ts', title: "Couldn't push the branch" },
-  { file: 'shared/lib/editorSettings.ts', title: "Couldn't open the editor" },
   { file: 'shared/lib/terminalApp.ts', title: "Couldn't open your terminal app" },
-  { file: 'features/workspace/components/RepoEntry/RepoEntryPanel.tsx', title: 'in the editor' },
-  {
-    file: 'shared/components/ProjectLinkList/ProjectRowEditor.tsx',
-    title: "Couldn't open ${project.name}",
-  },
   {
     file: 'shared/components/ProjectLinkList/ProjectDescriptionField.tsx',
     title: "Couldn't save the description of",
@@ -142,12 +136,12 @@ describe('the reported errors of the most used actions name their way out', () =
     }
   });
 
-  it('covers thirty call sites', () => {
+  it('covers twenty-seven call sites', () => {
     const total = SITES.reduce(
       (sum, { file, title }) =>
         sum + callsNaming({ text: sources.get(`${SRC}${file}`) ?? '', title }).length,
       0,
     );
-    expect(total).toBe(30);
+    expect(total).toBe(27);
   });
 });
