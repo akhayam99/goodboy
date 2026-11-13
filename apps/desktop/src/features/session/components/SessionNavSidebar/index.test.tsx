@@ -9,6 +9,7 @@ const { state, currentWorkspace, activityBar } = vi.hoisted(() => ({
     navigate: vi.fn(),
     loadArchivedSessions: vi.fn(),
     projects: [] as ReadonlyArray<never>,
+    boardReady: true,
   },
   currentWorkspace: {
     id: 'ws-1' as WorkspaceId,
@@ -37,6 +38,7 @@ vi.mock('../../../workspace/components/SessionActivityBar', () => ({
 afterEach(() => {
   cleanup();
   state.navigate.mockClear();
+  state.boardReady = true;
 });
 
 import { SessionNavSidebar } from './index';
@@ -50,6 +52,14 @@ describe('SessionNavSidebar', () => {
     expect(screen.getByTestId('activity-bar')).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: /lenses/i })).toBeNull();
     expect(screen.queryByRole('button', { name: 'ship the nav' })).toBeNull();
+  });
+
+  it('draws row skeletons, never the list or its empty state, until the sessions land', () => {
+    state.boardReady = false;
+    render(<SessionNavSidebar currentSessionId={null} />);
+
+    screen.getByRole('status', { name: 'Loading sessions' });
+    expect(screen.queryByTestId('activity-bar')).toBeNull();
   });
 
   it('closes the peek once a session is picked', () => {

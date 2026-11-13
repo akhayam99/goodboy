@@ -37,14 +37,20 @@ const seedBoardChrome = (): void => {
   });
 };
 
-export const BoardShellScene = () => {
+type Props = {
+  readonly afterSeed?: () => void;
+  readonly isSessionOpen?: boolean;
+};
+
+export const BoardShellScene = ({ afterSeed = noop, isSessionOpen = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     seedBoardScene();
     seedBoardChrome();
+    afterSeed();
     setIsReady(true);
-  }, []);
+  }, [afterSeed]);
 
   if (!isReady) {
     return null;
@@ -52,15 +58,19 @@ export const BoardShellScene = () => {
 
   return (
     <ToastProvider>
-      <BoardShellSceneContent />
+      <BoardShellSceneContent isSessionOpen={isSessionOpen} />
     </ToastProvider>
   );
 };
 
-const BoardShellSceneContent = () => {
+type ContentProps = {
+  readonly isSessionOpen: boolean;
+};
+
+const BoardShellSceneContent = ({ isSessionOpen }: ContentProps) => {
   const sessions = useSessions();
   const current = useCurrentSession();
-  const currentSession = isDirectedScene() ? current : null;
+  const currentSession = isDirectedScene() || isSessionOpen ? current : null;
   const rail = useSceneSidebar({ isCollapsed: sceneParam({ key: 'rail' }) === '1' });
   const arrangement = shellArrangement({
     hasWorkspace: true,

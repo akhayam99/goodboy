@@ -13,6 +13,7 @@ export const wipeLocalDatabase = (set: SetFn, get: GetFn, initialState: AppState
     set({
       ...initialState,
       hydrated: get().hydrated,
+      isShellReady: get().isShellReady,
       bootPhase: get().bootPhase,
       providers: get().providers,
       providerStatus: get().providerStatus,

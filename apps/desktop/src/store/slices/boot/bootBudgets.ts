@@ -1,4 +1,5 @@
 export const BOOT_BUDGETS = {
+  awaitedStepsBeforeShell: 3,
   awaitedStepsBeforeHydrated: 6,
   turnListLiveCallsAtLaunch: 1,
   listProjectsCallsPerWorkspace: 1,

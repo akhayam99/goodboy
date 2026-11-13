@@ -27,6 +27,7 @@ const { state, workspace, storeListeners } = vi.hoisted(() => {
       hydrate: vi.fn(async () => undefined),
       checkForUpdates: vi.fn(async () => undefined),
       hydrated: true,
+      isShellReady: true,
       bootPhase: 'ready' as const,
       error: null,
       workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,

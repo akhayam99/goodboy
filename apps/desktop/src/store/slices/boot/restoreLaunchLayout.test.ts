@@ -68,11 +68,25 @@ const saveLayout = (label: string, workspaceId: WorkspaceId, sessionId: string) 
     JSON.stringify({ workspaceId, location: locationIn(workspaceId, sessionId), at: Date.now() }),
   );
 
-const buildGet = () => {
+type SwitchError = {
+  readonly workspaceId: WorkspaceId;
+  readonly message: string;
+};
+
+type BuildParams = {
+  readonly failure?: SwitchError;
+};
+
+const buildGet = ({ failure }: BuildParams = {}) => {
+  const state = {
+    workspaceSwitchError: failure ?? null,
+    boardReady: failure === undefined,
+  };
   const setCurrentWorkspace = vi.fn(async () => undefined);
   const restoreLocation = vi.fn();
-  const get = (() => ({ setCurrentWorkspace, restoreLocation })) as never;
-  return { get, setCurrentWorkspace, restoreLocation };
+  const set = vi.fn();
+  const get = (() => ({ ...state, setCurrentWorkspace, restoreLocation })) as never;
+  return { get, set, setCurrentWorkspace, restoreLocation };
 };
 
 beforeEach(() => {
@@ -90,6 +104,7 @@ describe('restoreLaunchLayout', () => {
     const store = buildGet();
 
     const layout = await restoreLaunchLayout({
+      set: store.set,
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
@@ -112,6 +127,7 @@ describe('restoreLaunchLayout', () => {
     const store = buildGet();
 
     const layout = await restoreLaunchLayout({
+      set: store.set,
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
@@ -129,6 +145,7 @@ describe('restoreLaunchLayout', () => {
     const store = buildGet();
 
     const layout = await restoreLaunchLayout({
+      set: store.set,
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: true,
@@ -146,6 +163,7 @@ describe('restoreLaunchLayout', () => {
     const store = buildGet();
 
     const layout = await restoreLaunchLayout({
+      set: store.set,
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
@@ -159,5 +177,32 @@ describe('restoreLaunchLayout', () => {
     });
     expect(h.settings.has('window.layout.win-old')).toBe(false);
     expect(h.titles).toEqual(['northwind']);
+  });
+
+  it('shows the shell for the saved workspace and takes it down when that workspace fails to open', async () => {
+    saveLayout('main', WS_A, 'session-ledger');
+    h.settings.set('restart.reason', JSON.stringify({ reason: 'update', at: Date.now() }));
+    const store = buildGet({ failure: { workspaceId: WS_A, message: 'harborline unreadable' } });
+
+    await restoreLaunchLayout({
+      set: store.set,
+      get: store.get,
+      workspaces: WORKSPACES,
+      isReopenLast: false,
+      launch: LAUNCH,
+    });
+
+    expect(store.set).toHaveBeenNthCalledWith(1, {
+      currentWorkspaceId: WS_A,
+      switchingToWorkspaceId: null,
+      boardReady: false,
+      isShellReady: true,
+    });
+    expect(store.set).toHaveBeenLastCalledWith({
+      currentWorkspaceId: null,
+      boardReady: true,
+      isShellReady: false,
+    });
+    expect(store.restoreLocation).not.toHaveBeenCalled();
   });
 });

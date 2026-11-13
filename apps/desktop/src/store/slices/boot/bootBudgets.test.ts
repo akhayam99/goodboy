@@ -84,6 +84,7 @@ const PROJECTS_QUERY = 'SELECT * FROM projects WHERE workspace_id = ?';
 
 let useAppStore: StoryStore;
 let stepsBeforeHydrated: string[];
+let stepsBeforeShell: string[];
 
 const projectReadsOf = ({ workspaceId }: { readonly workspaceId: WorkspaceId }): number =>
   vi
@@ -115,12 +116,19 @@ beforeEach(async () => {
   stubStoryInvoke({ turn_list_live: () => [] });
   vi.spyOn(db, 'select');
   stepsBeforeHydrated = [];
+  stepsBeforeShell = [];
   vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
     queueMicrotask(callback);
     return 0;
   });
   perfSeam.counter = ({ name, detail }) => {
-    if (name === PERF_COUNT_NAMES.bootStep && !useAppStore.getState().hydrated) {
+    if (name !== PERF_COUNT_NAMES.bootStep) {
+      return;
+    }
+    if (!useAppStore.getState().isShellReady) {
+      stepsBeforeShell.push(detail ?? '');
+    }
+    if (!useAppStore.getState().hydrated) {
       stepsBeforeHydrated.push(detail ?? '');
     }
   };
@@ -137,6 +145,14 @@ afterEach(() => {
 
 describe('a cold launch stays inside its budget', () => {
   it('awaits no more steps than the budget before the app shows', async () => {
+    await useAppStore.getState().hydrate();
+
+    expect(useAppStore.getState().error).toBeNull();
+    expect(stepsBeforeShell).toEqual(['pending', 'migrations', 'launch-reads']);
+    expect(stepsBeforeShell.length).toBe(BOOT_BUDGETS.awaitedStepsBeforeShell);
+  });
+
+  it('awaits no more steps than the budget before the launch is done', async () => {
     await useAppStore.getState().hydrate();
 
     expect(useAppStore.getState().error).toBeNull();

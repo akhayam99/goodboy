@@ -844,10 +844,22 @@ determinate bar and the phase word on that same backdrop. The bar moves one
 sixth per real `bootPhase` write (`BOOT_PHASE_ORDER`, `bootProgressPercent`),
 never on a timer, and jumps under reduced motion. Settings, agent credentials and
 workspaces load together, so the phase word moves to the first of the three still
-loading and never steps back. On `ready` `App` mounts the app or
-the setup at once and `BootSplashExit` crossfades the splash out over 200 ms on
-top of it (same `BootStage`, so the tile does not move); there is no fixed wait
-after ready, and reduced motion removes the splash at once. The window opens hidden and
+loading and never steps back. The app shows before its data: once the launch
+knows which workspace it opens, `showLaunchShell` sets `isShellReady` with that
+workspace current and `boardReady` false, and `App` mounts the real top bar, the
+sidebar (doors, then `SessionRowsSkeleton` in place of the rows), the Board
+(`BoardSkeleton` lanes) and the tool rail, so the palette and the workspace switch
+already work. The rows and the cards replace their skeletons in the one commit
+that sets `boardReady`; no session empty state ("No sessions yet", "Add a folder
+first") draws before it (`empty-before-loaded.test.ts`). The last session then
+opens in place and its parts swap from their own skeletons; the idle loads come
+last. A launch with no workspace to open mounts the launcher or the setup on
+`ready`, as before. A failed launch, before or after the shell shows, puts the
+launch error screen back (`AppBootSplash`, on `bootPhase === 'error'`), and Retry
+hides the shell until the next workspace is known. The `boot-shell` scenes show
+the three states. `BootSplashExit` crossfades the splash out over 200 ms on
+top of the shell (same `BootStage`, so the tile does not move); there is no fixed
+wait, and reduced motion removes the splash at once. The window opens hidden and
 `useRevealWindow` shows it after the first paint (Rust shows it after 3 s if the
 page never does), so a light theme never flashes dark. Before React, `index.html`
 paints the same chrome, 6% backdrop and tile in both themes, and the native
