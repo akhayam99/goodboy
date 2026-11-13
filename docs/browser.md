@@ -710,6 +710,19 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 `browser::refuse_browser_pages`, which answers every app command from a
 `browse-` webview with the `browser-caller` code before it runs.
 
+Two tests hold the wall. `registers_every_app_command_behind_the_browser_wall`
+in `src-tauri/src/browser/tests.rs` fails when `lib.rs` has a second
+`invoke_handler` or `generate_handler`, when the list is not the whole argument
+of `refuse_browser_pages`, when a name in `window-commands.json` sits outside
+it, or when any other source file registers a handler or adds a capability at
+run time. It reads the source because the real commands are typed to the
+default runtime and cannot build on the mock one; the `probe` test beside it
+proves the wrapper refuses a `browse-` caller. `browser-isolation.test.ts` in
+`src/__tests__/regressions/` holds the plugin side: no capability pattern
+matches a tab label, none grants by window or names a remote address,
+`tauri.conf.json` lists no capability, and the folder holds only top level
+`.json` files, the only ones the test reads.
+
 ## Passkeys
 
 A tab can't finish a passkey sign-in on macOS. Answering a passkey request for

@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -272,6 +273,68 @@ fn refuses_every_app_command_to_a_browser_page_even_from_a_local_address() {
     let refused = get_ipc_response(&page, local_request("probe")).expect_err("refused");
     assert_eq!(refused["kind"], "refused");
     assert_eq!(refused["message"], BROWSER_CALLER);
+}
+
+const APP_SOURCE: &str = include_str!("../lib.rs");
+const WINDOW_COMMANDS: &str = include_str!("../../window-commands.json");
+const WALLED_HANDLER: &str =
+    ".invoke_handler(browser::refuse_browser_pages(tauri::generate_handler![";
+
+fn walled_commands() -> BTreeSet<&'static str> {
+    let start = APP_SOURCE
+        .find(WALLED_HANDLER)
+        .expect("lib.rs registers its commands inside refuse_browser_pages")
+        + WALLED_HANDLER.len();
+    let length = APP_SOURCE[start..]
+        .find(']')
+        .expect("the command list closes");
+    assert!(
+        APP_SOURCE[start + length..].starts_with("]))"),
+        "refuse_browser_pages closes right after the command list"
+    );
+    APP_SOURCE[start..start + length]
+        .split(',')
+        .map(str::trim)
+        .filter(|entry| !entry.is_empty())
+        .map(|entry| entry.rsplit("::").next().unwrap_or(entry))
+        .collect()
+}
+
+fn ledger_commands() -> BTreeSet<String> {
+    let ledger: serde_json::Value =
+        serde_json::from_str(WINDOW_COMMANDS).expect("window-commands.json parses");
+    ["every-window", "main-only"]
+        .iter()
+        .flat_map(|list| ledger[list].as_array().expect("a ledger list"))
+        .map(|name| name.as_str().expect("a command name").to_string())
+        .collect()
+}
+
+#[test]
+fn registers_every_app_command_behind_the_browser_wall() {
+    assert_eq!(APP_SOURCE.matches("invoke_handler").count(), 1);
+    assert_eq!(APP_SOURCE.matches("generate_handler").count(), 1);
+    let walled = walled_commands();
+    let ledger = ledger_commands();
+    let outside: Vec<&String> = ledger
+        .iter()
+        .filter(|name| !walled.contains(name.as_str()))
+        .collect();
+    assert!(outside.is_empty(), "outside the wall: {outside:?}");
+    let unlisted: Vec<&&str> = walled
+        .iter()
+        .filter(|name| !ledger.contains(**name))
+        .collect();
+    assert!(
+        unlisted.is_empty(),
+        "missing from window-commands.json: {unlisted:?}"
+    );
+    let elsewhere = production_hits(
+        &["invoke_handler", "generate_handler", "add_capability"],
+        &["lib.rs"],
+    );
+    assert!(elsewhere.is_empty(), "{elsewhere:?}");
+    assert!(!APP_SOURCE.contains("add_capability"));
 }
 
 fn webview(app: &App<MockRuntime>, label: &str) -> Webview<MockRuntime> {
