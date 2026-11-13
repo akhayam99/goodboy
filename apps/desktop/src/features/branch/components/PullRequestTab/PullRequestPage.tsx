@@ -151,7 +151,7 @@ export const PullRequestPage = ({
       data-slot="overview-grid"
       className="@container grid min-w-0 grid-cols-1 gap-8 @[880px]:grid-cols-[minmax(0,1fr)_17.5rem]"
     >
-      <div className="order-1 min-w-0 @[880px]:order-2">
+      <div className="order-2 min-w-0 @[880px]:col-start-2 @[880px]:row-start-1">
         <PullRequestProperties
           sessionId={sessionId}
           mountId={mountId}
@@ -170,7 +170,7 @@ export const PullRequestPage = ({
       </div>
       <div
         data-slot="reading-column"
-        className="order-2 flex min-w-0 max-w-170 flex-col gap-6 @[880px]:order-1"
+        className="order-1 flex min-w-0 flex-col gap-6 @[880px]:col-start-1 @[880px]:row-start-1 @[880px]:max-w-170"
       >
         <MergeBox
           box={box}

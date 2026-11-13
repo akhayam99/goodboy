@@ -10,8 +10,21 @@ type Props = {
   readonly record: InboxRecord;
 };
 
+type GhRunParams = {
+  readonly payload: unknown;
+};
+
+const ghRunAnswer = ({ payload }: GhRunParams) => {
+  const args = (payload as { readonly args?: ReadonlyArray<string> } | undefined)?.args ?? [];
+  const isRepoView = args[0] === 'repo';
+  return { stdout: isRepoView ? 'harborline/ledger-core\n' : '[]', stderr: '', exitCode: 0 };
+};
+
 const installIpc = (): void => {
-  mockSceneIpc((command) => {
+  mockSceneIpc((command, payload) => {
+    if (command === 'gh_run') {
+      return ghRunAnswer({ payload });
+    }
     if (command === 'bitbucket_list_pull_request_statuses') {
       return HOST_BITBUCKET_STATUSES;
     }
