@@ -1855,9 +1855,10 @@ worktree and branch. It finds the editors installed on your computer by
 itself. **Settings → App → General → Open with** picks the editor, the terminal app
 (Terminal.app, iTerm, Warp or Ghostty, as installed) and the browser. With up to four options the choice is a segmented control like Theme;
 with more it is a list. The browser starts at **System default**, and a
-⌘-click on a link and artifacts you open outside open there. A fourth row,
-**Links**, picks where a plain click on a web link goes: **In Goodboy**
-(the default) or **In your browser**. If the browser you picked is removed,
+⌘-click on a link, wireframes and anything opened outside a session open there. A fourth row,
+**Links**, picks where a plain click on a web link, a plan or a report goes: **In Goodboy**
+(the default, in a tab beside the session) or **In your browser**. One function, `openTarget`,
+decides where each target opens (see [browser.md](browser.md#the-click-rule)). If the browser you picked is removed,
 links open in the system browser and a note in Settings says so. When you are done, you pick the
 session up again in Goodboy.
 

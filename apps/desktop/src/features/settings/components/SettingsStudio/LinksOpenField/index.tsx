@@ -34,7 +34,7 @@ export const LinksOpenField = () => {
   return (
     <FieldRow
       label="Links"
-      help={`A plain click on a web link. ${ownBrowserClickWord()} always opens your browser.`}
+      help={`Click on a link, plan or report, in a session. ${ownBrowserClickWord()}: your browser.`}
     >
       <SegmentedTabs
         size="sm"

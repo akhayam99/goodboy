@@ -6,6 +6,7 @@
     "artifact_mirror_measure",
     "artifact_mirror_open",
     "artifact_mirror_open_root",
+    "artifact_mirror_path",
     "artifact_mirror_pending",
     "artifact_mirror_remove",
     "artifact_mirror_reveal",

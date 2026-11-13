@@ -14,7 +14,9 @@ import { deriveWireframeTarget } from '../wireframes/wireframeTarget';
 import { openWireframeInBrowser } from '../wireframes/openWireframeInBrowser';
 import { exportArtifactToFile } from './artifactFile';
 import { artifactFolderName } from './artifactFolderName';
-import { openArtifactMirror, revealArtifactMirror } from './artifactMirror/artifactMirrorInvoke';
+import { openSavedCopy } from '../open/openSavedCopy';
+import type { OpenClick } from '../open/types';
+import { revealArtifactMirror } from './artifactMirror/artifactMirrorInvoke';
 import { loadArtifactProvenance } from './artifactProvenance';
 import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from './artifactRetryDraft';
 import type { ArtifactGeneration } from './artifactCollection';
@@ -50,10 +52,15 @@ type MirrorParams = ArtifactParams & {
   readonly workspaceSlug: string;
 };
 
+type OpenCopyParams = MirrorParams & {
+  readonly event?: OpenClick;
+};
+
 export const openArtifactCopy = async ({
   artifact,
   workspaceSlug,
-}: MirrorParams): Promise<void> => {
+  event,
+}: OpenCopyParams): Promise<void> => {
   if (artifact.kind === 'wireframe') {
     await openWireframeInBrowser({
       artifact,
@@ -62,11 +69,7 @@ export const openArtifactCopy = async ({
     });
     return;
   }
-  await openArtifactMirror({
-    workspaceSlug,
-    folder: artifactFolderName({ artifact }),
-    file: MIRROR_INDEX_FILE,
-  });
+  await openSavedCopy({ artifact, workspaceSlug, file: MIRROR_INDEX_FILE, event });
 };
 
 export const revealArtifactCopy = ({ artifact, workspaceSlug }: MirrorParams): Promise<void> =>

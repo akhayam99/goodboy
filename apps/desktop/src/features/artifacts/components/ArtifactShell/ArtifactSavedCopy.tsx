@@ -25,7 +25,7 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={openInBrowser}
+            onClick={(event) => openInBrowser({ event })}
             data-testid="artifact-saved-copy-open"
           >
             <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />

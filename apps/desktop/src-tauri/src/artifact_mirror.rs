@@ -500,6 +500,31 @@ pub(crate) fn mirror_file(
     Ok(path)
 }
 
+fn openable_mirror_file(
+    home: &Path,
+    workspace_slug: &str,
+    folder: &str,
+    file: &str,
+) -> Result<PathBuf, ArtifactExportError> {
+    let path = mirror_file(home, workspace_slug, folder, file)?;
+    crate::util::open_guard::refuse_executable(&path)?;
+    Ok(path)
+}
+
+#[tauri::command]
+pub async fn artifact_mirror_path(
+    workspace_slug: String,
+    folder: String,
+    file: String,
+) -> Result<String, ArtifactExportError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        openable_mirror_file(&home()?, &workspace_slug, &folder, &file)
+            .map(|path| path.to_string_lossy().into_owned())
+    })
+    .await
+    .map_err(|error| destination(&error.to_string()))?
+}
+
 #[tauri::command]
 pub async fn artifact_mirror_open(
     app: tauri::AppHandle,
@@ -508,8 +533,7 @@ pub async fn artifact_mirror_open(
     file: String,
 ) -> Result<(), ArtifactExportError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let path = mirror_file(&home()?, &workspace_slug, &folder, &file)?;
-        crate::util::open_guard::refuse_executable(&path)?;
+        let path = openable_mirror_file(&home()?, &workspace_slug, &folder, &file)?;
         open_with_browser(&app, &path)?;
         Ok(())
     })
@@ -593,6 +617,43 @@ mod tests {
         assert!(write_mirror(&home, "harborline", "..", &[file("a.html", "x")]).is_err());
         assert!(write_mirror(&home, "harborline", "a/b", &[file("a.html", "x")]).is_err());
         assert!(locate_mirror(&home, "harborline", "../..").is_err());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn returns_the_path_of_a_saved_page_and_refuses_one_that_is_not_a_plain_page() {
+        let home = scratch_home();
+        let root = write_mirror(
+            &home,
+            "harborline",
+            "report",
+            &[file("index.html", "<p>x</p>")],
+        )
+        .expect("write");
+        let path = openable_mirror_file(&home, "harborline", "report", "index.html").expect("path");
+        assert_eq!(path, root.join("index.html"));
+        assert!(openable_mirror_file(&home, "harborline", "report", "../index.html").is_err());
+        assert!(openable_mirror_file(&home, "harborline", "report", "meta.json").is_err());
+        assert!(openable_mirror_file(&home, "harborline", "gone", "index.html").is_err());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn refuses_to_return_the_path_of_an_executable_page() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let home = scratch_home();
+        let root = write_mirror(
+            &home,
+            "harborline",
+            "report",
+            &[file("index.html", "echo acme")],
+        )
+        .expect("write");
+        let page = root.join("index.html");
+        std::fs::set_permissions(&page, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        assert!(openable_mirror_file(&home, "harborline", "report", "index.html").is_err());
         let _ = std::fs::remove_dir_all(home);
     }
 

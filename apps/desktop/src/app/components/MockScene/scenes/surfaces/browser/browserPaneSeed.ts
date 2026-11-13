@@ -22,7 +22,8 @@ export type BrowserPaneSceneState =
   | 'keys'
   | 'find'
   | 'find-missing'
-  | 'cover';
+  | 'cover'
+  | 'saved-copy';
 
 const VISITS: ReadonlyArray<BrowserVisit> = [
   { url: 'http://localhost:5173/checkout/confirm', title: 'Confirm order', visitedAt: 3 },
@@ -85,6 +86,27 @@ const ownerSessionOf = ({ payload }: PayloadParams): unknown => {
 
 const SIGN_IN_URL = 'https://id.cascadia.dev/signin';
 
+const SAVED_COPY_URL = 'file:///mirror/rounding-drift/index.html';
+
+type FirstTabParams = {
+  readonly isPasskey: boolean;
+  readonly isSavedCopy: boolean;
+};
+
+const firstTabAddress = ({ isPasskey, isSavedCopy }: FirstTabParams): string => {
+  if (isSavedCopy) {
+    return SAVED_COPY_URL;
+  }
+  return isPasskey ? SIGN_IN_URL : 'http://localhost:5173/checkout';
+};
+
+const firstTabTitle = ({ isPasskey, isSavedCopy }: FirstTabParams): string => {
+  if (isSavedCopy) {
+    return 'Rounding drift';
+  }
+  return isPasskey ? 'Sign in to Cascadia' : 'Checkout';
+};
+
 const ROUNDING_ID = brandId<SessionId>({ value: 'mock-browser-rounding' });
 
 const rowOf = ({ id, url, title, sessionId, projectId, position }: RowParams): BrowserTab => ({
@@ -142,11 +164,12 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
   seedActivityRunScene();
   const projectId = pinProjectOf({ state: useAppStore.getState(), sessionId: SESSION_ID });
   const isPasskey = state === 'passkey';
+  const isSavedCopy = state === 'saved-copy';
   const tabs = [
     rowOf({
       id: 'mock-browser-checkout',
-      url: isPasskey ? SIGN_IN_URL : 'http://localhost:5173/checkout',
-      title: isPasskey ? 'Sign in to Cascadia' : 'Checkout',
+      url: firstTabAddress({ isPasskey, isSavedCopy }),
+      title: firstTabTitle({ isPasskey, isSavedCopy }),
       sessionId: SESSION_ID,
       projectId: null,
       position: 0,

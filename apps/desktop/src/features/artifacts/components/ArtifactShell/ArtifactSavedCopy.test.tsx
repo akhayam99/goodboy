@@ -22,6 +22,9 @@ describe('ArtifactSavedCopy', () => {
     expect(screen.getByRole('region', { name: 'File' })).toBeDefined();
     fireEvent.click(screen.getByTestId('artifact-saved-copy-open'));
     expect(copy.openInBrowser).toHaveBeenCalledTimes(1);
+    expect(copy.openInBrowser).toHaveBeenCalledWith({
+      event: expect.objectContaining({ metaKey: false, ctrlKey: false }),
+    });
     fireEvent.click(screen.getByTestId('artifact-saved-copy-reveal'));
     expect(copy.reveal).toHaveBeenCalledTimes(1);
   });
