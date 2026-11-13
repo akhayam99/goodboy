@@ -56,13 +56,13 @@ const expectOnPagePrimitive = ({
   expect(header, `${page} draws its title through the page header`).not.toBeNull();
   expect(header?.getAttribute('data-page')).toBe(page);
   const isUnderBand = header?.hasAttribute('data-under-trail') ?? false;
-  expect(header?.className.split(' ').includes('pt-3')).toBe(!isUnderBand);
+  expect(header?.className.split(' ').includes('pt-2')).toBe(!isUnderBand);
 };
 
 const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   const geometry = frameGeometryOf({ page });
   expect(geometry.titleCentreY).toBe(geometry.bandHeight + geometry.titleRowHeight / 2);
-  expect(geometry.titleCentreY).toBe(geometry.bandHeight === FRAME_BAND_PX ? 56 : 28);
+  expect(geometry.titleCentreY).toBe(geometry.bandHeight === FRAME_BAND_PX ? 56 : 24);
   const title = onlyH1({
     scope: isStudio ? (document.querySelector('[data-studio-frame]') ?? document) : document,
   });
@@ -124,7 +124,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
       expect(row).not.toBeNull();
       expect(row?.previousElementSibling).toBeNull();
       expect(document.querySelector('[data-slot="board-band"]')).toBeNull();
-      expect(frameGeometryOf({ page: 'board' }).titleCentreY).toBe(28);
+      expect(frameGeometryOf({ page: 'board' }).titleCentreY).toBe(24);
       expectOnPagePrimitive({ page: 'board', title });
     },
   },

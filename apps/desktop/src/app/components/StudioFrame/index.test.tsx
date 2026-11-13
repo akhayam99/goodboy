@@ -130,7 +130,7 @@ describe('StudioFrame', () => {
       const header = skeleton?.querySelector<HTMLElement>('[data-page-header]');
       expect(header?.getAttribute('data-page')).toBe(meta.page);
       const isUnderBand = meta.close === 'back';
-      expect(header?.className.split(' ').includes('pt-3')).toBe(!isUnderBand);
+      expect(header?.className.split(' ').includes('pt-2')).toBe(!isUnderBand);
     },
   );
 

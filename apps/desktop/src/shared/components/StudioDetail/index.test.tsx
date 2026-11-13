@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { StudioWidget } from '@goodboy/ui';
-import { HeaderBand } from '@goodboy/ui';
 import { StudioDetailTabs } from '@goodboy/ui';
 
 beforeEach(() => {
@@ -73,27 +72,5 @@ describe('StudioWidget', () => {
 
     const body = screen.getByText('Primary body').parentElement;
     expect(body?.className).toBe('');
-  });
-});
-
-describe('HeaderBand', () => {
-  it('renders title and actions before the meta chips and subtitle', () => {
-    render(
-      <HeaderBand
-        title="Improve detail layout"
-        meta={<span>GB-42</span>}
-        subtitle={<span>api/items</span>}
-        actions={<a href="https://example.com">Open</a>}
-      />,
-    );
-
-    const title = screen.getByRole('heading', { level: 1, name: 'Improve detail layout' });
-    const meta = screen.getByText('GB-42');
-    const subtitle = screen.getByText('api/items');
-    const action = screen.getByRole('link', { name: 'Open' });
-
-    expect(title.parentElement?.contains(action)).toBe(true);
-    expect(title.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(meta.compareDocumentPosition(subtitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

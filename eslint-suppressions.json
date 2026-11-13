@@ -5182,11 +5182,6 @@
       "count": 13
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6

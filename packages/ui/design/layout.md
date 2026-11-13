@@ -82,10 +82,11 @@ owns the gap below the header, and children add no top margins. The root is
 
 **One header grid.** Every page, sub-page, studio and the Board draws its header
 through `PageHeader` (`packages/ui/src/components/PaneShell/PageHeader.tsx`): the
-12px header inset (`PANE_RHYTHM.headerInset`), or a 40px studio band where the band
-still holds Close, a 32px title row with the page's `h1` at `text-title` and the
-actions at its right, and an optional 12px muted meta line 4px under the row. The
-title's centre is therefore 28px under the pane top (56px under a band) and its left
+8px header inset (`PANE_RHYTHM.headerInset`), or a 40px studio band where the band
+still holds Close, a 32px title row (`PaneTitleRow`) with the page's `h1` at `text-title` and the
+actions at its right, 8px under the row, and an optional 16px muted meta line in the row's
+block, so the band is 48px (64px with the meta line). The
+title's centre is therefore 24px under the pane top (56px under a band) and its left
 edge is the column's content edge on every page; a page names its kind
 (`page="overview"`) and `PAGE_MEASURE` gives its column; `frameGeometryOf`
 (`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Every
@@ -107,7 +108,7 @@ Add workspace) keep a 40px band that holds only
 Close. A band also appears when the body hands it a trail (`StudioTrail`, the
 workflow editor and the Settings crumbs) or a header accessory, and only then is
 the body `UnderTrailContext`. The bandless pages, the Board and Settings included,
-sit on the 12px header inset in `frameGeometryOf`, like a session page. Optional `tabs` sit on
+sit on the 8px header inset in `frameGeometryOf`, like a session page. Optional `tabs` sit on
 their own row under the meta line, at the column's left. A glyph never indents the
 title: `PaneShell` has no `icon`, `glyph` or `tone`, the concept lives in the crumb. The
 crumb names the structure and the `h1` the object, and a report's document title is an
@@ -120,15 +121,15 @@ each passes `SessionPageIntro` as its `subheader`, two muted `text-body` lines a
 the prose measure from the one copy map `SESSION_PAGE_INTRO`, and their empty
 states keep only a title and an action. Every other page, the secondary pages
 included, adds no description line.
-A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
-fixed `h-8` row) through the custom `header` slot. The agent detail passes
-`AgentHeader` instead: one 32px title row with the role chip, the one-line title (full
+A detail that needs its own header row passes `PaneTitleRow` through the custom `header` slot.
+The agent detail passes
+`AgentHeader`, a `PaneTitleRow` too: one 32px title row with the role chip, the one-line title (full
 name on hover) and the provider mark, then the actions, **Open transcript** and the
 overflow menu. No meta line, no state, no model and no tabs (the state is the
 conversation tail, the model sits in each turn footer), and the conversation under it
 starts 8px down (`ChatView` `topInset="tight"`, `mode="conversation"`). A page that must show a banner
 under its title (the first lap) receives it through `PaneBannerContext` and `PaneShell`
-draws it as the first body block on the column, once, so the title never moves. The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
+draws it as the first body block on the column, once, so the title never moves. The session overview's goal band under the header holds one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
 there is none, then one row of facts: `Context`, `Artifacts`, linked work, `Link work` and the cost. Goal, decisions and summary
@@ -256,7 +257,7 @@ two 28px rows. Widths are 300, 380 and 460. It opens in 120ms (opacity and a
 Which action goes in which zone is decided in [DESIGN.md](../../../DESIGN.md#action-zones). The slots that carry it:
 
 - Primary actions are visible, labeled buttons. Overflow holds copy and rare actions. Reversible removals act immediately, offer an Undo toast for about 10 seconds, and join app Undo outside text fields. Only an action that loses work asks for inline confirmation. Linked task chips open their task and reveal a separate unlink control on hover or focus; they have no overflow trigger.
-- The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `HeaderBand` as `actions`, and `DrawerFrame` as its one `action`. The focused object's primary action uses it too. A drawer whose header carries a state and verbs, like the plan drawer, adds one second row through `DrawerFrame`'s `toolbar`, and its title may then take two lines; expanded, the same content goes into the one `action` and the header is one row.
+- The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `PaneTitleRow` as `actions`, and `DrawerFrame` as its one `action`. The focused object's primary action uses it too. A drawer whose header carries a state and verbs, like the plan drawer, adds one second row through `DrawerFrame`'s `toolbar`, and its title may then take two lines; expanded, the same content goes into the one `action` and the header is one row.
 - A creation or edit flow's action row is the one the creation grammar below describes. It is never stretched across a shell or container that also holds unrelated content.
 - A blocked object's way out is one next action strip in the `banner` slot of the detail layout: under the header, above the tabs, outside every scroll region, so every tab sees the same copy. Its tone sits on the left rail only (danger for a failed step, warning for a question, info for a wait), with a sentence that names the object, a muted cause, the technical detail behind a disclosure, one primary action and at most two secondary ones. It never repeats at the bottom of a transcript.
 - A status row that describes the same block, like the orchestrator strip under a failed step or an open question, stays on a neutral rail, so only the next action strip carries the tone.

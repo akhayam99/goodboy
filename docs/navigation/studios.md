@@ -74,7 +74,7 @@ in `studioMeta.ts`).
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not
-  add the 12px a bare page adds; a bandless page sits on the 12px header inset
+  add the 8px a bare page adds; a bandless page sits on the 8px header inset
   (`frameGeometryOf`), like a session page. The provider wraps the body whether
   or not the band is drawn, only its value changes: a trail that claims the
   band must not remount the page that drew it (Tasks Open lost its record

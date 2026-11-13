@@ -143,7 +143,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/ChatOriginRow.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/FolderCard.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/GoalTeaser.tsx": 1,
-  "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPanel.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 1,

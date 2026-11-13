@@ -1,4 +1,4 @@
-import { ICON_SIZE, TruncatedText } from '@goodboy/ui';
+import { ICON_SIZE, PaneTitleRow, TruncatedText } from '@goodboy/ui';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import type { ArtifactKind } from '@goodboy/types';
 import type { ArtifactActionTarget } from '../../../actions/types';
@@ -45,34 +45,38 @@ export const ArtifactShellHeader = ({
     <ArtifactHeaderMenuContext.Provider value={register}>
       <div
         data-testid="artifact-shell-header"
-        className="flex min-w-0 flex-col gap-0.5"
+        className="min-w-0"
         onContextMenu={menu.onContextMenu}
         onKeyDown={menu.onKeyDown}
       >
-        <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          {isTitleInDocument ? null : <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />}
-          {isTitleInDocument ? (
-            <h1 data-testid="artifact-title" className="sr-only">
-              {title}
-            </h1>
-          ) : (
-            <TruncatedText
-              as="h1"
-              data-testid="artifact-title"
-              className="min-w-0 flex-1 text-title text-foreground"
-            >
-              {title}
-            </TruncatedText>
-          )}
-          {isTitleInDocument ? <span className="flex-1" /> : null}
-          {chip}
-          {actions}
-        </div>
-        {meta === null ? null : (
-          <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-6">
-            {meta}
-          </div>
-        )}
+        <PaneTitleRow
+          titleTestId="artifact-title"
+          title={
+            isTitleInDocument ? (
+              <span className="sr-only">{title}</span>
+            ) : (
+              <span className="flex min-w-0 items-center gap-2">
+                <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />
+                <TruncatedText as="span" className="min-w-0 flex-1">
+                  {title}
+                </TruncatedText>
+              </span>
+            )
+          }
+          meta={
+            meta === null ? null : (
+              <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-6">
+                {meta}
+              </div>
+            )
+          }
+          actions={
+            <>
+              {chip}
+              {actions}
+            </>
+          }
+        />
       </div>
     </ArtifactHeaderMenuContext.Provider>
   );
