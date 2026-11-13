@@ -36,7 +36,7 @@ export const BrowserAddressPill = ({ model, field, isAddressShortcutOn }: Props)
           aria-label={`Edit address, ${name}`}
           onClick={field.edit}
           className={cn(
-            'w-full min-w-0 justify-start px-2 text-left font-normal',
+            'w-full min-w-0 justify-start border-border px-2 text-left font-normal',
             hasError && DANGER_BORDER,
           )}
         >
