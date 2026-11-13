@@ -40,6 +40,9 @@ type ToggleParams = {
   readonly tool: SessionTool;
 };
 
+const isFocusOnBody = (): boolean =>
+  document.activeElement === null || document.activeElement === document.body;
+
 const toggleWorkspaceTool = ({ tool }: ToggleParams): void => {
   if (tool.pane === 'terminal') {
     toggleTerminalDock({ isToggle: true });
@@ -71,6 +74,7 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
   activePaneRef.current = tools[activeIndex]?.pane ?? null;
   useLayoutEffect(() => {
     const rail = railRef.current;
+    const isOnDrawerEdge = rail !== null && rail.closest('[data-drawer-edge]') !== null;
     if (railFocusMemo.hasFocus) {
       railFocusMemo.hasFocus = false;
       rail
@@ -79,7 +83,12 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
     }
     return () => {
       railFocusMemo.pane = activePaneRef.current;
-      railFocusMemo.hasFocus = rail !== null && rail.contains(document.activeElement);
+      const isReturnFromDrawer = isOnDrawerEdge && railFocusMemo.isDrawerOpener && isFocusOnBody();
+      railFocusMemo.hasFocus =
+        (rail !== null && rail.contains(document.activeElement)) || isReturnFromDrawer;
+      if (isReturnFromDrawer) {
+        railFocusMemo.isDrawerOpener = false;
+      }
       queueMicrotask(() => {
         railFocusMemo.hasFocus = false;
       });
@@ -87,7 +96,10 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
   }, []);
   const rovingOf = ({ index }: IndexParams) => ({
     tabIndex: index === activeIndex ? 0 : -1,
-    onFocus: () => setFocusIndex(index),
+    onFocus: () => {
+      railFocusMemo.pane = tools[index]?.pane ?? null;
+      setFocusIndex(index);
+    },
   });
   return (
     <div
@@ -97,6 +109,15 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
       aria-label="Tools"
       aria-orientation="vertical"
       data-testid="session-tools"
+      onFocus={() => {
+        railFocusMemo.isDrawerOpener = false;
+      }}
+      onBlur={(event) => {
+        const next = event.relatedTarget;
+        if (next instanceof Element && next.closest('[data-drawer-card]') !== null) {
+          railFocusMemo.isDrawerOpener = true;
+        }
+      }}
       onKeyDown={(event) => {
         const next = toolbarIndexAfter({ key: event.key, from: activeIndex, count });
         if (next === null) {

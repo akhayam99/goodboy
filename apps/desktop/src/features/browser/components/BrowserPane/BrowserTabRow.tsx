@@ -1,4 +1,3 @@
-import type { MouseEvent } from 'react';
 import { Moon, X } from 'lucide-react';
 import { ICON_SIZE, IconButton, SelectableRow, cn } from '@goodboy/ui';
 import { BrowserFavicon } from './BrowserFavicon';
@@ -12,7 +11,6 @@ type Props = {
   readonly isCompact?: boolean;
   readonly onSelect: () => void;
   readonly onClose?: () => void;
-  readonly onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
 };
 
 const ASLEEP_TITLE = 'Asleep, may reload when opened';
@@ -39,11 +37,10 @@ export const BrowserTabRow = ({
   isCompact = false,
   onSelect,
   onClose,
-  onContextMenu,
 }: Props) => {
   const named = isPin ? `${label}, pinned` : label;
   return (
-    <div className="flex min-w-0 items-center gap-1" onContextMenu={onContextMenu}>
+    <div className="flex min-w-0 items-center gap-1">
       <SelectableRow
         selected={isSelected}
         ariaCurrent={isSelected ? 'page' : undefined}

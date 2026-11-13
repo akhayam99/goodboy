@@ -407,7 +407,7 @@ describe('primary surfaces mount on real store selectors', () => {
   });
 
   it.each([
-    ['app settings', { scope: 'app' }, 'Settings'],
+    ['app settings', { scope: 'app' }, 'General'],
     ['workspace settings with its rail', { scope: 'workspace' }, 'Projects'],
     ['the providers page', { scope: 'providers' }, 'Providers'],
     [

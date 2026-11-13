@@ -5837,11 +5837,6 @@
       "count": 30
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/index.tsx": {
-    "react-hooks/exhaustive-deps": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/railSubtitles.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 9
@@ -7721,11 +7716,6 @@
   "apps/desktop/src/store/sessionEviction.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 22
-    }
-  },
-  "apps/desktop/src/store/sessionEviction.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/agentQueue/enqueueAgentMessage.ts": {

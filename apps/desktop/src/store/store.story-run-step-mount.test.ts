@@ -131,7 +131,7 @@ const seed = async () => {
   ]);
   vi.mocked(db.listSessionsForWorkspace).mockResolvedValue([session()]);
   vi.mocked(db.listWorktreesForSessions).mockResolvedValue(new Map([[SESSION_ID, ROWS]]));
-  await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+  await useAppStore.getState().setCurrentWorkspace({ id: WORKSPACE_ID });
   await vi.waitFor(() => {
     expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toHaveLength(2);
   });

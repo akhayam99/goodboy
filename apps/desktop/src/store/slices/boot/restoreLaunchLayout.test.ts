@@ -113,7 +113,7 @@ describe('restoreLaunchLayout', () => {
     });
 
     expect(layout.isRestored).toBe(true);
-    expect(store.setCurrentWorkspace).toHaveBeenCalledWith(WS_A, LAUNCH);
+    expect(store.setCurrentWorkspace).toHaveBeenCalledWith({ id: WS_A, launch: LAUNCH });
     expect(store.restoreLocation).toHaveBeenCalledWith({
       location: locationIn(WS_A, 'session-ledger'),
     });
@@ -172,7 +172,7 @@ describe('restoreLaunchLayout', () => {
     });
 
     expect(layout.isRestored).toBe(true);
-    expect(store.setCurrentWorkspace).toHaveBeenCalledWith(WS_B, LAUNCH);
+    expect(store.setCurrentWorkspace).toHaveBeenCalledWith({ id: WS_B, launch: LAUNCH });
     expect(store.restoreLocation).toHaveBeenCalledWith({
       location: locationIn(WS_B, 'session-relay'),
     });

@@ -229,6 +229,7 @@ vi.mock('../store', async () => {
   );
   return {
     useAppStore,
+    useActionRun: () => null,
     useCurrentSession: () => null,
     useCurrentWorkspace: () => (state.currentWorkspaceId === null ? null : workspace),
     useSessionById: () => null,

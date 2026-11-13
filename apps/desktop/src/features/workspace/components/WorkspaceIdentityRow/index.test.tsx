@@ -248,7 +248,7 @@ describe('WorkspaceIdentityRow', () => {
       screen.getByText('Acme');
       expect(screen.getByRole('alert').textContent).toContain("Couldn't open Northwind.");
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-      expect(setCurrentWorkspace).toHaveBeenCalledWith(NORTHWIND);
+      expect(setCurrentWorkspace).toHaveBeenCalledWith({ id: NORTHWIND });
     });
   });
 });

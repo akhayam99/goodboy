@@ -1,5 +1,3 @@
-export type { GetFn, SetFn } from '../../slice-types';
-
 export type ActionRunPhase = 'pending' | 'done' | 'failed';
 
 export type ActionRun = {

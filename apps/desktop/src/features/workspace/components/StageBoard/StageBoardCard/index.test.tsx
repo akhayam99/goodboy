@@ -34,6 +34,8 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     sessionPins: {} as Record<string, ReadonlyArray<{ id: string; at: number }>>,
     projects: [] as ReadonlyArray<unknown>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionTelemetry: Object.fromEntries(Array.of<[string, ReadonlyArray<unknown>]>()),
+    sessionLoading: Object.fromEntries(Array.of<[string, unknown]>()),
     agentTurnState: {} as Record<string, unknown>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ status: string }>>,

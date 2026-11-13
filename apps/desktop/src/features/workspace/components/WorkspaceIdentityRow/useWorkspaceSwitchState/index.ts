@@ -29,7 +29,7 @@ export const useWorkspaceSwitchState = (): WorkspaceSwitchState => {
     failedName: nameOf({ workspaces, id: failedId }),
     retry: () => {
       if (failedId !== null) {
-        void setCurrentWorkspace(failedId);
+        void setCurrentWorkspace({ id: failedId });
       }
     },
   };

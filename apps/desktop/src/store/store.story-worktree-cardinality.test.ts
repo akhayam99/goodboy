@@ -156,7 +156,7 @@ describe('story: two mounts of one project survive a restart', () => {
   it('keeps every mount, its grouping and the persisted destination', async () => {
     await seed({ session: sessionWith(MOUNT_A2), rows: ROWS });
 
-    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    await useAppStore.getState().setCurrentWorkspace({ id: WORKSPACE_ID });
 
     const state = useAppStore.getState();
     const mounts = state.sessionProjectMounts[SESSION_ID] ?? [];
@@ -176,7 +176,7 @@ describe('story: two mounts of one project survive a restart', () => {
   it('runs an unselected turn in the lowest-parallelIndex mount without persisting a choice', async () => {
     await seed({ session: sessionWith(), rows: ROWS });
 
-    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    await useAppStore.getState().setCurrentWorkspace({ id: WORKSPACE_ID });
     const agent = buildStoryAgent({
       id: 'agent-operator' as AgentId,
       sessionId: SESSION_ID,
@@ -214,7 +214,7 @@ describe('story: two mounts of one project survive a restart', () => {
         rows: [row({ id: MOUNT_A1, projectId: PROJECT_A, branch: 'ak/one', parallelIndex: 1 })],
         projectBase,
       });
-      await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+      await useAppStore.getState().setCurrentWorkspace({ id: WORKSPACE_ID });
       useAppStore.setState((state) => ({
         sessionProjectMounts: {
           ...state.sessionProjectMounts,
@@ -247,7 +247,7 @@ describe('story: two mounts of one project survive a restart', () => {
   it('lets a workflow turn resolve the mount without a choice', async () => {
     await seed({ session: sessionWith(), rows: ROWS });
 
-    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    await useAppStore.getState().setCurrentWorkspace({ id: WORKSPACE_ID });
 
     await expect(
       useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go', origin: 'workflow' }),
@@ -259,7 +259,7 @@ describe('story: two mounts of one project survive a restart', () => {
   it('repairs and persists the choice when the session holds a single mount', async () => {
     await seed({ session: sessionWith(), rows: [ROWS[0] as ReturnType<typeof row>] });
 
-    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    await useAppStore.getState().setCurrentWorkspace({ id: WORKSPACE_ID });
 
     const state = useAppStore.getState();
     expect(state.sessionActiveMount[SESSION_ID]).toBe(MOUNT_A1);
@@ -310,13 +310,13 @@ describe('story: a queued fix stays on the worktree it named', () => {
   const restart = async ({ session }: { readonly session: Session }) => {
     await seed({ session, rows: ROWS });
     useAppStore.setState(useAppStore.getInitialState());
-    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    await useAppStore.getState().setCurrentWorkspace({ id: WORKSPACE_ID });
     openSession();
   };
 
   it('queues on the chosen mount, drains there after the choice moves, and survives removal', async () => {
     await seed({ session: sessionWith(MOUNT_A2), rows: ROWS });
-    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    await useAppStore.getState().setCurrentWorkspace({ id: WORKSPACE_ID });
     openSession();
 
     const target = namedMountTarget({

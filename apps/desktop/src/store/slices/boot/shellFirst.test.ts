@@ -209,7 +209,7 @@ describe('the shell shows before the data', () => {
     const hydrating = useAppStore.getState().hydrate();
 
     await held.reached;
-    const switching = useAppStore.getState().setCurrentWorkspace(NORTHWIND_ID);
+    const switching = useAppStore.getState().setCurrentWorkspace({ id: NORTHWIND_ID });
     held.release();
     await Promise.all([hydrating, switching]);
 
@@ -232,7 +232,7 @@ describe('the shell shows before the data', () => {
       }
       return realSelect(sql, params);
     });
-    const switching = useAppStore.getState().setCurrentWorkspace(NORTHWIND_ID);
+    const switching = useAppStore.getState().setCurrentWorkspace({ id: NORTHWIND_ID });
     held.release();
     await Promise.all([hydrating, switching]);
 

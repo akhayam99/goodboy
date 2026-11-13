@@ -23,7 +23,7 @@ export const openLaunchWorkspace = async ({
   launch,
 }: Params): Promise<LaunchOpen> => {
   showLaunchShell({ set, id });
-  const opening = get().setCurrentWorkspace(id, launch);
+  const opening = get().setCurrentWorkspace({ id, launch });
   const epoch = switchEpoch.value;
   await opening;
   const isLatest = switchEpoch.value === epoch;

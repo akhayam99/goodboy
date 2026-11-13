@@ -69,13 +69,14 @@ describe('the u37 running here scenes', () => {
     }
   });
 
-  it('puts the line in the header, above the tab strip', async () => {
+  it('puts the line at the top of the body, under the page tabs and out of the header', async () => {
     mount({ id: 'u37-running-here' });
 
     await waitFor(() => expect(runningLine()).not.toBeNull());
     const tabs = screen.getAllByRole('tab')[0];
     const position = runningLine()?.compareDocumentPosition(tabs ?? document.body) ?? 0;
-    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeGreaterThan(0);
+    expect(position & Node.DOCUMENT_POSITION_PRECEDING).toBeGreaterThan(0);
+    expect(runningLine()?.closest('[data-page-header]')).toBeNull();
   });
 
   it('names the terminal port and the agent port of the branch', async () => {

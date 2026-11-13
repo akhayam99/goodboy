@@ -68,7 +68,8 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   });
   const row = titleRowOf(title);
   expect(row).not.toBeNull();
-  expect(row?.firstElementChild).toBe(title);
+  const lead = row?.firstElementChild;
+  expect(lead === title || lead?.firstElementChild === title).toBe(true);
   expectOnPagePrimitive({ page, title });
   if (!isStudio) {
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
@@ -209,7 +210,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'frame: the Terminal page sits on the page header inset',
+    name: 'frame: the Terminal page folds its title into the tab row',
     covers: ['studio:terminal'],
     door: 'visible',
     open: async () => {
@@ -224,8 +225,10 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await studio('Terminal');
-      await heading('Terminal');
-      expectOnGrid({ page: 'terminal', isStudio: true });
+      const frame = document.querySelector('[data-studio-frame][data-studio-title="Terminal"]');
+      const region = await screen.findByRole('region', { name: 'Terminal' });
+      expect(frame?.contains(region)).toBe(true);
+      expect(region.querySelector('h1, [data-page-header]')).toBeNull();
     },
   },
   {

@@ -14,7 +14,7 @@ vi.mock('../../../store', async () => {
     readonly appStudio: Studio | null;
     readonly setFocusedArtifactId: () => void;
     readonly openDiffLens: () => void;
-    readonly setCurrentWorkspace: (id: string) => Promise<void>;
+    readonly setCurrentWorkspace: (params: { readonly id: string }) => Promise<void>;
     readonly openWorkspace: (params: {
       readonly id: string;
       readonly title: string;
@@ -32,7 +32,7 @@ vi.mock('../../../store', async () => {
     workspaces: [],
     setFocusedArtifactId: () => undefined,
     openDiffLens: () => undefined,
-    setCurrentWorkspace: async (id) => set({ currentWorkspaceId: id, appStudio: null }),
+    setCurrentWorkspace: async ({ id }) => set({ currentWorkspaceId: id, appStudio: null }),
     openWorkspace: async ({ id }) => {
       set({ currentWorkspaceId: id });
       return { kind: 'opened' };

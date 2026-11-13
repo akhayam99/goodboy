@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { StudioRailPlacement } from '@goodboy/ui';
 import type { ProviderId, Workspace } from '@goodboy/types';
@@ -104,14 +104,19 @@ export const SettingsStudio = ({
     tool: focus.tool,
   });
 
+  const redirect = useEffectEvent(() => onScopeChange(focus));
+  const rememberPage = useEffectEvent(() =>
+    rememberFocus(pageFocusOf({ scope: availableScope, focus })),
+  );
+
   useEffect(() => {
     if (isRedirect) {
-      onScopeChange(focus);
+      redirect();
     }
   }, [isRedirect]);
 
   useEffect(() => {
-    rememberFocus(pageFocusOf({ scope: availableScope, focus }));
+    rememberPage();
   }, [pageKey]);
 
   const [detailSlots, setDetailSlots] = useState<Slots>({});

@@ -140,7 +140,7 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'pull request page: Merge opens the confirm, a method is picked and one info toast follows',
+    name: 'pull request page: Merge opens the confirm, a method is picked and one result line follows',
     covers: ['navigate', 'tab:pr', 'pr-page:merge'],
     open: async (ctx) => {
       await openPrPage(ctx);
@@ -179,7 +179,7 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
           ).toBe(true),
         WAIT,
       );
-      expect(await screen.findAllByText(/^Merged #\d+ into main$/, undefined, WAIT)).toHaveLength(
+      expect(await screen.findAllByText(/^Merged #\d+ into main\.$/, undefined, WAIT)).toHaveLength(
         1,
       );
     },
