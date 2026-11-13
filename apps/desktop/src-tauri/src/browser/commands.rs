@@ -10,13 +10,14 @@ use super::local::{self, LocalFile};
 use super::page_keys::PageKeys;
 use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
-    self, BROWSER_CALLER, HOST_UNKNOWN, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_SESSION,
-    OTHER_WINDOW, PAGE_TEXT_UNAVAILABLE, TAB_CLOSED, TAB_GONE,
+    self, BROWSER_CALLER, HOST_UNKNOWN, INVALID_ADDRESS, INVALID_PRESET, NOT_WEB_ADDRESS,
+    OTHER_SESSION, OTHER_WINDOW, PAGE_TEXT_UNAVAILABLE, TAB_CLOSED, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts, TabState};
 use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::platform::web_text::{self, PageText};
 use crate::platform::web_url;
+use crate::platform::web_user_agent::DevicePreset;
 use crate::util::{now_ms, MessageError};
 
 const BLANK_ADDRESS: &str = "about:blank";
@@ -66,6 +67,13 @@ pub(crate) struct TabNavigateArgs {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TabArgs {
     tab_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TabUserAgentArgs {
+    tab_id: String,
+    preset: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -331,6 +339,16 @@ pub async fn browser_tab_forward(webview: Webview, args: TabArgs) -> Result<(), 
 #[tauri::command]
 pub async fn browser_tab_inspectable(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     host::make_inspectable(&owned_tab(&webview, &args.tab_id)?)
+}
+
+#[tauri::command]
+pub async fn browser_user_agent(
+    webview: Webview,
+    args: TabUserAgentArgs,
+) -> Result<(), MessageError> {
+    let preset =
+        DevicePreset::named(&args.preset).ok_or_else(|| reason::refused(INVALID_PRESET))?;
+    host::apply_user_agent(&owned_tab(&webview, &args.tab_id)?, preset)
 }
 
 #[tauri::command]

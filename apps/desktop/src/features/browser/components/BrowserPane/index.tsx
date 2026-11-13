@@ -9,6 +9,7 @@ import { browserTabListPref } from '../../browserTabListPref';
 import type { BrowserTabListMode } from '../../types';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
+import { devicePresetOf } from '../../devicePresets';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
 import { BrowserNotice } from './BrowserNotice';
@@ -62,6 +63,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
     view,
     tab: shownTab,
     attempt: model.wakeAttempt,
+    maxWidth: devicePresetOf({ id: model.devicePreset }).width,
     onError: model.showError,
   });
 
@@ -94,7 +96,14 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
               onFold={() => changeMode({ next: isRail ? 'list' : 'rail' })}
             />
           ) : null}
-          <BrowserView frame={frame} view={view} shown={model.shown} title={title} cover={cover} />
+          <BrowserView
+            frame={frame}
+            view={view}
+            shown={model.shown}
+            title={title}
+            cover={cover}
+            devicePreset={model.devicePreset}
+          />
         </div>
       </div>
     </DrawerFrame>

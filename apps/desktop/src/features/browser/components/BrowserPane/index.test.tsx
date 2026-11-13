@@ -882,7 +882,7 @@ describe('the browser pane', () => {
     screen.getByRole('listbox', { name: 'Suggestions' });
   });
 
-  it('lists the page hand-off first and five more rows in the More menu', async () => {
+  it('lists the page hand-off first and six more rows in the More menu', async () => {
     await openFirstPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
@@ -894,6 +894,7 @@ describe('the browser pane', () => {
       'Open as page',
       'Copy address',
       'Duplicate',
+      'WidthDesktop',
       'Close tab',
     ]);
   });
@@ -912,6 +913,7 @@ describe('the browser pane', () => {
       'Open as page',
       'Copy address',
       'Duplicate',
+      'WidthDesktop',
       'Inspect in Safari',
       'Close tab',
     ]);

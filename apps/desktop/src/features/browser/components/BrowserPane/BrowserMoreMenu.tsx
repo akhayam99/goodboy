@@ -1,4 +1,4 @@
-import { ArrowUpRight, Bot, Code, Copy, CopyPlus, X } from 'lucide-react';
+import { ArrowUpRight, Bot, Code, Copy, CopyPlus, MonitorSmartphone, X } from 'lucide-react';
 import {
   AnchoredPopover,
   ICON_SIZE,
@@ -13,6 +13,8 @@ import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { currentPlatform } from '../../../../shared/platform';
 import type { BrowserPaneModel } from '../../types';
 import { browserMoreOffOf } from './browserMoreRows';
+import { widthSelectOf } from './widthSelectOf';
+import { DEVICE_PRESETS, devicePresetOf } from '../../devicePresets';
 
 type Props = {
   readonly model: BrowserPaneModel;
@@ -80,6 +82,23 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
       isDisabled: isOff.isDuplicateOff,
       onSelect: model.duplicate,
     },
+    ...(isOff.isWidthOff
+      ? []
+      : [
+          {
+            kind: 'item' as const,
+            key: 'width',
+            label: 'Width',
+            icon: MonitorSmartphone,
+            hint: devicePresetOf({ id: model.devicePreset }).label,
+            choices: DEVICE_PRESETS.map((preset) => ({
+              id: preset.id,
+              label: preset.label,
+              isCurrent: preset.id === model.devicePreset,
+            })),
+            onSelect: widthSelectOf({ onChoose: model.setDevicePreset }),
+          },
+        ]),
     ...(currentPlatform() === 'darwin'
       ? [
           {

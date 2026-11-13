@@ -66,3 +66,10 @@ export type WorkspaceParams = {
 export type ProjectParams = {
   readonly projectId: ProjectId;
 };
+
+export type DevicePresetId = 'desktop' | 'tablet' | 'phone';
+
+export type DevicePresetParams = {
+  readonly tabId: string;
+  readonly preset: DevicePresetId;
+};

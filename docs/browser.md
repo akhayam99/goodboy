@@ -422,8 +422,33 @@ it; Esc inside the page goes to the page.
 - **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
   browser, Open as page (see Moves, absent when the dock has no page to open),
   Copy address, Duplicate (`model.duplicate` opens the shown address in a new
-  tab of the session), Inspect in Safari (macOS only, see Inspect in Safari)
+  tab of the session), Width (absent when no tab is shown, see Width
+  presets), Inspect in Safari (macOS only, see Inspect in Safari)
   and Close tab (off for a pin).
+- **Width presets** show the shown tab as Desktop, Tablet 768 or Phone 390.
+  The table lives in `features/browser/devicePresets.ts` (one source for the
+  menu, the frame and the note). The preset is kept per tab id in
+  `browserDevicePresets` of the browser slice, in memory only: it survives a
+  tab switch, not a restart, and a second window keeps its own. A narrower
+  preset draws `BrowserDeviceFrame` around the page placeholder: the frame is
+  the padding and border of the box that holds the placeholder, never an
+  overlay, so it never intersects the page rect. `viewBoundsOf` takes the
+  width as a cap and reports the placeholder capped to it and centered, which
+  is the rect `browser_tab_place` sends. The width applies at once. On macOS
+  `useDeviceAgent` then calls `browser_user_agent`, which sets the tab's
+  `WKWebView` custom user agent through `with_webview` and reloads the tab
+  (`platform/web_user_agent.rs`; the agent per preset is pinned in its tests,
+  and Desktop restores `TAB_USER_AGENT`). The hook keeps the agent each live
+  tab holds and loops until it matches the preset, so a late answer for a tab
+  that went back to Desktop is followed by a second call that restores it,
+  and a tab that wakes with a preset gets its agent again. A refused call
+  keeps the width and reads "Width only, the user agent didn't change" with
+  an error line that names the tab. Off macOS the pane skips the call (the
+  host would refuse with `unsupported-platform`) and the note says the width
+  is the only change. The note under the address row names the preset and
+  says touch isn't simulated: no script runs in the page, so pointer,
+  hover and pixel ratio stay desktop. Desktop is the undo. The mock scenes
+  `browser-width-phone` and `browser-width-tablet` show the frame.
 - **Inspect in Safari** makes the shown tab visible in Safari's Develop menu,
   to see why a page renders differently here than in another browser.
   `model.inspect` calls `browser_tab_inspectable`, which sends the public
@@ -848,7 +873,10 @@ workspace profile stays signed out.
 - A tab sends a current Safari user agent on macOS (`TAB_USER_AGENT` in
   `browser/host.rs`). The bare WKWebView agent lacks the `Version/` and
   `Safari/` tokens, and sites such as Google then serve their legacy pages.
-  Windows and Linux keep their engine's own agent.
+  Windows and Linux keep their engine's own agent. For the same reason the
+  Width presets change only the width there: Tauri exposes no user agent
+  setter after a webview is built, and `browser_user_agent` refuses with
+  `unsupported-platform`.
 - Back and forward are native on macOS: the host steps the WebKit view's own
   history, so a page cannot trap them. Tauri 2.12 exposes no
   native step, so on Windows and Linux they still run `history.back()` and
@@ -866,7 +894,7 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
 `local-folder`, `local-type`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
 `session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
-`profile-shared`, `profile-unavailable`, `history-unavailable`, `tab-row-gone`, `tab-row-owner`,
+`profile-shared`, `profile-unavailable`, `history-unavailable`, `invalid-preset`, `tab-row-gone`, `tab-row-owner`,
 `tab-rows-changed`, `tab-rows-failed`), never a sentence. The pane owns the
 words (`features/browser/browserFailureText.ts`).
 

@@ -24,6 +24,7 @@ use super::reason::{
 use super::registry::{BrowserRegistry, NewTab, PopupSeat, SeatRefusal, TabFacts, TabState};
 use super::visit_rows;
 use crate::platform::web_history::{HistoryState, HistoryStep};
+use crate::platform::web_user_agent::DevicePreset;
 use crate::util::{now_ms, uuid_v4, MessageError};
 
 const MIN_SIDE: f64 = 1.0;
@@ -35,7 +36,7 @@ pub(crate) const MAX_HIDDEN_POPUPS: usize = 4;
 pub(crate) const TAB_OPENED_EVENT: &str = "browser://tab-opened";
 
 #[cfg(target_os = "macos")]
-pub(crate) const TAB_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15";
+pub(crate) const TAB_USER_AGENT: &str = crate::platform::web_user_agent::DESKTOP_AGENT;
 
 #[cfg(not(target_os = "macos"))]
 const STOP_SCRIPT: &str = "window.stop()";
@@ -492,6 +493,27 @@ fn set_inspectable<R: Runtime>(webview: &Webview<R>) -> Result<(), MessageError>
 
 #[cfg(not(target_os = "macos"))]
 fn set_inspectable<R: Runtime>(_webview: &Webview<R>) -> Result<(), MessageError> {
+    Err(reason::refused(UNSUPPORTED_PLATFORM))
+}
+
+#[cfg(target_os = "macos")]
+pub(crate) fn apply_user_agent<R: Runtime>(
+    webview: &Webview<R>,
+    preset: DevicePreset,
+) -> Result<(), MessageError> {
+    webview
+        .with_webview(move |platform| {
+            crate::platform::web_user_agent::set_live_wk_web_view_user_agent(platform, preset)
+        })
+        .map_err(failed)?;
+    webview.reload().map_err(failed)
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn apply_user_agent<R: Runtime>(
+    _webview: &Webview<R>,
+    _preset: DevicePreset,
+) -> Result<(), MessageError> {
     Err(reason::refused(UNSUPPORTED_PLATFORM))
 }
 

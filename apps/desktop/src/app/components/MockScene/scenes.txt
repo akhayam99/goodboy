@@ -197,6 +197,8 @@ browser-pane-tabs
 browser-pane-tabs-dark
 browser-peek
 browser-peek-dark
+browser-width-phone
+browser-width-tablet
 c01-grid-dots
 c01-grid-groups
 c01-grid-list

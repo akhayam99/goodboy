@@ -1738,3 +1738,30 @@ fn takes_the_page_keys_from_the_app_and_refuses_them_from_a_browser_page() {
         Some("cmd+KeyW".to_string())
     );
 }
+
+#[cfg(target_os = "macos")]
+#[test]
+fn applies_a_user_agent_preset_to_a_live_tab_and_back() {
+    use super::host::apply_user_agent;
+    use crate::platform::web_user_agent::DevicePreset;
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = owned_tab(&webview(&app, "main"), &id).expect("owned tab");
+    assert!(apply_user_agent(&tab, DevicePreset::Phone).is_ok());
+    assert!(apply_user_agent(&tab, DevicePreset::Desktop).is_ok());
+}
+
+#[cfg(not(target_os = "macos"))]
+#[test]
+fn refuses_a_user_agent_preset_off_macos() {
+    use super::host::apply_user_agent;
+    use super::reason::UNSUPPORTED_PLATFORM;
+    use crate::platform::web_user_agent::DevicePreset;
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = owned_tab(&webview(&app, "main"), &id).expect("owned tab");
+    assert!(matches!(
+        apply_user_agent(&tab, DevicePreset::Phone),
+        Err(MessageError::Refused(code)) if code == UNSUPPORTED_PLATFORM
+    ));
+}

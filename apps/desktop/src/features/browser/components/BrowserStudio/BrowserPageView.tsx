@@ -4,6 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReloadSurface } from '../../../../shared/hooks/useReloadSurface';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
+import { devicePresetOf } from '../../devicePresets';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
@@ -51,6 +52,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
     view,
     tab: shownTab,
     attempt: model.wakeAttempt,
+    maxWidth: devicePresetOf({ id: model.devicePreset }).width,
     onError: model.showError,
   });
 
@@ -112,6 +114,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
                 shown={model.shown}
                 title={title}
                 cover={cover}
+                devicePreset={model.devicePreset}
                 emptyTitle="Open a page in this session"
               />
             </div>

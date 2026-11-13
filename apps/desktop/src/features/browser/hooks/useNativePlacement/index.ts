@@ -19,6 +19,7 @@ type Params = {
   readonly view: RefObject<HTMLDivElement | null>;
   readonly tab: BrowserTab | null;
   readonly attempt: number;
+  readonly maxWidth: number | null;
   readonly onError: (params: ErrorParams) => void;
 };
 
@@ -28,10 +29,13 @@ export const useNativePlacement = ({
   view,
   tab,
   attempt,
+  maxWidth,
   onError,
 }: Params): CoverReason | null => {
   const tabRef = useRef(tab);
   tabRef.current = tab;
+  const maxWidthRef = useRef(maxWidth);
+  maxWidthRef.current = maxWidth;
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
   const placementRef = useRef<ReturnType<typeof createNativePlacement> | null>(null);
@@ -77,7 +81,10 @@ export const useNativePlacement = ({
       if (reason !== null && reason !== coverRef.current) {
         show({ next: reason });
       }
-      const bounds = wantedTab === null ? null : viewBoundsOf({ view: element, overlays });
+      const bounds =
+        wantedTab === null
+          ? null
+          : viewBoundsOf({ view: element, overlays, maxWidth: maxWidthRef.current });
       placement.want({
         view: wantedTab === null || bounds === null ? null : { tab: wantedTab, bounds },
       });

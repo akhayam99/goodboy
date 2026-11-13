@@ -12,6 +12,7 @@ import { loadWorkspaceTabs } from './loadWorkspaceTabs';
 import { openTab } from './openTab';
 import { pinTab } from './pinTab';
 import { reorderTabs } from './reorderTabs';
+import { setDevicePreset } from './setDevicePreset';
 import { showPin } from './showPin';
 import { unbindLiveTab } from './unbindLiveTab';
 import { unpinTab } from './unpinTab';
@@ -38,5 +39,6 @@ export const createBrowserSlice = ({ set: writeState, get }: SliceDeps) => {
     forgetClosedBrowserTab: forgetClosedTab({ set, get }),
     closeBrowserSessionTabs: closeBrowserSessionTabs({ set, get }),
     closeStaleBrowserTabs: closeStaleBrowserTabs({ set, get }),
+    setBrowserDevicePreset: setDevicePreset({ set, get }),
   };
 };
