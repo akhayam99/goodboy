@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Chip, IconButton, Markdown, formatError } from '@goodboy/ui';
+import { Chip, IconButton, formatError } from '@goodboy/ui';
+import { CommentBody } from '../../../../shared/components/CommentBody';
 import type { PrReviewDraft, SessionId } from '@goodboy/types';
 import {
   CommentComposer,
@@ -90,7 +91,7 @@ export const LineComment = ({ sessionId, draft }: Props) => {
           onCancel={() => setIsEditing(false)}
         />
       ) : (
-        <Markdown text={draft.body} variant="preview" className="text-body text-foreground" />
+        <CommentBody body={draft.body} />
       )}
       {error !== null && <p className="text-meta text-danger">{error}</p>}
     </li>

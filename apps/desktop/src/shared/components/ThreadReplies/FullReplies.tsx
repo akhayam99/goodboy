@@ -3,7 +3,7 @@ import { Disclosure } from '@goodboy/ui';
 import { useNow } from '../../hooks/useNow';
 import { formatAge } from '../../utils/time/formatAge';
 import { Person } from '../Person';
-import { ThreadBody } from '../ThreadBody';
+import { CommentBody } from '../CommentBody';
 import type { ThreadReplyItem } from './threadReplyItem';
 
 type Props = {
@@ -35,7 +35,7 @@ export const FullReplies = ({ replies }: Props) => {
             )}
           </div>
           <div className="[overflow-wrap:anywhere]">
-            <ThreadBody body={reply.body} isClamped={reply.isBot === true} />
+            <CommentBody body={reply.body} isClamped={reply.isBot === true} />
           </div>
         </li>
       ))}

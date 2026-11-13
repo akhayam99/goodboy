@@ -1,6 +1,6 @@
-import { SectionHeader, Skeleton, cn } from '@goodboy/ui';
+import { SectionHeader, Skeleton } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
-import { HANGING_INDENT, LINE_FILL, SIGN_TEXT } from '../../../../diff/lib/lineTone';
+import { FileChangeCard } from '../../../../diff/FileChangeCard';
 import { inlineChangePlan } from '../../../inlineChangePlan';
 import { changeSummaryLine } from '../../../resolveItemCopy';
 import { REVIEW_FLOW_LABEL } from '../../../reviewFlowCopy';
@@ -13,8 +13,6 @@ type Props = {
 };
 
 const COMPACT_LINE_LIMIT = 8;
-
-const SIGN = { add: '+', del: '-', context: ' ' } as const;
 
 export const ProposedChange = ({ files, isLoading, error, isCompact = false }: Props) => {
   const plan = inlineChangePlan({ files });
@@ -51,32 +49,7 @@ export const ProposedChange = ({ files, isLoading, error, isCompact = false }: P
         <p className="text-meta text-muted-foreground">{REVIEW_FLOW_LABEL.noChangeCaptured}</p>
       )}
       {shownFiles.map((file) => (
-        <div key={file.path} className="min-w-0 overflow-hidden rounded-lg bg-subtle">
-          <p className="truncate px-3 pt-2 font-mono text-meta text-muted-foreground">
-            {file.path}
-          </p>
-          {file.hunks.map((hunk) => (
-            <div key={hunk.header} className="min-w-0 py-2 font-mono text-code">
-              <p className="px-3 text-faint-foreground">{hunk.header}</p>
-              {hunk.lines.map((line, index) => (
-                <p
-                  key={`${hunk.header}-${index}`}
-                  className={cn('flex min-w-0 gap-3 px-3', LINE_FILL[line.kind])}
-                >
-                  <span aria-hidden className={cn('w-2 shrink-0', SIGN_TEXT[line.kind])}>
-                    {SIGN[line.kind]}
-                  </span>
-                  <span
-                    style={HANGING_INDENT}
-                    className="min-w-0 whitespace-pre-wrap break-words text-foreground"
-                  >
-                    {line.text}
-                  </span>
-                </p>
-              ))}
-            </div>
-          ))}
-        </div>
+        <FileChangeCard key={file.path} file={file} />
       ))}
       {!isCompact && plan.kind !== 'whole' && files.length > 0 && (
         <p className="text-meta text-muted-foreground">

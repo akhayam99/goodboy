@@ -3,7 +3,7 @@ import { Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { CommentThread } from '../../../integrations/github/comment-threads';
 import { isBot } from '../../../integrations/github/comment-threads';
 import { Person } from '../../../../shared/components/Person';
-import { ThreadBody } from '../../../../shared/components/ThreadBody';
+import { CommentBody } from '../../../../shared/components/CommentBody';
 import { ThreadPathChip } from '../../../integrations/github/components/PullRequest/ThreadPathChip';
 import { ThreadReplies } from '../../../../shared/components/ThreadReplies';
 import { threadReplyItemsOf } from '../../../integrations/github/threadReplyItemsOf';
@@ -68,7 +68,7 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
         <ThreadPathChip path={path} line={head.line ?? null} onOpen={() => onOpenUrl(head.url)} />
       )}
       <div className="[overflow-wrap:anywhere]">
-        <ThreadBody body={head.body} isClamped={isBot(head.author)} />
+        <CommentBody body={head.body} isClamped={isBot(head.author)} />
       </div>
       <ThreadReplies replies={threadReplyItemsOf({ replies })} />
     </div>

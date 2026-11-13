@@ -366,23 +366,24 @@ only, so emphasis gets a synthetic slant. The boot shell in
 `apps/desktop/index.html` stays on `system-ui`, because it paints before the
 stylesheet loads, and the exported report embeds the same file as a data URI.
 
-| role            | measure                   | used for                                                                                   |
-| --------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
-| `text-display`  | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                     |
-| `text-title`    | 18/28, 600, -0.012em      | level 1: the one pane title (h1) of a surface, h1 and h2 inside a message                  |
-| `text-heading`  | 14/20, 600                | level 2: a page-grade section, a popover title, a kickoff question                         |
-| `text-row`      | 13/20, 500                | level 4: a top-level row label, a card title                                               |
-| `text-body`     | 14/20                     | running text; text with no class inherits it from the body                                 |
-| `text-prose`    | 15/24                     | level 3, the one reading size: messages, markdown, artifacts, goals, descriptions          |
-| `text-eyebrow`  | 12/16, 500, sentence case | a section label: `Eyebrow`, or direct in a sidebar group, `SettingChip`, `LevelCard`       |
-| `text-meta`     | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line |
-| `text-chip`     | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                  |
-| `text-rail`     | 9/12                      | the caption under every icon and over each group of the session tool rail                  |
-| `text-code`     | mono 12/18                | branch, path, command, inline code                                                         |
-| `text-code-row` | mono 13/20                | a branch row of the session rail, beside a level 4 name                                    |
-| `text-ui`       | 13/20                     | level 4: every line of a list surface that is not its title or prose                       |
-| `text-lead`     | 15/24, 500                | the title of a list surface                                                                |
-| `document`      | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role     |
+| role            | measure                   | used for                                                                                    |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------- |
+| `text-display`  | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                      |
+| `text-title`    | 18/28, 600, -0.012em      | level 1: the one pane title (h1) of a surface, h1 and h2 inside a message                   |
+| `text-heading`  | 14/20, 600                | level 2: a page-grade section, a popover title, a kickoff question                          |
+| `text-row`      | 13/20, 500                | level 4: a top-level row label, a card title                                                |
+| `text-body`     | 14/20                     | running text; text with no class inherits it from the body                                  |
+| `text-prose`    | 15/24                     | level 3, the one reading size: messages, markdown, artifacts, goals, descriptions           |
+| `text-comment`  | 14/22                     | the body of a comment: `CommentBody` in the review pane, the diff and the pull request page |
+| `text-eyebrow`  | 12/16, 500, sentence case | a section label: `Eyebrow`, or direct in a sidebar group, `SettingChip`, `LevelCard`        |
+| `text-meta`     | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line  |
+| `text-chip`     | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                   |
+| `text-rail`     | 9/12                      | the caption under every icon and over each group of the session tool rail                   |
+| `text-code`     | mono 12/18                | branch, path, command, inline code                                                          |
+| `text-code-row` | mono 13/20                | a branch row of the session rail, beside a level 4 name                                     |
+| `text-ui`       | 13/20                     | level 4: every line of a list surface that is not its title or prose                        |
+| `text-lead`     | 15/24, 500                | the title of a list surface                                                                 |
+| `document`      | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role      |
 
 Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
 durations, percentages, ages and key letters are the sans stack with

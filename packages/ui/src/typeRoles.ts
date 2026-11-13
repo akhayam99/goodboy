@@ -6,6 +6,7 @@ export const TYPE_ROLES = [
   'row-strong',
   'body',
   'prose',
+  'comment',
   'chip',
   'rail',
   'eyebrow',
