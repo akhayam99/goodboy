@@ -5,6 +5,7 @@ import { withoutSessionRuns } from '../action-runs/withoutSessionRuns';
 import { storedAgentDraft } from '../agents/storedAgentDraft';
 import { storedGroupBy } from '../session-grouping/storedGroupBy';
 import { browserWrites } from '../browser/browserWrites';
+import { keepTabCounts } from '../browser/keepTabCounts';
 import { dropSession } from '../navigation/history';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
@@ -74,7 +75,9 @@ export const evictSession = ({ set, get }: Params) => {
       mode === 'delete'
         ? withoutSessionRuns({ runs: state.actionRuns, sessionId })
         : state.actionRuns;
-    set({ ...changes, navigation, actionRuns });
+    set((current) =>
+      keepTabCounts({ state: current, patch: { ...changes, navigation, actionRuns } }),
+    );
     if (mode === 'delete') {
       forgetScrollMemory({ scopeId: sessionId });
       storedAgentDraft.forget({ agentIds });

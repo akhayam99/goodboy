@@ -193,7 +193,8 @@ and closing one removes it from the registry.
 A tab that changes state (live to asleep and back, asleep to closed, closed to
 live) sends `browser://tab-state` with its facts to its own window, whoever
 asked for the change. A call that finds the tab already in that state sends
-nothing.
+nothing. A page that changes its title, or asks for a passkey, sends the same
+event with the new facts.
 
 Nothing is created at boot. The sweep thread starts with the app and owns no
 webview; the registry is empty until a window opens a tab. Every change of
@@ -278,6 +279,11 @@ to a project is a pin that every session of the project shares.
   `browser_tab_row_pin`, `browser_tab_row_unpin` and
   `browser_stale_tab_sessions`. Every command names its owner and never reads
   the current session.
+- One more command reads a whole workspace: `browser_workspace_tab_rows_list`
+  answers the rows of every session and every project of the workspace it
+  names, in one read. The Browser page, the palette and the tool rail load
+  their rows with it, so a workspace of seven sessions costs one command, not
+  seven. Rows of another workspace never come back.
 - A save takes the address through the same rule as a live tab, so a row never
   holds an app address, and keeps the first 512 characters of the title. A
   local file is stored as its `file://` address, never its `gblocal` one. It
@@ -292,7 +298,10 @@ to a project is a pin that every session of the project shares.
   already gone succeeds, so a retry is safe.
 - The `browser` store slice (`store/slices/browser/`) keeps the rows as state:
   `browserSessionTabs` and `browserActiveTab` per session, `browserProjectPins`
-  per project. An action changes state only after its command answered, and a
+  per project, and `browserTabCounts`, the number of rows of each loaded
+  workspace. The slice recounts only when a tab write changes the rows, never
+  on another write, and a workspace that has not loaded has no count. An
+  action changes state only after its command answered, and a
   failure leaves the old rows and reports the error on the session or the
   project's workspace. Writes of one session run one at a time in call order
   and never wait on another session, a load that answers after a newer load, a
@@ -447,7 +456,7 @@ it; Esc inside the page goes to the page.
   first, then This session, then New tab; the note that tabs close when the
   session is archived is the tooltip of the This session label. A tab the
   engine put to sleep or closed (`browser://tab-state`, read by
-  `useTabStates`, corrected by every successful 1.5 second poll, and keyed by
+  `useTabStates`, corrected by every event and every list answer, and keyed by
   the engine's tab id so the Browser page marks tabs of every session) shows its favicon faint and
   a moon mark, "Asleep, may reload when opened" (an asleep webview comes back
   as it was, a closed one loads again). The list has three widths in
@@ -461,13 +470,17 @@ it; Esc inside the page goes to the page.
   and binds the two in `browserLiveTabs`. After a restart a row has no live
   webview; showing it opens one at the saved address and binds the new id. A
   pin shown in the pane is `browserShownPin`; pinning the shown tab keeps it on
-  screen. The pane reads the live address and title every 1.5 seconds and
-  saves a session tab's row whenever they differ from the stored row, a page
-  that comes back to an earlier address included. A failed save is tried
-  again at the next change. A `browser://tab-load` `finished` event reads
-  them at once, so a title does not wait for the poll; the poll stays for the
-  moves a page makes with no load, such as a script changing the address or the
-  title.
+  screen. The events drive the live address and title: `browser://tab-load`
+  `finished` reads them at once, and `browser://tab-state` carries a state, a
+  title or a passkey change of a tab. The pane saves a session tab's row
+  whenever they differ from the stored row, a page that comes back to an
+  earlier address included. A failed save is tried again at the next change.
+  A 1.5 second list stays only as a safety net for the moves a page makes with
+  no load, such as a script changing the address. It runs while the pane is on
+  screen and a bound tab is awake, and sleeps while the pane is parked or
+  hidden. A pane lists once when it opens and once when it comes back on
+  screen. A list answer for a session the pane has left is dropped, and the
+  host reads no address from a tab that is asleep.
 - **Placement**: one loop (`createNativePlacement`) owns show, hide and
   `set_bounds`. Every frame, and whenever the view's frame changes size, it
   measures the placeholder (`viewBoundsOf`) and wants the shown tab at that
@@ -556,9 +569,11 @@ open the Browser button on the right rail is selected and does nothing.
   into the dock on the tab (see Moves). The empty page keeps Dock too, and it
   opens the workspace dock, so the page is never a dead end.
 - **The count** on the Browser button is the number of rows the page lists: the tabs of
-  the workspace's sessions plus the pins of their projects, named
-  `Browser, 3 tabs`. A tab counts whether or not its page is open. A
-  session's rows load when its pane or the page opens.
+  the workspace's sessions plus the pins of the workspace's projects, named
+  `Browser, 3 tabs`. A tab counts whether or not its page is open. The store
+  keeps it (`browserTabCounts`) and the rail reads it, so the rail does not
+  recount on every write. The rail loads the workspace's rows once it shows;
+  until they land the button has no count, not a zero.
 
 ## Moves
 
@@ -722,7 +737,10 @@ test or a release checks.
   host calls and the tab actions; `bundle-budget.json` stays as it is. A
   webview is created only by `browser_tab_open`, never at boot.
 - **A tab opens, switches and closes** in a fixed number of store commits
-  (4, 1 and 1).
+  (3, 1 and 1).
+- **Idle** costs no host command. A pane that is parked, hidden or holds no
+  awake tab lists nothing on a timer, and the tool rail draws once, with the
+  count kept by the store. One command lists the rows of every session.
 - **The view moves** with one host call per frame at most, and none for a
   frame where the placeholder did not move. A frame sets no React state and
   writes no store key, so it commits nothing in the pane or the conversation
@@ -889,7 +907,9 @@ words (`features/browser/browserFailureText.ts`).
 - The page lives in `features/browser/components/BrowserStudio/`, its groups in
   `browserPageGroups.ts`, the route sync in `hooks/useBrowserStudioTab`.
   The sessions come from `browserScopeSessions`, the count from
-  `browserTabCount`. `BrowserStudio/index.test.tsx` pins the grouping, a tab
+  `workspaceTabCount`, kept by `keepTabCounts` and read through
+  `selectBrowserTabCount`. `loadWorkspaceTabs` loads the rows and skips a
+  session written while the read ran. `BrowserStudio/index.test.tsx` pins the grouping, a tab
   of another session, the reload back to the named tab, a route with no
   session, the overlay hide, that only the workspace's sessions load and
   the count matches the rows, and the moves: Open as page and Dock

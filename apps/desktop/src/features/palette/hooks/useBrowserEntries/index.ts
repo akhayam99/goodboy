@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -8,6 +8,7 @@ import { browserPageData } from '../../../browser/browserPageData';
 import { browserPinProjectIds } from '../../../browser/browserPinProjectIds';
 import { browserScopeSessions } from '../../../browser/browserScopeSessions';
 import { pinProjectOf } from '../../../browser/pinProjectOf';
+import { useBrowserWorkspaceTabs } from '../../../../shared/hooks/useBrowserWorkspaceTabs';
 import { browserOpenEntries } from '../../sources/browserOpenEntries';
 import { browserTabEntries } from '../../sources/browserTabEntries';
 import type { PaletteEntry } from '../../types';
@@ -33,11 +34,6 @@ export const useBrowserEntries = ({ query, scopeSessionId }: Params): BrowserEnt
       sessions.map((session) => state.browserSessionTabs[session.id] ?? NO_TABS),
     ),
   );
-  const isLoadedOf = useAppStore(
-    useShallow((state) =>
-      sessions.map((session) => state.browserSessionTabs[session.id] !== undefined),
-    ),
-  );
   const projectOf = useAppStore(
     useShallow((state) =>
       sessions.map((session) => pinProjectOf({ state, sessionId: session.id })),
@@ -51,23 +47,7 @@ export const useBrowserEntries = ({ query, scopeSessionId }: Params): BrowserEnt
     useShallow((state) => projectIds.map((id) => projectById(state.projects, id)?.name ?? '')),
   );
 
-  useEffect(() => {
-    const state = useAppStore.getState();
-    sessions.forEach((session, index) => {
-      if (isLoadedOf[index] !== true) {
-        void state.loadBrowserSessionTabs({ sessionId: session.id });
-      }
-    });
-  }, [sessions, isLoadedOf]);
-
-  useEffect(() => {
-    const state = useAppStore.getState();
-    for (const projectId of projectIds) {
-      if (state.browserProjectPins[projectId] === undefined) {
-        void state.loadBrowserProjectPins({ projectId });
-      }
-    }
-  }, [projectIds]);
+  useBrowserWorkspaceTabs({ isReload: false });
 
   const tabs = useMemo(
     () =>

@@ -185,8 +185,10 @@ a reader at 720 pushes from 1344px. Below its threshold it
 lies over the page, full height, with a scrim and an `inert` page, never
 squeezed. While it lies over the page, `DrawerColumn` draws an edge host
 (`data-drawer-edge`) at the right edge above the scrim and hands it to the page
-through `DrawerEdgeContext`; the right rail portals a live copy there
-(`ShellToolRail`, or `SessionFrame` in a frame without the shell rail), and the card sits left of it, so a tool can still switch or
+through `DrawerEdgeContext`; the right rail draws there, once: `ShellToolRail`
+portals its one tree into the edge and keeps an empty seat of the rail's width
+in place (`SessionFrame` portals a second copy in a frame without the shell
+rail), and the card sits left of it, so a tool can still switch or
 close the drawer. The host is measured after every commit (and by a
 `ResizeObserver` after that), and `drawerLayoutOf` takes its width as
 `edgeWidth`: the overlay card plus the column always fit in the sheet, so the

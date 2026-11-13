@@ -1663,6 +1663,21 @@ fn keeps_the_saved_address_when_a_page_has_none_yet() {
     assert_eq!(registry.facts("ledger-core"), Some(saved));
 }
 
+#[test]
+fn reads_no_address_from_an_asleep_tab() {
+    let registry = BrowserRegistry::default();
+    seed_tab(&registry, "ledger-core", northwind(), false);
+    let asleep = registry.facts("ledger-core").expect("tab exists");
+    assert_eq!(asleep.state, TabState::Asleep);
+    let reads = Mutex::new(0);
+    let listed = refresh_with(&registry, vec![asleep.clone()], |_| {
+        *reads.lock().expect("reads") += 1;
+        Url::parse("https://harborline.dev/billing").ok()
+    });
+    assert_eq!(listed, vec![asleep]);
+    assert_eq!(*reads.lock().expect("reads"), 0);
+}
+
 fn hear_page_keys(app: &App<MockRuntime>, label: &str) -> Arc<Mutex<Vec<(String, String)>>> {
     let heard = Arc::new(Mutex::new(vec![]));
     let sink = Arc::clone(&heard);

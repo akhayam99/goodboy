@@ -780,6 +780,7 @@ pub fn run() {
             browser::commands::browser_tab_list,
             browser::commands::browser_session_close,
             browser::tab_rows::browser_tab_rows_list,
+            browser::tab_rows::browser_workspace_tab_rows_list,
             browser::tab_rows::browser_tab_row_save,
             browser::tab_rows::browser_tab_rows_reorder,
             browser::tab_rows::browser_tab_row_delete,

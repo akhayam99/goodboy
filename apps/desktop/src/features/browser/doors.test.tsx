@@ -156,6 +156,7 @@ const stubHost = () => {
         ? rows.filter((row) => row.sessionId === owner.sessionId)
         : [];
     },
+    browser_workspace_tab_rows_list: () => rows,
     browser_tab_row_save: ({ args }: SaveArgs) => {
       const row = rowOf({ id: args.id, url: args.url, title: args.title });
       rows = [...rows.filter((existing) => existing.id !== row.id), row];

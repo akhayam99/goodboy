@@ -1,7 +1,8 @@
-import type { ProjectId, SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { BrowserTab, ClosedBrowserTab } from './types';
 
 export type BrowserState = {
+  readonly browserTabCounts: Readonly<Record<WorkspaceId, number>>;
   readonly browserSessionTabs: Readonly<Record<SessionId, ReadonlyArray<BrowserTab>>>;
   readonly browserProjectPins: Readonly<Record<ProjectId, ReadonlyArray<BrowserTab>>>;
   readonly browserActiveTab: Readonly<Record<SessionId, string | null>>;
@@ -12,6 +13,7 @@ export type BrowserState = {
 };
 
 export const browserInitialState: BrowserState = {
+  browserTabCounts: {},
   browserSessionTabs: {},
   browserProjectPins: {},
   browserActiveTab: {},

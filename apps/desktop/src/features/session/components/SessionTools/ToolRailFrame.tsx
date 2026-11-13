@@ -2,9 +2,9 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBrowserTabCount';
 import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { selectSlotBack } from '../../../../store/slices/drawer/selectSlotBack';
-import { browserTabCount } from '../../../browser/browserTabCount';
 import { toggleBrowserDock } from '../../../browser/toggleBrowserDock';
 import { runningTerminalCount } from '../../../terminal/runningTerminalCount';
 import { toggleTerminalDock } from '../../../terminal/toggleTerminalDock';
@@ -52,7 +52,8 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
   const pageKind = useAppStore((state) => state.appStudio?.kind ?? null);
   const waitingKind = useAppStore((state) => selectSlotBack({ state })?.kind ?? null);
   const runningCount = useAppStore((state) => runningTerminalCount({ tabs: state.terminalTabs }));
-  const tabCount = useAppStore((state) => browserTabCount({ state }));
+  const workspaceId = useAppStore((state) => state.currentWorkspaceId);
+  const tabCount = useAppStore((state) => selectBrowserTabCount({ state, workspaceId }));
   const sessionTools = session === null ? [] : SESSION_TOOLS;
   const tools = [...sessionTools, ...WORKSPACE_TOOLS];
   const count = tools.length;
@@ -139,7 +140,7 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
           isWaiting={waitingKind === tool.pane}
           isCurrent={pageKind === tool.pane}
           fact={toolFactOf({ pane: tool.pane, runningCount, tabCount })}
-          count={tool.pane === 'terminal' ? runningCount : tabCount}
+          count={tool.pane === 'terminal' ? runningCount : (tabCount ?? 0)}
           signal={tool.pane === 'terminal' ? terminalSignal : null}
           {...rovingOf({ index: sessionTools.length + offset })}
           onToggle={() => toggleWorkspaceTool({ tool })}

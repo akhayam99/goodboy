@@ -282,6 +282,7 @@ export const NON_SESSION_STATE_KEYS = [
   'projectRootScripts',
   'budgetRules',
   'browserProjectPins',
+  'browserTabCounts',
   'providerSpendBreakdown',
   'providerBudgetStatus',
   'budgetAlerts',

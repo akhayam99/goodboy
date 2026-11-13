@@ -41,6 +41,7 @@ export const seedBrowserTab = ({ sessionId }: Params): void => {
   mockSceneIpc((command) => {
     switch (command) {
       case 'browser_tab_rows_list':
+      case 'browser_workspace_tab_rows_list':
         return [row];
       case 'browser_tab_list':
         return [facts];

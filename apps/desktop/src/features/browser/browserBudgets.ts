@@ -6,7 +6,7 @@ export const BROWSER_BUDGETS = {
   placementMeasureMsPerFrame: 1,
   reactCommitsPerPlacementFrame: 0,
   storeCommitsPerPlacementFrame: 0,
-  storeCommitsPerOpen: 4,
+  storeCommitsPerOpen: 3,
   storeCommitsPerSwitch: 1,
   storeCommitsPerClose: 1,
   liveTabsPerWindow: 4,
