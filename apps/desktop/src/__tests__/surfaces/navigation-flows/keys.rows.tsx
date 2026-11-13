@@ -125,7 +125,7 @@ const openBrowserOnTabs = async (ctx: Ctx): Promise<void> => {
       [ctx.sessionId]: 'tab-checkout',
     },
   });
-  await screen.findByRole('button', { name: 'Edit address, Checkout' });
+  await screen.findByRole('button', { name: 'Edit address, Checkout, acme.example' });
 };
 
 const openTerminalPage = async (): Promise<void> => {
