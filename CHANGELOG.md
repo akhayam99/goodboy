@@ -12,6 +12,78 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.34.0
+
+The browser shows each page by its title, finds text in it, suggests from your tabs as you type and opens local files beside the session.
+
+This version updates your data in one direction. To go back to 0.33, restore the backup Goodboy made before updating.
+
+### New
+
+#### Open local files in a browser tab
+<!-- gb area=sessions pr=2202 -->
+
+Type the path of a local page, image or PDF in the address, after ⌘L or in ⌘K, and it opens in a tab beside the session. The tab takes the page's title, and Reload reads the file again.
+
+The page reads only the files in its folder and the folders under it. Opened from your home folder, Downloads, Documents or Desktop, it reads only itself and its styles, scripts and images. A missing file, a folder or another kind of file says why under the address.
+
+#### Find in page
+<!-- gb area=sessions pr=2203 -->
+
+⌘F opens a find bar under the address row while the browser is on screen. It says Found or Not found, Enter and ⇧Enter step through the matches, and Esc or Done clears the highlight.
+
+#### Suggestions as you type an address
+<!-- gb area=sessions pr=2203 -->
+
+The address is a command field. A word finds a tab of any session, a project pin or a page this session visited, and words are never searched on the web. Enter opens beside the session, and ⌘Enter opens your own browser.
+
+#### Browser keys
+<!-- gb area=sessions pr=2203 -->
+
+While the browser is on screen, ⌘T opens a tab, ⌘W closes the shown one, ⌘⇧T reopens the last you closed, ⌘⇧[ and ⌘⇧] step through the tabs and ⌘D pins or unpins. Elsewhere these keys keep their other meaning, and each one can be changed on the shortcuts page.
+
+On macOS, the browser keys and ⌘K work after you click into a page too.
+
+#### Web links open beside the session
+<!-- gb area=sessions pr=2204 -->
+
+A web address in a terminal, a port chip and a running service's port open beside the session, on the tab already showing that page when there is one. Rest on a link to see where a click goes.
+
+Settings → App → General → Open with → Links picks In Goodboy or In your browser. ⌘-click always opens your own browser.
+
+#### Inspect in Safari
+<!-- gb area=sessions pr=2203 -->
+
+On macOS, Inspect in Safari under More makes the shown tab visible in Safari's Develop menu, to see why a page renders differently here.
+
+### Improved
+
+#### The address shows the page title
+<!-- gb area=sessions image=address pr=2203 -->
+
+The address row shows the page as its icon, title and host. Click it or press ⌘L to see the full address and type a new one, and Esc puts the title back. More holds Open in your browser, Open as page, Copy address, Duplicate and Close tab.
+
+While a page loads, a thin line runs under the address and Reload becomes Stop. Back and Forward turn off when there is nothing behind or ahead.
+
+#### The tab list puts pins first and marks sleeping tabs
+<!-- gb area=sessions image=tab-list pr=2204 -->
+
+The project's pins come first, then the tabs of this session. A tab hidden for 10 minutes sleeps, and carries a sleep mark. The list folds to a rail of site icons, and opens as that rail in a narrow pane.
+
+#### The Browser page drops its title band
+<!-- gb area=sessions image=browser-page pr=2203 -->
+
+The Browser page goes straight from the trail to the address row and the page. Beside the session, at the right of the trail, puts the browser back next to the work, and New tab is the last row of the tab list.
+
+#### A menu over a page shows what it hides
+<!-- gb area=sessions pr=2204 -->
+
+When a menu, dialog or tooltip crosses a browser page, the page shows its icon, title, host and the reason it is hidden, instead of a blank box.
+
+### Fixed
+
+- An error line under the browser address no longer hides the tabs below it. <!-- gb area=sessions pr=2202 -->
+
 ## Goodboy v0.33.2
 
 Every message box holds its model picker, ⌘R reloads what you're looking at, and Runs puts live work first.
