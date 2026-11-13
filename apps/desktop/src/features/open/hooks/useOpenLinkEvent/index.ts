@@ -8,7 +8,7 @@ type EventParams = {
   readonly event: Event;
 };
 
-const detailOf = ({ event }: EventParams): OpenLinkDetail | null => {
+const openLinkDetailOf = ({ event }: EventParams): OpenLinkDetail | null => {
   const detail: unknown = event instanceof CustomEvent ? event.detail : null;
   if (typeof detail !== 'object' || detail === null) {
     return null;
@@ -33,7 +33,7 @@ const detailOf = ({ event }: EventParams): OpenLinkDetail | null => {
 };
 
 const onOpenLink = ({ event }: EventParams): void => {
-  const detail = detailOf({ event });
+  const detail = openLinkDetailOf({ event });
   if (detail === null) {
     return;
   }

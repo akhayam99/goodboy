@@ -39,7 +39,7 @@ type ToggleParams = {
   readonly tool: SessionTool;
 };
 
-const isFocusLost = (): boolean =>
+const isFocusOnBody = (): boolean =>
   document.activeElement === null || document.activeElement === document.body;
 
 const toggleWorkspaceTool = ({ tool }: ToggleParams): void => {
@@ -81,7 +81,7 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
     }
     return () => {
       railFocusMemo.pane = activePaneRef.current;
-      const isReturnFromDrawer = isOnDrawerEdge && railFocusMemo.isDrawerOpener && isFocusLost();
+      const isReturnFromDrawer = isOnDrawerEdge && railFocusMemo.isDrawerOpener && isFocusOnBody();
       railFocusMemo.hasFocus =
         (rail !== null && rail.contains(document.activeElement)) || isReturnFromDrawer;
       if (isReturnFromDrawer) {
