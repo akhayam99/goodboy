@@ -78,6 +78,8 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
               sessionActiveProject: {},
               sessionActiveMount: {},
               sessionPhaseRuns: {},
+              lightAgentSessions: {},
+              sessionAgentsError: {},
               selectedAgentId: {},
               agentRunHistory: {},
               runRouting: {},

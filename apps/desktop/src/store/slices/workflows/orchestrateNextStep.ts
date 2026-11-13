@@ -81,6 +81,8 @@ import { planChangeVerdictOf } from './planChangeVerdictOf';
 import { PRESET_CHANGE_COPY } from './presetChangeCopy';
 import { presetInputOf } from './presetInputOf';
 import { recordPlanChange } from './recordPlanChange';
+import { ensureFullAgents } from '../agents/ensureFullAgents';
+import { queuePendingOrchestration } from './runState/queuePendingOrchestration';
 import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 
@@ -430,25 +432,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
     options?: OrchestrateOptions,
   ): Promise<void> => {
     if (orchestrationInFlight.has(workflowRunId)) {
-      set((state) => {
-        const previous = state.pendingOrchestrations?.[workflowRunId];
-        const routing = options?.routing ?? previous?.routing;
-        return {
-          pendingOrchestrations: {
-            ...(state.pendingOrchestrations ?? {}),
-            [workflowRunId]: {
-              sessionId,
-              bypassGate: (previous?.bypassGate ?? false) || (options?.bypassGate ?? false),
-              ...(routing != null && { routing }),
-            },
-          },
-        };
+      queuePendingOrchestration({
+        set,
+        sessionId,
+        workflowRunId,
+        routing: options?.routing,
+        shouldBypassGate: options?.bypassGate ?? false,
       });
       return;
     }
     orchestrationInFlight.add(workflowRunId);
     try {
       setDeciding({ set, workflowRunId, isDeciding: true });
+      await ensureFullAgents({ set, get, sessionId });
       const session = sessionById(get().sessions, sessionId);
       const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
       if (

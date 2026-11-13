@@ -79,7 +79,15 @@ A response applies only while it is the answer to the newest request.
   `store/runtime/state-writes/sessionReads.ts`, one sequence for the plans and
   one for the artifacts of each session, shared by every loader that writes
   `sessionPlans` or `sessionArtifacts`. A new loader of either claims right
-  before its read and applies only while `isCurrent()`.
+  before its read and applies only while `isCurrent()`. The same module holds
+  one sequence for the full agent rows of each session (`loadFullAgentRows`,
+  also dropped after a workspace switch) and one for the open itself:
+  `setCurrentSession` claims `sessionReads.open()` on every switch, so the full
+  rows `openSessionAgents` asked for are dropped once the user left the
+  session, and the session stays light until it opens again. A row a live
+  write changed while the list loaded keeps its live fields
+  (`upgradeAgentRows`). A failed list keeps the light rows and shows the error
+  with Retry in the session rail.
   `useAutoPlanApproval` claims one token per plan for an approve and cancels it
   when the shown version moves, so an answer for an older version is dropped.
   `selectAgent` in `store/slices/agents/` claims one token per agent for its

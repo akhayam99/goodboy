@@ -30,5 +30,7 @@ export const clearedWorkspaceState = () => ({
   budgetAlerts: [],
   unknownPayloadCounts: {},
   sessionLoading: {},
+  lightAgentSessions: {},
+  sessionAgentsError: {},
   boardReady: false,
 });

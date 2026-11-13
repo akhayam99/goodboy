@@ -320,6 +320,7 @@ export {
   getAgentById,
   type AgentConfigUpdate,
 } from './queries/agent';
+export { listAgentOutputSummaries, listAgentSummariesForSessions } from './queries/agent-summary';
 export { insertTurnFileSet, listTurnFileSets } from './queries/turn-file-set';
 export {
   listAgentQueuedMessages,
@@ -625,7 +626,6 @@ export {
   markResolveCandidateReady,
   setResolveCandidateState,
   markOverlappingResolveCandidatesStale,
-  markResolveCandidateIntegrated,
   finalizeResolveCandidateIntegration,
 } from './queries/resolve-candidate';
 export {

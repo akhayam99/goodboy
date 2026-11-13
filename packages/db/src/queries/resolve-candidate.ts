@@ -156,18 +156,6 @@ export const markOverlappingResolveCandidatesStale = async ({
   );
 };
 
-export const markResolveCandidateIntegrated = async ({
-  db,
-  candidateId,
-  integratedSha,
-}: IntegratedParams): Promise<boolean> => {
-  const result = await db.execute(
-    "UPDATE resolve_candidates SET state = 'integrated', integrated_sha = ?, updated_at = ? WHERE id = ? AND state = 'ready'",
-    [integratedSha, Date.now(), candidateId],
-  );
-  return result.rowsAffected === 1;
-};
-
 const STALE_ITEM = 'STALE_ITEM';
 const CANDIDATE_NOT_READY = 'CANDIDATE_NOT_READY';
 

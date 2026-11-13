@@ -1,4 +1,4 @@
-import { ScrollFade, cn } from '@goodboy/ui';
+import { ErrorStrip, ScrollFade, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionLoading } from '../../../../store';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
@@ -20,6 +20,8 @@ type Props = {
 export const SessionLevel = ({ session, isActive }: Props) => {
   const sessionId = session.id;
   const isLoading = useSessionLoading(sessionId).agents;
+  const agentsError = useAppStore((state) => state.sessionAgentsError[sessionId] ?? null);
+  const openSessionAgents = useAppStore((state) => state.openSessionAgents);
   const { pages, facts } = useCardPages({ session });
   const pageLens = useSessionPageLens({ session });
   const isBranchless = useAppStore((state) =>
@@ -38,6 +40,11 @@ export const SessionLevel = ({ session, isActive }: Props) => {
           <div className="flex flex-col">
             <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
           </div>
+          <ErrorStrip
+            label="this session's agents"
+            error={agentsError === null ? null : new Error(agentsError)}
+            onRetry={() => void openSessionAgents({ sessionId })}
+          />
           {isLoading ? (
             <LevelSkeleton />
           ) : (
