@@ -14,6 +14,7 @@ import { MOCK_ENABLED } from './shared/lib/mockMode';
 import { bootstrapContrast } from './shared/lib/contrast';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadAvatarImage, loadRemoteImage } from './shared/lib/remoteImage';
+import { requestOpenLink } from './shared/lib/requestOpenLink';
 import { APP_CODE_HIGHLIGHTER } from './shared/lib/highlight/codeHighlighter';
 import { logRenderCrash } from './features/bug-report/logRenderCrash';
 import { CrashReport } from './features/bug-report/components/CrashReport';
@@ -61,7 +62,11 @@ createRoot(container).render(
       renderReport={renderCrashReport}
       onCatch={logRenderCrash}
     >
-      <RemoteImageLoaderProvider load={loadRemoteImage} loadAvatar={loadAvatarImage}>
+      <RemoteImageLoaderProvider
+        load={loadRemoteImage}
+        loadAvatar={loadAvatarImage}
+        onOpen={(url) => requestOpenLink({ url })}
+      >
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
           <ScrollerStyleProvider>
             {MockEntry !== null ? (

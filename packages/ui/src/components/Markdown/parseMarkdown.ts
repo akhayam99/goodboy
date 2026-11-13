@@ -1,3 +1,6 @@
+import { readDetails, readDetailsTag } from './htmlShapes';
+import { stripHtml } from './stripHtml';
+
 export type CellAlign = 'left' | 'center' | 'right';
 
 export type Block =
@@ -13,6 +16,7 @@ export type Block =
       rows: ReadonlyArray<ReadonlyArray<string>>;
     }
   | { kind: 'callout'; tag: string; content: string; blocks: ReadonlyArray<Block> }
+  | { kind: 'details'; summary: string; isOpen: boolean; blocks: ReadonlyArray<Block> }
   | { kind: 'facts'; entries: ReadonlyArray<KitEntry> }
   | { kind: 'metrics'; entries: ReadonlyArray<KitEntry> }
   | { kind: 'timeline'; entries: ReadonlyArray<KitEntry> }
@@ -277,7 +281,21 @@ type BlockStartParams = {
   readonly nextLine: string;
 };
 
+type LineParams = {
+  readonly line: string;
+};
+
+const isDetailsOpen = ({ line }: LineParams): boolean => {
+  const trimmed = line.trimStart();
+  if (!trimmed.startsWith('<details')) {
+    return false;
+  }
+  const tag = readDetailsTag({ text: trimmed, index: 0 });
+  return tag !== null && tag.name === 'details' && !tag.isClosing;
+};
+
 const startsBlock = ({ line, nextLine }: BlockStartParams): boolean =>
+  isDetailsOpen({ line }) ||
   FENCE_RE.test(line) ||
   HEADING_RE.test(line) ||
   HR_RE.test(line) ||
@@ -334,79 +352,6 @@ const collectListItems = ({ raws, cursor, indent, ordered }: CollectParams): Lis
   }
 
   return items;
-};
-
-const isTagNameStart = (ch: string | undefined): boolean =>
-  ch !== undefined && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'));
-
-const stripHtml = (input: string): string => {
-  let out = '';
-  let i = 0;
-  let inFence = false;
-  const n = input.length;
-
-  while (i < n) {
-    const atLineStart = i === 0 || input[i - 1] === '\n';
-    if (atLineStart && input.startsWith('```', i)) {
-      const lineEnd = input.indexOf('\n', i);
-      const end = lineEnd === -1 ? n : lineEnd;
-      out += input.slice(i, end);
-      i = end;
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) {
-      out += input[i];
-      i++;
-      continue;
-    }
-
-    const ch = input[i];
-
-    if (ch === '`') {
-      const end = input.indexOf('`', i + 1);
-      if (end !== -1) {
-        out += input.slice(i, end + 1);
-        i = end + 1;
-        continue;
-      }
-    }
-
-    if (ch === '<' && input.startsWith('<!--', i)) {
-      const end = input.indexOf('-->', i + 4);
-      if (end !== -1) {
-        i = end + 3;
-        continue;
-      }
-    }
-
-    if (ch === '<' && input[i + 1] === '<') {
-      let end = i;
-      while (input[end] === '<') {
-        end += 1;
-      }
-      out += input[end] === '/' ? '<<' : input.slice(i, end);
-      i = end;
-      continue;
-    }
-
-    if (ch === '<') {
-      const slashed = input[i + 1] === '/';
-      const nameStart = slashed ? input[i + 2] : input[i + 1];
-      if (isTagNameStart(nameStart)) {
-        const end = input.indexOf('>', i + 1);
-        if (end !== -1) {
-          i = end + 1;
-          continue;
-        }
-      }
-    }
-
-    out += ch;
-    i++;
-  }
-
-  return out.replace(/&nbsp;/g, ' ');
 };
 
 type BlocksParams = {
@@ -515,6 +460,20 @@ const parseBlocks = ({ input, depth }: BlocksParams): ReadonlyArray<Block> => {
       }
       if (closed || buf.length > 0) {
         blocks.push(calloutBlock({ tag, content: buf.join('\n').trim(), depth }));
+        continue;
+      }
+    }
+
+    if (depth < MAX_CALLOUT_DEPTH && isDetailsOpen({ line })) {
+      const details = readDetails({ lines, start: i });
+      if (details !== null) {
+        blocks.push({
+          kind: 'details',
+          summary: details.summary,
+          isOpen: details.isOpen,
+          blocks: parseBlocks({ input: details.body, depth: depth + 1 }),
+        });
+        i = details.next;
         continue;
       }
     }
@@ -632,6 +591,6 @@ type MarkdownParams = {
 };
 
 export const parseMarkdown = ({ text }: MarkdownParams): MarkdownDocument => {
-  const blocks = parseBlocks({ input: stripHtml(text), depth: 0 });
+  const blocks = parseBlocks({ input: stripHtml({ input: text }), depth: 0 });
   return { blocks, sections: toSections(blocks) };
 };

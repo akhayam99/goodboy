@@ -50,3 +50,26 @@ export const loadToolImage = async ({
     },
   });
 };
+
+export type ToolMediaKind = 'image' | 'video' | 'other';
+
+export const probeToolMedia = async ({
+  workspaceId,
+  projectId,
+  provider,
+  email,
+  siteUrl,
+  url,
+}: ToolImageParams): Promise<ToolMediaKind> => {
+  const kind = await invokeCommand<string>('probe_tool_media', {
+    args: {
+      workspaceId,
+      projectId: projectId ?? null,
+      provider,
+      email: email ?? null,
+      siteUrl: siteUrl ?? null,
+      url,
+    },
+  });
+  return kind === 'image' || kind === 'video' ? kind : 'other';
+};

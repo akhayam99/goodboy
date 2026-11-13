@@ -28,6 +28,8 @@ const nodeText = ({ node, shouldStripUnmatchedMarkers }: NodeTextParams): string
       return node.label ?? ctxTagLabel({ tag: node.tag });
     case 'image':
       return node.alt;
+    case 'video':
+      return 'video';
     case 'strong':
     case 'em':
     case 'del':

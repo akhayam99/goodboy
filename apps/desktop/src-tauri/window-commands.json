@@ -286,6 +286,7 @@
     "permission_rule_upsert",
     "planner_cancel",
     "planner_run",
+    "probe_tool_media",
     "process_ledger_list",
     "project_branches",
     "project_fetch",

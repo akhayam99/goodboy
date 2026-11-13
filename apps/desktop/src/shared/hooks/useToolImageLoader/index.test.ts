@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useToolImageLoader } from './index';
 
-const { loadRemoteImage, loadToolImage } = vi.hoisted(() => ({
+const { loadRemoteImage, loadToolImage, probeToolMedia } = vi.hoisted(() => ({
+  probeToolMedia: vi.fn(async () => 'video' as const),
   loadRemoteImage: vi.fn(async () => 'data:image/png;base64,remote'),
   loadToolImage: vi.fn(async () => 'data:image/png;base64,tool'),
 }));
 
-vi.mock('../../lib/remoteImage', () => ({ loadRemoteImage, loadToolImage }));
+vi.mock('../../lib/remoteImage', () => ({ loadRemoteImage, loadToolImage, probeToolMedia }));
 
 describe('useToolImageLoader', () => {
   beforeEach(() => {
@@ -101,5 +102,23 @@ describe('useToolImageLoader', () => {
         'https://acme.atlassian.net/rest/api/3/attachment/content/1',
       ),
     ).toBe(false);
+  });
+
+  it('asks the type of a github attachment with the workspace and project it names', async () => {
+    const { result } = renderHook(() =>
+      useToolImageLoader({ workspaceId: 'ws-1', projectId: 'pr-1', provider: 'github' }),
+    );
+    const url = 'https://github.com/user-attachments/assets/9f2c';
+
+    expect(result.current.shouldAutoLoad(url)).toBe(true);
+    await expect(result.current.probe({ url })).resolves.toBe('video');
+    expect(probeToolMedia).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      projectId: 'pr-1',
+      provider: 'github',
+      email: undefined,
+      siteUrl: null,
+      url,
+    });
   });
 });

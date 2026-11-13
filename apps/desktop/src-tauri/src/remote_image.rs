@@ -335,7 +335,11 @@ fn apply_tool_auth(builder: reqwest::RequestBuilder, auth: &ToolAuth) -> reqwest
     }
 }
 
-async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<String, String> {
+async fn send_authed_media(
+    provider: &str,
+    url: Url,
+    auth: ToolAuth,
+) -> Result<(String, reqwest::Response), String> {
     let host = url
         .host_str()
         .ok_or_else(|| "that image address names no host".to_string())?
@@ -348,8 +352,7 @@ async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<
         .map_err(|_| format!("could not load the image from {host}"))?;
 
     if !(300..400).contains(&response.status().as_u16()) {
-        let mut response = response;
-        return read_image_response(&host, &mut response).await;
+        return Ok((host, response));
     }
 
     let location = response
@@ -371,13 +374,59 @@ async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<
         .to_string();
     let redirect_addresses = resolve_public_addrs(&redirect_host).await?;
     let redirect_client = build_image_client(&redirect_host, &redirect_addresses)?;
-    let mut redirected = redirect_client
+    let redirected = redirect_client
         .get(redirect_url)
         .send()
         .await
         .map_err(|_| format!("could not load the image from {redirect_host}"))?;
 
-    read_image_response(&redirect_host, &mut redirected).await
+    Ok((redirect_host, redirected))
+}
+
+async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<String, String> {
+    let (host, mut response) = send_authed_media(provider, url, auth).await?;
+    read_image_response(&host, &mut response).await
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum MediaKind {
+    Image,
+    Video,
+    Other,
+}
+
+impl MediaKind {
+    fn as_str(&self) -> &'static str {
+        match self {
+            MediaKind::Image => "image",
+            MediaKind::Video => "video",
+            MediaKind::Other => "other",
+        }
+    }
+}
+
+fn classify_media_type(value: &str) -> MediaKind {
+    let lowered = value.trim().to_ascii_lowercase();
+    let essence = lowered.split(';').next().unwrap_or("").trim();
+    if is_image_content_type(essence) {
+        return MediaKind::Image;
+    }
+    if matches!(essence, "video/mp4" | "video/webm" | "video/quicktime") {
+        return MediaKind::Video;
+    }
+    MediaKind::Other
+}
+
+async fn probe_authed_media(provider: &str, url: Url, auth: ToolAuth) -> Result<MediaKind, String> {
+    let (host, response) = send_authed_media(provider, url, auth).await?;
+    check_status(response.status_code())?;
+    let content_type = response.declared_content_type().unwrap_or_default();
+    drop(response);
+    let kind = classify_media_type(&content_type);
+    if kind == MediaKind::Other && content_type.is_empty() {
+        return Err(format!("{host} did not say what this file is"));
+    }
+    Ok(kind)
 }
 
 #[derive(Debug, Deserialize)]
@@ -399,12 +448,11 @@ fn github_image_token(stored: Option<String>) -> Result<String, MessageError> {
         .ok_or_else(|| MessageError::Refused(GITHUB_IMAGE_KEY_NEEDED.to_string()))
 }
 
-#[tauri::command]
-pub async fn load_tool_image(
+fn resolve_tool_media(
     args: LoadToolImageArgs,
-    linear_cache: State<'_, crate::linear::LinearTokenCache>,
-    jira_cache: State<'_, crate::jira::JiraTokenCache>,
-) -> Result<String, MessageError> {
+    linear_cache: &crate::linear::LinearTokenCache,
+    jira_cache: &crate::jira::JiraTokenCache,
+) -> Result<(String, Url, ToolAuth), MessageError> {
     let LoadToolImageArgs {
         workspace_id,
         project_id,
@@ -421,7 +469,7 @@ pub async fn load_tool_image(
     let auth = match provider.as_str() {
         "linear" => {
             let token =
-                crate::linear::read_token(&workspace_id, project_id.as_deref(), &linear_cache)
+                crate::linear::read_token(&workspace_id, project_id.as_deref(), linear_cache)
                     .map_err(|e| e.to_string())?;
             ToolAuth::Raw(token)
         }
@@ -434,7 +482,7 @@ pub async fn load_tool_image(
                 project_id.as_deref(),
                 &site_url,
                 &email,
-                &jira_cache,
+                jira_cache,
             )
             .map_err(|e| e.to_string())?;
             ToolAuth::Basic { email, token }
@@ -450,7 +498,28 @@ pub async fn load_tool_image(
             )))
         }
     };
+    Ok((provider, parsed, auth))
+}
+
+#[tauri::command]
+pub async fn load_tool_image(
+    args: LoadToolImageArgs,
+    linear_cache: State<'_, crate::linear::LinearTokenCache>,
+    jira_cache: State<'_, crate::jira::JiraTokenCache>,
+) -> Result<String, MessageError> {
+    let (provider, parsed, auth) = resolve_tool_media(args, &linear_cache, &jira_cache)?;
     Ok(fetch_authed_image(&provider, parsed, auth).await?)
+}
+
+#[tauri::command]
+pub async fn probe_tool_media(
+    args: LoadToolImageArgs,
+    linear_cache: State<'_, crate::linear::LinearTokenCache>,
+    jira_cache: State<'_, crate::jira::JiraTokenCache>,
+) -> Result<String, MessageError> {
+    let (provider, parsed, auth) = resolve_tool_media(args, &linear_cache, &jira_cache)?;
+    let kind = probe_authed_media(&provider, parsed, auth).await?;
+    Ok(kind.as_str().to_string())
 }
 
 #[cfg(test)]
@@ -874,8 +943,8 @@ mod tests {
     #[test]
     fn the_redirect_hop_never_carries_the_first_hops_auth_header() {
         let start = SELF_SRC
-            .find("async fn fetch_authed_image")
-            .expect("fetch_authed_image");
+            .find("async fn send_authed_media")
+            .expect("send_authed_media");
         let rest = &SELF_SRC[start..];
         let end = rest.find("\n}\n").expect("function end");
         let body = &rest[..end];
@@ -907,5 +976,61 @@ mod tests {
             super::github_image_token(Some("ghp_example".to_string())).unwrap(),
             "ghp_example"
         );
+    }
+
+    #[test]
+    fn names_an_image_a_video_or_neither_from_the_declared_type() {
+        use super::{classify_media_type, MediaKind};
+        assert_eq!(classify_media_type("image/png"), MediaKind::Image);
+        assert_eq!(
+            classify_media_type("IMAGE/JPEG; charset=x"),
+            MediaKind::Image
+        );
+        assert_eq!(classify_media_type("image/svg+xml"), MediaKind::Other);
+        assert_eq!(classify_media_type("video/mp4"), MediaKind::Video);
+        assert_eq!(classify_media_type("video/webm"), MediaKind::Video);
+        assert_eq!(classify_media_type("video/quicktime"), MediaKind::Video);
+        assert_eq!(classify_media_type("video/x-flv"), MediaKind::Other);
+        assert_eq!(classify_media_type("text/html"), MediaKind::Other);
+        assert_eq!(classify_media_type(""), MediaKind::Other);
+    }
+
+    #[test]
+    fn the_probe_goes_through_the_same_vetted_hop_as_the_image_fetch() {
+        let start = SELF_SRC
+            .find("async fn probe_authed_media")
+            .expect("probe_authed_media");
+        let rest = &SELF_SRC[start..];
+        let end = rest.find("\n}\n").expect("function end");
+        let body = &rest[..end];
+
+        assert!(
+            body.contains("send_authed_media(provider, url, auth)"),
+            "{body}"
+        );
+        assert!(!body.contains("apply_tool_auth("), "{body}");
+        assert!(!body.contains("chunk()"), "{body}");
+        assert!(!body.contains("next_chunk"), "{body}");
+    }
+
+    #[test]
+    fn the_probe_only_runs_for_the_providers_own_attachment_addresses() {
+        let other = validate_tool_image_url(
+            "github",
+            "https://example.com/user-attachments/assets/9f2c",
+            None,
+        );
+        assert!(other.is_err());
+        let own = validate_tool_image_url(
+            "github",
+            "https://github.com/user-attachments/assets/9f2c",
+            None,
+        );
+        assert!(own.is_ok());
+    }
+
+    #[test]
+    fn the_probe_command_stays_registered_with_the_webview() {
+        assert!(LIB_SRC.contains("remote_image::probe_tool_media"));
     }
 }

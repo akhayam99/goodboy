@@ -348,6 +348,7 @@ pub fn run() {
             editor::open_privacy_settings,
             remote_image::fetch_remote_image,
             remote_image::load_tool_image,
+            remote_image::probe_tool_media,
             local_image::local_image_read,
             releases::releases_list,
             releases::release_changelog,

@@ -42,6 +42,8 @@ const renderNodes = ({ nodes, keyPrefix }: RenderParams): ReactNode =>
         return renderNodes({ nodes: node.children, keyPrefix: key });
       case 'image':
         return node.alt;
+      case 'video':
+        return 'video';
       case 'chip':
         return node.label ?? ctxTagLabel({ tag: node.tag });
       default: {

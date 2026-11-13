@@ -103,6 +103,19 @@ The same question gets the same answer on every host: look at every state, prefe
 
 The webview never picks the host a stored secret travels to. The GitLab host, the Jira site and email and the Bitbucket workspace slug and email still arrive as command arguments, but `integration_credentials::require_bound` compares each one with the config of the binding (`host`, `siteUrl`, `email`, `workspaceSlug`) before the token is read. A value that differs, or a binding with no config, fails with `unbound_value` and the request is never sent. The comparison ignores case, surrounding spaces and a trailing slash. Only the `*_validate_connection` and `jira_list_projects` commands take an explicit host, because they run before a binding exists and carry the typed secret with them. `load_tool_image` applies the same check for Jira, so the image host it trusts is the bound site.
 
+### Attachment hosts per provider
+
+`load_tool_image` and `probe_tool_media` (both in `remote_image.rs`) send the token of the connected tool to that tool's own attachment addresses and to no other. A bare address is asked for its type once, then drawn as an image or as a video poster row.
+
+| Provider          | Address that gets the token                              | Redirect                                                               |
+| ----------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- |
+| GitHub            | `github.com/user-attachments/assets/`                    | one hop to `private-user-images.githubusercontent.com`, no token on it |
+| Linear            | `uploads.linear.app`                                     | none                                                                   |
+| Jira              | `/rest/api/3/attachment/content/` on the bound site only | none                                                                   |
+| GitLab, Bitbucket | no attachment host is named in the code or here yet      | parked: the media row opens on the host                                |
+
+A body of a provider in the last row loads only after you press **Load**, through `fetch_remote_image` and with no token. A failed load shows its reason in place and an **Open on the host** button that goes through the router. A late answer for an address that left the page is dropped.
+
 `secret_set` and `secret_delete` accept only `provider_credential.<id>`, where the id is 1 to 64 letters, digits or dashes. Every other keychain slot (integration credentials, legacy slots) is written by Rust alone.
 
 ## Cloning from a host

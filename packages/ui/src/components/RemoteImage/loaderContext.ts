@@ -8,3 +8,14 @@ export const RemoteImageLoaderContext = createContext<RemoteImageLoader | null>(
 export const RemoteImageAvatarLoaderContext = createContext<RemoteImageLoader | null>(null);
 export const RemoteImageAutoLoadContext = createContext<RemoteImageAutoLoad | null>(null);
 export const RemoteImageToolContext = createContext<RemoteImageTool | null>(null);
+
+export type RemoteMediaKind = 'image' | 'video' | 'other';
+type ProbeParams = {
+  readonly url: string;
+};
+
+export type RemoteMediaProbe = (params: ProbeParams) => Promise<RemoteMediaKind>;
+export type RemoteMediaOpen = (url: string) => void;
+
+export const RemoteMediaProbeContext = createContext<RemoteMediaProbe | null>(null);
+export const RemoteMediaOpenContext = createContext<RemoteMediaOpen | null>(null);
