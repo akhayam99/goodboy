@@ -6,7 +6,7 @@ export const FRAME_TITLE_ROW_PX = 32;
 
 export const FRAME_TITLE_CENTRE_PX = FRAME_BAND_PX + FRAME_TITLE_ROW_PX / 2;
 
-export const FRAME_PAGE_HEADER_INSET_PX = 12;
+export const FRAME_PAGE_HEADER_INSET_PX = 8;
 
 export const FRAME_PAGES = [
   'board',

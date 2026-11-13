@@ -102,7 +102,7 @@ describe('PaneShell', () => {
     );
 
     const header = container.querySelector('[data-slot="pane-header"]') as HTMLElement;
-    expect(header.className).toContain('pt-3');
+    expect(header.className).toContain('pt-2');
   });
 
   it('adds the actions a parent hands down next to its own, once', () => {

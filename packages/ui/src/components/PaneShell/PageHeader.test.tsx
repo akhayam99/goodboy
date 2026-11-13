@@ -22,13 +22,14 @@ const headerOf = (title: string): HTMLElement => {
 };
 
 describe('PageHeader', () => {
-  it('owns the 12px top inset and the 32px title row of every page', () => {
+  it('owns the 8px top inset and the 32px title row of every page', () => {
     render(<PageHeader page="board" title="Sessions" />);
 
     const header = headerOf('Sessions');
-    expect(PANE_RHYTHM.headerInset).toBe('pt-3');
+    expect(PANE_RHYTHM.headerInset).toBe('pt-2');
     expect(PANE_RHYTHM.headerRow).toBe('h-8');
-    expect(header.className.split(' ')).toContain('pt-3');
+    expect(header.className.split(' ')).toContain('pt-2');
+    expect(header.className.split(' ')).toContain('pb-2');
     expect(header.getAttribute('data-page')).toBe('board');
     expect(header.querySelector('[data-slot="pane-title-row"]')?.className).toContain('h-8');
   });
@@ -47,7 +48,7 @@ describe('PageHeader', () => {
       </UnderTrailContext.Provider>,
     );
 
-    expect(headerOf('Terminal').className.split(' ')).not.toContain('pt-3');
+    expect(headerOf('Terminal').className.split(' ')).not.toContain('pt-2');
   });
 
   it('ends the title row with the Close the frame hands down', () => {

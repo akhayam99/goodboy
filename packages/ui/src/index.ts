@@ -96,7 +96,6 @@ export type {
 } from './components/ReportSheet';
 export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
-export { HeaderBand } from './components/HeaderBand';
 export { Notice } from './components/Notice';
 export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverflowMenu } from './components/OverflowMenu';

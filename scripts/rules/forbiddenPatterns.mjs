@@ -219,6 +219,20 @@ const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade/index.tsx';
 export const FOOTER_CTA_BAR =
   /<footer\b|\bPopoverFooter\b|\bPANE_RHYTHM\.dock\b|\bdock=\{(?![^}]*\bcomposer\b)/;
 
+const TITLE_ROW_OWNER = 'packages/ui/src/components/PaneShell/PaneTitleRow.tsx';
+const PAGE_TITLE_EXEMPT = /^apps\/desktop\/src\/app\/components\/MockScene\/|\/ErrorBoundary\.tsx$/;
+const PAGE_TITLE_TAG = /<h1\b|\bas="h1"/;
+const PAGE_TITLE_WINDOW = 5;
+
+const isPageTitleAt = ({ lines, index }) =>
+  PAGE_TITLE_TAG.test(lines[index] ?? '') &&
+  lines.slice(index, index + PAGE_TITLE_WINDOW).some((near) => near.includes('text-title'));
+
+const countPageTitleRows = (file) =>
+  file.path === TITLE_ROW_OWNER || PAGE_TITLE_EXEMPT.test(file.path)
+    ? 0
+    : file.lines.filter((_line, index) => isPageTitleAt({ lines: file.lines, index })).length;
+
 const countClassLines = ({ file, pattern }) =>
   countLines({ file, matches: (line) => pattern.test(line) });
 
@@ -396,6 +410,12 @@ export const RULES = [
     matches: (line) => FOOTER_CTA_BAR.test(line),
     hint: 'a form or creation ends with FormActions inline after its content, never a footer bar with a divider (packages/ui/design/layout.md, Form actions)',
   }),
+  {
+    id: 'page-title-row',
+    kinds: ['ts'],
+    count: countPageTitleRows,
+    hint: 'a page title is PaneTitleRow, the only h1 at text-title; a document own heading is content (packages/ui/design/layout.md, The page header)',
+  },
   {
     id: 'half-step-spacing',
     kinds: ['ts'],

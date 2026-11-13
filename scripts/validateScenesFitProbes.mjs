@@ -5,6 +5,7 @@ import { runReleaseImageShape } from './validateScenesReleaseImageShape.mjs';
 import { runQuestionCard } from './validateScenesQuestionCard.mjs';
 import { runRowAlign } from './validateScenesRowAlign.mjs';
 import { runRunTailFit } from './validateScenesRunTailFit.mjs';
+import { runTitleBand } from './validateScenesTitleBand.mjs';
 
 export const runFitProbes = async (context) => {
   await runDrawerReveal(context);
@@ -14,4 +15,5 @@ export const runFitProbes = async (context) => {
   await runReleaseImageShape(context);
   await runRowAlign(context);
   await runRunTailFit(context);
+  await runTitleBand(context);
 };

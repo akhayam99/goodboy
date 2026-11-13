@@ -164,8 +164,6 @@ const HEADER_PADDING = /\b(pt|py|mt|my)-\d+\b|\bh-10\b/;
 
 const PANE_HEADER_SLOT = /data-slot="pane-header"/;
 
-const TITLE_ROW_IMPORT = /\bPaneTitleRow\b/;
-
 const SKELETON_BODY_OF: Readonly<Record<keyof typeof STUDIO_META, string>> = {
   settings: 'rows',
   guide: 'prose',
@@ -249,9 +247,7 @@ describe('one page layout', () => {
   });
 
   it('lets no page set its own header padding or draw its own header slot', () => {
-    const slotOwners = productionFiles().filter(
-      (key) => PANE_HEADER_SLOT.test(read(key)) || TITLE_ROW_IMPORT.test(read(key)),
-    );
+    const slotOwners = productionFiles().filter((key) => PANE_HEADER_SLOT.test(read(key)));
     const padded = HEADER_FILES.filter((file) => HEADER_PADDING.test(read(file)));
     const settings = read('features/settings/components/SettingsStudio/index.tsx');
     const settingsDetail = settings.slice(
@@ -270,7 +266,7 @@ describe('one page layout', () => {
     const header = readFileSync(join(UI, 'components/PaneShell/PageHeader.tsx'), 'utf8');
     const shell = readFileSync(join(UI, 'components/PaneShell/index.tsx'), 'utf8');
 
-    expect(PANE_RHYTHM.headerInset).toBe('pt-3');
+    expect(PANE_RHYTHM.headerInset).toBe('pt-2');
     expect(header).toContain('PANE_RHYTHM.headerInset');
     expect(header).toContain('<PaneTitleRow');
     expect(shell).toContain('<PageHeader');

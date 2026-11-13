@@ -1,3 +1,4 @@
+import { PaneTitleRow } from '@goodboy/ui';
 import type { ReactNode, Ref } from 'react';
 
 type Props = {
@@ -11,33 +12,12 @@ type Props = {
 export const AgentHeader = ({ title, actions, meta = null, below = null, rootRef }: Props) => {
   return (
     <div ref={rootRef} className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 flex-col gap-1">
-        <div
-          data-testid="agent-header-title-row"
-          data-slot="pane-title-row"
-          className="flex min-h-8 min-w-0 items-center justify-between gap-4"
-        >
-          <div
-            data-testid="agent-header-lead"
-            className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-1"
-          >
-            <h1 className="flex min-h-8 min-w-0 flex-1 items-center text-title text-foreground">
-              {title}
-            </h1>
-          </div>
-          {actions != null ? (
-            <div className="flex min-h-8 shrink-0 items-center gap-2 self-start">{actions}</div>
-          ) : null}
-        </div>
-        {meta === null ? null : (
-          <div
-            data-testid="agent-header-meta"
-            className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
-          >
-            {meta}
-          </div>
-        )}
-      </div>
+      <PaneTitleRow
+        rowTestId="agent-header-title-row"
+        title={title}
+        meta={meta}
+        actions={actions}
+      />
       {below}
     </div>
   );

@@ -8,19 +8,24 @@ export const BOARD_LANE_FADE_PX = 32;
 
 export const PANE_GROUPS_GAP_REM = 2;
 
+export const HEADER_BAND_PX = 48;
+
+export const HEADER_META_PX = 16;
+
 export const PANE_RHYTHM = {
   inset: 'px-6',
-  headerInset: 'pt-3',
+  headerInset: 'pt-2',
   pinnedInset: 'pt-3 pb-5',
   headerRow: 'h-8',
+  headerMeta: 'h-4',
   header: 'px-6 py-5',
   body: 'px-6 py-5',
   dock: 'px-6 py-4',
   stack: 'flex flex-col gap-6',
   groups: 'flex flex-col gap-8',
   below: {
-    title: 'pb-4',
-    section: 'pb-6',
+    title: 'pb-2',
+    section: 'pb-2',
   },
   prose: 'max-w-[var(--measure)]',
   transcript: {
