@@ -10,8 +10,13 @@ type ErrorParams = {
   readonly error: unknown;
 };
 
+type PolledParams = {
+  readonly facts: ReadonlyArray<BrowserTabFacts>;
+};
+
 type Params = {
   readonly sessionId: SessionId;
+  readonly onPolled: (params: PolledParams) => void;
   readonly onError: (params: ErrorParams) => void;
 };
 
@@ -24,10 +29,12 @@ const POLL_MS = 1500;
 
 const NO_FACTS: ReadonlyArray<BrowserTabFacts> = [];
 
-export const useLiveTabFacts = ({ sessionId, onError }: Params): LiveTabFacts => {
+export const useLiveTabFacts = ({ sessionId, onPolled, onError }: Params): LiveTabFacts => {
   const [facts, setFacts] = useState<ReadonlyArray<BrowserTabFacts>>(NO_FACTS);
   const factsRef = useRef(facts);
   factsRef.current = facts;
+  const onPolledRef = useRef(onPolled);
+  onPolledRef.current = onPolled;
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
@@ -37,7 +44,11 @@ export const useLiveTabFacts = ({ sessionId, onError }: Params): LiveTabFacts =>
     });
     void browserHost.list({ sessionId }).then(
       (next) => {
-        if (claimed.isCurrent() && !sameFacts({ a: factsRef.current, b: next })) {
+        if (!claimed.isCurrent()) {
+          return;
+        }
+        onPolledRef.current({ facts: next });
+        if (!sameFacts({ a: factsRef.current, b: next })) {
           setFacts(next);
         }
       },

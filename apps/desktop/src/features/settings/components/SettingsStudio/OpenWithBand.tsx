@@ -11,6 +11,8 @@ import {
 } from '../../settings';
 import { useAppStore } from '../../../../store';
 
+import { ownBrowserClickWord } from '../../../browser/ownBrowserClickWord';
+import { LinksOpenField } from './LinksOpenField';
 import { ToolChoiceField, type ToolChoice } from './ToolChoiceField';
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 
@@ -179,7 +181,7 @@ export const OpenWithBand = () => {
         />
         <ToolChoiceField
           label="Browser"
-          help="Opens links, and artifacts you open in a browser."
+          help={`Your browser, for links you ${ownBrowserClickWord()} and artifacts you open outside.`}
           value={browserApp}
           choices={browserChoices}
           onChange={(id) => void onChangeBrowser(id)}
@@ -192,6 +194,7 @@ export const OpenWithBand = () => {
             title={`${missingBrowserLabel} isn't installed any more. Links open with your system browser until you pick another.`}
           />
         )}
+        <LinksOpenField />
       </div>
     </Band>
   );

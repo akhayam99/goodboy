@@ -37,6 +37,9 @@ const openRowsOf = ({ text }: Pick<Params, 'text'>): ReadonlyArray<CommandRow> =
     return [];
   }
   const label = text.trim();
+  if (parsed.kind === 'local') {
+    return [{ kind: 'open', key: 'open', url: parsed.path, label }];
+  }
   return [
     { kind: 'open', key: 'open', url: parsed.url, label },
     { kind: 'outside', key: 'outside', url: parsed.url, label },

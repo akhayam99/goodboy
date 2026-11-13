@@ -6,6 +6,7 @@ use super::find::{self, FindOutcome};
 use super::guard::{self, AppOrigins};
 use super::host::{self, OpenTab, SessionClosed, TabBounds};
 use super::lifecycle;
+use super::local::{self, LocalFile};
 use super::page_keys::PageKeys;
 use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
@@ -15,6 +16,8 @@ use super::registry::{BrowserRegistry, TabFacts, TabState};
 use crate::platform::web_history::{HistoryState, HistoryStep};
 use crate::util::{now_ms, MessageError};
 
+const BLANK_ADDRESS: &str = "about:blank";
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TabOpenArgs {
@@ -23,6 +26,23 @@ pub(crate) struct TabOpenArgs {
     url: String,
     bounds: TabBounds,
     is_shown: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TabOpenLocalArgs {
+    session_id: String,
+    workspace_id: String,
+    path: String,
+    bounds: TabBounds,
+    is_shown: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TabNavigateLocalArgs {
+    tab_id: String,
+    path: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -125,6 +145,40 @@ pub async fn browser_tab_open(
         &webview.window(),
         OpenTab::at(&args.session_id, profile, url, args.bounds, args.is_shown),
     )
+}
+
+fn local_file(path: &str) -> Result<LocalFile, MessageError> {
+    local::resolve(path, dirs::home_dir().as_deref()).map_err(reason::refused)
+}
+
+#[tauri::command]
+pub async fn browser_tab_open_local(
+    webview: Webview,
+    args: TabOpenLocalArgs,
+) -> Result<TabFacts, MessageError> {
+    refuse_browser_caller(&webview)?;
+    let profile = ProfileId::of_workspace(&args.workspace_id)?;
+    let file = local_file(&args.path)?;
+    let blank =
+        guard::parse_address(BLANK_ADDRESS).ok_or_else(|| reason::refused(INVALID_ADDRESS))?;
+    let opened = host::open_tab(
+        &webview.window(),
+        OpenTab::at(&args.session_id, profile, blank, args.bounds, args.is_shown),
+    )?;
+    let app = webview.app_handle();
+    host::load_local(app, &opened.id, &file).inspect_err(|_| {
+        let _ = host::close_tab(app, &opened.id);
+    })
+}
+
+#[tauri::command]
+pub async fn browser_tab_navigate_local(
+    webview: Webview,
+    args: TabNavigateLocalArgs,
+) -> Result<(), MessageError> {
+    owned_tab(&webview, &args.tab_id)?;
+    let file = local_file(&args.path)?;
+    host::load_local(webview.app_handle(), &args.tab_id, &file).map(|_| ())
 }
 
 #[tauri::command]
@@ -313,6 +367,25 @@ mod tests {
             "url": "http://localhost:5173/",
             "bounds": { "x": 963.5, "y": 36.5, "width": 477.5, "height": 864.5 },
             "isShown": true,
+        }));
+    }
+
+    #[test]
+    fn wire_shape_tab_open_local_args() {
+        assert_wire_reads::<TabOpenLocalArgs>(json!({
+            "sessionId": "harborline",
+            "workspaceId": "northwind",
+            "path": "~/harborline/plan.html",
+            "bounds": { "x": 963.5, "y": 36.5, "width": 477.5, "height": 864.5 },
+            "isShown": false,
+        }));
+    }
+
+    #[test]
+    fn wire_shape_tab_navigate_local_args() {
+        assert_wire_reads::<TabNavigateLocalArgs>(json!({
+            "tabId": "0f1e",
+            "path": "/work/harborline/plan.html",
         }));
     }
 

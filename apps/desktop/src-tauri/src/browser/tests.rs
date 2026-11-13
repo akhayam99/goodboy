@@ -13,13 +13,14 @@ use super::commands::{close_session, list_session, owned_tab, set_page_keys};
 use super::find::{find_in_page, MAX_NEEDLE_CHARS};
 use super::guard::label_of;
 use super::host::{
-    close_each, close_tab, fill_popup, open_tab, refresh_with, reserve_popup, OpenTab,
+    close_each, close_tab, fill_popup, load_local, open_tab, refresh_with, reserve_popup, OpenTab,
     SessionClosed, TabBounds, MAX_HIDDEN_POPUPS, TAB_OPENED_EVENT,
 };
 use super::lifecycle::{
     close_switched, hide_tab, place_tab, show_tab, sweep, SLEEP_LIMIT_MS, TAB_STATE_EVENT,
 };
 use super::load::{report_load, LoadPhase, TAB_LOAD_EVENT};
+use super::local::{self, LocalFile};
 use super::page_keys::{route_page_key, PageKeys, PAGE_KEY_EVENT};
 use super::profile::{begin_clear, ProfileId};
 use super::reason::{
@@ -727,6 +728,93 @@ fn shows_a_closed_tab_again_under_the_same_id_at_its_last_address() {
     assert_eq!(registry.ids_of_session("harborline", "main"), vec![id]);
 }
 
+fn local_plan() -> (std::path::PathBuf, LocalFile) {
+    let root = std::env::temp_dir().join(format!("goodboy-browser-local-{}", uuid_v4()));
+    std::fs::create_dir_all(root.join("harborline")).expect("folder");
+    let plan = root.join("harborline/plan.html");
+    std::fs::write(&plan, "<title>Plan</title>").expect("page");
+    let file = local::resolve(plan.to_str().expect("utf8"), None).expect("plan resolves");
+    (root, file)
+}
+
+fn open_local(app: &App<MockRuntime>, file: &LocalFile) -> String {
+    let blank = open_tab(
+        &window(app, "main"),
+        OpenTab::at("harborline", northwind(), url("about:blank"), PANE, true),
+    )
+    .expect("blank tab opens");
+    load_local(app.handle(), &blank.id, file).expect("local page loads");
+    blank.id
+}
+
+#[test]
+fn loads_a_typed_local_file_through_a_grant_of_its_own_tab() {
+    let app = app_with_windows(&["main"]);
+    let (root, file) = local_plan();
+    let id = open_local(&app, &file);
+    let registry = app.state::<BrowserRegistry>();
+    let shown = Url::from_file_path(&file.path).expect("file address");
+    assert_eq!(registry.facts(&id).expect("facts").url, shown.as_str());
+    let live = webview(&app, &label_of(&id)).url().expect("live url");
+    let (token, path) = local::split_live(&live).expect("live address is local");
+    assert_eq!(path, file.path);
+    assert!(local::may_load(&registry, &id, &live));
+    let other = open(&app, "main", "harborline");
+    assert!(!local::may_load(&registry, &other, &live));
+    assert_eq!(
+        registry.list("harborline", "main")[0].url,
+        shown.as_str(),
+        "a listing shows the file address, never the token"
+    );
+    close_tab(app.handle(), &id).expect("closes");
+    assert_eq!(registry.local_grant(&id, &token), None);
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn shows_a_closed_local_tab_again_at_its_file_through_the_same_grant() {
+    let app = app_with_windows(&["main"]);
+    let (root, file) = local_plan();
+    let id = open_local(&app, &file);
+    let page = webview(&app, &label_of(&id));
+    let moved = local::routed(
+        page.url().expect("live url"),
+        Some("step=2"),
+        Some("/checkout"),
+    );
+    page.navigate(moved).expect("same document move");
+    let before = webview(&app, &label_of(&id)).url().expect("live url");
+    let shown = local::routed(
+        Url::from_file_path(&file.path).expect("file address"),
+        Some("step=2"),
+        Some("/checkout"),
+    );
+    let listed = list_session(&webview(&app, "main"), "harborline").expect("lists");
+    assert_eq!(listed[0].url, shown.as_str());
+    hide_tab(app.handle(), &id, 100).expect("hides");
+    sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
+    assert!(!is_live_webview(&app, &id));
+
+    let facts = show_tab(&window(&app, "main"), &id, 900_000).expect("shows");
+    assert_eq!(facts.url, shown.as_str());
+    let after = webview(&app, &label_of(&id)).url().expect("live url");
+    assert_eq!(after, before);
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn refuses_to_open_a_file_address_as_a_web_tab() {
+    let app = app_with_windows(&["main"]);
+    let (root, file) = local_plan();
+    let shown = Url::from_file_path(&file.path).expect("file address");
+    let refused = open_tab(
+        &window(&app, "main"),
+        OpenTab::at("harborline", northwind(), shown, PANE, true),
+    );
+    assert!(matches!(refused, Err(MessageError::Refused(ref code)) if code == NOT_WEB_ADDRESS));
+    let _ = std::fs::remove_dir_all(root);
+}
+
 #[test]
 fn closes_an_older_hidden_tab_when_showing_a_closed_one_goes_over_the_cap() {
     let app = app_with_windows(&["main"]);
@@ -1156,6 +1244,10 @@ fn refuses_to_clear_a_blank_workspace() {
         begin_clear(app.handle(), " "),
         Err(MessageError::Refused(_))
     ));
+}
+
+pub(super) fn seed_local_tab(registry: &BrowserRegistry, id: &str) {
+    seed_tab(registry, id, northwind(), true);
 }
 
 fn seed_tab(registry: &BrowserRegistry, id: &str, profile: ProfileId, is_shown: bool) {

@@ -7,6 +7,9 @@ type Params = {
 const WORDS: ReadonlyMap<string, string> = new Map([
   ['not-web-address', "That address can't open here."],
   ['invalid-address', "That isn't an address."],
+  ['local-missing', 'No file at that path.'],
+  ['local-folder', "That's a folder. Type the path of a file in it."],
+  ['local-type', 'Only web pages, images and PDFs open here.'],
   ['tab-gone', 'This tab closed. Open the page again.'],
   ['tab-closed', 'This tab was put to sleep. Open it again.'],
   ['window-gone', 'This window lost the tab. Open the page again.'],

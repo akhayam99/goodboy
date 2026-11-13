@@ -1,5 +1,6 @@
 import { useAppStore } from '../../store';
 import { openUrl } from '../../shared/lib/editor';
+import { addressOf } from './addressOf';
 import { showBrowser } from './showBrowser';
 import { showBrowserTab } from './showBrowserTab';
 import type { BrowserPaneModel, CommandRow, CommandTabRow } from './types';
@@ -36,9 +37,11 @@ const showTab = ({ row, model }: TabParams): void => {
 };
 
 export const runCommandRow = async ({ row, isAlternate, model, onDone }: Params): Promise<void> => {
-  if (row.kind === 'outside' || isAlternate) {
+  const url = urlOf({ row });
+  const isLocal = addressOf({ text: url }).kind === 'local';
+  if (row.kind === 'outside' || (isAlternate && !isLocal)) {
     onDone();
-    await openUrl(urlOf({ row })).catch((failure: unknown) => model.showError({ error: failure }));
+    await openUrl(url).catch((failure: unknown) => model.showError({ error: failure }));
     return;
   }
   if (row.kind === 'tab') {

@@ -16,8 +16,8 @@ shows, hides, navigates and closes that id.
 **A page in a tab reaches no Goodboy command.** Tauri decides whether a page
 may call a command by its address, not by the webview's name: a page on the
 app's own origin is local, and a local page may call every command. So the
-host refuses every navigation that would make a tab local. That refusal is
-the first wall. The label is the second: no capability grants a `browse-`
+host refuses every navigation that would make a tab local, except a local
+file the user typed (see Local files). That refusal is the first wall. The label is the second: no capability grants a `browse-`
 webview, and no app command runs for one (see Capabilities).
 
 ## The navigation rule
@@ -26,14 +26,16 @@ The rule lives in `apps/desktop/src-tauri/src/browser/guard.rs` and runs in
 `on_navigation`, in `on_new_window` and before every command that loads an
 address.
 
-- Only `http` and `https` load. `javascript:`, `data:`, `blob:`, `file:` and
-  every other scheme are refused.
+- Only `http` and `https` load, plus a local file the user typed (see Local
+  files). `javascript:`, `data:`, `blob:`, `file:` and every other scheme are
+  refused.
 - `about:blank` and `about:srcdoc` pass at any time. Such a page or frame
   takes its creator's origin, so it can never make a tab local. A new tab may
   start on `about:blank`, never on `about:srcdoc`.
 - The app's own origins are refused even on `http`: `tauri://localhost`,
   `http://tauri.localhost` and `https://tauri.localhost` (Windows), every
-  scheme Goodboy or Tauri registers (`tauri`, `ipc`, `asset`, `gbframe`) and
+  scheme Goodboy or Tauri registers (`tauri`, `ipc`, `asset`, `gbframe`,
+  `gblocal`) and
   its `<scheme>.localhost` form, and in a development build the `devUrl`
   origin. When the `devUrl` host is a loopback name, every loopback host on
   its port counts as that origin: `localhost`, any `*.localhost`,
@@ -58,6 +60,80 @@ address.
 Phase 0 spike S2 proved the wall: a page in a tab got none of six probe
 commands, and got all six once it navigated itself to the dev origin or to
 `tauri://localhost`, until this rule refused those navigations.
+
+## Local files
+
+Only an address the user types opens a local file: the address row, ⌘L, or
+⌘K Open. It is an absolute path (a drive path such as `C:\work\plan.html` on
+Windows), a `~/` path or a `file://` address, to a page, an image or a PDF. A link, a door, a page, a popup or a frame never
+opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
+
+- **The scheme.** The file is served by Rust on `gblocal`
+  (`browser/local.rs`), never loaded as `file:`. The pane calls
+  `browser_tab_open_local` or `browser_tab_navigate_local` with the typed
+  text. Rust expands `~/`, resolves links, and refuses a missing path
+  (`local-missing`), a folder (`local-folder`) or another type
+  (`local-type`). A new tab starts on `about:blank`, gets its grant, then
+  loads the file.
+- **The grant.** It belongs to one tab, lives in the registry beside the tab
+  and goes with it: closing the tab revokes its grants before the webview
+  closes, so a close that fails still leaves no grant. It names the file's folder and a random token; the live
+  address is `gblocal://localhost/<token>/<absolute path>`
+  (`http://gblocal.localhost/...` on Windows). `on_navigation` lets a tab
+  move to a `gblocal` address only when the token is its own and the path is
+  inside the folder, so a web page that does not know the token can neither
+  navigate to, frame nor embed the file. A popup to a local address is
+  refused like any app origin.
+- **What a request reads.** The handler checks the requesting webview's
+  `browse-` label against the grant, then the path: under the folder, no `..`,
+  no hidden file or folder, links resolved and checked again, a known type
+  (pages, images, PDF, styles, scripts, fonts, data, text, video) and at most
+  64 MB. The checked path is then opened one part at a time from the folder
+  with no link followed (`scoped_path::open_confined`), and the type, size and
+  bytes come from that one handle, so a file or folder swapped for a link
+  after the check answers 404. On Windows the file is opened, then the final
+  path of that open handle must equal the checked path, so a folder swapped
+  for a junction answers 404 too. A platform with neither open serves
+  nothing. Anything else answers 404; nothing lists a folder.
+- **How far a grant reaches.** A grant serves every known type in the page's
+  own folder, one level, no recursion. Below that folder it serves only
+  static assets (`ASSET_TYPES`: styles, scripts, source maps, fonts, icons,
+  images, wasm and video), never a page, a PDF, data or text, so a site with
+  `index.html` beside `css/`, `js/` and `img/` loads whole, while a page
+  saved into a busy folder can not read the documents under it. A link from
+  the page to another page in a subfolder does not load; type its path to
+  open it. A wide folder is the home folder and every folder right under it
+  (Downloads, Documents, Desktop), the top of the disk or a folder one level
+  down, a folder right under `/Volumes`, `/media` or `/mnt`, and the top of a
+  mounted volume (its device differs from its parent's on macOS and Linux, a
+  reparse point on Windows). A check that can not read the folder or its
+  parent counts as wide. A page in a wide folder gets a grant of its own
+  (`wide_page`) that serves the page itself and the static assets beside it,
+  nothing else: no subfolder, no other page, and no PDF, data or text file
+  next to it, so a page saved to Downloads can not read the documents saved
+  there. Each file opened in a wide folder gets its own token.
+- **Headers.** Responses carry `no-store`, `nosniff`, `no-referrer` and
+  `Cross-Origin-Resource-Policy: same-origin`.
+- **What the app sees.** Facts, listings and rows carry the `file://` address,
+  query and fragment included; the token never leaves Rust. The address row
+  shows the path (`C:/work/plan.html` for a Windows drive, which opens again),
+  the title comes from the document, Reload reads the file again. A closed tab
+  comes back through its grant at the same query and fragment; after a restart
+  the row opens again through `browser_tab_open_local`, since the user typed
+  it. ⌘K Open shows a tab already on the same file instead of opening another:
+  `fileKeyOf` gives a `file://` address, its path, a `~/` path and a drive
+  path in either slash the same key. On Windows the grant and the request
+  compare paths without the `\\?\` prefix. Open in your browser is
+  off for a local tab (`open_url` takes `http` and `https` only).
+- **Why a scheme and not a `file:` load.** WebKit's file load with read
+  access to a folder would give the web process read
+  access to the whole folder tree, hidden files included, with no check on
+  links, for as long as that process lives; it is macOS only and cannot be
+  tested headless. The scheme checks every request, works on every platform
+  and is a pure function under test. The cost: Tauri counts a page on a
+  scheme the app registers as its own origin (`is_local_url` in Tauri 2.12),
+  so for a local page the label wall in Capabilities is the only command
+  wall. A web page never gets there.
 
 ## Tabs and windows
 
@@ -201,7 +277,8 @@ to a project is a pin that every session of the project shares.
   `browser_stale_tab_sessions`. Every command names its owner and never reads
   the current session.
 - A save takes the address through the same rule as a live tab, so a row never
-  holds a local address, and keeps the first 512 characters of the title. It
+  holds an app address, and keeps the first 512 characters of the title. A
+  local file is stored as its `file://` address, never its `gblocal` one. It
   drops a username and password from the address and keeps the query and the
   fragment, so a token in the query still lands in the row. A second save of an
   id updates its address and title and keeps its position.
@@ -358,13 +435,25 @@ it; Esc inside the page goes to the page.
 - **The address rule** (`addressOf`): a full `http` or `https` address loads
   as typed; a bare host loads on `https`, and on `http` when it is
   `localhost`, a `*.localhost` name, an IPv4 address in `127.x`, `[::1]` or
-  `0.0.0.0`. A name whose first label is `127` stays on `https`. Words and a
-  host with no dot are matched against tabs and visits instead, and every
-  other scheme gets no Open row. The pane never sends text to a search engine.
+  `0.0.0.0`. A name whose first label is `127` stays on `https`. A path that
+  starts with `/` or `~/`, or a `file:` address, is a local file (see Local
+  files). Words and a host with no dot are matched against tabs and visits
+  instead, and every other scheme gets no Open row. The pane never sends text
+  to a search engine.
 - **Tabs**: the strip shows the session's tabs, then the project pins with
-  their title and a pin mark, then New tab. The list shows This session and Pinned for the project, with
-  the note that tabs close when the session is archived. With no tab the pane
-  shows an empty state and focuses the address.
+  their title and a pin mark, then New tab. The list shows `Pinned · <project>`
+  first, then This session, then New tab; the note that tabs close when the
+  session is archived is the tooltip of the This session label. A tab the
+  engine put to sleep or closed (`browser://tab-state`, read by
+  `useTabStates`, corrected by every successful 1.5 second poll, and keyed by
+  the engine's tab id so the Browser page marks tabs of every session) shows its favicon faint and
+  a moon mark, "Asleep, may reload when opened" (an asleep webview comes back
+  as it was, a closed one loads again). The list has three widths in
+  `browserTabListPref`: `list` (192px), `rail` (36px of favicons, titles in
+  tooltips) and `hidden`; the fold button cycles `list` and `rail`, and a pane
+  under 560px wide shows the rail. The old boolean value reads as `list` or
+  `hidden`. The Browser page rail uses the same rows and the same groups order.
+  With no tab the pane shows an empty state and focuses the address.
 - **Live tabs**: a row and a live webview are not the same thing. Opening a
   page asks the host for a hidden webview, saves its row with the webview's id
   and binds the two in `browserLiveTabs`. After a restart a row has no live
@@ -378,8 +467,9 @@ it; Esc inside the page goes to the page.
   moves a page makes with no load, such as a script changing the address or the
   title.
 - **Placement**: one loop (`createNativePlacement`) owns show, hide and
-  `set_bounds`. Every frame, with a `ResizeObserver` as backup, it measures the
-  placeholder (`viewBoundsOf`) and wants the shown tab at that rect, or no tab
+  `set_bounds`. Every frame, and whenever the view's frame changes size, it
+  measures the placeholder (`viewBoundsOf`) and wants the shown tab at that
+  rect, or no tab
   when the placeholder is gone, hidden or covered. It runs one host call at a
   time toward the latest wanted state, shows the new tab before hiding the old
   one, and drops a live id the host answers `tab-gone` for, so the next frame
@@ -392,6 +482,12 @@ it; Esc inside the page goes to the page.
   ask again. Before ⌘R reloads the window, every view a placement still owns
   is hidden (`hideOwnedViews`, capped wait): the reloaded page no longer knows
   their ids, so a shown view would stay painted with no pane around it.
+  The `ResizeObserver`
+  watches the view's frame (`BrowserView`), which is mounted whenever the pane
+  is, never the placeholder inside it: the placeholder mounts later, once a tab
+  is shown, so an observer started at mount would watch nothing. An error row
+  or a tab strip that grows the chrome shrinks the frame and moves the native
+  view at once, even when no frame runs.
 - **Overlays**: a menu, a popover, a dialog or Search or run is any element that
   matches `OVERLAY_SELECTOR` (`shared/keyboard/overlaySelector.ts`). For a
   popover the cover check measures the children of `[data-dropdown-portal]`,
@@ -405,7 +501,13 @@ it; Esc inside the page goes to the page.
   a view inside that region is hidden, so the native view never paints over
   the dock. While
   one intersects the placeholder, the view is
-  hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
+  hidden; an overlay elsewhere in the window leaves it shown. While the view is
+  hidden under an overlay the placeholder shows a cover (`BrowserCover`) on the
+  subtle surface: favicon, title, host and the reason in one line
+  (`coverReasonText.ts`, from `createOverlayWatch().coverOf`: menu, dialog,
+  tooltip or page). The cover goes one frame after the host showed the view
+  again (`onShown` of `createNativePlacement`), so no frame has neither, and it
+  stays when the show fails. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they
   never sit under a view.
 - **Writes** name the session and the tab. A state change waits for the host:
@@ -505,15 +607,27 @@ sits in and the address, and one function opens it (`openInBrowser`).
   integration, sign-in or connect guide in a drawer, opens your browser as
   before, and so does a link outside a session. A GitHub commit link still
   opens its diff. Chips and rows need only `data-browser-session`.
-- **The click rule**: a plain click opens the session's browser, ⌘-click
-  (Ctrl-click off macOS) opens your browser, on chips and links alike. The
-  ⌘-click listener runs after the page's own handlers and skips a click they
-  already handled, so an anchor with its own `onClick` opens your browser
-  once. No earlier rule covered web links; ⌘-click on a file path in a
-  terminal still opens your editor.
-- **Peek**: resting on or focusing a `localhost` link in a session shows a
-  card with the title of its tab (or the host), the address and what a click
-  does. The card never creates a tab, because every tab is a whole webview.
+- **The click rule**: one function, `openWebLink`, decides every plain web
+  link click, on chips, session links, a Service's port and a terminal's
+  printed addresses alike. ⌘-click (Ctrl-click off macOS) always opens your
+  browser. Otherwise the Links setting (`links.open`, Settings › General ›
+  Open with) decides: `goodboy`, the default, opens beside the session, and
+  `browser` opens your browser. A door with no session opens your browser
+  whatever the setting says. The click's modifier is read when the click
+  lands, and the setting is read before the open starts; a setting that
+  cannot be read counts as the default and reports a warning. The ⌘-click
+  listener runs after the page's own handlers and skips a click they already
+  handled, so an anchor with its own `onClick` opens your browser once.
+  ⌘-click on a file path in a terminal still opens your editor.
+- **Terminal links**: `GenericTerminalPanel` hands a printed web link and its
+  click event to `onOpenWebLink`; with no prop it keeps opening your browser,
+  as the provider's inline terminal does. The terminal pane passes the
+  session of its tab, so a terminal on a plain folder has none.
+- **Peek**: resting on or focusing a `localhost` link in a session, or
+  resting on any web address in a terminal, shows a card with the title of
+  its tab (or the host), the address and what a click does, in the words of
+  `webLinkPeekWords.ts`, which read the same place `openWebLink` picks. The card
+  never creates a tab, because every tab is a whole webview.
 - **The keymap** is eight entries in `shared/keyboard/browserShortcuts.ts`, all
   `scope: 'browser'`, registered by `useBrowserKeys` while the pane or the
   Browser page is on screen. Elsewhere each chord keeps its other meaning:
@@ -554,7 +668,9 @@ sits in and the address, and one function opens it (`openInBrowser`).
   the session it belongs to (`showBrowserTab`, `showBrowserPinTab`). It offers
   `Open <address>` first, beside
   that same session, for an address with `http` or `https` or a localhost
-  name, or for a host with a port or a path. With no workspace open the entry
+  name, or for a host with a port or a path. A typed path to a page, an image
+  or a PDF gets `Open <path>` beside the session (`typedLocalPathOf`), and no
+  entry with no session. With no workspace open the entry
   reads `In your browser` and opens your browser. A file name such as
   `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
   (`typedAddressOf`).
@@ -647,7 +763,8 @@ workspace profile stays signed out.
 ## Errors
 
 A `browser_*` command fails with a reason code from `browser/reason.rs`
-(`browser-caller`, `not-web-address`, `invalid-address`, `tab-gone`,
+(`browser-caller`, `not-web-address`, `invalid-address`, `local-missing`,
+`local-folder`, `local-type`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
 `session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
 `profile-shared`, `profile-unavailable`, `history-unavailable`, `tab-row-gone`, `tab-row-owner`,
@@ -658,7 +775,8 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  twenty `browser_*` commands (`browser_page_keys` sets the page keys); `page_keys.rs`
+  twenty-two `browser_*` commands (`browser_page_keys` sets the page keys);
+  `local.rs` holds the `gblocal` scheme, the path rule and the grant check; `page_keys.rs`
   holds the chord parse, the key codes, the `PageKeys` state and
   `route_page_key`; `load.rs` maps the page load callback to
   `browser://tab-load` (`started`, `finished`, the tab id and the address) for
@@ -690,6 +808,14 @@ words (`features/browser/browserFailureText.ts`).
   app, and walks redirect, form post, blank page and script sequences. It
   also fails when `lib.rs` registers a scheme the rule does not refuse. The
   rule is a pure function because no test can load a page headless.
+  `browser::local::tests` pins the typed forms, the missing, folder and type
+  refusals, the folder scope, a path that climbs, hidden files, a link out of
+  the folder and one inside it, a file or folder swapped for a link after the
+  check, the home folder and mounted volume limits, the token address, a
+  typed query and fragment, and that a tab loads only what its own grant
+  covers. `browser::tests` loads a typed file through its grant, drops the
+  grant on close, brings a closed local tab back through the same grant at its
+  query and fragment and refuses a `file:` address on the web path.
 - `browser::tests` opens tabs on Tauri's mock runtime: the owning window, the
   refusals and their codes, an app command a `browse-` webview calls from a
   local address, the popup cap and its `browser://tab-opened` event, listing
@@ -772,9 +898,14 @@ words (`features/browser/browserFailureText.ts`).
   on macOS only with its line and its refusal, an overlay over the view and one elsewhere, a late open
   closed, a failed hide tried again, a late wake never shown, a failed wake
   woken again by Reload, a revisited address saved, a failed save tried again
-  and the view hidden when the pane closes. `createOverlayWatch.test.ts` pins
+  and the view hidden when the pane closes. It also opens a typed local file
+  through `browser_tab_open_local` with its path in the row, moves the shown
+  tab with `browser_tab_navigate_local`, shows the words for a missing file,
+  and places the view lower when the address error grows the chrome with no
+  frame running. `createOverlayWatch.test.ts` pins
   the cover check for a popover with no role, for tooltips and for a page view
-  under an overlay dock.
+  under an overlay dock, and the reason per overlay kind. The mock scene
+  `browser-pane-cover` (light and dark) opens a menu over the page.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane`, `browser-pane-tabs`,
   `browser-pane-address` (the field open), `browser-pane-more` (the menu
   open) and `browser-pane-loading` (the load line, Stop, a fetched icon, Forward
@@ -786,17 +917,28 @@ words (`features/browser/browserFailureText.ts`).
   `store/slices/browser-host/` holds the loads by live tab id and the icons by
   origin.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
-  `isOwnBrowserClick.ts` is the click rule, `sessionOfElement.ts` reads
-  `data-browser-session`, `claimSessionLink.ts` takes a link from the shared
-  interceptor (`useCommitLinkInterceptor`), `hooks/useOwnBrowserLinkClicks`
-  takes ⌘-click and `components/BrowserLinkDoors` draws the peek. The ⌘K
-  entries come from `palette/hooks/useBrowserEntries` and `typedAddressOf.ts`.
+  `openWebLink.ts` is the click rule (`webLinkPlace.ts` is its pure answer,
+  `isOwnBrowserClick.ts` reads the modifier, `shared/lib/linksOpenOf.ts` and
+  `linksOpenSetting.ts` read and name the setting), `sessionOfElement.ts`
+  reads `data-browser-session`, `claimSessionLink.ts` takes a link from the
+  shared interceptor (`useCommitLinkInterceptor`), `hooks/useOwnBrowserLinkClicks`
+  takes ⌘-click and `components/BrowserLinkDoors` draws the peek through
+  `WebLinkPeek.tsx`, which the terminal pane draws too
+  (`terminal/hooks/useTerminalWebLinks`). The ⌘K entries come from
+  `palette/hooks/useBrowserEntries` and `typedAddressOf.ts`.
   `doors.test.tsx` pins each door with a fake host: a chip opening a new tab
   and reusing one, ⌘-click and a session-less chip calling the system opener,
   a service row, a door on a page, a host failure, links in and out of a
-  session, the peek, ⌘L beside Ask and the ⌘K entries.
-  `tabForAddress.test.ts` pins the tab match; the scenes are `browser-peek`
-  and `browser-peek-dark`. `components/BrowserPane/keys.test.tsx` pins the
+  session, the peek, the Links setting set to your browser on a chip, a link
+  and the peek, ⌘L beside Ask and the ⌘K entries. `openWebLink.test.ts` pins
+  ⌘-click over the setting, `goodboy` with and without a session and
+  `browser`; `webLinkPeekWords.test.ts` pins the peek words against the place;
+  `GenericTerminalPanel/webLinks.test.tsx` pins that the addon's click reaches
+  `onOpenWebLink` with its event and that a hover reports the row;
+  `LinksOpenField/index.test.tsx` pins the row reading, saving and keeping the
+  old value on a failed save. `tabForAddress.test.ts` pins the tab match; the
+  scenes are `browser-peek`, `browser-peek-dark`, `settings-links` and
+  `settings-links-dark`. `components/BrowserPane/keys.test.tsx` pins the
   keymap and the find bar on the real store with a fake host (the needle sent
   to the shown tab, Found and Not found, ↩ and ⇧↩, Done and Esc clearing, a
   failed search, a late answer dropped, another tab shown), and the scenes

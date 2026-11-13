@@ -1,7 +1,7 @@
 import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
 import { browserTabListPref } from '../../../../../../features/browser/browserTabListPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
-import type { BrowserTabFacts } from '../../../../../../features/browser/types';
+import type { BrowserTabFacts, BrowserTabListMode } from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab } from '../../../../../../store/slices/browser/types';
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
@@ -11,6 +11,7 @@ import { mockSceneIpc } from '../../mockSceneIpc';
 export type BrowserPaneSceneState =
   | 'pane'
   | 'tabs'
+  | 'rail'
   | 'page'
   | 'peek'
   | 'address'
@@ -20,7 +21,8 @@ export type BrowserPaneSceneState =
   | 'loading'
   | 'keys'
   | 'find'
-  | 'find-missing';
+  | 'find-missing'
+  | 'cover';
 
 const VISITS: ReadonlyArray<BrowserVisit> = [
   { url: 'http://localhost:5173/checkout/confirm', title: 'Confirm order', visitedAt: 3 },
@@ -96,6 +98,17 @@ const rowOf = ({ id, url, title, sessionId, projectId, position }: RowParams): B
   updatedAt: 1,
 });
 
+type ListModeParams = {
+  readonly state: BrowserPaneSceneState;
+};
+
+const listModeOf = ({ state }: ListModeParams): BrowserTabListMode => {
+  if (state === 'tabs') {
+    return 'list';
+  }
+  return state === 'rail' ? 'rail' : 'hidden';
+};
+
 const factsOf = ({
   id,
   url,
@@ -105,6 +118,7 @@ const factsOf = ({
   sessionId: SESSION_ID,
   url,
   title,
+  state: id === 'mock-browser-tax' ? 'asleep' : 'live',
   isShown: false,
   hiddenSinceMs: null,
   openerId: null,
@@ -217,7 +231,7 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return null;
     }
   });
-  browserTabListPref.write(state === 'tabs');
+  browserTabListPref.write({ mode: listModeOf({ state }) });
   useAppStore.setState({
     browserSessionTabs: { [SESSION_ID]: tabs },
     browserActiveTab: { [SESSION_ID]: 'mock-browser-checkout' },

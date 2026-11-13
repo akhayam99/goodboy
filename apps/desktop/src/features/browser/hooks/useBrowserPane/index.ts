@@ -6,29 +6,32 @@ import { projectById } from '../../../../store/slices/projects/projectIndex';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { openUrl } from '../../../../shared/lib/editor';
 import { addressOf } from '../../addressOf';
+import { addressTextOf } from '../../addressTextOf';
 import { browserFailureText } from '../../browserFailureText';
 import { browserHost } from '../../browserHost';
 import { browserPaneRequests } from '../../browserPaneRequests';
 import { hostOf } from '../../hostOf';
+import { isFileAddress } from '../../isFileAddress';
 import { isTabGone } from '../../isTabGone';
 import { LOAD_STALLED_TEXT } from '../../loadStalledText';
 import { openPage } from '../../openPage';
 import { pinProjectOf } from '../../pinProjectOf';
 import { shownTabOf } from '../../shownTabOf';
-import type { BrowserPaneModel } from '../../types';
+import type { BrowserPaneModel, BrowserTarget } from '../../types';
 import { useFavicon } from '../useFavicon';
 import { useHistoryState } from '../useHistoryState';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
 import { useTabLoad } from '../useTabLoad';
+import { useTabStates } from '../useTabStates';
 
 type Params = {
   readonly sessionId: SessionId;
 };
 
-type UrlParams = {
-  readonly url: string;
+type TargetParams = {
+  readonly target: BrowserTarget;
 };
 
 type LiveParams = {
@@ -51,6 +54,10 @@ type DoneParams = {
   readonly isDone: boolean;
 };
 
+type UrlParams = {
+  readonly url: string;
+};
+
 const INSPECT_NOTICE = 'Open the Develop menu in Safari and pick this tab.';
 const NO_TABS: ReadonlyArray<BrowserTab> = [];
 const FALLBACK_BOUNDS = { x: 0, y: 0, width: 1, height: 1 };
@@ -60,6 +67,9 @@ const mustBeDone = ({ isDone }: DoneParams): void => {
     throw new Error('tab-not-saved');
   }
 };
+
+const targetOfUrl = ({ url }: UrlParams): BrowserTarget =>
+  isFileAddress({ url }) ? { kind: 'local', path: addressTextOf({ url }) } : { kind: 'web', url };
 
 export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const tabs = useAppStore((state) => state.browserSessionTabs[sessionId] ?? NO_TABS);
@@ -76,8 +86,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const draftEnds = useAppStore((state) => state.browserDraftEnds[sessionId] ?? 0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const { states, reconcile } = useTabStates();
   const { facts, refresh } = useLiveTabFacts({
     sessionId,
+    onPolled: reconcile,
     onError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   });
   const [isDrafting, setIsDrafting] = useState(false);
@@ -86,17 +98,23 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const shownLiveId = shown === null ? undefined : live?.[shown.tab.id];
   const factOf = ({ liveId }: LiveParams) =>
     liveId === undefined ? undefined : facts.find((fact) => fact.id === liveId);
-  const address = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
+  const isLiveAsleep = ({ liveId }: LiveParams): boolean => {
+    const state = liveId === undefined ? undefined : states.get(liveId);
+    return state === 'asleep' || state === 'closed';
+  };
+  const url = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
+  const address = addressTextOf({ url });
+  const canOpenOutside = url !== '' && !isFileAddress({ url });
   const shownLiveIdRef = useRef(shownLiveId);
   shownLiveIdRef.current = shownLiveId;
   const isLoading = useAppStore(
     (state) => shownLiveId !== undefined && state.browserLoads[shownLiveId] !== undefined,
   );
-  const history = useHistoryState({ tabId: shownLiveId, signal: `${address}|${isLoading}` });
+  const history = useHistoryState({ tabId: shownLiveId, signal: `${url}|${isLoading}` });
 
   useSaveLiveAddresses({ sessionId, tabs, live, facts });
   useOpenedPopups({ sessionId });
-  useFavicon({ liveId: shownLiveId, url: address });
+  useFavicon({ liveId: shownLiveId, url });
   useTabLoad({
     sessionId,
     onFinished: ({ tabId }) => {
@@ -150,22 +168,27 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     void run({ step: () => command({ tabId: shownLiveId }) });
   };
 
-  const openNew = async ({ url }: UrlParams): Promise<void> => {
-    const outcome = await openPage({ sessionId, url, bounds: FALLBACK_BOUNDS });
+  const openNew = async ({ target }: TargetParams): Promise<void> => {
+    const outcome = await openPage({ sessionId, target, bounds: FALLBACK_BOUNDS });
     mustBeDone({ isDone: outcome !== 'failed' });
     setIsDrafting(false);
   };
 
-  const navigate = ({ url }: UrlParams): Promise<unknown> => {
+  const navigate = ({ target }: TargetParams): Promise<unknown> => {
     if (shown === null || (shown.isPin && shownLiveId === undefined)) {
-      return openNew({ url });
+      return openNew({ target });
     }
     if (shownLiveId !== undefined) {
-      return browserHost.navigate({ tabId: shownLiveId, url });
+      return target.kind === 'local'
+        ? browserHost.navigateLocal({ tabId: shownLiveId, path: target.path })
+        : browserHost.navigate({ tabId: shownLiveId, url: target.url });
+    }
+    if (target.kind === 'local') {
+      return openNew({ target });
     }
     return useAppStore
       .getState()
-      .updateBrowserTab({ sessionId, tabId: shown.tab.id, url, title: shown.tab.title })
+      .updateBrowserTab({ sessionId, tabId: shown.tab.id, url: target.url, title: shown.tab.title })
       .then((isDone) => mustBeDone({ isDone }));
   };
 
@@ -176,6 +199,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     projectName,
     shown,
     address,
+    canOpenOutside,
     titleOf: ({ tab }) => {
       const fact = factOf({ liveId: live?.[tab.id] });
       if (fact !== undefined && fact.title !== '') {
@@ -183,6 +207,8 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       }
       return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
     },
+    isAsleep: ({ tab }) => isLiveAsleep({ liveId: live?.[tab.id] }),
+    isLiveAsleep,
     error,
     notice,
     isDrafting,
@@ -196,7 +222,11 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         setError(parsed.reason);
         return false;
       }
-      const isDone = await run({ step: () => navigate({ url: parsed.url }) });
+      const target: BrowserTarget =
+        parsed.kind === 'local'
+          ? { kind: 'local', path: parsed.path }
+          : { kind: 'web', url: parsed.url };
+      const isDone = await run({ step: () => navigate({ target }) });
       if (isDone) {
         setWakeAttempt((count) => count + 1);
       }
@@ -254,7 +284,8 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       if (closed === undefined) {
         return;
       }
-      void run({ step: () => openNew({ url: closed.url }) }).then((isDone) => {
+      const target = targetOfUrl({ url: closed.url });
+      void run({ step: () => openNew({ target }) }).then((isDone) => {
         if (!isDone) {
           return;
         }
@@ -282,10 +313,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       setIsDrafting(true);
     },
     openOutside: () => {
-      if (address === '') {
+      if (!canOpenOutside) {
         return;
       }
-      void openUrl(address).catch((failure: unknown) =>
+      void openUrl(url).catch((failure: unknown) =>
         setError(browserFailureText({ error: failure })),
       );
     },
@@ -298,10 +329,11 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       );
     },
     duplicate: () => {
-      if (address === '') {
+      if (url === '') {
         return;
       }
-      void run({ step: () => openNew({ url: address }) }).then((isDone) => {
+      const target = targetOfUrl({ url });
+      void run({ step: () => openNew({ target }) }).then((isDone) => {
         if (isDone) {
           setWakeAttempt((count) => count + 1);
         }

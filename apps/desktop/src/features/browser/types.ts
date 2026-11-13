@@ -1,11 +1,16 @@
 import type { ProjectId, SessionId } from '@goodboy/types';
 import type { BrowserTab } from '../../store/slices/browser/types';
 
+export type BrowserTabState = 'live' | 'asleep' | 'closed';
+
+export type BrowserTabListMode = 'list' | 'rail' | 'hidden';
+
 export type BrowserTabFacts = {
   readonly id: string;
   readonly sessionId: SessionId;
   readonly url: string;
   readonly title: string;
+  readonly state: BrowserTabState;
   readonly isShown: boolean;
   readonly hiddenSinceMs: number | null;
   readonly openerId: string | null;
@@ -53,6 +58,10 @@ type TabParams = {
   readonly tab: BrowserTab;
 };
 
+type LiveIdParams = {
+  readonly liveId: string | undefined;
+};
+
 type TextParams = {
   readonly text: string;
 };
@@ -72,7 +81,10 @@ export type BrowserPaneModel = {
   readonly projectName: string | null;
   readonly shown: ShownTab | null;
   readonly address: string;
+  readonly canOpenOutside: boolean;
   readonly titleOf: (params: TabParams) => string;
+  readonly isAsleep: (params: TabParams) => boolean;
+  readonly isLiveAsleep: (params: LiveIdParams) => boolean;
   readonly error: string | null;
   readonly notice: string | null;
   readonly isDrafting: boolean;
@@ -124,8 +136,13 @@ export type BrowserPageGroup = {
   readonly isPins: boolean;
 };
 
+export type BrowserTarget =
+  | { readonly kind: 'web'; readonly url: string }
+  | { readonly kind: 'local'; readonly path: string };
+
 export type BrowserAddress =
   | { readonly kind: 'ok'; readonly url: string }
+  | { readonly kind: 'local'; readonly path: string }
   | { readonly kind: 'refused'; readonly reason: string };
 
 export type CommandTabRow = {

@@ -32,6 +32,7 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
     hasAddress: model.address !== '',
     hasTab: shown !== null,
     isPinShown: shown?.isPin === true,
+    canOpenOutside: model.canOpenOutside,
   });
   const entries: ReadonlyArray<MenuEntry> = [
     {

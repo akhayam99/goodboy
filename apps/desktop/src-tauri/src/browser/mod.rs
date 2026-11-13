@@ -5,6 +5,7 @@ mod guard;
 mod host;
 mod lifecycle;
 mod load;
+pub(crate) mod local;
 mod page_keys;
 #[cfg(any(target_os = "macos", test))]
 mod passkey;

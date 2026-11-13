@@ -3,6 +3,7 @@ import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { PaletteOverlay } from '../../../../../../features/palette/components/PaletteOverlay';
 import { AppFrame } from '../../audit/AppFrame';
 import { useSceneRailFold } from '../../useSceneRailFold';
+import { BrowserCoverMenu } from './BrowserCoverMenu';
 import { seedBrowserPane, type BrowserPaneSceneState } from './browserPaneSeed';
 import { useOpenedChrome } from './useOpenedChrome';
 import { usePeekedLink } from './usePeekedLink';
@@ -31,6 +32,7 @@ export const BrowserPaneScene = ({ state, theme }: Props) => {
     <>
       <AppFrame view={state === 'page' ? 'browser' : 'session'} isRailCollapsed={false} hasPane />
       {state === 'keys' ? <PaletteOverlay initialQuery="dev" onClose={noop} /> : null}
+      {state === 'cover' ? <BrowserCoverMenu /> : null}
     </>
   );
 };

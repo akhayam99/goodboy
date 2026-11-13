@@ -18,6 +18,7 @@ type FailParams = ErrorParams & {
 type Params = {
   readonly sessionId: SessionId;
   readonly onError: (params: ErrorParams) => void;
+  readonly onShown?: () => void;
 };
 
 type ShownView = {
@@ -48,7 +49,7 @@ const STOP_RETRIES = 5;
 
 const STOP_RETRY_MS = 120;
 
-export const createNativePlacement = ({ sessionId, onError }: Params) => {
+export const createNativePlacement = ({ sessionId, onError, onShown }: Params) => {
   const owner = {};
   const isOwner = ({ liveId }: OwnerParams): boolean => VIEW_OWNERS.get(liveId) === owner;
   const release = ({ liveId }: OwnerParams): void => {
@@ -141,6 +142,7 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
     if (shown !== null && shown.liveId === liveId && isOwner({ liveId })) {
       await browserHost.place({ tabId: liveId, bounds: target.bounds });
       shown = { liveId, tabId: target.tab.id, bounds: target.bounds };
+      onShown?.();
       return hideStuck();
     }
     await browserHost.place({ tabId: liveId, bounds: target.bounds });
@@ -152,6 +154,7 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
     stuck.delete(liveId);
     await browserHost.show({ tabId: liveId });
     shown = { liveId, tabId: target.tab.id, bounds: target.bounds };
+    onShown?.();
     return hideStuck();
   };
 
@@ -195,6 +198,9 @@ export const createNativePlacement = ({ sessionId, onError }: Params) => {
       }
       wanted = view;
       if (isSettled()) {
+        if (shown !== null) {
+          onShown?.();
+        }
         return;
       }
       void drain();

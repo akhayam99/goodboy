@@ -7,7 +7,15 @@ const COVER_SELECTOR = [
   '[data-studio-slot]',
 ].join(', ');
 
+const DIALOG_SELECTOR = '[role="dialog"], [role="alertdialog"]';
+
 const UNDER_OVERLAY_DRAWER = '[data-drawer-main][inert]';
+
+export type CoverReason = 'menu' | 'dialog' | 'tooltip' | 'page';
+
+type ReasonOfParams = {
+  readonly overlay: Element;
+};
 
 type CoversParams = {
   readonly view: HTMLElement;
@@ -35,6 +43,16 @@ const intersects = ({ a, b }: IntersectParams): boolean =>
   a.top < b.bottom &&
   b.top < a.bottom;
 
+const reasonOf = ({ overlay }: ReasonOfParams): CoverReason => {
+  if (overlay.matches('[data-studio-slot]')) {
+    return 'page';
+  }
+  if (overlay.matches('[role="tooltip"]')) {
+    return 'tooltip';
+  }
+  return overlay.matches(DIALOG_SELECTOR) ? 'dialog' : 'menu';
+};
+
 export const createOverlayWatch = () => {
   let overlays: ReadonlyArray<Element> = [];
   let isDirty = true;
@@ -51,23 +69,27 @@ export const createOverlayWatch = () => {
     attributeFilter: ['role', 'data-dropdown-portal', 'aria-multiselectable', 'data-studio-slot'],
   });
 
+  const coverOf = ({ view, rect }: CoversParams): CoverReason | null => {
+    if (view.closest(UNDER_OVERLAY_DRAWER) !== null) {
+      return 'page';
+    }
+    if (isDirty || observer === null) {
+      overlays = Array.from(document.querySelectorAll(COVER_SELECTOR));
+      isDirty = false;
+    }
+    const found = overlays.find(
+      (overlay) =>
+        overlay.isConnected &&
+        !overlay.contains(view) &&
+        isUnderSlot({ overlay, view }) &&
+        intersects({ a: overlay.getBoundingClientRect(), b: rect }),
+    );
+    return found === undefined ? null : reasonOf({ overlay: found });
+  };
+
   return {
-    covers: ({ view, rect }: CoversParams): boolean => {
-      if (view.closest(UNDER_OVERLAY_DRAWER) !== null) {
-        return true;
-      }
-      if (isDirty || observer === null) {
-        overlays = Array.from(document.querySelectorAll(COVER_SELECTOR));
-        isDirty = false;
-      }
-      return overlays.some(
-        (overlay) =>
-          overlay.isConnected &&
-          !overlay.contains(view) &&
-          isUnderSlot({ overlay, view }) &&
-          intersects({ a: overlay.getBoundingClientRect(), b: rect }),
-      );
-    },
+    coverOf,
+    covers: ({ view, rect }: CoversParams): boolean => coverOf({ view, rect }) !== null,
     stop: (): void => {
       observer?.disconnect();
     },

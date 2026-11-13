@@ -62,6 +62,7 @@ const facts: BrowserTabFacts = {
   sessionId: SESSION_ID,
   url: CHECKOUT_URL,
   title: 'Checkout',
+  state: 'live',
   isShown: true,
   hiddenSinceMs: null,
   openerId: null,

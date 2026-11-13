@@ -5,6 +5,7 @@ use tauri::{AppHandle, Emitter, EventTarget, Manager, Rect, Runtime, Url, Window
 
 use super::guard::{self, AppOrigins};
 use super::host::{spawn_webview, webview_of};
+use super::local;
 use super::profile;
 use super::reason::{self, INVALID_ADDRESS, NOT_WEB_ADDRESS, PROFILE_BUSY, TAB_GONE};
 use super::registry::{BrowserRegistry, TabFacts, TabState};
@@ -54,7 +55,7 @@ fn close_webviews<R: Runtime>(app: &AppHandle<R>, ids: &[String], _gate: &Gate<'
             .as_ref()
             .and_then(crate::platform::web_url::live_url_of)
         {
-            registry.set_url(id, live.as_str());
+            registry.set_url(id, &local::shown_address(&live));
         }
         let closed = match webview {
             Some(webview) => webview.close(),
@@ -84,7 +85,7 @@ pub(crate) fn close_for_switch<R: Runtime>(
                 .as_ref()
                 .and_then(crate::platform::web_url::live_url_of)
             {
-                registry.set_url(id, live.as_str());
+                registry.set_url(id, &local::shown_address(&live));
             }
             match webview {
                 Some(webview) => webview.close().map_err(failed),
@@ -178,9 +179,11 @@ fn recreate<R: Runtime>(
         .rect_of(tab_id)
         .ok_or_else(|| reason::failed(TAB_GONE))?;
     let url = Url::parse(&last.url).map_err(|_| reason::refused(INVALID_ADDRESS))?;
-    if !guard::may_open(&url, &AppOrigins::of_app(app)) {
-        return Err(reason::refused(NOT_WEB_ADDRESS));
+    let url = match local::is_file_address(&url) {
+        true => local::reopen_url(&registry, tab_id, &url),
+        false => Some(url).filter(|url| guard::may_open(url, &AppOrigins::of_app(app))),
     }
+    .ok_or_else(|| reason::refused(NOT_WEB_ADDRESS))?;
     profile::prepare(app, &tab_profile)?;
     profile::activate(app, &tab_profile, gate)?;
     let webview = spawn_webview(window, tab_id, &tab_profile, &url, rect, true)?;

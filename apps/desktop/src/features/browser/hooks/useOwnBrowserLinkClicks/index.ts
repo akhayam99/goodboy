@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { isOwnBrowserClick } from '../../isOwnBrowserClick';
-import { openInYourBrowser } from '../../openInYourBrowser';
+import { openWebLink } from '../../openWebLink';
 import { sessionLinkOf } from '../../sessionLinkOf';
 
 export const useOwnBrowserLinkClicks = (): void => {
@@ -17,7 +17,7 @@ export const useOwnBrowserLinkClicks = (): void => {
           return;
         }
         event.preventDefault();
-        void openInYourBrowser({ url: link.url });
+        void openWebLink({ sessionId: link.sessionId, url: link.url, event });
       },
       { signal: listening.signal },
     );

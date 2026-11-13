@@ -1,25 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { WebLinksAddon } from '@xterm/addon-web-links';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
 import { RotateCcw } from 'lucide-react';
 import { getAppliedTheme, subscribeAppliedTheme } from '../../lib/theme';
-import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
-import { Button, ICON_SIZE, IconButton } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../conceptIcons';
+import { IconButton } from '@goodboy/ui';
 import { bufferText, registerTerminalText } from './terminalText';
 import { isTerminalAppChord } from './isTerminalAppChord';
 import { terminalFindKey } from './terminalFindKey';
 import { terminalFindOptions } from './terminalFindDecorations';
 import { TerminalFindBar, type TerminalFindController } from './TerminalFindBar';
+import { TerminalSelectionButton } from './TerminalSelectionButton';
 import type { TerminalFileLink } from './fileLinkProvider';
 import { loadWebglRenderer } from './loadWebglRenderer';
 import { registerFileLinks } from './registerFileLinks';
+import {
+  registerWebLinks,
+  type TerminalWebLinkHover,
+  type TerminalWebLinkOpen,
+} from './registerWebLinks';
 
 export type TerminalChunk = {
   readonly bytes: Uint8Array;
@@ -59,6 +62,8 @@ type Props = {
   readonly onExit?: (exitCode: number) => void;
   readonly selectionAction?: TerminalSelectionAction;
   readonly onOpenFileLink?: (link: TerminalFileLink) => void;
+  readonly onOpenWebLink?: (link: TerminalWebLinkOpen) => void;
+  readonly onWebLinkHover?: (hover: TerminalWebLinkHover | null) => void;
 };
 
 const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m';
@@ -73,6 +78,8 @@ export const GenericTerminalPanel = ({
   onExit,
   selectionAction,
   onOpenFileLink,
+  onOpenWebLink,
+  onWebLinkHover,
 }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
@@ -82,6 +89,10 @@ export const GenericTerminalPanel = ({
   const findTermRef = useRef('');
   const openFileLinkRef = useRef(onOpenFileLink);
   openFileLinkRef.current = onOpenFileLink;
+  const openWebLinkRef = useRef(onOpenWebLink);
+  openWebLinkRef.current = onOpenWebLink;
+  const webLinkHoverRef = useRef(onWebLinkHover);
+  webLinkHoverRef.current = onWebLinkHover;
   const [findStep, setFindStep] = useState<number | null>(null);
   const [hasSelection, setHasSelection] = useState(false);
 
@@ -107,7 +118,7 @@ export const GenericTerminalPanel = ({
     term.loadAddon(new Unicode11Addon());
     term.unicode.activeVersion = '11';
     term.loadAddon(new ClipboardAddon());
-    term.loadAddon(new WebLinksAddon((_event, uri) => void openUrl(uri)));
+    registerWebLinks({ term, openRef: openWebLinkRef, hoverRef: webLinkHoverRef });
     registerFileLinks({ term, openRef: openFileLinkRef });
     const searchAddon = new SearchAddon();
     term.loadAddon(searchAddon);
@@ -346,21 +357,10 @@ export const GenericTerminalPanel = ({
         <TerminalFindBar controller={findController} step={findStep} onClose={closeFind} />
       )}
       {selectionAction !== undefined && hasSelection && isActive ? (
-        <Button
-          variant="secondary"
-          size="sm"
-          className="absolute bottom-2 right-3 z-10"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => {
-            const text = termRef.current?.getSelection() ?? '';
-            if (text.trim() !== '') {
-              selectionAction.onAct({ text });
-            }
-          }}
-        >
-          <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
-          {selectionAction.label}
-        </Button>
+        <TerminalSelectionButton
+          action={selectionAction}
+          selectedText={() => termRef.current?.getSelection() ?? ''}
+        />
       ) : null}
       {onRestart && findStep === null ? (
         <IconButton

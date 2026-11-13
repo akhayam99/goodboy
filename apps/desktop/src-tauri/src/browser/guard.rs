@@ -2,12 +2,13 @@ use std::net::IpAddr;
 
 use tauri::{AppHandle, Runtime, Url};
 
+use super::local::LOCAL_SCHEME;
 use crate::frame_protocol::FRAME_SCHEME;
 
 pub(crate) const LABEL_PREFIX: &str = "browse-";
 
 const WEB_SCHEMES: &[&str] = &["http", "https"];
-const APP_SCHEMES: &[&str] = &["tauri", "ipc", "asset", FRAME_SCHEME];
+const APP_SCHEMES: &[&str] = &["tauri", "ipc", "asset", FRAME_SCHEME, LOCAL_SCHEME];
 const ABOUT_SCHEME: &str = "about";
 const BLANK_PAGE: &str = "blank";
 const FRAME_PAGES: &[&str] = &[BLANK_PAGE, "srcdoc"];
@@ -135,6 +136,8 @@ mod tests {
         "http://asset.localhost/etc/hosts",
         "gbframe://localhost/stage",
         "http://gbframe.localhost/stage",
+        "gblocal://localhost/0f1e/work/harborline/plan.html",
+        "http://gblocal.localhost/0f1e/work/harborline/plan.html",
         "http://localhost:1421/",
         "http://localhost:1421/spike-probe.html",
         "https://localhost:1421/",
@@ -340,8 +343,15 @@ mod tests {
             .filter_map(|rest| rest.split(',').next())
             .map(str::trim)
             .collect();
-        assert_eq!(registered, vec!["frame_protocol::FRAME_SCHEME"]);
+        assert_eq!(
+            registered,
+            vec![
+                "frame_protocol::FRAME_SCHEME",
+                "browser::local::LOCAL_SCHEME"
+            ]
+        );
         assert!(APP_SCHEMES.contains(&FRAME_SCHEME));
+        assert!(APP_SCHEMES.contains(&LOCAL_SCHEME));
         let elsewhere =
             crate::util::source_scan::production_hits(&["uri_scheme_protocol("], &["lib.rs"]);
         assert!(elsewhere.is_empty(), "{elsewhere:?}");

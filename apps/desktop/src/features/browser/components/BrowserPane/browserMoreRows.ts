@@ -10,10 +10,16 @@ type Params = {
   readonly hasAddress: boolean;
   readonly hasTab: boolean;
   readonly isPinShown: boolean;
+  readonly canOpenOutside: boolean;
 };
 
-export const browserMoreOffOf = ({ hasAddress, hasTab, isPinShown }: Params): BrowserMoreOff => ({
-  isOpenOutsideOff: !hasAddress,
+export const browserMoreOffOf = ({
+  hasAddress,
+  hasTab,
+  isPinShown,
+  canOpenOutside,
+}: Params): BrowserMoreOff => ({
+  isOpenOutsideOff: !canOpenOutside,
   isCopyAddressOff: !hasAddress,
   isDuplicateOff: !hasAddress,
   isInspectOff: !hasTab,

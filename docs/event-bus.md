@@ -115,7 +115,7 @@ Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compile
 | `query-bridge://project-materialize`                   | `{ id, runId, sessionId, projectId, projectName, reason }`                   | query_bridge/project.rs | session/projectMaterializeBridge.ts     |
 | `bridge://command`                                     | a phone command to run (the phone work is paused)                            | bridge/server.rs        | companion/commandExecutor.ts            |
 | `browser://tab-opened`                                 | the facts of a popup tab, to the opener's window only                        | browser/host.rs         | the browser pane, once it lands         |
-| `browser://tab-state`                                  | the facts of a tab gone live, asleep or closed, to its window                | browser/lifecycle.rs    | the browser pane, once it lands         |
+| `browser://tab-state`                                  | the facts of a tab gone live, asleep or closed, to its window                | browser/lifecycle.rs    | browser/listenTabState.ts               |
 | `browser://tab-load`                                   | a tab's load `started` or `finished`, with its id and address, to its window | browser/load.rs         | the browser pane (`useTabLoad`)         |
 | `browser://page-key`                                   | `{ tabId, combo }` of an app chord pressed in a focused page, to its window  | browser/page_keys.rs    | browser/hooks/usePageKeys               |
 

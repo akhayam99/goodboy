@@ -7,11 +7,12 @@ import { originOf } from '../../originOf';
 type Props = {
   readonly url: string;
   readonly isPin?: boolean;
+  readonly isAsleep?: boolean;
 };
 
 const PIN_TINT = tintClasses('info');
 
-export const BrowserFavicon = ({ url, isPin = false }: Props) => {
+export const BrowserFavicon = ({ url, isPin = false, isAsleep = false }: Props) => {
   const origin = originOf({ url });
   const src = useAppStore((state) =>
     origin === null ? null : (state.browserFavicons[origin] ?? null),
@@ -26,7 +27,7 @@ export const BrowserFavicon = ({ url, isPin = false }: Props) => {
         src={src}
         draggable={false}
         onError={() => setBrokenSrc(src)}
-        className="size-4 shrink-0 rounded-sm object-contain"
+        className={cn('size-4 shrink-0 rounded-sm object-contain', isAsleep && 'opacity-50')}
       />
     );
   }
@@ -36,6 +37,7 @@ export const BrowserFavicon = ({ url, isPin = false }: Props) => {
       className={cn(
         'flex size-4 shrink-0 items-center justify-center rounded-sm text-rail',
         isPin ? cn(PIN_TINT.bg, PIN_TINT.text) : 'bg-muted text-muted-foreground',
+        isAsleep && 'opacity-50',
       )}
     >
       {letter === '' ? '?' : letter}
