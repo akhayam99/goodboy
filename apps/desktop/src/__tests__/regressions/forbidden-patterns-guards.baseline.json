@@ -45,6 +45,7 @@
   },
   "page-title-row": {},
   "half-step-spacing": {},
+  "hand-written-age": {},
   "role-weight-override": {},
   "rust-else": {
     "apps/desktop/src-tauri/src/artifact_mirror.rs": 3,

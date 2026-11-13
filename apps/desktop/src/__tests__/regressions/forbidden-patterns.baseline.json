@@ -376,5 +376,9 @@
   "footer-cta-bar": {},
   "page-title-row": {},
   "half-step-spacing": {},
+  "hand-written-age": {
+    "apps/desktop/src/features/storage/components/StoragePage/ArtifactBulkDeleteBar.tsx": 1,
+    "apps/desktop/src/features/storage/components/StoragePage/ArtifactRow.tsx": 1
+  },
   "role-weight-override": {}
 }

@@ -1,4 +1,4 @@
-import { formatSpan } from '../../../shared/utils/time/formatSpan';
+import { formatAge } from '../../../shared/utils/time/formatAge';
 import type { SentryBreadcrumb } from './client';
 import { useNow } from '../../../shared/hooks/useNow';
 
@@ -18,7 +18,7 @@ export const SentryBreadcrumbs = ({ breadcrumbs, isLoading, error }: Props) => {
     <div className="flex flex-col gap-2">
       {breadcrumbs.map((breadcrumb, index) => {
         const relativeDate =
-          breadcrumb.timestamp == null ? '' : formatSpan({ from: breadcrumb.timestamp, to: now });
+          breadcrumb.timestamp == null ? '' : formatAge({ from: breadcrumb.timestamp, now });
         return (
           <div
             key={`${breadcrumb.timestamp ?? 'breadcrumb'}-${index}`}
@@ -27,7 +27,7 @@ export const SentryBreadcrumbs = ({ breadcrumbs, isLoading, error }: Props) => {
             <div className="flex items-center gap-2 text-meta text-muted-foreground">
               <span className="font-medium text-foreground">{breadcrumb.category ?? 'event'}</span>
               {breadcrumb.level != null ? <span>{breadcrumb.level}</span> : null}
-              {relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
+              {relativeDate !== '' ? <span>{relativeDate}</span> : null}
             </div>
             {breadcrumb.message != null ? (
               <span className="text-meta text-muted-foreground">{breadcrumb.message}</span>

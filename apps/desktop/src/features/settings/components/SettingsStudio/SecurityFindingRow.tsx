@@ -3,7 +3,7 @@ import { ShieldCheck } from 'lucide-react';
 import type { SecretKind, SecurityFinding, SecurityFindingSubjectKind } from '@goodboy/types';
 import { Button, ConfirmPopover, formatError, ICON_SIZE, Notice } from '@goodboy/ui';
 
-import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../shared/hooks/useNow';
 
 export const SECRET_KIND_LABEL: Readonly<Record<SecretKind, string>> = {
@@ -104,7 +104,7 @@ export const SecurityFindingRow = ({
           {SECRET_KIND_LABEL[finding.secretKind]} ending ••••{finding.last4}
         </span>
       }
-      detail={`${SECRET_KIND_LABEL[finding.secretKind]} · found ${formatSpan({ from: finding.firstSeenAt, to: now })} ago`}
+      detail={`${SECRET_KIND_LABEL[finding.secretKind]} · found ${formatAge({ from: finding.firstSeenAt, now })}`}
       actions={
         <ConfirmPopover
           role="alert"
