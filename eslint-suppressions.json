@@ -13102,11 +13102,6 @@
       "count": 10
     }
   },
-  "packages/ui/src/components/Avatar.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "packages/ui/src/components/Band/bandDepth.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

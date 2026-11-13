@@ -298,7 +298,7 @@ const BASE_PR: PullRequestState = {
   ...RESOLVE_SCENE_PR,
   url: PR_URL,
   body: PR_BODY,
-  author: 'nadia-p',
+  author: { login: 'nadia-p', avatarUrl: null },
   baseBranch: 'main',
   headBranch: MOUNT.branch,
   updatedAt: isoAgo({ minutes: 180 }),

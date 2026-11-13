@@ -3,7 +3,7 @@ import { cn } from '../cn';
 import { personHueOf } from '../personHueOf';
 import { RemoteImageAvatarLoaderContext } from './RemoteImage/loaderContext';
 
-type AvatarSize = 'xs' | 'sm';
+type AvatarSize = 'xs' | 'sm' | 'md';
 
 type Props = {
   readonly url: string | null;
@@ -20,11 +20,13 @@ type Result = {
 const DIMENSION_CLASS: Record<AvatarSize, string> = {
   xs: 'h-4 w-4',
   sm: 'h-5 w-5',
+  md: 'h-6 w-6',
 };
 
 const FALLBACK_TEXT_CLASS: Record<AvatarSize, string> = {
   xs: 'text-chip',
   sm: 'text-meta',
+  md: 'text-meta',
 };
 
 export const Avatar = ({ url, alt, size = 'sm', initialsSource = alt }: Props) => {

@@ -157,7 +157,7 @@ const OPEN_PR: PullRequestState = {
   body: '',
   updatedAt: NOW,
   headSha: PR_SHA,
-  author: 'priya-northwind',
+  author: { login: 'priya-northwind', avatarUrl: null },
 };
 
 const STRANDED_STATUS: WorktreeStatus = {

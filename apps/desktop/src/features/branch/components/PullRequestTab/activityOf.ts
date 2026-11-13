@@ -16,6 +16,7 @@ export type ActivityItem =
       readonly key: string;
       readonly at: string;
       readonly who: string | null;
+      readonly avatarUrl?: string | null;
       readonly isDraft: boolean;
     }
   | {
@@ -23,6 +24,7 @@ export type ActivityItem =
       readonly key: string;
       readonly at: string;
       readonly who: string | null;
+      readonly avatarUrl?: string | null;
       readonly count: number;
       readonly sha: string;
     }
@@ -31,6 +33,7 @@ export type ActivityItem =
       readonly key: string;
       readonly at: string;
       readonly who: string;
+      readonly avatarUrl?: string | null;
       readonly verdict: ReviewVerdict;
       readonly text: string;
       readonly isBot?: boolean;
@@ -56,6 +59,7 @@ export type ActivityItem =
       readonly key: string;
       readonly at: string;
       readonly who: string;
+      readonly avatarUrl?: string | null;
       readonly word: string;
       readonly tone: Tone;
       readonly notes: ReadonlyArray<string>;
@@ -66,6 +70,7 @@ export type ActivityItem =
       readonly key: string;
       readonly at: string;
       readonly who: string | null;
+      readonly avatarUrl?: string | null;
     }
   | { readonly kind: 'closed'; readonly key: string; readonly at: string };
 
@@ -93,8 +98,33 @@ const handleOf = ({
     ? view.author.login
     : author;
 
-const pushesOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<ActivityItem> => {
-  const groups = new Map<string, { who: string | null; count: number; at: string; sha: string }>();
+type AvatarParams = {
+  readonly view: PullRequestView;
+  readonly detail: PrDetail | null;
+  readonly login: string | null;
+};
+
+const avatarOf = ({ view, detail, login }: AvatarParams): string | null => {
+  if (login === null) {
+    return null;
+  }
+  if (view.author?.login === login && view.author.avatarUrl !== null) {
+    return view.author.avatarUrl;
+  }
+  return (
+    detail?.comments.find((comment) => comment.author === login && comment.authorAvatarUrl !== null)
+      ?.authorAvatarUrl ?? null
+  );
+};
+
+const pushesOf = ({
+  view,
+  detail,
+}: Pick<Params, 'view' | 'detail'>): ReadonlyArray<ActivityItem> => {
+  const groups = new Map<
+    string,
+    { who: string | null; avatarUrl: string | null; count: number; at: string; sha: string }
+  >();
   for (const commit of view.commits) {
     if (commit.committedAt === '') {
       continue;
@@ -102,8 +132,10 @@ const pushesOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<A
     const key = `${dayOf({ iso: commit.committedAt })}|${commit.author ?? ''}`;
     const group = groups.get(key);
     if (group === undefined) {
+      const who = handleOf({ view, author: commit.author });
       groups.set(key, {
-        who: handleOf({ view, author: commit.author }),
+        who,
+        avatarUrl: avatarOf({ view, detail, login: who }),
         count: 1,
         at: commit.committedAt,
         sha: commit.sha,
@@ -121,6 +153,7 @@ const pushesOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<A
     key: `push:${key}`,
     at: group.at,
     who: group.who,
+    avatarUrl: group.avatarUrl,
     count: group.count,
     sha: group.sha.slice(0, SHORT_SHA),
   }));
@@ -152,6 +185,7 @@ const reviewsOf = ({ detail }: DetailParams): ReadonlyArray<ActivityItem> => {
         key: `review:${review.id}`,
         at: review.submittedAt,
         who: review.author,
+        avatarUrl: review.authorAvatarUrl,
         verdict: review.state,
         text: review.body.trim(),
         ...(flags.has(review.author) ? { isBot: flags.get(review.author) === true } : {}),
@@ -239,9 +273,17 @@ const checksOf = ({
   ];
 };
 
-const endOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<ActivityItem> => {
+const endOf = ({ view, detail }: Pick<Params, 'view' | 'detail'>): ReadonlyArray<ActivityItem> => {
   if (view.state === 'merged' && view.mergedAt !== null) {
-    return [{ kind: 'merged', key: 'merged', at: view.mergedAt, who: view.author?.login ?? null }];
+    return [
+      {
+        kind: 'merged',
+        key: 'merged',
+        at: view.mergedAt,
+        who: view.author?.login ?? null,
+        avatarUrl: avatarOf({ view, detail, login: view.author?.login ?? null }),
+      },
+    ];
   }
   if (view.state === 'closed') {
     return [{ kind: 'closed', key: 'closed', at: view.updatedAt }];
@@ -263,9 +305,10 @@ export const pullRequestActivityOf = ({
       key: 'opened',
       at: view.createdAt,
       who: view.author?.login ?? null,
+      avatarUrl: avatarOf({ view, detail, login: view.author?.login ?? null }),
       isDraft: view.isDraft,
     },
-    ...pushesOf({ view }),
+    ...pushesOf({ view, detail }),
     ...reviewsOf({ detail }),
     ...commentsOf({ view, detail, threads, entries }),
     ...checksOf({ view, runs }),
@@ -275,7 +318,7 @@ export const pullRequestActivityOf = ({
       at: edit.at,
       what: edit.what,
     })),
-    ...endOf({ view }),
+    ...endOf({ view, detail }),
   ];
   return groupBotActivity({
     items: foldPushes({

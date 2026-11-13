@@ -50,6 +50,7 @@ export const groupBotActivity = ({
         key: `bot:${key}`,
         at: item.at,
         who: item.who,
+        avatarUrl: item.avatarUrl ?? null,
         word: said.word,
         tone: said.tone,
         notes: items.flatMap((other, position) =>

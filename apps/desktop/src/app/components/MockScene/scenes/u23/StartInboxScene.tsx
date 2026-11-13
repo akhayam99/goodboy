@@ -116,7 +116,7 @@ const pullRequest = ({ number, title, headBranch, ago }: PrParams): PullRequestS
   reviewDecision: null,
   body: 'One credit per processor event, however often the processor redelivers it.',
   updatedAt: isoAgo(ago),
-  author: 'nadia-p',
+  author: { login: 'nadia-p', avatarUrl: null },
 });
 
 const PR_GROUPS: ReadonlyArray<GithubPrGroup> = [

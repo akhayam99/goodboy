@@ -3,6 +3,7 @@ import type {
   GitlabMergeRequest,
   GitlabMrApprovalState,
 } from '../../features/integrations/gitlab/client';
+import { Person } from '../components/Person';
 import type { FactRegistry } from './factTypes';
 import { timeFact } from './timeFact';
 
@@ -27,7 +28,12 @@ export const gitlabMergeRequestFields: FactRegistry<GitlabMergeRequestFacts> = {
   person: ({ entity }) =>
     entity.mr.author == null
       ? null
-      : { key: 'author', label: 'Author', icon: UserRound, node: entity.mr.author.name },
+      : {
+          key: 'author',
+          label: 'Author',
+          icon: UserRound,
+          node: <Person login={entity.mr.author.username} avatarUrl={entity.mr.author.avatarUrl} />,
+        },
   place: ({ entity }) => ({
     key: 'branches',
     label: 'Branches',

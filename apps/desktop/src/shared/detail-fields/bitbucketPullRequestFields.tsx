@@ -1,5 +1,6 @@
 import { BadgeCheck, GitBranch, UserRound } from 'lucide-react';
 import type { BitbucketPullRequest } from '../../features/integrations/bitbucket/client';
+import { Person } from '../components/Person';
 import type { FactRegistry } from './factTypes';
 import { timeFact } from './timeFact';
 
@@ -7,7 +8,12 @@ export const bitbucketPullRequestFields: FactRegistry<BitbucketPullRequest> = {
   person: ({ entity }) =>
     entity.author == null
       ? null
-      : { key: 'author', label: 'Author', icon: UserRound, node: entity.author.displayName },
+      : {
+          key: 'author',
+          label: 'Author',
+          icon: UserRound,
+          node: <Person login={entity.author.nickname} avatarUrl={entity.author.avatarUrl} />,
+        },
   place: ({ entity }) => ({
     key: 'branches',
     label: 'Branches',

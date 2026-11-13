@@ -187,7 +187,7 @@ export const LiveEditScene = ({ mode }: Props) => {
             title: 'Guard the ledger export',
             headBranch: mount.branch,
             headSha: LEDGER.c,
-            author: 'nadia-p',
+            author: { login: 'nadia-p', avatarUrl: null },
             updatedAt: now,
           },
           mountId: input.mountId,
@@ -203,7 +203,11 @@ export const LiveEditScene = ({ mode }: Props) => {
       pullRequestViews: prViewsOf({
         sessionId: input.sessionId,
         mountId: input.mountId,
-        pr: { ...RESOLVE_SCENE_PR, author: 'nadia-p', headBranch: mount.branch },
+        pr: {
+          ...RESOLVE_SCENE_PR,
+          author: { login: 'nadia-p', avatarUrl: null },
+          headBranch: mount.branch,
+        },
         commits: mode === 'stash' ? commitsBefore : commitsAfter,
       }),
       refreshSessionPr: async () => undefined,

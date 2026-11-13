@@ -394,7 +394,6 @@
     "packages/types/src/workspace.ts": 8,
     "packages/types/src/worktree.ts": 2,
     "packages/ui/src/components/AppShell.tsx": 4,
-    "packages/ui/src/components/Avatar.tsx": 1,
     "packages/ui/src/components/Band/bandDepth.ts": 1,
     "packages/ui/src/components/BrandGlyph.tsx": 1,
     "packages/ui/src/components/CardAction.tsx": 4,

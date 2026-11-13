@@ -1,3 +1,4 @@
+import { Person } from '../Person';
 import { FullReplies } from './FullReplies';
 import type { ThreadReplyItem } from './threadReplyItem';
 
@@ -27,7 +28,14 @@ export const ThreadReplies = ({ replies, mode = 'full' }: Props) => {
         <ul aria-label="Replies" className="flex min-w-0 flex-1 flex-col gap-1">
           {replies.map((reply) => (
             <li key={reply.id} className="flex min-w-0 gap-2 text-meta">
-              <span className="shrink-0 text-row text-foreground">{reply.author}</span>
+              <span className="shrink-0">
+                <Person
+                  login={reply.author}
+                  avatarUrl={reply.avatarUrl ?? null}
+                  size="xs"
+                  isBot={reply.isBot === true}
+                />
+              </span>
               <span className="min-w-0 truncate text-muted-foreground">
                 {replyHeadOf({ body: reply.body })}
               </span>
