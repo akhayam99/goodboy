@@ -280,7 +280,10 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   `EmptyState` at page size: a title, one line that says what fills it and at
   most one action ("This folder is empty", "No changes against main", "Couldn't
   read this session folder" with Retry). The `mount.browseFiles` action (Browse files) opens the
-  Explore pane on a given mount (`openExplorePane`). An `explore` target in a
+  Explore pane on a given mount (`openExplorePane`). Opening a file or a
+  folder from any control goes through `openTarget` (`features/open/`): the
+  editor when one is set, the file drawer for a file with none, the file
+  manager for a folder with none. An `explore` target in a
   stored place (`s/{session}/explore/{mount}`) still parses and lands on the
   Overview with the pane open. Rows are 40px
   high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its

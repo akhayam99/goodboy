@@ -1,5 +1,5 @@
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
+import { openFolderAction } from '../openFolderAction';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import type { ActionDefinition } from '../types';
 import type { SessionFacts } from './session';
@@ -34,11 +34,7 @@ export const SESSION_EXTERNAL_OPEN_ACTIONS: ReadonlyArray<ActionDefinition<Sessi
     group: 'open',
     when: ({ facts }) => !facts.isArchived,
     blockedReason: ({ facts }) => (facts.worktreePath === null ? NO_WORKTREE_REASON : null),
-    run: ({ facts, env }) => {
-      if (facts.worktreePath !== null) {
-        void openInConfiguredEditor({ path: facts.worktreePath, state: env.getState() });
-      }
-    },
+    run: ({ facts }) => openFolderAction({ path: facts.worktreePath, sessionId: facts.sessionId }),
   },
   {
     id: 'session.terminalApp',

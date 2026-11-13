@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { brandId, type Session, type SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../../store';
 import { lensPlace } from '../../../../../store/slices/navigation/canonicalLocation';
-import { openInConfiguredEditor } from '../../../../../shared/lib/editorSettings';
+import { openFolder } from '../../../../open/openFolder';
 import { openReview } from '../../../../review/openReview';
 import { attentionPlace } from '../../../../session/attentionPlace';
 import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentReveal';
@@ -62,7 +62,7 @@ export const useBoardNavigation = (): BoardNavigation => {
       const state = useAppStore.getState();
       const path = state.sessionWorktrees[session.id]?.[0];
       if (path) {
-        void openInConfiguredEditor({ path, state });
+        void openFolder({ path, sessionId: sessionIdOf({ session }) });
       }
     };
 

@@ -1,24 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
-import { SETTING_EDITOR_BINARY } from '../../settings/settings';
 import type { ActionDefinition, ActionEnv } from '../types';
 import { DIFF_KIND, type DiffFacts } from './diff';
 import { MOUNT_KIND } from './mount';
 import type { MountFacts } from './mountFacts';
 import { SESSION_KIND, type SessionFacts } from './session';
 
-const { openInEditor, reportError } = vi.hoisted(() => ({
-  openInEditor: vi.fn(async () => undefined),
-  reportError: vi.fn(async () => undefined),
+const { openTargetOrThrow } = vi.hoisted(() => ({
+  openTargetOrThrow: vi.fn(async (_params: unknown) => undefined),
 }));
 
-vi.mock('../../../shared/lib/editor', () => ({ openInEditor }));
+vi.mock('../../open/openTargetOrThrow', () => ({ openTargetOrThrow }));
 
-const envWith = ({ settings }: { readonly settings: Record<string, string> }): ActionEnv =>
-  ({
-    getState: () => ({ settings, reportError }),
-  }) as unknown as ActionEnv;
+const env = {} as unknown as ActionEnv;
 
 const mountFacts: MountFacts = {
   sessionId: 'session-harborline' as SessionId,
@@ -124,39 +119,34 @@ const SURFACES: ReadonlyArray<Surface> = [
 
 describe('open in editor from actions', () => {
   beforeEach(() => {
-    openInEditor.mockClear();
-    reportError.mockClear();
+    openTargetOrThrow.mockClear();
   });
 
-  it.each(SURFACES)('$name opens the editor chosen in settings', async ({ run }) => {
-    await run({ env: envWith({ settings: { [SETTING_EDITOR_BINARY]: 'zed' } }) });
+  it.each(SURFACES)('$name opens the worktree folder through the router', async ({ run }) => {
+    await run({ env });
 
-    expect(openInEditor).toHaveBeenCalledWith({ path: '/work/payments-api', editor: 'zed' });
+    expect(openTargetOrThrow).toHaveBeenCalledWith({
+      target: { kind: 'folder', path: '/work/payments-api', editor: null },
+      sessionId: 'session-harborline',
+      event: { metaKey: false, ctrlKey: false },
+    });
   });
 
-  it.each(SURFACES)('$name falls back to code when nothing is chosen', async ({ run }) => {
-    await run({ env: envWith({ settings: {} }) });
+  it.each(SURFACES)('$name hands a failure back to the run line', async ({ run }) => {
+    openTargetOrThrow.mockRejectedValueOnce(new Error("editor binary 'zed' not found in PATH"));
 
-    expect(openInEditor).toHaveBeenCalledWith({ path: '/work/payments-api', editor: 'code' });
+    await expect(run({ env })).rejects.toThrow('not found in PATH');
   });
 
-  it.each(SURFACES)('$name reports a missing editor instead of swallowing it', async ({ run }) => {
-    openInEditor.mockRejectedValueOnce(new Error("editor binary 'zed' not found in PATH"));
-
-    await run({ env: envWith({ settings: { [SETTING_EDITOR_BINARY]: 'zed' } }) });
-
-    await vi.waitFor(() => expect(reportError).toHaveBeenCalledTimes(1));
-  });
-
-  it('mount menu keeps the submenu choice over the settings', async () => {
+  it('mount menu keeps the submenu choice', async () => {
     const action = MOUNT_KIND.actions.find((candidate) => candidate.id === 'mount.openInEditor');
 
-    await action?.run({
-      facts: mountFacts,
-      env: envWith({ settings: { [SETTING_EDITOR_BINARY]: 'zed' } }),
-      choice: 'cursor',
-    });
+    await action?.run({ facts: mountFacts, env, choice: 'cursor' });
 
-    expect(openInEditor).toHaveBeenCalledWith({ path: '/work/payments-api', editor: 'cursor' });
+    expect(openTargetOrThrow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { kind: 'folder', path: '/work/payments-api', editor: 'cursor' },
+      }),
+    );
   });
 });

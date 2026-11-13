@@ -12,6 +12,11 @@ export type OpenTarget =
       readonly line: number | null;
     }
   | {
+      readonly kind: 'folder';
+      readonly path: string;
+      readonly editor: string | null;
+    }
+  | {
       readonly kind: 'saved-copy';
       readonly copy: SavedCopyKind;
       readonly name: string;
@@ -20,7 +25,10 @@ export type OpenTarget =
       readonly file: string;
     };
 
-export type LaunchTarget = Exclude<OpenTarget, { readonly kind: 'file' }>;
+export type LaunchTarget = Exclude<
+  OpenTarget,
+  { readonly kind: 'file' } | { readonly kind: 'folder' }
+>;
 
 export type OpenPlace = 'beside-session' | 'your-browser' | 'editor';
 

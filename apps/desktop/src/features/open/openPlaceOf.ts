@@ -6,7 +6,7 @@ export const openPlaceOf = ({
   isOwnClick,
   sessionId,
 }: OpenPlaceParams): OpenPlace => {
-  if (target.kind === 'file') {
+  if (target.kind === 'file' || target.kind === 'folder') {
     return 'editor';
   }
   if (target.kind === 'saved-copy' && target.copy === 'wireframe') {

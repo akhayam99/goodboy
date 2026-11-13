@@ -689,7 +689,18 @@ sits in and the address, and one function opens it (`openInBrowser`).
 
 One function, `openTarget` in `features/open/`, decides where a target
 opens. A target is a web address, a saved copy (a plan or a report as a
-page on disk) or a file. Folders join it later.
+page on disk), a file or a folder.
+
+- **Files and folders.** A file opens in the editor Settings names (or the
+  first one detected) at its line; with no editor set and a session, it opens
+  the in-app file drawer at that line. A folder opens in the editor, or in the
+  file manager when no editor is set, and a menu that picks an editor passes
+  it in the target. A file that is gone says so through `reportError` with the
+  path named ("is missing"); from an action control (`openFolderAction`,
+  `openTargetOrThrow`) the same text comes back on the run line. Nothing
+  outside `features/open/` imports `openInEditor`; the `raw-open` guard counts
+  it with `openUrl` and `openArtifactMirror`. Shared code asks for a folder
+  with the `goodboy:open-folder` window event.
 
 - **Text links.** A relative or `file:` link in rendered text becomes a file
   target, resolved in the folder of the session's active mount and opened by
@@ -709,7 +720,7 @@ page on disk) or a file. Folders join it later.
   sponsor link, the bug report and crash links, the connect steps of Jira,
   Linear, Sentry and Slack, the provider connect and reset links, and a
   saved copy opened from the Storage page.
-- **No raw open.** Nothing outside `features/open/` imports `openUrl` or
+- **No raw open.** Nothing outside `features/open/` imports `openUrl`, `openInEditor` or
   `openArtifactMirror`; the `raw-open` guard in `forbidden-patterns` counts
   them and stays at zero. A link calls `openLink`, which reports a failure
   through `reportError`. An action control calls `openLinkOrThrow` through
