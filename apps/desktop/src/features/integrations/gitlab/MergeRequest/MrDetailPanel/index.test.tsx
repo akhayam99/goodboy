@@ -431,6 +431,41 @@ describe('MrDetailPanel', () => {
     expect(screen.getByText('1 system event hidden')).toBeDefined();
   });
 
+  it('lists the people comments on the shared activity and hides the opening it has no time for', async () => {
+    h.gitlabListMrDiscussions.mockResolvedValue([
+      {
+        id: 'disc-1',
+        individualNote: false,
+        notes: [
+          {
+            id: 1,
+            body: 'This needs a guard clause',
+            system: false,
+            author: { username: 'bob', name: 'Bob', avatarUrl: null },
+            createdAt: '2026-07-22T10:00:00Z',
+            resolvable: true,
+            resolved: false,
+            position: null,
+          },
+        ],
+      },
+    ]);
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    const activity = await screen.findByRole('region', { name: 'Activity' });
+    await waitFor(() =>
+      expect(activity.querySelector('[data-activity="review"]')?.textContent).toContain('Bob'),
+    );
+    expect(activity.querySelector('[data-activity="opened"]')).toBeNull();
+  });
+
   it('toggles the draft prefix on the title and reflects the answer', async () => {
     h.gitlabUpdateMrState.mockResolvedValue(
       makeMr({ title: 'Draft: Add merge request dashboard', draft: true }),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrComment } from '@goodboy/types';
-import type { ActivityItem } from './activityOf';
+import type { ActivityItem } from '../../../../shared/components/PullRequestActivity/activityItem';
 import { groupBotActivity } from './groupBotActivity';
 
 type ReviewParams = {

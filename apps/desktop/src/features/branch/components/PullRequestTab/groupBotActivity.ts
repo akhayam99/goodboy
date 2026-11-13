@@ -1,7 +1,7 @@
 import { isBotLogin } from '@goodboy/core/review-source';
 import type { PrComment } from '@goodboy/types';
 import type { ThreadEntry } from '../../../resolve/commentGroupsView';
-import type { ActivityItem } from './activityOf';
+import type { ActivityItem } from '../../../../shared/components/PullRequestActivity/activityItem';
 import { botCommentCountOf } from './botCommentCountOf';
 import { botKeyOf } from './botKeyOf';
 import { botWordOf } from './botWordOf';

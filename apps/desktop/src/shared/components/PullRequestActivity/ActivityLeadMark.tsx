@@ -1,4 +1,4 @@
-import { Person } from '../../../../shared/components/Person';
+import { Person } from '../Person';
 import type { ActivityLead } from './activityRowOf';
 
 type Props = {

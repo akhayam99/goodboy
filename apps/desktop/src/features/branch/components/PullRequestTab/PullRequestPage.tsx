@@ -30,7 +30,7 @@ import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import { pullRequestActivityOf } from './activityOf';
 import { MergeBox } from './MergeBox';
 import { mergeBoxOf, type PullRequestBranchFacts } from './MergeBox/mergeBoxOf';
-import { PullRequestActivity } from './PullRequestActivity';
+import { PullRequestActivity } from '../../../../shared/components/PullRequestActivity/PullRequestActivity';
 import { PullRequestActivitySkeleton } from './PullRequestActivitySkeleton';
 import { PullRequestDescription } from './PullRequestDescription';
 import { PullRequestProperties } from './PullRequestProperties';
