@@ -5,12 +5,15 @@ import {
   resolveStoredModelSelection,
 } from '@goodboy/core/providers';
 import { formatError } from '@goodboy/ui';
-import { updateProviderRunStatus, updateSessionState } from '@goodboy/db';
+import { updateProviderRunStatus } from '@goodboy/db';
 import type { TurnState } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import { ALREADY_SENT_MESSAGE } from './handDelivery';
-import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { invokeAgentList } from '../../../features/workflows/workflows';
+import { settleLostAdmission } from './unstartedTurn/settleLostAdmission';
+import { failOwnedRun } from './runOwnership/failOwnedRun';
+import { writeOwnedSessionState } from './runOwnership/writeOwnedSessionState';
 import {
   providersCoolingDown,
   withProviderCooldown,
@@ -93,6 +96,10 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     ...(permissionOnceAllows !== undefined && { permissionOnceAllows }),
   };
   const { assistantText } = progress;
+  if (err instanceof CommandError && err.kind === 'admission_lost') {
+    await settleLostAdmission({ set, get, ctx, err });
+    return null;
+  }
   const isAlreadySent = err instanceof CommandError && err.kind === 'delivery_duplicate';
   if (isAlreadySent) {
     onStarted?.();
@@ -223,7 +230,13 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     }
     const retryState: TurnState = { kind: 'idle', lastActivityAt: now() };
     const retryDerived = applyAgentTurnState(set, sessionId, activeAgentId, retryState, now());
-    await updateSessionState(tauriDatabase, sessionId, retryDerived, now());
+    await writeOwnedSessionState({
+      sessionId,
+      agentId: resolvedAgentId ?? activeAgentId,
+      runId,
+      state: retryDerived,
+      updatedAt: now(),
+    });
     return await runOnce({
       input: {
         sessionId,
@@ -306,7 +319,13 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     failedAt: now(),
   };
   const derived = applyAgentTurnState(set, sessionId, activeAgentId, errorState, now());
-  await updateSessionState(tauriDatabase, sessionId, derived, now());
+  await writeOwnedSessionState({
+    sessionId,
+    agentId: resolvedAgentId ?? activeAgentId,
+    runId,
+    state: derived,
+    updatedAt: now(),
+  });
   await updateProviderRunStatus(tauriDatabase, runId, {
     kind: 'failed',
     finishedAt: now(),
@@ -327,8 +346,9 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         (agent) => agent.id === resolvedAgentId && agent.status === 'stopped',
       );
     if (!isStoppedByUser) {
-      await invokeAgentUpdateStatus(resolvedAgentId, {
-        status: 'failed',
+      await failOwnedRun({
+        agentId: resolvedAgentId,
+        runId,
         completedAt: now(),
       });
     }
