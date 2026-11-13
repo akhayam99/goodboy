@@ -78,6 +78,7 @@ type BoxParams = {
   readonly queueLine?: string | null;
   readonly hasQuestion?: boolean;
   readonly isPushing?: boolean;
+  readonly steps?: ReadonlyArray<BranchDueStep>;
 };
 
 type Header = {
@@ -105,6 +106,7 @@ const build = ({
   queueLine = null,
   hasQuestion = false,
   isPushing = false,
+  steps: stepsOverride,
 }: BoxParams): Built => {
   const merged = { ...FACTS, ...facts };
   const readiness = evaluatePrMergeReadiness({ facts: merged });
@@ -144,7 +146,7 @@ const build = ({
     mergeWord: 'Squash and merge',
     queueLine,
     branch: { ahead: 4, behind, onlineAhead, isRebasing },
-    steps: header.steps,
+    steps: stepsOverride ?? header.steps,
     threads,
     unpushed,
     canRequestReview,
@@ -237,6 +239,17 @@ describe('mergeBoxOf', () => {
     expect(boxOf({ runs: FAILING, facts: { checks: 'failing' }, unpushed: 2 }).verdict.line).toBe(
       'Push your commits, then fix the failing check.',
     );
+  });
+
+  it('does not repeat the comments when answering then fixing them', () => {
+    const box = boxOf({
+      steps: ['answer', 'fixComments'],
+      facts: { review: 'approved', commentsNeedYou: 2 },
+      threads: { unresolved: 5, needYou: 2, unread: 1 },
+      hasQuestion: true,
+    });
+
+    expect(box.verdict.line).toBe('Answer the comments, then fix them.');
   });
 
   it('fixes the checks first when the branch only diverged online, as the header does', () => {
