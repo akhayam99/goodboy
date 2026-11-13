@@ -24,6 +24,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { pullRequestStateToneOf } from '../../../branch/pullRequestStateToneOf';
 import { requestChipLabel } from './requestChipLabel';
 import { stageWord } from './stageWord';
+import { CountsSkeleton } from './CountsSkeleton';
 
 type OpenAttention = {
   readonly sessionId: SessionId;
@@ -69,9 +70,9 @@ export const SessionHoverCardBody = ({
     isPinned && !isArchived ? 'Pinned' : null,
     isNamedByGoodboy ? 'Named by Goodboy' : null,
     summary.isAutorun ? NAMES.autopilot : null,
-    `${summary.agentCount} ${agentWord}`,
+    summary.agentCount === null ? null : `${summary.agentCount} ${agentWord}`,
     draftCount > 0 ? `${draftCount} ${draftWord}` : null,
-    summary.cost > 0 ? formatUsd(summary.cost) : null,
+    summary.cost !== null && summary.cost > 0 ? formatUsd(summary.cost) : null,
     summary.age === '' ? null : summary.age,
   ].filter((fact): fact is string => fact !== null);
   const stateText = isArchived
@@ -147,7 +148,10 @@ export const SessionHoverCardBody = ({
           ))}
         </div>
       ) : null}
-      <FactCardFootnote text={facts.join(' · ')} />
+      <div className="flex min-w-0 items-center gap-2">
+        <FactCardFootnote text={facts.join(' · ')} />
+        {summary.isCountsLoading ? <CountsSkeleton /> : null}
+      </div>
       {needsYou && !isFactsOnly ? (
         <GhostActionButton
           icon={ArrowRight}

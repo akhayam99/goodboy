@@ -6,6 +6,7 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { ReportStudio } from '../../../features/reports/components/ReportStudio';
 import { lazyNamed } from '../../../shared/lib/lazyNamed';
 import { readingArtifactOf } from './readingArtifact';
+import { ArtifactSkeleton } from './ArtifactSkeleton';
 
 const WireframeViewer = lazyNamed({
   load: () => import('../../../features/wireframes/components/WireframeViewer'),
@@ -53,7 +54,7 @@ export const ArtifactReadingDrawer = ({ sessionId, artifactId, onClose }: Props)
         {artifact.kind === 'report' ? (
           <ReportStudio sessionId={sessionId} artifact={artifact} />
         ) : (
-          <Suspense fallback={null}>
+          <Suspense fallback={<ArtifactSkeleton />}>
             <WireframeViewer sessionId={sessionId} artifact={artifact} />
           </Suspense>
         )}

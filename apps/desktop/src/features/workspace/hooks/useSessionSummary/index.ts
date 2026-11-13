@@ -44,9 +44,10 @@ export type SessionSummary = {
   readonly prState: PullRequestStateKind | null;
   readonly progress: WorkflowProgress | null;
   readonly tasks: ReadonlyArray<SessionExternalTask>;
-  readonly agentCount: number;
+  readonly agentCount: number | null;
   readonly isAutorun: boolean;
-  readonly cost: number;
+  readonly cost: number | null;
+  readonly isCountsLoading: boolean;
   readonly age: string;
 };
 
@@ -69,8 +70,14 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
     () => distinctTasks({ tasks: linkedTasks }).map((entry) => entry.task),
     [linkedTasks],
   );
-  const agentCount = useNonResolverStandaloneAgents(id).length;
-  const cost = useSessionCost(id);
+  const standaloneAgents = useNonResolverStandaloneAgents(id);
+  const spent = useSessionCost(id);
+  const isAgentsLoaded = useAppStore((s) => s.sessionPhaseRuns[id] !== undefined);
+  const isCostLoaded = useAppStore((s) => s.sessionTelemetry[id] !== undefined);
+  const isCostPending = useAppStore((s) => s.sessionLoading[id]?.telemetry === true);
+  const agentCount = isAgentsLoaded ? standaloneAgents.length : null;
+  const cost = isCostLoaded ? spent : null;
+  const isCountsLoading = !isAgentsLoaded || (!isCostLoaded && isCostPending);
 
   const progress = useMemo(() => workflowProgress({ runs, agents: phaseRuns }), [runs, phaseRuns]);
 
@@ -102,6 +109,7 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
     agentCount,
     isAutorun,
     cost,
+    isCountsLoading,
     age: formatAge({ from: session.updatedAt, now }),
   };
 };

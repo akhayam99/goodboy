@@ -712,11 +712,22 @@ describe('SessionTools', () => {
     render(<SessionTools sessionId={null} />);
 
     expect(toggle('browser').getAttribute('aria-label')).toBe('Browser');
-    expect(
-      toggle('browser')
-        .closest('[data-slot="session-tool"]')
-        ?.querySelector('[data-testid="tool-count"]'),
-    ).toBeNull();
+    const tool = toggle('browser').closest('[data-slot="session-tool"]');
+    expect(tool?.querySelector('[data-testid="tool-count"]')).toBeNull();
+    const skeleton = tool?.querySelector('[data-testid="tool-count-skeleton"]');
+    expect(skeleton?.getAttribute('aria-label')).toBe('Loading');
+  });
+
+  it('draws no skeleton on Browser once the tab rows have loaded empty', () => {
+    useAppStore.setState({
+      currentWorkspaceId: WORKSPACE,
+      sessions: [sessionFixture()],
+      browserTabCounts: { [WORKSPACE]: 0 },
+    });
+    render(<SessionTools sessionId={null} />);
+
+    expect(screen.queryByTestId('tool-count-skeleton')).toBeNull();
+    expect(screen.queryByTestId('tool-count')).toBeNull();
   });
 
   it('selects Terminal while its page is open and does nothing on click', () => {

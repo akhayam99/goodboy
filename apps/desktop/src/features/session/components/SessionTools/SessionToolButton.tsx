@@ -3,6 +3,7 @@ import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
 import { ToolCount } from './ToolCount';
+import { ToolCountSkeleton } from './ToolCountSkeleton';
 import { ToolSignalDot } from './ToolSignalDot';
 import { ToolWaitingRing } from './ToolWaitingRing';
 import { toolStateOf } from './toolStateOf';
@@ -15,6 +16,7 @@ type Props = {
   readonly isCurrent?: boolean;
   readonly fact?: string | null;
   readonly count?: number;
+  readonly isCountLoading?: boolean;
   readonly signal: ToolSignal | null;
   readonly tabIndex: number;
   readonly onFocus: () => void;
@@ -28,6 +30,7 @@ export const SessionToolButton = ({
   isCurrent = false,
   fact = null,
   count = 0,
+  isCountLoading = false,
   signal,
   tabIndex,
   onFocus,
@@ -75,7 +78,8 @@ export const SessionToolButton = ({
       </span>
       {state === 'waiting' ? <ToolWaitingRing /> : null}
       {signal === null ? null : <ToolSignalDot signal={signal} />}
-      {signal === null && count > 0 ? <ToolCount count={count} /> : null}
+      {signal === null && isCountLoading ? <ToolCountSkeleton /> : null}
+      {signal === null && !isCountLoading && count > 0 ? <ToolCount count={count} /> : null}
     </span>
   );
 };
