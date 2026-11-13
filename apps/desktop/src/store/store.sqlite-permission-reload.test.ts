@@ -143,7 +143,7 @@ const expectStillWaiting = async (): Promise<void> => {
     'running',
   );
   expect(state.agentTurnState[AGENT_ID]).toMatchObject({ kind: 'blocked', runId: RUN_ID });
-  expect(stageInfosOf({ state })[LEDGER_ID]?.stage).toBe('attention');
+  expect(stageInfosOf({ state, sessions: state.sessions })[LEDGER_ID]?.stage).toBe('attention');
 };
 
 describe('store on sqlite: a waiting permission across a reload', () => {

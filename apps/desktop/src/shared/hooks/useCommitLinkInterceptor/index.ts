@@ -39,11 +39,12 @@ export const useCommitLinkInterceptor = ({ claimLink = NO_CLAIM }: Params = {}) 
         setCommitDiff({ repo: commit[1] as string, sha: commit[2] as string });
         return;
       }
+      if (anchor != null && claimRef.current({ href, anchor, event: e })) {
+        e.preventDefault();
+        return;
+      }
       if (/^https?:/i.test(href)) {
         e.preventDefault();
-        if (anchor != null && claimRef.current({ href, anchor, event: e })) {
-          return;
-        }
         openUrl(href).catch((error: unknown) => {
           void useAppStore.getState().reportError({
             recovery: OPEN_FAILED,

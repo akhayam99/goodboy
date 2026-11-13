@@ -103,7 +103,7 @@ describe('RecordHeader', () => {
     expect(onToggle).toHaveBeenCalledOnce();
     expect(
       screen.getByRole('heading', { name: 'Ledger export times out over 10k rows' }).className,
-    ).toContain('text-lead');
+    ).toContain('text-title');
   });
 
   it('orders the overflow from the registry: tool verbs, session, the link, then destructive', () => {

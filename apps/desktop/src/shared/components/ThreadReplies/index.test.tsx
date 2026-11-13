@@ -35,8 +35,8 @@ describe('ThreadReplies', () => {
     const rows = within(list).getAllByRole('listitem');
 
     expect(rows.map((row) => row.textContent)).toEqual([
-      'northwind-devPlease take the transaction.',
-      'acme-botDone in the next commit.',
+      'Nnorthwind-devPlease take the transaction.',
+      'Aacme-botDone in the next commit.',
     ]);
   });
 

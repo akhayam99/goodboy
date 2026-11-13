@@ -37,6 +37,11 @@ export type PullRequestChecks = 'pending' | 'success' | 'failure' | null;
 
 export type PrMergeMethod = 'squash' | 'merge' | 'rebase';
 
+export type PullRequestAuthor = {
+  login: string;
+  avatarUrl: string | null;
+};
+
 export type PullRequestState = {
   number: number;
   title: string;
@@ -54,7 +59,7 @@ export type PullRequestState = {
   mergeQueue?: { position: number | null } | null;
   headSha?: string | null;
   mergedAt?: string | null;
-  author?: string | null;
+  author?: PullRequestAuthor | null;
   checksUnknown?: boolean;
   hasReviewRequests?: boolean;
 };

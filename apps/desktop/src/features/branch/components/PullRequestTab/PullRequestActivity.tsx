@@ -82,12 +82,9 @@ export const PullRequestActivity = ({
                   <ul className="flex min-w-0 flex-col gap-2">
                     {row.comments.map((comment, position) => (
                       <li
-                        key={`${comment.who ?? ''}:${position}`}
+                        key={position}
                         className="flex min-w-0 flex-col gap-1 rounded-md bg-subtle px-3 py-2"
                       >
-                        {comment.who === null ? null : (
-                          <span className="text-meta text-muted-foreground">{comment.who}</span>
-                        )}
                         <span className="min-w-0 text-meta text-foreground">
                           <ClampedProse text={comment.text} lines={2} />
                         </span>

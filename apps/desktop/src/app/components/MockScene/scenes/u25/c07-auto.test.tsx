@@ -170,12 +170,11 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('u34-p20-auto-narrow keeps the title in its own wrapping lead, the glance below it and no provider mark', async () => {
+  it('u34-p20-auto-narrow keeps the title in its own heading, the glance below it and no provider mark', async () => {
     mount({ id: 'u34-p20-auto-narrow' });
 
     const row = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
-    const lead = within(row).getByTestId('agent-header-lead');
-    within(lead).getByRole('heading', { level: 1 });
+    const lead = within(row).getByRole('heading', { level: 1 });
     expect(within(lead).queryByTestId('agent-header-settings')).toBeNull();
     expect(document.querySelector('[data-glance]')).not.toBeNull();
     expect(within(lead).queryByRole('button', { name: 'More agent actions' })).toBeNull();

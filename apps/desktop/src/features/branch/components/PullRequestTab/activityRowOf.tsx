@@ -8,7 +8,6 @@ import type { ActivityItem } from './activityOf';
 import { ActivityWho as Who } from './ActivityWho';
 
 type RowComment = {
-  readonly who: string | null;
   readonly text: string;
 };
 
@@ -58,7 +57,8 @@ export const activityRowOf = ({
         glyph: <CONCEPT_ICONS.pr size={GLYPH_SIZE} aria-hidden />,
         line: (
           <>
-            <Who name={item.who} /> opened this {item.isDraft ? 'draft ' : ''}
+            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} /> opened this{' '}
+            {item.isDraft ? 'draft ' : ''}
             {nouns.long}
           </>
         ),
@@ -70,7 +70,7 @@ export const activityRowOf = ({
         glyph: <CONCEPT_ICONS.commits size={GLYPH_SIZE} aria-hidden />,
         line: (
           <>
-            <Who name={item.who} /> pushed{' '}
+            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} /> pushed{' '}
             {countNoun({ count: item.count, one: 'commit', many: 'commits' })}{' '}
             <span className="text-code">{item.sha}</span>
           </>
@@ -90,7 +90,7 @@ export const activityRowOf = ({
           ),
         line: (
           <>
-            <Who name={item.who} />{' '}
+            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} isBot={item.isBot === true} />{' '}
             {item.verdict === 'approved'
               ? 'approved'
               : item.verdict === 'changes_requested'
@@ -98,7 +98,7 @@ export const activityRowOf = ({
                 : 'commented'}
           </>
         ),
-        comments: item.text === '' ? [] : [{ who: null, text: item.text }],
+        comments: item.text === '' ? [] : [{ text: item.text }],
         open: null,
       };
     case 'bot':
@@ -106,7 +106,7 @@ export const activityRowOf = ({
         glyph: <Bot size={GLYPH_SIZE} aria-hidden />,
         line: (
           <>
-            <Who name={item.who} />{' '}
+            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} isBot />{' '}
             <span
               data-bot-tone={item.tone}
               className={cn(
@@ -146,7 +146,7 @@ export const activityRowOf = ({
         glyph: <Pencil size={GLYPH_SIZE} aria-hidden />,
         line: (
           <>
-            <Who name="You" /> edited the {item.what}
+            <Who login="You" avatarUrl={null} /> edited the {item.what}
           </>
         ),
         comments: [],
@@ -157,8 +157,8 @@ export const activityRowOf = ({
         glyph: <CONCEPT_ICONS.merge size={GLYPH_SIZE} aria-hidden className="text-merged" />,
         line: (
           <>
-            <Who name={item.who} /> merged this {nouns.long} into{' '}
-            <span className="text-code">{baseBranch}</span>
+            <Who login={item.who} avatarUrl={item.avatarUrl ?? null} /> merged this {nouns.long}{' '}
+            into <span className="text-code">{baseBranch}</span>
           </>
         ),
         comments: [],

@@ -5,19 +5,22 @@ import { useAppStore } from '../../../../store';
 import { artifactFolderName } from '../../artifactFolderName';
 import {
   locateArtifactMirror,
-  openArtifactMirror,
   revealArtifactMirror,
   type ArtifactMirrorLocation,
 } from '../../artifactMirror/artifactMirrorInvoke';
+import { openArtifactCopy } from '../../artifactActionRuns';
+import type { OpenClick } from '../../../open/types';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
-const MIRROR_INDEX_FILE = 'index.html';
+type OpenParams = {
+  readonly event?: OpenClick;
+};
 
 export type ArtifactSavedCopy = Readonly<{
   location: ArtifactMirrorLocation | null;
   error: string | null;
   reveal: () => void;
-  openInBrowser: () => void;
+  openInBrowser: (params?: OpenParams) => void;
 }>;
 
 type Params = {
@@ -66,15 +69,18 @@ export const useArtifactSavedCopy = ({ sessionId, artifact }: Params): ArtifactS
     );
   }, [workspaceSlug, folder]);
 
-  const openInBrowser = useCallback(() => {
-    if (workspaceSlug === null) {
-      return;
-    }
-    setError(null);
-    openArtifactMirror({ workspaceSlug, folder, file: MIRROR_INDEX_FILE }).catch((cause: unknown) =>
-      setError(formatError(cause)),
-    );
-  }, [workspaceSlug, folder]);
+  const openInBrowser = useCallback(
+    ({ event }: OpenParams = {}) => {
+      if (workspaceSlug === null) {
+        return;
+      }
+      setError(null);
+      openArtifactCopy({ artifact, workspaceSlug, event }).catch((cause: unknown) =>
+        setError(formatError(cause)),
+      );
+    },
+    [workspaceSlug, artifact],
+  );
 
   return { location, error, reveal, openInBrowser };
 };

@@ -32,6 +32,7 @@ import { listGridFitFailures } from './validateScenesListGridFit.mjs';
 import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
+import { titleBandFailures } from './validateScenesTitleBand.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerRevealFailures } from './validateScenesDrawerReveal.mjs';
 import { readingHoldFailures } from './validateScenesReadingHold.mjs';
@@ -980,6 +981,45 @@ describe('headerLineFailures', () => {
       measured: { ...measured, tool: null },
     });
     assert.deepEqual(failures[0]?.missing, ['tool']);
+  });
+});
+
+describe('titleBandFailures', () => {
+  const band = ({ top = 8, block = 32, bottom = 8, isPinned = false } = {}) => ({
+    top,
+    block,
+    bottom,
+    isPinned,
+  });
+
+  it('passes the 48 band, the 64 band with a meta line and the 40 band under a trail', () => {
+    const measured = [band(), band({ block: 48 }), band({ top: 0 })];
+    for (const entry of measured) {
+      assert.deepEqual(titleBandFailures({ scene: 'fixture', width: 1440, measured: entry }), []);
+    }
+  });
+
+  it('fails the old 60 and 68 bands and a band no token produces', () => {
+    for (const entry of [
+      band({ top: 12, bottom: 16 }),
+      band({ top: 12, bottom: 24 }),
+      band({ top: 4 }),
+    ]) {
+      const failures = titleBandFailures({ scene: 'fixture', width: 1440, measured: entry });
+      assert.equal(failures.length, 1);
+    }
+  });
+
+  it('leaves a pinned header to the pinned zone and fails a page with no header', () => {
+    assert.deepEqual(
+      titleBandFailures({
+        scene: 'fixture',
+        width: 1440,
+        measured: band({ top: 0, bottom: 0, isPinned: true }),
+      }),
+      [],
+    );
+    assert.equal(titleBandFailures({ scene: 'fixture', width: 1440, measured: null }).length, 1);
   });
 });
 

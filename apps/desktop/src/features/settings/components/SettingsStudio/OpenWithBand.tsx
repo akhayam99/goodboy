@@ -181,7 +181,7 @@ export const OpenWithBand = () => {
         />
         <ToolChoiceField
           label="Browser"
-          help={`Your browser, for links you ${ownBrowserClickWord()} and artifacts you open outside.`}
+          help={`Your browser, for links you ${ownBrowserClickWord()}, wireframes, and anything opened outside a session.`}
           value={browserApp}
           choices={browserChoices}
           onChange={(id) => void onChangeBrowser(id)}

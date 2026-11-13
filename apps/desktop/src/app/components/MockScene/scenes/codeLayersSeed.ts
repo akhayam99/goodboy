@@ -135,7 +135,12 @@ const prFor = ({
     case 'closed':
       return { ...base, state: 'closed', checks: 'success', reviewDecision: null };
     case 'other':
-      return { ...base, author: 'kenji-w', checks: 'success', reviewDecision: 'review_required' };
+      return {
+        ...base,
+        author: { login: 'kenji-w', avatarUrl: null },
+        checks: 'success',
+        reviewDecision: 'review_required',
+      };
     default: {
       const exhaustive: never = state;
       return exhaustive;
@@ -251,7 +256,7 @@ export const seedCodeLayers = ({ layer, prState, worktreeState }: SeedParams): v
   }
   const hasPr = worktreeState !== 'nopr';
   const pr = prFor({
-    base: { ...github.pr, author: 'mara-l' },
+    base: { ...github.pr, author: { login: 'mara-l', avatarUrl: null } },
     state: worktreeState === 'merged' ? 'merged' : prState,
   });
   const detail =

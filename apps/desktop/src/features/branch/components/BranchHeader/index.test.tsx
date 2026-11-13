@@ -291,7 +291,7 @@ const titleRowOf = (): HTMLElement => {
 describe('BranchHeader one row', () => {
   it('holds the title and the actions on one row, with no state chip and no meta line', () => {
     status = statusOf({});
-    renderHeader({ pr: { ...PR, author: 'Maya Ortiz' } });
+    renderHeader({ pr: { ...PR, author: { login: 'maya-o', avatarUrl: null } } });
 
     expect(titleRowOf().textContent).toContain('Ledger export');
     expect(document.querySelector('[data-slot="branch-state"]')).toBeNull();

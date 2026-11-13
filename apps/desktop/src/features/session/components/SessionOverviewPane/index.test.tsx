@@ -13,7 +13,9 @@ const { renameSession } = vi.hoisted(() => ({
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../store/storyHarness')).dbModuleMock({ renameSession }),
 );
-vi.mock('./HeaderBand', () => ({ HeaderBand: () => <p>Overview goal</p> }));
+vi.mock('./GoalTeaser', () => ({ GoalTeaser: () => <p>Overview goal</p> }));
+vi.mock('./SessionDropPill', () => ({ SessionDropPill: () => null }));
+vi.mock('./TaskDragLayer', () => ({ TaskDragLayer: () => null }));
 vi.mock('./ArchivedRestore', () => ({
   ArchivedRestore: () => <button type="button">Restore</button>,
 }));

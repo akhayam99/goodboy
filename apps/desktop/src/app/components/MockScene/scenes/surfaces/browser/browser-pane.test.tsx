@@ -88,6 +88,8 @@ describe('the browser pane scenes', () => {
       'browser-pane-passkey-dark',
       'browser-pane-rail',
       'browser-pane-rail-dark',
+      'browser-pane-saved-copy',
+      'browser-pane-saved-copy-dark',
       'browser-pane-tabs',
       'browser-pane-tabs-dark',
       'browser-peek',
@@ -115,6 +117,14 @@ describe('the browser pane scenes', () => {
     expect(screen.getAllByTestId('pane-toggle-browser')[0]?.getAttribute('aria-pressed')).toBe(
       'true',
     );
+  });
+
+  it('shows a saved report in a tab beside the session', async () => {
+    mount({ id: 'browser-pane-saved-copy' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const pill = within(pane).getByRole('button', { name: /^Edit address, Rounding drift/ });
+    expect(pill.textContent).toContain('index.html');
   });
 
   it('opens the Browser page with every tab grouped by session and the Browser tool selected', async () => {

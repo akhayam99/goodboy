@@ -189,6 +189,8 @@ browser-pane-passkey
 browser-pane-passkey-dark
 browser-pane-rail
 browser-pane-rail-dark
+browser-pane-saved-copy
+browser-pane-saved-copy-dark
 browser-pane-tabs
 browser-pane-tabs-dark
 browser-peek

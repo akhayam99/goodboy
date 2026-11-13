@@ -5,6 +5,6 @@
   "plans -> artifacts": 2,
   "reports -> artifacts": 9,
   "reports -> wireframes": 1,
-  "wireframes -> artifacts": 22,
+  "wireframes -> artifacts": 20,
   "wireframes -> reports": 1
 }

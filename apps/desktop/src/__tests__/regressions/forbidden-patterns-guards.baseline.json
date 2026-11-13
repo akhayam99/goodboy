@@ -43,7 +43,9 @@
   "footer-cta-bar": {
     "website/src/pages/home/sections/Footer.tsx": 1
   },
+  "page-title-row": {},
   "half-step-spacing": {},
+  "hand-written-age": {},
   "role-weight-override": {},
   "rust-else": {
     "apps/desktop/src-tauri/src/artifact_mirror.rs": 3,
@@ -111,7 +113,6 @@
   "sibling-margin": {
     "apps/desktop/src/app/components/MockScene/scenes/conversationSeed.ts": 9,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactContextRow.tsx": 1,
-    "apps/desktop/src/features/artifacts/components/ArtifactList/index.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactScoutList.tsx": 2,
     "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestTitle.tsx": 1,
     "apps/desktop/src/features/budget/components/spend/SpendBar.tsx": 2,

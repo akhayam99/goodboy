@@ -206,7 +206,7 @@ describe('SessionTools', () => {
     const caption = 12;
     const captionGap = 2;
     const railGap = 8;
-    const headerInset = 12;
+    const headerInset = 8;
     const groups = new Set(ALL_TOOLS.map((tool) => tool.group)).size;
     const children = ALL_TOOLS.length + 2 * groups;
     const needed =

@@ -8,7 +8,7 @@ const NADIA: BitbucketUser = {
   accountId: null,
   nickname: 'nadia-p',
   displayName: 'Harborline QA',
-  avatarUrl: null,
+  avatarUrl: 'https://avatars.harborline.test/nadia-p.png',
 };
 
 const PR: BitbucketPullRequest = {
@@ -51,7 +51,7 @@ describe('mapBitbucketPrToPullRequestState', () => {
       updatedAt: '2026-10-06T09:30:00+00:00',
       headSha: '6c20f48a9e1',
       mergedAt: null,
-      author: 'nadia-p',
+      author: { login: 'nadia-p', avatarUrl: 'https://avatars.harborline.test/nadia-p.png' },
     });
   });
 

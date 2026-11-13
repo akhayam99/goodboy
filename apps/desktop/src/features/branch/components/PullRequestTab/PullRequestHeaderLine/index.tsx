@@ -1,4 +1,5 @@
 import type { PullRequestHost, PullRequestState } from '@goodboy/types';
+import { Person } from '../../../../../shared/components/Person';
 import { pullRequestKindOf } from '../../../../../shared/utils/pullRequestKind';
 import { pullRequestNumberLabel } from '../../../pullRequestNumberLabel';
 import { BranchStateChip } from '../../BranchHeader/BranchStateChip';
@@ -24,6 +25,10 @@ export const PullRequestHeaderLine = ({ pr, host }: Props) => (
     )}
     <span>into</span>
     <span className="text-code text-foreground">{pr.baseBranch}</span>
-    {pr.author === null || pr.author === undefined ? null : <span>by {pr.author}</span>}
+    {pr.author == null ? null : (
+      <span className="inline-flex min-w-0 items-center gap-1">
+        by <Person login={pr.author.login} avatarUrl={pr.author.avatarUrl} size="xs" />
+      </span>
+    )}
   </span>
 );

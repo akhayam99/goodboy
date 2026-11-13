@@ -81,7 +81,6 @@ type RowParams = { readonly id: string; readonly url: string; readonly title: st
 type LinkParams = {
   readonly href: string;
   readonly sessionId: SessionId | null;
-  readonly hasLinkArea?: boolean;
   readonly onClick?: MouseEventHandler<HTMLAnchorElement>;
 };
 
@@ -202,7 +201,7 @@ const callsOf = ({ command }: CommandParams) =>
     .filter(([name]) => name === command)
     .map(([, payload]) => argsOf({ payload }));
 
-const renderLink = ({ href, sessionId, hasLinkArea = true, onClick }: LinkParams) => {
+const renderLink = ({ href, sessionId, onClick }: LinkParams) => {
   renderHook(() => useCommitLinkInterceptor({ claimLink: claimSessionLink }));
   const anchor = (
     <a href={href} onClick={onClick}>
@@ -211,13 +210,7 @@ const renderLink = ({ href, sessionId, hasLinkArea = true, onClick }: LinkParams
   );
   render(
     <>
-      {sessionId === null ? (
-        anchor
-      ) : (
-        <div data-browser-session={sessionId}>
-          {hasLinkArea ? <div data-browser-links="">{anchor}</div> : anchor}
-        </div>
-      )}
+      {sessionId === null ? anchor : <div data-browser-session={sessionId}>{anchor}</div>}
       <BrowserLinkDoors />
     </>,
   );
@@ -486,40 +479,102 @@ describe('a link', () => {
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
   });
 
-  it('keeps a plain click on a session link outside the conversation in your browser', async () => {
-    const link = renderLink({
-      href: 'http://localhost:5173/checkout',
-      sessionId: SESSION_ID,
-      hasLinkArea: false,
-    });
+  it('opens beside the current session when the link sits on no session surface', async () => {
+    const link = renderLink({ href: 'http://localhost:5173/checkout', sessionId: null });
 
     fireEvent.click(link);
 
-    await waitFor(() => expect(outside).toEqual(['http://localhost:5173/checkout']));
-    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
-    expect(store.getState().drawer).toBeNull();
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_open' })).toEqual([
+        expect.objectContaining({ sessionId: SESSION_ID, url: 'http://localhost:5173/checkout' }),
+      ]),
+    );
+    expect(outside).toEqual([]);
   });
 
-  it('leaves a command click on a session link outside the conversation alone', async () => {
-    const link = renderLink({
-      href: 'https://docs.harborline.dev/tax',
-      sessionId: SESSION_ID,
-      hasLinkArea: false,
-    });
+  it('opens your browser on a command click when the link sits on no session surface', async () => {
+    const link = renderLink({ href: 'https://docs.harborline.dev/tax', sessionId: null });
 
     fireEvent.click(link, { metaKey: true });
 
-    expect(outside).toEqual([]);
+    await waitFor(() => expect(outside).toEqual(['https://docs.harborline.dev/tax']));
     expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
   });
 
-  it('keeps opening your browser outside a session', async () => {
+  it('takes the session at the click, before the Links read resolves', async () => {
+    const link = renderLink({ href: 'http://localhost:5173/checkout', sessionId: null });
+
+    fireEvent.click(link);
+    store.setState({ currentSessionId: OTHER_SESSION_ID });
+
+    await waitFor(() =>
+      expect(callsOf({ command: 'browser_tab_open' })).toEqual([
+        expect.objectContaining({ sessionId: SESSION_ID, url: 'http://localhost:5173/checkout' }),
+      ]),
+    );
+  });
+
+  it('opens your browser when there is no session at all', async () => {
+    store.setState({ currentSessionId: null });
     const link = renderLink({ href: 'https://docs.harborline.dev/tax', sessionId: null });
 
     fireEvent.click(link);
 
     await waitFor(() => expect(outside).toEqual(['https://docs.harborline.dev/tax']));
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
     expect(store.getState().drawer).toBeNull();
+  });
+
+  it('opens a commit link as the in-app diff, not as a tab', async () => {
+    const { result } = renderHook(() => useCommitLinkInterceptor({ claimLink: claimSessionLink }));
+    render(<a href="https://github.com/harborline/ledger-core/commit/abc1234">commit</a>);
+
+    fireEvent.click(screen.getByRole('link', { name: 'commit' }));
+
+    expect(result.current.commitDiff).toEqual({ repo: 'harborline/ledger-core', sha: 'abc1234' });
+    expect(outside).toEqual([]);
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
+  it('opens a relative link as a file of the session folder', async () => {
+    stubStoryInvoke({ detect_editors: [] });
+    const link = renderLink({ href: 'src/payout.ts#L12', sessionId: null });
+
+    fireEvent.click(link);
+
+    await waitFor(() =>
+      expect(store.getState().drawer).toEqual({
+        kind: 'explore-file',
+        sessionId: SESSION_ID,
+        payload: {
+          sessionDir: '/work/harborline/ledger-core-payout',
+          entry: {
+            name: 'payout.ts',
+            relPath: 'src/payout.ts',
+            isDir: false,
+            sizeBytes: null,
+            modifiedAt: null,
+          },
+          line: 12,
+        },
+      }),
+    );
+    expect(outside).toEqual([]);
+  });
+
+  it('says once that a relative link has no folder when there is no session', async () => {
+    store.setState({ currentSessionId: null });
+    const reportError = vi.spyOn(store.getState(), 'reportError');
+    store.setState({ reportError });
+    const link = renderLink({ href: 'src/payout.ts', sessionId: null });
+
+    fireEvent.click(link);
+
+    expect(reportError).toHaveBeenCalledTimes(1);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't open the file" }),
+    );
+    expect(outside).toEqual([]);
   });
 });
 
@@ -539,6 +594,15 @@ describe('the Links setting set to your browser', () => {
 
   it('sends a plain click on a session link to your browser', async () => {
     const link = renderLink({ href: 'https://docs.harborline.dev/tax', sessionId: SESSION_ID });
+
+    fireEvent.click(link);
+
+    await waitFor(() => expect(outside).toEqual(['https://docs.harborline.dev/tax']));
+    expect(callsOf({ command: 'browser_tab_open' })).toEqual([]);
+  });
+
+  it('sends a plain click on a text link on no session surface to your browser', async () => {
+    const link = renderLink({ href: 'https://docs.harborline.dev/tax', sessionId: null });
 
     fireEvent.click(link);
 
@@ -586,12 +650,9 @@ describe('the peek', () => {
     expect(card.textContent).toContain('Shows its tab beside the session.');
   });
 
-  it('never peeks a link outside the conversation', () => {
-    const link = renderLink({
-      href: 'http://localhost:5173/checkout',
-      sessionId: SESSION_ID,
-      hasLinkArea: false,
-    });
+  it('never peeks a link when there is no session', () => {
+    store.setState({ currentSessionId: null });
+    const link = renderLink({ href: 'http://localhost:5173/checkout', sessionId: null });
 
     fireEvent.focusIn(link);
 

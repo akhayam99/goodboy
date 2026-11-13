@@ -289,7 +289,6 @@
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
     "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
     "apps/desktop/src/features/reports/components/ReportStudio/ReportOutlineNav.tsx": 1,
-    "apps/desktop/src/features/review/components/ReviewThreadContent/index.tsx": 1,
     "apps/desktop/src/features/scripts/components/RunningScriptRow.tsx": 1,
     "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/NewBranchMountAction.tsx": 1,
@@ -375,6 +374,11 @@
   },
   "tone-border-rail": {},
   "footer-cta-bar": {},
+  "page-title-row": {},
   "half-step-spacing": {},
+  "hand-written-age": {
+    "apps/desktop/src/features/storage/components/StoragePage/ArtifactBulkDeleteBar.tsx": 1,
+    "apps/desktop/src/features/storage/components/StoragePage/ArtifactRow.tsx": 1
+  },
   "role-weight-override": {}
 }

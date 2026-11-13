@@ -554,8 +554,7 @@ open it.
 grammar on one screen, so read it before designing a new surface. Here is its
 rhythm. Each section has an eyebrow label, and a section has at most one
 primary button. The goal, the notices, Needs you, Next and Activity are peer
-sections in the pane body, one `PANE_RHYTHM.stack` gap apart: the header passes
-`headerRhythm="section"`, so the gap under it is the same. Space separates
+sections in the pane body, one `PANE_RHYTHM.stack` gap apart. Space separates
 sections, never a `<Divider />`, and a section never has a border. The Activity
 header holds the **Activity | Log** switch, **Mark as read** while an agent has
 an unread reply and the session cost on the right; the Log adds a search field

@@ -28,7 +28,10 @@ type RawBranchNode = {
   readonly autoMergeRequest: Record<string, unknown> | null;
   readonly headRefOid?: string | null;
   readonly mergedAt?: string | null;
-  readonly author?: { readonly login?: string | null } | null;
+  readonly author?: {
+    readonly login?: string | null;
+    readonly avatarUrl?: string | null;
+  } | null;
   readonly reviewRequests?: { readonly totalCount?: number | null } | null;
   readonly isInMergeQueue?: boolean | null;
   readonly mergeQueueEntry?: { readonly position?: number | null } | null;
@@ -53,7 +56,7 @@ type RawBranchResponse = {
 };
 
 const NODE_FIELDS = `number title url state isDraft mergeable baseRefName headRefName reviewDecision updatedAt body
-  autoMergeRequest{ enabledAt } headRefOid mergedAt author{ login } reviewRequests(first:1){ totalCount }
+  autoMergeRequest{ enabledAt } headRefOid mergedAt author{ login avatarUrl } reviewRequests(first:1){ totalCount }
   isInMergeQueue mergeQueueEntry{ position state }
   commits(last:1){ nodes{ commit{ statusCheckRollup{ contexts(first:100){ nodes{
     __typename ... on CheckRun{ status conclusion } ... on StatusContext{ state } } } } } } }`;

@@ -265,8 +265,9 @@ media query on the window, because the space that counts is the pane's.
 
 One primitive draws the top of every page: `PageHeader`
 (`packages/ui/src/components/PaneShell/PageHeader.tsx`). It owns the top inset
-(`PANE_RHYTHM.headerInset`, 12px, none under a studio band), the 32px title
-row (`PaneTitleRow`), the gap under the header, the title's left edge (its
+(`PANE_RHYTHM.headerInset`, 8px, none under a studio band), the 32px title
+row (`PaneTitleRow`, the only title row), the 8px under it (`PANE_RHYTHM.below`,
+so the band is 48px, or 64px with a meta line), the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
 page with its own frame (the Board, the Terminal, the chat room header)
 mounts it directly. No page sets its own header padding: the Settings detail,
@@ -278,6 +279,9 @@ and every drawer header row (`DrawerFrame`) take `PANE_RHYTHM.headerInset` and
 `PANE_RHYTHM.headerRow` (`h-8`), so their tops and centres match the page title
 row. `validate-scenes --only header-line` measures all four on
 `r4-rail-tools-open` at 1100, 1440 and 1920 and fails a drift over 1px.
+`validate-scenes --only title-band` measures the band of the Board, the
+session overview and the agent transcript and fails a height outside 40, 48 and
+64 (plus 36 per tab row or toolbar, which it does not count).
 
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
@@ -331,7 +335,7 @@ Five rules:
    (288, resizable 220 to 420). No page draws a second rail column.
 3. **Stage pages are only the Board, the Terminal and the Browser.** Nothing else is fluid.
 4. **The page title row and the drawer header share one line.** `DrawerFrame` draws its
-   header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 12px
+   header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 8px
    inset, 32px row), with one close control.
 5. **First-time states sit at the top left of the page column**, in one `EmptyState`
    layout; only the empty chat stage centres.

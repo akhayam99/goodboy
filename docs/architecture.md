@@ -239,7 +239,7 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
 - **Open never runs a file.** `util/open_guard.rs` refuses a file or bundle
   whose extension is executable (`.command`, `.app`, `.sh`, `.exe`, `.desktop`
   and the rest of its list, in any case) or whose execute bit is set, before
-  `explore_open` or `artifact_mirror_open` hands it to the OS default handler.
+  `explore_open`, `artifact_mirror_open` or `artifact_mirror_path` hands it on.
   The refusal has kind `executable_refused`; Reveal stays allowed.
   `reveal_in_file_manager` takes an absolute path only.
 - **Discovered scripts are quoted.** `project_scripts.rs` writes
@@ -599,7 +599,9 @@ anywhere; a debug build also prints to stdout.
 - **There is no reader window and no print window.** A plan, a report and a
   wireframe render in the app through `ArtifactDocument` (`medium="screen"`,
   themed) and on disk through the same component (`medium="file"`, always
-  light). `Open in browser` (`artifact_mirror_open`) opens that file with the
+  light). `Open in browser` follows the Links setting: beside the session it
+  takes the path from `artifact_mirror_path` and opens a local tab, and
+  outside (`artifact_mirror_open`) it opens that file with the
   OS default web browser, never with a `.html` file's default app: macOS asks
   Launch Services directly (`LSCopyDefaultApplicationURLForURL`, via
   `core-foundation-sys`), Windows asks the shell's association API directly
@@ -764,10 +766,11 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   `noteHostAnswer` writes only when the host state changes. Its late-answer
   guard sits in a record the slice owns, which an unchanged answer advances in
   place, so an older answer is still dropped.
-- **Stage info is derived once.** `stageInfosOf` memoizes the derivation per
-  sessions array and input tuple, so the board, the top bar and the sidebar
-  share one pass per store change. `cachedStageInfoOf` does the same per
-  session for `useSessionStageInfo` and `useSessionStages`.
+- **Stage info is derived once per session.** `cachedStageInfoOf` keeps one
+  derivation per session and the reads it made, and every caller (the board,
+  the top bar, the sidebar, the rows) shares it. A write re-derives only the
+  sessions whose reads changed. The rule and its trap live in
+  [typescript/state-writes.md](typescript/state-writes.md#7-derived-facts-are-kept-per-session).
 
 ### Database migrations
 

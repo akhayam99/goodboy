@@ -533,6 +533,11 @@ const FIXTURES = {
   'raw-scroller': { path: TS, flagged: "'overflow-y-auto'", allowed: "'overflow-hidden'" },
   'tone-border-rail': { path: TS, flagged: "'rounded-md border-l-2'", allowed: "'border-l-2'" },
   'footer-cta-bar': { path: TSX, flagged: '<footer className="x">', allowed: '<FormActions />' },
+  'page-title-row': {
+    path: TSX,
+    flagged: '<h1 className="min-w-0 truncate text-title text-foreground">',
+    allowed: '<h1 className="text-heading">',
+  },
   'half-step-spacing': { path: TS, flagged: "'p-1.5'", allowed: "'p-2'" },
   'role-weight-override': { path: TS, flagged: "'text-row font-medium'", allowed: "'text-row'" },
   'if-without-braces': {

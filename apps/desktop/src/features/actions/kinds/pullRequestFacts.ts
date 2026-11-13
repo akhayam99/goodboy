@@ -199,7 +199,7 @@ export const pullRequestFacts = ({
   const runs = checks ?? [];
   const groups = checksGroupsOf({ checks: runs });
   const failing = groups.find((entry) => entry.group === 'failing')?.runs ?? [];
-  const author = pr?.author ?? null;
+  const author = pr?.author?.login ?? null;
   return {
     sessionId,
     mountId,

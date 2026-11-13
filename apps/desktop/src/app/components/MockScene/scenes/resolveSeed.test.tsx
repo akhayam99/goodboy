@@ -33,7 +33,7 @@ describe('the resolve scene pull request', () => {
 
     render(<PullRequestHeaderLine pr={RESOLVE_SCENE_PR} host="github" />);
 
-    screen.getByText('by nadia-p');
+    screen.getByText('nadia-p');
     screen.getByText(RESOLVE_SCENE_PR.baseBranch);
     screen.getByText(RESOLVE_SCENE_PR.headBranch);
   });

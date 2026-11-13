@@ -56,6 +56,20 @@ describe('mapMrToPullRequestState', () => {
     });
   });
 
+  it('carries the author as a login and a picture address', () => {
+    const author = {
+      username: 'nadia-p',
+      name: 'Harborline Dev',
+      avatarUrl: 'https://gitlab.com/uploads/nadia-p.png',
+    };
+
+    expect(mapMrToPullRequestState({ mr: { ...MR, author } })?.author).toEqual({
+      login: 'nadia-p',
+      avatarUrl: 'https://gitlab.com/uploads/nadia-p.png',
+    });
+    expect(mapMrToPullRequestState({ mr: MR })?.author).toBeNull();
+  });
+
   it('drops the draft prefix from the title and keeps the draft flag', () => {
     expect(
       mapMrToPullRequestState({

@@ -20,14 +20,30 @@ const PR: PullRequestState = {
   reviewDecision: null,
   body: '',
   updatedAt: '2026-10-17T09:00:00.000Z',
-  author: 'nadia-p',
+  author: { login: 'nadia-p', avatarUrl: null },
 };
 
 describe('PullRequestHeaderLine', () => {
   it('says the number, the branch, the base and the author, and nothing else', () => {
     const { container } = render(<PullRequestHeaderLine pr={PR} host="github" />);
 
-    expect(container.textContent).toBe('#318hl/fix-duplicate-creditintomainby nadia-p');
+    expect(container.textContent).toBe('#318hl/fix-duplicate-creditintomainby Nnadia-p');
+  });
+
+  it('draws the author as a person chip with the picture slot', () => {
+    const { container } = render(<PullRequestHeaderLine pr={PR} host="github" />);
+
+    const chip = container.querySelector('[data-person]');
+    expect(chip?.textContent).toBe('Nnadia-p');
+    expect(chip?.querySelector('span[aria-hidden]')).not.toBeNull();
+  });
+
+  it('leaves the author out when the host names nobody', () => {
+    const { container } = render(
+      <PullRequestHeaderLine pr={{ ...PR, author: null }} host="github" />,
+    );
+
+    expect(container.querySelector('[data-person]')).toBeNull();
   });
 
   it('draws the state as an icon with its word for a screen reader and a tooltip', () => {

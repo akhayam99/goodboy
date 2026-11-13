@@ -110,7 +110,9 @@ const unrelatedWrite = (): Partial<AppState> => ({ detectedEditors: [] });
 
 const agentWrite = (): Partial<AppState> => {
   const state = useAppStore.getState();
-  const agent = Object.values(state.sessionPhaseRuns).flat()[0];
+  const agent = Object.values(state.sessionPhaseRuns).find(
+    (runs) => runs.length === AGENTS_PER_SESSION,
+  )?.[0];
   if (agent === undefined) {
     throw new Error('the shell has no agent to write for');
   }
@@ -140,20 +142,27 @@ describe('the always-on shell stays inside its budget', () => {
     seedAgents();
   });
 
-  it('scans the agents of every session when an agent changes state', () => {
+  it('derives only the session whose agent changed state', () => {
     const counts = writeOnce({ patch: agentWrite });
 
+    expect(countsOf({ name: PERF_COUNT_NAMES.stageDerivations, counts })).toBe(
+      SHELL_BUDGETS.stageDerivationsPerAgentWrite,
+    );
     expect(countsOf({ name: PERF_COUNT_NAMES.agentsScanned, counts })).toBe(
-      SHELL_BUDGETS.agentsScannedPerStoreWrite,
+      SHELL_BUDGETS.agentsScannedPerAgentWrite,
+    );
+    expect(countsOf({ name: PERF_COUNT_NAMES.stageReadsCompared, counts })).toBe(
+      SHELL_BUDGETS.stageReadsComparedPerAgentWrite,
     );
   });
 
-  it('builds a stage input object for each mounted row on an unrelated write', () => {
+  it('derives nothing on an unrelated write', () => {
     const counts = writeOnce({ patch: unrelatedWrite });
 
-    expect(countsOf({ name: PERF_COUNT_NAMES.stageInputsBuilt, counts })).toBe(
-      SHELL_BUDGETS.stageInputObjectsPerUnrelatedWrite,
+    expect(countsOf({ name: PERF_COUNT_NAMES.stageDerivations, counts })).toBe(
+      SHELL_BUDGETS.stageDerivationsPerUnrelatedWrite,
     );
+    expect(countsOf({ name: PERF_COUNT_NAMES.agentsScanned, counts })).toBe(0);
   });
 });
 

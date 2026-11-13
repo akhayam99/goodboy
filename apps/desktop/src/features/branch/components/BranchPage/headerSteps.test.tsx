@@ -81,7 +81,10 @@ const primaryId = (): string | null =>
 
 describe('Branch header on a pull request somebody else wrote', () => {
   it('reads Review when the signed in person is not the author', async () => {
-    seedQuietRequest({ patch: { author: 'nadia-p' }, viewer: 'harborline-dev' });
+    seedQuietRequest({
+      patch: { author: { login: 'nadia-p', avatarUrl: null } },
+      viewer: 'harborline-dev',
+    });
 
     await openPage();
 
@@ -90,7 +93,10 @@ describe('Branch header on a pull request somebody else wrote', () => {
   });
 
   it('keeps the Review step away from the author', async () => {
-    seedQuietRequest({ patch: { author: 'harborline-dev' }, viewer: 'harborline-dev' });
+    seedQuietRequest({
+      patch: { author: { login: 'harborline-dev', avatarUrl: null } },
+      viewer: 'harborline-dev',
+    });
 
     await openPage();
 
@@ -98,7 +104,7 @@ describe('Branch header on a pull request somebody else wrote', () => {
   });
 
   it('assumes the branch is yours while the signed in person is unknown', async () => {
-    seedQuietRequest({ patch: { author: 'nadia-p' }, viewer: null });
+    seedQuietRequest({ patch: { author: { login: 'nadia-p', avatarUrl: null } }, viewer: null });
 
     await openPage();
 

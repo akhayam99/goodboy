@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { RemoteImageLoaderProvider } from '@goodboy/ui';
 import type { PrComment } from '@goodboy/types';
 import type { CommentThread } from '../../../integrations/github/comment-threads';
@@ -47,8 +47,10 @@ describe('the review thread content', () => {
     );
 
     expect(screen.getByText('harbor-reviewer')).toBeDefined();
-    const avatar = await screen.findByRole('img', { name: 'harbor-reviewer' });
-    expect(avatar.getAttribute('src')).toBe('data:image/png;base64,iVBORw0KGgo=');
+    await waitFor(() => expect(document.querySelector('[data-person] img')).not.toBeNull());
+    const avatar = document.querySelector('[data-person] img');
+    expect(screen.getAllByText('harbor-reviewer')).toHaveLength(1);
+    expect(avatar?.getAttribute('src')).toBe('data:image/png;base64,iVBORw0KGgo=');
     expect(loadAvatar).toHaveBeenCalledWith({ url: 'https://avatars.example/harbor-reviewer.png' });
     expect(screen.getAllByText('3h ago').length).toBeGreaterThan(0);
     expect(screen.getByText('src/retry.ts:84')).toBeDefined();

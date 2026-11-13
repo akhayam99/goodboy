@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { ChevronUp } from 'lucide-react';
-import { Button, HeaderActions, HeaderBand, ICON_SIZE, Notice, Tooltip } from '@goodboy/ui';
+import { Button, HeaderActions, ICON_SIZE, Notice, PaneTitleRow, Tooltip } from '@goodboy/ui';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
@@ -125,7 +125,7 @@ export const BranchHeader = ({
   const primaryVariant = isYielding ? 'secondary' : 'primary';
   return (
     <div className="relative flex min-w-0 flex-col gap-2">
-      <HeaderBand
+      <PaneTitleRow
         title={
           <PullRequestTitle
             title={pr?.title ?? fallbackTitle}

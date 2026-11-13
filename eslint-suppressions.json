@@ -5182,11 +5182,6 @@
       "count": 13
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
@@ -13100,11 +13095,6 @@
   "packages/ui/src/components/AppShell.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 10
-    }
-  },
-  "packages/ui/src/components/Avatar.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "packages/ui/src/components/Band/bandDepth.ts": {

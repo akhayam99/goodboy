@@ -540,6 +540,14 @@ read; a page that draws its own `PageHeader` wraps it in `RevealRegion` (with
 the Terminal, which draws no header band (its tab row is one 40 row with Dock)
 and whose output must never resize, so only its rail reveals
 ([styling.md](../../docs/styling.md#a-header-that-steps-aside-while-you-read)).
+The title band of every page is 48px: 8 above (`PANE_RHYTHM.headerInset`), a
+32px row (`headerRow`) and 8 below (`below.title`, the same for a section page). A
+meta line adds 16 (`headerMeta`), so a band is 40, 48 or 64 and a tab row or a
+toolbar adds 36. `PaneTitleRow` is the only title row and its `h1` the only one at
+`text-title`; a document's own heading is content, not a page title
+(`page-title-row` in `forbidden-patterns.test.ts` holds it at zero, and
+`validate-scenes --only title-band` measures the band on the Board, the session
+overview and the agent transcript).
 `ScrollFade` paints its fade with the `mask-fade-x` and `mask-fade-y` utilities
 and writes its fade sizes only while the content overflows, so a static artifact
 page carries no inline style. The utilities reset both sizes to `0px`, so a
@@ -775,6 +783,12 @@ from `personHueOf`, which hashes the login onto eight hues from 120 to 330
 degrees so a person never reads as danger or warning. One login keeps one hue
 in every surface. The app wires `loadAvatarImage`, which keeps one request per
 address per run.
+
+`Person` (in the app's `shared/components/Person`) is the one chip for a person:
+the picture and the login, `Someone` when the login is missing, said once.
+Three sizes: `xs` at 16 in a meta line, `sm` at 20 in the properties rail, `md`
+at 24 in a timeline row or a comment. A bot is a square glyph tile of the same
+size, never a round picture.
 
 ### Identity palettes
 

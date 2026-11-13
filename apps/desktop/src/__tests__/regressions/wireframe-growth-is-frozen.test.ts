@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESKTOP_SRC, desktopSources, isTestSource } from '../helpers/sourceImports';
 
-const WIREFRAME_LINE_CEILING = 7969;
+const WIREFRAME_LINE_CEILING = 7964;
 
 const wireframeLines = (): number =>
   desktopSources()

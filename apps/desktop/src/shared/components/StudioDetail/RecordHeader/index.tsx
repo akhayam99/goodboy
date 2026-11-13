@@ -3,7 +3,15 @@ import type { ResolvedFact } from '../../../detail-fields/factTypes';
 import { RecordFrameContext } from '../RecordFrameContext';
 import { RecordProperties } from '../RecordProperties';
 import { X } from 'lucide-react';
-import { Button, ICON_SIZE, IconButton, StarToggle, useInheritedPaneActions } from '@goodboy/ui';
+import {
+  Button,
+  ICON_SIZE,
+  IconButton,
+  PaneTitleRow,
+  StarToggle,
+  TruncatedText,
+  useInheritedPaneActions,
+} from '@goodboy/ui';
 import {
   IntegrationGlyph,
   type IntegrationGlyphProvider,
@@ -122,9 +130,9 @@ export const RecordHeader = ({
           />
         ) : null}
       </div>
-      <h1 onContextMenu={menu.onContextMenu} className="text-lead text-foreground">
-        {title}
-      </h1>
+      <div onContextMenu={menu.onContextMenu} className="min-w-0">
+        <PaneTitleRow title={<TruncatedText>{title}</TruncatedText>} />
+      </div>
       {byline == null ? null : (
         <div className="truncate text-ui text-faint-foreground">{byline}</div>
       )}
