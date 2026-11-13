@@ -1,7 +1,11 @@
 import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
 import { browserTabListPref } from '../../../../../../features/browser/browserTabListPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
-import type { BrowserTabFacts, BrowserTabListMode } from '../../../../../../features/browser/types';
+import type {
+  BrowserConsoleRead,
+  BrowserTabFacts,
+  BrowserTabListMode,
+} from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab, DevicePresetId } from '../../../../../../store/slices/browser/types';
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
@@ -26,7 +30,62 @@ export type BrowserPaneSceneState =
   | 'cover'
   | 'saved-copy'
   | 'width-phone'
-  | 'width-tablet';
+  | 'width-tablet'
+  | 'console';
+
+const CONSOLE_READ: BrowserConsoleRead = {
+  doc: 'mockload',
+  isHeard: true,
+  entries: [
+    {
+      seq: 1,
+      kind: 'console',
+      level: 'error',
+      text: 'TypeError: retry is not a function',
+      source: 'checkout.js:214',
+      method: null,
+      status: null,
+    },
+    {
+      seq: 2,
+      kind: 'console',
+      level: 'warn',
+      text: 'Line "Shipping" was rendered twice',
+      source: 'CartLines.tsx:58',
+      method: null,
+      status: null,
+    },
+    {
+      seq: 3,
+      kind: 'console',
+      level: 'info',
+      text: 'payments-api: rates cached for 5 minutes',
+      source: 'rates.ts:31',
+      method: null,
+      status: null,
+    },
+    {
+      seq: 4,
+      kind: 'console',
+      level: 'log',
+      text: 'ledger-core: confirm step mounted',
+      source: 'confirm.ts:12',
+      method: null,
+      status: null,
+    },
+    {
+      seq: 5,
+      kind: 'network',
+      level: 'error',
+      text: '/api/orders/confirm',
+      source: null,
+      method: 'POST',
+      status: 500,
+    },
+  ],
+};
+
+const UNHEARD_READ: BrowserConsoleRead = { doc: null, entries: [], isHeard: false };
 
 const DEVICE_PRESETS_OF: Readonly<
   Partial<Record<BrowserPaneSceneState, Readonly<Record<string, DevicePresetId>>>>
@@ -82,6 +141,20 @@ const fieldOf = ({ payload, field }: FieldParams): unknown => {
 const textOf = ({ payload, field }: FieldParams): string => {
   const value = fieldOf({ payload, field });
   return typeof value === 'string' ? value : '';
+};
+
+type ConsoleReadParams = PayloadParams & {
+  readonly state: BrowserPaneSceneState;
+};
+
+const consoleReadOf = ({ state, payload }: ConsoleReadParams): BrowserConsoleRead => {
+  if (state !== 'console') {
+    return UNHEARD_READ;
+  }
+  if (fieldOf({ payload, field: 'doc' }) === CONSOLE_READ.doc) {
+    return { ...CONSOLE_READ, entries: [] };
+  }
+  return CONSOLE_READ;
 };
 
 const isProjectOwner = ({ payload }: PayloadParams): boolean => {
@@ -243,6 +316,8 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return null;
       case 'browser_find':
         return { isFound: textOf({ payload, field: 'needle' }) === 'retry' };
+      case 'browser_console_read':
+        return consoleReadOf({ state, payload });
       case 'browser_visits_list':
         return VISITS;
       case 'browser_tab_open':

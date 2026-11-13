@@ -1,5 +1,6 @@
-import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, Square, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, Square, Terminal, X } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
+import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
 import { useFindInPage } from '../../hooks/useFindInPage';
@@ -10,10 +11,16 @@ import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
 
+type ConsoleToggle = {
+  readonly isOpen: boolean;
+  readonly onToggle: () => void;
+};
+
 type Props = {
   readonly model: BrowserPaneModel;
   readonly isAddressShortcutOn: boolean;
   readonly isListOpen?: boolean;
+  readonly consoleToggle?: ConsoleToggle;
   readonly onToggleList?: () => void;
   readonly onOpenAsPage?: () => void;
   readonly onClose?: () => void;
@@ -23,6 +30,7 @@ export const BrowserAddressRow = ({
   model,
   isAddressShortcutOn,
   isListOpen = false,
+  consoleToggle,
   onToggleList,
   onOpenAsPage,
   onClose,
@@ -31,6 +39,18 @@ export const BrowserAddressRow = ({
   const field = useCommandField({ model });
   const find = useFindInPage({ model });
   useBrowserKeys({ model, isOn: isAddressShortcutOn, onFind: find.open });
+  useShortcut(
+    'browser.console',
+    () => {
+      if (consoleToggle === undefined || model.shown === null) {
+        return false;
+      }
+      consoleToggle.onToggle();
+      return true;
+    },
+    isAddressShortcutOn && consoleToggle !== undefined,
+    { canDecline: true },
+  );
   return (
     <>
       <div className="relative flex h-9 shrink-0 items-center gap-1 px-2">
@@ -82,6 +102,17 @@ export const BrowserAddressRow = ({
           />
         )}
         <BrowserMoreMenu model={model} onOpenAsPage={onOpenAsPage} />
+        {consoleToggle === undefined ? null : (
+          <IconButton
+            icon={Terminal}
+            label="Console"
+            aria-pressed={consoleToggle.isOpen}
+            shortcut="browser.console"
+            tooltipSide="top"
+            disabled={!canStep}
+            onClick={consoleToggle.onToggle}
+          />
+        )}
         {onClose === undefined ? null : (
           <IconButton icon={X} label="Close" tooltipSide="top" onClick={onClose} />
         )}

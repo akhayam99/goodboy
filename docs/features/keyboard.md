@@ -215,6 +215,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - A terminal with no session sends its links to your own browser.
 - Rest on a localhost link, or on a web address in a terminal, to see where a click goes before you open it.
 - While the browser is on screen, its keys are the ones every browser uses. **⌘L** goes to the address. **⌘T** opens a new tab. **⌘W** closes the shown tab, and with no tab left it closes the browser. **⌘⇧T** reopens the last tab you closed, up to five. **⌘⇧[** and **⌘⇧]** step through the tabs. **⌘D** pins or unpins the shown tab. **⌘⇧S** sends the page to the agent. **⌘F** finds text in the page. Elsewhere these keep their other meaning, so ⌘L stays Ask and ⌘F stays Search.
+- **Console**, the button after More, or **⌘⇧J**, opens the console under the page. **Console** lists what the page logged, with its errors, and **Network** the requests that failed, each with its count. It starts over at every load. **Clear** empties the list you see, and **Send to** the agent puts both lists on the message box as one file you can remove. Nothing is read while the console is closed.
 - The find bar sits under the address row and never covers the page. It says **Found** or **Not found**, and the page highlights the match. **Enter** goes to the next match and **⇧Enter** to the previous one. **Esc** or **Done** clears the highlight and closes the bar.
 - A pin is never closed by **⌘W**. Unpin it first.
 - Click into the page and the page keeps the keys. Click the address row or a tab to give them back.
@@ -241,6 +242,7 @@ This part is for contributors and agents who change the feature.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Send to the agent: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
+- Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserConsole` draws the region and `consoleAttachmentOf` the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
 - Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
 
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.

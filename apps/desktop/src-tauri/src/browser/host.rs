@@ -7,6 +7,7 @@ use tauri::{
     Runtime, Size, Url, Webview, WebviewBuilder, WebviewUrl, Window,
 };
 
+use super::console;
 use super::guard::{self, AppOrigins};
 use super::lifecycle;
 use super::load;
@@ -292,10 +293,9 @@ fn builder_for<R: Runtime>(
     let title_tab = id.to_string();
     let builder = WebviewBuilder::new(guard::label_of(id), WebviewUrl::External(url.clone()));
     #[cfg(target_os = "macos")]
-    let builder = builder
-        .user_agent(TAB_USER_AGENT)
-        .initialization_script_for_all_frames(passkey::WATCH_SCRIPT);
+    let builder = builder.user_agent(TAB_USER_AGENT);
     builder
+        .initialization_script_for_all_frames(console::tab_script())
         .on_navigation(move |target| {
             guard::may_navigate(target, &navigation_origins)
                 || local::may_load(

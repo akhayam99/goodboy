@@ -52,6 +52,7 @@
     "bridge_start",
     "bridge_status",
     "bridge_stop",
+    "browser_console_read",
     "browser_favicon",
     "browser_find",
     "browser_history_state",

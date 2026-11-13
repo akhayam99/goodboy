@@ -64,6 +64,8 @@ const mount = ({ id }: MountParams) => {
 describe('the browser pane scenes', () => {
   it('registers every state in light and dark for the capture', () => {
     expect(Object.keys(BROWSER_PANE_SCENES).sort()).toEqual([
+      'browser-console',
+      'browser-console-dark',
       'browser-handoff',
       'browser-handoff-dark',
       'browser-page',
@@ -119,6 +121,25 @@ describe('the browser pane scenes', () => {
     ).toBe('page');
     within(strip).getByRole('button', { name: 'Staging checkout, pinned' });
     expect(screen.getAllByTestId('pane-toggle-browser')[0]?.getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('opens the console under the page with a row per level and the failed request', async () => {
+    mount({ id: 'browser-console' });
+
+    const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
+    await waitFor(
+      () => expect(region.querySelectorAll('[data-console-level]')).toHaveLength(4),
+      WAIT,
+    );
+    expect(
+      Array.from(region.querySelectorAll('[data-console-level]'), (node) =>
+        node.getAttribute('data-console-level'),
+      ),
+    ).toEqual(['error', 'warn', 'info', 'log']);
+    expect(within(region).getByRole('tab', { name: /Network/ }).textContent).toBe('Network1');
+    expect(screen.getByRole('button', { name: 'Console' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
   });
