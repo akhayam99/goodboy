@@ -16,11 +16,9 @@ const LABEL: Readonly<Record<ActivityFilter, string>> = {
   all: 'All',
   people: 'People',
   bots: 'Bots',
-  pushes: 'Pushes',
-  checks: 'Checks',
 };
 
-const ORDER: ReadonlyArray<ActivityFilter> = ['all', 'people', 'bots', 'pushes', 'checks'];
+const ORDER: ReadonlyArray<ActivityFilter> = ['all', 'people', 'bots'];
 
 type ItemParams = {
   readonly item: ActivityItem;
@@ -39,9 +37,8 @@ const lanesOf = ({ item }: ItemParams): ReadonlyArray<ActivityLane> => {
     case 'comments':
       return item.hasPeople ? ['people'] : [];
     case 'push':
-      return ['pushes'];
     case 'checks':
-      return ['checks'];
+      return [];
     case 'opened':
     case 'edit':
     case 'merged':

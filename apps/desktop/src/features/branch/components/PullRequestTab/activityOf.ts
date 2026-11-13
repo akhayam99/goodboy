@@ -26,6 +26,7 @@ export type ActivityItem =
       readonly who: string | null;
       readonly avatarUrl?: string | null;
       readonly count: number;
+      readonly pushes: number;
       readonly sha: string;
     }
   | {
@@ -62,6 +63,7 @@ export type ActivityItem =
       readonly avatarUrl?: string | null;
       readonly word: string;
       readonly tone: Tone;
+      readonly count: number;
       readonly notes: ReadonlyArray<string>;
     }
   | { readonly kind: 'edit'; readonly key: string; readonly at: string; readonly what: string }
@@ -155,6 +157,7 @@ const pushesOf = ({
     who: group.who,
     avatarUrl: group.avatarUrl,
     count: group.count,
+    pushes: 1,
     sha: group.sha.slice(0, SHORT_SHA),
   }));
 };

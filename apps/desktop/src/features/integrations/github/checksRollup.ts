@@ -117,3 +117,29 @@ export const checksWordOf = ({ runs }: WordParams): string | null => {
   }
   return counts.skipped > 0 ? `${counts.skipped} skipped` : null;
 };
+
+export type ChecksSummary = {
+  readonly total: number;
+  readonly passed: number;
+  readonly failing: number;
+  readonly running: number;
+  readonly line: string;
+  readonly failingNames: ReadonlyArray<string>;
+};
+
+export const checksSummaryOf = ({ runs }: WordParams): ChecksSummary | null => {
+  if (runs === null || runs.length === 0) {
+    return null;
+  }
+  const counts = checksCountsOf({ checks: runs });
+  const passed = counts.passed + counts.skipped;
+  const failing = checksGroupsOf({ checks: runs }).find((group) => group.group === 'failing');
+  return {
+    total: runs.length,
+    passed,
+    failing: counts.failing,
+    running: counts.running,
+    line: `${passed} of ${runs.length} passed`,
+    failingNames: failing?.runs.map((run) => run.name) ?? [],
+  };
+};

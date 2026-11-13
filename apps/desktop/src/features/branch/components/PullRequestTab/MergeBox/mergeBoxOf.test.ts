@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrCheckRun, PullRequestReviewer } from '@goodboy/types';
 import { bitbucketReviewDecisionOf, gitlabReviewDecisionOf } from '@goodboy/core/review-source';
 import type { PullRequestPresentationState } from '../../../../../shared/utils/pullRequestPresentation';
-import { checksCountsOf } from '../../../../integrations/github/checksRollup';
+import { checksCountsOf, checksSummaryOf } from '../../../../integrations/github/checksRollup';
 import {
   evaluatePrMergeReadiness,
   type MergeReadinessFacts,
@@ -162,6 +162,12 @@ const linesOf = ({ box }: LinesParams): ReadonlyArray<string> =>
   box.rows.map((row) => `${row.title} (${row.tone})`);
 
 describe('mergeBoxOf', () => {
+  it('says the passed checks with the same line as the rail', () => {
+    const box = boxOf({ runs: PASSING });
+
+    expect(box.passing[0]).toBe(checksSummaryOf({ runs: PASSING })?.line);
+  });
+
   it('waits for a review nobody was asked for, with what passes folded apart', () => {
     const box = boxOf({});
 
@@ -172,7 +178,7 @@ describe('mergeBoxOf', () => {
     });
     expect(linesOf({ box })).toEqual(['No approval yet (info)']);
     expect(box.rows[0]).toMatchObject({ detail: 'Nobody asked yet', opens: 'reviewers' });
-    expect(box.passing).toEqual(['2 checks passed', 'No conflicts', 'Up to date with main']);
+    expect(box.passing).toEqual(['2 of 2 passed', 'No conflicts', 'Up to date with main']);
   });
 
   it('opens Comments instead of the picker when the host cannot ask for a review', () => {
@@ -339,7 +345,7 @@ describe('mergeBoxOf', () => {
       tone: 'success',
     });
     expect(box.passing).toEqual([
-      '2 checks passed',
+      '2 of 2 passed',
       'No conflicts',
       'Approved by kenji-w',
       'Up to date with main',

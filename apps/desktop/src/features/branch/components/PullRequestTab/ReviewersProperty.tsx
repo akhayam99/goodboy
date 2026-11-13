@@ -1,13 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { PullRequestPort } from '@goodboy/core/review-source';
-import { Avatar, EmptyLine, formatError, ICON_SIZE, IconButton, Skeleton } from '@goodboy/ui';
+import { Avatar, cn, EmptyLine, formatError, IconButton, Skeleton } from '@goodboy/ui';
 import type { MountId, PullRequestReviewer, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 import { ReviewerPicker } from '../../../../shared/components/ReviewerPicker';
 import { REVIEWER_STATE_WORD } from './reviewerStateWord';
-import { ReviewStateIcon } from './ReviewStateIcon';
+import { REVIEWER_STATE_TEXT } from './reviewerStateTone';
+import { PROPERTY_ROW } from './propertyRow';
 import { PropertyField } from './PropertyField';
 
 export type ReviewerRequest =
@@ -90,12 +91,13 @@ export const ReviewersProperty = ({
             <li
               key={reviewer.person.login}
               data-reviewer-state={reviewer.state}
-              className="flex min-h-7 min-w-0 items-center gap-2 text-meta"
+              className={PROPERTY_ROW}
             >
-              <Avatar url={reviewer.person.avatarUrl} alt={reviewer.person.login} size="xs" />
-              <span className="min-w-0 truncate text-foreground">{reviewer.person.login}</span>
-              <span className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
-                <ReviewStateIcon state={reviewer.state} size={ICON_SIZE.row} />
+              <Avatar url={reviewer.person.avatarUrl} alt={reviewer.person.login} size="sm" />
+              <span className="min-w-0 flex-1 truncate text-foreground">
+                {reviewer.person.login}
+              </span>
+              <span className={cn('shrink-0 text-meta', REVIEWER_STATE_TEXT[reviewer.state])}>
                 {REVIEWER_STATE_WORD[reviewer.state]}
               </span>
             </li>

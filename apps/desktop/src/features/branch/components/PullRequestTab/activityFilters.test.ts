@@ -6,7 +6,7 @@ const AT = '2026-10-01T10:00:00Z';
 
 const ITEMS: ReadonlyArray<ActivityItem> = [
   { kind: 'opened', key: 'opened', at: AT, who: 'nadia-p', isDraft: false },
-  { kind: 'push', key: 'push:1', at: AT, who: 'nadia-p', count: 3, sha: 'a41c9e2' },
+  { kind: 'push', key: 'push:1', at: AT, who: 'nadia-p', count: 3, pushes: 1, sha: 'a41c9e2' },
   {
     kind: 'review',
     key: 'review:1',
@@ -31,6 +31,7 @@ const ITEMS: ReadonlyArray<ActivityItem> = [
     who: 'acme-review',
     word: 'Commented',
     tone: 'neutral',
+    count: 1,
     notes: [],
   },
   {
@@ -156,9 +157,14 @@ describe('activityItemsFor', () => {
     ]);
   });
 
-  it('keeps the pushes and the checks apart', () => {
-    expect(keysOf(activityItemsFor({ items: ITEMS, filter: 'pushes' }))).toEqual(['push:1']);
-    expect(keysOf(activityItemsFor({ items: ITEMS, filter: 'checks' }))).toEqual(['checks']);
+  it('shows the pushes and the checks only under All', () => {
+    const lanes = ['people', 'bots'] as const;
+    for (const filter of lanes) {
+      const keys = keysOf(activityItemsFor({ items: ITEMS, filter }));
+      expect(keys).not.toContain('push:1');
+      expect(keys).not.toContain('checks');
+    }
+    expect(keysOf(activityItemsFor({ items: ITEMS, filter: 'all' }))).toContain('push:1');
   });
 });
 
@@ -170,8 +176,6 @@ describe('activityFilterOptionsOf', () => {
       ['all', 6],
       ['people', 2],
       ['bots', 2],
-      ['pushes', 1],
-      ['checks', 1],
     ]);
     for (const option of options) {
       expect(option.count).toBe(activityItemsFor({ items: ITEMS, filter: option.value }).length);
@@ -181,6 +185,6 @@ describe('activityFilterOptionsOf', () => {
   it('drops a filter with nothing in it', () => {
     const options = activityFilterOptionsOf({ items: ITEMS.slice(0, 2) });
 
-    expect(options.map((option) => option.value)).toEqual(['all', 'people', 'pushes']);
+    expect(options.map((option) => option.value)).toEqual(['all', 'people']);
   });
 });
