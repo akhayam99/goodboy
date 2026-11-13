@@ -11,14 +11,18 @@ const { openSpy, revealSpy, locateSpy } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../artifactMirror/artifactMirrorInvoke', () => ({
-  openArtifactMirror: (args: unknown) => openSpy(args),
   revealArtifactMirror: (args: unknown) => revealSpy(args),
   locateArtifactMirror: (args: unknown) => locateSpy(args),
+}));
+
+vi.mock('../../artifactActionRuns', () => ({
+  openArtifactCopy: (args: unknown) => openSpy(args),
 }));
 
 import { useAppStore } from '../../../../store';
 import { useArtifactSavedCopy } from './index';
 
+const COMMAND = { metaKey: true, ctrlKey: false };
 const sessionId = 'session-1' as SessionId;
 const workspaceId = 'workspace-1' as WorkspaceId;
 
@@ -51,17 +55,17 @@ describe('useArtifactSavedCopy', () => {
     });
   });
 
-  it('opens the mirror index file in the default browser', async () => {
+  it('opens the saved copy with the click it was pressed with', async () => {
     const { result } = renderHook(() => useArtifactSavedCopy({ sessionId, artifact }));
     await waitFor(() => {
       expect(result.current.location?.exists).toBe(true);
     });
-    result.current.openInBrowser();
+    result.current.openInBrowser({ event: COMMAND });
     await waitFor(() => {
       expect(openSpy).toHaveBeenCalledWith({
+        artifact,
         workspaceSlug: 'harborline',
-        folder: expect.stringContaining('rounding-drift'),
-        file: 'index.html',
+        event: COMMAND,
       });
     });
   });
@@ -69,7 +73,7 @@ describe('useArtifactSavedCopy', () => {
   it('surfaces a failure to open instead of throwing', async () => {
     openSpy.mockRejectedValueOnce(new Error('the file is not on disk yet'));
     const { result } = renderHook(() => useArtifactSavedCopy({ sessionId, artifact }));
-    result.current.openInBrowser();
+    result.current.openInBrowser({ event: COMMAND });
     await waitFor(() => {
       expect(result.current.error).toBe('the file is not on disk yet');
     });

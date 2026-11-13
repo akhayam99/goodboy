@@ -68,12 +68,23 @@ export const revealArtifactMirror = async ({
 }: FolderParams): Promise<void> =>
   invokeCommand<void>('artifact_mirror_reveal', { workspaceSlug, folder });
 
+type FileParams = FolderParams & {
+  readonly file: string;
+};
+
 export const openArtifactMirror = async ({
   workspaceSlug,
   folder,
   file,
-}: FolderParams & { readonly file: string }): Promise<void> =>
+}: FileParams): Promise<void> =>
   invokeCommand<void>('artifact_mirror_open', { workspaceSlug, folder, file });
+
+export const artifactMirrorPath = async ({
+  workspaceSlug,
+  folder,
+  file,
+}: FileParams): Promise<string> =>
+  invokeCommand<string>('artifact_mirror_path', { workspaceSlug, folder, file });
 
 export const openArtifactsFolder = async ({
   workspaceSlug,

@@ -28,6 +28,8 @@ export const BROWSER_PANE_SCENES: Readonly<Record<string, ComponentType>> = {
   'browser-pane-find-dark': () => <BrowserPaneScene state="find" theme="dark" />,
   'browser-pane-find-missing': () => <BrowserPaneScene state="find-missing" theme="light" />,
   'browser-pane-find-missing-dark': () => <BrowserPaneScene state="find-missing" theme="dark" />,
+  'browser-pane-saved-copy': () => <BrowserPaneScene state="saved-copy" theme="light" />,
+  'browser-pane-saved-copy-dark': () => <BrowserPaneScene state="saved-copy" theme="dark" />,
   'browser-peek': () => <BrowserPaneScene state="peek" theme="light" />,
   'browser-peek-dark': () => <BrowserPaneScene state="peek" theme="dark" />,
 };

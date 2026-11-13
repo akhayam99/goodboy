@@ -65,7 +65,9 @@ commands, and got all six once it navigated itself to the dev origin or to
 
 Only an address the user types opens a local file: the address row, ⌘L, or
 ⌘K Open. It is an absolute path (a drive path such as `C:\work\plan.html` on
-Windows), a `~/` path or a `file://` address, to a page, an image or a PDF. A link, a door, a page, a popup or a frame never
+Windows), a `~/` path or a `file://` address, to a page, an image or a PDF. The one
+other way in is the saved copy of a plan or a report, which the app opens itself
+through [the click rule](#the-click-rule). A link, a door, a page, a popup or a frame never
 opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
 
 - **The scheme.** The file is served by Rust on `gblocal`
@@ -607,18 +609,12 @@ sits in and the address, and one function opens it (`openInBrowser`).
   integration, sign-in or connect guide in a drawer, opens your browser as
   before, and so does a link outside a session. A GitHub commit link still
   opens its diff. Chips and rows need only `data-browser-session`.
-- **The click rule**: one function, `openWebLink`, decides every plain web
-  link click, on chips, session links, a Service's port and a terminal's
-  printed addresses alike. ⌘-click (Ctrl-click off macOS) always opens your
-  browser. Otherwise the Links setting (`links.open`, Settings › General ›
-  Open with) decides: `goodboy`, the default, opens beside the session, and
-  `browser` opens your browser. A door with no session opens your browser
-  whatever the setting says. The click's modifier is read when the click
-  lands, and the setting is read before the open starts; a setting that
-  cannot be read counts as the default and reports a warning. The ⌘-click
-  listener runs after the page's own handlers and skips a click they already
-  handled, so an anchor with its own `onClick` opens your browser once.
-  ⌘-click on a file path in a terminal still opens your editor.
+- **The click rule**: see [The click rule](#the-click-rule). Chips, session
+  links, a Service's port and a terminal's printed addresses all call
+  `openWebLink`, which hands the address to it. The ⌘-click listener runs
+  after the page's own handlers and skips a click they already handled, so
+  an anchor with its own `onClick` opens your browser once. ⌘-click on a
+  file path in a terminal still opens your editor.
 - **Terminal links**: `GenericTerminalPanel` hands a printed web link and its
   click event to `onOpenWebLink`; with no prop it keeps opening your browser,
   as the provider's inline terminal does. The terminal pane passes the
@@ -626,7 +622,7 @@ sits in and the address, and one function opens it (`openInBrowser`).
 - **Peek**: resting on or focusing a `localhost` link in a session, or
   resting on any web address in a terminal, shows a card with the title of
   its tab (or the host), the address and what a click does, in the words of
-  `webLinkPeekWords.ts`, which read the same place `openWebLink` picks. The card
+  `webLinkPeekWords.ts`, which read the same place `openPlaceOf` picks. The card
   never creates a tab, because every tab is a whole webview.
 - **The keymap** is eight entries in `shared/keyboard/browserShortcuts.ts`, all
   `scope: 'browser'`, registered by `useBrowserKeys` while the pane or the
@@ -674,6 +670,41 @@ sits in and the address, and one function opens it (`openInBrowser`).
   reads `In your browser` and opens your browser. A file name such as
   `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
   (`typedAddressOf`).
+
+## The click rule
+
+One function, `openTarget` in `features/open/`, decides where a target
+opens. A target is a web address or a saved copy (a plan or a report as a
+page on disk). Files and folders join it later.
+
+- **Beside the session or outside.** A plain click on a web address, a plan
+  or a report opens a tab beside the session when Links says **In Goodboy**,
+  the default, and opens your browser when Links says **In your browser**.
+  ⌘-click (Ctrl-click off macOS) always opens your browser. With no session
+  to open it beside, it opens your browser whatever Links says, and the Links
+  help text says "in a session". A wireframe always opens your browser: it is
+  agent-written HTML with scripts, and it waits for the wall audit before it
+  opens in a tab.
+- **One decision.** `openPlaceOf` is the pure answer: the kind of target,
+  Links, the command key and the session. `webLinkPeekWords.ts` reads the same
+  answer for the peek card. `openWebLink` is a thin caller for a web address;
+  a saved copy goes through `openSavedCopy`.
+- **Saved copies.** Beside the session, Rust returns the path of the copy
+  (`artifact_mirror_path`, which keeps `refuse_executable` and the plain
+  `.html` rule) and the page opens as a local tab (`openBeside`, kind
+  `local`). Rust launches nothing for it. Outside, `artifact_mirror_open`
+  launches the page with the Browser app you chose in Settings.
+- **Reads once, at the click.** The target and the session are captured at
+  the click, before the Links read; the command key is read at the same
+  moment. A setting that cannot be read counts as the default and reports a
+  warning. A late open for a session you left lands in the session of the
+  click, never in the current one, and a second window opens in its own.
+- **A failure is said once.** The tab is added after the open resolves, and
+  nothing is marked opened before. A failed open reports through
+  `reportError` with the target named. A caller that shows the reason in
+  place (the saved copy line, the wireframe note, an action's run line) opens
+  through `openTargetOrThrow` and reports nothing itself, so a failure never
+  shows twice. Retry is the click; there is no undo, close the tab.
 
 ## Performance
 
@@ -930,9 +961,12 @@ words (`features/browser/browserFailureText.ts`).
   `store/slices/browser-host/` holds the loads by live tab id and the icons by
   origin.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
-  `openWebLink.ts` is the click rule (`webLinkPlace.ts` is its pure answer,
+  `features/open/openTarget.ts` is the click rule (`openPlaceOf.ts` is its
+  pure answer, `readLinksOpen.ts` reads the setting once,
   `isOwnBrowserClick.ts` reads the modifier, `shared/lib/linksOpenOf.ts` and
-  `linksOpenSetting.ts` read and name the setting), `sessionOfElement.ts`
+  `linksOpenSetting.ts` name the setting, `openWebLink.ts` and
+  `openSavedCopy.ts` are its callers, `openTargetOrThrow.ts` is the one for
+  callers that show the reason in place), `sessionOfElement.ts`
   reads `data-browser-session`, `claimSessionLink.ts` takes a link from the
   shared interceptor (`useCommitLinkInterceptor`), `hooks/useOwnBrowserLinkClicks`
   takes ⌘-click and `components/BrowserLinkDoors` draws the peek through
@@ -945,7 +979,12 @@ words (`features/browser/browserFailureText.ts`).
   session, the peek, the Links setting set to your browser on a chip, a link
   and the peek, ⌘L beside Ask and the ⌘K entries. `openWebLink.test.ts` pins
   ⌘-click over the setting, `goodboy` with and without a session and
-  `browser`; `webLinkPeekWords.test.ts` pins the peek words against the place;
+  `browser`; `features/open/openPlaceOf.test.ts` pins the place for each kind
+  of target by Links by command key by session, and
+  `features/open/openTarget.test.ts` pins a report opening as a local tab with
+  nothing launched outside, a refused path keeping the page and returning the
+  reason, a wireframe staying outside, and a late open landing in the session
+  of the click; `webLinkPeekWords.test.ts` pins the peek words;
   `GenericTerminalPanel/webLinks.test.tsx` pins that the addon's click reaches
   `onOpenWebLink` with its event and that a hover reports the row;
   `LinksOpenField/index.test.tsx` pins the row reading, saving and keeping the
