@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { PAGE_MEASURE, type FramePage } from '@goodboy/ui';
+import { PAGE_MEASURE, PANE_RHYTHM, type FramePage } from '@goodboy/ui';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -73,7 +73,6 @@ const DOOR_SCENES: ReadonlyArray<readonly [string, FramePage]> = [
   ['r4-layout-tasks', 'inbox'],
   ['r4-layout-chat', 'chat'],
   ['r4-layout-workflows', 'workflows'],
-  ['r4-layout-terminal', 'terminal'],
   ['r4-layout-monitoring', 'monitoring'],
   ['r4-layout-settings', 'settings'],
 ];
@@ -98,7 +97,7 @@ describe('r4 layout scenes', () => {
     const header = pageHeaderOf(container);
     expect(header.getAttribute('data-page')).toBe(page);
     const isUnderTrail = header.hasAttribute('data-under-trail');
-    expect(header.className.split(' ').includes('pt-3')).toBe(!isUnderTrail);
+    expect(header.className.split(' ').includes(PANE_RHYTHM.headerInset)).toBe(!isUnderTrail);
     const column = header.closest('[data-page-column]');
     if (page === 'board') {
       expect(column).toBeNull();
@@ -127,14 +126,15 @@ describe('r4 layout scenes', () => {
     );
   });
 
-  it('puts the Terminal empty state on the title edge, not the panel edge', async () => {
+  it('puts the Terminal empty state on the terminal measure, with no title band', async () => {
     const container = await mount('r4-layout-terminal');
 
     const empty = screen.getByRole('heading', { name: 'No terminal yet' });
-    const header = pageHeaderOf(container);
     expect(empty.closest('[data-page-column]')?.getAttribute('data-width')).toBe(
-      header.closest('[data-page-column]')?.getAttribute('data-width'),
+      PAGE_MEASURE.terminal,
     );
+    const region = screen.getByRole('region', { name: 'Terminal' });
+    expect(region.querySelector('h1, [data-page-header]')).toBeNull();
   });
 
   it.each(LOADING_SCENES)('%s loads on its own page skeleton', async (name, page, shape) => {
@@ -143,7 +143,9 @@ describe('r4 layout scenes', () => {
     expect(container.querySelector(`[data-studio-skeleton="${shape}"]`)).not.toBeNull();
     const skeleton = container.querySelector(`[data-page-skeleton="${page}"]`);
     expect(skeleton).not.toBeNull();
-    expect(skeleton?.querySelector('[data-page-header]')?.className.split(' ')).toContain('pt-3');
+    expect(skeleton?.querySelector('[data-page-header]')?.className.split(' ')).toContain(
+      PANE_RHYTHM.headerInset,
+    );
   });
 
   it.each(Object.keys(U25_R4_LAYOUT_SCENES))('%s passes the a11y check', async (name) => {

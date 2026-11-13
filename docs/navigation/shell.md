@@ -153,17 +153,36 @@ never exists on one surface only.
   palette ignore `slot` and list every available action.
   `useActionControls` renders those controls with the pending words on the
   control, the blocked reason on the line under the header and a failure with
-  Retry under the control. A button reads `pendingId` through
-  `actionButtonStateOf` (busy, `pendingLabel` while it runs, disabled), and a
-  run ignores a press while another run is in flight. An action that mutates
-  defines `pendingLabel` and `doneLabel`; when it finishes `ActionStatusLine`
-  shows the `doneLabel` sentence with a dismiss button until the next action,
-  and a run that returns `'unchanged'` (a rebase that stopped or went to the
-  history rewriter) shows no sentence. `kinds/mutationFeedback.test.ts` fails
-  a new async diff or pull request action that lacks either word. `__tests__/actions/stateMatrix.test.ts` pins, per
-  kind and per state, which verbs show, in which slot, and why a verb is
-  blocked, and runs them on the real store; `kinds/*.matrix.test.ts` pins the
-  same for the three UX5 kinds against the plan's state table.
+  Retry under the control. Its runs live in the `action-runs` slice
+  (`store/slices/action-runs/`), one run per target: `actionRunKeyOf` names a
+  pull request by session and mount and a diff by session and worktree, so the
+  Branch header and every other surface on that target share one busy mark,
+  refuse a second press while it runs and show the same result line, even
+  after the surface that started it unmounts. Every mounted controls hook is
+  a surface of its key: a settled run is dropped when the last surface
+  unmounts and when its session is deleted, and a failure that settles with
+  no surface left is logged unread, because the check runs when the write
+  fails. A pending run older than ten minutes is reset when a surface mounts
+  again. Another kind keeps a run per hook instance, dropped on unmount. A
+  confirm that meets a run another surface started in between stays open.
+  The Branch overflow menu runs close and convert to draft through the same
+  controls. A button reads `pendingId` through
+  `actionButtonStateOf` (busy, `pendingLabel` while it runs, the elapsed
+  seconds after three, disabled). An action that mutates defines
+  `pendingLabel` and `doneLabel`; when it finishes `ActionRunLine` (under
+  `ActionStatusLine`) shows the `doneLabel` sentence with a dismiss button
+  until the next action, and a run that returns `'unchanged'` (a rebase that
+  stopped or went to the history rewriter) shows no sentence. The controls set
+  `isOutcomeShown` and `hasRunSurface` on the action env, so a pull request
+  write that fails while a surface is mounted is logged as a read row with no
+  toast, and Merge and Mark ready skip their toast; the palette, which has no
+  line, keeps them. The Mark ready done line keeps a Follow button to the
+  pull request tab (`doneTo` on the action) while that tab is not open.
+  `kinds/mutationFeedback.test.ts` fails a new async diff or pull request
+  action that lacks either word. `__tests__/actions/stateMatrix.test.ts`
+  pins, per kind and per state, which verbs show, in which slot, and why a
+  verb is blocked, and runs them on the real store; `kinds/*.matrix.test.ts`
+  pins the same for the three UX5 kinds against the plan's state table.
 - **Preview, tint and held rows.** A verb may carry a `preview` (a role
   today): a menu that is given `onPreview` calls it with the descriptor while
   the row is hovered or focused and with `null` when it leaves or the menu
@@ -823,10 +842,24 @@ Agents, headed "Welcome to Goodboy" with the one sentence and the trust line,
 and agent detection starts there. The boot splash is the tile, the name, a 160 px
 determinate bar and the phase word on that same backdrop. The bar moves one
 sixth per real `bootPhase` write (`BOOT_PHASE_ORDER`, `bootProgressPercent`),
-never on a timer, and jumps under reduced motion. On `ready` the bar fills for
-200 ms, then `App` mounts the app or the setup underneath and `BootSplashExit`
-crossfades the splash out over 200 ms on top of it (same `BootStage`, so the tile
-does not move); reduced motion skips both waits. The window opens hidden and
+never on a timer, and jumps under reduced motion. Settings, agent credentials and
+workspaces load together, so the phase word moves to the first of the three still
+loading and never steps back. The app shows before its data: once the launch
+knows which workspace it opens, `showLaunchShell` sets `isShellReady` with that
+workspace current and `boardReady` false, and `App` mounts the real top bar, the
+sidebar (doors, then `SessionRowsSkeleton` in place of the rows), the Board
+(`BoardSkeleton` lanes) and the tool rail, so the palette and the workspace switch
+already work. The rows and the cards replace their skeletons in the one commit
+that sets `boardReady`; no session empty state ("No sessions yet", "Add a folder
+first") draws before it (`empty-before-loaded.test.ts`). The last session then
+opens in place and its parts swap from their own skeletons; the idle loads come
+last. A launch with no workspace to open mounts the launcher or the setup on
+`ready`, as before. A failed launch, before or after the shell shows, puts the
+launch error screen back (`AppBootSplash`, on `bootPhase === 'error'`), and Retry
+hides the shell until the next workspace is known. The `boot-shell` scenes show
+the three states. `BootSplashExit` crossfades the splash out over 200 ms on
+top of the shell (same `BootStage`, so the tile does not move); there is no fixed
+wait, and reduced motion removes the splash at once. The window opens hidden and
 `useRevealWindow` shows it after the first paint (Rust shows it after 3 s if the
 page never does), so a light theme never flashes dark. Before React, `index.html`
 paints the same chrome, 6% backdrop and tile in both themes, and the native
@@ -991,3 +1024,13 @@ second layer the window class (`src-tauri/src/fullscreen_escape.rs`) replaces
 `cancelOperation:`, `keyDown:` and `toggleFullScreen:`, keeping any original
 implementation for other keys, and drops an Esc in full screen. Leave full
 screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
+
+**A number that has not loaded is a skeleton, never 0.** The Browser tool count
+in the rail (`selectBrowserTabCount` is `null` until the tab rows land), and the
+agent count and cost in the session hover card (`useSessionSummary` returns
+`null` and `isCountsLoading` until the phase runs and the telemetry are in the
+store) draw a skeleton labelled Loading. The palette (`PaletteSkeleton`), a lazy
+studio (`StudioSkeleton`) and the artifact viewer in the reading drawer
+(`ArtifactSkeleton`) show their shape while their chunk loads. The router keeps
+`fallback={null}` only around the onboarding wizard, which draws nothing when it
+is not needed.

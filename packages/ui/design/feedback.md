@@ -87,9 +87,25 @@ and answers again when the work ends. The product rules live in
   click is the retry. A form the user is still looking at keeps its error next
   to its footer instead, as DESIGN.md says. Never a toast, an inline banner and
   a suggestion for the same outcome.
+- **A result line is the one channel.** A control that keeps its result in
+  place shows it with `ActionRunLine`
+  (`apps/desktop/src/shared/components/ActionRunLine.tsx`): a
+  `role="status"` done line with Dismiss, or a danger `Notice` with the reason
+  and Retry. Its failure is still logged, as a read row with no toast while a
+  surface of the run is mounted and as an unread row when none is left, and
+  its success never toasts. A done line may keep a Follow button when the
+  toast it replaced navigated. A slow run adds its elapsed seconds to the
+  busy word after three seconds.
+
+The registry buttons run through the `action-runs` slice
+(`apps/desktop/src/store/slices/action-runs`): `runAction({ key, actionId,
+choice, task })` claims the target key, refuses a second claim while one is
+pending, and applies the result only while its token is current, so every
+surface on one target shows the same busy mark and the same line.
+`useActionControls` is its client.
 
 `usePendingAction` (`apps/desktop/src/shared/hooks/usePendingAction`) is the
-one runner: `run({ key, failureTitle, task })` keeps `key` in `pendingKeys`
+runner for a control with no result line: `run({ key, failureTitle, task })` keeps `key` in `pendingKeys`
 until `task` settles, drops a second run of the same key, reports a thrown
 error once through `reportError` and resolves to whether it worked. A store
 action that already logged its failure throws `ReportedError`, and a turn error

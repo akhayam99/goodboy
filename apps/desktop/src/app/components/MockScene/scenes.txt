@@ -1,3 +1,11 @@
+action-run-busy
+action-run-busy-light
+action-run-done
+action-run-done-light
+action-run-failed
+action-run-failed-light
+action-run-idle
+action-run-idle-light
 activity
 activity-check-chain
 activity-check-fixed-local
@@ -72,6 +80,9 @@ board-shell
 board-stacked
 board-states
 board-wide
+boot-shell
+boot-shell-session
+boot-shell-sessions
 branch-checks
 branch-checks-analyze-failing
 branch-checks-analyzed
@@ -118,6 +129,7 @@ branch-pr-gitlab
 branch-pr-gitlab-denied
 branch-pr-gitlab-merge
 branch-pr-gitlab-none
+branch-pr-media
 branch-pr-merge-blocked
 branch-pr-merge-methods
 branch-pr-merged
@@ -157,6 +169,10 @@ brand-security-findings
 brand-slack
 brand-storage
 brand-tools
+browser-console
+browser-console-dark
+browser-handoff
+browser-handoff-dark
 browser-page
 browser-page-dark
 browser-pane
@@ -181,10 +197,14 @@ browser-pane-passkey
 browser-pane-passkey-dark
 browser-pane-rail
 browser-pane-rail-dark
+browser-pane-saved-copy
+browser-pane-saved-copy-dark
 browser-pane-tabs
 browser-pane-tabs-dark
 browser-peek
 browser-peek-dark
+browser-width-phone
+browser-width-tablet
 c01-grid-dots
 c01-grid-groups
 c01-grid-list
@@ -238,6 +258,7 @@ c05-overview-merged-group
 c05-overview-merged-next
 c05-overview-notices
 c05-overview-running
+c05-overview-running-loading
 c06-agent-delegating
 c06-agent-failed
 c06-agent-finished
@@ -309,6 +330,9 @@ c12-issue-full
 c12-issue-github
 c12-issue-pane
 c12-issue-sentry
+c12-mr-gitlab
+c12-pr-bitbucket
+c12-pr-github
 c12-tasks-all
 c12-tasks-expanded
 c12-tasks-filter

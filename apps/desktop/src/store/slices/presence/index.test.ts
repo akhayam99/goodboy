@@ -33,7 +33,7 @@ type FakeState = {
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   agentTurnState: Record<string, TurnState>;
   orchestratingWorkflowRuns: Record<string, boolean>;
-  setCurrentWorkspace: (id: WorkspaceId | null) => Promise<void>;
+  setCurrentWorkspace: (params: { id: WorkspaceId | null }) => Promise<void>;
   switchWorkspaceHere: (params: { id: WorkspaceId; title: string }) => Promise<void>;
 };
 
@@ -148,7 +148,7 @@ describe('presence slice', () => {
     const setCurrentWorkspace = vi.fn(async () => undefined);
     const { slice } = harness({ currentWorkspaceId: null, setCurrentWorkspace });
     const result = await slice.openWorkspace({ id: wsA, title: 'A' });
-    expect(setCurrentWorkspace).toHaveBeenCalledWith(wsA);
+    expect(setCurrentWorkspace).toHaveBeenCalledWith({ id: wsA });
     expect(spawnWorkspaceWindow).not.toHaveBeenCalled();
     expect(result).toEqual({ kind: 'opened' });
   });
@@ -165,7 +165,7 @@ describe('presence slice', () => {
     const setCurrentWorkspace = vi.fn(async () => undefined);
     const { slice } = harness({ currentWorkspaceId: wsA, sessions: [], setCurrentWorkspace });
     const result = await slice.openWorkspace({ id: wsB, title: 'B' });
-    expect(setCurrentWorkspace).toHaveBeenCalledWith(wsB);
+    expect(setCurrentWorkspace).toHaveBeenCalledWith({ id: wsB });
     expect(spawnWorkspaceWindow).not.toHaveBeenCalled();
     expect(result).toEqual({ kind: 'opened' });
   });
@@ -232,7 +232,7 @@ describe('presence slice', () => {
     const setCurrentWorkspace = vi.fn(async () => undefined);
     const { slice } = harness({ sessions: [runningSession()], setCurrentWorkspace });
     await slice.switchWorkspaceHere({ id: wsB, title: 'B' });
-    expect(setCurrentWorkspace).toHaveBeenCalledWith(wsB);
+    expect(setCurrentWorkspace).toHaveBeenCalledWith({ id: wsB });
   });
 
   it('keeps the window title when the switch was refused', async () => {
@@ -279,7 +279,7 @@ describe('presence slice across two windows', () => {
       run: () => windows.second.slice.openWorkspace({ id: wsA, title: 'A' }),
     });
     expect(focusWindow).not.toHaveBeenCalled();
-    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith(wsA);
+    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith({ id: wsA });
     expect(result).toEqual({ kind: 'opened' });
   });
 
@@ -294,7 +294,7 @@ describe('presence slice across two windows', () => {
       run: () => windows.second.slice.openWorkspace({ id: wsA, title: 'A' }),
     });
     expect(focusWindow).not.toHaveBeenCalled();
-    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith(wsA);
+    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith({ id: wsA });
   });
 
   it('a closing event for a window B never heard of leaves the map unchanged', () => {
@@ -315,7 +315,7 @@ describe('presence slice across two windows', () => {
       run: () => windows.second.slice.openWorkspace({ id: wsA, title: 'A' }),
     });
     expect(focusWindow).toHaveBeenCalledWith('main');
-    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith(wsA);
+    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith({ id: wsA });
     expect(result).toEqual({ kind: 'opened' });
   });
 

@@ -4,4 +4,6 @@ pub(crate) mod key_monitor;
 pub(crate) mod passkey_handler;
 pub(crate) mod web_history;
 pub(crate) mod web_inspect;
+pub(crate) mod web_text;
 pub(crate) mod web_url;
+pub(crate) mod web_user_agent;

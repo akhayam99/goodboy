@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { copyToClipboard } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLinkOrThrow } from '../../../open/openLinkOrThrow';
 import { addressOf } from '../../addressOf';
 import { addressTextOf } from '../../addressTextOf';
 import { browserFailureText } from '../../browserFailureText';
@@ -23,7 +24,10 @@ import { useHistoryState } from '../useHistoryState';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
+import { useSendPageToAgent } from '../useSendPageToAgent';
 import { useTabLoad } from '../useTabLoad';
+import { useDeviceAgent } from '../useDeviceAgent';
+import { useBrowserWorkspaceTabs } from '../../../../shared/hooks/useBrowserWorkspaceTabs';
 import { useTabStates } from '../useTabStates';
 
 type Params = {
@@ -48,6 +52,10 @@ type StepParams = {
 
 type CommandParams = {
   readonly command: (params: HostTabParams) => Promise<unknown>;
+};
+
+type TitleParams = {
+  readonly tab: BrowserTab;
 };
 
 type DoneParams = {
@@ -87,8 +95,14 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const { states, reconcile } = useTabStates();
+  const isOnScreen = useAppStore((state) => selectDrawerPanel(state)?.kind === 'browser');
+  const hasAwakeTab = Object.values(live ?? {}).some((liveId) => {
+    const state = states.get(liveId);
+    return state !== 'asleep' && state !== 'closed';
+  });
   const { facts, refresh } = useLiveTabFacts({
     sessionId,
+    isWatching: isOnScreen && hasAwakeTab,
     onPolled: reconcile,
     onError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   });
@@ -105,12 +119,39 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const url = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
   const address = addressTextOf({ url });
   const canOpenOutside = url !== '' && !isFileAddress({ url });
+  const titleOfTab = ({ tab }: TitleParams): string => {
+    const fact = factOf({ liveId: live?.[tab.id] });
+    if (fact !== undefined && fact.title !== '') {
+      return fact.title;
+    }
+    return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
+  };
+  const device = useDeviceAgent({
+    tabId: shown?.tab.id ?? null,
+    liveId: shownLiveId,
+    title: shown === null ? '' : titleOfTab({ tab: shown.tab }),
+    onNote: ({ note }) => setNotice(note),
+    onError: ({ error: text }) => setError(text),
+  });
   const shownLiveIdRef = useRef(shownLiveId);
   shownLiveIdRef.current = shownLiveId;
   const isLoading = useAppStore(
     (state) => shownLiveId !== undefined && state.browserLoads[shownLiveId] !== undefined,
   );
   const history = useHistoryState({ tabId: shownLiveId, signal: `${url}|${isLoading}` });
+  const allTabs = useMemo(() => [...tabs, ...pins], [tabs, pins]);
+  const pageSend = useSendPageToAgent({
+    sessionId,
+    shown: shown?.tab ?? null,
+    tabs: allTabs,
+    resolve: ({ tab }) => {
+      const liveId = live?.[tab.id];
+      if (liveId === undefined || isLiveAsleep({ liveId })) {
+        return null;
+      }
+      return { liveId, url: factOf({ liveId })?.url ?? tab.url };
+    },
+  });
 
   useSaveLiveAddresses({ sessionId, tabs, live, facts });
   useOpenedPopups({ sessionId });
@@ -131,7 +172,6 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   });
 
   useEffect(() => {
-    void useAppStore.getState().loadBrowserSessionTabs({ sessionId });
     return () => {
       browserPaneRequests.opens.cancel({ key: browserPaneRequests.openKey({ sessionId }) });
     };
@@ -141,12 +181,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     setIsDrafting(false);
   }, [activeId, pinId, draftEnds]);
 
-  useEffect(() => {
-    if (projectId === null) {
-      return;
-    }
-    void useAppStore.getState().loadBrowserProjectPins({ projectId });
-  }, [projectId]);
+  useBrowserWorkspaceTabs({ isReload: true });
 
   const run = async ({ step }: StepParams): Promise<boolean> => {
     setError(null);
@@ -200,13 +235,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     shown,
     address,
     canOpenOutside,
-    titleOf: ({ tab }) => {
-      const fact = factOf({ liveId: live?.[tab.id] });
-      if (fact !== undefined && fact.title !== '') {
-        return fact.title;
-      }
-      return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
-    },
+    titleOf: titleOfTab,
     isAsleep: ({ tab }) => isLiveAsleep({ liveId: live?.[tab.id] }),
     isLiveAsleep,
     error,
@@ -316,7 +345,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       if (!canOpenOutside) {
         return;
       }
-      void openUrl(url).catch((failure: unknown) =>
+      openLinkOrThrow({ url, sessionId: null, place: 'outside' }).catch((failure: unknown) =>
         setError(browserFailureText({ error: failure })),
       );
     },
@@ -364,6 +393,11 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         }
       });
     },
+    devicePreset: device.preset,
+    setDevicePreset: device.change,
+    pageSend,
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
+    shownLiveId:
+      shownLiveId === undefined || isLiveAsleep({ liveId: shownLiveId }) ? null : shownLiveId,
   };
 };

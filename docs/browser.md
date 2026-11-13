@@ -65,7 +65,9 @@ commands, and got all six once it navigated itself to the dev origin or to
 
 Only an address the user types opens a local file: the address row, ⌘L, or
 ⌘K Open. It is an absolute path (a drive path such as `C:\work\plan.html` on
-Windows), a `~/` path or a `file://` address, to a page, an image or a PDF. A link, a door, a page, a popup or a frame never
+Windows), a `~/` path or a `file://` address, to a page, an image or a PDF. The one
+other way in is the saved copy of a plan or a report, which the app opens itself
+through [the click rule](#the-click-rule). A link, a door, a page, a popup or a frame never
 opens one; `browser_tab_open` and `browser_tab_navigate` still refuse `file:`.
 
 - **The scheme.** The file is served by Rust on `gblocal`
@@ -191,7 +193,8 @@ and closing one removes it from the registry.
 A tab that changes state (live to asleep and back, asleep to closed, closed to
 live) sends `browser://tab-state` with its facts to its own window, whoever
 asked for the change. A call that finds the tab already in that state sends
-nothing.
+nothing. A page that changes its title, or asks for a passkey, sends the same
+event with the new facts.
 
 Nothing is created at boot. The sweep thread starts with the app and owns no
 webview; the registry is empty until a window opens a tab. Every change of
@@ -276,6 +279,11 @@ to a project is a pin that every session of the project shares.
   `browser_tab_row_pin`, `browser_tab_row_unpin` and
   `browser_stale_tab_sessions`. Every command names its owner and never reads
   the current session.
+- One more command reads a whole workspace: `browser_workspace_tab_rows_list`
+  answers the rows of every session and every project of the workspace it
+  names, in one read. The Browser page, the palette and the tool rail load
+  their rows with it, so a workspace of seven sessions costs one command, not
+  seven. Rows of another workspace never come back.
 - A save takes the address through the same rule as a live tab, so a row never
   holds an app address, and keeps the first 512 characters of the title. A
   local file is stored as its `file://` address, never its `gblocal` one. It
@@ -290,7 +298,10 @@ to a project is a pin that every session of the project shares.
   already gone succeeds, so a retry is safe.
 - The `browser` store slice (`store/slices/browser/`) keeps the rows as state:
   `browserSessionTabs` and `browserActiveTab` per session, `browserProjectPins`
-  per project. An action changes state only after its command answered, and a
+  per project, and `browserTabCounts`, the number of rows of each loaded
+  workspace. The slice recounts only when a tab write changes the rows, never
+  on another write, and a workspace that has not loaded has no count. An
+  action changes state only after its command answered, and a
   failure leaves the old rows and reports the error on the session or the
   project's workspace. Writes of one session run one at a time in call order
   and never wait on another session, a load that answers after a newer load, a
@@ -349,7 +360,8 @@ it; Esc inside the page goes to the page.
 
 - **The address row** is one 36px row (`BrowserAddressRow`). It holds the tab
   list toggle, Back, Forward and Reload, the address pill, Pin to the session's
-  project (Unpin when a pin is shown), More and Close. The pane remembers the
+  project (Unpin when a pin is shown), More, Console (see Console) and Close.
+  The pane remembers the
   list toggle (`goodboy:browser-tab-list:v1`).
 - **Loading** shows on the row. From the host's `started` event of the shown tab
   to its `finished` event, a 2px `info` line breathes on the bottom edge of the
@@ -411,8 +423,33 @@ it; Esc inside the page goes to the page.
 - **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
   browser, Open as page (see Moves, absent when the dock has no page to open),
   Copy address, Duplicate (`model.duplicate` opens the shown address in a new
-  tab of the session), Inspect in Safari (macOS only, see Inspect in Safari)
+  tab of the session), Width (absent when no tab is shown, see Width
+  presets), Inspect in Safari (macOS only, see Inspect in Safari)
   and Close tab (off for a pin).
+- **Width presets** show the shown tab as Desktop, Tablet 768 or Phone 390.
+  The table lives in `features/browser/devicePresets.ts` (one source for the
+  menu, the frame and the note). The preset is kept per tab id in
+  `browserDevicePresets` of the browser slice, in memory only: it survives a
+  tab switch, not a restart, and a second window keeps its own. A narrower
+  preset draws `BrowserDeviceFrame` around the page placeholder: the frame is
+  the padding and border of the box that holds the placeholder, never an
+  overlay, so it never intersects the page rect. `viewBoundsOf` takes the
+  width as a cap and reports the placeholder capped to it and centered, which
+  is the rect `browser_tab_place` sends. The width applies at once. On macOS
+  `useDeviceAgent` then calls `browser_user_agent`, which sets the tab's
+  `WKWebView` custom user agent through `with_webview` and reloads the tab
+  (`platform/web_user_agent.rs`; the agent per preset is pinned in its tests,
+  and Desktop restores `TAB_USER_AGENT`). The hook keeps the agent each live
+  tab holds and loops until it matches the preset, so a late answer for a tab
+  that went back to Desktop is followed by a second call that restores it,
+  and a tab that wakes with a preset gets its agent again. A refused call
+  keeps the width and reads "Width only, the user agent didn't change" with
+  an error line that names the tab. Off macOS the pane skips the call (the
+  host would refuse with `unsupported-platform`) and the note says the width
+  is the only change. The note under the address row names the preset and
+  says touch isn't simulated: no script runs in the page, so pointer,
+  hover and pixel ratio stay desktop. Desktop is the undo. The mock scenes
+  `browser-width-phone` and `browser-width-tablet` show the frame.
 - **Inspect in Safari** makes the shown tab visible in Safari's Develop menu,
   to see why a page renders differently here than in another browser.
   `model.inspect` calls `browser_tab_inspectable`, which sends the public
@@ -445,7 +482,7 @@ it; Esc inside the page goes to the page.
   first, then This session, then New tab; the note that tabs close when the
   session is archived is the tooltip of the This session label. A tab the
   engine put to sleep or closed (`browser://tab-state`, read by
-  `useTabStates`, corrected by every successful 1.5 second poll, and keyed by
+  `useTabStates`, corrected by every event and every list answer, and keyed by
   the engine's tab id so the Browser page marks tabs of every session) shows its favicon faint and
   a moon mark, "Asleep, may reload when opened" (an asleep webview comes back
   as it was, a closed one loads again). The list has three widths in
@@ -459,13 +496,17 @@ it; Esc inside the page goes to the page.
   and binds the two in `browserLiveTabs`. After a restart a row has no live
   webview; showing it opens one at the saved address and binds the new id. A
   pin shown in the pane is `browserShownPin`; pinning the shown tab keeps it on
-  screen. The pane reads the live address and title every 1.5 seconds and
-  saves a session tab's row whenever they differ from the stored row, a page
-  that comes back to an earlier address included. A failed save is tried
-  again at the next change. A `browser://tab-load` `finished` event reads
-  them at once, so a title does not wait for the poll; the poll stays for the
-  moves a page makes with no load, such as a script changing the address or the
-  title.
+  screen. The events drive the live address and title: `browser://tab-load`
+  `finished` reads them at once, and `browser://tab-state` carries a state, a
+  title or a passkey change of a tab. The pane saves a session tab's row
+  whenever they differ from the stored row, a page that comes back to an
+  earlier address included. A failed save is tried again at the next change.
+  A 1.5 second list stays only as a safety net for the moves a page makes with
+  no load, such as a script changing the address. It runs while the pane is on
+  screen and a bound tab is awake, and sleeps while the pane is parked or
+  hidden. A pane lists once when it opens and once when it comes back on
+  screen. A list answer for a session the pane has left is dropped, and the
+  host reads no address from a tab that is asleep.
 - **Placement**: one loop (`createNativePlacement`) owns show, hide and
   `set_bounds`. Every frame, and whenever the view's frame changes size, it
   measures the placeholder (`viewBoundsOf`) and wants the shown tab at that
@@ -554,9 +595,11 @@ open the Browser button on the right rail is selected and does nothing.
   into the dock on the tab (see Moves). The empty page keeps Dock too, and it
   opens the workspace dock, so the page is never a dead end.
 - **The count** on the Browser button is the number of rows the page lists: the tabs of
-  the workspace's sessions plus the pins of their projects, named
-  `Browser, 3 tabs`. A tab counts whether or not its page is open. A
-  session's rows load when its pane or the page opens.
+  the workspace's sessions plus the pins of the workspace's projects, named
+  `Browser, 3 tabs`. A tab counts whether or not its page is open. The store
+  keeps it (`browserTabCounts`) and the rail reads it, so the rail does not
+  recount on every write. The rail loads the workspace's rows once it shows;
+  until they land the button has no count, not a zero.
 
 ## Moves
 
@@ -588,6 +631,34 @@ sits in and the address, and one function opens it (`openInBrowser`).
   session view or beside a page over it (the Terminal page); on the Browser
   page it switches the page to that session. A door with no session, such as
   a terminal on a plain folder, opens your browser.
+- **Send to agent** is a door in the other direction: the text of a tab goes
+  to the session's agent. The entries are the first row of More, a row in the
+  tab list's right-click menu (the `browserTab` kind of the action registry)
+  and `browser.sendToAgent` (⌘⇧S); all call
+  `sendPageToAgent`. The press names the tab, the session, its host and the
+  agent the composer would send to (`useHandOutputToAgent`). Rust reads the
+  tab only for that press (`browser_page_text`): the tab must belong to the
+  named session, the page must be `http` or `https`, and its live host must
+  still be the host the press named, or the read is refused
+  (`other-session`, `not-web-address`, `host-unknown`). The read is bound to
+  the navigation it checked: the registry counts each main-frame commit of a
+  tab (`mark_navigated`, from the `Started` page load), the command reads that
+  count before the host check and again after the text came back, and refuses
+  the text with `page-moved` when it changed. The address the page reports is
+  checked against the named host too, but only as a second guard, since the
+  page writes it. The script asks for
+  `document.body.innerText` only, no markup and no cookie. The text is cut at
+  60,000 characters with a note at its end (`platform/web_text.rs`). The UI
+  hides secrets in it (`redactSecrets`), opens it with the address on the first
+  line and a line saying it is page content, and queues it as a
+  `text/markdown` file with a `source` of `page` (`pageAttachmentOf`). The
+  composer shows the chip through the same queue as a terminal's output
+  (`outputHandoffs`), so the ten-file cap and the draft restore apply. The
+  run goes through the action runner under `browser.sendPage:<session>`: one
+  read at a time per session, a failure shows `ActionRunLine` with Retry, and
+  a read that finishes after its run was cleared is dropped by its token and
+  queues nothing. A page never calls this command: it is walled like every
+  other (see The invariant).
 - **Which tab**: a tab of the session already on the same address is shown.
   A bare server address (`http://localhost:5173`) takes any tab on that
   server. Otherwise a new tab opens. A host failure keeps the old tabs and
@@ -600,25 +671,18 @@ sits in and the address, and one function opens it (`openInBrowser`).
   first tab on the same address.
 - **Server chips**: the port chip on a terminal tab strip and the live port
   on a running Service open `http://localhost:<port>`.
-- **Links**: a web link in what is written in a session (a conversation
-  turn, a decision, an artifact) opens beside it. Those regions carry
-  `data-browser-links` inside the session's `data-browser-session`, and
-  `isBrowserLinkArea` checks both. A link anywhere else, such as an
-  integration, sign-in or connect guide in a drawer, opens your browser as
-  before, and so does a link outside a session. A GitHub commit link still
-  opens its diff. Chips and rows need only `data-browser-session`.
-- **The click rule**: one function, `openWebLink`, decides every plain web
-  link click, on chips, session links, a Service's port and a terminal's
-  printed addresses alike. ⌘-click (Ctrl-click off macOS) always opens your
-  browser. Otherwise the Links setting (`links.open`, Settings › General ›
-  Open with) decides: `goodboy`, the default, opens beside the session, and
-  `browser` opens your browser. A door with no session opens your browser
-  whatever the setting says. The click's modifier is read when the click
-  lands, and the setting is read before the open starts; a setting that
-  cannot be read counts as the default and reports a warning. The ⌘-click
-  listener runs after the page's own handlers and skips a click they already
-  handled, so an anchor with its own `onClick` opens your browser once.
-  ⌘-click on a file path in a terminal still opens your editor.
+- **Links**: any anchor in rendered text is claimed by `claimSessionLink` and
+  routed through `openTarget`, with no marked area: a conversation turn, a
+  decision, an artifact, a pull request body, an inbox row, a plan comment. The
+  session is the `data-browser-session` ancestor of the anchor, else the
+  store's current session (`sessionOfElement`). A GitHub commit link still
+  opens its diff.
+- **The click rule**: see [The click rule](#the-click-rule). Chips, session
+  links, a Service's port and a terminal's printed addresses all call
+  `openWebLink`, which hands the address to it. The ⌘-click listener runs
+  after the page's own handlers and skips a click they already handled, so
+  an anchor with its own `onClick` opens your browser once. ⌘-click on a
+  file path in a terminal still opens your editor.
 - **Terminal links**: `GenericTerminalPanel` hands a printed web link and its
   click event to `onOpenWebLink`; with no prop it keeps opening your browser,
   as the provider's inline terminal does. The terminal pane passes the
@@ -626,14 +690,15 @@ sits in and the address, and one function opens it (`openInBrowser`).
 - **Peek**: resting on or focusing a `localhost` link in a session, or
   resting on any web address in a terminal, shows a card with the title of
   its tab (or the host), the address and what a click does, in the words of
-  `webLinkPeekWords.ts`, which read the same place `openWebLink` picks. The card
+  `webLinkPeekWords.ts`, which read the same place `openPlaceOf` picks. The card
   never creates a tab, because every tab is a whole webview.
-- **The keymap** is eight entries in `shared/keyboard/browserShortcuts.ts`, all
+- **The keymap** is nine entries in `shared/keyboard/browserShortcuts.ts`, all
   `scope: 'browser'`, registered by `useBrowserKeys` while the pane or the
   Browser page is on screen. Elsewhere each chord keeps its other meaning:
   ⌘L Ask about this session, ⌘T a new terminal tab, ⌘W `app.close`, ⌘F Search,
   ⌘⇧[ and ⌘⇧] the sessions. ⌘L opens the pill, ⌘T starts a draft (the command field opens
-  empty), ⌘D toggles the pin, ⌘⇧[ and ⌘⇧] step `stepTab` order (tabs, then
+  empty), ⌘D toggles the pin, ⌘⇧S sends the shown page to the agent (Doors),
+  ⌘⇧[ and ⌘⇧] step `stepTab` order (tabs, then
   pins, wrapping). ⌘W closes the shown tab through `close`; a pin is never
   closed by it and consumes the key; with no tab shown the handler declines
   (`canDecline`) and `app.close` closes the pane. ⌘⇧T takes the newest entry of
@@ -675,6 +740,68 @@ sits in and the address, and one function opens it (`openInBrowser`).
   `foo.ts:42` or `plan.md/x` stays a search, as does a bare word with a dot
   (`typedAddressOf`).
 
+## The click rule
+
+One function, `openTarget` in `features/open/`, decides where a target
+opens. A target is a web address, a saved copy (a plan or a report as a
+page on disk), a file or a folder.
+
+- **Files and folders.** A file opens in the editor Settings names (or the
+  first one detected) at its line; with no editor set and a session, it opens
+  the in-app file drawer at that line. A folder opens in the editor, or in the
+  file manager when no editor is set, and a menu that picks an editor passes
+  it in the target. A file that is gone says so through `reportError` with the
+  path named ("is missing"); from an action control (`openFolderAction`,
+  `openTargetOrThrow`) the same text comes back on the run line. Nothing
+  outside `features/open/` imports `openInEditor`; the `raw-open` guard counts
+  it with `openUrl` and `openArtifactMirror`. Shared code asks for a folder
+  with the `goodboy:open-folder` window event.
+
+- **Text links.** A relative or `file:` link in rendered text becomes a file
+  target, resolved in the folder of the session's active mount and opened by
+  the editor or the in-app file view. With no session or no folder it says so
+  once and opens nothing. A web link with no session opens your browser.
+
+- **Beside the session or outside.** A plain click on a web address, a plan
+  or a report opens a tab beside the session when Links says **In Goodboy**,
+  the default, and opens your browser when Links says **In your browser**.
+  ⌘-click (Ctrl-click off macOS) always opens your browser. With no session
+  to open it beside, it opens your browser whatever Links says, and the Links
+  help text says "in a session". A wireframe always opens your browser: it is
+  agent-written HTML with scripts, and it waits for the wall audit before it
+  opens in a tab.
+- **The outside list.** A link that must leave the app passes
+  `place: 'outside'` and opens your browser whatever Links says: the
+  sponsor link, the bug report and crash links, the connect steps of Jira,
+  Linear, Sentry and Slack, the provider connect and reset links, and a
+  saved copy opened from the Storage page.
+- **No raw open.** Nothing outside `features/open/` imports `openUrl`, `openInEditor` or
+  `openArtifactMirror`; the `raw-open` guard in `forbidden-patterns` counts
+  them and stays at zero. A link calls `openLink`, which reports a failure
+  through `reportError`. An action control calls `openLinkOrThrow` through
+  the runner, so the failure comes back to the run line with Retry and is
+  never reported twice.
+- **One decision.** `openPlaceOf` is the pure answer: the kind of target,
+  Links, the command key and the session. `webLinkPeekWords.ts` reads the same
+  answer for the peek card. `openWebLink` is a thin caller for a web address;
+  a saved copy goes through `openSavedCopy`.
+- **Saved copies.** Beside the session, Rust returns the path of the copy
+  (`artifact_mirror_path`, which keeps `refuse_executable` and the plain
+  `.html` rule) and the page opens as a local tab (`openBeside`, kind
+  `local`). Rust launches nothing for it. Outside, `artifact_mirror_open`
+  launches the page with the Browser app you chose in Settings.
+- **Reads once, at the click.** The target and the session are captured at
+  the click, before the Links read; the command key is read at the same
+  moment. A setting that cannot be read counts as the default and reports a
+  warning. A late open for a session you left lands in the session of the
+  click, never in the current one, and a second window opens in its own.
+- **A failure is said once.** The tab is added after the open resolves, and
+  nothing is marked opened before. A failed open reports through
+  `reportError` with the target named. A caller that shows the reason in
+  place (the saved copy line, the wireframe note, an action's run line) opens
+  through `openTargetOrThrow` and reports nothing itself, so a failure never
+  shows twice. Retry is the click; there is no undo, close the tab.
+
 ## Performance
 
 The browser costs nothing until a tab opens, and then stays inside a budget.
@@ -687,7 +814,10 @@ test or a release checks.
   host calls and the tab actions; `bundle-budget.json` stays as it is. A
   webview is created only by `browser_tab_open`, never at boot.
 - **A tab opens, switches and closes** in a fixed number of store commits
-  (4, 1 and 1).
+  (3, 1 and 1).
+- **Idle** costs no host command. A pane that is parked, hidden or holds no
+  awake tab lists nothing on a timer, and the tool rail draws once, with the
+  count kept by the store. One command lists the rows of every session.
 - **The view moves** with one host call per frame at most, and none for a
   frame where the placeholder did not move. A frame sets no React state and
   writes no store key, so it commits nothing in the pane or the conversation
@@ -710,6 +840,19 @@ page unless its handler checks, so `lib.rs` wraps `generate_handler!` in
 `browser::refuse_browser_pages`, which answers every app command from a
 `browse-` webview with the `browser-caller` code before it runs.
 
+Two tests hold the wall. `registers_every_app_command_behind_the_browser_wall`
+in `src-tauri/src/browser/tests.rs` fails when `lib.rs` has a second
+`invoke_handler` or `generate_handler`, when the list is not the whole argument
+of `refuse_browser_pages`, when a name in `window-commands.json` sits outside
+it, or when any other source file registers a handler or adds a capability at
+run time. It reads the source because the real commands are typed to the
+default runtime and cannot build on the mock one; the `probe` test beside it
+proves the wrapper refuses a `browse-` caller. `browser-isolation.test.ts` in
+`src/__tests__/regressions/` holds the plugin side: no capability pattern
+matches a tab label, none grants by window or names a remote address,
+`tauri.conf.json` lists no capability, and the folder holds only top level
+`.json` files, the only ones the test reads.
+
 ## Passkeys
 
 A tab can't finish a passkey sign-in on macOS. Answering a passkey request for
@@ -719,8 +862,9 @@ only to an organization account whose app can be the default browser. Goodboy
 has neither, so WebKit refuses the request at once.
 Security keys and a phone go through the same request and fail the same way.
 
-So the host watches for the request instead. On macOS every frame of a tab
-runs a small script at document start that wraps `navigator.credentials.get`
+So the host watches for the request instead. On macOS the tab script (see
+Console) carries a passkey probe, so a tab still runs one document-start
+script; every frame runs it, and the probe wraps `navigator.credentials.get`
 and `create`: a call that asks for a passkey, unless it is only the quiet
 autofill offer, posts to a native message handler
 and then runs unchanged. A request whose options or bridge throw on read still
@@ -733,6 +877,65 @@ Dismiss clears the mark on the host (`browser_tab_passkey_dismiss`); a new
 document load clears it too. A refused dismiss keeps the notice and shows the
 reason. After the hand-over the sign-in lives in the default browser: the tab's
 workspace profile stays signed out.
+
+## Console
+
+The console is a region under the page, in the pane and on the Browser page.
+The Console button at the end of the address row, after More, opens it, and
+`browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button, not
+a More row: More already holds eight rows against the five-row budget, and a
+toggle with a pressed state belongs beside the page it watches. Safari's
+⌘⌥C is Show context (`lens.context`), and the registry refuses a browser key
+that shadows it, so the chord follows Chrome's J.
+
+- **The hook**: every tab runs one script at document start,
+  `browser/console_hook.js`, with the passkey probe appended on macOS
+  (`console::tab_script`). `builder_for` adds it once, for every frame, and
+  the console half returns at once in any frame that is not the top one. It
+  wraps `console.log`, `info`, `debug`, `warn` and `error`, listens for
+  `error` in the capture phase (a thrown error, or an image, script or style
+  that failed to load) and `unhandledrejection`, and wraps `fetch` and
+  `XMLHttpRequest` to note a failed request (a status of 400 or more, a
+  rejected `fetch`, a network error or a timeout). It keeps 500 entries in its
+  closure, each with a sequence number, under a load id made when the page
+  starts. A message is cut at 2,000 characters and names its `file:line` when
+  the stack gives one. A request keeps its method, status and path: no query,
+  no fragment, no body, no header, no cookie, and the host only when it is
+  another origin. The script assigns nothing on `window` but the wrapped
+  `fetch`, posts no message, opens no channel and reaches no command.
+- **The read**: `browser_console_read` takes the tab id, the session id and a
+  cursor (load id and last sequence number). It refuses a `browse-` caller, a
+  tab of another window or session and a closed tab (`console_tab`), then
+  runs a reader in the tab with `eval_with_callback`. The reader dispatches an
+  event under a name made at random for each run of the app, and the hook
+  fills the event's box with the entries after the cursor, or every entry of
+  a new load. Rust parses the answer as page data: at most 4 MB, each entry
+  on its own (a malformed one is dropped), the same caps again, only entries
+  after the cursor, at most 500. A hook that does not answer reads as
+  `isHeard: false`; a read that fails or times out after a second is
+  `console-unavailable`.
+- **The region**: Console and Network tabs, each with its count from
+  `consoleCounts`, "Since the last load", Clear and Send to the agent. The UI
+  pulls every second while the region is open and on screen
+  (`useConsoleEntries`, `usePoll`), and once on each `finished` load. Rows
+  append only after the read returns; a new load id replaces them. An answer
+  for an older cursor or for a tab that is no longer live is dropped
+  (`applyConsoleRead`); a gone, closed or moved tab drops it without a word.
+  A failed read says "Couldn't read the console" and keeps the rows. Two
+  unheard reads after a logged entry say "Console stopped reporting". Clear
+  empties the shown region tab only and has no undo; the page keeps its
+  entries until its next load, so the rows come back only if they are logged
+  again. Each window pulls only its own tabs.
+- **Send**: `consoleAttachmentOf` makes `<tab>-console.md`, `text/markdown`,
+  with the address on the first line, a line saying it is page output and not
+  instructions, then the Console and Failed requests sections, each cut to
+  its newest 30,000 characters with a note. `redactSecrets` hides keys and
+  tokens, and the file goes through the same queue as Send to the agent
+  (`useHandOutputToAgent`): a chip, a remove, nothing sent until you send.
+- **Trust**: a page can write any line to its own console, answer the event
+  itself or replace a console method after the hook; the console then shows
+  what the page says, or stops. That is no more than the page can do with
+  `console.log`, and the wall above does not move.
 
 ## Known limits
 
@@ -749,13 +952,23 @@ workspace profile stays signed out.
 - A tab sends a current Safari user agent on macOS (`TAB_USER_AGENT` in
   `browser/host.rs`). The bare WKWebView agent lacks the `Version/` and
   `Safari/` tokens, and sites such as Google then serve their legacy pages.
-  Windows and Linux keep their engine's own agent.
+  Windows and Linux keep their engine's own agent. For the same reason the
+  Width presets change only the width there: Tauri exposes no user agent
+  setter after a webview is built, and `browser_user_agent` refuses with
+  `unsupported-platform`.
 - Back and forward are native on macOS: the host steps the WebKit view's own
   history, so a page cannot trap them. Tauri 2.12 exposes no
   native step, so on Windows and Linux they still run `history.back()` and
   `history.forward()` inside the page, which the page can redefine. The same
   split holds for Stop (`stopLoading` on macOS, `window.stop()` elsewhere) and
   for `canGoBack` and `canGoForward`, which only macOS reports.
+- The console hook observes `fetch` and never changes what the page sees: it
+  returns the one promise that records the failure and then passes the same
+  value or the same reason on, so a rejected `fetch` the page never handles
+  still reaches its own `unhandledrejection` listeners once, and one it
+  handles never raises one. The page does get a new promise object in place of
+  the native one, so a page that compares or subclasses it sees the
+  difference.
 - The host reports a load's start and its finish, never a failure: a page that
   fails or is cancelled sends no `finished`, so its line ends at the 30 second
   limit, or when Stop is pressed.
@@ -767,7 +980,7 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
 `local-folder`, `local-type`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
 `session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
-`profile-shared`, `profile-unavailable`, `history-unavailable`, `tab-row-gone`, `tab-row-owner`,
+`profile-shared`, `profile-unavailable`, `history-unavailable`, `invalid-preset`, `console-unavailable`, `tab-row-gone`, `tab-row-owner`,
 `tab-rows-changed`, `tab-rows-failed`), never a sentence. The pane owns the
 words (`features/browser/browserFailureText.ts`).
 
@@ -775,7 +988,9 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  twenty-two `browser_*` commands (`browser_page_keys` sets the page keys);
+  twenty-five `browser_*` commands (`browser_page_keys` sets the page keys);
+  `console.rs` holds the tab script, the reader and the answer parse, and
+  `console_hook.js` the hook;
   `local.rs` holds the `gblocal` scheme, the path rule and the grant check; `page_keys.rs`
   holds the chord parse, the key codes, the `PageKeys` state and
   `route_page_key`; `load.rs` maps the page load callback to
@@ -791,7 +1006,8 @@ words (`features/browser/browserFailureText.ts`).
   stop. The passkey watch keeps its
   handler-to-tab map in `browser/passkey.rs`, its native handler class in
   `src-tauri/src/platform/passkey_handler.rs` and its script in
-  `browser/passkey.js`; `host.rs` adds the script to every frame,
+  `browser/passkey.js`, which `console::tab_script` appends to the console
+  hook; `host.rs` adds that one script to every frame,
   registers the handler after the view is made and forgets the handler when
   the tab closes, when its open is refused late and when its window is
   destroyed (`forget_window`). These two `platform/` files, the key monitor in
@@ -841,7 +1057,9 @@ words (`features/browser/browserFailureText.ts`).
 - The page lives in `features/browser/components/BrowserStudio/`, its groups in
   `browserPageGroups.ts`, the route sync in `hooks/useBrowserStudioTab`.
   The sessions come from `browserScopeSessions`, the count from
-  `browserTabCount`. `BrowserStudio/index.test.tsx` pins the grouping, a tab
+  `workspaceTabCount`, kept by `keepTabCounts` and read through
+  `selectBrowserTabCount`. `loadWorkspaceTabs` loads the rows and skips a
+  session written while the read ran. `BrowserStudio/index.test.tsx` pins the grouping, a tab
   of another session, the reload back to the named tab, a route with no
   session, the overlay hide, that only the workspace's sessions load and
   the count matches the rows, and the moves: Open as page and Dock
@@ -917,9 +1135,12 @@ words (`features/browser/browserFailureText.ts`).
   `store/slices/browser-host/` holds the loads by live tab id and the icons by
   origin.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
-  `openWebLink.ts` is the click rule (`webLinkPlace.ts` is its pure answer,
+  `features/open/openTarget.ts` is the click rule (`openPlaceOf.ts` is its
+  pure answer, `readLinksOpen.ts` reads the setting once,
   `isOwnBrowserClick.ts` reads the modifier, `shared/lib/linksOpenOf.ts` and
-  `linksOpenSetting.ts` read and name the setting), `sessionOfElement.ts`
+  `linksOpenSetting.ts` name the setting, `openWebLink.ts` and
+  `openSavedCopy.ts` are its callers, `openTargetOrThrow.ts` is the one for
+  callers that show the reason in place), `sessionOfElement.ts`
   reads `data-browser-session`, `claimSessionLink.ts` takes a link from the
   shared interceptor (`useCommitLinkInterceptor`), `hooks/useOwnBrowserLinkClicks`
   takes ⌘-click and `components/BrowserLinkDoors` draws the peek through
@@ -932,7 +1153,12 @@ words (`features/browser/browserFailureText.ts`).
   session, the peek, the Links setting set to your browser on a chip, a link
   and the peek, ⌘L beside Ask and the ⌘K entries. `openWebLink.test.ts` pins
   ⌘-click over the setting, `goodboy` with and without a session and
-  `browser`; `webLinkPeekWords.test.ts` pins the peek words against the place;
+  `browser`; `features/open/openPlaceOf.test.ts` pins the place for each kind
+  of target by Links by command key by session, and
+  `features/open/openTarget.test.ts` pins a report opening as a local tab with
+  nothing launched outside, a refused path keeping the page and returning the
+  reason, a wireframe staying outside, and a late open landing in the session
+  of the click; `webLinkPeekWords.test.ts` pins the peek words;
   `GenericTerminalPanel/webLinks.test.tsx` pins that the addon's click reaches
   `onOpenWebLink` with its event and that a hover reports the row;
   `LinksOpenField/index.test.tsx` pins the row reading, saving and keeping the

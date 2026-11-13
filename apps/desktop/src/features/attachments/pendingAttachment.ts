@@ -1,4 +1,5 @@
 import type { AttachmentInput } from '@goodboy/types';
+import type { PageSource } from '../../shared/types/pageSource';
 
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const ATTACHMENT_LIMIT = 10;
@@ -10,6 +11,7 @@ export type PendingAttachment = {
   readonly mimeType: string;
   readonly blob: Blob;
   readonly relPath: string | null;
+  readonly source?: PageSource;
 };
 
 export type StoredAttachment = {

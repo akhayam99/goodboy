@@ -14,7 +14,11 @@ import {
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
+import { HostOverview } from '../../components/HostOverview';
+import { hostActivitySectionOf } from '../../components/HostOverview/hostActivitySectionOf';
+import { hostActivityOf } from '../../../branch/hostActivityOf';
 import { PullRequestChip } from '../components/PullRequestChip';
+import { githubPrRailOf } from './githubPrRailOf';
 import { GITHUB_ISSUE_CAPABILITIES, githubIssueConversation } from '../githubIssueConversation';
 import { useGithubIssueComments } from '../useGithubIssueComments';
 
@@ -70,6 +74,30 @@ export const GithubPrDetail = ({
     [comments, isLoading, error, reload, post],
   );
   const conversation = useConversationPane({ source, resetKey: pr.url });
+  const timeline = useMemo(
+    () =>
+      hostActivityOf({
+        opened: {
+          who: pr.author?.login ?? null,
+          avatarUrl: pr.author?.avatarUrl ?? null,
+          at: null,
+          isDraft: pr.isDraft,
+        },
+        threads: source.threads,
+        end:
+          pr.state === 'merged'
+            ? {
+                kind: 'merged',
+                at: pr.mergedAt ?? pr.updatedAt,
+                who: pr.author?.login ?? null,
+                avatarUrl: pr.author?.avatarUrl ?? null,
+              }
+            : pr.state === 'closed'
+              ? { kind: 'closed', at: pr.updatedAt, who: null, avatarUrl: null }
+              : null,
+      }),
+    [pr, source.threads],
+  );
 
   const sections: ReadonlyArray<RecordSection> = [
     {
@@ -80,8 +108,11 @@ export const GithubPrDetail = ({
       defaultOpen: true,
       content: <DescriptionSection text={pr.body} />,
     },
+    ...hostActivitySectionOf({ items: timeline, host: 'github', baseBranch: pr.baseBranch }),
     conversation.section,
   ];
+
+  const rail = useMemo(() => githubPrRailOf({ pr }), [pr]);
 
   const refresh = () => {
     reload();
@@ -106,7 +137,9 @@ export const GithubPrDetail = ({
         />
       }
     >
-      <RecordSections sections={sections} />
+      <HostOverview rail={rail}>
+        <RecordSections sections={sections} />
+      </HostOverview>
     </PaneShell>
   );
 };

@@ -1,29 +1,38 @@
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
-import { areStageInputsSame } from './areStageInputsSame';
-import { stageInfoOf, type StageInfoState } from './stageInfoOf';
+import { cachedStageInfoOf } from './cachedStageInfoOf';
+import type { StageInfoState } from './stageInfoOf';
 
 type InfoMap = Readonly<Record<SessionId, SessionStageInfo>>;
 
-type Derivation = {
-  readonly inputs: StageInfoState;
-  readonly infos: InfoMap;
-};
-
-const derivations = new WeakMap<ReadonlyArray<Session>, Derivation>();
+const maps = new WeakMap<ReadonlyArray<Session>, InfoMap>();
 
 type Params = {
   readonly state: StageInfoState;
+  readonly sessions: ReadonlyArray<Session>;
 };
 
-export const stageInfosOf = ({ state }: Params): InfoMap => {
-  const known = derivations.get(state.sessions);
-  if (known !== undefined && areStageInputsSame({ first: known.inputs, second: state })) {
-    return known.infos;
+type CurrentParams = Params & {
+  readonly map: InfoMap;
+};
+
+const isMapCurrent = ({ map, state, sessions }: CurrentParams): boolean => {
+  for (const session of sessions) {
+    if (map[session.id] !== cachedStageInfoOf({ state, session })) {
+      return false;
+    }
+  }
+  return true;
+};
+
+export const stageInfosOf = ({ state, sessions }: Params): InfoMap => {
+  const known = maps.get(sessions);
+  if (known !== undefined && isMapCurrent({ map: known, state, sessions })) {
+    return known;
   }
   const infos: Record<SessionId, SessionStageInfo> = {};
-  for (const session of state.sessions) {
-    infos[session.id] = stageInfoOf(state, session);
+  for (const session of sessions) {
+    infos[session.id] = cachedStageInfoOf({ state, session });
   }
-  derivations.set(state.sessions, { inputs: state, infos });
+  maps.set(sessions, infos);
   return infos;
 };

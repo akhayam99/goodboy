@@ -1,8 +1,5 @@
-import {
-  NOTHING_CHANGED,
-  OPEN_APP_SETTINGS_GENERAL,
-} from '../../store/slices/notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
+import { CommandError } from '../../shared/lib/invokeCommand';
 import { resolveEditorBinary } from '../../shared/lib/editorSettings';
 import { useAppStore } from '../../store';
 import { exploreOpen } from './explore';
@@ -20,17 +17,20 @@ type Params = {
   };
 };
 
+type MissingParams = {
+  readonly error: unknown;
+};
+
+const MISSING_MESSAGE = /not found|no such file|not a file/i;
+
+const isMissing = ({ error }: MissingParams): boolean =>
+  error instanceof CommandError &&
+  (error.kind === 'not_file' || (error.kind === 'io' && MISSING_MESSAGE.test(error.message)));
+
 export const openFileLink = async ({ sessionId, root, baseDir, link }: Params): Promise<void> => {
-  const { reportError } = useAppStore.getState();
   const relPath = fileLinkRelPath({ root, baseDir, path: link.path });
   if (relPath === null) {
-    void reportError({
-      recovery: NOTHING_CHANGED,
-      title: "Couldn't open the file",
-      error: new Error(`${link.path} is outside this folder.`),
-      severity: 'warning',
-    });
-    return;
+    throw new Error(`${link.path} is outside this folder.`);
   }
   if (useAppStore.getState().detectedEditors.length === 0) {
     await useAppStore.getState().loadDetectedEditors();
@@ -65,10 +65,11 @@ export const openFileLink = async ({ sessionId, root, baseDir, link }: Params): 
       ...(column === undefined ? {} : { column }),
     });
   } catch (error) {
-    void reportError({
-      recovery: OPEN_APP_SETTINGS_GENERAL,
-      title: "Couldn't open the file",
-      error,
-    });
+    if (isMissing({ error })) {
+      throw new Error(`${link.path} is missing. It may have been moved or deleted.`, {
+        cause: error,
+      });
+    }
+    throw error;
   }
 };

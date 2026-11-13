@@ -1,4 +1,5 @@
 import type { AgentId } from '@goodboy/types';
+import type { PageSource } from '../../../shared/types/pageSource';
 import type { SetFn } from './types';
 
 export type DraftAttachment = Readonly<{
@@ -6,6 +7,7 @@ export type DraftAttachment = Readonly<{
   fileName: string;
   mimeType: string;
   relPath: string;
+  source?: PageSource;
 }>;
 
 export const setAgentAttachments = (set: SetFn) => {

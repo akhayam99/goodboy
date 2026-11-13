@@ -20,7 +20,7 @@ type AgoParams = {
   readonly minutes: number;
 };
 
-const isoAgo = ({ minutes }: AgoParams): string =>
+export const isoAgo = ({ minutes }: AgoParams): string =>
   new Date(CLOCK.ms({ at: '2026-10-16T09:00:00Z' }) - minutes * MINUTE).toISOString();
 
 type LinearStatus = {

@@ -121,13 +121,17 @@ drawer container at 1.2:1 or more on chrome and background, and
 `scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
 background, panel and floating.
 
-A sticky header is a surface, never a shadow. `sticky-surface` (and
-`sticky-surface-subtle` for a header on `subtle`) paints the role at 90% over a
-`backdrop-filter` of `blur(3px) saturate(1.2)`, so content that passes under it
-shows through frosted. Page content scrolls under the pinned back row of a
-`PaneShell`, so the frosted row is what the reader sees there. Under
-`prefers-reduced-transparency: reduce` it is the
-opaque role and the blur is off. A sticky header draws no `shadow-*` and no
+A sticky header is a surface, never a shadow. `sticky-surface` paints the
+background at 80% over a `backdrop-filter` of `blur(12px) saturate(1.4)`, so
+content that passes under it shows through frosted. Page content scrolls under
+the pinned back row of every `PaneShell`, a self-scrolling one included, so the
+frosted row is what the reader sees there. `sticky-surface-subtle` is the light
+frost (the role at 90% over `blur(3px) saturate(1.2)`) for a header on `subtle`
+(a drawer's pinned title row included) and for a diff file header, which parks right under the pinned zone, so a long
+diff never stacks two strong frosts on every scroll frame. Text on
+the frost holds 4.5:1 over any surface or half-inked text under it
+(`sticky-surface.test.ts`). Under `prefers-reduced-transparency: reduce` both
+are the opaque role and the blur is off. A sticky header draws no `shadow-*` and no
 gradient band; the only edge is the 1px `border-soft` hairline of
 `ScrollFade edge="line"`, lit once content is scrolled under it. Its block
 padding leaves more room below than above, from the spacing scale (`PANE_RHYTHM.pinnedInset`
@@ -182,6 +186,11 @@ caller shows the switch only when two or more options have content (one option
 is a disabled select, not a switch), and never inside a pane. No ring and no
 primary tint mark a selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
+
+`PageTabs` is the page tab row: `SegmentedTabs` with the `underline` variant, a 36px row on a
+hairline, each tab a label with its count beside it as a quiet number and the selected one
+underlined in the primary tone. Tabs change what the page is and sit under the page title; the
+boxed `SegmentedTabs` filters what a page lists. A page never stacks two boxed groups.
 
 `ChoiceChips` is the compact choice: one wrapping row of chips for two to nine
 short answers to one question, where `ChoiceCards` is a column of cards with a
@@ -357,23 +366,24 @@ only, so emphasis gets a synthetic slant. The boot shell in
 `apps/desktop/index.html` stays on `system-ui`, because it paints before the
 stylesheet loads, and the exported report embeds the same file as a data URI.
 
-| role            | measure                   | used for                                                                                   |
-| --------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
-| `text-display`  | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                     |
-| `text-title`    | 18/28, 600, -0.012em      | level 1: the one pane title (h1) of a surface, h1 and h2 inside a message                  |
-| `text-heading`  | 14/20, 600                | level 2: a page-grade section, a popover title, a kickoff question                         |
-| `text-row`      | 13/20, 500                | level 4: a top-level row label, a card title                                               |
-| `text-body`     | 14/20                     | running text; text with no class inherits it from the body                                 |
-| `text-prose`    | 15/24                     | level 3, the one reading size: messages, markdown, artifacts, goals, descriptions          |
-| `text-eyebrow`  | 12/16, 500, sentence case | a section label: `Eyebrow`, or direct in a sidebar group, `SettingChip`, `LevelCard`       |
-| `text-meta`     | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line |
-| `text-chip`     | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                  |
-| `text-rail`     | 9/12                      | the caption under every icon and over each group of the session tool rail                  |
-| `text-code`     | mono 12/18                | branch, path, command, inline code                                                         |
-| `text-code-row` | mono 13/20                | a branch row of the session rail, beside a level 4 name                                    |
-| `text-ui`       | 13/20                     | level 4: every line of a list surface that is not its title or prose                       |
-| `text-lead`     | 15/24, 500                | the title of a list surface                                                                |
-| `document`      | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role     |
+| role            | measure                   | used for                                                                                    |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------- |
+| `text-display`  | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                      |
+| `text-title`    | 18/28, 600, -0.012em      | level 1: the one pane title (h1) of a surface, h1 and h2 inside a message                   |
+| `text-heading`  | 14/20, 600                | level 2: a page-grade section, a popover title, a kickoff question                          |
+| `text-row`      | 13/20, 500                | level 4: a top-level row label, a card title                                                |
+| `text-body`     | 14/20                     | running text; text with no class inherits it from the body                                  |
+| `text-prose`    | 15/24                     | level 3, the one reading size: messages, markdown, artifacts, goals, descriptions           |
+| `text-comment`  | 14/22                     | the body of a comment: `CommentBody` in the review pane, the diff and the pull request page |
+| `text-eyebrow`  | 12/16, 500, sentence case | a section label: `Eyebrow`, or direct in a sidebar group, `SettingChip`, `LevelCard`        |
+| `text-meta`     | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line  |
+| `text-chip`     | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                   |
+| `text-rail`     | 9/12                      | the caption under every icon and over each group of the session tool rail                   |
+| `text-code`     | mono 12/18                | branch, path, command, inline code                                                          |
+| `text-code-row` | mono 13/20                | a branch row of the session rail, beside a level 4 name                                     |
+| `text-ui`       | 13/20                     | level 4: every line of a list surface that is not its title or prose                        |
+| `text-lead`     | 15/24, 500                | the title of a list surface                                                                 |
+| `document`      | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role      |
 
 Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
 durations, percentages, ages and key letters are the sans stack with
@@ -526,7 +536,16 @@ a heading belongs to the text after it. `h1` and `h2` take `text-title`, `h3`
 header row (language in `text-meta`, then **Wrap** and the host's
 `CodeBlockActionsContext` actions, only where a host provides them, so Markdown
 inside a button holds no button) over `text-ui font-mono` code in a horizontal
-`ScrollFade`; code and tables are never clamped. Inline code is `text-ui`, never
+`ScrollFade`; code and tables are never clamped. Media in Markdown: an image is a
+`RemoteImage` in both variants, capped at `max-h-80` in the preview variant that
+comments use and a click opens it on the host through the router, never a dialog.
+`<img>`, `<video>` and `<details><summary>` are read into the renderer's own
+nodes (`htmlShapes.ts`), a video is a `RemoteVideo`: a `VideoPoster` row (host, **Play**, **Open on the host**)
+that becomes a skeleton at 16:9 while the host answers, then a `<video>` over a `blob:`
+URL released on unmount, with size and length under it once. A refusal keeps the row
+with the reason, **Retry** on the play button and **Open on the host**. Without a
+`loadVideo` in the loader provider the row has no **Play**. A `<details>` is a `Disclosure`. A failed image keeps its place with the
+reason and **Open on the host**; no raw HTML reaches the page. Inline code is `text-ui`, never
 a fraction of the text size. A table (`renderTable`) has a `text-meta` header,
 one hairline between rows and `tabular-nums` on a number column.
 `ScrollFade` takes one of two top edges: `fade` (the default) or `line` (a
@@ -537,8 +556,21 @@ every `DrawerFrame` reveals: it pins the back row (a drawer's title row with its
 close) and the `lead`, and lets the rest of the header step aside while you
 read; a page that draws its own `PageHeader` wraps it in `RevealRegion` (with
 `hasLanes` when sibling lanes share one header, as on the Board), except
-the Terminal, whose output must never resize, so only its rail reveals
+the Terminal, which draws no header band (its tab row is one 40 row with Dock)
+and whose output must never resize, so only its rail reveals
 ([styling.md](../../docs/styling.md#a-header-that-steps-aside-while-you-read)).
+The title band of every page is 48px: 8 above (`PANE_RHYTHM.headerInset`), a
+32px row (`headerRow`) and 8 below (`below.title`, the same for a section page). A
+meta line adds 16 (`headerMeta`), so a band is 40, 48 or 64 and a tab row or a
+toolbar adds 36 (`PaneShell`'s `toolbar` prop draws the 36 row, and its `badge` prop
+puts a quiet count chip beside the title, so Tasks is 84). `PageColumn` is 960 wide
+plus its gutter and centred on every reading page; the Board, the diff and the
+Terminal use `width="full"` with the same 24 gutter and the title's left edge is the
+column's. `PaneTitleRow` is the only title row and its `h1` the only one at
+`text-title`; a document's own heading is content, not a page title
+(`page-title-row` in `forbidden-patterns.test.ts` holds it at zero, and
+`validate-scenes --only title-band` measures the band on the Board, the session
+overview and the agent transcript).
 `ScrollFade` paints its fade with the `mask-fade-x` and `mask-fade-y` utilities
 and writes its fade sizes only while the content overflows, so a static artifact
 page carries no inline style. The utilities reset both sizes to `0px`, so a
@@ -763,6 +795,23 @@ and `BUTTON_VARIANT_CLASSES`), so a toned icon passed in never draws a dim tint
 on the fill. `ButtonIconColor.test.tsx` pins it per variant and per tone; the
 `on-tone` contrast on every tone in both themes is pinned by
 `token-contrast-floor.test.ts`.
+
+### Avatar
+
+`Avatar` never gives a remote address to an `img`: the content policy refuses
+it. It asks `RemoteImageAvatarLoaderContext` for the picture and shows the
+returned data uri. Without a loader, on a refusal or on a late answer for an
+address no longer on screen, it shows a monogram: the first letter on a hue
+from `personHueOf`, which hashes the login onto eight hues from 120 to 330
+degrees so a person never reads as danger or warning. One login keeps one hue
+in every surface. The app wires `loadAvatarImage`, which keeps one request per
+address per run.
+
+`Person` (in the app's `shared/components/Person`) is the one chip for a person:
+the picture and the login, `Someone` when the login is missing, said once.
+Three sizes: `xs` at 16 in a meta line, `sm` at 20 in the properties rail, `md`
+at 24 in a timeline row or a comment. A bot is a square glyph tile of the same
+size, never a round picture.
 
 ### Identity palettes
 

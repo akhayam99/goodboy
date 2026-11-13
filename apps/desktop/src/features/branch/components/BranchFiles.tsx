@@ -4,8 +4,10 @@ import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
+import { useBranchIdentity } from '../hooks/useBranchIdentity';
 import { WriteReview } from '../../review/components/WriteReview';
 import { filesHeadFactOf } from '../branchTabFactsOf';
+import { SessionMediaScope } from '../../../shared/components/SessionMediaScope';
 import { BranchBodyColumn } from './BranchBodyColumn';
 
 type Props = {
@@ -28,6 +30,7 @@ export const BranchFiles = ({
   commitTotal,
 }: Props) => {
   const sessionId = session.id as SessionId;
+  const identity = useBranchIdentity({ sessionId });
   const mode = useAppStore((s) => s.pullRequestModes[sessionId] ?? 'overview');
   if (worktreePath === null) {
     return (
@@ -44,21 +47,25 @@ export const BranchFiles = ({
   if (mode === 'write_review' && hasPullRequest) {
     return (
       <BranchBodyColumn>
-        <WriteReview session={session} />
+        <SessionMediaScope sessionId={sessionId} mountId={identity.mount?.mountId ?? null}>
+          <WriteReview session={session} />
+        </SessionMediaScope>
       </BranchBodyColumn>
     );
   }
   return (
     <BranchBodyColumn>
-      <SessionDiffPane
-        sessionId={sessionId}
-        workingDir={workingDir}
-        worktreePath={worktreePath}
-        diff={diff}
-        isReadOnly={isReadOnly}
-        filesFact={filesHeadFactOf({ files: diff.files })}
-        commitTotal={commitTotal}
-      />
+      <SessionMediaScope sessionId={sessionId} mountId={identity.mount?.mountId ?? null}>
+        <SessionDiffPane
+          sessionId={sessionId}
+          workingDir={workingDir}
+          worktreePath={worktreePath}
+          diff={diff}
+          isReadOnly={isReadOnly}
+          filesFact={filesHeadFactOf({ files: diff.files })}
+          commitTotal={commitTotal}
+        />
+      </SessionMediaScope>
     </BranchBodyColumn>
   );
 };

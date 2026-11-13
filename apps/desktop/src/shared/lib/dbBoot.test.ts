@@ -61,7 +61,7 @@ beforeEach(() => {
 });
 
 describe('database boot', () => {
-  it('migrates a fresh database to the latest version and cleans orphan attachments', async () => {
+  it('migrates a fresh database to the latest version and leaves the cleanup to idle', async () => {
     const db = makeTestDatabase();
     invokeMock.mockImplementation(backendFor({ db }));
     const { runDbMigrations } = await loadBoot();
@@ -69,6 +69,17 @@ describe('database boot', () => {
     await runDbMigrations();
 
     expect(await highestApplied(db)).toBe(LATEST_VERSION);
+    expect(invokeMock).not.toHaveBeenCalledWith('attachment_cleanup_orphans', {});
+  });
+
+  it('prunes the database and cleans orphan attachments in the idle hygiene', async () => {
+    const db = makeTestDatabase();
+    invokeMock.mockImplementation(backendFor({ db }));
+    const { runDbHygiene, runDbMigrations } = await loadBoot();
+    await runDbMigrations();
+
+    await runDbHygiene();
+
     expect(invokeMock).toHaveBeenCalledWith('attachment_cleanup_orphans', {});
   });
 

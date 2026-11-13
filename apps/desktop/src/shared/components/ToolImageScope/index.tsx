@@ -2,7 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { RemoteImageLoaderProvider } from '@goodboy/ui';
 import { integrationLabel } from '../../utils/integrationLabel';
 import { useToolImageLoader } from '../../hooks/useToolImageLoader';
-import { openUrl } from '../../lib/editor';
+import { requestOpenLink } from '../../lib/requestOpenLink';
 import type { ToolImageProvider } from '../../lib/remoteImage';
 
 type Props = {
@@ -22,7 +22,7 @@ export const ToolImageScope = ({
   siteUrl,
   children,
 }: Props) => {
-  const { load, shouldAutoLoad } = useToolImageLoader({
+  const { load, shouldAutoLoad, probe, loadVideo } = useToolImageLoader({
     workspaceId,
     projectId,
     provider,
@@ -30,12 +30,21 @@ export const ToolImageScope = ({
     siteUrl,
   });
   const tool = useMemo(
-    () => ({ label: integrationLabel({ provider }), open: (url: string) => void openUrl(url) }),
+    () => ({
+      label: integrationLabel({ provider }),
+      open: (url: string) => requestOpenLink({ url }),
+    }),
     [provider],
   );
 
   return (
-    <RemoteImageLoaderProvider load={load} shouldAutoLoad={shouldAutoLoad} tool={tool}>
+    <RemoteImageLoaderProvider
+      load={load}
+      shouldAutoLoad={shouldAutoLoad}
+      tool={tool}
+      probe={probe}
+      loadVideo={loadVideo}
+    >
       {children}
     </RemoteImageLoaderProvider>
   );

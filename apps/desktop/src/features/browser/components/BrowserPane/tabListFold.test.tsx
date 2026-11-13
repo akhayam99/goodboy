@@ -138,6 +138,7 @@ beforeEach(async () => {
   stubStoryInvoke({
     browser_tab_rows_list: ({ args }: { readonly args: { readonly owner: { kind: string } } }) =>
       args.owner.kind === 'project' ? pins : tabs,
+    browser_workspace_tab_rows_list: () => [...tabs, ...pins],
     browser_tab_list: () => live,
     browser_tab_place: null,
     browser_tab_show: null,
@@ -186,6 +187,7 @@ describe('the browser tab list', () => {
   });
 
   it('drops the asleep mark on the next poll when the wake event never came', async () => {
+    store.getState().openDrawer({ kind: 'browser', sessionId: SESSION_ID, payload: null });
     renderPane();
     const list = await listOf();
 

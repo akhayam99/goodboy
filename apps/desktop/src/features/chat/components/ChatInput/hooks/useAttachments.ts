@@ -97,6 +97,7 @@ export const useAttachments = ({
               mimeType: att.mimeType,
               blob: dataUrlToBlob({ dataUrl, mimeType: att.mimeType }),
               relPath: att.relPath,
+              ...(att.source === undefined ? {} : { source: att.source }),
             });
           } catch {}
         }
@@ -125,6 +126,7 @@ export const useAttachments = ({
         fileName: a.fileName,
         mimeType: a.mimeType,
         relPath: a.relPath,
+        ...(a.source === undefined ? {} : { source: a.source }),
       }));
     setAgentAttachments(selectedAgentId, draftAtts);
   }, [attachments, selectedAgentId, setAgentAttachments]);
@@ -157,15 +159,17 @@ export const useAttachments = ({
     async ({ agentId, handoffs }: AttachOutputHandoffsParams): Promise<boolean> => {
       const built: PendingAttachment[] = [];
       for (const handoff of handoffs) {
-        const blob = new Blob([handoff.text], { type: OUTPUT_HANDOFF_MIME });
+        const mimeType = handoff.mimeType ?? OUTPUT_HANDOFF_MIME;
+        const blob = new Blob([handoff.text], { type: mimeType });
         const id = crypto.randomUUID();
         const relPath = await persistAttachmentToDisk({ id, fileName: handoff.fileName, blob });
         built.push({
           id,
           fileName: handoff.fileName,
-          mimeType: OUTPUT_HANDOFF_MIME,
+          mimeType,
           blob,
           relPath,
+          ...(handoff.source === undefined ? {} : { source: handoff.source }),
         });
       }
       if (attachmentsAgentIdRef.current !== agentId) {

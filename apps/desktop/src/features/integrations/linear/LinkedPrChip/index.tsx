@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import { cn, ICON_SIZE, tintClasses, Tooltip } from '@goodboy/ui';
 import { GitPullRequest } from 'lucide-react';
 import type { LinearLinkedPr } from '../client';
@@ -7,7 +8,7 @@ import {
   type PullRequestPresentation,
 } from '../../../../shared/utils/pullRequestPresentation';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { useAppStore } from '../../../../store';
 import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import { selectSessionForPr } from '../../../../store/slices/github/selectSessionForPr';
@@ -16,17 +17,21 @@ type Props = {
   readonly pr: LinearLinkedPr;
 };
 
+type OpenParams = {
+  readonly event: MouseEvent<HTMLButtonElement>;
+};
+
 export const LinkedPrChip = ({ pr }: Props) => {
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const navigate = useAppStore((s) => s.navigate);
 
-  const open = () => {
+  const open = ({ event }: OpenParams) => {
     const state = useAppStore.getState();
     const workspaceId = state.currentWorkspaceId;
     const sessionMatch =
       workspaceId == null ? null : selectSessionForPr({ state, workspaceId, url: pr.url });
     if (sessionMatch == null || state.appStudio !== null) {
-      void openUrl(pr.url);
+      openLink({ url: pr.url, event, ...(state.appStudio === null ? {} : { sessionId: null }) });
       return;
     }
     const { sessionId, number } = sessionMatch;
@@ -48,7 +53,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
     <Tooltip content={description}>
       <button
         type="button"
-        onClick={open}
+        onClick={(event) => open({ event })}
         aria-label={description}
         className={cn(
           'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-chip motion-safe:transition-opacity hover:opacity-80',

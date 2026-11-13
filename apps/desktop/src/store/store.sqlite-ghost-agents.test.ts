@@ -26,7 +26,7 @@ import {
   stubStoryInvoke,
 } from './storyHarness';
 import { writeTurnCursor } from '../features/chat/turnCursor';
-import { reconcileGhostAgents } from './slices/sessions/reconcileSessionRuns';
+import { readBackendRunIds, reconcileGhostAgents } from './slices/sessions/reconcileSessionRuns';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -58,6 +58,9 @@ const HARBORLINE_ID = 'workspace-harborline' as WorkspaceId;
 const NORTHWIND_ID = 'workspace-northwind' as WorkspaceId;
 const LEDGER_ID = 'session-ledger' as SessionId;
 const ONBOARDING_ID = 'session-onboarding' as SessionId;
+
+const reconcileNow = async (): Promise<number> =>
+  reconcileGhostAgents({ liveRunIds: await readBackendRunIds() });
 
 const harborline = buildStoryWorkspace({
   id: HARBORLINE_ID,
@@ -135,7 +138,7 @@ describe('store on sqlite: ghost running agents at boot', () => {
     });
     stubStoryInvoke({ turn_list_live: () => ['run-live'] });
 
-    const stopped = await reconcileGhostAgents();
+    const stopped = await reconcileNow();
 
     expect(stopped).toBe(1);
     expect(await statusOf(ONBOARDING_ID)).toEqual({
@@ -158,7 +161,7 @@ describe('store on sqlite: ghost running agents at boot', () => {
     });
     stubStoryInvoke({ turn_list_live: () => [] });
 
-    expect(await reconcileGhostAgents()).toBe(0);
+    expect(await reconcileNow()).toBe(0);
     expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-reload': 'running' });
   });
 
@@ -184,7 +187,7 @@ describe('store on sqlite: ghost running agents at boot', () => {
     });
     stubStoryInvoke({ turn_list_live: () => [] });
 
-    expect(await reconcileGhostAgents()).toBe(0);
+    expect(await reconcileNow()).toBe(0);
     expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-asking': 'running' });
   });
 
@@ -198,7 +201,7 @@ describe('store on sqlite: ghost running agents at boot', () => {
     stubStoryInvoke({ turn_list_live: () => [] });
     injectDbFault({ match: /permission_request/ });
 
-    await expect(reconcileGhostAgents()).rejects.toThrow('injected db fault');
+    await expect(reconcileNow()).rejects.toThrow('story_fault_no_such_table');
     expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-ghost': 'running' });
   });
 
@@ -215,7 +218,7 @@ describe('store on sqlite: ghost running agents at boot', () => {
       },
     });
 
-    expect(await reconcileGhostAgents()).toBe(0);
+    expect(await reconcileNow()).toBe(0);
     expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-ghost': 'running' });
   });
 });

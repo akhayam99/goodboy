@@ -4,7 +4,11 @@ import { SessionOverviewPane } from '../../../../features/session/components/Ses
 import { ACTIVITY_QUESTION_SESSION, seedActivityQuestionScene } from './activityQuestionSeed';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 
-export const ActivityQuestionScene = () => {
+type Props = {
+  readonly afterSeed?: () => () => void;
+};
+
+export const ActivityQuestionScene = ({ afterSeed }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -16,8 +20,10 @@ export const ActivityQuestionScene = () => {
       telemetryAt: new Date().toISOString() as IsoDateTime,
       lens: null,
     });
+    const release = afterSeed?.();
     setIsReady(true);
-  }, []);
+    return release;
+  }, [afterSeed]);
 
   if (!isReady) {
     return null;

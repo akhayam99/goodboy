@@ -105,6 +105,6 @@ describe('the facts on the branch tabs', () => {
       />,
     );
 
-    expect(screen.getByRole('tab', { name: /^Pull request/ }).textContent).toContain('Merged');
+    expect(screen.getByRole('tab', { name: /^Overview/ }).textContent).toContain('Merged');
   });
 });

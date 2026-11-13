@@ -1,4 +1,4 @@
-import { revertAgentStart, updateProviderRunStatus, updateSessionState } from '@goodboy/db';
+import { revertAgentStart, updateProviderRunStatus } from '@goodboy/db';
 import type { Agent, AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { invokeAgentList } from '../../../../features/workflows/workflows';
@@ -6,6 +6,7 @@ import { tauriDatabase } from '../../../../shared/lib/db';
 import { nowIso } from '../../project-mounts/nowIso';
 import { cancelledRunIds } from '../../sessions/sessionMutators';
 import type { GetFn, SetFn } from '../types';
+import { writeOwnedSessionState } from '../runOwnership/writeOwnedSessionState';
 import { releaseUnstartedTurn } from './releaseUnstartedTurn';
 
 type Params = Readonly<{
@@ -33,7 +34,13 @@ export const closeUnspawnedRun = async ({
   const derived = releaseUnstartedTurn({ set, get, sessionId, agentId, runId });
   const at = nowIso({});
   if (derived !== null) {
-    await updateSessionState(tauriDatabase, sessionId, derived, at);
+    await writeOwnedSessionState({
+      sessionId,
+      agentId: resolvedAgentId ?? agentId,
+      runId,
+      state: derived,
+      updatedAt: at,
+    });
   }
   await updateProviderRunStatus(
     tauriDatabase,

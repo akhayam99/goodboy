@@ -192,19 +192,8 @@ const SPLIT_DETAIL_FILES: Readonly<Partial<Record<StudioKind, ReadonlyArray<stri
   chat: ['features/workspace-chat/components/ChatStudio.tsx'],
   inbox: ['features/inbox/components/InboxStudio/InboxStudioLayout.tsx'],
   notifications: ['features/notifications/components/NotificationsStudio/index.tsx'],
+  settings: ['features/settings/components/SettingsStudio/index.tsx'],
 };
-
-const H1_ALLOWLIST: ReadonlySet<string> = new Set([
-  'features/artifacts/components/ArtifactShell/ArtifactShellHeader.tsx',
-  'features/artifacts/components/ArtifactList/index.tsx',
-  'features/workspace/components/WorkspaceLauncher/index.tsx',
-  'shared/components/StudioDetail/RecordHeader/index.tsx',
-]);
-
-const TITLE_ROW_PAGES: ReadonlyArray<string> = [
-  'features/session/components/AgentDetailPane/AgentHeader.tsx',
-  'features/workspace-chat/components/ChatRoom/ChatHeader.tsx',
-];
 
 const UI_COMPONENTS = join(SRC, '..', '..', '..', 'packages/ui/src/components');
 
@@ -412,41 +401,18 @@ describe('content column contract', () => {
     const offenders = walk(SRC)
       .map(toKey)
       .filter((key) => key.endsWith('.tsx') && !key.startsWith('app/components/MockScene/'))
-      .filter((key) => /<h1\b/.test(read(key)) && !H1_ALLOWLIST.has(key))
-      .filter((key) => !TITLE_ROW_PAGES.includes(key))
-      .filter((key) => key !== 'features/workspace-chat/components/ChatRoom/ChatHeader.tsx');
+      .filter((key) => /<h1\b/.test(read(key)));
 
     expect(offenders).toEqual([]);
-    const stale = [...H1_ALLOWLIST].filter((key) => !/<h1\b/.test(read(key)));
-    expect(stale).toEqual([]);
   });
 
-  it('draws the title row of every own-header page as a fixed, centred, single line', () => {
-    const drifted = TITLE_ROW_PAGES.flatMap((file) => {
-      const tags = titleRowTags(read(file));
-      if (tags.length === 0) {
-        return [`${file} has no title row`];
-      }
-      return tags.flatMap((tag) => {
-        const problems: Array<string> = [];
-        if (!/\b(min-)?h-8\b/.test(tag)) {
-          problems.push(`${file} title row is not 32px`);
-        }
-        if (!/items-center/.test(tag)) {
-          problems.push(`${file} title row does not centre`);
-        }
-        if (/flex-wrap|items-baseline|items-start/.test(tag)) {
-          problems.push(`${file} title row wraps or aligns off centre`);
-        }
-        return problems;
-      });
-    });
-
-    expect(drifted).toEqual([]);
+  it('draws the title row primitive as a fixed, centred, single line', () => {
     const primitive = readFileSync(join(UI_COMPONENTS, 'PaneShell/PaneTitleRow.tsx'), 'utf8');
-    const bandPrimitive = readFileSync(join(UI_COMPONENTS, 'HeaderBand.tsx'), 'utf8');
-    expect(titleRowTags(primitive)[0]).toMatch(/\bh-8\b.*items-center|items-center.*\bh-8\b/);
-    expect(titleRowTags(bandPrimitive)[0]).toMatch(/\bh-8\b.*items-center|items-center.*\bh-8\b/);
+    const tag = titleRowTags(primitive)[0] ?? '';
+
+    expect(tag).toMatch(/items-center/);
+    expect(tag).not.toMatch(/flex-wrap|items-baseline|items-start/);
+    expect(primitive).toContain('PANE_RHYTHM.headerRow');
   });
 
   it('keeps the first lap, move card and move report on the column as notices, never a bar of their own', () => {

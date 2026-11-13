@@ -1,4 +1,4 @@
-import { SegmentedTabs, cn, tintClasses, type SegmentedTabOption } from '@goodboy/ui';
+import { PageTabs, cn, tintClasses, type PageTabOption } from '@goodboy/ui';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchTabEntry } from '../../branchTabs';
 import type { BranchTabFacts } from '../../branchTabFactsOf';
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export const BranchTabStrip = ({ tabs, facts, value, onSelect }: Props) => {
-  const options = tabs.map((entry): SegmentedTabOption<BranchTab> => {
+  const options = tabs.map((entry): PageTabOption<BranchTab> => {
     const fact = facts[entry.id];
     return {
       value: entry.id,
@@ -34,13 +34,5 @@ export const BranchTabStrip = ({ tabs, facts, value, onSelect }: Props) => {
       }),
     };
   });
-  return (
-    <SegmentedTabs
-      ariaLabel="Branch pages"
-      options={options}
-      value={value}
-      onChange={onSelect}
-      size="sm"
-    />
-  );
+  return <PageTabs ariaLabel="Branch pages" options={options} value={value} onChange={onSelect} />;
 };

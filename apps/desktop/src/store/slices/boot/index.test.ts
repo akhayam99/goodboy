@@ -196,10 +196,15 @@ beforeAll(async () => {
 describe('store contract', () => {
   beforeEach(async () => {
     await resetStoryStore();
+    vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+      queueMicrotask(callback);
+      return 0;
+    });
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('boot', () => {
@@ -255,6 +260,8 @@ describe('store contract', () => {
       expect(vi.mocked(stopGhostAgents)).toHaveBeenCalledWith({
         db: expect.anything(),
         keepRunIds: ['run-live'],
+        launchId: 'launch-story',
+        nowMs: expect.any(Number),
       });
     });
 
@@ -285,10 +292,16 @@ describe('store contract', () => {
         return null;
       });
       storySpies.listProviderCredentials.mockImplementationOnce(async () => {
+        for (let tick = 0; tick < 200; tick += 1) {
+          await Promise.resolve();
+        }
         clock = 1_040;
         return [];
       });
       storySpies.listWorkspaces.mockImplementationOnce(async () => {
+        for (let tick = 0; tick < 400; tick += 1) {
+          await Promise.resolve();
+        }
         clock = 1_105;
         return [];
       });
@@ -327,8 +340,8 @@ describe('store contract', () => {
 
       expect(breadcrumbDetail({ phase: 'migrating' })).toBe('ms=10');
       expect(breadcrumbDetail({ phase: 'loading-settings' })).toBe('ms=1000');
-      expect(breadcrumbDetail({ phase: 'detecting-cli' })).toBe('ms=30');
-      expect(breadcrumbDetail({ phase: 'loading-workspaces' })).toBe('ms=65');
+      expect(breadcrumbDetail({ phase: 'detecting-cli' })).toBe('ms=1030');
+      expect(breadcrumbDetail({ phase: 'loading-workspaces' })).toBe('ms=1095');
       expect(breadcrumbDetail({ phase: 'ready' })).toBe('ms=1105,ok');
     });
 
@@ -470,17 +483,18 @@ describe('store contract', () => {
       storySpies.getSetting.mockImplementation(async (_db: unknown, key: string) =>
         off.has(key) ? 'false' : null,
       );
-      let switchesAtWorkspaces: ReadonlyArray<boolean> = [];
-      storySpies.listWorkspaces.mockImplementationOnce(async () => {
-        const settings = store.getState().settings;
-        switchesAtWorkspaces = [isLearningsOn({ settings })];
-        return [];
+      let switchesAtRestore: ReadonlyArray<boolean> = [];
+      const unsubscribe = store.subscribe((state) => {
+        if (state.bootPhase === 'restoring-session' && switchesAtRestore.length === 0) {
+          switchesAtRestore = [isLearningsOn({ settings: state.settings })];
+        }
       });
 
       await store.getState().hydrate();
+      unsubscribe();
 
       const state = store.getState();
-      expect(switchesAtWorkspaces).toEqual([false]);
+      expect(switchesAtRestore).toEqual([false]);
       expect(isLearningsOn({ settings: state.settings })).toBe(false);
       expect(isChatImagesOn({ state })).toBe(false);
     });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '../paneRhythm';
+import { HEADER_BAND_PX, HEADER_META_PX, PANE_GROUPS_GAP_REM, PANE_RHYTHM } from '../paneRhythm';
 import { COLLAPSED_RAIL_WIDTH } from '../components/AppShell';
 
 describe('PANE_RHYTHM', () => {
@@ -28,10 +28,20 @@ describe('PANE_RHYTHM', () => {
     expect(Object.keys(PANE_RHYTHM)).not.toContain('measure');
   });
 
-  it('puts a header that reads as a section one stack gap above the body', () => {
-    const stackGap = PANE_RHYTHM.stack.split(' ').find((entry) => entry.startsWith('gap-'));
-    expect(PANE_RHYTHM.below.section.replace('pb-', 'gap-')).toBe(stackGap);
-    expect(PANE_RHYTHM.below.title).toBe('pb-4');
+  describe('the title band', () => {
+    const pxOf = (token: string): number => Number(token.slice(token.indexOf('-') + 1)) * 4;
+
+    it('is 48: 8 above, a 32 row, 8 below, for a title page and a section page alike', () => {
+      const band =
+        pxOf(PANE_RHYTHM.headerInset) + pxOf(PANE_RHYTHM.headerRow) + pxOf(PANE_RHYTHM.below.title);
+      expect(band).toBe(HEADER_BAND_PX);
+      expect(PANE_RHYTHM.below.section).toBe(PANE_RHYTHM.below.title);
+    });
+
+    it('adds 16 for a meta line', () => {
+      expect(pxOf(PANE_RHYTHM.headerMeta)).toBe(HEADER_META_PX);
+      expect(HEADER_BAND_PX + HEADER_META_PX).toBe(64);
+    });
   });
 
   it('gives the groups gap in rem to a slot that cancels it while closed', () => {

@@ -216,7 +216,7 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'settings frame: a page with its band, its crumb and its own scopes rail beside the live column',
+    name: 'settings frame: a page with its band, no crumb and its own scopes rail beside the live column',
     covers: ['openSettings', 'scope:home'],
     open: async () => {
       await clickButton('Settings');
@@ -226,7 +226,7 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
       await heading('Appearance');
       expect(document.querySelector('[data-studio-band]')).not.toBeNull();
       expect(document.querySelector('[data-studio-rail="page"]')).not.toBeNull();
-      expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeDefined();
+      expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
       const rail = screen.getByRole('complementary', { name: 'Settings scopes' });
       expect(within(rail).getByRole('searchbox', { name: 'Search settings' })).toBeDefined();
       const detail = document.querySelector('[data-settings-detail]');

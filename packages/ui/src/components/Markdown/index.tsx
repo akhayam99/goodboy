@@ -2,9 +2,11 @@ import { Fragment, memo, useMemo, useRef, type ReactNode } from 'react';
 import { Square, SquareCheck, SquareMinus, type LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
 import { EYEBROW_CLASS, Eyebrow } from '../Eyebrow';
-import { RemoteImage } from '../RemoteImage';
-import { IMAGE_CLASS } from '../RemoteImage/imageClass';
-import { LocalImage } from '../LocalImage';
+import { COMMENT_IMAGE_CLASS } from '../RemoteImage/imageClass';
+import { VideoPoster } from '../VideoPoster';
+import { AttachmentMedia } from './AttachmentMedia';
+import { DetailsBlock } from './DetailsBlock';
+import { renderImage } from './renderImage';
 import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
 import { parseInline, type InlineNode } from './parseInline';
 import { type Block, type KitEntry, type TaskState } from './parseMarkdown';
@@ -29,40 +31,6 @@ const CHIP_CLASS = `mx-0.5 inline-flex items-center gap-1 rounded-sm px-2 py-0.5
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
   document: 'rounded-md bg-muted px-1 py-0 font-mono text-ui text-foreground wrap-anywhere',
   preview: 'font-mono text-ui text-foreground wrap-anywhere',
-};
-
-type ImageParams = {
-  readonly alt: string;
-  readonly url: string;
-  readonly key: string;
-  readonly variant: MarkdownVariant;
-};
-
-const renderImage = ({ alt, url, key, variant }: ImageParams): ReactNode => {
-  if (/^data:image\/svg/i.test(url)) {
-    return alt;
-  }
-  if (/^data:image\//i.test(url)) {
-    return <img key={key} src={url} alt={alt} className={IMAGE_CLASS} />;
-  }
-  if (/^data:/i.test(url)) {
-    return alt;
-  }
-  if (variant === 'preview') {
-    return alt;
-  }
-  if (!/^https?:/i.test(url)) {
-    if (
-      url.length <= 1024 &&
-      !/\s/.test(url) &&
-      !/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url) &&
-      /\.(?:png|jpe?g|gif|webp)$/i.test(url)
-    ) {
-      return <LocalImage key={`${key}-${url}`} url={url} alt={alt} />;
-    }
-    return alt;
-  }
-  return <RemoteImage key={key} url={url} alt={alt} />;
 };
 
 type InlineRenderParams = {
@@ -125,6 +93,9 @@ const renderInlineNodes = ({ nodes, keyPrefix, variant }: InlineRenderParams): R
     if (node.kind === 'image') {
       return renderImage({ alt: node.alt, url: node.url, key, variant });
     }
+    if (node.kind === 'video') {
+      return <VideoPoster key={key} url={node.url} />;
+    }
     return (
       <a
         key={key}
@@ -150,13 +121,26 @@ type InlineLinesParams = {
   readonly variant: MarkdownVariant;
 };
 
+const BARE_ATTACHMENT_RE = /^https:\/\/[^\s<>()"'`]{1,2048}$/;
+
 const renderInlineLines = ({ input, keyPrefix, variant }: InlineLinesParams): ReactNode =>
-  input.split('\n').map((line, lineIndex, lines) => (
-    <Fragment key={`${keyPrefix}-${lineIndex}`}>
-      {renderInline(line, `${keyPrefix}-${lineIndex}`, variant)}
-      {lineIndex < lines.length - 1 && <br />}
-    </Fragment>
-  ));
+  input.split('\n').map((line, lineIndex, lines) => {
+    const trimmed = line.trim();
+    const isBare = trimmed.length <= 2060 && BARE_ATTACHMENT_RE.test(trimmed);
+    return (
+      <Fragment key={`${keyPrefix}-${lineIndex}`}>
+        {isBare ? (
+          <AttachmentMedia
+            url={trimmed}
+            imageClassName={variant === 'preview' ? COMMENT_IMAGE_CLASS : undefined}
+          />
+        ) : (
+          renderInline(line, `${keyPrefix}-${lineIndex}`, variant)
+        )}
+        {lineIndex < lines.length - 1 && <br />}
+      </Fragment>
+    );
+  });
 
 const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
   1: 'text-title text-foreground',
@@ -404,6 +388,18 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         </div>
       );
     }
+    case 'details':
+      return (
+        <DetailsBlock
+          key={key}
+          label={renderInline(block.summary, `${key}-s`, variant)}
+          isOpenAtStart={block.isOpen}
+        >
+          {block.blocks.map((child, ci) =>
+            renderBlock({ block: child, id: `${key}-d${ci}`, variant, depth: depth + 1 }),
+          )}
+        </DetailsBlock>
+      );
     case 'facts': {
       if (variant === 'preview') {
         return renderKitPreview({ key, entries: block.entries });

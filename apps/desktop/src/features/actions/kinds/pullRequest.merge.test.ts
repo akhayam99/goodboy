@@ -23,7 +23,7 @@ const PR: PullRequestState = {
   reviewDecision: 'approved',
   body: '',
   updatedAt: '2026-09-20T10:00:00Z',
-  author: 'nadia-p',
+  author: { login: 'nadia-p', avatarUrl: null },
   headSha: '6c20f48a9e1d',
 };
 
@@ -209,6 +209,38 @@ describe('the merge confirm choice', () => {
       sessionId: SESSION,
       mountId: SHOWN_MOUNT,
       force: true,
+    });
+  });
+
+  it('toasts the merge from the palette, where no line shows the outcome', async () => {
+    vi.mocked(ENV.showToast).mockClear();
+    await runMerge('squash');
+    expect(ENV.showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Merged #318 into main' }),
+    );
+  });
+
+  it('leaves the outcome to the line under the button: no toast, failure logged quietly', async () => {
+    const showToast = vi.fn();
+    const hasRunSurface = () => true;
+    const mergePr = vi.fn(async () => undefined);
+    useAppStore.setState({
+      mergePr,
+      loadPullRequestView,
+      refreshSessionPr: vi.fn(async () => undefined),
+      refreshSessionPrDetail: vi.fn(async () => undefined),
+    });
+    const merge = PULL_REQUEST_KIND.actions.find((action) => action.id === 'pullRequest.merge');
+    await merge?.run({
+      facts: facts({ mountId: SHOWN_MOUNT }),
+      env: { ...ENV, origin: 'button', showToast, isOutcomeShown: true, hasRunSurface },
+      choice: 'squash',
+    });
+
+    expect(showToast).not.toHaveBeenCalled();
+    expect(mergePr).toHaveBeenCalledWith(SESSION, 318, 'squash', {
+      ...MOUNT_PINNED,
+      hasFailureSurface: hasRunSurface,
     });
   });
 });

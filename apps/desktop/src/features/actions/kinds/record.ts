@@ -1,7 +1,7 @@
 import { ArrowUpRight, Hash, Link, PlayCircle, RefreshCw, Star } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { openUrl } from '../../../shared/lib/editor';
+import { openWebAction } from '../openWebAction';
 import { startFromLabel } from '../../../shared/lib/startCopy';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import type { RecordVerb } from '../../../shared/components/StudioDetail/RecordActions/types';
@@ -86,7 +86,7 @@ export const RECORD_KIND: ObjectKindDefinition<RecordActionTarget, RecordFacts> 
       icon: ArrowUpRight,
       group: 'open',
       when: ({ facts }) => facts.url !== '',
-      run: ({ facts }) => openUrl(facts.url),
+      run: ({ facts, env }) => openWebAction({ url: facts.url, env, sessionId: facts.sessionId }),
     },
     {
       id: 'record.launch',

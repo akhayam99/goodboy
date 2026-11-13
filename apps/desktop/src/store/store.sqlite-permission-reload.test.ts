@@ -143,7 +143,7 @@ const expectStillWaiting = async (): Promise<void> => {
     'running',
   );
   expect(state.agentTurnState[AGENT_ID]).toMatchObject({ kind: 'blocked', runId: RUN_ID });
-  expect(stageInfosOf({ state })[LEDGER_ID]?.stage).toBe('attention');
+  expect(stageInfosOf({ state, sessions: state.sessions })[LEDGER_ID]?.stage).toBe('attention');
 };
 
 describe('store on sqlite: a waiting permission across a reload', () => {
@@ -510,13 +510,13 @@ describe('store on sqlite: a waiting permission across a reload', () => {
     await useAppStore.getState().hydrate();
     await expectStillWaiting();
 
-    await useAppStore.getState().setCurrentWorkspace(NORTHWIND_ID);
+    await useAppStore.getState().setCurrentWorkspace({ id: NORTHWIND_ID });
     expect(useAppStore.getState().currentWorkspaceId).toBe(NORTHWIND_ID);
     expect(storySpies.cancelTurn).not.toHaveBeenCalled();
     expect(cancelledRunIds.has(RUN_ID)).toBe(false);
     expect(await savedStatus()).toBe('running');
 
-    await useAppStore.getState().setCurrentWorkspace(HARBORLINE_ID);
+    await useAppStore.getState().setCurrentWorkspace({ id: HARBORLINE_ID });
     expect(useAppStore.getState().currentWorkspaceId).toBe(HARBORLINE_ID);
     expect(useAppStore.getState().boardReady).toBe(true);
     await expectStillWaiting();

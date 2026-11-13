@@ -9,9 +9,10 @@ import { useMemo } from 'react';
 import { Notice, PaneShell } from '@goodboy/ui';
 import type { BitbucketIntegrationBinding, FileDiff, SessionId, WorkspaceId } from '@goodboy/types';
 import { bitbucketPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
-import { checksRollup } from '../../../github/checksRollup';
-import { openUrl } from '../../../../../shared/lib/editor';
-import { PrChecks } from '../../../github/components/PullRequest/PrChecks';
+import { HostOverview } from '../../../components/HostOverview';
+import { hostActivitySectionOf } from '../../../components/HostOverview/hostActivitySectionOf';
+import { hostActivityOf } from '../../../../branch/hostActivityOf';
+import { bitbucketPrRailOf } from './bitbucketPrRailOf';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
 import { BitbucketStateChip } from '../../BitbucketStateChip';
@@ -146,6 +147,26 @@ export const PrDetailPanel = ({
 
   const webUrl = bitbucketPrUrl({ repo, pullRequest });
   const identifier = bitbucketPrIdentifier({ repo, pullRequest });
+  const timeline = hostActivityOf({
+    opened: {
+      who: pullRequest.author?.displayName ?? null,
+      avatarUrl: pullRequest.author?.avatarUrl ?? null,
+      at: pullRequest.createdOn,
+      isDraft: false,
+    },
+    threads: source.threads,
+    end:
+      pullRequest.state === 'MERGED'
+        ? {
+            kind: 'merged',
+            at: pullRequest.updatedOn,
+            who: pullRequest.author?.displayName ?? null,
+            avatarUrl: pullRequest.author?.avatarUrl ?? null,
+          }
+        : pullRequest.state === 'OPEN'
+          ? null
+          : { kind: 'closed', at: pullRequest.updatedOn, who: null, avatarUrl: null },
+  });
 
   const sections: ReadonlyArray<RecordSection> = [
     {
@@ -155,22 +176,6 @@ export const PrDetailPanel = ({
       isCollapsible: false,
       defaultOpen: true,
       content: <DescriptionSection text={pullRequest.description} />,
-    },
-    {
-      key: 'checks',
-      kind: 'tool',
-      label: 'Checks',
-      summary: checksRollup({ checks: detail.checks }),
-      isCollapsible: true,
-      defaultOpen: false,
-      content: (
-        <PrChecks
-          checks={detail.checks}
-          fallbackUrl={webUrl}
-          host="bitbucket"
-          onOpenUrl={(url) => void openUrl(url)}
-        />
-      ),
     },
     {
       key: 'changes',
@@ -188,6 +193,11 @@ export const PrDetailPanel = ({
         />
       ),
     },
+    ...hostActivitySectionOf({
+      items: timeline,
+      host: 'bitbucket',
+      baseBranch: pullRequest.destinationBranch,
+    }),
     conversation.section,
   ];
 
@@ -224,7 +234,9 @@ export const PrDetailPanel = ({
           body={error}
         />
       ) : null}
-      <RecordSections sections={sections} />
+      <HostOverview rail={bitbucketPrRailOf({ pullRequest, checks: detail.checks })}>
+        <RecordSections sections={sections} />
+      </HostOverview>
     </PaneShell>
   );
 };

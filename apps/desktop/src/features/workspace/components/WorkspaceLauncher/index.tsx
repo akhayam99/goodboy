@@ -9,6 +9,7 @@ import {
   ICON_SIZE,
   IconButton,
   KeyHint,
+  PaneTitleRow,
   ScrollFade,
   SearchField,
   Switch,
@@ -208,10 +209,7 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
       <main aria-label="Home" className="flex w-full max-w-[600px] flex-col gap-8 pb-10 pt-24">
         <div className="flex items-center gap-3">
           <BrandTile size={LOCKUP_TILE_PX} />
-          <div className="flex flex-col">
-            <h1 className="text-title text-foreground">Goodboy</h1>
-            <span className="text-meta tabular-nums text-faint-foreground">v{APP_VERSION}</span>
-          </div>
+          <PaneTitleRow title="Goodboy" meta={`v${APP_VERSION}`} />
         </div>
         {body}
       </main>

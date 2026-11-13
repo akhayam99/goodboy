@@ -2,7 +2,12 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["package.json", "eslint.strict.config.mjs"],
+      "entry": [
+        "package.json",
+        "eslint.strict.config.mjs",
+        "scripts/boot-timing.mjs",
+        "scripts/make-perf-fixture.mjs"
+      ],
       "ignore": ["scripts/rules/forbiddenPatterns.d.mts"],
       "ignoreBinaries": ["cwebp", "vite", "preview"]
     },
@@ -19,6 +24,8 @@
       "ignoreIssues": {
         "src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": ["exports"],
         "src/features/browser/browserBudgets.ts": ["files"],
+        "src/app/shellBudgets.ts": ["files"],
+        "src/store/slices/boot/bootBudgets.ts": ["files"],
         "src/features/chat/spawn-from-comment.ts": ["exports"],
         "src/features/chat/utils/transcript-items-trace.ts": ["exports"],
         "src/features/companion/mobileConfinement.ts": ["exports"],

@@ -111,22 +111,20 @@ export const ArtifactList = ({
   return (
     <PaneShell
       page="artifacts"
-      header={
-        <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="min-w-0 truncate text-title text-foreground">Artifacts</h1>
+      title="Artifacts"
+      actions={
+        <>
           {counts.all === 0 ? null : (
             <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
           )}
-          <div className="ml-auto flex shrink-0 items-center gap-3">
-            {branch === undefined || branch.branchCount < 2 ? null : (
-              <GroupBySwitch
-                value={branch.groupBy}
-                onChange={(next) => branch.onGroupByChange({ groupBy: next })}
-              />
-            )}
-            <ArtifactNewMenu sessionId={sessionId} onImportWireframe={importer.pick} />
-          </div>
-        </div>
+          {branch === undefined || branch.branchCount < 2 ? null : (
+            <GroupBySwitch
+              value={branch.groupBy}
+              onChange={(next) => branch.onGroupByChange({ groupBy: next })}
+            />
+          )}
+          <ArtifactNewMenu sessionId={sessionId} onImportWireframe={importer.pick} />
+        </>
       }
     >
       <div

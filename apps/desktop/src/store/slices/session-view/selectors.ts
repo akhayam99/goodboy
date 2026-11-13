@@ -1,19 +1,15 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
-  Agent,
-  AgentId,
   Session,
   SessionId,
   SessionStage,
   SessionStageInfo,
   SessionViewPrefs,
-  TurnState,
   WorkspaceId,
 } from '@goodboy/types';
 import { spendFigures } from '../../../features/budget/spendFigures';
 import { attentionWordsOf } from '../../../features/session/session-stage';
-import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import { useAppStore } from '../../store';
 import { useProjectFilteredSessions } from '../sessionFilters/selectors';
 import { useProjectMountsForSessions } from '../project-mounts/useProjectMountsForSessions';
@@ -29,9 +25,7 @@ import { useSessionInactivity } from './useSessionInactivity';
 import { projectsBySession } from './projectOfSession';
 import { DEFAULT_PREFS, type GroupedSessions } from './types';
 import { attentionCountOf, type AttentionCount } from './attentionCountOf';
-import { integrationsByWorkspace } from './integrationsByWorkspace';
 import { cachedStageInfoOf } from './cachedStageInfoOf';
-import type { StageInfoState } from './stageInfoOf';
 import { stageInfosOf } from './stageInfosOf';
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
@@ -47,39 +41,6 @@ export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionVie
   }, [workspaceId, prefs, getSessionViewPrefs]);
 
   return prefs ?? DEFAULT_PREFS;
-};
-
-function liveAgentTurnStateOf(
-  sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>,
-  agentTurnState: Readonly<Record<AgentId, TurnState>>,
-): Readonly<Record<AgentId, TurnState>> {
-  const entries: Record<AgentId, TurnState> = {};
-  for (const runs of Object.values(sessionPhaseRuns)) {
-    for (const run of runs) {
-      const turnState = agentTurnState[run.id];
-      if (turnState !== undefined && isTurnStateLive({ turnState, includeBlocked: true })) {
-        entries[run.id] = turnState;
-      }
-    }
-  }
-  return entries;
-}
-
-const pickBySessions = <T>({
-  map,
-  sessions,
-}: {
-  readonly map: Readonly<Record<SessionId, T>> | undefined;
-  readonly sessions: ReadonlyArray<Session>;
-}): Readonly<Record<SessionId, T>> => {
-  const picked: Record<SessionId, T> = {};
-  for (const session of sessions) {
-    const value = map?.[session.id];
-    if (value !== undefined) {
-      picked[session.id] = value;
-    }
-  }
-  return picked;
 };
 
 export const useSessionStageInfo = (session: Session): SessionStageInfo =>
@@ -146,144 +107,26 @@ const useStageSources = ({
   );
   const sessionGithub = useAppStore((s) => s.sessionGithub);
   const sessionRequests = useAppStore((s) => s.sessionRequests);
-  const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
-  const agentTurnState = useAppStore(
-    useShallow((s) => liveAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)),
-  );
-  const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId);
-  const currentSessionId = useAppStore((s) => s.currentSessionId);
-  const githubStatus = useAppStore((s) => s.githubStatus);
-  const hostReachability = useAppStore((s) => s.hostReachability);
-  const integrationBindings = useAppStore(
-    useShallow((s) => Object.values(s.workspaceIntegrations).flat()),
-  );
-  const workspaceIntegrations = useMemo(
-    () => integrationsByWorkspace({ bindings: integrationBindings }),
-    [integrationBindings],
-  );
-  const sessionResolveThreads = useAppStore(
-    useShallow((s) => pickBySessions({ map: s.sessionResolveThreads, sessions: filteredSessions })),
-  );
-  const sessionResolveAttempts = useAppStore(
-    useShallow((s) =>
-      pickBySessions({ map: s.sessionResolveAttempts, sessions: filteredSessions }),
-    ),
-  );
-  const sessionArtifacts = useAppStore(
-    useShallow((s) => pickBySessions({ map: s.sessionArtifacts, sessions: filteredSessions })),
-  );
-  const workspaces = useAppStore((s) => s.workspaces);
   const projects = useAppStore((s) => s.projects);
-  const sessionBranches = useAppStore((s) => s.sessionBranches);
-  const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
   const sessionProjectMounts = useProjectMountsForSessions({ sessions: filteredSessions });
-  const sessionActiveProject = useAppStore((s) => s.sessionActiveProject);
-  const sessionMounts = useAppStore((s) => s.sessionMounts);
-  const sessionActiveMount = useAppStore((s) => s.sessionActiveMount);
   const mountGithub = useAppStore((s) => s.mountGithub);
   const mountRequests = useAppStore((s) => s.mountRequests);
-  const prSeries = useAppStore((s) => s.prSeries);
-  const {
-    phaseTemplates,
-    sessionWorkflows,
-    agentKindOverride,
-    autoTreeViews,
-    sessionSlackDrafts,
-    sessionDismissedNextSteps,
-  } = useAppStore(
-    useShallow((s) => ({
-      phaseTemplates: s.phaseTemplates,
-      sessionWorkflows: s.sessionWorkflows,
-      agentKindOverride: s.agentKindOverride,
-      autoTreeViews: s.autoTreeViews,
-      sessionSlackDrafts: s.sessionSlackDrafts,
-      sessionDismissedNextSteps: s.sessionDismissedNextSteps,
-    })),
-  );
-  const stages = useMemo(() => {
-    const partial: StageInfoState = {
-      sessions: filteredSessions,
-      workspaces,
-      projects,
-      sessionBranches,
-      sessionWorktrees,
-      sessionProjectMounts,
-      sessionMounts,
-      sessionActiveMount,
-      sessionActiveProject,
-      mountGithub,
-      mountRequests,
-      prSeries,
-      sessionGithub,
-      sessionRequests,
-      sessionOpenQuestions,
-      sessionPhaseRuns,
-      agentTurnState,
-      orchestratingWorkflowRuns,
-      selectedAgentId,
-      currentSessionId,
-      githubStatus,
-      hostReachability,
-      workspaceIntegrations,
-      sessionResolveThreads,
-      sessionResolveAttempts,
-      phaseTemplates,
-      sessionWorkflows,
-      agentKindOverride,
-      autoTreeViews,
-      sessionSlackDrafts,
-      sessionDismissedNextSteps,
-      sessionArtifacts,
-    };
-    const infoMap = stageInfosOf({ state: partial });
-    const stageMap: Record<SessionId, SessionStage> = {};
+  const infos = useAppStore((s) => stageInfosOf({ state: s, sessions: filteredSessions }));
+  const stageMap = useMemo(() => {
+    const picked: Record<SessionId, SessionStage> = {};
     for (const session of filteredSessions) {
-      const info = infoMap[session.id];
+      const info = infos[session.id];
       if (info !== undefined) {
-        stageMap[session.id] = info.stage;
+        picked[session.id] = info.stage;
       }
     }
-    return { stageMap, infoMap };
-  }, [
-    filteredSessions,
-    workspaces,
-    projects,
-    sessionBranches,
-    sessionWorktrees,
-    sessionProjectMounts,
-    sessionMounts,
-    sessionActiveMount,
-    sessionActiveProject,
-    mountGithub,
-    mountRequests,
-    prSeries,
-    sessionGithub,
-    sessionRequests,
-    sessionOpenQuestions,
-    sessionPhaseRuns,
-    agentTurnState,
-    orchestratingWorkflowRuns,
-    selectedAgentId,
-    currentSessionId,
-    githubStatus,
-    hostReachability,
-    workspaceIntegrations,
-    sessionResolveThreads,
-    sessionResolveAttempts,
-    phaseTemplates,
-    sessionWorkflows,
-    agentKindOverride,
-    autoTreeViews,
-    sessionSlackDrafts,
-    sessionDismissedNextSteps,
-    sessionArtifacts,
-  ]);
+    return picked;
+  }, [filteredSessions, infos]);
   return {
     filteredSessions,
-    stages: useStableStages(stages.stageMap),
-    infos: stages.infoMap,
+    stages: useStableStages(stageMap),
+    infos,
     sessionGithub,
     mountGithub,
     sessionRequests,

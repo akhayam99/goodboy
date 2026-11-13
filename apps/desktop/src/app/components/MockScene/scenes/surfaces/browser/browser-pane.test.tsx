@@ -64,6 +64,10 @@ const mount = ({ id }: MountParams) => {
 describe('the browser pane scenes', () => {
   it('registers every state in light and dark for the capture', () => {
     expect(Object.keys(BROWSER_PANE_SCENES).sort()).toEqual([
+      'browser-console',
+      'browser-console-dark',
+      'browser-handoff',
+      'browser-handoff-dark',
       'browser-page',
       'browser-page-dark',
       'browser-pane',
@@ -88,10 +92,14 @@ describe('the browser pane scenes', () => {
       'browser-pane-passkey-dark',
       'browser-pane-rail',
       'browser-pane-rail-dark',
+      'browser-pane-saved-copy',
+      'browser-pane-saved-copy-dark',
       'browser-pane-tabs',
       'browser-pane-tabs-dark',
       'browser-peek',
       'browser-peek-dark',
+      'browser-width-phone',
+      'browser-width-tablet',
     ]);
     for (const [id, Scene] of Object.entries(BROWSER_PANE_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
@@ -115,6 +123,47 @@ describe('the browser pane scenes', () => {
     expect(screen.getAllByTestId('pane-toggle-browser')[0]?.getAttribute('aria-pressed')).toBe(
       'true',
     );
+  });
+
+  it('opens the console under the page with a row per level and the failed request', async () => {
+    mount({ id: 'browser-console' });
+
+    const region = await screen.findByRole('region', { name: 'Console' }, WAIT);
+    await waitFor(
+      () => expect(region.querySelectorAll('[data-console-level]')).toHaveLength(4),
+      WAIT,
+    );
+    expect(
+      Array.from(region.querySelectorAll('[data-console-level]'), (node) =>
+        node.getAttribute('data-console-level'),
+      ),
+    ).toEqual(['error', 'warn', 'info', 'log']);
+    expect(within(region).getByRole('tab', { name: /Network/ }).textContent).toBe('Network1');
+    expect(screen.getByRole('button', { name: 'Console' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('frames the page at the width of the phone and tablet presets', async () => {
+    mount({ id: 'browser-width-phone' });
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const frame = pane.querySelector('[data-device-frame]');
+    expect(frame?.getAttribute('style')).toContain('max-width: 408px');
+    cleanup();
+
+    mount({ id: 'browser-width-tablet' });
+    const tabletPane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    expect(tabletPane.querySelector('[data-device-frame]')?.getAttribute('style')).toContain(
+      'max-width: 786px',
+    );
+  });
+
+  it('shows a saved report in a tab beside the session', async () => {
+    mount({ id: 'browser-pane-saved-copy' });
+
+    const pane = await screen.findByRole('region', { name: 'Browser' }, WAIT);
+    const pill = within(pane).getByRole('button', { name: /^Edit address, Rounding drift/ });
+    expect(pill.textContent).toContain('index.html');
   });
 
   it('opens the Browser page with every tab grouped by session and the Browser tool selected', async () => {
@@ -217,11 +266,18 @@ describe('the browser pane scenes', () => {
     expect(within(pane).getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(false);
   });
 
-  it('opens the More menu with its five rows', async () => {
+  it('opens the More menu with its seven rows', async () => {
     mount({ id: 'browser-pane-more' });
 
     const menu = await screen.findByRole('menu', undefined, WAIT);
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(5);
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(7);
+  });
+
+  it('opens the More menu on the Send to the agent row first', async () => {
+    mount({ id: 'browser-handoff' });
+
+    const menu = await screen.findByRole('menu', undefined, WAIT);
+    expect(within(menu).getAllByRole('menuitem')[0]?.textContent).toContain('Send to');
   });
 
   it('peeks a localhost link in a decision with the title of its open tab', async () => {

@@ -62,6 +62,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  useAppStore.setState({ detectedEditors: [{ binary: 'code', label: 'VS Code' }] });
   stubStoryInvoke({ open_in_editor: async () => null });
 });
 
@@ -188,6 +189,10 @@ describe('useBoardNavigation', () => {
     act(() => {
       useAppStore.setState({
         sessionWorktrees: { [SESSION_ID]: ['/code/ledger-core'] },
+        detectedEditors: [
+          { binary: 'code', label: 'VS Code' },
+          { binary: 'zed', label: 'Zed' },
+        ],
         settings: { 'editor.binary': 'zed' },
       });
     });
@@ -211,7 +216,9 @@ describe('useBoardNavigation', () => {
     await vi.waitFor(() => expect(editorCalls()).toHaveLength(1));
     await vi.waitFor(() =>
       expect(
-        useAppStore.getState().notifications.some((n) => n.title === "Couldn't open the editor"),
+        useAppStore
+          .getState()
+          .notifications.some((n) => n.title === "Couldn't open /code/ledger-core"),
       ).toBe(true),
     );
     stubStoryInvoke({ open_in_editor: async () => null });

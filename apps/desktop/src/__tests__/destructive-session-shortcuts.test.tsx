@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 
@@ -13,6 +13,7 @@ const { state } = vi.hoisted(() => {
       hydrate: vi.fn(async () => undefined),
       checkForUpdates: vi.fn(async () => undefined),
       hydrated: true,
+      isShellReady: true,
       bootPhase: 'ready' as const,
       error: null,
       workspaceIntegrations: {},
@@ -51,12 +52,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
 }));
 vi.mock('../features/palette/components/PaletteOverlay', () => ({ PaletteOverlay: () => null }));
 vi.mock('../app/components/BootSplash', () => ({
-  BootSplash: ({ onFinished }: { onFinished: () => void }) => {
-    useEffect(() => {
-      onFinished();
-    }, [onFinished]);
-    return null;
-  },
+  BootSplash: () => null,
 }));
 vi.mock('../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
 vi.mock('../app/components/AppTopBar', () => ({ AppTopBar: () => null }));

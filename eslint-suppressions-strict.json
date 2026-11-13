@@ -466,7 +466,7 @@
   },
   "apps/desktop/src/features/session/components/SessionNavSidebar/index.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/linkWorkRows.ts": {
@@ -756,7 +756,7 @@
   },
   "apps/desktop/src/store/slices/boot/hydrate.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 12
+      "count": 11
     }
   },
   "apps/desktop/src/store/slices/credentials/createCredential.ts": {
@@ -1236,7 +1236,7 @@
   },
   "packages/db/src/queries/agent.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 9
+      "count": 2
     }
   },
   "packages/db/src/queries/github-pr-cache.ts": {

@@ -1,9 +1,13 @@
 import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
 import { browserTabListPref } from '../../../../../../features/browser/browserTabListPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
-import type { BrowserTabFacts, BrowserTabListMode } from '../../../../../../features/browser/types';
+import type {
+  BrowserConsoleRead,
+  BrowserTabFacts,
+  BrowserTabListMode,
+} from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
-import type { BrowserTab } from '../../../../../../store/slices/browser/types';
+import type { BrowserTab, DevicePresetId } from '../../../../../../store/slices/browser/types';
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
@@ -17,12 +21,78 @@ export type BrowserPaneSceneState =
   | 'address'
   | 'field'
   | 'more'
+  | 'handoff'
   | 'passkey'
   | 'loading'
   | 'keys'
   | 'find'
   | 'find-missing'
-  | 'cover';
+  | 'cover'
+  | 'saved-copy'
+  | 'width-phone'
+  | 'width-tablet'
+  | 'console';
+
+const CONSOLE_READ: BrowserConsoleRead = {
+  doc: 'mockload',
+  isHeard: true,
+  entries: [
+    {
+      seq: 1,
+      kind: 'console',
+      level: 'error',
+      text: 'TypeError: retry is not a function',
+      source: 'checkout.js:214',
+      method: null,
+      status: null,
+    },
+    {
+      seq: 2,
+      kind: 'console',
+      level: 'warn',
+      text: 'Line "Shipping" was rendered twice',
+      source: 'CartLines.tsx:58',
+      method: null,
+      status: null,
+    },
+    {
+      seq: 3,
+      kind: 'console',
+      level: 'info',
+      text: 'payments-api: rates cached for 5 minutes',
+      source: 'rates.ts:31',
+      method: null,
+      status: null,
+    },
+    {
+      seq: 4,
+      kind: 'console',
+      level: 'log',
+      text: 'ledger-core: confirm step mounted',
+      source: 'confirm.ts:12',
+      method: null,
+      status: null,
+    },
+    {
+      seq: 5,
+      kind: 'network',
+      level: 'error',
+      text: '/api/orders/confirm',
+      source: null,
+      method: 'POST',
+      status: 500,
+    },
+  ],
+};
+
+const UNHEARD_READ: BrowserConsoleRead = { doc: null, entries: [], isHeard: false };
+
+const DEVICE_PRESETS_OF: Readonly<
+  Partial<Record<BrowserPaneSceneState, Readonly<Record<string, DevicePresetId>>>>
+> = {
+  'width-phone': { 'mock-browser-checkout': 'phone' },
+  'width-tablet': { 'mock-browser-checkout': 'tablet' },
+};
 
 const VISITS: ReadonlyArray<BrowserVisit> = [
   { url: 'http://localhost:5173/checkout/confirm', title: 'Confirm order', visitedAt: 3 },
@@ -73,6 +143,20 @@ const textOf = ({ payload, field }: FieldParams): string => {
   return typeof value === 'string' ? value : '';
 };
 
+type ConsoleReadParams = PayloadParams & {
+  readonly state: BrowserPaneSceneState;
+};
+
+const consoleReadOf = ({ state, payload }: ConsoleReadParams): BrowserConsoleRead => {
+  if (state !== 'console') {
+    return UNHEARD_READ;
+  }
+  if (fieldOf({ payload, field: 'doc' }) === CONSOLE_READ.doc) {
+    return { ...CONSOLE_READ, entries: [] };
+  }
+  return CONSOLE_READ;
+};
+
 const isProjectOwner = ({ payload }: PayloadParams): boolean => {
   const owner = fieldOf({ payload, field: 'owner' });
   return typeof owner === 'object' && owner !== null && Reflect.get(owner, 'kind') === 'project';
@@ -84,6 +168,27 @@ const ownerSessionOf = ({ payload }: PayloadParams): unknown => {
 };
 
 const SIGN_IN_URL = 'https://id.cascadia.dev/signin';
+
+const SAVED_COPY_URL = 'file:///mirror/rounding-drift/index.html';
+
+type FirstTabParams = {
+  readonly isPasskey: boolean;
+  readonly isSavedCopy: boolean;
+};
+
+const firstTabAddress = ({ isPasskey, isSavedCopy }: FirstTabParams): string => {
+  if (isSavedCopy) {
+    return SAVED_COPY_URL;
+  }
+  return isPasskey ? SIGN_IN_URL : 'http://localhost:5173/checkout';
+};
+
+const firstTabTitle = ({ isPasskey, isSavedCopy }: FirstTabParams): string => {
+  if (isSavedCopy) {
+    return 'Rounding drift';
+  }
+  return isPasskey ? 'Sign in to Cascadia' : 'Checkout';
+};
 
 const ROUNDING_ID = brandId<SessionId>({ value: 'mock-browser-rounding' });
 
@@ -142,11 +247,12 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
   seedActivityRunScene();
   const projectId = pinProjectOf({ state: useAppStore.getState(), sessionId: SESSION_ID });
   const isPasskey = state === 'passkey';
+  const isSavedCopy = state === 'saved-copy';
   const tabs = [
     rowOf({
       id: 'mock-browser-checkout',
-      url: isPasskey ? SIGN_IN_URL : 'http://localhost:5173/checkout',
-      title: isPasskey ? 'Sign in to Cascadia' : 'Checkout',
+      url: firstTabAddress({ isPasskey, isSavedCopy }),
+      title: firstTabTitle({ isPasskey, isSavedCopy }),
       sessionId: SESSION_ID,
       projectId: null,
       position: 0,
@@ -198,6 +304,8 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
           return pins;
         }
         return ownerSessionOf({ payload }) === ROUNDING_ID ? roundingTabs : tabs;
+      case 'browser_workspace_tab_rows_list':
+        return [...tabs, ...roundingTabs, ...pins];
       case 'browser_tab_list':
         return live;
       case 'browser_history_state':
@@ -208,6 +316,8 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return null;
       case 'browser_find':
         return { isFound: textOf({ payload, field: 'needle' }) === 'retry' };
+      case 'browser_console_read':
+        return consoleReadOf({ state, payload });
       case 'browser_visits_list':
         return VISITS;
       case 'browser_tab_open':
@@ -236,6 +346,7 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
     browserSessionTabs: { [SESSION_ID]: tabs },
     browserActiveTab: { [SESSION_ID]: 'mock-browser-checkout' },
     browserShownPin: { [SESSION_ID]: null },
+    browserDevicePresets: DEVICE_PRESETS_OF[state] ?? {},
     browserLiveTabs: {
       [SESSION_ID]: Object.fromEntries(tabs.map((tab) => [tab.id, `mock-live-${tab.id}`])),
     },

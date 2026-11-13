@@ -29,8 +29,8 @@ describe('frameGeometryOf', () => {
     }
   });
 
-  it('opens every session page, sidebar door page and closable overlay on its 44px header row', () => {
-    expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX).toBe(44);
+  it('opens every session page, sidebar door page and closable overlay on its 40px header row', () => {
+    expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX).toBe(40);
     for (const page of [
       'board',
       'settings',
@@ -68,7 +68,7 @@ describe('frameGeometryOf', () => {
     for (const page of FRAME_PAGES) {
       expect(frameGeometryOf({ page }).drawerRowHeight, page).toBe(FRAME_TITLE_ROW_PX);
     }
-    expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX / 2).toBe(28);
+    expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX / 2).toBe(24);
   });
 });
 
@@ -108,7 +108,7 @@ describe('PAGE_FRAME', () => {
 
   it('keeps the split frame to the pages with a rail', () => {
     expect([...pagesOf({ type: 'split' })].sort()).toEqual(
-      ['branch', 'chat', 'guide', 'inbox', 'notifications', 'whatsNew'].sort(),
+      ['branch', 'chat', 'guide', 'inbox', 'notifications', 'settings', 'whatsNew'].sort(),
     );
   });
 

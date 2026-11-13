@@ -21,11 +21,9 @@ export const ChatHeader = ({ title, chat, linked, onOpenSession, onRemoved, chil
         <PageHeader
           page="chat"
           animationClassName=""
-          row={
-            <div data-slot="pane-title-row" className="flex h-8 min-w-0 items-center gap-2">
-              <TruncatedText as="h1" className="min-w-0 text-title text-foreground">
-                {title}
-              </TruncatedText>
+          title={<TruncatedText>{title}</TruncatedText>}
+          actions={
+            <>
               {linked.stage === null || linked.entries.length < 2 ? null : (
                 <ChatSessionsChip
                   entries={linked.entries}
@@ -33,9 +31,8 @@ export const ChatHeader = ({ title, chat, linked, onOpenSession, onRemoved, chil
                   onOpen={onOpenSession}
                 />
               )}
-              <span className="flex-1" />
               {chat === null ? null : <ChatHeaderDelete chat={chat} onRemoved={onRemoved} />}
-            </div>
+            </>
           }
         />
       </header>

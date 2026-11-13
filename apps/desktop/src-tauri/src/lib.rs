@@ -72,6 +72,7 @@ mod releases;
 mod remote;
 mod remote_auth;
 mod remote_image;
+mod remote_media;
 mod remote_probe;
 mod render_crash_log;
 mod repo;
@@ -98,6 +99,7 @@ mod thread_git;
 mod turn;
 mod turn_backlog;
 mod turn_delivery;
+mod turn_live;
 mod turn_quiet;
 mod usage_probe;
 mod util;
@@ -186,6 +188,7 @@ pub fn run() {
     };
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
     let turn_registry = turn::TurnRegistry::new();
+    turn_live::install(turn_registry.live_turns());
     let chat_registry = chat::ChatRegistry::new();
     let summarize_registry = summarize::SummarizeRegistry::new();
     let planner_registry = planner::PlannerRegistry::new();
@@ -348,6 +351,8 @@ pub fn run() {
             editor::open_privacy_settings,
             remote_image::fetch_remote_image,
             remote_image::load_tool_image,
+            remote_image::probe_tool_media,
+            remote_media::fetch_remote_media,
             local_image::local_image_read,
             releases::releases_list,
             releases::release_changelog,
@@ -384,6 +389,7 @@ pub fn run() {
             artifact_mirror::artifact_mirror_pending,
             artifact_mirror::artifact_mirror_locate,
             artifact_mirror::artifact_mirror_reveal,
+            artifact_mirror::artifact_mirror_path,
             artifact_mirror::artifact_mirror_open,
             artifact_mirror::artifact_mirror_open_root,
             artifact_mirror::artifact_mirror_measure,
@@ -517,6 +523,7 @@ pub fn run() {
             restart_marker::restart_prepare,
             restart_marker::restart_abort,
             turn::turn_list_live,
+            turn::turn_launch_id,
             turn::turn_quiet,
             window_close::window_close_claim,
             window_heartbeat::window_heartbeat,
@@ -771,14 +778,18 @@ pub fn run() {
             browser::commands::browser_history_state,
             browser::commands::browser_page_keys,
             browser::commands::browser_favicon,
+            browser::commands::browser_page_text,
+            browser::commands::browser_console_read,
             browser::commands::browser_tab_back,
             browser::commands::browser_tab_forward,
             browser::commands::browser_tab_passkey_dismiss,
             browser::commands::browser_tab_inspectable,
+            browser::commands::browser_user_agent,
             browser::commands::browser_tab_close,
             browser::commands::browser_tab_list,
             browser::commands::browser_session_close,
             browser::tab_rows::browser_tab_rows_list,
+            browser::tab_rows::browser_workspace_tab_rows_list,
             browser::tab_rows::browser_tab_row_save,
             browser::tab_rows::browser_tab_rows_reorder,
             browser::tab_rows::browser_tab_row_delete,

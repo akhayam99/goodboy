@@ -50,6 +50,7 @@ export type PrPageVariant =
 const PROJECT_ID = 'mock-u23-project-payments-api' as ProjectId;
 const MOUNT_ID = 'mock-u23-mount-fix-duplicate-credit' as MountId;
 export const PR_PAGE_WORKTREE = '~/code/harborline/payments-api-fix-duplicate-credit';
+const MOCK_AVATAR_HOST = 'https://avatars.harborline.example';
 const PR_URL = 'https://github.com/harborline/payments-api/pull/318';
 const DAY = 1440;
 
@@ -297,7 +298,7 @@ const BASE_PR: PullRequestState = {
   ...RESOLVE_SCENE_PR,
   url: PR_URL,
   body: PR_BODY,
-  author: 'nadia-p',
+  author: { login: 'nadia-p', avatarUrl: null },
   baseBranch: 'main',
   headBranch: MOUNT.branch,
   updatedAt: isoAgo({ minutes: 180 }),
@@ -439,13 +440,17 @@ const viewOf = ({ shape }: { readonly shape: Shape }): PullRequestView | null =>
         person: {
           login: review.author,
           name: null,
-          avatarUrl: null,
+          avatarUrl: `${MOCK_AVATAR_HOST}/${review.author}.png`,
           ...(review.isAuthorBot === undefined ? {} : { isBot: review.isAuthorBot }),
         },
         state: review.state,
       })),
       ...shape.requests.map((request) => ({
-        person: { login: request.login, name: null, avatarUrl: null },
+        person: {
+          login: request.login,
+          name: null,
+          avatarUrl: `${MOCK_AVATAR_HOST}/miss/${request.login}.png`,
+        },
         state: 'pending' as const,
       })),
     ],

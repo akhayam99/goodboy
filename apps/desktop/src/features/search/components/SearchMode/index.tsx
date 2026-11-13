@@ -1,13 +1,13 @@
 import { searchModeItems } from './searchModeItems';
 import type { SearchModeItem } from './searchModeItem';
-import { CHECK_STATE, OPEN_FAILED } from '../../../../store/slices/notifications/errorRecovery';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { ScrollFade, EmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { lookupStatuses } from '../../../integrations/issueCode/lookupCopy';
 import { openToolSettings } from '../../../integrations/openToolSettings';
@@ -107,9 +107,7 @@ export const SearchMode = ({
   const openItem = useCallback(
     ({ item }: OpenItemParams) => {
       if (item.kind === 'lookup') {
-        void openUrl(item.url).catch((error: unknown) =>
-          reportError({ recovery: OPEN_FAILED, title: "Couldn't open this issue", error }),
-        );
+        openLink({ url: item.url });
         onClose();
         return;
       }

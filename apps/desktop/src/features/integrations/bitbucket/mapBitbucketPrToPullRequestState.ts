@@ -35,6 +35,7 @@ export const mapBitbucketPrToPullRequestState = ({
     updatedAt: pr.updatedOn,
     headSha: pr.sourceCommit,
     mergedAt: null,
-    author: pr.author?.nickname ?? null,
+    author:
+      pr.author == null ? null : { login: pr.author.nickname, avatarUrl: pr.author.avatarUrl },
   };
 };

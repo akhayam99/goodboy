@@ -48,8 +48,8 @@ export const PullRequestTitle = ({ title, edit, noun = 'Pull request' }: Props) 
         aria-keyshortcuts="E"
         onClick={edit.start}
         className={cn(
-          '-mx-2 flex min-h-8 max-w-full min-w-0 cursor-text items-center rounded-md px-2 text-left',
-          'motion-safe:transition-colors hover:bg-hover',
+          'flex min-h-8 max-w-full min-w-0 cursor-text items-center rounded-md text-left',
+          'decoration-border underline-offset-4 hover:underline',
           FOCUS_RING,
         )}
       >

@@ -854,6 +854,63 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   `cli_too_old` item, even when the turn state was left `running` without a
   `done` (`isTurnThinking`).
 
+### Turn admission
+
+A turn marks its agent running before it spawns, and the prompt build sits in
+between. Another window that loads the workspace or launches in that gap sees
+a running agent with no live run and no cursor of its own.
+
+- **The claim leaves a row until the spawn.** `claimTurnAdmission` writes
+  `turn_admissions` (agent, run, the app launch from `turn_launch_id`, the
+  claim time) in the transaction that marks the agent running. `sendTurn`
+  deletes it once `turn_spawn` resolved, or when the turn ends without a
+  spawn; `revertAgentStart` deletes it with the claim it gives back.
+- **One claim at a time.** The claim transaction refuses with `turn_running`
+  when the agent is running on a run that is still pending or streaming,
+  which covers a held row (its claim marked the agent running on its own
+  streaming run). A second window never replaces a live claim, so two
+  processes never run for one agent.
+- **A held claim is left alone.** A row is held while its newer of
+  `spawned_at` and `claimed_at` is younger than 120 s
+  (`TURN_ADMISSION_HOLD_MS`) and it comes from this launch.
+  `reconcileLoadedAgent` neither cancels nor stops an agent with a held row,
+  and the launch sweep (`stopGhostAgents`, run by `reconcileGhostAgents` in the
+  launch reads group) skips it. The stop itself is one statement that also
+  checks the run and the row, so a claim that lands between the read and the
+  write wins.
+- **A stop never trusts an older live list.** The stop statement also asks
+  Rust, through the SQL function `turn_is_live` (`turn_live.rs`), whether
+  the run is spawning or live at that moment, and leaves the agent running
+  when it is. A run that spawned and released its row after a window read
+  `turn_list_live` is never marked stopped, adopted or claimed again. Only a
+  run the same window cancelled itself skips that check.
+- **An abandoned claim is cleared.** A row from an earlier launch (a crash
+  before the spawn) is cleared at the next launch, and one older than the
+  hold by whichever window reconciles next. When the launch cannot be read
+  the age alone decides.
+- **The spawn checks it.** Right before `turn_spawn`, `readTurnStream`
+  publishes `spawned_at` on the row (`publishTurnSpawn`), which renews the
+  hold, so expiry cannot clear it between that write and the spawn. A spawn
+  from a claimed turn carries `hasAdmission`, and `turn_spawn` refuses it
+  with `admission_lost` when the row is gone or names another run, so a turn
+  cleared by another window before the publish never starts. The check and
+  the mark that makes the run read as spawning happen under the database
+  lock, so a stop runs either before the check (and the spawn is refused) or
+  after it (and `turn_is_live` keeps the agent). The publish lives in
+  TypeScript because `turn_admissions` belongs to `packages/db` in the writer
+  map. An adoption or a detach is refused as a running turn (`turn_running`)
+  while a held row stands.
+- **A refused spawn has lost the agent.** `recoverTurnFailure` treats
+  `admission_lost` as loss of ownership (`settleLostAdmission`): it marks only
+  its own run failed, gives the agent back only while the row still names its
+  run (`revertAgentStart`), writes no session state while another run holds
+  the agent, and never plans a fallback. Every failure write that targets the
+  agent or the session is conditioned on the failing run
+  (`runOwnership/failOwnedRun`, `runOwnership/writeOwnedSessionState`), so a
+  window that wakes up after its claim expired and another window started a
+  run never marks that live run failed, and the next claim still sees
+  `turn_running`.
+
 ## Live state at the tail
 
 The live state of an operation is said once, as the last line of the content

@@ -3,6 +3,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { displayCwd } from '../../terminalTargets';
 import { ChangeFolderPicker } from './ChangeFolderPicker';
+import { DockTerminalButton } from './DockTerminalButton';
 import { LocationRow } from './LocationRow';
 import { TerminalPane } from './TerminalPane';
 import { TerminalStripActions } from './TerminalStripActions';
@@ -17,20 +18,25 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
   const { selected, worktree } = model;
   if (selected === null || worktree === null) {
     return (
-      <PageColumn width={PAGE_MEASURE.terminal}>
-        <EmptyState
-          size="page"
-          tone={CONCEPT_TONE.terminal}
-          icon={CONCEPT_ICONS.terminal}
-          title="No terminal yet"
-          description="Open a terminal in your workspace folder."
-          action={
-            <Button size="sm" onClick={model.openDefault}>
-              New terminal
-            </Button>
-          }
-        />
-      </PageColumn>
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <div className="flex h-10 shrink-0 items-center justify-end px-3">
+          <DockTerminalButton selected={null} />
+        </div>
+        <PageColumn width={PAGE_MEASURE.terminal}>
+          <EmptyState
+            size="page"
+            tone={CONCEPT_TONE.terminal}
+            icon={CONCEPT_ICONS.terminal}
+            title="No terminal yet"
+            description="Open a terminal in your workspace folder."
+            action={
+              <Button size="sm" onClick={model.openDefault}>
+                New terminal
+              </Button>
+            }
+          />
+        </PageColumn>
+      </div>
     );
   }
   const isIdle = selected.status !== 'exited' && !model.busyIds.has(selected.id);
@@ -63,11 +69,14 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
           />
         }
         actions={
-          <TerminalStripActions
-            worktree={worktree}
-            tab={selected}
-            handoffSessionId={worktree.sessionId}
-          />
+          <>
+            <DockTerminalButton selected={selected} />
+            <TerminalStripActions
+              worktree={worktree}
+              tab={selected}
+              handoffSessionId={worktree.sessionId}
+            />
+          </>
         }
       />
       <div data-terminal-body="" className="flex min-h-0 flex-1 flex-col px-3">

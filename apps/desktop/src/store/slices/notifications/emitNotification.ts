@@ -22,6 +22,7 @@ export type EmitNotificationParams = {
   action?: NotificationAction;
   coalesceKey?: string;
   isOnce?: boolean;
+  isRead?: boolean;
 };
 
 export const emitNotification = (set: SetFn, get: GetFn) => {
@@ -35,6 +36,7 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
     action,
     coalesceKey,
     isOnce,
+    isRead = false,
   }: EmitNotificationParams) => {
     if (
       isOnce === true &&
@@ -51,7 +53,7 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
       severity,
       sessionId: sessionId ?? null,
       workspaceId: workspaceId ?? null,
-      read: false,
+      read: isRead,
       action: action ?? null,
       coalesceKey:
         coalesceKey ?? `${kind}:${sessionId ?? workspaceId ?? 'global'}:${severity}:${title}`,

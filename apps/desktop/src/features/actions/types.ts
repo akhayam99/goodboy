@@ -12,6 +12,7 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import type { ArtifactGeneration } from '../artifacts/artifactCollection';
+import type { Place } from '../../store/slices/navigation/types';
 import type { RecordFacts } from './kinds/record';
 import type { CommitFacts } from './kinds/commit';
 import type { DiffFileFacts } from './kinds/diffFile';
@@ -22,6 +23,7 @@ import type { ChatFacts } from './kinds/chat';
 import type { ChatsFacts } from './kinds/chats';
 import type { PortFacts } from './kinds/port';
 import type { TerminalTabFacts } from './kinds/terminalTab';
+import type { BrowserTabFacts } from './kinds/browserTab';
 import type { NewFormFacts } from './kinds/newForm';
 import type { TaskListFacts } from './kinds/taskList';
 import type { WorkflowListFacts } from './kinds/workflowList';
@@ -146,6 +148,8 @@ export type ActionEnv = {
   readonly origin: ActionOrigin;
   readonly anchorKey: string | null;
   readonly viewing: ActionViewing | null;
+  readonly isOutcomeShown?: boolean;
+  readonly hasRunSurface?: () => boolean;
 };
 
 type FactsParams<F> = {
@@ -184,6 +188,7 @@ export type ActionDefinition<F> = {
   readonly isSecondary?: (params: FactsParams<F>) => boolean;
   readonly pendingLabel?: (params: FactsParams<F>) => string;
   readonly doneLabel?: (params: FactsParams<F>) => string;
+  readonly doneTo?: (params: FactsParams<F>) => Place;
   readonly isBusy?: (params: FactsParams<F>) => boolean;
   readonly run: (
     params: ActionRunParams<F>,
@@ -215,6 +220,7 @@ export type ResolvedAction = {
   readonly isSecondary?: boolean;
   readonly pendingLabel: string | null;
   readonly doneLabel: string | null;
+  readonly doneTo?: Place;
   readonly shortcut: ShortcutId | null;
   readonly preview: ActionPreview | null;
   readonly description: string | null;
@@ -404,6 +410,11 @@ export type TerminalTabActionTarget = {
   readonly facts: TerminalTabFacts;
 };
 
+export type BrowserTabActionTarget = {
+  readonly kind: 'browserTab';
+  readonly facts: BrowserTabFacts;
+};
+
 export type NewFormActionTarget = {
   readonly kind: 'newForm';
   readonly facts: NewFormFacts;
@@ -563,6 +574,7 @@ export type ObjectTarget =
   | ChatsActionTarget
   | PortActionTarget
   | TerminalTabActionTarget
+  | BrowserTabActionTarget
   | NewFormActionTarget
   | TaskListActionTarget
   | WorkflowListActionTarget

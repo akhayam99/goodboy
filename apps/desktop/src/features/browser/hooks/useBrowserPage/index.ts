@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -8,6 +8,7 @@ import { browserPageData, type BrowserPageData } from '../../browserPageData';
 import { browserPinProjectIds } from '../../browserPinProjectIds';
 import { browserScopeSessions } from '../../browserScopeSessions';
 import { pinProjectOf } from '../../pinProjectOf';
+import { useBrowserWorkspaceTabs } from '../../../../shared/hooks/useBrowserWorkspaceTabs';
 
 type Params = {
   readonly sessionId: SessionId | null;
@@ -34,21 +35,8 @@ export const useBrowserPage = ({ sessionId }: Params): BrowserPageData => {
   const namesOf = useAppStore(
     useShallow((state) => projectIds.map((id) => projectById(state.projects, id)?.name ?? '')),
   );
-  const sessionIds = useMemo(() => sessions.map((session) => session.id), [sessions]);
 
-  useEffect(() => {
-    const state = useAppStore.getState();
-    for (const id of sessionIds) {
-      void state.loadBrowserSessionTabs({ sessionId: id });
-    }
-  }, [sessionIds]);
-
-  useEffect(() => {
-    const state = useAppStore.getState();
-    for (const projectId of projectIds) {
-      void state.loadBrowserProjectPins({ projectId });
-    }
-  }, [projectIds]);
+  useBrowserWorkspaceTabs({ isReload: true });
 
   return useMemo(
     () => browserPageData({ sessionId, sessions, projectOf, tabsOf, projectIds, pinsOf, namesOf }),

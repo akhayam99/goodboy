@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
+import type { ReactElement } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -19,10 +20,16 @@ import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { MOCK_SCENES } from '../..';
 import { U25_C12_TASK_SCENES } from './c12-tasks';
+import { U25_C12_HOST_SCENES } from './c12-hosts';
 
 const SETTLE_MS = 2_000;
 
-type SceneName = keyof typeof U25_C12_TASK_SCENES;
+type SceneName = keyof typeof U25_C12_TASK_SCENES | keyof typeof U25_C12_HOST_SCENES;
+
+const SCENES: Readonly<Record<SceneName, () => ReactElement>> = {
+  ...U25_C12_TASK_SCENES,
+  ...U25_C12_HOST_SCENES,
+};
 
 beforeAll(async () => {
   await importStore();
@@ -40,7 +47,7 @@ afterEach(() => {
 });
 
 const mount = async (name: SceneName): Promise<void> => {
-  const Scene = U25_C12_TASK_SCENES[name];
+  const Scene = SCENES[name];
   render(
     <ToastProvider>
       <Scene />
@@ -176,4 +183,31 @@ describe('c12 task scenes', () => {
       screen.getByRole('heading', { name: 'Ledger export times out over 10k rows' }),
     ).toBeDefined();
   });
+});
+
+describe('c12 host scenes', () => {
+  it('registers every state in the scene registry', () => {
+    for (const name of Object.keys(U25_C12_HOST_SCENES)) {
+      expect(MOCK_SCENES[name]).toBeDefined();
+    }
+  });
+
+  it.each([
+    ['c12-pr-github', ['People', 'Linked issues'], ['Reviewers', 'Checks']],
+    ['c12-mr-gitlab', ['Reviewers', 'Checks', 'People', 'Linked issues'], []],
+    ['c12-pr-bitbucket', ['Reviewers', 'Checks', 'People', 'Linked issues'], []],
+  ] as const)(
+    '%s draws the shared rows and hides the ones its host lacks',
+    async (name, shown, hidden) => {
+      await mount(name);
+
+      const rail = screen.getByRole('group', { name: 'Overview' });
+      for (const label of shown) {
+        expect(within(rail).queryByRole('region', { name: label }) ?? null).not.toBeNull();
+      }
+      for (const label of hidden) {
+        expect(within(rail).queryByRole('region', { name: label })).toBeNull();
+      }
+    },
+  );
 });

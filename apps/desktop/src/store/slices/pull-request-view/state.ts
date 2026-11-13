@@ -6,7 +6,7 @@ export type PullRequestEdit = Readonly<{
   at: IsoDateTime;
 }>;
 
-export type PullRequestActivityFilter = 'all' | 'people' | 'bots' | 'pushes' | 'checks';
+export type PullRequestActivityFilter = 'all' | 'people' | 'bots';
 
 export type PullRequestViewEntry = Readonly<{
   prNumber: number;

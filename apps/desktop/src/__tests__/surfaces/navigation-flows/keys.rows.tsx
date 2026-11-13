@@ -21,6 +21,7 @@ import {
 } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
+import { SETTING_LINKS_OPEN } from '../../../shared/lib/linksOpenSetting';
 import { agentPlace, sessionPlace } from '../../../store';
 import type { BrowserTab } from '../../../store/slices/browser/types';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
@@ -51,6 +52,7 @@ import {
   useAppStore,
   visible,
   findSection,
+  WAIT,
 } from './harness';
 
 const LATEST_ACTIVITY = sceneClock({ anchor: '2099-01-01T00:00:00.000Z' }).iso({
@@ -578,7 +580,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'pullRequest.edit',
     open: async () => {
       await press('lens.pr')();
-      expect((await findSection(/^Pull request/)).getAttribute('aria-selected')).toBe('true');
+      expect((await findSection(/^Overview/)).getAttribute('aria-selected')).toBe('true');
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>
@@ -732,6 +734,18 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
+    id: 'browser.console',
+    note: 'with a tab shown the chord opens the console under the page, inside the pane',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.console')();
+    },
+    lands: async () => {
+      await screen.findByRole('region', { name: 'Console' });
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+    },
+  }),
+  keyRow({
     id: 'browser.pin',
     note: 'pins the shown tab to the project of the session',
     open: async (ctx) => {
@@ -740,6 +754,18 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+    },
+  }),
+  keyRow({
+    id: 'browser.sendToAgent',
+    note: 'reads the shown page for the agent of the session and reads nothing from a tab with no live page',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.sendToAgent')();
+    },
+    lands: async () => {
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+      expect(useAppStore.getState().outputHandoffs).toEqual({});
     },
   }),
 ];
@@ -1229,7 +1255,12 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'list.openInTool',
-    open: inboxKey('list.openInTool'),
+    open: async (ctx) => {
+      useAppStore.setState((state) => ({
+        settings: { ...state.settings, [SETTING_LINKS_OPEN]: 'browser' },
+      }));
+      await inboxKey('list.openInTool')(ctx);
+    },
     lands: async () =>
       waitFor(() => expect(openUrls()).toContain('https://linear.example.test/HBL-501')),
   }),
@@ -1301,6 +1332,7 @@ export const bootWorld = async ({
     hydrate: async () => undefined,
     checkForUpdates: async () => undefined,
     hydrated: true,
+    isShellReady: true,
     bootPhase: 'ready',
   });
   render(
@@ -1351,6 +1383,10 @@ const openReview = async (): Promise<void> => {
       'comments',
     );
   });
+  await waitFor(
+    () => expect(document.querySelector('nav[aria-label="Comments"]')).not.toBeNull(),
+    WAIT,
+  );
 };
 
 const neighbourOf = (threadId: string, step: 1 | -1): string | null => {

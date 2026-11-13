@@ -1,3 +1,5 @@
+import { readHtmlMedia } from './htmlShapes';
+
 export type InlineNode =
   | { readonly kind: 'text'; readonly value: string }
   | { readonly kind: 'code'; readonly value: string }
@@ -6,7 +8,8 @@ export type InlineNode =
   | { readonly kind: 'em'; readonly children: ReadonlyArray<InlineNode> }
   | { readonly kind: 'del'; readonly children: ReadonlyArray<InlineNode> }
   | { readonly kind: 'link'; readonly url: string; readonly children: ReadonlyArray<InlineNode> }
-  | { readonly kind: 'image'; readonly alt: string; readonly url: string };
+  | { readonly kind: 'image'; readonly alt: string; readonly url: string }
+  | { readonly kind: 'video'; readonly url: string };
 
 type Params = {
   readonly text: string;
@@ -42,6 +45,16 @@ export const parseInline = ({ text }: Params): ReadonlyArray<InlineNode> => {
           i = close + 2;
           continue;
         }
+      }
+    }
+
+    if (ch === '<' && text[i + 1] !== '<') {
+      const media = readHtmlMedia({ text, index: i });
+      if (media !== null) {
+        flush();
+        out.push(media.node);
+        i = media.end;
+        continue;
       }
     }
 

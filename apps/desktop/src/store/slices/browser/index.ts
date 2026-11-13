@@ -6,18 +6,23 @@ import { closeTab } from './closeTab';
 import { endDraft } from './endDraft';
 import { forgetClosedTab } from './forgetClosedTab';
 import { loadProjectPins } from './loadProjectPins';
+import { keptSet } from './keptSet';
 import { loadSessionTabs } from './loadSessionTabs';
+import { loadWorkspaceTabs } from './loadWorkspaceTabs';
 import { openTab } from './openTab';
 import { pinTab } from './pinTab';
 import { reorderTabs } from './reorderTabs';
+import { setDevicePreset } from './setDevicePreset';
 import { showPin } from './showPin';
 import { unbindLiveTab } from './unbindLiveTab';
 import { unpinTab } from './unpinTab';
 import { updateTab } from './updateTab';
 import type { SliceDeps } from '../../slice-types';
 
-export const createBrowserSlice = ({ set, get }: SliceDeps) => {
+export const createBrowserSlice = ({ set: writeState, get }: SliceDeps) => {
+  const set = keptSet({ set: writeState });
   return {
+    loadBrowserWorkspaceTabs: loadWorkspaceTabs({ set, get }),
     loadBrowserSessionTabs: loadSessionTabs({ set, get }),
     loadBrowserProjectPins: loadProjectPins({ set, get }),
     openBrowserTab: openTab({ set, get }),
@@ -34,5 +39,6 @@ export const createBrowserSlice = ({ set, get }: SliceDeps) => {
     forgetClosedBrowserTab: forgetClosedTab({ set, get }),
     closeBrowserSessionTabs: closeBrowserSessionTabs({ set, get }),
     closeStaleBrowserTabs: closeStaleBrowserTabs({ set, get }),
+    setBrowserDevicePreset: setDevicePreset({ set, get }),
   };
 };

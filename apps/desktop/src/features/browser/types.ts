@@ -1,5 +1,5 @@
 import type { ProjectId, SessionId } from '@goodboy/types';
-import type { BrowserTab } from '../../store/slices/browser/types';
+import type { BrowserTab, DevicePresetId } from '../../store/slices/browser/types';
 
 export type BrowserTabState = 'live' | 'asleep' | 'closed';
 
@@ -24,6 +24,44 @@ export type BrowserHistoryState = {
 
 export type BrowserFindOutcome = {
   readonly isFound: boolean;
+};
+
+export type BrowserConsoleKind = 'console' | 'network';
+
+export type BrowserConsoleLevel = 'log' | 'info' | 'warn' | 'error';
+
+export type BrowserConsoleEntry = {
+  readonly seq: number;
+  readonly kind: BrowserConsoleKind;
+  readonly level: BrowserConsoleLevel;
+  readonly text: string;
+  readonly source: string | null;
+  readonly method: string | null;
+  readonly status: number | null;
+};
+
+export type BrowserConsoleRead = {
+  readonly doc: string | null;
+  readonly entries: ReadonlyArray<BrowserConsoleEntry>;
+  readonly isHeard: boolean;
+};
+
+export type BrowserPageText = {
+  readonly title: string;
+  readonly url: string;
+  readonly text: string;
+  readonly isCut: boolean;
+};
+
+export type BrowserPageSend = {
+  readonly label: string;
+  readonly canSend: boolean;
+  readonly canSendTab: (params: TabParams) => boolean;
+  readonly isBusy: boolean;
+  readonly runKey: string;
+  readonly send: (params: TabParams) => void;
+  readonly sendShown: () => void;
+  readonly retry: () => void;
 };
 
 export type BrowserTabFavicon = {
@@ -64,6 +102,10 @@ type LiveIdParams = {
 
 type TextParams = {
   readonly text: string;
+};
+
+type DevicePresetParams = {
+  readonly preset: DevicePresetId;
 };
 
 type ErrorParams = {
@@ -110,7 +152,11 @@ export type BrowserPaneModel = {
   readonly find: (params: FindParams) => Promise<boolean>;
   readonly clearFind: () => Promise<void>;
   readonly inspect: () => void;
+  readonly devicePreset: DevicePresetId;
+  readonly setDevicePreset: (params: DevicePresetParams) => void;
+  readonly pageSend: BrowserPageSend;
   readonly showError: (params: ErrorParams) => void;
+  readonly shownLiveId: string | null;
 };
 
 export type OpenOutcome = 'opened' | 'stale' | 'failed';

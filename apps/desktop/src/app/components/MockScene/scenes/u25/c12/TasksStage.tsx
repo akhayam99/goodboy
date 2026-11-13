@@ -16,7 +16,7 @@ import {
   filterInboxRecords,
   inboxFacetCounts,
 } from '../../../../../../features/inbox/kindFilter';
-import { openCountWord } from '../../../../../../features/inbox/openCountWord';
+import { TasksCountChip } from '../../../../../../features/inbox/components/InboxStudio/TasksCountChip';
 import { taskGroupTotalsOf } from '../../../../../../features/inbox/taskGroupTotalsOf';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { sourceFailureOf } from '../../../../../../features/inbox/sourceFailureOf';
@@ -166,8 +166,8 @@ export const TasksStage = ({
     <PaneShell
       scroll="body"
       title={NAMES.tasks}
-      meta={openCountWord({ records: inScope, newKeys })}
-      actions={
+      badge={<TasksCountChip records={inScope} newKeys={newKeys} />}
+      toolbar={
         <InboxListHeader
           query={query}
           onQueryChange={noop}

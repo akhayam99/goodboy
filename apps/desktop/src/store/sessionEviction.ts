@@ -49,6 +49,8 @@ export const SESSION_EVICTION = [
   { key: 'sessionActiveProject', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionBranches', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionPhaseRuns', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'lightAgentSessions', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionAgentsError', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountGithub', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'mountSelectedPr', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'mountDetailFailures', keyedBy: 'mount', evictOn: 'archive' },
@@ -260,6 +262,7 @@ export const NON_SESSION_STATE_KEYS = [
   'codexPendingReset',
   'projectSentryLinks',
   'hydrated',
+  'isShellReady',
   'bootPhase',
   'bootFailedPhase',
   'newerDatabase',
@@ -282,6 +285,8 @@ export const NON_SESSION_STATE_KEYS = [
   'projectRootScripts',
   'budgetRules',
   'browserProjectPins',
+  'browserTabCounts',
+  'browserTabCountFailures',
   'providerSpendBreakdown',
   'providerBudgetStatus',
   'budgetAlerts',
@@ -353,6 +358,8 @@ export const NON_SESSION_STATE_KEYS = [
   'slackThreads',
   'retainedWorktreePaths',
   'prWriteClaims',
+  'actionRuns',
+  'actionRunSurfaces',
   'issueBriefs',
   'workspaceDurationHistory',
   'scribeWork',
@@ -395,10 +402,11 @@ export const NON_SESSION_STATE_KEYS = [
   'planStarts',
   'browserLoads',
   'browserFavicons',
+  'browserDevicePresets',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =
   (typeof SESSION_EVICTION)[number]['key'] | (typeof NON_SESSION_STATE_KEYS)[number];
 type UnregisteredKey = Exclude<keyof AppState, RegisteredKey>;
 
-const allStateKeysClassified: UnregisteredKey extends never ? true : UnregisteredKey = true;
+const isEveryStateKeyClassified: UnregisteredKey extends never ? true : UnregisteredKey = true;

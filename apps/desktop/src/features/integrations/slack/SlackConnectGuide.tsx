@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, CopyButton, ICON_SIZE, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { ArrowLeft, ArrowRight, SquareArrowOutUpRight } from 'lucide-react';
-import { openUrl } from '../../../shared/lib/editor';
+import { openLink } from '../../open/openLink';
 import { SLACK_APPS_URL, SLACK_NEW_APP_URL, SLACK_USER_SCOPES } from './slackAppManifest';
 
 type Props = {
@@ -120,7 +120,9 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => void openUrl(step.action?.url ?? '')}
+            onClick={() =>
+              openLink({ url: step.action?.url ?? '', sessionId: null, place: 'outside' })
+            }
             className="max-w-full"
           >
             <span className="truncate">{step.action.label}</span>

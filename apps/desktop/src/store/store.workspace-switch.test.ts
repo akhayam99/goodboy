@@ -103,7 +103,7 @@ describe('setCurrentWorkspace, session-scoped state cleanup', () => {
       budgetAlerts: [{ id: 'alert-1' } as never],
     });
 
-    await useAppStore.getState().setCurrentWorkspace(WS_B);
+    await useAppStore.getState().setCurrentWorkspace({ id: WS_B });
 
     const state = useAppStore.getState();
     expect(state.transcripts).toEqual({});
@@ -140,7 +140,7 @@ describe('setCurrentWorkspace, session-scoped state cleanup', () => {
       budgetAlerts: [],
     });
 
-    await useAppStore.getState().setCurrentWorkspace(WS_B);
+    await useAppStore.getState().setCurrentWorkspace({ id: WS_B });
 
     expect(storySpies.cancelTurn).toHaveBeenCalledTimes(1);
     expect(storySpies.cancelTurn).toHaveBeenCalledWith(RUN_ID);
@@ -165,7 +165,7 @@ describe('setCurrentWorkspace, session-scoped state cleanup', () => {
       budgetAlerts: [],
     });
 
-    await useAppStore.getState().setCurrentWorkspace(WS_B);
+    await useAppStore.getState().setCurrentWorkspace({ id: WS_B });
 
     expect(storySpies.cancelTurn).not.toHaveBeenCalled();
   });
@@ -181,7 +181,7 @@ describe('setCurrentWorkspace, session-scoped state cleanup', () => {
     } satisfies BudgetAlert;
     storySpies.invokeBudgetAlertsList.mockResolvedValue([alert] as never);
 
-    await useAppStore.getState().setCurrentWorkspace(WS_B);
+    await useAppStore.getState().setCurrentWorkspace({ id: WS_B });
 
     await vi.waitFor(() => {
       expect(useAppStore.getState().budgetAlerts).toEqual([alert]);
@@ -255,7 +255,7 @@ describe('setCurrentWorkspace, queued chain self-heal', () => {
   });
 
   it('wakes the advance for a session holding a queued after_run chain', async () => {
-    await useAppStore.getState().setCurrentWorkspace(WS_B);
+    await useAppStore.getState().setCurrentWorkspace({ id: WS_B });
 
     await vi.waitFor(() => {
       expect(advance).toHaveBeenCalledWith(SESSION_CHAINED);
@@ -280,7 +280,7 @@ describe('setCurrentWorkspace, queued chain self-heal', () => {
       }),
     ]);
 
-    await useAppStore.getState().setCurrentWorkspace(WS_B);
+    await useAppStore.getState().setCurrentWorkspace({ id: WS_B });
 
     await vi.waitFor(() => {
       expect(storySpies.invokeBudgetAlertsList).toHaveBeenCalled();

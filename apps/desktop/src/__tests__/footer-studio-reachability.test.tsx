@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
@@ -28,6 +27,7 @@ const { state, workspace, storeListeners } = vi.hoisted(() => {
       hydrate: vi.fn(async () => undefined),
       checkForUpdates: vi.fn(async () => undefined),
       hydrated: true,
+      isShellReady: true,
       bootPhase: 'ready' as const,
       error: null,
       workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
@@ -107,12 +107,7 @@ vi.mock('../features/palette/components/PaletteOverlay', () => ({
   PaletteOverlay: () => null,
 }));
 vi.mock('../app/components/BootSplash', () => ({
-  BootSplash: ({ onFinished }: { onFinished: () => void }) => {
-    useEffect(() => {
-      onFinished();
-    }, [onFinished]);
-    return null;
-  },
+  BootSplash: () => null,
 }));
 vi.mock('../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
 vi.mock('../app/components/AppTopBar', () => ({
@@ -234,6 +229,7 @@ vi.mock('../store', async () => {
   );
   return {
     useAppStore,
+    useActionRun: () => null,
     useCurrentSession: () => null,
     useCurrentWorkspace: () => (state.currentWorkspaceId === null ? null : workspace),
     useSessionById: () => null,

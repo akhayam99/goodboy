@@ -23,6 +23,14 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       currentWorkspaceId: null,
       navigation: Object.fromEntries(Array.of<[string, never]>()),
       amendFocus: () => undefined,
+      actionRuns: noEntries<never>(),
+      attachActionRunSurface: () => undefined,
+      detachActionRunSurface: () => undefined,
+      dropActionRun: () => undefined,
+      runAction: async ({ task }: { readonly task: () => Promise<string | null> }) => {
+        await task();
+        return 'applied';
+      },
       activeLens: plansLens,
       drawer: nothing(),
       appStudio: nothing(),
@@ -157,6 +165,7 @@ vi.mock('../../../../store', async () => {
     ...(await import('../../../../store/slices/navigation/place')),
     EMPTY_ARRAY: Array.of<never>(),
     useAppStore,
+    useActionRun: () => null,
     useSessionPlans: () => state.plans,
     useIsSessionCollectionLoaded: () => true,
     useSessionOpenQuestions: () => state.openQuestions,

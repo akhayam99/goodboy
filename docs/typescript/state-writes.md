@@ -71,12 +71,23 @@ A response applies only while it is the answer to the newest request.
 - `claim({ key })` takes a token without running anything and returns
   `isCurrent()`, for a loader that applies several fields in one `set`.
 - In use: `refreshMonitorSnapshot` in `store/slices/monitoring/`; the run of a
-  registry button in `features/actions/useActionControls` (a finish after the
-  `scopeKey` changed is dropped, outcome and failure alike); `sessionReads` in
+  registry button, through `runAction` in `store/slices/action-runs/` (each
+  claim takes a token per target key, and a finish whose token is no longer
+  current is dropped, outcome and failure alike. A run on a shared target key
+  is dropped when its last surface unmounts or its session is deleted, and a
+  run on an instance key when its hook unmounts); `sessionReads` in
   `store/runtime/state-writes/sessionReads.ts`, one sequence for the plans and
   one for the artifacts of each session, shared by every loader that writes
   `sessionPlans` or `sessionArtifacts`. A new loader of either claims right
-  before its read and applies only while `isCurrent()`.
+  before its read and applies only while `isCurrent()`. The same module holds
+  one sequence for the full agent rows of each session (`loadFullAgentRows`,
+  also dropped after a workspace switch) and one for the open itself:
+  `setCurrentSession` claims `sessionReads.open()` on every switch, so the full
+  rows `openSessionAgents` asked for are dropped once the user left the
+  session, and the session stays light until it opens again. A row a live
+  write changed while the list loaded keeps its live fields
+  (`upgradeAgentRows`). A failed list keeps the light rows and shows the error
+  with Retry in the session rail.
   `useAutoPlanApproval` claims one token per plan for an approve and cancels it
   when the shown version moves, so an answer for an older version is dropped.
   `selectAgent` in `store/slices/agents/` claims one token per agent for its
@@ -138,3 +149,27 @@ Example of an undo that holds its own rows:
 A count, a total or a label on screen comes from one function. A second
 computation drifts. A write path and its read path get one round-trip test:
 write through the action, read through the selector the screen uses, compare.
+
+## 7. Derived facts are kept per session
+
+A session's stage and its "needs you" reasons are derived once, by
+`stageInfoOf`, and kept per session by `cachedStageInfoOf`. The first
+derivation records what it read: each store key, and for a plain record, each
+entry it looked up (`recordStageReads`). The next read compares those values
+by reference and allocates nothing (`areStageReadsCurrent`). A record whose
+reference changed while the entries the session read did not is kept, so a
+write to one agent's turn state re-derives only that agent's session, and an
+unrelated write derives nothing. `stageInfosOf` returns the same map while
+every session's info is the same object, and `useStageSources` reads it
+straight from the store.
+
+A record read whole (`Object.values`, `in`, a spread) is compared whole, and a
+derivation that lists the whole state is never kept. A Map, a Set or an array
+in the state is compared whole too.
+
+Keep the derivation pure: it reads the state it is given and nothing else. A
+read of a module variable, the clock or another store is not recorded, and a
+change to it never re-derives. Put such a value in the store first.
+
+The budget is held in `app/shellBudgets.test.tsx`: one derivation and the
+agents of one session when an agent changes state, none on an unrelated write.

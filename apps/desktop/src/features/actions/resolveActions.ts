@@ -36,6 +36,7 @@ const resolveOne = <F>({
     ...(definition.isSecondary !== undefined && { isSecondary: definition.isSecondary({ facts }) }),
     pendingLabel: definition.pendingLabel?.({ facts }) ?? null,
     doneLabel: definition.doneLabel?.({ facts }) ?? null,
+    ...(definition.doneTo !== undefined && { doneTo: definition.doneTo({ facts }) }),
     shortcut: definition.shortcut ?? null,
     preview: definition.preview?.({ facts }) ?? null,
     description: definition.description?.({ facts }) ?? null,

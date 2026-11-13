@@ -97,7 +97,7 @@ const PR: PullRequestState = {
   isDraft: false,
   reviewDecision: 'review_required',
   body: '',
-  author: 'nadia-p',
+  author: { login: 'nadia-p', avatarUrl: null },
   updatedAt: NOW_ISO,
 };
 

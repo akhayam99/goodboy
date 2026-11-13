@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { StudioRailPlacement } from '@goodboy/ui';
 import type { ProviderId, Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 import { useAppStore } from '../../../../store';
-import { settingsTrail } from '../../trail/settingsTrail';
 import { AppScopePanel } from './AppScopePanel';
 import { SettingsScopesLayout } from './SettingsScopesLayout';
 import { isNestedScope, settingsScopeAvailable, type NestedScope } from './settingsScopes';
@@ -106,14 +105,19 @@ export const SettingsStudio = ({
     tool: focus.tool,
   });
 
+  const redirect = useEffectEvent(() => onScopeChange(focus));
+  const rememberPage = useEffectEvent(() =>
+    rememberFocus(pageFocusOf({ scope: availableScope, focus })),
+  );
+
   useEffect(() => {
     if (isRedirect) {
-      onScopeChange(focus);
+      redirect();
     }
   }, [isRedirect]);
 
   useEffect(() => {
-    rememberFocus(pageFocusOf({ scope: availableScope, focus }));
+    rememberPage();
   }, [pageKey]);
 
   const [detailSlots, setDetailSlots] = useState<Slots>({});
@@ -194,13 +198,6 @@ export const SettingsStudio = ({
     >
       {(requestClose) => (
         <>
-          <StudioTrail
-            segments={settingsTrail({
-              scope: availableScope,
-              section: focus.section,
-              pageKey,
-            })}
-          />
           <div className="relative flex min-h-0 min-w-0 flex-1">
             <SettingsScopesLayout
               pageKey={pageKey}
@@ -209,9 +206,11 @@ export const SettingsStudio = ({
               onScopeChange={onScopeChange}
               placement={railPlacement}
               detail={
-                <div data-settings-detail="" className="h-full min-h-0 min-w-0">
-                  {renderDetail(requestClose)}
-                </div>
+                <StudioDetail>
+                  <div data-settings-detail="" className="h-full min-h-0 min-w-0">
+                    {renderDetail(requestClose)}
+                  </div>
+                </StudioDetail>
               }
             />
           </div>

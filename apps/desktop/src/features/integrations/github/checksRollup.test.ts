@@ -1,7 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
-import { checksCountsOf, checksGroupsOf, checksRunsOf, checksWordOf } from './checksRollup';
+import {
+  checksCountsOf,
+  checksGroupsOf,
+  checksRunsOf,
+  checksSummaryOf,
+  checksWordOf,
+} from './checksRollup';
 
 const run = (conclusion: PrCheckRun['conclusion'], name = 'check'): PrCheckRun => ({
   name,
@@ -107,5 +113,32 @@ describe('checksWordOf', () => {
     expect(checksWordOf({ runs: [run('success'), run('pending')] })).toBe('1 running');
     expect(checksWordOf({ runs: [run('success'), run('skipped')] })).toBe('1 passed');
     expect(checksWordOf({ runs: [run('skipped'), run('neutral')] })).toBe('2 skipped');
+  });
+});
+
+describe('checksSummaryOf', () => {
+  it('says how many of the runs passed and names what failed', () => {
+    const summary = checksSummaryOf({
+      runs: [
+        run('success', 'build'),
+        run('success', 'unit tests'),
+        run('skipped', 'deploy preview'),
+        run('failure', 'lint'),
+      ],
+    });
+
+    expect(summary).toMatchObject({
+      total: 4,
+      passed: 3,
+      failing: 1,
+      running: 0,
+      line: '3 of 4 passed',
+      failingNames: ['lint'],
+    });
+  });
+
+  it('has nothing to say with no runs', () => {
+    expect(checksSummaryOf({ runs: null })).toBeNull();
+    expect(checksSummaryOf({ runs: [] })).toBeNull();
   });
 });

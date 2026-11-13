@@ -30,7 +30,7 @@ export type Props<T extends string = string> = {
   readonly value: T | null;
   readonly onChange: (value: T) => void;
   readonly size?: SegmentedTabsSize;
-  readonly variant?: 'pill' | 'card';
+  readonly variant?: 'pill' | 'card' | 'underline';
   readonly ariaLabel: string;
   readonly className?: string;
   readonly fill?: boolean;
@@ -62,6 +62,21 @@ const isShownBadge = ({ badge, isActive }: BadgeParams): boolean => {
   return !isActive && badge !== 0 && badge !== '0';
 };
 
+const UNDERLINE_FRAME =
+  'relative flex h-9 min-w-0 items-stretch gap-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border-soft';
+
+type UnderlineParams = {
+  readonly isActive: boolean;
+};
+
+const underlineTabClasses = ({ isActive }: UnderlineParams): string =>
+  cn(
+    'relative flex shrink-0 items-center gap-2 text-ui motion-safe:transition-colors',
+    isActive
+      ? 'z-10 text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary'
+      : 'text-muted-foreground hover:text-foreground',
+  );
+
 const GLYPH = {
   xs: ICON_SIZE.row,
   sm: ICON_SIZE.control,
@@ -91,6 +106,7 @@ export const SegmentedTabs = <T extends string>({
     );
   }
 
+  const isUnderline = variant === 'underline';
   const step = size === 'xs' ? 'xs' : 'sm';
   const focusIndex =
     value === null
@@ -109,10 +125,15 @@ export const SegmentedTabs = <T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       data-size={step}
+      data-slot={isUnderline ? 'page-tabs' : undefined}
       className={cn(
-        'gap-0.5 rounded-md border border-border-soft p-px',
-        SEGMENTED_FRAME_CLASSES[step],
-        fill ? 'grid w-full' : 'inline-flex w-fit items-center',
+        isUnderline
+          ? UNDERLINE_FRAME
+          : cn(
+              'gap-0.5 rounded-md border border-border-soft p-px',
+              SEGMENTED_FRAME_CLASSES[step],
+              fill ? 'grid w-full' : 'inline-flex w-fit items-center',
+            ),
         className,
       )}
       style={gridStyle}
@@ -143,7 +164,7 @@ export const SegmentedTabs = <T extends string>({
           <OptionalTooltip
             key={option.value}
             content={option.tooltip ?? option.hint}
-            anchorClassName={fill ? 'w-full' : undefined}
+            anchorClassName={isUnderline ? 'flex' : fill ? 'w-full' : undefined}
           >
             <button
               type="button"
@@ -155,13 +176,17 @@ export const SegmentedTabs = <T extends string>({
               onKeyDown={(event) => moveTabFocus({ event, index, options, tablistRef, onChange })}
               style={activeStyle}
               className={cn(
-                'relative flex items-center justify-center gap-2 rounded-sm border border-transparent text-meta motion-safe:transition-colors',
-                fill && 'w-full',
-                TAB_CLASSES[step],
+                isUnderline
+                  ? underlineTabClasses({ isActive })
+                  : cn(
+                      'relative flex items-center justify-center gap-2 rounded-sm border border-transparent text-meta motion-safe:transition-colors',
+                      fill && 'w-full',
+                      TAB_CLASSES[step],
+                      isActive
+                        ? 'bg-selected text-foreground'
+                        : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+                    ),
                 FOCUS_RING,
-                isActive
-                  ? 'bg-selected text-foreground'
-                  : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                 option.disabled === true &&
                   cn(DISABLED, 'hover:bg-transparent hover:text-disabled-foreground'),
               )}

@@ -3,6 +3,7 @@ import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { booleanNameLines } from './ast/booleanName.mjs';
 import { BOOLEAN_PREFIXES } from './ast/booleanPrefixes.mjs';
+import { DIFF_FONT_SANS_RULE } from './diffFontSans.mjs';
 import { paramShapeLines } from './ast/paramShape.mjs';
 import { unbracedIfLines } from './ast/unbracedIf.mjs';
 import { unusedImportLines } from './ast/unusedImport.mjs';
@@ -173,10 +174,16 @@ const HALF_STEP_SPACING =
 const ROLE_CLASS = /(?<![\w-])(?:[\w-]+:)*text-(?:row|label|heading|title)(?![\w-])/;
 const WEIGHT_CLASS = /(?<![\w-])(?:[\w-]+:)*font-(?:medium|semibold|bold)(?![\w-])/;
 const FORMAT_ERROR_OWNER = 'packages/ui/src/formatError.ts';
+const AGE_OWNER = 'apps/desktop/src/shared/utils/time/formatAge.ts';
+const MOCK_SCENE_PATH = /[/]MockScene[/]/;
+const HAND_WRITTEN_AGE = /\}\s+ago\b|\b(?:seconds?|minutes?|hours?|days?|weeks?) ago\b/;
 const INVOKE_OWNER = 'apps/desktop/src/shared/lib/invokeCommand.ts';
 const CAUGHT_SOURCE = /^(?:apps[/]desktop[/]src|packages[/]ui[/]src|packages[/]core[/]src)[/]/;
 export const TAURI_CORE_IMPORT =
   /import\s+\{[^}]*\binvoke\b[^}]*\}\s*from\s*['"]@tauri-apps\/api\/core['"]|import\s+\*\s+as\s+\w+\s+from\s*['"]@tauri-apps\/api\/core['"]|import\(\s*['"]@tauri-apps\/api\/core['"]\s*\)|require\(\s*['"]@tauri-apps\/api\/core['"]\s*\)/g;
+const OPEN_OWNER = 'apps/desktop/src/features/open/';
+const RAW_OPEN_IMPORT =
+  /import\s+\{[^}]*\b(?:openUrl|openArtifactMirror|openInEditor)\b[^}]*\}\s*from\s*['"][^'"]+['"]/g;
 const CATCH_BINDING = /\bcatch\s*\(\s*(\w+)|\.catch\(\s*\(?\s*(\w+)/;
 const CATCH_CONTINUATION_BINDING = /^\s*\(?\s*(\w+)\s*(?::[^)=]*)?\)?\s*=>/;
 
@@ -218,6 +225,20 @@ export const countStringifiedCaughtErrors = (file) => {
 const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade/index.tsx';
 export const FOOTER_CTA_BAR =
   /<footer\b|\bPopoverFooter\b|\bPANE_RHYTHM\.dock\b|\bdock=\{(?![^}]*\bcomposer\b)/;
+
+const TITLE_ROW_OWNER = 'packages/ui/src/components/PaneShell/PaneTitleRow.tsx';
+const PAGE_TITLE_EXEMPT = /^apps\/desktop\/src\/app\/components\/MockScene\/|\/ErrorBoundary\.tsx$/;
+const PAGE_TITLE_TAG = /<h1\b|\bas="h1"/;
+const PAGE_TITLE_WINDOW = 5;
+
+const isPageTitleAt = ({ lines, index }) =>
+  PAGE_TITLE_TAG.test(lines[index] ?? '') &&
+  lines.slice(index, index + PAGE_TITLE_WINDOW).some((near) => near.includes('text-title'));
+
+const countPageTitleRows = (file) =>
+  file.path === TITLE_ROW_OWNER || PAGE_TITLE_EXEMPT.test(file.path)
+    ? 0
+    : file.lines.filter((_line, index) => isPageTitleAt({ lines: file.lines, index })).length;
 
 const countClassLines = ({ file, pattern }) =>
   countLines({ file, matches: (line) => pattern.test(line) });
@@ -353,6 +374,15 @@ export const RULES = [
     hint: 'call invokeCommand from shared/lib/invokeCommand.ts, never invoke: it gives every rejection a kind and a message',
   },
   {
+    id: 'raw-open',
+    kinds: ['ts'],
+    count: (file) =>
+      file.path.startsWith(OPEN_OWNER)
+        ? 0
+        : (file.lines.join('\n').match(RAW_OPEN_IMPORT) ?? []).length,
+    hint: "open a target with openTarget from features/open, and say place: outside for a page that must leave the app; never import openUrl, openArtifactMirror or openInEditor; a folder is { kind: 'folder' } and a file is { kind: 'file' }",
+  },
+  {
     id: 'stringified-error',
     kinds: ['ts'],
     count: (file) =>
@@ -396,12 +426,28 @@ export const RULES = [
     matches: (line) => FOOTER_CTA_BAR.test(line),
     hint: 'a form or creation ends with FormActions inline after its content, never a footer bar with a divider (packages/ui/design/layout.md, Form actions)',
   }),
+  DIFF_FONT_SANS_RULE,
+  {
+    id: 'page-title-row',
+    kinds: ['ts'],
+    count: countPageTitleRows,
+    hint: 'a page title is PaneTitleRow, the only h1 at text-title; a document own heading is content (packages/ui/design/layout.md, The page header)',
+  },
   {
     id: 'half-step-spacing',
     kinds: ['ts'],
     count: (file) => countClassLines({ file, pattern: HALF_STEP_SPACING }),
     hint: 'spacing sits on the 4px grid: use 1, 2 or 3 (4, 8, 12px), never 1.5, 2.5 or 3.5',
   },
+  lineRule({
+    id: 'hand-written-age',
+    matches: (line) => HAND_WRITTEN_AGE.test(line),
+    count: (file) =>
+      file.path === AGE_OWNER || MOCK_SCENE_PATH.test(file.path)
+        ? 0
+        : countLines({ file, matches: (line) => HAND_WRITTEN_AGE.test(line) }),
+    hint: 'an age in words comes from formatAge or formatAdaptiveAge in shared/utils/time, never a hand-written "ago"',
+  }),
   lineRule({
     id: 'role-weight-override',
     matches: (line) => ROLE_CLASS.test(line) && WEIGHT_CLASS.test(line),
@@ -461,10 +507,7 @@ export const RULES = [
 ];
 
 export const applies = ({ rule, file }) => {
-  if (!rule.kinds.includes(file.kind)) {
-    return false;
-  }
-  if (file.isTest && rule.includeTests !== true) {
+  if (!rule.kinds.includes(file.kind) || (file.isTest && rule.includeTests !== true)) {
     return false;
   }
   return rule.roots === undefined || rule.roots.some((root) => file.path.startsWith(root));

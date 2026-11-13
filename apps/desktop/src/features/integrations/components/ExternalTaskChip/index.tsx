@@ -1,9 +1,10 @@
+import type { MouseEvent } from 'react';
 import { Chip, cn, Tooltip } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../LinkedWorkRow';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 
 type ExternalTaskChipTask = Pick<SessionExternalTask, 'provider' | 'identifier' | 'title' | 'url'>;
 
@@ -11,7 +12,7 @@ type Props = {
   task: ExternalTaskChipTask;
   variant?: 'full' | 'icon' | 'badge' | 'compact';
   identifierClassName?: string;
-  onClick?: () => void;
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   appearance?: 'chip' | 'row';
   ariaLabel?: string;
   repoLabel?: string;
@@ -80,11 +81,11 @@ export const ExternalTaskChip = ({
 
   const handleClick =
     onClick ??
-    (() => {
+    ((event: MouseEvent<HTMLButtonElement>) => {
       if (task.url === '') {
         return;
       }
-      void openUrl(task.url);
+      openLink({ url: task.url, event });
     });
 
   if (appearance === 'row') {
@@ -120,7 +121,7 @@ export const ExternalTaskChip = ({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          handleClick();
+          handleClick(e);
         }}
         aria-label={ariaLabel ?? `open ${task.identifier} in ${providerLabel}`}
         className={cn(

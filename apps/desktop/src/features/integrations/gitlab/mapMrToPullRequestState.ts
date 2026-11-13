@@ -47,5 +47,9 @@ export const mapMrToPullRequestState = ({
     updatedAt: mr.updatedAt,
     headSha: mr.sha ?? null,
     mergedAt: mr.mergedAt ?? null,
+    author:
+      mr.author == null
+        ? null
+        : { login: mr.author.username, avatarUrl: mr.author.avatarUrl ?? null },
   };
 };

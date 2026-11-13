@@ -1,4 +1,7 @@
 import type { PrCheckConclusion, PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
+import type { ChecksSummary } from '../../../shared/components/OverviewRail/ChecksProperty';
+
+export type { ChecksSummary };
 
 type ChecksGroup = 'failing' | 'running' | 'passed' | 'skipped';
 
@@ -58,11 +61,6 @@ export const checksGroupsOf = ({ checks }: Params): ReadonlyArray<ChecksGroupRun
     runs: checks.filter((check) => groupOf({ conclusion: check.conclusion }) === group),
   })).filter((entry) => entry.runs.length > 0);
 
-export const checksRollup = ({ checks }: Params): string =>
-  checksGroupsOf({ checks })
-    .map((entry) => `${entry.runs.length} ${entry.label.toLowerCase()}`)
-    .join(' · ');
-
 export type ChecksCounts = {
   readonly failing: number;
   readonly running: number;
@@ -116,4 +114,21 @@ export const checksWordOf = ({ runs }: WordParams): string | null => {
     return `${counts.passed} passed`;
   }
   return counts.skipped > 0 ? `${counts.skipped} skipped` : null;
+};
+
+export const checksSummaryOf = ({ runs }: WordParams): ChecksSummary | null => {
+  if (runs === null || runs.length === 0) {
+    return null;
+  }
+  const counts = checksCountsOf({ checks: runs });
+  const passed = counts.passed + counts.skipped;
+  const failing = checksGroupsOf({ checks: runs }).find((group) => group.group === 'failing');
+  return {
+    total: runs.length,
+    passed,
+    failing: counts.failing,
+    running: counts.running,
+    line: `${passed} of ${runs.length} passed`,
+    failingNames: failing?.runs.map((run) => run.name) ?? [],
+  };
 };

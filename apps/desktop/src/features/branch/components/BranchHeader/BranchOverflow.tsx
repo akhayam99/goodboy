@@ -30,6 +30,8 @@ const HEADER_RUN: ReadonlySet<string> = new Set([
   'pullRequest.merge',
   'pullRequest.markReady',
   'pullRequest.reopen',
+  'pullRequest.close',
+  'pullRequest.convertToDraft',
 ]);
 const MIN_DRAWN_ENTRIES = 2;
 

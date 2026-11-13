@@ -9,6 +9,7 @@ import type { Database, GuardedStatement, PlainStatement, Statement } from '../c
 import { agentInsertStatement, type AgentInsertInput } from './agent-write';
 import type { AutoArtifactKind } from './auto-artifacts';
 import { getAutoDelegation, type AutoDelegation, type AutoJsonObject } from './auto-delegations';
+import { HELD_ADMISSION_SQL, heldAdmissionParams } from './turn-admission';
 
 export const AUTO_ADOPT_ABORT = {
   gone: 'adopt_gone',
@@ -68,6 +69,9 @@ const guard = ({ sql, params, abortWhen, abortCode }: GuardParams): GuardedState
   abortCode,
 });
 
+const TURN_STARTED_SQL = `SELECT 1 FROM live_agents WHERE id = ? AND status = 'running'
+  UNION ALL SELECT 1 FROM turn_admissions WHERE agent_id = ? AND ${HELD_ADMISSION_SQL}`;
+
 const LINEAGE_SQL = `WITH RECURSIVE up(id) AS (
     SELECT parent_agent_id FROM live_agents WHERE id = ? AND parent_agent_id IS NOT NULL
     UNION
@@ -114,8 +118,8 @@ export const adoptAgentStatements = ({
       abortCode: AUTO_ADOPT_ABORT.inRun,
     }),
     guard({
-      sql: "SELECT 1 FROM live_agents WHERE id = ? AND status = 'running'",
-      params: [sourceAgentId],
+      sql: TURN_STARTED_SQL,
+      params: [sourceAgentId, sourceAgentId, ...heldAdmissionParams({ launchId: null, nowMs })],
       abortWhen: 'rows',
       abortCode: AUTO_ADOPT_ABORT.turnRunning,
     }),
@@ -215,8 +219,12 @@ export const detachAdoptionStatements = ({
     abortCode: AUTO_DETACH_ABORT.missing,
   }),
   guard({
-    sql: "SELECT 1 FROM live_agents WHERE id = ? AND status = 'running'",
-    params: [delegation.childAgentId],
+    sql: TURN_STARTED_SQL,
+    params: [
+      delegation.childAgentId,
+      delegation.childAgentId,
+      ...heldAdmissionParams({ launchId: null, nowMs }),
+    ],
     abortWhen: 'rows',
     abortCode: AUTO_DETACH_ABORT.turnRunning,
   }),

@@ -522,6 +522,11 @@ const FIXTURES = {
     flagged: `import { invoke } from '${TAURI_CORE}';`,
     allowed: "import { listen } from '@tauri-apps/api/event';",
   },
+  'raw-open': {
+    path: TS,
+    flagged: "import { openInEditor } from '../../shared/lib/editor';",
+    allowed: "import { openTarget } from '../open/openTarget';",
+  },
   'stringified-error': {
     path: TS,
     flagged: 'try {\n  run();\n} catch (error) {\n  show(String(error));\n}',
@@ -533,7 +538,23 @@ const FIXTURES = {
   'raw-scroller': { path: TS, flagged: "'overflow-y-auto'", allowed: "'overflow-hidden'" },
   'tone-border-rail': { path: TS, flagged: "'rounded-md border-l-2'", allowed: "'border-l-2'" },
   'footer-cta-bar': { path: TSX, flagged: '<footer className="x">', allowed: '<FormActions />' },
+  'diff-font-sans': {
+    path: 'apps/desktop/src/features/diff/x.tsx',
+    allowedPath: 'apps/desktop/src/features/branch/x.tsx',
+    flagged: '<p className="font-sans">',
+    allowed: '<p className="font-sans">',
+  },
+  'page-title-row': {
+    path: TSX,
+    flagged: '<h1 className="min-w-0 truncate text-title text-foreground">',
+    allowed: '<h1 className="text-heading">',
+  },
   'half-step-spacing': { path: TS, flagged: "'p-1.5'", allowed: "'p-2'" },
+  'hand-written-age': {
+    path: TS,
+    flagged: 'const label = `${minutes} minutes ago`;',
+    allowed: 'const label = formatAge({ at });',
+  },
   'role-weight-override': { path: TS, flagged: "'text-row font-medium'", allowed: "'text-row'" },
   'if-without-braces': {
     path: TS,

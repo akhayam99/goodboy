@@ -173,13 +173,25 @@ describe('PrDetailPanel', () => {
     await waitFor(() => screen.getByText('The tank was empty.'));
   });
 
-  it('groups the bitbucket build statuses as Failing and Running, no summary line', async () => {
+  it('feeds the build statuses to the Checks row of the rail and hides the rows it has no fact for', async () => {
     renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: /^Checks/ }));
-    await waitFor(() => expect(screen.getByRole('list', { name: 'Failing checks' })).toBeDefined());
-    expect(screen.getByRole('list', { name: 'Running checks' })).toBeDefined();
-    expect(screen.queryByTestId('checks-rollup')).toBeNull();
-    screen.getByText('unit tests');
+    await waitFor(() =>
+      expect(screen.getByTestId('checks-line').textContent).toBe('0 of 2 passed'),
+    );
+    const failing = screen.getByRole('list', { name: 'Failing checks' });
+    expect(failing.textContent).toContain('unit tests');
+    expect(screen.queryByRole('region', { name: 'Reviewers' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'People' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Linked issues' })).toBeNull();
+  });
+
+  it('lists the opening and the comment on the shared activity', async () => {
+    renderPanel();
+    await openConversation();
+
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    expect(activity.querySelector('[data-activity="opened"]')?.textContent).toContain('opened');
+    expect(activity.querySelector('[data-activity="review"]')?.textContent).toContain('Kim');
   });
 
   it('renders the changed file from the raw unified diff bitbucket returns', async () => {

@@ -54,7 +54,7 @@ export type RawPullRequest = {
   autoMergeRequest: Record<string, unknown> | null;
   headRefOid?: string | null;
   mergedAt?: string | null;
-  author?: { readonly login?: string | null } | null;
+  author?: { readonly login?: string | null; readonly avatarUrl?: string | null } | null;
   reviewRequests?: ReadonlyArray<unknown> | null;
 };
 
@@ -201,7 +201,10 @@ export const toPullRequestState = ({
   mergeQueue,
   headSha: raw.headRefOid ?? null,
   mergedAt: raw.mergedAt ?? null,
-  author: raw.author?.login ?? null,
+  author:
+    raw.author?.login == null
+      ? null
+      : { login: raw.author.login, avatarUrl: raw.author.avatarUrl ?? null },
   ...(raw.reviewRequests != null && { hasReviewRequests: raw.reviewRequests.length > 0 }),
 });
 

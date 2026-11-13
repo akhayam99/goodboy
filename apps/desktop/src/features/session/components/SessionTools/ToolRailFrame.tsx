@@ -2,9 +2,10 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBrowserTabCount';
+import { selectBrowserTabCountState } from '../../../../store/slices/browser/selectBrowserTabCountState';
 import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { selectSlotBack } from '../../../../store/slices/drawer/selectSlotBack';
-import { browserTabCount } from '../../../browser/browserTabCount';
 import { toggleBrowserDock } from '../../../browser/toggleBrowserDock';
 import { runningTerminalCount } from '../../../terminal/runningTerminalCount';
 import { toggleTerminalDock } from '../../../terminal/toggleTerminalDock';
@@ -39,6 +40,9 @@ type ToggleParams = {
   readonly tool: SessionTool;
 };
 
+const isFocusOnBody = (): boolean =>
+  document.activeElement === null || document.activeElement === document.body;
+
 const toggleWorkspaceTool = ({ tool }: ToggleParams): void => {
   if (tool.pane === 'terminal') {
     toggleTerminalDock({ isToggle: true });
@@ -52,7 +56,9 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
   const pageKind = useAppStore((state) => state.appStudio?.kind ?? null);
   const waitingKind = useAppStore((state) => selectSlotBack({ state })?.kind ?? null);
   const runningCount = useAppStore((state) => runningTerminalCount({ tabs: state.terminalTabs }));
-  const tabCount = useAppStore((state) => browserTabCount({ state }));
+  const workspaceId = useAppStore((state) => state.currentWorkspaceId);
+  const tabCount = useAppStore((state) => selectBrowserTabCount({ state, workspaceId }));
+  const tabCountState = useAppStore((state) => selectBrowserTabCountState({ state, workspaceId }));
   const sessionTools = session === null ? [] : SESSION_TOOLS;
   const tools = [...sessionTools, ...WORKSPACE_TOOLS];
   const count = tools.length;
@@ -68,6 +74,7 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
   activePaneRef.current = tools[activeIndex]?.pane ?? null;
   useLayoutEffect(() => {
     const rail = railRef.current;
+    const isOnDrawerEdge = rail !== null && rail.closest('[data-drawer-edge]') !== null;
     if (railFocusMemo.hasFocus) {
       railFocusMemo.hasFocus = false;
       rail
@@ -76,7 +83,12 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
     }
     return () => {
       railFocusMemo.pane = activePaneRef.current;
-      railFocusMemo.hasFocus = rail !== null && rail.contains(document.activeElement);
+      const isReturnFromDrawer = isOnDrawerEdge && railFocusMemo.isDrawerOpener && isFocusOnBody();
+      railFocusMemo.hasFocus =
+        (rail !== null && rail.contains(document.activeElement)) || isReturnFromDrawer;
+      if (isReturnFromDrawer) {
+        railFocusMemo.isDrawerOpener = false;
+      }
       queueMicrotask(() => {
         railFocusMemo.hasFocus = false;
       });
@@ -84,7 +96,10 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
   }, []);
   const rovingOf = ({ index }: IndexParams) => ({
     tabIndex: index === activeIndex ? 0 : -1,
-    onFocus: () => setFocusIndex(index),
+    onFocus: () => {
+      railFocusMemo.pane = tools[index]?.pane ?? null;
+      setFocusIndex(index);
+    },
   });
   return (
     <div
@@ -94,6 +109,15 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
       aria-label="Tools"
       aria-orientation="vertical"
       data-testid="session-tools"
+      onFocus={() => {
+        railFocusMemo.isDrawerOpener = false;
+      }}
+      onBlur={(event) => {
+        const next = event.relatedTarget;
+        if (next instanceof Element && next.closest('[data-drawer-card]') !== null) {
+          railFocusMemo.isDrawerOpener = true;
+        }
+      }}
       onKeyDown={(event) => {
         const next = toolbarIndexAfter({ key: event.key, from: activeIndex, count });
         if (next === null) {
@@ -139,7 +163,8 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
           isWaiting={waitingKind === tool.pane}
           isCurrent={pageKind === tool.pane}
           fact={toolFactOf({ pane: tool.pane, runningCount, tabCount })}
-          count={tool.pane === 'terminal' ? runningCount : tabCount}
+          count={tool.pane === 'terminal' ? runningCount : (tabCount ?? 0)}
+          isCountLoading={tool.pane === 'browser' && tabCountState === 'loading'}
           signal={tool.pane === 'terminal' ? terminalSignal : null}
           {...rovingOf({ index: sessionTools.length + offset })}
           onToggle={() => toggleWorkspaceTool({ tool })}

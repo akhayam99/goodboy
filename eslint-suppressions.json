@@ -5182,11 +5182,6 @@
       "count": 13
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
@@ -5840,11 +5835,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 30
-    }
-  },
-  "apps/desktop/src/features/settings/components/SettingsStudio/index.tsx": {
-    "react-hooks/exhaustive-deps": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/railSubtitles.test.ts": {
@@ -7726,11 +7716,6 @@
   "apps/desktop/src/store/sessionEviction.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 22
-    }
-  },
-  "apps/desktop/src/store/sessionEviction.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/agentQueue/enqueueAgentMessage.ts": {
@@ -10350,11 +10335,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/turn/recoverTurnFailure.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/turn/resolveErrorTurnMessage.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -12228,6 +12208,11 @@
       "count": 2
     }
   },
+  "packages/db/src/queries/agent-summary.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 14
+    }
+  },
   "packages/db/src/queries/agent-turn-span.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 17
@@ -12260,11 +12245,8 @@
     }
   },
   "packages/db/src/queries/agent.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 19
-    },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 8
+      "count": 1
     }
   },
   "packages/db/src/queries/artifact-orphan.test.ts": {
@@ -13102,11 +13084,6 @@
       "count": 10
     }
   },
-  "packages/ui/src/components/Avatar.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "packages/ui/src/components/Band/bandDepth.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -13282,7 +13259,7 @@
       "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 11
+      "count": 8
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1

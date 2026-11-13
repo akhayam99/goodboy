@@ -7,6 +7,8 @@ type Params = {
 const MESSAGES: Readonly<Record<TurnRefusal, string>> = {
   provider_limit: 'Every provider is over its limit. Change a limit or wait for the next period.',
   folder_busy: 'Another agent is writing in this folder. Try again in a moment.',
+  turn_running:
+    "This agent is already running a turn from another window, so this one didn't start. Send it again once that turn ends.",
   auto_child_unread:
     "Goodboy couldn't check whether this agent works for Auto, so the turn didn't start. Try again in a moment.",
   auto_child_off_route:

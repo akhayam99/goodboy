@@ -4,7 +4,7 @@ import { Button, cn, Collapsible, ICON_SIZE } from '@goodboy/ui';
 import { CircleCheck } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { PROVIDER_LABEL } from '../../providerLabel';
 import { PROVIDER_BRAND } from '../provider-brand';
 import { guideFor } from './guides';
@@ -128,7 +128,11 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {isAuthLinkRevealed && authUrl !== null && (
-            <Button variant="ghost" size="sm" onClick={() => void openUrl(authUrl)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openLink({ url: authUrl, sessionId: null, place: 'outside' })}
+            >
               Open the sign-in page again
             </Button>
           )}

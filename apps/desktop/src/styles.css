@@ -170,6 +170,8 @@
   --text-body--line-height: 20px;
   --text-prose: 15px;
   --text-prose--line-height: 24px;
+  --text-comment: 14px;
+  --text-comment--line-height: 22px;
   --text-meta: 12px;
   --text-meta--line-height: 16px;
   --text-chip: 11px;
@@ -574,7 +576,7 @@ html[data-theme='light'] {
   --color-elevated: oklch(1 0 250);
   --color-floating: oklch(1 0 250);
   --color-fill: oklch(0 0 0 / 0.05);
-  --color-skeleton: oklch(0 0 0 / 0.08);
+  --color-skeleton: oklch(0 0 0 / 0.12);
   --color-idle: oklch(0.6 0.005 250);
   --color-muted-foreground: oklch(0.43 0.006 250);
   --color-faint-foreground: oklch(0.5 0.006 250);
@@ -828,8 +830,8 @@ body {
 }
 
 @utility sticky-surface {
-  background-color: color-mix(in oklab, var(--color-background) 90%, transparent);
-  backdrop-filter: blur(3px) saturate(1.2);
+  background-color: color-mix(in oklab, var(--color-background) 80%, transparent);
+  backdrop-filter: blur(12px) saturate(1.4);
   @media (prefers-reduced-transparency: reduce) {
     background-color: var(--color-background);
     backdrop-filter: none;

@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use tauri::{Manager, Runtime, Webview};
 
+use super::console::{self, ConsoleRead, Cursor};
 use super::favicon::{self, BrowserFavicons, TabFavicon};
 use super::find::{self, FindOutcome};
 use super::guard::{self, AppOrigins};
@@ -10,10 +11,14 @@ use super::local::{self, LocalFile};
 use super::page_keys::PageKeys;
 use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
-    self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_CLOSED, TAB_GONE,
+    self, BROWSER_CALLER, HOST_UNKNOWN, INVALID_ADDRESS, INVALID_PRESET, NOT_WEB_ADDRESS,
+    OTHER_SESSION, OTHER_WINDOW, PAGE_MOVED, PAGE_TEXT_UNAVAILABLE, TAB_CLOSED, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts, TabState};
 use crate::platform::web_history::{HistoryState, HistoryStep};
+use crate::platform::web_text::{self, PageText};
+use crate::platform::web_url;
+use crate::platform::web_user_agent::DevicePreset;
 use crate::util::{now_ms, MessageError};
 
 const BLANK_ADDRESS: &str = "about:blank";
@@ -67,10 +72,34 @@ pub(crate) struct TabArgs {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub(crate) struct TabUserAgentArgs {
+    tab_id: String,
+    preset: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct TabFindArgs {
     tab_id: String,
     needle: String,
     is_backwards: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PageTextArgs {
+    tab_id: String,
+    session_id: String,
+    host: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ConsoleReadArgs {
+    pub(super) tab_id: String,
+    pub(super) session_id: String,
+    pub(super) doc: Option<String>,
+    pub(super) after: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -268,6 +297,104 @@ pub async fn browser_favicon(
     Ok(Some(TabFavicon { origin, src }))
 }
 
+fn check_page_read(
+    owner_session: &str,
+    args: &PageTextArgs,
+    live: &tauri::Url,
+    origins: &AppOrigins,
+) -> Result<(), MessageError> {
+    if owner_session != args.session_id {
+        return Err(reason::refused(OTHER_SESSION));
+    }
+    if !guard::is_web_address(live, origins) {
+        return Err(reason::refused(NOT_WEB_ADDRESS));
+    }
+    if guard::host_of(live) != args.host.trim().trim_end_matches('.').to_ascii_lowercase() {
+        return Err(reason::refused(HOST_UNKNOWN));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn browser_page_text(
+    webview: Webview,
+    args: PageTextArgs,
+) -> Result<PageText, MessageError> {
+    let tab = owned_tab(&webview, &args.tab_id)?;
+    let registry = webview.state::<BrowserRegistry>();
+    let owner_session = registry
+        .facts(&args.tab_id)
+        .map(|facts| facts.session_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    let navigation = registry
+        .navigation_of(&args.tab_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    let live = web_url::live_url_of(&tab).ok_or_else(|| reason::failed(PAGE_TEXT_UNAVAILABLE))?;
+    check_page_read(
+        &owner_session,
+        &args,
+        &live,
+        &AppOrigins::of_app(webview.app_handle()),
+    )?;
+    let page = web_text::read_page_text(&tab, PAGE_TEXT_UNAVAILABLE)?;
+    check_capture(
+        navigation,
+        registry.navigation_of(&args.tab_id),
+        &args,
+        &page,
+    )?;
+    Ok(page)
+}
+
+fn check_capture(
+    checked: u64,
+    now: Option<u64>,
+    args: &PageTextArgs,
+    page: &PageText,
+) -> Result<(), MessageError> {
+    if now != Some(checked) {
+        return Err(reason::refused(PAGE_MOVED));
+    }
+    let host = guard::parse_address(&page.url).map(|url| guard::host_of(&url));
+    if host.as_deref()
+        != Some(
+            args.host
+                .trim()
+                .trim_end_matches('.')
+                .to_ascii_lowercase()
+                .as_str(),
+        )
+    {
+        return Err(reason::refused(HOST_UNKNOWN));
+    }
+    Ok(())
+}
+
+pub(super) fn console_tab<R: Runtime>(
+    caller: &Webview<R>,
+    args: &ConsoleReadArgs,
+) -> Result<Webview<R>, MessageError> {
+    let tab = owned_tab(caller, &args.tab_id)?;
+    let owner_session = caller
+        .state::<BrowserRegistry>()
+        .facts(&args.tab_id)
+        .map(|facts| facts.session_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    if owner_session != args.session_id {
+        return Err(reason::refused(OTHER_SESSION));
+    }
+    Ok(tab)
+}
+
+#[tauri::command]
+pub async fn browser_console_read(
+    webview: Webview,
+    args: ConsoleReadArgs,
+) -> Result<ConsoleRead, MessageError> {
+    let tab = console_tab(&webview, &args)?;
+    console::read_console(&tab, Cursor::of(args.doc.as_deref(), args.after))
+}
+
 #[tauri::command]
 pub async fn browser_tab_back(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     host::step_history(&owned_tab(&webview, &args.tab_id)?, HistoryStep::Back)
@@ -281,6 +408,16 @@ pub async fn browser_tab_forward(webview: Webview, args: TabArgs) -> Result<(), 
 #[tauri::command]
 pub async fn browser_tab_inspectable(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     host::make_inspectable(&owned_tab(&webview, &args.tab_id)?)
+}
+
+#[tauri::command]
+pub async fn browser_user_agent(
+    webview: Webview,
+    args: TabUserAgentArgs,
+) -> Result<(), MessageError> {
+    let preset =
+        DevicePreset::named(&args.preset).ok_or_else(|| reason::refused(INVALID_PRESET))?;
+    host::apply_user_agent(&owned_tab(&webview, &args.tab_id)?, preset)
 }
 
 #[tauri::command]
@@ -420,8 +557,158 @@ mod tests {
     }
 
     #[test]
+    fn wire_shape_console_read_args() {
+        assert_wire_reads::<ConsoleReadArgs>(json!({
+            "tabId": "0f1e",
+            "sessionId": "harborline",
+            "doc": "k3x9",
+            "after": 12,
+        }));
+        assert_wire_reads::<ConsoleReadArgs>(json!({
+            "tabId": "0f1e",
+            "sessionId": "harborline",
+            "doc": null,
+            "after": 0,
+        }));
+    }
+
+    #[test]
     fn wire_shape_session_args() {
         assert_wire_reads::<SessionArgs>(json!({ "sessionId": "harborline" }));
+    }
+
+    #[test]
+    fn wire_shape_page_text_args() {
+        assert_wire_reads::<PageTextArgs>(json!({
+            "tabId": "0f1e",
+            "sessionId": "harborline",
+            "host": "localhost",
+        }));
+    }
+
+    fn page_args(session_id: &str, host: &str) -> PageTextArgs {
+        PageTextArgs {
+            tab_id: "0f1e".into(),
+            session_id: session_id.into(),
+            host: host.into(),
+        }
+    }
+
+    fn page_check(owner: &str, args: &PageTextArgs, address: &str) -> Result<(), String> {
+        let live = guard::parse_address(address).expect("an address");
+        check_page_read(owner, args, &live, &AppOrigins::with_dev_origin(None))
+            .map_err(|error| error.to_string())
+    }
+
+    #[test]
+    fn reads_a_page_whose_host_the_press_named() {
+        let args = page_args("harborline", "acme.test");
+
+        assert!(page_check("harborline", &args, "https://Acme.test/checkout").is_ok());
+        assert!(page_check("harborline", &args, "https://acme.test./checkout").is_ok());
+    }
+
+    #[test]
+    fn refuses_a_page_that_moved_to_another_host_after_the_press() {
+        let args = page_args("harborline", "acme.test");
+
+        assert_eq!(
+            page_check("harborline", &args, "https://northwind.test/"),
+            Err(HOST_UNKNOWN.to_string())
+        );
+        assert_eq!(
+            page_check("harborline", &args, "https://acme.test.northwind.test/"),
+            Err(HOST_UNKNOWN.to_string())
+        );
+    }
+
+    #[test]
+    fn refuses_a_tab_that_belongs_to_another_session() {
+        let args = page_args("harborline", "acme.test");
+
+        assert_eq!(
+            page_check("cascadia", &args, "https://acme.test/"),
+            Err(OTHER_SESSION.to_string())
+        );
+    }
+
+    #[test]
+    fn refuses_a_page_that_is_not_a_web_address() {
+        let args = page_args("harborline", "");
+
+        for address in ["about:blank", "file:///work/harborline/plan.html"] {
+            assert_eq!(
+                page_check("harborline", &args, address),
+                Err(NOT_WEB_ADDRESS.to_string()),
+                "{address}"
+            );
+        }
+    }
+
+    fn captured(url: &str) -> PageText {
+        PageText {
+            title: "Checkout".into(),
+            url: url.into(),
+            text: "Total".into(),
+            is_cut: false,
+        }
+    }
+
+    fn capture_check(checked: u64, now: Option<u64>, url: &str) -> Result<(), String> {
+        let args = page_args("harborline", "acme.test");
+        check_capture(checked, now, &args, &captured(url)).map_err(|error| error.to_string())
+    }
+
+    #[test]
+    fn keeps_a_capture_from_the_navigation_it_checked() {
+        assert!(capture_check(4, Some(4), "https://acme.test/checkout").is_ok());
+    }
+
+    #[test]
+    fn refuses_a_capture_when_the_tab_navigated_after_the_check() {
+        assert_eq!(
+            capture_check(4, Some(5), "https://acme.test/checkout"),
+            Err(PAGE_MOVED.to_string())
+        );
+        assert_eq!(
+            capture_check(4, None, "https://acme.test/checkout"),
+            Err(PAGE_MOVED.to_string())
+        );
+    }
+
+    #[test]
+    fn refuses_a_capture_whose_page_names_another_host() {
+        for url in ["https://northwind.test/", "not an address", ""] {
+            assert_eq!(
+                capture_check(4, Some(4), url),
+                Err(HOST_UNKNOWN.to_string()),
+                "{url}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_page_load_moves_the_navigation_the_capture_is_bound_to() {
+        let source = include_str!("load.rs");
+        let started = source
+            .find("if phase == LoadPhase::Started {")
+            .expect("a started branch");
+        let branch = &source[started..started + source[started..].find('}').expect("end")];
+        assert!(
+            branch.contains("registry.mark_navigated(tab_id)"),
+            "{branch}"
+        );
+
+        let command = include_str!("commands.rs");
+        let start = command
+            .find("pub async fn browser_page_text")
+            .expect("the command");
+        let body = &command[start..start + command[start..].find("\n}\n").expect("end")];
+        let checked = body.find("navigation_of(&args.tab_id)").expect("read");
+        let live = body.find("live_url_of(&tab)").expect("live");
+        let read = body.find("read_page_text(&tab").expect("capture");
+        let bound = body.find("check_capture(").expect("bound");
+        assert!(checked < live && live < read && read < bound, "{body}");
     }
 
     #[test]

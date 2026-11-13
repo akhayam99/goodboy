@@ -20,7 +20,7 @@ import {
   type ReportSheetVariant,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { openUrl } from '../../../shared/lib/editor';
+import { openLinkOrThrow } from '../../open/openLinkOrThrow';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../reportIssueTypes';
 import {
@@ -217,7 +217,7 @@ export const ReportComposer = ({
         }
       }
       try {
-        await openUrl(opened.url);
+        await openLinkOrThrow({ url: opened.url, sessionId: null, place: 'outside' });
         onDraftClear();
         onOpenedLink({ overflows: opened.overflows });
       } catch (err) {

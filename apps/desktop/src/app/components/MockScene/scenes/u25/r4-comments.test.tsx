@@ -93,7 +93,7 @@ describe('the r4 comments scenes', () => {
 
     expect(within(section()).getByRole('article', { name: 'Comment' })).toBeDefined();
     expect(verbsOf()).toEqual(['reviewComment.skip', 'reviewComment.reply', 'reviewComment.draft']);
-    expect(section().querySelector('[data-drawer-meta]')?.textContent ?? '').toMatch(/ago/);
+    expect(section().querySelector('[data-drawer-author]')?.textContent ?? '').toMatch(/ago/);
   });
 
   it('opens a fix to review with Apply fix as its primary', async () => {

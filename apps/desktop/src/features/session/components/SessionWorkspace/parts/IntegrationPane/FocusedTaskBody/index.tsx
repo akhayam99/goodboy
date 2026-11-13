@@ -6,7 +6,7 @@ import type {
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
-import { openUrl } from '../../../../../../../shared/lib/editor';
+import { openLink } from '../../../../../../open/openLink';
 import { ExternalTaskChip } from '../../../../../../integrations/components/ExternalTaskChip';
 import { integrationLabel } from '../../../../../../../shared/utils/integrationLabel';
 import { RecordHeader } from '../../../../../../../shared/components/StudioDetail/RecordHeader';
@@ -75,7 +75,7 @@ export const FocusedTaskBody = ({
         appearance="row"
         navigation="external"
         ariaLabel={`Open ${task.identifier}`}
-        onClick={() => void openUrl(task.url)}
+        onClick={(event) => openLink({ url: task.url, event })}
       />
       <p className="text-meta text-muted-foreground">
         Connection lost. Open the record in its provider or reconnect in Settings.

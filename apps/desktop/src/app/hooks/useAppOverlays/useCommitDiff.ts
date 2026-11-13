@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useCommitLinkInterceptor } from '../../../shared/hooks/useCommitLinkInterceptor';
-import { openUrl } from '../../../shared/lib/editor';
+import { openLink } from '../../../features/open/openLink';
 import { useAppStore } from '../../../store';
 import { claimSessionLink } from '../../../features/browser/claimSessionLink';
 
@@ -15,7 +15,10 @@ export const useCommitDiff = () => {
     }
     setCommitDiff(null);
     if (currentSessionId === null) {
-      void openUrl(`https://github.com/${commitDiff.repo}/commit/${commitDiff.sha}`);
+      openLink({
+        url: `https://github.com/${commitDiff.repo}/commit/${commitDiff.sha}`,
+        sessionId: null,
+      });
       return;
     }
     openDrawer({

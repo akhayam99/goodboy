@@ -1,4 +1,4 @@
-import type { ProjectId, SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 
 export type { GetFn } from '../../slice-types';
 
@@ -59,6 +59,17 @@ export type SessionParams = {
   readonly sessionId: SessionId;
 };
 
+export type WorkspaceParams = {
+  readonly workspaceId: WorkspaceId;
+};
+
 export type ProjectParams = {
   readonly projectId: ProjectId;
+};
+
+export type DevicePresetId = 'desktop' | 'tablet' | 'phone';
+
+export type DevicePresetParams = {
+  readonly tabId: string;
+  readonly preset: DevicePresetId;
 };

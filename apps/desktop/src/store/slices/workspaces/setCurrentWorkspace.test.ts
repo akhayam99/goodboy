@@ -38,6 +38,8 @@ vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     getSetting: vi.fn(async () => null),
     listAgentsForSessions: vi.fn(async () => new Map()),
+    listAgentSummariesForSessions: vi.fn(async () => []),
+    listAgentOutputSummaries: vi.fn(async () => []),
     listDecidedNudgeEventsForSessions: vi.fn(async () => []),
     listOpenQuestionsForSessions: vi.fn(async () => []),
     listExternalTasksForWorkspace: vi.fn(async () => []),
@@ -86,6 +88,7 @@ vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { verifyWorkspaceWorktrees } from '../project-mounts/verify/verifyWorkspaceWorktrees';
 import {
+  listAgentSummariesForSessions,
   listAgentsForSessions,
   listOpenQuestionsForSessions,
   listSessionsForWorkspace,
@@ -252,7 +255,7 @@ describe('setCurrentWorkspace mount hydration', () => {
   it('omits an unselected entry while retaining restored and repaired entries', async () => {
     const store = harness();
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(store.state.sessionActiveMount[UNSELECTED_SESSION_ID]).toBeUndefined();
     expect(store.state.sessionActiveMount[RESTORED_SESSION_ID]).toBe(RESTORED_MOUNT_ID);
@@ -262,7 +265,7 @@ describe('setCurrentWorkspace mount hydration', () => {
   it('releases the board as soon as the rows are in, without waiting for a pull request sweep', async () => {
     const store = harness({ boardReady: false });
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(store.state.boardReady).toBe(true);
   });
@@ -284,7 +287,7 @@ describe('setCurrentWorkspace run recovery', () => {
     );
     const store = harness();
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(reconcileLoadedSessions).toHaveBeenCalledWith(
       expect.objectContaining({ sessions: h.sessions, liveRunIds }),
@@ -297,13 +300,14 @@ describe('setCurrentWorkspace run recovery', () => {
     const asking = anAgent({ sessionId: RESTORED_SESSION_ID, status: 'running', runId: RUN_ID });
     const waiting: TurnState = { kind: 'blocked', runId: RUN_ID, blockedAt: NOW };
     h.sessions = [session({ id: RESTORED_SESSION_ID })];
+    vi.mocked(listAgentSummariesForSessions).mockResolvedValueOnce([asking]);
     vi.mocked(listAgentsForSessions).mockResolvedValueOnce(
       new Map([[RESTORED_SESSION_ID, [asking]]]),
     );
     vi.mocked(reconcileLoadedAgent).mockResolvedValueOnce({ agent: asking, waiting });
     const store = harness();
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(store.state.sessionPhaseRuns[RESTORED_SESSION_ID]).toEqual([asking]);
     expect(store.state.agentTurnState[asking.id]).toEqual(waiting);
@@ -331,7 +335,7 @@ describe('setCurrentWorkspace facts before the board', () => {
       return [question];
     });
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(switching).toEqual([WORKSPACE_ID]);
     expect(store.state.sessionOpenQuestions[RESTORED_SESSION_ID]).toEqual([question]);
@@ -344,7 +348,7 @@ describe('setCurrentWorkspace facts before the board', () => {
     const store = harness();
     vi.mocked(listOpenQuestionsForSessions).mockRejectedValueOnce(new Error('database is locked'));
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(store.state.boardReady).toBe(true);
     expect(store.state.workspaceFactsError).toBe('database is locked');
@@ -360,7 +364,7 @@ describe('setCurrentWorkspace facts before the board', () => {
   it('keeps the error when Retry fails again, and drops a Retry answer that lands after a switch', async () => {
     const store = harness();
     vi.mocked(listOpenQuestionsForSessions).mockRejectedValueOnce(new Error('database is locked'));
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     vi.mocked(listOpenQuestionsForSessions).mockRejectedValueOnce(new Error('disk I/O error'));
     await retryWorkspaceFacts(store)({ workspaceId: WORKSPACE_ID });
@@ -398,7 +402,7 @@ describe('setCurrentWorkspace stops all live work', () => {
       cancelTurnConfirmed,
     });
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(cancelTurnConfirmed).toHaveBeenCalledWith({
       sessionId: waiting.id,
@@ -435,7 +439,7 @@ describe('setCurrentWorkspace stops all live work', () => {
     it('stays here with everything that controls it, and says so', async () => {
       const store = stuckStore();
 
-      await setCurrentWorkspace(store.set, store.get)(OTHER_ID);
+      await setCurrentWorkspace(store.set, store.get)({ id: OTHER_ID });
 
       expect(store.state.currentWorkspaceId).toBe(WORKSPACE_ID);
       expect(store.state.sessions).toEqual([live]);
@@ -452,7 +456,7 @@ describe('setCurrentWorkspace stops all live work', () => {
     it('says so too when the switch has no target', async () => {
       const store = stuckStore();
 
-      await setCurrentWorkspace(store.set, store.get)(null);
+      await setCurrentWorkspace(store.set, store.get)({ id: null });
 
       expect(store.state.currentWorkspaceId).toBe(WORKSPACE_ID);
       expect(store.state.agentTurnState[agent.id]).toEqual(running);
@@ -463,12 +467,12 @@ describe('setCurrentWorkspace stops all live work', () => {
     it('switches on Retry once the process exited', async () => {
       const store = stuckStore();
       const switchTo = setCurrentWorkspace(store.set, store.get);
-      await switchTo(OTHER_ID);
+      await switchTo({ id: OTHER_ID });
       store.set({
         cancelTurnConfirmed: vi.fn(async () => ({ outcome: 'exited' as const, exitedAt: NOW })),
       });
 
-      await switchTo(OTHER_ID);
+      await switchTo({ id: OTHER_ID });
 
       expect(store.state.currentWorkspaceId).toBe(OTHER_ID);
       expect(store.state.workspaceSwitchError).toBeNull();
@@ -493,7 +497,7 @@ describe('setCurrentWorkspace stops all live work', () => {
       cancelTurnConfirmed,
     });
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(cancelTurnConfirmed).not.toHaveBeenCalled();
     expect(cancelTurn).not.toHaveBeenCalled();
@@ -507,7 +511,7 @@ describe('setCurrentWorkspace stops all live work', () => {
     });
     const store = harness({ sessions: [running] });
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(cancelTurn).toHaveBeenCalledWith('run-orphan');
     expect(cancelledRunIds.has(orphan)).toBe(true);
@@ -523,7 +527,7 @@ describe('setCurrentWorkspace stops all live work', () => {
       cancelTurnConfirmed,
     });
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(cancelTurn).not.toHaveBeenCalled();
     expect(cancelTurnConfirmed).not.toHaveBeenCalled();
@@ -555,8 +559,8 @@ describe('setCurrentWorkspace latest only and read first', () => {
 
     const switchTo = setCurrentWorkspace(store.set, store.get);
 
-    const first = switchTo(HARBORLINE_ID);
-    const second = switchTo(NORTHWIND_ID);
+    const first = switchTo({ id: HARBORLINE_ID });
+    const second = switchTo({ id: NORTHWIND_ID });
     await second;
     releaseHarborline([harborlineRow]);
     await first;
@@ -574,7 +578,7 @@ describe('setCurrentWorkspace latest only and read first', () => {
       boardReady: true,
     });
 
-    await setCurrentWorkspace(store.set, store.get)(NORTHWIND_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: NORTHWIND_ID });
 
     expect(store.state.currentWorkspaceId).toBe(HARBORLINE_ID);
     expect(store.state.sessions).toEqual([harborlineRow]);
@@ -593,9 +597,9 @@ describe('setCurrentWorkspace latest only and read first', () => {
     const store = harness({ currentWorkspaceId: HARBORLINE_ID });
     const switchTo = setCurrentWorkspace(store.set, store.get);
 
-    await switchTo(NORTHWIND_ID);
+    await switchTo({ id: NORTHWIND_ID });
     expect(store.state.workspaceSwitchError).not.toBeNull();
-    await switchTo(NORTHWIND_ID);
+    await switchTo({ id: NORTHWIND_ID });
 
     expect(store.state.currentWorkspaceId).toBe(NORTHWIND_ID);
     expect(store.state.sessions.map((row) => row.id)).toEqual([northwindRow.id]);
@@ -618,7 +622,7 @@ describe('setCurrentWorkspace latest only and read first', () => {
       boardReady: true,
     });
 
-    const switching = setCurrentWorkspace(store.set, store.get)(NORTHWIND_ID);
+    const switching = setCurrentWorkspace(store.set, store.get)({ id: NORTHWIND_ID });
 
     expect(store.state.switchingToWorkspaceId).toBe(NORTHWIND_ID);
     await vi.waitFor(() => {
@@ -646,8 +650,8 @@ describe('setCurrentWorkspace latest only and read first', () => {
     const store = harness({ currentWorkspaceId: null });
     const switchTo = setCurrentWorkspace(store.set, store.get);
 
-    void switchTo(HARBORLINE_ID);
-    const second = switchTo(NORTHWIND_ID);
+    void switchTo({ id: HARBORLINE_ID });
+    const second = switchTo({ id: NORTHWIND_ID });
 
     expect(store.state.switchingToWorkspaceId).toBe(NORTHWIND_ID);
     await second;
@@ -669,11 +673,11 @@ describe('setCurrentWorkspace latest only and read first', () => {
     const store = harness({ currentWorkspaceId: HARBORLINE_ID, sessions: [harborlineRow] });
     const switchTo = setCurrentWorkspace(store.set, store.get);
 
-    const pending = switchTo(NORTHWIND_ID);
+    const pending = switchTo({ id: NORTHWIND_ID });
     await vi.waitFor(() => {
       expect(listSessionsForWorkspace).toHaveBeenCalledWith(expect.anything(), NORTHWIND_ID);
     });
-    await switchTo(HARBORLINE_ID);
+    await switchTo({ id: HARBORLINE_ID });
     releaseNorthwind([northwindRow]);
     await pending;
 
@@ -696,11 +700,11 @@ describe('setCurrentWorkspace latest only and read first', () => {
     const store = harness();
     const switchTo = setCurrentWorkspace(store.set, store.get);
 
-    const first = switchTo(HARBORLINE_ID);
+    const first = switchTo({ id: HARBORLINE_ID });
     await vi.waitFor(() => {
       expect(listSessionsForWorkspace).toHaveBeenCalledWith(expect.anything(), HARBORLINE_ID);
     });
-    await switchTo(NORTHWIND_ID);
+    await switchTo({ id: NORTHWIND_ID });
     failHarborline(new Error('late failure'));
     await first;
 
@@ -740,7 +744,7 @@ describe('setCurrentWorkspace background verification', () => {
     gateVerification();
     const store = harness();
 
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
 
     expect(store.state.currentWorkspaceId).toBe(WORKSPACE_ID);
     expect(store.state.sessionProjectMounts[UNSELECTED_SESSION_ID]).toHaveLength(2);
@@ -750,7 +754,7 @@ describe('setCurrentWorkspace background verification', () => {
   it('patches only the sessions that lost a mount once git answers', async () => {
     const gate = gateVerification();
     const store = harness();
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
     const untouched = store.state.sessionProjectMounts[RESTORED_SESSION_ID];
 
     gate.release(withoutMount({ sessionId: UNSELECTED_SESSION_ID, mountId: 'mount-unselected-b' }));
@@ -766,7 +770,7 @@ describe('setCurrentWorkspace background verification', () => {
   it('repairs the write destination of a session whose active mount went missing', async () => {
     const gate = gateVerification();
     const store = harness();
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await setCurrentWorkspace(store.set, store.get)({ id: WORKSPACE_ID });
     expect(store.state.sessionActiveMount[RESTORED_SESSION_ID]).toBe(RESTORED_MOUNT_ID);
 
     gate.release(withoutMount({ sessionId: RESTORED_SESSION_ID, mountId: RESTORED_MOUNT_ID }));
@@ -784,10 +788,10 @@ describe('setCurrentWorkspace background verification', () => {
     const gate = gateVerification();
     const store = harness();
     const switchTo = setCurrentWorkspace(store.set, store.get);
-    await switchTo(WORKSPACE_ID);
+    await switchTo({ id: WORKSPACE_ID });
     const mountsBefore = store.state.sessionProjectMounts;
 
-    await switchTo(null);
+    await switchTo({ id: null });
     gate.release(withoutMount({ sessionId: UNSELECTED_SESSION_ID, mountId: 'mount-unselected-b' }));
     await gate.settled;
     await Promise.resolve();

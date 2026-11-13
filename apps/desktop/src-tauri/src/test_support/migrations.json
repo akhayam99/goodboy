@@ -962,5 +962,9 @@
   {
     "version": 241,
     "sql": "\nCREATE TABLE browser_visits (\n  id TEXT PRIMARY KEY,\n  session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,\n  url TEXT NOT NULL,\n  title TEXT NOT NULL DEFAULT '',\n  created_at INTEGER NOT NULL,\n  updated_at INTEGER NOT NULL,\n  UNIQUE (session_id, url)\n);\n\nCREATE INDEX idx_browser_visits_session ON browser_visits(session_id, updated_at);\n"
+  },
+  {
+    "version": 242,
+    "sql": "\nCREATE TABLE turn_admissions (\n  id TEXT PRIMARY KEY,\n  agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,\n  run_id TEXT NOT NULL,\n  owner_launch TEXT,\n  claimed_at INTEGER NOT NULL,\n  spawned_at INTEGER,\n  created_at INTEGER NOT NULL,\n  updated_at INTEGER NOT NULL,\n  UNIQUE (agent_id)\n);\n"
   }
 ]

@@ -28,14 +28,16 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
       }
       return;
     }
+    sessionReads.open();
     const tSwitch = performance.now();
     const stateNow = get();
+    const isLight = id !== null && stateNow.lightAgentSessions[id] === true;
     const cached = id
       ? {
           telemetry: stateNow.sessionTelemetry[id] !== undefined,
           slots: stateNow.sessionSlotsLoad[id] === 'loaded',
           plans: stateNow.sessionPlans[id] !== undefined,
-          agents: stateNow.sessionPhaseRuns[id] !== undefined,
+          agents: stateNow.sessionPhaseRuns[id] !== undefined && !isLight,
         }
       : null;
     const initialLoading: SessionLoadingFlags = id
@@ -169,7 +171,10 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           console.error('[resolve] load failed', formatError(error));
         });
     }
-    if (cached?.agents !== true) {
+    if (isLight) {
+      void get().openSessionAgents({ sessionId: id });
+    }
+    if (cached?.agents !== true && !isLight) {
       const endAgents = perf('agents+runIds');
       const endPhaseRunList = perf('agents:phaseRunList');
       const endRunIds = perf('agents:runIds');

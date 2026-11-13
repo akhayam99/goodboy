@@ -3,6 +3,8 @@ import { ImageOff, X } from 'lucide-react';
 import { ICON_SIZE, IconButton, Skeleton, Tooltip } from '@goodboy/ui';
 import { attachmentKindFor, fileIconFor } from '../../../chat/attachment-kinds';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
+import type { PageSource } from '../../../../shared/types/pageSource';
+import { pageChipTextOf } from '../../pageChipTextOf';
 import type { PendingAttachment } from '../../pendingAttachment';
 
 export type AttachmentThumbnail =
@@ -20,6 +22,7 @@ type Props = {
     readonly media?: 'image' | 'pdf';
   };
   readonly title?: string;
+  readonly page?: PageSource;
   readonly onRemove?: () => void;
 };
 
@@ -29,7 +32,11 @@ type PendingPropsParams = {
 };
 
 export const pendingAttachmentProps = ({ attachment, url }: PendingPropsParams) => {
-  const shared = { fileName: attachment.fileName, mimeType: attachment.mimeType };
+  const shared = {
+    fileName: attachment.fileName,
+    mimeType: attachment.mimeType,
+    ...(attachment.source === undefined ? {} : { page: attachment.source }),
+  };
   if (attachmentKindFor(attachment.mimeType) === 'image') {
     if (url === null) {
       return { ...shared, thumbnail: { status: 'loading' } as const };
@@ -53,6 +60,7 @@ export const AttachmentChip = ({
   preview,
   lazyPreview,
   title,
+  page,
   onRemove,
 }: Props) => {
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -86,7 +94,7 @@ export const AttachmentChip = ({
     onRemove == null ? null : (
       <IconButton
         icon={X}
-        label={`Remove ${fileName}`}
+        label={`Remove ${page?.title ?? fileName}`}
         iconSize={ICON_SIZE.mark}
         onClick={onRemove}
         className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full border-0 bg-foreground p-0 text-background hover:bg-foreground hover:text-background"
@@ -126,6 +134,37 @@ export const AttachmentChip = ({
             </button>
           )}
           {lightbox}
+          {removeButton}
+        </div>
+      </Tooltip>
+    );
+  }
+
+  if (page !== undefined) {
+    const text = pageChipTextOf({ source: page, now: Date.now() });
+    return (
+      <Tooltip content={text.hover}>
+        <div className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background py-2 pl-3 pr-6 ring-1 ring-border-soft">
+          {page.iconSrc === null ? (
+            <span
+              aria-hidden
+              className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-muted text-rail text-muted-foreground"
+            >
+              {page.host.charAt(0).toUpperCase()}
+            </span>
+          ) : (
+            <img
+              alt=""
+              aria-hidden
+              src={page.iconSrc}
+              draggable={false}
+              className="size-4 shrink-0 rounded-sm object-contain"
+            />
+          )}
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-meta text-foreground">{text.title}</span>
+            <span className="truncate text-meta text-muted-foreground">{text.detail}</span>
+          </div>
           {removeButton}
         </div>
       </Tooltip>

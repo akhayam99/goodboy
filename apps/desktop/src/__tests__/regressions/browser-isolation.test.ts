@@ -133,6 +133,13 @@ describe('the browser webviews get no capability', () => {
     expect(remote).toEqual([]);
   });
 
+  it('keeps every capability a plain json file at the top of the folder, where this test reads it', () => {
+    const unread = readdirSync(CAPABILITIES, { withFileTypes: true })
+      .filter((entry) => !entry.isFile() || !entry.name.endsWith('.json'))
+      .map((entry) => entry.name);
+    expect(unread).toEqual([]);
+  });
+
   it('keeps capabilities out of tauri.conf.json, where this test would not see them', () => {
     expect(readConfig().app.security.capabilities ?? []).toEqual([]);
   });

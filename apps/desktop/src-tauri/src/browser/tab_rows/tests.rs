@@ -2,8 +2,8 @@ use rusqlite::Connection;
 use tauri::Url;
 
 use super::{
-    delete_row, delete_session_rows, list_rows, pin_row, reorder_rows, save_row, stale_session_ids,
-    unpin_row, MoveArgs, SaveArgs, TabOwner, TabRow,
+    delete_row, delete_session_rows, list_rows, list_workspace_rows, pin_row, reorder_rows,
+    save_row, stale_session_ids, unpin_row, MoveArgs, SaveArgs, TabOwner, TabRow,
 };
 use crate::browser::guard::AppOrigins;
 use crate::browser::reason::{
@@ -99,6 +99,38 @@ fn saves_new_rows_at_the_end_of_their_owner() {
     assert_eq!(ids(&rows), vec!["a", "b"]);
     assert_eq!(rows[1].position, 1);
     assert_eq!(listed(&conn, &session("s2")).len(), 1);
+}
+
+#[test]
+fn lists_the_session_and_pinned_rows_of_one_workspace_in_one_read() {
+    let conn = seeded();
+    conn.execute_batch(
+        "INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+           VALUES ('w2', 'Cascadia', 'cascadia', 1, 1);
+         INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+           VALUES ('s3', 'w2', 'Review payments-api', 'idle', 1, 1);
+         INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+           VALUES ('p2', 'w2', 'ledger-core', '/work/ledger-core', 'repo', 1, 1);",
+    )
+    .expect("second workspace seeds");
+    save(&conn, "a", session("s1"), "https://acme.example/");
+    save(&conn, "b", session("s2"), "https://acme.example/docs");
+    save(&conn, "c", project("p1"), "https://acme.example/pinned");
+    save(&conn, "d", session("s3"), "https://acme.example/other");
+    save(&conn, "e", project("p2"), "https://acme.example/other-pin");
+
+    let first = list_workspace_rows(&conn, "w1").expect("rows list");
+    let second = list_workspace_rows(&conn, "w2").expect("rows list");
+
+    let mut first_ids = ids(&first);
+    first_ids.sort();
+    assert_eq!(first_ids, vec!["a", "b", "c"]);
+    let mut second_ids = ids(&second);
+    second_ids.sort();
+    assert_eq!(second_ids, vec!["d", "e"]);
+    assert!(list_workspace_rows(&conn, "missing")
+        .expect("rows list")
+        .is_empty());
 }
 
 #[test]

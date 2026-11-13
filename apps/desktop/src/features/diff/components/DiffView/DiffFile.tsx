@@ -272,7 +272,7 @@ const DiffFileView = ({
       return null;
     }
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 font-sans">
         {renderThreads(list)}
         {isComposerHere && comments !== null && composer?.kind === 'line' ? (
           <CommentComposer

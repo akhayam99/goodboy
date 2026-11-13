@@ -15,6 +15,7 @@ import { openDestination } from '../../../shared/navigation/openDestination';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
 import { AppStudio } from '../../components/AppOverlayRouter/AppStudio';
 import type { OpenPaletteParams, PaletteRequest } from '../../../features/palette/paletteModeTypes';
+import { useOpenLinkEvent } from '../../../features/open/hooks/useOpenLinkEvent';
 import { useCommitDiff } from './useCommitDiff';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
 import { useStudioEvents } from './useStudioEvents';
@@ -46,6 +47,7 @@ export const useAppOverlays = ({
   const deleteTargetSession = useSessionById(deleteSessionId);
   const [palette, setPalette] = useState<PaletteRequest | null>(null);
   useCommitDiff();
+  useOpenLinkEvent();
 
   const open = useCallback(
     ({ overlay: next }: OpenParams) => openStudio({ studio: next }),

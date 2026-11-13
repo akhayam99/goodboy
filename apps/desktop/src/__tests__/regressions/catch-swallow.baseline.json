@@ -158,7 +158,7 @@
   "apps/desktop/src/store/slices/sessions/createSession.ts": 1,
   "apps/desktop/src/store/slices/sessions/deleteTask.ts": 5,
   "apps/desktop/src/store/slices/sessions/discardUncreatedSession.ts": 1,
-  "apps/desktop/src/store/slices/sessions/reconcileSessionRuns.ts": 4,
+  "apps/desktop/src/store/slices/sessions/reconcileSessionRuns.ts": 3,
   "apps/desktop/src/store/slices/sessions/setCurrentSession.ts": 2,
   "apps/desktop/src/store/slices/sessions/unarchiveTask.ts": 2,
   "apps/desktop/src/store/slices/slack-drafts/loadSessionSlackDrafts.ts": 1,

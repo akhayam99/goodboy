@@ -225,7 +225,7 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   terminals whose shell had a foreground job (id and the `ps` command line) and
   every live script run (script id, session, name, cwd). An empty drain keeps
   the previous record, because the exit events call drain twice. The store reads
-  it once at boot (`loadEndedWork`) and stores the record's `at` in
+  it once after launch, on idle (`loadEndedWork`), and stores the record's `at` in
   `restart.ended_work_seen`, so the strips show on the first launch only.
 
 - **External terminals come from a table.** `open_in_external_terminal` takes a
@@ -239,7 +239,7 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
 - **Open never runs a file.** `util/open_guard.rs` refuses a file or bundle
   whose extension is executable (`.command`, `.app`, `.sh`, `.exe`, `.desktop`
   and the rest of its list, in any case) or whose execute bit is set, before
-  `explore_open` or `artifact_mirror_open` hands it to the OS default handler.
+  `explore_open`, `artifact_mirror_open` or `artifact_mirror_path` hands it on.
   The refusal has kind `executable_refused`; Reveal stays allowed.
   `reveal_in_file_manager` takes an absolute path only.
 - **Discovered scripts are quoted.** `project_scripts.rs` writes
@@ -277,7 +277,8 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   this window can reattach to and runs whose permission ask nobody answered
   (a `NOT EXISTS` on `turn_events` inside `stopGhostAgents`) are kept. The
   sweep is one statement, so if it fails it stops nothing and each workspace
-  load reconciles its own agents.
+  load reconciles its own agents. It finishes before the launch reads any
+  agent, and the first workspace load reuses its `turn_list_live` answer.
 
 ### Terminal and script output
 
@@ -493,6 +494,63 @@ baseline names `config_export/apply.rs`.
   providers.** Providers start as `unknown` and are detected after boot,
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
+- **Launch order.** `hydrate` (`store/slices/boot/hydrate.ts`) awaits six steps
+  in a row (`BOOT_BUDGETS.awaitedStepsBeforeHydrated`), and the app shows after
+  three of them (`BOOT_BUDGETS.awaitedStepsBeforeShell`). Migrations come first:
+  `runDbMigrations` (`shared/lib/dbBoot.ts`) also purges the step agents a
+  deleted workflow left behind, with their slot questions, and seeds missing
+  built-in workflows. Then one group runs together: the boot settings with the
+  onboarding and the four settings hydrations, provider credentials,
+  workspaces with their projects, the integration keys, staged file version
+  recovery, the ghost reconcile and the QA preview. Then the workspace and
+  session restore, then `ready`. The ghost reconcile reads `turn_list_live`
+  once; that set and the projects reach `setCurrentWorkspace` as `LaunchReads`,
+  so the first workspace load reads neither again. A failed member names its
+  own phase in `bootFailedPhase`, and the launch error screen shows as before.
+- **Shell before data.** The launch opens its workspace through
+  `openLaunchWorkspace` (`store/slices/boot/openLaunchWorkspace.ts`), for the
+  reload intent, the saved window layout, the window hash and the last
+  workspace alike. It first commits the shell (`showLaunchShell`: that
+  workspace id, `boardReady` false, `isShellReady` true), so `App` mounts with
+  skeletons; then `setCurrentWorkspace` loads the snapshot and commits rows,
+  cards and counts with `boardReady` in one set. The id is passed down, never
+  read back after an await. A switch made during the load claims the latest
+  (`switchEpoch`): the launch load drops and the last session is not restored.
+  When that switch fails, its error stays in `workspaceSwitchError` and the
+  launch shell is put back as below, never left on skeletons; while the switch
+  still runs, the shell stays on its skeletons.
+  A launch load that fails or does not commit puts the shell back (id null,
+  `isShellReady` false); `openWorkspaceOrFail` then throws to the launch error
+  screen. Each window runs its own chain. `isShellReady` is reset at the start
+  of `hydrate` and set again on `ready`, so a launch with no workspace shows
+  the launcher at `ready`. `hydrated` still means the launch is done: the
+  window layout save, the onboarding decision, the artifact mirror and the
+  port signal wait for it.
+- **What launch loads of the agents.** `loadLaunchAgents`
+  (`store/slices/workspaces/loadLaunchAgents.ts`) reads a light row for every
+  agent of the workspace (`listAgentSummariesForSessions` in
+  `packages/db/src/queries/agent-summary.ts`): id, status, kind, parent, run,
+  step, timestamps and the other plain columns, with no summary text and no
+  JSON column (domains, thread ids, routing). A session with live work (an
+  agent pending, running, blocked or stopped by the restart, as
+  `needsFullAgentRows` decides) gets its full rows at launch. Every other
+  session is marked in `lightAgentSessions` and carries the summary text of
+  its newest unread agent only, the one the sidebar label shows
+  (`BOOT_BUDGETS.summaryTextsPerUnopenedSessionAtLaunch`). Opening the session
+  replaces the light rows with full rows (`openSessionAgents`); a turn, a
+  workflow advance and an orchestration step load them first
+  (`ensureFullAgents`). The stage, the "needs you" reasons and the unread
+  label read only light fields, so they are the same before and after the
+  open (`store.sqlite-light-agents.test.ts`).
+- **After ready, on idle.** `runEachOnIdle` starts one task per idle slot
+  (`waitForIdle`): ended work, orphan worktrees, provider limits and their
+  probe, the audit retry drain, stale browser tabs, then `runDbHygiene`
+  (retention pruning and orphan attachments, which used to hold the one
+  database connection before the first paint). A hygiene failure is a warning
+  notification, never the launch error screen. The shell's first pull request
+  sweep (`sweepRequests({ isCurrentFirst: true })` from `useGithubPolling`)
+  refreshes the open session at once and the other sessions on idle.
+  `bootBudgets.test.ts` holds the store commits before idle work starts.
 
 ### Where commands run
 
@@ -599,7 +657,9 @@ anywhere; a debug build also prints to stdout.
 - **There is no reader window and no print window.** A plan, a report and a
   wireframe render in the app through `ArtifactDocument` (`medium="screen"`,
   themed) and on disk through the same component (`medium="file"`, always
-  light). `Open in browser` (`artifact_mirror_open`) opens that file with the
+  light). `Open in browser` follows the Links setting: beside the session it
+  takes the path from `artifact_mirror_path` and opens a local tab, and
+  outside (`artifact_mirror_open`) it opens that file with the
   OS default web browser, never with a `.html` file's default app: macOS asks
   Launch Services directly (`LSCopyDefaultApplicationURLForURL`, via
   `core-foundation-sys`), Windows asks the shell's association API directly
@@ -659,12 +719,23 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
 - **A remote image never reaches a reserved address.** `remote_image.rs`
   refuses, for IPv4, `0.0.0.0/8`, loopback, private, link-local, `100.64.0.0/10`,
   `192.0.0.0/24`, `192.88.99.0/24`, `198.18.0.0/15`, documentation, multicast
-  and `240.0.0.0/4`; for IPv6, unique local, link-local, loopback, multicast,
+  and `240.0.0.0/4`; for IPv6, unique local, link-local, the deprecated
+  site-local `fec0::/10`, loopback, multicast,
   NAT64 (`64:ff9b::/32`), 6to4 (`2002::/16`), Teredo (`2001::/32`),
   documentation (`2001:db8::/32`), discard (`100::/64`) and the `::/96`
-  IPv4-compatible block. An IPv4-mapped address takes the IPv4 rules. The table
-  tests in `remote_image.rs` pin each range and its public neighbours; a new
-  range changes both lists.
+  IPv4-compatible block. An IPv4-mapped address takes the IPv4 rules. The same
+  rules vet every address a DNS answer gives, before the client is pinned to
+  them. The table tests in `remote_image.rs` pin each range and its public
+  neighbours; a new range changes both lists.
+- **The pinned client never goes through a proxy.** `build_media_client` sets
+  `no_proxy()`, so a proxy named in the environment or the system settings cannot
+  resolve the host again on its own and reach an address the vetting refused.
+  `the_media_client_never_routes_through_a_proxy` pins it.
+- **One deadline covers the whole fetch.** A fetch, a probe and a video
+  (`remote_media.rs`) each take one `Deadline` (15 s, 180 s for a video) that
+  bounds the DNS lookup, the first request, the one GitHub redirect and the
+  streamed body together. A redirect gets what is left, never a fresh budget,
+  and a lookup also stops after 5 s (`DNS_TIMEOUT`).
 
 ### Hidden pages
 
@@ -764,10 +835,11 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   `noteHostAnswer` writes only when the host state changes. Its late-answer
   guard sits in a record the slice owns, which an unchanged answer advances in
   place, so an older answer is still dropped.
-- **Stage info is derived once.** `stageInfosOf` memoizes the derivation per
-  sessions array and input tuple, so the board, the top bar and the sidebar
-  share one pass per store change. `cachedStageInfoOf` does the same per
-  session for `useSessionStageInfo` and `useSessionStages`.
+- **Stage info is derived once per session.** `cachedStageInfoOf` keeps one
+  derivation per session and the reads it made, and every caller (the board,
+  the top bar, the sidebar, the rows) shares it. A write re-derives only the
+  sessions whose reads changed. The rule and its trap live in
+  [typescript/state-writes.md](typescript/state-writes.md#7-derived-facts-are-kept-per-session).
 
 ### Database migrations
 
@@ -897,7 +969,7 @@ query in the same commit:
   `project_scripts`, `projects`, `resolve_threads`, `retained_worktree_paths`,
   `search_docs`, `search_index`, `security_findings`, `session_artifacts`,
   `session_external_tasks`, `session_workflows`, `session_worktrees`,
-  `sessions`, `settings`, `steps`, `telemetry_records`, `turn_events`,
+  `sessions`, `settings`, `steps`, `telemetry_records`, `turn_admissions`, `turn_events`,
   `workflows`, `workspace_profiles`, `workspaces`, `worktree_roots`.
 - Owned by Rust, read by Rust and TypeScript: `browser_tabs`, `browser_visits`, `budget_alerts`, `budget_rules`,
   `integration_bindings`, `integration_credentials`, `permission_audit_log`,
@@ -1010,6 +1082,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                                          |
 | `telemetry_records`           | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `thread_reads`                | ts     | One row per review thread the user was shown in the Comments tab, with the time (`read_at`). Keyed by session and host thread id, so a resolve reopen and a re-fetch keep it. `read_at` is the latest comment time shown, not the write time. m239 backfills a row for every existing `resolve_threads` row. Rows go with the session. |
+| `turn_admissions`             | ts     | One row per agent between a turn's claim and its spawn (m242): the run, the app launch that claimed it (`turn_launch_id`), the claim time and the time its spawn was published. `queries/turn-admission.ts` reads and clears it; `turn_spawn` reads it and refuses a run whose row is gone. Rows go with the agent.                    |
 | `turn_events`                 | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `turn_file_sets`              | ts     | One row per writing turn and git mount, written when the turn ends (`recordTurnFileSets`).                                                                                                                                                                                                                                             |
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                     |

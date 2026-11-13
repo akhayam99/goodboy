@@ -85,7 +85,9 @@ describe('the review checkpoint', () => {
   it('shows one comment from nadia-p on a pull request dana-r opened', () => {
     const queue = store.getState().sessionResolveQueueItems[STORY_REVIEW_SESSION_ID] ?? [];
     expect(queue).toHaveLength(1);
-    expect(store.getState().sessionGithub[STORY_REVIEW_SESSION_ID]?.pr?.author).toBe('dana-r');
+    expect(store.getState().sessionGithub[STORY_REVIEW_SESSION_ID]?.pr?.author?.login).toBe(
+      'dana-r',
+    );
     const comments =
       store.getState().sessionGithub[STORY_REVIEW_SESSION_ID]?.detail?.comments ?? [];
     expect(comments.map((comment) => comment.body)).toEqual([STORY_REVIEW.comment]);

@@ -1,3 +1,5 @@
+import { releaseTurnAdmission } from '@goodboy/db';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { CHECK_STATE } from '../notifications/errorRecovery';
 import { releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { cancelledRunIds } from '../sessions/sessionMutators';
@@ -10,6 +12,7 @@ import { claimWorkflowTurn } from './workflowTurnBreaker';
 import { resetMountContinuationChain } from './mountContinuations';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { prepareTurn } from './prepareTurn';
+import { ensureFullAgents } from '../agents/ensureFullAgents';
 import { routeTurn } from './routeTurn';
 import { leaseTurnWriter } from './leaseTurnWriter';
 import { releaseTurnWriteSet } from './releaseTurnWriteSet';
@@ -52,6 +55,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
   const runOnce = async ({ input: given, lease }: RunOnceParams): Promise<SendTurnResult> => {
     const input = handDelivery.withId({ input: given });
     await workspaceVerification.settled();
+    await ensureFullAgents({ set, get, sessionId: input.sessionId });
     const prepared = await prepareTurn({ set, get, input });
     if (prepared.isDone) {
       return prepared.result;
@@ -84,7 +88,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await discardInPlaceCapture({ capture: startCtx.inPlaceCapture });
       return started.result;
     }
-    const { runId, resolvedAgentId, agentBefore } = started.value;
+    const { runId, resolvedAgentId, agentBefore, hasAdmission } = started.value;
+    const releaseAdmission = async (): Promise<void> => {
+      if (!hasAdmission) {
+        return;
+      }
+      await releaseTurnAdmission({
+        db: tauriDatabase,
+        agentId: startCtx.activeAgentId,
+        runId,
+      }).catch((error: unknown) => console.warn('release the turn admission failed', error));
+    };
     const closeThenDiscard = async ({ error }: DiscardParams): Promise<never> => {
       await closeUnspawnedRun({
         set,
@@ -122,6 +136,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         return;
       }
       ctx.progress.hasSpawned = true;
+      void releaseAdmission();
       input.onStarted?.();
     };
     try {
@@ -135,6 +150,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         return recovered;
       }
     } finally {
+      if (!ctx.progress.hasSpawned) {
+        await releaseAdmission();
+      }
       await closeTurnCapture({ get, ctx });
     }
     return await settleTurn({ set, get, ctx });

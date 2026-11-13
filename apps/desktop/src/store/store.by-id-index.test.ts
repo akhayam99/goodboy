@@ -193,7 +193,7 @@ describe('lookups by id follow every write to sessions and projects', () => {
       buildStoryProject({ id: PROJECT_STORE, workspaceId: WS_B, name: 'storefront-web' }),
     ]);
 
-    await useAppStore.getState().setCurrentWorkspace(WS_B);
+    await useAppStore.getState().setCurrentWorkspace({ id: WS_B });
 
     const state = useAppStore.getState();
     expect(sessionById(state.sessions, SESSION_LEDGER)).toBeUndefined();

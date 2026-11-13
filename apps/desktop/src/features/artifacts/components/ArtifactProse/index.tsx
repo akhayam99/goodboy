@@ -11,7 +11,6 @@ export const ArtifactProse = ({ text, hasLead = true, measure = 'reading' }: Pro
   <div
     data-testid="artifact-prose"
     data-find-root
-    data-browser-links=""
     data-lead={hasLead ? 'true' : 'false'}
     data-measure={measure}
     className="artifact-prose min-w-0"

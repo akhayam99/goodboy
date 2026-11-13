@@ -1,7 +1,5 @@
-import { OPEN_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState } from 'react';
-import { openUrl } from '../../lib/editor';
-import { useAppStore } from '../../../store';
+import { requestOpenLink } from '../../lib/requestOpenLink';
 
 export type CommitDiffTarget = { repo: string; sha: string };
 
@@ -39,18 +37,13 @@ export const useCommitLinkInterceptor = ({ claimLink = NO_CLAIM }: Params = {}) 
         setCommitDiff({ repo: commit[1] as string, sha: commit[2] as string });
         return;
       }
+      if (anchor != null && claimRef.current({ href, anchor, event: e })) {
+        e.preventDefault();
+        return;
+      }
       if (/^https?:/i.test(href)) {
         e.preventDefault();
-        if (anchor != null && claimRef.current({ href, anchor, event: e })) {
-          return;
-        }
-        openUrl(href).catch((error: unknown) => {
-          void useAppStore.getState().reportError({
-            recovery: OPEN_FAILED,
-            title: "Couldn't open the link",
-            error,
-          });
-        });
+        requestOpenLink({ url: href });
       }
     };
     document.addEventListener('click', onClick);

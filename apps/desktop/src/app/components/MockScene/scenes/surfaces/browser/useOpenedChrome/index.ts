@@ -22,6 +22,12 @@ const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   address: PILL,
   field: PILL,
   more: `${PANE} button[aria-label="More"]`,
+  handoff: `${PANE} button[aria-label="More"]`,
+  console: `${PANE} button[aria-label="Console"]`,
+};
+
+const OPENED: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
+  console: `${PANE} section[aria-label="Console"]`,
 };
 
 const FIELDS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
@@ -68,6 +74,7 @@ export const useOpenedChrome = ({ isOn, state }: Params): void => {
       return;
     }
     const text = TYPED[state];
+    const opened = OPENED[state];
     const fieldSelector = FIELDS[state] ?? FIELD;
     let frame = 0;
     const typeText = () => {
@@ -92,6 +99,18 @@ export const useOpenedChrome = ({ isOn, state }: Params): void => {
         selector === undefined ? null : document.querySelector<HTMLButtonElement>(selector);
       if (button === null) {
         frame = window.requestAnimationFrame(look);
+        return;
+      }
+      if (opened !== undefined) {
+        if (
+          document.querySelector(opened) === null &&
+          button.getAttribute('aria-pressed') !== 'true'
+        ) {
+          button.click();
+        }
+        if (document.querySelector(opened) === null) {
+          frame = window.requestAnimationFrame(look);
+        }
         return;
       }
       button.click();

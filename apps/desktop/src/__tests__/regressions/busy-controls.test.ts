@@ -13,7 +13,7 @@ import {
 } from './scanControls';
 
 const BASELINE_FILE = 'busy-controls.baseline.json';
-const ASYNC_CLICK = /onClick=\{\(\) => void (?!openUrl\b|copy\b)[A-Za-z_$][\w$.]*\(/;
+const ASYNC_CLICK = /onClick=\{\(\) => void (?!copy\b)[A-Za-z_$][\w$.]*\(/;
 const BUSY_PROP = /\b(?:disabled|isBusy|busy)\b/;
 const SAME_BRANCH_TERNARY = /\?\s*(['"])([^'"\n]*)\1\s*:\s*\1\2\1/g;
 

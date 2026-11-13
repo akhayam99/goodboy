@@ -19,7 +19,12 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
-import { seedColumn, sessionOf } from '../../../features/workspace/testing/sessionColumn';
+import type { Session } from '@goodboy/types';
+import {
+  openQuestionFor,
+  seedColumn,
+  sessionOf,
+} from '../../../features/workspace/testing/sessionColumn';
 import { cachedStageInfoOf } from './cachedStageInfoOf';
 
 let useAppStore: StoryStore;
@@ -40,6 +45,19 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+type AskParams = {
+  readonly session: Session;
+};
+
+const askIn = ({ session }: AskParams): void => {
+  useAppStore.setState((state) => ({
+    sessionOpenQuestions: {
+      ...state.sessionOpenQuestions,
+      [session.id]: [openQuestionFor({ sessionId: session.id })],
+    },
+  }));
+};
+
 describe('cachedStageInfoOf', () => {
   it('returns the same info for a state whose inputs did not change', () => {
     const state = useAppStore.getState();
@@ -54,16 +72,30 @@ describe('cachedStageInfoOf', () => {
     expect(second).toBe(first);
   });
 
-  it('derives again once an input the stage reads has changed', () => {
-    const session = useAppStore.getState().sessions[0];
+  it('derives again once an input the stage reads for that session has changed', () => {
+    const [session] = useAppStore.getState().sessions;
     if (session === undefined) {
       throw new Error('seed has no session');
     }
     const before = cachedStageInfoOf({ state: useAppStore.getState(), session });
 
-    useAppStore.setState({ currentSessionId: null });
+    askIn({ session });
     const after = cachedStageInfoOf({ state: useAppStore.getState(), session });
 
     expect(after).not.toBe(before);
+    expect(after.openQuestionCount).toBe(1);
+  });
+
+  it('keeps the info of a session whose own inputs did not change', () => {
+    const [asked, other] = useAppStore.getState().sessions;
+    if (asked === undefined || other === undefined) {
+      throw new Error('seed has no second session');
+    }
+    const before = cachedStageInfoOf({ state: useAppStore.getState(), session: other });
+
+    askIn({ session: asked });
+    const after = cachedStageInfoOf({ state: useAppStore.getState(), session: other });
+
+    expect(after).toBe(before);
   });
 });

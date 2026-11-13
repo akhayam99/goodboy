@@ -16,6 +16,7 @@ import {
 import { mountFixture } from '../../../../__tests__/helpers/actionFixtures';
 import type { BrowserTab, TabOwner } from '../../../../store/slices/browser/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import type { BrowserTabFacts } from '../../types';
 import { BrowserPane } from './index';
@@ -29,6 +30,8 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
+
+const sendRow = (): string => `Send to the agent${shortcutGlyphs('browser.sendToAgent')}`;
 
 const WORKSPACE_ID = nextWorkspaceId();
 const SESSION_ID = nextSessionId();
@@ -110,6 +113,7 @@ const stubHost = () => {
           ? row.sessionId === args.owner.sessionId
           : row.projectId === args.owner.projectId,
       ),
+    browser_workspace_tab_rows_list: () => rows,
     browser_tab_row_save: ({ args }: SaveArgs) => {
       const row = rowOf({ args });
       rows = [...rows.filter((existing) => existing.id !== row.id), row];
@@ -878,22 +882,24 @@ describe('the browser pane', () => {
     screen.getByRole('listbox', { name: 'Suggestions' });
   });
 
-  it('lists five rows in the More menu', async () => {
+  it('lists the page hand-off first and six more rows in the More menu', async () => {
     await openFirstPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     const rows = await screen.findAllByRole('menuitem');
     expect(rows.map((row) => row.textContent)).toEqual([
+      sendRow(),
       'Open in your browser',
       'Open as page',
       'Copy address',
       'Duplicate',
+      'DevelopDesktop',
       'Close tab',
     ]);
   });
 
-  it('adds Inspect in Safari to the More menu on macOS only', async () => {
+  it('keeps the More menu at seven rows and puts Inspect in Safari under Develop on macOS', async () => {
     const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
     agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
     await openFirstPage();
@@ -902,13 +908,17 @@ describe('the browser pane', () => {
 
     const rows = await screen.findAllByRole('menuitem');
     expect(rows.map((row) => row.textContent)).toEqual([
+      sendRow(),
       'Open in your browser',
       'Open as page',
       'Copy address',
       'Duplicate',
-      'Inspect in Safari',
+      'DevelopDesktop',
       'Close tab',
     ]);
+    expect(rows).toHaveLength(7);
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Develop/ }));
+    await screen.findByRole('menuitem', { name: 'Inspect in Safari' });
     agent.mockRestore();
   });
 
@@ -927,6 +937,7 @@ describe('the browser pane', () => {
     await openFirstPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
 
     await waitFor(() =>
@@ -945,6 +956,7 @@ describe('the browser pane', () => {
     failCommand({ command: 'browser_tab_inspectable', reason: 'unsupported-platform' });
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
 
     expect((await screen.findByRole('alert')).textContent).toBe(

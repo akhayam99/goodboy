@@ -1,7 +1,8 @@
 import { Check, SquareArrowOutUpRight } from 'lucide-react';
-import { Button, ICON_SIZE, Markdown, WorkNode } from '@goodboy/ui';
+import { Button, ICON_SIZE, WorkNode } from '@goodboy/ui';
+import { CommentBody } from '../../../../shared/components/CommentBody';
 
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { BAR_COPY } from '../../commentStateCopy';
 import { REPLY_NOTE_COPY, decidedNote } from '../../reviewFlowCopy';
 
@@ -44,15 +45,13 @@ export const ReplyNote = ({
           <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
           <span className="min-w-0">{REPLY_NOTE_COPY.posted({ provider })}</span>
           {url !== null && (
-            <Button size="xs" variant="ghost" onClick={() => void openUrl(url)}>
+            <Button size="xs" variant="ghost" onClick={() => openLink({ url })}>
               <SquareArrowOutUpRight size={ICON_SIZE.control} aria-hidden />
               {BAR_COPY.viewOn({ host: provider })}
             </Button>
           )}
         </p>
-        {reply.trim() === '' ? null : (
-          <Markdown text={reply} variant="preview" className="text-body text-foreground" />
-        )}
+        {reply.trim() === '' ? null : <CommentBody body={reply} />}
       </div>
     );
   }

@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 import type { Location } from '../navigation/types';
+import type { LaunchReads } from '../workspaces/launchReads';
 
 const h = vi.hoisted(() => ({
   settings: new Map<string, string>(),
@@ -45,6 +46,7 @@ const WORKSPACES = [
   { id: WS_A, name: 'harborline' },
   { id: WS_B, name: 'northwind' },
 ] as unknown as ReadonlyArray<Workspace>;
+const LAUNCH: LaunchReads = { projects: [], liveRunIds: new Set() };
 
 const locationIn = (workspaceId: WorkspaceId, sessionId: string): Location => ({
   workspaceId,
@@ -66,11 +68,26 @@ const saveLayout = (label: string, workspaceId: WorkspaceId, sessionId: string) 
     JSON.stringify({ workspaceId, location: locationIn(workspaceId, sessionId), at: Date.now() }),
   );
 
-const buildGet = () => {
+type SwitchError = {
+  readonly workspaceId: WorkspaceId;
+  readonly message: string;
+};
+
+type BuildParams = {
+  readonly failure?: SwitchError;
+};
+
+const buildGet = ({ failure }: BuildParams = {}) => {
+  const state = {
+    workspaceSwitchError: failure ?? null,
+    switchingToWorkspaceId: null,
+    boardReady: failure === undefined,
+  };
   const setCurrentWorkspace = vi.fn(async () => undefined);
   const restoreLocation = vi.fn();
-  const get = (() => ({ setCurrentWorkspace, restoreLocation })) as never;
-  return { get, setCurrentWorkspace, restoreLocation };
+  const set = vi.fn();
+  const get = (() => ({ ...state, setCurrentWorkspace, restoreLocation })) as never;
+  return { get, set, setCurrentWorkspace, restoreLocation };
 };
 
 beforeEach(() => {
@@ -88,13 +105,15 @@ describe('restoreLaunchLayout', () => {
     const store = buildGet();
 
     const layout = await restoreLaunchLayout({
+      set: store.set,
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
+      launch: LAUNCH,
     });
 
     expect(layout.isRestored).toBe(true);
-    expect(store.setCurrentWorkspace).toHaveBeenCalledWith(WS_A);
+    expect(store.setCurrentWorkspace).toHaveBeenCalledWith({ id: WS_A, launch: LAUNCH });
     expect(store.restoreLocation).toHaveBeenCalledWith({
       location: locationIn(WS_A, 'session-ledger'),
     });
@@ -109,9 +128,11 @@ describe('restoreLaunchLayout', () => {
     const store = buildGet();
 
     const layout = await restoreLaunchLayout({
+      set: store.set,
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
+      launch: LAUNCH,
     });
 
     expect(layout).toEqual({ isRestored: false, secondary: [] });
@@ -125,9 +146,11 @@ describe('restoreLaunchLayout', () => {
     const store = buildGet();
 
     const layout = await restoreLaunchLayout({
+      set: store.set,
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: true,
+      launch: LAUNCH,
     });
 
     expect(layout.secondary).toEqual([]);
@@ -141,17 +164,46 @@ describe('restoreLaunchLayout', () => {
     const store = buildGet();
 
     const layout = await restoreLaunchLayout({
+      set: store.set,
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
+      launch: LAUNCH,
     });
 
     expect(layout.isRestored).toBe(true);
-    expect(store.setCurrentWorkspace).toHaveBeenCalledWith(WS_B);
+    expect(store.setCurrentWorkspace).toHaveBeenCalledWith({ id: WS_B, launch: LAUNCH });
     expect(store.restoreLocation).toHaveBeenCalledWith({
       location: locationIn(WS_B, 'session-relay'),
     });
     expect(h.settings.has('window.layout.win-old')).toBe(false);
     expect(h.titles).toEqual(['northwind']);
+  });
+
+  it('shows the shell for the saved workspace and takes it down when that workspace fails to open', async () => {
+    saveLayout('main', WS_A, 'session-ledger');
+    h.settings.set('restart.reason', JSON.stringify({ reason: 'update', at: Date.now() }));
+    const store = buildGet({ failure: { workspaceId: WS_A, message: 'harborline unreadable' } });
+
+    await restoreLaunchLayout({
+      set: store.set,
+      get: store.get,
+      workspaces: WORKSPACES,
+      isReopenLast: false,
+      launch: LAUNCH,
+    });
+
+    expect(store.set).toHaveBeenNthCalledWith(1, {
+      currentWorkspaceId: WS_A,
+      switchingToWorkspaceId: null,
+      boardReady: false,
+      isShellReady: true,
+    });
+    expect(store.set).toHaveBeenLastCalledWith({
+      currentWorkspaceId: null,
+      boardReady: true,
+      isShellReady: false,
+    });
+    expect(store.restoreLocation).not.toHaveBeenCalled();
   });
 });

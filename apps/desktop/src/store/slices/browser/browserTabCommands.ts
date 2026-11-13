@@ -1,4 +1,4 @@
-import type { ProjectId, SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { BrowserTab, SessionClosed, TabOwner } from './types';
 
@@ -31,9 +31,17 @@ type SessionParams = {
   readonly sessionId: SessionId;
 };
 
+type WorkspaceParams = {
+  readonly workspaceId: WorkspaceId;
+};
+
 export const browserTabCommands = {
   list: ({ owner }: OwnerParams) =>
     invokeCommand<ReadonlyArray<BrowserTab>>('browser_tab_rows_list', { args: { owner } }),
+  listWorkspace: ({ workspaceId }: WorkspaceParams) =>
+    invokeCommand<ReadonlyArray<BrowserTab>>('browser_workspace_tab_rows_list', {
+      args: { workspaceId },
+    }),
   save: ({ id, owner, url, title }: SaveParams) =>
     invokeCommand<BrowserTab>('browser_tab_row_save', { args: { id, owner, url, title } }),
   reorder: ({ owner, ids }: ReorderParams) =>

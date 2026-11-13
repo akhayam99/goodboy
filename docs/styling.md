@@ -185,8 +185,10 @@ a reader at 720 pushes from 1344px. Below its threshold it
 lies over the page, full height, with a scrim and an `inert` page, never
 squeezed. While it lies over the page, `DrawerColumn` draws an edge host
 (`data-drawer-edge`) at the right edge above the scrim and hands it to the page
-through `DrawerEdgeContext`; the right rail portals a live copy there
-(`ShellToolRail`, or `SessionFrame` in a frame without the shell rail), and the card sits left of it, so a tool can still switch or
+through `DrawerEdgeContext`; the right rail draws there, once: `ShellToolRail`
+portals its one tree into the edge and keeps an empty seat of the rail's width
+in place (`SessionFrame` portals a second copy in a frame without the shell
+rail), and the card sits left of it, so a tool can still switch or
 close the drawer. The host is measured after every commit (and by a
 `ResizeObserver` after that), and `drawerLayoutOf` takes its width as
 `edgeWidth`: the overlay card plus the column always fit in the sheet, so the
@@ -259,16 +261,33 @@ pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
 
+The reading column is 960 wide (`--column-max`) plus its two gutters, centred,
+one column for every reading page. The title's left edge is the
+column's left edge. The Board, the diff and the Terminal are full width with the
+same 24px gutter. `validate-scenes --only page-column` measures the session
+overview, Tasks and Artifacts: a column over 1008 wide, one off centre or a
+title off the column edge fails, and a full-width page that does not fill its
+pane fails.
+
 ## The page layout
 
 One primitive draws the top of every page: `PageHeader`
 (`packages/ui/src/components/PaneShell/PageHeader.tsx`). It owns the top inset
-(`PANE_RHYTHM.headerInset`, 12px, none under a studio band), the 32px title
-row (`PaneTitleRow`), the gap under the header, the title's left edge (its
+(`PANE_RHYTHM.headerInset`, 8px, none under a studio band), the 32px title
+row (`PaneTitleRow`, the only title row), the 8px under it (`PANE_RHYTHM.below`,
+so the band is 48px, or 64px with a meta line), a `badge` beside the title (a
+quiet count chip, as Tasks shows "1,024 open"), a `toolbar` row of 36px under
+the band for the controls of a list (Tasks: scope, search, filters, grouping, menu;
+84px in all, no meta line), the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
 page with its own frame (the Board, the Terminal, the chat room header)
 mounts it directly. No page sets its own header padding: the Settings detail,
 the board frame and the terminal drop their own top rows.
+
+Tabs versus filters: the tabs that change what a page is (Overview, Comments, Changes on a pull
+request) are `PageTabs`, an underlined 36px row under the title that adds 36 to the band. A
+segmented control (`SegmentedTabs`) is a filter on a list, such as Open and Resolved, and sits in
+the body toolbar. A page never stacks two boxed groups.
 
 The columns beside the page share that header line: the session rail top row
 (`data-rail-top`, `data-header-line`), the first icon of the right rail
@@ -276,6 +295,9 @@ and every drawer header row (`DrawerFrame`) take `PANE_RHYTHM.headerInset` and
 `PANE_RHYTHM.headerRow` (`h-8`), so their tops and centres match the page title
 row. `validate-scenes --only header-line` measures all four on
 `r4-rail-tools-open` at 1100, 1440 and 1920 and fails a drift over 1px.
+`validate-scenes --only title-band` measures the band of the Board, the
+session overview and the agent transcript and fails a height outside 40, 48 and
+64 (plus 36 per tab row or toolbar, which it does not count).
 
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
@@ -329,7 +351,7 @@ Five rules:
    (288, resizable 220 to 420). No page draws a second rail column.
 3. **Stage pages are only the Board, the Terminal and the Browser.** Nothing else is fluid.
 4. **The page title row and the drawer header share one line.** `DrawerFrame` draws its
-   header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 12px
+   header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 8px
    inset, 32px row), with one close control.
 5. **First-time states sit at the top left of the page column**, in one `EmptyState`
    layout; only the empty chat stage centres.
@@ -454,8 +476,10 @@ A page that draws its own `PageHeader` (Board, Chat) wraps the header
 and the body in `RevealRegion`, the same region `PaneShell` uses, with any
 composer below it. `DrawerFrame` pins its title row (the close is its way
 back) and steps its meta line, overlay hint and toolbar aside; the back link
-rides at the top of the body, so it stays too. A drawer with none of those draws
-no region. The first vertical `ScrollFade` of the body to
+rides at the top of the body, so it stays too. In a region the title row is the
+pinned row (`DrawerRegion`, on `sticky-surface-subtle`), so text passes under it.
+A drawer whose body scrolls itself always draws the region; any other drawer with
+none of those draws no region. The first vertical `ScrollFade` of the body to
 mount is the page scroller: it finds the header through `HeaderRevealContext`
 (`packages/ui/src/useHeaderReveal`) and claims the role, so a nested scroller or
 a later sibling never drives the header and a page adds nothing. A scroller that
@@ -484,8 +508,12 @@ never shows through the frosted row). The `PaneShell` body scroller
 (`ScrollFade` `isUnderPinned`) runs from the bottom of the shown header, or
 from the top of the region once the header steps aside or is pinned, with the
 inset as its top padding and `scroll-padding-top`, so text scrolls under the back row and
-an anchor lands below it. A self-scrolling body pads the inset instead and stays
-below the row. A sticky row inside the scroller (a list group label, a diff file
+an anchor lands below it. A self-scrolling body works the same way: the pane
+does not pad, and every vertical `ScrollFade` at the top of the body (the
+reader, and a side scroller beside it such as the Changes file tree) reads
+`PinnedInsetContext` and takes the inset itself, so text passes under the
+frosted row there too. A side scroller still never drives the header, and a
+scroller nested inside one that took the inset does not take it twice. A sticky row inside the scroller (a list group label, a diff file
 header, the report outline) sits at `top: 0`: a sticky box parks at the
 scroller's padding edge, so the inset padding already puts it right under the
 pinned zone, and `top: var(--reveal-inset)` would count the inset twice. A page whose header is a
@@ -524,8 +552,8 @@ The slide uses `--duration-base` and `--ease-enter` to arrive,
 `--duration-quick` and `--ease-exit` to leave, and is off under reduced motion.
 A body with no scroller keeps the header in place. The terminal output (xterm)
 owns its own viewport, not a `ScrollFade`, and is never inside a reveal body,
-since any change to its height refits it: the Terminal page keeps its title,
-and only the rail reveals. The Browser page draws no header around a tab: the
+since any change to its height refits it: the Terminal page draws no title band,
+its tabs, Change folder, the port, Dock and the menu share one 40 row, and only the rail reveals. The Browser page draws no header around a tab: the
 trail and the address row are its back row, so nothing steps aside
 (`pageLayout.test.ts` checks `BrowserPageView` draws no `PageHeader`). The setup wizard keeps its one header row: it holds the way out
 (**Close** or **Set up later**) and the step progress, so it is the back row
@@ -572,9 +600,11 @@ sharp.
 **A sticky header blurs what passes under it; it never casts a shadow.** The
 pinned back row, the artifact page's pinned zone (back row and status bar
 together), the sliding header of a `RevealRegion` and the sticky rows of a
-list or a diff take `sticky-surface` (`sticky-surface-subtle` on `subtle`): the
-surface role at 90% with `blur(3px) saturate(1.2)`, opaque under
-`prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
+list take `sticky-surface`: the background at 80% with `blur(12px) saturate(1.4)`.
+A header on `subtle`, a drawer's title row and a diff file header take
+`sticky-surface-subtle`, the light frost at 90% with `blur(3px) saturate(1.2)`,
+so a row that parks under the pinned zone never stacks two strong frosts. Both
+are opaque under `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
 `bg-background` on the header itself. Its block padding leans down: the pinned zone
 is `pt-3 pb-5` (`PANE_RHYTHM.pinnedInset`), more room below than above, because
 the back row's 24px line already holds 4px above its text, and a header under or inside it adds no
@@ -716,7 +746,7 @@ rule, so a control you click is a primitive from `@goodboy/ui`:
 | Family  | Primitive                                                                   |
 | ------- | --------------------------------------------------------------------------- |
 | row     | `SelectableRow` (one button), `InteractiveRow` (a row with its own buttons) |
-| tab     | `SegmentedTabs`, `ChoiceCards`                                              |
+| tab     | `PageTabs` (page tabs), `SegmentedTabs` (filters), `ChoiceCards`            |
 | chip    | `Chip`                                                                      |
 | link    | a link, or the link style of the surface                                    |
 | icon    | `IconButton`                                                                |

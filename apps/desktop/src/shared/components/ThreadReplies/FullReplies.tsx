@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Avatar, Disclosure } from '@goodboy/ui';
+import { Disclosure } from '@goodboy/ui';
 import { useNow } from '../../hooks/useNow';
 import { formatAge } from '../../utils/time/formatAge';
-import { ThreadBody } from '../ThreadBody';
+import { Person } from '../Person';
+import { CommentBody } from '../CommentBody';
 import type { ThreadReplyItem } from './threadReplyItem';
 
 type Props = {
@@ -20,8 +21,12 @@ export const FullReplies = ({ replies }: Props) => {
       {replies.map((reply) => (
         <li key={reply.id} className="flex min-w-0 flex-col gap-1">
           <div className="flex items-center gap-2 text-meta text-muted-foreground">
-            <Avatar url={reply.avatarUrl ?? null} alt={reply.author} />
-            <span className="text-row text-foreground">{reply.author}</span>
+            <Person
+              login={reply.author}
+              avatarUrl={reply.avatarUrl ?? null}
+              size="md"
+              isBot={reply.isBot === true}
+            />
             {reply.createdAt === undefined ? null : (
               <>
                 <span className="opacity-50">·</span>
@@ -30,7 +35,7 @@ export const FullReplies = ({ replies }: Props) => {
             )}
           </div>
           <div className="[overflow-wrap:anywhere]">
-            <ThreadBody body={reply.body} isClamped={reply.isBot === true} />
+            <CommentBody body={reply.body} isClamped={reply.isBot === true} />
           </div>
         </li>
       ))}

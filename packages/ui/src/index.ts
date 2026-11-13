@@ -96,7 +96,6 @@ export type {
 } from './components/ReportSheet';
 export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
-export { HeaderBand } from './components/HeaderBand';
 export { Notice } from './components/Notice';
 export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverflowMenu } from './components/OverflowMenu';
@@ -239,6 +238,11 @@ export type {
   RemoteImageAutoLoad,
   RemoteImageLoader,
   RemoteImageTool,
+  RemoteMediaKind,
+  RemoteMediaOpen,
+  RemoteMediaProbe,
+  RemoteVideoFile,
+  RemoteVideoLoader,
 } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
@@ -280,6 +284,8 @@ export { ScrollFade } from './components/ScrollFade';
 export type { ScrollFadeProps } from './components/ScrollFade';
 export { ScrollerStyleContext } from './components/ScrollFade/scrollerStyleContext';
 export type { ScrollerStyle } from './components/ScrollFade/scrollerStyleContext';
+export { PageTabs } from './components/PageTabs';
+export type { PageTabOption } from './components/PageTabs';
 export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionLabel } from './components/SectionLabel';

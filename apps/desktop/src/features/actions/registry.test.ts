@@ -12,6 +12,7 @@ import { ITEM_KIND } from './kinds/item';
 import { PLAN_PART_KIND } from './kinds/planPart';
 import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
+import { BROWSER_TAB_KIND } from './kinds/browserTab';
 import { NEW_FORM_KIND } from './kinds/newForm';
 import { TASK_LIST_KIND } from './kinds/taskList';
 import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
@@ -72,6 +73,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['diff', DIFF_KIND.actions],
   ['port', PORT_KIND.actions],
   ['terminalTab', TERMINAL_TAB_KIND.actions],
+  ['browserTab', BROWSER_TAB_KIND.actions],
   ['newForm', NEW_FORM_KIND.actions],
   ['taskList', TASK_LIST_KIND.actions],
   ['workflowList', WORKFLOW_LIST_KIND.actions],

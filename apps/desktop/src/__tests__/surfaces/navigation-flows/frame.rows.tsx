@@ -56,19 +56,20 @@ const expectOnPagePrimitive = ({
   expect(header, `${page} draws its title through the page header`).not.toBeNull();
   expect(header?.getAttribute('data-page')).toBe(page);
   const isUnderBand = header?.hasAttribute('data-under-trail') ?? false;
-  expect(header?.className.split(' ').includes('pt-3')).toBe(!isUnderBand);
+  expect(header?.className.split(' ').includes('pt-2')).toBe(!isUnderBand);
 };
 
 const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   const geometry = frameGeometryOf({ page });
   expect(geometry.titleCentreY).toBe(geometry.bandHeight + geometry.titleRowHeight / 2);
-  expect(geometry.titleCentreY).toBe(geometry.bandHeight === FRAME_BAND_PX ? 56 : 28);
+  expect(geometry.titleCentreY).toBe(geometry.bandHeight === FRAME_BAND_PX ? 56 : 24);
   const title = onlyH1({
     scope: isStudio ? (document.querySelector('[data-studio-frame]') ?? document) : document,
   });
   const row = titleRowOf(title);
   expect(row).not.toBeNull();
-  expect(row?.firstElementChild).toBe(title);
+  const lead = row?.firstElementChild;
+  expect(lead === title || lead?.firstElementChild === title).toBe(true);
   expectOnPagePrimitive({ page, title });
   if (!isStudio) {
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
@@ -124,7 +125,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
       expect(row).not.toBeNull();
       expect(row?.previousElementSibling).toBeNull();
       expect(document.querySelector('[data-slot="board-band"]')).toBeNull();
-      expect(frameGeometryOf({ page: 'board' }).titleCentreY).toBe(28);
+      expect(frameGeometryOf({ page: 'board' }).titleCentreY).toBe(24);
       expectOnPagePrimitive({ page: 'board', title });
     },
   },
@@ -209,7 +210,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'frame: the Terminal page sits on the page header inset',
+    name: 'frame: the Terminal page folds its title into the tab row',
     covers: ['studio:terminal'],
     door: 'visible',
     open: async () => {
@@ -224,8 +225,10 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await studio('Terminal');
-      await heading('Terminal');
-      expectOnGrid({ page: 'terminal', isStudio: true });
+      const frame = document.querySelector('[data-studio-frame][data-studio-title="Terminal"]');
+      const region = await screen.findByRole('region', { name: 'Terminal' });
+      expect(frame?.contains(region)).toBe(true);
+      expect(region.querySelector('h1, [data-page-header]')).toBeNull();
     },
   },
   {

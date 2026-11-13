@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { usePoll } from '../../../../../shared/lib/usePoll';
 import { useAppStore, useSessions } from '../../../../../store';
+import { branchSignatureOf } from './branchSignatureOf';
 import { changedBranchSessions } from './changedBranchSessions';
 import { parseBranchSignature } from './parseBranchSignature';
 
@@ -18,18 +19,13 @@ export const useGithubPolling = (): void => {
       .join(';'),
   );
   const sessions = useSessions();
-  const branchSignature = useAppStore((s) => {
-    let acc = '';
-    for (const session of sessions) {
-      const branch = s.sessionBranches[session.id] ?? '';
-      acc += `${session.id}@${branch};`;
-    }
-    return acc;
-  });
+  const branchSignature = useAppStore((s) =>
+    branchSignatureOf({ sessions, branches: s.sessionBranches }),
+  );
   const knownBranches = useRef<ReadonlyMap<SessionId, string> | null>(null);
 
   useEffect(() => {
-    void sweepRequests();
+    void sweepRequests({ isCurrentFirst: true });
   }, [sweepRequests, githubAvailable, hostBindingSignature]);
 
   useEffect(() => {

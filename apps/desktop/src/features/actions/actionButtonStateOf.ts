@@ -22,9 +22,14 @@ export const actionButtonStateOf = ({
   isBusy = false,
 }: Params): ActionButtonState => {
   const isPending = controls !== null && controls.pendingId === actionId;
+  if (!isPending) {
+    return { isPending, isBusy, label };
+  }
+  const word = pendingLabel ?? label;
+  const seconds = controls.pendingSeconds;
   return {
     isPending,
-    isBusy: isPending || isBusy,
-    label: isPending ? (pendingLabel ?? label) : label,
+    isBusy: true,
+    label: seconds === null ? word : `${word} ${seconds}s`,
   };
 };

@@ -310,7 +310,7 @@ export const seedWizardScene = ({
     }) satisfies AppStore['connectProvider'],
     cancelProviderConnect: async () => undefined,
     refreshGithubStatus: async () => undefined,
-    setCurrentWorkspace: (async (id) =>
+    setCurrentWorkspace: (async ({ id }) =>
       useAppStore.setState({ currentWorkspaceId: id })) satisfies AppStore['setCurrentWorkspace'],
     startSessionFromDraft: startSampleScout,
     openSessionDraft: () => {

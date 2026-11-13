@@ -1,4 +1,4 @@
-import { ArrowUpRight, Code, Copy, CopyPlus, X } from 'lucide-react';
+import { ArrowUpRight, Bot, Code, Copy, CopyPlus, MonitorSmartphone, X } from 'lucide-react';
 import {
   AnchoredPopover,
   ICON_SIZE,
@@ -6,12 +6,16 @@ import {
   MenuTriggerButton,
   useDropdown,
   type MenuEntry,
+  type MenuItemEntry,
 } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { currentPlatform } from '../../../../shared/platform';
 import type { BrowserPaneModel } from '../../types';
 import { browserMoreOffOf } from './browserMoreRows';
+import { widthSelectOf } from './widthSelectOf';
+import { DEVICE_PRESETS, devicePresetOf } from '../../devicePresets';
 
 type Props = {
   readonly model: BrowserPaneModel;
@@ -24,7 +28,7 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
   const dropdown = useDropdown({
     width: 'min-w-[200px]',
     maxWidth: MENU_MAX_WIDTH,
-    expectedHeight: 240,
+    expectedHeight: 280,
     expectedWidth: 220,
   });
   const shown = model.shown;
@@ -34,7 +38,41 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
     isPinShown: shown?.isPin === true,
     canOpenOutside: model.canOpenOutside,
   });
+  const chooseWidth = widthSelectOf({ onChoose: model.setDevicePreset });
+  const developChildren: ReadonlyArray<MenuItemEntry> = [
+    ...(isOff.isWidthOff
+      ? []
+      : DEVICE_PRESETS.map((preset) => ({
+          kind: 'item' as const,
+          key: `width-${preset.id}`,
+          label: preset.label,
+          icon: MonitorSmartphone,
+          isActive: preset.id === model.devicePreset,
+          onSelect: () => chooseWidth(preset.id),
+        }))),
+    ...(currentPlatform() === 'darwin'
+      ? [
+          {
+            kind: 'item' as const,
+            key: 'inspect',
+            label: 'Inspect in Safari',
+            icon: Code,
+            isDisabled: isOff.isInspectOff,
+            onSelect: model.inspect,
+          },
+        ]
+      : []),
+  ];
   const entries: ReadonlyArray<MenuEntry> = [
+    {
+      kind: 'item',
+      key: 'sendToAgent',
+      label: model.pageSend.isBusy ? 'Reading the page' : model.pageSend.label,
+      icon: Bot,
+      hint: shortcutGlyphs('browser.sendToAgent'),
+      isDisabled: model.pageSend.isBusy || !model.pageSend.canSend,
+      onSelect: model.pageSend.sendShown,
+    },
     {
       kind: 'item',
       key: 'openOutside',
@@ -70,18 +108,19 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
       isDisabled: isOff.isDuplicateOff,
       onSelect: model.duplicate,
     },
-    ...(currentPlatform() === 'darwin'
-      ? [
+    ...(developChildren.length === 0
+      ? []
+      : [
           {
             kind: 'item' as const,
-            key: 'inspect',
-            label: 'Inspect in Safari',
+            key: 'develop',
+            label: 'Develop',
             icon: Code,
-            isDisabled: isOff.isInspectOff,
-            onSelect: model.inspect,
+            hint: isOff.isWidthOff ? null : devicePresetOf({ id: model.devicePreset }).label,
+            children: developChildren,
+            onSelect: () => undefined,
           },
-        ]
-      : []),
+        ]),
     {
       kind: 'item',
       key: 'closeTab',

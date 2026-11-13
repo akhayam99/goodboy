@@ -4,11 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ScribeProposalState } from '../../hooks/useScribeProposal';
 
-const h = vi.hoisted(() => ({ openUrl: vi.fn(async () => undefined) }));
-
-vi.mock('../../lib/editor', () => ({ openUrl: h.openUrl }));
-
 import { ScribeProposalView } from '.';
+
+const opened = vi.fn<(event: Event) => void>();
 
 const LONG_BODY = Array.from({ length: 9 }, (_, index) => `- change ${index + 1}`).join('\n');
 
@@ -43,10 +41,14 @@ const view = ({
   );
 
 beforeEach(() => {
-  h.openUrl.mockClear();
+  window.addEventListener('goodboy:open-link', opened);
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.removeEventListener('goodboy:open-link', opened);
+  opened.mockClear();
+});
 
 describe('ScribeProposalView', () => {
   it('shows the title, the body and that the draft is being created', () => {
@@ -70,9 +72,13 @@ describe('ScribeProposalView', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Created #418' }));
 
-    expect(h.openUrl).toHaveBeenCalledExactlyOnceWith(
-      'https://github.com/harborline/ledger-core/pull/418',
-    );
+    expect(opened).toHaveBeenCalledTimes(1);
+    const event = opened.mock.calls[0]?.[0];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
+      url: 'https://github.com/harborline/ledger-core/pull/418',
+      hasMetaKey: false,
+      hasCtrlKey: false,
+    });
   });
 
   it('names the action, hides the reason behind Details and offers Retry when a step failed', () => {

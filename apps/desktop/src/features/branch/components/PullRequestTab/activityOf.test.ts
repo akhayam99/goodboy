@@ -7,7 +7,7 @@ import {
   type CountableEntry,
   type ThreadEntry,
 } from '../../../resolve/commentGroupsView';
-import { activityItemsFor } from './activityFilters';
+import { activityItemsFor } from '../../../../shared/components/PullRequestActivity/activityFilters';
 import { pullRequestActivityOf } from './activityOf';
 
 const VIEW: PullRequestView = {
@@ -100,9 +100,52 @@ describe('pullRequestActivityOf', () => {
     expect(items[1]).toMatchObject({
       kind: 'push',
       count: 3,
+      pushes: 2,
       sha: 'a41c9e2',
       at: '2026-10-03T12:00:00Z',
     });
+  });
+
+  it('carries the picture address of the author on the opened, push and merged rows', () => {
+    const items = pullRequestActivityOf({
+      view: { ...VIEW, state: 'merged', mergedAt: '2026-10-04T08:00:00Z' },
+      detail: detail({
+        comments: [
+          comment({
+            author: 'nadia-p',
+            authorAvatarUrl: 'https://avatars.harborline.test/nadia.png',
+          }),
+        ],
+      }),
+      runs: null,
+      threads: NO_THREADS,
+      entries: [],
+      edits: [],
+    });
+
+    const avatars = items.flatMap((item) =>
+      item.kind === 'opened' || item.kind === 'push' || item.kind === 'merged'
+        ? [item.avatarUrl]
+        : [],
+    );
+    expect(avatars).toEqual(Array(4).fill('https://avatars.harborline.test/nadia.png'));
+  });
+
+  it('prefers the address the host sent with the author', () => {
+    const items = pullRequestActivityOf({
+      view: {
+        ...VIEW,
+        author: { login: 'nadia-p', name: null, avatarUrl: 'https://gitlab.test/nadia.png' },
+      },
+      detail: null,
+      runs: null,
+      threads: NO_THREADS,
+      entries: [],
+      edits: [],
+    });
+
+    expect(items[0]).toMatchObject({ kind: 'opened', avatarUrl: 'https://gitlab.test/nadia.png' });
+    expect(items[1]).toMatchObject({ kind: 'push', avatarUrl: 'https://gitlab.test/nadia.png' });
   });
 
   it('keeps the pushes apart when another author pushed in between', () => {

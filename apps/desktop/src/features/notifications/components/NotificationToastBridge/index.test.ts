@@ -11,6 +11,7 @@ type NotifOverride = {
   body?: string | null;
   sessionId?: SessionId | null;
   workspaceId?: WorkspaceId | null;
+  isRead?: boolean;
 };
 
 function notif(over: NotifOverride): Notification {
@@ -23,7 +24,7 @@ function notif(over: NotifOverride): Notification {
     severity: over.severity ?? 'error',
     sessionId: over.sessionId ?? null,
     workspaceId: over.workspaceId ?? null,
-    read: false,
+    read: over.isRead ?? false,
     action: null,
     coalesceKey: null,
     actedAt: null,
@@ -43,6 +44,15 @@ describe('pickFreshFailures', () => {
       notif({ id: 's1', ts: '2026-06-05T12:00:04.000Z', severity: 'success' }),
     ];
     expect(pickFreshFailures(list, seen, SINCE).map((n) => n.id)).toEqual(['e1', 'w1']);
+  });
+
+  it('never previews a failure that was born read because the screen already shows it', () => {
+    const seen = new Set<string>();
+    const list = [
+      notif({ id: 'shown', ts: '2026-06-05T12:00:01.000Z', isRead: true }),
+      notif({ id: 'e1', ts: '2026-06-05T12:00:02.000Z' }),
+    ];
+    expect(pickFreshFailures(list, seen, SINCE).map((n) => n.id)).toEqual(['e1']);
   });
 
   it('marks every scanned id seen so historical and ignored ones never toast', () => {

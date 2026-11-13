@@ -5,7 +5,34 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke }));
 
-import { loadRemoteImage, loadToolImage } from './remoteImage';
+import { loadAvatarImage, loadRemoteImage, loadToolImage, loadToolVideo } from './remoteImage';
+
+describe('loadAvatarImage', () => {
+  beforeEach(() => {
+    invoke.mockReset();
+    invoke.mockResolvedValue('data:image/png;base64,iVBORw0KGgo=');
+  });
+
+  it('sends one request for ten asks of the same address', async () => {
+    const asks = Array.from({ length: 10 }, () =>
+      loadAvatarImage({ url: 'https://avatars.example.com/mara-l.png' }),
+    );
+
+    await Promise.all(asks);
+
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not ask again after a refusal', async () => {
+    invoke.mockRejectedValue({ kind: 'refused', message: 'nothing was loaded' });
+    const url = 'https://avatars.example.com/refused.png';
+
+    await expect(loadAvatarImage({ url })).rejects.toBeDefined();
+    await expect(loadAvatarImage({ url })).rejects.toBeDefined();
+
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('loadRemoteImage', () => {
   beforeEach(() => {
@@ -86,5 +113,45 @@ describe('loadToolImage', () => {
         url: 'https://uploads.linear.app/a.png',
       },
     });
+  });
+});
+
+describe('loadToolVideo', () => {
+  const params = {
+    workspaceId: 'ws-1',
+    provider: 'github' as const,
+    url: 'https://github.com/user-attachments/assets/9f2c-acme',
+  };
+
+  const bodyOf = (code: number, bytes: readonly number[]): ArrayBuffer =>
+    new Uint8Array([code, ...bytes]).buffer;
+
+  beforeEach(() => {
+    invoke.mockReset();
+  });
+
+  it('asks the Rust fetch with the target and reads the type from the first byte', async () => {
+    invoke.mockResolvedValue(bodyOf(1, [26, 69, 223, 163]));
+
+    const video = await loadToolVideo(params);
+
+    expect(invoke).toHaveBeenCalledWith('fetch_remote_media', {
+      args: {
+        workspaceId: 'ws-1',
+        projectId: null,
+        provider: 'github',
+        email: null,
+        siteUrl: null,
+        url: params.url,
+      },
+    });
+    expect(video.blob.type).toBe('video/webm');
+    expect(video.bytes).toBe(4);
+  });
+
+  it('refuses a body that names no video type', async () => {
+    invoke.mockResolvedValue(bodyOf(9, [1, 2, 3]));
+
+    await expect(loadToolVideo(params)).rejects.toThrow('not a video');
   });
 });

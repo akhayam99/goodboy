@@ -32,7 +32,7 @@ const BLOCKED: MergeBoxModel = {
       opens: null,
     },
   ],
-  passing: ['7 checks passed', 'No conflicts'],
+  passing: ['7 of 7 passed', 'No conflicts'],
 };
 
 describe('MergeBox', () => {
@@ -66,7 +66,7 @@ describe('MergeBox', () => {
     render(<MergeBox box={BLOCKED} onOpen={() => undefined} />);
 
     const line = screen.getByTestId('merge-passing');
-    expect(line.textContent).toContain('7 checks passed · No conflicts');
+    expect(line.textContent).toContain('7 of 7 passed · No conflicts');
     expect(line.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('list', { name: 'What passes' })).toBeNull();
 
@@ -76,7 +76,7 @@ describe('MergeBox', () => {
     const passes = within(screen.getByRole('list', { name: 'What passes' })).getAllByRole(
       'listitem',
     );
-    expect(passes.map((pass) => pass.textContent)).toEqual(['7 checks passed', 'No conflicts']);
+    expect(passes.map((pass) => pass.textContent)).toEqual(['7 of 7 passed', 'No conflicts']);
   });
 
   it('draws shapes and one screen reader label while the pull request loads', () => {

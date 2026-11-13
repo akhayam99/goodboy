@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, SquareArrowOutUpRight, ShieldAlert } from 'lucide-react';
 import { Button, ICON_SIZE, Input, StatusDot } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { openUrl } from '../../../shared/lib/editor';
+import { openLink } from '../../open/openLink';
 import { useAppStore } from '../../../store';
 import { ConnectSteps, type ConnectStepDef } from '../components/ConnectSteps';
 import { WhatGoodboyCanDo } from '../components/WhatGoodboyCanDo';
@@ -56,7 +56,7 @@ export const LinearConnectSteps = ({
           size="sm"
           onClick={() => {
             setHasOpenedLink(true);
-            void openUrl(SECURITY_URL);
+            openLink({ url: SECURITY_URL, sessionId: null, place: 'outside' });
           }}
         >
           Open Linear

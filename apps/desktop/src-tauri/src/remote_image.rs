@@ -10,10 +10,12 @@ use reqwest::{Client, Url};
 use serde::Deserialize;
 use tauri::State;
 use tokio::net::lookup_host;
+use tokio::time::{timeout_at, Instant};
 
 const MAX_URL_LEN: usize = 4096;
 use crate::util::limits::MAX_IMAGE_BYTES;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
+const DNS_TIMEOUT: Duration = Duration::from_secs(5);
 const BLOCKED_SUFFIXES: &[&str] = &[".localhost", ".local", ".internal", ".home.arpa"];
 
 fn is_blocked_v4(ip: Ipv4Addr) -> bool {
@@ -49,6 +51,7 @@ fn is_blocked_v6(ip: Ipv6Addr) -> bool {
     let first = segments[0];
     let is_unique_local = first & 0xfe00 == 0xfc00;
     let is_link_local = first & 0xffc0 == 0xfe80;
+    let is_site_local = first & 0xffc0 == 0xfec0;
     let is_nat64 = first == 0x0064 && segments[1] == 0xff9b;
     let is_6to4 = first == 0x2002;
     let is_teredo = first == 0x2001 && segments[1] == 0;
@@ -57,6 +60,7 @@ fn is_blocked_v6(ip: Ipv6Addr) -> bool {
     let is_v4_compatible = segments[..6] == [0, 0, 0, 0, 0, 0];
     is_unique_local
         || is_link_local
+        || is_site_local
         || is_nat64
         || is_6to4
         || is_teredo
@@ -121,7 +125,7 @@ fn validate_image_url(url: &str) -> Result<Url, String> {
     Ok(parsed)
 }
 
-fn check_status(status: u16) -> Result<(), String> {
+pub(crate) fn check_status(status: u16) -> Result<(), String> {
     if (300..400).contains(&status) {
         return Err(
             "that host redirects the image somewhere else, so nothing was loaded".to_string(),
@@ -168,13 +172,56 @@ fn check_size(len: usize) -> Result<(), String> {
     Ok(())
 }
 
-async fn resolve_public_addrs(host: &str) -> Result<Vec<SocketAddr>, String> {
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Deadline(Instant);
+
+impl Deadline {
+    pub(crate) fn after(budget: Duration) -> Self {
+        Self(Instant::now() + budget)
+    }
+
+    fn remaining(self) -> Duration {
+        self.0.saturating_duration_since(Instant::now())
+    }
+
+    fn lookup_until(self, now: Instant) -> Instant {
+        self.0.min(now + DNS_TIMEOUT)
+    }
+
+    pub(crate) async fn bound<T>(
+        self,
+        host: &str,
+        work: impl Future<Output = Result<T, String>>,
+    ) -> Result<T, String> {
+        timeout_at(self.0, work)
+            .await
+            .map_err(|_| format!("{host} took too long, so nothing was loaded"))?
+    }
+}
+
+async fn resolve_public_addrs(host: &str, deadline: Deadline) -> Result<Vec<SocketAddr>, String> {
     if host_literal_ip(host).is_some() {
         return Ok(Vec::new());
     }
-    let addresses = lookup_host((host, 443))
+    resolve_within(host, deadline, lookup_host((host, 443))).await
+}
+
+async fn resolve_within<I: Iterator<Item = SocketAddr>>(
+    host: &str,
+    deadline: Deadline,
+    lookup: impl Future<Output = std::io::Result<I>>,
+) -> Result<Vec<SocketAddr>, String> {
+    let addresses = timeout_at(deadline.lookup_until(Instant::now()), lookup)
         .await
+        .map_err(|_| format!("{host} took too long to resolve, so nothing was loaded"))?
         .map_err(|_| format!("could not reach {host}"))?;
+    vet_addresses(host, addresses)
+}
+
+fn vet_addresses(
+    host: &str,
+    addresses: impl Iterator<Item = SocketAddr>,
+) -> Result<Vec<SocketAddr>, String> {
     let mut vetted: Vec<SocketAddr> = Vec::new();
     for address in addresses {
         if is_blocked_ip(address.ip()) {
@@ -194,18 +241,23 @@ fn image_redirect_policy() -> Policy {
     Policy::none()
 }
 
-fn build_image_client(host: &str, addresses: &[SocketAddr]) -> Result<Client, String> {
+fn build_media_client(
+    host: &str,
+    addresses: &[SocketAddr],
+    deadline: Deadline,
+) -> Result<Client, String> {
     let mut builder = Client::builder()
+        .no_proxy()
         .redirect(image_redirect_policy())
         .https_only(true)
-        .timeout(REQUEST_TIMEOUT);
+        .timeout(deadline.remaining());
     if !addresses.is_empty() {
         builder = builder.resolve_to_addrs(host, addresses);
     }
     builder.build().map_err(|e| e.to_string())
 }
 
-trait ImageResponse {
+pub(crate) trait ImageResponse {
     fn status_code(&self) -> u16;
     fn declared_content_type(&self) -> Option<String>;
     fn declared_length(&self) -> Option<u64>;
@@ -277,16 +329,23 @@ pub async fn fetch_remote_image(url: String) -> Result<String, MessageError> {
         .host_str()
         .ok_or_else(|| "that image address names no host".to_string())?
         .to_string();
-    let addresses = resolve_public_addrs(&host).await?;
-    let client = build_image_client(&host, &addresses)?;
+    let deadline = Deadline::after(REQUEST_TIMEOUT);
+    Ok(deadline
+        .bound(&host, fetch_public_image(&host, parsed, deadline))
+        .await?)
+}
+
+async fn fetch_public_image(host: &str, url: Url, deadline: Deadline) -> Result<String, String> {
+    let addresses = resolve_public_addrs(host, deadline).await?;
+    let client = build_media_client(host, &addresses, deadline)?;
 
     let mut response = client
-        .get(parsed)
+        .get(url)
         .send()
         .await
         .map_err(|_| format!("could not load the image from {host}"))?;
 
-    Ok(read_image_response(&host, &mut response).await?)
+    read_image_response(host, &mut response).await
 }
 
 const GITHUB_REDIRECT_HOST: &str = "private-user-images.githubusercontent.com";
@@ -304,7 +363,7 @@ fn tool_host_is_trusted(provider: &str, url: &Url, jira_site_host: Option<&str>)
     }
 }
 
-fn validate_tool_image_url(
+pub(crate) fn validate_tool_image_url(
     provider: &str,
     url: &str,
     jira_site_host: Option<&str>,
@@ -317,11 +376,11 @@ fn validate_tool_image_url(
     Ok(parsed)
 }
 
-fn is_allowed_redirect(provider: &str, url: &Url) -> bool {
+pub(crate) fn is_allowed_redirect(provider: &str, url: &Url) -> bool {
     provider == "github" && url.scheme() == "https" && url.host_str() == Some(GITHUB_REDIRECT_HOST)
 }
 
-enum ToolAuth {
+pub(crate) enum ToolAuth {
     Raw(String),
     Bearer(String),
     Basic { email: String, token: String },
@@ -335,21 +394,25 @@ fn apply_tool_auth(builder: reqwest::RequestBuilder, auth: &ToolAuth) -> reqwest
     }
 }
 
-async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<String, String> {
+pub(crate) async fn send_authed_media(
+    provider: &str,
+    url: Url,
+    auth: ToolAuth,
+    deadline: Deadline,
+) -> Result<(String, reqwest::Response), String> {
     let host = url
         .host_str()
         .ok_or_else(|| "that image address names no host".to_string())?
         .to_string();
-    let addresses = resolve_public_addrs(&host).await?;
-    let client = build_image_client(&host, &addresses)?;
+    let addresses = resolve_public_addrs(&host, deadline).await?;
+    let client = build_media_client(&host, &addresses, deadline)?;
     let response = apply_tool_auth(client.get(url), &auth)
         .send()
         .await
         .map_err(|_| format!("could not load the image from {host}"))?;
 
     if !(300..400).contains(&response.status().as_u16()) {
-        let mut response = response;
-        return read_image_response(&host, &mut response).await;
+        return Ok((host, response));
     }
 
     let location = response
@@ -369,15 +432,84 @@ async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<
         .host_str()
         .ok_or_else(|| "the redirect names no host".to_string())?
         .to_string();
-    let redirect_addresses = resolve_public_addrs(&redirect_host).await?;
-    let redirect_client = build_image_client(&redirect_host, &redirect_addresses)?;
-    let mut redirected = redirect_client
+    let redirect_addresses = resolve_public_addrs(&redirect_host, deadline).await?;
+    let redirect_client = build_media_client(&redirect_host, &redirect_addresses, deadline)?;
+    let redirected = redirect_client
         .get(redirect_url)
         .send()
         .await
         .map_err(|_| format!("could not load the image from {redirect_host}"))?;
 
-    read_image_response(&redirect_host, &mut redirected).await
+    Ok((redirect_host, redirected))
+}
+
+pub(crate) fn host_label(url: &Url) -> String {
+    url.host_str().unwrap_or("that host").to_string()
+}
+
+async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<String, String> {
+    let deadline = Deadline::after(REQUEST_TIMEOUT);
+    let label = host_label(&url);
+    deadline
+        .bound(&label, async move {
+            let (host, mut response) = send_authed_media(provider, url, auth, deadline).await?;
+            read_image_response(&host, &mut response).await
+        })
+        .await
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum MediaKind {
+    Image,
+    Video,
+    Other,
+}
+
+impl MediaKind {
+    fn as_str(&self) -> &'static str {
+        match self {
+            MediaKind::Image => "image",
+            MediaKind::Video => "video",
+            MediaKind::Other => "other",
+        }
+    }
+}
+
+fn classify_media_type(value: &str) -> MediaKind {
+    let lowered = value.trim().to_ascii_lowercase();
+    let essence = lowered.split(';').next().unwrap_or("").trim();
+    if is_image_content_type(essence) {
+        return MediaKind::Image;
+    }
+    if matches!(essence, "video/mp4" | "video/webm" | "video/quicktime") {
+        return MediaKind::Video;
+    }
+    MediaKind::Other
+}
+
+async fn probe_authed_media(provider: &str, url: Url, auth: ToolAuth) -> Result<MediaKind, String> {
+    let deadline = Deadline::after(REQUEST_TIMEOUT);
+    let label = host_label(&url);
+    deadline
+        .bound(&label, probe_within(provider, url, auth, deadline))
+        .await
+}
+
+async fn probe_within(
+    provider: &str,
+    url: Url,
+    auth: ToolAuth,
+    deadline: Deadline,
+) -> Result<MediaKind, String> {
+    let (host, response) = send_authed_media(provider, url, auth, deadline).await?;
+    check_status(response.status_code())?;
+    let content_type = response.declared_content_type().unwrap_or_default();
+    drop(response);
+    let kind = classify_media_type(&content_type);
+    if kind == MediaKind::Other && content_type.is_empty() {
+        return Err(format!("{host} did not say what this file is"));
+    }
+    Ok(kind)
 }
 
 #[derive(Debug, Deserialize)]
@@ -399,12 +531,11 @@ fn github_image_token(stored: Option<String>) -> Result<String, MessageError> {
         .ok_or_else(|| MessageError::Refused(GITHUB_IMAGE_KEY_NEEDED.to_string()))
 }
 
-#[tauri::command]
-pub async fn load_tool_image(
+pub(crate) fn resolve_tool_media(
     args: LoadToolImageArgs,
-    linear_cache: State<'_, crate::linear::LinearTokenCache>,
-    jira_cache: State<'_, crate::jira::JiraTokenCache>,
-) -> Result<String, MessageError> {
+    linear_cache: &crate::linear::LinearTokenCache,
+    jira_cache: &crate::jira::JiraTokenCache,
+) -> Result<(String, Url, ToolAuth), MessageError> {
     let LoadToolImageArgs {
         workspace_id,
         project_id,
@@ -421,7 +552,7 @@ pub async fn load_tool_image(
     let auth = match provider.as_str() {
         "linear" => {
             let token =
-                crate::linear::read_token(&workspace_id, project_id.as_deref(), &linear_cache)
+                crate::linear::read_token(&workspace_id, project_id.as_deref(), linear_cache)
                     .map_err(|e| e.to_string())?;
             ToolAuth::Raw(token)
         }
@@ -434,7 +565,7 @@ pub async fn load_tool_image(
                 project_id.as_deref(),
                 &site_url,
                 &email,
-                &jira_cache,
+                jira_cache,
             )
             .map_err(|e| e.to_string())?;
             ToolAuth::Basic { email, token }
@@ -450,19 +581,190 @@ pub async fn load_tool_image(
             )))
         }
     };
+    Ok((provider, parsed, auth))
+}
+
+#[tauri::command]
+pub async fn load_tool_image(
+    args: LoadToolImageArgs,
+    linear_cache: State<'_, crate::linear::LinearTokenCache>,
+    jira_cache: State<'_, crate::jira::JiraTokenCache>,
+) -> Result<String, MessageError> {
+    let (provider, parsed, auth) = resolve_tool_media(args, &linear_cache, &jira_cache)?;
     Ok(fetch_authed_image(&provider, parsed, auth).await?)
+}
+
+#[tauri::command]
+pub async fn probe_tool_media(
+    args: LoadToolImageArgs,
+    linear_cache: State<'_, crate::linear::LinearTokenCache>,
+    jira_cache: State<'_, crate::jira::JiraTokenCache>,
+) -> Result<String, MessageError> {
+    let (provider, parsed, auth) = resolve_tool_media(args, &linear_cache, &jira_cache)?;
+    let kind = probe_authed_media(&provider, parsed, auth).await?;
+    Ok(kind.as_str().to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        build_image_client, check_size, check_status, image_redirect_policy, is_allowed_redirect,
+        build_media_client, check_size, check_status, image_redirect_policy, is_allowed_redirect,
         is_blocked_host, is_image_content_type, read_image_response, resolve_public_addrs,
-        sniff_image_mime, tool_host_is_trusted, validate_image_url, validate_tool_image_url,
-        ImageResponse, Url, MAX_IMAGE_BYTES,
+        resolve_within, sniff_image_mime, tool_host_is_trusted, validate_image_url,
+        validate_tool_image_url, Deadline, ImageResponse, Url, DNS_TIMEOUT, MAX_IMAGE_BYTES,
+        REQUEST_TIMEOUT,
     };
     use std::collections::VecDeque;
-    use std::time::Duration;
+    use std::net::SocketAddr;
+    use std::time::{Duration, Instant};
+
+    fn build_image_client(host: &str, addresses: &[SocketAddr]) -> Result<reqwest::Client, String> {
+        build_media_client(host, addresses, Deadline::after(REQUEST_TIMEOUT))
+    }
+
+    fn answered(addresses: &[&str]) -> std::io::Result<std::vec::IntoIter<SocketAddr>> {
+        Ok(addresses
+            .iter()
+            .map(|address| address.parse().unwrap())
+            .collect::<Vec<SocketAddr>>()
+            .into_iter())
+    }
+
+    struct Stalled;
+
+    impl ImageResponse for Stalled {
+        fn status_code(&self) -> u16 {
+            200
+        }
+
+        fn declared_content_type(&self) -> Option<String> {
+            Some("image/png".to_string())
+        }
+
+        fn declared_length(&self) -> Option<u64> {
+            None
+        }
+
+        async fn next_chunk(&mut self) -> Result<Option<Vec<u8>>, String> {
+            std::future::pending().await
+        }
+    }
+
+    async fn stalling_listener() -> SocketAddr {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let mut held = Vec::new();
+            while let Ok((socket, _)) = listener.accept().await {
+                held.push(socket);
+            }
+        });
+        address
+    }
+
+    #[tokio::test]
+    async fn a_lookup_that_never_answers_ends_at_the_deadline() {
+        let started = Instant::now();
+        let pending = std::future::pending::<std::io::Result<std::vec::IntoIter<SocketAddr>>>();
+
+        let resolved = resolve_within(
+            "slow.example.com",
+            Deadline::after(Duration::from_millis(100)),
+            pending,
+        )
+        .await;
+
+        assert!(resolved.is_err());
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn a_lookup_never_waits_longer_than_its_own_cap() {
+        let long = Deadline::after(Duration::from_secs(180));
+        let short = Deadline::after(Duration::from_millis(10));
+        let now = tokio::time::Instant::now();
+
+        assert_eq!(long.lookup_until(now), now + DNS_TIMEOUT);
+        assert_eq!(short.lookup_until(now), short.0);
+    }
+
+    #[tokio::test]
+    async fn refuses_a_resolved_address_in_the_site_local_range() {
+        let deadline = Deadline::after(REQUEST_TIMEOUT);
+        for address in ["[fec0::1]:443", "[feff::9]:443"] {
+            let resolved = resolve_within("cdn.example.com", deadline, async {
+                answered(&["93.184.216.34:443", address])
+            })
+            .await;
+            assert!(resolved.is_err(), "accepted {address}");
+        }
+        let public = resolve_within("cdn.example.com", deadline, async {
+            answered(&["[2606:4700::1111]:443"])
+        })
+        .await;
+        assert_eq!(public.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_later_hop_gets_only_what_is_left_of_the_one_deadline() {
+        let address = stalling_listener().await;
+        let deadline = Deadline::after(Duration::from_millis(1500));
+        tokio::time::sleep(Duration::from_millis(1200)).await;
+
+        let started = Instant::now();
+        let client = build_media_client("stall.invalid", &[address], deadline).unwrap();
+        let sent = client.get("https://stall.invalid/a.png").send().await;
+
+        assert!(sent.is_err());
+        assert!(
+            started.elapsed() < Duration::from_millis(1200),
+            "the hop waited {:?}",
+            started.elapsed()
+        );
+    }
+
+    #[tokio::test]
+    async fn a_body_that_stalls_ends_at_the_deadline() {
+        let started = Instant::now();
+        let deadline = Deadline::after(Duration::from_millis(100));
+
+        let read = deadline
+            .bound(
+                "h.example.com",
+                read_image_response("h.example.com", &mut Stalled),
+            )
+            .await;
+
+        assert_eq!(
+            read,
+            Err("h.example.com took too long, so nothing was loaded".to_string())
+        );
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn every_fetch_runs_under_one_deadline() {
+        for (name, call) in [
+            (
+                "pub async fn fetch_remote_image",
+                ".bound(&host, fetch_public_image(&host, parsed, deadline))",
+            ),
+            (
+                "async fn fetch_authed_image",
+                "send_authed_media(provider, url, auth, deadline)",
+            ),
+            (
+                "async fn probe_authed_media",
+                ".bound(&label, probe_within(provider, url, auth, deadline))",
+            ),
+        ] {
+            let start = SELF_SRC.find(name).expect("function");
+            let rest = &SELF_SRC[start..];
+            let body = &rest[..rest.find("\n}\n").expect("function end")];
+            assert!(body.contains("Deadline::after(REQUEST_TIMEOUT)"), "{body}");
+            assert!(body.contains(call), "{body}");
+        }
+    }
 
     const LIB_SRC: &str = include_str!("lib.rs");
     const SELF_SRC: &str = include_str!("remote_image.rs");
@@ -507,10 +809,8 @@ mod tests {
         }
     }
 
-    fn command_body() -> &'static str {
-        let start = SELF_SRC
-            .find("pub async fn fetch_remote_image")
-            .expect("command");
+    fn command_body(name: &str) -> &'static str {
+        let start = SELF_SRC.find(name).expect("command");
         let rest = &SELF_SRC[start..];
         let end = rest.find("\n}\n").expect("command end");
         &rest[..end]
@@ -534,12 +834,19 @@ mod tests {
 
     #[tokio::test]
     async fn refuses_a_host_whose_dns_answer_is_private() {
-        assert!(resolve_public_addrs("localhost").await.is_err());
+        let deadline = Deadline::after(REQUEST_TIMEOUT);
+        assert!(resolve_public_addrs("localhost", deadline).await.is_err());
     }
 
     #[tokio::test]
     async fn leaves_a_literal_address_to_the_client() {
-        assert_eq!(resolve_public_addrs("93.184.216.34").await.unwrap(), vec![]);
+        let deadline = Deadline::after(REQUEST_TIMEOUT);
+        assert_eq!(
+            resolve_public_addrs("93.184.216.34", deadline)
+                .await
+                .unwrap(),
+            vec![]
+        );
     }
 
     #[test]
@@ -632,17 +939,17 @@ mod tests {
 
     #[test]
     fn the_command_vets_dns_and_pins_before_it_connects() {
-        let body = command_body();
+        let body = command_body("async fn fetch_public_image");
         assert!(
-            body.contains("resolve_public_addrs(&host).await?"),
+            body.contains("resolve_public_addrs(host, deadline).await?"),
             "{body}"
         );
         assert!(
-            body.contains("build_image_client(&host, &addresses)?"),
+            body.contains("build_media_client(host, &addresses, deadline)?"),
             "{body}"
         );
         assert!(
-            body.contains("read_image_response(&host, &mut response)"),
+            body.contains("read_image_response(host, &mut response)"),
             "{body}"
         );
     }
@@ -734,6 +1041,26 @@ mod tests {
         ] {
             assert!(validate_image_url(host).is_ok(), "refused {host}");
         }
+    }
+
+    #[test]
+    fn refuses_the_ipv6_site_local_range() {
+        for host in [
+            "https://[fec0::1]/a.png",
+            "https://[fec0:1234::5]/a.png",
+            "https://[feff:ffff::1]/a.png",
+        ] {
+            assert!(validate_image_url(host).is_err(), "accepted {host}");
+        }
+    }
+
+    #[test]
+    fn the_media_client_never_routes_through_a_proxy() {
+        let address = "93.184.216.34:443".parse().unwrap();
+        let client = build_image_client("pinned.invalid", &[address]).unwrap();
+
+        let shape = format!("{client:?}");
+        assert!(!shape.contains("proxies"), "{shape}");
     }
 
     #[test]
@@ -874,8 +1201,8 @@ mod tests {
     #[test]
     fn the_redirect_hop_never_carries_the_first_hops_auth_header() {
         let start = SELF_SRC
-            .find("async fn fetch_authed_image")
-            .expect("fetch_authed_image");
+            .find("async fn send_authed_media")
+            .expect("send_authed_media");
         let rest = &SELF_SRC[start..];
         let end = rest.find("\n}\n").expect("function end");
         let body = &rest[..end];
@@ -907,5 +1234,61 @@ mod tests {
             super::github_image_token(Some("ghp_example".to_string())).unwrap(),
             "ghp_example"
         );
+    }
+
+    #[test]
+    fn names_an_image_a_video_or_neither_from_the_declared_type() {
+        use super::{classify_media_type, MediaKind};
+        assert_eq!(classify_media_type("image/png"), MediaKind::Image);
+        assert_eq!(
+            classify_media_type("IMAGE/JPEG; charset=x"),
+            MediaKind::Image
+        );
+        assert_eq!(classify_media_type("image/svg+xml"), MediaKind::Other);
+        assert_eq!(classify_media_type("video/mp4"), MediaKind::Video);
+        assert_eq!(classify_media_type("video/webm"), MediaKind::Video);
+        assert_eq!(classify_media_type("video/quicktime"), MediaKind::Video);
+        assert_eq!(classify_media_type("video/x-flv"), MediaKind::Other);
+        assert_eq!(classify_media_type("text/html"), MediaKind::Other);
+        assert_eq!(classify_media_type(""), MediaKind::Other);
+    }
+
+    #[test]
+    fn the_probe_goes_through_the_same_vetted_hop_as_the_image_fetch() {
+        let start = SELF_SRC
+            .find("async fn probe_within")
+            .expect("probe_within");
+        let rest = &SELF_SRC[start..];
+        let end = rest.find("\n}\n").expect("function end");
+        let body = &rest[..end];
+
+        assert!(
+            body.contains("send_authed_media(provider, url, auth, deadline)"),
+            "{body}"
+        );
+        assert!(!body.contains("apply_tool_auth("), "{body}");
+        assert!(!body.contains("chunk()"), "{body}");
+        assert!(!body.contains("next_chunk"), "{body}");
+    }
+
+    #[test]
+    fn the_probe_only_runs_for_the_providers_own_attachment_addresses() {
+        let other = validate_tool_image_url(
+            "github",
+            "https://example.com/user-attachments/assets/9f2c",
+            None,
+        );
+        assert!(other.is_err());
+        let own = validate_tool_image_url(
+            "github",
+            "https://github.com/user-attachments/assets/9f2c",
+            None,
+        );
+        assert!(own.is_ok());
+    }
+
+    #[test]
+    fn the_probe_command_stays_registered_with_the_webview() {
+        assert!(LIB_SRC.contains("remote_image::probe_tool_media"));
     }
 }

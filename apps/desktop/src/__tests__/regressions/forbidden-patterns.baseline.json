@@ -211,8 +211,7 @@
     "packages/db/src/migrations/m160-artifact-run-phase.ts": 1,
     "packages/db/src/migrations/m161-workflow-preset-name-unique.ts": 1,
     "packages/db/src/migrations/m163-open-question-answer-delivery.ts": 1,
-    "packages/db/src/migrations/m164-orchestrator-hint-log.ts": 1,
-    "packages/ui/src/components/Markdown/index.tsx": 1
+    "packages/db/src/migrations/m164-orchestrator-hint-log.ts": 1
   },
   "config-comment": {
     ".github/workflows/homebrew.yml": 6,
@@ -243,6 +242,7 @@
     "apps/desktop/src/features/resolve/learnWorkspaceReplyStyle.ts": 1,
     "apps/desktop/src/shared/lib/db.ts": 1
   },
+  "raw-open": {},
   "stringified-error": {
     "packages/core/src/github/gh.ts": 1,
     "packages/core/src/planner/parser.ts": 1,
@@ -289,7 +289,6 @@
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
     "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
     "apps/desktop/src/features/reports/components/ReportStudio/ReportOutlineNav.tsx": 1,
-    "apps/desktop/src/features/review/components/ReviewThreadContent/index.tsx": 1,
     "apps/desktop/src/features/scripts/components/RunningScriptRow.tsx": 1,
     "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/NewBranchMountAction.tsx": 1,
@@ -375,6 +374,14 @@
   },
   "tone-border-rail": {},
   "footer-cta-bar": {},
+  "diff-font-sans": {
+    "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": 1
+  },
+  "page-title-row": {},
   "half-step-spacing": {},
+  "hand-written-age": {
+    "apps/desktop/src/features/storage/components/StoragePage/ArtifactBulkDeleteBar.tsx": 1,
+    "apps/desktop/src/features/storage/components/StoragePage/ArtifactRow.tsx": 1
+  },
   "role-weight-override": {}
 }

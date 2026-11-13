@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrCheckRun, PullRequestReviewer } from '@goodboy/types';
 import { bitbucketReviewDecisionOf, gitlabReviewDecisionOf } from '@goodboy/core/review-source';
 import type { PullRequestPresentationState } from '../../../../../shared/utils/pullRequestPresentation';
-import { checksCountsOf } from '../../../../integrations/github/checksRollup';
+import { checksCountsOf, checksSummaryOf } from '../../../../integrations/github/checksRollup';
 import {
   evaluatePrMergeReadiness,
   type MergeReadinessFacts,
@@ -78,6 +78,7 @@ type BoxParams = {
   readonly queueLine?: string | null;
   readonly hasQuestion?: boolean;
   readonly isPushing?: boolean;
+  readonly steps?: ReadonlyArray<BranchDueStep>;
 };
 
 type Header = {
@@ -105,6 +106,7 @@ const build = ({
   queueLine = null,
   hasQuestion = false,
   isPushing = false,
+  steps: stepsOverride,
 }: BoxParams): Built => {
   const merged = { ...FACTS, ...facts };
   const readiness = evaluatePrMergeReadiness({ facts: merged });
@@ -144,7 +146,7 @@ const build = ({
     mergeWord: 'Squash and merge',
     queueLine,
     branch: { ahead: 4, behind, onlineAhead, isRebasing },
-    steps: header.steps,
+    steps: stepsOverride ?? header.steps,
     threads,
     unpushed,
     canRequestReview,
@@ -162,6 +164,12 @@ const linesOf = ({ box }: LinesParams): ReadonlyArray<string> =>
   box.rows.map((row) => `${row.title} (${row.tone})`);
 
 describe('mergeBoxOf', () => {
+  it('says the passed checks with the same line as the rail', () => {
+    const box = boxOf({ runs: PASSING });
+
+    expect(box.passing[0]).toBe(checksSummaryOf({ runs: PASSING })?.line);
+  });
+
   it('waits for a review nobody was asked for, with what passes folded apart', () => {
     const box = boxOf({});
 
@@ -172,7 +180,7 @@ describe('mergeBoxOf', () => {
     });
     expect(linesOf({ box })).toEqual(['No approval yet (info)']);
     expect(box.rows[0]).toMatchObject({ detail: 'Nobody asked yet', opens: 'reviewers' });
-    expect(box.passing).toEqual(['2 checks passed', 'No conflicts', 'Up to date with main']);
+    expect(box.passing).toEqual(['2 of 2 passed', 'No conflicts', 'Up to date with main']);
   });
 
   it('opens Comments instead of the picker when the host cannot ask for a review', () => {
@@ -231,6 +239,17 @@ describe('mergeBoxOf', () => {
     expect(boxOf({ runs: FAILING, facts: { checks: 'failing' }, unpushed: 2 }).verdict.line).toBe(
       'Push your commits, then fix the failing check.',
     );
+  });
+
+  it('does not repeat the comments when answering then fixing them', () => {
+    const box = boxOf({
+      steps: ['answer', 'fixComments'],
+      facts: { review: 'approved', commentsNeedYou: 2 },
+      threads: { unresolved: 5, needYou: 2, unread: 1 },
+      hasQuestion: true,
+    });
+
+    expect(box.verdict.line).toBe('Answer the comments, then fix them.');
   });
 
   it('fixes the checks first when the branch only diverged online, as the header does', () => {
@@ -339,7 +358,7 @@ describe('mergeBoxOf', () => {
       tone: 'success',
     });
     expect(box.passing).toEqual([
-      '2 checks passed',
+      '2 of 2 passed',
       'No conflicts',
       'Approved by kenji-w',
       'Up to date with main',

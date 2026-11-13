@@ -14,6 +14,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { openUrl } from '../../../../../shared/lib/editor';
+import { SETTING_LINKS_OPEN } from '../../../../../shared/lib/linksOpenSetting';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -95,7 +96,7 @@ const show = async (variant: BitbucketPageVariant = 'pr') => {
       <BitbucketPageScene variant={variant} />
     </ToastProvider>,
   );
-  await findSectionRow(/^Pull request/);
+  await findSectionRow(/^Overview/);
   act(() => {
     useAppStore.setState(stubs);
   });
@@ -118,10 +119,10 @@ describe('the Bitbucket scenes', () => {
     ]);
   });
 
-  it('leads with the Pull request tab and the title as the one heading', async () => {
+  it('leads with the Overview tab and the title as the one heading', async () => {
     await show();
 
-    expect(sectionRow(/^Pull request/).getAttribute('aria-selected')).toBe('true');
+    expect(sectionRow(/^Overview/).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
@@ -136,8 +137,8 @@ describe('the Bitbucket scenes', () => {
     );
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.getByText('Approved')).toBeDefined();
-    expect(side.getByText('Changes')).toBeDefined();
-    expect(side.getByText('Asked')).toBeDefined();
+    expect(side.getByText('Asked for changes')).toBeDefined();
+    expect(side.getByText('Not yet reviewed')).toBeDefined();
     expect(side.queryByRole('region', { name: 'Base' })).toBeNull();
     expect(side.queryByRole('region', { name: 'Files changed' })).toBeNull();
   });
@@ -247,6 +248,7 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
     expect(stubs.mergePr).toHaveBeenCalledWith(SESSION.id, 42, 'rebase', {
       mountId: expect.any(String),
       expectedHeadSha: 'a41c9e2b7d3',
+      hasFailureSurface: expect.any(Function),
     });
   });
 
@@ -261,15 +263,16 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
     fireEvent.click(within(group).getByRole('button', { name: 'Close pull request' }));
 
     await waitFor(() => expect(stubs.closePr).toHaveBeenCalledTimes(1));
-    expect(stubs.closePr).toHaveBeenCalledWith(SESSION.id, 42, { mountId: expect.any(String) });
+    expect(stubs.closePr).toHaveBeenCalledWith(SESSION.id, 42, {
+      mountId: expect.any(String),
+      hasFailureSurface: expect.any(Function),
+    });
   });
 
   it('shows a declined pull request as closed with no Reopen, Close or Merge', async () => {
     await show('declined');
 
-    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('aria-label')).toBe(
-      'Closed',
-    );
+    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Closed');
     expect(screen.queryByRole('button', { name: /^Merge(?!:)/ })).toBeNull();
     await openOverflow();
     const menu = await screen.findByRole('menu', { name: 'Branch actions' });
@@ -291,9 +294,16 @@ describe('the Pull request tab on Bitbucket, without a pull request', () => {
     ).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Create pull request' })).toBeNull();
+    act(() => {
+      useAppStore.setState((state) => ({
+        settings: { ...state.settings, [SETTING_LINKS_OPEN]: 'browser' },
+      }));
+    });
     fireEvent.click(await screen.findByRole('button', { name: /Open Bitbucket/ }));
-    expect(openUrl).toHaveBeenCalledWith(
-      'https://bitbucket.org/harborline/payments-api/pull-requests/new?source=hl%2Ffix-duplicate-credit',
+    await waitFor(() =>
+      expect(openUrl).toHaveBeenCalledWith(
+        'https://bitbucket.org/harborline/payments-api/pull-requests/new?source=hl%2Ffix-duplicate-credit',
+      ),
     );
   });
 });

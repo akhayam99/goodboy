@@ -1,7 +1,7 @@
 import { SquareArrowOutUpRight } from 'lucide-react';
 import { Button, EmptyState, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 
 type Props = {
   readonly url: string | null;
@@ -20,7 +20,7 @@ export const BitbucketNoPullRequest = ({ url, isConnected }: Props) => (
     }
     action={
       url === null ? undefined : (
-        <Button variant="secondary" size="sm" onClick={() => void openUrl(url)}>
+        <Button variant="secondary" size="sm" onClick={(event) => openLink({ url, event })}>
           Open Bitbucket
           <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
         </Button>

@@ -123,7 +123,7 @@ pub(crate) fn close_switched(
     }
 }
 
-fn announce<R: Runtime>(app: &AppHandle<R>, facts: &TabFacts) {
+pub(crate) fn announce<R: Runtime>(app: &AppHandle<R>, facts: &TabFacts) {
     let Some(window_label) = app.state::<BrowserRegistry>().window_of(&facts.id) else {
         return;
     };

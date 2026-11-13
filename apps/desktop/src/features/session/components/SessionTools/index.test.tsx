@@ -206,7 +206,7 @@ describe('SessionTools', () => {
     const caption = 12;
     const captionGap = 2;
     const railGap = 8;
-    const headerInset = 12;
+    const headerInset = 8;
     const groups = new Set(ALL_TOOLS.map((tool) => tool.group)).size;
     const children = ALL_TOOLS.length + 2 * groups;
     const needed =
@@ -679,6 +679,7 @@ describe('SessionTools', () => {
     useAppStore.setState({
       currentWorkspaceId: WORKSPACE,
       sessions: [sessionFixture()],
+      browserTabCounts: { [WORKSPACE]: titles.length },
       browserSessionTabs: {
         [SESSION]: titles.map((title, position) => ({
           id: `tab-${position}`,
@@ -700,6 +701,46 @@ describe('SessionTools', () => {
         .closest('[data-slot="session-tool"]')
         ?.querySelector('[data-testid="tool-count"]')?.textContent,
     ).toBe('4');
+  });
+
+  it('shows no count on Browser until the tab rows have loaded', () => {
+    useAppStore.setState({
+      currentWorkspaceId: WORKSPACE,
+      sessions: [sessionFixture()],
+      browserTabCounts: {},
+    });
+    render(<SessionTools sessionId={null} />);
+
+    expect(toggle('browser').getAttribute('aria-label')).toBe('Browser');
+    const tool = toggle('browser').closest('[data-slot="session-tool"]');
+    expect(tool?.querySelector('[data-testid="tool-count"]')).toBeNull();
+    const skeleton = tool?.querySelector('[data-testid="tool-count-skeleton"]');
+    expect(skeleton?.getAttribute('aria-label')).toBe('Loading');
+  });
+
+  it('draws no skeleton on Browser once the tab rows have loaded empty', () => {
+    useAppStore.setState({
+      currentWorkspaceId: WORKSPACE,
+      sessions: [sessionFixture()],
+      browserTabCounts: { [WORKSPACE]: 0 },
+    });
+    render(<SessionTools sessionId={null} />);
+
+    expect(screen.queryByTestId('tool-count-skeleton')).toBeNull();
+    expect(screen.queryByTestId('tool-count')).toBeNull();
+  });
+
+  it('draws no skeleton and no count on Browser when the tab rows failed to load', () => {
+    useAppStore.setState({
+      currentWorkspaceId: WORKSPACE,
+      sessions: [sessionFixture()],
+      browserTabCounts: {},
+      browserTabCountFailures: { [WORKSPACE]: true },
+    });
+    render(<SessionTools sessionId={null} />);
+
+    expect(screen.queryByTestId('tool-count-skeleton')).toBeNull();
+    expect(screen.queryByTestId('tool-count')).toBeNull();
   });
 
   it('selects Terminal while its page is open and does nothing on click', () => {

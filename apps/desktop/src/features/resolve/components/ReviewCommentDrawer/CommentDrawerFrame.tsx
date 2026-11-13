@@ -1,15 +1,11 @@
 import { MessageSquare } from 'lucide-react';
 import { DrawerFrame } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { useNow } from '../../../../shared/hooks/useNow';
-import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { joinFacts } from '../../../../shared/utils/joinFacts';
+import type { MountId, SessionId } from '@goodboy/types';
 import type { ResolvedAction } from '../../../actions/types';
 import { ThreadHunk } from '../../../branch/components/ThreadHunk';
 import { ThreadProperties } from '../../../branch/components/ThreadProperties';
 import type { ReviewCommentBinding } from '../../hooks/useReviewCommentController';
 import { BAR_COPY } from '../../commentStateCopy';
-import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
 import { NoteThreadActions } from '../ReviewFlow/NoteThreadActions';
 import { ReviewComment } from '../ReviewFlow/ReviewComment';
 import { ThreadOverflowMenu } from '../ReviewFlow/ThreadOverflowMenu';
@@ -17,6 +13,8 @@ import { drawerMenuOmitOf } from './drawerMenuOmitOf';
 import type { ReviewPush } from '../ReviewFlow/useReviewPush';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import { CommentDrawerActions } from './CommentDrawerActions';
+import { CommentDrawerAuthor } from './CommentDrawerAuthor';
+import { SessionMediaScope } from '../../../../shared/components/SessionMediaScope';
 import { REVIEW_COMMENT_DRAWER_COPY } from './reviewCommentDrawerCopy';
 import { useCommentDrawerPlan } from './useCommentDrawerPlan';
 
@@ -27,6 +25,7 @@ type CommentDrawerPosition = {
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
   readonly entry: ReviewEntry;
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly push: ReviewPush;
@@ -52,24 +51,9 @@ const loneOf = ({ rare }: LoneParams): ResolvedAction | null => {
   return only.confirm === null && !hasChoices ? only : null;
 };
 
-type TitleParams = {
-  readonly entry: ReviewEntry;
-};
-
-const titleOf = ({ entry }: TitleParams): string => {
-  const note = entry.row.reviewerNote;
-  if (note === null) {
-    return REVIEW_COMMENT_DRAWER_COPY.fallbackTitle;
-  }
-  if (note.path === null) {
-    return note.author;
-  }
-  const name = note.path.split('/').pop() ?? note.path;
-  return note.line == null ? name : `${name}:${note.line}`;
-};
-
 export const CommentDrawerFrame = ({
   sessionId,
+  mountId = null,
   entry,
   entries,
   push,
@@ -81,19 +65,9 @@ export const CommentDrawerFrame = ({
   onTryAgain,
   onStartOver,
 }: Props) => {
-  const now = useNow(60_000);
   const plan = useCommentDrawerPlan({ sessionId, entry, push, hasRunLine });
   const lone = loneOf({ rare: plan.rare });
-  const note = entry.row.reviewerNote;
   const isNote = entry.row.thread.originKind === 'diff_comment';
-  const meta = joinFacts({
-    facts: [
-      note?.path === null ? null : note?.author,
-      note === null ? null : formatAge({ from: note.createdAtMs, now }),
-      entry.word,
-      entry.row.commentThread?.head.outdated === true && REVIEW_FLOW_LABEL.lineMoved,
-    ],
-  });
   const menu =
     plan.rare.length === 0 || lone !== null ? undefined : (
       <ThreadOverflowMenu
@@ -104,10 +78,9 @@ export const CommentDrawerFrame = ({
     );
   return (
     <DrawerFrame
-      title={titleOf({ entry })}
+      title={REVIEW_COMMENT_DRAWER_COPY.title}
       icon={MessageSquare}
       count={position === null ? undefined : REVIEW_COMMENT_DRAWER_COPY.position(position)}
-      meta={meta}
       menu={menu}
       onClose={onClose}
     >
@@ -116,21 +89,24 @@ export const CommentDrawerFrame = ({
         data-review-drawer={entry.threadId}
         className="flex min-w-0 flex-col gap-4"
       >
-        <ReviewComment
-          sessionId={sessionId}
-          entry={entry}
-          entries={entries}
-          hunk={
-            <ThreadHunk
-              row={entry.row}
-              onOpenInDiff={() => binding.onRun('reviewComment.openInDiff')}
-            />
-          }
-          {...binding}
-          onSelect={onSelect}
-          onTryAgain={onTryAgain}
-          onStartOver={onStartOver}
-        />
+        <CommentDrawerAuthor entry={entry} />
+        <SessionMediaScope sessionId={sessionId} mountId={mountId}>
+          <ReviewComment
+            sessionId={sessionId}
+            entry={entry}
+            entries={entries}
+            hunk={
+              <ThreadHunk
+                row={entry.row}
+                onOpenInDiff={() => binding.onRun('reviewComment.openInDiff')}
+              />
+            }
+            {...binding}
+            onSelect={onSelect}
+            onTryAgain={onTryAgain}
+            onStartOver={onStartOver}
+          />
+        </SessionMediaScope>
         <ThreadProperties sessionId={sessionId} entry={entry} />
         <CommentDrawerActions
           entry={entry}

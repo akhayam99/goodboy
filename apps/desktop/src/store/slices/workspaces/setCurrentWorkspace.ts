@@ -13,7 +13,6 @@ import type {
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
-  listAgentsForSessions,
   listExternalTasksForWorkspace,
   listProjectsForWorkspace,
   listSessionsForWorkspace,
@@ -57,11 +56,14 @@ import { verifyWorkspaceWorktrees } from '../project-mounts/verify/verifyWorkspa
 import { workspaceVerification } from '../project-mounts/verify/workspaceVerification';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import { beginWorkspaceSwitch } from './beginWorkspaceSwitch';
+import { clearedWorkspaceState } from './clearedWorkspaceState';
 import { failWorkspaceSwitch } from './failWorkspaceSwitch';
 import { refuseWorkspaceSwitch } from './refuseWorkspaceSwitch';
 import { loadWorkspaceFacts, type WorkspaceFacts } from './loadWorkspaceFacts';
 import { workspaceFactsPatchOf } from './workspaceFactsPatchOf';
 import { switchEpoch } from './switchEpoch';
+import type { LaunchReads } from './launchReads';
+import { loadLaunchAgents } from './loadLaunchAgents';
 import type { GetFn, SetFn } from './types';
 
 type RepairedDestination = {
@@ -73,6 +75,7 @@ type SnapshotParams = {
   readonly get: GetFn;
   readonly id: WorkspaceId;
   readonly isCurrent: () => boolean;
+  readonly launch: LaunchReads | undefined;
 };
 
 type MountRecords = {
@@ -91,6 +94,7 @@ type WorkspaceSnapshot = MountRecords & {
   readonly sessions: ReadonlyArray<Session>;
   readonly worktreesBySession: ReadonlyMap<SessionId, ReadonlyArray<SessionWorktree>>;
   readonly sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
+  readonly lightAgentSessions: Readonly<Record<SessionId, true>>;
   readonly waitingTurns: Record<string, TurnState>;
   readonly kindOverridesFromDb: Record<string, AgentKind>;
   readonly sessionExternalTasks: Record<string, SessionExternalTask[]>;
@@ -141,6 +145,11 @@ type BackgroundVerifyParams = {
 type VerifiedPatch = {
   readonly sessionId: SessionId;
   readonly hydration: SessionMountHydration;
+};
+
+type SwitchParams = {
+  readonly id: WorkspaceId | null;
+  readonly launch?: LaunchReads;
 };
 
 const SWITCH_KEY = 'workspace-switch';
@@ -294,11 +303,15 @@ const loadWorkspaceSnapshot = async ({
   get,
   id,
   isCurrent,
+  launch,
 }: SnapshotParams): Promise<WorkspaceSnapshot | null> => {
   const touchedAt = new Date().toISOString() as IsoDateTime;
   touchWorkspaceLastAccessed({ db: tauriDatabase, id }).catch(() => undefined);
 
-  const projects = await listProjectsForWorkspace({ db: tauriDatabase, workspaceId: id });
+  const projects =
+    launch === undefined
+      ? await listProjectsForWorkspace({ db: tauriDatabase, workspaceId: id })
+      : launch.projects.filter((project) => project.workspaceId === id);
   await get()
     .loadIntegrations(id)
     .catch(() => undefined);
@@ -308,7 +321,7 @@ const loadWorkspaceSnapshot = async ({
 
   const loadStartedAt = performance.now();
   const loadedSessions = await listSessionsForWorkspace(tauriDatabase, id);
-  const liveRunIds = await listLiveRunIds();
+  const liveRunIds = launch === undefined ? await listLiveRunIds() : launch.liveRunIds;
   const recoveryNow = new Date().toISOString() as IsoDateTime;
   const sessions = await reconcileLoadedSessions({
     sessions: loadedSessions,
@@ -316,9 +329,9 @@ const loadWorkspaceSnapshot = async ({
     now: recoveryNow,
   });
   const sessionIds = sessions.map((s) => s.id);
-  const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
+  const [worktreesBySession, launchAgents, externalTasks] = await Promise.all([
     listWorktreesForSessions(tauriDatabase, sessionIds),
-    listAgentsForSessions(tauriDatabase, sessionIds),
+    loadLaunchAgents({ sessionIds }),
     listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
   ]);
   if (!isCurrent()) {
@@ -345,7 +358,9 @@ const loadWorkspaceSnapshot = async ({
     writeHydration({ records, sessionId: s.id, hydration });
     hydratedSessions.push(sessionAfterHydration({ session: s, hydration }));
     const reconciled = await Promise.all(
-      (agentsBySession.get(s.id) ?? []).map((agent) => reconcileLoadedAgent({ agent, liveRunIds })),
+      (launchAgents.agentsBySession.get(s.id) ?? []).map((agent) =>
+        reconcileLoadedAgent({ agent, liveRunIds }),
+      ),
     );
     const runs = reconciled.map(({ agent }) => agent);
     for (const { agent, waiting } of reconciled) {
@@ -386,6 +401,7 @@ const loadWorkspaceSnapshot = async ({
     worktreesBySession,
     ...records,
     sessionPhaseRuns,
+    lightAgentSessions: launchAgents.lightAgentSessions,
     waitingTurns,
     kindOverridesFromDb,
     sessionExternalTasks,
@@ -393,44 +409,9 @@ const loadWorkspaceSnapshot = async ({
   };
 };
 
-const clearedWorkspaceState = () => ({
-  currentSessionId: null,
-  appStudio: null,
-  drawer: null,
-  drawerBack: null,
-  sessions: [],
-  archivedSessions: {},
-  sessionSummary: null,
-  workspaceSummary: null,
-  transcripts: {},
-  messages: {},
-  sessionTelemetry: {},
-  sessionSlots: {},
-  slotHistory: {},
-  slotHistoryCounts: {},
-  sessionSlotsLoad: {},
-  sessionWorktrees: {},
-  sessionProjectMounts: {},
-  sessionActiveProject: {},
-  sessionActiveMount: {},
-  sessionBranches: {},
-  sessionExternalTasks: {},
-  sessionPhaseRuns: {},
-  selectedAgentId: {},
-  agentRunHistory: {},
-  runRouting: {},
-  agentTurnState: {},
-  sessionBudgets: {},
-  summarizerStatus: {},
-  budgetAlerts: [],
-  unknownPayloadCounts: {},
-  sessionLoading: {},
-  boardReady: false,
-});
-
 export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
   const latest = createLatestOnly();
-  return async (id: WorkspaceId | null) => {
+  return async ({ id, launch }: SwitchParams) => {
     const claimed = latest.claim({ key: SWITCH_KEY });
     switchEpoch.value += 1;
     const isOpeningAnother = id != null && id !== get().currentWorkspaceId;
@@ -451,7 +432,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
     if (id != null) {
       let snapshot: WorkspaceSnapshot | null = null;
       try {
-        snapshot = await loadWorkspaceSnapshot({ get, id, isCurrent: claimed.isCurrent });
+        snapshot = await loadWorkspaceSnapshot({ get, id, isCurrent: claimed.isCurrent, launch });
       } catch (error) {
         if (claimed.isCurrent()) {
           failWorkspaceSwitch({ set, id, message: formatError(error) });
@@ -473,6 +454,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        lightAgentSessions,
         waitingTurns,
         kindOverridesFromDb,
         sessionExternalTasks,
@@ -498,6 +480,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        lightAgentSessions,
         agentTurnState: waitingTurns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks,

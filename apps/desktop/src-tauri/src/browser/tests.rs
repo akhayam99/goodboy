@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -272,6 +273,68 @@ fn refuses_every_app_command_to_a_browser_page_even_from_a_local_address() {
     let refused = get_ipc_response(&page, local_request("probe")).expect_err("refused");
     assert_eq!(refused["kind"], "refused");
     assert_eq!(refused["message"], BROWSER_CALLER);
+}
+
+const APP_SOURCE: &str = include_str!("../lib.rs");
+const WINDOW_COMMANDS: &str = include_str!("../../window-commands.json");
+const WALLED_HANDLER: &str =
+    ".invoke_handler(browser::refuse_browser_pages(tauri::generate_handler![";
+
+fn walled_commands() -> BTreeSet<&'static str> {
+    let start = APP_SOURCE
+        .find(WALLED_HANDLER)
+        .expect("lib.rs registers its commands inside refuse_browser_pages")
+        + WALLED_HANDLER.len();
+    let length = APP_SOURCE[start..]
+        .find(']')
+        .expect("the command list closes");
+    assert!(
+        APP_SOURCE[start + length..].starts_with("]))"),
+        "refuse_browser_pages closes right after the command list"
+    );
+    APP_SOURCE[start..start + length]
+        .split(',')
+        .map(str::trim)
+        .filter(|entry| !entry.is_empty())
+        .map(|entry| entry.rsplit("::").next().unwrap_or(entry))
+        .collect()
+}
+
+fn ledger_commands() -> BTreeSet<String> {
+    let ledger: serde_json::Value =
+        serde_json::from_str(WINDOW_COMMANDS).expect("window-commands.json parses");
+    ["every-window", "main-only"]
+        .iter()
+        .flat_map(|list| ledger[list].as_array().expect("a ledger list"))
+        .map(|name| name.as_str().expect("a command name").to_string())
+        .collect()
+}
+
+#[test]
+fn registers_every_app_command_behind_the_browser_wall() {
+    assert_eq!(APP_SOURCE.matches("invoke_handler").count(), 1);
+    assert_eq!(APP_SOURCE.matches("generate_handler").count(), 1);
+    let walled = walled_commands();
+    let ledger = ledger_commands();
+    let outside: Vec<&String> = ledger
+        .iter()
+        .filter(|name| !walled.contains(name.as_str()))
+        .collect();
+    assert!(outside.is_empty(), "outside the wall: {outside:?}");
+    let unlisted: Vec<&&str> = walled
+        .iter()
+        .filter(|name| !ledger.contains(**name))
+        .collect();
+    assert!(
+        unlisted.is_empty(),
+        "missing from window-commands.json: {unlisted:?}"
+    );
+    let elsewhere = production_hits(
+        &["invoke_handler", "generate_handler", "add_capability"],
+        &["lib.rs"],
+    );
+    assert!(elsewhere.is_empty(), "{elsewhere:?}");
+    assert!(!APP_SOURCE.contains("add_capability"));
 }
 
 fn webview(app: &App<MockRuntime>, label: &str) -> Webview<MockRuntime> {
@@ -1600,6 +1663,21 @@ fn keeps_the_saved_address_when_a_page_has_none_yet() {
     assert_eq!(registry.facts("ledger-core"), Some(saved));
 }
 
+#[test]
+fn reads_no_address_from_an_asleep_tab() {
+    let registry = BrowserRegistry::default();
+    seed_tab(&registry, "ledger-core", northwind(), false);
+    let asleep = registry.facts("ledger-core").expect("tab exists");
+    assert_eq!(asleep.state, TabState::Asleep);
+    let reads = Mutex::new(0);
+    let listed = refresh_with(&registry, vec![asleep.clone()], |_| {
+        *reads.lock().expect("reads") += 1;
+        Url::parse("https://harborline.dev/billing").ok()
+    });
+    assert_eq!(listed, vec![asleep]);
+    assert_eq!(*reads.lock().expect("reads"), 0);
+}
+
 fn hear_page_keys(app: &App<MockRuntime>, label: &str) -> Arc<Mutex<Vec<(String, String)>>> {
     let heard = Arc::new(Mutex::new(vec![]));
     let sink = Arc::clone(&heard);
@@ -1659,4 +1737,99 @@ fn takes_the_page_keys_from_the_app_and_refuses_them_from_a_browser_page() {
         app.state::<PageKeys>().combo_for(0x0D, 1 << 20),
         Some("cmd+KeyW".to_string())
     );
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn applies_a_user_agent_preset_to_a_live_tab_and_back() {
+    use super::host::apply_user_agent;
+    use crate::platform::web_user_agent::DevicePreset;
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = owned_tab(&webview(&app, "main"), &id).expect("owned tab");
+    assert!(apply_user_agent(&tab, DevicePreset::Phone).is_ok());
+    assert!(apply_user_agent(&tab, DevicePreset::Desktop).is_ok());
+}
+
+#[cfg(not(target_os = "macos"))]
+#[test]
+fn refuses_a_user_agent_preset_off_macos() {
+    use super::host::apply_user_agent;
+    use super::reason::UNSUPPORTED_PLATFORM;
+    use crate::platform::web_user_agent::DevicePreset;
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    let tab = owned_tab(&webview(&app, "main"), &id).expect("owned tab");
+    assert!(matches!(
+        apply_user_agent(&tab, DevicePreset::Phone),
+        Err(MessageError::Refused(code)) if code == UNSUPPORTED_PLATFORM
+    ));
+}
+
+fn console_args(tab_id: &str, session_id: &str) -> super::commands::ConsoleReadArgs {
+    super::commands::ConsoleReadArgs {
+        tab_id: tab_id.to_string(),
+        session_id: session_id.to_string(),
+        doc: None,
+        after: 0,
+    }
+}
+
+#[test]
+fn reads_the_console_of_an_owned_tab_of_the_named_session_only() {
+    use super::commands::console_tab;
+    use super::reason::OTHER_SESSION;
+    let app = app_with_windows(&["main", "win-2"]);
+    let id = open(&app, "main", "harborline");
+    let main = webview(&app, "main");
+    assert!(console_tab(&main, &console_args(&id, "harborline")).is_ok());
+    assert!(matches!(
+        console_tab(&main, &console_args(&id, "northwind")),
+        Err(MessageError::Refused(code)) if code == OTHER_SESSION
+    ));
+    assert!(matches!(
+        console_tab(&webview(&app, "win-2"), &console_args(&id, "harborline")),
+        Err(MessageError::Refused(code)) if code == OTHER_WINDOW
+    ));
+    let page = app.get_webview(&label_of(&id)).expect("child webview");
+    assert!(matches!(
+        console_tab(&page, &console_args(&id, "harborline")),
+        Err(MessageError::Refused(code)) if code == BROWSER_CALLER
+    ));
+}
+
+#[test]
+fn refuses_to_read_the_console_of_a_closed_or_gone_tab() {
+    use super::commands::console_tab;
+    let app = app_with_windows(&["main"]);
+    let id = open(&app, "main", "harborline");
+    hide_tab(app.handle(), &id, 100).expect("hides");
+    sweep(app.handle(), 100 + SLEEP_LIMIT_MS);
+    let main = webview(&app, "main");
+    assert!(matches!(
+        console_tab(&main, &console_args(&id, "harborline")),
+        Err(MessageError::Failed(code)) if code == TAB_CLOSED
+    ));
+    close_tab(app.handle(), &id).expect("closes");
+    assert!(matches!(
+        console_tab(&main, &console_args(&id, "harborline")),
+        Err(MessageError::Failed(code)) if code == TAB_GONE
+    ));
+}
+
+#[test]
+fn builds_every_tab_with_one_document_start_script() {
+    let host = include_str!("host.rs");
+    assert_eq!(host.matches("initialization_script").count(), 1);
+    assert!(host.contains(".initialization_script_for_all_frames(console::tab_script())"));
+    assert!(!host.contains("WATCH_SCRIPT"));
+    let elsewhere = production_hits(
+        &["initialization_script", "WATCH_SCRIPT"],
+        &[
+            "browser/host.rs",
+            "browser/console.rs",
+            "browser/passkey.rs",
+        ],
+    );
+    assert!(elsewhere.is_empty(), "{elsewhere:?}");
 }

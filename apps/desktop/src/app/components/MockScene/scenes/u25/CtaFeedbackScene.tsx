@@ -22,6 +22,7 @@ const controlsOf = ({ variant }: ControlsParams): ActionControls => ({
   actions: [],
   inSlot: () => [],
   pendingId: variant === 'pending' ? PUSH_ID : null,
+  pendingSeconds: null,
   confirming: null,
   failure:
     variant === 'failed'

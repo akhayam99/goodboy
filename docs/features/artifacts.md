@@ -54,7 +54,7 @@ While an agent still writes an artifact, its page says so in one sentence, with 
 
 ### Files on disk
 
-Open any artifact as a folder, in your browser or your file manager. The folder is rewritten on each revision and follows renames.
+Open any artifact as a folder, in your browser or your file manager. A plan or a report opens in a tab beside the session when Links says In Goodboy, and in your browser on a ⌘-click. A wireframe always opens in your browser. The folder is rewritten on each revision and follows renames.
 
 ### Create a wireframe
 

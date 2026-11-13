@@ -203,7 +203,7 @@ beforeEach(() => {
 describe('story: two migrated shells fuse into one workspace board', () => {
   it('adopts both known projects on attach and shows all nine sessions on one board', async () => {
     const acme = await useAppStore.getState().createWorkspace({ name: 'Acme' });
-    await useAppStore.getState().setCurrentWorkspace(acme.id);
+    await useAppStore.getState().setCurrentWorkspace({ id: acme.id });
     expect(useAppStore.getState().sessions).toHaveLength(0);
 
     const first = await useAppStore
@@ -253,7 +253,7 @@ describe('story: two migrated shells fuse into one workspace board', () => {
 describe('story: adopting into the open workspace keeps live work', () => {
   it('keeps a running turn in the open workspace when a shell is merged into it', async () => {
     const acme = await useAppStore.getState().createWorkspace({ name: 'Acme' });
-    await useAppStore.getState().setCurrentWorkspace(acme.id);
+    await useAppStore.getState().setCurrentWorkspace({ id: acme.id });
     const running = aSession({
       workspaceId: acme.id,
       state: { kind: 'running', runId: nextProviderRunId(), startedAt: TEST_NOW },
@@ -274,7 +274,7 @@ describe('story: adopting into the open workspace keeps live work', () => {
 
   it('drops a reload that a workspace switch overtook', async () => {
     const acme = await useAppStore.getState().createWorkspace({ name: 'Acme' });
-    await useAppStore.getState().setCurrentWorkspace(acme.id);
+    await useAppStore.getState().setCurrentWorkspace({ id: acme.id });
     const listed = vi.mocked(dbMock.listSessionsForWorkspace).getMockImplementation();
     vi.mocked(dbMock.listSessionsForWorkspace).mockImplementationOnce(async (db, workspaceId) => {
       switchEpoch.value += 1;
@@ -290,7 +290,7 @@ describe('story: adopting into the open workspace keeps live work', () => {
 
   it('refuses a merge with the number of agents running in the source', async () => {
     const acme = await useAppStore.getState().createWorkspace({ name: 'Acme' });
-    await useAppStore.getState().setCurrentWorkspace(acme.id);
+    await useAppStore.getState().setCurrentWorkspace({ id: acme.id });
     vi.mocked(dbMock.countRunningAdoptionAgents).mockResolvedValueOnce(2);
     vi.mocked(dbMock.mergeWorkspaces).mockClear();
 

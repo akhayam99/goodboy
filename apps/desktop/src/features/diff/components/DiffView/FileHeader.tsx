@@ -30,11 +30,14 @@ type Props = {
   readonly onOpenInEditor: (() => void) | null;
   readonly onShowWhole: (() => void) | null;
   readonly onCommentOnFile: (() => void) | null;
+  readonly isCompact?: boolean;
 };
 
 const STALE_TIP = 'Changed since you viewed it';
 
 const FILE_HEADER_PX = 44;
+
+const COMPACT_FILE_HEADER_PX = 32;
 
 export const FileHeader = ({
   file,
@@ -46,6 +49,7 @@ export const FileHeader = ({
   onOpenInEditor,
   onShowWhole,
   onCommentOnFile,
+  isCompact = false,
 }: Props) => {
   const { dir, name } = splitPath(file.path);
   const tone = tintClasses(STATUS_TONE[file.status]);
@@ -63,10 +67,10 @@ export const FileHeader = ({
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       className={cn(
-        'sticky-surface-subtle sticky top-0 z-10 flex min-w-0 items-center gap-2 pl-1 pr-2 font-sans',
+        'sticky-surface-subtle sticky top-0 z-10 flex min-w-0 items-center gap-2 pl-1 pr-2',
         isCollapsed ? 'rounded-lg' : 'rounded-t-lg',
       )}
-      style={{ height: FILE_HEADER_PX }}
+      style={{ height: isCompact ? COMPACT_FILE_HEADER_PX : FILE_HEADER_PX }}
     >
       <button
         type="button"
@@ -137,17 +141,19 @@ export const FileHeader = ({
           </Button>
         </Tooltip>
       )}
-      <ObjectMenuOrVerb
-        target={target}
-        menu={
-          <IconButton
-            icon={CONCEPT_ICONS.more}
-            label={`More for ${name}`}
-            aria-haspopup="menu"
-            onClick={menu.onContextMenu}
-          />
-        }
-      />
+      {isCompact ? null : (
+        <ObjectMenuOrVerb
+          target={target}
+          menu={
+            <IconButton
+              icon={CONCEPT_ICONS.more}
+              label={`More for ${name}`}
+              aria-haspopup="menu"
+              onClick={menu.onContextMenu}
+            />
+          }
+        />
+      )}
     </div>
   );
 };

@@ -14,6 +14,7 @@ export type BootPhase =
 
 export type BootState = {
   readonly hydrated: boolean;
+  readonly isShellReady: boolean;
   readonly bootPhase: BootPhase;
   readonly bootFailedPhase: BootPhase | null;
   readonly newerDatabase: NewerDatabase | null;
@@ -26,6 +27,7 @@ export type BootState = {
 
 export const bootInitialState: BootState = {
   hydrated: false,
+  isShellReady: false,
   bootPhase: 'pending',
   bootFailedPhase: null,
   newerDatabase: null,

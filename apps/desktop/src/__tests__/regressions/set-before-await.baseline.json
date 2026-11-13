@@ -12,7 +12,6 @@
   "apps/desktop/src/store/slices/ask/stopAskReply.ts": 1,
   "apps/desktop/src/store/slices/backup/exportActions.ts": 1,
   "apps/desktop/src/store/slices/backup/importActions.ts": 1,
-  "apps/desktop/src/store/slices/boot/hydrate.ts": 1,
   "apps/desktop/src/store/slices/branch-cleanup/loadProjectBranches.ts": 1,
   "apps/desktop/src/store/slices/budget/refreshProviderBudgetStatus.ts": 1,
   "apps/desktop/src/store/slices/changelog/loadChangelogDates.ts": 1,

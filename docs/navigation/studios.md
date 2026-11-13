@@ -14,7 +14,7 @@ never changes for a studio: it stays live in both sidebar states, so another
 door or a session row is one click away, and ⌘B and the sidebar toggle fold it
 on every page (`shellArrangement` takes no studio). **Settings is a page with
 its own scopes rail**: the 40px band holds `‹ Back to app` (with its Esc hint)
-and the crumb (`StudioTrail`), and below it `SettingsScopesLayout` draws a
+and no crumb, since the scopes rail already shows where you are, and below it `SettingsScopesLayout` draws a
 `StudioRailLayout` named Settings scopes (`placement="page"` beside the column,
 `chrome` on Home) with the fold control and `Search settings` in its first row,
 the groups or the matching settings under it, and the page as the detail
@@ -74,7 +74,7 @@ in `studioMeta.ts`).
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not
-  add the 12px a bare page adds; a bandless page sits on the 12px header inset
+  add the 8px a bare page adds; a bandless page sits on the 8px header inset
   (`frameGeometryOf`), like a session page. The provider wraps the body whether
   or not the band is drawn, only its value changes: a trail that claims the
   band must not remount the page that drew it (Tasks Open lost its record
@@ -326,8 +326,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
 - **Providers names its scope in the page header.** Every page of
   the scope (Models and each provider) carries the scope as the meta line of
   its title: the workspace name when one is open, `All workspaces` when there
-  is none (`ProviderSettingsScope` passes `scopeLabel`). The legacy trail
-  reads `Workspace` and `Providers` without a name, so the name
+  is none (`ProviderSettingsScope` passes `scopeLabel`). The name
   appears once per page.
 - **Workspace settings is one page per area, each part in a card.** A
   workspace page carries the page title and one line of
@@ -562,7 +561,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   one verb and the result follows the record (`startFromRecord`): an issue or
   an error opens the New session draft with the issue picked and its brief
   being written; a pull request waiting on you starts a PR reviewer and lands
-  on the Pull request tab; a Slack thread, a merge request, a Bitbucket pull
+  on the Overview tab; a Slack thread, a merge request, a Bitbucket pull
   request or a pull request of yours opens a popover with the goal and the
   brief. Enter from the Tasks list does the same, or opens the linked session.
 - **Every record body has one order.** Under the header, facts sit as pills in

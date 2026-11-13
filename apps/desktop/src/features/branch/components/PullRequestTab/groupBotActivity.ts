@@ -1,7 +1,8 @@
 import { isBotLogin } from '@goodboy/core/review-source';
 import type { PrComment } from '@goodboy/types';
 import type { ThreadEntry } from '../../../resolve/commentGroupsView';
-import type { ActivityItem } from './activityOf';
+import type { ActivityItem } from '../../../../shared/components/PullRequestActivity/activityItem';
+import { botCommentCountOf } from './botCommentCountOf';
 import { botKeyOf } from './botKeyOf';
 import { botWordOf } from './botWordOf';
 
@@ -44,19 +45,28 @@ export const groupBotActivity = ({
       comments,
       entries,
     });
+    const notes = items.flatMap((other, position) =>
+      keys[position] === key && other.kind === 'review' && other.text !== '' ? [other.text] : [],
+    );
     return [
       {
         kind: 'bot',
         key: `bot:${key}`,
         at: item.at,
         who: item.who,
+        avatarUrl: item.avatarUrl ?? null,
         word: said.word,
         tone: said.tone,
-        notes: items.flatMap((other, position) =>
-          keys[position] === key && other.kind === 'review' && other.text !== ''
-            ? [other.text]
-            : [],
-        ),
+        count: botCommentCountOf({
+          login: item.who,
+          comments,
+          reviews: items.flatMap((other) =>
+            other.kind === 'review'
+              ? [{ author: other.who, state: other.verdict, body: other.text }]
+              : [],
+          ),
+        }),
+        notes,
       },
     ];
   });

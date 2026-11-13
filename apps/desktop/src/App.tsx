@@ -4,7 +4,7 @@ import { NeedsYouAnnouncementBridge } from './app/components/NeedsYouAnnouncemen
 import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { BootSplash } from './app/components/BootSplash';
+import { AppBootSplash } from './app/components/BootSplash/AppBootSplash';
 import { BootSplashExit } from './app/components/BootSplash/BootSplashExit';
 import { MainRegion } from './app/components/MainRegion';
 import { AppTopBar } from './app/components/AppTopBar';
@@ -68,21 +68,14 @@ const KEEP_ALIVE_CAP = 5;
 
 export const App = () => {
   const hydrate = useAppStore((s) => s.hydrate);
-  const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
+  const isShellShown = useAppStore((s) => s.isShellReady && s.bootPhase !== 'error');
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
-  const bootPhase = useAppStore((s) => s.bootPhase);
-  const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
-  const error = useAppStore((s) => s.error);
-  const newerDatabase = useAppStore((s) => s.newerDatabase);
-  const restoreNewerDatabaseBackup = useAppStore((s) => s.restoreNewerDatabaseBackup);
-  const quitApp = useAppStore((s) => s.quitApp);
-  const [splashStage, setSplashStage] = useState<'running' | 'leaving' | 'gone'>('running');
-  const finishSplash = useCallback(() => setSplashStage('leaving'), []);
-  const removeSplash = useCallback(() => setSplashStage('gone'), []);
+  const [isSplashGone, setIsSplashGone] = useState(false);
+  const removeSplash = useCallback(() => setIsSplashGone(true), []);
   const currentWorkspace = useCurrentWorkspace();
   const currentWorkspaceId = currentWorkspace?.id ?? null;
   const workspaceProjectRoot = useAppStore((s) =>
@@ -212,22 +205,11 @@ export const App = () => {
   const deferredRenderedIds = useDeferredValue(renderedSessionIds);
   const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
-  if (!hydrated || splashStage === 'running') {
-    return (
-      <BootSplash
-        phase={bootPhase}
-        failedPhase={bootFailedPhase}
-        error={error}
-        newerDatabase={newerDatabase}
-        onRetry={retryHydrate}
-        onRestoreBackup={restoreNewerDatabaseBackup}
-        onQuit={() => void quitApp()}
-        onFinished={finishSplash}
-      />
-    );
+  if (!isShellShown) {
+    return <AppBootSplash />;
   }
 
-  const splashExit = splashStage === 'leaving' ? <BootSplashExit onDone={removeSplash} /> : null;
+  const splashExit = isSplashGone ? null : <BootSplashExit onDone={removeSplash} />;
 
   if (isWorkspaceLauncherBranch) {
     return (

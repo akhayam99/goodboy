@@ -8,7 +8,7 @@ import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { useAppStore, useSessionById, type InboxStudioFocus } from '../../../../store';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
@@ -21,7 +21,7 @@ import { useInboxLinkedSessions } from '../../useInboxLinkedSessions';
 import { orderInboxRecords } from '../../orderInboxRecords';
 import { isForMeRecord } from '../../isForMeRecord';
 import { shownTaskRecords } from '../../shownTaskRecords';
-import { openCountWord } from '../../openCountWord';
+import { TasksCountChip } from './TasksCountChip';
 import { taskGroupTotalsOf } from '../../taskGroupTotalsOf';
 import { sourceFailureOf } from '../../sourceFailureOf';
 import { taskGroupsOf, type TaskGroup } from '../../taskGroups';
@@ -383,7 +383,7 @@ export const InboxStudio = ({
     if (url === '') {
       return;
     }
-    void openUrl(url);
+    openLink({ url });
   }, []);
 
   const activeCursorKeyRef = useRef(activeCursorKey);
@@ -489,8 +489,8 @@ export const InboxStudio = ({
       page="inbox"
       scroll="body"
       title={NAMES.tasks}
-      meta={openCountWord({ records: inScope, newKeys })}
-      actions={
+      badge={<TasksCountChip records={inScope} newKeys={newKeys} />}
+      toolbar={
         <InboxListHeader
           query={query}
           onQueryChange={setQuery}

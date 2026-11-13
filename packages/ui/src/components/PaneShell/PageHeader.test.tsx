@@ -22,13 +22,14 @@ const headerOf = (title: string): HTMLElement => {
 };
 
 describe('PageHeader', () => {
-  it('owns the 12px top inset and the 32px title row of every page', () => {
+  it('owns the 8px top inset and the 32px title row of every page', () => {
     render(<PageHeader page="board" title="Sessions" />);
 
     const header = headerOf('Sessions');
-    expect(PANE_RHYTHM.headerInset).toBe('pt-3');
+    expect(PANE_RHYTHM.headerInset).toBe('pt-2');
     expect(PANE_RHYTHM.headerRow).toBe('h-8');
-    expect(header.className.split(' ')).toContain('pt-3');
+    expect(header.className.split(' ')).toContain('pt-2');
+    expect(header.className.split(' ')).toContain('pb-2');
     expect(header.getAttribute('data-page')).toBe('board');
     expect(header.querySelector('[data-slot="pane-title-row"]')?.className).toContain('h-8');
   });
@@ -47,7 +48,7 @@ describe('PageHeader', () => {
       </UnderTrailContext.Provider>,
     );
 
-    expect(headerOf('Terminal').className.split(' ')).not.toContain('pt-3');
+    expect(headerOf('Terminal').className.split(' ')).not.toContain('pt-2');
   });
 
   it('ends the title row with the Close the frame hands down', () => {
@@ -75,5 +76,25 @@ describe('PageHeader', () => {
     );
     const body = screen.getByText('Body copy');
     expect(body.closest('[data-page-column]')).not.toBeNull();
+  });
+
+  it('puts a badge beside the title and a toolbar row of 36 under it with no meta line', () => {
+    render(
+      <PageHeader
+        page="inbox"
+        title="Tasks"
+        badge={<span>12 open</span>}
+        toolbar={<button type="button">Filter</button>}
+      />,
+    );
+
+    const header = headerOf('Tasks');
+    const row = header.querySelector('[data-slot="pane-title-row"]');
+    const toolbar = header.querySelector('[data-slot="pane-toolbar"]');
+    expect(row?.contains(screen.getByText('12 open'))).toBe(true);
+    expect(toolbar?.className.split(' ')).toContain('h-9');
+    expect(toolbar?.contains(screen.getByRole('button', { name: 'Filter' }))).toBe(true);
+    expect(header.querySelector('[data-slot="pane-meta"]')).toBeNull();
+    expect(header.firstElementChild?.className.split(' ')).toContain('gap-0');
   });
 });

@@ -1,23 +1,49 @@
 import type { ReactNode } from 'react';
+import { cn } from '../../cn';
+import { PANE_RHYTHM } from '../../paneRhythm';
 
 type Props = {
   readonly title: ReactNode;
+  readonly badge?: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
+  readonly rowTestId?: string;
+  readonly titleTestId?: string;
 };
 
-export const PaneTitleRow = ({ title, meta, actions }: Props) => (
-  <div data-slot="pane-title-block" className="flex min-w-0 flex-col gap-1">
-    <div data-slot="pane-title-row" className="flex h-8 min-w-0 items-center justify-between gap-3">
-      <h1 className="min-w-0 flex-1 truncate text-title text-foreground">{title}</h1>
+export const PaneTitleRow = ({ title, badge, meta, actions, rowTestId, titleTestId }: Props) => (
+  <div data-slot="pane-title-block" className="flex min-w-0 flex-col">
+    <div
+      data-slot="pane-title-row"
+      data-testid={rowTestId}
+      className={cn('flex min-w-0 items-center justify-between gap-3', PANE_RHYTHM.headerRow)}
+    >
+      {badge != null ? (
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <h1 data-testid={titleTestId} className="min-w-0 truncate text-title text-foreground">
+            {title}
+          </h1>
+          {badge}
+        </div>
+      ) : (
+        <h1
+          data-testid={titleTestId}
+          className="min-w-0 flex-1 truncate text-title text-foreground"
+        >
+          {title}
+        </h1>
+      )}
       {actions != null ? (
         <div className="flex shrink-0 items-center justify-end gap-2">{actions}</div>
       ) : null}
     </div>
     {meta != null && meta !== '' ? (
-      <p data-slot="pane-meta" className="min-w-0 truncate text-meta text-muted-foreground">
+      <div
+        data-slot="pane-meta"
+        className={cn('min-w-0 truncate text-meta text-muted-foreground', PANE_RHYTHM.headerMeta)}
+      >
         {meta}
-      </p>
+      </div>
     ) : null}
   </div>
 );

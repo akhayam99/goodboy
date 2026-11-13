@@ -82,9 +82,7 @@ describe('the checks scenes', () => {
     draw({ name: 'branch-checks-no-pr' });
 
     const rail = within(await screen.findByRole('tablist', { name: 'Branch pages' }));
-    expect(rail.getByRole('tab', { name: /^Pull request/ }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
+    expect(rail.getByRole('tab', { name: /^Overview/ }).getAttribute('aria-selected')).toBe('true');
     expect(rail.queryByRole('tab', { name: /^Checks/ })).toBeNull();
   });
 

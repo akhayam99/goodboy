@@ -1,8 +1,9 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Check, CircleCheck } from 'lucide-react';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
-import { Chip, ICON_SIZE, Markdown, SectionHeader, Tooltip, FOCUS_RING, cn } from '@goodboy/ui';
+import { Chip, ICON_SIZE, SectionHeader, Tooltip, FOCUS_RING, cn } from '@goodboy/ui';
 import { useThreadQuestion } from '../../hooks/useThreadQuestion';
+import { CommentBody } from '../../../../shared/components/CommentBody';
 import { CommentComposer } from '../../../../shared/components/CommentComposer';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -241,7 +242,7 @@ export const ReviewComment = ({
     >
       {hunk}
 
-      <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
+      <div className="min-w-0">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
@@ -368,15 +369,11 @@ export const ReviewComment = ({
                   'motion-safe:transition-colors',
                 )}
               >
-                <Markdown text={reply} variant="preview" className="text-body text-foreground" />
+                <CommentBody body={reply} />
               </button>
             </Tooltip>
           ) : reply.trim() === '' ? null : (
-            <Markdown
-              text={row.delivery?.replyBody ?? reply}
-              variant="preview"
-              className="text-body text-foreground"
-            />
+            <CommentBody body={row.delivery?.replyBody ?? reply} />
           )}
         </div>
       )}

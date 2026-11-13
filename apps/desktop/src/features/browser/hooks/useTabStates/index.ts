@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
-import { listenTabState } from '../../listenTabState';
+import { useCallback, useState } from 'react';
 import type { BrowserTabFacts, BrowserTabState } from '../../types';
 
 type ReconcileParams = {
@@ -28,24 +27,6 @@ export const useTabStates = (): TabStatesModel => {
       return next;
     });
   }, []);
-
-  useEffect(() => {
-    let isLive = true;
-    let unlisten: (() => void) | null = null;
-    void listenTabState({
-      onState: ({ facts: told }) => reconcile({ facts: [told] }),
-    }).then((stop) => {
-      if (!isLive) {
-        stop();
-        return;
-      }
-      unlisten = stop;
-    });
-    return () => {
-      isLive = false;
-      unlisten?.();
-    };
-  }, [reconcile]);
 
   return { states, reconcile };
 };

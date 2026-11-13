@@ -23,7 +23,7 @@ import {
 } from '@goodboy/core/review-source';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
-import { openUrl } from '../../../shared/lib/editor';
+import { openWebAction } from '../openWebAction';
 import { branchPlace, fixRunTranscript } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { diffThreadIdOf } from '../../diff/lib/threadIds';
@@ -296,7 +296,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'open',
       when: ({ facts }) => facts.url !== null,
       slot: () => 'menu',
-      run: ({ facts }) => (facts.url === null ? undefined : openUrl(facts.url)),
+      run: ({ facts, env }) => openWebAction({ url: facts.url, env, sessionId: facts.sessionId }),
     },
     {
       id: 'reviewComment.replyAndResolve',
@@ -433,12 +433,12 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         facts.elsewhereSha !== null &&
         commitUrlOf({ prUrl: facts.prUrl, sha: facts.elsewhereSha }) !== null,
       slot: () => 'secondary',
-      run: ({ facts }) => {
+      run: ({ facts, env }) => {
         const url =
           facts.elsewhereSha === null
             ? null
             : commitUrlOf({ prUrl: facts.prUrl, sha: facts.elsewhereSha });
-        return url === null ? undefined : openUrl(url);
+        return openWebAction({ url, env, sessionId: facts.sessionId });
       },
     },
     {

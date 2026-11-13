@@ -1,10 +1,13 @@
 import type { Session, SessionStageInfo } from '@goodboy/types';
-import { areStageInputsSame } from './areStageInputsSame';
-import { stageInfoInputsOf } from './stageInfoInputsOf';
+import { countPerf } from '../../../shared/lib/countPerf';
+import { PERF_COUNT_NAMES } from '../../../shared/lib/perfCountNames';
+import { areStageReadsCurrent } from './areStageReadsCurrent';
+import { isSameStageInfo } from './isSameStageInfo';
+import { recordStageReads, type StageReads } from './recordStageReads';
 import { stageInfoOf, type StageInfoState } from './stageInfoOf';
 
 type Derivation = {
-  readonly inputs: Readonly<Record<string, unknown>>;
+  readonly reads: StageReads | null;
   readonly info: SessionStageInfo;
 };
 
@@ -16,12 +19,27 @@ type Params = {
 };
 
 export const cachedStageInfoOf = ({ state, session }: Params): SessionStageInfo => {
-  const inputs = stageInfoInputsOf({ state });
   const known = derivations.get(session);
-  if (known !== undefined && areStageInputsSame({ first: known.inputs, second: inputs })) {
+  if (
+    known !== undefined &&
+    known.reads !== null &&
+    areStageReadsCurrent({ reads: known.reads, state })
+  ) {
     return known.info;
   }
-  const info = stageInfoOf(state, session);
-  derivations.set(session, { inputs, info });
+  countPerf({ name: PERF_COUNT_NAMES.stageDerivations });
+  countPerf({
+    name: PERF_COUNT_NAMES.agentsScanned,
+    amount: state.sessionPhaseRuns[session.id]?.length ?? 0,
+  });
+  const { value, reads } = recordStageReads({
+    state,
+    derive: ({ view }) => stageInfoOf(view, session),
+  });
+  const info =
+    known !== undefined && isSameStageInfo({ first: known.info, second: value })
+      ? known.info
+      : value;
+  derivations.set(session, { reads, info });
   return info;
 };

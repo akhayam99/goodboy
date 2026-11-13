@@ -2,7 +2,11 @@ import type { PrCheckRun, PullRequestReviewer, PullRequestState } from '@goodboy
 import type { Tone } from '@goodboy/ui';
 import type { PullRequestPresentationState } from '../../../../../shared/utils/pullRequestPresentation';
 import { countNoun } from '../../../../../shared/utils/countNoun';
-import { checksCountsOf, checksGroupsOf } from '../../../../integrations/github/checksRollup';
+import {
+  checksCountsOf,
+  checksGroupsOf,
+  checksSummaryOf,
+} from '../../../../integrations/github/checksRollup';
 import type { MergeReadinessFacts, PrMergeReadiness } from '../../../../review/prMergeReadiness';
 import { mergeIsClear } from '../../../../review/prMergeReadiness';
 import type { BranchDueStep } from '../../../branchStepOf';
@@ -145,13 +149,8 @@ const checksPart = ({ runs, isChecksUnread, checks }: ChecksParams): Part => {
       },
     });
   }
-  return counts.passed > 0
-    ? passOnly({
-        pass: countNoun({ count: counts.passed, one: 'check passed', many: 'checks passed' }),
-      })
-    : passOnly({
-        pass: countNoun({ count: counts.skipped, one: 'check skipped', many: 'checks skipped' }),
-      });
+  const summary = checksSummaryOf({ runs });
+  return summary === null ? NOTHING : passOnly({ pass: summary.line });
 };
 
 type LoginsParams = {
@@ -379,7 +378,16 @@ type StepsParams = {
 };
 
 const stepsLineOf = ({ steps, facts }: StepsParams): string | null => {
-  const texts = steps.slice(0, 2).map((step) => verdictStepTextOf({ step, facts }));
+  const [first, second] = steps.slice(0, 2).map((step) => verdictStepTextOf({ step, facts }));
+  const repeated = ' the comments';
+  const isRepeated =
+    first !== undefined &&
+    second !== undefined &&
+    first.endsWith(repeated) &&
+    second.endsWith(repeated);
+  const texts = [first, isRepeated ? `${second.slice(0, -repeated.length)} them` : second].filter(
+    (text) => text !== undefined,
+  );
   if (texts.length === 0) {
     return null;
   }

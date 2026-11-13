@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SquareArrowOutUpRight } from 'lucide-react';
 import { Button, Disclosure, ICON_SIZE } from '@goodboy/ui';
 
-import { openUrl } from '../../../../shared/lib/editor';
+import { openLink } from '../../../open/openLink';
 import { givenOf } from '../../checks/givenOf';
 import { Fact } from './Fact';
 
@@ -47,7 +47,7 @@ export const GivenFacts = ({ text }: Props) => {
                       variant="ghost"
                       size="sm"
                       aria-label={`Open check run for ${check.name}`}
-                      onClick={() => void openUrl(check.url ?? '')}
+                      onClick={(event) => openLink({ url: check.url ?? '', event })}
                     >
                       Open check run
                       <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />

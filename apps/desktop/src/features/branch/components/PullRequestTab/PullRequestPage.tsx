@@ -18,6 +18,7 @@ import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pu
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
+import { checksSummaryOf } from '../../../integrations/github/checksRollup';
 import type { BranchDueStep } from '../../branchStepOf';
 import { usePullRequestPort } from '../../hooks/usePullRequestPort';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
@@ -29,7 +30,7 @@ import type { ThreadEntry } from '../../../resolve/commentGroupsView';
 import { pullRequestActivityOf } from './activityOf';
 import { MergeBox } from './MergeBox';
 import { mergeBoxOf, type PullRequestBranchFacts } from './MergeBox/mergeBoxOf';
-import { PullRequestActivity } from './PullRequestActivity';
+import { PullRequestActivity } from '../../../../shared/components/PullRequestActivity/PullRequestActivity';
 import { PullRequestActivitySkeleton } from './PullRequestActivitySkeleton';
 import { PullRequestDescription } from './PullRequestDescription';
 import { PullRequestProperties } from './PullRequestProperties';
@@ -85,6 +86,7 @@ export const PullRequestPage = ({
   const port = usePullRequestPort({ sessionId, mountId });
   const { readiness, commentsUnread, facts, reviewers } = prReadiness;
   const runs = pullRequestRunsOf({ pr, detail, view });
+  const checks = useMemo(() => checksSummaryOf({ runs }), [runs]);
   const matched = detail !== null && detail.prNumber === pr.number ? detail : null;
   const comments = matched?.comments ?? null;
   const hostCounts = useMemo(
@@ -145,85 +147,80 @@ export const PullRequestPage = ({
   const nouns = port?.nouns ?? PULL_REQUEST_NOUNS[host];
 
   return (
-    <div data-slot="overview-grid" className="@container flex min-w-0 flex-col gap-6">
-      <MergeBox
-        box={box}
-        onOpen={(target) => {
-          if (target === 'reviewers') {
-            window.dispatchEvent(
-              new Event(pullRequestEventName({ name: PR_REQUEST_REVIEW_EVENT, sessionId })),
-            );
-            return;
-          }
-          onSelectTab(target);
-        }}
-      />
+    <div
+      data-slot="overview-grid"
+      className="@container grid min-w-0 grid-cols-1 gap-8 @[880px]:grid-cols-[minmax(0,1fr)_17.5rem]"
+    >
+      <div className="order-2 min-w-0 @[880px]:col-start-2 @[880px]:row-start-1">
+        <PullRequestProperties
+          sessionId={sessionId}
+          mountId={mountId}
+          pr={pr}
+          view={view}
+          port={port}
+          request={request}
+          reviewers={reviewers}
+          checks={checks}
+          comments={comments}
+          reviews={matched?.reviews ?? []}
+          isLoaded={matched !== null || view !== null}
+          canEdit={canEdit}
+          onMutated={onMutated}
+        />
+      </div>
       <div
-        data-slot="page-columns"
-        className="grid min-w-0 grid-cols-1 gap-8 @[880px]:grid-cols-[minmax(0,1fr)_224px]"
+        data-slot="reading-column"
+        className="order-1 flex min-w-0 flex-col gap-6 @[880px]:col-start-1 @[880px]:row-start-1 @[880px]:max-w-170"
       >
-        <div className="order-1 min-w-0 @[880px]:order-2">
-          <PullRequestProperties
-            sessionId={sessionId}
-            mountId={mountId}
-            pr={pr}
-            view={view}
-            port={port}
-            request={request}
-            reviewers={reviewers}
-            comments={comments}
-            entries={entries}
-            isLoaded={matched !== null || view !== null}
-            canEdit={canEdit}
-            onMutated={onMutated}
-          />
-        </div>
-        <div
-          data-slot="reading-column"
-          className="order-2 flex min-w-0 max-w-prose flex-col gap-8 @[880px]:order-1"
-        >
-          <PullRequestDescription
-            sessionId={sessionId}
-            workspaceId={session.workspaceId}
-            pr={pr}
-            canEdit={canEdit}
-            hostName={REVIEW_SOURCE_LABEL[host]}
-            onSaved={onMutated}
-          />
-          {view === null && viewError !== null ? (
-            <ViewErrorNotice
-              host={host}
-              kind={viewErrorKind}
-              error={viewError}
-              onReload={onReload}
-            />
-          ) : (
-            <SkeletonSwap
-              gateKey={`pr-activity:${sessionId}:${pr.number}`}
-              isLoaded={view !== null}
-              skeleton={<PullRequestActivitySkeleton label={ACTIVITY_LOADING} />}
-            >
-              {view === null ? null : (
-                <PullRequestActivity
-                  items={items}
-                  nouns={nouns}
-                  baseBranch={pr.baseBranch}
-                  onOpenComments={() => onSelectTab('comments')}
-                  onOpenChecks={() => onSelectTab('checks')}
-                  chosen={viewEntry?.activityFilter ?? 'all'}
-                  onChoose={(next) =>
-                    setActivityFilter({
-                      sessionId,
-                      prNumber: pr.number,
-                      mountId: viewEntry?.mountId ?? null,
-                      filter: next,
-                    })
-                  }
-                />
-              )}
-            </SkeletonSwap>
-          )}
-        </div>
+        <MergeBox
+          box={box}
+          onOpen={(target) => {
+            if (target === 'reviewers') {
+              window.dispatchEvent(
+                new Event(pullRequestEventName({ name: PR_REQUEST_REVIEW_EVENT, sessionId })),
+              );
+              return;
+            }
+            onSelectTab(target);
+          }}
+        />
+        <PullRequestDescription
+          sessionId={sessionId}
+          workspaceId={session.workspaceId}
+          pr={pr}
+          canEdit={canEdit}
+          hostName={REVIEW_SOURCE_LABEL[host]}
+          openedAt={view?.createdAt ?? null}
+          onSaved={onMutated}
+        />
+        {view === null && viewError !== null ? (
+          <ViewErrorNotice host={host} kind={viewErrorKind} error={viewError} onReload={onReload} />
+        ) : (
+          <SkeletonSwap
+            gateKey={`pr-activity:${sessionId}:${pr.number}`}
+            isLoaded={view !== null}
+            skeleton={<PullRequestActivitySkeleton label={ACTIVITY_LOADING} />}
+          >
+            {view === null ? null : (
+              <PullRequestActivity
+                items={items}
+                nouns={nouns}
+                baseBranch={pr.baseBranch}
+                onOpenComments={() => onSelectTab('comments')}
+                onOpenChecks={() => onSelectTab('checks')}
+                chosen={viewEntry?.activityFilter ?? 'all'}
+                onChoose={(next) =>
+                  setActivityFilter({
+                    sessionId,
+                    prNumber: pr.number,
+                    mountId: viewEntry?.mountId ?? null,
+                    filter: next,
+                  })
+                }
+              />
+            )}
+          </SkeletonSwap>
+        )}
       </div>
     </div>
   );

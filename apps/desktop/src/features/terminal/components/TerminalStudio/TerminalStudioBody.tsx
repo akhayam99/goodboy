@@ -7,7 +7,6 @@ import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { pickerRowCount } from '../../pickerRowCount';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import { TerminalDetail } from './TerminalDetail';
-import { TerminalPageHeader } from './TerminalPageHeader';
 import { TerminalRail } from './TerminalRail';
 
 type Props = {
@@ -41,8 +40,12 @@ export const TerminalStudioBody = ({ model, isActive }: Props) => {
     model.newTab();
   };
   return (
-    <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-      <TerminalPageHeader selected={model.selected} />
+    <div
+      role="region"
+      aria-label="Terminal"
+      onKeyDown={handleKeyDown}
+      className="flex h-full min-h-0 min-w-0 flex-1 flex-col"
+    >
       <StudioRailLayout
         railLabel="Terminals"
         railWidth="standard"

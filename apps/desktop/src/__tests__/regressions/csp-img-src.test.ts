@@ -33,6 +33,10 @@ describe('the app content security policy', () => {
     expect(directive({ csp: readCsp(), name: 'img-src' })).toEqual(["'self'", 'data:', 'blob:']);
   });
 
+  it('admits blob urls for media and nothing else', () => {
+    expect(directive({ csp: readCsp(), name: 'media-src' })).toEqual(['blob:']);
+  });
+
   it('leaves the other directives closed', () => {
     const csp = readCsp();
     expect(directive({ csp, name: 'default-src' })).toEqual(["'self'"]);

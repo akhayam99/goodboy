@@ -341,6 +341,7 @@ const bootEmpty = async (): Promise<Ctx> => {
     hydrate: async () => undefined,
     checkForUpdates: async () => undefined,
     hydrated: true,
+    isShellReady: true,
     bootPhase: 'ready',
   });
   await hydrateOnboardingFromDb();
@@ -429,6 +430,7 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
     hydrate: async () => undefined,
     checkForUpdates: async () => undefined,
     hydrated: true,
+    isShellReady: true,
     bootPhase: 'ready',
   });
   traceActions();
@@ -632,7 +634,7 @@ export const pane = (name: PaneName) => async (ctx: Ctx) => {
 type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
-  pr: /^Pull request/,
+  pr: /^Overview/,
   comments: /^Comments/,
   files: /^Changes/,
   commits: /^Commits/,

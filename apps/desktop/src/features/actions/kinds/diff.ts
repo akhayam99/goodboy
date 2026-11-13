@@ -11,7 +11,7 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { dirtyTreeSentence } from '../../../shared/lib/dirtyTreeCopy';
-import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
+import { openFolderAction } from '../openFolderAction';
 import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
@@ -94,11 +94,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     icon: FileCode,
     group: 'open',
     when: () => true,
-    run: ({ facts, env }) => {
-      if (facts.worktreePath !== null) {
-        void openInConfiguredEditor({ path: facts.worktreePath, state: env.getState() });
-      }
-    },
+    run: ({ facts }) => openFolderAction({ path: facts.worktreePath, sessionId: facts.sessionId }),
   },
   {
     id: 'diff.rebase',

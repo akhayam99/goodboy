@@ -83,12 +83,34 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+let idleCallbacks: Array<() => void> = [];
+
+const runIdleCallbacks = async (): Promise<void> => {
+  while (idleCallbacks.length > 0) {
+    const pending = idleCallbacks;
+    idleCallbacks = [];
+    for (const callback of pending) {
+      callback();
+    }
+    for (let tick = 0; tick < 100; tick += 1) {
+      await Promise.resolve();
+    }
+  }
+};
+
 beforeEach(async () => {
   await resetStoryStore();
+  idleCallbacks = [];
+  vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+    idleCallbacks.push(callback);
+    return idleCallbacks.length;
+  });
 });
 
-afterEach(() => {
+afterEach(async () => {
+  await runIdleCallbacks();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 type Deferred = {
@@ -182,6 +204,58 @@ describe('hydrate order of repairs', () => {
     await useAppStore.getState().hydrate();
 
     expect(isReadyWhenGhostsStop).toBe(false);
+    expect(isReadyWhenOrphansRepair).toBeNull();
+    await runIdleCallbacks();
     expect(isReadyWhenOrphansRepair).toBe(true);
+  });
+});
+
+describe('hydrate after ready', () => {
+  it('leaves the hygiene and the background loads for idle time after the app shows', async () => {
+    const { runDbHygiene } = await import('../../../shared/lib/dbBoot');
+    const started: Array<string> = [];
+    useAppStore.setState({
+      loadEndedWork: async () => {
+        started.push('ended-work');
+      },
+      reconcileOrphanWorktrees: async () => {
+        started.push('orphan-worktrees');
+      },
+      loadProviderLimits: async () => {
+        started.push('provider-limits');
+      },
+      probeProviderLimits: async () => {
+        started.push('provider-probe');
+      },
+    });
+
+    await useAppStore.getState().hydrate();
+
+    expect(useAppStore.getState().hydrated).toBe(true);
+    expect(started).toEqual([]);
+    expect(runDbHygiene).not.toHaveBeenCalled();
+    await runIdleCallbacks();
+    expect(started).toEqual([
+      'ended-work',
+      'orphan-worktrees',
+      'provider-limits',
+      'provider-probe',
+    ]);
+    expect(runDbHygiene).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the app open when the idle hygiene fails and says so', async () => {
+    const { runDbHygiene } = await import('../../../shared/lib/dbBoot');
+    vi.mocked(runDbHygiene).mockRejectedValueOnce(new Error('database busy'));
+
+    await useAppStore.getState().hydrate();
+    await runIdleCallbacks();
+
+    expect(useAppStore.getState().bootPhase).toBe('ready');
+    expect(useAppStore.getState().error).toBeNull();
+    expect(storySpies.insertNotification).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ title: "Couldn't tidy the database after launch" }),
+    );
   });
 });

@@ -244,6 +244,7 @@ pub(crate) fn open_connection(path: &std::path::Path) -> Result<Connection, DbEr
     conn.execute_batch(&format!(
         "PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = {BUSY_TIMEOUT_MS};"
     ))?;
+    crate::turn_live::define(&conn)?;
     restrict_data_files(path)?;
     Ok(conn)
 }

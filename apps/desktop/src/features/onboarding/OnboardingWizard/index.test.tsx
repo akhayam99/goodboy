@@ -400,7 +400,7 @@ describe('OnboardingWizard', () => {
       click(/^continue$/i);
       click(/create workspace/i);
       await waitFor(() => expect(stepOf()).toBe('first-session'));
-      expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith(WORKSPACE.id);
+      expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith({ id: WORKSPACE.id });
     });
 
     it('hands the failure of making the workspace current to the form, to draw in its action row', async () => {

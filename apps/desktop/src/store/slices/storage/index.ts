@@ -6,7 +6,7 @@ import { loadStorage } from './loadStorage';
 import { loadStorageArtifacts } from './loadStorageArtifacts';
 import { cancelOtherTools, loadOtherTools } from './loadOtherTools';
 import { measureStorageSizes } from './measureStorageSizes';
-import { openStorageArtifact } from './openStorageArtifact';
+import { markStorageArtifactOpened } from './markStorageArtifactOpened';
 import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
 import { removeStorageFolders } from './removeStorageFolders';
 import { scanStorageRepository } from './scanStorageRepository';
@@ -25,7 +25,7 @@ export const createStorageSlice = ({ set, get }: SliceDeps) => {
     keepStorageFolder: keepStorageFolder(set, get),
     keepStorageArtifact: keepStorageArtifact(set, get),
     deleteStorageArtifacts: deleteStorageArtifacts(set, get),
-    openStorageArtifact: openStorageArtifact(set, get),
+    markStorageArtifactOpened: markStorageArtifactOpened({ set, get }),
     scanStorageRepository: scanStorageRepository(set, get),
     checkStorageNudge: checkStorageNudge(set, get),
     loadOtherTools: loadOtherTools(set, get),

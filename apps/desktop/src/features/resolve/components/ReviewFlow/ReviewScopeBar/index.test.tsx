@@ -39,6 +39,40 @@ describe('ReviewScopeBar', () => {
     expect(container.querySelector('[data-slot="review-scope-bar"]')).toBeNull();
   });
 
+  it('keeps the fix run on the same 36 row as Open and Resolved', () => {
+    const { container } = render(
+      <ReviewScopeBar
+        scope="branch"
+        onScope={vi.fn()}
+        state="open"
+        onState={vi.fn()}
+        counts={COUNTS}
+        stateCounts={{ open: 2, resolved: 1, needYou: 0 }}
+        hostLabel="GitHub"
+        trailing={<span data-testid="run">Fixing 2 comments</span>}
+      />,
+    );
+    const bar = container.querySelector('[data-slot="review-scope-bar"]');
+    expect(bar?.querySelector('[data-testid="run"]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-slot="review-scope-bar"]')).toHaveLength(1);
+  });
+
+  it('shows the bar for a run alone, with no thread yet', () => {
+    const { container } = render(
+      <ReviewScopeBar
+        scope="branch"
+        onScope={vi.fn()}
+        state="open"
+        onState={vi.fn()}
+        counts={COUNTS}
+        stateCounts={{ open: 0, resolved: 0, needYou: 0 }}
+        hostLabel="GitHub"
+        trailing={<span>Fixing</span>}
+      />,
+    );
+    expect(container.querySelector('[data-slot="review-scope-bar"]')).not.toBeNull();
+  });
+
   it('warms the Open count when a thread needs you', () => {
     const { container } = renderBar({ open: 5, resolved: 12, needYou: 2 });
     expect(container.textContent).toContain('Open5');

@@ -35,7 +35,7 @@ export const DescriptionFold = ({ children }: Props) => {
         onFocus={() => setIsOpen(true)}
         className={cn(
           'min-w-0',
-          !isOpen && 'max-h-30 overflow-hidden',
+          !isOpen && 'max-h-80 overflow-hidden',
           !isOpen && isOverflowing && 'mask-b-from-50%',
         )}
       >
@@ -49,7 +49,7 @@ export const DescriptionFold = ({ children }: Props) => {
           className="w-fit"
           onClick={() => setIsOpen((wasOpen) => !wasOpen)}
         >
-          {isOpen ? 'Show less' : 'Show all'}
+          {isOpen ? 'Show less' : 'Show the full description'}
         </Button>
       ) : null}
     </div>

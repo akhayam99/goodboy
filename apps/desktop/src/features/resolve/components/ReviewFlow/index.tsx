@@ -46,12 +46,12 @@ import { isPushFailure } from '../../reviewCommentState';
 import { bulkRunOf } from './bulkRun';
 import { AnswersPanel } from './AnswersPanel';
 import { FixRunGroupHeader } from './FixRunGroupHeader';
-import { FixRunSection } from './FixRunSection';
 import { useDropHandledSelection } from './useDropHandledSelection';
 import { useFixRunGroups } from './useFixRunGroups';
 import { BulkUndoBar } from './BulkUndoBar';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
-import { ReviewScopeBar, type CommentScope, type CommentState } from './ReviewScopeBar';
+import type { CommentScope, CommentState } from './ReviewScopeBar';
+import { ReviewToolbar } from './ReviewToolbar';
 import { useBulkQuestions } from './useBulkQuestions';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewList } from './ReviewList';
@@ -113,9 +113,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   } = useReviewEntries({ sessionId, scope: 'branch', mountId });
   const [pickedScope, setScope] = useState<CommentScope>('branch');
   const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
-  const [pickedState, setCommentState] = useState<CommentState>('open');
+  const [commentState, setCommentState] = useState<CommentState>('open');
   const stateCounts = useMemo(() => stateCountsInScopeOf({ entries, scope }), [entries, scope]);
-  const commentState: CommentState = pickedState;
   const allGroups = useMemo(
     () => groupsInViewOf({ groups: branchGroups, scope, state: commentState }),
     [branchGroups, commentState, scope],
@@ -626,6 +625,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       : createPortal(
           <ReviewCommentDrawer
             sessionId={sessionId}
+            mountId={mountId}
             entry={opened}
             entries={entries}
             push={push}
@@ -663,7 +663,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
             body={acceptError}
           />
         )}
-        <ReviewScopeBar
+        <ReviewToolbar
+          sessionId={sessionId}
           scope={scope}
           onScope={setScope}
           state={commentState}
@@ -671,17 +672,12 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           counts={counts}
           stateCounts={stateCounts}
           hostLabel={provider}
+          run={run}
+          lane={lane}
+          bulkRun={bulkRun}
+          isChecksShown={!isRunLive && fixRunReady === null}
+          onOpenAnswers={openAnswers}
         />
-        {run === null ? null : (
-          <FixRunSection
-            sessionId={sessionId}
-            run={run}
-            lane={lane}
-            bulkRun={bulkRun}
-            isChecksShown={!isRunLive && fixRunReady === null}
-            onOpenAnswers={openAnswers}
-          />
-        )}
         {body()}
       </PageColumn>
       {drawer}

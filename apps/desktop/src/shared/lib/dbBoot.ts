@@ -2,6 +2,7 @@ import { removeSessionQuestionsFromSlots } from '@goodboy/core/context';
 import { seedMissingBuiltinWorkflows } from '@goodboy/core/workflows';
 import {
   DatabaseFromNewerBuildError,
+  deleteOrphanedWorkflowAgents,
   pickRestorableSnapshot,
   runDatabaseHygiene,
 } from '@goodboy/db';
@@ -76,15 +77,23 @@ export const restoreMigrationSnapshot = async ({
 export const runDbMigrations = async (): Promise<MigrateResult> => {
   const databasePath = await invokeDb<string>('db_path', {});
   const result = await runGuardedMigrations({ databasePath });
+  const orphaned = await deleteOrphanedWorkflowAgents({ db: tauriDatabase, now: Date.now() });
+  await removeSessionQuestionsFromSlots({
+    db: tauriDatabase,
+    questions: orphaned.removedQuestions,
+  }).catch(() => undefined);
+  await seedMissingBuiltinWorkflows({ db: tauriDatabase }).catch(() => undefined);
+  return result;
+};
+
+export const runDbHygiene = async (): Promise<void> => {
   const hygiene = await runDatabaseHygiene({ db: tauriDatabase, now: Date.now() });
   await removeSessionQuestionsFromSlots({
     db: tauriDatabase,
     questions: hygiene.orphanedWorkflowQuestions,
-  }).catch(() => undefined);
-  await seedMissingBuiltinWorkflows({ db: tauriDatabase }).catch(() => undefined);
+  });
   await invokeDb('attachment_cleanup_orphans', {});
   await invokeDb('chat_attachments_prune', {}).catch(() => undefined);
-  return result;
 };
 
 export const wipeDb = async (): Promise<MigrateResult> => {

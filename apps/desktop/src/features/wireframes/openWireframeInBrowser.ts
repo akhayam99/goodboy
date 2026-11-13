@@ -1,7 +1,6 @@
 import type { WireframeArtifact } from '@goodboy/types';
-import { artifactFolderName } from '../artifacts/artifactFolderName';
-import { openArtifactMirror } from '../artifacts/artifactMirror/artifactMirrorInvoke';
 import { mirrorArtifacts } from '../artifacts/artifactMirror/artifactMirrorQueue';
+import { openSavedCopy } from '../open/openSavedCopy';
 import { screenPagePath, WIREFRAME_INDEX_PAGE } from './wireframePagePath';
 
 type Params = {
@@ -19,9 +18,5 @@ export const openWireframeInBrowser = async ({
   screenId,
 }: Params): Promise<void> => {
   await mirrorArtifacts({ items: [{ artifact, workspaceSlug }] });
-  await openArtifactMirror({
-    workspaceSlug,
-    folder: artifactFolderName({ artifact }),
-    file: wireframeBrowserFile({ screenId }),
-  });
+  await openSavedCopy({ artifact, workspaceSlug, file: wireframeBrowserFile({ screenId }) });
 };

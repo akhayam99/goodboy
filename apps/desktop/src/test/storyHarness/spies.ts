@@ -157,6 +157,7 @@ const storyInvokeHandlers = {
   browser_session_tab_rows_delete: 0,
   browser_stale_tab_sessions: [],
   browser_tab_rows_list: [],
+  browser_workspace_tab_rows_list: [],
   browser_visits_list: [],
   get_workspace_overrides: null,
   get_session_overrides: null,
@@ -202,6 +203,7 @@ const storyInvokeHandlers = {
   workspace_script_snapshot: { data: '', offset: 0, exitCode: null },
   terminal_snapshot: { data: '', offset: 0, exitCode: null },
   turn_list_live: [],
+  turn_launch_id: 'launch-story',
   worktree_list_registered: ({ worktreePaths }: ListRegisteredArgs) =>
     worktreePaths.map((path) => ({
       kind: 'registered',
@@ -487,10 +489,7 @@ export const storySpies = {
     async (_args: { readonly repoPath: string }): Promise<string | null> => null,
   ),
   worktreeGitDirectory: vi.fn(async (_args: WorktreeBaseArgs): Promise<string | null> => null),
-  worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => ({
-    files: [],
-    numstat: '',
-  })),
+  worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => ({ files: [], numstat: '' })),
   listBranchCommits: vi.fn(
     async (
       _worktreePath: string,

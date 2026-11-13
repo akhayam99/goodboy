@@ -6,7 +6,6 @@ import {
   formatError,
   ICON_SIZE,
   Notice,
-  SectionHeader,
   SegmentedTabs,
   Textarea,
   useEscapeLayer,
@@ -16,6 +15,7 @@ import type { PullRequestState, SessionId, WorkspaceId } from '@goodboy/types';
 import { isInteractiveClick } from '../../../../shared/utils/isInteractiveClick';
 import { useAppStore } from '../../../../store';
 import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';
+import { DescriptionAuthorRow } from './DescriptionAuthorRow';
 import { embedImageUrl } from './embedImageUrl';
 import { DescriptionFold } from './DescriptionFold';
 import { RenderedBody } from './RenderedBody';
@@ -28,6 +28,7 @@ type Props = {
   readonly pr: PullRequestState;
   readonly canEdit: boolean;
   readonly hostName: string;
+  readonly openedAt: string | null;
   readonly onSaved: () => void;
 };
 
@@ -44,6 +45,7 @@ export const PullRequestDescription = ({
   pr,
   canEdit,
   hostName,
+  openedAt,
   onSaved,
 }: Props) => {
   const editPr = useAppStore((state) => state.editPr);
@@ -149,7 +151,7 @@ export const PullRequestDescription = ({
 
   const hasBody = pr.body.trim() !== '';
   const action = (
-    <span className="flex items-center gap-2">
+    <>
       {isSaved && (
         <span role="status" className="text-meta text-muted-foreground">
           Saved to {hostName}
@@ -161,12 +163,16 @@ export const PullRequestDescription = ({
           Edit
         </Button>
       )}
-    </span>
+    </>
   );
 
   return (
-    <section aria-label={DESCRIPTION} className="flex min-w-0 flex-col gap-3">
-      <SectionHeader label={DESCRIPTION} headingLevel={2} action={action} />
+    <section
+      aria-label={DESCRIPTION}
+      data-slot="description-card"
+      className="flex min-w-0 flex-col gap-3 rounded-lg border border-border-soft bg-background p-4"
+    >
+      <DescriptionAuthorRow author={pr.author} openedAt={openedAt} action={action} />
       {isEditing ? (
         <div className="flex min-w-0 flex-col gap-3">
           <SegmentedTabs<EditorView>
