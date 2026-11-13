@@ -12223,6 +12223,14 @@
       "count": 2
     }
   },
+  "packages/db/src/queries/agent-summary.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 14
+    },
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 7
+    }
+  },
   "packages/db/src/queries/agent-turn-span.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 17
@@ -12255,11 +12263,8 @@
     }
   },
   "packages/db/src/queries/agent.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 19
-    },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 8
+      "count": 1
     }
   },
   "packages/db/src/queries/artifact-orphan.test.ts": {

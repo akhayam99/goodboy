@@ -5,4 +5,6 @@ export const BOOT_BUDGETS = {
   listProjectsCallsPerWorkspace: 1,
   fixedWaitAfterReadyMs: 0,
   storeCommitsBeforeIdle: 47,
+  summaryTextsPerUnopenedSessionAtLaunch: 1,
+  jsonColumnsParsedPerUnopenedSessionAtLaunch: 0,
 } as const;

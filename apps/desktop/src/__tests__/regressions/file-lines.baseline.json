@@ -60,7 +60,7 @@
   "apps/desktop/src/store/slices/artifacts/artifactScoutRun.ts": 852,
   "apps/desktop/src/store/slices/turn/turnHelpers.ts": 1097,
   "apps/desktop/src/store/slices/workflows/clusterImplementation.ts": 613,
-  "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": 958,
+  "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": 954,
   "apps/desktop/src/store/slices/workflows/scoutTree.ts": 659,
   "packages/core/src/artifacts/wireframe/validateWireframeDocument.ts": 1928,
   "packages/core/src/context/marker-parsing.ts": 1187,

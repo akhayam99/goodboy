@@ -178,6 +178,8 @@ export const storyDbStubs = () => ({
   insertTurnEvent: vi.fn(async () => undefined),
   insertTurnEventsBatch: vi.fn(async () => undefined),
   listAgentsForSessions: vi.fn(async () => new Map()),
+  listAgentSummariesForSessions: vi.fn(async () => []),
+  listAgentOutputSummaries: vi.fn(async () => []),
   listAgentRunIdsForSession: vi.fn(async () => new Map()),
   listAgentTurnSpanRoutes: vi.fn(async () => []),
   listTurnFileSets: vi.fn(async () => []),

@@ -1,56 +1,22 @@
 import type {
   Agent,
   AgentId,
-  AgentSourceKind,
-  AgentStatus,
-  IsoDateTime,
   EffortLevel,
   ProviderId,
-  ProviderRunId,
   SessionId,
-  StepId,
   VerbosityLevel,
-  WorkflowRunId,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
   WorkflowTaskProfile,
 } from '@goodboy/types';
-import { isAgentStoppedBy } from '@goodboy/types';
 import type { Database, PlainStatement } from '../client';
 import { legacyAgentRoutingDecision, parseWorkflowRouting } from './workflowRoutingCodec';
 import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
-import { mountIdOf } from './session-worktree';
+import { toAgentSummary, type AgentSummaryRow } from './agent-summary';
 
-type AgentRow = {
-  id: string;
-  session_id: string;
-  step_id: string | null;
-  workflow_run_id: string | null;
-  parent_agent_id: string | null;
-  ordinal: number;
-  name: string;
-  status: string;
-  provider_run_id: string | null;
+type AgentRow = AgentSummaryRow & {
   output_summary: string | null;
-  started_at: number | null;
-  provider_session_id: string | null;
-  provider_session_provider_id: string | null;
-  last_finished_at: number | null;
-  last_viewed_at: number | null;
-  done_at: number | null;
-  stopped_at: number | null;
-  stopped_by: string | null;
-  deleted_at: number | null;
-  verbosity: string | null;
-  effort: string | null;
-  model_override: string | null;
-  provider_override: string | null;
-  kind: string | null;
-  source_thread_id: string | null;
   source_thread_ids: string | null;
-  source_comment_url: string | null;
-  source_kind: string | null;
-  mount_id: string | null;
   domains_json: string | null;
   routing_lock: string | null;
   routing_decision: string | null;
@@ -94,52 +60,9 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
         })
       : null);
   return {
-    id: row.id as AgentId,
-    sessionId: row.session_id as SessionId,
-    ...(row.step_id != null && { stepId: row.step_id as StepId }),
-    ...(row.workflow_run_id != null && { workflowRunId: row.workflow_run_id as WorkflowRunId }),
-    ...(row.parent_agent_id != null && { parentAgentId: row.parent_agent_id as AgentId }),
-    ordinal: row.ordinal,
-    name: row.name,
-    status: row.status as AgentStatus,
-    ...(row.provider_run_id && { runId: row.provider_run_id as ProviderRunId }),
+    ...toAgentSummary({ row }),
     ...(row.output_summary && { outputSummary: row.output_summary }),
-    ...(row.started_at != null && {
-      startedAt: new Date(row.started_at).toISOString() as IsoDateTime,
-    }),
-    ...(row.provider_session_id && { providerSessionId: row.provider_session_id }),
-    ...(row.provider_session_provider_id != null && {
-      providerSessionProviderId: row.provider_session_provider_id as ProviderId,
-    }),
-    ...(row.last_finished_at != null && {
-      completedAt: new Date(row.last_finished_at).toISOString() as IsoDateTime,
-      lastFinishedAt: new Date(row.last_finished_at).toISOString() as IsoDateTime,
-    }),
-    ...(row.last_viewed_at != null && {
-      lastViewedAt: new Date(row.last_viewed_at).toISOString() as IsoDateTime,
-    }),
-    ...(row.done_at != null && {
-      doneAt: new Date(row.done_at).toISOString() as IsoDateTime,
-    }),
-    ...(row.stopped_at != null && {
-      stoppedAt: new Date(row.stopped_at).toISOString() as IsoDateTime,
-    }),
-    ...(isAgentStoppedBy(row.stopped_by) && { stoppedBy: row.stopped_by }),
-    ...(row.deleted_at != null && {
-      deletedAt: new Date(row.deleted_at).toISOString() as IsoDateTime,
-    }),
-    ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
-    ...(row.effort && {
-      effort: row.effort as EffortLevel,
-    }),
-    ...(row.model_override && { modelOverride: row.model_override }),
-    ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
-    ...(row.kind && { kind: row.kind }),
-    ...(row.source_thread_id != null && { sourceThreadId: row.source_thread_id }),
     ...(sourceThreadIds.length > 0 && { sourceThreadIds }),
-    ...(row.source_comment_url != null && { sourceCommentUrl: row.source_comment_url }),
-    ...(row.source_kind != null && { sourceKind: row.source_kind as AgentSourceKind }),
-    ...(row.mount_id != null && { mountId: mountIdOf({ value: row.mount_id }) }),
     ...(domains.length > 0 && { domains }),
     routingLock: routing.routingLock,
     routingDecision,

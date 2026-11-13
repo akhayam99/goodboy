@@ -523,6 +523,22 @@ baseline names `config_export/apply.rs`.
   the launcher at `ready`. `hydrated` still means the launch is done: the
   window layout save, the onboarding decision, the artifact mirror and the
   port signal wait for it.
+- **What launch loads of the agents.** `loadLaunchAgents`
+  (`store/slices/workspaces/loadLaunchAgents.ts`) reads a light row for every
+  agent of the workspace (`listAgentSummariesForSessions` in
+  `packages/db/src/queries/agent-summary.ts`): id, status, kind, parent, run,
+  step, timestamps and the other plain columns, with no summary text and no
+  JSON column (domains, thread ids, routing). A session with live work (an
+  agent pending, running, blocked or stopped by the restart, as
+  `needsFullAgentRows` decides) gets its full rows at launch. Every other
+  session is marked in `lightAgentSessions` and carries the summary text of
+  its newest unread agent only, the one the sidebar label shows
+  (`BOOT_BUDGETS.summaryTextsPerUnopenedSessionAtLaunch`). Opening the session
+  replaces the light rows with full rows (`openSessionAgents`); a turn, a
+  workflow advance and an orchestration step load them first
+  (`ensureFullAgents`). The stage, the "needs you" reasons and the unread
+  label read only light fields, so they are the same before and after the
+  open (`store.sqlite-light-agents.test.ts`).
 - **After ready, on idle.** `runEachOnIdle` starts one task per idle slot
   (`waitForIdle`): ended work, orphan worktrees, provider limits and their
   probe, the audit retry drain, stale browser tabs, then `runDbHygiene`

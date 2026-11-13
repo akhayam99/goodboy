@@ -22,6 +22,7 @@ import { waitForSessionSummarizer } from './summarizerGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
+import { ensureFullAgents } from '../agents/ensureFullAgents';
 
 const advanceInFlight = new Set<SessionId>();
 
@@ -246,6 +247,7 @@ export const maybeAutoAdvanceWorkflow = (set: SetFn, get: GetFn) => {
     }
     advanceInFlight.add(sessionId);
     try {
+      await ensureFullAgents({ set, get, sessionId });
       await runAdvance({ set, get, sessionId });
     } catch (error) {
       console.error('workflow auto-advance failed', error);

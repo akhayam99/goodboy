@@ -13,7 +13,6 @@ import type {
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
-  listAgentsForSessions,
   listExternalTasksForWorkspace,
   listProjectsForWorkspace,
   listSessionsForWorkspace,
@@ -64,6 +63,7 @@ import { loadWorkspaceFacts, type WorkspaceFacts } from './loadWorkspaceFacts';
 import { workspaceFactsPatchOf } from './workspaceFactsPatchOf';
 import { switchEpoch } from './switchEpoch';
 import type { LaunchReads } from './launchReads';
+import { loadLaunchAgents } from './loadLaunchAgents';
 import type { GetFn, SetFn } from './types';
 
 type RepairedDestination = {
@@ -94,6 +94,7 @@ type WorkspaceSnapshot = MountRecords & {
   readonly sessions: ReadonlyArray<Session>;
   readonly worktreesBySession: ReadonlyMap<SessionId, ReadonlyArray<SessionWorktree>>;
   readonly sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
+  readonly lightAgentSessions: Readonly<Record<SessionId, true>>;
   readonly waitingTurns: Record<string, TurnState>;
   readonly kindOverridesFromDb: Record<string, AgentKind>;
   readonly sessionExternalTasks: Record<string, SessionExternalTask[]>;
@@ -323,9 +324,9 @@ const loadWorkspaceSnapshot = async ({
     now: recoveryNow,
   });
   const sessionIds = sessions.map((s) => s.id);
-  const [worktreesBySession, agentsBySession, externalTasks] = await Promise.all([
+  const [worktreesBySession, launchAgents, externalTasks] = await Promise.all([
     listWorktreesForSessions(tauriDatabase, sessionIds),
-    listAgentsForSessions(tauriDatabase, sessionIds),
+    loadLaunchAgents({ sessionIds }),
     listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
   ]);
   if (!isCurrent()) {
@@ -352,7 +353,9 @@ const loadWorkspaceSnapshot = async ({
     writeHydration({ records, sessionId: s.id, hydration });
     hydratedSessions.push(sessionAfterHydration({ session: s, hydration }));
     const reconciled = await Promise.all(
-      (agentsBySession.get(s.id) ?? []).map((agent) => reconcileLoadedAgent({ agent, liveRunIds })),
+      (launchAgents.agentsBySession.get(s.id) ?? []).map((agent) =>
+        reconcileLoadedAgent({ agent, liveRunIds }),
+      ),
     );
     const runs = reconciled.map(({ agent }) => agent);
     for (const { agent, waiting } of reconciled) {
@@ -393,6 +396,7 @@ const loadWorkspaceSnapshot = async ({
     worktreesBySession,
     ...records,
     sessionPhaseRuns,
+    lightAgentSessions: launchAgents.lightAgentSessions,
     waitingTurns,
     kindOverridesFromDb,
     sessionExternalTasks,
@@ -445,6 +449,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        lightAgentSessions,
         waitingTurns,
         kindOverridesFromDb,
         sessionExternalTasks,
@@ -470,6 +475,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        lightAgentSessions,
         agentTurnState: waitingTurns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks,

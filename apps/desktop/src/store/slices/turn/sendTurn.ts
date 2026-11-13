@@ -12,6 +12,7 @@ import { claimWorkflowTurn } from './workflowTurnBreaker';
 import { resetMountContinuationChain } from './mountContinuations';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { prepareTurn } from './prepareTurn';
+import { ensureFullAgents } from '../agents/ensureFullAgents';
 import { routeTurn } from './routeTurn';
 import { leaseTurnWriter } from './leaseTurnWriter';
 import { releaseTurnWriteSet } from './releaseTurnWriteSet';
@@ -54,6 +55,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
   const runOnce = async ({ input: given, lease }: RunOnceParams): Promise<SendTurnResult> => {
     const input = handDelivery.withId({ input: given });
     await workspaceVerification.settled();
+    await ensureFullAgents({ set, get, sessionId: input.sessionId });
     const prepared = await prepareTurn({ set, get, input });
     if (prepared.isDone) {
       return prepared.result;

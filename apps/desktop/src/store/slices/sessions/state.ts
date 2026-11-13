@@ -25,6 +25,8 @@ export type SessionsState = {
   readonly workspaceSummary: TelemetrySummary | null;
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
+  readonly lightAgentSessions: Readonly<Record<SessionId, true>>;
+  readonly sessionAgentsError: Readonly<Record<SessionId, string>>;
 };
 
 export const sessionsInitialState: SessionsState = {
@@ -36,4 +38,6 @@ export const sessionsInitialState: SessionsState = {
   workspaceSummary: null,
   sessionTelemetry: {},
   sessionLoading: {},
+  lightAgentSessions: {},
+  sessionAgentsError: {},
 };

@@ -38,6 +38,8 @@ vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     getSetting: vi.fn(async () => null),
     listAgentsForSessions: vi.fn(async () => new Map()),
+    listAgentSummariesForSessions: vi.fn(async () => []),
+    listAgentOutputSummaries: vi.fn(async () => []),
     listDecidedNudgeEventsForSessions: vi.fn(async () => []),
     listOpenQuestionsForSessions: vi.fn(async () => []),
     listExternalTasksForWorkspace: vi.fn(async () => []),
@@ -86,6 +88,7 @@ vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { verifyWorkspaceWorktrees } from '../project-mounts/verify/verifyWorkspaceWorktrees';
 import {
+  listAgentSummariesForSessions,
   listAgentsForSessions,
   listOpenQuestionsForSessions,
   listSessionsForWorkspace,
@@ -297,6 +300,7 @@ describe('setCurrentWorkspace run recovery', () => {
     const asking = anAgent({ sessionId: RESTORED_SESSION_ID, status: 'running', runId: RUN_ID });
     const waiting: TurnState = { kind: 'blocked', runId: RUN_ID, blockedAt: NOW };
     h.sessions = [session({ id: RESTORED_SESSION_ID })];
+    vi.mocked(listAgentSummariesForSessions).mockResolvedValueOnce([asking]);
     vi.mocked(listAgentsForSessions).mockResolvedValueOnce(
       new Map([[RESTORED_SESSION_ID, [asking]]]),
     );
