@@ -353,6 +353,8 @@ export const NON_SESSION_STATE_KEYS = [
   'slackThreads',
   'retainedWorktreePaths',
   'prWriteClaims',
+  'actionRuns',
+  'actionRunSurfaces',
   'issueBriefs',
   'workspaceDurationHistory',
   'scribeWork',

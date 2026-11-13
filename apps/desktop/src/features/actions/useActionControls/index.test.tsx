@@ -239,7 +239,9 @@ describe('useActionControls feedback', () => {
 
     act(() => result.current.trigger({ actionId: REOPEN }));
     await waitFor(() => expect(result.current.outcome?.message).toBe('Reopened #319.'));
-    expect(reopenPr).toHaveBeenNthCalledWith(2, SESSION_B.id, LATER_NUMBER, {});
+    expect(reopenPr).toHaveBeenNthCalledWith(2, SESSION_B.id, LATER_NUMBER, {
+      hasFailureSurface: expect.any(Function),
+    });
 
     await act(async () => oldGate.resolve());
     expect(result.current.outcome?.message).toBe('Reopened #319.');
@@ -260,5 +262,180 @@ describe('useActionControls feedback', () => {
 
     expect(result.current.failure).toBeNull();
     expect(result.current.outcome).toBeNull();
+  });
+});
+
+type SurfacesParams = {
+  readonly sessionId: SessionId;
+};
+
+const useTwoSurfaces = ({ sessionId }: SurfacesParams) => ({
+  header: useControls({ sessionId, scopeKey: `${sessionId}:header` }),
+  page: useControls({ sessionId, scopeKey: `${sessionId}:page` }),
+});
+
+const useTwoPullRequests = () => ({
+  first: useControls({ sessionId: SESSION_A.id, scopeKey: SESSION_A.id }),
+  second: useControls({ sessionId: SESSION_B.id, scopeKey: SESSION_B.id }),
+});
+
+describe('useActionControls on one shared run per target', () => {
+  it('shows one busy mark on every surface of a pull request and ignores the second press', async () => {
+    const gate = deferred();
+    const reopenPr = mockReopen(() => gate.promise);
+    const { result } = renderHook(() => useTwoSurfaces({ sessionId: SESSION_A.id }), {
+      wrapper: Wrapper,
+    });
+
+    act(() => result.current.header.trigger({ actionId: REOPEN }));
+    expect(result.current.page.pendingId).toBe(REOPEN);
+    act(() => result.current.page.trigger({ actionId: REOPEN }));
+    expect(reopenPr).toHaveBeenCalledTimes(1);
+
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(result.current.page.outcome?.message).toBe('Reopened #318.'));
+    expect(result.current.header.outcome?.message).toBe('Reopened #318.');
+    expect(result.current.page.pendingId).toBeNull();
+  });
+
+  it('keeps two pull requests apart: one pending never holds the other', async () => {
+    const gate = deferred();
+    const reopenPr = mockReopen(() => gate.promise);
+    const { result } = renderHook(useTwoPullRequests, { wrapper: Wrapper });
+
+    act(() => result.current.first.trigger({ actionId: REOPEN }));
+    reopenPr.mockImplementationOnce(async () => undefined);
+    act(() => result.current.second.trigger({ actionId: REOPEN }));
+
+    await waitFor(() => expect(result.current.second.outcome?.message).toBe('Reopened #319.'));
+    expect(result.current.first.pendingId).toBe(REOPEN);
+    expect(result.current.first.outcome).toBeNull();
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(result.current.first.outcome?.message).toBe('Reopened #318.'));
+  });
+
+  it('keeps a failure on every surface until one of them retries it', async () => {
+    const reopenPr = mockReopen(async () => {
+      throw new Error('GitHub said no');
+    });
+    const { result } = renderHook(() => useTwoSurfaces({ sessionId: SESSION_A.id }), {
+      wrapper: Wrapper,
+    });
+
+    act(() => result.current.header.trigger({ actionId: REOPEN }));
+    await waitFor(() => expect(result.current.page.failure?.message).toBe('GitHub said no'));
+
+    reopenPr.mockImplementationOnce(async () => undefined);
+    act(() => result.current.page.retry());
+    await waitFor(() => expect(result.current.header.outcome?.message).toBe('Reopened #318.'));
+    expect(result.current.header.failure).toBeNull();
+  });
+
+  it('never clears a pending run on dismiss', async () => {
+    const gate = deferred();
+    mockReopen(() => gate.promise);
+    const { result } = renderHook(() => useTwoSurfaces({ sessionId: SESSION_A.id }), {
+      wrapper: Wrapper,
+    });
+
+    act(() => result.current.header.trigger({ actionId: REOPEN }));
+    act(() => result.current.page.dismissOutcome());
+    act(() => result.current.page.dismissFailure());
+
+    expect(result.current.header.pendingId).toBe(REOPEN);
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(result.current.header.outcome?.message).toBe('Reopened #318.'));
+  });
+
+  it('still shows the result when the surface that started it is gone', async () => {
+    const gate = deferred();
+    mockReopen(() => gate.promise);
+    const first = renderHook(
+      () => useControls({ sessionId: SESSION_A.id, scopeKey: SESSION_A.id }),
+      { wrapper: Wrapper },
+    );
+    act(() => first.result.current.trigger({ actionId: REOPEN }));
+    first.unmount();
+
+    const second = renderHook(
+      () => useControls({ sessionId: SESSION_A.id, scopeKey: SESSION_A.id }),
+      { wrapper: Wrapper },
+    );
+    expect(second.result.current.pendingId).toBe(REOPEN);
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(second.result.current.outcome?.message).toBe('Reopened #318.'));
+  });
+
+  it('forgets a settled run once every surface is gone', async () => {
+    mockReopen(async () => undefined);
+    const first = renderHook(
+      () => useControls({ sessionId: SESSION_A.id, scopeKey: SESSION_A.id }),
+      { wrapper: Wrapper },
+    );
+    act(() => first.result.current.trigger({ actionId: REOPEN }));
+    await waitFor(() => expect(first.result.current.outcome?.message).toBe('Reopened #318.'));
+    first.unmount();
+    expect(store.getState().actionRuns).toEqual({});
+
+    const second = renderHook(
+      () => useControls({ sessionId: SESSION_A.id, scopeKey: SESSION_A.id }),
+      { wrapper: Wrapper },
+    );
+    expect(second.result.current.outcome).toBeNull();
+    expect(second.result.current.failure).toBeNull();
+  });
+
+  it('forgets a failure when the last surface leaves', async () => {
+    mockReopen(async () => {
+      throw new Error('GitHub said no');
+    });
+    const { result, unmount } = renderHook(() => useTwoSurfaces({ sessionId: SESSION_A.id }), {
+      wrapper: Wrapper,
+    });
+    act(() => result.current.header.trigger({ actionId: REOPEN }));
+    await waitFor(() => expect(result.current.page.failure?.message).toBe('GitHub said no'));
+
+    unmount();
+
+    expect(store.getState().actionRuns).toEqual({});
+    expect(store.getState().actionRunSurfaces).toEqual({});
+  });
+});
+
+const CLOSE = 'pullRequest.close';
+const CONVERT = 'pullRequest.convertToDraft';
+
+describe('useActionControls confirm on a shared run', () => {
+  it('keeps the confirm panel open when another surface started a run in between', async () => {
+    store.setState({
+      sessionGithub: {
+        [SESSION_A.id]: {
+          ...githubOf({ projectId: PROJECT.id, number: PR.number }),
+          pr: { ...PR, state: 'open' },
+        },
+      },
+    });
+    const gate = deferred();
+    const convertPrToDraft = vi.fn<StoreState['convertPrToDraft']>(() => gate.promise);
+    const closePr = vi.fn<StoreState['closePr']>(async () => undefined);
+    store.setState({ convertPrToDraft, closePr });
+    const { result } = renderHook(() => useTwoSurfaces({ sessionId: SESSION_A.id }), {
+      wrapper: Wrapper,
+    });
+
+    act(() => result.current.header.trigger({ actionId: CLOSE }));
+    expect(result.current.header.confirming?.id).toBe(CLOSE);
+    act(() => result.current.page.trigger({ actionId: CONVERT }));
+    expect(result.current.page.pendingId).toBe(CONVERT);
+
+    await act(async () => result.current.header.confirm());
+    expect(closePr).not.toHaveBeenCalled();
+    expect(result.current.header.confirming?.id).toBe(CLOSE);
+
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(result.current.header.pendingId).toBeNull());
+    await act(async () => result.current.header.confirm());
+    expect(closePr).toHaveBeenCalledTimes(1);
+    expect(result.current.header.confirming).toBeNull();
   });
 });

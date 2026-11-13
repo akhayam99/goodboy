@@ -1,6 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ReportedError } from '../notifications/reportedError';
+import { noFailureSurface } from './prWriteOptions';
 import type { GetFn } from './types';
 
 type Params = Readonly<{
@@ -9,6 +10,7 @@ type Params = Readonly<{
   workspaceId: WorkspaceId;
   title: string;
   isQuiet?: boolean;
+  hasFailureSurface?: () => boolean;
   run: () => Promise<void>;
 }>;
 
@@ -18,6 +20,7 @@ export const runPortWrite = async ({
   workspaceId,
   title,
   isQuiet = false,
+  hasFailureSurface = noFailureSurface,
   run,
 }: Params): Promise<void> => {
   try {
@@ -32,6 +35,7 @@ export const runPortWrite = async ({
         body: message,
         sessionId,
         workspaceId,
+        isRead: hasFailureSurface(),
       });
     }
     throw new ReportedError(message);

@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { forgetScrollMemory } from '@goodboy/ui';
 import { SESSION_EVICTION, type EvictionMode, type EvictionScope } from '../../sessionEviction';
+import { withoutSessionRuns } from '../action-runs/withoutSessionRuns';
 import { storedAgentDraft } from '../agents/storedAgentDraft';
 import { storedGroupBy } from '../session-grouping/storedGroupBy';
 import { browserWrites } from '../browser/browserWrites';
@@ -69,7 +70,11 @@ export const evictSession = ({ set, get }: Params) => {
       ]),
     );
     browserWrites.loads.cancel({ key: browserWrites.sessionLoadKey({ sessionId }) });
-    set({ ...changes, navigation });
+    const actionRuns =
+      mode === 'delete'
+        ? withoutSessionRuns({ runs: state.actionRuns, sessionId })
+        : state.actionRuns;
+    set({ ...changes, navigation, actionRuns });
     if (mode === 'delete') {
       forgetScrollMemory({ scopeId: sessionId });
       storedAgentDraft.forget({ agentIds });

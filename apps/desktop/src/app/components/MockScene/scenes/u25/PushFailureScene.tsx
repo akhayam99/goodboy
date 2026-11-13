@@ -25,6 +25,7 @@ const controlsOf = ({ error }: ControlsParams): ActionControls => ({
   actions: [],
   inSlot: () => [],
   pendingId: null,
+  pendingSeconds: null,
   confirming: null,
   failure: { actionId: 'diff.push', message: error.message, error, choice: null },
   outcome: null,

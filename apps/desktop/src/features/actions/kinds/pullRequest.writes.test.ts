@@ -125,9 +125,10 @@ type RunParams = {
   readonly id: string;
   readonly state: PullRequestState['state'];
   readonly choice?: string | null;
+  readonly hasRunSurface?: () => boolean;
 };
 
-const runOnShownMount = async ({ id, state, choice = null }: RunParams) => {
+const runOnShownMount = async ({ id, state, choice = null, hasRunSurface }: RunParams) => {
   const action = PULL_REQUEST_KIND.actions.find((candidate) => candidate.id === id);
   if (action === undefined) {
     throw new Error(`Missing action ${id}`);
@@ -143,7 +144,11 @@ const runOnShownMount = async ({ id, state, choice = null }: RunParams) => {
     writeInFlight: null,
     isScribeWriting: false,
   });
-  await action.run({ facts, env: env(), choice });
+  await action.run({
+    facts,
+    env: { ...env(), ...(hasRunSurface === undefined ? {} : { hasRunSurface }) },
+    choice,
+  });
 };
 
 const ghCallCount = () =>
@@ -205,4 +210,52 @@ describe('a pull request write goes to the repository of the mount on screen', (
     expect(refreshSessionPr).not.toHaveBeenCalled();
     expect(loadPullRequestView).not.toHaveBeenCalled();
   });
+});
+
+describe('a refused pull request write logs its failure for the surface that shows it', () => {
+  const REFUSED = { gh_run: { stdout: '', stderr: 'not mergeable', exitCode: 1 } };
+  const WRITES = [
+    { id: 'pullRequest.markReady', state: 'draft' },
+    { id: 'pullRequest.merge', state: 'open' },
+    { id: 'pullRequest.reopen', state: 'closed' },
+    { id: 'pullRequest.convertToDraft', state: 'open' },
+    { id: 'pullRequest.close', state: 'open' },
+  ] as const;
+
+  it.each(WRITES)(
+    '$id logs the row read while a surface shows the failure',
+    async ({ id, state }) => {
+      stubStoryInvoke(REFUSED);
+
+      await expect(
+        runOnShownMount({ id, state, choice: 'squash', hasRunSurface: () => true }),
+      ).rejects.toThrow();
+
+      expect(store.getState().notifications.map((row) => row.read)).toEqual([true]);
+    },
+  );
+
+  it.each(WRITES)(
+    '$id logs the row unread once no surface is left to show it',
+    async ({ id, state }) => {
+      stubStoryInvoke(REFUSED);
+
+      await expect(
+        runOnShownMount({ id, state, choice: 'squash', hasRunSurface: () => false }),
+      ).rejects.toThrow();
+
+      expect(store.getState().notifications.map((row) => row.read)).toEqual([false]);
+    },
+  );
+
+  it.each(WRITES)(
+    '$id logs the row unread from a menu with no surface at all',
+    async ({ id, state }) => {
+      stubStoryInvoke(REFUSED);
+
+      await expect(runOnShownMount({ id, state, choice: 'squash' })).rejects.toThrow();
+
+      expect(store.getState().notifications.map((row) => row.read)).toEqual([false]);
+    },
+  );
 });

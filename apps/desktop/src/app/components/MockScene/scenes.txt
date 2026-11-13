@@ -1,3 +1,11 @@
+action-run-busy
+action-run-busy-light
+action-run-done
+action-run-done-light
+action-run-failed
+action-run-failed-light
+action-run-idle
+action-run-idle-light
 activity
 activity-check-chain
 activity-check-fixed-local

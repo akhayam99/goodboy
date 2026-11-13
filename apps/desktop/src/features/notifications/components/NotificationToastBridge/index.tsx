@@ -32,7 +32,7 @@ export const pickFreshFailures = (
     if (new Date(n.ts).getTime() < since) {
       continue;
     }
-    if (n.severity !== 'error' && n.severity !== 'warning') {
+    if (n.read || (n.severity !== 'error' && n.severity !== 'warning')) {
       continue;
     }
     out.push(n);

@@ -27,6 +27,7 @@ export {
   type WorkspaceAttention,
 } from './slices/session-view/selectors';
 export { useDormantSpend } from './slices/dormant-spend/selectors';
+export { useActionRun } from './slices/action-runs/selectors';
 export {
   useProjectFilteredSessions,
   useSelectedProjectIds,

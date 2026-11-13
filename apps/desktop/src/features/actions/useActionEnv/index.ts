@@ -8,9 +8,17 @@ type Params = {
   readonly origin: ActionOrigin;
   readonly anchorKey?: string | null;
   readonly viewing?: ActionViewing | null;
+  readonly isOutcomeShown?: boolean;
+  readonly hasRunSurface?: () => boolean;
 };
 
-export const useActionEnv = ({ origin, anchorKey = null, viewing = null }: Params): ActionEnv => {
+export const useActionEnv = ({
+  origin,
+  anchorKey = null,
+  viewing = null,
+  isOutcomeShown = false,
+  hasRunSurface,
+}: Params): ActionEnv => {
   const showToast = useShowToast();
   const copyText = useCopyText();
   const viewingKind = viewing?.kind ?? null;
@@ -24,7 +32,9 @@ export const useActionEnv = ({ origin, anchorKey = null, viewing = null }: Param
       anchorKey,
       viewing:
         viewingKind === null || viewingId === null ? null : { kind: viewingKind, id: viewingId },
+      isOutcomeShown,
+      ...(hasRunSurface === undefined ? {} : { hasRunSurface }),
     }),
-    [anchorKey, copyText, origin, showToast, viewingId, viewingKind],
+    [anchorKey, copyText, hasRunSurface, isOutcomeShown, origin, showToast, viewingId, viewingKind],
   );
 };
