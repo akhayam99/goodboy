@@ -5,6 +5,7 @@ import type { ProviderId, Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
 import { AppScopePanel } from './AppScopePanel';
@@ -205,9 +206,11 @@ export const SettingsStudio = ({
               onScopeChange={onScopeChange}
               placement={railPlacement}
               detail={
-                <div data-settings-detail="" className="h-full min-h-0 min-w-0">
-                  {renderDetail(requestClose)}
-                </div>
+                <StudioDetail>
+                  <div data-settings-detail="" className="h-full min-h-0 min-w-0">
+                    {renderDetail(requestClose)}
+                  </div>
+                </StudioDetail>
               }
             />
           </div>

@@ -16,7 +16,7 @@ export const ActivityBotNotes = ({ notes }: Props) => {
         size="xs"
         variant="quiet"
         aria-expanded={isOpen}
-        className="w-fit"
+        className="w-fit px-0"
         onClick={() => setIsOpen((wasOpen) => !wasOpen)}
       >
         {isOpen ? 'Hide summary' : 'Show summary'}

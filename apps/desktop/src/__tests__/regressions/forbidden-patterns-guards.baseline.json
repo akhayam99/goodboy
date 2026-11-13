@@ -116,7 +116,6 @@
     "apps/desktop/src/app/components/MockScene/scenes/conversationSeed.ts": 9,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactContextRow.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactScoutList.tsx": 2,
-    "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestTitle.tsx": 1,
     "apps/desktop/src/features/budget/components/spend/SpendBar.tsx": 2,
     "apps/desktop/src/features/chat/components/ArtifactBlockCard/PlanBlock.tsx": 1,
     "apps/desktop/src/features/chat/components/ChatView/parts/TranscriptSkeleton.tsx": 1,

@@ -86,7 +86,7 @@ describe('StudioFrame', () => {
     expect(container.querySelector('[data-studio-skeleton="rows"]')).not.toBeNull();
   });
 
-  it('draws Settings in the page slot with its Back to app band and a skeleton with its rail', () => {
+  it('draws Settings in the page slot with a skeleton that keeps the band room beside its rail', () => {
     const Pending = lazy(() => new Promise<never>(() => undefined));
     const { container } = render(
       <StudioFrame kind="settings" placement="content" onClose={() => undefined}>
@@ -94,8 +94,7 @@ describe('StudioFrame', () => {
       </StudioFrame>,
     );
 
-    expect(container.querySelector('[data-studio-band]')).not.toBeNull();
-    screen.getByRole('button', { name: /^Back to app/ });
+    expect(container.querySelector('[data-studio-band]')).toBeNull();
     expect(container.querySelector('[data-studio-skeleton-rail]')).not.toBeNull();
     expect(container.querySelector('[data-studio-skeleton="rows"]')).not.toBeNull();
   });

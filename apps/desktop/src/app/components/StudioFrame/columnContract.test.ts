@@ -192,6 +192,7 @@ const SPLIT_DETAIL_FILES: Readonly<Partial<Record<StudioKind, ReadonlyArray<stri
   chat: ['features/workspace-chat/components/ChatStudio.tsx'],
   inbox: ['features/inbox/components/InboxStudio/InboxStudioLayout.tsx'],
   notifications: ['features/notifications/components/NotificationsStudio/index.tsx'],
+  settings: ['features/settings/components/SettingsStudio/index.tsx'],
 };
 
 const UI_COMPONENTS = join(SRC, '..', '..', '..', 'packages/ui/src/components');

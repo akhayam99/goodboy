@@ -2,6 +2,8 @@ export const PAGE_COLUMN_SCENES = [
   { scene: 'c05-overview-running', kind: 'reading' },
   { scene: 'c12-tasks-all', kind: 'reading' },
   { scene: 'artifacts-rows', kind: 'reading' },
+  { scene: 'workflow-run', kind: 'reading' },
+  { scene: 'overview-full', kind: 'reading' },
   { scene: 'board', kind: 'full' },
 ];
 export const PAGE_COLUMN_WIDTHS = [1440, 1920];

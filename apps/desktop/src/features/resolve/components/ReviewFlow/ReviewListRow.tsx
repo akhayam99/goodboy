@@ -10,6 +10,8 @@ import {
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { isBot } from '../../../integrations/github/comment-threads';
+import { Person } from '../../../../shared/components/Person';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
@@ -101,6 +103,15 @@ export const ReviewListRow = ({
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex h-5 min-w-0 items-center gap-2 text-meta">
+            {note === null || note.author === '' ? null : (
+              <Person
+                login={note.author}
+                avatarUrl={entry.row.commentThread?.head.authorAvatarUrl ?? null}
+                size="xs"
+                isBot={isBot(note.author)}
+                isNameHidden
+              />
+            )}
             <span data-row-author className="min-w-0 flex-1 truncate text-muted-foreground">
               {meta}
             </span>

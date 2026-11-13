@@ -378,7 +378,16 @@ type StepsParams = {
 };
 
 const stepsLineOf = ({ steps, facts }: StepsParams): string | null => {
-  const texts = steps.slice(0, 2).map((step) => verdictStepTextOf({ step, facts }));
+  const [first, second] = steps.slice(0, 2).map((step) => verdictStepTextOf({ step, facts }));
+  const repeated = ' the comments';
+  const isRepeated =
+    first !== undefined &&
+    second !== undefined &&
+    first.endsWith(repeated) &&
+    second.endsWith(repeated);
+  const texts = [first, isRepeated ? `${second.slice(0, -repeated.length)} them` : second].filter(
+    (text) => text !== undefined,
+  );
   if (texts.length === 0) {
     return null;
   }

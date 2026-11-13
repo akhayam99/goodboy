@@ -58,7 +58,6 @@ export const PAGE_FRAME: Readonly<Record<FramePage, FrameType>> = {
   questions: 'column',
   workflows: 'column',
   impact: 'column',
-  settings: 'column',
   scripts: 'column',
   artifacts: 'column',
   explore: 'column',
@@ -78,6 +77,7 @@ export const PAGE_FRAME: Readonly<Record<FramePage, FrameType>> = {
   whatsNew: 'split',
   inbox: 'split',
   notifications: 'split',
+  settings: 'split',
 };
 
 export type FrameTitleLeft = 'column' | 'stage' | 'detail';
