@@ -1,7 +1,15 @@
 import { cn, StatusDot } from '@goodboy/ui';
-import type { ChecksSummary } from '../../../../integrations/github/checksRollup';
 import { PROPERTY_ROW } from '../propertyRow';
 import { PropertyField } from '../PropertyField';
+
+export type ChecksSummary = {
+  readonly total: number;
+  readonly passed: number;
+  readonly failing: number;
+  readonly running: number;
+  readonly line: string;
+  readonly failingNames: ReadonlyArray<string>;
+};
 
 type Props = {
   readonly summary: ChecksSummary | null;

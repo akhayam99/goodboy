@@ -14,7 +14,9 @@ import {
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
+import { HostOverview } from '../../components/HostOverview';
 import { PullRequestChip } from '../components/PullRequestChip';
+import { githubPrRailOf } from './githubPrRailOf';
 import { GITHUB_ISSUE_CAPABILITIES, githubIssueConversation } from '../githubIssueConversation';
 import { useGithubIssueComments } from '../useGithubIssueComments';
 
@@ -83,6 +85,8 @@ export const GithubPrDetail = ({
     conversation.section,
   ];
 
+  const rail = useMemo(() => githubPrRailOf({ pr }), [pr]);
+
   const refresh = () => {
     reload();
     onRefresh?.();
@@ -106,7 +110,9 @@ export const GithubPrDetail = ({
         />
       }
     >
-      <RecordSections sections={sections} />
+      <HostOverview rail={rail}>
+        <RecordSections sections={sections} />
+      </HostOverview>
     </PaneShell>
   );
 };

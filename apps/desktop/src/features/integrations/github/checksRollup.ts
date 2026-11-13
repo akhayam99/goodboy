@@ -1,4 +1,7 @@
 import type { PrCheckConclusion, PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
+import type { ChecksSummary } from '../../../shared/components/OverviewRail/ChecksProperty';
+
+export type { ChecksSummary };
 
 type ChecksGroup = 'failing' | 'running' | 'passed' | 'skipped';
 
@@ -116,15 +119,6 @@ export const checksWordOf = ({ runs }: WordParams): string | null => {
     return `${counts.passed} passed`;
   }
   return counts.skipped > 0 ? `${counts.skipped} skipped` : null;
-};
-
-export type ChecksSummary = {
-  readonly total: number;
-  readonly passed: number;
-  readonly failing: number;
-  readonly running: number;
-  readonly line: string;
-  readonly failingNames: ReadonlyArray<string>;
 };
 
 export const checksSummaryOf = ({ runs }: WordParams): ChecksSummary | null => {

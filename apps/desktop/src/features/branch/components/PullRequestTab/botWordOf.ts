@@ -8,7 +8,7 @@ import {
 } from '../../../resolve/commentGroupsView';
 import { botKeyOf } from './botKeyOf';
 import { reviewHeadsOf } from './reviewHeadsOf';
-import { REVIEWER_STATE_WORD } from './reviewerStateWord';
+import { REVIEWER_STATE_WORD } from '../../../../shared/components/OverviewRail/reviewerStateWord';
 
 type Params = {
   readonly bot: PullRequestReviewer;
