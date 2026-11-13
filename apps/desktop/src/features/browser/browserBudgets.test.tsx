@@ -73,6 +73,7 @@ const settle = () => new Promise((resolve) => setImmediate(resolve));
 const stubHost = () => {
   stubStoryInvoke({
     browser_tab_rows_list: () => rows,
+    browser_workspace_tab_rows_list: () => rows,
     browser_tab_row_save: ({ args }: SaveArgs) => {
       const row: BrowserTab = {
         id: args.id,

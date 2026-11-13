@@ -198,6 +198,8 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
           return pins;
         }
         return ownerSessionOf({ payload }) === ROUNDING_ID ? roundingTabs : tabs;
+      case 'browser_workspace_tab_rows_list':
+        return [...tabs, ...roundingTabs, ...pins];
       case 'browser_tab_list':
         return live;
       case 'browser_history_state':

@@ -102,6 +102,12 @@ pub(crate) struct SessionRowsArgs {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub(crate) struct WorkspaceRowsArgs {
+    workspace_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct MoveArgs {
     id: String,
     session_id: String,
@@ -181,6 +187,26 @@ pub(crate) fn list_rows(conn: &Connection, owner: &TabOwner) -> Result<Vec<TabRo
         .map_err(db_failed)?;
     let rows = statement
         .query_map(params![owner.id()], read_row)
+        .map_err(db_failed)?
+        .collect::<rusqlite::Result<Vec<_>>>()
+        .map_err(db_failed)?;
+    Ok(rows)
+}
+
+pub(crate) fn list_workspace_rows(
+    conn: &Connection,
+    workspace_id: &str,
+) -> Result<Vec<TabRow>, MessageError> {
+    let mut statement = conn
+        .prepare(&format!(
+            "SELECT {COLUMNS} FROM browser_tabs
+             WHERE session_id IN (SELECT id FROM sessions WHERE workspace_id = ?1)
+                OR project_id IN (SELECT id FROM projects WHERE workspace_id = ?1)
+             ORDER BY position, created_at, id"
+        ))
+        .map_err(db_failed)?;
+    let rows = statement
+        .query_map(params![workspace_id], read_row)
         .map_err(db_failed)?
         .collect::<rusqlite::Result<Vec<_>>>()
         .map_err(db_failed)?;
@@ -398,6 +424,15 @@ pub async fn browser_tab_rows_list(
 ) -> Result<Vec<TabRow>, MessageError> {
     let conn = connection(&state)?;
     list_rows(&conn, &args.owner)
+}
+
+#[tauri::command]
+pub async fn browser_workspace_tab_rows_list(
+    state: State<'_, Db>,
+    args: WorkspaceRowsArgs,
+) -> Result<Vec<TabRow>, MessageError> {
+    let conn = connection(&state)?;
+    list_workspace_rows(&conn, &args.workspace_id)
 }
 
 #[tauri::command]

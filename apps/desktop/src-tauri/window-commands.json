@@ -82,6 +82,7 @@
     "browser_tab_show",
     "browser_tab_stop",
     "browser_visits_list",
+    "browser_workspace_tab_rows_list",
     "budget_alert_dismiss",
     "budget_alerts_list",
     "budget_emit_alerts",

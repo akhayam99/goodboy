@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { copyToClipboard } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -24,6 +25,7 @@ import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
 import { useTabLoad } from '../useTabLoad';
+import { useBrowserWorkspaceTabs } from '../../../../shared/hooks/useBrowserWorkspaceTabs';
 import { useTabStates } from '../useTabStates';
 
 type Params = {
@@ -87,8 +89,14 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const { states, reconcile } = useTabStates();
+  const isOnScreen = useAppStore((state) => selectDrawerPanel(state)?.kind === 'browser');
+  const hasAwakeTab = Object.values(live ?? {}).some((liveId) => {
+    const state = states.get(liveId);
+    return state !== 'asleep' && state !== 'closed';
+  });
   const { facts, refresh } = useLiveTabFacts({
     sessionId,
+    isWatching: isOnScreen && hasAwakeTab,
     onPolled: reconcile,
     onError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   });
@@ -131,7 +139,6 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   });
 
   useEffect(() => {
-    void useAppStore.getState().loadBrowserSessionTabs({ sessionId });
     return () => {
       browserPaneRequests.opens.cancel({ key: browserPaneRequests.openKey({ sessionId }) });
     };
@@ -141,12 +148,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     setIsDrafting(false);
   }, [activeId, pinId, draftEnds]);
 
-  useEffect(() => {
-    if (projectId === null) {
-      return;
-    }
-    void useAppStore.getState().loadBrowserProjectPins({ projectId });
-  }, [projectId]);
+  useBrowserWorkspaceTabs({ isReload: true });
 
   const run = async ({ step }: StepParams): Promise<boolean> => {
     setError(null);

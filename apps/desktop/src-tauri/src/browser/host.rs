@@ -229,8 +229,12 @@ fn watch_passkeys<R: Runtime>(webview: &Webview<R>, tab_id: &str) {
     let app = webview.app_handle().clone();
     let asked_tab = tab_id.to_string();
     let on_ask: passkey::OnAsk = std::sync::Arc::new(move || {
-        app.state::<BrowserRegistry>()
+        let blocked = app
+            .state::<BrowserRegistry>()
             .mark_passkey_blocked(&asked_tab);
+        if let Some(facts) = blocked {
+            lifecycle::announce(&app, &facts);
+        }
     });
     let watched_tab = tab_id.to_string();
     let watched = webview.with_webview(move |platform| {
@@ -257,6 +261,9 @@ pub(crate) fn refresh_with(
 ) -> Vec<TabFacts> {
     tabs.into_iter()
         .map(|facts| {
+            if facts.state != TabState::Live {
+                return facts;
+            }
             let Some(live) = read(&facts.id) else {
                 return facts;
             };
@@ -317,6 +324,7 @@ fn builder_for<R: Runtime>(
             let Some(facts) = registry.set_title(&title_tab, &title) else {
                 return;
             };
+            lifecycle::announce(app, &facts);
             let Ok(live) = webview.url() else {
                 return;
             };

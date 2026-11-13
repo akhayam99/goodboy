@@ -120,6 +120,7 @@ beforeEach(async () => {
   });
   stubStoryInvoke({
     browser_tab_rows_list: [row],
+    browser_workspace_tab_rows_list: [row],
     browser_tab_list: [facts],
     browser_tab_place: null,
     browser_tab_show: facts,

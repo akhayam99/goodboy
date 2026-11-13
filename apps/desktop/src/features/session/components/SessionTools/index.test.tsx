@@ -679,6 +679,7 @@ describe('SessionTools', () => {
     useAppStore.setState({
       currentWorkspaceId: WORKSPACE,
       sessions: [sessionFixture()],
+      browserTabCounts: { [WORKSPACE]: titles.length },
       browserSessionTabs: {
         [SESSION]: titles.map((title, position) => ({
           id: `tab-${position}`,
@@ -700,6 +701,22 @@ describe('SessionTools', () => {
         .closest('[data-slot="session-tool"]')
         ?.querySelector('[data-testid="tool-count"]')?.textContent,
     ).toBe('4');
+  });
+
+  it('shows no count on Browser until the tab rows have loaded', () => {
+    useAppStore.setState({
+      currentWorkspaceId: WORKSPACE,
+      sessions: [sessionFixture()],
+      browserTabCounts: {},
+    });
+    render(<SessionTools sessionId={null} />);
+
+    expect(toggle('browser').getAttribute('aria-label')).toBe('Browser');
+    expect(
+      toggle('browser')
+        .closest('[data-slot="session-tool"]')
+        ?.querySelector('[data-testid="tool-count"]'),
+    ).toBeNull();
   });
 
   it('selects Terminal while its page is open and does nothing on click', () => {

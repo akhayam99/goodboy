@@ -105,6 +105,7 @@ const stubHost = () => {
           ? row.sessionId === args.owner.sessionId
           : row.projectId === args.owner.projectId,
       ),
+    browser_workspace_tab_rows_list: () => rows,
     browser_tab_row_save: ({ args }: SaveArgs) => {
       const row = rowOf({ args });
       rows = [...rows.filter((existing) => existing.id !== row.id), row];

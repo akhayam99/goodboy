@@ -37,7 +37,7 @@ import {
 } from '../__tests__/surfaces/navigation-flows/harness';
 import { BrowserPane } from '../features/browser/components/BrowserPane';
 import { useBrowserPage } from '../features/browser/hooks/useBrowserPage';
-import { browserTabCount } from '../features/browser/browserTabCount';
+import { selectBrowserTabCount } from '../store/slices/browser/selectBrowserTabCount';
 import type { BrowserTabFacts } from '../features/browser/types';
 import { ShellToolRail } from './components/ShellToolRail';
 import { SHELL_BUDGETS } from './shellBudgets';
@@ -158,10 +158,12 @@ describe('the always-on shell stays inside its budget', () => {
 });
 
 describe('the tool rail with the drawer edge shown stays inside its budget', () => {
+  let edge: HTMLDivElement;
+
   beforeEach(() => {
     seedSessionWithMounts({ useAppStore });
     seedAgents();
-    const edge = document.createElement('div');
+    edge = document.createElement('div');
     document.body.append(edge);
     render(
       <DrawerEdgeContext.Provider value={edge}>
@@ -170,13 +172,26 @@ describe('the tool rail with the drawer edge shown stays inside its budget', () 
     );
   });
 
-  it('mounts the session tools once for the rail and once for the edge', () => {
+  it('mounts the session tools once with the drawer edge shown', () => {
     expect(document.querySelectorAll('[data-testid="session-tools"]').length).toBe(
       SHELL_BUDGETS.sessionToolsTreesMounted,
     );
   });
 
-  it('loops over all sessions for each tree when a session changes', () => {
+  it('draws the one tree in the drawer edge and keeps a seat for it in the rail', () => {
+    expect(edge.querySelectorAll('[data-testid="session-tools"]').length).toBe(1);
+    expect(document.querySelectorAll('[data-slot="tool-rail-seat"]').length).toBe(1);
+  });
+
+  it('loops over no session when an unrelated value changes', () => {
+    const counts = writeOnce({ patch: unrelatedWrite });
+
+    expect(countsOf({ name: PERF_COUNT_NAMES.browserTabCount, counts })).toBe(
+      SHELL_BUDGETS.allSessionLoopsPerWriteFromToolRail,
+    );
+  });
+
+  it('loops over no session when a session changes', () => {
     const counts = writeOnce({ patch: sessionWrite });
 
     expect(countsOf({ name: PERF_COUNT_NAMES.browserTabCount, counts })).toBe(
@@ -249,7 +264,7 @@ const idleMinuteWithPaneOpen = async ({ tabs }: IdleParams): Promise<IdleMinute>
 };
 
 describe('a pane left open stays inside its budget', () => {
-  it.each([1, 4])('lists the tabs on a timer with %i live tab(s)', async (tabs) => {
+  it.each([1, 4])('lists no tab on a timer with %i live tab(s) off screen', async (tabs) => {
     const { calls, hopsPerTab } = await idleMinuteWithPaneOpen({ tabs });
 
     expect(calls).toBe(SHELL_BUDGETS.browserListCallsPerIdleMinute);
@@ -258,12 +273,12 @@ describe('a pane left open stays inside its budget', () => {
 });
 
 describe('the Browser page stays inside its budget', () => {
-  it('reads the tab rows with one command per session', () => {
+  it('reads the tab rows of every session with one command', () => {
     const workspaceId = nextWorkspaceId();
     const sessions = Array.from({ length: ACTIVE_SESSIONS }, () =>
       buildStorySession({ id: nextSessionId(), workspaceId }),
     );
-    stubStoryInvoke({ browser_tab_rows_list: [], browser_project_pins_list: [] });
+    stubStoryInvoke({ browser_tab_rows_list: [], browser_workspace_tab_rows_list: [] });
     act(() => {
       useAppStore.setState({ sessions, currentWorkspaceId: workspaceId });
     });
@@ -271,14 +286,14 @@ describe('the Browser page stays inside its budget', () => {
     renderHook(() => useBrowserPage({ sessionId: sessions[0]?.id ?? null }));
 
     const reads = storySpies.tauriInvoke.mock.calls.filter(
-      ([command]) => command === 'browser_tab_rows_list',
+      ([command]) => typeof command === 'string' && command.endsWith('tab_rows_list'),
     ).length;
     expect(reads).toBe(SHELL_BUDGETS.commandsToListTabsOnBrowserPage);
   });
 });
 
 describe('numbers appear before their data', () => {
-  it('shows a number for the tab count, the cost and the agent count while nothing has loaded', () => {
+  it('shows a number for the cost and the agent count, and none for the tab count, while nothing has loaded', () => {
     const workspaceId = nextWorkspaceId();
     const session = buildStorySession({ id: nextSessionId(), workspaceId });
     act(() => {
@@ -286,7 +301,10 @@ describe('numbers appear before their data', () => {
     });
     const cost = renderHook(() => useSessionCost(session.id)).result.current;
     const agents = renderHook(() => useNonResolverStandaloneAgents(session.id)).result.current;
-    const tabs = browserTabCount({ state: useAppStore.getState() });
+    const tabs = selectBrowserTabCount({
+      state: useAppStore.getState(),
+      workspaceId,
+    });
 
     const shown = [tabs, cost, agents.length].filter((value) => typeof value === 'number');
 

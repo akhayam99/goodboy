@@ -18,7 +18,7 @@ import {
 import { mountFixture } from '../../../../__tests__/helpers/actionFixtures';
 import type { BrowserTab, TabOwner } from '../../../../store/slices/browser/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { browserTabCount } from '../../browserTabCount';
+import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBrowserTabCount';
 import type { BrowserTabFacts } from '../../types';
 import { BrowserPane } from '../BrowserPane';
 import { BrowserStudio } from './index';
@@ -107,6 +107,7 @@ const stubHost = () => {
           ? row.sessionId === args.owner.sessionId
           : row.projectId === args.owner.projectId,
       ),
+    browser_workspace_tab_rows_list: () => rows,
     browser_tab_open: ({ args }: OpenArgs) => factsOf({ args }),
     browser_tab_list: () => live,
     browser_history_state: null,
@@ -588,10 +589,11 @@ describe('the browser page', () => {
       ).toHaveLength(4),
     );
     expect(groupLabels()).not.toContain('Watch the notify-relay queue');
-    expect(
-      callsOf({ command: 'browser_tab_rows_list' }).map((args) => args.owner),
-    ).not.toContainEqual({ kind: 'session', sessionId: elsewhere });
-    expect(browserTabCount({ state: store.getState() })).toBe(4);
+    expect(store.getState().browserSessionTabs[elsewhere]).toBeUndefined();
+    expect(callsOf({ command: 'browser_workspace_tab_rows_list' })).toEqual([
+      { workspaceId: WORKSPACE_ID },
+    ]);
+    expect(selectBrowserTabCount({ state: store.getState(), workspaceId: WORKSPACE_ID })).toBe(4);
   });
 
   it('opens on the first session holding a tab when the route names no session', async () => {
