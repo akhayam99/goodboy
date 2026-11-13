@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import type { PrCheckRun } from '@goodboy/types';
-import { checksSummaryOf } from '../../../../integrations/github/checksRollup';
+import { checksSummaryOf } from '../../../../features/integrations/github/checksRollup';
 import { ChecksProperty } from '.';
 
 afterEach(cleanup);

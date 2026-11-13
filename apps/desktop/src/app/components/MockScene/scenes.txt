@@ -327,6 +327,9 @@ c12-issue-full
 c12-issue-github
 c12-issue-pane
 c12-issue-sentry
+c12-mr-gitlab
+c12-pr-bitbucket
+c12-pr-github
 c12-tasks-all
 c12-tasks-expanded
 c12-tasks-filter

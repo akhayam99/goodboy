@@ -8,7 +8,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { ChecksSummary } from '../../../integrations/github/checksRollup';
-import { ChecksProperty } from './ChecksProperty';
+import { ChecksProperty } from '../../../../shared/components/OverviewRail/ChecksProperty';
 import { PeopleProperty } from './PeopleProperty';
 import { ResolvesProperty } from './ResolvesProperty';
 import { ReviewersProperty, type ReviewerRequest } from './ReviewersProperty';

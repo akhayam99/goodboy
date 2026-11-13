@@ -9,9 +9,8 @@ import { useMemo } from 'react';
 import { Notice, PaneShell } from '@goodboy/ui';
 import type { BitbucketIntegrationBinding, FileDiff, SessionId, WorkspaceId } from '@goodboy/types';
 import { bitbucketPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
-import { checksRollup } from '../../../github/checksRollup';
-import { openLink } from '../../../../open/openLink';
-import { PrChecks } from '../../../github/components/PullRequest/PrChecks';
+import { HostOverview } from '../../../components/HostOverview';
+import { bitbucketPrRailOf } from './bitbucketPrRailOf';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
 import { BitbucketStateChip } from '../../BitbucketStateChip';
@@ -157,22 +156,6 @@ export const PrDetailPanel = ({
       content: <DescriptionSection text={pullRequest.description} />,
     },
     {
-      key: 'checks',
-      kind: 'tool',
-      label: 'Checks',
-      summary: checksRollup({ checks: detail.checks }),
-      isCollapsible: true,
-      defaultOpen: false,
-      content: (
-        <PrChecks
-          checks={detail.checks}
-          fallbackUrl={webUrl}
-          host="bitbucket"
-          onOpenUrl={(url) => openLink({ url })}
-        />
-      ),
-    },
-    {
       key: 'changes',
       kind: 'tool',
       label: 'Changes',
@@ -224,7 +207,9 @@ export const PrDetailPanel = ({
           body={error}
         />
       ) : null}
-      <RecordSections sections={sections} />
+      <HostOverview rail={bitbucketPrRailOf({ pullRequest, checks: detail.checks })}>
+        <RecordSections sections={sections} />
+      </HostOverview>
     </PaneShell>
   );
 };

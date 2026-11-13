@@ -1,15 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { PullRequestPort } from '@goodboy/core/review-source';
-import { Avatar, cn, EmptyLine, formatError, IconButton, Skeleton } from '@goodboy/ui';
+import { EmptyLine, formatError, IconButton, Skeleton } from '@goodboy/ui';
 import type { MountId, PullRequestReviewer, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 import { ReviewerPicker } from '../../../../shared/components/ReviewerPicker';
-import { REVIEWER_STATE_WORD } from './reviewerStateWord';
-import { REVIEWER_STATE_TEXT } from './reviewerStateTone';
-import { PROPERTY_ROW } from './propertyRow';
-import { PropertyField } from './PropertyField';
+import { ReviewerRows } from '../../../../shared/components/OverviewRail/ReviewerRows';
+import { PropertyField } from '../../../../shared/components/OverviewRail/PropertyField';
 
 export type ReviewerRequest =
   | { readonly kind: 'hidden' }
@@ -86,23 +84,7 @@ export const ReviewersProperty = ({
       ) : people.length === 0 ? (
         <EmptyLine>Nobody asked yet</EmptyLine>
       ) : (
-        <ul className="flex min-w-0 flex-col">
-          {people.map((reviewer) => (
-            <li
-              key={reviewer.person.login}
-              data-reviewer-state={reviewer.state}
-              className={PROPERTY_ROW}
-            >
-              <Avatar url={reviewer.person.avatarUrl} alt={reviewer.person.login} size="sm" />
-              <span className="min-w-0 flex-1 truncate text-foreground">
-                {reviewer.person.login}
-              </span>
-              <span className={cn('shrink-0 text-meta', REVIEWER_STATE_TEXT[reviewer.state])}>
-                {REVIEWER_STATE_WORD[reviewer.state]}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <ReviewerRows people={people} />
       )}
       {request.kind === 'disabled' && (
         <p className="text-meta text-faint-foreground">{request.reason}</p>

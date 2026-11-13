@@ -13,7 +13,7 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { closingIssueReferences } from '../../../integrations/github/closingIssueReferences';
 import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
 import { openGithubIssue } from '../../../session/openGithubIssue';
-import { PropertyField } from './PropertyField';
+import { PropertyField } from '../../../../shared/components/OverviewRail/PropertyField';
 
 type Props = {
   readonly sessionId: SessionId;
