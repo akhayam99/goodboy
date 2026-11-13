@@ -55,7 +55,7 @@ Choose how often a run stops for you: **Every step**, **After the plan** to appr
 
 **Skip** passes a step that has not finished and keeps what it already wrote. If a step says nothing for 15 minutes, the run offers **Continue**. When an agent stops without saying it is done and without asking you anything, the agent page reads "This step ended without a result". The agent page offers **Mark step done**.
 
-The run page reads **Needs you** once, with **Open step 3**. On the step page the dock holds one state line, **Not finished**, with **Retry** and **Continue**. The composer reads "Answer the step".
+The run page has one title. Its state, here **Needs you**, is a chip on the line under the title, beside the branches, and the page body does not repeat the word. It reads **Needs you** once, with **Open step 3**. On the step page the dock holds one state line, **Not finished**, with **Retry** and **Continue**. The composer reads "Answer the step".
 
 Goodboy also moves a step to that state within a few seconds if it is still running after its turn ended with nothing to continue it. That adds one line to the app log.
 

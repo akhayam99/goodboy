@@ -6,9 +6,7 @@ import { ToolSettingsScope } from '../../../integrations/components/ToolSettings
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 import { useAppStore } from '../../../../store';
-import { settingsTrail } from '../../trail/settingsTrail';
 import { AppScopePanel } from './AppScopePanel';
 import { SettingsScopesLayout } from './SettingsScopesLayout';
 import { isNestedScope, settingsScopeAvailable, type NestedScope } from './settingsScopes';
@@ -194,13 +192,6 @@ export const SettingsStudio = ({
     >
       {(requestClose) => (
         <>
-          <StudioTrail
-            segments={settingsTrail({
-              scope: availableScope,
-              section: focus.section,
-              pageKey,
-            })}
-          />
           <div className="relative flex min-h-0 min-w-0 flex-1">
             <SettingsScopesLayout
               pageKey={pageKey}
