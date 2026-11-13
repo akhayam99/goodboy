@@ -5,8 +5,11 @@ pub(crate) enum DevicePreset {
     Phone,
 }
 
+#[cfg(any(target_os = "macos", test))]
 pub(crate) const DESKTOP_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15";
+#[cfg(any(target_os = "macos", test))]
 const TABLET_AGENT: &str = "Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+#[cfg(any(target_os = "macos", test))]
 const PHONE_AGENT: &str = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
 
 impl DevicePreset {
@@ -19,6 +22,7 @@ impl DevicePreset {
         }
     }
 
+    #[cfg(any(target_os = "macos", test))]
     pub(crate) fn user_agent(self) -> &'static str {
         match self {
             Self::Desktop => DESKTOP_AGENT,
