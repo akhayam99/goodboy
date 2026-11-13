@@ -716,12 +716,23 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
 - **A remote image never reaches a reserved address.** `remote_image.rs`
   refuses, for IPv4, `0.0.0.0/8`, loopback, private, link-local, `100.64.0.0/10`,
   `192.0.0.0/24`, `192.88.99.0/24`, `198.18.0.0/15`, documentation, multicast
-  and `240.0.0.0/4`; for IPv6, unique local, link-local, loopback, multicast,
+  and `240.0.0.0/4`; for IPv6, unique local, link-local, the deprecated
+  site-local `fec0::/10`, loopback, multicast,
   NAT64 (`64:ff9b::/32`), 6to4 (`2002::/16`), Teredo (`2001::/32`),
   documentation (`2001:db8::/32`), discard (`100::/64`) and the `::/96`
-  IPv4-compatible block. An IPv4-mapped address takes the IPv4 rules. The table
-  tests in `remote_image.rs` pin each range and its public neighbours; a new
-  range changes both lists.
+  IPv4-compatible block. An IPv4-mapped address takes the IPv4 rules. The same
+  rules vet every address a DNS answer gives, before the client is pinned to
+  them. The table tests in `remote_image.rs` pin each range and its public
+  neighbours; a new range changes both lists.
+- **The pinned client never goes through a proxy.** `build_media_client` sets
+  `no_proxy()`, so a proxy named in the environment or the system settings cannot
+  resolve the host again on its own and reach an address the vetting refused.
+  `the_media_client_never_routes_through_a_proxy` pins it.
+- **One deadline covers the whole fetch.** A fetch, a probe and a video
+  (`remote_media.rs`) each take one `Deadline` (15 s, 180 s for a video) that
+  bounds the DNS lookup, the first request, the one GitHub redirect and the
+  streamed body together. A redirect gets what is left, never a fresh budget,
+  and a lookup also stops after 5 s (`DNS_TIMEOUT`).
 
 ### Hidden pages
 

@@ -3,8 +3,11 @@ use std::time::Duration;
 use tauri::ipc::Response;
 use tauri::State;
 
+use reqwest::Url;
+
 use crate::remote_image::{
-    check_status, resolve_tool_media, send_authed_media, ImageResponse, LoadToolImageArgs,
+    check_status, host_label, resolve_tool_media, send_authed_media, Deadline, ImageResponse,
+    LoadToolImageArgs, ToolAuth,
 };
 use crate::util::limits::MAX_VIDEO_BYTES;
 use crate::util::MessageError;
@@ -99,9 +102,22 @@ pub async fn fetch_remote_media(
     jira_cache: State<'_, crate::jira::JiraTokenCache>,
 ) -> Result<Response, MessageError> {
     let (provider, parsed, auth) = resolve_tool_media(args, &linear_cache, &jira_cache)?;
-    let (host, mut response) = send_authed_media(&provider, parsed, auth, VIDEO_TIMEOUT).await?;
-    let body = read_video_response(&host, &mut response).await?;
+    let deadline = Deadline::after(VIDEO_TIMEOUT);
+    let label = host_label(&parsed);
+    let body = deadline
+        .bound(&label, fetch_video(&provider, parsed, auth, deadline))
+        .await?;
     Ok(Response::new(body))
+}
+
+async fn fetch_video(
+    provider: &str,
+    url: Url,
+    auth: ToolAuth,
+    deadline: Deadline,
+) -> Result<Vec<u8>, String> {
+    let (host, mut response) = send_authed_media(provider, url, auth, deadline).await?;
+    read_video_response(&host, &mut response).await
 }
 
 #[cfg(test)]
@@ -280,13 +296,21 @@ mod tests {
     fn the_command_goes_through_the_vetted_hop_that_drops_the_token_on_a_redirect() {
         let body = function_body("pub async fn fetch_remote_media");
         assert!(body.contains("resolve_tool_media("), "{body}");
+        assert!(body.contains("Deadline::after(VIDEO_TIMEOUT)"), "{body}");
         assert!(
-            body.contains("send_authed_media(&provider, parsed, auth, VIDEO_TIMEOUT)"),
+            body.contains(".bound(&label, fetch_video(&provider, parsed, auth, deadline))"),
             "{body}"
         );
-        assert!(!body.contains("apply_tool_auth("), "{body}");
-        assert!(!body.contains("Client::builder"), "{body}");
-        assert!(!body.contains(".redirect("), "{body}");
+        let fetch = function_body("async fn fetch_video");
+        assert!(
+            fetch.contains("send_authed_media(provider, url, auth, deadline)"),
+            "{fetch}"
+        );
+        for source in [body, fetch] {
+            assert!(!source.contains("apply_tool_auth("), "{source}");
+            assert!(!source.contains("Client::builder"), "{source}");
+            assert!(!source.contains(".redirect("), "{source}");
+        }
     }
 
     #[test]

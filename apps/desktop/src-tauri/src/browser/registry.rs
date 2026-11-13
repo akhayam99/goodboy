@@ -39,6 +39,7 @@ struct Tab {
     rect: Rect,
     opened: u64,
     grants: Vec<LocalGrant>,
+    navigation: u64,
 }
 
 impl Tab {
@@ -240,6 +241,7 @@ impl BrowserRegistry {
                 rect: tab.rect,
                 opened,
                 grants: Vec::new(),
+                navigation: 0,
             },
         );
         facts
@@ -526,6 +528,19 @@ impl BrowserRegistry {
             .cloned()
     }
 
+    pub(crate) fn mark_navigated(&self, id: &str) {
+        if let Some(tab) = lock_or_recover(&self.tabs).by_id.get_mut(id) {
+            tab.navigation = tab.navigation.wrapping_add(1);
+        }
+    }
+
+    pub(crate) fn navigation_of(&self, id: &str) -> Option<u64> {
+        lock_or_recover(&self.tabs)
+            .by_id
+            .get(id)
+            .map(|tab| tab.navigation)
+    }
+
     pub(crate) fn set_url(&self, id: &str, url: &str) -> Option<TabFacts> {
         self.update(id, |facts| facts.url = url.to_string())
     }
@@ -639,6 +654,21 @@ mod tests {
     #[test]
     fn starts_empty() {
         assert!(BrowserRegistry::default().is_empty());
+    }
+
+    #[test]
+    fn counts_each_navigation_of_one_tab_only() {
+        let registry = BrowserRegistry::default();
+        open(&registry, "0f1e", "harborline", true);
+        open(&registry, "1a2b", "harborline", true);
+        let before = registry.navigation_of("0f1e").expect("a tab");
+
+        registry.mark_navigated("0f1e");
+
+        assert_ne!(registry.navigation_of("0f1e"), Some(before));
+        assert_eq!(registry.navigation_of("1a2b"), Some(0));
+        assert_eq!(registry.navigation_of("gone"), None);
+        registry.mark_navigated("gone");
     }
 
     #[test]

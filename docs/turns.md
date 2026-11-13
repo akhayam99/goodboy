@@ -900,6 +900,16 @@ a running agent with no live run and no cursor of its own.
   TypeScript because `turn_admissions` belongs to `packages/db` in the writer
   map. An adoption or a detach is refused as a running turn (`turn_running`)
   while a held row stands.
+- **A refused spawn has lost the agent.** `recoverTurnFailure` treats
+  `admission_lost` as loss of ownership (`settleLostAdmission`): it marks only
+  its own run failed, gives the agent back only while the row still names its
+  run (`revertAgentStart`), writes no session state while another run holds
+  the agent, and never plans a fallback. Every failure write that targets the
+  agent or the session is conditioned on the failing run
+  (`runOwnership/failOwnedRun`, `runOwnership/writeOwnedSessionState`), so a
+  window that wakes up after its claim expired and another window started a
+  run never marks that live run failed, and the next claim still sees
+  `turn_running`.
 
 ## Live state at the tail
 
