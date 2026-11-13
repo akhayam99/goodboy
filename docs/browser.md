@@ -602,13 +602,12 @@ sits in and the address, and one function opens it (`openInBrowser`).
   first tab on the same address.
 - **Server chips**: the port chip on a terminal tab strip and the live port
   on a running Service open `http://localhost:<port>`.
-- **Links**: a web link in what is written in a session (a conversation
-  turn, a decision, an artifact) opens beside it. Those regions carry
-  `data-browser-links` inside the session's `data-browser-session`, and
-  `isBrowserLinkArea` checks both. A link anywhere else, such as an
-  integration, sign-in or connect guide in a drawer, opens your browser as
-  before, and so does a link outside a session. A GitHub commit link still
-  opens its diff. Chips and rows need only `data-browser-session`.
+- **Links**: any anchor in rendered text is claimed by `claimSessionLink` and
+  routed through `openTarget`, with no marked area: a conversation turn, a
+  decision, an artifact, a pull request body, an inbox row, a plan comment. The
+  session is the `data-browser-session` ancestor of the anchor, else the
+  store's current session (`sessionOfElement`). A GitHub commit link still
+  opens its diff.
 - **The click rule**: see [The click rule](#the-click-rule). Chips, session
   links, a Service's port and a terminal's printed addresses all call
   `openWebLink`, which hands the address to it. The ⌘-click listener runs
@@ -674,8 +673,13 @@ sits in and the address, and one function opens it (`openInBrowser`).
 ## The click rule
 
 One function, `openTarget` in `features/open/`, decides where a target
-opens. A target is a web address or a saved copy (a plan or a report as a
-page on disk). Files and folders join it later.
+opens. A target is a web address, a saved copy (a plan or a report as a
+page on disk) or a file. Folders join it later.
+
+- **Text links.** A relative or `file:` link in rendered text becomes a file
+  target, resolved in the folder of the session's active mount and opened by
+  the editor or the in-app file view. With no session or no folder it says so
+  once and opens nothing. A web link with no session opens your browser.
 
 - **Beside the session or outside.** A plain click on a web address, a plan
   or a report opens a tab beside the session when Links says **In Goodboy**,

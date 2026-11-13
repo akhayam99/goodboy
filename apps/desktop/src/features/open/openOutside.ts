@@ -1,9 +1,9 @@
 import { openUrl } from '../../shared/lib/editor';
 import { openArtifactMirror } from '../artifacts/artifactMirror/artifactMirrorInvoke';
-import type { OpenTarget } from './types';
+import type { LaunchTarget } from './types';
 
 type Params = {
-  readonly target: OpenTarget;
+  readonly target: LaunchTarget;
 };
 
 export const openOutside = async ({ target }: Params): Promise<void> => {

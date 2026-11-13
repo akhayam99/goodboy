@@ -6,6 +6,12 @@ export type SavedCopyKind = 'document' | 'wireframe';
 export type OpenTarget =
   | { readonly kind: 'web'; readonly url: string }
   | {
+      readonly kind: 'file';
+      readonly path: string;
+      readonly root: string;
+      readonly line: number | null;
+    }
+  | {
       readonly kind: 'saved-copy';
       readonly copy: SavedCopyKind;
       readonly name: string;
@@ -14,7 +20,9 @@ export type OpenTarget =
       readonly file: string;
     };
 
-export type OpenPlace = 'beside-session' | 'your-browser';
+export type LaunchTarget = Exclude<OpenTarget, { readonly kind: 'file' }>;
+
+export type OpenPlace = 'beside-session' | 'your-browser' | 'editor';
 
 export type OpenResult =
   | { readonly status: 'opened'; readonly place: OpenPlace }

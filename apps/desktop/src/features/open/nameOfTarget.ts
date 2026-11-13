@@ -5,5 +5,9 @@ type Params = {
   readonly target: OpenTarget;
 };
 
-export const nameOfTarget = ({ target }: Params): string =>
-  target.kind === 'web' ? hostOf({ url: target.url }) : target.name;
+export const nameOfTarget = ({ target }: Params): string => {
+  if (target.kind === 'web') {
+    return hostOf({ url: target.url });
+  }
+  return target.kind === 'file' ? target.path : target.name;
+};
