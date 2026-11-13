@@ -829,7 +829,7 @@
         },
         {
           "title": "Pull request on the Branch page",
-          "text": "One merge box says whether a pull request can merge, with the next steps and every thing that holds it, worst first. It is the Pull request tab of the Branch page on GitHub, GitLab and Bitbucket. Edit it in place and merge the ways the host allows. A pull request held for a merge reads Queued.",
+          "text": "One merge box says whether a pull request can merge, with the next steps and every thing that holds it, worst first. It is the Overview tab of the Branch page on GitHub, GitLab and Bitbucket. Edit it in place and merge the ways the host allows. A pull request held for a merge reads Queued.",
           "group": "Review and resolve on the Branch page",
           "also": "pull request page"
         },

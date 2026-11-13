@@ -183,6 +183,11 @@ is a disabled select, not a switch), and never inside a pane. No ring and no
 primary tint mark a selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
+`PageTabs` is the page tab row: `SegmentedTabs` with the `underline` variant, a 36px row on a
+hairline, each tab a label with its count beside it as a quiet number and the selected one
+underlined in the primary tone. Tabs change what the page is and sit under the page title; the
+boxed `SegmentedTabs` filters what a page lists. A page never stacks two boxed groups.
+
 `ChoiceChips` is the compact choice: one wrapping row of chips for two to nine
 short answers to one question, where `ChoiceCards` is a column of cards with a
 hint. It is a horizontal `listbox` of `option` buttons, not a tablist and not a menu, with

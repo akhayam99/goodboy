@@ -578,7 +578,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'pullRequest.edit',
     open: async () => {
       await press('lens.pr')();
-      expect((await findSection(/^Pull request/)).getAttribute('aria-selected')).toBe('true');
+      expect((await findSection(/^Overview/)).getAttribute('aria-selected')).toBe('true');
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>

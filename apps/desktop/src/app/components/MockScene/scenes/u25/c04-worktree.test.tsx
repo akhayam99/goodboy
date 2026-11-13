@@ -108,14 +108,7 @@ describe('the c04 worktree level scenes', () => {
     expect(level.getByRole('button', { name: /^payments-api, / })).toBeDefined();
     expect(level.queryByRole('status')).toBeNull();
     expect(level.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
-    expect(stripNames()).toEqual([
-      'Pull request',
-      'Comments',
-      'Changes',
-      'Commits',
-      'Checks',
-      'Work',
-    ]);
+    expect(stripNames()).toEqual(['Overview', 'Comments', 'Changes', 'Commits', 'Checks', 'Work']);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Merge status' }).textContent).toContain(
       '6 commits behind main',
@@ -125,16 +118,14 @@ describe('the c04 worktree level scenes', () => {
   it('c04-worktree-pr-draft reads Draft in the entry and the State property', async () => {
     await mount('c04-worktree-pr-draft');
 
-    expect(stripTab({ name: /^Pull request/ }).textContent).toBe('Pull requestDraft');
-    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('aria-label')).toBe(
-      'Draft',
-    );
+    expect(stripTab({ name: /^Overview/ }).textContent).toBe('OverviewDraft');
+    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
   });
 
   it('c04-worktree-no-pr leaves the entry slot empty and offers the create form', async () => {
     await mount('c04-worktree-no-pr');
 
-    expect(stripTab({ name: /^Pull request/ }).textContent).toBe('Pull request');
+    expect(stripTab({ name: /^Overview/ }).textContent).toBe('Overview');
     expect(screen.getByRole('button', { name: /create pull request$/i })).toBeDefined();
   });
 

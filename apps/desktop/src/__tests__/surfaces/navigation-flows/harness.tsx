@@ -632,7 +632,7 @@ export const pane = (name: PaneName) => async (ctx: Ctx) => {
 type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
-  pr: /^Pull request/,
+  pr: /^Overview/,
   comments: /^Comments/,
   files: /^Changes/,
   commits: /^Commits/,

@@ -86,7 +86,7 @@ describe('Branch page capabilities from the branch tree', () => {
   it('section keys stay on the entries: Pull request, Comments and Files carry their shortcut', async () => {
     await mount('c04-worktree-pr-behind');
 
-    for (const name of [/^Pull request/, /^Comments/, /^Changes/]) {
+    for (const name of [/^Overview/, /^Comments/, /^Changes/]) {
       expect(stripTab({ name })).toBeDefined();
     }
     expect(BRANCH_TAB_REGISTRY.pr.shortcut).toBe('lens.pr');

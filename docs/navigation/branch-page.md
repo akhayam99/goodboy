@@ -13,26 +13,31 @@ Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
 **Frame.** The Branch page is the center of the Projects tree (Session
-rail): one detail with no rail of its own. Its sections are the tab strip under
-its title (`BranchTabStrip`); the page computes its counts once
+rail): one detail with no rail of its own. Its sections are the underlined page tabs
+under its title (`BranchTabStrip`, built on `PageTabs`); the page computes its counts once
 (`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
 one pill. A host with no session rail (a scene, a test) shows the page alone. The
-header, the banners and every section body sit on the 960px column of the
-detail; nothing moves from one section to the next. The header steps aside
+header and every section body sit on the 960px column of the
+detail; nothing moves from one section to the next. The header holds three things,
+100px at rest with a pull request: the title row (48), one meta line (16) and the tab row (36).
+The running line, the work lines, the notices and the base branch row are the top of the body
+(`BranchBodyTop`, `BranchNotices`), above the section and out of the pinned header. The header steps aside
 while you read (`PaneShell`, `revealKey` the tab): 24px of
-scroll down keeps only the back row (`Back to overview`) and the banners
-pinned, and 8px up, the top of the section, keyboard focus in the header or
-another tab brings the title, the line, the tabs and the work lines back. On a
+scroll down keeps only the back row (`Back to overview`) pinned, and 8px up, the top of the
+section, keyboard focus in the header or
+another tab brings the title, the line and the tabs back. On a
 section whose scroller does not start its body (Changes, with its toolbar above
-the diff; Comments, with its filter above the list) the toolbar rides up with
-the content and stays under the back row.
+the diff) the toolbar rides up with
+the content and stays under the back row. Comments has one 36 toolbar (`ReviewToolbar`): Open and
+Resolved, the source switch when notes and host threads both exist, and the fix run on the same row.
 
 **Header.** One row: the title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on
-the Pull request entry and it becomes an input in the same 32px row, `Enter` saves
-to the host, `Esc` cancels, a failure is an inline notice with Retry), one primary and `⋯`. The
-line under the title is the same on every tab: an icon for the state (its word is the tooltip),
-the number, the branch into its base and the author (`PullRequestHeaderLine`); without a pull
+the Overview entry and it becomes an input in the same 32px row, `Enter` saves
+to the host, `Esc` cancels, a failure is an inline notice with Retry), the state chip (20 high,
+the state word and its icon, `BranchStateChip`), one primary and `⋯`. The
+line under the title is the same on every tab: the number and the branch in mono, `into` the base,
+and the author's picture and name with `opened it` and the age (`PullRequestHeaderLine`); without a pull
 request it says `Not pushed`, `Pushed` or `Rebasing` and the distance to the base. **There is no branch switcher in the header or
 the rail**: the branches of the session are the rows of the Projects tree
 (`SessionLevel/ProjectTree`), and choosing one makes it the active mount and
@@ -230,16 +235,16 @@ Copy patch, and Rebase and Request review have their own place on Commits and Ov
 
 **Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
-pull request and no comment `Pull request`, `Changes`, `Commits`, `Work`; with a local note or a thread
+pull request and no comment `Overview`, `Changes`, `Commits`, `Work`; with a local note or a thread
 and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, Merged and
-Closed show all six, `Pull request`, `Comments`, `Changes`, `Commits`, `Checks`, `Work`. The first is
-labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
+Closed show all six, `Overview`, `Comments`, `Changes`, `Commits`, `Checks`, `Work`. The first is
+called `Overview` on every host (its key is ⌥⌘1,
 Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
 request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you; the counts and their scope are written once, under the entry slots below. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
-`Pull request` when the active mount has a pull request, else `Changes`; then the door resolver
+`Overview` when the active mount has a pull request, else `Changes`; then the door resolver
 above drops a section the state lacks. The
 sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
 pull request chip, an approved or changes-requested mark and a mount's
@@ -264,7 +269,7 @@ screen, whichever one chat writes to. The write destination is a separate fact: 
 Back and a reload leave it where it was, and the push confirm names the repository when the session
 has more than one.
 
-**Pull request.** The pull request itself, on the 960px column
+**Overview.** The pull request itself, on the 960px column
 (`features/branch/components/PullRequestTab`): the merge box first, then two columns, the
 reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
 below an 880px page container the side column moves above the reading column as one wrapping

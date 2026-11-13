@@ -52,6 +52,7 @@ import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
 import type { BranchNextStep, BranchReviewCounts } from '../../branchPrimary';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { pullRequestStateWordOf } from '../../pullRequestStateWordOf';
+import { BranchNotices } from '../BranchNotices';
 import { BranchStateChip } from './BranchStateChip';
 import { BRANCH_MENU_DIFF } from '../../branchPrimary';
 import { BranchHeader } from './index';
@@ -237,19 +238,26 @@ const Harness = ({
     mergeLabel: 'Squash and merge',
   });
   return (
-    <BranchHeader
-      sessionId={SESSION_ID}
-      pr={pr}
-      fallbackTitle="feat/export"
-      controls={controls}
-      isPushBusy={false}
-      isPrimaryYielding={isPrimaryYielding}
-      isStepHidden={isStepHidden}
-      tab="pr"
-      isActive={isActive}
-      canEditTitle={canEditTitle}
-      onMutated={onMutated ?? vi.fn()}
-    />
+    <>
+      <BranchHeader
+        sessionId={SESSION_ID}
+        pr={pr}
+        fallbackTitle="feat/export"
+        controls={controls}
+        isPushBusy={false}
+        isPrimaryYielding={isPrimaryYielding}
+        isStepHidden={isStepHidden}
+        tab="pr"
+        isActive={isActive}
+        canEditTitle={canEditTitle}
+        onMutated={onMutated ?? vi.fn()}
+      />
+      <BranchNotices
+        sessionId={SESSION_ID}
+        controls={controls}
+        isPushNext={!isStepHidden && controls.primary?.actionId === 'diff.push'}
+      />
+    </>
   );
 };
 
@@ -289,15 +297,24 @@ const titleRowOf = (): HTMLElement => {
 };
 
 describe('BranchHeader one row', () => {
-  it('holds the title and the actions on one row, with no state chip and no meta line', () => {
+  it('holds the title, the state chip and the actions on one row, with no meta line', () => {
     status = statusOf({});
     renderHeader({ pr: { ...PR, author: { login: 'maya-o', avatarUrl: null } } });
 
     expect(titleRowOf().textContent).toContain('Ledger export');
-    expect(document.querySelector('[data-slot="branch-state"]')).toBeNull();
+    const chip = titleRowOf().querySelector('[data-slot="branch-state"]');
+    expect(chip?.textContent).toBe('Draft');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ledger export');
     expect(titleRowOf().nextElementSibling?.textContent ?? '').toBe('');
     const header = titleRowOf().parentElement?.textContent ?? '';
     expect(header).not.toMatch(/#318|Maya Ortiz|commit|feat\/export/);
+  });
+
+  it('draws no state chip while the branch has no pull request', () => {
+    status = statusOf({});
+    renderHeader();
+
+    expect(document.querySelector('[data-slot="branch-state"]')).toBeNull();
   });
 
   it('carries one h1, the pull request title or the branch name', () => {

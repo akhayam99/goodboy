@@ -96,7 +96,7 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
       branchTab('pr'),
       () => heading(/Stop retried webhooks/),
       async () => {
-        expect(sectionLabels()[0]).toBe('Pull request');
+        expect(sectionLabels()[0]).toBe('Overview');
         expect(sectionLabels()).toHaveLength(6);
       },
     ),

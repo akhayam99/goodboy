@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cn, SegmentedTabs } from '@goodboy/ui';
 import type { CommentStateCounts } from '../../../commentGroupsView';
 import type { ReviewEntryCounts } from '../useReviewEntries';
@@ -14,6 +15,7 @@ type Props = {
   readonly counts: ReviewEntryCounts;
   readonly stateCounts: CommentStateCounts;
   readonly hostLabel: string | null;
+  readonly trailing?: ReactNode;
 };
 
 type BadgeParams = {
@@ -41,14 +43,18 @@ export const ReviewScopeBar = ({
   counts,
   stateCounts,
   hostLabel,
+  trailing = null,
 }: Props) => {
   const isSourceSwitchShown = hostLabel !== null && counts.notes > 0 && counts.host > 0;
   const isStateSwitchShown = stateCounts.open + stateCounts.resolved > 0;
-  if (!isSourceSwitchShown && !isStateSwitchShown) {
+  if (!isSourceSwitchShown && !isStateSwitchShown && trailing == null) {
     return null;
   }
   return (
-    <div data-slot="review-scope-bar" className="flex min-w-0 flex-wrap items-center gap-2">
+    <div
+      data-slot="review-scope-bar"
+      className="flex min-h-9 min-w-0 shrink-0 flex-wrap items-center gap-2"
+    >
       {isSourceSwitchShown ? (
         <SegmentedTabs<CommentScope>
           ariaLabel="Comment source"
@@ -86,6 +92,7 @@ export const ReviewScopeBar = ({
           ]}
         />
       ) : null}
+      {trailing == null ? null : <div className="min-w-0 flex-1">{trailing}</div>}
     </div>
   );
 };

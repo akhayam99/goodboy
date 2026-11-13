@@ -37,20 +37,18 @@ import { useBranchReviewState } from '../../hooks/useBranchReviewState';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
-import { requestNounLabel } from '../../requestNounLabel';
 import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
 import { BranchHeader } from '../BranchHeader';
-import { BranchRunningLine } from '../BranchRunningLine';
 import { BranchStartLine } from '../BranchStartLine';
 import { BranchTabStrip } from '../BranchTabStrip';
-import { BranchWorkLines } from '../BranchWorkLines';
 import { NoPullRequest } from '../PullRequestTab/NoPullRequest';
 import { PullRequestTab } from '../PullRequestTab';
 import { PullRequestHeaderLine } from '../PullRequestTab/PullRequestHeaderLine';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
+import { BranchBodyTop } from './BranchBodyTop';
 import { BranchDetail } from './BranchDetail';
 import { BranchScroll } from './BranchScroll';
 import { BranchWorkBody } from './BranchWorkBody';
@@ -127,10 +125,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       pr === null ? ('none' as const) : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
     hasComments,
   };
-  const requestLabel = requestNounLabel({ host });
-  const tabs = branchTabsOf(scope).map((entry) =>
-    entry.id === 'pr' ? { ...entry, label: requestLabel } : entry,
-  );
+  const tabs = branchTabsOf(scope);
   const tab = resolveBranchTab({ tab: storedTab, scope });
   const isReadOnly = isBranchReadOnly(scope);
   const { hasPushFailure, isPushBusy, pushCount, review } = useBranchReviewState({
@@ -260,6 +255,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     start.step.state === 'unpushed' &&
     !bitbucketRemote.isBitbucket &&
     (sources.entries.length > 0 || repo !== null);
+  const isStepHidden = isFormLeading && controls.step === 'push';
   const isPrimaryYielding =
     isFormLeading ||
     pushPhaseYieldsOf({ kind: branchReview.push.phase.kind }) ||
@@ -394,6 +390,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     ahead: start.step.ahead,
     notPushed: pushCount,
   });
+  const openedAt = pullRequestView.view?.createdAt ?? null;
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
   const detail = (
@@ -412,7 +409,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           />
         }
         header={
-          <div className="flex min-w-0 flex-col gap-3">
+          <div className="flex min-w-0 flex-col">
             <BranchHeader
               sessionId={sessionId}
               host={host}
@@ -422,38 +419,41 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                 isBranchStart ? (
                   <BranchStartLine start={start} />
                 ) : pr === null ? null : (
-                  <PullRequestHeaderLine pr={pr} host={host} />
+                  <PullRequestHeaderLine pr={pr} host={host} openedAt={openedAt} />
                 )
               }
               controls={controls}
               isPushBusy={isPushBusy}
               isPrimaryYielding={isPrimaryYielding}
-              isStepHidden={isFormLeading && controls.step === 'push'}
+              isStepHidden={isStepHidden}
               tab={tab}
               isActive={isActive}
               canEditTitle={canEditTitle}
               onMutated={onMutated}
             />
-            <BranchRunningLine session={session} mount={identity.mount} isActive={isActive} />
             <BranchTabStrip tabs={tabs} facts={entryFacts} value={tab} onSelect={selectTab} />
-            <BranchWorkLines
-              session={session}
-              checkWork={controls.checkWork}
-              run={branchReview.run}
-              lane={branchReview.lane}
-              isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
-              onOpenComments={() => selectTab('comments')}
-            />
-            {baseRow}
             <div
               ref={setTabActionsSlot}
               data-slot="branch-tab-actions"
-              className="flex min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
+              className="flex min-h-9 min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
             />
           </div>
         }
       >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{body()}</div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <BranchBodyTop
+            session={session}
+            mount={identity.mount}
+            isActive={isActive}
+            controls={controls}
+            review={branchReview}
+            isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
+            isPushNext={!isStepHidden && controls.primary?.actionId === 'diff.push'}
+            baseRow={baseRow}
+            onOpenComments={() => selectTab('comments')}
+          />
+          {body()}
+        </div>
       </PaneShell>
     </BranchDetail>
   );
