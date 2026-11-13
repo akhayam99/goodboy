@@ -1,5 +1,5 @@
 import type { ProjectId, SessionId } from '@goodboy/types';
-import type { BrowserTab } from '../../store/slices/browser/types';
+import type { BrowserTab, DevicePresetId } from '../../store/slices/browser/types';
 
 export type BrowserTabState = 'live' | 'asleep' | 'closed';
 
@@ -84,6 +84,10 @@ type TextParams = {
   readonly text: string;
 };
 
+type DevicePresetParams = {
+  readonly preset: DevicePresetId;
+};
+
 type ErrorParams = {
   readonly error: unknown;
 };
@@ -128,6 +132,8 @@ export type BrowserPaneModel = {
   readonly find: (params: FindParams) => Promise<boolean>;
   readonly clearFind: () => Promise<void>;
   readonly inspect: () => void;
+  readonly devicePreset: DevicePresetId;
+  readonly setDevicePreset: (params: DevicePresetParams) => void;
   readonly pageSend: BrowserPageSend;
   readonly showError: (params: ErrorParams) => void;
 };

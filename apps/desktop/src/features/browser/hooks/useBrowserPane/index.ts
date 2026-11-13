@@ -26,6 +26,7 @@ import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
 import { useSendPageToAgent } from '../useSendPageToAgent';
 import { useTabLoad } from '../useTabLoad';
+import { useDeviceAgent } from '../useDeviceAgent';
 import { useBrowserWorkspaceTabs } from '../../../../shared/hooks/useBrowserWorkspaceTabs';
 import { useTabStates } from '../useTabStates';
 
@@ -51,6 +52,10 @@ type StepParams = {
 
 type CommandParams = {
   readonly command: (params: HostTabParams) => Promise<unknown>;
+};
+
+type TitleParams = {
+  readonly tab: BrowserTab;
 };
 
 type DoneParams = {
@@ -114,6 +119,20 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const url = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
   const address = addressTextOf({ url });
   const canOpenOutside = url !== '' && !isFileAddress({ url });
+  const titleOfTab = ({ tab }: TitleParams): string => {
+    const fact = factOf({ liveId: live?.[tab.id] });
+    if (fact !== undefined && fact.title !== '') {
+      return fact.title;
+    }
+    return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
+  };
+  const device = useDeviceAgent({
+    tabId: shown?.tab.id ?? null,
+    liveId: shownLiveId,
+    title: shown === null ? '' : titleOfTab({ tab: shown.tab }),
+    onNote: ({ note }) => setNotice(note),
+    onError: ({ error: text }) => setError(text),
+  });
   const shownLiveIdRef = useRef(shownLiveId);
   shownLiveIdRef.current = shownLiveId;
   const isLoading = useAppStore(
@@ -216,13 +235,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     shown,
     address,
     canOpenOutside,
-    titleOf: ({ tab }) => {
-      const fact = factOf({ liveId: live?.[tab.id] });
-      if (fact !== undefined && fact.title !== '') {
-        return fact.title;
-      }
-      return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
-    },
+    titleOf: titleOfTab,
     isAsleep: ({ tab }) => isLiveAsleep({ liveId: live?.[tab.id] }),
     isLiveAsleep,
     error,
@@ -380,6 +393,8 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         }
       });
     },
+    devicePreset: device.preset,
+    setDevicePreset: device.change,
     pageSend,
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   };

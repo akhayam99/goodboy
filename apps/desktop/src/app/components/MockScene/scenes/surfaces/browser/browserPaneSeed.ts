@@ -3,7 +3,7 @@ import { browserTabListPref } from '../../../../../../features/browser/browserTa
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
 import type { BrowserTabFacts, BrowserTabListMode } from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
-import type { BrowserTab } from '../../../../../../store/slices/browser/types';
+import type { BrowserTab, DevicePresetId } from '../../../../../../store/slices/browser/types';
 import type { BrowserVisit } from '../../../../../../store/slices/browser-visits/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
@@ -24,7 +24,16 @@ export type BrowserPaneSceneState =
   | 'find'
   | 'find-missing'
   | 'cover'
-  | 'saved-copy';
+  | 'saved-copy'
+  | 'width-phone'
+  | 'width-tablet';
+
+const DEVICE_PRESETS_OF: Readonly<
+  Partial<Record<BrowserPaneSceneState, Readonly<Record<string, DevicePresetId>>>>
+> = {
+  'width-phone': { 'mock-browser-checkout': 'phone' },
+  'width-tablet': { 'mock-browser-checkout': 'tablet' },
+};
 
 const VISITS: ReadonlyArray<BrowserVisit> = [
   { url: 'http://localhost:5173/checkout/confirm', title: 'Confirm order', visitedAt: 3 },
@@ -262,6 +271,7 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
     browserSessionTabs: { [SESSION_ID]: tabs },
     browserActiveTab: { [SESSION_ID]: 'mock-browser-checkout' },
     browserShownPin: { [SESSION_ID]: null },
+    browserDevicePresets: DEVICE_PRESETS_OF[state] ?? {},
     browserLiveTabs: {
       [SESSION_ID]: Object.fromEntries(tabs.map((tab) => [tab.id, `mock-live-${tab.id}`])),
     },

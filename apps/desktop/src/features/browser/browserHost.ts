@@ -1,5 +1,6 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
+import type { DevicePresetId } from '../../store/slices/browser/types';
 import type {
   BrowserBounds,
   BrowserFindOutcome,
@@ -35,6 +36,10 @@ type PlaceParams = TabParams & {
 
 type NavigateParams = TabParams & {
   readonly url: string;
+};
+
+type UserAgentParams = TabParams & {
+  readonly preset: DevicePresetId;
 };
 
 type FindParams = TabParams & {
@@ -92,6 +97,8 @@ export const browserHost = {
   inspectable: ({ tabId }: TabParams) =>
     invokeCommand<null>('browser_tab_inspectable', { args: { tabId } }),
   close: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_close', { args: { tabId } }),
+  userAgent: ({ tabId, preset }: UserAgentParams) =>
+    invokeCommand<null>('browser_user_agent', { args: { tabId, preset } }),
   list: ({ sessionId }: SessionParams) =>
     invokeCommand<ReadonlyArray<BrowserTabFacts>>('browser_tab_list', { args: { sessionId } }),
   pageKeys: ({ combos }: PageKeysParams) =>

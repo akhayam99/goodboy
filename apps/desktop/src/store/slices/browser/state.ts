@@ -1,5 +1,5 @@
 import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
-import type { BrowserTab, ClosedBrowserTab } from './types';
+import type { BrowserTab, ClosedBrowserTab, DevicePresetId } from './types';
 
 export type BrowserState = {
   readonly browserTabCounts: Readonly<Record<WorkspaceId, number>>;
@@ -10,6 +10,7 @@ export type BrowserState = {
   readonly browserLiveTabs: Readonly<Record<SessionId, Readonly<Record<string, string>>>>;
   readonly browserDraftEnds: Readonly<Record<SessionId, number>>;
   readonly browserClosedTabs: Readonly<Record<SessionId, ReadonlyArray<ClosedBrowserTab>>>;
+  readonly browserDevicePresets: Readonly<Record<string, DevicePresetId>>;
 };
 
 export const browserInitialState: BrowserState = {
@@ -21,4 +22,5 @@ export const browserInitialState: BrowserState = {
   browserLiveTabs: {},
   browserDraftEnds: {},
   browserClosedTabs: {},
+  browserDevicePresets: {},
 };

@@ -3,6 +3,7 @@ export type BrowserMoreOff = {
   readonly isCopyAddressOff: boolean;
   readonly isDuplicateOff: boolean;
   readonly isInspectOff: boolean;
+  readonly isWidthOff: boolean;
   readonly isCloseTabOff: boolean;
 };
 
@@ -23,5 +24,6 @@ export const browserMoreOffOf = ({
   isCopyAddressOff: !hasAddress,
   isDuplicateOff: !hasAddress,
   isInspectOff: !hasTab,
+  isWidthOff: !hasTab,
   isCloseTabOff: !hasTab || isPinShown,
 });

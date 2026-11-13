@@ -26,6 +26,7 @@ pub(crate) const PAGE_TEXT_UNAVAILABLE: &str = "page-text-unavailable";
 pub(crate) const OTHER_SESSION: &str = "other-session";
 pub(crate) const HOST_UNKNOWN: &str = "host-unknown";
 pub(crate) const UNSUPPORTED_PLATFORM: &str = "unsupported-platform";
+pub(crate) const INVALID_PRESET: &str = "invalid-preset";
 pub(crate) const TAB_ROW_GONE: &str = "tab-row-gone";
 pub(crate) const TAB_ROW_OWNER: &str = "tab-row-owner";
 pub(crate) const TAB_ROWS_CHANGED: &str = "tab-rows-changed";
