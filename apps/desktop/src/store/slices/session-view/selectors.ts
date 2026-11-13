@@ -15,6 +15,8 @@ import { spendFigures } from '../../../features/budget/spendFigures';
 import { attentionWordsOf } from '../../../features/session/session-stage';
 import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import { useAppStore } from '../../store';
+import { countPerf } from '../../../shared/lib/countPerf';
+import { PERF_COUNT_NAMES } from '../../../shared/lib/perfCountNames';
 import { useProjectFilteredSessions } from '../sessionFilters/selectors';
 import { useProjectMountsForSessions } from '../project-mounts/useProjectMountsForSessions';
 import { useTelemetryForSessions } from '../sessions/selectors';
@@ -54,7 +56,9 @@ function liveAgentTurnStateOf(
   agentTurnState: Readonly<Record<AgentId, TurnState>>,
 ): Readonly<Record<AgentId, TurnState>> {
   const entries: Record<AgentId, TurnState> = {};
+  let scanned = 0;
   for (const runs of Object.values(sessionPhaseRuns)) {
+    scanned += runs.length;
     for (const run of runs) {
       const turnState = agentTurnState[run.id];
       if (turnState !== undefined && isTurnStateLive({ turnState, includeBlocked: true })) {
@@ -62,6 +66,7 @@ function liveAgentTurnStateOf(
       }
     }
   }
+  countPerf({ name: PERF_COUNT_NAMES.agentsScanned, amount: scanned });
   return entries;
 }
 

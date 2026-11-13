@@ -31,6 +31,9 @@ import { adoptLegacyIntegrationSecrets } from '../integrations/adoptLegacyIntegr
 import { drainAuditRetryQueue } from './auditRetryQueue';
 import { scheduleStorageCheck } from '../storage/scheduleStorageCheck';
 import { scheduleSearchBackfill } from '../search-index/scheduleSearchBackfill';
+import { markBoot } from '../../../shared/lib/bootMarks';
+import { countPerf } from '../../../shared/lib/countPerf';
+import { PERF_COUNT_NAMES } from '../../../shared/lib/perfCountNames';
 import type { GetFn, SetFn } from './types';
 import type { BootPhase } from './state';
 
@@ -42,6 +45,9 @@ type RecordBootBreadcrumbParams = {
 };
 
 const recordBootBreadcrumb = ({ phase, detail }: RecordBootBreadcrumbParams): void => {
+  if (phase !== 'error') {
+    markBoot({ name: phase });
+  }
   try {
     void Promise.resolve(invokeCommand('boot_breadcrumb', { phase, detail })).catch(
       () => undefined,
@@ -50,6 +56,13 @@ const recordBootBreadcrumb = ({ phase, detail }: RecordBootBreadcrumbParams): vo
     return;
   }
 };
+
+type CountBootStepParams = {
+  step: string;
+};
+
+const countBootStep = ({ step }: CountBootStepParams): void =>
+  countPerf({ name: PERF_COUNT_NAMES.bootStep, detail: step });
 
 let hydratePromise: Promise<void> | null = null;
 
@@ -62,16 +75,20 @@ export const hydrate = (set: SetFn, get: GetFn) => {
       const bootStartedAt = Date.now();
       try {
         recordBootBreadcrumb({ phase: 'pending', detail: 'start' });
+        countBootStep({ step: 'pending' });
         const migratingAt = Date.now();
         set({ bootPhase: 'migrating', bootFailedPhase: null, newerDatabase: null, error: null });
         await runDbMigrations();
+        countBootStep({ step: 'migrations' });
         await hydrateOnboardingFromDb();
+        countBootStep({ step: 'onboarding' });
         await Promise.all([
           get().hydrateBootstrapPhases(),
           get().hydrateFolderPurposes(),
           get().hydrateChangelogSeen(),
           get().hydrateCliRequirements(),
         ]);
+        countBootStep({ step: 'independent-hydrations' });
         void get()
           .loadNotifications()
           .catch(() => {});
@@ -79,6 +96,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           .loadProviderLimits()
           .then(() => get().probeProviderLimits())
           .catch(() => {});
+        countBootStep({ step: 'notifications-and-limits' });
         recordBootBreadcrumb({
           phase: 'migrating',
           detail: `ms=${Date.now() - migratingAt}`,
@@ -106,6 +124,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           }
           return { settings: next };
         });
+        countBootStep({ step: 'settings' });
         recordBootBreadcrumb({
           phase: 'loading-settings',
           detail: `ms=${Date.now() - loadingSettingsAt}`,
@@ -116,6 +135,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         await get()
           .loadCredentials()
           .catch(() => {});
+        countBootStep({ step: 'credentials' });
         recordBootBreadcrumb({
           phase: 'detecting-cli',
           detail: `ms=${Date.now() - detectingCliAt}`,
@@ -132,7 +152,9 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           )
         ).flat();
         set({ workspaces, projects });
+        countBootStep({ step: 'workspaces' });
         const adoption = await adoptLegacyIntegrationSecrets();
+        countBootStep({ step: 'integration-key-adoption' });
         if (adoption.ok === false) {
           void get().reportError({
             recovery: CHECK_STATE,
@@ -145,6 +167,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         await get()
           .loadIntegrationCredentials()
           .catch(() => {});
+        countBootStep({ step: 'integration-credentials' });
         try {
           await recoverStagedFileVersions({
             onFailure: async ({ sessionId, runId, message }) => {
@@ -165,11 +188,15 @@ export const hydrate = (set: SetFn, get: GetFn) => {
             body: formatError(error),
           });
         }
+        countBootStep({ step: 'staged-file-versions' });
         inPlaceSnapshot.install({ port: createFolderSnapshotPort({ set, get }) });
         void startFolderVersions({ set, get, nowMs: Date.now() });
+        countBootStep({ step: 'folder-versions' });
 
         await reconcileGhostAgents().catch(() => 0);
+        countBootStep({ step: 'ghost-agents' });
         await applyQaDecidingPreview({ set }).catch(() => {});
+        countBootStep({ step: 'qa-preview' });
         recordBootBreadcrumb({
           phase: 'loading-workspaces',
           detail: `ms=${Date.now() - loadingWorkspacesAt}`,
@@ -192,6 +219,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
               reloadIntent.location === undefined ? reloadIntent.sessionId : null;
             if (snapSessionId && get().sessions.some((s) => s.id === snapSessionId)) {
               await get().setCurrentSession(snapSessionId);
+              countBootStep({ step: 'open-session' });
               const snapAgentId = reloadIntent.agentId;
               if (
                 snapAgentId &&
@@ -232,12 +260,14 @@ export const hydrate = (set: SetFn, get: GetFn) => {
                 const sessions = get().sessions;
                 if (sessions.some((s) => s.id === lastSessionId)) {
                   await get().setCurrentSession(lastSessionId);
+                  countBootStep({ step: 'open-session' });
                 }
               }
             }
           }
         }
 
+        countBootStep({ step: 'restoring-session' });
         recordBootBreadcrumb({
           phase: 'restoring-session',
           detail: `ms=${Date.now() - restoringSessionAt}`,
@@ -249,7 +279,9 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           .reattachTerminalTabs()
           .catch(() => {});
         void get().loadEndedWork();
+        countBootStep({ step: 'ready' });
         set({ bootPhase: 'ready', hydrated: true });
+        markBoot({ name: 'hydrated' });
         void reopenSecondaryWindows({ layouts: launchLayout?.secondary ?? [] });
         recordBootBreadcrumb({
           phase: 'ready',
