@@ -1,8 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { Chip, Tooltip } from '@goodboy/ui';
-import { isOwnBrowserClick } from '../../browser/isOwnBrowserClick';
-import { openInBrowser } from '../../browser/openInBrowser';
-import { openInYourBrowser } from '../../browser/openInYourBrowser';
+import { openWebLink } from '../../browser/openWebLink';
 import { ownBrowserClickWord } from '../../browser/ownBrowserClickWord';
 
 type Props = {
@@ -23,13 +21,7 @@ export const PortChip = ({ port, sessionId }: Props) => {
         kind="reference"
         label={`:${port}`}
         ariaLabel={`Open localhost:${port}`}
-        onClick={(event) => {
-          if (isOwnBrowserClick({ event })) {
-            void openInYourBrowser({ url });
-            return;
-          }
-          void openInBrowser({ sessionId, url });
-        }}
+        onClick={(event) => void openWebLink({ sessionId, url, event })}
       />
     </Tooltip>
   );

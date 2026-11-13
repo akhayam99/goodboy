@@ -98,6 +98,7 @@ const stubHost = () => {
         sessionId: args.sessionId,
         url: args.url,
         title: '',
+        state: 'live',
         isShown: false,
         hiddenSinceMs: null,
         openerId: null,

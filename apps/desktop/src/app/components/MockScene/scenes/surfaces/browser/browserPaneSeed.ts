@@ -1,13 +1,14 @@
 import { brandId, type ProjectId, type SessionId } from '@goodboy/types';
 import { browserTabListPref } from '../../../../../../features/browser/browserTabListPref';
 import { pinProjectOf } from '../../../../../../features/browser/pinProjectOf';
-import type { BrowserTabFacts } from '../../../../../../features/browser/types';
+import type { BrowserTabFacts, BrowserTabListMode } from '../../../../../../features/browser/types';
 import { useAppStore } from '../../../../../../store';
 import type { BrowserTab } from '../../../../../../store/slices/browser/types';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
 
-export type BrowserPaneSceneState = 'pane' | 'tabs' | 'page' | 'peek' | 'passkey';
+export type BrowserPaneSceneState =
+  'pane' | 'tabs' | 'rail' | 'page' | 'peek' | 'passkey' | 'cover';
 
 const PEEK_DECISION =
   'Check the tax line on [localhost:5173/checkout](http://localhost:5173/checkout) before the PR goes up';
@@ -73,6 +74,17 @@ const rowOf = ({ id, url, title, sessionId, projectId, position }: RowParams): B
   updatedAt: 1,
 });
 
+type ListModeParams = {
+  readonly state: BrowserPaneSceneState;
+};
+
+const listModeOf = ({ state }: ListModeParams): BrowserTabListMode => {
+  if (state === 'tabs') {
+    return 'list';
+  }
+  return state === 'rail' ? 'rail' : 'hidden';
+};
+
 const factsOf = ({
   id,
   url,
@@ -82,6 +94,7 @@ const factsOf = ({
   sessionId: SESSION_ID,
   url,
   title,
+  state: id === 'mock-browser-tax' ? 'asleep' : 'live',
   isShown: false,
   hiddenSinceMs: null,
   openerId: null,
@@ -184,7 +197,7 @@ export const seedBrowserPane = ({ state }: SeedParams): void => {
         return null;
     }
   });
-  browserTabListPref.write(state === 'tabs');
+  browserTabListPref.write({ mode: listModeOf({ state }) });
   useAppStore.setState({
     browserSessionTabs: { [SESSION_ID]: tabs },
     browserActiveTab: { [SESSION_ID]: 'mock-browser-checkout' },

@@ -352,9 +352,19 @@ it; Esc inside the page goes to the page.
   files). Words, a host with no dot and every other scheme are refused under
   the row. The pane never sends text to a search engine.
 - **Tabs**: the strip shows the session's tabs, then the project pins with
-  their title and a pin mark, then New tab. The list shows This session and Pinned for the project, with
-  the note that tabs close when the session is archived. With no tab the pane
-  shows an empty state and focuses the address.
+  their title and a pin mark, then New tab. The list shows `Pinned · <project>`
+  first, then This session, then New tab; the note that tabs close when the
+  session is archived is the tooltip of the This session label. A tab the
+  engine put to sleep or closed (`browser://tab-state`, read by
+  `useTabStates`, corrected by every successful 1.5 second poll, and keyed by
+  the engine's tab id so the Browser page marks tabs of every session) shows its favicon faint and
+  a moon mark, "Asleep, may reload when opened" (an asleep webview comes back
+  as it was, a closed one loads again). The list has three widths in
+  `browserTabListPref`: `list` (192px), `rail` (36px of favicons, titles in
+  tooltips) and `hidden`; the fold button cycles `list` and `rail`, and a pane
+  under 560px wide shows the rail. The old boolean value reads as `list` or
+  `hidden`. The Browser page rail uses the same rows and the same groups order.
+  With no tab the pane shows an empty state and focuses the address.
 - **Live tabs**: a row and a live webview are not the same thing. Opening a
   page asks the host for a hidden webview, saves its row with the webview's id
   and binds the two in `browserLiveTabs`. After a restart a row has no live
@@ -399,7 +409,13 @@ it; Esc inside the page goes to the page.
   a view inside that region is hidden, so the native view never paints over
   the dock. While
   one intersects the placeholder, the view is
-  hidden; an overlay elsewhere in the window leaves it shown. Toasts keep left of the pane, even when it lies over
+  hidden; an overlay elsewhere in the window leaves it shown. While the view is
+  hidden under an overlay the placeholder shows a cover (`BrowserCover`) on the
+  subtle surface: favicon, title, host and the reason in one line
+  (`coverReasonText.ts`, from `createOverlayWatch().coverOf`: menu, dialog,
+  tooltip or page). The cover goes one frame after the host showed the view
+  again (`onShown` of `createNativePlacement`), so no frame has neither, and it
+  stays when the show fails. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they
   never sit under a view.
 - **Writes** name the session and the tab. A state change waits for the host:
@@ -499,15 +515,27 @@ sits in and the address, and one function opens it (`openInBrowser`).
   integration, sign-in or connect guide in a drawer, opens your browser as
   before, and so does a link outside a session. A GitHub commit link still
   opens its diff. Chips and rows need only `data-browser-session`.
-- **The click rule**: a plain click opens the session's browser, ⌘-click
-  (Ctrl-click off macOS) opens your browser, on chips and links alike. The
-  ⌘-click listener runs after the page's own handlers and skips a click they
-  already handled, so an anchor with its own `onClick` opens your browser
-  once. No earlier rule covered web links; ⌘-click on a file path in a
-  terminal still opens your editor.
-- **Peek**: resting on or focusing a `localhost` link in a session shows a
-  card with the title of its tab (or the host), the address and what a click
-  does. The card never creates a tab, because every tab is a whole webview.
+- **The click rule**: one function, `openWebLink`, decides every plain web
+  link click, on chips, session links, a Service's port and a terminal's
+  printed addresses alike. ⌘-click (Ctrl-click off macOS) always opens your
+  browser. Otherwise the Links setting (`links.open`, Settings › General ›
+  Open with) decides: `goodboy`, the default, opens beside the session, and
+  `browser` opens your browser. A door with no session opens your browser
+  whatever the setting says. The click's modifier is read when the click
+  lands, and the setting is read before the open starts; a setting that
+  cannot be read counts as the default and reports a warning. The ⌘-click
+  listener runs after the page's own handlers and skips a click they already
+  handled, so an anchor with its own `onClick` opens your browser once.
+  ⌘-click on a file path in a terminal still opens your editor.
+- **Terminal links**: `GenericTerminalPanel` hands a printed web link and its
+  click event to `onOpenWebLink`; with no prop it keeps opening your browser,
+  as the provider's inline terminal does. The terminal pane passes the
+  session of its tab, so a terminal on a plain folder has none.
+- **Peek**: resting on or focusing a `localhost` link in a session, or
+  resting on any web address in a terminal, shows a card with the title of
+  its tab (or the host), the address and what a click does, in the words of
+  `webLinkPeekWords.ts`, which read the same place `openWebLink` picks. The card
+  never creates a tab, because every tab is a whole webview.
 - **⌘L** focuses the address row while the pane is on screen or the Browser
   page is open. Elsewhere ⌘L stays Ask about this session, which held the
   chord first (`browser.address` is scoped, so it wins only there). A page
@@ -732,21 +760,33 @@ words (`features/browser/browserFailureText.ts`).
   and places the view lower when the address error grows the chrome with no
   frame running. `createOverlayWatch.test.ts` pins
   the cover check for a popover with no role, for tooltips and for a page view
-  under an overlay dock.
+  under an overlay dock, and the reason per overlay kind. The mock scene
+  `browser-pane-cover` (light and dark) opens a menu over the page.
   `addressOf.test.ts` pins the address rule. The mock scenes `browser-pane` and `browser-pane-tabs` (light
   and dark) draw a stand in where the native view goes.
 - The doors: `openInBrowser.ts` opens, `tabForAddress.ts` picks the tab,
-  `isOwnBrowserClick.ts` is the click rule, `sessionOfElement.ts` reads
-  `data-browser-session`, `claimSessionLink.ts` takes a link from the shared
-  interceptor (`useCommitLinkInterceptor`), `hooks/useOwnBrowserLinkClicks`
-  takes ⌘-click and `components/BrowserLinkDoors` draws the peek. The ⌘K
-  entries come from `palette/hooks/useBrowserEntries` and `typedAddressOf.ts`.
+  `openWebLink.ts` is the click rule (`webLinkPlace.ts` is its pure answer,
+  `isOwnBrowserClick.ts` reads the modifier, `shared/lib/linksOpenOf.ts` and
+  `linksOpenSetting.ts` read and name the setting), `sessionOfElement.ts`
+  reads `data-browser-session`, `claimSessionLink.ts` takes a link from the
+  shared interceptor (`useCommitLinkInterceptor`), `hooks/useOwnBrowserLinkClicks`
+  takes ⌘-click and `components/BrowserLinkDoors` draws the peek through
+  `WebLinkPeek.tsx`, which the terminal pane draws too
+  (`terminal/hooks/useTerminalWebLinks`). The ⌘K entries come from
+  `palette/hooks/useBrowserEntries` and `typedAddressOf.ts`.
   `doors.test.tsx` pins each door with a fake host: a chip opening a new tab
   and reusing one, ⌘-click and a session-less chip calling the system opener,
   a service row, a door on a page, a host failure, links in and out of a
-  session, the peek, ⌘L beside Ask and the ⌘K entries.
-  `tabForAddress.test.ts` pins the tab match; the scenes are `browser-peek`
-  and `browser-peek-dark`.
+  session, the peek, the Links setting set to your browser on a chip, a link
+  and the peek, ⌘L beside Ask and the ⌘K entries. `openWebLink.test.ts` pins
+  ⌘-click over the setting, `goodboy` with and without a session and
+  `browser`; `webLinkPeekWords.test.ts` pins the peek words against the place;
+  `GenericTerminalPanel/webLinks.test.tsx` pins that the addon's click reaches
+  `onOpenWebLink` with its event and that a hover reports the row;
+  `LinksOpenField/index.test.tsx` pins the row reading, saving and keeping the
+  old value on a failed save. `tabForAddress.test.ts` pins the tab match; the
+  scenes are `browser-peek`, `browser-peek-dark`, `settings-links` and
+  `settings-links-dark`.
 - The budgets: `features/browser/browserBudgets.ts` holds the numbers.
   `browserBudgets.test.tsx` runs in the unit project and counts, never times:
   no `browser_*` command and no frame request while no tab was opened, the

@@ -45,15 +45,15 @@ const PINS = [
 ];
 
 describe('the groups of the browser page', () => {
-  it('lists the sessions that hold a tab in their order, then one group of pins per project', () => {
+  it('lists one group of pins per project, then the sessions that hold a tab in their order', () => {
     const groups = browserPageGroups({ sessions: SESSIONS, pins: PINS, selectedId: null });
 
     expect(groups.map((group) => group.label)).toEqual([
+      'Pinned · payments-api',
       'Show tax in the checkout total',
       'Stop retried webhooks posting',
-      'Pinned for payments-api',
     ]);
-    expect(groups.map((group) => group.isPins)).toEqual([false, false, true]);
+    expect(groups.map((group) => group.isPins)).toEqual([true, false, false]);
   });
 
   it('keeps the picked session even with no tab, so a page can open in it', () => {
@@ -66,8 +66,8 @@ describe('the groups of the browser page', () => {
     const picked = browserPageGroups({ sessions: SESSIONS, pins: PINS, selectedId: WEBHOOKS });
     const elsewhere = browserPageGroups({ sessions: SESSIONS, pins: PINS, selectedId: ROUNDING });
 
-    expect(picked.at(-1)?.sessionId).toBe(WEBHOOKS);
-    expect(elsewhere.at(-1)?.sessionId).toBe(CHECKOUT);
+    expect(picked.at(0)?.sessionId).toBe(WEBHOOKS);
+    expect(elsewhere.at(0)?.sessionId).toBe(CHECKOUT);
   });
 
   it('drops a group of pins that no session of the page can open', () => {

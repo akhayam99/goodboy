@@ -160,9 +160,13 @@ brand-tools
 browser-page
 browser-page-dark
 browser-pane
+browser-pane-cover
+browser-pane-cover-dark
 browser-pane-dark
 browser-pane-passkey
 browser-pane-passkey-dark
+browser-pane-rail
+browser-pane-rail-dark
 browser-pane-tabs
 browser-pane-tabs-dark
 browser-peek
@@ -799,6 +803,8 @@ sessions-menu
 sessions-nomatch
 settings-app
 settings-general-pinned
+settings-links
+settings-links-dark
 settings-no-workspace
 settings-projects-failed
 settings-projects-nostar

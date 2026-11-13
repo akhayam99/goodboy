@@ -19,6 +19,7 @@ import type { BrowserPaneModel, BrowserTarget } from '../../types';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
+import { useTabStates } from '../useTabStates';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -71,8 +72,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const live = useAppStore((state) => state.browserLiveTabs[sessionId]);
   const draftEnds = useAppStore((state) => state.browserDraftEnds[sessionId] ?? 0);
   const [error, setError] = useState<string | null>(null);
+  const { states, reconcile } = useTabStates();
   const { facts, refresh } = useLiveTabFacts({
     sessionId,
+    onPolled: reconcile,
     onError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   });
   const [isDrafting, setIsDrafting] = useState(false);
@@ -81,6 +84,10 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const shownLiveId = shown === null ? undefined : live?.[shown.tab.id];
   const factOf = ({ liveId }: LiveParams) =>
     liveId === undefined ? undefined : facts.find((fact) => fact.id === liveId);
+  const isLiveAsleep = ({ liveId }: LiveParams): boolean => {
+    const state = liveId === undefined ? undefined : states.get(liveId);
+    return state === 'asleep' || state === 'closed';
+  };
   const url = factOf({ liveId: shownLiveId })?.url ?? shown?.tab.url ?? '';
   const address = addressTextOf({ url });
   const canOpenOutside = url !== '' && !isFileAddress({ url });
@@ -163,6 +170,8 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
       }
       return tab.title === '' ? hostOf({ url: fact?.url ?? tab.url }) : tab.title;
     },
+    isAsleep: ({ tab }) => isLiveAsleep({ liveId: live?.[tab.id] }),
+    isLiveAsleep,
     error,
     isDrafting,
     wakeAttempt,

@@ -120,6 +120,46 @@ describe('createOverlayWatch', () => {
     watch.stop();
   });
 
+  it('names the reason per overlay kind', () => {
+    const reasons = [
+      { role: 'menu', reason: 'menu' },
+      { role: 'dialog', reason: 'dialog' },
+      { role: 'alertdialog', reason: 'dialog' },
+      { role: 'tooltip', reason: 'tooltip' },
+    ];
+    for (const { role, reason } of reasons) {
+      document.body.replaceChildren();
+      const overlay = document.createElement('div');
+      overlay.setAttribute('role', role);
+      giveRect({ element: overlay, rect: { x: 500, y: 80, width: 200, height: 120 } });
+      document.body.append(overlay);
+      const view = placedView();
+      const watch = createOverlayWatch();
+
+      expect(watch.coverOf({ view, rect: view.getBoundingClientRect() })).toBe(reason);
+      watch.stop();
+    }
+  });
+
+  it('names a studio page as the reason, and none when nothing covers', () => {
+    const slot = document.createElement('div');
+    slot.setAttribute('data-studio-slot', 'content');
+    giveRect({ element: slot, rect: { x: 0, y: 40, width: 1440, height: 860 } });
+    const under = document.createElement('div');
+    giveRect({ element: under, rect: VIEW_RECT });
+    document.body.prepend(under);
+    document.body.append(slot);
+    const watch = createOverlayWatch();
+
+    expect(watch.coverOf({ view: under, rect: under.getBoundingClientRect() })).toBe('page');
+    watch.stop();
+    slot.remove();
+    const clear = createOverlayWatch();
+
+    expect(clear.coverOf({ view: under, rect: under.getBoundingClientRect() })).toBeNull();
+    clear.stop();
+  });
+
   it('leaves the view alone for a tooltip parked off screen', () => {
     const tooltip = document.createElement('span');
     tooltip.setAttribute('role', 'tooltip');
