@@ -5,7 +5,6 @@ import {
   ConfirmPopover,
   formatError,
   ICON_SIZE,
-  Markdown,
   OptionalTooltip,
   ToneBar,
 } from '@goodboy/ui';
@@ -15,6 +14,7 @@ import type { DiffComments, DiffThread } from './types';
 import { THREAD_ACTION_CLASS as ACTION_CLASS } from './threadActionClass';
 import { ThreadActionButton } from './ThreadActionButton';
 import { CommentComposer } from './CommentComposer';
+import { CommentBody } from '../../../../shared/components/CommentBody';
 import { ThreadReplies } from '../../../../shared/components/ThreadReplies';
 import { repliesLabel } from '../../../../shared/utils/repliesLabel';
 import { ThreadKindChip } from './ThreadKindChip';
@@ -60,7 +60,7 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
         tabIndex={-1}
         data-thread-state="resolved"
         data-thread-source={thread.source}
-        className="flex min-w-0 items-center gap-1 rounded-md bg-subtle px-3 py-1 font-sans text-chip text-muted-foreground"
+        className="flex min-w-0 items-center gap-1 rounded-md bg-subtle px-3 py-1 text-chip text-muted-foreground"
       >
         <ThreadKindChip thread={thread} />
         <span className="shrink-0 font-medium">{thread.statusLabel}</span>
@@ -146,7 +146,7 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
       tabIndex={-1}
       data-thread-state="open"
       data-thread-source={thread.source}
-      className="relative flex min-w-0 flex-col gap-2 rounded-md bg-elevated py-2 pl-4 pr-3 font-sans"
+      className="relative flex min-w-0 flex-col gap-2 rounded-md bg-elevated py-2 pl-4 pr-3"
     >
       <ToneBar tone={thread.tone} density="card" />
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
@@ -214,8 +214,8 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
           {thread.canDelete !== false && comments.onDelete ? deleteControl : null}
         </span>
       </div>
-      <div className="min-w-0 text-body text-foreground">
-        <Markdown text={thread.body} variant="preview" />
+      <div className="min-w-0">
+        <CommentBody body={thread.body} />
       </div>
       {replyCount > 0 ? <ThreadReplies replies={thread.replies ?? []} mode="collapsed" /> : null}
       {verbs.isReplying ? (

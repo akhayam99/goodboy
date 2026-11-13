@@ -3,6 +3,7 @@ import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { booleanNameLines } from './ast/booleanName.mjs';
 import { BOOLEAN_PREFIXES } from './ast/booleanPrefixes.mjs';
+import { DIFF_FONT_SANS_RULE } from './diffFontSans.mjs';
 import { paramShapeLines } from './ast/paramShape.mjs';
 import { unbracedIfLines } from './ast/unbracedIf.mjs';
 import { unusedImportLines } from './ast/unusedImport.mjs';
@@ -425,6 +426,7 @@ export const RULES = [
     matches: (line) => FOOTER_CTA_BAR.test(line),
     hint: 'a form or creation ends with FormActions inline after its content, never a footer bar with a divider (packages/ui/design/layout.md, Form actions)',
   }),
+  DIFF_FONT_SANS_RULE,
   {
     id: 'page-title-row',
     kinds: ['ts'],
@@ -505,10 +507,7 @@ export const RULES = [
 ];
 
 export const applies = ({ rule, file }) => {
-  if (!rule.kinds.includes(file.kind)) {
-    return false;
-  }
-  if (file.isTest && rule.includeTests !== true) {
+  if (!rule.kinds.includes(file.kind) || (file.isTest && rule.includeTests !== true)) {
     return false;
   }
   return rule.roots === undefined || rule.roots.some((root) => file.path.startsWith(root));

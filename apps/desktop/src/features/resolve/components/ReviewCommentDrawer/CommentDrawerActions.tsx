@@ -58,7 +58,7 @@ export const CommentDrawerActions = ({ entry, push, plan, lone, extra, binding }
     const button = (
       <Button
         key={action.id}
-        size="sm"
+        size="md"
         variant={variant}
         data-review-verb={action.id}
         disabled={isBlocked || (pendingActionId !== null && pendingActionId !== action.id)}
@@ -91,7 +91,7 @@ export const CommentDrawerActions = ({ entry, push, plan, lone, extra, binding }
         return (
           <Button
             key="retryPush"
-            size="sm"
+            size="md"
             variant="primary"
             data-review-verb={COMMENT_DRAWER_VERB.push}
             disabled={
@@ -106,7 +106,7 @@ export const CommentDrawerActions = ({ entry, push, plan, lone, extra, binding }
         return (
           <Button
             key="pushOnly"
-            size="sm"
+            size="md"
             variant="ghost"
             data-review-verb={COMMENT_DRAWER_VERB.pushOnly}
             disabled={
@@ -125,7 +125,7 @@ export const CommentDrawerActions = ({ entry, push, plan, lone, extra, binding }
         return (
           <Button
             key="viewOnHost"
-            size="sm"
+            size="md"
             variant="secondary"
             data-review-verb={COMMENT_DRAWER_VERB.openHost}
             onClick={() => binding.onRun(COMMENT_DRAWER_VERB.openHost)}
@@ -138,7 +138,7 @@ export const CommentDrawerActions = ({ entry, push, plan, lone, extra, binding }
         return (
           <Button
             key="transcript"
-            size="sm"
+            size="md"
             variant="secondary"
             data-review-verb={COMMENT_DRAWER_VERB.transcript}
             onClick={() => binding.onRun(COMMENT_DRAWER_VERB.transcript)}
@@ -162,7 +162,7 @@ export const CommentDrawerActions = ({ entry, push, plan, lone, extra, binding }
     error === null || failedActionId === null || isFailureShown ? null : (
       <Button
         key="retry"
-        size="sm"
+        size="md"
         variant="secondary"
         data-review-verb="retry"
         disabled={isBusy}

@@ -16,7 +16,7 @@ type Props = {
   readonly error?: string | null;
 };
 
-const FRAME = `rounded-md border bg-elevated px-3 py-3 font-sans ${tintClasses('primary').border}`;
+const FRAME = `rounded-md border bg-elevated px-3 py-3 ${tintClasses('primary').border}`;
 
 export const CommentComposer = ({
   label,

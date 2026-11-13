@@ -1,5 +1,6 @@
 import { Check, SquareArrowOutUpRight } from 'lucide-react';
-import { Button, ICON_SIZE, Markdown, WorkNode } from '@goodboy/ui';
+import { Button, ICON_SIZE, WorkNode } from '@goodboy/ui';
+import { CommentBody } from '../../../../shared/components/CommentBody';
 
 import { openLink } from '../../../open/openLink';
 import { BAR_COPY } from '../../commentStateCopy';
@@ -50,9 +51,7 @@ export const ReplyNote = ({
             </Button>
           )}
         </p>
-        {reply.trim() === '' ? null : (
-          <Markdown text={reply} variant="preview" className="text-body text-foreground" />
-        )}
+        {reply.trim() === '' ? null : <CommentBody body={reply} />}
       </div>
     );
   }

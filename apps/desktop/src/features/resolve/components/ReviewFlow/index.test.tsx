@@ -489,10 +489,10 @@ describe('Review as one flow', () => {
     expect(within(bar()).getByRole('button', { name: /^Apply fix/ })).toBeDefined();
   });
 
-  it('shows the moved line as a fact in the drawer meta without changing its state', async () => {
+  it('shows the moved line as a chip in the drawer author row without changing its state', async () => {
     await mount({ threadId: 'PRRT_thread_flaky_test' });
 
-    expect(document.querySelector('[data-drawer-meta]')?.textContent ?? '').toContain(
+    expect(document.querySelector('[data-drawer-author]')?.textContent ?? '').toContain(
       'The line moved',
     );
     expect(row(/This test sleeps/).getAttribute('aria-description') ?? '').not.toContain(

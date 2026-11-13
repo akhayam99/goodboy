@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { ThreadBody } from './index';
+import { CommentBody } from './index';
 import { ToolImageScope } from '../ToolImageScope';
 
 const { loadToolImage, loadRemoteImage, probeToolMedia } = vi.hoisted(() => ({
@@ -24,11 +24,11 @@ const flush = async (): Promise<void> => {
 const renderBody = (body: string) =>
   render(
     <ToolImageScope workspaceId="ws-1" provider="github">
-      <ThreadBody body={body} isClamped={false} />
+      <CommentBody body={body} isClamped={false} />
     </ToolImageScope>,
   );
 
-describe('ThreadBody media', () => {
+describe('CommentBody media', () => {
   it('loads an attachment of the pull request host through the connected account', async () => {
     const { container } = renderBody(
       '![board](https://github.com/user-attachments/assets/9f2c-thread)',

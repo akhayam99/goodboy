@@ -538,6 +538,12 @@ const FIXTURES = {
   'raw-scroller': { path: TS, flagged: "'overflow-y-auto'", allowed: "'overflow-hidden'" },
   'tone-border-rail': { path: TS, flagged: "'rounded-md border-l-2'", allowed: "'border-l-2'" },
   'footer-cta-bar': { path: TSX, flagged: '<footer className="x">', allowed: '<FormActions />' },
+  'diff-font-sans': {
+    path: 'apps/desktop/src/features/diff/x.tsx',
+    allowedPath: 'apps/desktop/src/features/branch/x.tsx',
+    flagged: '<p className="font-sans">',
+    allowed: '<p className="font-sans">',
+  },
   'page-title-row': {
     path: TSX,
     flagged: '<h1 className="min-w-0 truncate text-title text-foreground">',

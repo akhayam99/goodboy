@@ -166,7 +166,7 @@ describe('the u23 comments scenes', () => {
     if (first !== null) {
       fireEvent.click(first);
     }
-    expect(await screen.findByText(/^\d of 8 comments$/)).toBeDefined();
+    expect(await screen.findByText(/^· \d of 8$/)).toBeDefined();
   });
 
   it('draws a failed push as Push failed in Needs you, with a red mark on the session', async () => {

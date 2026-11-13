@@ -13,7 +13,7 @@ export const ReviewCommentDrawer = ({ entry, ...frame }: Props) => {
   if (entry === null) {
     return (
       <DrawerFrame
-        title={REVIEW_COMMENT_DRAWER_COPY.fallbackTitle}
+        title={REVIEW_COMMENT_DRAWER_COPY.title}
         icon={MessageSquare}
         onClose={frame.onClose}
       >

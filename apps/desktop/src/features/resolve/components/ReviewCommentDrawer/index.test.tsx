@@ -154,6 +154,17 @@ describe('the comment drawer', () => {
     expect(document.activeElement).toBe(rowOf({ threadId: THREAD_IDS.retryConstant }));
   });
 
+  it('draws a header of 40 with the position, then the author row with the file under it', async () => {
+    await mount({ threadId: THREAD_IDS.retryConstant });
+
+    const header = section().querySelector<HTMLElement>('[data-drawer-header]');
+    expect(header?.textContent).toMatch(/^Comment\s*· \d+ of \d+/);
+    expect(header?.querySelector('[data-drawer-meta]')).toBeNull();
+    const author = section().querySelector<HTMLElement>('[data-drawer-author]');
+    expect(author?.querySelector('[data-person]')).not.toBeNull();
+    expect(author?.querySelector('[data-drawer-file]')).not.toBeNull();
+  });
+
   it('holds Fix as the primary and Reply and Skip as visible verbs, each with its key', async () => {
     await mount({ threadId: THREAD_IDS.retryConstant });
 
