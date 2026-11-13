@@ -93,6 +93,22 @@ describe('the run header scenes on the orchestrated document', () => {
     },
   );
 
+  it.each(SCENE_IDS)(
+    'holds one title and the status chip on the meta line, with no state word in the body in %s',
+    async (id) => {
+      renderScene(id);
+
+      const bar = await header();
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+      expect(bar.querySelectorAll('[data-slot="pane-title-row"]')).toHaveLength(1);
+      const chip = bar.querySelector('[data-slot="pane-meta"] [data-run-status]');
+      expect(chip).not.toBeNull();
+      expect(chip?.textContent).not.toBe('');
+      const body = document.querySelector('[data-orchestrated-facts]');
+      expect(body?.querySelector('[data-glance] .text-row') ?? null).toBeNull();
+    },
+  );
+
   it('keeps Restore as the one header primary of the archived run', async () => {
     renderScene('run-header-archived');
 

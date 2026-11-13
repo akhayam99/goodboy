@@ -841,7 +841,6 @@
     "apps/desktop/src/features/settings/hooks/usePageChangedCount/index.ts": 1,
     "apps/desktop/src/features/settings/pageKeys.ts": 2,
     "apps/desktop/src/features/settings/settingsPaletteEntries.ts": 1,
-    "apps/desktop/src/features/settings/trail/settingsTrail.ts": 1,
     "apps/desktop/src/features/settings/verbosity.ts": 1,
     "apps/desktop/src/features/settings/workspaceSettings/fields.ts": 45,
     "apps/desktop/src/features/settings/workspaceSettings/plan.ts": 8,

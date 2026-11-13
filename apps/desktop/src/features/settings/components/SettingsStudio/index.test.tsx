@@ -571,10 +571,10 @@ describe('SettingsStudio, the page it draws', () => {
       />,
     );
 
-  it('draws the trail, its own scopes rail and the page, with the fold then the search first', () => {
+  it('draws no trail, its own scopes rail and the page, with the fold then the search first', () => {
     mountPage();
 
-    screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
     expect(document.querySelector('[data-studio-rail="page"]')).not.toBeNull();
     const rail = screen.getByRole('complementary', { name: 'Settings scopes' });
     const hide = within(rail).getByRole('button', { name: 'Hide settings scopes' });

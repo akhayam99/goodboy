@@ -14,7 +14,7 @@ never changes for a studio: it stays live in both sidebar states, so another
 door or a session row is one click away, and ⌘B and the sidebar toggle fold it
 on every page (`shellArrangement` takes no studio). **Settings is a page with
 its own scopes rail**: the 40px band holds `‹ Back to app` (with its Esc hint)
-and the crumb (`StudioTrail`), and below it `SettingsScopesLayout` draws a
+and no crumb, since the scopes rail already shows where you are, and below it `SettingsScopesLayout` draws a
 `StudioRailLayout` named Settings scopes (`placement="page"` beside the column,
 `chrome` on Home) with the fold control and `Search settings` in its first row,
 the groups or the matching settings under it, and the page as the detail
@@ -326,8 +326,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
 - **Providers names its scope in the page header.** Every page of
   the scope (Models and each provider) carries the scope as the meta line of
   its title: the workspace name when one is open, `All workspaces` when there
-  is none (`ProviderSettingsScope` passes `scopeLabel`). The legacy trail
-  reads `Workspace` and `Providers` without a name, so the name
+  is none (`ProviderSettingsScope` passes `scopeLabel`). The name
   appears once per page.
 - **Workspace settings is one page per area, each part in a card.** A
   workspace page carries the page title and one line of

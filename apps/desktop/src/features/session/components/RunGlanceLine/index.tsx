@@ -9,6 +9,7 @@ type Props = {
   readonly spend: string | null;
   readonly settings: ReactNode;
   readonly revealEvent?: string;
+  readonly isStateShown?: boolean;
 };
 
 const CHIP_OPEN_EVENTS: ReadonlyArray<string> = [
@@ -16,7 +17,14 @@ const CHIP_OPEN_EVENTS: ReadonlyArray<string> = [
   'goodboy:open-permission-picker',
 ];
 
-export const RunGlanceLine = ({ id, glance, spend, settings, revealEvent }: Props) => {
+export const RunGlanceLine = ({
+  id,
+  glance,
+  spend,
+  settings,
+  revealEvent,
+  isStateShown = true,
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const tint = tintClasses(glance.tone);
   const settingsId = `run-settings-${id}`;
@@ -37,21 +45,27 @@ export const RunGlanceLine = ({ id, glance, spend, settings, revealEvent }: Prop
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div data-glance={glance.state} className="flex min-h-6 min-w-0 items-center gap-2 text-meta">
-        <span
-          aria-hidden="true"
-          className={cn(
-            'inline-block size-1.5 shrink-0 rounded-full',
-            tint.dot,
-            glance.isLive && 'motion-safe:animate-soft-pulse',
-          )}
-        />
+        {isStateShown ? (
+          <span
+            aria-hidden="true"
+            className={cn(
+              'inline-block size-1.5 shrink-0 rounded-full',
+              tint.dot,
+              glance.isLive && 'motion-safe:animate-soft-pulse',
+            )}
+          />
+        ) : null}
         <span role="status" aria-live="polite" className="flex min-w-0 items-center gap-2">
-          <span className={cn('shrink-0 text-row', tint.text)}>{glance.word}</span>
+          {isStateShown ? (
+            <span className={cn('shrink-0 text-row', tint.text)}>{glance.word}</span>
+          ) : null}
           {glance.sentence === '' ? null : (
             <>
-              <span aria-hidden="true" className="text-faint-foreground">
-                ·
-              </span>
+              {isStateShown ? (
+                <span aria-hidden="true" className="text-faint-foreground">
+                  ·
+                </span>
+              ) : null}
               <span className="min-w-0 truncate text-muted-foreground">{glance.sentence}</span>
             </>
           )}
