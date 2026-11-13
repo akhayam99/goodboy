@@ -730,6 +730,19 @@ describe('SessionTools', () => {
     expect(screen.queryByTestId('tool-count')).toBeNull();
   });
 
+  it('draws no skeleton and no count on Browser when the tab rows failed to load', () => {
+    useAppStore.setState({
+      currentWorkspaceId: WORKSPACE,
+      sessions: [sessionFixture()],
+      browserTabCounts: {},
+      browserTabCountFailures: { [WORKSPACE]: true },
+    });
+    render(<SessionTools sessionId={null} />);
+
+    expect(screen.queryByTestId('tool-count-skeleton')).toBeNull();
+    expect(screen.queryByTestId('tool-count')).toBeNull();
+  });
+
   it('selects Terminal while its page is open and does nothing on click', () => {
     useAppStore.setState({
       appStudio: { kind: 'terminal', terminalId: null, sessionId: null },

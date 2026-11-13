@@ -1,10 +1,12 @@
 import { ActivityQuestionScene } from '../ActivityQuestionScene';
 import { ActivityRunScene } from '../ActivityRunScene';
 import { MountsScene } from '../MountsScene';
+import { holdBrowserTabCount } from './holdBrowserTabCount';
 import { C05OverviewScene } from './c05OverviewScene';
 
 export const U25_C05_OVERVIEW_SCENES = {
   'c05-overview-running': () => <ActivityQuestionScene />,
+  'c05-overview-running-loading': () => <ActivityQuestionScene afterSeed={holdBrowserTabCount} />,
   'c05-overview-lanes': () => <ActivityRunScene isLogShown />,
   'c05-overview-merged-next': () => <C05OverviewScene state="merged-next" />,
   'c05-overview-merged-group': () => <C05OverviewScene state="merged-group" />,

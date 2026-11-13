@@ -3,6 +3,7 @@ import type { BrowserTab, ClosedBrowserTab, DevicePresetId } from './types';
 
 export type BrowserState = {
   readonly browserTabCounts: Readonly<Record<WorkspaceId, number>>;
+  readonly browserTabCountFailures: Readonly<Record<WorkspaceId, true>>;
   readonly browserSessionTabs: Readonly<Record<SessionId, ReadonlyArray<BrowserTab>>>;
   readonly browserProjectPins: Readonly<Record<ProjectId, ReadonlyArray<BrowserTab>>>;
   readonly browserActiveTab: Readonly<Record<SessionId, string | null>>;
@@ -15,6 +16,7 @@ export type BrowserState = {
 
 export const browserInitialState: BrowserState = {
   browserTabCounts: {},
+  browserTabCountFailures: {},
   browserSessionTabs: {},
   browserProjectPins: {},
   browserActiveTab: {},
