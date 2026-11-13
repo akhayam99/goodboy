@@ -403,15 +403,13 @@ describe('the browser pane', () => {
       }),
     ]);
     expect(storedUrl()).toBe(LOCAL_PLAN);
-    await waitFor(() =>
-      expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Address' }).value).toBe(
-        '/work/harborline/plan.html',
-      ),
-    );
+    await screen.findByRole('button', {
+      name: /^Edit address, .*\/work\/harborline\/plan\.html$/,
+    });
     screen.getByRole('button', { name: 'Close plan.html' });
-    expect(
-      screen.getByRole<HTMLButtonElement>('button', { name: 'Open in your browser' }).disabled,
-    ).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const outside = await screen.findByRole('menuitem', { name: 'Open in your browser' });
+    expect(outside.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('moves the shown tab to a typed local file by its live id', async () => {
@@ -444,8 +442,9 @@ describe('the browser pane', () => {
       const scheduled = frames.mock.calls.length;
       await waitFor(() => expect(frames.mock.calls.length).toBeGreaterThan(scheduled));
       const placed = callsOf({ command: 'browser_tab_place' }).length;
+      failCommand({ command: 'browser_tab_navigate_local', reason: 'local-missing' });
 
-      await typeAddress({ text: 'checkout total' });
+      await typeAddress({ text: '~/harborline/gone.html' });
       screen.getByRole('alert');
       const lower = { ...VIEW_RECT, y: VIEW_RECT.y + 24, height: VIEW_RECT.height - 24 };
       const view = document.querySelector('[data-browser-view]');

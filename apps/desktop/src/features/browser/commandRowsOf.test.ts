@@ -75,6 +75,19 @@ describe('commandRowsOf', () => {
     expect(rows.hasNoMatch).toBe(false);
   });
 
+  it('offers a typed local path beside the session only, never in your browser', () => {
+    const rows = rowsFor({ text: '~/harborline/plan.html' });
+
+    expect(rows.groups[0]?.rows).toEqual([
+      {
+        kind: 'open',
+        key: 'open',
+        url: '~/harborline/plan.html',
+        label: '~/harborline/plan.html',
+      },
+    ]);
+  });
+
   it('matches a word against tabs of every session, this one first, and skips visits of a listed tab', () => {
     expect(keysOf({ text: 'check' })).toEqual([
       ['Tabs', ['tab:checkout', 'tab:staging']],
