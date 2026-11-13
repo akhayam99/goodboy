@@ -1,8 +1,20 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertSession, insertWorkspace, setSetting } from '@goodboy/db';
-import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import {
+  insertAgent,
+  insertSession,
+  insertWorkspace,
+  listAgentsForSessions,
+  setSetting,
+} from '@goodboy/db';
+import {
+  brandId,
+  type AgentId,
+  type ProviderRunId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   buildStorySession,
@@ -98,9 +110,53 @@ type FirstCallParams = {
   readonly fragment: string;
 };
 
+const sqlOf = ({ request }: { readonly request: unknown }): string => {
+  if (typeof request === 'string') {
+    return request;
+  }
+  if (typeof request !== 'object' || request === null || !('statements' in request)) {
+    return '';
+  }
+  const { statements } = request;
+  if (!Array.isArray(statements)) {
+    return '';
+  }
+  return statements
+    .map((statement: unknown) =>
+      typeof statement === 'object' && statement !== null && 'sql' in statement
+        ? String(statement.sql)
+        : '',
+    )
+    .join('\n');
+};
+
 const firstCallOrderOf = ({ calls, order, fragment }: FirstCallParams): number | undefined => {
-  const index = calls.findIndex(([sql]) => typeof sql === 'string' && sql.includes(fragment));
+  const index = calls.findIndex(([request]) => sqlOf({ request }).includes(fragment));
   return index < 0 ? undefined : order[index];
+};
+
+type ClaimedAgentParams = {
+  readonly id: string;
+  readonly runId: string;
+  readonly launch: string;
+};
+
+const seedClaimedAgent = async ({ id, runId, launch }: ClaimedAgentParams): Promise<void> => {
+  await insertAgent(storySqlite(), {
+    id: brandId<AgentId>({ value: id }),
+    sessionId: LEDGER_ID,
+    ordinal: 0,
+    name: 'implementer',
+    status: 'running',
+    providerRunId: brandId<ProviderRunId>({ value: runId }),
+  });
+  const claimedAt = Date.now();
+  await storySqlite().execute(
+    `INSERT INTO turn_admissions
+       (id, agent_id, run_id, owner_launch, claimed_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, id, runId, launch, claimedAt, claimedAt, claimedAt],
+  );
 };
 
 const hostCommandsBesideBreadcrumbs = (): number =>
@@ -137,7 +193,7 @@ beforeEach(async () => {
   });
   realSelect = db.select.bind(db);
   vi.spyOn(db, 'select');
-  vi.spyOn(db, 'execute');
+  vi.spyOn(db, 'transaction');
 });
 
 afterEach(() => {
@@ -171,11 +227,11 @@ describe('the launch keeps its order', () => {
 
     await useAppStore.getState().hydrate();
 
-    const execute = vi.mocked(storySqlite().execute).mock;
+    const transaction = vi.mocked(storySqlite().transaction).mock;
     const select = vi.mocked(storySqlite().select).mock;
     const ghostStop = firstCallOrderOf({
-      calls: execute.calls,
-      order: execute.invocationCallOrder,
+      calls: transaction.calls,
+      order: transaction.invocationCallOrder,
       fragment: GHOST_STOP_SQL,
     });
     const agentsRead = firstCallOrderOf({
@@ -187,6 +243,26 @@ describe('the launch keeps its order', () => {
     expect(ghostStop).toBeDefined();
     expect(agentsRead).toBeDefined();
     expect(ghostStop ?? Infinity).toBeLessThan(agentsRead ?? -Infinity);
+  });
+
+  it('never stops an agent whose claim this launch holds, and stops one an earlier launch left', async () => {
+    await setSetting(storySqlite(), SETTING_REOPEN_LAST, '1');
+    await setSetting(storySqlite(), SETTING_LAST_WORKSPACE_ID, HARBORLINE_ID);
+    await seedClaimedAgent({ id: 'agent-held', runId: 'run-held', launch: 'launch-story' });
+    await seedClaimedAgent({ id: 'agent-crashed', runId: 'run-crashed', launch: 'launch-before' });
+
+    await useAppStore.getState().hydrate();
+
+    const agents = (await listAgentsForSessions(storySqlite(), [LEDGER_ID])).get(LEDGER_ID) ?? [];
+    const admissions = await storySqlite().select<{ readonly agent_id: string }>(
+      'SELECT agent_id FROM turn_admissions ORDER BY agent_id',
+    );
+    expect(useAppStore.getState().error).toBeNull();
+    expect(Object.fromEntries(agents.map((agent) => [agent.id, agent.status]))).toEqual({
+      'agent-held': 'running',
+      'agent-crashed': 'stopped',
+    });
+    expect(admissions.map((row) => row.agent_id)).toEqual(['agent-held']);
   });
 
   it('puts the window back where it was after a restart', async () => {

@@ -28,7 +28,6 @@ import {
   setAgentDone,
   setAgentProviderSession,
   setAgentVerbosity,
-  stopGhostAgents,
   updateWorkflowNodeRouting,
   type AgentInsertInput,
 } from './agent-write';
@@ -377,6 +376,35 @@ describe('agent writes', () => {
       expect(after?.startedAt).toBeUndefined();
     });
 
+    it('gives back the admission of the run it reverts and keeps a newer one', async () => {
+      const id = await seedAgent('a3', 'running');
+      const claim = async (run: string): Promise<void> => {
+        await db.execute('DELETE FROM turn_admissions WHERE agent_id = ?', [id]);
+        await db.execute(
+          `INSERT INTO turn_admissions
+             (id, agent_id, run_id, owner_launch, claimed_at, created_at, updated_at)
+           VALUES (?, ?, ?, 'launch-1', 1, 1, 1)`,
+          [id, id, run],
+        );
+      };
+      const admitted = async (): Promise<ReadonlyArray<string>> =>
+        (
+          await db.select<{ run_id: string }>(
+            'SELECT run_id FROM turn_admissions WHERE agent_id = ?',
+            [id],
+          )
+        ).map((row) => row.run_id);
+      const runId = brandId<ProviderRunId>({ value: 'run-unspawned' });
+
+      await claim('run-newer');
+      await revertAgentStart({ db, agentId: id, runId, agentBefore: null });
+      expect(await admitted()).toEqual(['run-newer']);
+
+      await claim('run-unspawned');
+      await revertAgentStart({ db, agentId: id, runId, agentBefore: null });
+      expect(await admitted()).toEqual([]);
+    });
+
     it('leaves a row a stop or a newer run already moved on', async () => {
       const id = await seedAgent('a3', 'pending');
       const before = await getAgentById(db, id);
@@ -650,96 +678,6 @@ describe('agent writes', () => {
       ).rejects.toThrow('Invalid routing lock');
 
       expect((await getAgentById(db, id))?.providerOverride).toBeUndefined();
-    });
-  });
-
-  describe('stopGhostAgents', () => {
-    const seedRunning = async (id: string, runId: string | null, status = 'running') => {
-      await seedAgent(id, status);
-      await db.execute('UPDATE agents SET provider_run_id = ? WHERE id = ?', [runId, id]);
-    };
-
-    const statusOf = async (id: string): Promise<string | undefined> =>
-      (await db.select<{ status: string }>('SELECT status FROM agents WHERE id = ?', [id]))[0]
-        ?.status;
-
-    it('stops the running rows whose run is not kept and leaves the others', async () => {
-      await seedRunning('ghost', 'run-ghost');
-      await seedRunning('live', 'run-live');
-      await seedRunning('unassigned', null);
-      await seedRunning('done', 'run-done', 'completed');
-
-      const stopped = await stopGhostAgents({ db, keepRunIds: ['run-live'] });
-
-      expect(stopped).toBe(1);
-      expect(await statusOf('ghost')).toBe('stopped');
-      expect(await statusOf('live')).toBe('running');
-      expect(await statusOf('unassigned')).toBe('running');
-      expect(await statusOf('done')).toBe('completed');
-    });
-
-    it('records who stopped the row and when', async () => {
-      await seedRunning('ghost', 'run-ghost');
-
-      await stopGhostAgents({ db, keepRunIds: [] });
-
-      const [row] = await db.select<{ stopped_by: string; stopped_at: number }>(
-        "SELECT stopped_by, stopped_at FROM agents WHERE id = 'ghost'",
-      );
-      expect(row?.stopped_by).toBe('app');
-      expect(row?.stopped_at).toBeGreaterThan(0);
-    });
-
-    it('keeps a run whose permission ask has no decision, and stops one that was decided', async () => {
-      await seedRunning('asking', 'run-asking');
-      await seedRunning('answered', 'run-answered');
-      type EventParams = {
-        readonly id: string;
-        readonly agentId: string;
-        readonly payload: object;
-      };
-      const event = async ({ id, agentId, payload }: EventParams): Promise<void> => {
-        await db.execute(
-          `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
-           VALUES (?, ?, ?, ?, 1)`,
-          [id, sessionId, agentId, JSON.stringify(payload)],
-        );
-      };
-      const ask = { kind: 'permission_request', toolName: 'Bash', input: {}, at: '' };
-      await event({
-        id: 'ask-1',
-        agentId: 'asking',
-        payload: { ...ask, runId: 'run-asking', toolUseId: 'tool-1' },
-      });
-      await event({
-        id: 'ask-2',
-        agentId: 'answered',
-        payload: { ...ask, runId: 'run-answered', toolUseId: 'tool-2' },
-      });
-      await event({
-        id: 'decision-2',
-        agentId: 'answered',
-        payload: {
-          kind: 'permission_decision',
-          runId: 'run-answered',
-          toolUseId: 'tool-2',
-          decision: 'deny',
-          ruleId: null,
-          decidedBy: 'user',
-          at: '',
-        },
-      });
-
-      expect(await stopGhostAgents({ db, keepRunIds: [] })).toBe(1);
-      expect(await statusOf('asking')).toBe('running');
-      expect(await statusOf('answered')).toBe('stopped');
-    });
-
-    it('is a no-op the second time', async () => {
-      await seedRunning('ghost', 'run-ghost');
-      await stopGhostAgents({ db, keepRunIds: [] });
-
-      expect(await stopGhostAgents({ db, keepRunIds: [] })).toBe(0);
     });
   });
 });

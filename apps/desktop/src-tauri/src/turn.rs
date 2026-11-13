@@ -4,6 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 
+use rusqlite::{Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 use thiserror::Error;
@@ -16,6 +17,7 @@ use crate::proc::spawn::{spawn_command, StdinMode};
 use crate::providers::cli_args::{turn_args, turn_stdin};
 use crate::turn_backlog::{AttachSnapshot, TurnBacklog};
 use crate::turn_delivery::{DeliveryClaim, DeliveryRegistry, DeliveryRun};
+use crate::turn_live::{LiveTurns, SpawningGuard, SpawningRuns};
 use crate::turn_quiet::{LiveTurn, QuietTracker, TurnQuiet};
 use crate::util::lock_or_recover;
 
@@ -33,6 +35,8 @@ pub enum TurnError {
     ConfinementUnproven(String),
     #[error("this delivery already started run {0}")]
     DeliveryDuplicate(String),
+    #[error("the claim for run {0} is gone, so the turn did not start")]
+    AdmissionLost(String),
 }
 
 crate::util::impl_error_serialize!(TurnError);
@@ -45,6 +49,7 @@ impl TurnError {
             TurnError::NotFound(_) => "not_found",
             TurnError::ConfinementUnproven(_) => "confinement_unproven",
             TurnError::DeliveryDuplicate(_) => "delivery_duplicate",
+            TurnError::AdmissionLost(_) => "admission_lost",
         }
     }
 }
@@ -57,11 +62,19 @@ pub struct TurnRegistry(
     pub TurnBacklog,
     pub DeliveryRegistry,
     pub QuietTracker,
+    pub SpawningRuns,
 );
 
 impl TurnRegistry {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn live_turns(&self) -> LiveTurns {
+        LiveTurns {
+            live: Arc::clone(&self.0),
+            spawning: self.4.clone(),
+        }
     }
 }
 
@@ -146,6 +159,8 @@ pub struct SpawnArgs {
     pub excludes_tmp: bool,
     #[serde(default)]
     pub delivery_id: Option<String>,
+    #[serde(default)]
+    pub has_admission: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -527,6 +542,52 @@ fn claim_delivery(state: &TurnRegistry, args: &SpawnArgs) -> Result<(), TurnErro
     }
 }
 
+fn check_admission(conn: &Connection, args: &SpawnArgs) -> Result<(), TurnError> {
+    let lost = || TurnError::AdmissionLost(args.run_id.clone());
+    let agent_id = args.agent_id.as_deref().ok_or_else(lost)?;
+    let held: Option<String> = conn
+        .query_row(
+            "SELECT run_id FROM turn_admissions WHERE agent_id = ?1",
+            [agent_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|error| TurnError::Io(std::io::Error::other(error.to_string())))?;
+    if held.as_deref() != Some(args.run_id.as_str()) {
+        return Err(lost());
+    }
+    Ok(())
+}
+
+fn admit_checked(
+    conn: &Connection,
+    spawning: &SpawningRuns,
+    args: &SpawnArgs,
+) -> Result<SpawningGuard, TurnError> {
+    check_admission(conn, args)?;
+    Ok(spawning.hold(&args.run_id))
+}
+
+fn admit_spawn(
+    app: &AppHandle,
+    state: &TurnRegistry,
+    args: &SpawnArgs,
+) -> Result<SpawningGuard, TurnError> {
+    if !args.has_admission {
+        return Ok(state.4.hold(&args.run_id));
+    }
+    let Some(database) = app.try_state::<crate::db::Db>() else {
+        return Err(TurnError::AdmissionLost(args.run_id.clone()));
+    };
+    let conn = lock_or_recover(&database.0);
+    admit_checked(&conn, &state.4, args)
+}
+
+#[tauri::command]
+pub fn turn_launch_id() -> String {
+    crate::boot_breadcrumb::launch_id().to_string()
+}
+
 fn release_delivery(state: &TurnRegistry, args: &SpawnArgs) {
     if let Some(delivery_id) = args.delivery_id.as_deref() {
         state.2.release(delivery_id, &args.run_id);
@@ -569,6 +630,7 @@ fn spawn_turn(app: &AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
         .unwrap_or("default")
         .to_string();
 
+    let _spawning = admit_spawn(app, &state, &args)?;
     claim_delivery(&state, &args)?;
     let spawned = spawn_one(
         app,
@@ -851,6 +913,95 @@ mod tests {
         }
         let found = registry.2.lookup("delivery-1", |_| false);
         assert_eq!(found.map(|run| run.run_id), Some("run-1".to_string()));
+    }
+
+    fn admitted_args(run_id: &str) -> SpawnArgs {
+        serde_json::from_value(serde_json::json!({
+            "runId": run_id,
+            "model": "sonnet",
+            "workingDir": "/repo/one",
+            "prompt": "go",
+            "agentId": "agent-1",
+            "hasAdmission": true,
+        }))
+        .expect("spawn args")
+    }
+
+    fn admission_db() -> Connection {
+        let conn = crate::test_support::migrated_connection();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, slug, name, created_at, updated_at)
+               VALUES ('w1', '/tmp/harborline', 'Harborline', 1, 1);
+             INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+               VALUES ('s1', 'w1', 'Northwind', 'idle', 1, 1);
+             INSERT INTO agents (id, session_id, ordinal, name, status, provider_run_id)
+               VALUES ('agent-1', 's1', 0, 'implementer', 'running', 'run-1');",
+        )
+        .expect("seed agent");
+        conn
+    }
+
+    fn claim(conn: &Connection, run_id: &str) {
+        conn.execute(
+            "INSERT INTO turn_admissions
+               (id, agent_id, run_id, owner_launch, claimed_at, created_at, updated_at)
+             VALUES ('agent-1', 'agent-1', ?1, 'launch-1', 1, 1, 1)",
+            [run_id],
+        )
+        .expect("claim");
+    }
+
+    #[test]
+    fn a_spawn_with_its_admission_starts() {
+        let conn = admission_db();
+        claim(&conn, "run-1");
+        check_admission(&conn, &admitted_args("run-1")).expect("admitted");
+    }
+
+    #[test]
+    fn a_spawn_whose_admission_was_cleared_or_taken_is_refused() {
+        let conn = admission_db();
+        let cleared = check_admission(&conn, &admitted_args("run-1"));
+        assert!(matches!(cleared, Err(TurnError::AdmissionLost(run)) if run == "run-1"));
+        claim(&conn, "run-2");
+        let taken = check_admission(&conn, &admitted_args("run-1"));
+        assert!(matches!(taken, Err(TurnError::AdmissionLost(_))));
+    }
+
+    fn stop_unless_live(conn: &Connection) -> usize {
+        conn.execute(
+            "UPDATE agents SET status = 'stopped'
+             WHERE id = 'agent-1' AND status = 'running' AND NOT turn_is_live(provider_run_id)",
+            [],
+        )
+        .expect("cleanup")
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_cleanup_between_the_admission_check_and_the_exit_never_stops_the_run() {
+        let conn = admission_db();
+        claim(&conn, "run-1");
+        let registry = TurnRegistry::new();
+        let turns = registry.live_turns();
+        crate::turn_live::define_with(&conn, move |run_id| turns.is_live(run_id)).expect("define");
+
+        let spawning =
+            admit_checked(&conn, &registry.4, &admitted_args("run-1")).expect("admitted");
+        conn.execute("DELETE FROM turn_admissions WHERE agent_id = 'agent-1'", [])
+            .expect("expired cleanup");
+        assert_eq!(stop_unless_live(&conn), 0);
+
+        let child = std::process::Command::new("sh")
+            .args(["-c", "exit 0"])
+            .spawn()
+            .expect("spawn sh");
+        register(&registry.0, "run-1", &LiveChild::new(child));
+        drop(spawning);
+        assert_eq!(stop_unless_live(&conn), 0);
+
+        lock_or_recover(&registry.0).remove("run-1");
+        assert_eq!(stop_unless_live(&conn), 1);
     }
 
     #[test]

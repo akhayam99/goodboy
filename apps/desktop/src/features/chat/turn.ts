@@ -118,6 +118,7 @@ type SpawnArgs = {
   readonly blocksPush?: boolean;
   readonly isAutoChild?: boolean;
   readonly excludesTmp?: boolean;
+  readonly hasAdmission?: boolean;
   readonly writerLease?: {
     readonly path: string;
     readonly holder: string;

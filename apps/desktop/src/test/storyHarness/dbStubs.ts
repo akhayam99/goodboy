@@ -11,6 +11,7 @@ export const storyDbStubs = () => ({
   hasOtherSessionTurnSince: vi.fn(async () => false),
   insertAgentTurnSpan: vi.fn(async () => undefined),
   stopGhostAgents: vi.fn(async () => 0),
+  releaseTurnAdmission: vi.fn(async () => undefined),
   insertAgentHandoff: vi.fn(async () => undefined),
   countUserTextEvents: vi.fn(async () => 0),
   isAutoChildAgent: vi.fn(async () => false),

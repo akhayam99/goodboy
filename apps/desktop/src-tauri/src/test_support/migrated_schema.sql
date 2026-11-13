@@ -1453,6 +1453,18 @@ CREATE TABLE browser_visits (
   UNIQUE (session_id, url)
 );
 
+CREATE TABLE turn_admissions (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  run_id TEXT NOT NULL,
+  owner_launch TEXT,
+  claimed_at INTEGER NOT NULL,
+  spawned_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE (agent_id)
+);
+
 CREATE INDEX idx_permission_audit_retry_created ON permission_audit_retry(created_at);
 
 CREATE INDEX idx_turn_events_agent_created ON turn_events(agent_id, created_at);

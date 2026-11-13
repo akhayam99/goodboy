@@ -369,6 +369,7 @@
     "turn_attach",
     "turn_cancel",
     "turn_delivery_lookup",
+    "turn_launch_id",
     "turn_list_live",
     "turn_quiet",
     "turn_release",
