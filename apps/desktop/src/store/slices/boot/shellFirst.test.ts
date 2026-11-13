@@ -221,6 +221,31 @@ describe('the shell shows before the data', () => {
     expect(state.currentSessionId).toBe(RELAY_ID);
   });
 
+  it('leaves the skeletons and keeps the error when the switch made during the load fails', async () => {
+    const held = holdSessionsRead({ workspaceId: HARBORLINE_ID });
+    const hydrating = useAppStore.getState().hydrate();
+
+    await held.reached;
+    vi.mocked(storySqlite().select).mockImplementation(async (sql, params) => {
+      if (sql.startsWith(SESSIONS_READ_SQL) && params?.[0] === NORTHWIND_ID) {
+        throw new Error('northwind unreadable');
+      }
+      return realSelect(sql, params);
+    });
+    const switching = useAppStore.getState().setCurrentWorkspace(NORTHWIND_ID);
+    held.release();
+    await Promise.all([hydrating, switching]);
+
+    const state = useAppStore.getState();
+    expect(state.boardReady).toBe(true);
+    expect(state.switchingToWorkspaceId).toBeNull();
+    expect(state.workspaceSwitchError).toEqual({
+      workspaceId: NORTHWIND_ID,
+      message: 'northwind unreadable',
+    });
+    expect(state.bootPhase).toBe('ready');
+  });
+
   it('lets a second window show its own workspace from its own chain', async () => {
     window.location.hash = `#ws=${NORTHWIND_ID}`;
     const held = holdSessionsRead({ workspaceId: NORTHWIND_ID });
