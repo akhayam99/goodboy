@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../store';
 import { OPEN_FAILED } from '../../store/slices/notifications/errorRecovery';
 import { isOwnBrowserClick } from '../browser/isOwnBrowserClick';
+import { openFileLink } from '../explore/openFileLink';
 import { nameOfTarget } from './nameOfTarget';
 import { openBesideSession } from './openBesideSession';
 import { openOutside } from './openOutside';
@@ -24,6 +25,15 @@ type GoParams = {
 };
 
 const go = async ({ target, sessionId, place }: GoParams): Promise<void> => {
+  if (target.kind === 'file') {
+    await openFileLink({
+      sessionId,
+      root: target.root,
+      baseDir: target.root,
+      link: { path: target.path, line: target.line, column: null },
+    });
+    return;
+  }
   if (place === 'beside-session' && sessionId !== null) {
     await openBesideSession({ sessionId, target });
     return;

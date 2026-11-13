@@ -1,11 +1,11 @@
 import type { SessionId } from '@goodboy/types';
 import { artifactMirrorPath } from '../artifacts/artifactMirror/artifactMirrorInvoke';
 import { openBeside } from '../browser/openBeside';
-import type { OpenTarget } from './types';
+import type { LaunchTarget } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly target: OpenTarget;
+  readonly target: LaunchTarget;
 };
 
 export const openBesideSession = async ({ sessionId, target }: Params): Promise<void> => {

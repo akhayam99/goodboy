@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { isOwnBrowserClick } from '../../isOwnBrowserClick';
-import { openWebLink } from '../../openWebLink';
-import { sessionLinkOf } from '../../sessionLinkOf';
+import { claimSessionLink } from '../../claimSessionLink';
 
 export const useOwnBrowserLinkClicks = (): void => {
   useEffect(() => {
@@ -12,12 +11,13 @@ export const useOwnBrowserLinkClicks = (): void => {
         if (event.defaultPrevented || event.button !== 0 || !isOwnBrowserClick({ event })) {
           return;
         }
-        const link = sessionLinkOf({ target: event.target });
-        if (link === null) {
+        const target = event.target;
+        const anchor = target instanceof Element ? target.closest('a[href]') : null;
+        const href = anchor?.getAttribute('href') ?? '';
+        if (anchor === null || href === '' || !claimSessionLink({ href, anchor, event })) {
           return;
         }
         event.preventDefault();
-        void openWebLink({ sessionId: link.sessionId, url: link.url, event });
       },
       { signal: listening.signal },
     );
