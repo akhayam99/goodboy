@@ -6,6 +6,7 @@ import {
   MenuTriggerButton,
   useDropdown,
   type MenuEntry,
+  type MenuItemEntry,
 } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -37,6 +38,31 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
     isPinShown: shown?.isPin === true,
     canOpenOutside: model.canOpenOutside,
   });
+  const chooseWidth = widthSelectOf({ onChoose: model.setDevicePreset });
+  const developChildren: ReadonlyArray<MenuItemEntry> = [
+    ...(isOff.isWidthOff
+      ? []
+      : DEVICE_PRESETS.map((preset) => ({
+          kind: 'item' as const,
+          key: `width-${preset.id}`,
+          label: preset.label,
+          icon: MonitorSmartphone,
+          isActive: preset.id === model.devicePreset,
+          onSelect: () => chooseWidth(preset.id),
+        }))),
+    ...(currentPlatform() === 'darwin'
+      ? [
+          {
+            kind: 'item' as const,
+            key: 'inspect',
+            label: 'Inspect in Safari',
+            icon: Code,
+            isDisabled: isOff.isInspectOff,
+            onSelect: model.inspect,
+          },
+        ]
+      : []),
+  ];
   const entries: ReadonlyArray<MenuEntry> = [
     {
       kind: 'item',
@@ -82,35 +108,19 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
       isDisabled: isOff.isDuplicateOff,
       onSelect: model.duplicate,
     },
-    ...(isOff.isWidthOff
+    ...(developChildren.length === 0
       ? []
       : [
           {
             kind: 'item' as const,
-            key: 'width',
-            label: 'Width',
-            icon: MonitorSmartphone,
-            hint: devicePresetOf({ id: model.devicePreset }).label,
-            choices: DEVICE_PRESETS.map((preset) => ({
-              id: preset.id,
-              label: preset.label,
-              isCurrent: preset.id === model.devicePreset,
-            })),
-            onSelect: widthSelectOf({ onChoose: model.setDevicePreset }),
+            key: 'develop',
+            label: 'Develop',
+            icon: Code,
+            hint: isOff.isWidthOff ? null : devicePresetOf({ id: model.devicePreset }).label,
+            children: developChildren,
+            onSelect: () => undefined,
           },
         ]),
-    ...(currentPlatform() === 'darwin'
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'inspect',
-            label: 'Inspect in Safari',
-            icon: Code,
-            isDisabled: isOff.isInspectOff,
-            onSelect: model.inspect,
-          },
-        ]
-      : []),
     {
       kind: 'item',
       key: 'closeTab',

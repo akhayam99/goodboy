@@ -894,12 +894,12 @@ describe('the browser pane', () => {
       'Open as page',
       'Copy address',
       'Duplicate',
-      'WidthDesktop',
+      'DevelopDesktop',
       'Close tab',
     ]);
   });
 
-  it('adds Inspect in Safari to the More menu on macOS only', async () => {
+  it('keeps the More menu at seven rows and puts Inspect in Safari under Develop on macOS', async () => {
     const agent = vi.spyOn(window.navigator, 'userAgent', 'get');
     agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
     await openFirstPage();
@@ -913,10 +913,12 @@ describe('the browser pane', () => {
       'Open as page',
       'Copy address',
       'Duplicate',
-      'WidthDesktop',
-      'Inspect in Safari',
+      'DevelopDesktop',
       'Close tab',
     ]);
+    expect(rows).toHaveLength(7);
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Develop/ }));
+    await screen.findByRole('menuitem', { name: 'Inspect in Safari' });
     agent.mockRestore();
   });
 
@@ -935,6 +937,7 @@ describe('the browser pane', () => {
     await openFirstPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
 
     await waitFor(() =>
@@ -953,6 +956,7 @@ describe('the browser pane', () => {
     failCommand({ command: 'browser_tab_inspectable', reason: 'unsupported-platform' });
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect in Safari' }));
 
     expect((await screen.findByRole('alert')).textContent).toBe(
