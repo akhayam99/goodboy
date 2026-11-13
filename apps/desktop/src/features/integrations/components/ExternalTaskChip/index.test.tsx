@@ -111,7 +111,10 @@ describe('ExternalTaskChip, row appearance', () => {
     window.addEventListener('goodboy:open-linear-studio', listener);
     render(<ExternalTaskChip task={makeTask()} appearance="row" />);
     fireEvent.click(screen.getByRole('button', { name: /open GB-123 in Linear/i }));
-    expect(mocks.openLink).toHaveBeenCalledWith({ url: 'https://linear.app/goodboy/issue/GB-123' });
+    expect(mocks.openLink).toHaveBeenCalledWith({
+      url: 'https://linear.app/goodboy/issue/GB-123',
+      event: expect.objectContaining({ metaKey: false }),
+    });
     expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-linear-studio', listener);
   });
@@ -146,7 +149,19 @@ describe('ExternalTaskChip, click behavior', () => {
   ] as const)('opens the %s task URL from the chip appearance', (provider, url) => {
     render(<ExternalTaskChip task={makeTask({ provider, url })} />);
     fireEvent.click(screen.getByRole('button'));
-    expect(mocks.openLink).toHaveBeenCalledWith({ url });
+    expect(mocks.openLink).toHaveBeenCalledWith({
+      url,
+      event: expect.objectContaining({ metaKey: false }),
+    });
+  });
+
+  it('forwards the command key of the click to the link', () => {
+    render(<ExternalTaskChip task={makeTask()} />);
+    fireEvent.click(screen.getByRole('button'), { metaKey: true });
+    expect(mocks.openLink).toHaveBeenCalledWith({
+      url: 'https://linear.app/goodboy/issue/GB-123',
+      event: expect.objectContaining({ metaKey: true }),
+    });
   });
 
   it('invokes a custom onClick instead of dispatching a studio event', () => {

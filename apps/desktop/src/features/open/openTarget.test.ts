@@ -51,12 +51,31 @@ let store: StoryStore;
 let localOpens: OpenLocalArgs['args'][];
 let launched: string[];
 let isPathRefused: boolean;
+let isOpenRefused: boolean;
+
+type SavedRowArgs = {
+  readonly args: { readonly id: string; readonly url: string; readonly title: string };
+};
+
+const savedRow = ({ args }: SavedRowArgs) => ({
+  id: args.id,
+  sessionId: SESSION_ID,
+  projectId: null,
+  url: args.url,
+  title: args.title,
+  position: 0,
+  createdAt: 0,
+  updatedAt: 0,
+});
 
 const stubHost = () => {
   stubStoryInvoke({
     browser_tab_rows_list: () => [],
-    browser_tab_row_save: null,
+    browser_tab_row_save: savedRow,
     browser_tab_open_local: ({ args }: OpenLocalArgs): BrowserTabFacts => {
+      if (isOpenRefused) {
+        throw new Error('the page host is gone');
+      }
       localOpens = [...localOpens, args];
       return {
         id: `live-${localOpens.length}`,
@@ -99,6 +118,7 @@ beforeEach(async () => {
   localOpens = [];
   launched = [];
   isPathRefused = false;
+  isOpenRefused = false;
   vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Macintosh');
   await resetStoryStore();
   store.setState({
@@ -202,6 +222,23 @@ describe('opening a saved copy', () => {
     );
   });
 
+  it('returns failed once and reports once when the beside page cannot open', async () => {
+    store.setState({ settings: { [SETTING_LINKS_OPEN]: 'goodboy' } });
+    const reportError = vi.fn(async () => undefined);
+    store.setState({ reportError });
+    isOpenRefused = true;
+
+    const result = await openTarget({
+      target: savedCopy('document'),
+      sessionId: SESSION_ID,
+      event: PLAIN,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.status === 'failed' ? result.reason : '').toContain('the page host is gone');
+    expect(reportError).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves the report to the caller when it asks to', async () => {
     store.setState({ settings: { [SETTING_LINKS_OPEN]: 'goodboy' } });
     const reportError = vi.fn(async () => undefined);
@@ -239,7 +276,7 @@ describe('opening a web address', () => {
   it('still opens beside the session by default', async () => {
     stubStoryInvoke({
       browser_tab_rows_list: () => [],
-      browser_tab_row_save: null,
+      browser_tab_row_save: savedRow,
       browser_tab_open: ({ args }: { readonly args: { readonly sessionId: string } }) => ({
         id: 'live-web',
         sessionId: args.sessionId,

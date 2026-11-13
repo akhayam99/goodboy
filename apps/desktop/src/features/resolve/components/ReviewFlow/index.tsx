@@ -113,9 +113,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   } = useReviewEntries({ sessionId, scope: 'branch', mountId });
   const [pickedScope, setScope] = useState<CommentScope>('branch');
   const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
-  const [pickedState, setCommentState] = useState<CommentState>('open');
+  const [commentState, setCommentState] = useState<CommentState>('open');
   const stateCounts = useMemo(() => stateCountsInScopeOf({ entries, scope }), [entries, scope]);
-  const commentState: CommentState = pickedState;
   const allGroups = useMemo(
     () => groupsInViewOf({ groups: branchGroups, scope, state: commentState }),
     [branchGroups, commentState, scope],
@@ -626,6 +625,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       : createPortal(
           <ReviewCommentDrawer
             sessionId={sessionId}
+            mountId={mountId}
             entry={opened}
             entries={entries}
             push={push}

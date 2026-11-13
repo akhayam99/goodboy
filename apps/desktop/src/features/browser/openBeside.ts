@@ -11,11 +11,12 @@ import { openPage } from './openPage';
 import { showBrowser } from './showBrowser';
 import { showBrowserTab } from './showBrowserTab';
 import { tabForAddress } from './tabForAddress';
-import type { BrowserTarget } from './types';
+import type { BrowserTarget, OpenOutcome } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly target: BrowserTarget;
+  readonly shouldReport?: boolean;
 };
 
 type MatchParams = {
@@ -45,7 +46,11 @@ const tabForTarget = ({ tabs, target, home }: MatchParams): BrowserTab | null =>
   );
 };
 
-export const openBeside = async ({ sessionId, target }: Params): Promise<void> => {
+export const openBeside = async ({
+  sessionId,
+  target,
+  shouldReport = true,
+}: Params): Promise<OpenOutcome> => {
   const claimed = browserPaneRequests.opens.claim({
     key: browserPaneRequests.openKey({ sessionId }),
   });
@@ -56,19 +61,26 @@ export const openBeside = async ({ sessionId, target }: Params): Promise<void> =
     }
     const home = await homeFor({ target });
     if (!claimed.isCurrent()) {
-      return;
+      return 'stale';
     }
     const tabs = useAppStore.getState().browserSessionTabs[sessionId] ?? [];
     const known = tabForTarget({ tabs, target, home });
     if (known !== null) {
       showBrowserTab({ sessionId, tabId: known.id });
-      return;
+      return 'opened';
     }
     const outcome = await openPage({ sessionId, target, bounds: FALLBACK_BOUNDS });
     if (outcome === 'opened') {
       useAppStore.getState().endBrowserDraft({ sessionId });
     }
+    if (outcome === 'failed' && !shouldReport) {
+      throw new Error('The page did not open');
+    }
+    return outcome;
   } catch (error) {
+    if (!shouldReport) {
+      throw error;
+    }
     const name = target.kind === 'web' ? hostOf({ url: target.url }) : target.path;
     await useAppStore.getState().reportError({
       recovery: OPEN_FAILED,
@@ -76,5 +88,6 @@ export const openBeside = async ({ sessionId, target }: Params): Promise<void> =
       error,
       sessionId,
     });
+    return 'failed';
   }
 };

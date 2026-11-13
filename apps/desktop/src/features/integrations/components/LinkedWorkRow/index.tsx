@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { ArrowRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
 import { cn, ICON_SIZE, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
@@ -22,7 +22,7 @@ type Props = {
   readonly leading: LinkedWorkRowLeading;
   readonly identifier: string;
   readonly title?: string;
-  readonly onClick: () => void;
+  readonly onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   readonly ariaLabel?: string;
   readonly tooltip?: string;
   readonly actions?: ReactNode;
@@ -71,7 +71,7 @@ export const LinkedWorkRow = ({
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            onClick();
+            onClick(event);
           }}
           aria-label={ariaLabel}
           className={cn('flex min-w-0 flex-1 items-center gap-2 rounded-md text-left', FOCUS_RING)}

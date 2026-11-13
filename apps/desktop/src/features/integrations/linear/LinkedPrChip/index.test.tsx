@@ -123,7 +123,10 @@ describe('LinkedPrChip', () => {
     );
     fireEvent.click(screen.getByRole('button'));
 
-    expect(h.openLink).toHaveBeenCalledWith({ url: 'https://github.com/acme/other/pull/9' });
+    expect(h.openLink).toHaveBeenCalledWith({
+      url: 'https://github.com/acme/other/pull/9',
+      event: expect.objectContaining({ metaKey: false }),
+    });
     expect(h.store.navigate).not.toHaveBeenCalled();
   });
 
@@ -138,7 +141,11 @@ describe('LinkedPrChip', () => {
     );
     fireEvent.click(screen.getByRole('button'));
 
-    expect(h.openLink).toHaveBeenCalledWith({ url: SESSION_PR.url });
+    expect(h.openLink).toHaveBeenCalledWith({
+      url: SESSION_PR.url,
+      event: expect.objectContaining({ metaKey: false }),
+      sessionId: null,
+    });
     expect(h.store.navigate).not.toHaveBeenCalled();
     expect(h.store.selectSessionPr).not.toHaveBeenCalled();
     h.store.appStudio = null;

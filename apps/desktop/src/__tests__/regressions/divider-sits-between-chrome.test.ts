@@ -34,7 +34,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'chrome',
   },
   'packages/ui/src/components/Listbox/index.tsx': { count: 1, reason: 'chrome' },
-  'packages/ui/src/components/SegmentedTabs.tsx': { count: 2, reason: 'chrome' },
   'apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx': {
     count: 2,
     reason: 'chrome',

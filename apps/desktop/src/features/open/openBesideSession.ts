@@ -10,7 +10,11 @@ type Params = {
 
 export const openBesideSession = async ({ sessionId, target }: Params): Promise<void> => {
   if (target.kind === 'web') {
-    await openBeside({ sessionId, target: { kind: 'web', url: target.url } });
+    await openBeside({
+      sessionId,
+      target: { kind: 'web', url: target.url },
+      shouldReport: false,
+    });
     return;
   }
   const path = await artifactMirrorPath({
@@ -18,5 +22,5 @@ export const openBesideSession = async ({ sessionId, target }: Params): Promise<
     folder: target.folder,
     file: target.file,
   });
-  await openBeside({ sessionId, target: { kind: 'local', path } });
+  await openBeside({ sessionId, target: { kind: 'local', path }, shouldReport: false });
 };

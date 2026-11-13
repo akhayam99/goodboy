@@ -153,9 +153,25 @@ describe('three html shapes', () => {
   it('opens and closes a details block in place', () => {
     render(<Markdown text={'<details>\n<summary>Notes</summary>\n\nhidden words\n</details>'} />);
 
-    expect(screen.queryByText('hidden words')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
-    expect(screen.queryByText('hidden words')).not.toBeNull();
+    const details = screen.getByTestId('markdown-details');
+    expect(details.tagName).toBe('DETAILS');
+    expect(details.hasAttribute('open')).toBe(false);
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(details.querySelector('summary')?.textContent).toContain('Notes');
+  });
+
+  it('keeps a link in a details summary out of a button', () => {
+    render(
+      <Markdown
+        text={
+          '<details open><summary>See [the log](https://ci.harborline.dev/1)</summary>body</details>'
+        }
+      />,
+    );
+
+    const summary = screen.getByTestId('markdown-details').querySelector('summary');
+    expect(summary?.querySelector('button')).toBeNull();
+    expect(summary?.querySelector('a')).not.toBeNull();
   });
 
   it('draws a video tag as a poster row, not a player', () => {
