@@ -105,9 +105,11 @@ export const toAgentSummary = ({ row }: ToSummaryParams): AgentSummary => ({
   ordinal: row.ordinal,
   name: row.name,
   status: row.status as AgentStatus,
-  ...(row.provider_run_id && { runId: row.provider_run_id as ProviderRunId }),
+  ...(row.provider_run_id != null &&
+    row.provider_run_id !== '' && { runId: row.provider_run_id as ProviderRunId }),
   ...(row.started_at != null && { startedAt: agentStampOf({ value: row.started_at }) }),
-  ...(row.provider_session_id && { providerSessionId: row.provider_session_id }),
+  ...(row.provider_session_id != null &&
+    row.provider_session_id !== '' && { providerSessionId: row.provider_session_id }),
   ...(row.provider_session_provider_id != null && {
     providerSessionProviderId: row.provider_session_provider_id as ProviderId,
   }),
@@ -120,11 +122,14 @@ export const toAgentSummary = ({ row }: ToSummaryParams): AgentSummary => ({
   ...(row.stopped_at != null && { stoppedAt: agentStampOf({ value: row.stopped_at }) }),
   ...(isAgentStoppedBy(row.stopped_by) && { stoppedBy: row.stopped_by }),
   ...(row.deleted_at != null && { deletedAt: agentStampOf({ value: row.deleted_at }) }),
-  ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
-  ...(row.effort && { effort: row.effort as EffortLevel }),
-  ...(row.model_override && { modelOverride: row.model_override }),
-  ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
-  ...(row.kind && { kind: row.kind }),
+  ...(row.verbosity != null &&
+    row.verbosity !== '' && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
+  ...(row.effort != null && row.effort !== '' && { effort: row.effort as EffortLevel }),
+  ...(row.model_override != null &&
+    row.model_override !== '' && { modelOverride: row.model_override }),
+  ...(row.provider_override != null &&
+    row.provider_override !== '' && { providerOverride: row.provider_override as ProviderId }),
+  ...(row.kind != null && row.kind !== '' && { kind: row.kind }),
   ...(row.source_thread_id != null && { sourceThreadId: row.source_thread_id }),
   ...(row.source_comment_url != null && { sourceCommentUrl: row.source_comment_url }),
   ...(row.source_kind != null && { sourceKind: row.source_kind as AgentSourceKind }),

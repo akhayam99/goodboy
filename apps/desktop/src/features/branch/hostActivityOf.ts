@@ -84,7 +84,11 @@ export const hostActivityOf = ({ opened, threads, end }: Params): ReadonlyArray<
   return groupBotActivity({
     items: items
       .map((item, index) => ({ item, index }))
-      .sort((a, b) => a.item.at.localeCompare(b.item.at) || a.index - b.index)
+      .sort((a, b) =>
+        a.item.at.localeCompare(b.item.at) !== 0
+          ? a.item.at.localeCompare(b.item.at)
+          : a.index - b.index,
+      )
       .map(({ item }) => item),
     comments: null,
     entries: [],
