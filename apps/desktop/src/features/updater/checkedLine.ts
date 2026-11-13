@@ -1,4 +1,4 @@
-import { formatSpan } from '../../shared/utils/time/formatSpan';
+import { formatAge } from '../../shared/utils/time/formatAge';
 import type { UpdateFailure, UpdaterState } from '../../store/slices/updater/state';
 
 type CheckedLineParams = {
@@ -15,7 +15,7 @@ export const checkedLine = ({ status, failure, checkedAt, now }: CheckedLinePara
   if (checkedAt === null) {
     return 'Not checked yet. Goodboy looks for a new version every hour.';
   }
-  const checked = `Checked ${formatSpan({ from: checkedAt, to: now })} ago.`;
+  const checked = `Checked ${formatAge({ from: checkedAt, now })}.`;
   if (status === 'uptodate') {
     return `${checked} You have the latest version.`;
   }

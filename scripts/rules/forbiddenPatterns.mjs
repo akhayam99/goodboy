@@ -173,6 +173,9 @@ const HALF_STEP_SPACING =
 const ROLE_CLASS = /(?<![\w-])(?:[\w-]+:)*text-(?:row|label|heading|title)(?![\w-])/;
 const WEIGHT_CLASS = /(?<![\w-])(?:[\w-]+:)*font-(?:medium|semibold|bold)(?![\w-])/;
 const FORMAT_ERROR_OWNER = 'packages/ui/src/formatError.ts';
+const AGE_OWNER = 'apps/desktop/src/shared/utils/time/formatAge.ts';
+const MOCK_SCENE_PATH = /[/]MockScene[/]/;
+const HAND_WRITTEN_AGE = /\}\s+ago\b|\b(?:seconds?|minutes?|hours?|days?|weeks?) ago\b/;
 const INVOKE_OWNER = 'apps/desktop/src/shared/lib/invokeCommand.ts';
 const CAUGHT_SOURCE = /^(?:apps[/]desktop[/]src|packages[/]ui[/]src|packages[/]core[/]src)[/]/;
 export const TAURI_CORE_IMPORT =
@@ -422,6 +425,15 @@ export const RULES = [
     count: (file) => countClassLines({ file, pattern: HALF_STEP_SPACING }),
     hint: 'spacing sits on the 4px grid: use 1, 2 or 3 (4, 8, 12px), never 1.5, 2.5 or 3.5',
   },
+  lineRule({
+    id: 'hand-written-age',
+    matches: (line) => HAND_WRITTEN_AGE.test(line),
+    count: (file) =>
+      file.path === AGE_OWNER || MOCK_SCENE_PATH.test(file.path)
+        ? 0
+        : countLines({ file, matches: (line) => HAND_WRITTEN_AGE.test(line) }),
+    hint: 'an age in words comes from formatAge or formatAdaptiveAge in shared/utils/time, never a hand-written "ago"',
+  }),
   lineRule({
     id: 'role-weight-override',
     matches: (line) => ROLE_CLASS.test(line) && WEIGHT_CLASS.test(line),
