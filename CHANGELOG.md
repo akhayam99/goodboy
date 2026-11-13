@@ -25,7 +25,7 @@ This version updates your data in one direction. To go back to 0.33, restore the
 
 Type the path of a local page, image or PDF in the address, after ⌘L or in ⌘K, and it opens in a tab beside the session. The tab takes the page's title, and Reload reads the file again.
 
-The page reads only the files in its folder and the folders under it. A missing file, a folder or another kind of file says why under the address.
+The page reads only the files in its folder and the folders under it. Opened from your home folder, Downloads, Documents or Desktop, it reads only itself and its styles, scripts and images. A missing file, a folder or another kind of file says why under the address.
 
 #### Find in page
 <!-- gb area=sessions pr=2203 -->
