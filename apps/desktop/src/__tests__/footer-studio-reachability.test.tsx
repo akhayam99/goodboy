@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
@@ -107,12 +106,7 @@ vi.mock('../features/palette/components/PaletteOverlay', () => ({
   PaletteOverlay: () => null,
 }));
 vi.mock('../app/components/BootSplash', () => ({
-  BootSplash: ({ onFinished }: { onFinished: () => void }) => {
-    useEffect(() => {
-      onFinished();
-    }, [onFinished]);
-    return null;
-  },
+  BootSplash: () => null,
 }));
 vi.mock('../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
 vi.mock('../app/components/AppTopBar', () => ({

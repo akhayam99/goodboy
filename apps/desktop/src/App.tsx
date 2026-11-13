@@ -80,9 +80,8 @@ export const App = () => {
   const newerDatabase = useAppStore((s) => s.newerDatabase);
   const restoreNewerDatabaseBackup = useAppStore((s) => s.restoreNewerDatabaseBackup);
   const quitApp = useAppStore((s) => s.quitApp);
-  const [splashStage, setSplashStage] = useState<'running' | 'leaving' | 'gone'>('running');
-  const finishSplash = useCallback(() => setSplashStage('leaving'), []);
-  const removeSplash = useCallback(() => setSplashStage('gone'), []);
+  const [isSplashGone, setIsSplashGone] = useState(false);
+  const removeSplash = useCallback(() => setIsSplashGone(true), []);
   const currentWorkspace = useCurrentWorkspace();
   const currentWorkspaceId = currentWorkspace?.id ?? null;
   const workspaceProjectRoot = useAppStore((s) =>
@@ -212,7 +211,7 @@ export const App = () => {
   const deferredRenderedIds = useDeferredValue(renderedSessionIds);
   const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
-  if (!hydrated || splashStage === 'running') {
+  if (!hydrated) {
     return (
       <BootSplash
         phase={bootPhase}
@@ -222,12 +221,11 @@ export const App = () => {
         onRetry={retryHydrate}
         onRestoreBackup={restoreNewerDatabaseBackup}
         onQuit={() => void quitApp()}
-        onFinished={finishSplash}
       />
     );
   }
 
-  const splashExit = splashStage === 'leaving' ? <BootSplashExit onDone={removeSplash} /> : null;
+  const splashExit = isSplashGone ? null : <BootSplashExit onDone={removeSplash} />;
 
   if (isWorkspaceLauncherBranch) {
     return (

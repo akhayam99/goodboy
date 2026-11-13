@@ -174,58 +174,11 @@ describe('BootSplash finish', () => {
     );
   };
 
-  it('lets the bar fill before it reports finished', () => {
+  it('shows the bar full at ready', () => {
     stubReducedMotion({ isReduced: false });
-    const onFinished = vi.fn();
-    render(<BootSplash phase="ready" error={null} onFinished={onFinished} />);
+    render(<BootSplash phase="ready" error={null} />);
 
     expect(screen.getByTestId('boot-progress-fill').style.width).toBe('100%');
-    act(() => {
-      vi.advanceTimersByTime(199);
-    });
-    expect(onFinished).not.toHaveBeenCalled();
-    act(() => {
-      vi.advanceTimersByTime(1);
-    });
-    expect(onFinished).toHaveBeenCalledOnce();
-  });
-
-  it('reports finished once even when the callback identity changes', () => {
-    stubReducedMotion({ isReduced: false });
-    const onFinished = vi.fn();
-    const { rerender } = render(<BootSplash phase="ready" error={null} onFinished={onFinished} />);
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
-    rerender(<BootSplash phase="ready" error={null} onFinished={() => onFinished()} />);
-    act(() => {
-      vi.advanceTimersByTime(1_000);
-    });
-
-    expect(onFinished).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not finish when the phase leaves ready before the bar fills', () => {
-    stubReducedMotion({ isReduced: false });
-    const onFinished = vi.fn();
-    const { rerender } = render(<BootSplash phase="ready" error={null} onFinished={onFinished} />);
-    rerender(<BootSplash phase="error" error="boom" onFinished={onFinished} />);
-    act(() => {
-      vi.advanceTimersByTime(1_000);
-    });
-
-    expect(onFinished).not.toHaveBeenCalled();
-  });
-
-  it('finishes at once under reduced motion', () => {
-    stubReducedMotion({ isReduced: true });
-    const onFinished = vi.fn();
-    render(<BootSplash phase="ready" error={null} onFinished={onFinished} />);
-    act(() => {
-      vi.advanceTimersByTime(0);
-    });
-
-    expect(onFinished).toHaveBeenCalledOnce();
   });
 });
 
