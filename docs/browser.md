@@ -639,7 +639,13 @@ sits in and the address, and one function opens it (`openInBrowser`).
   tab only for that press (`browser_page_text`): the tab must belong to the
   named session, the page must be `http` or `https`, and its live host must
   still be the host the press named, or the read is refused
-  (`other-session`, `not-web-address`, `host-unknown`). The script asks for
+  (`other-session`, `not-web-address`, `host-unknown`). The read is bound to
+  the navigation it checked: the registry counts each main-frame commit of a
+  tab (`mark_navigated`, from the `Started` page load), the command reads that
+  count before the host check and again after the text came back, and refuses
+  the text with `page-moved` when it changed. The address the page reports is
+  checked against the named host too, but only as a second guard, since the
+  page writes it. The script asks for
   `document.body.innerText` only, no markup and no cookie. The text is cut at
   60,000 characters with a note at its end (`platform/web_text.rs`). The UI
   hides secrets in it (`redactSecrets`), opens it with the address on the first

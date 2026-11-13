@@ -37,6 +37,7 @@ pub(crate) fn report_load<R: Runtime>(
 ) {
     let registry = app.state::<BrowserRegistry>();
     if phase == LoadPhase::Started {
+        registry.mark_navigated(tab_id);
         registry.set_passkey_blocked(tab_id, false);
     }
     if phase == LoadPhase::Finished {

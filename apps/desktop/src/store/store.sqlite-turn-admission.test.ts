@@ -3,6 +3,7 @@ import { insertWorkspace, listAgentsForSessions } from '@goodboy/db';
 import { liveTestRuns } from '@goodboy/db/test-helpers';
 import { nextWorkspaceId } from '@goodboy/types/testing';
 import { brandId, type AgentId, type ProviderRunId, type SessionId } from '@goodboy/types';
+import { CommandError } from '../shared/lib/invokeCommand';
 import { claimTurnAdmission } from './slices/turn/childTurn/claimTurnAdmission';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import { adoptAgent } from './runtime/auto/adoptAgent';
@@ -151,6 +152,77 @@ const admittedRuns = async (): Promise<ReadonlyArray<string>> =>
       [first.agentId],
     )
   ).map((row) => row.run_id);
+
+const SUCCESSOR = brandId<ProviderRunId>({ value: 'run-other-window' });
+
+const runStateOf = async ({ runId }: { readonly runId: string }): Promise<string | undefined> =>
+  (
+    await storySqlite().select<{ readonly status_kind: string }>(
+      'SELECT status_kind FROM provider_runs WHERE id = ?',
+      [runId],
+    )
+  )[0]?.status_kind;
+
+const claimNext = () =>
+  claimTurnAdmission({
+    agentId: first.agentId,
+    delegationId: null,
+    runId: brandId<ProviderRunId>({ value: 'run-third-window' }),
+  });
+
+const replaceAfterExpiry = async ({ rejection }: { readonly rejection: CommandError }) => {
+  const reached = gate();
+  const release = gate();
+  storySpies.turnSpawn.mockImplementationOnce(async () => {
+    reached.open();
+    await release.opened;
+    throw rejection;
+  });
+
+  const turn = useAppStore.getState().sendTurn({
+    sessionId: first.sessionId,
+    agentId: first.agentId,
+    content: 'Also list the migrations.',
+    origin: 'operator',
+  });
+  await reached.opened;
+  const claimed = await storedAgent();
+  await storySqlite().execute(
+    'UPDATE turn_admissions SET claimed_at = ?, spawned_at = NULL WHERE agent_id = ?',
+    [Date.now() - HOLD_MS - 1, first.agentId],
+  );
+  const stopped = await reconcileLoadedAgent({ agent: claimed, liveRunIds: new Set() });
+  await storySqlite().execute(
+    `INSERT INTO provider_runs (id, session_id, provider, model, status_kind, created_at)
+     VALUES (?, ?, 'anthropic', 'claude-sonnet-4-5', 'streaming', ?)`,
+    [SUCCESSOR, first.sessionId, Date.now()],
+  );
+  const claim = await claimTurnAdmission({
+    agentId: first.agentId,
+    delegationId: null,
+    runId: SUCCESSOR,
+  });
+  await storySqlite().execute("UPDATE sessions SET state_kind = 'running' WHERE id = ?", [
+    first.sessionId,
+  ]);
+  release.open();
+  await turn.catch((error: unknown) => error);
+
+  const [session] = await storySqlite().select<{ readonly state_kind: string }>(
+    'SELECT state_kind FROM sessions WHERE id = ?',
+    [first.sessionId],
+  );
+  return {
+    stopped: stopped.agent.status,
+    claim,
+    after: await storedAgent(),
+    sessionState: session?.state_kind,
+    runStates: {
+      lost: await runStateOf({ runId: claimed.runId ?? '' }),
+      successor: await runStateOf({ runId: SUCCESSOR }),
+    },
+  };
+};
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -338,6 +410,39 @@ describe('a turn admission outlives another window until the spawn', () => {
       .catch((error: unknown) => error);
 
     expect(await admittedRuns()).toEqual([]);
+  });
+
+  it('settles only its own run when an expired claim is refused at the spawn after another window took the agent', async () => {
+    const replaced = await replaceAfterExpiry({
+      rejection: new CommandError({
+        kind: 'admission_lost',
+        message: 'the claim for run run-1 is gone, so the turn did not start',
+      }),
+    });
+
+    expect(replaced.stopped).toBe('stopped');
+    expect(replaced.claim).toBe('admitted');
+    expect(replaced.after).toMatchObject({ status: 'running', runId: SUCCESSOR });
+    expect(replaced.sessionState).toBe('running');
+    expect(replaced.runStates).toEqual({ lost: 'failed', successor: 'streaming' });
+    expect(await admittedRuns()).toEqual([SUCCESSOR]);
+    expect(storySpies.turnSpawn).toHaveBeenCalledTimes(1);
+    expect(await claimNext()).toBe('turn_running');
+  });
+
+  it('never fails the agent of a successor run when the spawn refuses for another reason', async () => {
+    const replaced = await replaceAfterExpiry({
+      rejection: new CommandError({
+        kind: 'confinement_unproven',
+        message: 'role confinement is not proven for this CLI: explorer',
+      }),
+    });
+
+    expect(replaced.claim).toBe('admitted');
+    expect(replaced.after).toMatchObject({ status: 'running', runId: SUCCESSOR });
+    expect(replaced.sessionState).toBe('running');
+    expect(replaced.runStates.successor).toBe('streaming');
+    expect(await claimNext()).toBe('turn_running');
   });
 
   it('stops at boot an agent whose claim an earlier launch left behind', async () => {
