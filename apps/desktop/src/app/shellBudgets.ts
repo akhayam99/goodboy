@@ -1,6 +1,8 @@
 export const SHELL_BUDGETS = {
-  agentsScannedPerStoreWrite: 15765,
-  stageInputObjectsPerUnrelatedWrite: 12,
+  agentsScannedPerAgentWrite: 150,
+  stageDerivationsPerAgentWrite: 1,
+  stageReadsComparedPerAgentWrite: 5674,
+  stageDerivationsPerUnrelatedWrite: 0,
   sessionToolsTreesMounted: 2,
   allSessionLoopsPerWriteFromToolRail: 2,
   browserListCallsPerIdleMinute: 40,

@@ -1687,7 +1687,7 @@
     "apps/desktop/src/store/slices/session-view/markSessionOpened.ts": 2,
     "apps/desktop/src/store/slices/session-view/resolveItemDrafts.ts": 1,
     "apps/desktop/src/store/slices/session-view/resolveSurface.ts": 1,
-    "apps/desktop/src/store/slices/session-view/selectors.ts": 14,
+    "apps/desktop/src/store/slices/session-view/selectors.ts": 12,
     "apps/desktop/src/store/slices/session-view/sessionCreation.ts": 3,
     "apps/desktop/src/store/slices/session-view/sessionStageRequest.ts": 1,
     "apps/desktop/src/store/slices/session-view/setExploreExpanded.ts": 1,

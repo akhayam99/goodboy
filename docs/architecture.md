@@ -766,10 +766,11 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   `noteHostAnswer` writes only when the host state changes. Its late-answer
   guard sits in a record the slice owns, which an unchanged answer advances in
   place, so an older answer is still dropped.
-- **Stage info is derived once.** `stageInfosOf` memoizes the derivation per
-  sessions array and input tuple, so the board, the top bar and the sidebar
-  share one pass per store change. `cachedStageInfoOf` does the same per
-  session for `useSessionStageInfo` and `useSessionStages`.
+- **Stage info is derived once per session.** `cachedStageInfoOf` keeps one
+  derivation per session and the reads it made, and every caller (the board,
+  the top bar, the sidebar, the rows) shares it. A write re-derives only the
+  sessions whose reads changed. The rule and its trap live in
+  [typescript/state-writes.md](typescript/state-writes.md#7-derived-facts-are-kept-per-session).
 
 ### Database migrations
 

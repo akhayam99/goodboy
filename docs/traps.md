@@ -510,6 +510,11 @@ fails silently at runtime.
 
 ## Traps in the store
 
+- `stageInfoOf` must read only the state it is given. Its derivation is kept
+  per session and re-derived only when a recorded read changes, so a value it
+  takes from a module variable, the clock or `useAppStore.getState()` goes
+  stale without a sign
+  ([typescript/state-writes.md](typescript/state-writes.md#7-derived-facts-are-kept-per-session)).
 - A plan's run is found by its link (`plan.workflowRunId`, else the planner
   agent's `workflowRunId`) in `planOwnerOf`, never by the next step of the
   run's workflow. An orchestrated run creates its next step later, so a lookup
