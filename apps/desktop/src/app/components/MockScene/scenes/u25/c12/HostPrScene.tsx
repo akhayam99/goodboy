@@ -15,8 +15,12 @@ type GhRunParams = {
 };
 
 const ghRunAnswer = ({ payload }: GhRunParams) => {
-  const args = (payload as { readonly args?: ReadonlyArray<string> } | undefined)?.args ?? [];
-  const isRepoView = args[0] === 'repo';
+  const isRepoView =
+    typeof payload === 'object' &&
+    payload !== null &&
+    'args' in payload &&
+    Array.isArray(payload.args) &&
+    payload.args[0] === 'repo';
   return { stdout: isRepoView ? 'harborline/ledger-core\n' : '[]', stderr: '', exitCode: 0 };
 };
 
