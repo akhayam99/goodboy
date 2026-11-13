@@ -21,7 +21,7 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
   { page: 'workflows', files: ['features/workflows/components/WorkflowsPanel/index.tsx'] },
   {
     page: 'terminal',
-    files: ['features/terminal/components/TerminalStudio/TerminalPageHeader.tsx'],
+    files: ['features/terminal/components/TerminalStudio/TerminalStudioBody.tsx'],
   },
   {
     page: 'browser',
@@ -136,7 +136,6 @@ const READING_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['chat', 'agent
 
 const HEADER_FILES: ReadonlyArray<string> = [
   'features/workspace/components/StageBoard/SessionsHeader.tsx',
-  'features/terminal/components/TerminalStudio/TerminalPageHeader.tsx',
   'features/workspace-chat/components/ChatRoom/ChatHeader.tsx',
   'features/session/components/AgentDetailPane/AgentHeader.tsx',
   'features/artifacts/components/ArtifactShell/ArtifactShellHeader.tsx',
@@ -156,6 +155,8 @@ const HEADERLESS_VIEW_OF: Readonly<Partial<Record<FramePage, string>>> = {
 const SIDE_SCROLLER_FILES: ReadonlyArray<string> = [
   'features/chat/components/ConversationDock/index.tsx',
 ];
+
+const HEADERLESS_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['terminal']);
 
 const PAGE_PRIMITIVE = /<(PaneShell|PageHeader)\b/;
 
@@ -225,6 +226,9 @@ describe('one page layout', () => {
     const drifted = ALL_PAGES.flatMap((root) =>
       root.files.flatMap((file) => {
         const source = read(file);
+        if (HEADERLESS_PAGES.has(root.page)) {
+          return PAGE_PRIMITIVE.test(source) ? [`${root.page}: ${file} draws a header band`] : [];
+        }
         if (!PAGE_PRIMITIVE.test(source)) {
           return [`${root.page}: ${file} mounts no PaneShell or PageHeader`];
         }

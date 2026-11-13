@@ -120,7 +120,7 @@ export const TerminalTabStrip = ({
   };
 
   return (
-    <div className="flex shrink-0 items-center gap-0.5 px-3">
+    <div className="flex h-10 shrink-0 items-center gap-0.5 px-3">
       <ScrollFade
         orientation="horizontal"
         className="min-w-0 shrink"

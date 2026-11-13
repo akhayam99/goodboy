@@ -524,8 +524,8 @@ The slide uses `--duration-base` and `--ease-enter` to arrive,
 `--duration-quick` and `--ease-exit` to leave, and is off under reduced motion.
 A body with no scroller keeps the header in place. The terminal output (xterm)
 owns its own viewport, not a `ScrollFade`, and is never inside a reveal body,
-since any change to its height refits it: the Terminal page keeps its title,
-and only the rail reveals. The Browser page draws no header around a tab: the
+since any change to its height refits it: the Terminal page draws no title band,
+its tabs, Change folder, the port, Dock and the menu share one 40 row, and only the rail reveals. The Browser page draws no header around a tab: the
 trail and the address row are its back row, so nothing steps aside
 (`pageLayout.test.ts` checks `BrowserPageView` draws no `PageHeader`). The setup wizard keeps its one header row: it holds the way out
 (**Close** or **Set up later**) and the step progress, so it is the back row

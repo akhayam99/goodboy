@@ -537,7 +537,8 @@ every `DrawerFrame` reveals: it pins the back row (a drawer's title row with its
 close) and the `lead`, and lets the rest of the header step aside while you
 read; a page that draws its own `PageHeader` wraps it in `RevealRegion` (with
 `hasLanes` when sibling lanes share one header, as on the Board), except
-the Terminal, whose output must never resize, so only its rail reveals
+the Terminal, which draws no header band (its tab row is one 40 row with Dock)
+and whose output must never resize, so only its rail reveals
 ([styling.md](../../docs/styling.md#a-header-that-steps-aside-while-you-read)).
 `ScrollFade` paints its fade with the `mask-fade-x` and `mask-fade-y` utilities
 and writes its fade sizes only while the content overflows, so a static artifact
