@@ -28,6 +28,7 @@ export const useBrowserKeys = ({ model, isOn, onFind }: Params): void => {
   useShortcut('browser.prevTab', () => go({ step: -1 }), isOn);
   useShortcut('browser.nextTab', () => go({ step: 1 }), isOn);
   useShortcut('browser.pin', model.togglePin, isOn);
+  useShortcut('browser.sendToAgent', model.pageSend.sendShown, isOn);
   useShortcut('browser.find', onFind, isOn);
   useShortcut(
     'browser.closeTab',

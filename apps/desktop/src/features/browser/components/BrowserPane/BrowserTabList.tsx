@@ -1,3 +1,4 @@
+import { useState, type MouseEvent } from 'react';
 import { ChevronsLeft, ChevronsRight, Plus } from 'lucide-react';
 import {
   FOCUS_RING,
@@ -8,9 +9,20 @@ import {
   SelectableRow,
   Tooltip,
   cn,
+  type MenuPoint,
 } from '@goodboy/ui';
+import type { BrowserTab } from '../../../../store/slices/browser/types';
 import type { BrowserPaneModel } from '../../types';
+import { BrowserTabMenu } from './BrowserTabMenu';
 import { BrowserTabRow } from './BrowserTabRow';
+
+type TabParams = {
+  readonly tab: BrowserTab;
+};
+
+type OpenMenu = TabParams & {
+  readonly point: MenuPoint;
+};
 
 type Props = {
   readonly model: BrowserPaneModel;
@@ -24,6 +36,13 @@ const SESSION_NOTE = 'Tabs close when the session is archived.';
 export const BrowserTabList = ({ model, isRail, canFold, onFold }: Props) => {
   const shownId = model.shown?.tab.id ?? null;
   const hasPins = model.pins.length > 0 && model.projectName !== null;
+  const [menu, setMenu] = useState<OpenMenu | null>(null);
+  const openMenu =
+    ({ tab }: TabParams) =>
+    (event: MouseEvent<HTMLDivElement>): void => {
+      event.preventDefault();
+      setMenu({ tab, point: { x: event.clientX, y: event.clientY } });
+    };
   return (
     <nav
       aria-label="Browser tabs"
@@ -49,6 +68,7 @@ export const BrowserTabList = ({ model, isRail, canFold, onFold }: Props) => {
                   isAsleep={model.isAsleep({ tab: pin })}
                   isCompact={isRail}
                   onSelect={() => model.select({ tab: pin })}
+                  onContextMenu={openMenu({ tab: pin })}
                 />
               ))}
             </div>
@@ -74,6 +94,7 @@ export const BrowserTabList = ({ model, isRail, canFold, onFold }: Props) => {
                 isCompact={isRail}
                 onSelect={() => model.select({ tab })}
                 onClose={() => model.close({ tab })}
+                onContextMenu={openMenu({ tab })}
               />
             ))}
             <SelectableRow
@@ -105,6 +126,14 @@ export const BrowserTabList = ({ model, isRail, canFold, onFold }: Props) => {
           />
         </div>
       ) : null}
+      {menu === null ? null : (
+        <BrowserTabMenu
+          model={model}
+          tab={menu.tab}
+          point={menu.point}
+          onClose={() => setMenu(null)}
+        />
+      )}
     </nav>
   );
 };

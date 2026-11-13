@@ -16,6 +16,7 @@ import {
 import { mountFixture } from '../../../../__tests__/helpers/actionFixtures';
 import type { BrowserTab, TabOwner } from '../../../../store/slices/browser/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import type { BrowserTabFacts } from '../../types';
 import { BrowserPane } from './index';
@@ -29,6 +30,8 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
+
+const sendRow = (): string => `Send to the agent${shortcutGlyphs('browser.sendToAgent')}`;
 
 const WORKSPACE_ID = nextWorkspaceId();
 const SESSION_ID = nextSessionId();
@@ -878,13 +881,14 @@ describe('the browser pane', () => {
     screen.getByRole('listbox', { name: 'Suggestions' });
   });
 
-  it('lists five rows in the More menu', async () => {
+  it('lists the page hand-off first and five more rows in the More menu', async () => {
     await openFirstPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     const rows = await screen.findAllByRole('menuitem');
     expect(rows.map((row) => row.textContent)).toEqual([
+      sendRow(),
       'Open in your browser',
       'Open as page',
       'Copy address',
@@ -902,6 +906,7 @@ describe('the browser pane', () => {
 
     const rows = await screen.findAllByRole('menuitem');
     expect(rows.map((row) => row.textContent)).toEqual([
+      sendRow(),
       'Open in your browser',
       'Open as page',
       'Copy address',

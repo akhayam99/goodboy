@@ -89,7 +89,7 @@ and answers again when the work ends. The product rules live in
   a suggestion for the same outcome.
 - **A result line is the one channel.** A control that keeps its result in
   place shows it with `ActionRunLine`
-  (`apps/desktop/src/features/actions/components/ActionControls/`): a
+  (`apps/desktop/src/shared/components/ActionRunLine.tsx`): a
   `role="status"` done line with Dismiss, or a danger `Notice` with the reason
   and Retry. Its failure is still logged, as a read row with no toast while a
   surface of the run is mounted and as an unread row when none is left, and

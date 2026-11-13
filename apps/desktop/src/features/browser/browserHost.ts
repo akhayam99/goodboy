@@ -4,6 +4,7 @@ import type {
   BrowserBounds,
   BrowserFindOutcome,
   BrowserHistoryState,
+  BrowserPageText,
   BrowserTabFacts,
   BrowserTabFavicon,
 } from './types';
@@ -45,6 +46,11 @@ type SessionParams = {
   readonly sessionId: SessionId;
 };
 
+type PageTextParams = TabParams &
+  SessionParams & {
+    readonly host: string;
+  };
+
 type PageKeysParams = {
   readonly combos: ReadonlyArray<string>;
 };
@@ -72,6 +78,8 @@ export const browserHost = {
   stop: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_stop', { args: { tabId } }),
   find: ({ tabId, needle, isBackwards }: FindParams) =>
     invokeCommand<BrowserFindOutcome>('browser_find', { args: { tabId, needle, isBackwards } }),
+  pageText: ({ tabId, sessionId, host }: PageTextParams) =>
+    invokeCommand<BrowserPageText>('browser_page_text', { args: { tabId, sessionId, host } }),
   historyState: ({ tabId }: TabParams) =>
     invokeCommand<BrowserHistoryState | null>('browser_history_state', { args: { tabId } }),
   favicon: ({ tabId }: TabParams) =>

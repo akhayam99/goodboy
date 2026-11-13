@@ -57,7 +57,7 @@ impl AppOrigins {
     }
 }
 
-fn host_of(url: &Url) -> String {
+pub(crate) fn host_of(url: &Url) -> String {
     url.host_str()
         .unwrap_or_default()
         .trim_end_matches('.')

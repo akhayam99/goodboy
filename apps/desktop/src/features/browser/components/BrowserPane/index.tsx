@@ -13,6 +13,7 @@ import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
 import { BrowserNotice } from './BrowserNotice';
 import { BrowserPasskeyNotice } from './BrowserPasskeyNotice';
+import { BrowserSendLine } from './BrowserSendLine';
 import { BrowserTabList } from './BrowserTabList';
 import { BrowserTabStrip } from './BrowserTabStrip';
 import { BrowserView } from './BrowserView';
@@ -81,6 +82,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
           </p>
         )}
         <BrowserNotice notice={model.notice} />
+        <BrowserSendLine pageSend={model.pageSend} />
         <BrowserPasskeyNotice model={model} />
         {hasTabs && !isListOpen ? <BrowserTabStrip model={model} /> : null}
         <div ref={paneRef} className="flex min-h-0 flex-1 gap-2 px-2 pb-2">

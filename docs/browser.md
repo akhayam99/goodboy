@@ -588,6 +588,27 @@ sits in and the address, and one function opens it (`openInBrowser`).
   session view or beside a page over it (the Terminal page); on the Browser
   page it switches the page to that session. A door with no session, such as
   a terminal on a plain folder, opens your browser.
+- **Send to agent** is a door in the other direction: the text of a tab goes
+  to the session's agent. The entries are the first row of More, a row in the
+  tab list's right-click menu and `browser.sendToAgent` (⌘⇧S); all call
+  `sendPageToAgent`. The press names the tab, the session, its host and the
+  agent the composer would send to (`useHandOutputToAgent`). Rust reads the
+  tab only for that press (`browser_page_text`): the tab must belong to the
+  named session, the page must be `http` or `https`, and its live host must
+  still be the host the press named, or the read is refused
+  (`other-session`, `not-web-address`, `host-unknown`). The script asks for
+  `document.body.innerText` only, no markup and no cookie. The text is cut at
+  60,000 characters with a note at its end (`platform/web_text.rs`). The UI
+  hides secrets in it (`redactSecrets`), opens it with the address on the first
+  line and a line saying it is page content, and queues it as a
+  `text/markdown` file with a `source` of `page` (`pageAttachmentOf`). The
+  composer shows the chip through the same queue as a terminal's output
+  (`outputHandoffs`), so the ten-file cap and the draft restore apply. The
+  run goes through the action runner under `browser.sendPage:<session>`: one
+  read at a time per session, a failure shows `ActionRunLine` with Retry, and
+  a read that finishes after its run was cleared is dropped by its token and
+  queues nothing. A page never calls this command: it is walled like every
+  other (see The invariant).
 - **Which tab**: a tab of the session already on the same address is shown.
   A bare server address (`http://localhost:5173`) takes any tab on that
   server. Otherwise a new tab opens. A host failure keeps the old tabs and
@@ -628,12 +649,13 @@ sits in and the address, and one function opens it (`openInBrowser`).
   its tab (or the host), the address and what a click does, in the words of
   `webLinkPeekWords.ts`, which read the same place `openWebLink` picks. The card
   never creates a tab, because every tab is a whole webview.
-- **The keymap** is eight entries in `shared/keyboard/browserShortcuts.ts`, all
+- **The keymap** is nine entries in `shared/keyboard/browserShortcuts.ts`, all
   `scope: 'browser'`, registered by `useBrowserKeys` while the pane or the
   Browser page is on screen. Elsewhere each chord keeps its other meaning:
   ⌘L Ask about this session, ⌘T a new terminal tab, ⌘W `app.close`, ⌘F Search,
   ⌘⇧[ and ⌘⇧] the sessions. ⌘L opens the pill, ⌘T starts a draft (the command field opens
-  empty), ⌘D toggles the pin, ⌘⇧[ and ⌘⇧] step `stepTab` order (tabs, then
+  empty), ⌘D toggles the pin, ⌘⇧S sends the shown page to the agent (Doors),
+  ⌘⇧[ and ⌘⇧] step `stepTab` order (tabs, then
   pins, wrapping). ⌘W closes the shown tab through `close`; a pin is never
   closed by it and consumes the key; with no tab shown the handler declines
   (`canDecline`) and `app.close` closes the pane. ⌘⇧T takes the newest entry of

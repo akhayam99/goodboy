@@ -22,6 +22,7 @@ const SELECTORS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {
   address: PILL,
   field: PILL,
   more: `${PANE} button[aria-label="More"]`,
+  handoff: `${PANE} button[aria-label="More"]`,
 };
 
 const FIELDS: Readonly<Partial<Record<BrowserPaneSceneState, string>>> = {

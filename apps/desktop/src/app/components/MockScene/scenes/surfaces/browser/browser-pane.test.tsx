@@ -64,6 +64,8 @@ const mount = ({ id }: MountParams) => {
 describe('the browser pane scenes', () => {
   it('registers every state in light and dark for the capture', () => {
     expect(Object.keys(BROWSER_PANE_SCENES).sort()).toEqual([
+      'browser-handoff',
+      'browser-handoff-dark',
       'browser-page',
       'browser-page-dark',
       'browser-pane',
@@ -217,11 +219,18 @@ describe('the browser pane scenes', () => {
     expect(within(pane).getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(false);
   });
 
-  it('opens the More menu with its five rows', async () => {
+  it('opens the More menu with its six rows', async () => {
     mount({ id: 'browser-pane-more' });
 
     const menu = await screen.findByRole('menu', undefined, WAIT);
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(5);
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(6);
+  });
+
+  it('opens the More menu on the Send to the agent row first', async () => {
+    mount({ id: 'browser-handoff' });
+
+    const menu = await screen.findByRole('menu', undefined, WAIT);
+    expect(within(menu).getAllByRole('menuitem')[0]?.textContent).toContain('Send to');
   });
 
   it('peeks a localhost link in a decision with the title of its open tab', async () => {

@@ -10,10 +10,13 @@ use super::local::{self, LocalFile};
 use super::page_keys::PageKeys;
 use super::profile::{self, ClearOutcome, Isolation, ProfileId};
 use super::reason::{
-    self, BROWSER_CALLER, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_WINDOW, TAB_CLOSED, TAB_GONE,
+    self, BROWSER_CALLER, HOST_UNKNOWN, INVALID_ADDRESS, NOT_WEB_ADDRESS, OTHER_SESSION,
+    OTHER_WINDOW, PAGE_TEXT_UNAVAILABLE, TAB_CLOSED, TAB_GONE,
 };
 use super::registry::{BrowserRegistry, TabFacts, TabState};
 use crate::platform::web_history::{HistoryState, HistoryStep};
+use crate::platform::web_text::{self, PageText};
+use crate::platform::web_url;
 use crate::util::{now_ms, MessageError};
 
 const BLANK_ADDRESS: &str = "about:blank";
@@ -71,6 +74,14 @@ pub(crate) struct TabFindArgs {
     tab_id: String,
     needle: String,
     is_backwards: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PageTextArgs {
+    tab_id: String,
+    session_id: String,
+    host: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -268,6 +279,45 @@ pub async fn browser_favicon(
     Ok(Some(TabFavicon { origin, src }))
 }
 
+fn check_page_read(
+    owner_session: &str,
+    args: &PageTextArgs,
+    live: &tauri::Url,
+    origins: &AppOrigins,
+) -> Result<(), MessageError> {
+    if owner_session != args.session_id {
+        return Err(reason::refused(OTHER_SESSION));
+    }
+    if !guard::is_web_address(live, origins) {
+        return Err(reason::refused(NOT_WEB_ADDRESS));
+    }
+    if guard::host_of(live) != args.host.trim().trim_end_matches('.').to_ascii_lowercase() {
+        return Err(reason::refused(HOST_UNKNOWN));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn browser_page_text(
+    webview: Webview,
+    args: PageTextArgs,
+) -> Result<PageText, MessageError> {
+    let tab = owned_tab(&webview, &args.tab_id)?;
+    let owner_session = webview
+        .state::<BrowserRegistry>()
+        .facts(&args.tab_id)
+        .map(|facts| facts.session_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    let live = web_url::live_url_of(&tab).ok_or_else(|| reason::failed(PAGE_TEXT_UNAVAILABLE))?;
+    check_page_read(
+        &owner_session,
+        &args,
+        &live,
+        &AppOrigins::of_app(webview.app_handle()),
+    )?;
+    web_text::read_page_text(&tab, PAGE_TEXT_UNAVAILABLE)
+}
+
 #[tauri::command]
 pub async fn browser_tab_back(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     host::step_history(&owned_tab(&webview, &args.tab_id)?, HistoryStep::Back)
@@ -422,6 +472,74 @@ mod tests {
     #[test]
     fn wire_shape_session_args() {
         assert_wire_reads::<SessionArgs>(json!({ "sessionId": "harborline" }));
+    }
+
+    #[test]
+    fn wire_shape_page_text_args() {
+        assert_wire_reads::<PageTextArgs>(json!({
+            "tabId": "0f1e",
+            "sessionId": "harborline",
+            "host": "localhost",
+        }));
+    }
+
+    fn page_args(session_id: &str, host: &str) -> PageTextArgs {
+        PageTextArgs {
+            tab_id: "0f1e".into(),
+            session_id: session_id.into(),
+            host: host.into(),
+        }
+    }
+
+    fn page_check(owner: &str, args: &PageTextArgs, address: &str) -> Result<(), String> {
+        let live = guard::parse_address(address).expect("an address");
+        check_page_read(owner, args, &live, &AppOrigins::with_dev_origin(None))
+            .map_err(|error| error.to_string())
+    }
+
+    #[test]
+    fn reads_a_page_whose_host_the_press_named() {
+        let args = page_args("harborline", "acme.test");
+
+        assert!(page_check("harborline", &args, "https://Acme.test/checkout").is_ok());
+        assert!(page_check("harborline", &args, "https://acme.test./checkout").is_ok());
+    }
+
+    #[test]
+    fn refuses_a_page_that_moved_to_another_host_after_the_press() {
+        let args = page_args("harborline", "acme.test");
+
+        assert_eq!(
+            page_check("harborline", &args, "https://northwind.test/"),
+            Err(HOST_UNKNOWN.to_string())
+        );
+        assert_eq!(
+            page_check("harborline", &args, "https://acme.test.northwind.test/"),
+            Err(HOST_UNKNOWN.to_string())
+        );
+    }
+
+    #[test]
+    fn refuses_a_tab_that_belongs_to_another_session() {
+        let args = page_args("harborline", "acme.test");
+
+        assert_eq!(
+            page_check("cascadia", &args, "https://acme.test/"),
+            Err(OTHER_SESSION.to_string())
+        );
+    }
+
+    #[test]
+    fn refuses_a_page_that_is_not_a_web_address() {
+        let args = page_args("harborline", "");
+
+        for address in ["about:blank", "file:///work/harborline/plan.html"] {
+            assert_eq!(
+                page_check("harborline", &args, address),
+                Err(NOT_WEB_ADDRESS.to_string()),
+                "{address}"
+            );
+        }
     }
 
     #[test]

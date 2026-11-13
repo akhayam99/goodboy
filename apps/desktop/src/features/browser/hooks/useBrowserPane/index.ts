@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { copyToClipboard } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -23,6 +23,7 @@ import { useHistoryState } from '../useHistoryState';
 import { useLiveTabFacts } from '../useLiveTabFacts';
 import { useOpenedPopups } from '../useOpenedPopups';
 import { useSaveLiveAddresses } from '../useSaveLiveAddresses';
+import { useSendPageToAgent } from '../useSendPageToAgent';
 import { useTabLoad } from '../useTabLoad';
 import { useTabStates } from '../useTabStates';
 
@@ -111,6 +112,19 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     (state) => shownLiveId !== undefined && state.browserLoads[shownLiveId] !== undefined,
   );
   const history = useHistoryState({ tabId: shownLiveId, signal: `${url}|${isLoading}` });
+  const allTabs = useMemo(() => [...tabs, ...pins], [tabs, pins]);
+  const pageSend = useSendPageToAgent({
+    sessionId,
+    shown: shown?.tab ?? null,
+    tabs: allTabs,
+    resolve: ({ tab }) => {
+      const liveId = live?.[tab.id];
+      if (liveId === undefined || isLiveAsleep({ liveId })) {
+        return null;
+      }
+      return { liveId, url: factOf({ liveId })?.url ?? tab.url };
+    },
+  });
 
   useSaveLiveAddresses({ sessionId, tabs, live, facts });
   useOpenedPopups({ sessionId });
@@ -364,6 +378,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
         }
       });
     },
+    pageSend,
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
   };
 };

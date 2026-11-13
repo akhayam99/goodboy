@@ -165,6 +165,8 @@ brand-security-findings
 brand-slack
 brand-storage
 brand-tools
+browser-handoff
+browser-handoff-dark
 browser-page
 browser-page-dark
 browser-pane

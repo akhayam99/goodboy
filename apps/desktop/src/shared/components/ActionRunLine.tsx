@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { Button, IconButton, Notice } from '@goodboy/ui';
-import type { ActionRun } from '../../../../store/slices/action-runs/types';
+import type { ActionRun } from '../../store/slices/action-runs/types';
 
 type Props = {
   readonly run: Pick<ActionRun, 'phase' | 'message'> | null;
