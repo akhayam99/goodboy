@@ -96,7 +96,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     [closeHover, navigate],
   );
 
-  useArchivedSessionsLoad({ workspaceId });
+  useArchivedSessionsLoad({ workspaceId, isReady: boardReady });
 
   const byStage = useMemo(() => {
     const map = new Map<string, ReadonlyArray<Session>>();

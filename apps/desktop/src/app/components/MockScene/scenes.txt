@@ -80,6 +80,9 @@ board-shell
 board-stacked
 board-states
 board-wide
+boot-shell
+boot-shell-session
+boot-shell-sessions
 branch-checks
 branch-checks-analyze-failing
 branch-checks-analyzed

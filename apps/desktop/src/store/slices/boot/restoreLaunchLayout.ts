@@ -13,9 +13,11 @@ import {
 } from '../../../features/workspace/windowLayout';
 import { readRecentRestartReason } from '../turn/restartMarker';
 import type { LaunchReads } from '../workspaces/launchReads';
-import type { GetFn } from './types';
+import { openLaunchWorkspace } from './openLaunchWorkspace';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
+  readonly set: SetFn;
   readonly get: GetFn;
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly isReopenLast: boolean;
@@ -30,19 +32,24 @@ export type LaunchLayout = {
 const NOTHING_RESTORED: LaunchLayout = { isRestored: false, secondary: [] };
 
 type ApplyParams = {
+  readonly set: SetFn;
   readonly get: GetFn;
   readonly layout: WindowLayout;
   readonly workspace: Workspace;
   readonly launch: LaunchReads;
 };
 
-const applyLayout = async ({ get, layout, workspace, launch }: ApplyParams): Promise<void> => {
-  await get().setCurrentWorkspace(workspace.id, launch);
+const applyLayout = async ({ set, get, layout, workspace, launch }: ApplyParams): Promise<void> => {
+  const { isLatest, failure } = await openLaunchWorkspace({ set, get, id: workspace.id, launch });
   void setWindowTitle(workspace.name);
+  if (!isLatest || failure !== null) {
+    return;
+  }
   await get().restoreLocation({ location: layout.location });
 };
 
 export const restoreLaunchLayout = async ({
+  set,
   get,
   workspaces,
   isReopenLast,
@@ -58,7 +65,7 @@ export const restoreLaunchLayout = async ({
     if (layout === undefined || workspace === undefined) {
       return NOTHING_RESTORED;
     }
-    await applyLayout({ get, layout, workspace, launch });
+    await applyLayout({ set, get, layout, workspace, launch });
     return { isRestored: true, secondary: [] };
   }
   if (!isMainWindow() || targetWorkspaceFromHash() !== null) {
@@ -74,7 +81,7 @@ export const restoreLaunchLayout = async ({
   const main = layouts.find((layout) => layout.label === MAIN_WINDOW_LABEL);
   const mainWorkspace = workspaces.find((workspace) => workspace.id === main?.workspaceId);
   if (main !== undefined && mainWorkspace !== undefined) {
-    await applyLayout({ get, layout: main, workspace: mainWorkspace, launch });
+    await applyLayout({ set, get, layout: main, workspace: mainWorkspace, launch });
   }
   const opened = new Set(mainWorkspace === undefined ? [] : [mainWorkspace.id]);
   const secondary: Array<WindowLayout & { readonly title: string }> = [];

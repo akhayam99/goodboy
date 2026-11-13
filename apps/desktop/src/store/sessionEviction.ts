@@ -260,6 +260,7 @@ export const NON_SESSION_STATE_KEYS = [
   'codexPendingReset',
   'projectSentryLinks',
   'hydrated',
+  'isShellReady',
   'bootPhase',
   'bootFailedPhase',
   'newerDatabase',

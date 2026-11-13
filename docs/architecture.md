@@ -495,7 +495,8 @@ baseline names `config_export/apply.rs`.
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
 - **Launch order.** `hydrate` (`store/slices/boot/hydrate.ts`) awaits six steps
-  in a row (`BOOT_BUDGETS.awaitedStepsBeforeHydrated`). Migrations come first:
+  in a row (`BOOT_BUDGETS.awaitedStepsBeforeHydrated`), and the app shows after
+  three of them (`BOOT_BUDGETS.awaitedStepsBeforeShell`). Migrations come first:
   `runDbMigrations` (`shared/lib/dbBoot.ts`) also purges the step agents a
   deleted workflow left behind, with their slot questions, and seeds missing
   built-in workflows. Then one group runs together: the boot settings with the
@@ -506,6 +507,22 @@ baseline names `config_export/apply.rs`.
   once; that set and the projects reach `setCurrentWorkspace` as `LaunchReads`,
   so the first workspace load reads neither again. A failed member names its
   own phase in `bootFailedPhase`, and the launch error screen shows as before.
+- **Shell before data.** The launch opens its workspace through
+  `openLaunchWorkspace` (`store/slices/boot/openLaunchWorkspace.ts`), for the
+  reload intent, the saved window layout, the window hash and the last
+  workspace alike. It first commits the shell (`showLaunchShell`: that
+  workspace id, `boardReady` false, `isShellReady` true), so `App` mounts with
+  skeletons; then `setCurrentWorkspace` loads the snapshot and commits rows,
+  cards and counts with `boardReady` in one set. The id is passed down, never
+  read back after an await. A switch made during the load claims the latest
+  (`switchEpoch`): the launch load drops and the last session is not restored.
+  A launch load that fails or does not commit puts the shell back (id null,
+  `isShellReady` false); `openWorkspaceOrFail` then throws to the launch error
+  screen. Each window runs its own chain. `isShellReady` is reset at the start
+  of `hydrate` and set again on `ready`, so a launch with no workspace shows
+  the launcher at `ready`. `hydrated` still means the launch is done: the
+  window layout save, the onboarding decision, the artifact mirror and the
+  port signal wait for it.
 - **After ready, on idle.** `runEachOnIdle` starts one task per idle slot
   (`waitForIdle`): ended work, orphan worktrees, provider limits and their
   probe, the audit retry drain, stale browser tabs, then `runDbHygiene`

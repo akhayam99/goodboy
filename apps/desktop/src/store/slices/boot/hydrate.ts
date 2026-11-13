@@ -258,7 +258,13 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         recordBootBreadcrumb({ phase: 'pending', detail: 'start' });
         countBootStep({ step: 'pending' });
         const migratingAt = Date.now();
-        set({ bootPhase: 'migrating', bootFailedPhase: null, newerDatabase: null, error: null });
+        set({
+          bootPhase: 'migrating',
+          bootFailedPhase: null,
+          newerDatabase: null,
+          error: null,
+          isShellReady: false,
+        });
         await runDbMigrations();
         countBootStep({ step: 'migrations' });
         recordBootBreadcrumb({
@@ -317,8 +323,11 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         let launchLayout: LaunchLayout | null = null;
         if (reloadIntent?.mode === 'restore') {
           const snapWorkspace = workspaces.find((w) => w.id === reloadIntent.workspaceId) ?? null;
-          if (snapWorkspace) {
-            await openWorkspaceOrFail({ get, id: snapWorkspace.id, launch });
+          const opened =
+            snapWorkspace === null
+              ? null
+              : await openWorkspaceOrFail({ set, get, id: snapWorkspace.id, launch });
+          if (snapWorkspace !== null && opened?.isLatest === true) {
             void setWindowTitle(snapWorkspace.name);
             const { location } = reloadIntent;
             if (location !== undefined) {
@@ -345,6 +354,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
             : null;
           const reopenLast = reopenLastRaw === '1';
           launchLayout = await restoreLaunchLayout({
+            set,
             get,
             workspaces,
             isReopenLast: reopenLast,
@@ -352,7 +362,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           }).catch(() => null);
           const isLayoutRestored = launchLayout?.isRestored === true;
           if (!isLayoutRestored && hashWorkspace) {
-            await openWorkspaceOrFail({ get, id: hashWorkspace.id, launch });
+            await openWorkspaceOrFail({ set, get, id: hashWorkspace.id, launch });
             void setWindowTitle(hashWorkspace.name);
           } else if (!isLayoutRestored && reopenLast) {
             const lastWorkspaceId =
@@ -363,10 +373,15 @@ export const hydrate = (set: SetFn, get: GetFn) => {
               ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
               : null;
             if (targetWorkspace) {
-              await openWorkspaceOrFail({ get, id: targetWorkspace.id, launch });
+              const { isLatest } = await openWorkspaceOrFail({
+                set,
+                get,
+                id: targetWorkspace.id,
+                launch,
+              });
               const lastSessionId =
                 lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as SessionId) : null;
-              if (lastSessionId) {
+              if (isLatest && lastSessionId) {
                 const sessions = get().sessions;
                 if (sessions.some((s) => s.id === lastSessionId)) {
                   await get().setCurrentSession(lastSessionId);
@@ -389,7 +404,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           .reattachTerminalTabs()
           .catch(() => {});
         countBootStep({ step: 'ready' });
-        set({ bootPhase: 'ready', hydrated: true });
+        set({ bootPhase: 'ready', hydrated: true, isShellReady: true });
         markBoot({ name: 'hydrated' });
         void reopenSecondaryWindows({ layouts: launchLayout?.secondary ?? [] });
         recordBootBreadcrumb({

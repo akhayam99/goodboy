@@ -8,6 +8,7 @@ import {
   sessionPlace,
 } from '../../../../store';
 import { SessionActivityBar } from '../../../workspace/components/SessionActivityBar';
+import { SessionRowsSkeleton } from './SessionRowsSkeleton';
 
 type Props = {
   readonly currentSessionId: SessionId | null;
@@ -27,6 +28,7 @@ export const SessionNavSidebar = ({
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Session>;
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
+  const isBoardReady = useAppStore((s) => s.boardReady);
 
   const onSelectSession = useCallback(
     (id: SessionId) => {
@@ -47,7 +49,8 @@ export const SessionNavSidebar = ({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1 flex-col overflow-x-clip">
         <div className="flex min-h-0 flex-1">
-          {currentWorkspace ? (
+          {currentWorkspace !== null && !isBoardReady ? <SessionRowsSkeleton /> : null}
+          {currentWorkspace !== null && isBoardReady ? (
             <SessionActivityBar
               workspaceId={currentWorkspace.id}
               sessions={sessions}
