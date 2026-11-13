@@ -828,8 +828,8 @@ body {
 }
 
 @utility sticky-surface {
-  background-color: color-mix(in oklab, var(--color-background) 90%, transparent);
-  backdrop-filter: blur(3px) saturate(1.2);
+  background-color: color-mix(in oklab, var(--color-background) 80%, transparent);
+  backdrop-filter: blur(12px) saturate(1.4);
   @media (prefers-reduced-transparency: reduce) {
     background-color: var(--color-background);
     backdrop-filter: none;
