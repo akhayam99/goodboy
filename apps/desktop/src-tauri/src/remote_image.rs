@@ -121,7 +121,7 @@ fn validate_image_url(url: &str) -> Result<Url, String> {
     Ok(parsed)
 }
 
-fn check_status(status: u16) -> Result<(), String> {
+pub(crate) fn check_status(status: u16) -> Result<(), String> {
     if (300..400).contains(&status) {
         return Err(
             "that host redirects the image somewhere else, so nothing was loaded".to_string(),
@@ -195,17 +195,25 @@ fn image_redirect_policy() -> Policy {
 }
 
 fn build_image_client(host: &str, addresses: &[SocketAddr]) -> Result<Client, String> {
+    build_media_client(host, addresses, REQUEST_TIMEOUT)
+}
+
+fn build_media_client(
+    host: &str,
+    addresses: &[SocketAddr],
+    timeout: Duration,
+) -> Result<Client, String> {
     let mut builder = Client::builder()
         .redirect(image_redirect_policy())
         .https_only(true)
-        .timeout(REQUEST_TIMEOUT);
+        .timeout(timeout);
     if !addresses.is_empty() {
         builder = builder.resolve_to_addrs(host, addresses);
     }
     builder.build().map_err(|e| e.to_string())
 }
 
-trait ImageResponse {
+pub(crate) trait ImageResponse {
     fn status_code(&self) -> u16;
     fn declared_content_type(&self) -> Option<String>;
     fn declared_length(&self) -> Option<u64>;
@@ -304,7 +312,7 @@ fn tool_host_is_trusted(provider: &str, url: &Url, jira_site_host: Option<&str>)
     }
 }
 
-fn validate_tool_image_url(
+pub(crate) fn validate_tool_image_url(
     provider: &str,
     url: &str,
     jira_site_host: Option<&str>,
@@ -317,11 +325,11 @@ fn validate_tool_image_url(
     Ok(parsed)
 }
 
-fn is_allowed_redirect(provider: &str, url: &Url) -> bool {
+pub(crate) fn is_allowed_redirect(provider: &str, url: &Url) -> bool {
     provider == "github" && url.scheme() == "https" && url.host_str() == Some(GITHUB_REDIRECT_HOST)
 }
 
-enum ToolAuth {
+pub(crate) enum ToolAuth {
     Raw(String),
     Bearer(String),
     Basic { email: String, token: String },
@@ -335,17 +343,18 @@ fn apply_tool_auth(builder: reqwest::RequestBuilder, auth: &ToolAuth) -> reqwest
     }
 }
 
-async fn send_authed_media(
+pub(crate) async fn send_authed_media(
     provider: &str,
     url: Url,
     auth: ToolAuth,
+    timeout: Duration,
 ) -> Result<(String, reqwest::Response), String> {
     let host = url
         .host_str()
         .ok_or_else(|| "that image address names no host".to_string())?
         .to_string();
     let addresses = resolve_public_addrs(&host).await?;
-    let client = build_image_client(&host, &addresses)?;
+    let client = build_media_client(&host, &addresses, timeout)?;
     let response = apply_tool_auth(client.get(url), &auth)
         .send()
         .await
@@ -373,7 +382,7 @@ async fn send_authed_media(
         .ok_or_else(|| "the redirect names no host".to_string())?
         .to_string();
     let redirect_addresses = resolve_public_addrs(&redirect_host).await?;
-    let redirect_client = build_image_client(&redirect_host, &redirect_addresses)?;
+    let redirect_client = build_media_client(&redirect_host, &redirect_addresses, timeout)?;
     let redirected = redirect_client
         .get(redirect_url)
         .send()
@@ -384,7 +393,7 @@ async fn send_authed_media(
 }
 
 async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<String, String> {
-    let (host, mut response) = send_authed_media(provider, url, auth).await?;
+    let (host, mut response) = send_authed_media(provider, url, auth, REQUEST_TIMEOUT).await?;
     read_image_response(&host, &mut response).await
 }
 
@@ -418,7 +427,7 @@ fn classify_media_type(value: &str) -> MediaKind {
 }
 
 async fn probe_authed_media(provider: &str, url: Url, auth: ToolAuth) -> Result<MediaKind, String> {
-    let (host, response) = send_authed_media(provider, url, auth).await?;
+    let (host, response) = send_authed_media(provider, url, auth, REQUEST_TIMEOUT).await?;
     check_status(response.status_code())?;
     let content_type = response.declared_content_type().unwrap_or_default();
     drop(response);
@@ -448,7 +457,7 @@ fn github_image_token(stored: Option<String>) -> Result<String, MessageError> {
         .ok_or_else(|| MessageError::Refused(GITHUB_IMAGE_KEY_NEEDED.to_string()))
 }
 
-fn resolve_tool_media(
+pub(crate) fn resolve_tool_media(
     args: LoadToolImageArgs,
     linear_cache: &crate::linear::LinearTokenCache,
     jira_cache: &crate::jira::JiraTokenCache,
@@ -1005,7 +1014,7 @@ mod tests {
         let body = &rest[..end];
 
         assert!(
-            body.contains("send_authed_media(provider, url, auth)"),
+            body.contains("send_authed_media(provider, url, auth, REQUEST_TIMEOUT)"),
             "{body}"
         );
         assert!(!body.contains("apply_tool_auth("), "{body}");

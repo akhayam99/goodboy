@@ -2,13 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useToolImageLoader } from './index';
 
-const { loadRemoteImage, loadToolImage, probeToolMedia } = vi.hoisted(() => ({
+const { loadRemoteImage, loadToolImage, loadToolVideo, probeToolMedia } = vi.hoisted(() => ({
   probeToolMedia: vi.fn(async () => 'video' as const),
+  loadToolVideo: vi.fn(async () => ({ blob: new Blob(), bytes: 0 })),
   loadRemoteImage: vi.fn(async () => 'data:image/png;base64,remote'),
   loadToolImage: vi.fn(async () => 'data:image/png;base64,tool'),
 }));
 
-vi.mock('../../lib/remoteImage', () => ({ loadRemoteImage, loadToolImage, probeToolMedia }));
+vi.mock('../../lib/remoteImage', () => ({
+  loadRemoteImage,
+  loadToolImage,
+  loadToolVideo,
+  probeToolMedia,
+}));
 
 describe('useToolImageLoader', () => {
   beforeEach(() => {
@@ -41,6 +47,24 @@ describe('useToolImageLoader', () => {
       url: 'https://uploads.linear.app/a.png',
     });
     expect(loadRemoteImage).not.toHaveBeenCalled();
+  });
+
+  it('sends a video to the Rust fetch with the session provider and workspace', async () => {
+    const { result } = renderHook(() =>
+      useToolImageLoader({ workspaceId: 'ws-1', provider: 'github' }),
+    );
+    const url = 'https://github.com/user-attachments/assets/1';
+
+    await result.current.loadVideo({ url });
+
+    expect(loadToolVideo).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      projectId: undefined,
+      provider: 'github',
+      email: undefined,
+      siteUrl: null,
+      url,
+    });
   });
 
   it('routes a foreign url through the anonymous loader', async () => {

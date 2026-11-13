@@ -22,7 +22,7 @@ export const ToolImageScope = ({
   siteUrl,
   children,
 }: Props) => {
-  const { load, shouldAutoLoad, probe } = useToolImageLoader({
+  const { load, shouldAutoLoad, probe, loadVideo } = useToolImageLoader({
     workspaceId,
     projectId,
     provider,
@@ -43,6 +43,7 @@ export const ToolImageScope = ({
       shouldAutoLoad={shouldAutoLoad}
       tool={tool}
       probe={probe}
+      loadVideo={loadVideo}
     >
       {children}
     </RemoteImageLoaderProvider>

@@ -140,6 +140,7 @@
     "export_artifact_folder",
     "export_artifact_to_file",
     "fetch_remote_image",
+    "fetch_remote_media",
     "file_versions_begin_snapshot",
     "file_versions_delete",
     "file_versions_finalize_snapshot",

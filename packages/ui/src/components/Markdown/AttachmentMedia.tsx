@@ -6,7 +6,7 @@ import {
   type RemoteMediaKind,
   type RemoteMediaProbe,
 } from '../RemoteImage/loaderContext';
-import { VideoPoster } from '../VideoPoster';
+import { RemoteVideo } from '../RemoteVideo';
 
 type Props = {
   readonly url: string;
@@ -71,7 +71,7 @@ export const AttachmentMedia = ({ url, imageClassName }: Props) => {
     return null;
   }
   if (state.media === 'video') {
-    return <VideoPoster url={url} />;
+    return <RemoteVideo url={url} />;
   }
   return <RemoteImage url={url} alt="" className={imageClassName} />;
 };

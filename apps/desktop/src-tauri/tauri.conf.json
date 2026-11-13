@@ -29,7 +29,7 @@
     ],
     "security": {
       "freezePrototype": false,
-      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-src gbframe: http://gbframe.localhost; connect-src 'self' ipc: http://ipc.localhost; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+      "csp": "default-src 'self'; img-src 'self' data: blob:; media-src blob:;style-src 'self' 'unsafe-inline'; script-src 'self'; frame-src gbframe: http://gbframe.localhost; connect-src 'self' ipc: http://ipc.localhost; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     }
   },
   "bundle": {

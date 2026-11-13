@@ -1,4 +1,9 @@
-import { Markdown, RemoteImageLoaderProvider, type RemoteMediaKind } from '@goodboy/ui';
+import {
+  Markdown,
+  RemoteImageLoaderProvider,
+  type RemoteMediaKind,
+  type RemoteVideoFile,
+} from '@goodboy/ui';
 
 const ATTACHMENT_HOST = 'https://github.com/user-attachments/assets/';
 
@@ -9,6 +14,7 @@ const DESCRIPTION = [
   'Harborline export now streams from ledger-core instead of buffering.',
   `<img src="${ATTACHMENT_HOST}ledger-before" alt="Before, buffered export" width="480">`,
   `<video src="${ATTACHMENT_HOST}ledger-demo" controls="controls"></video>`,
+  `<video src="${ATTACHMENT_HOST}ledger-full-run" controls="controls"></video>`,
   `${ATTACHMENT_HOST}ledger-after`,
   '<details>\n<summary>Logs from notify-relay</summary>\n\nretry **twice** with `backoff`\n</details>',
 ].join('\n\n');
@@ -27,6 +33,16 @@ const probe = async ({ url }: ProbeParams): Promise<RemoteMediaKind> =>
 
 const load = async (): Promise<string> => BOARD_IMAGE;
 
+const SAMPLE_BYTES = 4_400_000;
+const REFUSED = 'that video is larger than 50 MB, so nothing was loaded';
+
+const loadVideo = async ({ url }: ProbeParams): Promise<RemoteVideoFile> => {
+  if (url.endsWith('ledger-full-run')) {
+    throw new Error(REFUSED);
+  }
+  return { blob: new Blob([new Uint8Array(8)], { type: 'video/mp4' }), bytes: SAMPLE_BYTES };
+};
+
 type AutoLoadParams = {
   readonly url: string;
 };
@@ -40,6 +56,7 @@ export const BranchPrMediaScene = () => (
     load={load}
     shouldAutoLoad={(url) => isAttachment({ url })}
     probe={probe}
+    loadVideo={loadVideo}
     onOpen={onOpen}
   >
     <div className="flex max-w-[var(--measure)] flex-col gap-6 p-6">

@@ -19,3 +19,8 @@ export type RemoteMediaOpen = (url: string) => void;
 
 export const RemoteMediaProbeContext = createContext<RemoteMediaProbe | null>(null);
 export const RemoteMediaOpenContext = createContext<RemoteMediaOpen | null>(null);
+
+export type RemoteVideoFile = { readonly blob: Blob; readonly bytes: number };
+export type RemoteVideoLoader = (params: ProbeParams) => Promise<RemoteVideoFile>;
+
+export const RemoteVideoLoaderContext = createContext<RemoteVideoLoader | null>(null);

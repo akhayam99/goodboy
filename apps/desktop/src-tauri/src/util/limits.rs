@@ -2,6 +2,7 @@ const KIB: u64 = 1024;
 const MIB: u64 = 1024 * KIB;
 
 pub(crate) const MAX_IMAGE_BYTES: usize = (10 * MIB) as usize;
+pub(crate) const MAX_VIDEO_BYTES: usize = (50 * MIB) as usize;
 pub(crate) const MAX_LOCAL_IMAGE_BYTES: u64 = 15 * MIB;
 pub(crate) const MAX_TURN_LINE_BYTES: usize = (64 * MIB) as usize;
 pub(crate) const MAX_PAGES: u32 = 20;
@@ -32,6 +33,7 @@ mod tests {
     #[test]
     fn every_message_names_the_number_the_code_enforces() {
         assert_eq!(format_limit(MAX_IMAGE_BYTES as u64), "10 MiB");
+        assert_eq!(format_limit(MAX_VIDEO_BYTES as u64), "50 MiB");
         assert_eq!(format_limit(MAX_LOCAL_IMAGE_BYTES), "15 MiB");
         assert_eq!(format_limit(MAX_TURN_LINE_BYTES as u64), "64 MiB");
     }
