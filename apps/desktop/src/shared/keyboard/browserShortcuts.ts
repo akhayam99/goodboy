@@ -71,4 +71,12 @@ export const BROWSER_SHORTCUTS = {
     group: 'session',
     scope: 'browser',
   },
+  'browser.console': {
+    combo: 'cmd+shift+KeyJ',
+    offMacCombo: 'ctrl+alt+shift+KeyJ',
+    label: 'Show or hide the console',
+    plane: 'session',
+    group: 'session',
+    scope: 'browser',
+  },
 } as const satisfies Record<string, ShortcutEntry>;

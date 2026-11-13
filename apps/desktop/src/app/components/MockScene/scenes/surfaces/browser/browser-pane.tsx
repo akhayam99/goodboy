@@ -34,6 +34,8 @@ export const BROWSER_PANE_SCENES: Readonly<Record<string, ComponentType>> = {
   'browser-pane-saved-copy-dark': () => <BrowserPaneScene state="saved-copy" theme="dark" />,
   'browser-width-phone': () => <BrowserPaneScene state="width-phone" theme="light" />,
   'browser-width-tablet': () => <BrowserPaneScene state="width-tablet" theme="light" />,
+  'browser-console': () => <BrowserPaneScene state="console" theme="light" />,
+  'browser-console-dark': () => <BrowserPaneScene state="console" theme="dark" />,
   'browser-peek': () => <BrowserPaneScene state="peek" theme="light" />,
   'browser-peek-dark': () => <BrowserPaneScene state="peek" theme="dark" />,
 };

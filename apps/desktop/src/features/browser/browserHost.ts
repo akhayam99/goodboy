@@ -3,6 +3,7 @@ import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { DevicePresetId } from '../../store/slices/browser/types';
 import type {
   BrowserBounds,
+  BrowserConsoleRead,
   BrowserFindOutcome,
   BrowserHistoryState,
   BrowserPageText,
@@ -56,6 +57,12 @@ type PageTextParams = TabParams &
     readonly host: string;
   };
 
+type ConsoleReadParams = TabParams &
+  SessionParams & {
+    readonly doc: string | null;
+    readonly after: number;
+  };
+
 type PageKeysParams = {
   readonly combos: ReadonlyArray<string>;
 };
@@ -85,6 +92,10 @@ export const browserHost = {
     invokeCommand<BrowserFindOutcome>('browser_find', { args: { tabId, needle, isBackwards } }),
   pageText: ({ tabId, sessionId, host }: PageTextParams) =>
     invokeCommand<BrowserPageText>('browser_page_text', { args: { tabId, sessionId, host } }),
+  consoleRead: ({ tabId, sessionId, doc, after }: ConsoleReadParams) =>
+    invokeCommand<BrowserConsoleRead>('browser_console_read', {
+      args: { tabId, sessionId, doc, after },
+    }),
   historyState: ({ tabId }: TabParams) =>
     invokeCommand<BrowserHistoryState | null>('browser_history_state', { args: { tabId } }),
   favicon: ({ tabId }: TabParams) =>

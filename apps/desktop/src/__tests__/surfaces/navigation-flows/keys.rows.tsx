@@ -732,6 +732,18 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
+    id: 'browser.console',
+    note: 'with a tab shown the chord opens the console under the page, inside the pane',
+    open: async (ctx) => {
+      await openBrowserOnTabs(ctx);
+      await press('browser.console')();
+    },
+    lands: async () => {
+      await screen.findByRole('region', { name: 'Console' });
+      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('browser');
+    },
+  }),
+  keyRow({
     id: 'browser.pin',
     note: 'pins the shown tab to the project of the session',
     open: async (ctx) => {

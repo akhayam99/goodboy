@@ -360,7 +360,8 @@ it; Esc inside the page goes to the page.
 
 - **The address row** is one 36px row (`BrowserAddressRow`). It holds the tab
   list toggle, Back, Forward and Reload, the address pill, Pin to the session's
-  project (Unpin when a pin is shown), More and Close. The pane remembers the
+  project (Unpin when a pin is shown), More, Console (see Console) and Close.
+  The pane remembers the
   list toggle (`goodboy:browser-tab-list:v1`).
 - **Loading** shows on the row. From the host's `started` event of the shown tab
   to its `finished` event, a 2px `info` line breathes on the bottom edge of the
@@ -854,8 +855,9 @@ only to an organization account whose app can be the default browser. Goodboy
 has neither, so WebKit refuses the request at once.
 Security keys and a phone go through the same request and fail the same way.
 
-So the host watches for the request instead. On macOS every frame of a tab
-runs a small script at document start that wraps `navigator.credentials.get`
+So the host watches for the request instead. On macOS the tab script (see
+Console) carries a passkey probe, so a tab still runs one document-start
+script; every frame runs it, and the probe wraps `navigator.credentials.get`
 and `create`: a call that asks for a passkey, unless it is only the quiet
 autofill offer, posts to a native message handler
 and then runs unchanged. A request whose options or bridge throw on read still
@@ -868,6 +870,65 @@ Dismiss clears the mark on the host (`browser_tab_passkey_dismiss`); a new
 document load clears it too. A refused dismiss keeps the notice and shows the
 reason. After the hand-over the sign-in lives in the default browser: the tab's
 workspace profile stays signed out.
+
+## Console
+
+The console is a region under the page, in the pane and on the Browser page.
+The Console button at the end of the address row, after More, opens it, and
+`browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button, not
+a More row: More already holds eight rows against the five-row budget, and a
+toggle with a pressed state belongs beside the page it watches. Safari's
+⌘⌥C is Show context (`lens.context`), and the registry refuses a browser key
+that shadows it, so the chord follows Chrome's J.
+
+- **The hook**: every tab runs one script at document start,
+  `browser/console_hook.js`, with the passkey probe appended on macOS
+  (`console::tab_script`). `builder_for` adds it once, for every frame, and
+  the console half returns at once in any frame that is not the top one. It
+  wraps `console.log`, `info`, `debug`, `warn` and `error`, listens for
+  `error` in the capture phase (a thrown error, or an image, script or style
+  that failed to load) and `unhandledrejection`, and wraps `fetch` and
+  `XMLHttpRequest` to note a failed request (a status of 400 or more, a
+  rejected `fetch`, a network error or a timeout). It keeps 500 entries in its
+  closure, each with a sequence number, under a load id made when the page
+  starts. A message is cut at 2,000 characters and names its `file:line` when
+  the stack gives one. A request keeps its method, status and path: no query,
+  no fragment, no body, no header, no cookie, and the host only when it is
+  another origin. The script assigns nothing on `window` but the wrapped
+  `fetch`, posts no message, opens no channel and reaches no command.
+- **The read**: `browser_console_read` takes the tab id, the session id and a
+  cursor (load id and last sequence number). It refuses a `browse-` caller, a
+  tab of another window or session and a closed tab (`console_tab`), then
+  runs a reader in the tab with `eval_with_callback`. The reader dispatches an
+  event under a name made at random for each run of the app, and the hook
+  fills the event's box with the entries after the cursor, or every entry of
+  a new load. Rust parses the answer as page data: at most 4 MB, each entry
+  on its own (a malformed one is dropped), the same caps again, only entries
+  after the cursor, at most 500. A hook that does not answer reads as
+  `isHeard: false`; a read that fails or times out after a second is
+  `console-unavailable`.
+- **The region**: Console and Network tabs, each with its count from
+  `consoleCounts`, "Since the last load", Clear and Send to the agent. The UI
+  pulls every second while the region is open and on screen
+  (`useConsoleEntries`, `usePoll`), and once on each `finished` load. Rows
+  append only after the read returns; a new load id replaces them. An answer
+  for an older cursor or for a tab that is no longer live is dropped
+  (`applyConsoleRead`); a gone, closed or moved tab drops it without a word.
+  A failed read says "Couldn't read the console" and keeps the rows. Two
+  unheard reads after a logged entry say "Console stopped reporting". Clear
+  empties the shown region tab only and has no undo; the page keeps its
+  entries until its next load, so the rows come back only if they are logged
+  again. Each window pulls only its own tabs.
+- **Send**: `consoleAttachmentOf` makes `<tab>-console.md`, `text/markdown`,
+  with the address on the first line, a line saying it is page output and not
+  instructions, then the Console and Failed requests sections, each cut to
+  its newest 30,000 characters with a note. `redactSecrets` hides keys and
+  tokens, and the file goes through the same queue as Send to the agent
+  (`useHandOutputToAgent`): a chip, a remove, nothing sent until you send.
+- **Trust**: a page can write any line to its own console, answer the event
+  itself or replace a console method after the hook; the console then shows
+  what the page says, or stops. That is no more than the page can do with
+  `console.log`, and the wall above does not move.
 
 ## Known limits
 
@@ -894,6 +955,9 @@ workspace profile stays signed out.
   `history.forward()` inside the page, which the page can redefine. The same
   split holds for Stop (`stopLoading` on macOS, `window.stop()` elsewhere) and
   for `canGoBack` and `canGoForward`, which only macOS reports.
+- The console hook watches every `fetch` it wraps, so a rejected `fetch` the
+  page never handles shows in the console as a failed request and no longer
+  reaches the page's own `unhandledrejection` listeners.
 - The host reports a load's start and its finish, never a failure: a page that
   fails or is cancelled sends no `finished`, so its line ends at the 30 second
   limit, or when Stop is pressed.
@@ -905,7 +969,7 @@ A `browser_*` command fails with a reason code from `browser/reason.rs`
 `local-folder`, `local-type`, `tab-gone`,
 `tab-closed`, `window-gone`, `other-window`, `too-many-popups`,
 `session-closing`, `invalid-workspace`, `profile-busy`, `profile-live`,
-`profile-shared`, `profile-unavailable`, `history-unavailable`, `invalid-preset`, `tab-row-gone`, `tab-row-owner`,
+`profile-shared`, `profile-unavailable`, `history-unavailable`, `invalid-preset`, `console-unavailable`, `tab-row-gone`, `tab-row-owner`,
 `tab-rows-changed`, `tab-rows-failed`), never a sentence. The pane owns the
 words (`features/browser/browserFailureText.ts`).
 
@@ -913,7 +977,9 @@ words (`features/browser/browserFailureText.ts`).
 
 - `apps/desktop/src-tauri/src/browser/host.rs` builds a tab's webview with
   the rule, the popup path and the download refusal; `commands.rs` holds the
-  twenty-two `browser_*` commands (`browser_page_keys` sets the page keys);
+  twenty-five `browser_*` commands (`browser_page_keys` sets the page keys);
+  `console.rs` holds the tab script, the reader and the answer parse, and
+  `console_hook.js` the hook;
   `local.rs` holds the `gblocal` scheme, the path rule and the grant check; `page_keys.rs`
   holds the chord parse, the key codes, the `PageKeys` state and
   `route_page_key`; `load.rs` maps the page load callback to
@@ -929,7 +995,8 @@ words (`features/browser/browserFailureText.ts`).
   stop. The passkey watch keeps its
   handler-to-tab map in `browser/passkey.rs`, its native handler class in
   `src-tauri/src/platform/passkey_handler.rs` and its script in
-  `browser/passkey.js`; `host.rs` adds the script to every frame,
+  `browser/passkey.js`, which `console::tab_script` appends to the console
+  hook; `host.rs` adds that one script to every frame,
   registers the handler after the view is made and forgets the handler when
   the tab closes, when its open is refused late and when its window is
   destroyed (`forget_window`). These two `platform/` files, the key monitor in

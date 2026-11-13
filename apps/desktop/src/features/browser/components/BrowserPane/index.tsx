@@ -8,10 +8,12 @@ import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { browserTabListPref } from '../../browserTabListPref';
 import type { BrowserTabListMode } from '../../types';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
+import { useConsoleEntries } from '../../hooks/useConsoleEntries';
 import { useNativePlacement } from '../../hooks/useNativePlacement';
 import { devicePresetOf } from '../../devicePresets';
 import { promoteBrowserTab } from '../../promoteBrowserTab';
 import { BrowserAddressRow } from './BrowserAddressRow';
+import { BrowserConsole } from './BrowserConsole';
 import { BrowserNotice } from './BrowserNotice';
 import { BrowserPasskeyNotice } from './BrowserPasskeyNotice';
 import { BrowserSendLine } from './BrowserSendLine';
@@ -48,6 +50,12 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
   const isOnScreen = useAppStore((state) => selectDrawerPanel(state)?.kind === 'browser');
+  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const consoleLog = useConsoleEntries({
+    sessionId,
+    liveId: model.shownLiveId,
+    isOpen: isConsoleOpen && isOnScreen,
+  });
 
   useReloadSurface({
     isEnabled: isOnScreen,
@@ -74,6 +82,10 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
           model={model}
           isAddressShortcutOn={isOnScreen}
           isListOpen={isListOpen}
+          consoleToggle={{
+            isOpen: isConsoleOpen,
+            onToggle: () => setIsConsoleOpen(!isConsoleOpen),
+          }}
           onToggleList={() => changeMode({ next: isListOpen ? 'hidden' : 'list' })}
           onOpenAsPage={() => promoteBrowserTab({ sessionId, tabId: shownTab?.id ?? null })}
           onClose={onClose}
@@ -96,14 +108,19 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
               onFold={() => changeMode({ next: isRail ? 'list' : 'rail' })}
             />
           ) : null}
-          <BrowserView
-            frame={frame}
-            view={view}
-            shown={model.shown}
-            title={title}
-            cover={cover}
-            devicePreset={model.devicePreset}
-          />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+            <BrowserView
+              frame={frame}
+              view={view}
+              shown={model.shown}
+              title={title}
+              cover={cover}
+              devicePreset={model.devicePreset}
+            />
+            {isConsoleOpen && shownTab !== null ? (
+              <BrowserConsole model={model} title={title} log={consoleLog} />
+            ) : null}
+          </div>
         </div>
       </div>
     </DrawerFrame>

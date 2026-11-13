@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use tauri::{Manager, Runtime, Webview};
 
+use super::console::{self, ConsoleRead, Cursor};
 use super::favicon::{self, BrowserFavicons, TabFavicon};
 use super::find::{self, FindOutcome};
 use super::guard::{self, AppOrigins};
@@ -90,6 +91,15 @@ pub(crate) struct PageTextArgs {
     tab_id: String,
     session_id: String,
     host: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ConsoleReadArgs {
+    pub(super) tab_id: String,
+    pub(super) session_id: String,
+    pub(super) doc: Option<String>,
+    pub(super) after: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -326,6 +336,31 @@ pub async fn browser_page_text(
     web_text::read_page_text(&tab, PAGE_TEXT_UNAVAILABLE)
 }
 
+pub(super) fn console_tab<R: Runtime>(
+    caller: &Webview<R>,
+    args: &ConsoleReadArgs,
+) -> Result<Webview<R>, MessageError> {
+    let tab = owned_tab(caller, &args.tab_id)?;
+    let owner_session = caller
+        .state::<BrowserRegistry>()
+        .facts(&args.tab_id)
+        .map(|facts| facts.session_id)
+        .ok_or_else(|| reason::failed(TAB_GONE))?;
+    if owner_session != args.session_id {
+        return Err(reason::refused(OTHER_SESSION));
+    }
+    Ok(tab)
+}
+
+#[tauri::command]
+pub async fn browser_console_read(
+    webview: Webview,
+    args: ConsoleReadArgs,
+) -> Result<ConsoleRead, MessageError> {
+    let tab = console_tab(&webview, &args)?;
+    console::read_console(&tab, Cursor::of(args.doc.as_deref(), args.after))
+}
+
 #[tauri::command]
 pub async fn browser_tab_back(webview: Webview, args: TabArgs) -> Result<(), MessageError> {
     host::step_history(&owned_tab(&webview, &args.tab_id)?, HistoryStep::Back)
@@ -484,6 +519,22 @@ mod tests {
             "tabId": "0f1e",
             "needle": "retry",
             "isBackwards": false,
+        }));
+    }
+
+    #[test]
+    fn wire_shape_console_read_args() {
+        assert_wire_reads::<ConsoleReadArgs>(json!({
+            "tabId": "0f1e",
+            "sessionId": "harborline",
+            "doc": "k3x9",
+            "after": 12,
+        }));
+        assert_wire_reads::<ConsoleReadArgs>(json!({
+            "tabId": "0f1e",
+            "sessionId": "harborline",
+            "doc": null,
+            "after": 0,
         }));
     }
 

@@ -1,4 +1,5 @@
 pub(crate) mod commands;
+mod console;
 mod favicon;
 mod find;
 mod guard;

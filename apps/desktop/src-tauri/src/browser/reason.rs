@@ -23,6 +23,7 @@ pub(crate) const HISTORY_UNAVAILABLE: &str = "history-unavailable";
 pub(crate) const FIND_UNAVAILABLE: &str = "find-unavailable";
 pub(crate) const NEEDLE_TOO_LONG: &str = "needle-too-long";
 pub(crate) const PAGE_TEXT_UNAVAILABLE: &str = "page-text-unavailable";
+pub(crate) const CONSOLE_UNAVAILABLE: &str = "console-unavailable";
 pub(crate) const OTHER_SESSION: &str = "other-session";
 pub(crate) const HOST_UNKNOWN: &str = "host-unknown";
 pub(crate) const UNSUPPORTED_PLATFORM: &str = "unsupported-platform";

@@ -397,5 +397,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
     setDevicePreset: device.change,
     pageSend,
     showError: ({ error: failure }) => setError(browserFailureText({ error: failure })),
+    shownLiveId:
+      shownLiveId === undefined || isLiveAsleep({ liveId: shownLiveId }) ? null : shownLiveId,
   };
 };

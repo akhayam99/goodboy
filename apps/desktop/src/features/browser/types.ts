@@ -26,6 +26,26 @@ export type BrowserFindOutcome = {
   readonly isFound: boolean;
 };
 
+export type BrowserConsoleKind = 'console' | 'network';
+
+export type BrowserConsoleLevel = 'log' | 'info' | 'warn' | 'error';
+
+export type BrowserConsoleEntry = {
+  readonly seq: number;
+  readonly kind: BrowserConsoleKind;
+  readonly level: BrowserConsoleLevel;
+  readonly text: string;
+  readonly source: string | null;
+  readonly method: string | null;
+  readonly status: number | null;
+};
+
+export type BrowserConsoleRead = {
+  readonly doc: string | null;
+  readonly entries: ReadonlyArray<BrowserConsoleEntry>;
+  readonly isHeard: boolean;
+};
+
 export type BrowserPageText = {
   readonly title: string;
   readonly url: string;
@@ -136,6 +156,7 @@ export type BrowserPaneModel = {
   readonly setDevicePreset: (params: DevicePresetParams) => void;
   readonly pageSend: BrowserPageSend;
   readonly showError: (params: ErrorParams) => void;
+  readonly shownLiveId: string | null;
 };
 
 export type OpenOutcome = 'opened' | 'stale' | 'failed';
