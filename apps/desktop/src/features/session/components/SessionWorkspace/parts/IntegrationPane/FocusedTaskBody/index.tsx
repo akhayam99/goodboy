@@ -75,7 +75,7 @@ export const FocusedTaskBody = ({
         appearance="row"
         navigation="external"
         ariaLabel={`Open ${task.identifier}`}
-        onClick={() => openLink({ url: task.url })}
+        onClick={(event) => openLink({ url: task.url, event })}
       />
       <p className="text-meta text-muted-foreground">
         Connection lost. Open the record in its provider or reconnect in Settings.

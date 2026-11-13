@@ -20,7 +20,7 @@ export const BitbucketNoPullRequest = ({ url, isConnected }: Props) => (
     }
     action={
       url === null ? undefined : (
-        <Button variant="secondary" size="sm" onClick={() => openLink({ url })}>
+        <Button variant="secondary" size="sm" onClick={(event) => openLink({ url, event })}>
           Open Bitbucket
           <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
         </Button>

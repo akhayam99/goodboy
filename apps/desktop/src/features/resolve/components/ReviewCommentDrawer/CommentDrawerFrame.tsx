@@ -1,6 +1,6 @@
 import { MessageSquare } from 'lucide-react';
 import { DrawerFrame } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import type { ResolvedAction } from '../../../actions/types';
 import { ThreadHunk } from '../../../branch/components/ThreadHunk';
 import { ThreadProperties } from '../../../branch/components/ThreadProperties';
@@ -25,6 +25,7 @@ type CommentDrawerPosition = {
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
   readonly entry: ReviewEntry;
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly push: ReviewPush;
@@ -52,6 +53,7 @@ const loneOf = ({ rare }: LoneParams): ResolvedAction | null => {
 
 export const CommentDrawerFrame = ({
   sessionId,
+  mountId = null,
   entry,
   entries,
   push,
@@ -88,7 +90,7 @@ export const CommentDrawerFrame = ({
         className="flex min-w-0 flex-col gap-4"
       >
         <CommentDrawerAuthor entry={entry} />
-        <SessionMediaScope sessionId={sessionId}>
+        <SessionMediaScope sessionId={sessionId} mountId={mountId}>
           <ReviewComment
             sessionId={sessionId}
             entry={entry}

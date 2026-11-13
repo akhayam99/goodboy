@@ -76,6 +76,8 @@ describe('ScribeProposalView', () => {
     const event = opened.mock.calls[0]?.[0];
     expect(event instanceof CustomEvent ? event.detail : null).toEqual({
       url: 'https://github.com/harborline/ledger-core/pull/418',
+      hasMetaKey: false,
+      hasCtrlKey: false,
     });
   });
 

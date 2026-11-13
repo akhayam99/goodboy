@@ -99,7 +99,7 @@ export const seedStoryReview = (): void => {
                 ...github,
                 pr: {
                   ...github.pr,
-                  author: PR_AUTHOR.login,
+                  author: { login: PR_AUTHOR.login, avatarUrl: PR_AUTHOR.avatarUrl },
                   title: STORY_REVIEW.prTitle,
                 },
                 detail: {

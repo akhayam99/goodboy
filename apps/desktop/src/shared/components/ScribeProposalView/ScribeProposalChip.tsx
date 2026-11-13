@@ -26,7 +26,7 @@ export const ScribeProposalChip = ({ state }: Props) => {
           <button
             type="button"
             className="hover:underline"
-            onClick={() => requestOpenLink({ url })}
+            onClick={(event) => requestOpenLink({ url, event })}
           >
             {label}
           </button>

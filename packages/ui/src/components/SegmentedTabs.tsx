@@ -62,7 +62,8 @@ const isShownBadge = ({ badge, isActive }: BadgeParams): boolean => {
   return !isActive && badge !== 0 && badge !== '0';
 };
 
-const UNDERLINE_FRAME = 'flex h-9 min-w-0 items-stretch gap-4 border-b border-border-soft';
+const UNDERLINE_FRAME =
+  'relative flex h-9 min-w-0 items-stretch gap-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border-soft';
 
 type UnderlineParams = {
   readonly isActive: boolean;
@@ -70,10 +71,10 @@ type UnderlineParams = {
 
 const underlineTabClasses = ({ isActive }: UnderlineParams): string =>
   cn(
-    'flex shrink-0 items-center gap-2 border-b-2 text-ui motion-safe:transition-colors',
+    'relative flex shrink-0 items-center gap-2 text-ui motion-safe:transition-colors',
     isActive
-      ? 'border-primary text-foreground'
-      : 'border-transparent text-muted-foreground hover:text-foreground',
+      ? 'z-10 text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary'
+      : 'text-muted-foreground hover:text-foreground',
   );
 
 const GLYPH = {
