@@ -5,12 +5,18 @@ export const TITLE_BAND_SCENES = [
   'branch-pr-github',
   'branch-comments',
   'branch-checks',
+  'c12-tasks-all',
+  'artifacts-rows',
 ];
 export const TITLE_BAND_WIDTHS = [1100, 1440];
 export const TITLE_BAND_READY = '[data-page-header]';
 export const TITLE_BAND_HEIGHTS_PX = [40, 48, 64];
 export const TITLE_BAND_TAB_ROW_PX = 36;
+export const TITLE_BAND_TOOLBAR_PX = 36;
 export const TITLE_BAND_HEADER_PX = {
+  'c05-overview-running': 48,
+  'c12-tasks-all': 84,
+  'artifacts-rows': 48,
   'branch-pr-github': 100,
   'branch-comments': 100,
   'branch-checks': 100,
@@ -30,6 +36,9 @@ export const titleBandProbe = () => {
     block: block.getBoundingClientRect().height,
     bottom: pad('bottom'),
     tabs: [...header.querySelectorAll('[data-slot="page-tabs"]')].map(
+      (row) => row.getBoundingClientRect().height,
+    ),
+    toolbars: [...header.querySelectorAll('[data-slot="pane-toolbar"]')].map(
       (row) => row.getBoundingClientRect().height,
     ),
     isPinned: header.hasAttribute('data-pinned'),
@@ -53,9 +62,18 @@ export const titleBandFailures = ({
   }
   const tabs = measured.tabs ?? [];
   const band = measured.top + measured.block + measured.bottom;
-  const header = band + tabs.reduce((sum, height) => sum + height, 0);
+  const toolbars = measured.toolbars ?? [];
+  const header = band + [...tabs, ...toolbars].reduce((sum, height) => sum + height, 0);
   const expected = TITLE_BAND_HEADER_PX[scene];
   const failures = [];
+  if (toolbars.some((height) => Math.abs(height - TITLE_BAND_TOOLBAR_PX) > tolerance)) {
+    failures.push({
+      scene,
+      width,
+      check: `a toolbar row is ${TITLE_BAND_TOOLBAR_PX} pixels`,
+      toolbars: toolbars.map(round),
+    });
+  }
   if (tabs.some((height) => Math.abs(height - TITLE_BAND_TAB_ROW_PX) > tolerance)) {
     failures.push({
       scene,

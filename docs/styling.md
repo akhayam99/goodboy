@@ -261,13 +261,24 @@ pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
 
+The reading column is 960 wide (`--column-max`) plus its two gutters, centred,
+one column for every reading page. The title's left edge is the
+column's left edge. The Board, the diff and the Terminal are full width with the
+same 24px gutter. `validate-scenes --only page-column` measures the session
+overview, Tasks and Artifacts: a column over 1008 wide, one off centre or a
+title off the column edge fails, and a full-width page that does not fill its
+pane fails.
+
 ## The page layout
 
 One primitive draws the top of every page: `PageHeader`
 (`packages/ui/src/components/PaneShell/PageHeader.tsx`). It owns the top inset
 (`PANE_RHYTHM.headerInset`, 8px, none under a studio band), the 32px title
 row (`PaneTitleRow`, the only title row), the 8px under it (`PANE_RHYTHM.below`,
-so the band is 48px, or 64px with a meta line), the title's left edge (its
+so the band is 48px, or 64px with a meta line), a `badge` beside the title (a
+quiet count chip, as Tasks shows "1,024 open"), a `toolbar` row of 36px under
+the band for the controls of a list (Tasks: scope, search, filters, grouping, menu;
+84px in all, no meta line), the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
 page with its own frame (the Board, the Terminal, the chat room header)
 mounts it directly. No page sets its own header padding: the Settings detail,

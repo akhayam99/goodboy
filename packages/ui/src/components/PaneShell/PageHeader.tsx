@@ -22,8 +22,10 @@ type BaseProps = {
 
 type TitleProps = {
   readonly title: ReactNode;
+  readonly badge?: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
+  readonly toolbar?: ReactNode;
   readonly subheader?: ReactNode;
   readonly row?: undefined;
 };
@@ -31,8 +33,10 @@ type TitleProps = {
 type RowProps = {
   readonly row: ReactElement;
   readonly title?: undefined;
+  readonly badge?: undefined;
   readonly meta?: undefined;
   readonly actions?: undefined;
+  readonly toolbar?: undefined;
   readonly subheader?: undefined;
 };
 
@@ -76,7 +80,13 @@ export const PageHeader = (props: PageHeaderProps) => {
         !isPinned && !isUnderTrail && PANE_RHYTHM.headerInset,
       )}
     >
-      <div className={cn('flex min-w-0 flex-col gap-2', animationClassName)}>
+      <div
+        className={cn(
+          'flex min-w-0 flex-col',
+          props.toolbar == null ? 'gap-2' : 'gap-0',
+          animationClassName,
+        )}
+      >
         {isTrailInline ? (
           <div data-slot="page-trail" className="flex h-6 min-w-0 items-center">
             {trail}
@@ -86,7 +96,17 @@ export const PageHeader = (props: PageHeaderProps) => {
           props.row
         ) : (
           <>
-            <PaneTitleRow title={props.title} meta={props.meta} actions={titleActions} />
+            <PaneTitleRow
+              title={props.title}
+              badge={props.badge}
+              meta={props.meta}
+              actions={titleActions}
+            />
+            {props.toolbar != null ? (
+              <div data-slot="pane-toolbar" className="flex h-9 min-w-0 items-center">
+                {props.toolbar}
+              </div>
+            ) : null}
             {props.subheader ?? null}
           </>
         )}

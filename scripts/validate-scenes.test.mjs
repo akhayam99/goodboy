@@ -33,6 +33,7 @@ import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
 import { titleBandFailures } from './validateScenesTitleBand.mjs';
+import { pageColumnFailures } from './validateScenesPageColumn.mjs';
 import { frostFailures } from './validateScenesFrost.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerRevealFailures } from './validateScenesDrawerReveal.mjs';
@@ -1015,7 +1016,11 @@ describe('titleBandFailures', () => {
     const measured = { ...band({ block: 48 }), tabs: [36] };
     assert.deepEqual(titleBandFailures({ scene: 'branch-pr-github', width: 1440, measured }), []);
     const taller = { ...band({ block: 48 }), tabs: [44] };
-    const failures = titleBandFailures({ scene: 'branch-pr-github', width: 1440, measured: taller });
+    const failures = titleBandFailures({
+      scene: 'branch-pr-github',
+      width: 1440,
+      measured: taller,
+    });
     assert.deepEqual(
       failures.map((entry) => entry.check),
       ['a tab row is 36 pixels', 'the header is 100 pixels'],
@@ -1032,6 +1037,116 @@ describe('titleBandFailures', () => {
       [],
     );
     assert.equal(titleBandFailures({ scene: 'fixture', width: 1440, measured: null }).length, 1);
+  });
+
+  it('holds the Tasks header at 84: a 48 band and one 36 toolbar', () => {
+    const measured = { ...band(), toolbars: [36] };
+    assert.deepEqual(titleBandFailures({ scene: 'c12-tasks-all', width: 1440, measured }), []);
+    const meta = { ...band({ block: 48 }), toolbars: [36] };
+    assert.deepEqual(
+      titleBandFailures({ scene: 'c12-tasks-all', width: 1440, measured: meta }).map(
+        (entry) => entry.check,
+      ),
+      ['the header is 84 pixels'],
+    );
+    const taller = { ...band(), toolbars: [44] };
+    assert.deepEqual(
+      titleBandFailures({ scene: 'c12-tasks-all', width: 1440, measured: taller }).map(
+        (entry) => entry.check,
+      ),
+      ['a toolbar row is 36 pixels', 'the header is 84 pixels'],
+    );
+  });
+
+  it('holds the session overview and the artifacts list at 48', () => {
+    for (const scene of ['c05-overview-running', 'artifacts-rows']) {
+      assert.deepEqual(titleBandFailures({ scene, width: 1440, measured: band() }), []);
+      assert.equal(
+        titleBandFailures({ scene, width: 1440, measured: { ...band(), toolbars: [36] } }).length,
+        1,
+      );
+    }
+  });
+});
+
+describe('pageColumnFailures', () => {
+  const column = ({
+    left = 216,
+    width = 1008,
+    paneLeft = 0,
+    paneRight = 1440,
+    gutter = 24,
+    title = left + gutter,
+  } = {}) => ({
+    left,
+    right: left + width,
+    width,
+    paneLeft,
+    paneRight,
+    gutter,
+    title,
+  });
+
+  it('passes a 960 reading column centred with its title on the column edge', () => {
+    for (const kind of ['reading']) {
+      assert.deepEqual(
+        pageColumnFailures({ scene: 'fixture', width: 1440, kind, measured: column() }),
+        [],
+      );
+    }
+  });
+
+  it('fails the 860 column flush left that the session overview had', () => {
+    const flush = column({ left: 0, width: 884, gutter: 24 });
+    const failures = pageColumnFailures({
+      scene: 'fixture',
+      width: 1440,
+      kind: 'reading',
+      measured: flush,
+    });
+    assert.deepEqual(
+      failures.map((entry) => entry.check),
+      ['a reading column is centred in its pane'],
+    );
+  });
+
+  it('fails a column wider than the 960 frame and a title off the column edge', () => {
+    const wide = column({ left: 100, width: 1140, title: 150 });
+    assert.deepEqual(
+      pageColumnFailures({ scene: 'fixture', width: 1440, kind: 'reading', measured: wide }).map(
+        (entry) => entry.check,
+      ),
+      [
+        "the title's left edge is the column's left edge",
+        'a reading column is at most 1008 pixels',
+        'a reading column is centred in its pane',
+      ],
+    );
+  });
+
+  it('lets a full-width page fill its pane with the 24 gutter and nothing narrower', () => {
+    const full = column({ left: 0, width: 1440 });
+    assert.deepEqual(
+      pageColumnFailures({ scene: 'board', width: 1440, kind: 'full', measured: full }),
+      [],
+    );
+    const narrow = pageColumnFailures({
+      scene: 'board',
+      width: 1440,
+      kind: 'full',
+      measured: column(),
+    });
+    assert.deepEqual(
+      narrow.map((entry) => entry.check),
+      ['a full-width page fills the pane'],
+    );
+  });
+
+  it('fails a page with no column or no title', () => {
+    assert.equal(
+      pageColumnFailures({ scene: 'fixture', width: 1440, kind: 'reading', measured: null }).length,
+      1,
+    );
   });
 });
 
