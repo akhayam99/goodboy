@@ -1,5 +1,5 @@
-import { countNoun } from '../../../../shared/utils/countNoun';
-import type { ActivityItem } from './activityOf';
+import { countNoun } from '../../utils/countNoun';
+import type { ActivityItem } from './activityItem';
 
 type Params = {
   readonly item: Extract<ActivityItem, { kind: 'push' }>;

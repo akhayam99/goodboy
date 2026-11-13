@@ -1,5 +1,6 @@
 import { gitlabMrRailOf } from './gitlabMrRailOf';
 import { HostOverview } from '../../../components/HostOverview';
+import { gitlabMrSectionsOf } from './gitlabMrSectionsOf';
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
 import { gitlabSessionOf } from '../../../../../store/slices/mount-request/requestOf';
@@ -276,7 +277,6 @@ export const MrDetailPanel = ({
   }
 
   if (mr != null) {
-    const approval = approvals.approval;
     const sections: ReadonlyArray<RecordSection> = [
       {
         key: 'description',
@@ -286,7 +286,7 @@ export const MrDetailPanel = ({
         defaultOpen: true,
         content: <DescriptionSection text={mr.description ?? ''} />,
       },
-      conversation.section,
+      ...gitlabMrSectionsOf({ mr, conversation: conversation.section, threads: source.threads }),
     ];
 
     return (
@@ -303,7 +303,7 @@ export const MrDetailPanel = ({
               <RecordProperties
                 facts={resolveFacts({
                   registry: gitlabMergeRequestFields,
-                  entity: { mr, approval },
+                  entity: { mr, approval: approvals.approval },
                 })}
               />
             }
@@ -331,7 +331,7 @@ export const MrDetailPanel = ({
           />
         ) : null}
         <HostOverview
-          rail={gitlabMrRailOf({ mr, approval: approvals.isSupported ? approval : null })}
+          rail={gitlabMrRailOf({ mr, approval: approvals.isSupported ? approvals.approval : null })}
         >
           <RecordSections sections={sections} />
         </HostOverview>

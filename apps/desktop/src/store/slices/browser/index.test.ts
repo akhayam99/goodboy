@@ -271,6 +271,16 @@ describe('browser tabs open, close and reorder', () => {
     expect(hostRows.map((row) => row.id)).toEqual(['tab-a', 'tab-c']);
   });
 
+  it('closing a tab forgets its width preset and keeps the others', async () => {
+    await openThree();
+    useAppStore.getState().setBrowserDevicePreset({ tabId: 'tab-a', preset: 'phone' });
+    useAppStore.getState().setBrowserDevicePreset({ tabId: 'tab-b', preset: 'tablet' });
+
+    await useAppStore.getState().closeBrowserTab({ sessionId: SESSION_ID, tabId: 'tab-b' });
+
+    expect(useAppStore.getState().browserDevicePresets).toEqual({ 'tab-a': 'phone' });
+  });
+
   it('closing the last tab leaves no active tab', async () => {
     await useAppStore.getState().openBrowserTab({
       sessionId: SESSION_ID,

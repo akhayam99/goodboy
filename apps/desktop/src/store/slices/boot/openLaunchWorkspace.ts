@@ -30,7 +30,7 @@ export const openLaunchWorkspace = async ({
   const switchError = get().workspaceSwitchError;
   const failure =
     switchError !== null && switchError.workspaceId === id ? switchError.message : null;
-  if (isLatest && !get().boardReady) {
+  if (!get().boardReady && get().switchingToWorkspaceId === null) {
     set({ currentWorkspaceId: null, boardReady: true, isShellReady: false });
   }
   return { isLatest, failure };

@@ -516,6 +516,9 @@ baseline names `config_export/apply.rs`.
   cards and counts with `boardReady` in one set. The id is passed down, never
   read back after an await. A switch made during the load claims the latest
   (`switchEpoch`): the launch load drops and the last session is not restored.
+  When that switch fails, its error stays in `workspaceSwitchError` and the
+  launch shell is put back as below, never left on skeletons; while the switch
+  still runs, the shell stays on its skeletons.
   A launch load that fails or does not commit puts the shell back (id null,
   `isShellReady` false); `openWorkspaceOrFail` then throws to the launch error
   screen. Each window runs its own chain. `isShellReady` is reset at the start

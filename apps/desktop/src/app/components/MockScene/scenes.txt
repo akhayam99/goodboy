@@ -258,6 +258,7 @@ c05-overview-merged-group
 c05-overview-merged-next
 c05-overview-notices
 c05-overview-running
+c05-overview-running-loading
 c06-agent-delegating
 c06-agent-failed
 c06-agent-finished

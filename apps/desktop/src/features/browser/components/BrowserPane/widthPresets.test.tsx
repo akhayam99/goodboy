@@ -187,8 +187,8 @@ const openCheckout = async () => {
 
 const chooseWidth = async ({ label }: LabelParams) => {
   fireEvent.click(screen.getByRole('button', { name: 'More' }));
-  fireEvent.click(await screen.findByRole('menuitem', { name: /^Width/ }));
-  fireEvent.click(await screen.findByRole('menuitemradio', { name: label }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: /^Develop/ }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: label }));
 };
 
 const deviceFrame = () => document.querySelector('[data-device-frame]');

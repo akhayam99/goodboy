@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ActivityItem } from './activityOf';
+import type { ActivityItem } from './activityItem';
 import { foldPushes } from './foldPushes';
 import { pushLineOf } from './pushLineOf';
 

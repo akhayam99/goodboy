@@ -206,6 +206,19 @@ describe('the console hook', () => {
     ]);
   });
 
+  it('hands the page the rejection with the same reason, observed once', async () => {
+    const reason = new Error('offline');
+    const rejected = Promise.reject(reason);
+    const tab = page({ fetchAnswer: () => rejected });
+
+    const answer = tab.window.fetch('/api/cart');
+    const handled = vi.fn();
+    await answer.catch(handled);
+
+    expect(handled).toHaveBeenCalledWith(reason);
+    expect(tab.read()?.entries).toHaveLength(1);
+  });
+
   it('records a request whose answer is an error status', () => {
     const tab = page();
     const xhr = new tab.window.XMLHttpRequest();
