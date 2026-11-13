@@ -13,7 +13,7 @@ import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider
 import { MOCK_ENABLED } from './shared/lib/mockMode';
 import { bootstrapContrast } from './shared/lib/contrast';
 import { bootstrapTheme } from './shared/lib/theme';
-import { loadRemoteImage } from './shared/lib/remoteImage';
+import { loadAvatarImage, loadRemoteImage } from './shared/lib/remoteImage';
 import { APP_CODE_HIGHLIGHTER } from './shared/lib/highlight/codeHighlighter';
 import { logRenderCrash } from './features/bug-report/logRenderCrash';
 import { CrashReport } from './features/bug-report/components/CrashReport';
@@ -61,7 +61,7 @@ createRoot(container).render(
       renderReport={renderCrashReport}
       onCatch={logRenderCrash}
     >
-      <RemoteImageLoaderProvider load={loadRemoteImage}>
+      <RemoteImageLoaderProvider load={loadRemoteImage} loadAvatar={loadAvatarImage}>
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
           <ScrollerStyleProvider>
             {MockEntry !== null ? (

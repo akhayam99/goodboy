@@ -5,7 +5,34 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke }));
 
-import { loadRemoteImage, loadToolImage } from './remoteImage';
+import { loadAvatarImage, loadRemoteImage, loadToolImage } from './remoteImage';
+
+describe('loadAvatarImage', () => {
+  beforeEach(() => {
+    invoke.mockReset();
+    invoke.mockResolvedValue('data:image/png;base64,iVBORw0KGgo=');
+  });
+
+  it('sends one request for ten asks of the same address', async () => {
+    const asks = Array.from({ length: 10 }, () =>
+      loadAvatarImage({ url: 'https://avatars.example.com/mara-l.png' }),
+    );
+
+    await Promise.all(asks);
+
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not ask again after a refusal', async () => {
+    invoke.mockRejectedValue({ kind: 'refused', message: 'nothing was loaded' });
+    const url = 'https://avatars.example.com/refused.png';
+
+    await expect(loadAvatarImage({ url })).rejects.toBeDefined();
+    await expect(loadAvatarImage({ url })).rejects.toBeDefined();
+
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('loadRemoteImage', () => {
   beforeEach(() => {

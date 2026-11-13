@@ -765,6 +765,17 @@ on the fill. `ButtonIconColor.test.tsx` pins it per variant and per tone; the
 `on-tone` contrast on every tone in both themes is pinned by
 `token-contrast-floor.test.ts`.
 
+### Avatar
+
+`Avatar` never gives a remote address to an `img`: the content policy refuses
+it. It asks `RemoteImageAvatarLoaderContext` for the picture and shows the
+returned data uri. Without a loader, on a refusal or on a late answer for an
+address no longer on screen, it shows a monogram: the first letter on a hue
+from `personHueOf`, which hashes the login onto eight hues from 120 to 330
+degrees so a person never reads as danger or warning. One login keeps one hue
+in every surface. The app wires `loadAvatarImage`, which keeps one request per
+address per run.
+
 ### Identity palettes
 
 Identity colour names an object instead of describing its state. Two workflows

@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { RemoteImageLoaderProvider } from '@goodboy/ui';
 import type { PrComment } from '@goodboy/types';
 import type { CommentThread } from '../../../integrations/github/comment-threads';
 import { ReviewThreadContent } from './index';
@@ -37,13 +38,18 @@ const threadOf = (patch: Partial<PrComment> = {}): CommentThread => ({
 afterEach(cleanup);
 
 describe('the review thread content', () => {
-  it('keeps the author, the avatar, the age, the location and the body of the head comment', () => {
-    render(<ReviewThreadContent thread={threadOf()} onOpenUrl={vi.fn()} />);
+  it('keeps the author, the avatar, the age, the location and the body of the head comment', async () => {
+    const loadAvatar = vi.fn(async () => 'data:image/png;base64,iVBORw0KGgo=');
+    render(
+      <RemoteImageLoaderProvider load={loadAvatar} loadAvatar={loadAvatar}>
+        <ReviewThreadContent thread={threadOf()} onOpenUrl={vi.fn()} />
+      </RemoteImageLoaderProvider>,
+    );
 
     expect(screen.getByText('harbor-reviewer')).toBeDefined();
-    expect(screen.getByRole('img', { name: 'harbor-reviewer' }).getAttribute('src')).toBe(
-      'https://avatars.example/harbor-reviewer.png',
-    );
+    const avatar = await screen.findByRole('img', { name: 'harbor-reviewer' });
+    expect(avatar.getAttribute('src')).toBe('data:image/png;base64,iVBORw0KGgo=');
+    expect(loadAvatar).toHaveBeenCalledWith({ url: 'https://avatars.example/harbor-reviewer.png' });
     expect(screen.getAllByText('3h ago').length).toBeGreaterThan(0);
     expect(screen.getByText('src/retry.ts:84')).toBeDefined();
     expect(screen.getByText('This retries forever on a 500.')).toBeDefined();

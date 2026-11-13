@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import {
   RemoteImageAutoLoadContext,
+  RemoteImageAvatarLoaderContext,
   RemoteImageLoaderContext,
   RemoteImageToolContext,
   type RemoteImageAutoLoad,
@@ -10,19 +11,29 @@ import {
 
 type Props = {
   readonly load: RemoteImageLoader;
+  readonly loadAvatar?: RemoteImageLoader;
   readonly shouldAutoLoad?: RemoteImageAutoLoad;
   readonly tool?: RemoteImageTool;
   readonly children: ReactNode;
 };
 
-export const RemoteImageLoaderProvider = ({ load, shouldAutoLoad, tool, children }: Props) => {
+export const RemoteImageLoaderProvider = ({
+  load,
+  loadAvatar,
+  shouldAutoLoad,
+  tool,
+  children,
+}: Props) => {
+  const inheritedAvatarLoad = useContext(RemoteImageAvatarLoaderContext);
   return (
     <RemoteImageLoaderContext.Provider value={load}>
-      <RemoteImageAutoLoadContext.Provider value={shouldAutoLoad ?? null}>
-        <RemoteImageToolContext.Provider value={tool ?? null}>
-          {children}
-        </RemoteImageToolContext.Provider>
-      </RemoteImageAutoLoadContext.Provider>
+      <RemoteImageAvatarLoaderContext.Provider value={loadAvatar ?? inheritedAvatarLoad}>
+        <RemoteImageAutoLoadContext.Provider value={shouldAutoLoad ?? null}>
+          <RemoteImageToolContext.Provider value={tool ?? null}>
+            {children}
+          </RemoteImageToolContext.Provider>
+        </RemoteImageAutoLoadContext.Provider>
+      </RemoteImageAvatarLoaderContext.Provider>
     </RemoteImageLoaderContext.Provider>
   );
 };

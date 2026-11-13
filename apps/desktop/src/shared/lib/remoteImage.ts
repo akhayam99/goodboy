@@ -8,6 +8,18 @@ export const loadRemoteImage = async ({ url }: Params): Promise<string> => {
   return invokeCommand<string>('fetch_remote_image', { url });
 };
 
+const avatarRequests = new Map<string, Promise<string>>();
+
+export const loadAvatarImage = ({ url }: Params): Promise<string> => {
+  const known = avatarRequests.get(url);
+  if (known != null) {
+    return known;
+  }
+  const request = loadRemoteImage({ url });
+  avatarRequests.set(url, request);
+  return request;
+};
+
 export type ToolImageProvider = 'linear' | 'jira' | 'github';
 
 type ToolImageParams = {
