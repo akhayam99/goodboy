@@ -62,6 +62,7 @@ export type SweepRequestsParams = Readonly<{
   shouldSkipUnknownRequest?: boolean;
   sessionId?: SessionId;
   isForced?: boolean;
+  isCurrentFirst?: boolean;
 }>;
 
 export type ReviewSourceSlice = Readonly<{

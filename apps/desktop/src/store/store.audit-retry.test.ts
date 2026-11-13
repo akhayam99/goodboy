@@ -243,10 +243,15 @@ describe('audit retry queue, drain worker (happy path)', () => {
   beforeEach(() => {
     resetStorySpies();
     runTurnSpy.mockImplementation(() => emptyStream());
+    vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+      queueMicrotask(callback);
+      return 0;
+    });
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     auditRetryDrainSpy.mockReset();
     auditRetryDeleteSpy.mockReset();
     auditRetryUpdateSpy.mockReset();
@@ -266,7 +271,9 @@ describe('audit retry queue, drain worker (happy path)', () => {
       identity: 'test',
     });
     await useAppStore.getState().hydrate();
-    await Promise.resolve();
+    for (let tick = 0; tick < 100; tick += 1) {
+      await Promise.resolve();
+    }
   }
 
   it('drain happy path: retries insert, deletes on success', async () => {

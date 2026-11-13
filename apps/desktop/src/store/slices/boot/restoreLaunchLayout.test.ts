@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 import type { Location } from '../navigation/types';
+import type { LaunchReads } from '../workspaces/launchReads';
 
 const h = vi.hoisted(() => ({
   settings: new Map<string, string>(),
@@ -45,6 +46,7 @@ const WORKSPACES = [
   { id: WS_A, name: 'harborline' },
   { id: WS_B, name: 'northwind' },
 ] as unknown as ReadonlyArray<Workspace>;
+const LAUNCH: LaunchReads = { projects: [], liveRunIds: new Set() };
 
 const locationIn = (workspaceId: WorkspaceId, sessionId: string): Location => ({
   workspaceId,
@@ -91,10 +93,11 @@ describe('restoreLaunchLayout', () => {
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
+      launch: LAUNCH,
     });
 
     expect(layout.isRestored).toBe(true);
-    expect(store.setCurrentWorkspace).toHaveBeenCalledWith(WS_A);
+    expect(store.setCurrentWorkspace).toHaveBeenCalledWith(WS_A, LAUNCH);
     expect(store.restoreLocation).toHaveBeenCalledWith({
       location: locationIn(WS_A, 'session-ledger'),
     });
@@ -112,6 +115,7 @@ describe('restoreLaunchLayout', () => {
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
+      launch: LAUNCH,
     });
 
     expect(layout).toEqual({ isRestored: false, secondary: [] });
@@ -128,6 +132,7 @@ describe('restoreLaunchLayout', () => {
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: true,
+      launch: LAUNCH,
     });
 
     expect(layout.secondary).toEqual([]);
@@ -144,10 +149,11 @@ describe('restoreLaunchLayout', () => {
       get: store.get,
       workspaces: WORKSPACES,
       isReopenLast: false,
+      launch: LAUNCH,
     });
 
     expect(layout.isRestored).toBe(true);
-    expect(store.setCurrentWorkspace).toHaveBeenCalledWith(WS_B);
+    expect(store.setCurrentWorkspace).toHaveBeenCalledWith(WS_B, LAUNCH);
     expect(store.restoreLocation).toHaveBeenCalledWith({
       location: locationIn(WS_B, 'session-relay'),
     });

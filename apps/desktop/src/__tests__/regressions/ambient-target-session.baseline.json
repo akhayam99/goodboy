@@ -12,7 +12,7 @@
   "apps/desktop/src/store/slices/navigation/captureLocation.ts": 4,
   "apps/desktop/src/store/slices/project-mounts/materializationGate.ts": 2,
   "apps/desktop/src/store/slices/project-mounts/unmountMount.ts": 4,
-  "apps/desktop/src/store/slices/review-source/sweepRequests.ts": 2,
+  "apps/desktop/src/store/slices/review-source/sweepRequests.ts": 1,
   "apps/desktop/src/store/slices/session-sync/resyncSession.ts": 1,
   "apps/desktop/src/store/slices/session-view/artifactConversation.ts": 2,
   "apps/desktop/src/store/slices/session-view/artifactCreation.ts": 1,

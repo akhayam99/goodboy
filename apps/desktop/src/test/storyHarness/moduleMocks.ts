@@ -35,6 +35,7 @@ export const dbLibModuleMock = () => ({
 
 export const dbBootModuleMock = () => ({
   runDbMigrations: storySpies.runDbMigrations,
+  runDbHygiene: vi.fn(async () => undefined),
   restoreMigrationSnapshot: storySpies.restoreMigrationSnapshot,
   wipeDb: vi.fn(async () => undefined),
 });

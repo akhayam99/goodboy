@@ -842,7 +842,9 @@ Agents, headed "Welcome to Goodboy" with the one sentence and the trust line,
 and agent detection starts there. The boot splash is the tile, the name, a 160 px
 determinate bar and the phase word on that same backdrop. The bar moves one
 sixth per real `bootPhase` write (`BOOT_PHASE_ORDER`, `bootProgressPercent`),
-never on a timer, and jumps under reduced motion. On `ready` `App` mounts the app or
+never on a timer, and jumps under reduced motion. Settings, agent credentials and
+workspaces load together, so the phase word moves to the first of the three still
+loading and never steps back. On `ready` `App` mounts the app or
 the setup at once and `BootSplashExit` crossfades the splash out over 200 ms on
 top of it (same `BootStage`, so the tile does not move); there is no fixed wait
 after ready, and reduced motion removes the splash at once. The window opens hidden and

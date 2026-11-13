@@ -31,7 +31,6 @@
   "apps/desktop/src/store/slices/review-source/activeReviewSource.ts": 1,
   "apps/desktop/src/store/slices/review-source/selectReviewSource.ts": 1,
   "apps/desktop/src/store/slices/review-source/sessionPullRequestOf.ts": 1,
-  "apps/desktop/src/store/slices/review-source/sweepRequests.ts": 2,
   "apps/desktop/src/store/slices/session-pins/index.ts": 1,
   "apps/desktop/src/store/slices/session-view/workSurface.ts": 3,
   "apps/desktop/src/store/slices/sessionDraft/openSessionDraft.ts": 2,
@@ -44,7 +43,7 @@
   "apps/desktop/src/store/slices/workspaces/disconnectWorkspace.ts": 1,
   "apps/desktop/src/store/slices/workspaces/mergeWorkspaces.ts": 1,
   "apps/desktop/src/store/slices/workspaces/selectors.ts": 1,
-  "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.ts": 2,
+  "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.ts": 1,
   "apps/desktop/src/store/slices/worktrees/resolveActiveMountPath.ts": 1,
   "apps/desktop/src/store/slices/worktrees/resolveSessionRepo.ts": 1
 }

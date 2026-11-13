@@ -25,7 +25,7 @@ export const useGithubPolling = (): void => {
   const knownBranches = useRef<ReadonlyMap<SessionId, string> | null>(null);
 
   useEffect(() => {
-    void sweepRequests();
+    void sweepRequests({ isCurrentFirst: true });
   }, [sweepRequests, githubAvailable, hostBindingSignature]);
 
   useEffect(() => {

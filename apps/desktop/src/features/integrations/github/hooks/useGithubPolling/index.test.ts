@@ -49,11 +49,11 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('useGithubPolling', () => {
-  it('sweeps everything once on mount', () => {
+  it('sweeps everything once on mount, the current session first', () => {
     renderHook(() => useGithubPolling());
 
     expect(sweep).toHaveBeenCalledTimes(1);
-    expect(sweep).toHaveBeenCalledWith();
+    expect(sweep).toHaveBeenCalledWith({ isCurrentFirst: true });
   });
 
   it('refetches only the session whose branch changed', () => {
