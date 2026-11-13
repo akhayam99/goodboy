@@ -14,6 +14,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { openUrl } from '../../../../../shared/lib/editor';
+import { SETTING_LINKS_OPEN } from '../../../../../shared/lib/linksOpenSetting';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -247,6 +248,7 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
     expect(stubs.mergePr).toHaveBeenCalledWith(SESSION.id, 42, 'rebase', {
       mountId: expect.any(String),
       expectedHeadSha: 'a41c9e2b7d3',
+      hasFailureSurface: expect.any(Function),
     });
   });
 
@@ -261,7 +263,10 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
     fireEvent.click(within(group).getByRole('button', { name: 'Close pull request' }));
 
     await waitFor(() => expect(stubs.closePr).toHaveBeenCalledTimes(1));
-    expect(stubs.closePr).toHaveBeenCalledWith(SESSION.id, 42, { mountId: expect.any(String) });
+    expect(stubs.closePr).toHaveBeenCalledWith(SESSION.id, 42, {
+      mountId: expect.any(String),
+      hasFailureSurface: expect.any(Function),
+    });
   });
 
   it('shows a declined pull request as closed with no Reopen, Close or Merge', async () => {
@@ -289,9 +294,16 @@ describe('the Pull request tab on Bitbucket, without a pull request', () => {
     ).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Create pull request' })).toBeNull();
+    act(() => {
+      useAppStore.setState((state) => ({
+        settings: { ...state.settings, [SETTING_LINKS_OPEN]: 'browser' },
+      }));
+    });
     fireEvent.click(await screen.findByRole('button', { name: /Open Bitbucket/ }));
-    expect(openUrl).toHaveBeenCalledWith(
-      'https://bitbucket.org/harborline/payments-api/pull-requests/new?source=hl%2Ffix-duplicate-credit',
+    await waitFor(() =>
+      expect(openUrl).toHaveBeenCalledWith(
+        'https://bitbucket.org/harborline/payments-api/pull-requests/new?source=hl%2Ffix-duplicate-credit',
+      ),
     );
   });
 });
