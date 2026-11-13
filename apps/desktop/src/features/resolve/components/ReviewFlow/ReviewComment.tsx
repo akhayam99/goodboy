@@ -242,7 +242,7 @@ export const ReviewComment = ({
     >
       {hunk}
 
-      <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
+      <div className="min-w-0">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
