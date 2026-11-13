@@ -241,6 +241,8 @@ export type {
   RemoteMediaKind,
   RemoteMediaOpen,
   RemoteMediaProbe,
+  RemoteVideoFile,
+  RemoteVideoLoader,
 } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';

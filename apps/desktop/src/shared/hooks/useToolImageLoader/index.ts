@@ -1,8 +1,14 @@
 import { useMemo } from 'react';
-import type { RemoteImageAutoLoad, RemoteImageLoader, RemoteMediaProbe } from '@goodboy/ui';
+import type {
+  RemoteImageAutoLoad,
+  RemoteImageLoader,
+  RemoteMediaProbe,
+  RemoteVideoLoader,
+} from '@goodboy/ui';
 import {
   loadRemoteImage,
   loadToolImage,
+  loadToolVideo,
   probeToolMedia,
   type ToolImageProvider,
 } from '../../lib/remoteImage';
@@ -50,6 +56,7 @@ export type ToolImageLoader = {
   readonly load: RemoteImageLoader;
   readonly shouldAutoLoad: RemoteImageAutoLoad;
   readonly probe: RemoteMediaProbe;
+  readonly loadVideo: RemoteVideoLoader;
 };
 
 type Params = {
@@ -77,6 +84,8 @@ export const useToolImageLoader = ({
       shouldAutoLoad: (url: string) => isToolHost({ provider, url, siteUrl: site }),
       probe: ({ url }: ProbeParams) =>
         probeToolMedia({ workspaceId, projectId, provider, email, siteUrl: site, url }),
+      loadVideo: ({ url }: ProbeParams) =>
+        loadToolVideo({ workspaceId, projectId, provider, email, siteUrl: site, url }),
     }),
     [workspaceId, projectId, provider, email, site],
   );

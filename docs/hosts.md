@@ -107,7 +107,7 @@ The webview never picks the host a stored secret travels to. The GitLab host, th
 
 ### Attachment hosts per provider
 
-`load_tool_image` and `probe_tool_media` (both in `remote_image.rs`) send the token of the connected tool to that tool's own attachment addresses and to no other. A bare address is asked for its type once, then drawn as an image or as a video poster row.
+`load_tool_image` and `probe_tool_media` (both in `remote_image.rs`) send the token of the connected tool to that tool's own attachment addresses and to no other. A bare address is asked for its type once, then drawn as an image or as a video poster row. **Play** on that row calls `fetch_remote_media` (`remote_media.rs`), which goes through the same hop, so the table below governs it too: the token goes to the provider's attachment host only and never on the redirect. It takes `video/mp4`, `video/webm` and `video/quicktime` up to 50 MB; a larger or refused video shows its reason in place with **Play** as the retry and **Open on the host**. Nothing is fetched before Play, and a body that lands after the video left the page is dropped.
 
 | Provider          | Address that gets the token                              | Redirect                                                               |
 | ----------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- |

@@ -72,6 +72,7 @@ mod releases;
 mod remote;
 mod remote_auth;
 mod remote_image;
+mod remote_media;
 mod remote_probe;
 mod render_crash_log;
 mod repo;
@@ -349,6 +350,7 @@ pub fn run() {
             remote_image::fetch_remote_image,
             remote_image::load_tool_image,
             remote_image::probe_tool_media,
+            remote_media::fetch_remote_media,
             local_image::local_image_read,
             releases::releases_list,
             releases::release_changelog,

@@ -6,6 +6,8 @@ import {
   RemoteImageToolContext,
   RemoteMediaOpenContext,
   RemoteMediaProbeContext,
+  RemoteVideoLoaderContext,
+  type RemoteVideoLoader,
   type RemoteImageAutoLoad,
   type RemoteImageLoader,
   type RemoteImageTool,
@@ -20,6 +22,7 @@ type Props = {
   readonly tool?: RemoteImageTool;
   readonly probe?: RemoteMediaProbe;
   readonly onOpen?: RemoteMediaOpen;
+  readonly loadVideo?: RemoteVideoLoader;
   readonly children: ReactNode;
 };
 
@@ -30,6 +33,7 @@ export const RemoteImageLoaderProvider = ({
   tool,
   probe,
   onOpen,
+  loadVideo,
   children,
 }: Props) => {
   const inheritedAvatarLoad = useContext(RemoteImageAvatarLoaderContext);
@@ -41,7 +45,9 @@ export const RemoteImageLoaderProvider = ({
           <RemoteImageToolContext.Provider value={tool ?? null}>
             <RemoteMediaProbeContext.Provider value={probe ?? null}>
               <RemoteMediaOpenContext.Provider value={onOpen ?? tool?.open ?? inheritedOpen}>
-                {children}
+                <RemoteVideoLoaderContext.Provider value={loadVideo ?? null}>
+                  {children}
+                </RemoteVideoLoaderContext.Provider>
               </RemoteMediaOpenContext.Provider>
             </RemoteMediaProbeContext.Provider>
           </RemoteImageToolContext.Provider>
