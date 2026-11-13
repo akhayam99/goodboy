@@ -227,7 +227,9 @@ export const GITLAB_PAGE_ROWS: ReadonlyArray<Row> = [
           ]),
         WAIT,
       );
-      expect(await screen.findAllByText(/^Merged !42 into main$/, undefined, WAIT)).toHaveLength(1);
+      expect(await screen.findAllByText(/^Merged !42 into main\.$/, undefined, WAIT)).toHaveLength(
+        1,
+      );
     },
   },
 ];
