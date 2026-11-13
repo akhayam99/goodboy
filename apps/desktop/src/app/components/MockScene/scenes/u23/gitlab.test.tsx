@@ -60,7 +60,7 @@ describe('the gitlab page scenes', () => {
   it('branch-pr-gitlab says merge request, MR and the number with the host nouns', async () => {
     draw({ name: 'branch-pr-gitlab' });
 
-    expect((await findSectionRow(/^Merge request/)).getAttribute('aria-selected')).toBe('true');
+    expect((await findSectionRow(/^Overview/)).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );

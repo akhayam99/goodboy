@@ -273,6 +273,11 @@ page with its own frame (the Board, the Terminal, the chat room header)
 mounts it directly. No page sets its own header padding: the Settings detail,
 the board frame and the terminal drop their own top rows.
 
+Tabs versus filters: the tabs that change what a page is (Overview, Comments, Changes on a pull
+request) are `PageTabs`, an underlined 36px row under the title that adds 36 to the band. A
+segmented control (`SegmentedTabs`) is a filter on a list, such as Open and Resolved, and sits in
+the body toolbar. A page never stacks two boxed groups.
+
 The columns beside the page share that header line: the session rail top row
 (`data-rail-top`, `data-header-line`), the first icon of the right rail
 and every drawer header row (`DrawerFrame`) take `PANE_RHYTHM.headerInset` and
@@ -730,7 +735,7 @@ rule, so a control you click is a primitive from `@goodboy/ui`:
 | Family  | Primitive                                                                   |
 | ------- | --------------------------------------------------------------------------- |
 | row     | `SelectableRow` (one button), `InteractiveRow` (a row with its own buttons) |
-| tab     | `SegmentedTabs`, `ChoiceCards`                                              |
+| tab     | `PageTabs` (page tabs), `SegmentedTabs` (filters), `ChoiceCards`            |
 | chip    | `Chip`                                                                      |
 | link    | a link, or the link style of the surface                                    |
 | icon    | `IconButton`                                                                |

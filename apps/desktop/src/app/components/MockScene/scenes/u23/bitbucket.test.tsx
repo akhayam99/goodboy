@@ -95,7 +95,7 @@ const show = async (variant: BitbucketPageVariant = 'pr') => {
       <BitbucketPageScene variant={variant} />
     </ToastProvider>,
   );
-  await findSectionRow(/^Pull request/);
+  await findSectionRow(/^Overview/);
   act(() => {
     useAppStore.setState(stubs);
   });
@@ -118,10 +118,10 @@ describe('the Bitbucket scenes', () => {
     ]);
   });
 
-  it('leads with the Pull request tab and the title as the one heading', async () => {
+  it('leads with the Overview tab and the title as the one heading', async () => {
     await show();
 
-    expect(sectionRow(/^Pull request/).getAttribute('aria-selected')).toBe('true');
+    expect(sectionRow(/^Overview/).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
@@ -267,9 +267,7 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
   it('shows a declined pull request as closed with no Reopen, Close or Merge', async () => {
     await show('declined');
 
-    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('aria-label')).toBe(
-      'Closed',
-    );
+    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Closed');
     expect(screen.queryByRole('button', { name: /^Merge(?!:)/ })).toBeNull();
     await openOverflow();
     const menu = await screen.findByRole('menu', { name: 'Branch actions' });

@@ -279,6 +279,8 @@ export { ScrollFade } from './components/ScrollFade';
 export type { ScrollFadeProps } from './components/ScrollFade';
 export { ScrollerStyleContext } from './components/ScrollFade/scrollerStyleContext';
 export type { ScrollerStyle } from './components/ScrollFade/scrollerStyleContext';
+export { PageTabs } from './components/PageTabs';
+export type { PageTabOption } from './components/PageTabs';
 export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionLabel } from './components/SectionLabel';

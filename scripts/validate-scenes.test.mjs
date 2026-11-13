@@ -1011,6 +1011,17 @@ describe('titleBandFailures', () => {
     }
   });
 
+  it('holds the pull request header at 100: a 64 band with meta and one 36 tab row', () => {
+    const measured = { ...band({ block: 48 }), tabs: [36] };
+    assert.deepEqual(titleBandFailures({ scene: 'branch-pr-github', width: 1440, measured }), []);
+    const taller = { ...band({ block: 48 }), tabs: [44] };
+    const failures = titleBandFailures({ scene: 'branch-pr-github', width: 1440, measured: taller });
+    assert.deepEqual(
+      failures.map((entry) => entry.check),
+      ['a tab row is 36 pixels', 'the header is 100 pixels'],
+    );
+  });
+
   it('leaves a pinned header to the pinned zone and fails a page with no header', () => {
     assert.deepEqual(
       titleBandFailures({

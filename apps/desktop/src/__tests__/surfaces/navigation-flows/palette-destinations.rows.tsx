@@ -193,7 +193,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await waitFor(
-        () => expect(getSection(/^Pull request/).getAttribute('aria-selected')).toBe('true'),
+        () => expect(getSection(/^Overview/).getAttribute('aria-selected')).toBe('true'),
         WAIT,
       );
       expect(opened).not.toHaveBeenCalled();

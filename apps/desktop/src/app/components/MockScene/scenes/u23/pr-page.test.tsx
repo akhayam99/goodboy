@@ -105,11 +105,11 @@ describe('the pull request page scenes', () => {
     expect(screen.queryByRole('tablist', { name: 'Opens as' })).toBeNull();
   });
 
-  it('branch-pr-github leads with the Pull request tab and its title as the one heading', async () => {
+  it('branch-pr-github leads with the Overview tab and its title as the one heading', async () => {
     draw({ name: 'branch-pr-github' });
 
-    expect((await findSectionRow(/^Pull request/)).getAttribute('aria-selected')).toBe('true');
-    expect(sectionNames()[0]).toBe('Pull request');
+    expect((await findSectionRow(/^Overview/)).getAttribute('aria-selected')).toBe('true');
+    expect(sectionNames()[0]).toBe('Overview');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
@@ -225,9 +225,7 @@ describe('the pull request page scenes', () => {
     draw({ name: 'branch-pr-draft' });
 
     const side = within(await screen.findByRole('group', { name: 'Properties' }));
-    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('aria-label')).toBe(
-      'Draft',
-    );
+    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
     expect(side.getByText('Nobody asked yet')).toBeDefined();
   });
 

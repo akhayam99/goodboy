@@ -79,6 +79,39 @@ const openPage = async (): Promise<void> => {
 const primaryId = (): string | null =>
   document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary') ?? null;
 
+describe('Branch page header', () => {
+  it('holds the title row, one meta line and the page tabs, and no running line, work line or notice', async () => {
+    seedQuietRequest({
+      patch: { author: { login: 'nadia-p', avatarUrl: null } },
+      viewer: 'harborline-dev',
+    });
+
+    await openPage();
+
+    const header = document.querySelector<HTMLElement>('[data-page-header]');
+    expect(header?.querySelectorAll('[data-slot="pane-title-row"]')).toHaveLength(1);
+    expect(header?.querySelectorAll('[data-pr-header-line]')).toHaveLength(1);
+    expect(header?.querySelectorAll('[role="tablist"]')).toHaveLength(1);
+    expect(header?.querySelector('[role="tablist"]')?.getAttribute('data-slot')).toBe('page-tabs');
+    expect(header?.querySelector('[data-branch-running-line]')).toBeNull();
+    expect(header?.querySelector('[data-testid="resolve-run-status"]')).toBeNull();
+    expect(header?.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('says Overview on the first tab and names the state in the title row', async () => {
+    seedQuietRequest({ patch: { state: 'open', isDraft: false }, viewer: 'harborline-dev' });
+
+    await openPage();
+
+    const tabs = document.querySelectorAll('[role="tablist"] [role="tab"]');
+    expect(tabs[0]?.textContent).toContain('Overview');
+    expect(
+      document.querySelector('[data-slot="pane-title-row"] [data-slot="branch-state"]')
+        ?.textContent,
+    ).toBe('Open');
+  });
+});
+
 describe('Branch header on a pull request somebody else wrote', () => {
   it('reads Review when the signed in person is not the author', async () => {
     seedQuietRequest({

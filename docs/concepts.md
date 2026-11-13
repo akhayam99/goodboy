@@ -1694,7 +1694,7 @@ suggestion, never silent. The store slice `tracker-moves` owns it:
 - **Bitbucket**: pull requests from start to finish, with description, diff,
   build results in plain words and review threads. Eight actions: approve,
   revoke, request changes, withdraw, comment, reply, merge, decline, and from the
-  Pull request tab rename, edit the description, add reviewers and merge with the
+  Overview tab rename, edit the description, add reviewers and merge with the
   strategy you pick. Its nouns are `pull request`, `PR` and `#42`, and Bitbucket
   has no draft. Issues go through Jira.
 - **Jira**: read full issues and act on them. Comment, assign, move to another

@@ -95,7 +95,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('pr')(ctx);
-      await waitFor(() => expect(sectionLabels()[0]).toBe('Pull request'), WAIT);
+      await waitFor(() => expect(sectionLabels()[0]).toBe('Overview'), WAIT);
     },
   },
 ];

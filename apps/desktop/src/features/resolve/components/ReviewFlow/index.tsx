@@ -46,12 +46,12 @@ import { isPushFailure } from '../../reviewCommentState';
 import { bulkRunOf } from './bulkRun';
 import { AnswersPanel } from './AnswersPanel';
 import { FixRunGroupHeader } from './FixRunGroupHeader';
-import { FixRunSection } from './FixRunSection';
 import { useDropHandledSelection } from './useDropHandledSelection';
 import { useFixRunGroups } from './useFixRunGroups';
 import { BulkUndoBar } from './BulkUndoBar';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
-import { ReviewScopeBar, type CommentScope, type CommentState } from './ReviewScopeBar';
+import type { CommentScope, CommentState } from './ReviewScopeBar';
+import { ReviewToolbar } from './ReviewToolbar';
 import { useBulkQuestions } from './useBulkQuestions';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewList } from './ReviewList';
@@ -663,7 +663,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
             body={acceptError}
           />
         )}
-        <ReviewScopeBar
+        <ReviewToolbar
+          sessionId={sessionId}
           scope={scope}
           onScope={setScope}
           state={commentState}
@@ -671,17 +672,12 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           counts={counts}
           stateCounts={stateCounts}
           hostLabel={provider}
+          run={run}
+          lane={lane}
+          bulkRun={bulkRun}
+          isChecksShown={!isRunLive && fixRunReady === null}
+          onOpenAnswers={openAnswers}
         />
-        {run === null ? null : (
-          <FixRunSection
-            sessionId={sessionId}
-            run={run}
-            lane={lane}
-            bulkRun={bulkRun}
-            isChecksShown={!isRunLive && fixRunReady === null}
-            onOpenAnswers={openAnswers}
-          />
-        )}
         {body()}
       </PageColumn>
       {drawer}

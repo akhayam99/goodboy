@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import type { PullRequestState } from '@goodboy/types';
 import { PullRequestHeaderLine } from '.';
 
@@ -24,10 +24,21 @@ const PR: PullRequestState = {
 };
 
 describe('PullRequestHeaderLine', () => {
-  it('says the number, the branch, the base and the author, and nothing else', () => {
+  it('says the number, the branch, the base, the author and when it was opened', () => {
+    const { container } = render(
+      <PullRequestHeaderLine pr={PR} host="github" openedAt="2020-01-01T09:00:00.000Z" />,
+    );
+
+    expect(container.textContent).toMatch(
+      /^#318·hl\/fix-duplicate-creditintomain·Nnadia-popened it\d+d ago$/,
+    );
+  });
+
+  it('sets the number and both branches in mono', () => {
     const { container } = render(<PullRequestHeaderLine pr={PR} host="github" />);
 
-    expect(container.textContent).toBe('#318hl/fix-duplicate-creditintomainby Nnadia-p');
+    const mono = [...container.querySelectorAll('.text-code')].map((node) => node.textContent);
+    expect(mono).toEqual(['#318', 'hl/fix-duplicate-credit', 'main']);
   });
 
   it('draws the author as a person chip with the picture slot', () => {
@@ -38,25 +49,24 @@ describe('PullRequestHeaderLine', () => {
     expect(chip?.querySelector('span[aria-hidden]')).not.toBeNull();
   });
 
-  it('leaves the author out when the host names nobody', () => {
+  it('leaves the author and the age out when the host names nobody', () => {
     const { container } = render(
-      <PullRequestHeaderLine pr={{ ...PR, author: null }} host="github" />,
+      <PullRequestHeaderLine
+        pr={{ ...PR, author: null }}
+        host="github"
+        openedAt="2020-01-01T09:00:00.000Z"
+      />,
     );
 
     expect(container.querySelector('[data-person]')).toBeNull();
+    expect(container.textContent).not.toContain('opened it');
   });
 
-  it('draws the state as an icon with its word for a screen reader and a tooltip', () => {
-    render(<PullRequestHeaderLine pr={{ ...PR, state: 'merged' }} host="github" />);
-
-    const icon = screen.getByRole('img', { name: 'Merged' });
-    expect(icon.getAttribute('data-state')).toBe('merged');
-    expect(screen.queryByText('Merged')).toBeNull();
-  });
-
-  it('reads the same on every tab, with no thread counts and no merge sentence', () => {
+  it('leaves the state to the title row, with no thread counts and no merge sentence', () => {
     const { container } = render(<PullRequestHeaderLine pr={PR} host="github" />);
 
+    expect(container.querySelector('[data-slot="branch-state"]')).toBeNull();
+    expect(container.querySelector('[role="img"]')).toBeNull();
     expect(container.textContent).not.toContain('wants to merge');
     expect(container.textContent).not.toContain('open thread');
   });

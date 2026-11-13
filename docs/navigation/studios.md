@@ -562,7 +562,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   one verb and the result follows the record (`startFromRecord`): an issue or
   an error opens the New session draft with the issue picked and its brief
   being written; a pull request waiting on you starts a PR reviewer and lands
-  on the Pull request tab; a Slack thread, a merge request, a Bitbucket pull
+  on the Overview tab; a Slack thread, a merge request, a Bitbucket pull
   request or a pull request of yours opens a popover with the goal and the
   brief. Enter from the Tasks list does the same, or opens the linked session.
 - **Every record body has one order.** Under the header, facts sit as pills in
