@@ -7,7 +7,7 @@ import {
   type CountableEntry,
   type ThreadEntry,
 } from '../../../resolve/commentGroupsView';
-import { activityItemsFor } from './activityFilters';
+import { activityItemsFor } from '../../../../shared/components/PullRequestActivity/activityFilters';
 import { pullRequestActivityOf } from './activityOf';
 
 const VIEW: PullRequestView = {

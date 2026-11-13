@@ -1,11 +1,11 @@
 import { ClampedProse, SegmentedTabs, SelectableRow } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
-import { useNow } from '../../../../shared/hooks/useNow';
-import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { useNow } from '../../hooks/useNow';
+import { formatAge } from '../../utils/time/formatAge';
 import { ActivityBotNotes } from './ActivityBotNotes';
 import { ActivityLeadMark } from './ActivityLeadMark';
 import { activityFilterOptionsOf, activityItemsFor, type ActivityFilter } from './activityFilters';
-import type { ActivityItem } from './activityOf';
+import type { ActivityItem } from './activityItem';
 import { activityRowOf } from './activityRowOf';
 
 type Props = {
@@ -16,6 +16,7 @@ type Props = {
   readonly onOpenChecks: () => void;
   readonly chosen: ActivityFilter;
   readonly onChoose: (filter: ActivityFilter) => void;
+  readonly isHeadingShown?: boolean;
 };
 
 const ROW = 'grid min-w-0 grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2';
@@ -28,15 +29,19 @@ export const PullRequestActivity = ({
   onOpenChecks,
   chosen,
   onChoose,
+  isHeadingShown = true,
 }: Props) => {
   const now = useNow(60_000);
   const options = activityFilterOptionsOf({ items: allItems });
   const filter = options.some((option) => option.value === chosen) ? chosen : 'all';
   const items = activityItemsFor({ items: allItems, filter });
   return (
-    <section aria-label="Activity" className="flex min-w-0 flex-col gap-2">
+    <section
+      aria-label={isHeadingShown ? 'Activity' : undefined}
+      className="flex min-w-0 flex-col gap-2"
+    >
       <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
-        <h2 className="text-row text-muted-foreground">Activity</h2>
+        {isHeadingShown ? <h2 className="text-row text-muted-foreground">Activity</h2> : <span />}
         {options.length > 2 ? (
           <SegmentedTabs
             size="xs"

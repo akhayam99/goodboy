@@ -1,6 +1,7 @@
 import { CHECK_STATE } from '../notifications/errorRecovery';
 import { browserTabCommands } from './browserTabCommands';
 import { browserWrites } from './browserWrites';
+import { withoutTabCountFailure } from './withoutTabCountFailure';
 import type { SliceDeps } from '../../slice-types';
 import type { WorkspaceParams } from './types';
 
@@ -45,12 +46,19 @@ export const loadWorkspaceTabs = ({ set, get }: SliceDeps) => {
           browserActiveTab,
           browserProjectPins,
           browserTabCounts: { ...state.browserTabCounts, [workspaceId]: 0 },
+          browserTabCountFailures: withoutTabCountFailure({
+            failures: state.browserTabCountFailures,
+            workspaceId,
+          }),
         };
       });
     } catch (error) {
       if (!claimed.isCurrent()) {
         return;
       }
+      set((state) => ({
+        browserTabCountFailures: { ...state.browserTabCountFailures, [workspaceId]: true },
+      }));
       await get().reportError({
         recovery: CHECK_STATE,
         title: "Couldn't load the browser tabs",

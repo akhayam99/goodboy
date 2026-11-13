@@ -80,6 +80,7 @@ type BuildParams = {
 const buildGet = ({ failure }: BuildParams = {}) => {
   const state = {
     workspaceSwitchError: failure ?? null,
+    switchingToWorkspaceId: null,
     boardReady: failure === undefined,
   };
   const setCurrentWorkspace = vi.fn(async () => undefined);

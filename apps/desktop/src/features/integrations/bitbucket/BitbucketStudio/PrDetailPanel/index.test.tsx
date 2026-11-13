@@ -185,6 +185,15 @@ describe('PrDetailPanel', () => {
     expect(screen.queryByRole('region', { name: 'Linked issues' })).toBeNull();
   });
 
+  it('lists the opening and the comment on the shared activity', async () => {
+    renderPanel();
+    await openConversation();
+
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    expect(activity.querySelector('[data-activity="opened"]')?.textContent).toContain('opened');
+    expect(activity.querySelector('[data-activity="review"]')?.textContent).toContain('Kim');
+  });
+
   it('renders the changed file from the raw unified diff bitbucket returns', async () => {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /^Changes/ }));

@@ -10,6 +10,8 @@ import { Notice, PaneShell } from '@goodboy/ui';
 import type { BitbucketIntegrationBinding, FileDiff, SessionId, WorkspaceId } from '@goodboy/types';
 import { bitbucketPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { HostOverview } from '../../../components/HostOverview';
+import { hostActivitySectionOf } from '../../../components/HostOverview/hostActivitySectionOf';
+import { hostActivityOf } from '../../../../branch/hostActivityOf';
 import { bitbucketPrRailOf } from './bitbucketPrRailOf';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
@@ -145,6 +147,26 @@ export const PrDetailPanel = ({
 
   const webUrl = bitbucketPrUrl({ repo, pullRequest });
   const identifier = bitbucketPrIdentifier({ repo, pullRequest });
+  const timeline = hostActivityOf({
+    opened: {
+      who: pullRequest.author?.displayName ?? null,
+      avatarUrl: pullRequest.author?.avatarUrl ?? null,
+      at: pullRequest.createdOn,
+      isDraft: false,
+    },
+    threads: source.threads,
+    end:
+      pullRequest.state === 'MERGED'
+        ? {
+            kind: 'merged',
+            at: pullRequest.updatedOn,
+            who: pullRequest.author?.displayName ?? null,
+            avatarUrl: pullRequest.author?.avatarUrl ?? null,
+          }
+        : pullRequest.state === 'OPEN'
+          ? null
+          : { kind: 'closed', at: pullRequest.updatedOn, who: null, avatarUrl: null },
+  });
 
   const sections: ReadonlyArray<RecordSection> = [
     {
@@ -171,6 +193,11 @@ export const PrDetailPanel = ({
         />
       ),
     },
+    ...hostActivitySectionOf({
+      items: timeline,
+      host: 'bitbucket',
+      baseBranch: pullRequest.destinationBranch,
+    }),
     conversation.section,
   ];
 

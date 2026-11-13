@@ -1,4 +1,4 @@
-import type { ActivityItem } from './activityOf';
+import type { ActivityItem } from './activityItem';
 
 type Params = {
   readonly items: ReadonlyArray<ActivityItem>;

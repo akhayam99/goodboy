@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import { Check, MessageSquare, Pencil, CircleX } from 'lucide-react';
 import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { countNoun } from '../../../../shared/utils/countNoun';
-import type { ActivityItem } from './activityOf';
+import { CONCEPT_ICONS } from '../conceptIcons';
+import { countNoun } from '../../utils/countNoun';
+import type { ActivityItem } from './activityItem';
 import { ActivityWho as Who } from './ActivityWho';
 import { pushLineOf } from './pushLineOf';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { activityFilterOptionsOf, activityItemsFor } from './activityFilters';
-import type { ActivityItem } from './activityOf';
+import type { ActivityItem } from './activityItem';
 
 const AT = '2026-10-01T10:00:00Z';
 

@@ -104,6 +104,12 @@ describe('the c05 overview scenes', () => {
     expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
   });
 
+  it('c05-overview-running-loading keeps the Browser count on its skeleton', async () => {
+    await mount('c05-overview-running-loading');
+
+    expect(screen.getByTestId('tool-count-skeleton').getAttribute('aria-label')).toBe('Loading');
+  });
+
   it('c05-overview-lanes draws every log row on one gutter with the step number in its slot', async () => {
     await mount('c05-overview-lanes');
 

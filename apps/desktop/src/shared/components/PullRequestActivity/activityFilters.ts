@@ -1,6 +1,6 @@
 import { isBotLogin } from '@goodboy/core/review-source';
-import type { PullRequestActivityFilter } from '../../../../store/slices/pull-request-view/state';
-import type { ActivityItem } from './activityOf';
+import type { PullRequestActivityFilter } from '../../../store/slices/pull-request-view/state';
+import type { ActivityItem } from './activityItem';
 
 export type ActivityFilter = PullRequestActivityFilter;
 
