@@ -56,11 +56,11 @@ describe('formatBootReport', () => {
 describe('markBoot', () => {
   it('keeps the first time a mark was taken', () => {
     markBoot({ name: 'ready' });
-    const first = performance.getEntriesByName('goodboy:boot:ready')[0];
+    const first = performance.getEntriesByName('launch.ready')[0];
 
     markBoot({ name: 'ready' });
 
-    expect(performance.getEntriesByName('goodboy:boot:ready')).toEqual([first]);
+    expect(performance.getEntriesByName('launch.ready')).toEqual([first]);
   });
 
   it('counts a mark through the seam only when one is installed', () => {

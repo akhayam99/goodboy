@@ -4,7 +4,7 @@ import { countPerf } from './countPerf';
 import { PERF_COUNT_NAMES } from './perfCountNames';
 import { formatBootReport, type BootMark } from './formatBootReport';
 
-const MARK_PREFIX = 'goodboy:boot:';
+const MARK_PREFIX = 'launch.';
 const REPORT_FALLBACK_MS = 10_000;
 const NOT_REPORTED = 'not-reported';
 
