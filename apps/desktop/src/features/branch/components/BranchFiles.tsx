@@ -6,6 +6,7 @@ import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { WriteReview } from '../../review/components/WriteReview';
 import { filesHeadFactOf } from '../branchTabFactsOf';
+import { SessionMediaScope } from '../../../shared/components/SessionMediaScope';
 import { BranchBodyColumn } from './BranchBodyColumn';
 
 type Props = {
@@ -44,21 +45,25 @@ export const BranchFiles = ({
   if (mode === 'write_review' && hasPullRequest) {
     return (
       <BranchBodyColumn>
-        <WriteReview session={session} />
+        <SessionMediaScope sessionId={sessionId}>
+          <WriteReview session={session} />
+        </SessionMediaScope>
       </BranchBodyColumn>
     );
   }
   return (
     <BranchBodyColumn>
-      <SessionDiffPane
-        sessionId={sessionId}
-        workingDir={workingDir}
-        worktreePath={worktreePath}
-        diff={diff}
-        isReadOnly={isReadOnly}
-        filesFact={filesHeadFactOf({ files: diff.files })}
-        commitTotal={commitTotal}
-      />
+      <SessionMediaScope sessionId={sessionId}>
+        <SessionDiffPane
+          sessionId={sessionId}
+          workingDir={workingDir}
+          worktreePath={worktreePath}
+          diff={diff}
+          isReadOnly={isReadOnly}
+          filesFact={filesHeadFactOf({ files: diff.files })}
+          commitTotal={commitTotal}
+        />
+      </SessionMediaScope>
     </BranchBodyColumn>
   );
 };

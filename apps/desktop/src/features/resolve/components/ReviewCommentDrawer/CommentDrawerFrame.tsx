@@ -17,6 +17,7 @@ import { drawerMenuOmitOf } from './drawerMenuOmitOf';
 import type { ReviewPush } from '../ReviewFlow/useReviewPush';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import { CommentDrawerActions } from './CommentDrawerActions';
+import { SessionMediaScope } from '../../../../shared/components/SessionMediaScope';
 import { REVIEW_COMMENT_DRAWER_COPY } from './reviewCommentDrawerCopy';
 import { useCommentDrawerPlan } from './useCommentDrawerPlan';
 
@@ -116,21 +117,23 @@ export const CommentDrawerFrame = ({
         data-review-drawer={entry.threadId}
         className="flex min-w-0 flex-col gap-4"
       >
-        <ReviewComment
-          sessionId={sessionId}
-          entry={entry}
-          entries={entries}
-          hunk={
-            <ThreadHunk
-              row={entry.row}
-              onOpenInDiff={() => binding.onRun('reviewComment.openInDiff')}
-            />
-          }
-          {...binding}
-          onSelect={onSelect}
-          onTryAgain={onTryAgain}
-          onStartOver={onStartOver}
-        />
+        <SessionMediaScope sessionId={sessionId}>
+          <ReviewComment
+            sessionId={sessionId}
+            entry={entry}
+            entries={entries}
+            hunk={
+              <ThreadHunk
+                row={entry.row}
+                onOpenInDiff={() => binding.onRun('reviewComment.openInDiff')}
+              />
+            }
+            {...binding}
+            onSelect={onSelect}
+            onTryAgain={onTryAgain}
+            onStartOver={onStartOver}
+          />
+        </SessionMediaScope>
         <ThreadProperties sessionId={sessionId} entry={entry} />
         <CommentDrawerActions
           entry={entry}

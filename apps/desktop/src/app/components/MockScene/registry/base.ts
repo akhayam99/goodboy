@@ -26,6 +26,7 @@ import { ResolveLaunchScene } from '../scenes/ResolveLaunchScene';
 import { ResolveSelectScene } from '../scenes/ResolveSelectScene';
 import { ResolveBulkScene } from '../scenes/ResolveBulkScene';
 import { BranchCommentsScene } from '../scenes/BranchCommentsScene';
+import { BranchPrMediaScene } from '../scenes/BranchPrMediaScene';
 import { BranchThreadsNewScene } from '../scenes/BranchThreadsNewScene';
 import { BranchLaneScene } from '../scenes/BranchLaneScene';
 import { BranchNarrowScene } from '../scenes/BranchNarrowScene';
@@ -351,6 +352,7 @@ export const BASE_SCENES = {
   'resolve-bulk-accepted': () => createElement(ResolveBulkScene, { stage: 'accepted' }),
   'resolve-bulk-retry': () => createElement(ResolveBulkScene, { stage: 'retry' }),
   'branch-comments': BranchCommentsScene,
+  'branch-pr-media': BranchPrMediaScene,
   'branch-threads-new': () => createElement(BranchThreadsNewScene, { tab: 'pr' }),
   'branch-threads-new-comments': () => createElement(BranchThreadsNewScene, { tab: 'comments' }),
   'branch-commits': BrandHistoryScene,

@@ -535,7 +535,13 @@ a heading belongs to the text after it. `h1` and `h2` take `text-title`, `h3`
 header row (language in `text-meta`, then **Wrap** and the host's
 `CodeBlockActionsContext` actions, only where a host provides them, so Markdown
 inside a button holds no button) over `text-ui font-mono` code in a horizontal
-`ScrollFade`; code and tables are never clamped. Inline code is `text-ui`, never
+`ScrollFade`; code and tables are never clamped. Media in Markdown: an image is a
+`RemoteImage` in both variants, capped at `max-h-80` in the preview variant that
+comments use and a click opens it on the host through the router, never a dialog.
+`<img>`, `<video>` and `<details><summary>` are read into the renderer's own
+nodes (`htmlShapes.ts`), a video is a `VideoPoster` row until the player exists,
+and a `<details>` is a `Disclosure`. A failed image keeps its place with the
+reason and **Open on the host**; no raw HTML reaches the page. Inline code is `text-ui`, never
 a fraction of the text size. A table (`renderTable`) has a `text-meta` header,
 one hairline between rows and `tabular-nums` on a number column.
 `ScrollFade` takes one of two top edges: `fade` (the default) or `line` (a

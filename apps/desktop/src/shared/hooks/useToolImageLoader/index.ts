@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
-import type { RemoteImageAutoLoad, RemoteImageLoader } from '@goodboy/ui';
-import { loadRemoteImage, loadToolImage, type ToolImageProvider } from '../../lib/remoteImage';
+import type { RemoteImageAutoLoad, RemoteImageLoader, RemoteMediaProbe } from '@goodboy/ui';
+import {
+  loadRemoteImage,
+  loadToolImage,
+  probeToolMedia,
+  type ToolImageProvider,
+} from '../../lib/remoteImage';
 
 const TOOL_HOSTS: Readonly<
   Record<ToolImageProvider, (url: URL, siteUrl: string | null) => boolean>
@@ -37,9 +42,14 @@ const isToolHost = ({ provider, url, siteUrl }: HostCheckParams): boolean => {
   }
 };
 
+type ProbeParams = {
+  readonly url: string;
+};
+
 export type ToolImageLoader = {
   readonly load: RemoteImageLoader;
   readonly shouldAutoLoad: RemoteImageAutoLoad;
+  readonly probe: RemoteMediaProbe;
 };
 
 type Params = {
@@ -65,6 +75,8 @@ export const useToolImageLoader = ({
           ? loadToolImage({ workspaceId, projectId, provider, email, siteUrl: site, url })
           : loadRemoteImage({ url }),
       shouldAutoLoad: (url: string) => isToolHost({ provider, url, siteUrl: site }),
+      probe: ({ url }: ProbeParams) =>
+        probeToolMedia({ workspaceId, projectId, provider, email, siteUrl: site, url }),
     }),
     [workspaceId, projectId, provider, email, site],
   );

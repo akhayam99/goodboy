@@ -126,6 +126,7 @@ branch-pr-gitlab
 branch-pr-gitlab-denied
 branch-pr-gitlab-merge
 branch-pr-gitlab-none
+branch-pr-media
 branch-pr-merge-blocked
 branch-pr-merge-methods
 branch-pr-merged

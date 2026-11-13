@@ -238,6 +238,9 @@ export type {
   RemoteImageAutoLoad,
   RemoteImageLoader,
   RemoteImageTool,
+  RemoteMediaKind,
+  RemoteMediaOpen,
+  RemoteMediaProbe,
 } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';

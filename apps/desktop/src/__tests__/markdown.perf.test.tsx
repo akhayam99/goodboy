@@ -77,3 +77,46 @@ describe('a 10,000 word streamed answer', () => {
     expect(parseCalls.count).toBe(2);
   });
 });
+
+const BODY_BYTES = 200_000;
+const BODY_BUDGET_MS = 3000;
+
+const mediaBody = (): string => {
+  const unit = [
+    'Proof from payments-api before the change',
+    '<img src="https://cdn.acme.dev/a.png" alt="before" width="400">',
+    '<video src="https://github.com/user-attachments/assets/9f2c" controls="controls"></video>',
+    '<details>\n<summary>Logs from notify-relay</summary>\n\nretry **twice** with `backoff`\n</details>',
+    'https://github.com/user-attachments/assets/aaaa-bbbb',
+  ].join('\n\n');
+  const parts: string[] = [];
+  let size = 0;
+  while (size < BODY_BYTES) {
+    parts.push(unit);
+    size += unit.length;
+  }
+  return parts.join('\n\n');
+};
+
+describe('a 200 KB body of images, videos and details', () => {
+  afterEach(cleanup);
+
+  it('parses and draws inside the budget', () => {
+    const text = mediaBody();
+    const start = performance.now();
+    const { container } = render(<Markdown text={text} variant="preview" />);
+    const elapsed = performance.now() - start;
+
+    expect(text.length).toBeGreaterThanOrEqual(BODY_BYTES);
+    expect(container.querySelector('script')).toBeNull();
+    expect(elapsed).toBeLessThan(BODY_BUDGET_MS);
+  });
+
+  it('survives one unclosed tag per line', () => {
+    const text = '<details>\n<img src="https://cdn.acme.dev/a.png" alt="x\n'.repeat(4000);
+    const start = performance.now();
+    render(<Markdown text={text} variant="preview" />);
+
+    expect(performance.now() - start).toBeLessThan(BODY_BUDGET_MS);
+  });
+});
