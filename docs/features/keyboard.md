@@ -246,6 +246,6 @@ This part is for contributors and agents who change the feature.
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Send to the agent: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
 - Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserConsole` draws the region and `consoleAttachmentOf` the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
-- Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
+- Files: the Changes page switches between **Changed** and **All files** (`useChangesMode`); the file chord opens it on All files.
 
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.

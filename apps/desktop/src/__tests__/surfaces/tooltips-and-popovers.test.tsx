@@ -28,7 +28,6 @@ import { aDelegation, FIXTURE_SESSION } from '../../features/auto/testing/autoVi
 import { AutoChildCard } from '../../features/auto/chat/AutoChildCard';
 import { delegationCardOf } from '../../features/auto/chat/delegationCardOf';
 import { RUN_AUTONOMY_HEADER } from '../../features/workflows/runAutonomy';
-import { LiveRow } from '../../features/session/central/now/LiveRow';
 import { layoutTimelineRail } from '../../features/workTreeModel/railGeometry';
 import type { TimelineRowItem } from '../../features/session/timeline/buildTimelineStream';
 import { RunTreeRow } from '../../features/workflows/components/RunTree/RunTreeRow';
@@ -360,35 +359,6 @@ describe('a cut title in a row is reachable by hover and by keyboard', () => {
 
     expect(document.activeElement).not.toBe(title);
     expect(screen.queryByRole('tooltip')).toBeNull();
-  });
-
-  it('opens the title of an overview row the same way, from a row with its own overlay', () => {
-    cutTextEverywhere();
-    const onOpen = vi.fn();
-    render(
-      <LiveRow
-        glyph={<svg />}
-        kindWord="Implementer"
-        title={LONG_TITLE}
-        openLabel="Open the agent"
-        onOpen={onOpen}
-        where={null}
-        end={null}
-        time={<span>2m</span>}
-      />,
-    );
-    const title = screen.getByText(LONG_TITLE);
-
-    vi.useFakeTimers();
-    fireEvent.mouseEnter(title);
-    act(() => {
-      vi.advanceTimersByTime(400);
-    });
-    vi.useRealTimers();
-
-    expect(screen.getByRole('tooltip').textContent).toBe(LONG_TITLE);
-    fireEvent.click(title);
-    expect(onOpen).toHaveBeenCalledTimes(1);
   });
 });
 

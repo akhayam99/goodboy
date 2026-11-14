@@ -584,13 +584,11 @@ whether you clicked it on the board or in the session overview.
   rebase title names the folder, or the branch when two or more mounts of
   the session share a folder (`mountLabelOf`); the open-pr title always
   names the branch.
-- The overview cards **Needs you** and **Next** (`features/session/central/cards/`) hold the
-  suggestions: a suggestion is not activity, it is a pointer to what activity
-  should happen next. **Needs you** holds the Decide and Fix groups, **Next**
-  the Update and Ship groups (`OVERVIEW_CARD_OF_GROUP`).
-- A Next card is an `ActionCard` (`features/session/central/next/ActionCard.tsx`): glyph, title and detail,
-  then the main verb, an optional second verb and the **⋯** menu, in the columns of
-  `ROW_COLUMNS`. Only the first card of a stack carries a filled primary; later cards
+- The branch board of the overview holds the suggestions as the main verb of a
+  row (`BoardRowAction`, from `cardsByRowId`): a suggestion is not activity, it is a pointer to what
+  activity should happen next. The Decide and Fix groups come first, the Update and Ship groups after.
+- A Next suggestion shows as the verb of its row: the main verb, an optional second
+  verb and the **⋯** menu. Only the first row carries a filled primary; later rows
   keep a `secondary` verb. A short visible verb (`shortLabel`: Start, Fix, Rebase) sits
   over the full `label`, which stays the accessible name ("Continue with Reviewer").
   **Not now** lives in the **⋯** menu.
@@ -599,15 +597,13 @@ whether you clicked it on the board or in the session overview.
   Suggestions that start no agent keep the `SUGGESTION_ICONS` glyph with the band tone.
   The alternatives (such as Start tester instead, or one rebase target each) are items of
   the **⋯** menu. The menu is the `suggestion` kind of the action registry
-  (`features/actions/kinds/suggestion.ts`), drawn by `SuggestionOverflowMenu`
-  from `NextStepMenu`; `useActionCardActions` builds its target from the suggestion, the
+  (`features/actions/kinds/suggestion.ts`); `useActionCardActions` builds its target from the suggestion, the
   role the primary starts (`agentKind`) and `useIsAutoOn`, so the alternatives
   come from the card and not from closures of `useSuggestionActions`. Hovering
   or focusing one shows its `preview` role on the glyph, and closing the menu
   puts the primary's role back. `useSuggestionRunner` wraps each alternative with
   `track` (the accepted outcome, a pending key per action id, the failure title
   of the primary), so the primary and the menu are held while one runs.
-  `menuParity.test.tsx` holds the menu of a Next card to the registry set of its suggestion.
 - **Not now** registers an `undoable` operation on the app undo stack
   (`useSuggestionRunner`), so the toast says Dismissed with **Undo** and the
   `app.undo` chord, and ⌘Z (Ctrl+Z off macOS) restores dismissals in reverse

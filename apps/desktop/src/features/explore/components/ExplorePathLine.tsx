@@ -1,9 +1,9 @@
 import { cn } from '@goodboy/ui';
-import type { ExploreEntry } from '../../explore';
-import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { formatBytes } from '../../../../shared/utils/formatBytes';
-import { joinFacts } from '../../../../shared/utils/joinFacts';
-import { useNow } from '../../../../shared/hooks/useNow';
+import type { ExploreEntry } from '../explore';
+import { formatAge } from '../../../shared/utils/time/formatAge';
+import { formatBytes } from '../../../shared/utils/formatBytes';
+import { joinFacts } from '../../../shared/utils/joinFacts';
+import { useNow } from '../../../shared/hooks/useNow';
 
 type Props = {
   readonly entry: ExploreEntry;

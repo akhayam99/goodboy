@@ -42,7 +42,6 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
       checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
     },
   },
-  { kind: 'context', sessionId: SESSION_ID, payload: { section: 'goal', view: 'current' } },
   {
     kind: 'explore-file',
     sessionId: SESSION_ID,
@@ -74,7 +73,7 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   },
   { kind: 'scriptRun', sessionId: SESSION_ID, payload: { scriptKey: 'test', mountId: null } },
   { kind: 'conversation', sessionId: SESSION_ID, payload: { threadId: 'thread-1' } },
-  { kind: 'ask', sessionId: SESSION_ID, payload: null },
+  { kind: 'scripts', sessionId: SESSION_ID, payload: null },
   { kind: 'new', sessionId: SESSION_ID, payload: { form: 'report' } },
   {
     kind: 'transcript',
@@ -142,14 +141,13 @@ const slideOf = (keyframes: string): number => {
 
 const SIZING_BY_KIND: ReadonlyArray<readonly [DrawerRequest['kind'], DrawerSizing]> = [
   ['check-analysis', 'side'],
-  ['context', 'side'],
   ['explore-file', 'reader'],
   ['artifact', 'side'],
   ['artifact-document', 'reader'],
   ['plan-part', 'side'],
   ['scriptRun', 'side'],
   ['conversation', 'side'],
-  ['ask', 'side'],
+  ['scripts', 'side'],
   ['new', 'reader'],
   ['transcript', 'side'],
   ['file-diff', 'reader'],
@@ -195,13 +193,13 @@ describe('the tier of every drawer', () => {
 });
 
 describe('every drawer fits inside its aside at 1280 and 1440', () => {
-  it('opens the transcript at the same sizing as Ask', () => {
-    const ask = EVERY_KIND.find((drawer) => drawer.kind === 'ask');
+  it('opens the transcript at the same sizing as Scripts', () => {
+    const scripts = EVERY_KIND.find((drawer) => drawer.kind === 'scripts');
     const transcript = EVERY_KIND.find((drawer) => drawer.kind === 'transcript');
-    if (ask === undefined || transcript === undefined) {
-      throw new Error('ask and transcript requests are listed');
+    if (scripts === undefined || transcript === undefined) {
+      throw new Error('scripts and transcript requests are listed');
     }
-    expect(sizingOf(transcript)).toBe(sizingOf(ask));
+    expect(sizingOf(transcript)).toBe(sizingOf(scripts));
     expect(sizingOf(transcript)).toBe('side');
   });
 
@@ -224,8 +222,10 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
 
       expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {
-        expect(cardRight + DRAWER_INSET).toBe(columnWidth);
-        expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx).toBe(columnWidth);
+        expect(cardRight).toBe(columnWidth);
+        expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx + DRAWER_INSET).toBe(
+          columnWidth,
+        );
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })).toBe(true);
         return;
       }

@@ -10,7 +10,6 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -64,56 +63,4 @@ describe('the u27 context menu scenes', () => {
     const menu = screen.getByRole('menu');
     expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0);
   });
-
-  it('u27-central-branch-menu gives the central branch row the rail branch verbs', async () => {
-    const Scene = U27_CONTEXT_MENU_SCENES['u27-central-branch-menu'];
-    if (Scene === undefined) {
-      throw new Error('no scene u27-central-branch-menu');
-    }
-    render(
-      <ToastProvider>
-        <ObjectMenuProvider>
-          <Scene />
-        </ObjectMenuProvider>
-      </ToastProvider>,
-    );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
-
-    const central = document.querySelector('[data-list-grid-row]');
-    const branch = central?.querySelector('.text-code')?.textContent ?? '';
-    const rail = Array.from(document.querySelectorAll('.group\\/row')).find(
-      (row) => branch !== '' && row.querySelector(`[aria-label^="${branch}"]`) !== null,
-    );
-    if (central === null || rail === undefined) {
-      throw new Error(`the scene shows no central or rail row for ${branch}`);
-    }
-    const centralVerbs = verbsOf({ row: central });
-    const railVerbs = verbsOf({ row: rail });
-
-    expect(centralVerbs).toContain('Rebase on main');
-    expect(centralVerbs).toContain('Create PR');
-    expect(centralVerbs).toEqual(railVerbs);
-  });
 });
-
-type VerbsParams = {
-  readonly row: Element;
-};
-
-const verbsOf = ({ row }: VerbsParams): ReadonlyArray<string> => {
-  act(() => {
-    row.dispatchEvent(
-      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 8, clientY: 8 }),
-    );
-  });
-  const menu = screen.getByRole('menu');
-  const verbs = within(menu)
-    .getAllByRole('menuitem')
-    .map((item) => (item.textContent ?? '').trim());
-  act(() => {
-    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }));
-  });
-  return verbs;
-};

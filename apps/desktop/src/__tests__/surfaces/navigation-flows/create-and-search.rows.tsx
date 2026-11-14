@@ -3,6 +3,8 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { startSettingsRowOf } from '../../helpers/startSettingsRowOf';
 import type { AgentId, IsoDateTime, MountId, SearchHit } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
+import { CONTEXT_ROWS } from '../../../store/slices/contextDrawer/contextRows';
+import { captureWindowLocation } from '../../../store/slices/navigation/captureWindowLocation';
 import { currentPlatform } from '../../../shared/platform';
 import {
   type Ctx,
@@ -113,12 +115,15 @@ const SEARCH_JUMPS: ReadonlyArray<{
     kind: 'decision',
     overrides: () => ({ kind: 'decision', ordinal: 1 }),
     lands: async (ctx) => {
+      await lens('context')(ctx);
+      expect(useAppStore.getState().drawer).toBeNull();
       await waitFor(
         () =>
-          expect(useAppStore.getState().drawer).toMatchObject({
-            kind: 'context',
-            sessionId: ctx.sessionId,
-            payload: { section: 'decisions', highlight: [1] },
+          expect(
+            captureWindowLocation({ state: useAppStore.getState() }).focus.returnRows,
+          ).toMatchObject({
+            [CONTEXT_ROWS.section]: 'decisions',
+            [CONTEXT_ROWS.highlight]: '1',
           }),
         WAIT,
       );

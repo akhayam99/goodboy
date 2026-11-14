@@ -321,7 +321,7 @@ export type { ListboxOptionRowProps } from './components/Listbox/ListboxOptionRo
 export { filterOptions } from './components/Listbox/filterOptions';
 export type { FilteredOption, ListboxMatch } from './components/Listbox/filterOptions';
 export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';
-export { TREE_INDENT_PX, treeIndentPx } from './treeIndent';
+export { treeIndentPx } from './treeIndent';
 export { Meter } from './components/Meter';
 export type { MeterProps, MeterSize } from './components/Meter';
 export { METER_TRACK } from './meterTrack';
@@ -334,8 +334,6 @@ export { useListMotion } from './useListMotion';
 export type { ListMotionEntry, ListMotionItem, ListMotionPhase } from './useListMotion';
 export { ListItemMotion } from './components/ListItemMotion';
 export { HeightMotion } from './components/HeightMotion';
-export { EntryWash } from './components/EntryWash';
-export { useEntryWash } from './useEntryWash';
 export { useScrollMemory } from './useScrollMemory';
 export { useHoldAppScroll } from './useHoldAppScroll';
 export { appScrollIntoView } from './appScrollIntoView';

@@ -349,20 +349,14 @@ type Route = {
   readonly isSidebarPage?: boolean;
 };
 
-const drawerRoute = (kind: 'context' | 'ask'): Route => ({
+const drawerRoute = (kind: 'scripts' | 'spawned'): Route => ({
   name: `${kind} drawer`,
   open: async () => {
     const sessionId = brandId<SessionId>({
       value: requireValue({ value: useAppStore.getState().currentSessionId }),
     });
     act(() => {
-      useAppStore
-        .getState()
-        .openDrawer(
-          kind === 'ask'
-            ? { kind, sessionId, payload: null }
-            : { kind, sessionId, payload: { section: 'goal', view: 'current' } },
-        );
+      useAppStore.getState().openDrawer({ kind, sessionId, payload: null });
     });
     await settle();
   },
@@ -376,8 +370,8 @@ const ROUTES: ReadonlyArray<Route> = [
     isOpen: () => appStudioKind() === door.kind,
     isSidebarPage: door.isSidebarPage,
   })),
-  drawerRoute('context'),
-  drawerRoute('ask'),
+  drawerRoute('scripts'),
+  drawerRoute('spawned'),
 ];
 
 describe('every route has exactly one way back', () => {

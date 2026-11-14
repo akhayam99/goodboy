@@ -151,12 +151,8 @@ const sessionPlace = ({
 });
 
 const paneOfLens = ({ lens, sessionId }: PaneParams): OpenDrawer | null => {
-  const section = contextSectionOf({ lens });
-  if (section === 'goal' || section === 'decisions' || section === 'summary') {
-    return { kind: 'context', sessionId, payload: { section, view: 'current' } };
-  }
-  if (lens === 'explore') {
-    return { kind: 'explore', sessionId, payload: null };
+  if (contextSectionOf({ lens }) !== null || lens === 'explore') {
+    return null;
   }
   if (lens === 'scripts') {
     return { kind: 'scripts', sessionId, payload: null };

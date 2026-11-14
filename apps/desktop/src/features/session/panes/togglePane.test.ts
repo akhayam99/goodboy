@@ -33,41 +33,41 @@ const shownKind = (): string | null => selectDrawerPanel(store.getState())?.kind
 
 describe('togglePane under a page', () => {
   it('closes the page and shows the parked pane instead of closing it unseen', () => {
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+    togglePane({ sessionId: SESSION_ID, pane: 'spawned' });
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
     expect(shownKind()).toBeNull();
 
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+    togglePane({ sessionId: SESSION_ID, pane: 'spawned' });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('scripts');
+    expect(shownKind()).toBe('spawned');
   });
 
   it('leaves Impact opened from Guide in one press and shows the parked pane', () => {
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+    togglePane({ sessionId: SESSION_ID, pane: 'spawned' });
     store.getState().openStudio({ studio: { kind: 'guide' } });
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+    togglePane({ sessionId: SESSION_ID, pane: 'spawned' });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('scripts');
+    expect(shownKind()).toBe('spawned');
   });
 
   it('closes the page and opens the pane when nothing was parked', () => {
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+    togglePane({ sessionId: SESSION_ID, pane: 'spawned' });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('scripts');
+    expect(shownKind()).toBe('spawned');
   });
 
   it('still closes a shown pane on a session', () => {
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
-    expect(shownKind()).toBe('scripts');
+    togglePane({ sessionId: SESSION_ID, pane: 'spawned' });
+    expect(shownKind()).toBe('spawned');
 
-    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+    togglePane({ sessionId: SESSION_ID, pane: 'spawned' });
 
     expect(shownKind()).toBeNull();
   });

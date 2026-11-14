@@ -235,7 +235,7 @@ const isAskHandOver = ({ state, sessionId }: SessionParams): boolean => {
   if (drawer === null || drawer.sessionId !== sessionId) {
     return false;
   }
-  return drawer.kind === 'ask' || (drawer.kind === 'question' && drawer.payload.from === 'ask');
+  return drawer.kind === 'question' && drawer.payload.from === 'ask';
 };
 
 const canonicalQuestion = ({ state, request }: PlaceParams): CanonicalPlace | null => {

@@ -102,11 +102,11 @@ describe('the drawer split scenes', () => {
     );
   });
 
-  it('keeps the context drawer in the side tier, pushed at 1440', async () => {
+  it('keeps a side drawer in the side tier, pushed at 1440', async () => {
     renderScene({ id: 'drawer-split-context', windowPx: 1440 });
 
     await screen.findByRole('complementary', { name: 'Side panel' });
-    expect(useAppStore.getState().drawer?.kind).toBe('context');
+    expect(useAppStore.getState().drawer?.kind).toBe('scripts');
     expect(panel().getAttribute('data-drawer-sizing')).toBe('side');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
     expect(panel().style.width).toBe('408px');

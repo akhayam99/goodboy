@@ -134,7 +134,7 @@ describe('session tools rows stay reachable', () => {
     }
   });
 
-  it('Scripts lens: the palette and the Open scripts toast still reach the pane', async () => {
+  it('Scripts lens: the palette and the Open scripts toast reach the Terminal and its Scripts menu', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
@@ -143,7 +143,6 @@ describe('session tools rows stay reachable', () => {
     });
     await settle();
 
-    expect(drawerKind()).toBe('scripts');
-    expect(screen.getByRole('region', { name: 'Scripts' })).toBeDefined();
+    expect(drawerKind()).toBe('terminal');
   });
 });

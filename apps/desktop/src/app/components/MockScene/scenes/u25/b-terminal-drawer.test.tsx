@@ -181,6 +181,31 @@ describe('the terminal drawer scenes', () => {
     expect(Object.values(store.getState().terminalTabs).flat()).toHaveLength(before);
   });
 
+  it('says so in place when the mount of its worktree is removed, and keeps the panel open', async () => {
+    renderScene({ name: 'terminal-drawer-session' });
+    await settle();
+    const mounts = store.getState().sessionProjectMounts[SESSION_ID] ?? [];
+    const removed = mounts.find((mount) => mount.mountId === 'mock-run-mount-payments');
+    expect(removed).toBeDefined();
+
+    act(() => {
+      store.setState((current) => ({
+        sessionProjectMounts: {
+          ...current.sessionProjectMounts,
+          [SESSION_ID]: mounts.filter((mount) => mount.mountId !== 'mock-run-mount-payments'),
+        },
+      }));
+    });
+    await settle();
+
+    const drawer = screen.getByRole('region', { name: 'Terminal' });
+    expect(within(drawer).getByRole('status').textContent).toBe(
+      'This worktree was removed, so its terminals ended.',
+    );
+    expect(store.getState().drawer?.kind).toBe('terminal');
+    expect(within(drawer).queryByTestId('terminal-panel')).toBeNull();
+  });
+
   it('moves the same worktree and tab to the Terminal page from the drawer', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();

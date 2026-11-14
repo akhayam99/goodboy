@@ -24,7 +24,8 @@ const pressed = async (id: ShortcutId, target?: Element): Promise<void> => {
 const openScripts = async ({ sessionId }: Ctx): Promise<string> => {
   const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
   anchor.focus();
-  await pressed('lens.scripts');
+  useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null });
+  await settle();
   const mount = useAppStore.getState().sessionProjectMounts[sessionId]?.[0];
   if (mount === undefined) {
     throw new Error('the world has no mount for the session');
