@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE, Tooltip, TruncatedText } from '@goodboy/ui';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { LOOSE_ROW_ID } from './looseRowId';
 import { useBoardContext } from './useBoardContext';
 
@@ -46,11 +47,13 @@ export const BoardRowAction = ({ rowId, index = 0 }: Props) => {
     }
     mainVerb.run();
   };
+  const look = actionButtonLookOf({ verb: mainVerb?.label ?? '', isNext: true });
   const button =
     mainVerb === null ? null : (
       <Button
         size="sm"
-        variant="primary"
+        variant={look.variant}
+        intent={look.intent}
         aria-label={mainVerb.ariaLabel}
         disabled={mainVerb.isDisabled}
         isBusy={mainVerb.isBusy}

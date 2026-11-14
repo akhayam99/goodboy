@@ -1,13 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { CircleAlert } from 'lucide-react';
 import {
-  Button,
   ConfirmPopover,
   FOCUS_RING,
   HeaderActions,
   ICON_SIZE,
   StatusDot,
-  Tooltip,
   TruncatedText,
   cn,
   tintClasses,
@@ -23,7 +21,8 @@ import { ROW_COLUMNS } from '../rowColumns';
 import type { ActionCardModel } from './actionCardsOf';
 import { cardIconOf } from './cardIconOf';
 import { cardStateWordOf } from './cardStateWordOf';
-import type { CardActions, CardVerb } from './useActionCardActions';
+import type { CardActions } from './useActionCardActions';
+import { verbButton } from './verbButton';
 
 type Props = {
   readonly card: ActionCardModel;
@@ -33,34 +32,6 @@ type Props = {
   readonly hasOverflowColumn?: boolean;
   readonly chip?: ReactNode;
   readonly onOpen?: (() => void) | null;
-};
-
-type VerbButtonParams = {
-  readonly verb: CardVerb;
-  readonly variant: 'primary' | 'secondary';
-  readonly isPickerOpen?: boolean;
-  readonly onClick: () => void;
-};
-
-const verbButton = ({ verb, variant, isPickerOpen, onClick }: VerbButtonParams) => {
-  const button = (
-    <Button
-      size="sm"
-      variant={variant}
-      aria-label={verb.ariaLabel}
-      aria-expanded={verb.hasPicker ? isPickerOpen : undefined}
-      disabled={verb.isDisabled}
-      isBusy={verb.isBusy}
-      onClick={onClick}
-    >
-      {verb.label}
-    </Button>
-  );
-  return verb.blockedReason === undefined ? (
-    button
-  ) : (
-    <Tooltip content={verb.blockedReason}>{button}</Tooltip>
-  );
 };
 
 export const ActionCard = ({
