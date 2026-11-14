@@ -214,7 +214,7 @@ const manifestPatchOf = ({ added }: ManifestParams): string =>
     ...added.map((line) => `+    ${line},`),
     'diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml',
     '@@ -1,1 +1,2 @@',
-    '+  nock: 14.0.1',
+    ...added.map((line) => `+  ${line.split('"').join('').replace('^', '')}`),
     'diff --git a/test/retry.test.ts b/test/retry.test.ts',
   ].join('\n');
 

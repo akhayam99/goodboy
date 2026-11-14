@@ -89,7 +89,9 @@ describe('the launch guard', () => {
     expect(rules?.env).toEqual([]);
     expect(rules?.deniedTools).toContain('Edit(CODEOWNERS)');
     expect(rules?.deniedTools).not.toContain('Edit(**/package.json)');
-    expect(rules?.deniedTools).not.toContain('Bash(pnpm add *)');
+    expect(rules?.deniedTools).toContain('Bash(pnpm add *)');
+    expect(rules?.deniedTools).toContain('Bash(npm install *)');
+    expect(rules?.deniedTools).toContain('Bash(cargo add:*)');
     expect(rules?.deniedTools).toContain('Edit(**/pnpm-lock.yaml)');
   });
 

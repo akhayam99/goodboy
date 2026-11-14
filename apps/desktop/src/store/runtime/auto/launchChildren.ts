@@ -18,6 +18,7 @@ import {
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { AGENT_NOT_CREATED_REASON } from '../../../features/auto/agentNotCreatedReason';
+import { isStartRowHeld } from './admission/isStartRowHeld';
 import { remoteJson, remoteOf, resumeOf, snapshotJson, snapshotOf } from './attemptBaseline';
 import { carriedSnapshot } from './carriedSnapshot';
 import { childImagesOf } from './childImagesOf';
@@ -79,6 +80,9 @@ const attemptToLaunch = async ({
 }: AttemptToLaunchParams): Promise<AutoAttempt | null> => {
   const isWriter = isAutoWriterRole({ role });
   if (delegation.state === 'accepted') {
+    if (await isStartRowHeld({ ctx, delegation, role })) {
+      return null;
+    }
     const carried = await carriedSnapshot({ ctx, delegation, worktreePath: target.worktreePath });
     const snapshot =
       carried ?? (await readSnapshot({ ports: ctx.ports, worktreePath: target.worktreePath }));

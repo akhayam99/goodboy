@@ -378,6 +378,7 @@ export const continueChild = async ({
           request: {
             ...input.request,
             ...(deliveryId !== undefined && { deliveryId }),
+            isStartConfirmed: from === 'user',
             capture: { mode: 'new' },
             inputArtifacts: input.inputArtifacts.map((ref) => ({
               artifactId: ref.artifactId,

@@ -47,6 +47,159 @@ const patchOf = ({ manifest }: PatchParams): string =>
     '+  nock: 14.0.1',
   ].join('\n');
 
+type LockPatchParams = {
+  readonly path?: string;
+  readonly lines: ReadonlyArray<string>;
+};
+
+const lockPatchOf = ({ path = 'pnpm-lock.yaml', lines }: LockPatchParams): string =>
+  [
+    `diff --git a/${path} b/${path}`,
+    `--- a/${path}`,
+    `+++ b/${path}`,
+    '@@ -1,9 +1,9 @@',
+    ...lines,
+  ].join('\n');
+
+const ACME: ChangeRules = {
+  ...ASK_BOTH,
+  guard: { ...GUARD, dependencies: 'allow', allowedPackages: ['acme@1.0.0'] },
+};
+
+describe('an allowance names one package and one version', () => {
+  it('refuses a second package or a second range on the line of the allowed one', () => {
+    const paths = ['package.json'];
+    for (const line of [
+      '+    "acme": "1.0.0", "northwind": "9.0.0",',
+      '+    "acme": "1.0.0 || 9.0.0",',
+      '+    "acme": ">=1.0.0",',
+      '+    "acme": "1.0.0 9.0.0",',
+    ]) {
+      expect(
+        changeGateOf({
+          rules: ACME,
+          paths,
+          patch: lockPatchOf({ path: 'package.json', lines: [line] }),
+        }),
+      ).toEqual({ kind: 'refused', paths });
+    }
+    expect(
+      changeGateOf({
+        rules: ACME,
+        paths,
+        patch: lockPatchOf({ path: 'package.json', lines: ['+    "acme": "^1.0.0",'] }),
+      }),
+    ).toEqual({ kind: 'clear' });
+  });
+
+  it('refuses a requirement range, a table or a second specifier', () => {
+    const paths = ['requirements.txt'];
+    for (const line of ['+acme>=1.0.0', '+acme==1.0.0,<2', '+acme[extra]==1.0.0', '+acme==9.0.0']) {
+      expect(
+        changeGateOf({
+          rules: ACME,
+          paths,
+          patch: lockPatchOf({ path: 'requirements.txt', lines: [line] }),
+        }),
+      ).toEqual({ kind: 'refused', paths });
+    }
+    expect(
+      changeGateOf({
+        rules: ACME,
+        paths,
+        patch: lockPatchOf({ path: 'requirements.txt', lines: ['+acme==1.0.0'] }),
+      }),
+    ).toEqual({ kind: 'clear' });
+  });
+
+  it('takes a lockfile with the allowed package and what it depends on, and nothing else', () => {
+    const added = [
+      ' packages:',
+      '+  acme@1.0.0:',
+      '+    resolution: {integrity: sha512-acme}',
+      '+  propagate@2.0.1:',
+      '+    resolution: {integrity: sha512-propagate}',
+      ' snapshots:',
+      '+  acme@1.0.0:',
+      '+    dependencies:',
+      '+      propagate: 2.0.1',
+      '+  propagate@2.0.1: {}',
+    ];
+    expect(
+      changeGateOf({
+        rules: ACME,
+        paths: ['pnpm-lock.yaml'],
+        patch: lockPatchOf({ lines: added }),
+      }),
+    ).toEqual({ kind: 'clear' });
+    expect(
+      changeGateOf({
+        rules: ACME,
+        paths: ['pnpm-lock.yaml'],
+        patch: lockPatchOf({ lines: [' snapshots:', '-  acme@0.9.0: {}', '+  acme@1.0.0: {}'] }),
+      }),
+    ).toEqual({ kind: 'clear' });
+    for (const extra of [['+  left-pad@1.3.0: {}'], ['-  acme@0.9.0: {}', '+  acme@9.0.0: {}']]) {
+      expect(
+        changeGateOf({
+          rules: ACME,
+          paths: ['pnpm-lock.yaml'],
+          patch: lockPatchOf({ lines: [...added, ...extra] }),
+        }),
+      ).toEqual({ kind: 'refused', paths: ['pnpm-lock.yaml'] });
+    }
+  });
+
+  it('reads an npm lock by its node_modules entries', () => {
+    const lines = [
+      '+    "node_modules/acme": {',
+      '+      "version": "1.0.0",',
+      '+      "dependencies": {',
+      '+        "propagate": "^2.0.0"',
+      '+      }',
+      '+    },',
+      '+    "node_modules/propagate": {',
+      '+      "version": "2.0.1"',
+      '+    },',
+    ];
+    const lock = ({ lines: changed }: LockPatchParams) =>
+      changeGateOf({
+        rules: ACME,
+        paths: ['package-lock.json'],
+        patch: lockPatchOf({ path: 'package-lock.json', lines: changed }),
+      });
+
+    expect(lock({ lines })).toEqual({ kind: 'clear' });
+    expect(
+      lock({ lines: [...lines, '+    "node_modules/left-pad": {', '+      "version": "1.3.0"'] }),
+    ).toEqual({
+      kind: 'refused',
+      paths: ['package-lock.json'],
+    });
+    expect(lock({ lines: ['+    "node_modules/acme": {', '+      "version": "9.0.0",'] })).toEqual({
+      kind: 'refused',
+      paths: ['package-lock.json'],
+    });
+  });
+
+  it('reads a Cargo lock by its package blocks', () => {
+    const block = ['+[[package]]', '+name = "acme"', '+version = "1.0.0"'];
+    const other = ['+[[package]]', '+name = "northwind"', '+version = "9.0.0"'];
+    const lock = ({ lines }: LockPatchParams) =>
+      changeGateOf({
+        rules: ACME,
+        paths: ['Cargo.lock'],
+        patch: lockPatchOf({ path: 'Cargo.lock', lines }),
+      });
+
+    expect(lock({ lines: block })).toEqual({ kind: 'clear' });
+    expect(lock({ lines: [...block, ...other] })).toEqual({
+      kind: 'refused',
+      paths: ['Cargo.lock'],
+    });
+  });
+});
+
 describe('the landing backstop', () => {
   it('is off when both rows allow, whatever changed', () => {
     expect(isChangeGateOn({ rules: ALLOW_BOTH })).toBe(false);
@@ -98,18 +251,24 @@ describe('the landing backstop', () => {
     const script = patchOf({ manifest: ['-    "test": "vitest",', '+    "test": "vitest run",'] });
 
     for (const patch of [other, version, script]) {
-      expect(changeGateOf({ rules: ALLOWED, paths, patch })).toEqual({ kind: 'refused', paths });
+      expect(changeGateOf({ rules: ALLOWED, paths, patch })).toEqual({
+        kind: 'refused',
+        paths: ['package.json'],
+      });
     }
   });
 
-  it('holds a lockfile the manifest change does not explain', () => {
+  it('holds a lockfile entry the allowance does not name', () => {
     expect(
       changeGateOf({
         rules: ALLOWED,
         paths: ['pnpm-lock.yaml'],
-        patch: patchOf({ manifest: [] }),
+        patch: lockPatchOf({ lines: ['-  left-pad@1.0.0:', '+  left-pad@1.3.0:'] }),
       }),
     ).toEqual({ kind: 'refused', paths: ['pnpm-lock.yaml'] });
+    expect(
+      changeGateOf({ rules: ALLOWED, paths: ['pnpm-lock.yaml'], patch: patchOf({ manifest: [] }) }),
+    ).toEqual({ kind: 'clear' });
     expect(
       changeGateOf({
         rules: ALLOWED,

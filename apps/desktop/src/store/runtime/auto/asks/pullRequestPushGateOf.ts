@@ -122,7 +122,13 @@ export const pullRequestPushGateOf = async ({
   }
   const delegations = await listAutoDelegations({ db: ctx.db, treeId: delegation.treeId });
   const records = delegations
-    .filter((row) => row.state === 'settled' && row.generation === delegation.generation)
+    .filter(
+      (row) =>
+        row.state === 'settled' &&
+        row.generation === delegation.generation &&
+        row.target['mountId'] === delegation.target['mountId'] &&
+        row.target['worktreePath'] === worktreePath,
+    )
     .map((row) => publishOfResult({ result: row.result }))
     .filter((record) => record !== null && record.branch === branch && record.sha === head);
   if (records.some((record) => record?.state === 'pushed')) {

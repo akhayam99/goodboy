@@ -1226,6 +1226,14 @@ writer that takes a plan (`isAdmissionPlanGateOn`, in
 `inputArtifactStatementsOf`), and Add a project picks the mount mode in
 `applyMountBlock`. With no stored rows every outcome equals the level.
 
+A row tightened before the launch holds it: when `launchChildren` claims an
+accepted child, `isStartRowHeld` reads its start row again and, when it now
+asks, moves the child back to `awaiting_confirm` instead of starting it. Only a
+start the user confirmed skips this: `confirmDelegation` writes
+`request.isStartConfirmed` in its transaction, a start from the user
+(`continueChild`) carries it, and admission writes it false, so a retry never
+inherits it.
+
 A row changed between a proposal and your confirm never loosens it: a waiting
 child stays waiting when its start row turns free, and `confirmDelegation`
 reads Approve the plan again and, when it now asks, checks in its own
@@ -1338,7 +1346,9 @@ publishes.
   every go carries that head: the port pushes exactly that commit
   (`pushSha`, a pinned plain push), never the branch as it is by then. It goes
   at once when the head is online or a publish record of the tree already
-  pushed that commit. Otherwise the commit would reach the host, so it first
+  pushed that commit to the same target: a record counts only when its
+  delegation names the same mount and worktree (so the same remote) and the
+  same branch and commit, never another mount that shares them. Otherwise the commit would reach the host, so it first
   runs the same host change check as a writer push (`hostChangeRefusalOf`, see
   [Landing backstop](#landing-backstop)): a refused or unread change fails the
   publication with the reason and raises no push ask. At When checks pass a
@@ -1405,18 +1415,21 @@ and the row's help line says so.
   Claude or Codex and any reserved name), and for Codex no
   `sandbox_workspace_write.network_access=true`. Codex has no per-file rule:
   for protected files the backstop is the enforcement.
-- **An allowance lifts one.** A dependency allowance lifts the command rules
-  and settings for that attempt so the package manager can add the package,
-  keeps the deny rules on hand edits of lockfiles and keeps the protected ones;
-  it names one package (and its version when the need gave one), and the
-  backstop refuses any other dependency change. A protected file allowance
+- **An allowance lifts one.** A dependency allowance names one package (and its
+  version when the need gave one). Deny rules cannot name an exception, so the
+  add, upgrade and install-with-arguments commands stay denied, and so do hand
+  edits of lockfiles; it lifts the manifest edit rules, the network and the
+  offline settings for that attempt, so the agent writes that one entry and
+  runs the install command without arguments. The backstop refuses any other
+  dependency change. A protected file allowance
   lifts only the pattern that holds its path. A dependency allowance is dropped
   when the row already allows every dependency.
 - **The brief.** `launchGuardBriefOf` (`kickoff.ts`) is added to the brief at
   launch: do not add or upgrade, installing what the lockfile holds is fine,
   and when a new one is needed end with `needs="dependency"` (or
   `needs="protected_file"`) and one line: the package, the version and why, or
-  the path and why. An allowance adds "You may add nock@14.0.1".
+  the path and why. An allowance adds "You may add nock@14.0.1" and says to
+  write that entry by hand and run the install without arguments.
 - **The ask.** When the attempt returns with that need and its guard asks it,
   `needGrantsOf` adds the `auto_grants` row in the settle transaction
   (`settleAttempt` `grants`), subject from `needSubjectOf` (`nock@14.0.1`, or the
@@ -1445,12 +1458,19 @@ in the attempt's stored guard), the changed paths and, when the attempt holds a
 dependency allowance, the patch (`isDependencyPatchNeeded`). A manifest or
 lockfile of any manager, in any folder, is refused while the dependencies row
 asks, unless an allowance explains it (`unattributedDependencyPathsOf`,
-`dependencyChanges.ts`): every changed line of the manifest must be the allowed
-package at the allowed version (a moved line, a block opener or the old version
-it replaces passes), and a lockfile passes only when the same patch holds such
-a manifest change and every changed manifest passes. The lockfile itself is not
-parsed: a lockfile no manifest change explains, a manifest with no patch (not
-committed) and a patch that cannot be read are refused. A protected file is
+`dependencyChanges.ts`). Every changed manifest line is read whole
+(`isManifestChangeCovered`): it must be one entry, the allowed package, with
+one version that is exactly the allowed one (a `^`, `~`, `=` or `==` prefix
+passes; a range, `||`, a second specifier, a second entry on the line, an
+inline table or extras are refused); a moved line, a block opener and a removed
+line of the allowed package pass. Every changed lockfile line must belong to the
+allowed package or to what it depends on in the same patch
+(`isLockfileChangeCovered`): pnpm, yarn, npm and bun locks by their indented
+entries, Cargo and uv locks by their `[[package]]` blocks, `go.sum` line by
+line, and a new entry of the allowed package must carry the allowed version.
+A line it cannot attribute holds the lockfile, as do a binary lockfile, a
+manifest or lockfile with no patch (not committed) and a patch that cannot be
+read. A protected file is
 refused while its row asks and no allowed path names it. With both rows at Allow nothing is read
 and the result goes on as before. A row tightened while the agent runs applies
 to its result here.

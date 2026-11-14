@@ -290,9 +290,10 @@ describe('Auto proposal admission and confirmation', () => {
     expect(
       await world.runtime.confirm({ delegationId: delegation.id, decision: 'confirm', hint: '  ' }),
     ).toBe('confirmed');
-    expect((await getAutoDelegation({ db, delegationId: delegation.id }))?.request).toEqual(
-      delegation.request,
-    );
+    expect((await getAutoDelegation({ db, delegationId: delegation.id }))?.request).toEqual({
+      ...delegation.request,
+      isStartConfirmed: true,
+    });
   });
 
   it('replays a settled proposal and refuses a request id reused with different alternatives', async () => {

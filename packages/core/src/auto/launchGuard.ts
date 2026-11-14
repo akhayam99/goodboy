@@ -258,19 +258,24 @@ type FileRulesParams = {
 const fileRulesOf = ({ patterns }: FileRulesParams): ReadonlyArray<string> =>
   patterns.flatMap((pattern) => EDIT_TOOLS.map((tool) => `${tool}(${pattern})`));
 
+const COMMAND_RULES: ReadonlyArray<string> = PACKAGE_MANAGERS.flatMap((manager) => [
+  ...manager.adds.flatMap((command) => [`Bash(${command}:*)`, `Bash(${command} *)`]),
+  ...manager.installs.map((command) => `Bash(${command} *)`),
+]);
+
 const DEPENDENCY_RULES: ReadonlyArray<string> = [
-  ...PACKAGE_MANAGERS.flatMap((manager) => [
-    ...manager.adds.flatMap((command) => [`Bash(${command}:*)`, `Bash(${command} *)`]),
-    ...manager.installs.map((command) => `Bash(${command} *)`),
-  ]),
+  ...COMMAND_RULES,
   ...fileRulesOf({ patterns: DEPENDENCY_FILES.map((file) => `**/${file}`) }),
 ];
 
-const LOCKFILE_RULES: ReadonlyArray<string> = fileRulesOf({
-  patterns: [...new Set(PACKAGE_MANAGERS.flatMap((manager) => manager.lockfiles))].map(
-    (file) => `**/${file}`,
-  ),
-});
+const ALLOWANCE_RULES: ReadonlyArray<string> = [
+  ...COMMAND_RULES,
+  ...fileRulesOf({
+    patterns: [...new Set(PACKAGE_MANAGERS.flatMap((manager) => manager.lockfiles))].map(
+      (file) => `**/${file}`,
+    ),
+  }),
+];
 
 const OFFLINE_ENV: ReadonlyArray<LaunchGuardEnv> = PACKAGE_MANAGERS.flatMap((manager) =>
   manager.env.map(([name, value]) => ({ name, value })),
@@ -289,14 +294,15 @@ export const guardedPatternsOf = ({ guard }: GuardParams): ReadonlyArray<string>
 
 export const launchGuardRulesOf = ({ guard }: GuardParams): LaunchGuardRules | null => {
   const isDependencyAsk = guard.dependencies === 'ask';
-  const lockfileRules = !isDependencyAsk && guard.allowedPackages.length > 0 ? LOCKFILE_RULES : [];
+  const allowanceRules =
+    !isDependencyAsk && guard.allowedPackages.length > 0 ? ALLOWANCE_RULES : [];
   const protectedPatterns = guardedPatternsOf({ guard });
-  if (!isDependencyAsk && protectedPatterns.length === 0 && lockfileRules.length === 0) {
+  if (!isDependencyAsk && protectedPatterns.length === 0 && allowanceRules.length === 0) {
     return null;
   }
   return {
     deniedTools: [
-      ...(isDependencyAsk ? DEPENDENCY_RULES : lockfileRules),
+      ...(isDependencyAsk ? DEPENDENCY_RULES : allowanceRules),
       ...fileRulesOf({ patterns: protectedPatterns }),
     ],
     env: isDependencyAsk ? OFFLINE_ENV : [],

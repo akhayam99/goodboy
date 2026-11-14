@@ -18,6 +18,7 @@ import { createAutoBridgeClient } from '../../../../features/auto/bridge/createA
 import { serveAutoBridge } from '../../../../features/auto/bridge/serveAutoBridge';
 import { readAutoTreeViews } from '../../../slices/auto-view/readAutoTreeViews';
 import { writeAutoLevel } from '../level/writeAutoLevel';
+import { writeLeadPermission } from '../level/writeLeadPermission';
 import {
   autoDelegates,
   autoTurnEnds,
@@ -289,5 +290,30 @@ describe('Lead asks as rows', () => {
     expect(await answer({ askId, answer: 'allow' })).toBe('allowed');
     expect(await answer({ askId, answer: 'allow' })).toBe('settled');
     expect(await asksNow({ world })).toEqual([]);
+  });
+
+  it('asks again for a start the row turned to Ask before it launched, then starts it once', async () => {
+    const world = await makeRuntimeWorld();
+    const db = world.state.world.db;
+    await writeAutoLevel({ db, target, level: 'run' });
+    await userSays({ world, id: 'outbox-acme', text: 'cover the payments-api retries' });
+    await autoDelegates({ world, spec: [tester] });
+    await writeLeadPermission({
+      db,
+      target: { treeId: world.treeId },
+      change: { key: 'startReaders', value: 'ask' },
+      nowMs: world.state.world.clock.now(),
+    });
+    await autoTurnEnds({ world });
+
+    expect(world.state.ports.childTurns).toEqual([]);
+    const delegation = (await listAutoDelegations({ db, treeId: world.treeId }))[0];
+    expect(delegation?.state).toBe('awaiting_confirm');
+    const [ask] = await asksNow({ world });
+    expect(ask?.kind).toBe('start');
+
+    expect(await answererOf({ world })({ askId: ask?.id ?? '', answer: 'allow' })).toBe('allowed');
+    await world.runtime.drive(world.treeId);
+    expect(world.state.ports.childTurns).toHaveLength(1);
   });
 });
