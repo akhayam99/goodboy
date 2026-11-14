@@ -68,7 +68,6 @@ export const SessionCrumbs = ({ session }: Props) => {
               )}
               {isCurrent ? (
                 <span
-                  ref={slots?.setTitle}
                   aria-current="page"
                   data-crumb-current=""
                   className={cn(
@@ -77,6 +76,11 @@ export const SessionCrumbs = ({ session }: Props) => {
                   )}
                 >
                   {slots?.isTitleClaimed === true ? null : label}
+                  <span
+                    ref={slots?.setTitle}
+                    data-crumb-title-slot=""
+                    className="flex min-w-0 items-center gap-2 empty:hidden"
+                  />
                 </span>
               ) : (
                 <Button

@@ -89,9 +89,11 @@ export const KEYS_ROWS_ROWS: ReadonlyArray<Row> = [
           ),
         WAIT,
       );
-      expect(
-        (await screen.findAllByRole('heading', { name: SHIP_TITLE }, WAIT)).length,
-      ).toBeGreaterThan(0);
+      await waitFor(
+        () =>
+          expect(document.querySelector('[data-crumb-current]')?.textContent).toContain(SHIP_TITLE),
+        WAIT,
+      );
     }),
   },
 ];
