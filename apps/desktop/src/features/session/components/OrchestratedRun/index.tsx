@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import { PANE_RHYTHM, PaneShell, TERMINAL_DIM, cn } from '@goodboy/ui';
 import type { Session, Workflow, WorkflowRun } from '@goodboy/types';
 import { RunWorkTime } from '../AgentTree/RunWorkTime';
@@ -14,6 +15,7 @@ import { OrchestratedRouting } from './OrchestratedRouting';
 import { OrchestratedTail } from './OrchestratedTail';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { PresetChangeAsk } from './PresetChangeAsk';
+import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 
 type Props = {
   readonly session: Session;
@@ -23,6 +25,7 @@ type Props = {
 
 export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
   const view = useRunView({ session, run, workflow });
+  const isInHead = useContext(SessionHeadSlotsContext) !== null;
   const sessionId = session.id;
   const runningStep =
     view.agents.find((agent) => agent.parentAgentId == null && agent.status === 'running') ?? null;
@@ -39,14 +42,15 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
     <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />
   );
 
+  const head = <RunPageHead session={session} view={view} stepAgentId={runningStep?.id ?? null} />;
+
   return (
     <HintRowStateProvider>
       <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
+        {isInHead ? head : null}
         <PaneShell
           page="run"
-          header={
-            <RunPageHead session={session} view={view} stepAgentId={runningStep?.id ?? null} />
-          }
+          {...(!isInHead && { header: head })}
           headerRhythm="section"
           scroll="body"
           animationClassName="motion-safe:animate-fade-in"

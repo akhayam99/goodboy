@@ -19,7 +19,14 @@ describe('autoCardHeadOf', () => {
           aDelegation({ key: 'planner', role: 'planner', state: 'settled', outcome: 'completed' }),
         ],
       }),
-    ).toEqual({ name: 'Plan', meta: '1 agent', word: 'Done', isOpen: false });
+    ).toEqual({ name: 'Plan', meta: '1 agent', word: 'Done', isWordShown: false, isOpen: false });
+  });
+  it('leaves the state word to the row when the card holds one agent', () => {
+    const head = autoCardHeadOf({
+      delegations: [aDelegation({ key: 'planner', role: 'planner', state: 'awaiting_confirm' })],
+    });
+    expect(head.word).toBe('Needs you');
+    expect(head.isWordShown).toBe(false);
   });
   it('names a card with a writer Build', () => {
     expect(
@@ -29,7 +36,13 @@ describe('autoCardHeadOf', () => {
           aDelegation({ key: 'test', role: 'tester', state: 'settled', outcome: 'completed' }),
         ],
       }),
-    ).toEqual({ name: 'Build', meta: '2 agents', word: 'Running', isOpen: true });
+    ).toEqual({
+      name: 'Build',
+      meta: '2 agents',
+      word: 'Running',
+      isWordShown: true,
+      isOpen: true,
+    });
   });
   it.each(['ci-fixer', 'docs', 'scribe'])('names a %s batch Build', (role) => {
     expect(

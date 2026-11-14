@@ -233,7 +233,7 @@ type TurnKeys = {
   readonly anchorKey: string | null | undefined;
 };
 
-const TAIL_FLOOR = 48;
+const TAIL_FLOOR = 24;
 const ANCHOR_TOP = 40;
 
 type TailParams = {
@@ -331,7 +331,7 @@ describe('useScrollPin send anchor', () => {
     expect(tailPx({ tail })).toBe(TAIL_FLOOR + (500 - ANCHOR_TOP - 300 - TAIL_FLOOR));
   });
 
-  it('keeps 48px under the last line once the reply is taller than the view', () => {
+  it('keeps 24px under the last line once the reply is taller than the view', () => {
     const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
     const { rerender, tail } = openTurn({ box });
     sendOn({ rerender });

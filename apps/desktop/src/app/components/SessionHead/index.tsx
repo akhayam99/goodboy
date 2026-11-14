@@ -1,9 +1,11 @@
+import { useContext } from 'react';
 import { PageColumn, PANE_RHYTHM, PaneTitleRow, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
 import { isTabView } from '../../../store/slices/navigation/isTabView';
 import { OverviewTitle } from '../../../features/session/components/SessionOverviewPane/OverviewTitle';
+import { SessionHeadSlotsContext } from '../../../features/session/sessionHeadSlotsContext';
 import { SessionPageTabs } from '../SessionPageTabs';
 import { SessionCrumbs } from './SessionCrumbs';
 import { SessionHeadActions } from './SessionHeadActions';
@@ -14,6 +16,7 @@ type Props = {
 
 export const SessionHead = ({ session }: Props) => {
   const sessionId = session.id;
+  const slots = useContext(SessionHeadSlotsContext);
   const isDetail = useAppStore((state) => {
     const { place } = captureLocation({ state });
     return (
@@ -29,11 +32,18 @@ export const SessionHead = ({ session }: Props) => {
       >
         <PaneTitleRow
           title={<OverviewTitle session={session} />}
-          isHeading={!isDetail}
+          isHeading={!isDetail || slots?.isHeadingClaimed === true}
           actions={<SessionHeadActions session={session} />}
         />
-        <div className="flex min-w-0 items-center">
+        <div className="flex min-w-0 items-center gap-3">
           {isDetail ? <SessionCrumbs session={session} /> : <SessionPageTabs session={session} />}
+          {isDetail && slots !== null ? (
+            <div
+              ref={slots.setMeta}
+              data-session-head-meta=""
+              className="flex shrink-0 items-center gap-2 empty:hidden"
+            />
+          ) : null}
         </div>
       </header>
     </PageColumn>

@@ -100,7 +100,7 @@ describe('the long transcript scene', () => {
     expect(rows.every((row) => (row.getAttribute('data-anchor-key') ?? '') !== '')).toBe(true);
   });
 
-  it('opens at the bottom on a 48px floor under the last line, with no jump to offer', async () => {
+  it('opens at the bottom on a 24px floor under the last line, with no jump to offer', async () => {
     const Scene = U25_CHAT_LONG_SCENES['transcript-long'];
     const { container } = render(
       <ToastProvider>

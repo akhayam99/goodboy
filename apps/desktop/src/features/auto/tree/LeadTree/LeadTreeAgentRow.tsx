@@ -2,6 +2,7 @@ import { memo } from 'react';
 import type { AgentId } from '@goodboy/types';
 import { cn, formatUsd } from '@goodboy/ui';
 import { DelegationClock } from '../../chat/DelegationClock';
+import { LEAD_TREE_CURSOR } from './leadTreeCursor';
 import { leadTreeIndentOf } from './leadTreeIndentOf';
 import { LeadTreeDot } from './LeadTreeDot';
 
@@ -46,7 +47,7 @@ export const LeadTreeAgentRow = memo(
       className={cn(
         'flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-hover',
         isSelected && 'bg-selected',
-        isActive && 'ring-1 ring-focus-ring',
+        isActive && LEAD_TREE_CURSOR,
       )}
       style={leadTreeIndentOf({ depth })}
       onClick={() => onSelect(agentId)}

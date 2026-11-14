@@ -1192,9 +1192,9 @@ session lands on the bottom. A later key anchors the last `[data-turn]`
 (`applyFollow` re-reads its top on every resize, one write, held through
 `isHolding` like the answer hold) and ends at the first scroll of the reader,
 who is then pinned only when they reach the bottom again. Under the list sits
-`[data-transcript-tail]`, the one floor of the transcript: 48 px
+`[data-transcript-tail]`, the one floor of the transcript: 24 px
 (`TRANSCRIPT_FLOOR_PX`) under the last line, with no padding under the scroller.
-After a send the hook adds a spacer to it, `clientHeight - 40 - last turn - 48`
+After a send the hook adds a spacer to it, `clientHeight - 40 - last turn - 24`
 and never below zero, so a short turn can reach the 40 px line; the spacer
 shrinks as the reply grows and a different agent resets it. Content starts at
 the top and grows down, it is never piled against the composer.
