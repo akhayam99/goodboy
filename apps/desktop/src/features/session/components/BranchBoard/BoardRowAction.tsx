@@ -8,9 +8,10 @@ import { useBoardContext } from './useBoardContext';
 type Props = {
   readonly rowId: string;
   readonly index?: number;
+  readonly isLead?: boolean;
 };
 
-export const BoardRowAction = ({ rowId, index = 0 }: Props) => {
+export const BoardRowAction = ({ rowId, index = 0, isLead = true }: Props) => {
   const { cardsByRowId, actionsFor, openFor, rowById } = useBoardContext();
   const [isConfirming, setIsConfirming] = useState(false);
   const card = cardsByRowId.get(rowId)?.[index];
@@ -47,7 +48,10 @@ export const BoardRowAction = ({ rowId, index = 0 }: Props) => {
     }
     mainVerb.run();
   };
-  const look = actionButtonLookOf({ verb: mainVerb?.label ?? '', variant: 'primary' });
+  const look = actionButtonLookOf({
+    verb: mainVerb?.label ?? '',
+    variant: isLead ? 'primary' : 'secondary',
+  });
   const button =
     mainVerb === null ? null : (
       <Button

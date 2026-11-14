@@ -242,8 +242,12 @@ Copy patch, and Rebase and Request review have their own place on Commits and Co
 **Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
 pull request and no comment `Conversation`, `Changes`, `Commits`, `Work`; with a local note or a thread
-and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, Merged and
-Closed show all six, `Conversation`, `Comments`, `Changes`, `Commits`, `Checks`, `Work`. The first is
+and still no pull request `Comments` joins them at the end; Draft, Open, Approved, Queued, Merged and
+Closed show all six, `Conversation`, `Changes`, `Commits`, `Checks`, `Work`, `Comments`. Comments
+stays its own tab after Work instead of folding into Conversation: it holds the review flow
+(pick threads, fix them with an agent, resolve, push) and the local notes of a branch with no
+pull request, where Conversation is the start page. Conversation shows the threads in its
+activity and links to Comments. The first is
 called `Conversation` on every host, so `Overview` names only the session overview (its key is ⌥⌘1,
 Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
 request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you; the counts and their scope are written once, under the entry slots below. Merged and

@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { brandId, type MountId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../../store';
 import { mountFixture } from '../../../__tests__/helpers/actionFixtures';
@@ -7,7 +8,13 @@ import type { ActionEnv } from '../types';
 import { MOUNT_KIND } from './mount';
 import type { MountFacts } from './mountFacts';
 
-const MOUNT = mountFixture({ worktreePath: '/work/harborline/ledger-core-rounding' });
+const DOOR = mountFixture();
+const MOUNT = mountFixture({
+  mountId: brandId<MountId>({ value: 'mount-ledger-core-rounding' }),
+  worktreePath: '/work/harborline/ledger-core-rounding',
+  branch: 'hl/rounding',
+  parallelIndex: 1,
+});
 const SESSION_ID = MOUNT.sessionId;
 
 const env: ActionEnv = {
@@ -71,22 +78,27 @@ beforeEach(() => {
     currentSessionId: SESSION_ID,
     activeLens: { [SESSION_ID]: null },
     sessionActiveMount: {},
+    sessionProjectMounts: { [SESSION_ID]: [DOOR, MOUNT] },
     exploreMountPath: {},
+    diffMountPath: {},
+    branchTab: {},
     navigation: {},
     drawer: null,
   });
 });
 
 describe('mount.browseFiles', () => {
-  it('opens the Explore pane on that mount and never moves where agents write', async () => {
+  it('opens the Files tab of that branch, not the first one, and never moves where agents write', async () => {
     const setSessionActiveMount = vi.fn(async () => undefined);
     useAppStore.setState({ setSessionActiveMount });
 
     await definition().run({ facts: facts(), env, choice: null });
 
     const state = useAppStore.getState();
-    expect(state.activeLens[SESSION_ID]).toBeNull();
-    expect(state.drawer).toEqual({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    expect(state.activeLens[SESSION_ID]).toBe('branch');
+    expect(state.branchTab[SESSION_ID]).toBe('files');
+    expect(state.diffMountPath[SESSION_ID]).toBe(MOUNT.worktreePath);
+    expect(state.drawer).toBeNull();
     expect(state.exploreMountPath[SESSION_ID]).toBe(MOUNT.worktreePath);
     expect(state.sessionActiveMount).toEqual({});
     expect(setSessionActiveMount).not.toHaveBeenCalled();

@@ -272,7 +272,7 @@ const aNote = (): DiffComment => ({
 });
 
 describe('Branch page header and sections', () => {
-  it('names the pull request and lists Conversation, Comments, Changes, Commits, Checks and Work in the rail', async () => {
+  it('names the pull request and lists Conversation, Changes, Commits, Checks, Work and Comments in the rail', async () => {
     await mount();
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
@@ -280,11 +280,11 @@ describe('Branch page header and sections', () => {
     );
     expect(sectionNames()).toEqual([
       'Conversation',
-      'Comments',
       'Changes',
       'Commits',
       'Checks',
       'Work',
+      'Comments',
     ]);
     expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
   });
@@ -296,11 +296,11 @@ describe('Branch page header and sections', () => {
     const tabs = within(strip).getAllByRole('tab');
     expect(tabs.map((tab) => (tab.textContent ?? '').replace(/[^A-Za-z ]/g, '').trim())).toEqual([
       'Conversation',
-      'Comments',
       'Changes',
       'Commits',
       'Checks',
       'Work',
+      'Comments',
     ]);
     expect(
       within(strip)
@@ -356,7 +356,7 @@ describe('Branch page sections by state', () => {
     });
     await settle();
 
-    expect(sectionNames()).toEqual(['Conversation', 'Comments', 'Changes', 'Commits', 'Work']);
+    expect(sectionNames()).toEqual(['Conversation', 'Changes', 'Commits', 'Work', 'Comments']);
     expect(railRow(/^Comments/).textContent).toBe('Comments');
   });
 
@@ -369,11 +369,11 @@ describe('Branch page sections by state', () => {
 
       expect(sectionNames()).toEqual([
         'Conversation',
-        'Comments',
         'Changes',
         'Commits',
         'Checks',
         'Work',
+        'Comments',
       ]);
     },
   );

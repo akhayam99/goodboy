@@ -296,8 +296,10 @@ from `useShellRight`), no close key reaches it
 (`selectDrawerPanel` is null under a studio), and it shows again, as it was,
 when the studio closes. A workspace tool shows beside any studio but its own
 page; under its own page it is kept in the store and not mounted. On Tasks,
-Chat and Workflows the page's own panel and the dock replace each other,
-latest wins (`useOneRightPanel`). Its own key on the studio leaves every studio stacked
+Chat and Workflows the page's own panel and the dock stay open together: the
+page hosts both in its `DrawerColumn`, its panel in the `detail` slot and the
+dock, handed down by `AppShell` through `ShellDockContext` when `isDockInStudio`,
+in the dock slot beside the rail. Its own key on the studio leaves every studio stacked
 over the session and shows it. A reader, an item or a
 form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most

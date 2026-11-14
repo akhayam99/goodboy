@@ -97,7 +97,7 @@ describe('the u24 prpage frame scenes', () => {
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Conversation', 'Comments', 'Changes', 'Commits', 'Work']);
+    expect(sectionNames()).toEqual(['Conversation', 'Changes', 'Commits', 'Work', 'Comments']);
     expect(
       within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', {
         name: /^Comments/,
@@ -112,11 +112,11 @@ describe('the u24 prpage frame scenes', () => {
 
     expect(sectionNames()).toEqual([
       'Conversation',
-      'Comments',
       'Changes',
       'Commits',
       'Checks',
       'Work',
+      'Comments',
     ]);
     expect(chip().textContent).toBe('Draft');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);

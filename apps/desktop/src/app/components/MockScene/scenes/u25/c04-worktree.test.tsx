@@ -100,11 +100,11 @@ describe('the c04 worktree level scenes', () => {
     expect(screen.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
     expect(stripNames()).toEqual([
       'Conversation',
-      'Comments',
       'Changes',
       'Commits',
       'Checks',
       'Work',
+      'Comments',
     ]);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Merge status' }).textContent).toContain(

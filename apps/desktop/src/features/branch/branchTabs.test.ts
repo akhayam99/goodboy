@@ -61,7 +61,7 @@ const PR_STATES: ReadonlyArray<PullRequestStateKind> = [
   'closed',
 ];
 
-const ALL_SIX: ReadonlyArray<BranchTab> = ['pr', 'comments', 'files', 'commits', 'checks', 'work'];
+const ALL_SIX: ReadonlyArray<BranchTab> = ['pr', 'files', 'commits', 'checks', 'work', 'comments'];
 
 const tabIds = (state: PullRequestPresentationState, hasComments: boolean) =>
   branchTabsOf({ state, hasComments }).map((tab) => tab.id);
@@ -133,7 +133,7 @@ describe('the Branch sections by state', () => {
   });
 
   it('adds Comments with no pull request once one local note exists', () => {
-    expect(tabIds('none', true)).toEqual(['pr', 'comments', 'files', 'commits', 'work']);
+    expect(tabIds('none', true)).toEqual(['pr', 'files', 'commits', 'work', 'comments']);
   });
 
   it.each(PR_STATES)('gives all six sections in the %s state', (state) => {
@@ -164,7 +164,7 @@ describe('the Branch sections by state', () => {
   it('leaves the pull request section out of a registry that holds it back', () => {
     expect(
       branchTabsOf({ state: 'open', hasComments: false }, withoutPr).map((tab) => tab.id),
-    ).toEqual(['comments', 'files', 'commits', 'checks', 'work']);
+    ).toEqual(['files', 'commits', 'checks', 'work', 'comments']);
   });
 
   it('names each section by the label of its shortcut, Conversation aside', () => {
