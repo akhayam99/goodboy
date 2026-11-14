@@ -1,6 +1,6 @@
 import type { AutoDelegation } from '@goodboy/db';
 import { delegationCardOf, type DelegationCardModel } from '../chat/delegationCardOf';
-import type { LaunchSnapshotItem } from '../chat/launchSnapshotOf';
+import { launchSnapshotOf, type LaunchSnapshotItem } from '../chat/launchSnapshotOf';
 
 export const SPAWN_RECORD_NOT_RECORDED = 'Not recorded';
 export const SPAWN_RECORD_STILL_WORKING = 'Still working.';
@@ -32,7 +32,10 @@ type Params = {
   readonly agentId: string;
   readonly number: string | null;
   readonly delegations: ReadonlyArray<AutoDelegation>;
+  readonly launchSnapshots?: Readonly<Record<string, unknown>>;
 };
+
+const NO_SNAPSHOTS: Readonly<Record<string, unknown>> = {};
 
 type ChainParams = {
   readonly head: AutoDelegation;
@@ -79,6 +82,7 @@ export const spawnRecordOf = ({
   agentId,
   number,
   delegations,
+  launchSnapshots = NO_SNAPSHOTS,
 }: Params): SpawnRecordModel | null => {
   const owned = delegations
     .filter((candidate) => candidate.childAgentId === agentId)
@@ -106,7 +110,7 @@ export const spawnRecordOf = ({
     },
     model: modelTextOf({ card }),
     modelReason: card.modelReason,
-    wentIn: card.wentIn,
+    wentIn: launchSnapshotOf({ snapshot: launchSnapshots[head.id] ?? null }),
     doneWhen: card.doneWhen,
     result: resultTextOf({ card }),
     isLive: card.isOpen,

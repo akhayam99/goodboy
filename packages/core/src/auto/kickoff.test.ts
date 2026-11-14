@@ -7,6 +7,7 @@ import {
   AUTO_KICKOFF_HEADER,
   composeAnswerKickoff,
   composeDelegationKickoff,
+  kickoffGuidanceOf,
   type DelegationKickoffParams,
 } from './kickoff';
 
@@ -241,6 +242,18 @@ describe('the guidance of one run in a child brief', () => {
 
     expect(text.indexOf('**Guidance**')).toBeGreaterThan(-1);
     expect(text.indexOf('**Guidance**')).toBeLessThan(text.indexOf('**Task** Revise the plan'));
+  });
+
+  it('reads back the guidance a brief carried, and none from a brief without it', () => {
+    const multi = 'Keep every change inside payments-api.\n\nNever touch the ledger.';
+
+    expect(
+      kickoffGuidanceOf({ kickoff: composeDelegationKickoff(base({ guidance: GUIDANCE })) }),
+    ).toBe(GUIDANCE);
+    expect(
+      kickoffGuidanceOf({ kickoff: composeDelegationKickoff(base({ guidance: multi })) }),
+    ).toBe(multi);
+    expect(kickoffGuidanceOf({ kickoff: composeDelegationKickoff(base()) })).toBeNull();
   });
 
   it('leaves the brief byte for byte the same when the guidance is unset, null or blank', () => {

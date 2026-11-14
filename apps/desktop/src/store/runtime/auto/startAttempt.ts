@@ -21,6 +21,7 @@ export type StartAttemptParams = Readonly<{
   generation: number;
   baseline: AutoJsonObject | null;
   writeSet: AutoJsonObject | null;
+  launchSnapshot?: AutoJsonObject | null;
 }>;
 
 export type StartAttemptOutcome =
@@ -39,6 +40,7 @@ export const startAttempt = async ({
   generation,
   baseline,
   writeSet,
+  launchSnapshot = null,
 }: StartAttemptParams): Promise<StartAttemptOutcome> => {
   const delegation = await getAutoDelegation({ db, delegationId });
   if (delegation === null || delegation.treeId !== treeId) {
@@ -66,6 +68,7 @@ export const startAttempt = async ({
       generation,
       baseline,
       writeSet,
+      launchSnapshot,
       nowMs,
     }),
   ];

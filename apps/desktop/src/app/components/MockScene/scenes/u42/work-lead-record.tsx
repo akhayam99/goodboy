@@ -19,19 +19,6 @@ const RECORD = spawnRecordOf({
         roleFit: 'implementer',
         roleReason: 'the brief adds tests only.',
         doneWhen: 'A redelivered batch posts one credit per event.',
-        launchSnapshot: [
-          {
-            kind: 'note',
-            label: 'Also cover the batch endpoint',
-            detail: 'your note, read at turn 4',
-          },
-          {
-            kind: 'result',
-            label: 'Result of Scout 2.1',
-            detail: 'the batch endpoint calls the same guard',
-          },
-          { kind: 'guidance', label: 'Use pnpm, never npm', detail: 'project guidance' },
-        ],
       },
       result: {
         schemaVersion: 1,
@@ -47,6 +34,43 @@ const RECORD = spawnRecordOf({
       },
     },
   ],
+  launchSnapshots: {
+    [base.id]: {
+      schemaVersion: 1,
+      items: [
+        {
+          kind: 'note',
+          ref: 'outbox-user-4',
+          version: null,
+          label: 'Also cover the batch endpoint',
+          detail: 'your note, read at turn 4',
+        },
+        {
+          kind: 'image',
+          ref: 'attachment-batch',
+          version: null,
+          label: 'batch-redelivery.png',
+          detail: 'an image you sent',
+        },
+        {
+          kind: 'artifact',
+          ref: 'artifact-plan@2',
+          version: 2,
+          label: 'Idempotent webhooks in payments-api',
+          detail: 'plan, version 2',
+        },
+        {
+          kind: 'guidance',
+          ref: 'guidance',
+          version: null,
+          label: 'Use pnpm, never npm',
+          detail: 'run guidance',
+        },
+      ],
+      images: [],
+      routing: { provider: 'anthropic', model: 'claude-sonnet-5-5', effort: 'high' },
+    },
+  },
 });
 
 const WorkLeadRecordScene = () =>

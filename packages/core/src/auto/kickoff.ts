@@ -52,6 +52,25 @@ export const AUTO_DEPENDENCIES_RULE =
 export const AUTO_KICKOFF_HEADER =
   'You were started by Auto and report back to Auto. A question you ask goes to Auto first. Never emit `<<fan-out>>`, `<<scout-split>>` or `<<handoff>>` markers and never start other agents yourself: Auto does that.';
 
+const GUIDANCE_HEADING = '**Guidance**\n';
+
+const TASK_HEADING = '\n\n**Task** ';
+
+type KickoffGuidanceParams = {
+  readonly kickoff: string;
+};
+
+export const kickoffGuidanceOf = ({ kickoff }: KickoffGuidanceParams): string | null => {
+  const start = kickoff.indexOf(`\n\n${GUIDANCE_HEADING}`);
+  if (start === -1) {
+    return null;
+  }
+  const rest = kickoff.slice(start + 2 + GUIDANCE_HEADING.length);
+  const end = rest.indexOf(TASK_HEADING);
+  const text = (end === -1 ? rest : rest.slice(0, end)).trim();
+  return text === '' ? null : text;
+};
+
 export type KickoffArtifactInput = Readonly<{
   artifactId: string;
   kind: string;
@@ -243,7 +262,7 @@ export const composeDelegationKickoff = ({
   }
   const guidanceText = guidance?.trim() ?? '';
   if (guidanceText !== '') {
-    sections.push(`**Guidance**\n${guidanceText}`);
+    sections.push(`${GUIDANCE_HEADING}${guidanceText}`);
   }
   sections.push(revise === null ? `**Task** ${task}` : reviseSection({ revise }));
   sections.push(`**Done when** ${doneWhen ?? AUTO_DEFAULT_DONE_WHEN[role]}`);

@@ -1,5 +1,6 @@
 import { listAutoOutbox, type AutoDelegation, type AutoTree } from '@goodboy/db';
 import type { MessageAttachment } from '@goodboy/types';
+import { childRowsOf } from './launchSnapshot/childRowsOf';
 import { userImagesOf } from './userImagesOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -15,12 +16,5 @@ export const childImagesOf = async ({
   delegation,
 }: Params): Promise<ReadonlyArray<MessageAttachment>> => {
   const accepted = await listAutoOutbox({ db: ctx.db, treeId: tree.id, states: ['accepted'] });
-  return userImagesOf({
-    rows: accepted.filter(
-      (row) =>
-        row.kind === 'user' &&
-        row.generation === tree.generation &&
-        row.createdAt <= delegation.createdAt,
-    ),
-  });
+  return userImagesOf({ rows: childRowsOf({ accepted, tree, delegation }) });
 };

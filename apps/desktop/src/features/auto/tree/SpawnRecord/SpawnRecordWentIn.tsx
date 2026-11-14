@@ -27,7 +27,7 @@ export const SpawnRecordWentIn = ({ items }: Props) => {
       {items.map((item) => {
         const Icon = ICONS[item.kind];
         return (
-          <li key={`${item.kind}:${item.label}`} className="flex min-w-0 items-start gap-2">
+          <li key={`${item.kind}:${item.ref}`} className="flex min-w-0 items-start gap-2">
             <Icon size={ICON_SIZE.control} className="shrink-0 text-muted-foreground" aria-hidden />
             <span className="min-w-0">
               {item.label}
