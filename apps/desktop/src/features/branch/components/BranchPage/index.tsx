@@ -394,8 +394,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const detail = (
     <BranchDetail>
       <PaneShell
-        page="branch"
-        width={isChanges ? 'full' : undefined}
+        page={isChanges ? 'branchChanges' : 'branch'}
         scroll="self"
         revealKey={tab}
         headerRhythm="section"

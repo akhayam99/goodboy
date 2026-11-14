@@ -79,7 +79,7 @@ describe('PAGE_MEASURE', () => {
       FRAME_PAGES.filter((page) => PAGE_MEASURE[page] === width);
 
     expect(measureOf('measure')).toEqual(['agent', 'chat']);
-    expect(measureOf('full')).toEqual(['board', 'terminal', 'browser']);
+    expect(measureOf('full')).toEqual(['board', 'terminal', 'browser', 'branchChanges']);
     expect(PAGE_MEASURE.overview).toBe(PAGE_MEASURE.runs);
     expect(Object.keys(PAGE_MEASURE).sort()).toEqual([...FRAME_PAGES].sort());
   });
@@ -109,7 +109,16 @@ describe('PAGE_FRAME', () => {
 
   it('keeps the split frame to the pages with a rail', () => {
     expect([...pagesOf({ type: 'split' })].sort()).toEqual(
-      ['branch', 'chat', 'guide', 'inbox', 'notifications', 'settings', 'whatsNew'].sort(),
+      [
+        'branch',
+        'branchChanges',
+        'chat',
+        'guide',
+        'inbox',
+        'notifications',
+        'settings',
+        'whatsNew',
+      ].sort(),
     );
   });
 

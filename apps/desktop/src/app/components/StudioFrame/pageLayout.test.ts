@@ -105,7 +105,11 @@ const SESSION_PAGES: ReadonlyArray<PageRoot> = [
     page: 'questions',
     files: ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
   },
-  { page: 'branch', files: ['features/branch/components/BranchPage/index.tsx'] },
+  {
+    page: 'branch',
+    files: ['features/branch/components/BranchPage/index.tsx'],
+    prop: "page=\\{isChanges \\? 'branchChanges' : 'branch'\\}",
+  },
 ];
 
 const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
