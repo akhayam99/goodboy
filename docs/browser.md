@@ -511,7 +511,17 @@ it; Esc inside the page goes to the page.
   `set_bounds`. Every frame, and whenever the view's frame changes size, it
   measures the placeholder (`viewBoundsOf`) and wants the shown tab at that
   rect, or no tab
-  when the placeholder is gone, hidden or covered. It runs one host call at a
+  when the placeholder is gone, hidden or covered. The placeholder is measured
+  in CSS pixels of the app page, and app zoom (`shared/lib/zoom.ts`, the
+  page zoom of the window webview) makes one CSS pixel `zoom` window points, so
+  `viewBoundsOf` multiplies the rect, the device cap included, by the zoom
+  this window last applied (`appliedZoom`) and rounds each edge, never the
+  width, so the view meets the chrome on every side. A zoom change, a window
+  resize or a dock resize changes that rect and the next frame places the view
+  again; after a reload the webview keeps its zoom and `applyStoredZoom` sets
+  the same factor. WebKit raises `devicePixelRatio` with the zoom, so xterm
+  redraws crisp on its own, and `watchTerminalFit` refits the terminal's
+  columns and rows when the ratio changes. It runs one host call at a
   time toward the latest wanted state, shows the new tab before hiding the old
   one, and drops a live id the host answers `tab-gone` for, so the next frame
   reopens the row. A view whose hide failed stays on its list and is hidden
