@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ExtractedScribeText } from '@goodboy/core/context';
+import { extractScribeText, type ExtractedScribeText } from '@goodboy/core/context';
 import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import type { ResumeScribePullRequestInput, ScribeWork } from '../../slices/scribe/types';
 import { publishScribePullRequest } from './publishScribePullRequest';
@@ -64,7 +64,7 @@ const harness = ({ endings }: HarnessParams) => {
         sessionId: SESSION_ID,
         mountId: 'mount-ledger-core',
         agentId: AGENT_ID,
-        assistantText,
+        output: extractScribeText(assistantText),
       },
     });
   return { publish, calls };

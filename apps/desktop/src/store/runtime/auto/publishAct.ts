@@ -22,8 +22,10 @@ import type {
   PublishRowResult,
 } from '../../../features/auto/publishPort';
 import { remoteOf } from './attemptBaseline';
+import { releaseHeldPullRequests } from './asks/releaseHeldPullRequests';
 import { delegationRoleOf } from './attemptEnvelope';
 import { executePublish } from './executePublish';
+import { readPublishPermissions } from './level/readPublishPermissions';
 import { planPublish } from './planPublish';
 import type { PushBranchOutcome, RestoreBackupOutcome } from './ports';
 import { publishQueue } from './publishQueue';
@@ -260,7 +262,8 @@ const confirmRow = async ({
   worktreePath,
   record,
 }: RowParams): Promise<PublishRowResult> => {
-  if (record.state !== 'awaiting_confirm') {
+  const isPushNow = record.state === 'declined' && record.mode === 'push';
+  if (record.state !== 'awaiting_confirm' && !isPushNow) {
     return refused({ delegationId: delegation.id, message: NOT_WAITING });
   }
   return pushRow({
@@ -326,11 +329,14 @@ const remoteNowOf = async ({
 const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
   const { ctx, delegation, worktreePath, record } = params;
   const wanted = publishOfRequest({ request: delegation.request });
-  if (!canRetryPublish({ publish: record }) || wanted === null) {
+  if (!canRetryPublish({ publish: record })) {
     return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
   }
   if (record.isConfirmed && record.mode === 'push') {
     return pushRow({ ...params, toPush: record, fromState: record.state });
+  }
+  if (wanted === null) {
+    return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
   }
   const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
   const baseline = attempts.filter((attempt) => attempt.state === 'ended').at(-1)?.baseline;
@@ -339,6 +345,7 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
     record.mode === 'force'
       ? await remoteNowOf({ ports: ctx.ports, worktreePath, branch: record.branch })
       : remoteOf({ baseline });
+  const { push } = await readPublishPermissions({ db: ctx.db, treeId: delegation.treeId });
   const planned = await planPublish({
     ports: ctx.ports,
     worktreePath,
@@ -352,6 +359,7 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
     checksRun: checksRunOfResult({ result: delegation.result }),
     endHead: record.sha,
     tries: record.tries + 1,
+    push,
   });
   if (planned.state !== 'pushing') {
     return writeRecord({ ctx, delegation, record: planned });
@@ -490,7 +498,7 @@ const actOnOne = async ({ ctx, act, delegationId }: OneParams): Promise<PublishR
     typeof mountId !== 'string' ||
     typeof worktreePath !== 'string' ||
     typeof sessionId !== 'string' ||
-    delegationRoleOf({ delegation }) === 'scribe'
+    (delegationRoleOf({ delegation }) === 'scribe' && record.mode !== 'push')
   ) {
     return refused({ delegationId, message: NOTHING_TO_ACT_ON });
   }
@@ -526,5 +534,6 @@ export const publishAct = async ({
   for (const delegationId of delegationIds) {
     rows.push(await actOnOne({ ctx, act, delegationId }));
   }
+  await releaseHeldPullRequests({ ctx, rows });
   return { kind: 'done', rows };
 };

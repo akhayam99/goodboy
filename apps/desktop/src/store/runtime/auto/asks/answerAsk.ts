@@ -1,9 +1,10 @@
 import { publishOfResult } from '@goodboy/core/auto';
-import { getAutoDelegation } from '@goodboy/db';
+import { getAutoDelegation, getAutoGrant } from '@goodboy/db';
 import type { AutoDelegationId } from '@goodboy/types';
 import type { AskAnswer, AskAnswerResult } from '../../../../features/auto/askAnswerPort';
 import type { AutoRuntime } from '../createAutoRuntime';
 import { answerGrant } from './answerGrant';
+import { answerPullRequest } from './answerPullRequest';
 import { parseLeadAskId } from './parseLeadAskId';
 
 export type AskRuntime = Pick<AutoRuntime, 'ctx' | 'confirm' | 'publish' | 'drive'>;
@@ -60,6 +61,10 @@ export const answerAsk = async ({ runtime, askId, answer }: Params): Promise<Ask
   }
   if (ref.kind === 'push') {
     return answerPush({ runtime, delegationId: ref.delegationId, sha: ref.sha, answer });
+  }
+  const grant = await getAutoGrant({ db: runtime.ctx.db, grantId: ref.grantId });
+  if (grant?.kind === 'pull_request') {
+    return answerPullRequest({ ctx: runtime.ctx, grant, answer });
   }
   const outcome = await answerGrant({ ctx: runtime.ctx, grantId: ref.grantId, answer });
   if (outcome.treeId !== null) {
