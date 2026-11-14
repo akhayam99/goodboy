@@ -420,6 +420,32 @@ describe('actionCardsOf', () => {
     ]);
   });
 
+  it('places a rebase with one target on that branch and one with many on no branch', () => {
+    const targetOf = ({ mountId }: TargetParams): RebaseSuggestionTarget => ({
+      id: `${mountId}`,
+      mountId,
+      projectId: brandId({ value: 'project-harbor' }),
+      projectName: 'harbor-portal',
+      branch: `hl/${mountId}`,
+      worktreePath: `/work/${mountId}`,
+      baseBranch: 'main',
+      behind: 3,
+      dirtyCount: 0,
+    });
+    const other = brandId<MountId>({ value: 'mount-other' });
+    const one: SessionSuggestion = {
+      ...REBASE,
+      payload: { targets: [targetOf({ mountId: MOUNT_ID })] },
+    };
+    const many: SessionSuggestion = {
+      ...REBASE,
+      payload: { targets: [targetOf({ mountId: MOUNT_ID }), targetOf({ mountId: other })] },
+    };
+
+    expect(actionCardsOf({ ...NONE, suggestions: [one] })[0]?.mountId).toBe(MOUNT_ID);
+    expect(actionCardsOf({ ...NONE, suggestions: [many] })[0]?.mountId).toBeNull();
+  });
+
   it('returns no card for no source', () => {
     expect(actionCardsOf(NONE)).toEqual([]);
   });
