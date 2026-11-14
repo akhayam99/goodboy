@@ -52,7 +52,7 @@ describe('the Tasks drawer split scene', () => {
     expect(Object.keys(U24_DRAWERS_TASKS_SCENES)).toEqual(['drawer-split-tasks']);
   });
 
-  it('stands the record drawer beside the page container inside the studio, with no band', async () => {
+  it('stands the record panel beside the page container inside the studio, with no band', async () => {
     stubColumnWidth(1600);
     const Scene = U24_DRAWERS_TASKS_SCENES['drawer-split-tasks'];
     const { container } = render(
@@ -64,7 +64,7 @@ describe('the Tasks drawer split scene', () => {
     await screen.findByRole('complementary', { name: 'Task' });
     const slot = container.querySelector<HTMLElement>('[data-studio-slot="content"]');
     const page = slot?.querySelector<HTMLElement>('[data-container="page"]');
-    const drawer = slot?.querySelector<HTMLElement>('[data-container="drawer"]');
+    const detail = slot?.querySelector<HTMLElement>('[data-container="detail"]');
 
     expect(
       screen.getByRole('complementary', { name: 'Task' }).getAttribute('data-drawer-mode'),
@@ -72,8 +72,8 @@ describe('the Tasks drawer split scene', () => {
     expect(page?.getAttribute('data-sheet')).toBe('pushed');
     expect(page?.querySelector('[data-studio-band]')).toBeNull();
     expect(page?.textContent).toContain('Tasks');
-    expect(drawer?.textContent).toContain('CAS-231');
-    expect(page?.contains(drawer ?? null)).toBe(false);
+    expect(detail?.textContent).toContain('CAS-231');
+    expect(page?.contains(detail ?? null)).toBe(false);
   });
 
   it('fades the record panel in with the page, then leaves a later panel to the drawer motion', async () => {
