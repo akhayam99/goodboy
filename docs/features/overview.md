@@ -26,7 +26,7 @@ The Overview reads top to bottom:
 2. **The state.** One sentence from the running summary says where the work stands, with when it was written. It turns gray when it is older than a day.
 3. **What waits for you.** The **Needs you** group of the board comes first, and each row says why in words.
 4. **Where each branch stands.** Every row shows the six stages of its branch and the one step it stands at.
-5. **What it costs.** The **Spend** and **Time** tiles add up every branch.
+5. **What it costs.** The **Spend** and **Time** tiles add up every branch. Spend names its Leads and agents, and leaves out Leads when there are none.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">

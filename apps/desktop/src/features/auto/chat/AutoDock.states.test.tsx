@@ -106,7 +106,7 @@ describe('AutoDock', () => {
     screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' });
   });
 
-  it('says approved in the artifact tone with Open plan only', () => {
+  it('says approved in the done tone, never the merged hue, with Open plan only', () => {
     renderDock({
       view: aView({
         phase: 'waiting',
@@ -114,7 +114,7 @@ describe('AutoDock', () => {
       }),
     });
 
-    expect(screen.getByText('Plan v1 approved').getAttribute('data-tone')).toBe('merged');
+    expect(screen.getByText('Plan v1 approved').getAttribute('data-tone')).toBe('success');
     expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
   });
 

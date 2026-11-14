@@ -53,7 +53,12 @@ export const BoardTiles = ({ kpis, facts, now, filter, onFilter }: Props) => {
       <StatCard
         label="Spend"
         value={formatUsd(kpis.spendUsd)}
-        hint={`${countWordOf({ count: kpis.leadCount, noun: 'Lead' })}, ${countWordOf({ count: kpis.agentCount, noun: 'agent' })}`}
+        hint={[
+          kpis.leadCount === 0 ? '' : countWordOf({ count: kpis.leadCount, noun: 'Lead' }),
+          countWordOf({ count: kpis.agentCount, noun: 'agent' }),
+        ]
+          .filter((part) => part !== '')
+          .join(', ')}
         reservesDeltaRow
       />
       <StatCard
