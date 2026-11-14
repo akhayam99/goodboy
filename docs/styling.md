@@ -174,12 +174,13 @@ corners (`rounded-l-frame`), with a `frame-edge` border on three sides, 8px from
 the page container (the resize handle sits in that gap). The page container
 rounds all four corners whenever the rail is there. Closed, the container is the
 rail alone, 44px wide, and its aside is that plus the 8px gutter. The rail is
-the anchor: `DrawerColumn` draws one rail host (`data-drawer-edge`) as the
-last child of the container and hands it to the page through `DrawerEdgeContext`;
-`ShellToolRail` (and `SessionFrame` in a frame without the shell rail) portals
-the one rail tree into it. The host is the same element closed, pushing, over
-the page and while a handle drags, so the rail never moves; a panel opens
-inward, immediately left of it, with no gap, line or radius between them. The
+the dock's left edge: `DrawerColumn` draws one rail host (`data-drawer-edge`) as
+the first child of the container and hands it to the page through
+`DrawerEdgeContext`; `ShellToolRail` (and `SessionFrame` in a frame without the
+shell rail) portals the one rail tree into it. The host is the same element
+closed, pushing, over the page and while a handle drags; the dock opens to its
+right, toward the window edge, with no gap, line or radius between them, so the
+rail rides the dock's left edge as the aside eases. The
 aside is the panel width plus the 8px gutter plus the rail (`drawerAsideWidthOf`
 takes `railWidth`). The pane gives up that width and the centred column slides
 left to re-centre in what is left of it (see The content column). The drawer
@@ -195,7 +196,10 @@ stays in the flow, so the page does not grow; the rail sits above the scrim in
 the same container, so a tool can still switch or close the panel. The host is
 measured after every commit (and by a `ResizeObserver` after that), so the
 overlay panel plus the rail always fit in the sheet and the column never covers
-the panel's primary or its Close. Only the panel animates; the rail does not.
+the panel's primary or its Close. Over the page the container (rail and dock)
+slides in from the right edge as one piece (`animate-drawer-dock-in`) and back
+out (`animate-drawer-dock-out`), and `useSnapAfterFloat` lands the aside at its
+closed width with no width transition, so the rail stops where it started.
 `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) and `browser` (720, drag 480 to the room the session column leaves, so
 past 1000 on a wide window; it shrinks to the room on a narrower window while 720 fits); each tier

@@ -14,6 +14,7 @@ import { DrawerPanelCard } from './DrawerPanelCard';
 import { useDrawerPanel } from '../useDrawerPanel';
 import { useDrawerPreview } from '../useDrawerPreview';
 import { useEdgeHost } from '../useEdgeHost';
+import { useSnapAfterFloat } from '../useSnapAfterFloat';
 import { useDrawerTierWidths } from '../useDrawerTierWidths';
 import {
   drawerAsideWidthOf,
@@ -112,6 +113,8 @@ export const DrawerColumn = ({
   const isOverlayExit = dockPanel.isOverlayExit || detailPanel.isOverlayExit;
   const isAnyExiting = dockPanel.exit.isExiting || detailPanel.exit.isExiting;
   const isFloating = (isOverlay && (isDockShown || isDetailShown)) || isOverlayExit;
+  const isDockSliding = isOverlay && isDockShown;
+  useSnapAfterFloat({ ref: asideRef, isFloating });
   const hasRail = railWidth > 0;
   const dockPx = isDockShown || (dockPanel.isOverlayExit && !isParked) ? layout.dock.width : 0;
   const detailPx =
@@ -253,8 +256,15 @@ export const DrawerColumn = ({
                 'panel-on-rail relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l border-frame-edge bg-drawer',
                 isFloating && 'pointer-events-auto shadow-xl',
                 isContainerIdle && 'border-0',
+                isDockSliding && !dockPanel.exit.isResumed && 'motion-safe:animate-drawer-dock-in',
+                dockPanel.isOverlayExit && 'motion-safe:animate-drawer-dock-out',
               )}
             >
+              <div
+                ref={edge.setHost}
+                data-drawer-edge=""
+                className="relative z-10 flex shrink-0 bg-drawer empty:hidden"
+              />
               {isOpen || dockPanel.exit.isExiting ? (
                 <DrawerPanelCard
                   slot="drawer"
@@ -269,11 +279,6 @@ export const DrawerColumn = ({
                   pushWidthClass={PUSH_CONTENT}
                 />
               ) : null}
-              <div
-                ref={edge.setHost}
-                data-drawer-edge=""
-                className="relative z-10 flex shrink-0 bg-drawer empty:hidden"
-              />
             </div>
           </div>
         </aside>
