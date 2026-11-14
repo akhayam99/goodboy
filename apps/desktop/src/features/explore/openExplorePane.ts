@@ -13,5 +13,10 @@ export const openExplorePane = ({ state, sessionId, mountPath }: Params): void =
   if (mountPath !== null) {
     state.setExploreMountPath({ sessionId, mountPath });
   }
-  openPlaceRows({ sessionId, lens: 'files', rows: { [PLACE_ROWS.changesMode]: 'all' } });
+  openPlaceRows({
+    sessionId,
+    lens: 'files',
+    rows: { [PLACE_ROWS.changesMode]: 'all' },
+    ...(mountPath !== null && { mountPath }),
+  });
 };
