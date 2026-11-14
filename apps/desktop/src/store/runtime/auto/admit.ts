@@ -235,6 +235,7 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
           role: child.role,
           request: {
             ...child.request,
+            isStartConfirmed: false,
             capture:
               revise === null
                 ? { mode: 'new' }

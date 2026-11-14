@@ -520,6 +520,31 @@ describe('the push a pull request needs', () => {
   });
 });
 
+describe('a push of the same branch and commit on another mount', () => {
+  it('does not stand in for the push the pull request needs', async () => {
+    const fork: PickableMount = {
+      ...LEDGER_MOUNT,
+      id: 'mount-ledger-fork',
+      mountName: 'ledger-fork',
+      worktreePath: '/tmp/ledger-fork',
+    };
+    const world = await worldOf({ push: 'ask', pullRequest: 'allow' });
+    world.state.ports.setMounts([LEDGER_MOUNT, fork]);
+    await runChild({ world, child: pusher({}), text: done });
+    await answererOf(world)({ askId: (await onlyAskOf(world)).id, answer: 'allow' });
+    expect(world.state.ports.pushes).toHaveLength(1);
+
+    await runChild({ world, child: scribe({ mount: fork }), text: scribeText, index: 1 });
+
+    expect(world.state.ports.publications).toEqual([]);
+    const scribeRow = (await delegationsOf(world)).find((row) => row.role === 'scribe');
+    expect(pullRequestOfResult({ result: scribeRow?.result })).toMatchObject({
+      state: 'awaiting_push',
+      mountId: fork.id,
+    });
+  });
+});
+
 describe('a held pull request and the rows of now', () => {
   it('asks for the pull request when its row turned to Ask while it waited for the push', async () => {
     const world = await worldOf({ push: 'ask', pullRequest: 'allow' });

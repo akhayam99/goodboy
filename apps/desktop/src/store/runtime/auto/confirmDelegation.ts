@@ -88,6 +88,12 @@ export const confirmDelegation = async ({
                 ],
               },
             ]),
+        {
+          sql: `UPDATE auto_delegations
+            SET request_json = json_set(request_json, '$.isStartConfirmed', json('true'))
+            WHERE id = ? AND generation = ? AND state = 'awaiting_confirm'`,
+          params: [delegationId, delegation.generation],
+        },
         casAutoDelegationStateStatement({
           delegationId,
           generation: delegation.generation,

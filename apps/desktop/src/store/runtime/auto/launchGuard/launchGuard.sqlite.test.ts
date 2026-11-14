@@ -209,7 +209,9 @@ describe('the launch guard of an agent', () => {
     expect(rules?.isNetworkOff).toBe(false);
     expect(rules?.env).toEqual([]);
     expect(rules?.deniedTools).toContain('Edit(.github/workflows/**)');
-    expect(rules?.deniedTools).not.toContain('Bash(pnpm add:*)');
+    expect(rules?.deniedTools).toContain('Bash(pnpm add:*)');
+    expect(rules?.deniedTools).not.toContain('Edit(**/package.json)');
+    expect(rules?.deniedTools).toContain('Edit(**/pnpm-lock.yaml)');
     expect(turnOf({ world, index: 1 }).text).toContain('You may add nock@14.0.1');
     expect(await getAutoGrant({ db: world.state.world.db, grantId })).toMatchObject({
       state: 'used',

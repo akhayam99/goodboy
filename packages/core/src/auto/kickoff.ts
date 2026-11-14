@@ -72,7 +72,7 @@ export const launchGuardBriefOf = ({ guard, childAgentId }: GuardBriefParams): s
   }
   if (guard.allowedPackages.length > 0) {
     parts.push(
-      `**Allowed for this attempt** You may add ${guard.allowedPackages.join(', ')}. No other dependency.`,
+      `**Allowed for this attempt** You may add ${guard.allowedPackages.join(', ')}. No other dependency. The add and upgrade commands stay blocked: write that one entry in the manifest yourself, at that exact version, then run the install command without arguments so the lockfile follows.`,
     );
   }
   const kept = guardedPatternsOf({ guard });
