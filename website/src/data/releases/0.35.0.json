@@ -1,13 +1,8 @@
 {
   "version": "0.35.0",
-  "date": "2026-11-13",
+  "date": "2026-11-14",
   "summary": "Pull requests get an overview with faces and a rail, pages share one title band, the browser gains a console and width presets, and launch is faster.",
   "new": [
-    {
-      "title": "A pull request overview with a rail",
-      "area": "review",
-      "copy": "The overview is a reading column and a rail."
-    },
     {
       "title": "Images and video in pull request bodies",
       "area": "review",

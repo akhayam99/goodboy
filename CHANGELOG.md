@@ -20,13 +20,6 @@ This version updates your data in one direction. To go back to 0.34, restore the
 
 ### New
 
-#### A pull request overview with a rail
-<!-- gb area=review image=pr-overview pr=2224 -->
-
-The overview is a reading column and a rail. The column holds the merge verdict, the description in a card and a timeline folded into groups, each person with a face. The rail lists Reviewers, Checks, People and Linked issues.
-
-GitLab and Bitbucket merge requests get the same rail and the same folded timeline.
-
 #### Images and video in pull request bodies
 <!-- gb area=review pr=2224 -->
 
@@ -48,6 +41,13 @@ Develop holds Desktop, Tablet and Phone. A preset shows the page at that width a
 `⌘⇧S`, or Send to the agent under More, puts the text you see on the page on the message box as a chip. Nothing goes to the agent until you send the message.
 
 ### Improved
+
+#### A pull request overview with a rail
+<!-- gb area=review image=pr-overview pr=2224 -->
+
+The overview is a reading column and a rail. The column holds the merge verdict, the description in a card and a timeline folded into groups, each person with a face. The rail lists Reviewers, Checks, People and Linked issues.
+
+GitLab and Bitbucket merge requests get the same rail and the same folded timeline.
 
 #### The Terminal page drops its title band
 <!-- gb area=sessions image=terminal-page pr=2224 -->
