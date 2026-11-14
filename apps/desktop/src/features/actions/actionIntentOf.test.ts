@@ -14,6 +14,10 @@ describe('actionIntentOf', () => {
     ['Review', 'primary'],
     ['Run', 'primary'],
     ['Copy link', 'neutral'],
+    ['stop', 'destructive'],
+    ['artifact.stop', 'destructive'],
+    ['Stop Auto', 'destructive'],
+    ['filters.reset', 'neutral'],
   ] as const)('maps %s to %s', (verb, intent) => {
     expect(actionIntentOf({ verb })).toBe(intent);
   });
@@ -23,6 +27,15 @@ describe('actionButtonLookOf', () => {
   it('never fills a caution or destructive verb', () => {
     for (const verb of ['Rebase', 'Remove worktree', 'Discard changes']) {
       expect(actionButtonLookOf({ verb, variant: 'primary' }).variant).toBe('secondary');
+    }
+  });
+
+  it('gives Stop one look everywhere: destructive and quiet', () => {
+    for (const variant of ['primary', 'secondary', 'ghost', 'quiet'] as const) {
+      expect(actionButtonLookOf({ verb: 'stop', variant })).toEqual({
+        intent: 'destructive',
+        variant: 'quiet',
+      });
     }
   });
 

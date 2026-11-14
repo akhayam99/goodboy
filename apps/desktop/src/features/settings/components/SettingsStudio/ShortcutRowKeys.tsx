@@ -3,6 +3,7 @@ import { shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import { isRebindable } from '../../../../shared/keyboard/overrides/isRebindable';
 import type { ShortcutRow } from './shortcutRows';
 import type { ShortcutRecorder } from './useShortcutRecorder';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 
 type Props = {
   readonly row: ShortcutRow;
@@ -32,7 +33,7 @@ export const ShortcutRowKeys = ({ row, isOverridden, recorder }: Props) => {
     <span className="flex shrink-0 items-center gap-2">
       {isOverridden ? (
         <Button
-          variant="quiet"
+          {...actionButtonLookOf({ verb: 'shortcut.reset', variant: 'quiet' })}
           size="xs"
           aria-label={`Reset keys for ${row.label}`}
           isBusy={recorder.isSaving}

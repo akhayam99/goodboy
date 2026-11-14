@@ -2,6 +2,7 @@ import { Button } from '@goodboy/ui';
 import type { PublishAct } from '../publishPort';
 import { PublishResultLine } from './PublishResultLine';
 import type { PublishRow } from './publishRowsOf';
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 
 type ActParams = {
   readonly act: PublishAct;
@@ -50,6 +51,7 @@ export const PublishRunRow = ({ rows, busyIds, onAct }: Props) => {
           </Button>
           <Button
             size="sm"
+            {...actionButtonLookOf({ verb: 'force push', variant: 'primary' })}
             isBusy={isAskBusy}
             busyLabel="Pushing"
             onClick={() => onAct({ act: 'confirm', delegationIds: waitingIds })}

@@ -156,7 +156,7 @@ export const ConfirmPopover = ({
       hasOpened.current = true;
       focusFirst({
         root: popupRef.current,
-        selector: role === 'danger' ? CANCEL_SELECTOR : ACTION_SELECTOR,
+        selector: role === 'danger' || role === 'caution' ? CANCEL_SELECTOR : ACTION_SELECTOR,
       });
       return;
     }

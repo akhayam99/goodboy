@@ -5,8 +5,11 @@ import { Button, ConfirmPopover, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 
 import { useAppStore } from '../../../../store';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { BRANCH_PICKER_MAX_WIDTH, branchPickerOption } from '../../../worktree/branchPicker';
 import { listBranchNames } from '../../../worktree/worktree';
+
+const REBASE_LOOK = actionButtonLookOf({ verb: 'diff.rebase', variant: 'secondary' });
 
 export type RebaseRequest = {
   readonly ontoBranch: string | null;
@@ -67,7 +70,7 @@ export const HistoryRebaseHead = ({
     <span className="flex shrink-0 items-center gap-1">
       {isRebaseShown ? (
         <ConfirmPopover
-          role="primary"
+          role="caution"
           icon={<ArrowUp size={ICON_SIZE.row} aria-hidden />}
           title={`Rebase onto ${target}?`}
           description="Your commits replay on top of it."
@@ -77,7 +80,8 @@ export const HistoryRebaseHead = ({
           trigger={({ arm }) => (
             <Button
               size="sm"
-              variant="secondary"
+              variant={REBASE_LOOK.variant}
+              intent={REBASE_LOOK.intent}
               data-base-rebase
               disabled={!isInteractive}
               onClick={arm}

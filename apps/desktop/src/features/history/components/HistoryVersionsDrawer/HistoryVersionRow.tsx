@@ -4,6 +4,7 @@ import { Button, ConfirmPopover, Disclosure, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { historyVersionWhy } from '../../historyVersionWhy';
 import { versionCommitDiff } from '../../versionCommitDiff';
 import type { HistoryVersion } from '../../hooks/useHistoryVersions';
@@ -71,7 +72,7 @@ export const HistoryVersionRow = ({ version, nowSubjects, nowMs, hasUpstream, on
       ) : (
         <div className="flex">
           <ConfirmPopover
-            role="danger"
+            role="caution"
             icon={<CONCEPT_ICONS.backup size={ICON_SIZE.row} aria-hidden />}
             title={`Reset the branch to the version from ${formatDayMonth({ at: backup.createdAt * 1000 })}?`}
             description="Your branch goes back to that state."
@@ -84,7 +85,11 @@ export const HistoryVersionRow = ({ version, nowSubjects, nowMs, hasUpstream, on
             confirmLabel="Reset branch"
             onConfirm={onReset}
             trigger={({ arm }) => (
-              <Button size="sm" variant="danger" onClick={arm}>
+              <Button
+                size="sm"
+                {...actionButtonLookOf({ verb: 'reset', variant: 'secondary' })}
+                onClick={arm}
+              >
                 Reset branch to this version
               </Button>
             )}

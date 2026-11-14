@@ -10,6 +10,7 @@ import { ensure, worktreeStatusKey } from '../../../../../store/runtime/worktree
 
 import { rebaseStoppedBody } from './rebaseStoppedBody';
 import { NAMES } from '../../../../../shared/utils/names';
+import { actionButtonLookOf } from '../../../../actions/actionButtonLookOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -90,7 +91,11 @@ export const RebaseStoppedNotice = ({
             onConfirm={abort}
             onCancel={() => setIsConfirming(false)}
             trigger={() => (
-              <Button size="sm" variant="ghost" onClick={() => setIsConfirming(true)}>
+              <Button
+                size="sm"
+                {...actionButtonLookOf({ verb: 'abort rebase', variant: 'ghost' })}
+                onClick={() => setIsConfirming(true)}
+              >
                 Abort rebase
               </Button>
             )}
