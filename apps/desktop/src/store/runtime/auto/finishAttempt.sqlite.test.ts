@@ -282,7 +282,10 @@ describe('closing the work of one child', () => {
       mountId: 'mount-ledger-core',
       agentId: turn.childAgentId,
     });
-    expect(world.state.ports.publications[0]?.assistantText).toContain('<<pr-title>>');
+    expect(world.state.ports.publications[0]?.output).toMatchObject({
+      prTitle: 'Add the ledger export',
+      prBody: 'Exports the ledger as CSV.',
+    });
     expect((await delegationOf(world)).outcome).toBe('completed');
     expect(world.state.ports.autoTurns[1]?.text).toContain(
       'Pull request #421 is open: https://github.com/harborline/ledger-core/pull/421',

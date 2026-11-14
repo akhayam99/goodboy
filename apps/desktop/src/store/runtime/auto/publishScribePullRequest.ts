@@ -1,4 +1,3 @@
-import { extractScribeText } from '@goodboy/core/context';
 import { brandId, type MountId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import { scribeKeyOf } from '../../slices/scribe/scribeKeyOf';
@@ -18,7 +17,7 @@ export const publishScribePullRequest = async ({
   getState,
   params,
 }: PublishScribePullRequestParams): Promise<ScribePublication> => {
-  const output = extractScribeText(params.assistantText);
+  const { output } = params;
   if (output.prTitle === null && output.prBody === null) {
     return { kind: 'failed', message: SCRIBE_NO_TEXT };
   }

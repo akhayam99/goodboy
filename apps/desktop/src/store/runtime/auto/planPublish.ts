@@ -1,7 +1,9 @@
 import {
   CHECKS_RED_HOLD,
+  isPublishAskedOf,
   publishGateOf,
   type DelegatePublish,
+  type LeadPermissionValue,
   type RemoteRead,
   type ResultChecksRun,
   type ResultPublish,
@@ -23,6 +25,7 @@ export type PlanPublishParams = Readonly<{
   checksRun: ResultChecksRun | null;
   endHead: string | null;
   tries: number;
+  push: LeadPermissionValue<'push'>;
 }>;
 
 const CONTENT_CHANGED =
@@ -112,7 +115,9 @@ export const planPublish = async (params: PlanPublishParams): Promise<ResultPubl
     message: null,
   };
   if (wanted.mode === 'push') {
-    return { ...record, state: 'pushing' };
+    return isPublishAskedOf({ mode: wanted.mode, push: params.push })
+      ? record
+      : { ...record, state: 'pushing' };
   }
   if (remote === null || remote.kind === 'unknown') {
     return held({

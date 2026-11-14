@@ -143,6 +143,16 @@ The Workspace step of setup clones through `repo_clone.rs`, the one clone path i
 5. Fill its column of the table above with the vendor page each field comes from.
 6. Add its store step: a `refreshSession<Host>` that refreshes one mount through `refreshMountRequest`, one arm in `refreshMountRequests` (`store/slices/review-source/`), one entry reader in `mountFetchFactsOf`, one branch in `requestHostOfRemote` and, for review threads, one arm in `refreshMountThreads` that lists the comments through `refreshSourceThreads`. The sweep, the stage reason and the board signal read those, so nothing else in the store names the host.
 
+## Publish gates
+
+A Lead's Push a branch and Open or update a pull request rows stop the action
+before Goodboy calls any port, so they hold the same way on a GitHub, a GitLab
+and a Bitbucket mount: the push waits before the `pushBranch` port (a git push
+of the checked commit) and the pull request before the
+`publishScribePullRequest` port. What each port does on a host once you answer
+is unchanged. No host carries its own gate. `docs/auto.md` (Publish gates) holds
+the rules; `publishGates.sqlite.test.ts` runs both gates on one mount per host.
+
 ## Branch push counts
 
 The branch header counts commits ahead of origin through `branchPushFactsOf`,

@@ -1,4 +1,4 @@
-import { publishOfResult } from '@goodboy/core/auto';
+import { publishOfResult, pullRequestOfResult } from '@goodboy/core/auto';
 import type { AutoGrantKind } from '@goodboy/db';
 import type { AutoDelegationId, AutoTreeId } from '@goodboy/types';
 import type { AutoTreeView } from '../../../slices/auto-view/state';
@@ -56,8 +56,16 @@ export const leadAsksOf = ({ view }: Params): ReadonlyArray<LeadAsk> => {
       },
     ];
   });
+  const heldGrantIds = new Set(
+    view.delegations
+      .filter(
+        (delegation) => delegation.state === 'settled' && delegation.generation === tree.generation,
+      )
+      .map((delegation) => pullRequestOfResult({ result: delegation.result })?.grantId),
+  );
   const fromGrants = (view.grantAsks ?? [])
     .filter((grant) => grant.state === 'asked' && grant.isCurrent)
+    .filter((grant) => grant.kind !== 'pull_request' || heldGrantIds.has(grant.id))
     .map((grant): LeadAsk => ({
       id: leadAskIdOf({ ref: { kind: 'grant', grantId: grant.id } }),
       kind: grant.kind,

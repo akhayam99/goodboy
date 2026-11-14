@@ -257,6 +257,7 @@ export {
   PUBLISH_MAX_TRIES,
   canPutBackPublish,
   canRetryPublish,
+  isPublishAskedOf,
   parseDelegatePublish,
   publishGateOf,
   publishOfRequest,
@@ -268,6 +269,13 @@ export {
   type PublishState,
   type ResultPublish,
 } from './publish';
+
+export {
+  pullRequestAskTextOf,
+  pullRequestOfResult,
+  pullRequestTextVersionOf,
+  type ResultPullRequest,
+} from './pullRequestAsk';
 
 export { remoteVerdictOf, type RemoteRead, type RemoteVerdictParams } from './remoteWatch';
 
