@@ -77,7 +77,7 @@ export type WorktreeSceneConfig = {
   readonly gitState?: 'level' | 'behind' | 'rebasing';
   readonly hasMoreProjects?: boolean;
   readonly hasFixableNote?: boolean;
-  readonly fileRail?: 'docked' | 'folded' | 'overlay';
+  readonly fileRail?: 'docked' | 'folded' | 'narrow';
   readonly filesMode?: 'all' | 'reading';
 };
 
@@ -206,14 +206,22 @@ const openReadme = (): void => {
   }, OPEN_ROWS_MS);
 };
 
-const openFiles = (): void => {
+const OPEN_FILES_TRIES = 40;
+
+type TryParams = {
+  readonly left: number;
+};
+
+const openFiles = ({ left }: TryParams = { left: OPEN_FILES_TRIES }): void => {
   window.setTimeout(() => {
-    const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
-    const files = [...(toolbar?.querySelectorAll<HTMLElement>('button') ?? [])].find((button) =>
-      (button.textContent ?? '').startsWith('Files'),
-    );
-    files?.click();
-  }, 900);
+    const show = document.querySelector<HTMLElement>('button[aria-label="Show files"]');
+    if (show !== null) {
+      show.click();
+    }
+    if (left > 0) {
+      openFiles({ left: left - 1 });
+    }
+  }, 300);
 };
 
 type Props = {
@@ -252,7 +260,7 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
           : sessionPlace({ sessionId: SESSION_ID }),
     });
     setIsReady(true);
-    if (config.fileRail === 'overlay') {
+    if (config.fileRail === 'narrow') {
       openFiles();
     }
     if (config.filesMode === 'reading') {
@@ -277,7 +285,7 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
       </div>
       <main
         className="flex min-w-0 flex-1 flex-col"
-        style={config.fileRail === 'overlay' ? { maxWidth: NARROW_PAGE_PX } : undefined}
+        style={config.fileRail === 'narrow' ? { maxWidth: NARROW_PAGE_PX } : undefined}
       >
         <SessionFrame session={session ?? SESSION}>
           {config.level === 'worktree' ? (

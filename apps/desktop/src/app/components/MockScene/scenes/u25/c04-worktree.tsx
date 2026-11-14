@@ -31,7 +31,7 @@ const FILES_NARROW: WorktreeSceneConfig = {
   variant: 'github',
   level: 'worktree',
   tab: 'files',
-  fileRail: 'overlay',
+  fileRail: 'narrow',
 };
 const FILES_ALL: WorktreeSceneConfig = {
   variant: 'github',

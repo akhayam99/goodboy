@@ -56,6 +56,7 @@ type Props = {
   readonly largeChange?: boolean;
   readonly empty?: 'clean' | 'editsOnly';
   readonly isUnpushed?: boolean;
+  readonly patch?: string;
 };
 
 export const BrandDiffScene = ({
@@ -63,6 +64,7 @@ export const BrandDiffScene = ({
   largeChange = false,
   empty = undefined,
   isUnpushed = false,
+  patch,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [isStaged, setIsStaged] = useState(false);
@@ -93,7 +95,9 @@ export const BrandDiffScene = ({
   }
 
   const stage =
-    empty !== undefined ? (
+    patch !== undefined ? (
+      <DiffStage handlers={handlersFor(patch)} centerNote={false} />
+    ) : empty !== undefined ? (
       <DiffStage
         handlers={empty === 'clean' ? CLEAN_HANDLERS : EDITS_ONLY_HANDLERS}
         centerNote={false}

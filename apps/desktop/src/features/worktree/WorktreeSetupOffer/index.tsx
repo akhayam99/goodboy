@@ -22,7 +22,12 @@ type Props = {
   readonly worktreePath: string;
   readonly projectName: string;
   readonly branch: string;
+  readonly layout?: SetupOfferLayout;
 };
+
+export type SetupOfferLayout = 'card' | 'row';
+
+const ROW_CLASS = 'py-2';
 
 type SaveParams = {
   readonly next: SetupOffer;
@@ -62,7 +67,9 @@ export const WorktreeSetupOffer = ({
   worktreePath,
   projectName,
   branch,
+  layout = 'card',
 }: Props) => {
+  const isRow = layout === 'row';
   const key = setupOfferKey({ mountId });
   const scriptId = `setup:${mountId}`;
   const raw = useAppStore((state) => state.settings[key]);
@@ -128,7 +135,15 @@ export const WorktreeSetupOffer = ({
   const title = `Worktree ${projectName}/${branch} is ready.`;
 
   if (record?.status === 'pending' && command !== null) {
-    return <Notice tone="info" placement="inline" role="status" title={`Running ${command}…`} />;
+    return (
+      <Notice
+        tone="info"
+        placement="inline"
+        role="status"
+        title={`Running ${command}…`}
+        className={isRow ? ROW_CLASS : undefined}
+      />
+    );
   }
   if (offer.state === 'done') {
     return null;
@@ -142,6 +157,7 @@ export const WorktreeSetupOffer = ({
         role="alert"
         title={`Setup failed: ${command}`}
         body={reason === '' ? undefined : reason}
+        className={isRow ? ROW_CLASS : undefined}
         actions={
           <>
             <Button
@@ -163,13 +179,15 @@ export const WorktreeSetupOffer = ({
   }
   const carried = carriedLine({ offer });
   const proposed = command === null ? '' : `Setup proposed: ${command}.`;
+  const detail = [carried, proposed].filter((part) => part !== '').join(' ');
   return (
     <Notice
       tone="info"
       placement="inline"
       role="status"
-      title={title}
-      body={[carried, proposed].filter((part) => part !== '').join(' ')}
+      title={isRow ? [title, detail].filter((part) => part !== '').join(' ') : title}
+      body={isRow ? undefined : detail}
+      className={isRow ? ROW_CLASS : undefined}
       actions={
         <>
           {command === null ? null : (

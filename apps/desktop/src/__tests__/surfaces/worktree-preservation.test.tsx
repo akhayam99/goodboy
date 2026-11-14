@@ -184,14 +184,15 @@ describe('Branch page capabilities from the branch tree', () => {
     expect(screen.getByRole('region', { name: 'Reviewers' })).toBeDefined();
   });
 
-  it('Files keeps the tree with its filter in the file rail on the right of the diff', async () => {
+  it('Files keeps the tree with its filter in the file rail on the left of the diff', async () => {
     await mount('c04-worktree-files');
 
     const rail = within(screen.getByRole('complementary', { name: 'Files' }));
     expect(rail.getByRole('navigation', { name: 'Changed files' })).toBeDefined();
     expect(rail.getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
     expect(rail.getByRole('button', { name: 'Filter and group files' })).toBeDefined();
-    expect(rail.getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
+    expect(rail.queryByRole('button', { name: /^Next unviewed/ })).toBeNull();
+    screen.getByRole('button', { name: /^Next unviewed/ });
     expect(document.querySelector('[data-level-layer="session"]')).toBeNull();
   });
 

@@ -88,9 +88,16 @@ const paneHeading = (): string | null =>
 
 const openBranchPage = (): Promise<void> => openCrumb(/Branch/);
 
+type TabParams = {
+  readonly name: RegExp;
+};
+
+const widthOfTab = ({ name }: TabParams): string =>
+  name.source === '^Changes' ? 'full' : 'column';
+
 export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'branch column: no trail band, the header and body stay on the column from tab to tab',
+    name: 'branch column: no trail band, the header and body stay on the column from tab to tab, Changes on the full width',
     covers: ['navigate', 'branch:column'],
     open: async (ctx) => {
       await openBranchPage();
@@ -98,12 +105,12 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
       for (const name of [/^Overview/, /^Comments/, /^Changes/, /^Commits/, /^Checks/]) {
         await visitTab(name);
         expect(trailBands()).toBe(0);
-        expect(headerColumn()).toBe('column');
+        expect(headerColumn()).toBe(widthOfTab({ name }));
       }
       for (const name of [/^Overview/, /^Comments/, /^Changes/, /^Commits/]) {
         await visitTab(name);
         expect(bodyColumns().length).toBeGreaterThan(0);
-        expect(bodyColumns().every((width) => width === 'column')).toBe(true);
+        expect(bodyColumns().every((width) => width === widthOfTab({ name }))).toBe(true);
       }
     },
     lands: async (ctx) => {
