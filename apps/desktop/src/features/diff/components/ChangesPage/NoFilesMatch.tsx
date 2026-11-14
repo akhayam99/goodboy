@@ -1,4 +1,4 @@
-import { Button, EmptyState, PageColumn } from '@goodboy/ui';
+import { Button, EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -6,7 +6,7 @@ type Props = {
 };
 
 export const NoFilesMatch = ({ onClear }: Props) => (
-  <PageColumn>
+  <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-12">
     <EmptyState
       size="section"
       tone={CONCEPT_TONE.diff}
@@ -19,5 +19,5 @@ export const NoFilesMatch = ({ onClear }: Props) => (
         </Button>
       }
     />
-  </PageColumn>
+  </div>
 );

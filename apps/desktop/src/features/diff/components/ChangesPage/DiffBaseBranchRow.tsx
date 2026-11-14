@@ -11,11 +11,15 @@ type Props = {
   readonly onDone: () => void;
 };
 
+type CommitParams = {
+  readonly candidate: string | null;
+};
+
 export const DiffBaseBranchRow = ({ projectId, repoPath, value, onDone }: Props) => {
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
   const [error, setError] = useState<string | null>(null);
 
-  const commit = async (candidate: string | null) => {
+  const commit = async ({ candidate }: CommitParams) => {
     const trimmed = candidate?.trim() ?? '';
     const next = trimmed === '' ? null : trimmed;
     if (next === value) {
@@ -35,7 +39,11 @@ export const DiffBaseBranchRow = ({ projectId, repoPath, value, onDone }: Props)
     <div className="flex min-w-0 flex-col gap-1">
       <div className="flex min-w-0 items-center gap-3 text-meta">
         <span className="shrink-0 text-foreground">Compare with</span>
-        <BaseBranchSelect repoPath={repoPath} value={value} onCommit={commit} />
+        <BaseBranchSelect
+          repoPath={repoPath}
+          value={value}
+          onCommit={(candidate) => commit({ candidate })}
+        />
         <Button size="sm" variant="secondary" onClick={onDone}>
           Done
         </Button>

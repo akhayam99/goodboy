@@ -3,7 +3,7 @@ import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBrowserTabCount';
 import { selectBrowserTabCountState } from '../../../../store/slices/browser/selectBrowserTabCountState';
-import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
+import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
 import { selectSlotBack } from '../../../../store/slices/drawer/selectSlotBack';
 import { toggleBrowserDock } from '../../../browser/toggleBrowserDock';
 import { runningTerminalCount } from '../../../terminal/runningTerminalCount';
@@ -42,7 +42,7 @@ const toggleWorkspaceTool = ({ tool }: ToggleParams): void => {
 };
 
 export const ToolRailFrame = ({ terminalSignal }: Props) => {
-  const dockKind = useAppStore((state) => selectDrawerPanel(state)?.kind ?? null);
+  const dockKind = useAppStore((state) => selectDockDrawer({ state })?.kind ?? null);
   const pageKind = useAppStore((state) => state.appStudio?.kind ?? null);
   const waitingKind = useAppStore((state) => selectSlotBack({ state })?.kind ?? null);
   const runningCount = useAppStore((state) => runningTerminalCount({ tabs: state.terminalTabs }));

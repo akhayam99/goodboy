@@ -12,8 +12,8 @@ import {
   RIGHT_DRAWER_MAX,
   canDrawerPush,
   drawerAsideWidthOf,
-  drawerLayoutOf,
   mainWidthOf,
+  panelPairLayoutOf,
   type DrawerPlacement,
   type DrawerSizing,
 } from '@goodboy/ui';
@@ -211,21 +211,21 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
   it.each(CASES)(
     '$kind ($sizing, $placement) at $windowPx with a $savedPx saved width over a $columnWidth column',
     ({ sizing, placement, columnWidth, savedPx }) => {
-      const { mode, width: drawerWidthPx } = drawerLayoutOf({
+      const pair = panelPairLayoutOf({
         main: columnWidth,
-        sizing,
-        savedWidth: savedPx,
         placement,
+        dock: { sizing, savedWidth: savedPx, isOpen: true },
+        detail: { sizing: 'side', savedWidth: savedPx, isOpen: false },
       });
+      const mode = pair.mode;
+      const drawerWidthPx = pair.dock.width;
       const asidePx = drawerAsideWidthOf({ width: drawerWidthPx, mode });
       const cardRight = columnWidth - asidePx + DRAWER_INSET + drawerWidthPx;
 
       expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {
         expect(cardRight).toBe(columnWidth);
-        expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx + DRAWER_INSET).toBe(
-          columnWidth,
-        );
+        expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx).toBe(columnWidth);
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })).toBe(true);
         return;
       }

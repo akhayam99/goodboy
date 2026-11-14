@@ -23,6 +23,7 @@ import { TerminalScriptsMenu } from '../TerminalStudio/TerminalScriptsMenu';
 import { TerminalStripActions } from '../TerminalStudio/TerminalStripActions';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
 import { TerminalScopePicker } from './TerminalScopePicker';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -165,7 +166,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
         </span>
       }
       page={{
-        label: 'Open as page',
+        label: NAMES.openFullPage,
         onOpen: () => openTerminalOnPage({ terminalId: selected.id, sessionId }),
       }}
       onClose={onClose}

@@ -226,7 +226,7 @@ export const DrawerFrame = ({
       ref={sectionRef}
       aria-label={title}
       tabIndex={-1}
-      className="flex h-full min-h-0 min-w-0 flex-col bg-subtle outline-none motion-safe:animate-nav-step-in"
+      className="flex h-full min-h-0 min-w-0 flex-col bg-panel-surface outline-none motion-safe:animate-nav-step-in"
     >
       {hasRegion ? (
         <DrawerRegion

@@ -90,7 +90,7 @@ in `studioMeta.ts`).
   (`ChatHeader`). Exactly one `h1` per studio scene.
 - **One Terminal studio for every terminal.** Terminal lives in the dock (see
   the session terminal below); its page is the large size of the same object,
-  opened from the dock's `Open as page` (`openTerminalOnPage`, a push, so ⌘[
+  opened from the dock's `Open full page` (`openTerminalOnPage`, a push, so ⌘[
   brings the dock back on the same tab) and left by `Dock` in its header
   (`dockTerminalPage`). With no terminal yet, `Dock` stays and opens one in the
   dock (`dockEmptyTerminalPage`), as the empty Browser page does. The page is `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`TerminalStudio`:
@@ -142,7 +142,7 @@ presses Enter; the session must be live, so an archived session hides the verb. 
 the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
   terminal`and`⌘⌥T` (`session.terminal`, toggles the dock on the active worktree) all go
 through it. The header holds the project name, the short worktree chip (it truncates before the
-buttons), two icon buttons (`Open as page`and`Close`)
+buttons), two icon buttons (`Open full page`and`Close`)
 and the same tab strip as the page: drawer and page show the same tabs of the same
 worktree. The head repeats no name: the folder picker stands where the title would be. Closing
 the drawer never kills the shell: the tabs stay in the Terminal list under the
@@ -252,7 +252,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   for the rail, like Notifications with its filter button, drops the strip
   while the pane is too narrow to dock, `canUnfold`), and `useStudioRailFold` remembers the choice per surface
   (`goodboy:studio-rail-folded:<studio>:v1`). Chat, Terminal, the Guide, the
-  changelog, Settings and Notifications fold this way.
+  changelog, Settings, Notifications and the file list of Changes fold this way.
   **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
   on: each foldable column registers with `useInnerColumn` while its page
   shows (the session pages while no studio covers it, a page rail through

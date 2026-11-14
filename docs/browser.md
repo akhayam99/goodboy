@@ -343,7 +343,7 @@ icons while it is open. Search or Run opens it too, and Go › Show or Hide Brow
 shows or hides it like the rail button. On a session
 page it shows that session's tabs; anywhere else it shows the session the
 Browser page would pick (`WorkspaceBrowserDock`, drawer `sessionId: null`), or
-says there are no tabs yet, with no Open as page, since that page would be
+says there are no tabs yet, with no Open full page, since that page would be
 empty too. It stays open across every move, beside any page
 but the Browser page, and closes when the session it shows is archived or
 deleted (`slotAfterSessionGone`). Pressing the tool again, the X or Esc on the pane closes
@@ -421,7 +421,7 @@ it; Esc inside the page goes to the page.
   (`needle-too-long`) and the field stops at 200. An asleep tab has no view to
   search and reads the failure line.
 - **More** (`BrowserMoreMenu`, rows in `browserMoreRows.ts`) holds Open in your
-  browser, Open as page (see Moves, absent when the dock has no page to open),
+  browser, Open full page (see Moves, absent when the dock has no page to open),
   Copy address, Duplicate (`model.duplicate` opens the shown address in a new
   tab of the session), Width (absent when no tab is shown, see Width
   presets), Inspect in Safari (macOS only, see Inspect in Safari)
@@ -563,7 +563,7 @@ it; Esc inside the page goes to the page.
 
 ## The page
 
-Open as page in the dock opens the Browser page, a studio kind of its own
+Open full page in the dock opens the Browser page, a studio kind of its own
 (`{ kind: 'browser', sessionId, tabId }`), like the Terminal page. While it is
 open the Browser button on the right rail is selected and does nothing.
 
@@ -609,7 +609,7 @@ new bounds or a new window. A form half typed and the scroll stay.
 - **Tab strip overflow**: a tab chip shrinks from 12rem to a 6rem minimum
   (`BrowserTabChip`), then the strip scrolls sideways with fade edges
   (`BrowserTabStrip`); the address row never wraps.
-- **Open as page** as a button in the pane's address row and in its More menu, shown with or without a tab,
+- **Open full page** (`NAMES.openFullPage`, the one label the Terminal dock uses too) as a button in the pane's address row and in its More menu, shown with or without a tab,
   pushes the Browser page
   on the session and the shown tab
   (`promoteBrowserTab`), so ⌘[ brings the dock back. The page's placement takes
@@ -1078,7 +1078,7 @@ words (`features/browser/browserFailureText.ts`).
   session written while the read ran. `BrowserStudio/index.test.tsx` pins the grouping, a tab
   of another session, the reload back to the named tab, a route with no
   session, the overlay hide, that only the workspace's sessions load and
-  the count matches the rows, and the moves: Open as page and Dock
+  the count matches the rows, and the moves: Open full page and Dock
   keep one live id with no open, navigate or reload, a failed place
   on the page shows its words and leaves the view to the pane, and a late page
   show is hidden again; `createNativePlacement.test.ts` pins the owner

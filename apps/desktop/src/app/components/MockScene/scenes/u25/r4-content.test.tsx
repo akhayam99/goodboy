@@ -126,7 +126,7 @@ describe('the r4 content scenes', () => {
   it('r4-questions-drawer titles the drawer with the asker and age, the card with the question', async () => {
     await mount('r4-questions-drawer');
 
-    const drawerTitle = document.querySelector('[data-container="drawer"] h2')?.textContent ?? '';
+    const drawerTitle = document.querySelector('[data-container="detail"] h2')?.textContent ?? '';
     const card = screen.getByRole('article');
     expect(drawerTitle).toMatch(/^\S.* asks$/);
     expect(card.textContent ?? '').not.toContain(drawerTitle);
@@ -206,7 +206,7 @@ describe('the r4 content scenes', () => {
     });
 
     expect(screen.queryByRole('button', { name: /^Open the agent: / })).toBeNull();
-    const drawerTitle = document.querySelector('[data-container="drawer"] h2')?.textContent ?? '';
+    const drawerTitle = document.querySelector('[data-container="detail"] h2')?.textContent ?? '';
     expect(drawerTitle).toBe('Implementer asks');
     const row = document.querySelector<HTMLElement>('[data-list-grid-row][aria-current="true"]');
     if (row === null) {

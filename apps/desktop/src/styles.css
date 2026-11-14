@@ -847,6 +847,27 @@ body {
   }
 }
 
+@utility sticky-surface-panel {
+  background-color: color-mix(in oklab, var(--panel-surface, var(--color-subtle)) 90%, transparent);
+  backdrop-filter: blur(3px) saturate(1.2);
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--panel-surface, var(--color-subtle));
+    backdrop-filter: none;
+  }
+}
+
+@utility bg-panel-surface {
+  background-color: var(--panel-surface, var(--color-subtle));
+}
+
+@utility panel-on-page {
+  --panel-surface: var(--color-background);
+}
+
+@utility panel-on-rail {
+  --panel-surface: var(--color-drawer);
+}
+
 @utility bg-selected {
   background-image: linear-gradient(var(--color-overlay-selected), var(--color-overlay-selected));
 }

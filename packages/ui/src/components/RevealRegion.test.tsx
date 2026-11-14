@@ -213,7 +213,7 @@ describe('DrawerFrame header reveal', () => {
     const close = screen.getByRole('button', { name: 'Close' });
     expect(headerState()).toBe('hidden');
     expect(pinned.contains(close)).toBe(true);
-    expect(pinned.className).toContain('sticky-surface-subtle');
+    expect(pinned.className).toContain('sticky-surface-panel');
   });
 
   it('draws no reveal region when the drawer has nothing to step aside', () => {

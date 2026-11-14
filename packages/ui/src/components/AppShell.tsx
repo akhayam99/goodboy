@@ -18,6 +18,9 @@ export type AppShellProps = {
   readonly main: ReactNode;
   readonly drawer?: ReactNode;
   readonly drawerSizing?: DrawerSizing;
+  readonly detail?: ReactNode;
+  readonly detailSizing?: DrawerSizing;
+  readonly isDetailParked?: boolean;
   readonly drawerPlacement?: DrawerPlacement;
   readonly studio?: ReactNode;
   readonly rightRail?: ReactNode;
@@ -98,6 +101,9 @@ export const AppShell = ({
   main,
   drawer,
   drawerSizing,
+  detail,
+  detailSizing,
+  isDetailParked,
   drawerPlacement,
   studio,
   rightRail,
@@ -198,6 +204,9 @@ export const AppShell = ({
             }
             drawer={drawer ?? null}
             sizing={drawerSizing}
+            detail={detail ?? null}
+            detailSizing={detailSizing}
+            isDetailParked={isDetailParked ?? isStudioShown}
             placement={drawerPlacement}
             isParked={isDrawerParked ?? isStudioShown}
             frame="sheet"

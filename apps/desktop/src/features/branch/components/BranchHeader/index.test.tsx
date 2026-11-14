@@ -256,6 +256,7 @@ const Harness = ({
         sessionId={SESSION_ID}
         controls={controls}
         isPushNext={!isStepHidden && controls.primary?.actionId === 'diff.push'}
+        isSetupOfferShown
       />
     </>
   );

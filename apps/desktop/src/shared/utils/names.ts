@@ -42,6 +42,7 @@ export const NAMES = {
   markAsRead: 'Mark as read',
   openTranscript: 'Open transcript',
   openAgent: 'Open agent',
+  openFullPage: 'Open full page',
   undoReply: 'Undo changes from this reply',
   bringItBack: 'Bring it back',
   waitsForThisReply: 'Waits for this reply',

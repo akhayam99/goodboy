@@ -346,6 +346,11 @@ c13-workflows-history-filter
 c2-next-step
 card-rails
 changelog
+changes-3-files
+changes-3-files-dark
+changes-3-files-setup
+changes-300-files
+changes-300-files-dark
 changes-files-all
 changes-files-reading
 chat-empty-noprojects
@@ -626,6 +631,10 @@ palette-query
 palette-stable-height
 palette-stable-height-typing
 palette-state
+panel-frame-browser
+panel-frame-detail
+panel-frame-detail-terminal
+panel-frame-terminal
 permissions-empty
 picker-starred
 plan-drawer-approved

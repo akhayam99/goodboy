@@ -225,7 +225,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await click(screen.getByTestId('pane-toggle-terminal'));
-      await clickButton(/^Open as page$/);
+      await clickButton(/^Open full page$/);
     },
     lands: async () => {
       await studio('Terminal');

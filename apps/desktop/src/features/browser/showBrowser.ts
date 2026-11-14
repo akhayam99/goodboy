@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
+import { selectDockDrawer } from '../../store/slices/drawer/selectDockDrawer';
 import { browserStudioPlace } from './browserStudioPlace';
 
 type Params = {
@@ -16,7 +16,7 @@ export const showBrowser = ({ sessionId }: Params): void => {
     }
     return;
   }
-  const drawer = selectDrawerPanel(state);
+  const drawer = selectDockDrawer({ state });
   if (drawer?.kind === 'browser' && drawer.sessionId === sessionId) {
     return;
   }

@@ -1,5 +1,5 @@
 import { useAppStore } from '../../store';
-import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
+import { selectDockDrawer } from '../../store/slices/drawer/selectDockDrawer';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { openWorkspaceTerminal } from './openWorkspaceTerminal';
 import { toggleSessionTerminal } from './toggleSessionTerminal';
@@ -14,10 +14,10 @@ export const toggleTerminalDock = ({ isToggle }: Params): void => {
   if (workspaceId === null || state.appStudio?.kind === 'terminal') {
     return;
   }
-  const shown = selectDrawerPanel(state);
+  const shown = selectDockDrawer({ state });
   if (shown?.kind === 'terminal') {
     if (isToggle) {
-      state.closeDrawer();
+      state.closeDrawerEntry({ entry: shown });
     }
     return;
   }
