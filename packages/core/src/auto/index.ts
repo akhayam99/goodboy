@@ -147,6 +147,14 @@ export {
   type SnapshotEntry,
 } from './attribution';
 
+export {
+  changeGateOf,
+  changeRefusalOf,
+  isChangeGateOn,
+  type ChangeGateVerdict,
+  type ChangeRules,
+  type ChangeStage,
+} from './changeGate';
 export { pathsOfPatch, type PathsOfPatchParams } from './patchPaths';
 
 export {

@@ -9,6 +9,7 @@ import {
   worktreeSnapshot,
   worktreeStatus,
 } from '../../../features/worktree/worktree';
+import { worktreeDiffFromMergeBase } from '../../../features/worktree/worktreeDiffFromMergeBase';
 import { useAppStore, type AppStore } from '../../store';
 import { createAutoRuntime, type AutoRuntime } from './createAutoRuntime';
 import { createRealAutoPorts } from './createRealAutoPorts';
@@ -60,6 +61,7 @@ export const makeAutoRuntime = ({
     lookupDeliveryRun,
     worktreeSnapshot,
     worktreeDiffRange,
+    worktreeDiffFromMergeBase,
     worktreeCommitRange,
     worktreeStatus: ({ worktreePath }) => worktreeStatus({ worktreePath }),
     worktreeRemoteHead,

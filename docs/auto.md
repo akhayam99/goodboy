@@ -1409,6 +1409,52 @@ and the row's help line says so.
   `turn/fake_cli_tests.rs` (rules, settings and network at Ask, byte-equal at
   Allow, an allowance that lifts one) cover it.
 
+### Landing backstop
+
+Deny rules match commands, so an agent that works around one can still change
+a manifest. The backstop is the net behind the launch guard, not the
+permission. `changeGateOf` (`packages/core/src/auto/changeGate.ts`) takes the
+rules (`readChangeRules` in `store/runtime/auto/launchGuard/`: both rows read
+now with `readLaunchPermissions`, a failed read asks both, plus the allowances
+in the attempt's stored guard) and the changed paths. A manifest or lockfile of
+any manager, in any folder, is refused while the dependencies row asks and the
+attempt holds no dependency allowance; a protected file is refused while its
+row asks and no allowed path names it. With both rows at Allow nothing is read
+and the result goes on as before. A row tightened while the agent runs applies
+to its result here.
+
+- **At the end of an attempt.** `finishAttempt.ts` reads the changed files
+  first (`attributeChanges` `changedPaths`, the whole list, not the capped
+  `changedFiles`) and asks `landingRefusalOf`. A list that cannot be read in
+  full (a snapshot or the committed diff missing) is refused: closed, not open.
+  A refused result settles `failed` with the reason from `changeRefusalOf`,
+  which names the files and says nothing ran and nothing landed.
+  `verifyAttempt` is not called, so a changed script never
+  runs, the publish plan holds, the Scribe opens no pull request, a revise does
+  not reach `landAttemptRevision`, and the Lead reads the one refusal and may
+  start the agent again. Nothing to undo: nothing landed.
+- **At publish.** `planPublish` checks what the host would receive, not the
+  attempt's own range, on every plan, at the settle and on a retry. The
+  `readHostChanges` port (`launchGuard/readHostChanges.ts`) lists every path
+  between the branch head on the host (`worktreeRemoteHead`) and the commit to
+  push; when the branch is not on the host yet, or its head is not in the local
+  repository, it diffs from the merge base with the mount's base branch
+  (`worktreeDiffFromMergeBase`, a three dot `worktree_diff_range`, `origin/<base>`
+  first). A gated
+  path holds the publish with `so nothing was pushed`; a list that cannot be
+  read holds it with the error and offers a retry.
+- A refused change stays in the worktree and a later attempt may work on top
+  of it. Its own diff no longer shows the change, so it can land, but the
+  publish still sees it on the way to the host and holds until an allowance
+  covers it.
+- `changeGate.test.ts`, `launchGuard/readHostChanges.test.ts`,
+  `launchGuard/changeGate.sqlite.test.ts` (a lockfile around the deny rule, a
+  protected file, an unread list, a covered change, Allow as today, a row
+  tightened before a retry, an allowed package landed and pushed, a refused
+  lockfile behind a clean retry, an unreadable host list) and the Rust
+  `a_range_diff_from_the_merge_base_leaves_out_what_the_base_changed_since`
+  cover it.
+
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
 the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
 like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`

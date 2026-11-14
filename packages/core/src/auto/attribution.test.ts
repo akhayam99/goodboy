@@ -66,6 +66,7 @@ describe('attributing changed files to one attempt', () => {
       changedFiles: [],
       hasReadOnlyViolation: false,
       isComplete: false,
+      changedPaths: [],
     });
     expect(
       attributeChanges({
@@ -85,6 +86,7 @@ describe('attributing changed files to one attempt', () => {
     });
 
     expect(outcome.changedFiles).toHaveLength(50);
+    expect(outcome.changedPaths).toHaveLength(80);
   });
 
   it('credits a writer with files it committed, even when the status is clean', () => {

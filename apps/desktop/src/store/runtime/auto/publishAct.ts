@@ -25,6 +25,7 @@ import { remoteOf } from './attemptBaseline';
 import { releaseHeldPullRequests } from './asks/releaseHeldPullRequests';
 import { delegationRoleOf } from './attemptEnvelope';
 import { executePublish } from './executePublish';
+import { readChangeRules } from './launchGuard/readChangeRules';
 import { readPublishPermissions } from './level/readPublishPermissions';
 import { planPublish } from './planPublish';
 import type { PushBranchOutcome, RestoreBackupOutcome } from './ports';
@@ -339,7 +340,8 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
     return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
   }
   const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
-  const baseline = attempts.filter((attempt) => attempt.state === 'ended').at(-1)?.baseline;
+  const ended = attempts.filter((attempt) => attempt.state === 'ended').at(-1) ?? null;
+  const baseline = ended?.baseline;
   const ending = endingOf({ result: delegation.result });
   const remote =
     record.mode === 'force'
@@ -348,6 +350,7 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
   const { push } = await readPublishPermissions({ db: ctx.db, treeId: delegation.treeId });
   const planned = await planPublish({
     ports: ctx.ports,
+    sessionId: params.sessionId,
     worktreePath,
     branch: record.branch,
     wanted,
@@ -360,6 +363,7 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
     endHead: record.sha,
     tries: record.tries + 1,
     push,
+    changes: await readChangeRules({ db: ctx.db, treeId: delegation.treeId, attempt: ended }),
   });
   if (planned.state !== 'pushing') {
     return writeRecord({ ctx, delegation, record: planned });

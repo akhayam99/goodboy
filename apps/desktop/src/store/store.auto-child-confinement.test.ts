@@ -620,6 +620,7 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
       lookupDeliveryRun: async () => ({ runId, isLive: true }),
       worktreeSnapshot: async () => ({ head: 'abc123', entries: [], isPartial: false }),
       worktreeDiffRange: async () => '',
+      worktreeDiffFromMergeBase: async () => '',
       worktreeCommitRange: async () => [],
       worktreeStatus: async () => ({ branch: 'nw/settle' }),
       worktreeRemoteHead: async () => 'remote111',

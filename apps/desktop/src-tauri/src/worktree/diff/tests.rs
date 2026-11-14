@@ -79,10 +79,45 @@ fn a_range_diff_refuses_an_option_shaped_revision() {
     assert!(worktree_diff_range_blocking(
         path,
         "--output=leak.txt".to_string(),
-        "HEAD".to_string()
+        "HEAD".to_string(),
+        false
     )
     .is_err());
     assert!(!root.join("leak.txt").exists());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_range_diff_from_the_merge_base_leaves_out_what_the_base_changed_since() {
+    let root = repo_with("merge-base", "a.txt");
+    let path = root.to_string_lossy().into_owned();
+    git_ok(&root, &["checkout", "-b", "ak/ledger-export"]);
+    std::fs::write(root.join("pnpm-lock.yaml"), "lock\n").unwrap();
+    git_ok(&root, &["add", "pnpm-lock.yaml"]);
+    git_ok(&root, &["commit", "-m", "lock"]);
+    git_ok(&root, &["checkout", "main"]);
+    std::fs::write(root.join("main.txt"), "main\n").unwrap();
+    git_ok(&root, &["add", "main.txt"]);
+    git_ok(&root, &["commit", "-m", "main moves"]);
+
+    let from_base = worktree_diff_range_blocking(
+        path.clone(),
+        "main".to_string(),
+        "ak/ledger-export".to_string(),
+        true,
+    )
+    .unwrap();
+    let plain = worktree_diff_range_blocking(
+        path,
+        "main".to_string(),
+        "ak/ledger-export".to_string(),
+        false,
+    )
+    .unwrap();
+
+    assert!(from_base.contains("b/pnpm-lock.yaml"));
+    assert!(!from_base.contains("main.txt"));
+    assert!(plain.contains("main.txt"));
     std::fs::remove_dir_all(root).unwrap();
 }
 

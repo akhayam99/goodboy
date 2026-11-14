@@ -18,7 +18,6 @@ import type {
   CancelRunParams,
   ChildStartOutcome,
   LookupDeliveryRunParams,
-  ReadCommittedFilesParams,
   ReadMountSnapshotParams,
   StartChildTurnParams,
 } from './ports';
@@ -36,6 +35,8 @@ import { createHistoryBackup } from '../../../features/history/historyEngine';
 import { publishScribePullRequest } from './publishScribePullRequest';
 import { pushAutoBranch } from './pushAutoBranch';
 import { restoreAutoBackup } from './restoreAutoBackup';
+import { baseBranchReaderOf } from './launchGuard/baseBranchReaderOf';
+import { readHostChanges, type HostChangeReaders } from './launchGuard/readHostChanges';
 import { readRemoteHead, type BranchOfParams, type RemoteHeadReaders } from './readRemoteHead';
 import { makeStartAutoTurn } from './startAutoTurn';
 import { startDeliveredTurn, type ReadRunCostParams, type SleepParams } from './startDeliveredTurn';
@@ -58,7 +59,8 @@ export type RealAutoPortsDeps = Readonly<{
   refreshSessionArtifacts: AutoPorts['refreshSessionArtifacts'];
   lookupDeliveryRun: (params: LookupDeliveryRunParams) => Promise<DeliveryRun | null>;
   worktreeSnapshot: (params: ReadMountSnapshotParams) => Promise<WorktreeSnapshot>;
-  worktreeDiffRange: (params: ReadCommittedFilesParams) => Promise<string>;
+  worktreeDiffRange: HostChangeReaders['diffRange'];
+  worktreeDiffFromMergeBase: HostChangeReaders['diffFromMergeBase'];
   worktreeCommitRange: MakeBranchFactsReadersParams['commitRange'];
   worktreeStatus: (params: BranchOfParams) => Promise<Readonly<{ branch: string | null }>>;
   worktreeRemoteHead: RemoteHeadReaders['remoteHeadOf'];
@@ -169,6 +171,14 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     readMountSnapshot: ({ worktreePath }) => deps.worktreeSnapshot({ worktreePath }),
     readCommittedFiles: async (params) =>
       pathsOfPatch({ patch: await deps.worktreeDiffRange(params) }),
+    readHostChanges: readHostChanges({
+      readers: {
+        baseBranchOf: baseBranchReaderOf({ getState: deps.getState }),
+        remoteHeadOf: deps.worktreeRemoteHead,
+        diffRange: deps.worktreeDiffRange,
+        diffFromMergeBase: deps.worktreeDiffFromMergeBase,
+      },
+    }),
     readRemoteHead: (params) =>
       readRemoteHead({
         readers: {
