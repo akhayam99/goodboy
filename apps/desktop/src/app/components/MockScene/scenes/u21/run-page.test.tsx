@@ -68,7 +68,7 @@ const tail = (): HTMLElement => nodeOf('[data-orchestrated-tail]');
 
 const runDocument = (): HTMLElement => nodeOf('[data-orchestrated-run]');
 
-const header = (): HTMLElement => nodeOf('[data-slot="pane-header"]');
+const header = (): HTMLElement => nodeOf('[data-session-head]');
 
 describe('the u21 run page scenes on the orchestrated document', () => {
   it('registers exactly the three scenes the plan names', () => {
@@ -78,9 +78,8 @@ describe('the u21 run page scenes on the orchestrated document', () => {
   it('reads the run as one document under its title', async () => {
     renderScene('workflow-run-scrolled');
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Duplicate credit fix' }),
-    ).toBeDefined();
+    await screen.findByTestId('run-tree');
+    expect(nodeOf('[data-crumb-current]').textContent).toBe('Duplicate credit fix');
     expect(within(runDocument()).getByTestId('run-tree')).toBeDefined();
   });
 
@@ -206,9 +205,9 @@ describe('the u21 run page scenes on the orchestrated document', () => {
     const runTail = await screen.findByRole('region', { name: 'Run state' });
     const titleRow = screen
       .getByRole('button', { name: /run actions$/ })
-      .closest<HTMLElement>('[data-slot="pane-title-row"]');
+      .closest<HTMLElement>('[data-session-head-meta]');
     if (titleRow === null) {
-      throw new Error('the run page has no title row');
+      throw new Error('the run page has no head meta');
     }
     expect(within(titleRow).getByRole('button', { name: 'Review plan' })).toBeDefined();
     expect(within(runTail).queryByRole('button', { name: 'Review plan' })).toBeNull();

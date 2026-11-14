@@ -440,6 +440,8 @@ const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
 
 const MEASURE_RAIL = 'measure mx-auto max-w-[var(--measure-frame)]';
 
+const READING_RAIL = 'reading mx-auto max-w-[var(--column-frame)]';
+
 const placeRoot = (): Element => {
   const root =
     document.querySelector('[data-studio-slot]') ??
@@ -853,14 +855,23 @@ describe('moving across every place keeps one frame', () => {
     await escape();
 
     await openAgentTranscript(sessionId);
-    const agentLayers = (): RailLayers =>
-      sessionLayers({ transcript: scrollContent(), composer: shown('textarea') });
-    expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: MEASURE_RAIL });
+    const agentHead = (): RailLayers => sessionLayers({});
+    const agentLayers = (): RailLayers => ({
+      transcript: scrollContent(),
+      composer: shown('textarea'),
+    });
+    expectOneRail({ place: 'Agent transcript', layers: agentHead(), rail: COLUMN_RAIL });
+    expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: READING_RAIL });
     await openContextDrawer(sessionId);
     expectOneRail({
       place: 'Agent transcript with a drawer',
+      layers: agentHead(),
+      rail: COLUMN_RAIL,
+    });
+    expectOneRail({
+      place: 'Agent transcript with a drawer',
       layers: agentLayers(),
-      rail: MEASURE_RAIL,
+      rail: READING_RAIL,
     });
     await escape();
 

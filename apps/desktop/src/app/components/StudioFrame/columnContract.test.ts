@@ -449,6 +449,7 @@ describe('content column contract', () => {
           name !== 'PaneActionsContext' &&
           name !== 'Head' &&
           name !== 'SessionHeadFrame' &&
+          name !== 'HeadSlotsGate' &&
           name !== 'Cards',
       );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);

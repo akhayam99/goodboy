@@ -126,8 +126,8 @@ const openFailedChildOfDoneRun = (): void => {
 };
 
 const headOf = (): HTMLElement => {
-  const head = [...document.querySelectorAll<HTMLElement>('[data-slot="pane-title-row"]')].at(-1);
-  if (head === undefined) {
+  const head = document.querySelector<HTMLElement>('[data-session-head]');
+  if (head === null) {
     throw new Error('no page head');
   }
   return head;
