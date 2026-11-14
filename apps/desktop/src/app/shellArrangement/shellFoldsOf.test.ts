@@ -1,4 +1,4 @@
-import { drawerLayoutOf, mainWidthOf } from '@goodboy/ui';
+import { mainWidthOf, panelPairLayoutOf } from '@goodboy/ui';
 import { describe, expect, it } from 'vitest';
 import { shellFoldsOf } from './shellFoldsOf';
 
@@ -39,13 +39,18 @@ it.each([
     const sessionRail = isFolded ? 44 : 240;
     const contentInset = sessionRail + toolRail;
     expect(shellFoldsOf({ paneSizing: 'side', columnWidth: main }).isRailNarrow).toBe(isFolded);
-    const layout = drawerLayoutOf({ main, sizing: 'side', savedWidth: 400, contentInset });
+    const layout = panelPairLayoutOf({
+      main,
+      contentInset,
+      dock: { sizing: 'side', savedWidth: 400, isOpen: true },
+      detail: { sizing: 'side', savedWidth: 400, isOpen: false },
+    });
     expect(layout.mode).toBe(mode);
     expect(
       mainWidthOf({
         columnWidth: main,
         mode: layout.mode,
-        drawerWidthPx: layout.width,
+        drawerWidthPx: layout.dock.width,
         railWidth: toolRail,
       }) - sessionRail,
     ).toBe(contentWidth);

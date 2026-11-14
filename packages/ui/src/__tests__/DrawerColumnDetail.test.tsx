@@ -92,12 +92,14 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
   it('orders content, detail panel, tool dock and rail from left to right', () => {
     stubColumn({ column: 1600 });
     renderFrame({ dock: 'Terminal output', detail: 'Artifact' });
-    const track = group()?.parentElement;
-    const children = Array.from(track?.children ?? []);
+    const detailGroup = group();
+    const dock = dockBox();
+    if (detailGroup === null || dock === null) {
+      throw new Error('both containers render');
+    }
+    const children = Array.from(detailGroup.parentElement?.children ?? []);
 
-    expect(children.indexOf(group() as Element)).toBeLessThan(
-      children.indexOf(dockBox() as Element),
-    );
+    expect(children.indexOf(detailGroup)).toBeLessThan(children.indexOf(dock));
     expect(detailBox()?.textContent).toBe('Artifact');
     expect(dockBox()?.textContent).toContain('Terminal output');
     expect(dockBox()?.lastElementChild?.hasAttribute('data-drawer-edge')).toBe(true);

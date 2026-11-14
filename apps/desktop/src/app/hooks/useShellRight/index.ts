@@ -1,5 +1,6 @@
 import { createElement, type ReactNode } from 'react';
-import type { DrawerSizing } from '@goodboy/ui';
+import type { DrawerPlacement, DrawerSizing } from '@goodboy/ui';
+import { selectDrawerPlacement } from '../../../store/slices/drawer/selectDrawerPlacement';
 import { useAppStore } from '../../../store';
 import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
 import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
@@ -17,6 +18,7 @@ type ShellRight = {
   readonly isDetailParked: boolean;
   readonly dockSizing: DrawerSizing;
   readonly detailSizing: DrawerSizing;
+  readonly placement: DrawerPlacement;
 };
 
 export const useShellRight = ({}: Params): ShellRight => {
@@ -34,7 +36,9 @@ export const useShellRight = ({}: Params): ShellRight => {
   const detailSizing = useAppStore((state) =>
     drawerSizingOf({ drawer: selectDetailDrawer({ state }) }),
   );
+  const placement = useAppStore(selectDrawerPlacement);
   return {
+    placement,
     rightRail: isRailInStudio ? null : createElement(ShellToolRail),
     isDrawerMounted,
     isDrawerParked: false,

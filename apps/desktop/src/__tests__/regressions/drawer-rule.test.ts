@@ -92,11 +92,12 @@ describe('the one drawer rule', () => {
     expect(hostsOf(UI)).toEqual([join('components', 'AppShell.tsx')]);
   });
 
-  it('mounts DrawerHost once, as the drawer slot of AppShell', () => {
+  it('mounts DrawerHost in App only, once as the tool dock and once as the detail panel', () => {
     const mounts = DESKTOP.filter(({ text }) => /<DrawerHost\b/.test(text));
 
     expect(mounts.map(({ rel }) => rel)).toEqual(['App.tsx']);
-    expect(mounts[0]?.text).toMatch(/drawer=\{[^}]*<DrawerHost \/>[^}]*\}/);
+    expect(mounts[0]?.text).toMatch(/drawer=\{[^}]*<DrawerHost slot="dock" \/>[^}]*\}/);
+    expect(mounts[0]?.text).toMatch(/detail=\{[^}]*<DrawerHost slot="detail" \/>[^}]*\}/);
   });
 
   it('times the css exit of the overlay as long as the timer that keeps it mounted', () => {

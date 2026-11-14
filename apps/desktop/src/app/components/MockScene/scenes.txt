@@ -631,6 +631,10 @@ palette-query
 palette-stable-height
 palette-stable-height-typing
 palette-state
+panel-frame-browser
+panel-frame-detail
+panel-frame-detail-terminal
+panel-frame-terminal
 permissions-empty
 picker-starred
 plan-drawer-approved

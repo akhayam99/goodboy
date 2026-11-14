@@ -59,7 +59,6 @@ import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { useShellRight } from './app/hooks/useShellRight';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
-import { selectDrawerPlacement } from './store/slices/drawer/selectDrawerPlacement';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
 import { LastCrashBridge } from './features/bug-report/components/LastCrashBridge';
 
@@ -70,7 +69,6 @@ export const App = () => {
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
   const isShellShown = useAppStore((s) => s.isShellReady && s.bootPhase !== 'error');
-  const drawerPlacement = useAppStore(selectDrawerPlacement);
   const shellRight = useShellRight({});
   const [isSplashGone, setIsSplashGone] = useState(false);
   const removeSplash = useCallback(() => setIsSplashGone(true), []);
@@ -292,7 +290,7 @@ export const App = () => {
           drawerSizing={shellRight.dockSizing}
           detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
           detailSizing={shellRight.detailSizing}
-          drawerPlacement={drawerPlacement}
+          drawerPlacement={shellRight.placement}
           isDrawerParked={shellRight.isDrawerParked}
           isDetailParked={shellRight.isDetailParked}
           rightRail={shellRight.rightRail}
