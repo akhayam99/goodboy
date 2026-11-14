@@ -246,7 +246,6 @@ describe('the open session on the rail', () => {
     const pages = within(card.getByRole('list', { name: 'Pages' }));
     expect(pages.getAllByRole('button').map((row) => row.textContent)).toEqual([
       'Overview',
-      'Changes',
       'Runs',
       'Artifacts',
       'Questions',
