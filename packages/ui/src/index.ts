@@ -4,6 +4,8 @@ export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
 export { ShellDockContext } from './shellDockContext';
 export { ShellRailContext } from './shellRailContext';
+export { UnderHeadContext } from './underHeadContext';
+export { HEAD_INSET_VAR } from './headInsetVar';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export { DrawerBackChipContext } from './drawerBackChipContext';
 export type { DrawerChip } from './drawerBackChipContext';

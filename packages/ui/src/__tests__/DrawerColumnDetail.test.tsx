@@ -89,7 +89,7 @@ const renderFrame = ({ dock, detail }: RenderParams) =>
   );
 
 describe('DrawerColumn with a detail panel and a tool dock', () => {
-  it('orders content, detail panel, tool dock and rail from left to right', () => {
+  it('orders content, detail panel, rail and tool dock from left to right', () => {
     stubColumn({ column: 1600 });
     renderFrame({ dock: 'Terminal output', detail: 'Artifact' });
     const detailGroup = group();
@@ -102,7 +102,7 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     expect(children.indexOf(detailGroup)).toBeLessThan(children.indexOf(dock));
     expect(detailBox()?.textContent).toBe('Artifact');
     expect(dockBox()?.textContent).toContain('Terminal output');
-    expect(dockBox()?.lastElementChild?.hasAttribute('data-drawer-edge')).toBe(true);
+    expect(dockBox()?.firstElementChild?.hasAttribute('data-drawer-edge')).toBe(true);
   });
 
   it('draws the dock on the rail surface and the detail panel on the page surface', () => {

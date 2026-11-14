@@ -115,21 +115,24 @@ drawer container stands 8px to its right (the resize handle sits in that gap),
 flush with the window's right edge and rounded on its two left corners, and the
 pair keeps an 8px inset above the window's bottom edge.
 
-**The rail is the anchor, and a panel opens inward of it.** The drawer container
-holds the panel and the rail: one surface, with the rail as its last child
-(`data-drawer-edge`, fed through `DrawerEdgeContext`). Closed, the container is
-the rail alone, 44px wide. The rail is the same element at the same place closed,
-pushing, over the page and while a handle drags. The reason: the rail holds the
-button that opens a panel and the one that closes it; a panel that opened outward
-would move that button away from the pointer and the second press of the same
-gesture would land on something else. Every drawer of the app obeys it, not only
-Tools: every panel opens between the page and the rail.
+**The rail is the dock's left edge, and the dock opens to its right.** The
+drawer container holds the rail and the dock: one surface, with the rail as its
+first child (`data-drawer-edge`, fed through `DrawerEdgeContext`). Closed, the
+container is the rail alone, 44px wide, on the window's right edge. A click on
+Terminal or Browser expands the dock to the right of the icon, toward the
+window edge, so the rail travels left with the opening dock and back right as
+it closes; it is the same element closed, pushing, over the page and while a
+handle drags, never a second copy. The trade: the button that closed the dock
+is no longer under the pointer after it opened, so the dock's own close (its
+header X, Esc) is the near way out, and the rail button stays one move away.
+A detail panel opens between the page and the rail.
 
 **Two panels, one order.** Left to right the frame reads: sidebar, page
-content, detail panel, tool dock, rail. The tool dock (Terminal, Browser) lives
+content, detail panel, rail, tool dock. The tool dock (Terminal, Browser) lives
 in the drawer container, attached to the rail with no gap, line or radius
 between them, on the rail's `bg-drawer` surface, so rail and dock read as one
-surface. A detail panel (an artifact, Ask, a plan part, a check analysis, a
+surface running to the window edge. The resize handle stays in the gap between
+the detail panel (or the page) and the rail. A detail panel (an artifact, Ask, a plan part, a check analysis, a
 transcript, a reader, every other kind) is its own container between the page
 and the dock: `data-container="detail"`, `rounded-frame`, `frame-edge` border,
 on the page's `bg-background`, 8px from the page and 8px from the drawer
@@ -195,8 +198,14 @@ focus was on the page it moves into the drawer, never to the body.
 
 **Over the page, the drawer container runs the full height of the sheet.**
 Below the push width every open panel lies over the page from the right edge
-together, detail and dock, under one scrim, and the rail stays in its place and
-live. The container has no inset: flush with the sheet's top, bottom and right edges, left corners
+together, detail and dock, under one scrim, and the rail stays live. Rail and
+dock slide in together from the right edge (`animate-drawer-dock-in`, the
+container translates from the dock width to 0 in `duration-base`), so the rail
+leaves the window edge with the dock behind it, and slide back out together
+(`animate-drawer-dock-out`, `duration-quick`); once the exit ends the aside
+lands in the flow at its closed width with no width transition
+(`useSnapAfterFloat`), so the rail stops on the edge where it started. The
+container has no inset: flush with the sheet's top, bottom and right edges, left corners
 rounded (`rounded-l-frame`), `shadow-xl` under the whole container (panel and
 rail), the same `bg-drawer`; a spacer of the closed width keeps the page where
 it was under it. A scrim
@@ -215,7 +224,7 @@ content fades in once there is room; over the page it slides in 200ms; a new kin
 an open drawer fades its content in 120ms. The detail panel's group
 (`data-detail-group`) eases its own width with the same token while the aside
 eases the sum, so the page content slides as either panel opens or closes and
-the dock and the rail never jump; the motion is a `transition-[width]`
+the rail rides the dock's left edge with it, never jumping; the motion is a `transition-[width]`
 (`duration-200 ease-enter`) behind `motion-safe`, so reduced motion is instant.
 It never writes the sidebar preference: a pane folds nothing.
 
