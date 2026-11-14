@@ -85,6 +85,7 @@ export const mountNoteOf = ({ value }: MountNoteParams): MountNote | null => {
 export type StoredDelivery = Readonly<{
   text: string;
   rowIds: ReadonlyArray<string>;
+  turn?: number;
 }>;
 
 export const EMPTY_USER_FACTS: UserFacts = {
@@ -135,11 +136,13 @@ export const storedDeliveryOf = ({ value }: ValueParams): StoredDelivery | null 
   }
   const text = delivery['text'];
   const rowIds = delivery['rowIds'];
+  const turn = delivery['turn'];
   if (typeof text !== 'string' || !Array.isArray(rowIds)) {
     return null;
   }
   return {
     text,
     rowIds: rowIds.filter((id: unknown): id is string => typeof id === 'string'),
+    ...(typeof turn === 'number' && Number.isInteger(turn) && turn > 0 && { turn }),
   };
 };

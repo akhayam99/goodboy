@@ -2,6 +2,7 @@ import { AUTO_BLOCK_TEXT, parseAutoDelegationRole } from '@goodboy/core/auto';
 import { AGENT_KIND_META, kindForRole } from '../../session/agent-kind';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { taskTitleOf } from '../taskTitleOf';
+import { noteWordOf } from '../tree/noteWordOf';
 
 export type PendingMessageAction = 'sendNow' | 'raiseLimit' | 'retry';
 
@@ -38,8 +39,24 @@ const waitingForOf = ({ view }: Params): string => {
 const hasOpenChild = ({ view }: Params): boolean =>
   view.delegations.some((delegation) => delegation.state !== 'settled' && !delegation.isAdopted);
 
-export const pendingMessageLineOf = ({ view }: Params): PendingMessageLine => {
+type LineParams = Params & {
+  readonly isAtOnce?: boolean;
+};
+
+export const pendingMessageLineOf = ({
+  view,
+  isAtOnce = false,
+}: LineParams): PendingMessageLine => {
   const { phase, blockedReason } = view.tree;
+  const isHeld = phase === 'blocked' || phase === 'stopping' || phase === 'stopped';
+  if (isAtOnce && !isHeld) {
+    return {
+      tone: 'waits',
+      text: noteWordOf({ isWork: true, turn: null }),
+      reason: null,
+      action: null,
+    };
+  }
   if (phase === 'waiting' && hasOpenChild({ view })) {
     return {
       tone: 'waits',

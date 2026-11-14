@@ -24,6 +24,7 @@ import { userImagesOf } from '../../runtime/auto/userImagesOf';
 import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
 import { presentDelegationsOf } from './presentDelegationsOf';
+import { readMessagesOf } from './readMessagesOf';
 import type { AutoPendingMessage, AutoPendingRefusal, AutoTreeView } from './state';
 
 type Params = {
@@ -111,7 +112,7 @@ export const readAutoTreeViews = async ({
           listAutoArtifactLedger({ db, treeId: tree.id }),
           readAutoTreeSpend({ db, treeId: tree.id }),
           listAutoOutbox({ db, treeId: tree.id, states: ['pending', 'dropped'] }),
-          listAutoOutbox({ db, treeId: tree.id, states: ['accepted'], kinds: ['results'] }),
+          listAutoOutbox({ db, treeId: tree.id, states: ['accepted'] }),
           readFirstUserText({ db, agentId: tree.rootAgentId }),
           listAutoGrantsOfTree({ db, treeId: tree.id }),
         ]);
@@ -124,6 +125,7 @@ export const readAutoTreeViews = async ({
         budget: spend === null ? null : autoBudgetOf({ spend }),
         pendingRefusal: pendingRefusalOf({ tree, pending }),
         pendingMessages: pendingMessagesOf({ tree, pending }),
+        readMessages: readMessagesOf({ tree, accepted, delegations }),
         droppedMessageIds: droppedMessageIdsOf({ tree, pending }),
         deliveredResults: deliveredResultsOf({ accepted }),
         rootAsk,

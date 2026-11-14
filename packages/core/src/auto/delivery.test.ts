@@ -131,6 +131,18 @@ describe('the message that delivers stored rows to Auto', () => {
     ).toEqual({ text: 'hello', rowIds: ['a', 'b'] });
     expect(storedDeliveryOf({ value: { kind: 'user' } })).toBeNull();
   });
+
+  it('reads the turn that took the delivery, and only a whole positive one', () => {
+    const turns: ReadonlyArray<unknown> = [3, 0, '3'];
+    const read = turns.map((turn) =>
+      storedDeliveryOf({ value: { delivery: { text: 'hello', rowIds: ['a'], turn } } }),
+    );
+    expect(read).toEqual([
+      { text: 'hello', rowIds: ['a'], turn: 3 },
+      { text: 'hello', rowIds: ['a'] },
+      { text: 'hello', rowIds: ['a'] },
+    ]);
+  });
 });
 
 describe('refusals and the state digest in a delivery', () => {

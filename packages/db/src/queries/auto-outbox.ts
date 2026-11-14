@@ -295,7 +295,7 @@ export const claimAutoOutboxStatement = ({
 type StoreOutboxDeliveryStatementParams = {
   readonly outboxId: AutoOutboxId;
   readonly claimedBy: string;
-  readonly delivery: Readonly<{ text: string; rowIds: ReadonlyArray<string> }>;
+  readonly delivery: Readonly<{ text: string; rowIds: ReadonlyArray<string>; turn?: number }>;
   readonly abortCode: string;
 };
 

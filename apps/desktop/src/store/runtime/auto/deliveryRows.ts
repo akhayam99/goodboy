@@ -12,9 +12,10 @@ type KindAllowedParams = {
   readonly phase: AutoPhase;
   readonly kind: AutoOutboxKind;
   readonly isIdle: boolean;
+  readonly isAtOnce: boolean;
 };
 
-const isKindAllowed = ({ phase, kind, isIdle }: KindAllowedParams): boolean => {
+const isKindAllowed = ({ phase, kind, isIdle, isAtOnce }: KindAllowedParams): boolean => {
   switch (phase) {
     case 'answering':
     case 'merging':
@@ -22,7 +23,7 @@ const isKindAllowed = ({ phase, kind, isIdle }: KindAllowedParams): boolean => {
     case 'done':
       return true;
     case 'waiting':
-      return kind === 'question' || kind === 'refusal' || (isIdle && kind === 'user');
+      return kind === 'question' || kind === 'refusal' || ((isIdle || isAtOnce) && kind === 'user');
     case 'finished':
       return kind === 'user';
     case 'deciding':
@@ -42,6 +43,7 @@ export type ChooseDeliveryRowsParams = Readonly<{
   generation: number;
   pending: ReadonlyArray<AutoOutboxRow>;
   isIdle?: boolean;
+  isAtOnce?: boolean;
   sendNowId?: string | null;
 }>;
 
@@ -50,6 +52,7 @@ export const chooseDeliveryRows = ({
   generation,
   pending,
   isIdle = false,
+  isAtOnce = false,
   sendNowId = null,
 }: ChooseDeliveryRowsParams): ReadonlyArray<AutoOutboxRow> => {
   if (sendNowId !== null && phase === 'waiting') {
@@ -59,21 +62,24 @@ export const chooseDeliveryRows = ({
   }
   const eligible = pending
     .filter(
-      (row) => row.generation === generation && isKindAllowed({ phase, kind: row.kind, isIdle }),
+      (row) =>
+        row.generation === generation && isKindAllowed({ phase, kind: row.kind, isIdle, isAtOnce }),
     )
     .sort((a, b) => KIND_RANK[a.kind] - KIND_RANK[b.kind] || a.createdAt - b.createdAt);
   const primary = eligible[0];
   if (primary === undefined) {
     return [];
   }
+  const fresh =
+    phase === 'waiting' && !(isAtOnce && primary.kind === 'user') ? [primary] : eligible;
   const stored = storedDeliveryOf({ value: primary.payload });
   if (stored === null) {
-    return phase === 'waiting' ? [primary] : eligible;
+    return fresh;
   }
   const byId = new Map(pending.map((row) => [String(row.id), row]));
   const same = stored.rowIds.map((id) => byId.get(id));
   if (same.every((row) => row !== undefined)) {
     return same.flatMap((row) => (row === undefined ? [] : [row]));
   }
-  return phase === 'waiting' ? [primary] : eligible;
+  return fresh;
 };

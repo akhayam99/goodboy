@@ -204,7 +204,21 @@ message" and the composer keeps its text.
 **When a message waits.** A `user` row is delivered in every phase that takes a turn
 (`chooseDeliveryRows`), except while the tree is `waiting` for running agents: there it
 stays `pending` and goes with the next results, so a message typed during a long child run
-reaches Auto only when the child ends.
+reaches Auto only when the child ends. That is the switch off.
+
+**Answer while working.** With **Work** on (`flowRulesOf().isMessageDeliveredAtOnce`, read
+by `deliverNext` from the `work.enabled` setting at every delivery), a `user` row is delivered
+in `waiting` too, all pending user rows in one turn, while the agents keep running. The Lead
+may answer, start another agent or say it waits. Its turn moves the tree to `deciding`; an
+agent that settles meanwhile writes its results row as usual, and `settleAutoTurn` sends the
+tree to `merging`, so those results go in the next turn, once. Delivery stays once per
+outbox row id: a claimed or accepted row is never `pending` again, and a lapsed lease
+reuses the stored delivery and its delivery id. Stop wins: a stopping tree delivers nothing.
+The claim stores the turn number (`turns_used + 1`) in the stored delivery, and
+`readAutoTreeViews` reads a note sent while agents worked back as `readMessages` with that
+turn. The note words come from `noteWordOf`: "Queued" with the switch off, "Not read yet"
+and "Read at turn n" with it on. Remove is the undo until the note is read; a note the
+runtime could not deliver keeps "Not read yet" in the tree and stays editable.
 
 **One queue.** The chat holds only what Auto has read. Every message not delivered yet sits above
 the composer in one list, in send order (`QueuedMessages`, rows from `queuedRowsOf`): the `user`
@@ -221,6 +235,8 @@ the ids existed have no `outboxId` and stay where they were written.
 A row reads one status word and nothing else: "Waits for this reply", "Waits for <task of the
 child>" or "Waits for 2 agents" while the tree waits for running agents (`pendingMessageLineOf`,
 `waitingForOf`), and "Not delivered" for a blocked or stopped tree, with the reason in its tooltip.
+With **Work** on, every row that is not blocked or stopped reads "Not read yet" and offers no
+Send now, because it goes at once (`useQueuedRows` passes `isAtOnce`).
 **Send now** (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that
 one row at once as its own Auto turn, like a child's question, and leaves the children running. It
 runs in the tree's queue and claims the row with the tree's phase revision and the row's

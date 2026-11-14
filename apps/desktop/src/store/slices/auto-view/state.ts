@@ -17,6 +17,7 @@ export type AutoTreeView = Readonly<{
   budget: AutoBudgetFacts | null;
   pendingRefusal: AutoPendingRefusal | null;
   pendingMessages: ReadonlyArray<AutoPendingMessage>;
+  readMessages?: ReadonlyArray<AutoReadMessage>;
   droppedMessageIds: ReadonlyArray<string>;
   deliveredResults: ReadonlyArray<AutoDeliveredResult>;
   rootAsk: string | null;
@@ -56,6 +57,13 @@ export type AutoPendingMessage = Readonly<{
   createdAt: number;
   text: string;
   images: ReadonlyArray<MessageAttachment>;
+}>;
+
+export type AutoReadMessage = Readonly<{
+  rowId: string;
+  createdAt: number;
+  text: string;
+  turn: number;
 }>;
 
 export type AutoViewState = {

@@ -9,6 +9,7 @@ import { AgentDetailPane } from '../../../../../features/session/components/Agen
 import { LeadPage } from '../../../../../features/session/components/LeadPage';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
 import { DrawerHost } from '../../../DrawerHost';
 import { seedActivityRunScene } from '../activityRunSeed';
 import {
@@ -28,6 +29,7 @@ type Props = {
   readonly selected?: 'root' | 'planner';
   readonly mountAct?: 'pending' | 'failing';
   readonly hasLeadPage?: boolean;
+  readonly isWorkOn?: boolean;
 };
 
 const TRAY_IMAGE_DATA_URL =
@@ -61,6 +63,7 @@ export const AutoChatScene = ({
   selected = 'root',
   mountAct,
   hasLeadPage = false,
+  isWorkOn = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const sizing = useAppStore(selectDrawerSizing);
@@ -92,6 +95,10 @@ export const AutoChatScene = ({
       sessionAnsweredQuestions: { [AUTO_SESSION.id]: [] },
       sessionEvents: { [AUTO_SESSION.id]: [] },
       drawer: null,
+      settings: {
+        ...useAppStore.getState().settings,
+        [SETTING_WORK_ENABLED]: isWorkOn ? 'true' : 'false',
+      },
       ...(state === 'mount-ask'
         ? {
             sessionProjectMounts: {
@@ -137,7 +144,7 @@ export const AutoChatScene = ({
       });
     }, PLAN_OPEN_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [state, isPlanOpen, selectedId, mountAct]);
+  }, [state, isPlanOpen, selectedId, mountAct, isWorkOn]);
 
   if (!isReady || agent === null) {
     return null;
