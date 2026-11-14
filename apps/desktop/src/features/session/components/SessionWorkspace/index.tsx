@@ -18,6 +18,7 @@ import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
 import { escapeLadder } from '../../escapeLadder';
 import { SessionHeadContext } from '../../sessionHeadContext';
 import { SessionHeadFrame } from '../SessionHeadFrame';
+import { HeadSlotsGate } from '../HeadSlotsGate';
 
 const LENS_KEEP_ALIVE_CAP = 3;
 
@@ -72,7 +73,11 @@ export const SessionWorkspace = ({ session }: Props) => {
 
   const lensLayers = keptSurfaces.map((target) => ({
     key: target,
-    content: <SessionLensPane session={session} target={target} isShown={showLens} />,
+    content: (
+      <HeadSlotsGate isOpen={showLens && target === surface}>
+        <SessionLensPane session={session} target={target} isShown={showLens} />
+      </HeadSlotsGate>
+    ),
   }));
 
   const body = (

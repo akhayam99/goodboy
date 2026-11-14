@@ -181,7 +181,10 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       state().navigate({ to: agentPlace({ sessionId: ctx.sessionId, agentId: OTHER_AGENT }) });
       await settle();
       await waitFor(
-        () => expect(screen.getByRole('heading', { name: /Review the retry cap/ })).toBeDefined(),
+        () =>
+          expect(document.querySelector('[data-crumb-current]')?.textContent).toMatch(
+            /Review the retry cap/,
+          ),
         WAIT,
       );
     },
