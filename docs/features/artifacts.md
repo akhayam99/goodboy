@@ -103,7 +103,7 @@ Bring in a wireframe made elsewhere, with a preview of any fixes before it lands
 
 ### Revisions and Restore
 
-Bring back an earlier plan, report or wireframe as a new revision, with its author, without losing the later ones.
+Bring back an earlier plan, report or wireframe as a new revision, with its author, without losing the later ones. When the list does not load it says so in plain words with **Retry**.
 
 ### Save a copy and New variant
 
