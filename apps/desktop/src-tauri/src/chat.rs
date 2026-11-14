@@ -411,6 +411,7 @@ fn build_chat_cli_args(
         blocks_push: true,
         is_auto_child: false,
         excludes_tmp: true,
+        launch_guard: None,
     };
     let cli = turn_args_with_prompt(shape, &spawn);
     if shape == "codex" {

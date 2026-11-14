@@ -674,9 +674,12 @@ fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool
             };
             v.push("-s".to_string());
             v.push(sandbox.to_string());
+            let is_network_off = args.launch_guard.is_some_and(|guard| guard.is_network_off);
             if sandbox == "workspace-write" {
-                v.push("-c".to_string());
-                v.push("sandbox_workspace_write.network_access=true".to_string());
+                if !is_network_off {
+                    v.push("-c".to_string());
+                    v.push("sandbox_workspace_write.network_access=true".to_string());
+                }
                 if args.excludes_tmp {
                     for setting in [
                         "sandbox_workspace_write.exclude_tmpdir_env_var=true",
@@ -791,6 +794,9 @@ fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool
             if args.is_auto_child {
                 disallowed_tools
                     .extend(AUTO_CHILD_DENIED_TOOLS.iter().map(|tool| tool.to_string()));
+            }
+            if let Some(guard) = args.launch_guard {
+                disallowed_tools.extend(guard.denied_tools.iter().cloned());
             }
             disallowed_tools.push("mcp__*".to_string());
             v.push("--disallowedTools".to_string());
@@ -1119,6 +1125,7 @@ mod tests {
             blocks_push: false,
             is_auto_child: false,
             excludes_tmp: false,
+            launch_guard: None,
         }
     }
 

@@ -752,6 +752,9 @@ The trailing `-` makes codex read the prompt from stdin. See
 - The sandbox follows the mode, as in [Permission modes per CLI](#permission-modes-per-cli).
   Full access keeps `workspace-write`: Goodboy never passes
   `--dangerously-bypass-approvals-and-sandbox`
+- With `workspace-write` Goodboy adds `-c sandbox_workspace_write.network_access=true`. An Auto
+  child whose launch guard asks before dependencies (`launchGuard.isNetworkOff`, see
+  [the launch guard](auto.md#launch-guard)) starts without it, so its sandbox has no network
 - `--skip-git-repo-check` is required. Without it, codex refuses folders it does not trust
 - codex CLI v0.130 writes the `codex login status` output to stderr when no terminal
   (TTY) is attached. Processes that Tauri starts never have one. So the sign-in check
@@ -929,7 +932,9 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   as a hidden alias, so Goodboy keeps sending `default` for Ask first: `manual`
   is not in older CLIs and would break them
 - Allow and deny rules still reach Claude only (`--allowedTools`,
-  `--disallowedTools`). The other CLIs have no equivalent flag
+  `--disallowedTools`). The other CLIs have no equivalent flag. The deny rules of an Auto
+  child's launch guard (`launchGuard.deniedTools`) join the end of `--disallowedTools`, before
+  `mcp__*`; its offline settings (`launchGuard.env`) reach every CLI through the environment
 - Settings, Workspace, Permissions shows this table in words, one column per
   provider, and lists the workspace and global rules. Each rule names the
   provider that follows it and the ones that ignore it, and a deny rule that a

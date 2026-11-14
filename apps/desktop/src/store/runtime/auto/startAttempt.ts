@@ -10,7 +10,9 @@ import {
   type Database,
   type Statement,
 } from '@goodboy/db';
+import type { LaunchGuardRows } from '@goodboy/core/auto';
 import type { AutoDelegationId, AutoTreeId } from '@goodboy/types';
+import { launchGuardStart } from './launchGuard/launchGuardStart';
 
 export type StartAttemptParams = Readonly<{
   db: Database;
@@ -22,6 +24,7 @@ export type StartAttemptParams = Readonly<{
   baseline: AutoJsonObject | null;
   writeSet: AutoJsonObject | null;
   launchSnapshot?: AutoJsonObject | null;
+  guardRows?: LaunchGuardRows | null;
 }>;
 
 export type StartAttemptOutcome =
@@ -41,11 +44,13 @@ export const startAttempt = async ({
   baseline,
   writeSet,
   launchSnapshot = null,
+  guardRows = null,
 }: StartAttemptParams): Promise<StartAttemptOutcome> => {
   const delegation = await getAutoDelegation({ db, delegationId });
   if (delegation === null || delegation.treeId !== treeId) {
     return { kind: 'refused', reason: 'unknown_delegation' };
   }
+  const guarded = await launchGuardStart({ db, nowMs, delegation, writeSet, rows: guardRows });
   const statements: Statement[] = [
     {
       sql: `SELECT 1 FROM auto_trees
@@ -61,13 +66,14 @@ export const startAttempt = async ({
       to: 'starting',
       abortCode: ABORT_START_DELEGATION,
     }),
+    ...guarded.statements,
     insertAutoAttemptStatement({
       id: delegation.firstAttemptId,
       delegationId,
       treeId,
       generation,
       baseline,
-      writeSet,
+      writeSet: guarded.writeSet,
       launchSnapshot,
       nowMs,
     }),

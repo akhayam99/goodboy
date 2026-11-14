@@ -8,6 +8,7 @@ const SCOUT_CHILD: ChildTurn = {
   treeId: brandId<AutoTreeId>({ value: 'tree-ledger-core' }),
   role: 'scout',
   route: { provider: 'anthropic', model: 'claude-haiku-5' },
+  guard: null,
 };
 
 describe('the role a turn is confined to', () => {

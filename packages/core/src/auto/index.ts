@@ -198,9 +198,31 @@ export {
 } from './branchFacts';
 
 export {
+  DEPENDENCY_FILES,
+  OFFLINE_PACKAGE_MANAGERS,
+  PACKAGE_MANAGERS,
+  PROTECTED_FILE_PATTERNS,
+  guardedPatternsOf,
+  isPathInPattern,
+  launchGuardOf,
+  launchGuardRulesOf,
+  needSubjectOf,
+  parseLaunchGuard,
+  storedLaunchGuardOf,
+  type LaunchAllowance,
+  type LaunchGuard,
+  type LaunchGuardEnv,
+  type LaunchGuardRows,
+  type LaunchGuardRules,
+  type LaunchGuardValue,
+  type PackageManager,
+} from './launchGuard';
+
+export {
   composeAnswerKickoff,
   composeDelegationKickoff,
   kickoffGuidanceOf,
+  launchGuardBriefOf,
   type AnswerKickoffParams,
   type DelegationKickoffParams,
   type KickoffArtifactInput,
