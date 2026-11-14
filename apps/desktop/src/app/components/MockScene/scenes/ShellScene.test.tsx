@@ -43,7 +43,7 @@ const pageTab = (label: string): HTMLElement => {
 
 const renderShell = async () => {
   render(<ShellScene />);
-  await screen.findByTestId('pane-toggle-ask');
+  await screen.findByTestId('pane-toggle-scripts');
 };
 
 describe('the shell scene mounts the real session workspace', () => {
@@ -89,6 +89,6 @@ describe('the shell scene mounts the real session workspace', () => {
       expect(screen.queryByRole('complementary', { name: 'Settings scopes' })).toBeNull(),
     );
     expect(useAppStore.getState().appStudio).toBeNull();
-    expect(screen.getByTestId('pane-toggle-ask')).toBeDefined();
+    expect(screen.getByTestId('pane-toggle-scripts')).toBeDefined();
   });
 });

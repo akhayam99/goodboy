@@ -171,7 +171,7 @@ describe('the c02 sidebar and session rail scenes', () => {
     await mount('c02-shell-overview');
 
     expect(screen.getByTestId('overview-title').closest('h1')).not.toBeNull();
-    expect(screen.getAllByTestId('pane-toggle-ask').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('pane-toggle-scripts').length).toBeGreaterThan(0);
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
   });
 });

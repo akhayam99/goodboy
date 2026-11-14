@@ -658,11 +658,10 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'ask.open',
     lands: async (ctx) => {
-      await waitFor(() => {
-        const drawer = selectOpenDrawer(useAppStore.getState());
-        expect(drawer?.kind).toBe('ask');
-        expect(drawer?.sessionId).toBe(ctx.sessionId);
-      });
+      await contextTab(ctx);
+      expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
+      const composer = await screen.findByRole('textbox', { name: 'Ask about this session' });
+      await waitFor(() => expect(document.activeElement).toBe(composer));
     },
   }),
   keyRow({
@@ -1147,7 +1146,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'ask.reset',
-    note: 'inside the Ask panel the new chord resets the chat, not a session',
+    note: 'inside Ask, in the Context tab, the new chord resets the chat, not a session',
     open: async (ctx) => {
       await press('ask.open')();
       const composer = await screen.findByPlaceholderText('Ask about this session…', {});

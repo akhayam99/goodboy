@@ -348,7 +348,11 @@ export const BrandContextScene = () => {
       ensureProjectMounted: async () => undefined,
       recordSessionEvent: async () => undefined,
     } as never);
-    useAppStore.getState().openContextDrawer({ sessionId: CTX_SESSION_ID, section: 'decisions' });
+    useAppStore.getState().openDrawer({
+      kind: 'context',
+      sessionId: CTX_SESSION_ID,
+      payload: { section: 'decisions', view: 'current' },
+    });
     setIsReady(true);
   }, []);
 

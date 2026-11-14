@@ -65,7 +65,11 @@ type PaneParams = {
   readonly pane: ClusterPane;
 };
 
-const OBJECT_PAGE_LENSES: ReadonlySet<LensKind> = new Set<LensKind>(['workflows', 'plans']);
+const OBJECT_PAGE_LENSES: ReadonlySet<LensKind> = new Set<LensKind>([
+  'workflows',
+  'plans',
+  'context',
+]);
 
 const doorTabOf = ({ kind }: { readonly kind: LensKind | null }): BranchTab => {
   if (kind === 'files') {

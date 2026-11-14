@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { pressShortcut } from '../../helpers/pressKey';
 import { type Row, WAIT, settle, useAppStore } from './harness';
 
-const askButton = (): Promise<HTMLElement> => screen.findByTestId('pane-toggle-ask');
+const toolButton = (): Promise<HTMLElement> => screen.findByTestId('pane-toggle-scripts');
 
 const sidePanel = (): HTMLElement => screen.getByRole('complementary', { name: 'Side panel' });
 
@@ -18,21 +18,21 @@ const escapeInSearch = async (): Promise<void> => {
   await settle();
 };
 
-const openAskThenPalette = async (): Promise<void> => {
-  const ask = await askButton();
-  ask.focus();
-  pressShortcut({ id: 'ask.open' });
+const openScriptsThenPalette = async (): Promise<void> => {
+  const tool = await toolButton();
+  tool.focus();
+  pressShortcut({ id: 'lens.scripts' });
   await settle();
   await waitFor(() => {
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('ask');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
   }, WAIT);
   pressShortcut({ id: 'palette.open' });
   await settle();
   await searchInput();
 };
 
-const expectAskStillOpen = (): void => {
-  expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('ask');
+const expectScriptsStillOpen = (): void => {
+  expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
   expect(sidePanel().getAttribute('data-drawer-mode')).not.toBe('closed');
 };
 
@@ -44,20 +44,20 @@ const expectPaletteGone = async (): Promise<void> => {
 
 export const LAYERS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'ask under the palette: Esc in the search box closes only the palette',
-    covers: ['key:ask.open', 'key:palette.open', 'layers:palette-over-ask'],
-    open: openAskThenPalette,
+    name: 'scripts under the palette: Esc in the search box closes only the palette',
+    covers: ['key:lens.scripts', 'key:palette.open', 'layers:palette-over-ask'],
+    open: openScriptsThenPalette,
     lands: async () => {
       await escapeInSearch();
       await expectPaletteGone();
-      expectAskStillOpen();
+      expectScriptsStillOpen();
     },
   },
   {
-    name: 'ask under the palette: focus after Esc is on the page body today, not the composer',
+    name: 'scripts under the palette: focus after Esc is on the page body today, not the panel',
     covers: ['layers:palette-focus-return'],
     open: async () => {
-      await openAskThenPalette();
+      await openScriptsThenPalette();
       const [option] = await screen.findAllByRole('option', {}, WAIT);
       expect(option).toBeDefined();
       fireEvent.mouseEnter(option ?? document.body);
@@ -66,16 +66,16 @@ export const LAYERS_ROWS: ReadonlyArray<Row> = [
       await expectPaletteGone();
     },
     lands: async () => {
-      expectAskStillOpen();
+      expectScriptsStillOpen();
       expect(document.activeElement).toBe(document.body);
       expect(sidePanel().contains(document.activeElement)).toBe(false);
     },
   },
   {
-    name: 'ask under the palette: a second Esc closes the drawer',
+    name: 'scripts under the palette: a second Esc closes the drawer',
     covers: ['layers:esc-twice'],
     open: async () => {
-      await openAskThenPalette();
+      await openScriptsThenPalette();
       await escapeInSearch();
       await expectPaletteGone();
     },

@@ -155,7 +155,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 - **Decisions**: Record a decision once and have the agents after it read it.
 - **Running summary**: Hand the next agent where things stand.
-- **Context drawer**: Open goal, decisions, summary and explanations from any session page with the Context button, and copy them all with Copy context.
+- **Context drawer**: Open goal, decisions, summary and explanations in the Context tab, with Projects, Linked and Ask beside them, and copy them with Copy context.
 - **Who receives what**: See which agents read each part of the context.
 - **Explanations**: Read back what agents explained about the topics you follow.
 

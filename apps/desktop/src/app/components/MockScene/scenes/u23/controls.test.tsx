@@ -171,11 +171,11 @@ describe('controls hints', () => {
     renderScene('controls-hints');
 
     const row = rowOf('Session tools and Search side by side');
-    const ask = within(row).getByTestId('pane-toggle-ask');
+    const scripts = within(row).getByTestId('pane-toggle-scripts');
     const search = within(row).getByRole('button', { name: /^Search or run \(/ });
-    expect(ask.textContent).toBe('');
-    expect(ask.getAttribute('aria-label')).toBe('Ask this session');
-    expect(ask.querySelector('kbd')).toBeNull();
+    expect(scripts.textContent).toBe('');
+    expect(scripts.getAttribute('aria-label')).toBe('Scripts');
+    expect(scripts.querySelector('kbd')).toBeNull();
     expect(search.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');
     expect(search.querySelector('kbd')?.textContent).toBe(shortcutGlyphs('palette.open'));
   });

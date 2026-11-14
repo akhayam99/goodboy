@@ -28,8 +28,11 @@ draws the same list.
   [branch-page.md](branch-page.md)). Never two rows.
 - **Changes on every session.** A branchless session shows its file versions; a session with
   a branch shows the Branch page pinned on its Changes section, without its own strip.
-- **Context** shows the existing Context panel until the Context tab replaces it; the Projects
-  and Linked cards (`SessionLevel`) wait for that tab.
+- **Context** is `ContextTab`: the Projects and Linked cards (`SessionLevel`, handed in through
+  `ContextCardsContext`), goal, decisions, summary and explanations (`ContextDrawer` in page
+  mode) and Ask at the foot. `openContextDrawer` navigates to the tab and keeps the section,
+  view and highlight in the place's rows (`context.section`, `context.view`,
+  `context.highlight`, read by the tab); it does not open a drawer.
 - **No fold, no width.** The rail's fold, its width and its page-column fold key are gone with
   it; `SessionFrame` keeps the session tools rail and its drawer inset only.
 
@@ -675,7 +678,8 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
   the content (see The session tools), so no header carries a second `⋯` (pinned by
   `scene-primaries.test.tsx`). `PaneActionsContext` stays for a page that
   lends its own action to a nested header (the issue detail's back word).
-  ⌘L (`ask.open`, app plane) opens Ask or, when it is open, focuses its box;
+  ⌘L (`ask.open`, app plane) opens the Context tab (`openAsk`) and focuses the Ask box; Ask
+  keeps its conversation and starts no agent;
   the key is bound once per visible session (`useAskOpenShortcut` in
   `SessionWorkspace`), not by the row, so two mounted pages never bind it
   twice.
@@ -708,7 +712,7 @@ a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
 record panel shown as an overlay the rail stays where it is, above that panel's
 scrim, as it does above the shell's. It holds two
 groups by scope. On a session page with no page open, the Session group holds
-Explore, Context, Ask, Agents and Scripts (`SESSION_TOOLS`), under the caption
+Explore, Agents and Scripts (`SESSION_TOOLS`; Context and Ask moved to the Context tab), under the caption
 Session (`ToolGroupCaption`, `text-rail`). At its foot, on every screen, the
 Workspace group holds Terminal and Browser (`WORKSPACE_TOOLS`) with no
 caption, since a 44px column cannot fit the word; a flexible gap keeps it

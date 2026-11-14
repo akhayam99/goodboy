@@ -4,7 +4,7 @@ import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer'
 import { pressShortcut } from '../../helpers/pressKey';
 import { type Row, WAIT, settle, useAppStore } from './harness';
 
-const askButton = (): Promise<HTMLElement> => screen.findByTestId('pane-toggle-ask');
+const toolButton = (): Promise<HTMLElement> => screen.findByTestId('pane-toggle-scripts');
 
 const sidePanel = (): HTMLElement => screen.getByRole('complementary', { name: 'Side panel' });
 
@@ -19,16 +19,16 @@ const scrimOf = (): HTMLElement | null =>
 
 export const DRAWER_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'ask over a narrow page: ⌘L opens it over a scrim, a scrim click closes it, focus returns to Ask',
-    covers: ['key:ask.open', 'openAsk'],
+    name: 'scripts over a narrow page: its chord opens it over a scrim, a scrim click closes it, focus returns to Scripts',
+    covers: ['key:lens.scripts'],
     open: async () => {
-      const ask = await askButton();
-      ask.focus();
-      expect(document.activeElement).toBe(ask);
-      pressShortcut({ id: 'ask.open' });
+      const tool = await toolButton();
+      tool.focus();
+      expect(document.activeElement).toBe(tool);
+      pressShortcut({ id: 'lens.scripts' });
       await settle();
       await waitFor(() => {
-        expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('ask');
+        expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
         expect(sidePanel().getAttribute('data-drawer-mode')).toBe('overlay');
       }, WAIT);
       expect(scrimOf()).not.toBeNull();
@@ -46,7 +46,7 @@ export const DRAWER_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => {
         expect(scrimOf()).toBeNull();
       }, WAIT);
-      expect(document.activeElement).toBe(await askButton());
+      expect(document.activeElement).toBe(await toolButton());
     },
   },
 ];

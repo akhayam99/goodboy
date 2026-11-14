@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus } from '../../../../../store';
 import { selectHasContextChange } from '../../../../../store/slices/contextDrawer/selectHasContextChange';
-import { contextNoteOf } from '../contextNote';
+import { contextNoteOf } from '../../ContextTab/contextNote';
 
 export type ToolSignal = {
   readonly kind: 'changed' | 'running' | 'error';

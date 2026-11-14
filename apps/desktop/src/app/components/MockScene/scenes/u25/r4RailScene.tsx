@@ -29,6 +29,9 @@ type PaneParams = {
 };
 
 const openPane = ({ pane }: PaneParams): void => {
+  if (pane === 'ask' || pane === 'context') {
+    useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
+  }
   if (openPaneOf({ state: useAppStore.getState(), sessionId: SESSION_ID }) === pane) {
     return;
   }

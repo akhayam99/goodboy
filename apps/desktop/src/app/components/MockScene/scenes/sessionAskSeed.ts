@@ -106,16 +106,35 @@ const turn = ({ index, question, answer, status, minutes }: TurnParams) => [
 type SeedParams = {
   readonly state: AskSceneState;
   readonly session?: Session;
+  readonly isDrawer?: boolean;
 };
 
-export const seedSessionAsk = ({ state, session = SESSION }: SeedParams): void => {
+type SurfaceParams = {
+  readonly sessionId: Session['id'];
+  readonly isDrawer: boolean;
+};
+
+const openAskSurface = ({ sessionId, isDrawer }: SurfaceParams): void => {
+  const store = useAppStore.getState();
+  if (isDrawer) {
+    store.openDrawer({ kind: 'ask', sessionId, payload: null });
+    return;
+  }
+  store.openAsk({ sessionId });
+};
+
+export const seedSessionAsk = ({
+  state,
+  session = SESSION,
+  isDrawer = false,
+}: SeedParams): void => {
   useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
   const store = useAppStore.getState();
   if (state === 'closed') {
     useAppStore.setState({ askThreadId: { [session.id]: null }, drawer: null });
     return;
   }
-  store.openAsk({ sessionId: session.id });
+  openAskSurface({ sessionId: session.id, isDrawer });
   if (state === 'rightnow') {
     useAppStore.setState({ askThreadId: { [session.id]: null } });
     return;

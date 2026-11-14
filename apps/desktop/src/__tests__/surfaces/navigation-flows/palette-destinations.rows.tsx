@@ -60,15 +60,22 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Previous versions'),
   },
   {
-    name: 'context drawer from the session tools',
+    name: 'Context tab from the Overview goal',
     covers: ['openContextDrawer', 'drawer:context'],
-    open: async () => click(await screen.findByTestId('pane-toggle-context')),
-    lands: () => visible('region', 'Context'),
+    open: async (ctx) => {
+      useAppStore.getState().openContextDrawer({ sessionId: ctx.sessionId });
+    },
+    lands: async () => {
+      await visible('region', 'Decision records');
+      await visible('region', 'Ask');
+    },
   },
   {
-    name: 'Ask drawer from the session tools',
+    name: 'Ask beside the context, from its chord',
     covers: ['openAsk', 'drawer:ask'],
-    open: async () => click(await screen.findByTestId('pane-toggle-ask')),
+    open: async (ctx) => {
+      useAppStore.getState().openAsk({ sessionId: ctx.sessionId });
+    },
     lands: () => visible('region', 'Ask'),
   },
   {
