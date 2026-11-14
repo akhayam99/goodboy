@@ -3,6 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { WorkFilter } from '../../../../../store/slices/work/state';
 import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
+import { StartWork } from '../../../../../features/session/components/StartWork';
 import { WorkStudio } from '../../../../../features/work/components/WorkStudio';
 import { SideColumn } from '../../../SideColumn';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
@@ -30,9 +31,13 @@ const ACTIONS: ColumnActions = {
 type Props = {
   readonly filter: WorkFilter;
   readonly isLoading?: boolean;
+  readonly isStartOpen?: boolean;
 };
 
-const WorkListScene = ({ filter, isLoading = false }: Props) => {
+const START_TEXT =
+  'Stop retried webhooks posting a second credit in payments-api. Leave the ledger export alone.';
+
+const WorkListScene = ({ filter, isLoading = false, isStartOpen = false }: Props) => {
   const [workspaceId, setWorkspaceId] = useState<WorkspaceId | null>(null);
 
   useEffect(() => {
@@ -47,10 +52,13 @@ const WorkListScene = ({ filter, isLoading = false }: Props) => {
       isWorkStale: false,
       agentTurnState: workListTurns(),
       currentSessionId: null,
+      workStart: isStartOpen
+        ? { sessionId: null, projectId: null, branch: null, text: START_TEXT }
+        : null,
     });
     useAppStore.getState().openStudio({ studio: { kind: 'work', filter } });
     setWorkspaceId(seed.workspaceId);
-  }, [filter, isLoading]);
+  }, [filter, isLoading, isStartOpen]);
 
   if (workspaceId === null) {
     return null;
@@ -67,7 +75,12 @@ const WorkListScene = ({ filter, isLoading = false }: Props) => {
         />
       </div>
       <PageSheet>
-        <WorkStudio workspaceId={workspaceId} filter={filter} onClose={noop} />
+        <WorkStudio
+          workspaceId={workspaceId}
+          filter={filter}
+          onClose={noop}
+          renderComposer={(composer) => <StartWork {...composer} />}
+        />
       </PageSheet>
     </main>
   );
@@ -77,4 +90,5 @@ export const U42_WORK_LIST_SCENES = {
   'work-list': () => <WorkListScene filter="open" />,
   'work-list-needs-you': () => <WorkListScene filter="needsYou" />,
   'work-list-loading': () => <WorkListScene filter="open" isLoading />,
+  'work-start': () => <WorkListScene filter="open" isStartOpen />,
 };

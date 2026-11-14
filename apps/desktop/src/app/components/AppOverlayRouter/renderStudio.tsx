@@ -18,6 +18,10 @@ const WorkflowStudio = lazyNamed({
   load: () => import('../../../features/workflows/components/WorkflowStudio'),
   pick: ({ WorkflowStudio }) => WorkflowStudio,
 });
+const StartWork = lazyNamed({
+  load: () => import('../../../features/session/components/StartWork'),
+  pick: ({ StartWork }) => StartWork,
+});
 const WorkStudio = lazyNamed({
   load: () => import('../../../features/work/components/WorkStudio'),
   pick: ({ WorkStudio }) => WorkStudio,
@@ -83,7 +87,12 @@ export const renderStudio = ({
       );
     case 'work':
       return currentWorkspace === null ? null : (
-        <WorkStudio workspaceId={currentWorkspace.id} filter={overlay.filter} onClose={close} />
+        <WorkStudio
+          workspaceId={currentWorkspace.id}
+          filter={overlay.filter}
+          onClose={close}
+          renderComposer={(composer) => <StartWork {...composer} />}
+        />
       );
     case 'inbox':
       return currentWorkspace === null ? null : (

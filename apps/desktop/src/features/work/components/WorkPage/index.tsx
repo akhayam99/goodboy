@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, HeaderActions, ICON_SIZE, PaneShell, ScrollFade } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
@@ -20,9 +21,16 @@ type Props = {
   readonly filter: WorkFilter;
   readonly onFilterChange: (filter: WorkFilter) => void;
   readonly startWork: StartWorkPort | null;
+  readonly composer?: ReactNode;
 };
 
-export const WorkPage = ({ workspaceId, filter, onFilterChange, startWork }: Props) => {
+export const WorkPage = ({
+  workspaceId,
+  filter,
+  onFilterChange,
+  startWork,
+  composer = null,
+}: Props) => {
   const model = useWorkLeads({ workspaceId, filter });
   const projects = useAppStore((state) => state.projects);
   return (
@@ -47,6 +55,7 @@ export const WorkPage = ({ workspaceId, filter, onFilterChange, startWork }: Pro
       toolbar={<WorkFilterTabs filter={filter} counts={model.counts} onChange={onFilterChange} />}
     >
       <ScrollFade viewportClassName="flex flex-col gap-1 pb-6">
+        {composer}
         {model.isStale ? <WorkStaleNotice onRetry={model.retry} /> : null}
         {model.isLoading ? <WorkSkeleton /> : null}
         {!model.isLoading && model.rows.length === 0 ? <WorkEmpty filter={filter} /> : null}

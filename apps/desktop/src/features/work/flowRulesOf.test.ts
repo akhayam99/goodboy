@@ -8,6 +8,7 @@ const MATRIX: ReadonlyArray<Row> = [
   ['sidebar', 'hasWorkSection', false, true],
   ['the word', 'word', 'Auto', 'Lead'],
   ['start target', 'shouldStartOpenComposer', false, true],
+  ['start label', 'startLabel', 'Start a run', 'Start work'],
   ['autonomy control', 'autonomyControl', 'level-chip', 'rows-panel'],
   ['permission rows', 'hasPermissionRows', false, true],
   ['a message while agents work', 'isMessageDeliveredAtOnce', false, true],
