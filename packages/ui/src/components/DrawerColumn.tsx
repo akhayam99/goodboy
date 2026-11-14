@@ -10,7 +10,7 @@ import { dismissTopEscapeLayer } from '../escape';
 import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
 import { ResizeHandle } from './ResizeHandle';
 import { DrawerDetailGroup } from './DrawerDetailGroup';
-import { DrawerPanelCard } from './DrawerPanelCard';
+import { DrawerDockBox } from './DrawerDockBox';
 import { useDrawerPanel } from '../useDrawerPanel';
 import { useDrawerPreview } from '../useDrawerPreview';
 import { useEdgeHost } from '../useEdgeHost';
@@ -25,8 +25,6 @@ import {
 } from '../drawerGeometry';
 
 export type DrawerColumnFrame = 'sheet' | 'none';
-
-const PUSH_CONTENT = 'w-[calc(var(--goodboy-drawer-panel)-1px)]';
 
 const SCRIM_RADIUS: Readonly<Record<SheetEdge, string>> = {
   wrapped: 'rounded-l-frame',
@@ -113,7 +111,6 @@ export const DrawerColumn = ({
   const isOverlayExit = dockPanel.isOverlayExit || detailPanel.isOverlayExit;
   const isAnyExiting = dockPanel.exit.isExiting || detailPanel.exit.isExiting;
   const isFloating = (isOverlay && (isDockShown || isDetailShown)) || isOverlayExit;
-  const isDockSliding = isOverlay && isDockShown;
   useSnapAfterFloat({ ref: asideRef, isFloating });
   const hasRail = railWidth > 0;
   const dockPx = isDockShown || (dockPanel.isOverlayExit && !isParked) ? layout.dock.width : 0;
@@ -250,36 +247,18 @@ export const DrawerColumn = ({
                 />
               ) : null}
             </div>
-            <div
-              data-container="drawer"
-              className={cn(
-                'panel-on-rail relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l border-frame-edge bg-drawer',
-                isFloating && 'pointer-events-auto shadow-xl',
-                isContainerIdle && 'border-0',
-                isDockSliding && !dockPanel.exit.isResumed && 'motion-safe:animate-drawer-dock-in',
-                dockPanel.isOverlayExit && 'motion-safe:animate-drawer-dock-out',
-              )}
-            >
-              <div
-                ref={edge.setHost}
-                data-drawer-edge=""
-                className="relative z-10 flex shrink-0 bg-drawer empty:hidden"
-              />
-              {isOpen || dockPanel.exit.isExiting ? (
-                <DrawerPanelCard
-                  slot="drawer"
-                  panel={dockPanel}
-                  node={drawer}
-                  panelKey={drawerKey}
-                  isOpen={isOpen}
-                  isParked={isParked}
-                  isOverlay={isOverlay}
-                  isFloating={isFloating}
-                  parkedWidth={layout.dock.width}
-                  pushWidthClass={PUSH_CONTENT}
-                />
-              ) : null}
-            </div>
+            <DrawerDockBox
+              panel={dockPanel}
+              node={drawer}
+              panelKey={drawerKey}
+              isOpen={isOpen}
+              isParked={isParked}
+              isOverlay={isOverlay}
+              isFloating={isFloating}
+              isIdle={isContainerIdle}
+              parkedWidth={layout.dock.width}
+              setEdgeHost={edge.setHost}
+            />
           </div>
         </aside>
       </div>
