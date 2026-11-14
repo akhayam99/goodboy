@@ -635,6 +635,26 @@ branch lives only in `leadSpendByBranchOf`: an agent's spend goes to the row of
 its own branch, the Lead's own turns to its primary branch, or to the group
 without a branch (`mountId` null), and the rows sum to the total.
 
+### The spawn record
+
+`SpawnRecord` (`apps/desktop/src/features/auto/tree/SpawnRecord/index.tsx`) answers why
+one agent exists, in eight fields: Why, Brief, Role, Model, Went in, Done when,
+Result and Attempts. `spawnRecordOf` builds it from the stored delegation rows
+through `delegationCardOf`, and nothing is computed outside that path. Why is the
+stored `reason` (cut at 240 characters when written). Role is the role plus the
+stored `roleReason`, with the role fit as "Why not X" when both are stored. Model
+is the routing the delegation recorded and its `reason`. Done when is the stored
+`doneWhen`. Attempts counts the `retryOf` chain behind the agent.
+
+Went in reads the launch snapshot (`launchSnapshotOf`, `request.launchSnapshot`)
+and lists it as given to the agent, never as read by it. An agent without a
+snapshot reads "Not recorded": a state, not an error, and nothing is recomputed
+from today's images. The record lives in the one right slot, is never stored,
+and Esc or the close button closes it without a history entry. The record of an
+agent is a pure function of that agent's rows, so a late result for another
+agent does not repaint it. "Open transcript" calls `onOpenTranscript` with the
+agent id.
+
 ## Plans
 
 The plan a Planner writes opens in the right drawer. Its second row shows
