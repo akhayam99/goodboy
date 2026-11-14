@@ -12,6 +12,8 @@ import {
   brandId,
   type AgentId,
   type ArtifactId,
+  type IsoDateTime,
+  type SessionArtifact,
   type SessionId,
   type StepId,
   type WorkflowRunId,
@@ -19,7 +21,8 @@ import {
 import { anAgent, aSession, aWorkflowRun } from '@goodboy/types/testing';
 import { STORE_IMPORT_TIMEOUT_MS, importStore } from '../../storyHarness';
 import type { AppState } from '../../types';
-import { backOf } from './backOf';
+import { crumbsOf } from './crumbsOf';
+import { parentPlace } from './parentPlace';
 import { BOARD_PLACE, branchPlace, sessionPlace } from './place';
 import type { Place } from './types';
 
@@ -28,11 +31,12 @@ const MAIN = brandId<AgentId>({ value: 'agent-planner' });
 const CHILD = brandId<AgentId>({ value: 'agent-scout' });
 const GRANDCHILD = brandId<AgentId>({ value: 'agent-tester' });
 const STEP = brandId<AgentId>({ value: 'agent-step' });
-const RESOLVER = brandId<AgentId>({ value: 'agent-resolver' });
 const SUB_STEP = brandId<AgentId>({ value: 'agent-sub-step' });
 const SUB_SUB_STEP = brandId<AgentId>({ value: 'agent-sub-sub-step' });
 const ARTIFACT = brandId<ArtifactId>({ value: 'artifact-1' });
 const DYNAMIC_RUN = brandId<WorkflowRunId>({ value: 'run-dynamic' });
+const TITLE = 'Guard the settlement batch';
+const NOW = brandId<IsoDateTime>({ value: '2026-09-14T16:40:00.000Z' });
 
 let appState: AppState;
 
@@ -43,7 +47,7 @@ beforeAll(async () => {
     sessions: [
       aSession({
         id: S1,
-        goal: 'Guard the settlement batch',
+        goal: TITLE,
         workflowRuns: [
           aWorkflowRun({
             id: DYNAMIC_RUN,
@@ -65,7 +69,6 @@ beforeAll(async () => {
           workflowRunId: DYNAMIC_RUN,
           stepId: brandId<StepId>({ value: 'step-1' }),
         }),
-        anAgent({ id: RESOLVER, sessionId: S1, name: 'resolve: ana on a.ts:4' }),
         anAgent({
           id: SUB_STEP,
           sessionId: S1,
@@ -84,83 +87,70 @@ beforeAll(async () => {
         }),
       ],
     },
-    agentKindOverride: { [RESOLVER]: 'resolver' },
   };
 }, STORE_IMPORT_TIMEOUT_MS);
 
 const agentAt = ({ agentId }: { readonly agentId: AgentId }): Place =>
   sessionPlace({ sessionId: S1, agentId });
 
-type BackParams = {
+type CrumbParams = {
   readonly place: Place;
 };
 
-const labelOf = ({ place }: BackParams): string | null =>
-  backOf({ state: appState, place })?.label ?? null;
+const labelsOf = ({ place }: CrumbParams): ReadonlyArray<string> =>
+  crumbsOf({ state: appState, place }).map((crumb) => crumb.label);
 
-describe('backOf', () => {
-  it.each<readonly [string, Place, string | null]>([
-    ['the board', BOARD_PLACE, null],
-    ['the Overview', sessionPlace({ sessionId: S1 }), null],
-    ['a session tab', sessionPlace({ sessionId: S1, lens: 'questions' }), null],
-    ['the Context tab', sessionPlace({ sessionId: S1, lens: 'context' }), null],
-    ['an old Orchestrated address', sessionPlace({ sessionId: S1, lens: 'orchestrated' }), null],
+const RUN = sessionPlace({
+  sessionId: S1,
+  lens: 'workflows',
+  target: { kind: 'run', runId: DYNAMIC_RUN },
+});
+
+describe('crumbsOf', () => {
+  it.each<readonly [string, Place]>([
+    ['the board', BOARD_PLACE],
+    ['the Overview', sessionPlace({ sessionId: S1 })],
+    ['a session tab', sessionPlace({ sessionId: S1, lens: 'questions' })],
+    ['the Context tab', sessionPlace({ sessionId: S1, lens: 'context' })],
+    ['an old Orchestrated address', sessionPlace({ sessionId: S1, lens: 'orchestrated' })],
+  ])('draws no crumbs on %s, which shows the tabs', (_name, place) => {
+    expect(labelsOf({ place })).toEqual([]);
+  });
+
+  it.each<readonly [string, Place, ReadonlyArray<string>]>([
     [
-      'a file in the Changes tab',
+      'a file of a branchless session',
       sessionPlace({
         sessionId: S1,
         lens: 'files',
         target: { kind: 'diff', mountPath: null, focus: { kind: 'branch', path: 'src/ledger.ts' } },
       }),
-      'Back to changes',
+      [TITLE, 'Changes'],
     ],
-    ['a Lead', agentAt({ agentId: MAIN }), 'Back to overview'],
-    ['a sub agent', agentAt({ agentId: CHILD }), 'Back to planner'],
-    ['a sub sub agent', agentAt({ agentId: GRANDCHILD }), 'Back to scout'],
-    ['a run step', agentAt({ agentId: STEP }), 'Back to Close the settlement batch'],
-    ['a sub step', agentAt({ agentId: SUB_STEP }), 'Back to implementer'],
-    ['a sub sub step', agentAt({ agentId: SUB_SUB_STEP }), 'Back to scout'],
+    ['a Lead', agentAt({ agentId: MAIN }), [TITLE, 'planner']],
+    ['a sub agent', agentAt({ agentId: CHILD }), [TITLE, 'planner', 'scout']],
+    ['a sub sub agent', agentAt({ agentId: GRANDCHILD }), [TITLE, 'planner', 'scout', 'tester']],
+    ['a run', RUN, [TITLE, 'Runs', 'Close the settlement batch']],
     [
-      'a run',
-      sessionPlace({
-        sessionId: S1,
-        lens: 'workflows',
-        target: { kind: 'run', runId: DYNAMIC_RUN },
-      }),
-      'Back to runs',
+      'a run step',
+      agentAt({ agentId: STEP }),
+      [TITLE, 'Runs', 'Close the settlement batch', 'implementer'],
     ],
-    ['a resolver', agentAt({ agentId: RESOLVER }), 'Back to comments'],
     [
-      'an artifact',
+      'a sub sub step',
+      agentAt({ agentId: SUB_SUB_STEP }),
+      [TITLE, 'Runs', 'Close the settlement batch', 'implementer', 'scout', 'reader'],
+    ],
+    [
+      'an artifact gone from the list',
       sessionPlace({
         sessionId: S1,
         lens: 'plans',
         target: { kind: 'artifact', artifactId: ARTIFACT },
       }),
-      'Back to artifacts',
+      [TITLE, 'Artifacts', 'Artifact'],
     ],
-    [
-      'an issue',
-      sessionPlace({
-        sessionId: S1,
-        lens: 'github_issue',
-        target: { kind: 'github-issue', issueNumber: 12 },
-      }),
-      'Back to overview',
-    ],
-    [
-      'a linked record',
-      sessionPlace({
-        sessionId: S1,
-        lens: 'linear',
-        target: {
-          kind: 'external-task',
-          task: { provider: 'linear', externalId: 'NW-142', projectId: null },
-        },
-      }),
-      'Back to overview',
-    ],
-    ['a Branch section', branchPlace({ sessionId: S1, tab: 'commits' }), 'Back to overview'],
+    ['a Branch section', branchPlace({ sessionId: S1, tab: 'commits' }), [TITLE, 'Branch']],
     [
       'a branch file',
       branchPlace({
@@ -168,40 +158,56 @@ describe('backOf', () => {
         tab: 'files',
         focus: { kind: 'branch', path: 'src/ledger.ts' },
       }),
-      'Back to branch',
+      [TITLE, 'Branch'],
     ],
     [
       'a thread',
       branchPlace({ sessionId: S1, tab: 'comments', threadId: 'thread-1' }),
-      'Back to branch',
+      [TITLE, 'Branch'],
     ],
-  ])('names the parent of %s', (_name, place, label) => {
-    expect(labelOf({ place })).toBe(label);
+  ])('names the way from the session to %s', (_name, place, labels) => {
+    expect(labelsOf({ place })).toEqual(labels);
   });
 
-  it('names a run with no title and no workflow in its row as the run', () => {
-    const untitled: AppState = {
-      ...appState,
-      sessions: appState.sessions.map((session) => ({
-        ...session,
-        workflowRuns: [aWorkflowRun({ id: DYNAMIC_RUN, executionMode: 'dynamic' })],
-      })),
+  it('names an artifact and a branch by their own names', () => {
+    const plan: SessionArtifact = {
+      id: ARTIFACT,
+      sessionId: S1,
+      agentId: MAIN,
+      workflowRunId: null,
+      kind: 'plan',
+      schemaVersion: 1,
+      title: 'Settlement plan',
+      sourceFormat: 'markdown',
+      sourceText: '## findings',
+      metadata: {},
+      status: 'active',
+      revision: 1,
+      sourceTurnId: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      openedAt: null,
     };
-    expect(backOf({ state: untitled, place: agentAt({ agentId: STEP }) })?.label).toBe(
-      'Back to run',
-    );
+    const named: AppState = { ...appState, sessionArtifacts: { [S1]: [plan] } };
+    const artifact = sessionPlace({
+      sessionId: S1,
+      lens: 'plans',
+      target: { kind: 'artifact', artifactId: ARTIFACT },
+    });
+
+    expect(crumbsOf({ state: named, place: artifact }).map((crumb) => crumb.label)).toEqual([
+      TITLE,
+      'Artifacts',
+      'Settlement plan',
+    ]);
   });
 
-  it('points at the real parent place', () => {
-    expect(backOf({ state: appState, place: agentAt({ agentId: GRANDCHILD }) })?.to).toEqual(
-      sessionPlace({ sessionId: S1, lens: 'workflows', agentId: CHILD }),
-    );
-    expect(backOf({ state: appState, place: agentAt({ agentId: STEP }) })?.to).toEqual(
-      sessionPlace({
-        sessionId: S1,
-        lens: 'workflows',
-        target: { kind: 'run', runId: DYNAMIC_RUN },
-      }),
-    );
+  it('points every crumb but the last at a place one Esc reaches', () => {
+    const place = agentAt({ agentId: SUB_STEP });
+    const crumbs = crumbsOf({ state: appState, place });
+    const parent = crumbs[crumbs.length - 2];
+
+    expect(parent?.place).toEqual(parentPlace({ state: appState, place }));
+    expect(crumbs[0]?.place).toEqual(sessionPlace({ sessionId: S1 }));
   });
 });

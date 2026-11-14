@@ -804,6 +804,14 @@ search
 session-ask
 session-close-ask
 session-close-written
+session-head-artifacts
+session-head-branch
+session-head-branch-light
+session-head-context
+session-head-overview
+session-head-overview-light
+session-head-questions
+session-head-runs
 session-hover
 session-marks
 session-marks-bitbucket

@@ -162,6 +162,7 @@ const renderDrawer = ({
       );
     case 'conversation':
       return <ReviewCommentDrawerHost />;
+    case 'ask':
     case 'browser':
     case 'check-analysis':
     case 'file-diff':

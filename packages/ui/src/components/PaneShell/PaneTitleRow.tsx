@@ -3,15 +3,49 @@ import { cn } from '../../cn';
 import { PANE_RHYTHM } from '../../paneRhythm';
 
 type Props = {
-  readonly title: ReactNode;
+  readonly title?: ReactNode;
   readonly badge?: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
   readonly rowTestId?: string;
   readonly titleTestId?: string;
+  readonly isHeading?: boolean;
 };
 
-export const PaneTitleRow = ({ title, badge, meta, actions, rowTestId, titleTestId }: Props) => (
+type TitleParams = {
+  readonly title: ReactNode;
+  readonly className: string;
+  readonly testId: string | undefined;
+  readonly isHeading: boolean;
+};
+
+const titleNodeOf = ({ title, className, testId, isHeading }: TitleParams): ReactNode => {
+  if (title == null) {
+    return <div className="min-w-0 flex-1" />;
+  }
+  if (isHeading) {
+    return (
+      <h1 data-testid={testId} className={className}>
+        {title}
+      </h1>
+    );
+  }
+  return (
+    <div data-testid={testId} className={className}>
+      {title}
+    </div>
+  );
+};
+
+export const PaneTitleRow = ({
+  title,
+  badge,
+  meta,
+  actions,
+  rowTestId,
+  titleTestId,
+  isHeading = true,
+}: Props) => (
   <div data-slot="pane-title-block" className="flex min-w-0 flex-col">
     <div
       data-slot="pane-title-row"
@@ -20,18 +54,21 @@ export const PaneTitleRow = ({ title, badge, meta, actions, rowTestId, titleTest
     >
       {badge != null ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <h1 data-testid={titleTestId} className="min-w-0 truncate text-title text-foreground">
-            {title}
-          </h1>
+          {titleNodeOf({
+            title,
+            className: 'min-w-0 truncate text-title text-foreground',
+            testId: titleTestId,
+            isHeading,
+          })}
           {badge}
         </div>
       ) : (
-        <h1
-          data-testid={titleTestId}
-          className="min-w-0 flex-1 truncate text-title text-foreground"
-        >
-          {title}
-        </h1>
+        titleNodeOf({
+          title,
+          className: 'min-w-0 flex-1 truncate text-title text-foreground',
+          testId: titleTestId,
+          isHeading,
+        })
       )}
       {actions != null ? (
         <div className="flex shrink-0 items-center justify-end gap-2">{actions}</div>

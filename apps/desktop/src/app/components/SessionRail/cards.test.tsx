@@ -44,6 +44,7 @@ import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 import { SideColumn } from '../SideColumn';
 import { SessionContextCards } from '../SessionContextCards';
 import { SessionFrame } from './SessionFrame';
+import { SessionHead } from '../SessionHead';
 import { CARD_INSET } from './SessionLevel/railInset';
 
 let useAppStore: StoryStore;
@@ -139,6 +140,7 @@ const Shell = ({ place = null }: MountParams) => {
       />
       {current === null ? null : (
         <SessionFrame session={current}>
+          <SessionHead session={current} />
           <PaneShell title="Context" scroll="self">
             <SessionContextCards session={current} />
           </PaneShell>
@@ -158,7 +160,9 @@ const elementOf = (selector: string, root: ParentNode = document): HTMLElement =
   return element;
 };
 
-const rail = (): HTMLElement => elementOf('[data-page-header]');
+const rail = (): HTMLElement => elementOf('[data-session-head] [data-session-actions]');
+
+const titleRow = (): HTMLElement => elementOf('[data-session-head] [data-slot="pane-title-row"]');
 
 const sessionLayer = (): HTMLElement => elementOf('[data-level-layer="session"]');
 
@@ -396,10 +400,10 @@ describe('the session rail top row and its menu', () => {
     );
 
     await act(async () => {
-      fireEvent.click(within(rail()).getByRole('button', { name: 'Retry' }));
+      fireEvent.click(within(titleRow()).getByRole('button', { name: 'Retry' }));
     });
     expect(pinSession).toHaveBeenCalledTimes(2);
-    expect(within(rail()).queryByText(/database is locked/)).toBeNull();
+    expect(within(titleRow()).queryByText(/database is locked/)).toBeNull();
   });
 
   it('reports a failed read of the session limit and leaves the menu working', async () => {

@@ -618,7 +618,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'pullRequest.edit',
     open: async () => {
       await press('lens.pr')();
-      expect((await findSection(/^Overview/)).getAttribute('aria-selected')).toBe('true');
+      expect((await findSection(/^Conversation/)).getAttribute('aria-selected')).toBe('true');
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>
@@ -664,8 +664,10 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'ask.open',
     lands: async (ctx) => {
-      await contextTab(ctx);
-      expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
+      expect(selectOpenDrawer(useAppStore.getState())).toMatchObject({
+        kind: 'ask',
+        sessionId: ctx.sessionId,
+      });
       const composer = await screen.findByRole('textbox', { name: 'Ask about this session' });
       await waitFor(() => expect(document.activeElement).toBe(composer));
     },
@@ -878,7 +880,10 @@ const openUrls = (): ReadonlyArray<string> =>
 
 const withBranchlessSession = (ctx: Ctx): void => {
   const state = useAppStore.getState();
-  useAppStore.setState({ sessionBranches: { ...state.sessionBranches, [ctx.sessionId]: '' } });
+  useAppStore.setState({
+    sessionBranches: { ...state.sessionBranches, [ctx.sessionId]: '' },
+    sessionProjectMounts: { ...state.sessionProjectMounts, [ctx.sessionId]: [] },
+  });
 };
 
 const connectTools = (): void => {
@@ -1150,7 +1155,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'ask.reset',
-    note: 'inside Ask, in the Context tab, the new chord resets the chat, not a session',
+    note: 'inside the Ask panel, the new chord resets the chat, not a session',
     open: async (ctx) => {
       await press('ask.open')();
       const composer = await screen.findByPlaceholderText('Ask about this session…', {});

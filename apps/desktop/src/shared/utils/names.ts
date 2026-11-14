@@ -62,6 +62,7 @@ export const NAMES = {
   overview: 'Overview',
   branch: 'Branch',
   comments: 'Comments',
+  conversation: 'Conversation',
   pullRequest: 'Pull request',
   artifacts: 'Artifacts',
   scripts: 'Scripts',

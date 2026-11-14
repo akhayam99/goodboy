@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { useContext, useEffect } from 'react';
-import { PaneActionsContext, PaneTabsContext } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -250,6 +249,7 @@ vi.mock('../SessionOverviewPane/LinkIssueAction', () => ({
   ),
 }));
 import { SessionWorkspace } from './index';
+import { SessionHeadContext } from '../../sessionHeadContext';
 
 const trailBands = (): number => document.querySelectorAll('[data-slot="trail-bar"]').length;
 
@@ -823,44 +823,39 @@ describe('SessionWorkspace integration lenses', () => {
   });
 });
 
-const renderWithTabs = () =>
+const FakeHead = ({ session: shown }: { readonly session: Session }) => (
+  <header data-testid="session-head">{shown.id}</header>
+);
+
+const renderWithHead = () =>
   render(
-    <PaneTabsContext.Provider value={<nav aria-label="Session pages" />}>
-      <PaneActionsContext.Provider value={<div data-testid="session-actions" />}>
-        <SessionWorkspace session={session} />
-      </PaneActionsContext.Provider>
-    </PaneTabsContext.Provider>,
+    <SessionHeadContext.Provider value={FakeHead}>
+      <SessionWorkspace session={session} />
+    </SessionHeadContext.Provider>,
   );
 
-describe('SessionWorkspace page tabs', () => {
-  it('hands the session tabs and actions to the title of the overview', () => {
+describe('SessionWorkspace session head', () => {
+  it('draws the session head once, first, above the overview', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};
 
-    renderWithTabs();
+    const { container } = renderWithHead();
 
-    within(screen.getByTestId('pane-tabs')).getByRole('navigation', { name: 'Session pages' });
-    within(screen.getByTestId('pane-actions')).getByTestId('session-actions');
+    expect(screen.getAllByTestId('session-head')).toHaveLength(1);
+    expect(container.firstElementChild?.firstElementChild?.getAttribute('data-testid')).toBe(
+      'session-head',
+    );
+    expect(within(screen.getByTestId('pane-tabs')).queryByRole('navigation')).toBeNull();
   });
 
-  it('hands them to a session with a branch too', () => {
-    store.activeLens = { [SESSION_ID]: null };
-    store.selectedAgentId = {};
-    store.sessionBranches = { [SESSION_ID]: 'fix-duplicate-credit' };
-
-    renderWithTabs();
-
-    within(screen.getByTestId('pane-tabs')).getByRole('navigation');
-  });
-
-  it('never draws a second tab row over the pull request page', async () => {
+  it('keeps the one head over the pull request page, with no session tabs handed to it', async () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
-    renderWithTabs();
+    renderWithHead();
 
     await screen.findByTestId('branch-page');
+    expect(screen.getAllByTestId('session-head')).toHaveLength(1);
     expect(screen.queryByRole('navigation', { name: 'Session pages' })).toBeNull();
-    expect(screen.queryByTestId('session-actions')).toBeNull();
   });
 });

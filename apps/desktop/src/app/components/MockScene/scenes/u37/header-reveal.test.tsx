@@ -80,14 +80,14 @@ describe('u37 header reveal scenes', () => {
   });
 
   it.each(BRANCH_STILLS)(
-    'draws %s with the back row pinned above the header that steps aside',
+    'draws %s with the session crumbs above the header that steps aside',
     async (id) => {
       mount({ id });
 
-      const back = await screen.findByRole('button', { name: 'Back to overview' });
+      const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' });
       const title = await screen.findByRole('heading', { level: 1 });
       expect(revealHeader().contains(title)).toBe(true);
-      expect(revealHeader().contains(back)).toBe(false);
+      expect(revealHeader().contains(crumbs)).toBe(false);
       await waitFor(() => expect(document.querySelector('[data-page-scroller]')).not.toBeNull());
     },
   );
@@ -96,7 +96,11 @@ describe('u37 header reveal scenes', () => {
     mount({ id });
 
     await waitFor(() => {
-      const titles = [...document.querySelectorAll('[data-slot="reveal-header"] :is(h1, h2)')];
+      const titles = [
+        ...document.querySelectorAll(
+          '[data-slot="reveal-header"] :is(h1, h2), [data-session-head] h1',
+        ),
+      ];
       expect(titles.length).toBeGreaterThan(0);
     }, SCENE_WAIT);
   });

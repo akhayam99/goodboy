@@ -4,6 +4,7 @@ import { agentHomeFor } from './agentHomeFor';
 import { branchPlace, sessionPlace } from './place';
 import { placeBeforeDraft } from './placeBeforeDraft';
 import { runGroupFocusOf } from './runGroupFocusOf';
+import { SESSION_TAB_LENSES } from './sessionTabLenses';
 import type { LensKind } from '../session-view/types';
 import type { Place, SessionView } from './types';
 
@@ -16,15 +17,6 @@ const BRANCH_WORK_LENSES: ReadonlySet<LensKind | null> = new Set<LensKind | null
   'workflows',
   'questions',
   'plans',
-]);
-
-const SESSION_TABS: ReadonlySet<LensKind> = new Set<LensKind>([
-  'workflows',
-  'orchestrated',
-  'plans',
-  'questions',
-  'context',
-  'files',
 ]);
 
 type ItemParams = {
@@ -118,7 +110,7 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   if (BRANCH_WORK_LENSES.has(view.lens) && view.target === null && fromBranch !== null) {
     return branchPlace({ sessionId, mountPath: fromBranch.mountPath, tab: 'work' });
   }
-  if (view.lens !== null && !SESSION_TABS.has(view.lens)) {
+  if (view.lens !== null && !SESSION_TAB_LENSES.has(view.lens)) {
     return sessionPlace({ sessionId });
   }
   return null;

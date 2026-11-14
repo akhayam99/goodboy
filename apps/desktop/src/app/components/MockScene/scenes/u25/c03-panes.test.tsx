@@ -77,10 +77,9 @@ describe('c03 session tools scenes', () => {
     expect(pressed()).toEqual([]);
   });
 
-  it('opens Ask in the Context tab', async () => {
+  it('opens Ask as a detail panel', async () => {
     await mount('c03-panes-ask');
-    expect(useAppStore.getState().drawer).toBeNull();
-    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('context');
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION_ID });
     screen.getByRole('region', { name: 'Ask' });
     expect(pressed()).toEqual([]);
   });

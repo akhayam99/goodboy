@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppTopBar } from '../../AppTopBar';
+import { DrawerHost } from '../../DrawerHost';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
@@ -77,12 +78,18 @@ const BoardShellSceneContent = ({ isSessionOpen }: ContentProps) => {
     isSidebarCollapsed: rail.isCollapsed,
   });
   const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
-  const { rightRail } = useShellRight({});
+  const shellRight = useShellRight({});
 
   return (
     <>
       <AppShell
-        rightRail={rightRail}
+        rightRail={shellRight.rightRail}
+        drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
+        drawerSizing={shellRight.dockSizing}
+        detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
+        detailSizing={shellRight.detailSizing}
+        isDrawerParked={shellRight.isDrawerParked}
+        isDetailParked={shellRight.isDetailParked}
         studio={shell.studio}
         topBar={
           <AppTopBar

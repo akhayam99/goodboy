@@ -39,7 +39,7 @@ import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/c
 import { ToastProvider } from '../../shared/components/Toast';
 import { LeadPage } from '../../features/session/components/LeadPage';
 import { useLeadSelectionStore } from '../../features/session/hooks/useLeadSelectionStore';
-import { backOf } from '../../store/slices/navigation/backOf';
+import { parentPlace } from '../../store/slices/navigation/parentPlace';
 import { sessionPlace } from '../../store/slices/navigation/place';
 import { stubProviderRouting } from '../helpers/journeyHarness';
 import { makeAutoRuntime } from '../../store/runtime/auto/makeAutoRuntime';
@@ -489,10 +489,10 @@ describe('journey: the Lead page', () => {
     fireEvent.click(within(record).getByRole('button', { name: 'Open transcript' }));
 
     expect(useAppStore.getState().selectedAgentId[sessionId]).toBe(childId);
-    const back = backOf({
+    const parent = parentPlace({
       state: useAppStore.getState(),
       place: sessionPlace({ sessionId, agentId: brandedId<AgentId>({ value: childId }) }),
     });
-    expect(back?.to.at === 'session' ? back.to.view.agentId : null).toBe(rootId);
+    expect(parent?.at === 'session' ? parent.view.agentId : null).toBe(rootId);
   });
 });

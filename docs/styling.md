@@ -256,11 +256,11 @@ Every main pane renders through `PaneShell`, and its crumb, header and body
 sit in one `PageColumn`. At rest the column is centred in the pane, with equal
 space either side: Overview, Runs, Agents, Artifacts, the session pages, Chat,
 Workflows, Tasks detail, settings pages, agent and pull request detail. The
-header, the back row (`Back to X` and the Ask button), the body and
-the footer share the same column edges, so moving from Overview to Runs to
-Agents to a settings page never shifts the first letter. The Ask button is the
-last item of the trail's `PageColumn`: its right edge is the column's right
-edge, the header actions' right edge. The gutter is 24px a side, 16px once the
+session head (the title row and the tabs or crumbs, drawn once by `SessionWorkspace` on
+the `column` measure), the page header, the body and the footer share the same column
+edges, so moving from Overview to Runs to Agents to a settings page never shifts the first
+letter, and the head never moves between tabs. Its actions end at the column's right edge,
+the page header actions' right edge. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.

@@ -632,8 +632,10 @@ describe('PaletteOverlay, Ask in chat', () => {
     });
 
     expect(onClose).toHaveBeenCalled();
-    expect(useAppStore.getState().drawer).toBeNull();
-    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId: PAYOUT })).toBe(true);
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: PAYOUT });
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId: PAYOUT })).toBe(
+      false,
+    );
     expect(sendAskQuestion).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: PAYOUT, question: 'Why did the tester fail?' }),
     );

@@ -2,7 +2,6 @@ import { useContext } from 'react';
 import type { Session } from '@goodboy/types';
 import { PaneShell } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
-import { AskDrawer } from '../../ask/components/AskDrawer';
 import { ContextCardsContext } from '../../contextCardsContext';
 import { openLens } from '../../openLens';
 import { ContextDrawer } from '../ContextDrawer';
@@ -17,7 +16,7 @@ export const ContextTab = ({ session }: Props) => {
   const Cards = useContext(ContextCardsContext);
   const focus = useContextFocus();
   return (
-    <PaneShell title={NAMES.context}>
+    <PaneShell>
       <section
         aria-label={NAMES.context}
         data-testid="context-tab"
@@ -30,11 +29,6 @@ export const ContextTab = ({ session }: Props) => {
           section={focus.section}
           view={focus.view}
           highlight={focus.highlight}
-          isPage
-          onClose={() => openLens({ sessionId, lens: null })}
-        />
-        <AskDrawer
-          sessionId={sessionId}
           isPage
           onClose={() => openLens({ sessionId, lens: null })}
         />

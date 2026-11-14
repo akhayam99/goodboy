@@ -234,12 +234,6 @@ const foldOfPanel = ({ drawer }: DrawerParams): PanelFold | null => {
       rows: { [PLACE_ROWS.contextSection]: contextRowOf({ payload: drawer.payload }) },
     };
   }
-  if (kind === 'ask') {
-    return {
-      place: sessionPlace({ sessionId, lens: 'context' }),
-      rows: { [PLACE_ROWS.contextSection]: 'ask' },
-    };
-  }
   if (kind === 'explore') {
     return { place: sessionPlace({ sessionId, lens: 'files' }), rows: ALL_FILES };
   }

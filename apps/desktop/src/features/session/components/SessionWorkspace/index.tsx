@@ -1,13 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import {
-  cn,
-  useEscapeLayer,
-  OwnPaneChrome,
-  PaneBannerContext,
-  PageTrailContext,
-  PaneSwap,
-} from '@goodboy/ui';
+import { cn, useEscapeLayer, PaneBannerContext, PaneSwap, UnderTrailContext } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
@@ -21,10 +14,9 @@ import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface, type LensSurface } from '../../lens-surface';
-import { SessionBackRow } from './SessionBackRow';
-import { sessionBackOf } from './SessionBackRow/sessionBackOf';
 import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
 import { escapeLadder } from '../../escapeLadder';
+import { SessionHeadContext } from '../../sessionHeadContext';
 
 const LENS_KEEP_ALIVE_CAP = 3;
 
@@ -36,6 +28,7 @@ export const SessionWorkspace = ({ session }: Props) => {
   const sessionId: SessionId = session.id;
   useSessionBranchSync({ session });
   useAskOpenShortcut({ sessionId });
+  const Head = useContext(SessionHeadContext);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
   const isBranchless = useIsBranchlessSession({ session });
   const activeLens =
@@ -74,45 +67,35 @@ export const SessionWorkspace = ({ session }: Props) => {
   useEscapeLayer(() => escapeLadder({}), isCurrent, true);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
-  const hasBack = useAppStore((state) => sessionBackOf({ state, sessionId }) !== null);
-  const trail = hasBack ? <SessionBackRow sessionId={sessionId} /> : null;
 
-  const lensLayers = keptSurfaces.map((target) => {
-    const pane = <SessionLensPane session={session} target={target} isShown={showLens} />;
-    return {
-      key: target,
-      content: (
-        <PageTrailContext.Provider value={showLens && target !== 'overview' ? trail : null}>
-          {target === 'branch' ? <OwnPaneChrome>{pane}</OwnPaneChrome> : pane}
-        </PageTrailContext.Provider>
-      ),
-    };
-  });
+  const lensLayers = keptSurfaces.map((target) => ({
+    key: target,
+    content: <SessionLensPane session={session} target={target} isShown={showLens} />,
+  }));
 
   return (
-    <div className="@container relative flex h-full w-full min-w-0 flex-col">
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <div
-          className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
-          inert={!showLens}
-        >
-          <PaneBannerContext.Provider value={showAgentOverlay ? null : banner}>
-            <PaneSwap activeKey={surface} layers={lensLayers} shouldFocusTitle={showLens} />
-          </PaneBannerContext.Provider>
-        </div>
+    <div className="@container relative flex h-full w-full min-w-0 flex-col gap-2">
+      {Head === null ? null : <Head session={session} />}
+      <UnderTrailContext.Provider value={Head !== null}>
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
+            inert={!showLens}
+          >
+            <PaneBannerContext.Provider value={showAgentOverlay ? null : banner}>
+              <PaneSwap activeKey={surface} layers={lensLayers} shouldFocusTitle={showLens} />
+            </PaneBannerContext.Provider>
+          </div>
 
-        {surfaceLayer === 'run' && runFocus !== null ? (
-          <PaneBannerContext.Provider value={banner}>
-            <PageTrailContext.Provider value={trail}>
+          {surfaceLayer === 'run' && runFocus !== null ? (
+            <PaneBannerContext.Provider value={banner}>
               <div className="absolute inset-0 z-20 flex flex-col bg-background">
                 <PresetRunPage session={session} focus={runFocus} />
               </div>
-            </PageTrailContext.Provider>
-          </PaneBannerContext.Provider>
-        ) : null}
-        {showAgentOverlay ? (
-          <PaneBannerContext.Provider value={banner}>
-            <PageTrailContext.Provider value={trail}>
+            </PaneBannerContext.Provider>
+          ) : null}
+          {showAgentOverlay ? (
+            <PaneBannerContext.Provider value={banner}>
               <AgentOverlay
                 session={session}
                 sessionId={sessionId}
@@ -120,10 +103,10 @@ export const SessionWorkspace = ({ session }: Props) => {
                 selectedAgentId={selectedAgentId}
                 onBack={leaveAgentOverlay}
               />
-            </PageTrailContext.Provider>
-          </PaneBannerContext.Provider>
-        ) : null}
-      </div>
+            </PaneBannerContext.Provider>
+          ) : null}
+        </div>
+      </UnderTrailContext.Provider>
     </div>
   );
 };

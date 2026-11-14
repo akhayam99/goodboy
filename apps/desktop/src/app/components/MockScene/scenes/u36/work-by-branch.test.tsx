@@ -80,14 +80,14 @@ describe('the u36 work by branch scenes', () => {
     }
   });
 
-  it('u36-c19-questions-by-branch groups the questions under their branches and No branch', async () => {
+  it('u36-c19-questions-by-branch groups the questions under their branches, Answered last', async () => {
     await mount('u36-c19-questions-by-branch');
 
     const headings = headingTexts();
     expect(headings).toContain('fix/duplicate-credit');
     expect(headings).toContain('feat/retry-budget');
     expect(headings).toContain('rec/2-backfill');
-    expect(headings[headings.length - 1]).toBe('No branch');
+    expect(headings[headings.length - 1]).toBe('Answered');
     expect(screen.getAllByRole('button', { name: /^Should the limit apply/ })).toHaveLength(2);
     expect(screen.getAllByTestId('run-also-on')).toHaveLength(2);
   });

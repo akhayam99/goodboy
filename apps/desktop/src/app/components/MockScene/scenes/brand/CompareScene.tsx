@@ -294,6 +294,7 @@ export const BrandCompareScene = () => {
   return (
     <ShellFrame
       session={SESSION}
+      hasOwnTrail
       main={isStaged ? <CompareStage artifact={ARTIFACT} versions={VERSIONS} /> : null}
     />
   );

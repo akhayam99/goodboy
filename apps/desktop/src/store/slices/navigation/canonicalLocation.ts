@@ -189,26 +189,17 @@ type ChangesParams = {
   readonly request: SessionPlace;
 };
 
-const changesOnBranch = ({ state, request }: ChangesParams): SessionPlace => {
+const changesOnBranch = ({ state, request }: ChangesParams): Place => {
   const { view, sessionId } = request;
   if (view.lens !== 'files' || view.agentId !== null || !hasMount({ state, sessionId })) {
     return request;
   }
   const target = view.target?.kind === 'diff' ? view.target : null;
-  if (target !== null && target.mountPath !== null) {
-    return request;
-  }
-  const mountPath = doorMountPath({ state, sessionId });
+  const mountPath = target?.mountPath ?? doorMountPath({ state, sessionId });
   if (mountPath === null) {
     return request;
   }
-  return {
-    ...request,
-    view: {
-      ...view,
-      target: target === null ? { kind: 'diff', mountPath, focus: null } : { ...target, mountPath },
-    },
-  };
+  return branchPlace({ sessionId, mountPath, tab: 'files', focus: target?.focus ?? null });
 };
 
 const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {

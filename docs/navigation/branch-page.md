@@ -15,30 +15,31 @@ quoted headers, so a name with accents is its own file.
 **Frame.** The Branch page is the center of the Projects tree (Context tab): one detail with no rail of its own. Its sections are the underlined page tabs
 under its title (`BranchTabStrip`, built on `PageTabs`); the page computes its counts once
 (`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
-one pill. **One tab row per page.** The session's own tabs (Overview, Changes, Runs, Artifacts,
-Questions, Context, `SessionPageTabs`) reach a page through `PaneTabsContext`, which
-`SessionWorkspace` leaves empty on the Branch page, so the pull request page shows only
-its own row. The Changes tab of a session with a branch is this page pinned on its Changes
-section (`pinnedTab`): it draws no `BranchTabStrip` and takes the session's row. A host with no session (a scene, a test) shows the page alone. The
+one pill. **One tab row per page.** Inside a session the session head sits above the page
+with the crumbs `Session › {branch name}` in place of the session tabs (see
+[session-rail.md](session-rail.md#crumbs)), so the pull request page shows only its own row.
+Every door to the session's changes (the single-branch Changes shortcut, the board row's
+Changes door, the palette, the chord) opens this page on its Changes tab. A host with no
+session (a scene, a test) shows the page alone. The
 header and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next. The header holds three things,
 100px at rest with a pull request: the title row (48), one meta line (16) and the tab row (36).
 The running line, the work lines, the notices and the base branch row are the top of the body
 (`BranchBodyTop`, `BranchNotices`), above the section and out of the pinned header. The header steps aside
 while you read (`PaneShell`, `revealKey` the tab): 24px of
-scroll down keeps only the back row (`Back to overview`) pinned, and 8px up, the top of the
+scroll down keeps only the session head pinned, and 8px up, the top of the
 section, keyboard focus in the header or
 another tab brings the title, the line and the tabs back. On a
 section whose scroller does not start its body (Changes, with its toolbar above
 the diff) the toolbar rides up with
-the content and stays under the back row. Comments has one 36 toolbar (`ReviewToolbar`): Open and
+the content and stays under the session head. Comments has one 36 toolbar (`ReviewToolbar`): Open and
 Resolved, the source switch when notes and host threads both exist, and the fix run on the same row.
 
 A comment reads the same in the diff, the review pane and the page: `CommentBody` (`shared/components/CommentBody`) draws every body at `text-comment`, 14/22, and the diff sets `font-sans` once on the container that holds its threads (`DiffFile`), so a thread and a composer inside a mono row never undo it. The `diff-font-sans` guard counts `font-sans` written under `features/diff` and only falls. The review pane (`ReviewCommentDrawer`) has a 40 header, `Comment · 4 of 8`, with the menu and close; the author row (`CommentDrawerAuthor`: picture, name, age, state chip) is content, with the file and line as a mono line under it. The proposed change is a file card (`FileChangeCard`) that reuses `FileHeader` at its compact 32 height, and the verbs sit in one 32 row with one primary.
 
 **Header.** One row: the title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on
-the Overview entry and it becomes an input in the same 32px row, `Enter` saves
+the Conversation entry and it becomes an input in the same 32px row, `Enter` saves
 to the host, `Esc` cancels, a failure is an inline notice with Retry), the state chip (20 high,
 the state word and its icon, `BranchStateChip`), one primary and `⋯`. The
 line under the title is the same on every tab: the number and the branch in mono, `into` the base,
@@ -128,7 +129,7 @@ confirm is an inline panel with a method picker (`ActionConfirm.choice`,
 method the repository forbids shown disabled with its reason
 (`Turned off in payments-api`). Merging raises one plain `info` toast with no
 Follow. Push, Publish and Retry go through the existing publish
-machinery: a frozen preview pinned under the back row, above the title
+machinery: a frozen preview pinned under the session head, above the title
 (`PushBanner`, the only push one, in the page's `lead`, so it never scrolls or
 steps away), drift and the result per thread. Under it sits the rebase job banner
 (`JobBanner`, `features/history/JobBanner`): one strip for a rebase
@@ -236,28 +237,28 @@ branch actions (Change base branch…, only before a pull request exists, Copy p
 on a merged request); a queued request with auto-merge adds `Cancel auto-merge`. It lists the push
 whenever the header does not draw one (`branchShownIdsOf`), and it never holds more than five rows
 (`branchMenuRowsOf`): the rows with another home drop first (Edit title and description, Copy link,
-Copy patch, and Rebase and Request review have their own place on Commits and Overview).
+Copy patch, and Rebase and Request review have their own place on Commits and Conversation).
 
 **Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
-pull request and no comment `Overview`, `Changes`, `Commits`, `Work`; with a local note or a thread
+pull request and no comment `Conversation`, `Changes`, `Commits`, `Work`; with a local note or a thread
 and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, Merged and
-Closed show all six, `Overview`, `Comments`, `Changes`, `Commits`, `Checks`, `Work`. The first is
-called `Overview` on every host (its key is ⌥⌘1,
+Closed show all six, `Conversation`, `Comments`, `Changes`, `Commits`, `Checks`, `Work`. The first is
+called `Conversation` on every host, so `Overview` names only the session overview (its key is ⌥⌘1,
 Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
 request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you; the counts and their scope are written once, under the entry slots below. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
-`Overview` when the active mount has a pull request, else `Changes`; then the door resolver
+`Conversation` when the active mount has a pull request, else `Changes`; then the door resolver
 above drops a section the state lacks. The
 sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
 pull request chip, an approved or changes-requested mark and a mount's
-`Create PR` land on `Overview`; a comment, a thread, a fix run, a note, ⌥⌘R
+`Create PR` land on `Conversation`; a comment, a thread, a fix run, a note, ⌥⌘R
 (`Open Comments`) and a draft comments chip name `Comments` themselves (with no pull
 request and no comment they land on `Changes`), `Changes`
 and `Commits` doors name theirs, and a CI failure names `Checks` (with no pull request,
-`Overview`). The chosen section
+`Conversation`). The chosen section
 is stored per session and is read through `branchTabOf` (`useBranchTab` in a
 component), never from `branchTab[sessionId]` directly, so a section is only
 remembered once the person has chosen one; the page shows the section the state has
@@ -274,7 +275,7 @@ screen, whichever one chat writes to. The write destination is a separate fact: 
 Back and a reload leave it where it was, and the push confirm names the repository when the session
 has more than one.
 
-**Overview.** The pull request itself, on the 960px column
+**Conversation.** The pull request itself, on the 960px column
 (`features/branch/components/PullRequestTab`): the merge box first, then two columns, the
 reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
 below an 880px page container the side column moves above the reading column as one wrapping
@@ -584,7 +585,7 @@ artifacts are read the body is a skeleton, and for artifacts also until every pr
 answered (`useArtifactBranchItems` `isSettled`). A run, an agent or an artifact opened from Work, by a
 row or by a row menu action, marks the new history entry with `Focus.runGroup`
 (`useMarkBranchWorkLeave`, written on the entry as it lands, not through `amendFocus`, which would
-sync that entry to the page still showing), so its `Back to` leads to this tab (`parentPlace`) even
+sync that entry to the page still showing), so its parent crumb and Esc lead to this tab (`parentPlace`) even
 after Back from a child agent, and under By state the Artifacts page reveals the arrived branch only
 once every provenance read has answered (`useGroupArrival` waits for `isSettled`). A
 question opens its drawer over the Questions page, whose `Close` goes back here. Back also reopens the

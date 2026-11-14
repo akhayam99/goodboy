@@ -111,7 +111,6 @@ export const ArtifactList = ({
   return (
     <PaneShell
       page="artifacts"
-      title="Artifacts"
       actions={
         <>
           {counts.all === 0 ? null : (

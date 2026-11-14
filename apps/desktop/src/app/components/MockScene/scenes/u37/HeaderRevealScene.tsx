@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PageTrailContext } from '@goodboy/ui';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
-import { SessionBackRow } from '../../../../../features/session/components/SessionWorkspace/SessionBackRow';
 import { useAppStore } from '../../../../../store';
 import { branchPlace } from '../../../../../store/slices/navigation/place';
 import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
@@ -70,10 +68,8 @@ export const HeaderRevealScene = ({ still }: Props) => {
       className="overflow-hidden bg-background text-foreground"
       style={{ height: FRAME_HEIGHT_PX }}
     >
-      <WorktreeSceneColumn>
-        <PageTrailContext.Provider value={<SessionBackRow sessionId={SESSION_ID} />}>
-          <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
-        </PageTrailContext.Provider>
+      <WorktreeSceneColumn headSession={SESSION}>
+        <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
       </WorktreeSceneColumn>
     </main>
   );

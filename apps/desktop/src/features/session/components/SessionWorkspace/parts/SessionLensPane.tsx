@@ -43,7 +43,6 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
   );
   const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workingDir = useAppStore((s) => resolveActiveMountPath({ state: s, sessionId }));
-  const hasBranch = useAppStore((s) => (s.sessionProjectMounts[sessionId] ?? []).length > 0);
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const isAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const isPlansLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
@@ -135,18 +134,6 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
   }
   if (target === 'context') {
     return <ContextTab session={session} />;
-  }
-  if (target === 'files' && hasBranch) {
-    return (
-      <Suspense fallback={<LensSkeleton page="branch" label="Loading changes" />}>
-        <BranchPage
-          session={session}
-          workingDir={workingDir}
-          isActive={isShown}
-          pinnedTab="files"
-        />
-      </Suspense>
-    );
   }
   if (target === 'files') {
     return (

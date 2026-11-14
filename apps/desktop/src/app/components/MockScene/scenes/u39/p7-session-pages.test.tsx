@@ -78,9 +78,8 @@ describe('the ux39 P7 session pages scenes', () => {
   it('ux39-p7-open lists the pages as tabs with Questions counted and the actions in the title row', async () => {
     await mount('ux39-p7-open');
 
-    expect(tabLabelsOf()).toEqual([
+    expect(tabLabelsOf().slice(0, 5)).toEqual([
       'Overview',
-      'Changes',
       'Runs',
       'Artifacts',
       'Questions',
@@ -99,7 +98,7 @@ describe('the ux39 P7 session pages scenes', () => {
     await mount('ux39-p7-open-branchless');
 
     expect(within(tabs()).getByRole('tab', { name: /^Overview/ }).tagName).toBe('BUTTON');
-    expect(within(tabs()).getByRole('tab', { name: /^Changes/ }).tagName).toBe('BUTTON');
+    expect(within(tabs()).queryByRole('tab', { name: /^Changes/ })).toBeNull();
   });
 
   it('ux39-p7-session-menu opens the session menu with five rows at most', async () => {

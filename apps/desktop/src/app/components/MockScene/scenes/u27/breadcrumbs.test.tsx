@@ -6,8 +6,9 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { captureLocation } from '../../../../../store/slices/navigation/captureLocation';
+import { escapeLadder } from '../../../../../features/session/escapeLadder';
 import { stackKey } from '../../../../../store/slices/navigation/currentStack';
 import { FLOW_SESSION_ID } from '../flow-audit/fixtures';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -66,36 +67,49 @@ describe('breadcrumbs scenes', () => {
   });
 
   it.each<readonly [string, string]>([
-    ['run', 'Back to runs'],
-    ['step', 'Back to Duplicate credit fix'],
-    ['agent', 'Back to overview'],
-    ['artifact', 'Back to artifacts'],
-    ['branch-file', 'Back to branch'],
-  ])('draws one back row and no trail on the %s page', async (slug, label) => {
+    ['run', 'Runs'],
+    ['step', 'Duplicate credit fix'],
+    ['artifact', 'Artifacts'],
+  ])('draws the session crumbs and no back row on the %s page', async (slug, parent) => {
     mount({ id: `u27-breadcrumbs-after-${slug}-light` });
-    const back = await screen.findByRole('button', { name: label });
+    const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' });
 
-    expect(back.closest('[data-session-back]')).not.toBeNull();
-    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    within(crumbs).getByRole('button', { name: parent });
+    expect(document.querySelector('[data-session-back]')).toBeNull();
+    expect(document.querySelector('[data-slot="trail"]')).toBeNull();
   });
 
-  it('closes the branch file on a deep link when Back to branch is clicked', async () => {
+  it.each(['agent', 'branch-file'])(
+    'draws the session and the item as the crumbs of the %s page',
+    async (slug) => {
+      mount({ id: `u27-breadcrumbs-after-${slug}-light` });
+      const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+
+      expect(within(crumbs).getAllByRole('listitem')).toHaveLength(2);
+      expect(document.querySelector('[data-session-back]')).toBeNull();
+    },
+  );
+
+  it('closes the branch file on a deep link on Esc, then goes to the overview', async () => {
     mount({ id: 'u27-breadcrumbs-after-branch-file-light' });
-    const back = await screen.findByRole('button', { name: 'Back to branch' });
+    await screen.findByRole('navigation', { name: 'Breadcrumb' });
     expect(useAppStore.getState().diffFocus[FLOW_SESSION_ID]?.path).not.toBeNull();
 
-    fireEvent.click(back);
+    act(() => escapeLadder({}));
 
     await waitFor(() => {
       expect(useAppStore.getState().diffFocus[FLOW_SESSION_ID]?.path ?? null).toBeNull();
     });
-    expect(screen.queryByRole('button', { name: 'Back to branch' })).toBeNull();
-    screen.getByRole('button', { name: 'Back to overview' });
+    act(() => escapeLadder({}));
+    await waitFor(() => {
+      const { place } = captureLocation({ state: useAppStore.getState() });
+      expect(place.at === 'session' ? place.view.target : 'none').toBeNull();
+    });
   });
 
   it('goes back in history to the branch page when one sits below the file', async () => {
     mount({ id: 'u27-breadcrumbs-after-branch-file-light' });
-    await screen.findByRole('button', { name: 'Back to branch' });
+    await screen.findByRole('navigation', { name: 'Breadcrumb' });
     const file = captureLocation({ state: useAppStore.getState() }).place;
     if (file.at !== 'session' || file.view.target?.kind !== 'branch') {
       throw new Error('scene is not on a branch file');
@@ -109,12 +123,11 @@ describe('breadcrumbs scenes', () => {
     });
     const depth = useAppStore.getState().navigation[stackKeyOf()]?.index ?? 0;
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Back to branch' }));
+    act(() => escapeLadder({}));
 
     await waitFor(() => {
       expect(useAppStore.getState().diffFocus[FLOW_SESSION_ID]?.path ?? null).toBeNull();
     });
     expect(useAppStore.getState().navigation[stackKeyOf()]?.index).toBe(depth - 1);
-    expect(screen.queryByRole('button', { name: 'Back to branch' })).toBeNull();
   });
 });

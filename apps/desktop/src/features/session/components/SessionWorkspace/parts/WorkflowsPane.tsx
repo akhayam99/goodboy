@@ -13,7 +13,6 @@ import { RunsGrid } from './RunsGrid';
 import { StartRun } from '../../StartRun/StartRun';
 import { startRunEventName } from '../../../startRun/startRunEventName';
 import { RUN_ROUTE_COPY } from '../../../startRun/runRouteCopy';
-import { NAMES } from '../../../../../shared/utils/names';
 import { SessionPageIntro } from '../../SessionPageIntro';
 
 type Props = {
@@ -80,7 +79,7 @@ export const WorkflowsPane = ({ session }: Props) => {
   }
 
   return (
-    <PaneShell page="runs" title={NAMES.runs} subheader={<SessionPageIntro page="runs" />}>
+    <PaneShell page="runs" subheader={<SessionPageIntro page="runs" />}>
       <div className={cn(PANE_RHYTHM.groups, 'min-w-0')}>
         {hasRuns ? (
           <div ref={startRowRef} data-start-run-row="" className="flex">

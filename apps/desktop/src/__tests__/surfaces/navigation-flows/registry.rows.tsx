@@ -80,7 +80,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('comments'),
   },
   {
-    name: 'a pull request address lands on the Overview, first of the six sections',
+    name: 'a pull request address lands on the Conversation, first of the six sections',
     covers: ['navigate', 'tab:pr'],
     open: async (ctx) => {
       useAppStore.getState().navigate({ to: branchPlace({ sessionId: ctx.sessionId, tab: 'pr' }) });
@@ -88,7 +88,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('pr')(ctx);
-      await waitFor(() => expect(sectionLabels()[0]).toBe('Overview'), WAIT);
+      await waitFor(() => expect(sectionLabels()[0]).toBe('Conversation'), WAIT);
     },
   },
 ];

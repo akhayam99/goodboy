@@ -52,7 +52,9 @@ export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Open the full log/, 'full log'),
     lands: async () => {
       expect(await screen.findByRole('region', { name: 'Log entries' }, WAIT)).toBeDefined();
-      expect(document.querySelector('[data-page="overview"]')).not.toBeNull();
+      expect(
+        document.querySelector('[data-session-head] [aria-selected="true"]')?.textContent,
+      ).toBe('Overview');
     },
   },
   {

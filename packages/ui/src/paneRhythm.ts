@@ -16,6 +16,7 @@ export const PANE_RHYTHM = {
   inset: 'px-6',
   headerInset: 'pt-2',
   pinnedInset: 'pt-3 pb-5',
+  pinnedUnderBand: 'pb-5',
   headerRow: 'h-8',
   firstRow: 'h-10 pt-2',
   headerMeta: 'h-4',

@@ -20,7 +20,12 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import type { LensKind } from '../../../store';
-import { sessionOf } from '../../../features/workspace/testing/sessionColumn';
+import {
+  ledgerCore,
+  mountOf,
+  paymentsApi,
+  sessionOf,
+} from '../../../features/workspace/testing/sessionColumn';
 import { SessionPageTabs } from '.';
 
 const session = sessionOf({ goal: 'Reconcile the ledger export' });
@@ -48,26 +53,33 @@ const selectedTab = (): string | null =>
     ?.textContent ?? null;
 
 describe('the session page tabs', () => {
-  it('reads Overview, Changes, Runs, Artifacts, Questions and Context on every session', () => {
+  it('reads Overview, Runs, Artifacts, Questions and Context on every session', () => {
     render(<SessionPageTabs session={session} />);
 
     screen.getByRole('tablist', { name: 'Session pages' });
     const names = screen.getAllByRole('tab').map((tab) => tab.textContent?.replace(/\d+$/, ''));
-    expect(names).toEqual(['Overview', 'Changes', 'Runs', 'Artifacts', 'Questions', 'Context']);
+    expect(names).toEqual(['Overview', 'Runs', 'Artifacts', 'Questions', 'Context']);
   });
 
-  it('reads Changes with a branch and without one', () => {
+  it('adds the Changes shortcut last only while the session has exactly one branch', () => {
+    const ledger = mountOf({ session, project: ledgerCore });
+    const payments = mountOf({ session, project: paymentsApi });
     act(() => {
-      store.setState({ sessionBranches: { [session.id]: 'fix-duplicate-credit' } });
+      store.setState({ sessionProjectMounts: { [session.id]: [ledger] } });
+    });
+    const view = render(<SessionPageTabs session={session} />);
+    expect(screen.getAllByRole('tab').at(-1)?.textContent).toBe('Changes');
+    view.unmount();
+
+    act(() => {
+      store.setState({ sessionProjectMounts: { [session.id]: [ledger, payments] } });
     });
     render(<SessionPageTabs session={session} />);
-
-    screen.getByRole('tab', { name: /Changes/ });
+    expect(screen.queryByRole('tab', { name: /Changes/ })).toBeNull();
   });
 
   it.each([
     [null, 'Overview'],
-    ['files', 'Changes'],
     ['workflows', 'Runs'],
     ['orchestrated', 'Runs'],
     ['plans', 'Artifacts'],

@@ -93,12 +93,19 @@ describe('the c04 worktree level scenes', () => {
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
-  it('c04-worktree-pr-behind shows the session page tabs, the property block, no status line', async () => {
+  it('c04-worktree-pr-behind shows the branch tabs, the property block, no status line', async () => {
     await mount('c04-worktree-pr-behind');
 
-    expect(screen.getByRole('tablist', { name: 'Session pages' })).toBeDefined();
+    expect(screen.getByRole('tablist', { name: 'Branch pages' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
-    expect(stripNames()).toEqual(['Overview', 'Comments', 'Changes', 'Commits', 'Checks', 'Work']);
+    expect(stripNames()).toEqual([
+      'Conversation',
+      'Comments',
+      'Changes',
+      'Commits',
+      'Checks',
+      'Work',
+    ]);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Merge status' }).textContent).toContain(
       '6 commits behind main',
@@ -108,14 +115,14 @@ describe('the c04 worktree level scenes', () => {
   it('c04-worktree-pr-draft reads Draft in the entry and the State property', async () => {
     await mount('c04-worktree-pr-draft');
 
-    expect(stripTab({ name: /^Overview/ }).textContent).toBe('OverviewDraft');
+    expect(stripTab({ name: /^Conversation/ }).textContent).toBe('ConversationDraft');
     expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
   });
 
   it('c04-worktree-no-pr leaves the entry slot empty and offers the create form', async () => {
     await mount('c04-worktree-no-pr');
 
-    expect(stripTab({ name: /^Overview/ }).textContent).toBe('Overview');
+    expect(stripTab({ name: /^Conversation/ }).textContent).toBe('Conversation');
     expect(screen.getByRole('button', { name: /create pull request$/i })).toBeDefined();
   });
 

@@ -19,7 +19,9 @@ import { SessionWorkspace } from '../../features/session/components/SessionWorks
 import { captureLocation } from '../../store/slices/navigation/captureLocation';
 import { agentPlace, branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import type { PlaceRequest } from '../../store/slices/navigation/types';
-import { backOf } from '../../store/slices/navigation/backOf';
+import { crumbsOf } from '../../store/slices/navigation/crumbsOf';
+import { SessionHeadContext } from '../../features/session/sessionHeadContext';
+import { SessionHead } from '../../app/components/SessionHead';
 import { LENS_KINDS } from '../../store/slices/session-view/types';
 import {
   AGENT_BACKFILL_ID,
@@ -37,8 +39,8 @@ import type { StoryStore } from '../../store/storyHarness';
 
 const SRC = join(__dirname, '..', '..');
 const UI_SRC = join(SRC, '..', '..', '..', 'packages', 'ui', 'src');
-const BACK_ROW = '[data-session-back] button';
-const BREADCRUMB = 'nav[aria-label="Breadcrumb"]';
+const CRUMBS = '[data-session-crumbs] li';
+const OLD_WAYS_UP = '[data-session-back], [data-slot="trail"]';
 const BACK_ICON = /\b(ArrowLeft|ChevronLeft)\b/;
 const FIRST_MOUNT_PATH = FLOW_MOUNTS[0]?.worktreePath ?? null;
 const FIRST_ARTIFACT_ID = CHAT_ARTIFACTS[0]?.id ?? null;
@@ -56,7 +58,6 @@ const WAYS_UP = new Set([
   DRAWER_FRAME,
   ...drawerFrameParts(),
   'app/components/AppTopBar/NavCluster/HistoryArrow.tsx',
-  'features/session/components/SessionWorkspace/SessionBackRow/index.tsx',
 ]);
 
 const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
@@ -71,7 +72,7 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
   'shared/components/StudioShell/StudioBackButton.tsx':
     'Back to app is the studio Close, not an up',
   'shared/components/GoneObject.tsx':
-    'the empty state of a gone object; the back row above it is the way up',
+    'the empty state of a gone object; the crumbs above it are the way up',
   'features/session/ask/components/AskDrawer/AskPlanView.tsx':
     'a view inside the Ask drawer; moves to the DrawerFrame back when touched (plan P5)',
   'features/session/components/ContextDrawer/VersionsView.tsx':
@@ -81,7 +82,7 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
 const LINKED_WORK =
   'opens the Overview; a linked record is reached from the Linked card, with no list page';
 
-const SESSION_TAB = 'a session tab is the top of its session, so it draws no back row';
+const SESSION_TAB = 'a session tab is the top of its session, so the head shows the tabs';
 
 const PAGELESS: Readonly<Record<string, string>> = {
   'the linear page': LINKED_WORK,
@@ -92,9 +93,7 @@ const PAGELESS: Readonly<Record<string, string>> = {
   'the workflows page': SESSION_TAB,
   'the orchestrated page': SESSION_TAB,
   'the plans page': SESSION_TAB,
-  'the files page': SESSION_TAB,
   'the context page': SESSION_TAB,
-  'a diff': SESSION_TAB,
 };
 
 const PLACES: ReadonlyArray<readonly [string, PlaceRequest]> = [
@@ -189,11 +188,11 @@ afterEach(() => {
 const isShown = (node: Element): boolean =>
   node.closest('[inert]') === null && node.closest('[hidden]') === null;
 
-const shownBacks = (): ReadonlyArray<string> =>
-  [...document.querySelectorAll(BACK_ROW)].filter(isShown).map((back) => back.textContent ?? '');
+const shownCrumbs = (): ReadonlyArray<string> =>
+  [...document.querySelectorAll(CRUMBS)].filter(isShown).map((crumb) => crumb.textContent ?? '');
 
-const shownBreadcrumbs = (): number =>
-  [...document.querySelectorAll(BREADCRUMB)].filter(isShown).length;
+const headNav = (): string | null =>
+  document.querySelector('[data-session-head]')?.getAttribute('data-head-nav') ?? null;
 
 const sourcesOf = (dir: string): ReadonlyArray<string> =>
   readdirSync(dir).flatMap((name) => {
@@ -218,24 +217,30 @@ const keyOf = (path: string): string =>
   path.startsWith(UI_SRC) ? `packages/ui/src/${relative(UI_SRC, path)}` : relative(SRC, path);
 
 describe('every place has a way up', () => {
-  it.each(PLACES)('draws one back row and no trail on %s', async (name, to) => {
+  it.each(PLACES)('draws the session crumbs or the tabs on %s', async (name, to) => {
     act(() => useAppStore.getInitialState().navigate({ to }));
     const state = useAppStore.getState();
-    const expected = backOf({ state, place: captureLocation({ state }).place })?.label ?? null;
+    const expected = crumbsOf({ state, place: captureLocation({ state }).place }).map(
+      (crumb) => crumb.label,
+    );
 
     render(
       <ToastProvider>
-        <SessionWorkspace session={FLOW_SESSION} />
+        <SessionHeadContext.Provider value={SessionHead}>
+          <SessionWorkspace session={FLOW_SESSION} />
+        </SessionHeadContext.Provider>
       </ToastProvider>,
     );
 
+    expect(document.querySelectorAll(OLD_WAYS_UP)).toHaveLength(0);
     if (PAGELESS[name] !== undefined) {
-      expect(shownBacks()).toEqual([]);
+      expect(expected).toEqual([]);
+      expect(headNav()).toBe('tabs');
       return;
     }
-    expect(expected).not.toBeNull();
-    await waitFor(() => expect(shownBacks()).toEqual([expected]), { timeout: 4_000 });
-    expect(shownBreadcrumbs()).toBe(0);
+    expect(expected.length).toBeGreaterThan(1);
+    await waitFor(() => expect(shownCrumbs()).toEqual(expected), { timeout: 4_000 });
+    expect(headNav()).toBe('crumbs');
   });
 
   it('names only walked places as pageless', () => {

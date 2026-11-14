@@ -108,8 +108,12 @@ describe('the r4 content scenes', () => {
   it('r4-questions lists the questions on one grid, waiting first', async () => {
     await mount('r4-questions');
 
-    expect(document.querySelectorAll('[data-list-grid]')).toHaveLength(1);
-    const grid = document.querySelector<HTMLElement>('[data-list-grid]');
+    expect(
+      [...document.querySelectorAll('[data-list-grid]')].map((list) =>
+        list.getAttribute('aria-label'),
+      ),
+    ).toEqual(['Questions', 'Answered questions']);
+    const grid = document.querySelector<HTMLElement>('[data-list-grid][aria-label="Questions"]');
     const groups = Array.from(grid?.querySelectorAll('h2') ?? []).map((node) => node.textContent);
     expect(groups[0]).toBe('Needs you');
     expect(screen.queryByText('No questions')).toBeNull();

@@ -5,13 +5,13 @@ import { LENS_ICON } from './lens-labels';
 import { columnPagesOf, pagesOf } from './pageRegistry';
 
 describe('the session level pages', () => {
-  it('read Overview, Changes, Runs, Artifacts on every session', () => {
-    expect(columnPagesOf().map((page) => page.label)).toEqual([
-      'Overview',
-      'Changes',
-      'Runs',
-      'Artifacts',
-    ]);
+  it('read Overview, Runs, Artifacts on every session', () => {
+    expect(columnPagesOf().map((page) => page.label)).toEqual(['Overview', 'Runs', 'Artifacts']);
+  });
+
+  it('add the Changes shortcut last only on a session with one branch', () => {
+    expect(pagesOf({ hasOpenQuestions: true }).map((page) => page.id)).not.toContain('files');
+    expect(pagesOf({ hasOpenQuestions: true, hasOneBranch: true }).at(-1)?.id).toBe('files');
   });
 
   it('fold Orchestrated into the one Runs entry', () => {
@@ -34,7 +34,6 @@ describe('the session level pages', () => {
     expect(closed.map((page) => page.id)).not.toContain('questions');
     expect(open.map((page) => page.id)).toEqual([
       'overview',
-      'files',
       'runs',
       'artifacts',
       'questions',
@@ -44,7 +43,7 @@ describe('the session level pages', () => {
 });
 
 describe('the page registry', () => {
-  const every = pagesOf({ hasOpenQuestions: true });
+  const every = pagesOf({ hasOpenQuestions: true, hasOneBranch: true });
 
   it('names every page after its shortcut', () => {
     for (const page of every) {
@@ -68,10 +67,10 @@ describe('the page registry', () => {
 
   it('counts exactly the pages that the count grammar names', () => {
     expect(every.filter((page) => page.count !== null).map((page) => page.id)).toEqual([
-      'files',
       'runs',
       'artifacts',
       'questions',
+      'files',
     ]);
   });
 });

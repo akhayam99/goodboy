@@ -70,6 +70,10 @@ export type DrawerContent =
       readonly payload: { readonly threadId: string };
     }
   | {
+      readonly kind: 'ask';
+      readonly payload: null;
+    }
+  | {
       readonly kind: 'question';
       readonly payload: { readonly questionId: OpenQuestionId; readonly from?: 'ask' };
     }

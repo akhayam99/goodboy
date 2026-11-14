@@ -446,7 +446,7 @@ describe('content column contract', () => {
           name !== 'PaneBannerContext' &&
           name !== 'PageTrailContext' &&
           name !== 'PaneActionsContext' &&
-          name !== 'OwnPaneChrome' &&
+          name !== 'Head' &&
           name !== 'Cards',
       );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);

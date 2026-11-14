@@ -45,7 +45,7 @@ const RIGHT_CLICK_SESSION_ROWS: ReadonlyArray<{
   readonly lands: (ctx: Ctx) => Promise<void>;
 }> = [
   { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
-  { label: 'Changes', lens: 'files', lands: changesTab },
+  { label: 'Changes', lens: 'branch', lands: changesTab },
 ];
 
 export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [

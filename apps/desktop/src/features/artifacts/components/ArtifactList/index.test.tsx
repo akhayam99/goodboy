@@ -55,7 +55,7 @@ describe('ArtifactList states', () => {
   it('shows loading rows before an initial read and never the empty state', () => {
     state.sessionArtifacts = {};
     renderList();
-    screen.getByRole('heading', { name: 'Artifacts' });
+    expect(screen.queryByRole('heading', { name: 'Artifacts' })).toBeNull();
     const loading = screen.getByRole('status', { name: 'Loading artifacts' });
     expect(loading.querySelectorAll('[data-testid="artifact-skeleton-row"]')).toHaveLength(3);
     expect(screen.queryByText('No artifacts yet')).toBeNull();

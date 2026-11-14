@@ -51,7 +51,7 @@ const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
 const AGENT = brandId<AgentId>({ value: 'agent-1' });
 const SRC = join(__dirname, '..', '..');
-const RETIRED_DRAWER_KINDS: ReadonlyArray<string> = ['ask', 'context', 'explore'];
+const RETIRED_DRAWER_KINDS: ReadonlyArray<string> = ['context', 'explore'];
 
 const FORMER_KEYS = {
   sessionSidebarCollapsed: 'goodboy:sessions-sidebar-collapsed',

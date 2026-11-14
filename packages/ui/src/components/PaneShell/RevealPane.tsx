@@ -54,6 +54,7 @@ export const RevealPane = ({
           className={cn(
             'flex flex-col gap-3',
             !isOuterUnderTrail && (isEvenInset ? PANE_RHYTHM.pinnedInset : PANE_RHYTHM.headerInset),
+            isOuterUnderTrail && isHeaderPinned && PANE_RHYTHM.pinnedUnderBand,
             animationClassName,
           )}
         >

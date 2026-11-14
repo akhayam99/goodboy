@@ -98,13 +98,13 @@ describe('Branch page header', () => {
     expect(header?.querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('says Overview on the first tab and names the state in the title row', async () => {
+  it('says Conversation on the first tab and names the state in the title row', async () => {
     seedQuietRequest({ patch: { state: 'open', isDraft: false }, viewer: 'harborline-dev' });
 
     await openPage();
 
     const tabs = document.querySelectorAll('[role="tablist"] [role="tab"]');
-    expect(tabs[0]?.textContent).toContain('Overview');
+    expect(tabs[0]?.textContent).toContain('Conversation');
     expect(
       document.querySelector('[data-slot="pane-title-row"] [data-slot="branch-state"]')
         ?.textContent,

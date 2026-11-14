@@ -166,7 +166,9 @@ describe('one agent, one page', () => {
 
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
     screen.getByText('1 file changed');
-    expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
+    expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toBe(
+      'Auto',
+    );
   });
 
   it.each(['process_error', 'no_closing_envelope'])(
