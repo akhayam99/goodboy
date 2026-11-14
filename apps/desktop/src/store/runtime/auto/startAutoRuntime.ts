@@ -23,6 +23,11 @@ import {
   registerDelegationDecisionPort,
 } from '../../../features/auto/delegationDecisionPort';
 import { currentPublishPort, registerPublishPort } from '../../../features/auto/publishPort';
+import {
+  currentAskAnswerPort,
+  registerAskAnswerPort,
+  type AskAnswerParams,
+} from '../../../features/auto/askAnswerPort';
 import { currentSendNowPort, registerSendNowPort } from '../../../features/auto/sendNowPort';
 import { currentTreeRetryPort, registerTreeRetryPort } from '../../../features/auto/treeRetryPort';
 import { currentWithdrawPort, registerWithdrawPort } from '../../../features/auto/withdrawPort';
@@ -45,6 +50,7 @@ import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import { makeAutoRuntime } from './makeAutoRuntime';
 import type { SleepParams } from './startDeliveredTurn';
 import { createPushSweep, type PushSweepErrorParams } from './settledPush/createPushSweep';
+import { createAskAnswerer } from './asks/createAskAnswerer';
 import {
   startAutoTree,
   startAutoTrees,
@@ -84,6 +90,8 @@ const REGISTERED_PORTS: AutoBridgePorts = {
       deliveryId,
     }),
   decision: (params) => requirePort({ port: currentDelegationDecisionPort() })(params),
+  answerAsk: ({ askId, answer }: AskAnswerParams) =>
+    requirePort({ port: currentAskAnswerPort() })({ askId, answer }),
   rerunChecks: (params) => requirePort({ port: currentChecksRerunPort() })(params),
   publish: (params) => requirePort({ port: currentPublishPort() })(params),
 };
@@ -101,6 +109,7 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
   registerChecksRerunPort({ port: client.ports.rerunChecks });
   registerPublishPort({ port: client.ports.publish });
   registerDelegationDecisionPort({ port: client.ports.decision });
+  registerAskAnswerPort({ port: client.ports.answerAsk });
   registerAutoUserTurnPort({ port: client.ports.userTurn });
   registerAutoChildTurnPort({ port: client.ports.childTurn });
   const unfollow = await followArtifactAnnouncements({
@@ -118,6 +127,7 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
     registerChecksRerunPort({ port: null });
     registerPublishPort({ port: null });
     registerDelegationDecisionPort({ port: null });
+    registerAskAnswerPort({ port: null });
     registerAutoUserTurnPort({ port: null });
     registerAutoChildTurnPort({ port: null });
   };
@@ -169,6 +179,7 @@ export const startAutoRuntime = async ({
         ...(hint === undefined ? {} : { hint }),
       }),
   });
+  registerAskAnswerPort({ port: createAskAnswerer({ runtimeOf }) });
   registerTreeStopPort({
     port: async ({ treeId }) => {
       const outcome = await runtimeOf().stop(brandId<AutoTreeId>({ value: treeId }));
@@ -266,6 +277,7 @@ export const startAutoRuntime = async ({
     registerAutoChildTurnPort({ port: null });
     registerAutoDrivePort({ port: null });
     registerDelegationDecisionPort({ port: null });
+    registerAskAnswerPort({ port: null });
     registerTreeStopPort({ port: null });
     holder.runtime = null;
   };

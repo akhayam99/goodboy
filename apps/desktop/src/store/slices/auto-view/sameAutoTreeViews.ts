@@ -46,6 +46,7 @@ const signatureOf = (view: AutoTreeView): string =>
       result.outcomeLine,
     ]),
     view.rootAsk,
+    (view.grantAsks ?? []).map((grant) => [grant.id, grant.state, grant.isCurrent]),
   ]);
 
 export const sameAutoTreeViews = ({ first, second }: Params): boolean =>

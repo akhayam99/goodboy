@@ -8,6 +8,7 @@ import {
 import {
   listAutoArtifactLedger,
   listAutoDelegations,
+  listAutoGrantsOfTree,
   listAutoOutbox,
   listAutoTreesOfSession,
   listGoneAutoChildIds,
@@ -103,7 +104,7 @@ export const readAutoTreeViews = async ({
   const level = await readAutoLevel({ db, target: { sessionId } });
   return Promise.all(
     trees.map(async (tree): Promise<AutoTreeView> => {
-      const [delegations, goneChildIds, artifacts, spend, pending, accepted, rootAsk] =
+      const [delegations, goneChildIds, artifacts, spend, pending, accepted, rootAsk, grantAsks] =
         await Promise.all([
           listAutoDelegations({ db, treeId: tree.id }),
           listGoneAutoChildIds({ db, treeId: tree.id, sessionId }),
@@ -112,6 +113,7 @@ export const readAutoTreeViews = async ({
           listAutoOutbox({ db, treeId: tree.id, states: ['pending', 'dropped'] }),
           listAutoOutbox({ db, treeId: tree.id, states: ['accepted'], kinds: ['results'] }),
           readFirstUserText({ db, agentId: tree.rootAgentId }),
+          listAutoGrantsOfTree({ db, treeId: tree.id }),
         ]);
       const present = presentDelegationsOf({ delegations, goneChildIds: new Set(goneChildIds) });
       return {
@@ -126,6 +128,7 @@ export const readAutoTreeViews = async ({
         deliveredResults: deliveredResultsOf({ accepted }),
         rootAsk,
         level,
+        grantAsks,
       };
     }),
   );

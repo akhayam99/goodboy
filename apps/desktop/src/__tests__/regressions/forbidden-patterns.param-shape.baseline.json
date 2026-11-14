@@ -253,7 +253,7 @@
     "apps/desktop/src/features/artifacts/turnArtifactOutcome.ts": 1,
     "apps/desktop/src/features/attachments/pendingAttachment.ts": 9,
     "apps/desktop/src/features/auto/autoGroupOf.ts": 1,
-    "apps/desktop/src/features/auto/bridge/createAutoBridgeClient.ts": 8,
+    "apps/desktop/src/features/auto/bridge/createAutoBridgeClient.ts": 5,
     "apps/desktop/src/features/auto/bridge/isAutoBridgeRequest.ts": 4,
     "apps/desktop/src/features/auto/bridge/serveAutoBridge.ts": 1,
     "apps/desktop/src/features/auto/chat/delegationResultOf.ts": 3,

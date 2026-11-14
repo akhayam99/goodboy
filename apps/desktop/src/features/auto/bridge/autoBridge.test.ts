@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { brandId, type AgentId, type SessionId } from '@goodboy/types';
+import type { AskAnswerPort } from '../askAnswerPort';
 import type { AutoChildTurnPort } from '../autoChildTurnPort';
 import type { AutoUserTurnPort } from '../autoUserTurnPort';
 import type { ChecksRerunPort } from '../checksRerunPort';
@@ -79,6 +80,7 @@ const mainPorts = () => {
   const sendNow = vi.fn<SendNowPort>(async () => ({ kind: 'retried' }));
   const withdraw = vi.fn<WithdrawPort>(async () => ({ kind: 'withdrawn' }));
   const childTurn = vi.fn<AutoChildTurnPort>(async () => ({ kind: 'continued' }));
+  const answerAsk = vi.fn<AskAnswerPort>(async () => 'allowed');
   const ports: AutoBridgePorts = {
     stop,
     retry,
@@ -89,9 +91,11 @@ const mainPorts = () => {
     decision,
     rerunChecks,
     publish,
+    answerAsk,
   };
   return {
     ports,
+    answerAsk,
     stop,
     retry,
     sendNow,
@@ -307,6 +311,25 @@ describe('Auto in a window without the runtime', () => {
       'retry',
       'put_back',
     ]);
+  });
+
+  it('hands an answer to an ask to the main window by its id and gets its result back', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    expect(await client.ports.answerAsk({ askId: 'grant:grant-nock', answer: 'allow' })).toBe(
+      'allowed',
+    );
+    expect(main.answerAsk).toHaveBeenCalledWith({ askId: 'grant:grant-nock', answer: 'allow' });
+    expect(isAutoBridgeRequest({ id: 'request-9', call: { kind: 'answerAsk', askId: '' } })).toBe(
+      false,
+    );
+    expect(
+      isAutoBridgeRequest({
+        id: 'request-9',
+        call: { kind: 'answerAsk', askId: 'grant:grant-nock', answer: 'maybe' },
+      }),
+    ).toBe(false);
   });
 
   it('ignores a publish request with no ids or an unknown act', () => {

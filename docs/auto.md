@@ -1118,6 +1118,45 @@ A row tightened while an agent runs applies to its next start. The tests are
 on and off, each precedence step, the stale pair) and
 `leadPermissions.sqlite.test.ts` (writes, Reset, two windows, failure).
 
+### Asks
+
+An ask is anything a Lead waits for you to answer, and every ask has one id.
+`store/runtime/auto/asks/leadAsksOf.ts` lists the asks of one tree view: a start
+that waits for your confirmation (`start:<delegation>`, a delegation in
+`awaiting_confirm`, which keeps its one meaning, not started yet), a push that
+waits (`push:<delegation>:<commit>`, a publish record in `awaiting_confirm`), and
+one row of `auto_grants` per dependency, protected file or pull request ask
+(`grant:<id>`). A stopped or finished Lead lists none. Counts are by ask id, and
+the same need named twice by one attempt is one row (`insertAutoGrantStatement`
+ignores the duplicate). The plan and a project ask keep their own flows and are
+not in this list.
+
+A grant row (`packages/db/src/queries/auto-grants.ts`) is bound to the attempt
+that asked, or for a pull request to one version of its text, and its state is
+asked, allowed, declined or used. It is current while its attempt is the latest
+attempt of its delegation in the tree's generation, or while no newer text was
+asked for the same subject. `answerAutoGrantStatement` moves only a current,
+asked row, so a second answer and an answer for a superseded attempt or text are
+dropped. An allowance is used up at launch: the launcher reads
+`listAutoGrantAllowances` and puts `markAutoGrantUsedStatement` in the
+transaction that inserts the next attempt, so a crash after Allow and before the
+start relaunches with the allowance, and a second launch with the same allowance
+aborts.
+
+`answerAsk` (`store/runtime/auto/asks/answerAsk.ts`) is the one function that
+answers an ask, by id, in the main window: a start goes to `confirmDelegation`, a
+push to the publish act after it checked that the push still waits for that
+commit, a grant to `answerGrant`, which guards the tree (not stopped, owner
+lease), moves the row and bumps the phase revision, then drives the tree. It returns
+allowed, declined or settled, and settled means the answer was dropped.
+`createAskAnswerer` lets one answer per ask id run at a time: the same answer
+again shares its result, a different one gets settled. Another window answers
+through the `answerAsk` call of the Auto bridge (`features/auto/askAnswerPort.ts`);
+the ask leaves both windows on their next read. `asks.sqlite.test.ts` and
+`auto-grants.test.ts` cover a double answer, the other window, a superseded
+attempt, an older commit, the crash before launch, counts by id and the old
+start ask.
+
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
 the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
 like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`
