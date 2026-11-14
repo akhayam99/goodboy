@@ -29,6 +29,7 @@ export type LeadTreeModel = Readonly<{
   items: ReadonlyArray<LeadTreeItem>;
   tree: LeadTree | null;
   delegations: ReadonlyArray<AutoDelegation>;
+  launchSnapshots: Readonly<Record<string, unknown>>;
   onToggleFold: (foldId: string) => void;
   onEditNote: (noteId: string) => void;
   onRemoveNote: (noteId: string) => void;
@@ -43,6 +44,8 @@ const NO_DELEGATIONS: ReadonlyArray<AutoDelegation> = [];
 const NO_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 
 const NO_READ: ReadonlyArray<AutoReadMessage> = [];
+
+const NO_SNAPSHOTS: Readonly<Record<string, unknown>> = {};
 
 export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): LeadTreeModel => {
   const views = useAutoTreeViews({ sessionId });
@@ -110,6 +113,7 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
     items: model.items,
     tree: model.tree,
     delegations: view?.delegations ?? NO_DELEGATIONS,
+    launchSnapshots: view?.launchSnapshots ?? NO_SNAPSHOTS,
     onToggleFold,
     onEditNote: queued.onEdit,
     onRemoveNote: queued.onRemove,

@@ -21,6 +21,8 @@ import { carriedSnapshot } from './carriedSnapshot';
 import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
+import { launchImagesOf } from './launchSnapshot/launchImagesOf';
+import { launchSnapshotFor } from './launchSnapshot/launchSnapshotFor';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
 import { routedModelOf } from '../../slices/turn/childTurn/routedModelOf';
 import { readSnapshot } from './readSnapshot';
@@ -80,12 +82,14 @@ const attemptToLaunch = async ({
     const remote = isWriter
       ? await ctx.ports.readRemoteHead({ worktreePath: target.worktreePath, branch: null })
       : null;
+    const launchSnapshot = await launchSnapshotFor({ ctx, tree, delegation });
     const started = await ctx.scheduler.startAttempt({
       treeId: tree.id,
       delegationId: delegation.id,
       generation: tree.generation,
       baseline: { ...snapshotJson({ snapshot, nowMs: ctx.now() }), ...remoteJson({ remote }) },
       writeSet: isWriter ? { worktreePath: target.worktreePath } : null,
+      launchSnapshot,
     });
     return started.kind === 'started' ? started.attempt : null;
   }
@@ -196,7 +200,9 @@ const startTurn = async ({
       role,
       ...routedModelOf({ delegation }),
       text: kickoffTextOf({ delegation, attempt }),
-      images: await childImagesOf({ ctx, tree, delegation }),
+      images:
+        launchImagesOf({ snapshot: attempt.launchSnapshot }) ??
+        (await childImagesOf({ ctx, tree, delegation })),
       mountTarget: target,
       runId: ctx.ports.newId(),
       captureMode: delegation.reviseOf === null ? 'new' : 'revise',

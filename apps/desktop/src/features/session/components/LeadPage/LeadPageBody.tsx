@@ -45,7 +45,7 @@ export const LeadPageBody = ({
   const navigate = useAppStore((state) => state.navigate);
   const selectedId = useLeadSelectionStore((state) => state.selectedByLead[agent.id] ?? null);
   const select = useLeadSelectionStore((state) => state.select);
-  const { items, delegations } = model;
+  const { items, delegations, launchSnapshots } = model;
   const selectedItem = useMemo(
     () =>
       selectedId === null
@@ -61,8 +61,9 @@ export const LeadPageBody = ({
             agentId: selectedItem.agentId,
             number: selectedItem.number,
             delegations,
+            launchSnapshots,
           }),
-    [selectedItem, delegations],
+    [selectedItem, delegations, launchSnapshots],
   );
   const onSelect = useCallback(
     (agentId: AgentId) => {

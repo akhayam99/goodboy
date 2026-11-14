@@ -274,7 +274,10 @@ on the echo (`operator_text` with
 `attachments`). The delivery that reads the row hands them to Auto's turn (`storedAttachments` on
 `sendTurn`, listed by full path in the prompt, never written again), and every child Auto starts
 after that message gets them in its brief (`childImagesOf`: the images of the accepted user rows
-of the tree's generation up to the delegation); the child page names them as chips. An image that
+of the tree's generation up to the delegation); the child page names them as chips. The launch
+reads those images once, into the launch snapshot of the attempt (see The spawn record), and
+starts the child with the stored list, so a relaunch after a crash hands over the same images
+even when the tree got more since. An image that
 cannot be written refuses the message with "Auto could not keep the images. Attach them again.":
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
@@ -697,10 +700,22 @@ stored `roleReason`, with the role fit as "Why not X" when both are stored. Mode
 is the routing the delegation recorded and its `reason`. Done when is the stored
 `doneWhen`. Attempts counts the `retryOf` chain behind the agent.
 
-Went in reads the launch snapshot (`launchSnapshotOf`, `request.launchSnapshot`)
-and lists it as given to the agent, never as read by it. An agent without a
-snapshot reads "Not recorded": a state, not an error, and nothing is recomputed
-from today's images. The record lives in the one right slot, is never stored,
+Went in reads the launch snapshot and lists it as given to the agent, never as
+read by it. The snapshot is `auto_attempts.launch_snapshot`, written once by
+`startAttempt` in the same transaction that inserts the attempt, so a snapshot
+that cannot be written fails the start and never leaves a half-started attempt.
+`launchSnapshotFor` (`store/runtime/auto/launchSnapshot/`) builds it right
+before: the user notes up to the delegation (row id, with the turn the Lead read
+it at), their images (the full references the child is started with), the
+artifacts and versions the brief carried (`inputArtifacts` and the revise
+target), the run guidance in the brief (`kickoffGuidanceOf`) and the routing.
+Nothing rewrites it: a retry is a new delegation with its own first attempt and
+its own snapshot, and a resumed attempt after a question writes none.
+`readAutoTreeViews` loads the snapshots by delegation (`launchSnapshots`) and
+`spawnRecordOf` reads the one of the agent's latest delegation through
+`launchSnapshotOf`. An agent without a snapshot, for one started before the
+column existed, reads "Not recorded": a state, not an error, and nothing is
+recomputed from today's images. The record lives in the one right slot, is never stored,
 and Esc or the close button closes it without a history entry. The record of an
 agent is a pure function of that agent's rows, so a late result for another
 agent does not repaint it. "Open transcript" opens the agent's own page; its

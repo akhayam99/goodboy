@@ -197,6 +197,7 @@ export {
 export {
   composeAnswerKickoff,
   composeDelegationKickoff,
+  kickoffGuidanceOf,
   type AnswerKickoffParams,
   type DelegationKickoffParams,
   type KickoffArtifactInput,

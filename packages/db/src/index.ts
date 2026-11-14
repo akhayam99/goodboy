@@ -699,24 +699,7 @@ export {
   type NewAutoArtifact,
   type RegisterAutoArtifactOutcome,
 } from './queries/auto-artifacts';
-export {
-  AUTO_ATTEMPT_STATES,
-  claimAutoAttemptPublishStatement,
-  endAutoAttemptStatement,
-  getAutoAttempt,
-  insertAutoAttemptStatement,
-  listAutoAttemptsOfDelegation,
-  listAutoAttemptsOfTree,
-  listLiveAutoAttempts,
-  markAutoAttemptRunningStatement,
-  mergeAutoAttemptBaselineStatement,
-  patchAutoAttemptChecksStatement,
-  patchAutoAttemptPublishStatement,
-  pauseAutoAttemptStatement,
-  settleAutoAttemptPublishStatement,
-  type AutoAttempt,
-  type AutoAttemptState,
-} from './queries/auto-attempts';
+export * from './queries/auto-attempts';
 export {
   AUTO_ADOPT_ABORT,
   AUTO_DETACH_ABORT,

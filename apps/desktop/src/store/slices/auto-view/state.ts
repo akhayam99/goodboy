@@ -23,6 +23,7 @@ export type AutoTreeView = Readonly<{
   rootAsk: string | null;
   level?: AutoLevel;
   grantAsks?: ReadonlyArray<AutoGrant>;
+  launchSnapshots?: Readonly<Record<string, unknown>>;
 }>;
 
 export type AutoDeliveredArtifact = Readonly<{

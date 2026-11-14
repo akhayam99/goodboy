@@ -40,22 +40,44 @@ describe('spawnRecordOf', () => {
     const record = spawnRecordOf({
       agentId: 'agent-impl',
       number: null,
-      delegations: [
-        {
-          ...base,
-          request: {
-            ...base.request,
-            launchSnapshot: [
-              { kind: 'note', label: 'Also cover the batch endpoint' },
-              { kind: 'x' },
-            ],
-          },
+      delegations: [base],
+      launchSnapshots: {
+        [base.id]: {
+          schemaVersion: 1,
+          items: [
+            { kind: 'note', ref: 'outbox-user-2', label: 'Also cover the batch endpoint' },
+            { kind: 'x', ref: 'x', label: 'unknown kind' },
+          ],
         },
-      ],
+      },
     });
     expect(record?.wentIn).toEqual([
-      { kind: 'note', label: 'Also cover the batch endpoint', detail: null },
+      { kind: 'note', ref: 'outbox-user-2', label: 'Also cover the batch endpoint', detail: null },
     ]);
+  });
+
+  it('reads the snapshot of the latest delegation only, never one of an earlier attempt', () => {
+    const first = aDelegation({
+      key: 'first',
+      role: 'tester',
+      state: 'settled',
+      outcome: 'failed',
+    });
+    const retry = {
+      ...aDelegation({ key: 'retry', role: 'tester', state: 'running' }),
+      childAgentId: first.childAgentId,
+      retryOf: first.id,
+      createdAt: first.createdAt + 1,
+    };
+    const record = spawnRecordOf({
+      agentId: first.childAgentId,
+      number: '3',
+      delegations: [first, retry],
+      launchSnapshots: {
+        [first.id]: { schemaVersion: 1, items: [{ kind: 'note', ref: 'n1', label: 'old' }] },
+      },
+    });
+    expect(record?.wentIn).toBeNull();
   });
 
   it('keeps the reason of the role even when thin', () => {
