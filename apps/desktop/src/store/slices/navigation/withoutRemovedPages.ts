@@ -3,19 +3,17 @@ import { contextSectionOf } from './contextSectionOf';
 import { brandId, type AgentId, type SessionId, type WorkflowRunId } from '@goodboy/types';
 import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
 import type { OpenDrawer } from '../drawer/state';
-import type { LensKind } from '../session-view/types';
+import { LENS_KINDS, type LensKind } from '../session-view/types';
 import { sessionPlace } from './place';
+import { PLACE_ROWS } from './placeRows';
 import type { StudioPlace } from './studio';
-import type { Location, Place, SessionTarget } from './types';
+import type { Focus, Location, Place, SessionTarget } from './types';
 
 type Params = {
   readonly location: Location;
 };
 
-type PaneParams = {
-  readonly lens: string;
-  readonly sessionId: SessionId;
-};
+type Rows = Readonly<Record<string, string>>;
 
 type StudioParams = {
   readonly studio: StudioPlace | null;
@@ -25,39 +23,38 @@ type TargetParams = {
   readonly target: SessionTarget | null;
 };
 
-const REMOVED_LENSES: ReadonlySet<string> = new Set([
-  'terminal',
-  'explore',
-  'scripts',
-  'context',
-  'goal',
-  'decisions',
-  'last_output_summary',
-]);
-
 const RETIRED_RUNS_LENSES: ReadonlySet<string> = new Set(['agents', 'auto']);
 
 const REMOVED_TARGETS: ReadonlySet<string> = new Set(['terminal', 'explore', 'scripts', 'agent']);
 
 const REMOVED_DRAWERS: ReadonlySet<string> = new Set(['auto-child', 'run-step']);
 
+const CONTEXT_SECTIONS: ReadonlySet<unknown> = new Set([
+  'goal',
+  'decisions',
+  'summary',
+  'explanations',
+]);
+
 const REMOVED_STUDIOS: ReadonlyMap<string, StudioPlace> = new Map<string, StudioPlace>([
   ['companion', IPHONE_SETTINGS_PLACE],
 ]);
 
-const paneOfLens = ({ lens, sessionId }: PaneParams): OpenDrawer | null => {
-  const section = contextSectionOf({ lens });
-  if (section !== null) {
-    return { kind: 'context', sessionId, payload: { section: section, view: 'current' } };
-  }
-  if (lens === 'explore') {
-    return { kind: 'explore', sessionId, payload: null };
-  }
-  if (lens === 'scripts') {
-    return { kind: 'scripts', sessionId, payload: null };
-  }
-  return null;
+const NO_ROWS: Rows = {};
+
+const ALL_FILES: Rows = { [PLACE_ROWS.changesMode]: 'all' };
+
+const RUNNING_RUNS: Rows = { [PLACE_ROWS.runsFilter]: 'running' };
+
+type RowsParams = {
+  readonly focus: Focus;
+  readonly rows: Rows;
 };
+
+const withRows = ({ focus, rows }: RowsParams): Focus =>
+  Object.keys(rows).length === 0
+    ? focus
+    : { ...focus, returnRows: { ...focus.returnRows, ...rows } };
 
 const studioStillThere = ({ studio }: StudioParams): StudioPlace | null => {
   if (studio === null) {
@@ -81,45 +78,81 @@ const targetStillThere = ({ target }: TargetParams): SessionTarget | null => {
   return target;
 };
 
-type LensParams = {
+type LensFold = {
+  readonly lens: LensKind | null;
+  readonly pane: OpenDrawer | null;
+  readonly rows: Rows;
+};
+
+type LensFoldParams = {
+  readonly lens: string;
+  readonly sessionId: SessionId;
+};
+
+const foldOfRemovedLens = ({ lens, sessionId }: LensFoldParams): LensFold | null => {
+  const section = contextSectionOf({ lens });
+  if (section !== null) {
+    return { lens: 'context', pane: null, rows: { [PLACE_ROWS.contextSection]: section } };
+  }
+  if (lens === 'explore') {
+    return { lens: 'files', pane: null, rows: ALL_FILES };
+  }
+  if (lens === 'scripts') {
+    return { lens: null, pane: { kind: 'scripts', sessionId, payload: null }, rows: NO_ROWS };
+  }
+  if (lens === 'terminal') {
+    return { lens: null, pane: null, rows: NO_ROWS };
+  }
+  return null;
+};
+
+type KnownParams = {
   readonly lens: LensKind | null;
 };
 
-type DrawerParams = {
-  readonly drawer: OpenDrawer | null;
-};
-
-const lensStillThere = ({ lens }: LensParams): LensKind | null => {
-  const name = String(lens);
-  if (REMOVED_LENSES.has(name)) {
-    return null;
-  }
-  return RETIRED_RUNS_LENSES.has(name) ? 'workflows' : lens;
-};
+const isKnownLens = ({ lens }: KnownParams): boolean => lens === null || LENS_KINDS.has(lens);
 
 const withoutRemovedLens = ({ location }: Params): Location => {
   const { place } = location;
   if (place.at !== 'session') {
     return location;
   }
-  const { view } = place;
+  const { view, sessionId } = place;
   const lens = String(view.lens);
-  const isProviderList = isProviderListLens({ lens }) && view.target === null;
-  const hasRemovedLens = REMOVED_LENSES.has(lens) || isProviderList;
-  const nextLens = isProviderList ? null : lensStillThere({ lens: view.lens });
-  const target = hasRemovedLens ? null : targetStillThere({ target: view.target });
-  if (nextLens === view.lens && target === view.target) {
-    return location;
+  const fold = foldOfRemovedLens({ lens, sessionId });
+  if (fold !== null) {
+    return {
+      ...location,
+      place: { ...place, view: { ...view, lens: fold.lens, target: null } },
+      focus: withRows({
+        focus: { ...location.focus, drawer: location.focus.drawer ?? fold.pane },
+        rows: fold.rows,
+      }),
+    };
   }
-  const pane = hasRemovedLens ? paneOfLens({ lens, sessionId: place.sessionId }) : null;
-  return {
-    ...location,
-    place: {
-      ...place,
-      view: { ...view, lens: nextLens, target },
-    },
-    focus: { ...location.focus, drawer: location.focus.drawer ?? pane },
-  };
+  if (RETIRED_RUNS_LENSES.has(lens)) {
+    const rows = lens === 'agents' && view.agentId === null ? RUNNING_RUNS : NO_ROWS;
+    return {
+      ...location,
+      place: {
+        ...place,
+        view: { ...view, lens: 'workflows', target: targetStillThere({ target: view.target }) },
+      },
+      focus: withRows({ focus: location.focus, rows }),
+    };
+  }
+  const isProviderList = isProviderListLens({ lens }) && view.target === null;
+  if (isProviderList || !isKnownLens({ lens: view.lens })) {
+    return { ...location, place: sessionPlace({ sessionId }) };
+  }
+  const target = targetStillThere({ target: view.target });
+  return target === view.target
+    ? location
+    : { ...location, place: { ...place, view: { ...view, target } } };
+};
+
+type DrawerParams = {
+  readonly drawer: OpenDrawer | null;
 };
 
 const pageOfRemovedDrawer = ({ drawer }: DrawerParams): Place | null => {
@@ -187,9 +220,94 @@ const withoutFormerSection = ({ location }: Params): Location => {
   };
 };
 
+type PanelFold = {
+  readonly place: Place;
+  readonly rows: Rows;
+};
+
+type ContextPanelParams = {
+  readonly drawer: Extract<OpenDrawer, { readonly kind: 'context' }>;
+};
+
+const contextRowOf = ({ drawer }: ContextPanelParams): string => {
+  if (Reflect.get(drawer.payload, 'view') === 'versions') {
+    return 'history';
+  }
+  const section: unknown = Reflect.get(drawer.payload, 'section');
+  return CONTEXT_SECTIONS.has(section) ? String(section) : 'goal';
+};
+
+type FilePanelParams = {
+  readonly drawer: Extract<OpenDrawer, { readonly kind: 'explore-file' }>;
+};
+
+const treeFileOf = ({ drawer }: FilePanelParams): string | null => {
+  if (drawer.payload.from !== 'explore') {
+    return null;
+  }
+  const entry: unknown = Reflect.get(drawer.payload, 'entry');
+  const path: unknown =
+    typeof entry === 'object' && entry !== null ? Reflect.get(entry, 'relPath') : null;
+  return typeof path === 'string' && path !== '' ? path : null;
+};
+
+const foldOfPanel = ({ drawer }: DrawerParams): PanelFold | null => {
+  if (drawer === null || drawer.sessionId === null) {
+    return null;
+  }
+  const { sessionId } = drawer;
+  if (drawer.kind === 'context') {
+    return {
+      place: sessionPlace({ sessionId, lens: 'context' }),
+      rows: { [PLACE_ROWS.contextSection]: contextRowOf({ drawer }) },
+    };
+  }
+  if (drawer.kind === 'ask') {
+    return {
+      place: sessionPlace({ sessionId, lens: 'context' }),
+      rows: { [PLACE_ROWS.contextSection]: 'ask' },
+    };
+  }
+  if (drawer.kind === 'explore') {
+    return { place: sessionPlace({ sessionId, lens: 'files' }), rows: ALL_FILES };
+  }
+  if (drawer.kind === 'spawned') {
+    return { place: sessionPlace({ sessionId, lens: 'workflows' }), rows: RUNNING_RUNS };
+  }
+  if (drawer.kind !== 'explore-file') {
+    return null;
+  }
+  const path = treeFileOf({ drawer });
+  if (path === null) {
+    return null;
+  }
+  return {
+    place: sessionPlace({
+      sessionId,
+      lens: 'files',
+      target: { kind: 'diff', mountPath: null, focus: { kind: 'branch', path } },
+    }),
+    rows: ALL_FILES,
+  };
+};
+
+const withoutRemovedPanel = ({ location }: Params): Location => {
+  const fold = foldOfPanel({ drawer: location.focus.drawer });
+  if (fold === null) {
+    return location;
+  }
+  return {
+    ...location,
+    place: fold.place,
+    focus: withRows({ focus: { ...location.focus, drawer: null }, rows: fold.rows }),
+  };
+};
+
 export const withoutRemovedPages = ({ location }: Params): Location =>
-  withoutRemovedLens({
-    location: withoutFormerSection({
-      location: withoutRemovedDrawer({ location: withoutRemovedStudio({ location }) }),
+  withoutRemovedPanel({
+    location: withoutRemovedLens({
+      location: withoutFormerSection({
+        location: withoutRemovedDrawer({ location: withoutRemovedStudio({ location }) }),
+      }),
     }),
   });

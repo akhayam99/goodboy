@@ -7,6 +7,7 @@ import {
   WAIT,
   both,
   branchTab,
+  changesTab,
   click,
   clickBackArrow,
   clickButton,
@@ -99,10 +100,10 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: both(branchTab('comments'), worktreeMarked),
   },
   {
-    name: 'door: Files lands on the Branch with its worktree row current',
+    name: 'door: Files lands on the Changes tab with its worktree row current',
     covers: ['navigate', 'sidebar:files-door'],
     open: () => openPalette(/^Open changes/),
-    lands: both(branchTab('files'), worktreeMarked),
+    lands: both(changesTab, worktreeMarked),
   },
   {
     name: 'door: Comments lands on the Branch Comments tab with the worktree level on screen',

@@ -75,7 +75,7 @@ describe('the u35 review place scenes', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Back to Add the stuck-delivery banner' }),
     );
-    await screen.findByRole('button', { name: 'Back to runs' });
+    await screen.findByRole('button', { name: 'Back to overview' });
   });
 
   it('u35-branch-setup-offer draws the setup offer inside the Branch page', async () => {

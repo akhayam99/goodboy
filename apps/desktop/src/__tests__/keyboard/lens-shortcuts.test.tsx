@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
+import { PLACE_ROWS } from '../../store/slices/navigation/placeRows';
 import { brandId, type SessionId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
@@ -57,7 +58,8 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
     openStudio: vi.fn(),
     amendStudio: vi.fn(),
     closeStudio: vi.fn(),
-    toggleContextDrawer: vi.fn(),
+    amendFocus: vi.fn(),
+    navigation: {},
     openDrawer: vi.fn(),
     drawer: null,
   };
@@ -236,6 +238,7 @@ beforeEach(() => {
   state.workspaceIntegrations = {};
   state.navigate.mockClear();
   state.openDrawer.mockClear();
+  state.amendFocus.mockClear();
   state.back.mockClear();
   state.forward.mockClear();
   reload.mockClear();
@@ -268,17 +271,16 @@ describe('App lens shortcuts off darwin', () => {
     });
   });
 
-  it('opens the Agents tool on ctrl shift alt A and moves no page', () => {
+  it('opens Runs filtered to Running on ctrl shift alt A', () => {
     render(<App />);
 
     press({ code: 'KeyA', key: 'A', ctrlKey: true, shiftKey: true, altKey: true });
 
-    expect(state.openDrawer).toHaveBeenCalledWith({
-      kind: 'spawned',
-      sessionId: 'session-1',
-      payload: null,
+    expect(lensCalls()).toEqual([['session-1', 'workflows']]);
+    expect(state.amendFocus).toHaveBeenCalledWith({
+      patch: { returnRows: { [PLACE_ROWS.runsFilter]: 'running' } },
     });
-    expect(state.navigate).not.toHaveBeenCalled();
+    expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
   it('walks to the previous session on ctrl', () => {
@@ -358,18 +360,17 @@ describe('App lens shortcuts on darwin', () => {
     });
   });
 
-  it('opens the Agents tool from its chord and leaves the page where it is', () => {
-    state.activeLens = { 'session-1': 'workflows' };
+  it('opens Runs filtered to Running from its chord, opening no panel', () => {
+    state.activeLens = { 'session-1': 'questions' };
     render(<App />);
 
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
-    expect(state.openDrawer).toHaveBeenCalledWith({
-      kind: 'spawned',
-      sessionId: 'session-1',
-      payload: null,
+    expect(lensCalls()).toEqual([['session-1', 'workflows']]);
+    expect(state.amendFocus).toHaveBeenCalledWith({
+      patch: { returnRows: { [PLACE_ROWS.runsFilter]: 'running' } },
     });
-    expect(state.navigate).not.toHaveBeenCalled();
+    expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
   it('leaves the old Agents tool chord free', () => {
@@ -381,7 +382,7 @@ describe('App lens shortcuts on darwin', () => {
     expect(state.navigate).not.toHaveBeenCalled();
   });
 
-  it('toggles the Context drawer on the page where you are, with one chord and retires the three section chords', () => {
+  it('opens the Context tab with one chord and retires the three section chords', () => {
     render(<App />);
 
     press({ code: 'KeyC', key: 'c', metaKey: true, altKey: true });
@@ -389,8 +390,8 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyE', key: 'e', metaKey: true, altKey: true });
     press({ code: 'KeyU', key: 'u', metaKey: true, altKey: true });
 
-    expect(lensCalls()).toEqual([]);
-    expect(state.toggleContextDrawer.mock.calls).toEqual([[{ sessionId: 'session-1' }]]);
+    expect(lensCalls()).toEqual([['session-1', 'context']]);
+    expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
   it('reaches the integration lenses of the tools that are connected', () => {
@@ -475,21 +476,23 @@ describe('App lens shortcuts on darwin', () => {
     expect(state.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
   });
 
-  it('routes the diff binding to the Diff lens and the explore binding to the Explore pane', () => {
+  it('routes the diff binding to the Changes tab and the explore binding to its All files', () => {
     render(<App />);
 
     press({ code: 'KeyF', key: 'f', metaKey: true, altKey: true });
     press({ code: 'KeyX', key: 'x', metaKey: true, altKey: true });
 
-    expect(lensCalls()).toEqual([['session-1', 'files']]);
-    expect(state.openDrawer).toHaveBeenCalledWith({
-      kind: 'explore',
-      sessionId: 'session-1',
-      payload: null,
+    expect(lensCalls()).toEqual([
+      ['session-1', 'files'],
+      ['session-1', 'files'],
+    ]);
+    expect(state.amendFocus).toHaveBeenCalledWith({
+      patch: { returnRows: { [PLACE_ROWS.changesMode]: 'all' } },
     });
+    expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
-  it('opens the Explore pane in a branchless session and keeps the diff binding off', () => {
+  it('opens the Changes tab in a branchless session from both bindings', () => {
     state.workspaces = [
       { id: 'workspace-1', name: 'Workspace', rootPath: '/simple', kind: 'simple' },
     ];
@@ -499,12 +502,11 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyX', key: 'x', metaKey: true, altKey: true });
     press({ code: 'KeyF', key: 'f', metaKey: true, altKey: true });
 
-    expect(lensCalls()).toEqual([]);
-    expect(state.openDrawer).toHaveBeenCalledWith({
-      kind: 'explore',
-      sessionId: 'session-1',
-      payload: null,
-    });
+    expect(lensCalls()).toEqual([
+      ['session-1', 'files'],
+      ['session-1', 'files'],
+    ]);
+    expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
   it('reloads Goodboy on the shifted reload combo', async () => {

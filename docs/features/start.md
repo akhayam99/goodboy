@@ -148,13 +148,15 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 A thin column of icons sits at the right of every screen, before any open panel. In a session its top group holds the tools that read that session. They stay put on every page of the session, and an open tool stays open when you move to another page.
 
-| Tool        | Key |
-| ----------- | --- |
-| **Explore** | ⌘⌥X |
-| **Context** | ⌘⌥C |
-| **Ask**     | ⌘L  |
-| **Agents**  | ⌘⌥A |
-| **Scripts** | ⌘⌥S |
+| Tool        | Key  |
+| ----------- | ---- |
+| **Explore** | none |
+| **Context** | none |
+| **Ask**     | ⌘L   |
+| **Agents**  | none |
+| **Scripts** | ⌘⌥S  |
+
+⌘⌥X opens the Changes tab on All files, ⌘⌥C the Context tab and ⌘⌥A Runs on what is running.
 
 At its foot, on every screen, sit **Terminal** (⌃\` or ⌘⌥T) and **Browser**. They open beside whatever you are doing and stay open as you move between sessions and pages. See [Terminal](keyboard.md#terminal) and [Browser](keyboard.md#browser).
 

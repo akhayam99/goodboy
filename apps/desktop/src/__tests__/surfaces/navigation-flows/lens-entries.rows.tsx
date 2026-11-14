@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import {
   type Ctx,
   branchTab,
+  changesTab,
   CRUMB_ROWS,
   LENS_ROWS,
   type Row,
@@ -44,7 +45,7 @@ const RIGHT_CLICK_SESSION_ROWS: ReadonlyArray<{
   readonly lands: (ctx: Ctx) => Promise<void>;
 }> = [
   { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
-  { label: 'Changes', lens: 'branch', lands: branchTab('files') },
+  { label: 'Changes', lens: 'files', lands: changesTab },
 ];
 
 export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [

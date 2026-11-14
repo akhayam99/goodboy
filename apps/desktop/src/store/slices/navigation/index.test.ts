@@ -163,9 +163,9 @@ describe('restoring a saved window location', () => {
       }),
     });
     before.getState().openDrawer({
-      kind: 'context',
+      kind: 'session-log',
       sessionId: S1,
-      payload: { section: 'summary', view: 'current' },
+      payload: { focusEntryId: null },
     });
     before.getState().amendFocus({ patch: { scroll: { plans: 320 } } });
     const saved = parseLocation({
@@ -562,7 +562,7 @@ describe('navigation slice', () => {
 
   it('goes up with a back when the previous voice is the parent', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().amendFocus({ patch: { scroll: { list: 300 } } });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     store.getState().up();
@@ -575,10 +575,10 @@ describe('navigation slice', () => {
 
   it('goes up with a clean push when the user did not come from the parent', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     store.getState().up();
-    expect(keyOf(store)).toBe(`s/${S1}/workflows`);
+    expect(keyOf(store)).toBe(`s/${S1}`);
     expect(store.getState().navigation[WS]?.entries).toHaveLength(4);
   });
 
@@ -929,14 +929,6 @@ describe('Branch page', () => {
         request: sessionPlace({
           sessionId: S1,
           lens: 'files',
-          target: { kind: 'diff', mountPath: MOUNT, focus: null },
-        }),
-        tab: 'files',
-      },
-      {
-        request: sessionPlace({
-          sessionId: S1,
-          lens: 'files',
           target: { kind: 'diff', mountPath: MOUNT, focus: null, page: 'history' },
         }),
         tab: 'commits',
@@ -948,6 +940,19 @@ describe('Branch page', () => {
       expect(store.getState().activeLens[S1]).toBe('branch');
       expect(branchOf(store)?.tab).toBe(tab);
     }
+  });
+
+  it('keeps the Changes door on the session tab, on its branch', () => {
+    const store = makeStore();
+    store.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'files',
+        target: { kind: 'diff', mountPath: MOUNT, focus: null },
+      }),
+    });
+    expect(store.getState().activeLens[S1]).toBe('files');
+    expect(store.getState().diffMountPath[S1]).toBe(MOUNT);
   });
 
   it('lands the Branch door on the pull request once the branch has one', () => {

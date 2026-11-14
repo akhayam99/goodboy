@@ -18,6 +18,15 @@ const BRANCH_WORK_LENSES: ReadonlySet<LensKind | null> = new Set<LensKind | null
   'plans',
 ]);
 
+const SESSION_TABS: ReadonlySet<LensKind> = new Set<LensKind>([
+  'workflows',
+  'orchestrated',
+  'plans',
+  'questions',
+  'context',
+  'files',
+]);
+
 type ItemParams = {
   readonly view: SessionView;
 };
@@ -84,6 +93,9 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     const root = resolveRootAgent({ agents, agentId: view.agentId });
     const isRunHome = root?.workflowRunId != null && root.stepId != null;
     const runId = isRunHome ? (agent?.workflowRunId ?? null) : null;
+    if (runId === null && home === 'workflows' && root?.id === view.agentId) {
+      return sessionPlace({ sessionId });
+    }
     return sessionPlace({
       sessionId,
       lens: home,
@@ -100,10 +112,13 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   if (view.target !== null && view.target.kind !== 'diff' && view.target.kind !== 'thread') {
     return { ...place, view: { ...view, target: null } };
   }
+  if (view.target?.kind === 'diff' && view.target.focus !== null) {
+    return { ...place, view: { ...view, target: { ...view.target, focus: null } } };
+  }
   if (BRANCH_WORK_LENSES.has(view.lens) && view.target === null && fromBranch !== null) {
     return branchPlace({ sessionId, mountPath: fromBranch.mountPath, tab: 'work' });
   }
-  if (view.lens !== null) {
+  if (view.lens !== null && !SESSION_TABS.has(view.lens)) {
     return sessionPlace({ sessionId });
   }
   return null;

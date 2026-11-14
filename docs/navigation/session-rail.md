@@ -109,8 +109,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   (`foldedLensOf`, applied by `sessionPlace`, `canonicalLocation`,
   `applyLocation` and the workspace), and a saved window that names the retired
   `agents` or `auto` lens lands on Runs through `withoutRemovedPages`, so an
-  old address or a saved window lands on Runs, and the back row of an old agent or
-  run reads `Back to runs`. An agent's home is Runs, or Comments for a resolver
+  old address or a saved window lands on Runs, the back row of a run reads
+  `Back to runs` and the back row of a top agent reads `Back to overview`. An agent's home is Runs, or Comments for a resolver
   (`agentHomeLens`). A row never carries a native
   `title`. The Runs page opens on the Start a run field (`StartRun`), and
   **Start a run** in the New menu (`newForm.startRun`), in a session's ⌘K
@@ -345,8 +345,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
 - **Auto keeps the rail on the session.** An Auto row of Runs opens that
   conversation and opens no tool, and Runs stays
   selected on the rail while an Auto agent is in the center. ⌘⌥W opens Runs;
-  ⌘⌥A is the Agents tool (`session.spawned`), a palette row as well, and ⌘⌥L is
-  free. Pressed below Runs (a run,
+  ⌘⌥A (`session.spawned`), a palette row as well, opens Runs on what is running
+  (`runs.filter` in `focus.returnRows`), and ⌘⌥L is free. Pressed below Runs (a run,
   a step, an agent or an Auto conversation) ⌘⌥W lands on the Runs list, and
   pressed on the list it stays: ⌘↑ is the key that leaves. ⌘⌥P does the same
   for Artifacts (`OBJECT_PAGE_LENSES` in `useAppShortcuts`). A studio or a
@@ -647,7 +647,7 @@ activity yet show the plain overview with its actions.
   title row, in the same gap; `PaneShell` clears the context for its body, so a
   nested header never repeats it. The row is a quiet `xs` button with a
   `ChevronLeft`; its `aria-label` is its text. `backOf` (store, navigation)
-  names the parent from `parentPlace`: a main agent reads `Back to runs`, a sub
+  names the parent from `parentPlace`: a main agent reads `Back to overview`, a sub
   agent and a sub sub agent read `Back to {parent agent name}` (`parentPlace`
   walks `parentAgentId` one step; a top level run step keeps its run, a sub
   step reads `Back to {parent step name}`), a run reads `Back

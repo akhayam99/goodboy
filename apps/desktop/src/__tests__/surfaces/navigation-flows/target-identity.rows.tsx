@@ -144,7 +144,7 @@ export const TARGET_IDENTITY_ROWS: ReadonlyArray<Row> = [
         });
       });
     },
-    lands: both(branchTab('files'), showsMount({ pick: (mounts) => mounts.second })),
+    lands: both(lens('files'), showsMount({ pick: (mounts) => mounts.second })),
   },
   {
     name: 'view mount A, open mount B from its row: the Files page shows B',

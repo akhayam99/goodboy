@@ -408,7 +408,8 @@ The `context` kind carries `{ section, view }`: `section` is `goal`, `decisions`
 `current` or `versions` (the old versions of that slot, inside the same drawer,
 with Restore; Escape and the header's **Back to current** leave the view before the
 drawer). The **Context** tool in the session tools toggles it on any page of the
-session, and so does ⌘⌥C, the only chord left for it. The drawer opens on Goal,
+session; ⌘⌥C opens the Context tab instead, and a restored Context panel opens
+as that tab (`withoutRemovedPages`). The drawer opens on Goal,
 every time, unless the caller names a section (the Activity row of a decision
 change opens Decisions). The chip carries a quiet dot, never a count, while the
 decisions ledger holds a change you have not marked as read

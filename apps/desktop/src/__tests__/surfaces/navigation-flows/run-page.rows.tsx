@@ -270,8 +270,8 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'Esc on the Runs list does what its back row does and lands on the Overview',
-    covers: ['navigate', 'up'],
+    name: 'Esc on the Runs tab stays there, since a session tab has no back row',
+    covers: ['navigate'],
     open: async (ctx) => {
       act(() =>
         useAppStore.getState().navigate({
@@ -284,9 +284,10 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await waitFor(
-        () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBeNull(),
+        () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('workflows'),
         WAIT,
       );
+      expect(screen.queryByRole('button', { name: /^Back to / })).toBeNull();
     },
   },
   {

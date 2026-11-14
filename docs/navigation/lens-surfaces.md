@@ -253,8 +253,8 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and a fix run transcript come back through Back.
 - **The switcher and Search or run list only destinations the session can
-  use.** One function feeds both. Context is a drawer, not a destination:
-  Search or run offers **Show context** (⌘⌥C) and neither lists a Context page.
+  use.** One function feeds both. Context is a tab of every session: Search or
+  run offers **Open Context** (⌘⌥C), and Changes is listed on every session.
   Provider entries open **Link work** on that provider (the event carries the source), unfold a folded session rail first, and are not offered on an archived session; a provider list address restores to Overview.
   Explore is always listed, opens as a pane (see The session tools), and
   browses one project of the session at a time as a tree (`role="tree"`). It

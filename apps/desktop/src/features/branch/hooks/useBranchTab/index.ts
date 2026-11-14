@@ -5,7 +5,8 @@ import type { BranchTab } from '../../../../store/slices/navigation/types';
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly pinned?: BranchTab;
 };
 
-export const useBranchTab = ({ sessionId }: Params): BranchTab =>
-  useAppStore((state) => branchTabOf({ state, sessionId }));
+export const useBranchTab = ({ sessionId, pinned }: Params): BranchTab =>
+  useAppStore((state) => pinned ?? branchTabOf({ state, sessionId }));

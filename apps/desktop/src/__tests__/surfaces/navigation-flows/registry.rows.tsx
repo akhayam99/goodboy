@@ -6,6 +6,7 @@ import {
   WAIT,
   both,
   branchTab,
+  changesTab,
   lens,
   openCrumb,
   openPalette,
@@ -72,13 +73,13 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Open changes finds the Changes tab',
     covers: ['navigate', 'palette:Open changes'],
     open: () => openPalette(/^Open changes/, 'Open changes'),
-    lands: branchTab('files'),
+    lands: changesTab,
   },
   {
     name: 'palette: the former name Files still finds the Changes tab',
     covers: ['navigate', 'palette:Open changes'],
     open: () => openPalette(/^Open changes/, 'Files'),
-    lands: branchTab('files'),
+    lands: changesTab,
   },
   {
     name: 'palette: the former names still find the tabs',

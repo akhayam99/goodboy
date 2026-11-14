@@ -482,7 +482,7 @@ export const SHORTCUTS = {
   'lens.context': {
     combo: 'cmd+alt+KeyC',
     offMacCombo: 'ctrl+shift+alt+KeyC',
-    label: 'Show context',
+    label: NAMES.context,
     plane: 'lens',
     group: 'views',
   },

@@ -334,7 +334,7 @@ shows beside it, and the history entry keeps the drawer. A workspace switch
 empties the slot. Esc inside a parked drawer is suspended, so it reaches the
 page, and so are the list keys and the Scripts run and stop keys
 (`useIsDrawerParked`), so a hidden list never moves or runs a script. After the trip the drawer's inner step (a plan in Ask) answers first
-again. A drawer's own key (⌘⌥C, ⌘⌥X, ⌘⌥S) on a page leaves that page and every
+again. A drawer's own key (⌘⌥S) on a page leaves that page and every
 page stacked under it, and shows that drawer; it never closes a parked one,
 and an overlay drawer takes focus back. Esc in the session is one ladder: an open
 menu, popover or field takes it first, then the top of the slot closes, then

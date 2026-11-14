@@ -42,7 +42,6 @@ const RUN = brandId<WorkflowRunId>({ value: 'run-northwind' });
 const TITLE = 'Stop retried webhooks posting a second credit';
 
 const OVERVIEW = sessionPlace({ sessionId: S1 });
-const RUNS = sessionPlace({ sessionId: S1, lens: 'workflows' });
 const RUN_PLACE = sessionPlace({
   sessionId: S1,
   lens: 'workflows',
@@ -135,7 +134,7 @@ const backButton = (name: string) => screen.getByRole('button', { name });
 
 describe('SessionBackRow', () => {
   it.each<readonly [string, PlaceRequest, string, PlaceRequest]>([
-    ['a main agent', MAIN_PLACE, 'Back to runs', RUNS],
+    ['a Lead', MAIN_PLACE, 'Back to overview', OVERVIEW],
     ['a sub agent', CHILD_PLACE, 'Back to planner', MAIN_PLACE],
     ['a sub sub agent', GRANDCHILD_PLACE, 'Back to scout', CHILD_PLACE],
     ['a run step', STEP_PLACE, 'Back to run', RUN_PLACE],

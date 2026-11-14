@@ -79,11 +79,20 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
 const LINKED_WORK =
   'opens the Overview; a linked record is reached from the Linked card, with no list page';
 
+const SESSION_TAB = 'a session tab is the top of its session, so it draws no back row';
+
 const PAGELESS: Readonly<Record<string, string>> = {
   'the linear page': LINKED_WORK,
   'the gitlab_issues page': LINKED_WORK,
   'the jira_issues page': LINKED_WORK,
   'the slack_threads page': LINKED_WORK,
+  'the questions page': SESSION_TAB,
+  'the workflows page': SESSION_TAB,
+  'the orchestrated page': SESSION_TAB,
+  'the plans page': SESSION_TAB,
+  'the files page': SESSION_TAB,
+  'the context page': SESSION_TAB,
+  'a diff': SESSION_TAB,
 };
 
 const PLACES: ReadonlyArray<readonly [string, PlaceRequest]> = [

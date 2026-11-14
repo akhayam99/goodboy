@@ -387,7 +387,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   drawer and the scroll. An address carries only what a screen reads: a window
   saved by an older build with an agent tab, an Explore folder, the Explore or
   Scripts lens, a selection or revealed rows still loads, and
-  `withoutRemovedPages` drops those parts (an old lens opens its pane). `locationKey` prints the text
+  `withoutRemovedPages` folds those parts to their new home (see Stored places below), and an
+  unknown lens opens the session Overview, never a blank page. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
@@ -474,12 +475,58 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   and names that one parent for the back row (`Back to runs`, `Back to
 {parent agent name}`, `Back to artifacts`, `Back to branch`, `Back to
 overview`); a sub agent's parent is the agent that spawned it.
+- **Two Backs, and they differ.** The back row (and ⌘↑) is `parentPlace`: it
+  only points inside the session, never at a list outside it, and it reads
+  the same after a reload, in a second window and from a link. History Back
+  (⌘[) walks this window's stack of 50 and is empty after a reload. A top
+  agent (a root agent at `s/{session}/workflows/agent/{agent}`, the one page
+  `canonicalAgent` resolves for every door) goes back to the session Overview,
+  and `upTo` writes its id into `focus.returnRows['board.lead']` so the board
+  brings its row into view; opened from the Work tab of a pull request it goes
+  back to that tab, read from `focus.runGroup`, which the window layout saves.
+  A session tab (Overview, Runs, Artifacts, Questions, Context, Changes) is the
+  top of its session and has no back row; a file open in Changes goes back to
+  Changes.
+- **The Changes tab is a place on every session.** A `files` place keeps its
+  `diff` target and no longer turns into the pull request page:
+  `canonicalLocation` fills a missing mount with the branch you looked at
+  last (`doorMountPath`), and `captureLocation` saves it, so a reload reopens
+  the same branch. On a session with a branch, `SessionLensPane` draws the
+  place with `BranchPage` pinned on its Changes section (`pinnedTab`); a
+  folder session keeps `FilesPane`. The Context tab draws the Context panel
+  body in the page until it has its own. A stored `diff` target with `page: 'history'` still opens
+  the pull request's Commits.
+- **Stored places.** One fold, `withoutRemovedPages`, maps every place an older
+  build saved to its new home, and `PLACE_ROWS` (`placeRows.ts`) names the
+  `focus.returnRows` keys that carry what a place needs without a new stored
+  kind:
+
+  | Stored                                                           | Opens as                                                                   |
+  | ---------------------------------------------------------------- | -------------------------------------------------------------------------- |
+  | Overview, Runs, Artifacts, Questions                             | the same place                                                             |
+  | Changes page                                                     | the Changes tab, on its branch                                             |
+  | Context panel, any section, or the Goal, Decisions, Summary lens | the Context tab, `context.section` = that section (`history` for versions) |
+  | Ask panel                                                        | the Context tab, `context.section` = `ask`                                 |
+  | Agents panel or Agents page                                      | Runs, `runs.filter` = `running`                                            |
+  | Scripts panel, a script run                                      | unchanged, the Scripts drawer                                              |
+  | Explore panel or page                                            | the Changes tab, `changes.mode` = `all`                                    |
+  | A file opened from the Explore tree                              | the Changes tab on that file, `changes.mode` = `all`                       |
+  | A file opened from a link, the full log, a reading panel         | unchanged                                                                  |
+  | An unknown lens                                                  | the session Overview                                                       |
+
+  The previous release must open every place this build saves: it folds a
+  stored Context tab to its Context panel and opens a stored Changes tab as
+  that branch's diff on its pull request page. `storedPlaces.test.ts` runs
+  every row through a frozen copy of that fold
+  (`testing/opensInPreviousRelease.ts`), and `navigationContract.test.ts`
+  holds the two Backs, the reload and the two windows.
+
 - **Dead entries fall out.** An archived or deleted session removes its
   entries and collapses the duplicates left behind. An agent that is gone
   falls back to its home lens.
 - **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
   back and forward buttons walk the stack. ⌘↑ (`nav.up`, `goUp`) is Up; on a
-  session's Overview, which has no parent, it goes to the board, while ⌘W
+  session tab, which has no parent, it goes to the board, while ⌘W
   there keeps walking history. In a studio, ⌘↑ runs the parent crumb of the
   `StudioTrail` on screen (`studioUpSlot`), so Impact › Spend › a provider goes
   to Spend and a full Tasks record goes to the list; a studio with no trail

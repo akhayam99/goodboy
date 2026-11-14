@@ -49,8 +49,8 @@ The Rust files with the most comments lost them in one pass. What a reader would
   mounted (`useShellRight`) so its shortcuts never answer twice. A close path
   reads `selectDrawerPanel` (null under a studio unless a workspace tool shows
   beside it): `selectOpenDrawer` answers what the session holds, so a close that
-  reads it closes a drawer nobody sees. A toggle (`togglePane`, `toggleDrawer`,
-  `toggleContextDrawer`) leaves every stacked page first (`leaveStudio`, since
+  reads it closes a drawer nobody sees. A toggle (`togglePane`, `toggleDrawer`)
+  leaves every stacked page first (`leaveStudio`, since
   one `closeStudio` only steps back to the page below), then shows the drawer,
   and never closes one on a page. The session rail's fold (`useShellFolds`)
   reads `selectOpenDrawer` on purpose, so the rail keeps its fold across the

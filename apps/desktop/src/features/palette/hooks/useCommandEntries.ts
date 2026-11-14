@@ -3,7 +3,6 @@ import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { destinationEntryOf } from '../destinationEntryOf';
 import { destinationPaletteKeyOf } from '../destinationPaletteKeyOf';
 import { footDestinationEntryOf } from '../footDestinationEntryOf';
-import { contextPaletteEntryOf } from '../contextPaletteEntryOf';
 import { useMemo } from 'react';
 import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
 import { useCurrentInnerColumn } from '@goodboy/ui';
@@ -93,7 +92,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const navigate = useAppStore((s) => s.navigate);
   const openStudio = useAppStore((s) => s.openStudio);
-  const toggleContextDrawer = useAppStore((s) => s.toggleContextDrawer);
   const projectPairs = useAppStore((s) =>
     Object.entries(s.sessionProjectMounts)
       .flatMap(([id, list]) => {
@@ -223,7 +221,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       for (const destination of destinations) {
         out.push(destinationEntryOf({ sessionId, destination }));
       }
-      out.push(contextPaletteEntryOf({ sessionId, toggle: toggleContextDrawer }));
     }
 
     out.push(...workspaceEntries({ workspaces, projects, open: openWorkspace }));
@@ -517,7 +514,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     openWorkspace,
     navigate,
     openStudio,
-    toggleContextDrawer,
     runScript,
     reportError,
     markSessionsRead,
