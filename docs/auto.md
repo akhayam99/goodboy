@@ -741,6 +741,27 @@ off the same function gives the Auto words of the Overview below, and the
 header shows no word. `leadStopReaders.test.tsx` checks every word in every
 reader.
 
+### The workspace read
+
+The Work list reads every Lead of a workspace across its open sessions, not one
+session at a time. `listAutoWorkTreesOfWorkspace`
+(`packages/db/src/queries/auto-work-trees.ts`) returns each tree with its
+session goal, the project of its primary mount and its branches: the primary
+mount and every mount its delegations of the current generation target,
+each branch once. The `work` slice (`store/slices/work/`) loads each session
+through `readAutoTreeViews`, so a Lead carries the same view the Lead page
+reads. `loadWorkLeads({ workspaceId, filter })` keeps only the latest read; a
+read for a workspace or filter the window left is dropped. A failed read keeps
+the old rows and sets `isWorkStale`; the next poll retries. A change made in
+another window shows on the next read.
+
+`workRowsOf` (`features/work/workRowsOf.ts`) owns every number of the list. It
+makes one row per Lead (a Lead on two branches is one row), takes the state word
+from `autoTreeWordOf` and so from `leadStopOf`, the pending asks from
+`leadAsksOf`, the agents running and the spend from the view, and the four
+filter counts (All open, Needs you, Working, Finished). A filter's count is the
+number of its rows. A Stopped Lead is in no filter.
+
 ## Plans
 
 The plan a Planner writes opens in the right drawer. Its second row shows
