@@ -1,6 +1,14 @@
 import { useCallback, useState } from 'react';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { cn, useEscapeLayer, PaneBannerContext, PageTrailContext, PaneSwap } from '@goodboy/ui';
+import {
+  cn,
+  useEscapeLayer,
+  PaneActionsContext,
+  PaneBannerContext,
+  PaneTabsContext,
+  PageTrailContext,
+  PaneSwap,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
@@ -68,14 +76,23 @@ export const SessionWorkspace = ({ session }: Props) => {
   const banner = <FirstLapBanner sessionId={sessionId} />;
   const trail = <SessionBackRow sessionId={sessionId} />;
 
-  const lensLayers = keptSurfaces.map((target) => ({
-    key: target,
-    content: (
-      <PageTrailContext.Provider value={showLens && target !== 'overview' ? trail : null}>
-        <SessionLensPane session={session} target={target} isShown={showLens} />
-      </PageTrailContext.Provider>
-    ),
-  }));
+  const lensLayers = keptSurfaces.map((target) => {
+    const pane = <SessionLensPane session={session} target={target} isShown={showLens} />;
+    return {
+      key: target,
+      content: (
+        <PageTrailContext.Provider value={showLens && target !== 'overview' ? trail : null}>
+          {target === 'branch' ? (
+            <PaneTabsContext.Provider value={null}>
+              <PaneActionsContext.Provider value={null}>{pane}</PaneActionsContext.Provider>
+            </PaneTabsContext.Provider>
+          ) : (
+            pane
+          )}
+        </PageTrailContext.Provider>
+      ),
+    };
+  });
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">

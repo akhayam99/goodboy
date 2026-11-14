@@ -3,10 +3,10 @@ import type { LensKind } from '../../store';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import { NAMES } from '../../shared/utils/names';
-import { LENS_ICON, LENS_LABEL, lensLabelFor } from './lens-labels';
+import { LENS_ICON, LENS_LABEL } from './lens-labels';
 import type { CountedPageId } from './pageCountWord';
 
-type PageId = 'overview' | 'files' | 'runs' | 'artifacts' | 'questions';
+type PageId = 'overview' | 'files' | 'runs' | 'artifacts' | 'questions' | 'context';
 
 export type Page = {
   readonly id: PageId;
@@ -48,16 +48,12 @@ const OVERVIEW_PAGE: Page = {
   currentLenses: [null],
 };
 
-const CHANGES_PAGE: Page = {
+const CHANGES_PAGE = lensPage({
   id: 'files',
-  label: lensLabelFor({ lens: 'files', isBranchless: true }),
-  icon: LENS_ICON.files,
-  tint: 'files',
+  lens: 'files',
   shortcut: 'lens.files',
   count: 'files',
-  lens: 'files',
-  currentLenses: ['files'],
-};
+});
 
 const RUNS_PAGE: Page = {
   ...lensPage({ id: 'runs', lens: 'workflows', shortcut: 'lens.workflows', count: 'runs' }),
@@ -78,22 +74,26 @@ const QUESTIONS_PAGE = lensPage({
   count: 'questions',
 });
 
-type ColumnParams = {
-  readonly isBranchless: boolean;
-};
+const CONTEXT_PAGE = lensPage({
+  id: 'context',
+  lens: 'context',
+  shortcut: 'lens.context',
+  count: null,
+});
 
-export const columnPagesOf = ({ isBranchless }: ColumnParams): ReadonlyArray<Page> => [
+export const columnPagesOf = (): ReadonlyArray<Page> => [
   OVERVIEW_PAGE,
-  ...(isBranchless ? [CHANGES_PAGE] : []),
+  CHANGES_PAGE,
   RUNS_PAGE,
   ARTIFACTS_PAGE,
 ];
 
-type PagesParams = ColumnParams & {
+type PagesParams = {
   readonly hasOpenQuestions: boolean;
 };
 
-export const pagesOf = ({ isBranchless, hasOpenQuestions }: PagesParams): ReadonlyArray<Page> => [
-  ...columnPagesOf({ isBranchless }),
+export const pagesOf = ({ hasOpenQuestions }: PagesParams): ReadonlyArray<Page> => [
+  ...columnPagesOf(),
   ...(hasOpenQuestions ? [QUESTIONS_PAGE] : []),
+  CONTEXT_PAGE,
 ];

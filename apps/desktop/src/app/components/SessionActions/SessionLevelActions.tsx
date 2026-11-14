@@ -1,28 +1,27 @@
-import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
+import { READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import { Pin } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { ObjectOverflowMenu } from '../../../../features/actions/ObjectOverflowMenu';
-import type { ObjectTarget } from '../../../../features/actions/types';
-import { ArmedActionPopover } from '../../../../shared/components/HeaderConfirm/ArmedActionPopover';
-import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/utils/names';
-import type { ActionControls } from '../../../../features/actions/useActionControls';
-import { useSessionRefresh } from '../../../../features/session/hooks/useSessionRefresh';
-import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
+import { ObjectOverflowMenu } from '../../../features/actions/ObjectOverflowMenu';
+import type { ObjectTarget } from '../../../features/actions/types';
+import { ArmedActionPopover } from '../../../shared/components/HeaderConfirm/ArmedActionPopover';
+import { useAppStore } from '../../../store';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
+import type { ActionControls } from '../../../features/actions/useActionControls';
+import { useSessionRefresh } from '../../../features/session/hooks/useSessionRefresh';
+import { PRESSED_TOGGLE } from '../../../shared/components/pressedToggle';
 import { sessionMenuOf } from './sessionMenuOf';
 
 type Props = {
   readonly session: Session;
   readonly controls: ActionControls;
-  readonly isFolded?: boolean;
 };
 
 const PIN_IDS: ReadonlySet<string> = new Set(['session.pin', 'session.unpin']);
 
-export const SessionLevelActions = ({ session, controls, isFolded = false }: Props) => {
+export const SessionLevelActions = ({ session, controls }: Props) => {
   const sessionId = session.id;
   const refresh = useSessionRefresh();
   const isRefreshing = useAppStore((state) => state.sessionSyncing[sessionId] === true);
@@ -57,7 +56,7 @@ export const SessionLevelActions = ({ session, controls, isFolded = false }: Pro
           target={target}
           label="More session actions"
           size="control"
-          side={isFolded ? 'right' : 'bottom'}
+          side="bottom"
           only={only}
           relabel={relabel}
           onArm={({ action }) => controls.trigger({ actionId: action.id })}
@@ -65,7 +64,7 @@ export const SessionLevelActions = ({ session, controls, isFolded = false }: Pro
       )}
     />
   );
-  if (isFolded || session.archivedAt != null) {
+  if (session.archivedAt != null) {
     return (
       <div data-session-actions="" className="flex shrink-0 items-center gap-1">
         {menu}

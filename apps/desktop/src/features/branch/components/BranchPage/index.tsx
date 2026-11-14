@@ -125,7 +125,7 @@ export const BranchPage = ({ session, workingDir, isActive = true, pinnedTab }: 
       pr === null ? ('none' as const) : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
     hasComments,
   };
-  const tabs = branchTabsOf(scope);
+  const tabs = pinnedTab === undefined ? branchTabsOf(scope) : [];
   const tab = resolveBranchTab({ tab: useBranchTab({ sessionId, pinned: pinnedTab }), scope });
   const isReadOnly = isBranchReadOnly(scope);
   const { hasPushFailure, isPushBusy, pushCount, review } = useBranchReviewState({

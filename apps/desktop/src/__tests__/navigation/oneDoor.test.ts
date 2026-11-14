@@ -23,13 +23,9 @@ const SESSION_RAIL_PREFIX = 'app/components/SessionRail/';
 
 const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
   'app/components/SessionRail/SessionPages/index.tsx',
-  'app/components/SessionRail/SessionPageRow.tsx',
-  'app/components/SessionRail/RailWorktreeButton.tsx',
-  'app/components/SessionRail/RailBranchesButton.tsx',
 ]);
 
 const SHOWN_ROWS: ReadonlySet<string> = new Set([
-  'app/components/SessionRail/RailBranchRow.tsx',
   'app/components/SessionRail/SessionLevel/BranchRowLine.tsx',
   'app/components/SessionRail/SessionLevel/LevelLinked.tsx',
   'app/components/SessionRail/SessionLevel/LinkedTaskRow/index.tsx',
@@ -130,13 +126,9 @@ describe('one selected sign across the navigation surfaces', () => {
     const marked = railSources.filter(({ source }) => /isCurrent=\{/.test(source));
 
     expect(marked.map(({ path }) => path).sort()).toEqual([...SESSION_LEVEL_PAGES].sort());
-    const level = railSources.find(
-      ({ path }) => path === 'app/components/SessionRail/RailSessionLevel.tsx',
-    );
     const pages = railSources.find(
       ({ path }) => path === 'app/components/SessionRail/SessionPages/index.tsx',
     );
-    expect(level?.source).toContain('currentSignOf(');
     expect(pages?.source).toContain('isCurrent={sign === page.id}');
   });
 

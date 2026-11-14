@@ -432,10 +432,7 @@ hide animation or overlay can move it.
   500 ms rest, not a one line label), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
   because it holds doors and a few marks, not the list; the sessions list comes
-  back through the peek. The session rail has the same one reduced state: its
-  own toggle folds it to a 44px strip of the current level's icons
-  (`SessionRailIcons`), remembered apart from the column
-  (`goodboy:session-rail-collapsed:v1`). Hiding a column
+  back through the peek. Hiding a column
   outright sets it and its handle to zero width and marks the aside `inert`: a
   zero-width column that still takes focus is a keyboard trap. The shell
   primitive can lay out more reduced states than the product uses. Which one a
@@ -446,16 +443,8 @@ hide animation or overlay can move it.
 - **The main sidebar never folds by itself; a pane folds by its tier.** Only
   its toggle folds the column: the one toggle is the first control of the top
   bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⌘B),
-  and no pane, no page and no window width folds or unfolds it. `shellFoldsOf` (read through `useShellFolds`) reads the
-  open pane's tier: a reader tier pane (720: a file, a diff, a document, New)
-  or the browser pane (720, wider on a wide window) folds the session rail to
-  its 44px icons while it is open; a side tier pane
-  (416: Explore, Context, Ask, Agents, Scripts, Terminal and the transcripts
-  Agents opens) folds nothing. A fold of this kind never writes a saved
-  choice (`useSessionRailFold`), and the rail toggle opens a rail folded this
-  way for as long as the pane stays open, also without saving; the saved fold
-  comes back when the pane closes. The session rail keeps its own toggle at the
-  left of its top row.
+  and no pane, no page and no window width folds or unfolds it. A session has no
+  left rail: its pages are the page tabs under the title, so no pane folds anything.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
   work row, so it can hover over main without taking layout space. A studio is
   a page in the one main slot: it draws inside the content sheet, over the page

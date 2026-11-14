@@ -31,7 +31,7 @@ import type {
   ObjectTarget,
   ResolvedAction,
 } from '../../features/actions/types';
-import { sessionMenuOf } from '../../app/components/SessionRail/SessionLevel/sessionMenuOf';
+import { sessionMenuOf } from '../../app/components/SessionActions/sessionMenuOf';
 import { agentHeaderOmitOf } from '../../features/session/components/AgentDetailPane/agentHeaderOmitOf';
 import { AGENT_HEADER_MENU_IDS } from '../../features/session/components/agentHeaderMenuIds';
 import { runPageOmitOf } from '../../features/session/components/PresetRun/runPageOmitOf';
@@ -520,7 +520,7 @@ describe('a notification row ⋯ holds at most five rows', () => {
 
 const CALLER_KINDS: Readonly<Record<string, ReadonlyArray<ObjectTarget['kind']>>> = {
   'app/components/MockScene/scenes/u30/edges/PopoversStage.tsx': ['agent'],
-  'app/components/SessionRail/SessionLevel/SessionLevelActions.tsx': ['session'],
+  'app/components/SessionActions/SessionLevelActions.tsx': ['session'],
   'app/components/SessionRail/SessionLevel/WorktreeRow.tsx': ['mount'],
   'features/actions/ActionCardOverflowMenu.tsx': ['actionCard'],
   'features/actions/ExploreFileMenu.tsx': ['exploreFile'],

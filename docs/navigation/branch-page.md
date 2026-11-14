@@ -12,11 +12,14 @@ Changes tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
-**Frame.** The Branch page is the center of the Projects tree (Session
-rail): one detail with no rail of its own. Its sections are the underlined page tabs
+**Frame.** The Branch page is the center of the Projects tree (Context tab): one detail with no rail of its own. Its sections are the underlined page tabs
 under its title (`BranchTabStrip`, built on `PageTabs`); the page computes its counts once
 (`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
-one pill. A host with no session rail (a scene, a test) shows the page alone. The
+one pill. **One tab row per page.** The session's own tabs (Overview, Changes, Runs, Artifacts,
+Questions, Context, `SessionPageTabs`) reach a page through `PaneTabsContext`, which
+`SessionWorkspace` leaves empty on the Branch page, so the pull request page shows only
+its own row. The Changes tab of a session with a branch is this page pinned on its Changes
+section (`pinnedTab`): it draws no `BranchTabStrip` and takes the session's row. A host with no session (a scene, a test) shows the page alone. The
 header and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next. The header holds three things,
 100px at rest with a pull request: the title row (48), one meta line (16) and the tab row (36).

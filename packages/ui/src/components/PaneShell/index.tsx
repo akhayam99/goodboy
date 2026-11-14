@@ -6,6 +6,7 @@ import { PageHeader } from './PageHeader';
 import { pageWidthOf } from './pageWidthOf';
 import { PaneActionsContext } from './paneActionsContext';
 import { PaneBannerContext } from './paneBannerContext';
+import { PaneTabsContext } from './paneTabsContext';
 import { PageTrailContext } from './pageTrailContext';
 import { RevealPane } from './RevealPane';
 
@@ -71,9 +72,11 @@ export const PaneShell = (props: Props) => {
     );
   const children = (
     <PaneActionsContext.Provider value={null}>
-      <PaneBannerContext.Provider value={null}>
-        <PageTrailContext.Provider value={null}>{content}</PageTrailContext.Provider>
-      </PaneBannerContext.Provider>
+      <PaneTabsContext.Provider value={null}>
+        <PaneBannerContext.Provider value={null}>
+          <PageTrailContext.Provider value={null}>{content}</PageTrailContext.Provider>
+        </PaneBannerContext.Provider>
+      </PaneTabsContext.Provider>
     </PaneActionsContext.Provider>
   );
   const headerAnimation = isHeaderPinned ? '' : animationClassName;

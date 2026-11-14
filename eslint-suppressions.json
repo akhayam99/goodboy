@@ -7003,11 +7003,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace/hooks/useCardPages/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/hooks/useSessionPinsSync/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2

@@ -7,6 +7,7 @@ import { PaneTitleRow } from './PaneTitleRow';
 import { PageTrailContext } from './pageTrailContext';
 import { UnderTrailContext } from './underTrailContext';
 import { useInheritedPaneActions } from './paneActionsContext';
+import { useInheritedPaneTabs } from './paneTabsContext';
 import { pageWidthOf } from './pageWidthOf';
 
 type BaseProps = {
@@ -50,9 +51,10 @@ export const PageHeader = (props: PageHeaderProps) => {
     isTrailPinned = false,
     isPinned = false,
     rhythm = 'title',
-    tabs,
     animationClassName = 'motion-safe:animate-studio-in',
   } = props;
+  const inheritedTabs = useInheritedPaneTabs();
+  const tabs = props.tabs ?? inheritedTabs;
   const isUnderTrail = useContext(UnderTrailContext);
   const trail = useContext(PageTrailContext);
   const isTrailInline = trail != null && !isTrailPinned;
