@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import {
@@ -67,22 +67,6 @@ const present = ({ value, what }: PresentParams): HTMLElement => {
   return value;
 };
 
-const nextRows = (): ReadonlyArray<HTMLElement> => {
-  const next = present({
-    value: document.querySelector<HTMLElement>('[data-overview-card="branches"]'),
-    what: 'Branches card',
-  });
-  for (const fold of next.querySelectorAll<HTMLElement>('button[aria-expanded="false"]')) {
-    fireEvent.click(fold);
-  }
-  return Array.from(next.querySelectorAll<HTMLElement>('[data-action-card]'));
-};
-
-const cardOrder = (): ReadonlyArray<string> =>
-  Array.from(document.querySelectorAll('[data-overview-card]')).map(
-    (card) => card.getAttribute('data-overview-card') ?? '',
-  );
-
 describe('the c05 overview scenes', () => {
   it('registers every scene for the capture', () => {
     Object.entries(U25_C05_OVERVIEW_SCENES).forEach(([name, Scene]) =>
@@ -90,17 +74,14 @@ describe('the c05 overview scenes', () => {
     );
   });
 
-  it('c05-overview-running puts Needs you first when it has rows, rows without an Open word', async () => {
+  it('c05-overview-running draws the tiles above one row per branch, with no Open word', async () => {
     await mount('c05-overview-running');
 
-    const order = cardOrder();
-    expect(order.length).toBeGreaterThan(0);
-    expect(order.indexOf('needs-you')).toBeLessThanOrEqual(0);
+    const board = screen.getByRole('region', { name: 'Branches' });
+    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(5);
+    expect(board.querySelectorAll('[data-board-row]').length).toBeGreaterThan(0);
+    expect(within(board).queryByRole('button', { name: 'Open' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
-    const first = document.querySelector<HTMLElement>('[data-overview-card]');
-    const rows = within(present({ value: first, what: 'the first card' })).getAllByRole('button');
-    expect(rows.length).toBeGreaterThan(0);
-    expect(rows.map((row) => row.textContent)).not.toContain('Open');
     expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
   });
 
@@ -124,31 +105,28 @@ describe('the c05 overview scenes', () => {
     expect(activity.querySelectorAll('[data-timeline-ordinal]').length).toBeGreaterThan(0);
   });
 
-  it('c05-overview-merged-next offers Remove the worktree with the merge and the size', async () => {
+  it('c05-overview-merged-next keeps the merged branch as a row and offers its worktree with the size', async () => {
     await mount('c05-overview-merged-next');
 
-    const row = nextRows().find((candidate) =>
-      (candidate.textContent ?? '').includes('Remove the ledger-core worktree'),
-    );
-    expect(row).toBeDefined();
-    expect(row?.textContent).toContain('#418 merged · 412 MB');
-    const remove = within(present({ value: row, what: 'the cleanup row' })).getByRole('button', {
-      name: 'Remove worktree',
+    const merged = present({
+      value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
+      what: 'Merged group',
     });
-    expect(remove.textContent).toBe('Remove');
+    expect(merged.textContent).toContain('#412');
+    const remove = within(merged).getByRole('button', { name: /^Remove 1 worktree/ });
+    expect(remove.textContent).toContain('412 MB');
     expect(screen.queryByRole('button', { name: 'Keep' })).toBeNull();
   });
 
-  it('c05-overview-merged-group folds two merged worktrees into one row', async () => {
+  it('c05-overview-merged-group lists both merged branches and one button for their worktrees', async () => {
     await mount('c05-overview-merged-group');
 
-    const rows = nextRows().filter((candidate) =>
-      (candidate.textContent ?? '').includes('Remove 2 merged worktrees'),
-    );
-    expect(rows).toHaveLength(1);
-    within(present({ value: rows[0], what: 'the grouped row' })).getByRole('button', {
-      name: 'Remove worktrees',
+    const merged = present({
+      value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
+      what: 'Merged group',
     });
+    expect(merged.querySelectorAll('[data-board-row]').length).toBeGreaterThanOrEqual(2);
+    expect(within(merged).getAllByRole('button', { name: /^Remove 2 worktrees/ })).toHaveLength(1);
   });
 
   it('c05-overview-notices shows the closed worktree and the branch decision in the notices slot', async () => {
@@ -158,13 +136,7 @@ describe('the c05 overview scenes', () => {
     within(notices).getByRole('button', { name: /^Restore branch for/ });
     within(notices).getByRole('button', { name: 'Use this branch here' });
     expect(screen.queryByPlaceholderText('What should it do?')).toBeNull();
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    expect(needsYou.contains(notices)).toBe(false);
-    expect(
-      document.querySelector('[data-overview-glance]')?.getAttribute('data-overview-glance'),
-    ).toBe('waiting');
-    const count = Number(needsYou.querySelector('[data-overview-count]')?.textContent);
-    expect(count).toBeGreaterThan(needsYou.querySelectorAll('[data-action-card]').length);
+    expect(screen.getByRole('region', { name: 'Branches' }).contains(notices)).toBe(false);
   });
 
   it('c05-overview-blank starts inline, with New as the outline button and Start as the primary', async () => {

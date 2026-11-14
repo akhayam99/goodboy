@@ -35,7 +35,7 @@
   "session -> auto": 10,
   "session -> bootstrap": 1,
   "session -> file-versions": 6,
-  "session -> history": 5,
+  "session -> history": 4,
   "session -> inbox": 3,
   "session -> plans": 1,
   "session -> suggestions": 3,

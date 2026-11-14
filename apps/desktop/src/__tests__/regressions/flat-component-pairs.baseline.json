@@ -125,7 +125,6 @@
   "apps/desktop/src/features/search/findInView/FindInViewController.tsx": 1,
   "apps/desktop/src/features/session/ask/components/AskDrawer/AskComposer.tsx": 1,
   "apps/desktop/src/features/session/ask/components/AskDrawer/AskPlanView.tsx": 1,
-  "apps/desktop/src/features/session/central/cards/RunningCard.tsx": 1,
   "apps/desktop/src/features/session/central/log/LogDrawer.tsx": 1,
   "apps/desktop/src/features/session/central/next/ActionCard.tsx": 1,
   "apps/desktop/src/features/session/central/next/NextGroup.tsx": 1,
