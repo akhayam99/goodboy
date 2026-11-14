@@ -630,6 +630,13 @@ inline above the primary. A session that exists always has a real title, so
 its header never has an empty state. Sessions created elsewhere with no
 activity yet show the plain overview with its actions.
 
+## Board model
+
+- **A branch is a row by its stored mount id, in any state.** A merged branch stays a row and a removed worktree keeps its row, because the row never reads the path. Work with no known branch lands in one row, "Not on a branch".
+- **Groups are Needs you, In progress, Merged and Not on a branch.** An empty group is not drawn. Merged shows the 3 newest (`MERGED_FOLD_LIMIT`) unless it is the only group with branches. A session with one branch draws no groups.
+- **The stage of a row comes from that branch only.** `branchFactsFor` builds its facts and `deriveSessionStage` words them; the session's own error state and unread mark never reach a row.
+- **The five tiles are counted by id.** `sessionKpisOf` reads the board: Branches (merged of total), Needs you, Checks, Spend and Time. A Lead on two branches is two rows and one Lead; the rows sum to each tile.
+
 ## Back row
 
 - **Every session page below the Overview draws one `‹ Back to X` row above its title.**
