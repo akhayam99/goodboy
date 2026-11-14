@@ -8,6 +8,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import {
   brandId,
   type AgentId,
+  type ArtifactId,
   type IsoDateTime,
   type IntegrationBinding,
   type IntegrationBindingId,
@@ -27,6 +28,7 @@ import type { BrowserTab } from '../../../store/slices/browser/types';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { currentStack } from '../../../store/slices/navigation/currentStack';
 import { locationKey } from '../../../store/slices/navigation/locationKey';
+import { PLACE_ROWS } from '../../../store/slices/navigation/placeRows';
 import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
@@ -42,6 +44,7 @@ import {
   bridge,
   both,
   branchTab,
+  changesTab,
   clickButton,
   heading,
   lens,
@@ -66,6 +69,8 @@ const undoRuns: Array<number> = [];
 const undoPrevented: Array<boolean> = [];
 
 const upIndexes: Array<number> = [];
+
+const ARTIFACT_IN_LIST = brandId<ArtifactId>({ value: 'artifact-settlement-plan' });
 
 const focusAnchor = async (): Promise<HTMLElement> => {
   const anchor = await screen.findByRole('button', { name: ANCHOR });
@@ -176,17 +181,23 @@ const tab = async (name: RegExp, isSelected = true): Promise<void> => {
   expect(await screen.findByRole('tab', { name, selected: isSelected })).toBeDefined();
 };
 
-const drawerIs = (tabName: string | null) => async (ctx: Ctx) => {
-  await waitFor(() => {
-    const drawer = selectOpenDrawer(useAppStore.getState());
-    expect(drawer?.kind).toBe('context');
-    expect(drawer?.sessionId).toBe(ctx.sessionId);
-    if (tabName !== null) {
-      if (drawer?.kind === 'context') {
-        expect(drawer.payload.section).toBe(tabName);
-      }
-    }
-  });
+type PlaceRowParams = {
+  readonly key: string;
+  readonly value: string;
+};
+
+const placeRowIs =
+  ({ key, value }: PlaceRowParams) =>
+  async (): Promise<void> => {
+    await waitFor(() => {
+      const stack = currentStack(useAppStore.getState());
+      expect(stack.entries[stack.index]?.focus.returnRows?.[key]).toBe(value);
+    });
+  };
+
+const contextTab = async (ctx: Ctx): Promise<void> => {
+  await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
+  await lens('context')(ctx);
 };
 
 const WORKSPACE_NAMES = ['Northwind', 'Cascadia', 'Acme', 'Harborline Labs'] as const;
@@ -398,15 +409,32 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'nav.up',
     note: 'goes up to the parent and reuses the entry below when it is the parent',
-    open: async () => {
+    open: async (ctx) => {
       await openCrumb(/^Artifacts/);
+      useAppStore.getState().navigate({
+        to: sessionPlace({
+          sessionId: ctx.sessionId,
+          lens: 'plans',
+          target: { kind: 'artifact', artifactId: ARTIFACT_IN_LIST },
+        }),
+      });
+      await settle();
       upIndexes.push(currentStack(useAppStore.getState()).index);
       await press('nav.up')();
     },
     lands: async (ctx) => {
-      await lens(null)(ctx);
+      await lens('plans')(ctx);
       expect(currentStack(useAppStore.getState()).index).toBe((upIndexes.at(-1) ?? 0) - 1);
     },
+  }),
+  keyRow({
+    id: 'nav.up',
+    note: 'on a session tab goes up to the board, as on the Overview',
+    open: async () => {
+      await openCrumb(/^Artifacts/);
+      await press('nav.up')();
+    },
+    lands: () => heading('Board'),
   }),
   keyRow({
     id: 'nav.up',
@@ -552,18 +580,16 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({ id: 'lens.review', lands: branchTab('comments') }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
-  pressRow({ id: 'lens.files', lands: branchTab('files') }),
+  pressRow({ id: 'lens.files', lands: changesTab }),
   pressRow({ id: 'lens.plans', lands: both(lens('plans'), () => heading('Artifacts')) }),
   pressRow({ id: 'lens.scripts', lands: pane('Scripts') }),
-  pressRow({ id: 'session.spawned', lands: pane('Agents') }),
-  keyRow({
+  pressRow({
     id: 'session.spawned',
-    note: 'stays open when the page moves to Runs',
-    open: async () => {
-      await press('session.spawned')();
-      await press('lens.workflows')();
-    },
-    lands: both(lens('workflows'), pane('Agents')),
+    lands: both(
+      lens('workflows'),
+      placeRowIs({ key: PLACE_ROWS.runsFilter, value: 'running' }),
+      () => heading('Runs'),
+    ),
   }),
   pressRow({
     id: 'session.terminal',
@@ -586,24 +612,21 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () =>
       expect(await screen.findByRole('textbox', { name: 'Pull request title' })).toBeDefined(),
   }),
-  pressRow({ id: 'lens.context', lands: drawerIs(null) }),
+  pressRow({ id: 'lens.context', lands: contextTab }),
   keyRow({
     id: 'lens.context',
-    note: 'on a page with Context parked closes the page and shows Context',
+    note: 'on a page with Context parked closes the page and shows the Context tab',
     open: async (ctx) => {
       useAppStore.getState().openContextDrawer({ sessionId: ctx.sessionId });
       useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: null } });
       await settle();
       await press('lens.context')();
     },
-    lands: async (ctx) => {
-      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
-      await drawerIs(null)(ctx);
-    },
+    lands: contextTab,
   }),
   keyRow({
     id: 'lens.context',
-    note: "on What's new over Guide with Context parked leaves both pages and shows Context",
+    note: "on What's new over Guide with Context parked leaves both pages and shows the Context tab",
     open: async (ctx) => {
       useAppStore.getState().openContextDrawer({ sessionId: ctx.sessionId });
       useAppStore.getState().openStudio({ studio: { kind: 'guide' } });
@@ -612,23 +635,19 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       await press('lens.context')();
     },
     lands: async (ctx) => {
-      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
+      await contextTab(ctx);
       expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
-      await drawerIs(null)(ctx);
     },
   }),
   keyRow({
     id: 'lens.context',
-    note: 'on a page with nothing parked closes the page and opens Context',
+    note: 'on a page with nothing parked closes the page and opens the Context tab',
     open: async () => {
       useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: null } });
       await settle();
       await press('lens.context')();
     },
-    lands: async (ctx) => {
-      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
-      await drawerIs(null)(ctx);
-    },
+    lands: contextTab,
   }),
   pressRow({
     id: 'ask.open',
@@ -1176,7 +1195,16 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await focusAnchor();
       await pressed('lens.explore');
     },
-    lands: pane('Explore'),
+    lands: both(lens('files'), placeRowIs({ key: PLACE_ROWS.changesMode, value: 'all' })),
+  }),
+  keyRow({
+    id: 'lens.explore',
+    note: 'on a session with a branch opens its Changes tab on All files',
+    open: async () => {
+      await focusAnchor();
+      await pressed('lens.explore');
+    },
+    lands: both(changesTab, placeRowIs({ key: PLACE_ROWS.changesMode, value: 'all' })),
   }),
   keyRow({
     id: 'lens.linear',

@@ -9,6 +9,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/co
 import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
 import { openLens } from '../../../openLens';
 import type { LensSurface } from '../../../lens-surface';
+import { ContextDrawer } from '../../ContextDrawer';
 import { SessionOverviewPane } from '../../SessionOverviewPane';
 import { LinkIssueAction } from '../../SessionOverviewPane/LinkIssueAction';
 import { FilesPane } from './FilesPane';
@@ -42,6 +43,7 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
   );
   const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workingDir = useAppStore((s) => resolveActiveMountPath({ state: s, sessionId }));
+  const hasBranch = useAppStore((s) => (s.sessionProjectMounts[sessionId] ?? []).length > 0);
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const isAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const isPlansLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
@@ -129,6 +131,28 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
           action={<LinkIssueAction session={session} initialSource="github" />}
         />
       </PaneShell>
+    );
+  }
+  if (target === 'context') {
+    return (
+      <ContextDrawer
+        sessionId={sessionId}
+        section="goal"
+        view="current"
+        onClose={() => openLens({ sessionId, lens: null })}
+      />
+    );
+  }
+  if (target === 'files' && hasBranch) {
+    return (
+      <Suspense fallback={<LensSkeleton page="branch" label="Loading changes" />}>
+        <BranchPage
+          session={session}
+          workingDir={workingDir}
+          isActive={isShown}
+          pinnedTab="files"
+        />
+      </Suspense>
     );
   }
   if (target === 'files') {

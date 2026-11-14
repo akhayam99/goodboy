@@ -5,7 +5,7 @@ type Params = {
 };
 
 export const contextSectionOf = ({ lens }: Params): ContextDrawerSection | null => {
-  if (lens === 'context' || lens === 'goal') {
+  if (lens === 'goal') {
     return 'goal';
   }
   if (lens === 'decisions') {

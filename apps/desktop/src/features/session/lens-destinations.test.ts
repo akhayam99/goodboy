@@ -7,8 +7,6 @@ const LENS_SHORTCUT_IDS = Object.keys(SHORTCUTS)
   .filter((id): id is ShortcutId => id in SHORTCUTS)
   .filter((id) => id.startsWith('lens.'));
 
-const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>(['lens.context']);
-
 const NO_CONNECTED_TOOLS: ConnectedLensTools = {
   linear: false,
   gitlab: false,
@@ -32,7 +30,7 @@ const lenses = ({
   lensDestinations({ isBranchless, isArchived, connectedTools }).map((d) => d.pane ?? d.lens);
 
 describe('lensDestinations', () => {
-  it('offers every destination chord, and leaves the context parts to their region', () => {
+  it('offers every destination chord', () => {
     const offered = new Set(
       [
         ...lensDestinations({
@@ -47,10 +45,6 @@ describe('lensDestinations', () => {
     );
 
     for (const id of LENS_SHORTCUT_IDS) {
-      if (REGION_ONLY_SHORTCUTS.has(id)) {
-        expect(offered.has(id), `${id} opens its region, not a menu entry`).toBe(false);
-        continue;
-      }
       expect(offered.has(id), `${id} has a chord but no palette destination`).toBe(true);
     }
   });
@@ -64,20 +58,19 @@ describe('lensDestinations', () => {
     }
   });
 
-  it('lists no Context page, since Context is a drawer', () => {
-    const offered = lenses();
-
-    expect(offered).not.toContain('context');
-    expect(offered).not.toContain('goal');
-    expect(offered).not.toContain('decisions');
-    expect(offered).not.toContain('last_output_summary');
+  it('lists the Context tab on every session, and none of its former parts', () => {
+    expect(lenses()).toContain('context');
+    expect(lenses({ isBranchless: true })).toContain('context');
+    expect(lenses()).not.toContain('goal');
+    expect(lenses()).not.toContain('decisions');
+    expect(lenses()).not.toContain('last_output_summary');
   });
 
-  it('always lists Explore and lists the diff only when mounted', () => {
+  it('lists Changes and its All files door on every session', () => {
     expect(lenses()).toContain('explore');
     expect(lenses()).toContain('files');
     expect(lenses({ isBranchless: true })).toContain('explore');
-    expect(lenses({ isBranchless: true })).not.toContain('files');
+    expect(lenses({ isBranchless: true })).toContain('files');
   });
 
   it('lists the pull request apart from Review', () => {

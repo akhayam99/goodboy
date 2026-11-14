@@ -885,7 +885,7 @@ The Console button at the end of the address row, after More, opens it, and
 `browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button, not
 a More row: More already holds eight rows against the five-row budget, and a
 toggle with a pressed state belongs beside the page it watches. Safari's
-⌘⌥C is Show context (`lens.context`), and the registry refuses a browser key
+⌘⌥C is Context (`lens.context`), and the registry refuses a browser key
 that shadows it, so the chord follows Chrome's J.
 
 - **The hook**: every tab runs one script at document start,

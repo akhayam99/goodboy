@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
+import { doorMountPath } from './doorMountPath';
 import { resolverThread } from './resolverThread';
 import { branchTabOf } from '../session-view/branchTabOf';
 import type { LensKind } from '../session-view/types';
@@ -34,6 +35,11 @@ const openThreadOf = ({ state, sessionId }: ThreadParams): string | null => {
   }
   return drawer.kind === 'transcript' ? (state.branchThreadId[sessionId] ?? null) : null;
 };
+
+const changesBranchOf = ({ state, sessionId }: ThreadParams): string | null =>
+  (state.sessionProjectMounts?.[sessionId] ?? []).length > 0
+    ? doorMountPath({ state, sessionId })
+    : null;
 
 const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
   const agentId = state.selectedAgentId[sessionId] ?? null;
@@ -70,7 +76,7 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
     };
   }
   if (lens === 'files') {
-    const mountPath = state.diffMountPath[sessionId] ?? null;
+    const mountPath = state.diffMountPath[sessionId] ?? changesBranchOf({ state, sessionId });
     const focus = state.diffFocus[sessionId] ?? null;
     if (mountPath === null && focus === null) {
       return null;

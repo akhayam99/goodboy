@@ -72,10 +72,15 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Ask'),
   },
   {
-    name: 'palette: Show context',
-    covers: ['toggleContextDrawer', 'palette:Show context'],
-    open: () => openPalette(/^Show context/, 'show context'),
-    lands: () => visible('region', 'Context'),
+    name: 'palette: Open Context',
+    covers: ['navigate', 'palette:Open Context'],
+    open: () => openPalette(/^Open Context/, 'open context'),
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('context'),
+        WAIT,
+      );
+    },
   },
   {
     name: 'palette: Refresh session',

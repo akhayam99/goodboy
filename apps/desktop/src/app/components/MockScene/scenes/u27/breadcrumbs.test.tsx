@@ -68,7 +68,7 @@ describe('breadcrumbs scenes', () => {
   it.each<readonly [string, string]>([
     ['run', 'Back to runs'],
     ['step', 'Back to Duplicate credit fix'],
-    ['agent', 'Back to runs'],
+    ['agent', 'Back to overview'],
     ['artifact', 'Back to artifacts'],
     ['branch-file', 'Back to branch'],
   ])('draws one back row and no trail on the %s page', async (slug, label) => {

@@ -664,6 +664,11 @@ export const branchTab = (tab: BranchTabName) => async (ctx: Ctx) => {
   }, WAIT);
 };
 
+export const changesTab = async (ctx: Ctx): Promise<void> => {
+  await lens('files')(ctx);
+  expect(await screen.findByRole('button', { name: /^Compared with / })).toBeDefined();
+};
+
 export const both =
   (...checks: ReadonlyArray<(ctx: Ctx) => Promise<void>>) =>
   async (ctx: Ctx) => {
@@ -730,7 +735,7 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
   { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
-  { label: 'Changes', lens: 'branch', lands: branchTab('files') },
+  { label: 'Changes', lens: 'files', lands: changesTab },
   {
     label: 'Pull request',
     lens: 'branch',

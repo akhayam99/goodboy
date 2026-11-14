@@ -272,7 +272,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Agents panel',
-        desc: `Agents, or ${shortcutGlyphs('session.spawned')}, shows the open run or Auto as a tree, else what is live. An agent opens beside it; j and k hop.`,
+        desc: `Agents on the right rail shows the open run or Auto as a tree, else what is live, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens beside it; j and k hop.`,
       },
       {
         term: 'Right rail',
@@ -371,7 +371,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context pane',
-        desc: `Context, in the session tools or ${shortcutGlyphs('lens.context')}, holds the goal, decisions, summary and explanations in one column, with Copy context. Changes carry a mark until Mark as read, and Update now queues an update.`,
+        desc: `Context, a tab of the session (${shortcutGlyphs('lens.context')}), holds the goal, decisions, summary and explanations in one column, with Copy context. Changes carry a mark until Mark as read, and Update now queues an update.`,
       },
       {
         term: 'Visible to',
@@ -765,7 +765,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
+        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs on what is running and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
       },
       {
         term: 'Terminal',
