@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
+import { useIsWorkOn } from '../../../shared/hooks/useIsWorkOn';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../autoTreeOfAgent';
 import { useAutoTreeViews } from '../useAutoTreeViews';
@@ -36,6 +37,7 @@ export const useAutoTreeRows = ({ sessionId, agentId }: Params): AutoTreeRowsMod
   const rootTurn = useAppStore((state) =>
     rootAgentId === null ? null : (state.agentTurnState[rootAgentId] ?? null),
   );
+  const isWork = useIsWorkOn();
   const rows = useMemo(() => {
     if (tree !== null) {
       return railRowsOf({
@@ -43,12 +45,13 @@ export const useAutoTreeRows = ({ sessionId, agentId }: Params): AutoTreeRowsMod
         agents,
         rootRouting: { provider, model, effort },
         rootTurn,
+        isWork,
       });
     }
     if (rootAgentId === null) {
       return [];
     }
-    return [restingRootRowOf({ agentId: rootAgentId, provider, model, effort })];
-  }, [tree, agents, rootAgentId, provider, model, effort, rootTurn]);
+    return [restingRootRowOf({ agentId: rootAgentId, provider, model, effort, isWork })];
+  }, [tree, agents, rootAgentId, provider, model, effort, rootTurn, isWork]);
   return { tree, rows, rootAgentId };
 };

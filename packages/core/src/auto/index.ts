@@ -111,6 +111,16 @@ export {
   type StoredLeadPermissionRows,
 } from './permissions';
 
+export {
+  LEAD_STOP_WORDS,
+  leadStopOf,
+  type LeadStop,
+  type LeadStopFacts,
+  type LeadStopReason,
+  type LeadStopState,
+  type LeadStopWord,
+} from './leadStopOf';
+
 export { outcomeLineOf, parseOutcomeLine, stripOutcomeLine } from './outcome';
 
 export type { OutcomeLine } from './outcome';

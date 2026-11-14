@@ -89,6 +89,7 @@ const runsOf = ({
     revisingStarts: {},
     mounts,
     projects: [PAYMENTS_PROJECT, LEDGER_PROJECT],
+    isWork: false,
   });
 
 const presetRun = () =>

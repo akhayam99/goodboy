@@ -45,7 +45,7 @@ describe('railRowsOf substeps', () => {
     };
     const view = aView({ phase: 'waiting', delegations: [...DELEGATIONS, helper] });
 
-    const rows = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING });
+    const rows = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING, isWork: false });
 
     expect(rows.map((row) => [row.label, row.depth])).toEqual([
       ['Auto', 0],
@@ -74,7 +74,7 @@ describe('railRowsOf substeps', () => {
     };
     const view = aView({ phase: 'waiting', delegations: [orphan] });
 
-    const rows = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING });
+    const rows = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING, isWork: false });
 
     expect(rows.map((row) => row.depth)).toEqual([0, 1]);
   });
@@ -90,7 +90,7 @@ describe('railRowsOf substeps', () => {
       delegations: [at('fourth', 40), at('third', 30), at('eleventh', 110), at('tenth', 100)],
     });
 
-    const rows = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING });
+    const rows = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING, isWork: false });
 
     expect(rows.map((row) => row.label)).toEqual([
       'Auto',
@@ -117,6 +117,7 @@ describe('railRowsOf nodes', () => {
       view: aView({ phase: 'waiting', delegations: settled }),
       agents: [],
       rootRouting: ROOT_ROUTING,
+      isWork: false,
     })
       .slice(1)
       .map((row) => [row.agentId, row.node]);

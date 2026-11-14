@@ -7,6 +7,7 @@ import {
   type AutoPhase,
 } from '@goodboy/db';
 import { applyAutoBlock } from './applyAutoBlock';
+import { readIsLeadClosing } from './level/readIsLeadClosing';
 import { repeatReturnStatements } from './returns/repeatReturnStatements';
 import { requeueStatements } from './requeueStatements';
 import { undecidedReturnsOf } from './returns/undecidedReturnsOf';
@@ -60,16 +61,26 @@ const nextPhaseOf = ({ pendingCount, openCount, hasDelegations }: NextPhaseParam
   return hasDelegations ? 'done' : 'answering';
 };
 
+type ClosedParams = {
+  readonly phase: AutoPhase;
+  readonly isClosing: boolean;
+};
+
+const closedPhaseOf = ({ phase, isClosing }: ClosedParams): AutoPhase =>
+  isClosing && (phase === 'done' || phase === 'answering') ? 'finished' : phase;
+
 type AttemptParams = {
   readonly ctx: AgentVerbContext;
   readonly ended: AutoTurnEnded;
   readonly isRefused: boolean;
+  readonly isClosing: boolean;
 };
 
 const settleOnce = async ({
   ctx,
   ended,
   isRefused,
+  isClosing,
 }: AttemptParams): Promise<SettleAutoTurnOutcome | 'retry'> => {
   const tree = await getAutoTree({ db: ctx.db, treeId: ended.treeId });
   if (tree === null) {
@@ -104,10 +115,13 @@ const settleOnce = async ({
   const open = await listOpenAutoDelegations({ db: ctx.db, treeId: tree.id });
   const phase = isYield
     ? ('delegating' as const)
-    : nextPhaseOf({
-        pendingCount: pending.length,
-        openCount: open.length,
-        hasDelegations: all.length > 0,
+    : closedPhaseOf({
+        phase: nextPhaseOf({
+          pendingCount: pending.length,
+          openCount: open.length,
+          hasDelegations: all.length > 0,
+        }),
+        isClosing,
       });
   const hasProgress =
     undecided.length === 0 &&
@@ -135,8 +149,12 @@ export const settleAutoTurn = async ({
   await reconcileTurnCost({ ctx, ended });
   const applied = await applyAutoBlock({ ctx, ended });
   const isRefused = applied.kind === 'refused';
+  const isClosing =
+    applied.kind === 'applied' &&
+    applied.action === 'finish' &&
+    (await readIsLeadClosing({ db: ctx.db, treeId: ended.treeId }));
   for (let attempt = 0; attempt < MAX_CAS_ATTEMPTS; attempt += 1) {
-    const outcome = await settleOnce({ ctx, ended, isRefused });
+    const outcome = await settleOnce({ ctx, ended, isRefused, isClosing });
     if (outcome !== 'retry') {
       return outcome;
     }

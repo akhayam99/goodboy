@@ -10,6 +10,7 @@ import type { LeadTreeDataModel } from '../../../auto/tree/LeadTreeData';
 import { spawnRecordOf } from '../../../auto/tree/spawnRecordOf';
 import { AgentDetailPane } from '../AgentDetailPane';
 import { useLeadSelectionStore } from '../../hooks/useLeadSelectionStore';
+import { LeadHeaderWord } from './LeadHeaderWord';
 import { LeadPageRecord } from './LeadPageRecord';
 import { LeadPageTree } from './LeadPageTree';
 import { leadLayoutOf } from './leadLayoutOf';
@@ -103,16 +104,21 @@ export const LeadPageBody = ({
         onOpenTranscript={onOpenTranscript}
       />
     );
-  const agentsToggle = isNarrow ? (
-    <Button
-      variant="ghost"
-      size="sm"
-      aria-expanded={isAgentsOpen}
-      onClick={() => setIsAgentsOpen(!isAgentsOpen)}
-    >
-      {`Agents ${agentCount}`}
-    </Button>
-  ) : undefined;
+  const headerLead = (
+    <>
+      <LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />
+      {isNarrow ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-expanded={isAgentsOpen}
+          onClick={() => setIsAgentsOpen(!isAgentsOpen)}
+        >
+          {`Agents ${agentCount}`}
+        </Button>
+      ) : null}
+    </>
+  );
 
   return (
     <div
@@ -129,7 +135,7 @@ export const LeadPageBody = ({
               agent={agent}
               isChatActive={isChatActive}
               onBack={onBack}
-              {...(agentsToggle !== undefined && { agentsToggle })}
+              headerLead={headerLead}
             />
           </AutoSelectAgentContext.Provider>
         </QueuedNotesReportContext.Provider>

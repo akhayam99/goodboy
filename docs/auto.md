@@ -292,7 +292,12 @@ Tester**, **Needs you**, **Reading the results**, **Failed**, **Stopping**,
 children are not rows of the Overview; they live in the Auto tree of the Agents
 panel.
 
-Auto never finishes itself. A tree that rests after its agents settled (stored
+Auto finishes itself only when the Lead may close the work: with the Work
+switch on and the Close the work row at Lead (never set by a preset), a
+`finish` block that was accepted settles the turn in the stored phase
+`finished` instead of a resting phase (`settleAutoTurn`, `readIsLeadClosing`),
+in the same guarded write. With the row at You, or the switch off, it rests.
+A tree that rests after its agents settled (stored
 phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark finished** in the agent menu
 (`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
 `finished` (m231) through `moveRestingAutoTree`: one write that needs a resting
@@ -720,6 +725,22 @@ local, never stored and never an address (`useLeadSelectionStore`);
 `openLeadAgent` is the door a compact tree on the board or the Work tab calls to
 open the Lead page with an agent selected.
 
+### Lead state words
+
+With the Work switch on, a Lead reads one of five words: **Working**, **Waits
+for you**, **Resting**, **Stopped**, **Finished**. `leadStopOf`
+(`packages/core/src/auto/leadStopOf.ts`) is the one function that picks it,
+from the stored phase, the Lead's own turn, a plan waiting for approval, a
+project ask and the spend limit. Plan ready, an ask, the limit and a failed
+turn are the reason next to **Waits for you**, never a sixth word; Stopping
+reads **Stopped** with the reason `stopping`. `autoTreeWordOf` calls it for
+every reader: the header word of the Lead page (`LeadHeaderWord`), the session row
+(`sessionRunsOf`), the Lead line of a branch Work tab (`branchLeadsOf`, which
+copies the row word) and the root of the tree (`railRowsOf`). With the switch
+off the same function gives the Auto words of the Overview below, and the
+header shows no word. `leadStopReaders.test.tsx` checks every word in every
+reader.
+
 ## Plans
 
 The plan a Planner writes opens in the right drawer. Its second row shows
@@ -975,9 +996,12 @@ It decides by ending its final reply with at most one block:
   too. A stop on a child that already ended changes nothing and answers `alreadyEnded`, never a
   refusal.
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
-  waits. It stores nothing: the tree still rests as Idle until the user marks it finished. The
-  prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to
-  close.
+  waits, and the refusal says why. With Close the work at You it stores nothing: the tree still
+  rests as Idle until the user marks it finished, and the prompt asks Auto to suggest **Mark
+  finished** and to send `finish` only when the user asked to close. With Close the work at
+  Lead and the Work switch on, the turn settles as `finished` and the prompt
+  (`buildAutoSystemPrompt` with `isLeadClosing`) asks the Lead to end with `finish` once the
+  work is done. A user message to a finished Lead opens it again.
 - `mount` attaches a project of the workspace, on the branch the user named
   (`project`, optional `branch`, `reason`; `parseMountSpec`). It is how "create a worktree on
   app-web with branch X" is done: the worktree is the deliverable, so no implementer starts to

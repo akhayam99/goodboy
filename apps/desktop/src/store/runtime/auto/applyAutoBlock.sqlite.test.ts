@@ -5,7 +5,10 @@ import {
   listAutoAttemptsOfTree,
   listAutoDelegations,
   listAutoOutbox,
+  setAutoTreePermissionsIfUnchanged,
+  setSetting,
 } from '@goodboy/db';
+import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { stopTree } from './stopTree';
 import { endedTurn } from './testing/deliveryWorld';
 import {
@@ -187,6 +190,102 @@ describe('the answer and finish actions of the block', () => {
 
     expect(await treeOf(world)).toMatchObject({ phase: 'done' });
     expect(await refusalsOf(world)).toHaveLength(0);
+  });
+});
+
+type CloseParams = {
+  readonly world: RuntimeWorld;
+  readonly isWorkOn: boolean;
+  readonly closer: 'you' | 'lead';
+};
+
+const closeWorkIs = async ({ world, isWorkOn, closer }: CloseParams): Promise<void> => {
+  const db = world.state.world.db;
+  await setSetting(db, SETTING_WORK_ENABLED, isWorkOn ? 'true' : 'false');
+  const outcome = await setAutoTreePermissionsIfUnchanged({
+    db,
+    treeId: world.treeId,
+    expected: '{}',
+    permissions: JSON.stringify({ closeWork: closer }),
+    nowMs: 1,
+  });
+  expect(outcome).toEqual({ kind: 'applied' });
+};
+
+type SettledParams = {
+  readonly world: RuntimeWorld;
+};
+
+const settledScout = async ({ world }: SettledParams): Promise<void> => {
+  await autoTurnEndsWithBlock({ world, block: delegateBlock([SCOUTS[0]]) });
+  const child = world.state.ports.childTurns[0];
+  if (child === undefined) {
+    throw new Error('a child was expected');
+  }
+  await childTurnEnds({ world, index: 0, text: done(child.childAgentId, 'Mapped it.') });
+};
+
+describe('the finish block and the Close the work row', () => {
+  it('closes the tree when Close the work is Lead and Work is on', async () => {
+    const world = await started();
+    await closeWorkIs({ world, isWorkOn: true, closer: 'lead' });
+    await settledScout({ world });
+
+    await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'Mapped.' } });
+
+    expect(await treeOf(world)).toMatchObject({ phase: 'finished', activeRunId: null });
+    expect(await refusalsOf(world)).toHaveLength(0);
+  });
+
+  it('rests when Close the work is You, and Mark finished stays the user button', async () => {
+    const world = await started();
+    await closeWorkIs({ world, isWorkOn: true, closer: 'you' });
+    await settledScout({ world });
+
+    await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'Mapped.' } });
+
+    expect(await treeOf(world)).toMatchObject({ phase: 'done' });
+  });
+
+  it('rests as today with Work off, whatever the Lead row says', async () => {
+    const world = await started();
+    await closeWorkIs({ world, isWorkOn: false, closer: 'lead' });
+    await settledScout({ world });
+
+    await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'Mapped.' } });
+
+    expect(await treeOf(world)).toMatchObject({ phase: 'done' });
+  });
+
+  it('refuses to finish with an open agent and says why, even when the Lead may close', async () => {
+    const world = await started();
+    await closeWorkIs({ world, isWorkOn: true, closer: 'lead' });
+    await autoTurnEndsWithBlock({ world, block: delegateBlock([SCOUTS[0], IMPLEMENTER]) });
+    const index = world.state.ports.childTurns.findIndex((turn) => turn.role === 'implementer');
+    await childTurnEnds({
+      world,
+      index,
+      text: 'I need a choice.\n<<ctx-question blocking="true">>Which export format?<</ctx-question>>',
+    });
+
+    await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'All done.' } });
+
+    const refusals = await refusalsOf(world);
+    expect(refusals.at(-1)?.payload).toMatchObject({ action: 'finish', code: 'tree_busy' });
+    expect((await treeOf(world))?.phase).not.toBe('finished');
+  });
+
+  it('opens a closed Lead again when the user writes to it', async () => {
+    const world = await started();
+    await closeWorkIs({ world, isWorkOn: true, closer: 'lead' });
+    await settledScout({ world });
+    await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'Mapped.' } });
+    const turns = world.state.ports.autoTurns.length;
+
+    await userSays({ world, id: 'outbox-user-2', text: 'also check the import' });
+
+    expect(world.state.ports.autoTurns).toHaveLength(turns + 1);
+    expect((await treeOf(world))?.phase).not.toBe('finished');
   });
 });
 
