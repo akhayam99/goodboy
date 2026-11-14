@@ -602,3 +602,57 @@ export const moveRestingAutoTree = async ({
   );
   return result.rowsAffected === 1;
 };
+
+type TreePermissionsRow = {
+  readonly permissions: string;
+};
+
+type GetAutoTreePermissionsParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+};
+
+export const getAutoTreePermissions = async ({
+  db,
+  treeId,
+}: GetAutoTreePermissionsParams): Promise<string | null> => {
+  const rows = await db.select<TreePermissionsRow>(
+    'SELECT permissions FROM auto_trees WHERE id = ?',
+    [treeId],
+  );
+  return rows[0]?.permissions ?? null;
+};
+
+type SetAutoTreePermissionsParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+  readonly expected: string;
+  readonly permissions: string;
+  readonly nowMs: number;
+};
+
+export type SetAutoTreePermissionsOutcome =
+  | Readonly<{ kind: 'applied' }>
+  | Readonly<{ kind: 'stale'; permissions: string }>
+  | Readonly<{ kind: 'missing' }>;
+
+export const setAutoTreePermissionsIfUnchanged = async ({
+  db,
+  treeId,
+  expected,
+  permissions,
+  nowMs,
+}: SetAutoTreePermissionsParams): Promise<SetAutoTreePermissionsOutcome> => {
+  const result = await db.execute(
+    'UPDATE auto_trees SET permissions = ?, updated_at = ? WHERE id = ? AND permissions = ?',
+    [permissions, nowMs, treeId, expected],
+  );
+  if (result.rowsAffected === 1) {
+    return { kind: 'applied' };
+  }
+  const current = await getAutoTreePermissions({ db, treeId });
+  if (current === null) {
+    return { kind: 'missing' };
+  }
+  return { kind: 'stale', permissions: current };
+};

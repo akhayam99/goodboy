@@ -749,7 +749,6 @@ export {
   patchAutoDelegationPublishStatement,
   settleAutoDelegationStatement,
   type AutoDelegation,
-  type AutoDelegationPatch,
   type AutoDelegationState,
   type AutoJsonObject,
   type AutoOutcome,
@@ -774,7 +773,6 @@ export {
   withdrawAutoOutboxStatement,
   type AutoOutboxKind,
   type AutoOutboxRow,
-  type AutoOutboxState,
   type NewAutoOutbox,
 } from './queries/auto-outbox';
 export {
@@ -792,7 +790,6 @@ export {
   releaseAutoReservationStatement,
   type AutoReservation,
   type AutoReservationOwnerKind,
-  type AutoReservationState,
   type AutoTreeSpend,
 } from './queries/auto-reservations';
 export {
@@ -805,6 +802,7 @@ export {
   claimAutoTree,
   getAutoTree,
   getAutoTreeByRootAgent,
+  getAutoTreePermissions,
   insertAutoTree,
   listAutoTreesOfSession,
   listAutoAgentsWithoutTree,
@@ -812,6 +810,7 @@ export {
   recordAutoRefusal,
   releaseAutoTree,
   setAutoTreeCapIfUnchanged,
+  setAutoTreePermissionsIfUnchanged,
   lowerAutoTreeCapsOfSession,
   moveRestingAutoTree,
   AUTO_RESTING_PHASES,
@@ -821,7 +820,6 @@ export {
   type AutoStopState,
   type AutoTree,
   type AutoTreeExpectation,
-  type AutoTreeLossReason,
   type AutoTreePhaseOutcome,
   type AutoTreePhasePatch,
   type InsertAutoTreeOutcome,

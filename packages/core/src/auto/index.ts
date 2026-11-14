@@ -90,6 +90,27 @@ export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './refusalUserRe
 
 export { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
 
+export {
+  LEAD_LOCKED_ROWS,
+  LEAD_PERMISSION_KEYS,
+  LEAD_PERMISSION_PRESETS,
+  LEAD_PERMISSION_VALUES,
+  leadPermissionsOf,
+  parseLeadPermissionRows,
+  type EffectiveLeadPermission,
+  type EffectiveLeadPermissionRows,
+  type LeadLockedRow,
+  type LeadPermissionKey,
+  type LeadPermissionLayers,
+  type LeadPermissions,
+  type LeadPermissionsParams,
+  type LeadPermissionNote,
+  type LeadPermissionRows,
+  type LeadPermissionSource,
+  type LeadPermissionValue,
+  type StoredLeadPermissionRows,
+} from './permissions';
+
 export { outcomeLineOf, parseOutcomeLine, stripOutcomeLine } from './outcome';
 
 export type { OutcomeLine } from './outcome';

@@ -1061,6 +1061,53 @@ that default for every Auto turn. The level's planning instructions take
 precedence over the role-addition guidance below. `prompt.level.test.ts` checks
 each level's text and `store.auto-level-prompt.test.ts` checks what a turn sends.
 
+### Permission rows
+
+A Lead is an Auto tree: the screen says Lead, the code and the tables say
+`auto`. Its autonomy is nine rows, a spend limit and four locked rows
+(`packages/core/src/auto/permissions.ts`). The rows and their values are
+`LEAD_PERMISSION_VALUES`: Approve the plan (ask, skip), Start agents that read
+(ask, free), Start agents that write (ask, after the plan, free), Push a branch
+(ask, when checks pass), Open or update a pull request, Add or upgrade
+dependencies and Change protected files (ask, allow each), Add a project (ask,
+when the session allows it, allow) and Close the work (you, Lead). The spend
+limit is the tree's `cap_usd`, the same number the reservation guard reads. The
+locked rows are not stored and not editable: force push asks with a backup,
+merge is you, agents never push, the Lead never writes.
+
+The three levels are the three presets in `LEAD_PERMISSION_PRESETS`, value for
+value with what each level does today: Every step asks for the plan, every
+child and every project; After the plan asks for the plan, lets readers start
+and adds a project through the materialization allowance (`applyMountBlock`);
+Never skips the plan and starts and adds freely. No preset holds a new ask:
+push, pull request, dependencies and protected files are at their open value in
+all three, and ask only once a row is set to Ask.
+
+`leadPermissionsOf` is the one function that gives a row its effective value
+and its source, in this order: the Lead's own rows (`auto_trees.permissions`,
+m243), the workspace default (workspace value `auto.permissions`, read only
+while the Work switch is on), the session's level, the workspace level, then
+**After the plan**. The hidden `agents.autoPlanApproval` setting stands in for
+the default's Approve the plan row while no Lead row and no default row holds
+it, so a workspace that never opens the panel behaves as today; once a row
+holds it, the row owns it, and a stored Ask is never overridden by the setting.
+Start agents that write at After the plan with Approve the plan at Skip cannot
+both hold: when either comes from a stored row it reads as Ask and carries a
+`LeadPermissionNote` that says why; when the skip comes from the hidden setting and the writer
+row from a level, it reads as free, which is what that pair does today. The
+preset reads Custom as soon as the effective rows match none of the three.
+
+`store/runtime/auto/level/readLeadPermissions.ts` reads a tree, a session or a
+workspace target. `writeLeadPermission.ts` writes one row on the workspace
+default (compare and swap on the workspace value) or on one Lead
+(`setAutoTreePermissionsIfUnchanged`, compare and swap on the JSON it read); a
+null value is Reset and removes the row. A lost swap re-reads and retries once,
+then fails with "changed in another window"; a failed write keeps the old value.
+A row tightened while an agent runs applies to its next start. The tests are
+`permissions.test.ts` (the compatibility table for each level with the switch
+on and off, each precedence step, the stale pair) and
+`leadPermissions.sqlite.test.ts` (writes, Reset, two windows, failure).
+
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
 the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
 like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`

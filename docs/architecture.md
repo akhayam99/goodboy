@@ -1005,6 +1005,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `auto_artifacts`              | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `auto_attempts`               | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `auto_delegations`            | ts     |                                                                                                                                                                                                                                                                                                                                        |
+| `auto_grants`                 | ts     | One row per ask of a Lead for a dependency, a protected file or a pull request (m243): its subject, its state (asked, allowed, declined, used) and what it is bound to, an attempt or a version of the pull request text. Rows go with the tree.                                                                                       |
 | `auto_outbox`                 | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `auto_reservations`           | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `auto_trees`                  | ts     | Auto tree registry (`store/runtime/auto/`). Nothing in Rust writes it.                                                                                                                                                                                                                                                                 |
@@ -1116,7 +1117,12 @@ kept.
   the rebuild keeps their rows. `listAutoTreesToRecover` and
   `idx_auto_trees_live` leave a finished tree out. `auto_delegations`,
   `auto_attempts`, `auto_reservations`, `auto_outbox`, `auto_artifacts` and
-  `auto_artifact_versions` hang off it and go with it.
+  `auto_artifact_versions` hang off it and go with it. m243 is additive: it adds
+  `auto_trees.permissions` (the permission rows changed on this Lead as JSON, `{}`
+  follows the workspace default), `auto_attempts.launch_snapshot` (what the
+  attempt was handed at launch, written once, NULL reads "Not recorded") and the
+  `auto_grants` table, which goes with its tree. `setAutoTreePermissionsIfUnchanged`
+  is the one writer of the column and compares the JSON it read.
 - `store/runtime/auto/scheduler.ts` is the one writer of tree state. A window
   writes only while it holds the lease, so a second window reads. Every
   transition names the phase revision, generation and phase it expects, and a

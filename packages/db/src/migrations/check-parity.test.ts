@@ -17,6 +17,7 @@ import { ARTIFACT_REVISION_AUTHORS } from '../queries/artifactRevision';
 import { AUTO_APPROVAL_STATES } from '../queries/auto-artifacts';
 import { AUTO_ATTEMPT_STATES } from '../queries/auto-attempts';
 import { AUTO_DELEGATION_STATES } from '../queries/auto-delegations';
+import { AUTO_GRANT_KINDS, AUTO_GRANT_STATES } from '../queries/auto-grants';
 import { AUTO_OUTBOX_KINDS, AUTO_OUTBOX_STATES } from '../queries/auto-outbox';
 import { AUTO_RESERVATION_OWNER_KINDS } from '../queries/auto-reservations';
 import { AUTO_PHASES, AUTO_STOP_STATES } from '../queries/auto-trees';
@@ -29,6 +30,8 @@ const CHECKED_CONSTANTS: Readonly<Record<string, Values>> = {
   'auto_artifacts.approval_state': AUTO_APPROVAL_STATES,
   'auto_attempts.state': AUTO_ATTEMPT_STATES,
   'auto_delegations.state': AUTO_DELEGATION_STATES,
+  'auto_grants.kind': AUTO_GRANT_KINDS,
+  'auto_grants.state': AUTO_GRANT_STATES,
   'auto_outbox.kind': AUTO_OUTBOX_KINDS,
   'auto_outbox.state': AUTO_OUTBOX_STATES,
   'auto_reservations.owner_kind': AUTO_RESERVATION_OWNER_KINDS,
