@@ -7,7 +7,6 @@ import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDra
 import { DrawerHost } from '../../../DrawerHost';
 import { SESSION, seedActivityRunScene } from '../activityRunSeed';
 import { PlannerTranscriptScene } from '../PlannerTranscriptScene';
-import { seedSessionAsk } from '../sessionAskSeed';
 
 const NARROW_WIDTH_PX = 1000;
 const WIDE_WIDTH_PX = 1440;
@@ -22,7 +21,7 @@ const DrawerOverlayNarrowScene = () => {
   useEffect(() => {
     seedActivityRunScene();
     useAppStore.setState({ selectedAgentId: {} });
-    seedSessionAsk({ state: 'answer', isDrawer: true });
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION.id, payload: null });
     setIsReady(true);
   }, []);
 

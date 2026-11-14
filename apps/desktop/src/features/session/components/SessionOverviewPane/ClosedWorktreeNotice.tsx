@@ -4,6 +4,7 @@ import { Button, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import type { ActionControls } from '../../../actions/useActionControls';
@@ -77,7 +78,7 @@ export const ClosedWorktreeNotice = ({ sessionId, row, controls }: Props) => {
                   <Button
                     key={action.id}
                     size="sm"
-                    variant="secondary"
+                    {...actionButtonLookOf({ verb: action.id, variant: 'secondary' })}
                     disabled={action.blockedReason !== null}
                     isBusy={state.isPending}
                     aria-label={`${action.label} for ${branch}`}

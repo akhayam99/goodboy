@@ -31,43 +31,43 @@ const shownKind = (): string | null => selectDrawerPanel(store.getState())?.kind
 
 describe('toggleDrawer', () => {
   it('closes a shown drawer on a session', () => {
-    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
-    expect(shownKind()).toBe('explore');
+    store.getState().toggleDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    expect(shownKind()).toBe('scripts');
 
-    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().toggleDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
 
     expect(shownKind()).toBeNull();
   });
 
   it('closes the page and shows the drawer parked under it', () => {
-    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().toggleDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
     store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
     expect(shownKind()).toBeNull();
 
-    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().toggleDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('explore');
+    expect(shownKind()).toBe('scripts');
   });
 
   it('leaves every stacked page in one press and shows the parked drawer', () => {
-    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().toggleDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
     store.getState().openStudio({ studio: { kind: 'guide' } });
     store.getState().openStudio({ studio: { kind: 'changelog' } });
 
-    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().toggleDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
 
     expect(store.getState().appStudio).toBeNull();
     expect(store.getState().currentSessionId).toBe(SESSION_ID);
-    expect(shownKind()).toBe('explore');
+    expect(shownKind()).toBe('scripts');
   });
 
   it('closes the page and opens the drawer when nothing was parked', () => {
     store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
 
-    store.getState().toggleDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().toggleDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('explore');
+    expect(shownKind()).toBe('scripts');
   });
 });

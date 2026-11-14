@@ -1,4 +1,4 @@
-import { isRunEntryFinished } from '../done/outcomeLineOf';
+import { isRunEntryFinished } from '../done/isRunEntryFinished';
 import type { Agent, AgentId, MountId, Step, TurnState } from '@goodboy/types';
 import { autoGroupOf, type AutoGroup } from '../../../auto/autoGroupOf';
 import { classifyStep, type AgentKind } from '../../agent-kind';

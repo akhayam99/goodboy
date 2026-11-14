@@ -67,27 +67,11 @@ const renderScene = (id: SceneId) => {
 describe('the drawer chrome scenes', () => {
   it('registers exactly the scenes the unit names, plus the overlay twin of the toast', () => {
     expect(Object.keys(U23_DRAWER_CHROME_SCENES).sort()).toEqual([
-      'drawer-ask-draft',
       'drawer-headers',
       'floating-surfaces',
       'toast-over-drawer',
       'toast-over-drawer-overlay',
     ]);
-  });
-
-  it('ask draft: the composer holds the draft and has focus', async () => {
-    stubColumnWidth(1440);
-    renderScene('drawer-ask-draft');
-
-    const composer = (await screen.findByRole(
-      'textbox',
-      { name: 'Ask about this session' },
-      WAIT,
-    )) as HTMLTextAreaElement;
-
-    expect(composer.value).toBe('Which of these should I fix first, and what breaks if I skip it?');
-    await waitFor(() => expect(document.activeElement).toBe(composer), WAIT);
-    expect(screen.getByRole('region', { name: 'Ask' })).toBeDefined();
   });
 
   it('headers: Context in versions says Back to current, the others say Close', async () => {

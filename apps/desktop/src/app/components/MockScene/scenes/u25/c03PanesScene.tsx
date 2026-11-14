@@ -12,7 +12,8 @@ import { SESSION_ID } from '../activityRunSeed';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { shellPromptLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 
-export type PanesSceneState = ClusterPane | 'closed' | 'explore-file' | 'script-output';
+export type PanesSceneState =
+  ClusterPane | 'ask' | 'context' | 'closed' | 'explore-file' | 'script-output';
 
 const PAYMENTS = '~/code/harborline/payments-api-backfill';
 const RELAY = '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z';
@@ -67,14 +68,29 @@ type PaneParams = {
   readonly pane: ClusterPane;
 };
 
+type TabSceneParams = {
+  readonly tab: 'ask' | 'context';
+};
+
 const openPane = ({ pane }: PaneParams): void => {
-  if (pane === 'ask' || pane === 'context') {
-    useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
-  }
   if (openPaneOf({ state: useAppStore.getState(), sessionId: SESSION_ID }) === pane) {
     return;
   }
+  if (pane === 'scripts') {
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    return;
+  }
   togglePane({ sessionId: SESSION_ID, pane });
+};
+
+const openTab = ({ tab }: TabSceneParams): void => {
+  useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
+  const store = useAppStore.getState();
+  if (tab === 'ask') {
+    store.openAsk({ sessionId: SESSION_ID });
+    return;
+  }
+  store.openContextDrawer({ sessionId: SESSION_ID, section: 'goal' });
 };
 
 const seedFailedCheck = (): void => {
@@ -143,6 +159,10 @@ const openState = ({ state }: SeedParams): void => {
   if (state === 'terminal') {
     seedShells();
     store.openDrawer({ kind: 'terminal', sessionId: SESSION_ID, payload: { terminalId: SHELL } });
+    return;
+  }
+  if (state === 'ask' || state === 'context') {
+    openTab({ tab: state });
     return;
   }
   openPane({ pane: state });

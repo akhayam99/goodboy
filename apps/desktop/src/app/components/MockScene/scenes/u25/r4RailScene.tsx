@@ -17,11 +17,11 @@ const CARD_STATES: ReadonlySet<R4RailState> = new Set<R4RailState>([
   'session',
   'cards-folded',
   'tree',
+  'tools-open',
 ]);
 
 const PANE_OF: Readonly<Partial<Record<R4RailState, ClusterPane>>> = {
-  'tools-open': 'context',
-  narrow: 'explore',
+  narrow: 'scripts',
 };
 
 type PaneParams = {
@@ -29,10 +29,11 @@ type PaneParams = {
 };
 
 const openPane = ({ pane }: PaneParams): void => {
-  if (pane === 'ask' || pane === 'context') {
-    useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
-  }
   if (openPaneOf({ state: useAppStore.getState(), sessionId: SESSION_ID }) === pane) {
+    return;
+  }
+  if (pane === 'scripts') {
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
     return;
   }
   togglePane({ sessionId: SESSION_ID, pane });

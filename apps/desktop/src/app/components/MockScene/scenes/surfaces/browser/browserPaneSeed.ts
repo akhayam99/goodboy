@@ -240,11 +240,8 @@ const seedPeek = ({ tabs }: PeekParams): void => {
       ),
     },
   }));
-  useAppStore.getState().openDrawer({
-    kind: 'context',
-    sessionId: SESSION_ID,
-    payload: { section: 'decisions', view: 'current' },
-  });
+  useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
+  useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'decisions' });
 };
 
 export const seedBrowserPane = ({ state }: SeedParams): void => {

@@ -73,14 +73,13 @@ export const BranchHeader = ({
     const tip = action.blockedReason ?? action.note;
     const look = actionButtonLookOf({
       verb: action.actionId,
-      isNext: variant === 'primary',
+      variant,
     });
     const button = (
       <Button
         size="sm"
         variant={look.variant}
         intent={look.intent}
-        data-variant={variant}
         data-branch-primary={slot === 'primary' ? action.actionId : undefined}
         data-branch-secondary={slot === 'secondary' ? action.actionId : undefined}
         disabled={action.blockedReason !== null}

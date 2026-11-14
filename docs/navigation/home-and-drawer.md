@@ -454,7 +454,7 @@ column), **Change model** (Settings, Providers, Models, scrolled to Step summari
 and **Update now**. Update now queues a consolidation pass through
 `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is queued.
-Summary draws its State block only when the State holds more than the sentence the glance line on the Overview shows (`summaryStateOf`, `stateBodyHasMore`), so the line opens onto the rest and never onto a repeat.
+Summary draws its State block only when the State holds more than its first sentence (`stateBodyHasMore`), so the block never repeats the sentence.
 
 Every card reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and

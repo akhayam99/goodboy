@@ -1,6 +1,5 @@
 import { RebaseAllScene } from './RebaseAllScene';
 import { RebaseConflictScene } from './RebaseConflictScene';
-import { RebasePickerScene } from './RebasePickerScene';
 
 export const U26_REBASE_SCENES = {
   'u26-rebase-conflict-dark': () => <RebaseConflictScene theme="dark" />,
@@ -12,6 +11,4 @@ export const U26_REBASE_SCENES = {
   'u26-rebase-all-auto-light': () => <RebaseAllScene theme="light" stage="auto" />,
   'u26-rebase-all-settled-dark': () => <RebaseAllScene theme="dark" stage="settled" />,
   'u26-rebase-all-settled-light': () => <RebaseAllScene theme="light" stage="settled" />,
-  'u26-rebase-picker-dark': () => <RebasePickerScene theme="dark" />,
-  'u26-rebase-picker-light': () => <RebasePickerScene theme="light" />,
 };

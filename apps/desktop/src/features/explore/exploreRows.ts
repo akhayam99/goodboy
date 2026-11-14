@@ -130,8 +130,6 @@ export const flattenExploreRows = ({
   return rows;
 };
 
-export const exploreRowHeight = (): number => EXPLORE_ROW_PX;
-
 export const entryRowsOf = (rows: ReadonlyArray<ExploreRow>): ReadonlyArray<ExploreEntryRow> =>
   rows.filter((row): row is ExploreEntryRow => row.kind === 'entry');
 

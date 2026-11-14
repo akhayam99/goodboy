@@ -588,7 +588,13 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
   pressRow({ id: 'lens.files', lands: changesTab }),
   pressRow({ id: 'lens.plans', lands: both(lens('plans'), () => heading('Artifacts')) }),
-  pressRow({ id: 'lens.scripts', lands: pane('Scripts') }),
+  pressRow({
+    id: 'lens.scripts',
+    lands: async () => {
+      await screen.findByRole('button', { name: 'Open as page' });
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+    },
+  }),
   pressRow({
     id: 'session.spawned',
     lands: both(
@@ -968,17 +974,15 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await settle();
       useAppStore
         .getState()
-        .openDrawer({ kind: 'explore', sessionId: ctx.sessionId, payload: null });
-      useAppStore.getState().openDrawer({
-        kind: 'context',
-        sessionId: ctx.sessionId,
-        payload: { section: 'goal', view: 'current' },
-      });
+        .openDrawer({ kind: 'scripts', sessionId: ctx.sessionId, payload: null });
+      useAppStore
+        .getState()
+        .openDrawer({ kind: 'spawned', sessionId: ctx.sessionId, payload: null });
       await settle();
       await pickMenuItem({ id: 'slot.close' });
     },
     lands: async () => {
-      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('explore'));
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('scripts'));
       expect(useAppStore.getState().drawerBack).toBeNull();
     },
   }),

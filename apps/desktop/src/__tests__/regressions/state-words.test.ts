@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { STATE_WORD_MEANINGS } from '../../shared/utils/stateWordMeanings';
 import { stateWordMeaningOf } from '../../shared/utils/stateWordMeaningOf';
 import { AGENT_STATUS_PRESENTATION } from '../../features/session/agent-status';
-import { LIVE_TONE } from '../../features/session/central/now/liveTone';
 import { glanceOf, type GlanceState } from '../../features/session/glance/glanceOf';
 import { describeCopy, scanCopy } from './scanCopy';
 
@@ -55,8 +54,6 @@ describe('one table of state words and meanings', () => {
   it('keeps the glance, live group and agent state maps in the table', () => {
     const words = [
       ...STATES.map((state) => glanceOf({ state, sentence: '' }).word),
-      ...Object.values(LIVE_TONE.state).map(({ word }) => word),
-      ...Object.values(LIVE_TONE.phase).map(({ word }) => word),
       ...Object.values(AGENT_STATUS_PRESENTATION).map(({ label }) => label),
     ];
 

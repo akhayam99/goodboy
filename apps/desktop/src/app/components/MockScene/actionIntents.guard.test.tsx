@@ -13,20 +13,15 @@ import { ToastProvider } from '../../../shared/components/Toast';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { MOCK_SCENES } from './registry';
 
-const SCENE_IDS = [
-  'action-intents',
-  'board-states',
-  'branch-push',
-  'u26-central-branches-dark',
-  'u26-rebase-all-idle-dark',
-  'u27-next-list-after-dark',
-] as const;
+const SCENE_IDS = Object.keys(MOCK_SCENES)
+  .filter((id) => id !== 'crash-report')
+  .sort();
 
 const FILLED =
   'button[data-variant="primary"]:not([data-intent="caution"]):not([data-intent="destructive"])';
 const TONED_FILLED =
   'button[data-variant="primary"][data-intent="caution"], button[data-variant="primary"][data-intent="destructive"]';
-const ROWS = '[data-action-card], header';
+const ROWS = '[data-action-card], header, [role="row"], [role="listitem"]';
 
 beforeAll(async () => {
   await importStore();

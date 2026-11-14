@@ -18,37 +18,32 @@ const pressEscape = async (): Promise<void> => {
 
 const openedKind = (): string | null => selectOpenDrawer(useAppStore.getState())?.kind ?? null;
 
-const openAskDrawer = async ({ sessionId }: Ctx): Promise<void> => {
-  useAppStore.getState().openDrawer({ kind: 'ask', sessionId, payload: null });
+const openScriptsDrawer = async ({ sessionId }: Ctx): Promise<void> => {
+  useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null });
   await settle();
-  await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
+  await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
 };
 
-const openContextOverAsk = async (ctx: Ctx): Promise<void> => {
-  await openAskDrawer(ctx);
-  await composer();
-  useAppStore.getState().openDrawer({
-    kind: 'context',
-    sessionId: ctx.sessionId,
-    payload: { section: 'goal', view: 'current' },
-  });
+const openAgentsOverScripts = async (ctx: Ctx): Promise<void> => {
+  await openScriptsDrawer(ctx);
+  useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: ctx.sessionId, payload: null });
   await settle();
-  await waitFor(() => expect(openedKind()).toBe('context'), WAIT);
+  await waitFor(() => expect(openedKind()).toBe('spawned'), WAIT);
 };
 
 export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: the drawer it replaced waits in a back chip, the chip swaps, Esc walks back',
     covers: ['openDrawer', 'closeDrawer'],
-    open: openContextOverAsk,
+    open: openAgentsOverScripts,
     lands: async () => {
-      await userEvent.setup().click(await screen.findByRole('button', { name: 'Back to Ask' }));
+      await userEvent.setup().click(await screen.findByRole('button', { name: 'Back to Scripts' }));
       await settle();
-      await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
-      expect(await screen.findByRole('button', { name: 'Back to Context' })).toBeDefined();
+      await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
+      expect(await screen.findByRole('button', { name: 'Back to Agents' })).toBeDefined();
 
       await pressEscape();
-      await waitFor(() => expect(openedKind()).toBe('context'), WAIT);
+      await waitFor(() => expect(openedKind()).toBe('spawned'), WAIT);
       expect(screen.queryByRole('button', { name: /^Back to / })).toBeNull();
 
       await pressEscape();
@@ -58,13 +53,13 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: ⌘⇧W closes the top of the slot, then the drawer from the chip',
     covers: ['key:slot.close', 'closeDrawer'],
-    open: openContextOverAsk,
+    open: openAgentsOverScripts,
     lands: async () => {
       pressShortcut({ id: 'slot.close' });
       await settle();
-      await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
+      await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
 
-      pressShortcut({ id: 'slot.close', target: await composer() });
+      pressShortcut({ id: 'slot.close' });
       await settle();
       await waitFor(() => expect(openedKind()).toBeNull(), WAIT);
     },
@@ -91,23 +86,6 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
       const reopened = await composer();
       expect(reopened.value).toBe(DRAFT);
       await waitFor(() => expect(document.activeElement).toBe(reopened), WAIT);
-    },
-  },
-  {
-    name: 'ask drawer: an empty composer closes on the first Esc and the header says Close',
-    covers: ['openDrawer'],
-    open: async (ctx) => {
-      await openAskDrawer(ctx);
-      await composer();
-    },
-    lands: async () => {
-      const region = await screen.findByRole('region', { name: 'Ask' });
-      expect(region.querySelector('header')?.textContent).not.toMatch(/Harborline|Northwind/);
-      expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
-
-      await pressEscape();
-
-      await waitFor(() => expect(openedKind()).toBeNull(), WAIT);
     },
   },
 ];

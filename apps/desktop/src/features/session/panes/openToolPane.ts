@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { PLACE_ROWS } from '../../../store/slices/navigation/placeRows';
-import { openScriptsPane } from '../../scripts/openScriptsPane';
+import { openBranchTerminal } from '../../terminal/openBranchTerminal';
 import { openPlaceRows } from '../openPlaceRows';
 
 export type ToolPaneDestination = 'explore' | 'scripts' | 'spawned';
@@ -25,7 +25,7 @@ export const openToolPane = ({ sessionId, pane }: Params): void => {
       if (state.currentSessionId !== sessionId) {
         state.navigate({ to: sessionPlace({ sessionId }) });
       }
-      openScriptsPane({ state, sessionId, projectId: null });
+      openBranchTerminal({ sessionId, mountPath: null });
       return;
     }
     default: {

@@ -15,6 +15,14 @@ const CAUTION_VERBS: ReadonlySet<string> = new Set([
   'force push',
   'reset',
   'abort rebase',
+  'undo rebase',
+  'retry rebase',
+  'diff.abortRebase',
+  'mount.abortRebase',
+  'mount.abortRebaseConflict',
+  'session.abortRebaseAll',
+  'commit.squashDown',
+  'commit.foldDown',
 ]);
 
 const DESTRUCTIVE_VERBS: ReadonlySet<string> = new Set([
@@ -65,7 +73,13 @@ const PRIMARY_VERBS: ReadonlySet<string> = new Set([
 ]);
 
 export const actionIntentOf = ({ verb }: Params): ButtonIntent => {
-  if (DESTRUCTIVE_VERBS.has(verb) || DESTRUCTIVE_VERBS.has(verb.toLowerCase())) {
+  if (
+    DESTRUCTIVE_VERBS.has(verb) ||
+    DESTRUCTIVE_VERBS.has(verb.toLowerCase()) ||
+    verb.endsWith('.delete') ||
+    verb.endsWith('.discard') ||
+    verb === 'commit.remove'
+  ) {
     return 'destructive';
   }
   if (CAUTION_VERBS.has(verb) || CAUTION_VERBS.has(verb.toLowerCase())) {

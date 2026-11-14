@@ -782,7 +782,7 @@ Folding the rail leaves the column in place.
   opens it in the center, and the tool, open already, stays through the move. A row
   never opens a tool as a side effect: an Auto row of Runs opens the Auto page
   and nothing beside it. The
-  Overview's Now run header (`LiveRunBlock`) opens that exact run page,
+  Overview's run row opens that exact run page,
   including an orchestrated run, and Back returns to the Overview. Its step
   rows and status sentence are status, not parallel links to the Runs list.
   The tree reads top down, like the step list of the run page: each parent
@@ -845,20 +845,21 @@ Folding the rail leaves the column in place.
 - **One pane at a time.** Every toggle goes through `togglePane`
   (`features/session/panes/`): pressing the open pane's toggle closes it,
   pressing another replaces it in the one right drawer. `openPaneOf` reads the
-  open drawer's row in `DRAWER_KINDS` (its pane, or the pane that opened it), so an Explore file opened from Explore keeps
-  Explore lit, and a script output opened from Scripts keeps Scripts lit. Esc
-  closes the pane (`DrawerFrame`).
-- **Explore and Scripts are drawer kinds** (`explore`, `scripts`), not lenses.
-  `ExplorePane` and `ScriptsPanel` render in a `DrawerFrame`. A file opened
-  from Explore replaces it and shows **Back to Explore**; a script output opened
-  from Scripts replaces it and shows **Back to scripts** (`DrawerFrame`'s
-  `back`, carried by the payload's `from`); Run on a Service does not open it,
-  Run on a Command does (`NAMES.commands`, the band in `ScriptsPanel`). `openExplorePane` takes the
-  worktree to browse (the mount registry's Browse files passes it),
-  `openScriptsPane` the project to scope to (Open scripts). There is no
-  Explore or Scripts lens: the palette's Open Explore and Open Scripts, toasts
-  and stored notifications (`open-lens` scripts) open the pane through
-  `openToolPane`, which first goes to the session when another one is shown.
+  open drawer's row in `DRAWER_KINDS` (its pane, or the pane that opened it), so a script output opened from
+  Scripts keeps Scripts lit. Esc closes the pane (`DrawerFrame`).
+- **Scripts is a drawer kind** (`scripts`), not a lens, and Explore, Context and
+  Ask are no drawer kinds: Explore is **All files** on the Changes page and
+  Context and Ask are the Context tab. `ScriptsPanel` renders in a
+  `DrawerFrame`. A script output opened from Scripts replaces it and shows
+  **Back to scripts** (`DrawerFrame`'s `back`, carried by the payload's `from`);
+  Run on a Service does not open it, Run on a Command does (`NAMES.commands`,
+  the band in `ScriptsPanel`). `openExplorePane` takes the worktree to browse
+  (the mount registry's Browse files passes it), `openScriptsPane` the project
+  to scope to (Open scripts). The Scripts chord, the palette's Open Scripts,
+  toasts and stored notifications (`open-lens` scripts) go to the Terminal and
+  its **Scripts** menu through `openToolPane`, which first goes to the session
+  when another one is shown. A stored place with an `explore`, `context` or
+  `ask` drawer folds to its page (`withoutRemovedPages`).
 - **Browser opens a page beside the work** (drawer kind `browser`,
   `features/browser/`): the session's tabs and the project pins in a reader
   tier pane, so the session rail folds to icons while it is open.

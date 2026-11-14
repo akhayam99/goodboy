@@ -22,16 +22,16 @@ describe('actionIntentOf', () => {
 describe('actionButtonLookOf', () => {
   it('never fills a caution or destructive verb', () => {
     for (const verb of ['Rebase', 'Remove worktree', 'Discard changes']) {
-      expect(actionButtonLookOf({ verb, isNext: true }).variant).toBe('secondary');
+      expect(actionButtonLookOf({ verb, variant: 'primary' }).variant).toBe('secondary');
     }
   });
 
   it('fills the next step and outlines the rest', () => {
-    expect(actionButtonLookOf({ verb: 'Push', isNext: true })).toEqual({
+    expect(actionButtonLookOf({ verb: 'Push', variant: 'primary' })).toEqual({
       intent: 'primary',
       variant: 'primary',
     });
-    expect(actionButtonLookOf({ verb: 'Push', isNext: false })).toEqual({
+    expect(actionButtonLookOf({ verb: 'Push', variant: 'secondary' })).toEqual({
       intent: 'neutral',
       variant: 'secondary',
     });

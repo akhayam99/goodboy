@@ -47,7 +47,7 @@ export const BoardRowAction = ({ rowId, index = 0 }: Props) => {
     }
     mainVerb.run();
   };
-  const look = actionButtonLookOf({ verb: mainVerb?.label ?? '', isNext: true });
+  const look = actionButtonLookOf({ verb: mainVerb?.label ?? '', variant: 'primary' });
   const button =
     mainVerb === null ? null : (
       <Button

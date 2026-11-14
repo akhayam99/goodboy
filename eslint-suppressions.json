@@ -1224,7 +1224,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/drawer-chrome.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/drawerChrome/FloatingSurfacesScene.tsx": {

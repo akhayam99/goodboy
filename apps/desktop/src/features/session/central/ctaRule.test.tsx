@@ -25,7 +25,7 @@ vi.mock('../../../shared/hooks/useElementWidth', async () => {
 
 import type { ComponentType } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../shared/components/Toast';
 import {
   importStore,
@@ -34,15 +34,13 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../store/storyHarness';
 import { sceneInvoke, clearSceneInvoke } from '../../../test/sceneInvoke';
-import { U26_CENTRAL_NEXT_SCENES } from '../../../app/components/MockScene/scenes/u26/central-next';
 import { U24_AUTO_CHAT_SCENES } from '../../../app/components/MockScene/scenes/u24/auto-chat';
 import { U26_CENTRAL_SCENES } from '../../../app/components/MockScene/scenes/u26/central';
 import { U33_OVERVIEW_NEEDS_YOU_SCENES } from '../../../app/components/MockScene/scenes/surfaces/overview-needs-you/overview-needs-you';
 
-const COLUMN_SCENES = [U26_CENTRAL_NEXT_SCENES, U26_CENTRAL_SCENES, U33_OVERVIEW_NEEDS_YOU_SCENES];
+const COLUMN_SCENES = [U26_CENTRAL_SCENES, U33_OVERVIEW_NEEDS_YOU_SCENES];
 
 const ALLOWED_VARIANTS: ReadonlySet<string> = new Set(['primary', 'secondary', 'quiet']);
-const NARROW_SCENE = 'u26-central-next-narrow-light';
 
 beforeAll(async () => {
   await importStore();
@@ -192,20 +190,6 @@ describe('the CTA rule of the central column', () => {
     }
   });
 
-  it('folds the second secondary into the overflow below 560 px and keeps the primary word', () => {
-    const { container } = show({ scenes: U26_CENTRAL_NEXT_SCENES, name: NARROW_SCENE });
-
-    expect(screen.queryByRole('button', { name: 'Open check' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Answer' }).dataset.variant).toBe('primary');
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'More options for Fix the failing static-analysis check',
-      }),
-    );
-    screen.getByRole('menuitem', { name: 'Open check' });
-    expect(container.querySelectorAll('[data-variant="primary"]')).toHaveLength(1);
-  });
-
   it('leaves the one primary of the Auto chat to the dock while a plan waits', async () => {
     show({ scenes: U24_AUTO_CHAT_SCENES, name: 'auto-chat-confirm' });
 
@@ -214,11 +198,5 @@ describe('the CTA rule of the central column', () => {
 
     expect(dock.querySelectorAll('[data-variant="primary"]')).toHaveLength(1);
     expect(within(dock).getByRole('button', { name: 'Continue' }).dataset.variant).toBe('primary');
-  });
-
-  it('keeps the second secondary visible at 560 px and up', () => {
-    show({ scenes: U26_CENTRAL_NEXT_SCENES, name: 'u26-central-next-mid-light' });
-
-    screen.getByRole('button', { name: 'Open check' });
   });
 });

@@ -5,7 +5,6 @@ import {
   EXPLORE_ROW_PX,
   ancestorPathsOf,
   entryRowsOf,
-  exploreRowHeight,
   flattenExploreRows,
   pendingFoldersOf,
   type ExploreListing,
@@ -209,7 +208,7 @@ describe('flattenExploreRows', () => {
     const many = Array.from({ length: 100_000 }, (_, index) => file(`f${index}.ts`));
     const rows = flattenExploreRows({ entriesByPath: { '': many }, ...NONE, expanded: {} });
     expect(rows).toHaveLength(100_000);
-    const layout = layoutRows({ rows, heightOf: exploreRowHeight });
+    const layout = layoutRows({ rows, heightOf: () => EXPLORE_ROW_PX });
     const range = windowOf({
       layout,
       count: rows.length,
@@ -221,10 +220,9 @@ describe('flattenExploreRows', () => {
   });
 });
 
-describe('exploreRowHeight', () => {
+describe('EXPLORE_ROW_PX', () => {
   it('is the 40px row of the scale', () => {
     expect(EXPLORE_ROW_PX).toBe(40);
-    expect(exploreRowHeight()).toBe(40);
   });
 });
 

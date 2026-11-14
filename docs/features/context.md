@@ -58,5 +58,5 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 ## Under the hood
 
 - Decision marks: `DecisionsSection` renders one list and `markContextRead` clears marks after persistence.
-- Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, `summaryStateOf` owns its Overview sentence, and `shareableContext` keeps the complete text.
+- Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, and `shareableContext` keeps the complete text.
 - Card controls: `SlotSourceActions` keeps the three menu entries together.

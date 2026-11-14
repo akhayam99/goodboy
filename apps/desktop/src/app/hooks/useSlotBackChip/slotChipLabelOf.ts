@@ -49,12 +49,6 @@ const fileName = ({ path }: PathParams): string | null => {
 
 export const slotChipLabelOf = ({ drawer, artifacts }: Params): SlotChipLabel => {
   switch (drawer.kind) {
-    case 'ask':
-      return { kind: 'Ask', title: null };
-    case 'context':
-      return { kind: 'Context', title: null };
-    case 'explore':
-      return { kind: 'Explore', title: null };
     case 'scripts':
       return { kind: 'Scripts', title: null };
     case 'spawned':
