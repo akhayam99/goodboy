@@ -151,6 +151,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   guide: ['features/settings/components/GuideStudio/parts/ChapterPage.tsx'],
   addWorkspace: ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
   workflow: ['features/workflows/components/WorkflowsPanel/index.tsx'],
+  work: ['features/work/components/WorkPage/index.tsx'],
   inbox: ['features/inbox/components/InboxStudio/index.tsx'],
   terminal: ['features/terminal/components/TerminalStudio/index.tsx'],
   browser: ['features/browser/components/BrowserStudio/BrowserStudioBody.tsx'],

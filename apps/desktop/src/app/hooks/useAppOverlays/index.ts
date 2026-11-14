@@ -94,6 +94,8 @@ export const useAppOverlays = ({
 
   const openWorkflows = useCallback(() => openDestination({ id: 'workflows' }), []);
 
+  const openWork = useCallback(() => openDestination({ id: 'work' }), []);
+
   const openProviders = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'providers' } } }),
     [goTo],
@@ -205,6 +207,7 @@ export const useAppOverlays = ({
     openNewChat,
     openMonitoring,
     openImpact,
+    openWork,
     openWorkflows,
     studio,
     layers,

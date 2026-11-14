@@ -65,6 +65,7 @@ const noop = () => undefined;
 const ACTIONS: ColumnActions = {
   openBoard: noop,
   openInbox: noop,
+  openWork: noop,
   openChat: noop,
   openWorkflows: noop,
   openNewChat: noop,

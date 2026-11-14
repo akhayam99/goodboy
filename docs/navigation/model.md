@@ -103,6 +103,15 @@
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
   Needs you rows read the attention group of `useStageGroupedSessions`.
+  Work is a seventh door between Tasks and Workflows, with a New badge outlined in the primary colour,
+  and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`
+  (key `+work`, `features/work/components/WorkPage`): every Lead of the workspace across sessions,
+  four filters (All open, Needs you, Working, Finished) whose counts come from `workRowsOf`, polled
+  by `useWorkLeads`, with the filter kept on the studio place so a reload and History Back restore it.
+  A row opens the Lead page inside its session through `agentPlace`; the back row of that page goes
+  to the session, never to Work. A stored Work place with the switch off opens the Board
+  (`foldedWorkPlace`, the `savedPlaceOnWork` rule of `flowRulesOf`). ⌘K lists Work and one
+  "Lead: title" row per open Lead (`leadEntries`), only with the switch on.
   Monitoring is the row after Impact, its page has no band and no Close, and
   it is the one way to the page in the chrome: the top bar holds no Monitoring
   icon. The column holds no tool: Terminal and Browser live on the right rail
