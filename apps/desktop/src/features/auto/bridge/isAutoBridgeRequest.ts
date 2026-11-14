@@ -62,6 +62,9 @@ const isCall = (value: unknown): value is AutoBridgeCall => {
       (value['hint'] === undefined || typeof value['hint'] === 'string')
     );
   }
+  if (kind === 'answerAsk') {
+    return isText(value['askId']) && (value['answer'] === 'allow' || value['answer'] === 'decline');
+  }
   return false;
 };
 

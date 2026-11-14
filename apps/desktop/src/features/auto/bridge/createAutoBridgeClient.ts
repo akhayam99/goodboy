@@ -1,3 +1,4 @@
+import type { AskAnswerParams, AskAnswerResult } from '../askAnswerPort';
 import type { AutoChildTurnResult } from '../autoChildTurnPort';
 import type { AutoUserTurnParams, AutoUserTurnResult } from '../autoUserTurnPort';
 import type { ChecksRerunResult } from '../checksRerunPort';
@@ -21,20 +22,24 @@ const AUTO_BRIDGE_LONG_TIMEOUT_MS = 30 * 60_000;
 
 const NO_ANSWER = 'The main window did not answer. Do it from the main window.';
 
-const STOP_RESULTS: ReadonlyArray<TreeStopResult> = ['stopped', 'stuck', 'not_owner'];
+type ResultValuesParams<Result> = {
+  readonly values: ReadonlyArray<Result>;
+};
 
-const TURN_RESULTS: ReadonlyArray<AutoUserTurnResult> = ['queued', 'lost'];
+const resultOfValues =
+  <Result>({ values }: ResultValuesParams<Result>) =>
+  (value: unknown): value is Result =>
+    values.some((result) => result === value);
 
-const DECISION_RESULTS: ReadonlyArray<DelegationDecisionResult> = ['confirmed', 'declined', 'lost'];
+const isStopResult = resultOfValues<TreeStopResult>({ values: ['stopped', 'stuck', 'not_owner'] });
 
-const isStopResult = (value: unknown): value is TreeStopResult =>
-  STOP_RESULTS.some((result) => result === value);
+const isTurnResult = resultOfValues<AutoUserTurnResult>({ values: ['queued', 'lost'] });
 
-const isTurnResult = (value: unknown): value is AutoUserTurnResult =>
-  TURN_RESULTS.some((result) => result === value);
+const isDecisionResult = resultOfValues<DelegationDecisionResult>({
+  values: ['confirmed', 'declined', 'lost'],
+});
 
-const isDecisionResult = (value: unknown): value is DelegationDecisionResult =>
-  DECISION_RESULTS.some((result) => result === value);
+const isAskResult = resultOfValues<AskAnswerResult>({ values: ['allowed', 'declined', 'settled'] });
 
 type ResultKindsParams = {
   readonly kinds: ReadonlyArray<string>;
@@ -204,6 +209,8 @@ export const createAutoBridgeClient = async ({
         call: { kind: 'decision', delegationId, decision, ...(hint === undefined ? {} : { hint }) },
         isResult: isDecisionResult,
       }),
+    answerAsk: ({ askId, answer }: AskAnswerParams) =>
+      ask({ call: { kind: 'answerAsk', askId, answer }, isResult: isAskResult }),
     childTurn: ({ agentId, sessionId, text, from, hasFiles, isBusy, deliveryId }) =>
       ask({
         call: {

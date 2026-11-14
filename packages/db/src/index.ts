@@ -752,8 +752,8 @@ export {
   type AutoDelegationState,
   type AutoJsonObject,
   type AutoOutcome,
-  type NewAutoDelegation,
 } from './queries/auto-delegations';
+export * from './queries/auto-grants';
 export {
   AUTO_OUTBOX_KINDS,
   AUTO_OUTBOX_STATES,
