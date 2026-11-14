@@ -24,21 +24,6 @@ export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
     shortcut: 'lens.explore',
   },
   {
-    pane: 'context',
-    group: 'session',
-    icon: CONCEPT_ICONS.context,
-    label: NAMES.context,
-    shortcut: 'lens.context',
-  },
-  {
-    pane: 'ask',
-    group: 'session',
-    icon: CONCEPT_ICONS.ask,
-    label: 'Ask',
-    fullLabel: 'Ask this session',
-    shortcut: 'ask.open',
-  },
-  {
     pane: 'spawned',
     group: 'session',
     icon: CONCEPT_ICONS.agents,

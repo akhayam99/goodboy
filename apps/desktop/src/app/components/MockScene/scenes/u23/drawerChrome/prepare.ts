@@ -18,14 +18,14 @@ const SCRIPT_GROUP = {
 } as const;
 
 export const prepareAskDraft = (): void => {
-  seedSessionAsk({ state: 'answer' });
+  seedSessionAsk({ state: 'answer', isDrawer: true });
   const state = useAppStore.getState();
   const threadId: ChatId | null = state.askThreadId[SESSION_ID] ?? null;
   state.setAskDraft({ sessionId: SESSION_ID, threadId, text: DRAFT });
 };
 
 export const prepareToast = (): void => {
-  seedSessionAsk({ state: 'answer' });
+  seedSessionAsk({ state: 'answer', isDrawer: true });
 };
 
 export type HeadersSeed = {

@@ -18,6 +18,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { SESSION_ID } from '../activityRunSeed';
 import { U25_C03_PANE_SCENES } from './c03-panes';
 
 const SETTLE_MS = 2_000;
@@ -75,10 +76,12 @@ describe('c03 session tools scenes', () => {
     expect(pressed()).toEqual([]);
   });
 
-  it('opens Ask beside the overview', async () => {
+  it('opens Ask in the Context tab', async () => {
     await mount('c03-panes-ask');
-    expect(useAppStore.getState().drawer?.kind).toBe('ask');
-    expect(pressed()).toEqual(['Ask this session']);
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('context');
+    screen.getByRole('region', { name: 'Ask' });
+    expect(pressed()).toEqual([]);
   });
 
   it('opens the terminal on the worktree this session last used, with the scope picker', async () => {
@@ -110,10 +113,12 @@ describe('c03 session tools scenes', () => {
     expect(screen.getByRole('button', { name: 'Back to scripts' })).toBeDefined();
   });
 
-  it('opens Context from its own row', async () => {
+  it('opens Context as a tab', async () => {
     await mount('c03-panes-context');
-    expect(useAppStore.getState().drawer?.kind).toBe('context');
-    expect(pressed()).toEqual(['Context']);
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('context');
+    screen.getByRole('region', { name: 'Context' });
+    expect(pressed()).toEqual([]);
   });
 
   it('keeps the tools in a column right of the content, not in the page tabs, and no page header holds a pane toggle', async () => {
@@ -132,20 +137,16 @@ describe('c03 session tools scenes', () => {
   });
 
   it('keeps the tool icons with the open one pressed', async () => {
-    await mount('c03-panes-ask');
+    await mount('c03-panes-explore');
     const icons = within(cluster()).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([
       'Explore',
-      'Context',
-      'Ask this session',
       'Agents',
       'Scripts',
       'Terminal',
       'Browser',
     ]);
     expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual([
-      'false',
-      'false',
       'true',
       'false',
       'false',
@@ -155,9 +156,7 @@ describe('c03 session tools scenes', () => {
   });
 
   it.each([
-    ['c03-panes-ask', 'Ask this session'],
     ['c03-panes-explore', 'Explore'],
-    ['c03-panes-context', 'Context'],
     ['c03-panes-scripts', 'Scripts'],
   ] as const)('%s opens its pane, never the closed layout', async (name, label) => {
     await mount(name);

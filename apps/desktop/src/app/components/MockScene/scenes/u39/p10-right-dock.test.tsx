@@ -93,8 +93,6 @@ describe('the ux39 right dock scenes', () => {
 
     expect(railTools()).toEqual([
       'pane-toggle-explore',
-      'pane-toggle-context',
-      'pane-toggle-ask',
       'pane-toggle-spawned',
       'pane-toggle-scripts',
       'pane-toggle-terminal',

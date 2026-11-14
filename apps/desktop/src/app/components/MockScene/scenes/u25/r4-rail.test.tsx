@@ -89,7 +89,7 @@ describe('r4 session rail scenes', () => {
     expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(card('Linked')).toBeDefined();
     expect(within(tabs()).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
-    expect(within(tools()).getAllByRole('button')).toHaveLength(7);
+    expect(within(tools()).getAllByRole('button')).toHaveLength(5);
     screen.getByRole('button', { name: 'More session actions' });
     screen.getByRole('button', { name: 'Refresh session' });
   });
@@ -108,16 +108,18 @@ describe('r4 session rail scenes', () => {
     ).toBe('false');
   });
 
-  it('r4-rail-tools-open presses Context while its drawer is open', async () => {
+  it('r4-rail-tools-open shows the Context tab with every section, the cards and Ask', async () => {
     await mount('r4-rail-tools-open');
 
-    expect(useAppStore.getState().drawer?.kind).toBe('context');
+    expect(useAppStore.getState().drawer).toBeNull();
+    const tab = screen.getByTestId('context-tab');
+    within(tab).getByRole('region', { name: 'Goal' });
+    within(tab).getByRole('region', { name: 'Ask' });
+    within(tab).getByRole('group', { name: 'Projects' });
     const pressed = within(tools())
       .getAllByRole('button')
-      .filter((button) => button.getAttribute('aria-pressed') === 'true')
-      .map((button) => button.getAttribute('aria-label'));
-    expect(pressed).toEqual(['Context']);
-    expect(document.querySelector('[data-slot="page-trail"]')).toBeNull();
+      .filter((button) => button.getAttribute('aria-pressed') === 'true');
+    expect(pressed).toEqual([]);
   });
 
   it('r4-rail-tree draws many branches one line each in rank order, with the finished ones folded', async () => {

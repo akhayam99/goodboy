@@ -23,6 +23,7 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 import { sessionPlace } from '../../store/slices/navigation/place';
+import { selectIsContextTabOpen } from '../../store/slices/contextDrawer/selectIsContextTabOpen';
 import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { DrawerHost } from '../../app/components/DrawerHost';
@@ -80,18 +81,20 @@ const paneToggles = (): ReadonlyArray<Element> =>
 const drawerKind = (): string | null => useAppStore.getState().drawer?.kind ?? null;
 
 describe('session tools rows stay reachable', () => {
-  it('Ask beside any page: the tools stay the same on the Overview and on Agents', async () => {
+  it('Ask lives in the Context tab: ask.open lands there and the tools hold no Ask button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await press('Ask this session');
-    expect(drawerKind()).toBe('ask');
+    act(() => useAppStore.getState().openAsk({ sessionId }));
+    await settle();
+    expect(drawerKind()).toBeNull();
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(true);
 
     act(() => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
     });
     await settle();
-    expect(within(tools()).getByRole('button', { name: 'Ask this session' })).toBeDefined();
+    expect(within(tools()).queryByRole('button', { name: 'Ask this session' })).toBeNull();
     expect(paneToggles()).toEqual([]);
   });
 

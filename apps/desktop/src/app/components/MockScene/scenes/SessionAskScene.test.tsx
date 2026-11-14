@@ -41,15 +41,14 @@ const renderState = async (state: string) => {
       <SessionAskScene />
     </ToastProvider>,
   );
-  return screen.findByTestId('pane-toggle-ask');
+  return screen.findByRole('region', { name: 'Ask' });
 };
 
 const askDrawer = () => screen.getByRole('region', { name: 'Ask' });
 
 describe('the session Ask scene', () => {
-  it('opens from the trail band with questions to try and no Right now strip', async () => {
-    const trigger = await renderState('rightnow');
-    expect(trigger.getAttribute('aria-pressed')).toBe('true');
+  it('opens in the Context tab with questions to try and no Right now strip', async () => {
+    await renderState('rightnow');
     const suggestions = within(screen.getByRole('region', { name: 'Try asking' }));
     expect(suggestions.getAllByRole('button').length).toBeGreaterThan(0);
     expect(screen.queryByTestId('ask-right-now')).toBeNull();
@@ -57,32 +56,32 @@ describe('the session Ask scene', () => {
     expect(within(askDrawer()).getByText('Read only')).toBeDefined();
   });
 
-  it('opens the drawer with no scope chip, with its own glyph and tooltip name', async () => {
-    const trigger = await renderState('rightnow');
+  it('opens with no scope chip', async () => {
+    await renderState('rightnow');
     expect(within(askDrawer()).queryByTestId('ask-scope')).toBeNull();
-    expect(trigger.getAttribute('aria-label')).toBe('Ask this session');
   });
 
   it('says what Ask is above the questions to try, and drops it once a turn exists', async () => {
     await renderState('rightnow');
     await within(askDrawer()).findByRole('heading', { name: 'Ask this session' });
-    within(askDrawer()).getByText('What it did, what it found, what waits on you.');
+    within(askDrawer()).getByText(/^What it did, what it found, what waits on you\./);
     cleanup();
     await renderState('answer');
     expect(within(askDrawer()).queryByRole('heading', { name: 'Ask this session' })).toBeNull();
   });
 
-  it('closes and reopens from the trail button', async () => {
-    const trigger = await renderState('closed');
-    expect(trigger.getAttribute('aria-pressed')).toBe('false');
+  it('stays on the Overview until Ask is opened, then lands in the Context tab', async () => {
+    window.history.replaceState(null, '', '/?scene=session-ask&state=closed');
+    render(
+      <ToastProvider>
+        <SessionAskScene />
+      </ToastProvider>,
+    );
+    await screen.findByTestId('overview-title');
     expect(screen.queryByRole('region', { name: 'Ask' })).toBeNull();
-    fireEvent.click(trigger);
-    expect(useAppStore.getState().drawer).toEqual({
-      kind: 'ask',
-      sessionId: SESSION.id,
-      payload: null,
-    });
-    fireEvent.click(trigger);
+    act(() => useAppStore.getState().openAsk({ sessionId: SESSION.id }));
+    expect(await screen.findByRole('region', { name: 'Ask' })).toBeDefined();
+    expect(useAppStore.getState().activeLens[SESSION.id]).toBe('context');
     expect(useAppStore.getState().drawer).toBeNull();
   });
 
@@ -127,25 +126,18 @@ describe('the session Ask scene', () => {
     if (questionChip === null) {
       throw new Error('no question chip');
     }
-    expect(screen.getByTestId('overview-title')).toBeDefined();
     act(() => {
       fireEvent.click(questionChip);
     });
     expect(useAppStore.getState().activeLens[SESSION.id]).toBe('questions');
-    expect(
-      screen
-        .queryAllByTestId('overview-title')
-        .filter((title) => title.closest('[style*="display: none"]') === null),
-    ).toHaveLength(0);
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'question',
       sessionId: SESSION.id,
-      payload: { from: 'ask' },
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Back to Ask' }));
+      useAppStore.getState().closeQuestion();
     });
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
+    expect(useAppStore.getState().activeLens[SESSION.id]).toBe('context');
     expect(askDrawer()).toBeDefined();
   });
 
@@ -171,9 +163,8 @@ describe('the session Ask scene', () => {
     ).toBeDefined();
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'question',
-      payload: { questionId, from: 'ask' },
+      payload: { questionId },
     });
-    expect(screen.getByRole('button', { name: 'Back to Ask' })).toBeDefined();
   });
 
   it('opens a plan inside Ask under Back to answer, and Esc goes back', async () => {
@@ -183,7 +174,6 @@ describe('the session Ask scene', () => {
     expect(screen.queryByPlaceholderText('Ask about this session…')).toBeNull();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(await screen.findByTestId('ask-answer')).toBeDefined();
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask' });
   });
 
   it('a palette reset inside a plan restores the composer', async () => {

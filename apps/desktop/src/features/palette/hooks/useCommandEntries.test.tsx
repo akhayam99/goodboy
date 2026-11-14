@@ -245,7 +245,7 @@ describe('the palette entries for new things', () => {
     expect(entryKeys()).not.toContain('action:ask-reset');
 
     act(() => {
-      useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+      useAppStore.getState().openAsk({ sessionId: SESSION_ID });
     });
 
     expect(entryKeys()).toContain('action:ask-reset');
@@ -253,7 +253,7 @@ describe('the palette entries for new things', () => {
 
   it('omits New question while Ask is streaming', () => {
     act(() => {
-      useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+      useAppStore.getState().openAsk({ sessionId: SESSION_ID });
       useAppStore.setState({
         askThreads: {
           [SESSION_ID]: [
@@ -286,7 +286,7 @@ describe('the palette entries for new things', () => {
 
   it('resets the Ask chat from the palette', () => {
     act(() => {
-      useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+      useAppStore.getState().openAsk({ sessionId: SESSION_ID });
       useAppStore.setState({ askThreadId: { [SESSION_ID]: THREAD_ID } });
     });
     const { result } = renderHook(() => useCommandEntries(), { wrapper });

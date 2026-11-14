@@ -20,9 +20,17 @@ type Props = {
   readonly isStopping: boolean;
   readonly onSend: (question: string) => Promise<boolean>;
   readonly onStop: () => void;
+  readonly isAutoFocused?: boolean;
 };
 
-export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop }: Props) => {
+export const AskComposer = ({
+  sessionId,
+  isStreaming,
+  isStopping,
+  onSend,
+  onStop,
+  isAutoFocused = true,
+}: Props) => {
   const threadId = useAppStore((state) => state.askThreadId[sessionId] ?? null);
   const text = useAppStore(
     (state) => state.askDrafts[askDraftKeyOf({ sessionId, threadId })] ?? '',
@@ -34,10 +42,12 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
 
   useEffect(() => {
     const focus = () => fieldRef.current?.querySelector('textarea')?.focus();
-    focus();
+    if (isAutoFocused) {
+      focus();
+    }
     window.addEventListener(ASK_FOCUS_EVENT, focus);
     return () => window.removeEventListener(ASK_FOCUS_EVENT, focus);
-  }, []);
+  }, [isAutoFocused]);
 
   const restoreText = ({ sent }: RestoreTextParams): void => {
     const { askThreadId, askDrafts } = useAppStore.getState();
@@ -56,7 +66,7 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
       isStreaming={isStreaming}
       isStopping={isStopping}
       isImagesOn={false}
-      isAutoFocused
+      isAutoFocused={isAutoFocused}
       minRows={1}
       maxRows={6}
       fieldRef={fieldRef}

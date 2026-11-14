@@ -246,13 +246,13 @@ const expectCentredColumns = (): void => {
 };
 
 const expectAskInToolColumn = (): void => {
-  const ask = shown('[data-testid="pane-toggle-ask"]');
+  const tool = shown('[data-testid="pane-toggle-scripts"]');
   expect(
-    ask?.closest('[role="toolbar"][aria-label="Tools"]'),
-    'Ask sits in the session tools column',
+    tool?.closest('[role="toolbar"][aria-label="Tools"]'),
+    'Scripts sits in the session tools column',
   ).not.toBeNull();
-  expect(ask?.closest('[role="tablist"][aria-label="Session pages"]') ?? null).toBeNull();
-  expect(ask?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
+  expect(tool?.closest('[role="tablist"][aria-label="Session pages"]') ?? null).toBeNull();
+  expect(tool?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
   expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
 
@@ -289,7 +289,6 @@ const drawerRequests = (sessionId: SessionId): ReadonlyArray<DrawerRequest> => {
   const mount = state.sessionProjectMounts[sessionId]?.[0];
   return [
     { kind: 'context', sessionId, payload: { section: 'goal', view: 'current' } },
-    { kind: 'ask', sessionId, payload: null },
     {
       kind: 'scriptRun',
       sessionId,
@@ -403,7 +402,7 @@ type AskChipTarget = {
 };
 
 const askChipAwayFrom = async ({ lens }: { readonly lens: string }): Promise<AskChipTarget> => {
-  const answer = await screen.findByTestId('ask-answer', undefined);
+  const answer = await screen.findByTestId('ask-answer');
   const chips = Array.from(answer.querySelectorAll<HTMLElement>('[data-ask-kind]'));
   const found = chips
     .map((chip) => ({
@@ -968,22 +967,18 @@ describe('moving across every place keeps one frame', () => {
         expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       }
 
-      await press('ask.open');
-      await waitFor(() => expect(openDrawerKind()).toBe('ask'));
-      await waitFor(() => expect(focusOwner()).toBe('drawer'));
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      const askEdge = leftEdge();
       act(() => seedSessionAsk({ state: 'answer', session: currentSession(sessionId) }));
       await settle();
-      const chip = await askChipAwayFrom({ lens: 'branch' });
-      await click(chip.button);
-      expect(openDrawerKind()).toBe('ask');
-      expect(lensOf()).toBe(chip.lens);
-      expect(leftEdge().main).toBe(askEdge.main);
-      await click(historyButton('Back'));
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      await escape();
       expect(openDrawerKind()).toBeNull();
+      expectPlace({ session: sessionId, lens: 'context', studio: null, doors: [] });
+      const chip = await askChipAwayFrom({ lens: 'context' });
+      await click(chip.button);
+      expect(lensOf()).toBe(chip.lens);
+      await click(historyButton('Back'));
+      expectPlace({ session: sessionId, lens: 'context', studio: null, doors: [] });
+      await openPage('Branch');
+      await click(getSection(/^Comments/));
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
 
       const edge = leftEdge();
       for (const request of drawerRequests(sessionId)) {
@@ -1006,7 +1001,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      expect(currentPage()).toBe('Overview');
+      await waitFor(() => expect(currentPage()).toBe('Overview'), { timeout: 3000 });
 
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });

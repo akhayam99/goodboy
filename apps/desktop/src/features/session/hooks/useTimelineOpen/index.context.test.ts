@@ -5,6 +5,7 @@ import { cleanup, renderHook } from '@testing-library/react';
 import { brandId, type IsoDateTime, type SessionEventId, type SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { importStore, resetStoryStore, type StoryStore } from '../../../../store/storyHarness';
+import { currentStack } from '../../../../store/slices/navigation/currentStack';
 import type { TimelineEventEntry } from '../../timeline/buildTimelineGroups';
 import { useTimelineOpen } from '.';
 
@@ -27,7 +28,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('Context links from the log', () => {
-  it('opens the Decisions section without a Context page address', () => {
+  it('opens the Decisions section in the Context tab', () => {
     const entry: TimelineEventEntry = {
       kind: 'event',
       id: 'event-harborline',
@@ -44,10 +45,11 @@ describe('Context links from the log', () => {
     const target = result.current({ entry });
     expect(target?.label).toBe('Open decisions');
     target?.open();
-    expect(store.getState().activeLens[SESSION_ID] ?? null).toBeNull();
-    expect(store.getState().drawer).toMatchObject({
-      kind: 'context',
-      payload: { section: 'decisions' },
+    expect(store.getState().activeLens[SESSION_ID] ?? null).toBe('context');
+    expect(store.getState().drawer).toBeNull();
+    const stack = currentStack(store.getState());
+    expect(stack.entries[stack.index]?.focus.returnRows).toMatchObject({
+      'context.section': 'decisions',
     });
   });
 });
