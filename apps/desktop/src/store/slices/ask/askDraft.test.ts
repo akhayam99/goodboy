@@ -53,7 +53,7 @@ describe('the Ask draft', () => {
     });
   });
 
-  it('survives leaving the Context tab and coming back to Ask', () => {
+  it('survives closing the Ask panel and opening it again', () => {
     useAppStore.getState().openAsk({ sessionId: SESSION });
     useAppStore
       .getState()
