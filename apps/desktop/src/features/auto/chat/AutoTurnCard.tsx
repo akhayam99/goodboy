@@ -38,7 +38,9 @@ export const AutoTurnCard = ({ delegations, replies = [], children }: Props) => 
         <span className="text-row text-foreground">{head.name}</span>
         <span className="min-w-0 truncate text-meta text-faint-foreground">{head.meta}</span>
         <span className="flex-1" />
-        <span className={cn('shrink-0 text-meta', wordClassOf({ head }))}>{head.word}</span>
+        {head.isWordShown ? (
+          <span className={cn('shrink-0 text-meta', wordClassOf({ head }))}>{head.word}</span>
+        ) : null}
       </div>
       {replies.map((reply) => (
         <AutoCardReply key={reply.key} reply={reply} />

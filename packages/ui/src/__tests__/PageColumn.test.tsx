@@ -46,6 +46,26 @@ describe('PageColumn', () => {
     );
   });
 
+  it('caps a reading column at the measure and starts it on the left edge of the column', () => {
+    render(
+      <PageColumn width="reading">
+        <p>Transcript</p>
+      </PageColumn>,
+    );
+    const classes = classesOf('Transcript');
+
+    expect(classes).toEqual(
+      expect.arrayContaining([
+        'mx-auto',
+        'w-full',
+        'max-w-[var(--column-frame)]',
+        'pl-6',
+        'pr-[max(1.5rem,calc(min(100%,var(--column-frame))-var(--measure-frame)+1.5rem))]',
+        '@max-[720px]:px-4',
+      ]),
+    );
+  });
+
   it('keeps the gutter but drops the cap and the centring when it is full width', () => {
     render(
       <PageColumn width="full">

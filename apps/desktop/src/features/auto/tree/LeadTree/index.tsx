@@ -85,7 +85,7 @@ export const LeadTree = ({
       tabIndex={0}
       data-testid="lead-tree"
       data-density={density}
-      className="flex min-w-0 flex-col gap-0.5 outline-none"
+      className="group/tree flex min-w-0 flex-col gap-0.5 outline-none"
       onKeyDown={onKeyDown}
     >
       {items.map((item) => {
@@ -117,7 +117,6 @@ export const LeadTree = ({
               depth={item.depth}
               label={item.label}
               isOpen={item.isOpen}
-              spendUsd={item.spendUsd}
               isActive={isActive}
               onToggle={onToggleFold}
             />

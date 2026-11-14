@@ -77,7 +77,8 @@ describe('PAGE_MEASURE', () => {
     const measureOf = (width: PageColumnWidth) =>
       FRAME_PAGES.filter((page) => PAGE_MEASURE[page] === width);
 
-    expect(measureOf('measure')).toEqual(['agent', 'chat']);
+    expect(measureOf('measure')).toEqual(['chat']);
+    expect(measureOf('reading')).toEqual(['agent']);
     expect(measureOf('full')).toEqual(['board', 'terminal', 'browser']);
     expect(PAGE_MEASURE.overview).toBe(PAGE_MEASURE.runs);
     expect(Object.keys(PAGE_MEASURE).sort()).toEqual([...FRAME_PAGES].sort());

@@ -16,9 +16,16 @@ type Props = {
   readonly sessionId: SessionId;
   readonly brief?: string | null;
   readonly heading?: string;
+  readonly isInline?: boolean;
 };
 
-export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) => {
+export const AgentTitle = ({
+  agent,
+  sessionId,
+  brief = null,
+  heading,
+  isInline = false,
+}: Props) => {
   const [isBriefOpen, setIsBriefOpen] = useState(false);
   const renameAgent = useAppStore((state) => state.renameAgent);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
@@ -45,7 +52,8 @@ export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) =
           onBlur={rename.onBlur}
           aria-invalid={rename.error !== null}
           className={cn(
-            'w-full min-w-0 rounded-md bg-background px-2 py-0.5 text-title text-foreground outline-none ring-1',
+            'w-full min-w-0 rounded-md bg-background px-2 py-0.5 text-foreground outline-none ring-1',
+            isInline ? 'text-meta' : 'text-title',
             rename.error !== null ? 'ring-danger' : 'ring-primary',
           )}
         />
@@ -58,6 +66,14 @@ export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) =
     heading ??
     (kind === 'resolver' && isAutoResolverName({ name: agent.name }) ? fixRunName : null) ??
     agentHeadingOf({ name: agentDisplayName({ name: agent.name, kind }), kind, brief });
+
+  if (brief !== null && displayName === brief && isInline) {
+    return (
+      <TruncatedText className="min-w-0 truncate" onDoubleClick={rename.start}>
+        {firstLineOf({ text: brief }) ?? brief}
+      </TruncatedText>
+    );
+  }
 
   if (brief !== null && displayName === brief) {
     return (
