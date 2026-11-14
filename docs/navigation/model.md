@@ -489,9 +489,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   the same after a reload, in a second window and from a link. History Back
   (⌘[) walks this window's stack of 50 and is empty after a reload. A top
   agent (a root agent at `s/{session}/workflows/agent/{agent}`, the one page
-  `canonicalAgent` resolves for every door) goes back to the session Overview,
-  and `upTo` writes its id into `focus.returnRows['board.lead']` so the board
-  brings its row into view; opened from the Work tab of a pull request it goes
+  `canonicalAgent` resolves for every door) goes back to Runs, the list that holds
+  it, so its crumbs read `Overview › Runs › {run}` like a workflow run; when an up
+  lands on the Overview, `upTo` writes the agent it left into
+  `focus.returnRows['board.lead']` so the board brings its row into view; opened from the Work tab of a pull request it goes
   back to that tab, read from `focus.runGroup`, which the window layout saves.
   A session tab (Overview, Runs, Artifacts, Questions, Context) is the top of
   its session and has no crumbs; a file open in a branchless session's Changes

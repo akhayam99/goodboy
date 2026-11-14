@@ -667,8 +667,11 @@ activity yet show the plain overview with its actions.
 - **Every session place below a tab draws the crumbs in place of the tab strip.**
   `crumbsOf` (store, navigation) walks `parentPlace` from the open place up to the session
   and prepends the Overview, drawn as `Overview` (`NAMES.overview`). In the examples below
-  read `Session` as that first crumb. A main agent reads `Session ›
-{agent}`, a sub agent `Session › {parent agent} › {agent}`, a run `Session › Runs ›
+  read `Session` as that first crumb. A main agent reads `Session › Runs ›
+{agent}`, a sub agent `Session › Runs › {parent agent} › {agent}`; an agent Auto started
+  that still has its role name reads `{Role} · {short task}` (`agentTaskLabelOf`: the role noun
+  and the first sentence of its task through `taskTitleOf`, never the raw prompt; the head
+  draws the task middle cut, the full brief one click away), a run `Session › Runs ›
 {run title}` (the run's title, else its workflow's name, else `Run`), a run step adds its
   step names, an artifact `Session › Artifacts › {artifact title}`, a branch or pull request
   `Session › {branch name}` (one crumb with a file or a thread open), a GitHub issue, a linked

@@ -562,7 +562,7 @@ describe('navigation slice', () => {
 
   it('goes up with a back when the previous voice is the parent', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().amendFocus({ patch: { scroll: { list: 300 } } });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     store.getState().up();
@@ -575,10 +575,10 @@ describe('navigation slice', () => {
 
   it('goes up with a clean push when the user did not come from the parent', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     store.getState().up();
-    expect(keyOf(store)).toBe(`s/${S1}`);
+    expect(keyOf(store)).toBe(`s/${S1}/workflows`);
     expect(store.getState().navigation[WS]?.entries).toHaveLength(4);
   });
 
