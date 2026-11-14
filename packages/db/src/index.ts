@@ -817,7 +817,6 @@ export {
   type AutoRestingPhase,
   type SetAutoTreeCapOutcome,
   type AutoPhase,
-  type AutoStopState,
   type AutoTree,
   type AutoTreeExpectation,
   type AutoTreePhaseOutcome,
@@ -827,6 +826,7 @@ export {
   type NewAutoTree,
 } from './queries/auto-trees';
 export { countLiveAutoTrees } from './queries/auto-live-trees';
+export { listAutoWorkTreesOfWorkspace, type AutoWorkTree } from './queries/auto-work-trees';
 export {
   AUTO_ADMISSION_TREE_ABORT,
   AUTO_RESUME_TREE_ABORT,
