@@ -44,6 +44,7 @@ const STUDIO_KINDS: ReadonlyArray<StudioKind> = [
   'guide',
   'addWorkspace',
   'workflow',
+  'work',
   'inbox',
   'impact',
   'changelog',

@@ -61,7 +61,7 @@ in `studioMeta.ts`).
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows the opaque skeleton of that page
   (`STUDIO_META[kind].skeleton`, drawn through `PageSkeleton` on the page's header
-  inset and measure): `rows` (Tasks, Workflows, Monitoring, Notifications, Settings,
+  inset and measure): `rows` (Tasks, Work, Workflows, Monitoring, Notifications, Settings,
   Add workspace), `prose` (the guide, What's new), `room` (Chat), `terminal` and
   `cards` (Impact), with a rail skeleton where the page has a rail. With no
   studio open, no frame node exists, so nothing covers the page.

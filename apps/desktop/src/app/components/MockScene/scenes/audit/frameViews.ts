@@ -28,6 +28,9 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
     case 'shortcuts':
       openers.openShortcutHelp();
       return;
+    case 'work':
+      openers.openWork();
+      return;
     case 'workflows':
       openers.openWorkflows();
       return;

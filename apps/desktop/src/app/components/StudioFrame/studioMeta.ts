@@ -65,6 +65,15 @@ export const STUDIO_META = {
     skeleton: { shape: 'rows', hasRail: false },
     canHostDrawer: true,
   },
+  work: {
+    icon: CONCEPT_ICONS.work,
+    tone: CONCEPT_TONE.work,
+    title: NAMES.work,
+    close: 'none',
+    tier: 'column',
+    page: 'work',
+    skeleton: { shape: 'rows', hasRail: false },
+  },
   inbox: {
     icon: CONCEPT_ICONS.inbox,
     tone: CONCEPT_TONE.inbox,

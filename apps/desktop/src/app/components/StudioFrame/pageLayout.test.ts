@@ -19,6 +19,7 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
   { page: 'inbox', files: ['features/inbox/components/InboxStudio/index.tsx'] },
   { page: 'chat', files: ['features/workspace-chat/components/ChatRoom/ChatHeader.tsx'] },
   { page: 'workflows', files: ['features/workflows/components/WorkflowsPanel/index.tsx'] },
+  { page: 'work', files: ['features/work/components/WorkPage/index.tsx'] },
   {
     page: 'terminal',
     files: ['features/terminal/components/TerminalStudio/TerminalStudioBody.tsx'],
@@ -111,6 +112,7 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   board: 'full',
   inbox: 'column',
   chat: 'measure',
+  work: 'column',
   workflows: 'column',
   terminal: 'full',
   browser: 'full',
@@ -169,6 +171,7 @@ const SKELETON_BODY_OF: Readonly<Record<keyof typeof STUDIO_META, string>> = {
   guide: 'prose',
   addWorkspace: 'rows',
   workflow: 'rows',
+  work: 'rows',
   inbox: 'rows',
   impact: 'cards',
   changelog: 'prose',

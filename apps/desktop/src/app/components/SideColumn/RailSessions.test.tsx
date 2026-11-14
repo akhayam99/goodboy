@@ -40,6 +40,7 @@ let realNavigate: ReturnType<StoryStore['getState']>['navigate'];
 const actions = (): ColumnActions => ({
   openBoard: vi.fn(),
   openInbox: vi.fn(),
+  openWork: vi.fn(),
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openNewChat: vi.fn(),

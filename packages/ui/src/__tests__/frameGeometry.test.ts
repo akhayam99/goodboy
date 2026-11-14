@@ -44,6 +44,7 @@ describe('frameGeometryOf', () => {
       'questions',
       'inbox',
       'chat',
+      'work',
       'workflows',
       'terminal',
       'monitoring',

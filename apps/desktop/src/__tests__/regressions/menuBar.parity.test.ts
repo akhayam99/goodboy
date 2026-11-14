@@ -164,7 +164,9 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
   it('lists the Go menu destinations in the destination list order', () => {
     const block = /const GO_ROWS: &\[Row\] = &\[([\s\S]*?)\n\];/.exec(source)?.[1] ?? '';
     const goIds = [...block.matchAll(/\bcommand\(\s*"([^"]+)"/g)].map(([, id = '']) => id);
-    const paged = DESTINATIONS.filter(({ home }) => home !== 'foot');
+    const paged = DESTINATIONS.filter(
+      ({ home, menuId }) => home !== 'foot' && menuId !== undefined,
+    );
     expect(goIds).toEqual(['nav.back', 'nav.forward', ...paged.map(({ menuId }) => menuId)]);
   });
 
@@ -203,7 +205,9 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
     expect(labels.find(({ id }) => id === 'session.board')?.label).toBe(
       SHORTCUTS['session.board'].label,
     );
-    const drift = DESTINATIONS.filter(({ home }) => home !== 'foot').filter(
+    const drift = DESTINATIONS.filter(
+      ({ home, menuId }) => home !== 'foot' && menuId !== undefined,
+    ).filter(
       ({ menuId, label, home }) =>
         labels.find(({ id }) => id === menuId)?.label !==
         (home === 'rail' ? `Show or Hide ${label}` : label),

@@ -25,7 +25,7 @@ import { OPEN_REPORT_SHEET_EVENT } from '../../../features/bug-report/openReport
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { ColumnRail } from './ColumnRail';
 import { SideColumn } from './index';
-import { COLUMN_DOORS, type ColumnActions } from './columnDoors';
+import { columnDoorsOf, type ColumnActions } from './columnDoors';
 import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
@@ -35,6 +35,7 @@ let useAppStore: StoryStore;
 const actions = (): ColumnActions => ({
   openBoard: vi.fn(),
   openInbox: vi.fn(),
+  openWork: vi.fn(),
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openNewChat: vi.fn(),
@@ -317,11 +318,25 @@ describe('SideColumn', () => {
     expect(plus.closest('[class*="opacity-0"]')).toBeNull();
   });
 
+  it('shows the Work door with its New badge only while the switch is on', () => {
+    mountColumn({ place: 'board' });
+    expect(doorNames(navLayer())).not.toContain('work');
+    cleanup();
+
+    useAppStore.setState({ settings: { 'work.enabled': 'true' } });
+    mountColumn({ place: 'board' });
+
+    expect(doorNames(navLayer())).toContain('work');
+    expect(
+      navLayer().querySelector('[data-column-door-row="work"]')?.textContent?.includes('New'),
+    ).toBe(true);
+  });
+
   it('gives every door the same signal slot and action slot so trailing info shares an edge', () => {
     mountColumn({ place: 'board' });
     const nav = navLayer();
 
-    for (const { id } of COLUMN_DOORS) {
+    for (const { id } of columnDoorsOf({ isWork: false })) {
       const door = nav.querySelector(`[data-column-door-row="${id}"] [data-column-door]`);
       expect(door?.querySelectorAll('[data-door-slot="signal"]')).toHaveLength(1);
       expect(door?.querySelectorAll('[data-door-slot="action"]')).toHaveLength(1);
