@@ -412,10 +412,11 @@ draft is not there yet, so the Commits count is a number on the Comments section
 pull request page and the session's Changes shortcut). On Changes the header and the diff stay on
 the 960 column of every other section (`PAGE_MEASURE.branchChanges` is `column`), and the file
 list is its own full height column on the left of the page, the mirror of the Agents column of a
-run page: `useBranchRailSlot` hands `ChangesPage` the frame's left slot (`data-session-lead` of
-`SessionHeadFrame`, or the Branch page's own `data-branch-lead` outside a session frame) and the
-rail, a page `StudioRailLayout` (`surface` `changes-files`), is portaled there while the page is
-shown, with a border on its right. Its first row (Hide files, then `Changed N | All files` with
+run page: `BranchPaneRoot` reads the frame's left slot through `useBranchRailSlot`
+(`data-session-lead` of `SessionHeadFrame`, or the Branch page's own `data-branch-lead` outside a
+session frame) and hands it to `ChangesPage` (`BranchRailSlotContext`). The rail, a page
+`StudioRailLayout` (`surface` `changes-files`), is portaled there only while the page is on
+screen (`HeadSlotsGate` gives a hidden layer no left slot), with a border on its right. Its first row (Hide files, then `Changed N | All files` with
 the diff totals, `ModeControl`) sits on the session title line, and the rail and the diff scroll
 on their own. The diff column keeps the toolbar's own inset (`ToolbarRow`, 40 high), so the scope
 pill, the file headers and the Branch title start on one x. The toolbar reads the scope
