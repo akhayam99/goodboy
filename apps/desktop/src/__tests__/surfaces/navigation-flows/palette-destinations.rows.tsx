@@ -89,12 +89,6 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'Refresh session'),
   },
   {
-    name: 'palette: Hide session pages',
-    covers: ['palette:Hide session pages'],
-    open: () => openPalette(/^Hide session pages/, 'hide session pages'),
-    lands: () => visible('button', 'Show session pages'),
-  },
-  {
     name: 'palette: Board',
     covers: ['navigate', 'palette:Board'],
     open: () => openPalette(/^Board$/),

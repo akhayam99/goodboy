@@ -38,5 +38,8 @@ export const seedReadmeHero = (): void => {
   seedBrandLimits();
   seedHeroAgents();
   seedHeroGoal();
+  useAppStore.setState((state) => ({
+    activeLens: { ...state.activeLens, [SESSION_ID]: 'context' },
+  }));
   openContext();
 };

@@ -1,7 +1,7 @@
 import type { Session } from '@goodboy/types';
 import { shellArrangement } from '../../../../../shellArrangement';
 import { ShellLeft } from '../../../../SideColumn/ShellLeft';
-import { SessionFrame } from '../../../../SessionRail/SessionFrame';
+import { SessionContextCards } from '../../../../SessionContextCards';
 import { useSceneShell } from '../../useSceneShell';
 
 const COLUMN_WIDTH = 244;
@@ -27,9 +27,7 @@ export const SidebarColumns = ({ session }: Props) => {
         />
       </div>
       <div style={{ width: COLUMN_WIDTH }}>
-        <SessionFrame session={session}>
-          <div />
-        </SessionFrame>
+        <SessionContextCards session={session} />
       </div>
     </div>
   );

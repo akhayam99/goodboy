@@ -57,12 +57,14 @@ const mount = async (name: SceneName): Promise<void> => {
 };
 
 const level = () => {
-  const layer = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
+  const layer = document.querySelector<HTMLElement>('[data-level-layer="session"]');
   if (layer === null) {
     throw new Error('the scene shows no session level');
   }
   return within(layer);
 };
+
+const SESSION_ROWS_SCENE = 'c04-session-worktrees';
 
 const entry = async (name: RegExp): Promise<void> => {
   fireEvent.click(stripTab({ name }));
@@ -70,7 +72,10 @@ const entry = async (name: RegExp): Promise<void> => {
 };
 
 const worktreeMenu = async (): Promise<ReadonlyArray<string>> => {
-  const dots = level().getByRole('button', { name: /actions$/ });
+  const [dots] = level().getAllByRole('button', { name: /actions$/ });
+  if (dots === undefined) {
+    throw new Error('the session level draws no worktree menu');
+  }
   fireEvent.contextMenu(dots.closest('[data-worktree-actions]')?.parentElement ?? dots);
   await advance();
   return screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
@@ -137,7 +142,9 @@ describe('Branch page capabilities from the branch tree', () => {
     expect(labels.some((label) => /Copy branch name/.test(label))).toBe(false);
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     await advance();
+    cleanup();
 
+    await mount(SESSION_ROWS_SCENE);
     const worktree = await worktreeMenu();
     expect(worktree.some((label) => /Copy branch name/.test(label))).toBe(true);
   });
@@ -185,7 +192,7 @@ describe('Branch page capabilities from the branch tree', () => {
     expect(rail.getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
     expect(rail.getByRole('button', { name: 'Filter and group files' })).toBeDefined();
     expect(rail.getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
-    expect(level().queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    expect(document.querySelector('[data-level-layer="session"]')).toBeNull();
   });
 
   it('Commits and Checks open their bodies from their entries', async () => {
@@ -200,7 +207,7 @@ describe('Branch page capabilities from the branch tree', () => {
 
 describe('branch actions from the branch row', () => {
   it('the worktree menu holds Switch branch, Link work to this branch, copy and editor actions', async () => {
-    await mount('c04-worktree-pr-draft');
+    await mount(SESSION_ROWS_SCENE);
 
     const labels = await worktreeMenu();
 
@@ -219,7 +226,7 @@ describe('branch actions from the branch row', () => {
   });
 
   it('Switch branch opens the switch panel under the row', async () => {
-    await mount('c04-worktree-pr-draft');
+    await mount(SESSION_ROWS_SCENE);
 
     await worktreeMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: /Switch branch/ }));

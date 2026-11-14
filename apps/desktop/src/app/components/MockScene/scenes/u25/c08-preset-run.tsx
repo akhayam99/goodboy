@@ -14,5 +14,4 @@ export const U25_C08_PRESET_RUN_SCENES = {
   'c08-run-archived': () => <C08RunScene state="archived" selection="overview" />,
   'c08-run-menu': () => <C08RunScene state="working" selection="overview" click="menu" />,
   'c08-run-add-step': () => <C08RunScene state="done" selection="overview" click="addStep" />,
-  'c08-run-folded': () => <C08RunScene state="working" selection="implementer" isFolded />,
 } satisfies Readonly<Record<string, ComponentType>>;

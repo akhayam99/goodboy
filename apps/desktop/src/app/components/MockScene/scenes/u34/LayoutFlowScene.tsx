@@ -5,7 +5,6 @@ import { SessionOverviewPane } from '../../../../../features/session/components/
 import { useAppStore } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { shellArrangement } from '../../../../shellArrangement';
-import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
 import { DrawerHost } from '../../../DrawerHost';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
@@ -50,7 +49,6 @@ export const LayoutFlowScene = ({
   const drawer = useAppStore((state) => state.drawer);
   const sizing = useAppStore(selectDrawerSizing);
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, isFolded ? '1' : '0');
     seedRunningList();
     if (isFourBranches) {
       seedFourBranches();
@@ -64,7 +62,7 @@ export const LayoutFlowScene = ({
       useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION.id, payload: null });
     }
     setIsReady(true);
-  }, [isDrawerOpen, isFolded, isFourBranches]);
+  }, [isDrawerOpen, isFourBranches]);
   if (!isReady) {
     return null;
   }

@@ -251,6 +251,14 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
       }
       await click(target);
     },
-    lands: lens(null),
+    lands: async (ctx) => {
+      await waitFor(
+        () =>
+          expect(['context', null]).toContain(
+            useAppStore.getState().activeLens[ctx.sessionId] ?? null,
+          ),
+        WAIT,
+      );
+    },
   },
 ];

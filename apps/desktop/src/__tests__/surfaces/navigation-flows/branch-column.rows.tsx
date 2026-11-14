@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { waitFor, within } from '@testing-library/react';
 import type { MountId, SessionMountView, SessionProjectMount } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
 import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
@@ -13,6 +13,7 @@ import {
   getSection,
   openCrumb,
   settle,
+  sessionLevel,
   shownAll,
   useAppStore,
 } from './harness';
@@ -22,10 +23,6 @@ const SECOND_BRANCH = 'cs/second-branch';
 const SECOND_PATH = '/work/cascade-second-branch';
 
 const trailBands = (): number => shownAll('main [data-slot="trail-bar"]').length;
-
-const currentWorktree = (): string =>
-  shownAll('[data-level-layer="session"]:not([inert]) [data-worktree-current]')[0]?.textContent ??
-  '';
 
 const headerColumn = (): string | null =>
   shownAll('[data-slot="pane-header"] [data-page-column]')[0]?.getAttribute('data-width') ??
@@ -115,15 +112,13 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'branch tree: a click on the row of a second branch moves the page to it on its landing tab, and the tree and header follow',
+    name: 'branch tree: a click on the row of a second branch in the Context tab moves the page to it on its landing tab, and the header follows',
     covers: ['navigate', 'rail:session-level'],
     open: async (ctx) => {
       addSecondBranch(ctx);
-      await openBranchPage();
-      await branchTab('pr')(ctx);
-      await visitTab(/^Changes/);
+      const level = await sessionLevel();
       await click(
-        await screen.findByRole(
+        await within(level).findByRole(
           'button',
           { name: (name) => name.startsWith(`${SECOND_BRANCH},`) || name === SECOND_BRANCH },
           WAIT,
@@ -144,7 +139,6 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
         WAIT,
       );
       await waitFor(() => expect(paneHeading()).toBe(SECOND_BRANCH), WAIT);
-      await waitFor(() => expect(currentWorktree()).toContain(SECOND_BRANCH), WAIT);
       expect(trailBands()).toBe(0);
     },
   },

@@ -9,7 +9,6 @@ import { DrawerHost } from '../../../DrawerHost';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
-import { useSceneRailFold } from '../useSceneRailFold';
 import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 import { showDemoNotice } from '../../demo/director/showDemoNotice';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
@@ -28,7 +27,6 @@ type Props = {
   readonly state: C08State;
   readonly selection: C08Selection | 'list';
   readonly click?: C08Click;
-  readonly isFolded?: boolean;
   readonly extra?: () => void;
   readonly isToolOpen?: boolean;
   readonly theme?: 'light' | 'dark';
@@ -76,7 +74,6 @@ export const C08RunScene = ({
   state,
   selection,
   click = 'none',
-  isFolded = false,
   extra,
   isToolOpen = false,
   theme,
@@ -85,7 +82,6 @@ export const C08RunScene = ({
   const session = useSessionById(C08_SESSION_ID);
   const sizing = useAppStore(selectDrawerSizing);
   const isDrawerOpen = useAppStore((current) => current.drawer !== null);
-  useSceneRailFold({ isFolded });
 
   useEffect(() => {
     if (theme !== undefined) {

@@ -70,8 +70,8 @@ const header = (): HTMLElement => nodeOf('[data-run-header-actions]');
 const checklist = (): HTMLElement => nodeOf('section[aria-label="Plan and progress"]');
 
 const currentPage = (): string | null =>
-  document.querySelector('[data-testid="session-pages"] [aria-current="page"]')?.textContent ??
-  null;
+  document.querySelector('[role="tablist"][aria-label="Session pages"] [aria-selected="true"]')
+    ?.textContent ?? null;
 
 describe('the c09 orchestrated scenes', () => {
   it('registers every scene in the mock registry', () => {

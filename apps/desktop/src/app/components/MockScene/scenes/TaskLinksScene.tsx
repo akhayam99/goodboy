@@ -4,13 +4,15 @@ import type { SessionExternalTask } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { SESSION, finishActivityRuns, seedActivityRunScene } from './activityRunSeed';
+import { SessionContextCards } from '../../SessionContextCards';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 
 type Props = {
   readonly state?: 'idle' | 'hover' | 'undo';
+  readonly isCardsShown?: boolean;
 };
 
-export const TaskLinksScene = ({ state = 'idle' }: Props) => {
+export const TaskLinksScene = ({ state = 'idle', isCardsShown = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     seedActivityRunScene();
@@ -90,7 +92,13 @@ export const TaskLinksScene = ({ state = 'idle' }: Props) => {
     <ShellFrame
       session={session}
       sidebar="expanded"
-      main={<SessionOverviewPane session={session} />}
+      main={
+        isCardsShown ? (
+          <SessionContextCards session={session} />
+        ) : (
+          <SessionOverviewPane session={session} />
+        )
+      }
     />
   );
 };

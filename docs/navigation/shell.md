@@ -12,7 +12,7 @@ skeleton: it is not true yet, no test fails on it, and the unit that makes it
 true turns it into a **holds** line and adds its guard in the same change. A
 unit that changes the skeleton edits this section first.
 
-1. **Left is where you go. Target.** Owned by The column and The session rail.
+1. **Left is where you go. Target.** Owned by The column and the session page tabs.
 2. **Right is what you hold. Holds.** The right rail sits at the sheet's right
    edge on every screen of a workspace: the session tools on a session page,
    Terminal and Browser at its foot everywhere. Terminal and Browser stay open
@@ -35,9 +35,9 @@ unit that changes the skeleton edits this section first.
 What holds today and is guarded:
 
 - **One selected sign.** A control lights from `isCurrent` and never from its
-  own state, in the column, the session rail, the session list, the Goodboy row
+  own state, in the column, the page tabs, the session list, the Goodboy row
   and the bell; every one of them reads the one column place (`useColumnPlace`),
-  New session included; the session rail reads the session pages sign
+  New session included; the page tabs read the session pages sign
   (`currentSignOf`). Every page except the New workspace flow names a place, so
   exactly one control is lit, and the open session is never lit under a page. `__tests__/navigation/oneDoor.test.ts`.
 - **One door for moves.** Only `navigate`, `back`, `forward`, `up` and
@@ -298,9 +298,8 @@ frames. A surface that needs a different frame changes the shared one instead of
 forking a second (`app/shellArrangement`, which every shell mount, the app and
 the mock scenes alike, reads). **The column never changes; a session adds one
 rail of its own.** The column is the workspace's navigation and looks the same
-on every screen. Inside a session the session rail (see Session rail) sits at
-the left of the page, inside the content sheet on the page background, and
-has one level, the session. No other surface
+on every screen. Inside a session the pages are page tabs (see Session page tabs)
+under the page title, inside the content sheet. No other surface
 adds a navigation column: filters or a list that belong to a page sit beside
 the detail as a page rail. The right drawer is context, never navigation. The
 right drawer holds reference material beside the page and closes with the pane
@@ -460,7 +459,7 @@ hide animation or overlay can move it.
 mounts editors and takes a title.
 
 **The Projects card of the session level shows which projects a session has
-materialized.** It lives in the session rail, not on the Overview, and always has
+materialized.** It lives in the Context tab, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
 row that folds its worktrees, each worktree folds its main pages one more
 indent in; a merged or closed worktree stays a row with its pull request
@@ -543,7 +542,7 @@ covered.
   bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
   units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
   door, the dock badge and Search or run; questions ("3 questions") on the
-  Questions entry of the session rail; items ("4 items need you") on the Overview card and
+  Questions tab; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
   row opens the session hover card (facts only) after the pointer rests, the
@@ -894,7 +893,7 @@ Welcome step at Agents, and a stored tools entry counts for nothing.
 Auto is described in [auto.md](../auto.md); this is where it sits. Auto is always
 on: Settings has no Auto switch, and the **Experimental** marker sits on the
 Auto start of the New menu. An Auto conversation is a row of the one **Runs**
-entry of the session rail. The tree of an Auto agent, and of each
+tab of the session. The tree of an Auto agent, and of each
 child of an Auto tree, is the Agents panel of the session tools (see The session
 tools), never a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The

@@ -35,5 +35,5 @@ export const TaskMoveMenuScene = () => {
     match: 'prefix',
     intervalMs: CLICK_MS,
   });
-  return <TaskLinksScene />;
+  return <TaskLinksScene isCardsShown />;
 };

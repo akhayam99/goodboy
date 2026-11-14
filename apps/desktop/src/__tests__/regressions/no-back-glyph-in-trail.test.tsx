@@ -21,7 +21,7 @@ const TRAIL = '[data-slot="trail"]';
 const BACK_GLYPH = '.lucide-chevron-left, .lucide-arrow-left';
 const BACK_CHARACTERS = /[‹←]/;
 const SESSION_SCENE = 'shell';
-const SESSION_RAIL = '[data-session-rail]';
+const SESSION_TABS = '[role="tablist"][aria-label="Session pages"]';
 
 const KEPT = [
   'SettingsColumnNav.tsx',
@@ -83,7 +83,7 @@ const paneShellActionsOf = ({ source }: ActionsParams): ReadonlyArray<string> =>
 };
 
 describe('no back glyph in a trail', () => {
-  it('draws the session trail with no back glyph, no back row in the session rail, and names every back glyph Back', async () => {
+  it('draws the session trail with no back glyph, no back glyph in the session tabs, and names every back glyph Back', async () => {
     const Scene = MOCK_SCENES[SESSION_SCENE];
     if (Scene === undefined) {
       throw new Error(`no scene ${SESSION_SCENE}`);
@@ -94,13 +94,12 @@ describe('no back glyph in a trail', () => {
       </ToastProvider>,
     );
 
-    await waitFor(() => expect(document.querySelector(SESSION_RAIL)).not.toBeNull(), {
+    await waitFor(() => expect(document.querySelector(SESSION_TABS)).not.toBeNull(), {
       timeout: 4_000,
     });
     expect(Array.from(document.querySelectorAll(TRAIL)).filter(hasBackGlyph)).toEqual([]);
     const glyphs = Array.from(document.querySelectorAll(BACK_GLYPH));
-    expect(document.querySelector(SESSION_RAIL)?.getAttribute('data-session-rail')).toBe('session');
-    expect(glyphs.some((glyph) => glyph.closest(SESSION_RAIL) !== null)).toBe(false);
+    expect(glyphs.some((glyph) => glyph.closest(SESSION_TABS) !== null)).toBe(false);
     for (const glyph of glyphs) {
       const button = glyph.closest('button');
       const label = button?.getAttribute('aria-label') ?? '';

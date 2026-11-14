@@ -111,7 +111,7 @@ const deleteDescription = ({ isBranchless }: { readonly isBranchless: boolean })
 type OpenLensParams = {
   readonly env: ActionEnv;
   readonly sessionId: SessionId;
-  readonly lens: 'review' | 'files' | null;
+  readonly lens: 'review' | 'files' | 'context' | null;
 };
 
 const openLens = ({ env, sessionId, lens }: OpenLensParams): void => {
@@ -439,7 +439,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     shortcut: 'session.linkWork',
     when: isUnarchived,
     run: ({ facts, env }) => {
-      openLens({ env, sessionId: facts.sessionId, lens: null });
+      openLens({ env, sessionId: facts.sessionId, lens: 'context' });
       dispatchAfterNavigation({ name: linkIssueEventName({ sessionId: facts.sessionId }) });
     },
   },

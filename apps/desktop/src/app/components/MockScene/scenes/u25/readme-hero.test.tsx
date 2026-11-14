@@ -62,7 +62,13 @@ describe('readme hero scene', () => {
   it('opens the session with its projects, the shared context and runs on three providers', async () => {
     await mount();
 
-    const rail = screen.getByRole('navigation', { name: 'Session pages' });
+    const tabs = screen.getByRole('tablist', { name: 'Session pages' });
+    expect(
+      within(tabs)
+        .getByRole('tab', { name: /^Context/ })
+        .getAttribute('aria-selected'),
+    ).toBe('true');
+    const rail = document.querySelector<HTMLElement>('[data-level-layer="session"]') ?? tabs;
     const projects = within(rail).getByRole('group', { name: 'Projects' });
     const labels = [...projects.querySelectorAll('[data-worktree-entries] [data-entry-label]')].map(
       (label) => label.textContent ?? '',

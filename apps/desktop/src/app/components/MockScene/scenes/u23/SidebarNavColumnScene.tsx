@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAppStore, useCurrentSession } from '../../../../../store';
 import { SessionLevel } from '../../../SessionRail/SessionLevel';
+import { SessionPageTabs } from '../../../SessionPageTabs';
+import { SessionHeaderActions } from '../../../SessionActions/SessionHeaderActions';
 import { SideColumn } from '../../../SideColumn';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import type { ColumnPlace } from '../../../../../shared/navigation/columnPlace';
@@ -72,9 +74,15 @@ export const SidebarNavColumnScene = ({
         {isSessionLevel ? (
           <aside
             aria-label="Session level"
-            className="flex h-full w-60 shrink-0 flex-col bg-background pt-3"
+            className="flex h-full w-[640px] shrink-0 flex-col gap-3 bg-background pt-3"
           >
-            <SessionLevel session={current ?? seed.session} isActive />
+            <div className="flex items-center justify-between gap-3 px-4">
+              <SessionPageTabs session={current ?? seed.session} />
+              <SessionHeaderActions session={current ?? seed.session} />
+            </div>
+            <div className="w-60">
+              <SessionLevel session={current ?? seed.session} isActive />
+            </div>
           </aside>
         ) : null}
       </div>

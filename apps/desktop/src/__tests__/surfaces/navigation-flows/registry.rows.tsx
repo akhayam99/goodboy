@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { branchPlace } from '../../../store';
 import {
   type Row,
@@ -18,17 +18,9 @@ import {
 const PAGES = ['Overview', 'Runs', 'Artifacts'];
 
 const pageLabels = async (): Promise<ReadonlyArray<string>> => {
-  const list = await waitFor(() => {
-    const found = document.querySelector<HTMLElement>(
-      '[data-level-layer="session"]:not([inert]) [data-testid="session-pages"]',
-    );
-    if (found === null) {
-      throw new Error('the sidebar is not on a session level');
-    }
-    return found;
-  }, WAIT);
+  const list = await waitFor(() => screen.getByRole('tablist', { name: 'Session pages' }), WAIT);
   return within(list)
-    .getAllByRole('button')
+    .getAllByRole('tab')
     .map((row) => row.textContent ?? '');
 };
 
@@ -43,7 +35,7 @@ const startsWithInOrder = (texts: ReadonlyArray<string>, labels: ReadonlyArray<s
 
 export const REGISTRY_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'session level: the pages read Overview, Runs, Artifacts, with no branch entry',
+    name: 'session tabs: the pages read Overview, Runs, Artifacts, with no branch entry',
     covers: ['sidebar:session-pages'],
     open: () => settle(),
     lands: async () => {
