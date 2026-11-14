@@ -203,7 +203,7 @@ describe('the session head', () => {
 
     await waitFor(() => expect(headOf().getAttribute('data-head-nav')).toBe('crumbs'));
     const labels = crumbLabels();
-    expect(labels[0]).toBe(FLOW_SESSION.goal);
+    expect(labels[0]).toBe('Overview');
     expect(labels[1]).toBe('Artifacts');
     expect(labels).toHaveLength(3);
     expect(document.querySelector('[data-session-back]')).toBeNull();
