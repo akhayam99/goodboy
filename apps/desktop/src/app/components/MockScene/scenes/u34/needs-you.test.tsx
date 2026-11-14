@@ -62,8 +62,8 @@ const mount = async (name: SceneName): Promise<void> => {
   });
 };
 
-const card = (): HTMLElement | null =>
-  document.querySelector<HTMLElement>('[data-overview-card="needs-you"]');
+const board = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('[data-slot="branch-board-section"]');
 
 describe('the u34 needs you scenes', () => {
   it('registers every scene for the capture', () => {
@@ -72,16 +72,16 @@ describe('the u34 needs you scenes', () => {
     );
   });
 
-  it('u34-needs-you-question holds the question in the one card', async () => {
+  it('u34-needs-you-question holds the question on the board', async () => {
     await mount('u34-needs-you-question');
 
-    expect(card()?.querySelectorAll('button').length).toBeGreaterThan(0);
+    expect(board()?.querySelectorAll('button').length).toBeGreaterThan(0);
   });
 
-  it('u34-needs-you-run-question holds the waiting run and the question in one card', async () => {
+  it('u34-needs-you-run-question holds the waiting run and the question on one board', async () => {
     await mount('u34-needs-you-run-question');
 
-    expect(document.querySelectorAll('[data-overview-card="needs-you"]')).toHaveLength(1);
-    expect(card()?.querySelectorAll('button').length).toBeGreaterThan(1);
+    expect(document.querySelectorAll('[data-slot="branch-board"]')).toHaveLength(1);
+    expect(board()?.querySelectorAll('button').length).toBeGreaterThan(1);
   });
 });

@@ -116,28 +116,43 @@ const show = async () => {
   await settle();
 };
 
-describe('the Archive this session offer in Branches', () => {
-  it('is not offered while the pull request is open', async () => {
+describe('the Archive session button in the header', () => {
+  it('is not the primary while the pull request is open', async () => {
     seedCentralColumn({ kind: 'finished' });
     await show();
 
-    expect(screen.queryByText('Archive this session')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Archive session' })).toBeNull();
   });
 
-  it('is offered once every branch is merged, with the reason and one Archive button', async () => {
+  it('is the primary once every branch is merged and nothing works or waits', async () => {
     seedCentralColumn({ kind: 'finished' });
     setRequestState({ state: 'merged' });
     await show();
 
-    const next = screen.getByRole('region', { name: 'Branches' });
-    within(next).getByText('Archive this session');
-    expect(next.textContent).toContain('All branches merged');
-    within(next).getByRole('button', { name: /^Archive/ });
+    expect(screen.getByRole('button', { name: 'Archive session' }).dataset.variant).toBe('primary');
+  });
+
+  it('is not the primary while a Lead works, though every branch is merged', async () => {
+    seedCentralColumn({ kind: 'finished' });
+    setRequestState({ state: 'merged' });
+    act(() => {
+      useAppStore.setState((store) => ({
+        sessionPhaseRuns: {
+          ...store.sessionPhaseRuns,
+          [COLUMN_SESSION_ID]: (store.sessionPhaseRuns[COLUMN_SESSION_ID] ?? []).map(
+            (agent, index) => (index === 0 ? { ...agent, status: 'running' as const } : agent),
+          ),
+        },
+      }));
+    });
+    await show();
+
+    expect(screen.queryByRole('button', { name: 'Archive session' })).toBeNull();
   });
 
   it('archives on one click and offers Undo in the toast', async () => {
     seedCentralColumn({ kind: 'finished' });
-    setRequestState({ state: 'closed' });
+    setRequestState({ state: 'merged' });
     const bulkArchiveTask = vi.fn(
       async (ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult> => ({
         succeeded: [...ids],
@@ -149,10 +164,8 @@ describe('the Archive this session offer in Branches', () => {
     });
     await show();
 
-    const next = screen.getByRole('region', { name: 'Branches' });
-    expect(next.textContent).toContain('All branches closed');
     await act(async () => {
-      fireEvent.click(within(next).getByRole('button', { name: /^Archive/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Archive session' }));
       await Promise.resolve();
     });
     await settle();

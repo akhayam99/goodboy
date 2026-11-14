@@ -1,15 +1,15 @@
 import { Button } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
-import { useNow } from '../../../../../shared/hooks/useNow';
-import { useTimelineOpen } from '../../../hooks/useTimelineOpen';
-import type { TimelineTopLevelEntry } from '../../../timeline/buildTimelineGroups';
-import type { OverviewCardModel } from '../../overviewCardsOf';
-import type { DoneSummary } from '../doneSummaryOf';
-import type { LatestDone } from '../latestDoneOf';
-import { LatestDoneRow } from '../LatestDoneRow';
-import { useLeadAgentOf } from '../../../hooks/useLeadAgentOf';
-import { OverviewCard } from '../OverviewCard';
+import { useAppStore } from '../../../../store';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { useTimelineOpen } from '../../hooks/useTimelineOpen';
+import type { TimelineTopLevelEntry } from '../../timeline/buildTimelineGroups';
+import type { OverviewCardModel } from '../overviewCardsOf';
+import type { DoneSummary } from './doneSummaryOf';
+import type { LatestDone } from './latestDoneOf';
+import { LatestDoneRow } from './LatestDoneRow';
+import { useLeadAgentOf } from '../../hooks/useLeadAgentOf';
+import { OverviewCard } from './OverviewCard';
 
 type Props = {
   readonly sessionId: SessionId;

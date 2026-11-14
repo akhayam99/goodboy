@@ -69,49 +69,21 @@ describe('the u33 overview needs you scene', () => {
     expect(frame?.style.padding).toBe('');
   });
 
-  it('is one list with no Decide or Fix header and no subject twice', async () => {
+  it('draws one board whose rows each hold at most one filled verb', async () => {
     const { container } = mount();
 
-    const needsYou = await screen.findByRole('region', { name: 'Needs you' }, WAIT);
-    expect(needsYou.querySelectorAll('[data-next-group-head] [class*="text-meta"]')).toHaveLength(
-      0,
-    );
-    const cards = [...needsYou.querySelectorAll('[data-action-card]')];
-    const live = [...needsYou.querySelectorAll('[data-needs-you-live] [data-live-row]')];
-    const autoRows = [
-      ...needsYou.querySelectorAll('[data-needs-you-live] [data-live-group="auto"]'),
-    ];
-    expect(new Set(cards.map((card) => card.textContent)).size).toBe(cards.length);
-    expect(container.querySelector('[data-live-section="needs-you"]')).toBeNull();
-    const count = needsYou.querySelector('[data-overview-count]')?.textContent;
-    expect(count).toBe(String(cards.length + live.length - autoRows.length));
-  });
-
-  it('holds one primary and gives the other rows no second verb and no overflow at rest', async () => {
-    const { container } = mount();
-
-    const needsYou = await screen.findByRole('region', { name: 'Needs you' }, WAIT);
-    expect(container.querySelectorAll('[data-variant="primary"]').length).toBeLessThanOrEqual(1);
-    const cards = [...needsYou.querySelectorAll('[data-action-card]')];
-    for (const card of cards.slice(1)) {
-      expect(card.querySelectorAll('button').length).toBeLessThanOrEqual(1);
-      expect(card.querySelector('[data-slot="header-actions-overflow"]')).toBeNull();
+    const board = await screen.findByRole('region', { name: 'Branches' }, WAIT);
+    expect(board.querySelectorAll('[data-board-row]').length).toBeGreaterThan(0);
+    for (const row of board.querySelectorAll('[data-board-row]')) {
+      expect(row.querySelectorAll('[data-variant="primary"]').length).toBeLessThanOrEqual(1);
     }
-  });
-
-  it('says what is happening in one glance line fed by the card counts', async () => {
-    const { container } = mount();
-
-    await screen.findByRole('region', { name: 'Needs you' }, WAIT);
-    const glance = container.querySelector('[data-overview-glance]');
-    expect(glance?.getAttribute('data-overview-glance')).toBe('waiting');
-    expect(glance?.textContent).toContain('need you');
+    expect(container.querySelector('[data-overview-glance]')).toBeNull();
   });
 
   it('has no accessibility violations', async () => {
     const { container } = mount();
 
-    await screen.findByRole('region', { name: 'Needs you' }, WAIT);
+    await screen.findByRole('region', { name: 'Branches' }, WAIT);
     const { violations } = await runA11yCheck(container);
     expect(violations.map((violation) => violation.id)).toEqual([]);
   });

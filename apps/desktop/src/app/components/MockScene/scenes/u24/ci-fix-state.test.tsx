@@ -259,7 +259,7 @@ describe('CI fix state scenes', () => {
     show({ name: 'activity-check-fixed-local' });
     expect(screen.queryByText('payments-api / test is fixed on your branch')).toBeNull();
     expect(rowPush()).not.toBeNull();
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    const needsYou = screen.getByRole('region', { name: 'Branches' });
     expect(within(needsYou).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(2);
     expect(screen.queryByText('Review the changes')).toBeNull();

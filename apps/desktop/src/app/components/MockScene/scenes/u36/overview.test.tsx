@@ -70,28 +70,23 @@ describe('the u36 overview scenes', () => {
   });
 
   it.each(['light', 'dark'])(
-    'u36-p15-next-only-%s names the next step in the line and fills the one Next row',
+    'u36-p15-next-only-%s draws the board and no glance line',
     async (theme) => {
       await show({ name: `u36-p15-next-only-${theme}` });
 
-      expect(glance()?.getAttribute('data-overview-glance')).toBe('next');
-      expect(glance()?.textContent).toMatch(/^Next: /);
-      expect(document.body.textContent).not.toContain('Nothing needs you');
-      expect(
-        document.querySelectorAll('[data-central-column] [data-variant="primary"]'),
-      ).toHaveLength(1);
+      expect(glance()).toBeNull();
+      expect(document.querySelector('[data-slot="branch-board"]')).not.toBeNull();
     },
   );
 
   it.each(['light', 'dark'])(
-    'u36-p15-needs-you-%s counts what waits and keeps one filled button',
+    'u36-p15-needs-you-%s draws the Needs you tile and the board',
     async (theme) => {
       await show({ name: `u36-p15-needs-you-${theme}` });
 
-      expect(glance()?.getAttribute('data-overview-glance')).toBe('waiting');
-      expect(
-        document.querySelectorAll('[data-central-column] [data-variant="primary"]'),
-      ).toHaveLength(1);
+      expect(glance()).toBeNull();
+      expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(5);
+      expect(document.querySelector('[data-slot="branch-board"]')).not.toBeNull();
     },
   );
 });

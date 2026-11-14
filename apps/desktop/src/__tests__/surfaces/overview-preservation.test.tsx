@@ -144,28 +144,23 @@ describe('Overview capabilities from the session Overview', () => {
     expect(action.querySelector('svg')).not.toBeNull();
   });
 
-  it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
+  it('turns a mount cleanup proposal into Remove worktree on the merged row and one button on the group', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
-    const next = present({
-      value: document.querySelector<HTMLElement>('[data-overview-card="branches"]'),
-      what: 'the Branches card',
+    const merged = present({
+      value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
+      what: 'the Merged group',
     });
-    const row =
-      Array.from(next.querySelectorAll<HTMLElement>('[data-action-card]')).find((candidate) =>
-        (candidate.textContent ?? '').includes('Remove the ledger-core worktree'),
-      ) ?? null;
-    const card = within(present({ value: row, what: 'the cleanup row' }));
-    card.getByRole('button', { name: 'Remove worktree' });
 
+    within(merged).getByRole('button', { name: /^Remove 1 worktree/ });
     fireEvent.click(
-      card.getByRole('button', { name: 'More options for Remove the ledger-core worktree' }),
+      present({
+        value: within(merged).getAllByRole('button', { expanded: false })[0],
+        what: 'the merged row',
+      }),
     );
     await advance();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Not now' }));
-    await advance();
 
-    expect(screen.queryByText('Remove the ledger-core worktree')).toBeNull();
-    screen.getByText('Dismissed');
+    within(merged).getByRole('button', { name: 'Remove worktree' });
   });
 
   it('keeps the branch drift decision in the notices slot', async () => {
@@ -290,7 +285,7 @@ describe('Overview capabilities from the session Overview', () => {
     ]);
   });
 
-  it('keeps the exact ask one press away: Answer on the Needs you card navigates to the question', async () => {
+  it('keeps the exact ask one press away: Answer on the Needs you row navigates to the question', async () => {
     await mountScene({ name: 'c05-overview-running' });
     const target = useAppStore.getState().navigate;
     const places: Array<unknown> = [];
@@ -303,8 +298,8 @@ describe('Overview capabilities from the session Overview', () => {
       });
     });
 
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    fireEvent.click(within(needsYou).getByRole('button', { name: 'Answer' }));
+    const board = screen.getByRole('region', { name: 'Branches' });
+    fireEvent.click(within(board).getByRole('button', { name: 'Answer' }));
     await advance();
 
     expect(places).toHaveLength(1);

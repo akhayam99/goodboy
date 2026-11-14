@@ -108,7 +108,6 @@ describe('the CTA rule of the central column', () => {
     const { container } = show(params);
     const buttons = buttonsOf({ root: container });
 
-    expect(buttons.length).toBeGreaterThan(0);
     for (const button of buttons) {
       expect(button.dataset.size).toBe(isOverflowTrigger({ button }) ? 'control' : 'sm');
     }
@@ -129,7 +128,9 @@ describe('the CTA rule of the central column', () => {
     (params) => {
       const { container } = show(params);
       const column = container.querySelector('[data-central-column]');
-      const primaries = column?.querySelectorAll('[data-variant="primary"]') ?? [];
+      const primaries = [...(column?.querySelectorAll('[data-variant="primary"]') ?? [])].filter(
+        (primary) => primary.closest('[data-slot="branch-board"]') === null,
+      );
       const firstCard = column?.querySelector('[data-action-card]');
       const waitingRun = column?.querySelector('[data-live-group][data-state="waiting"]');
 

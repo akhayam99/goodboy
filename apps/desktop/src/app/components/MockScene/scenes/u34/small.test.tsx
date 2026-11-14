@@ -52,16 +52,14 @@ const mount = ({ name }: MountParams) => {
 };
 
 describe('the small flows scenes', () => {
-  it('keeps one question on Needs you and no needs-you label on Done', async () => {
+  it('keeps one question on the board with one Answer button', async () => {
     mount({ name: 'u34-u5-question' });
-    const done = await screen.findByRole('region', { name: 'Done' });
+    const board = await screen.findByRole('region', { name: 'Branches' });
     const state = (await importStore()).getState();
     expect(Object.values(state.sessionOpenQuestions).flat()).toHaveLength(1);
-    expect(done.textContent).not.toMatch(/needs? you/);
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    expect(within(needsYou).getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
+    expect(within(board).getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
-    expect(within(needsYou).queryByRole('button', { name: 'See result' })).toBeNull();
+    expect(within(board).queryByRole('button', { name: 'See result' })).toBeNull();
   });
 
   it('draws one mark per row, an empty slot at rest, and a bold title when unread', () => {
