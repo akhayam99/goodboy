@@ -171,10 +171,11 @@ describe('the u23 frame scenes', () => {
     expect(container.querySelector('[data-studio-band]')).toBeNull();
   });
 
-  it('puts the Questions list under the title in one column', async () => {
+  it('puts the Questions list under the session head in one column', async () => {
     await renderScene('frame-questions');
 
-    const title = await screen.findByRole('heading', { level: 1, name: 'Questions' });
+    const title = await screen.findByRole('heading', { level: 1 });
+    expect(screen.queryByRole('heading', { level: 1, name: 'Questions' })).toBeNull();
     const column = title.closest('[data-page-column]') as HTMLElement;
     expect(column.getAttribute('data-width')).toBe('column');
     const queue = await screen.findByRole('list', { name: 'Questions' });

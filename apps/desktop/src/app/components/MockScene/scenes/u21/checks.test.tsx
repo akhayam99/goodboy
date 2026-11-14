@@ -78,11 +78,13 @@ describe('the checks scenes', () => {
     expect(await screen.findByText('No checks have reported on this pull request.')).toBeDefined();
   });
 
-  it('branch-checks-no-pr lands on Overview and the rail has no Checks without a pull request', async () => {
+  it('branch-checks-no-pr lands on Conversation and the rail has no Checks without a pull request', async () => {
     draw({ name: 'branch-checks-no-pr' });
 
     const rail = within(await screen.findByRole('tablist', { name: 'Branch pages' }));
-    expect(rail.getByRole('tab', { name: /^Overview/ }).getAttribute('aria-selected')).toBe('true');
+    expect(rail.getByRole('tab', { name: /^Conversation/ }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
     expect(rail.queryByRole('tab', { name: /^Checks/ })).toBeNull();
   });
 

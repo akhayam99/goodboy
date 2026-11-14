@@ -110,7 +110,7 @@ type IntroParams = {
 
 const expectIntro = ({ page, title }: IntroParams) => {
   const header = headerOf();
-  expect(within(header).getByRole('heading', { level: 1, name: title })).toBeDefined();
+  expect(within(header).queryByRole('heading', { level: 1, name: title })).toBeNull();
   const intro = header.querySelector<HTMLElement>('[data-slot="session-page-intro"]');
   expect(intro?.dataset.page).toBe(page);
   expect([...(intro?.querySelectorAll('p') ?? [])].map((line) => line.textContent)).toEqual([

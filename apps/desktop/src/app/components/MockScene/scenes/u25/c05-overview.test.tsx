@@ -155,7 +155,7 @@ describe('the c05 overview scenes', () => {
   it('c05-overview-archived is read only with Restore in the header', async () => {
     await mount('c05-overview-archived');
 
-    const header = document.querySelector<HTMLElement>('[data-slot="pane-header"]');
+    const header = document.querySelector<HTMLElement>('[data-session-head]');
     expect(header).not.toBeNull();
     within(present({ value: header, what: 'the header' })).getByRole('button', { name: /Restore/ });
     expect(screen.queryByRole('button', { name: 'New' })).toBeNull();

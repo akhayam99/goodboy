@@ -100,10 +100,12 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.queryByText('Workflow · Orchestrated')).toBeNull();
   });
 
-  it('c09-orch-running reads as one document with the sidebar on Runs', async () => {
+  it('c09-orch-running reads as one document under the Runs crumb', async () => {
     await mount('c09-orch-running');
 
-    expect(currentPage()).toBe('Runs1');
+    within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('button', {
+      name: 'Runs',
+    });
     expect(screen.getByRole('heading', { name: 'Speed up the export end to end' })).toBeDefined();
     expect(screen.getByText(/times out over 10k rows/)).toBeDefined();
     const facts = nodeOf('[data-orchestrated-facts]');

@@ -78,14 +78,18 @@ const BoardShellSceneContent = ({ isSessionOpen }: ContentProps) => {
     isSidebarCollapsed: rail.isCollapsed,
   });
   const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
-  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
+  const shellRight = useShellRight({});
 
   return (
     <>
       <AppShell
-        rightRail={rightRail}
-        drawer={isDrawerMounted ? <DrawerHost /> : null}
-        isDrawerParked={isDrawerParked}
+        rightRail={shellRight.rightRail}
+        drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
+        drawerSizing={shellRight.dockSizing}
+        detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
+        detailSizing={shellRight.detailSizing}
+        isDrawerParked={shellRight.isDrawerParked}
+        isDetailParked={shellRight.isDetailParked}
         studio={shell.studio}
         topBar={
           <AppTopBar

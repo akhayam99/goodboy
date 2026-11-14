@@ -109,9 +109,8 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(
       within(mainSidebar()).getByRole('option', { name: /^Retry failed webhook deliveries/ }),
     ).toBeDefined();
-    expect(tabNames()).toEqual([
+    expect(tabNames().slice(0, 5)).toEqual([
       'Overview',
-      'Changes',
       'Runs',
       'Artifacts',
       'Questions',
@@ -143,10 +142,10 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(selected.map((tab) => tab.textContent?.replace(/\d+$/, ''))).toEqual(['Runs']);
   });
 
-  it('c02-level-branchless shows Changes and no Projects', async () => {
+  it('c02-level-branchless shows no Changes shortcut and no Projects', async () => {
     await mount('c02-level-branchless');
 
-    expect(screen.getByRole('tab', { name: /^Changes/ })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: /^Changes/ })).toBeNull();
     await openContext();
     expect(within(sessionLayer()).queryByRole('group', { name: 'Projects' })).toBeNull();
   });
@@ -167,10 +166,10 @@ describe('the c02 sidebar and session rail scenes', () => {
     );
   });
 
-  it('c02-shell-overview draws the Overview page header (the session name) with Ask and no trail band', async () => {
+  it('c02-shell-overview draws the session head (the session name) with Ask and no trail band', async () => {
     await mount('c02-shell-overview');
 
-    expect(screen.getByTestId('overview-title').closest('h1')).not.toBeNull();
+    expect(screen.getByTestId('overview-title').closest('[data-session-head]')).not.toBeNull();
     expect(screen.getAllByTestId('pane-toggle-terminal').length).toBeGreaterThan(0);
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
   });

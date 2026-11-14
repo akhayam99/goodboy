@@ -64,10 +64,10 @@ export const ArtifactShellHeader = ({
           isHeading={!isTitleInDocument}
           title={
             isTitleInDocument ? (
-              <span className="flex min-w-0 items-center">
-                <span className="sr-only">{title}</span>
+              <div className="flex min-w-0 items-center">
+                <h1 className="sr-only">{title}</h1>
                 {metaLine}
-              </span>
+              </div>
             ) : (
               <span className="flex min-w-0 items-center gap-2">
                 <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />

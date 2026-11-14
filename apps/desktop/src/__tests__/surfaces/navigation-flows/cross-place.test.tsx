@@ -353,6 +353,11 @@ const openPage = async (label: string): Promise<void> => {
     }
     return;
   }
+  const sessionCrumb = shown('[data-session-crumbs] [data-crumb="0"]');
+  if (label === 'Overview' && shown(SESSION_TABS) === null && sessionCrumb instanceof HTMLElement) {
+    await click(sessionCrumb);
+    return;
+  }
   await click(pageRow(label));
 };
 
@@ -474,7 +479,7 @@ const expectOneRail = ({
 const HEADER = '[data-session-head], [data-slot="pane-header"]';
 
 const sessionLayers = (extra: RailLayers): RailLayers => ({
-  header: shown(HEADER),
+  header: shown('[data-slot="pane-header"]') ?? shown('[data-session-head]'),
   ...extra,
 });
 
@@ -1034,7 +1039,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
-      expect(shown(SESSION_TABS)).not.toBeNull();
+      expect(shown('[data-session-crumbs]')).not.toBeNull();
       await escape();
       expect(currentPage()).toBe('Runs');
       const page = requireValue({

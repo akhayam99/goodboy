@@ -47,7 +47,7 @@ const renderState = async (state: string) => {
 const askDrawer = () => screen.getByRole('region', { name: 'Ask' });
 
 describe('the session Ask scene', () => {
-  it('opens in the Context tab with questions to try and no Right now strip', async () => {
+  it('opens as a panel with questions to try and no Right now strip', async () => {
     await renderState('rightnow');
     const suggestions = within(screen.getByRole('region', { name: 'Try asking' }));
     expect(suggestions.getAllByRole('button').length).toBeGreaterThan(0);
@@ -70,7 +70,7 @@ describe('the session Ask scene', () => {
     expect(within(askDrawer()).queryByRole('heading', { name: 'Ask this session' })).toBeNull();
   });
 
-  it('stays on the Overview until Ask is opened, then lands in the Context tab', async () => {
+  it('stays on the Overview until Ask is opened, then opens it as a panel beside the Overview', async () => {
     window.history.replaceState(null, '', '/?scene=session-ask&state=closed');
     render(
       <ToastProvider>
@@ -81,8 +81,8 @@ describe('the session Ask scene', () => {
     expect(screen.queryByRole('region', { name: 'Ask' })).toBeNull();
     act(() => useAppStore.getState().openAsk({ sessionId: SESSION.id }));
     expect(await screen.findByRole('region', { name: 'Ask' })).toBeDefined();
-    expect(useAppStore.getState().activeLens[SESSION.id]).toBe('context');
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().activeLens[SESSION.id] ?? null).toBeNull();
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
   });
 
   it('asks a suggested question', async () => {
@@ -129,7 +129,6 @@ describe('the session Ask scene', () => {
     act(() => {
       fireEvent.click(questionChip);
     });
-    expect(useAppStore.getState().activeLens[SESSION.id]).toBe('questions');
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'question',
       sessionId: SESSION.id,
@@ -137,8 +136,7 @@ describe('the session Ask scene', () => {
     act(() => {
       useAppStore.getState().closeQuestion();
     });
-    expect(useAppStore.getState().activeLens[SESSION.id]).toBe('context');
-    expect(askDrawer()).toBeDefined();
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
   });
 
   it('prefills the answer field from the Answer button and never sends it', async () => {
@@ -248,10 +246,10 @@ describe('the session Ask scene', () => {
     });
     stop();
 
-    expect(callsOutside).toBe(1);
+    expect(callsOutside).toBe(0);
     expect(turnsOutside).toBe(2);
 
-    expect(newSession).toHaveBeenCalledTimes(1);
+    expect(newSession).toHaveBeenCalledTimes(0);
     expect(useAppStore.getState().askThreadId[SESSION.id]).toBeNull();
     expect(screen.queryAllByTestId('ask-turn')).toHaveLength(0);
   });

@@ -50,13 +50,20 @@ describe('the shell scene mounts the real session workspace', () => {
   it('opens the step of its preset run with the page tabs on the session, Ask and no trail band', async () => {
     await renderShell();
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
-    expect(screen.getAllByRole('tablist', { name: 'Session pages' }).length).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: 'Back to Runs' })).toBeNull();
+    expect(screen.getAllByRole('navigation', { name: 'Breadcrumb' }).length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-session-back]')).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 
   it('moves to Runs and Artifacts from the page tabs', async () => {
     await renderShell();
+    const session = document.querySelector('[data-session-crumbs] [data-crumb="0"]');
+    if (session !== null) {
+      act(() => {
+        fireEvent.click(session);
+      });
+    }
+    await waitFor(() => expect(screen.getAllByRole('tab').length).toBeGreaterThan(0));
     const moves: ReadonlyArray<readonly [string, string]> = [
       ['Runs', 'workflows'],
       ['Artifacts', 'plans'],

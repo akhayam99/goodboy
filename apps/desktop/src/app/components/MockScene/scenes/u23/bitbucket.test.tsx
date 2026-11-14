@@ -96,7 +96,7 @@ const show = async (variant: BitbucketPageVariant = 'pr') => {
       <BitbucketPageScene variant={variant} />
     </ToastProvider>,
   );
-  await findSectionRow(/^Overview/);
+  await findSectionRow(/^Conversation/);
   act(() => {
     useAppStore.setState(stubs);
   });
@@ -119,10 +119,10 @@ describe('the Bitbucket scenes', () => {
     ]);
   });
 
-  it('leads with the Overview tab and the title as the one heading', async () => {
+  it('leads with the Conversation tab and the title as the one heading', async () => {
     await show();
 
-    expect(sectionRow(/^Overview/).getAttribute('aria-selected')).toBe('true');
+    expect(sectionRow(/^Conversation/).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );

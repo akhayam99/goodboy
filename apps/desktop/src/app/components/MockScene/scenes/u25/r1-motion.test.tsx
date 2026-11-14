@@ -70,7 +70,7 @@ describe('the r1 motion scenes', () => {
     await mount('r1-motion-shell-open');
 
     expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
-    expect(screen.getAllByRole('tablist', { name: 'Session pages' }).length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-session-head]')).not.toBeNull();
 
     fireEvent.click(sidebarToggle());
 
@@ -82,7 +82,7 @@ describe('the r1 motion scenes', () => {
     await mount('r1-motion-shell-folded');
 
     expect(document.querySelector('[data-column-rail]')).not.toBeNull();
-    expect(screen.getAllByRole('tablist', { name: 'Session pages' }).length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-session-head]')).not.toBeNull();
 
     fireEvent.click(sidebarToggle());
 

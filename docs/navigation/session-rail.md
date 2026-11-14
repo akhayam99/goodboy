@@ -33,7 +33,8 @@ in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
   each crumb but the last is a link that calls `upTo` with its place, and Esc goes one crumb
   up (`escapeLadder`, `up`). There is no `Back to` line. The session title in the title row
   is the h1 on a tab and plain text on a detail, whose own title row holds the h1.
-- **Ask** in the title row opens the Ask panel as a detail panel (drawer kind `ask`, the
+- **Ask** in the title row opens the Ask panel as a detail panel (drawer kind `ask`, a reader
+  kind, so `DrawerHost slot="detail"` draws it between the page and the tool dock, in the
   `DrawerFrame` the artifact detail uses), pressed while open; a second press closes it. ⌘L
   (`ask.open`) opens it too and focuses its box (`openAsk`). Ask keeps its conversation and
   starts no agent. The Context tab holds no Ask.

@@ -15,6 +15,7 @@ import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
 import { SessionHead } from '../../SessionHead';
+import { SessionHeadContext } from '../../../../features/session/sessionHeadContext';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
@@ -153,7 +154,9 @@ export const ShellFrame = ({
               <div className="@container flex h-full w-full min-w-0 flex-col gap-2">
                 <SessionHead session={session} />
                 <UnderTrailContext.Provider value>
-                  <div className="min-h-0 flex-1">{main}</div>
+                  <SessionHeadContext.Provider value={null}>
+                    <div className="min-h-0 flex-1">{main}</div>
+                  </SessionHeadContext.Provider>
                 </UnderTrailContext.Provider>
               </div>
             )}

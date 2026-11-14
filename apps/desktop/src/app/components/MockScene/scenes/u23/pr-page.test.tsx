@@ -105,11 +105,11 @@ describe('the pull request page scenes', () => {
     expect(screen.queryByRole('tablist', { name: 'Opens as' })).toBeNull();
   });
 
-  it('branch-pr-github leads with the Overview tab and its title as the one heading', async () => {
+  it('branch-pr-github leads with the Conversation tab and its title as the one heading', async () => {
     draw({ name: 'branch-pr-github' });
 
-    expect((await findSectionRow(/^Overview/)).getAttribute('aria-selected')).toBe('true');
-    expect(sectionNames()[0]).toBe('Overview');
+    expect((await findSectionRow(/^Conversation/)).getAttribute('aria-selected')).toBe('true');
+    expect(sectionNames()[0]).toBe('Conversation');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );

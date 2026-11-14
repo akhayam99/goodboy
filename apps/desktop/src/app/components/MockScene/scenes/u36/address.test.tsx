@@ -65,21 +65,21 @@ describe('the u36 address scenes', () => {
   });
 
   it.each(['light', 'dark'])(
-    'u36-p6-gone-run-%s says the run is gone under its back row',
+    'u36-p6-gone-run-%s says the run is gone under its crumbs',
     async (theme) => {
       mount({ id: `u36-p6-gone-run-${theme}` });
 
       await screen.findByText('This run is no longer in this session');
-      await screen.findByRole('button', { name: 'Back to runs' });
+      await screen.findByRole('button', { name: 'Runs' });
     },
   );
 
   it.each(['light', 'dark'])(
-    'u36-p6-step-back-%s names the run of the step in its back row',
+    'u36-p6-step-back-%s names the run of the step in its crumbs',
     async (theme) => {
       mount({ id: `u36-p6-step-back-${theme}` });
 
-      await screen.findByRole('button', { name: 'Back to Duplicate credit fix' });
+      await screen.findByRole('button', { name: 'Duplicate credit fix' });
     },
   );
 });
