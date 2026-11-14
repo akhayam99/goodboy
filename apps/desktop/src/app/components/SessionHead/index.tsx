@@ -7,6 +7,7 @@ import { isTabView } from '../../../store/slices/navigation/isTabView';
 import { OverviewTitle } from '../../../features/session/components/SessionOverviewPane/OverviewTitle';
 import { SessionHeadSlotsContext } from '../../../features/session/sessionHeadSlotsContext';
 import { SessionPageTabs } from '../SessionPageTabs';
+import { SessionBackButton } from './SessionBackButton';
 import { SessionCrumbs } from './SessionCrumbs';
 import { SessionHeadActions } from './SessionHeadActions';
 
@@ -35,6 +36,7 @@ export const SessionHead = ({ session }: Props) => {
         )}
       >
         <PaneTitleRow
+          leading={isDetail ? <SessionBackButton sessionId={sessionId} /> : null}
           title={<OverviewTitle session={session} />}
           isHeading={!isDetail || slots?.isHeadingClaimed === true}
           actions={<SessionHeadActions session={session} />}

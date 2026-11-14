@@ -31,7 +31,12 @@ in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
   the navigation store). The crumbs are the `parentPlace` chain from the session Overview to
   the open place, one crumb per object (a branch with a file or a thread open is one crumb);
   each crumb but the last is a link that calls `upTo` with its place, and Esc goes one crumb
-  up (`escapeLadder`, `up`). There is no `Back to` line. The first crumb reads `Overview`,
+  up (`escapeLadder`, `up`). There is no `Back to` line; instead the title row starts with a
+  back button (`SessionBackButton`, an outline `ArrowLeft` icon button the size of the head's
+  other controls, its left edge on the column edge, the title shifted right by it) named
+  `Back to {parent crumb}` with Esc in its tooltip. It calls `up`, the chain Esc walks, so on
+  every page below a tab the user sees at once that the screen is secondary and how to leave
+  it. A tab draws no back button. The first crumb reads `Overview`,
   never the session title, which the title row above it already shows. The session title in
   the title row is the h1 on a tab and plain text on a detail, whose own title row holds the h1.
 - **Ask** in the title row opens the Ask panel as a detail panel (drawer kind `ask`, a reader
@@ -676,9 +681,12 @@ activity yet show the plain overview with its actions.
   Context, also with a question drawer open) draws the tabs, and a drawer keeps its
   `DrawerFrame` back. `every-place-has-a-way-up.test.tsx` walks one place per lens and per
   target kind, renders `SessionWorkspace` with the head and fails when the drawn crumbs differ
-  from `crumbsOf`, when a tab draws crumbs, or when a `Back to` row or a studio trail is
-  drawn. It also fails on a back arrow or chevron outside `DrawerFrame` and the history
-  arrows, with a named allowlist for the backs that are not a way up. The history arrows in the top bar are
+  from `crumbsOf`, when a tab draws crumbs or a back button, when a detail draws no head back
+  button named after its parent crumb, or when a studio trail is drawn. It also fails on a
+  back arrow or chevron outside `DrawerFrame`, the head back button and the history arrows,
+  with a named allowlist for the backs that are not a way up. `no-back-glyph-in-trail.test.tsx`
+  keeps the glyph out of the crumbs themselves: on a secondary page the head holds exactly one,
+  in the back button of the title row. The history arrows in the top bar are
   memory, not a way up: the left one reads `Back: {place}` and the right one
   `Forward: {place}` (an agent's name, a run's title, a page), with the
   session's title on a second line and `Hold for history` on a third; a hold or a

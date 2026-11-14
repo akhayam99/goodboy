@@ -462,6 +462,23 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: lens('plans'),
   }),
   keyRow({
+    id: 'nav.crumbUp',
+    note: 'goes one crumb up from an artifact, the place the head back button names',
+    open: async (ctx) => {
+      await openCrumb(/^Artifacts/);
+      useAppStore.getState().navigate({
+        to: sessionPlace({
+          sessionId: ctx.sessionId,
+          lens: 'plans',
+          target: { kind: 'artifact', artifactId: ARTIFACT_IN_LIST },
+        }),
+      });
+      await settle();
+      await pressed('nav.crumbUp', document.body);
+    },
+    lands: lens('plans'),
+  }),
+  keyRow({
     id: 'session.next',
     note: 'walks the list in the order it shows, which follows the last activity',
     open: async (ctx) => {

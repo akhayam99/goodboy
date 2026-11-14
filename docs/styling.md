@@ -306,7 +306,8 @@ One primitive draws the top of every page: `PageHeader`
 (`PANE_RHYTHM.headerInset`, 8px, none under a studio band), the 32px title
 row (`PaneTitleRow`, the only title row), the 8px under it (`PANE_RHYTHM.below`,
 so the band is 48px, or 64px with a meta line), a `badge` beside the title (a
-quiet count chip, as Tasks shows "1,024 open"), a `toolbar` row of 36px under
+quiet count chip, as Tasks shows "1,024 open"; `PaneTitleRow` also takes a `leading` control
+before the title, which only the session head's back button uses), a `toolbar` row of 36px under
 the band for the controls of a list (Tasks: scope, search, filters, grouping, menu;
 84px in all, no meta line), the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
