@@ -146,9 +146,9 @@ describe('the c08 preset run scenes', () => {
     await mount('c08-run-overview');
 
     expect(document.querySelector('[data-run-overview]')).not.toBeNull();
-    expect(
-      screen.getByRole('heading', { name: 'Fix flaky tests in the ledger export' }),
-    ).toBeDefined();
+    expect(document.querySelector('[data-crumb-current]')?.textContent).toBe(
+      'Fix flaky tests in the ledger export',
+    );
     expect(screen.getByText(/fail one run in five on CI/)).toBeDefined();
     expect(tail().getAttribute('data-run-tail')).toBe('openStep');
   });

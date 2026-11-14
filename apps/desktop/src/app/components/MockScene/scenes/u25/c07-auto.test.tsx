@@ -67,6 +67,15 @@ const sessionHead = (): HTMLElement => {
   return head;
 };
 
+const pageCrumb = async (): Promise<HTMLElement> => {
+  await screen.findByRole('button', { name: 'More agent actions' }, WAIT);
+  const crumb = sessionHead().querySelector<HTMLElement>('[data-crumb-current]');
+  if (crumb === null) {
+    throw new Error('no page crumb');
+  }
+  return crumb;
+};
+
 const crumbLabels = (): ReadonlyArray<string> =>
   [...document.querySelectorAll('[data-session-crumbs] li')].map(
     (crumb) => crumb.textContent ?? '',
@@ -159,13 +168,13 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-working opens a child on the same page as a top-level agent and keeps the tree', async () => {
     mount({ id: 'c07-auto-working' });
 
-    await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    await pageCrumb();
     fireEvent.click(await treeRow(/^Implementer, /));
 
     expect(
       await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),
     ).toBeDefined();
-    screen.getByTestId('agent-header-title-row');
+    await pageCrumb();
     screen.getByText('Auto started this agent and reads your messages to it.');
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
     expect(sessionHead()).toBeDefined();
@@ -173,16 +182,16 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByTestId('pane-toggle-spawned')).toBeNull();
   });
 
-  it('u34-p20-auto-narrow keeps the title in its own heading, the glance below it and no provider mark', async () => {
+  it('u34-p20-auto-narrow keeps the title in the last crumb, the glance beside it and no provider mark', async () => {
     mount({ id: 'u34-p20-auto-narrow' });
 
-    const row = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
-    const lead = within(row).getByRole('heading', { level: 1 });
-    expect(within(lead).queryByTestId('agent-header-settings')).toBeNull();
+    const crumb = await pageCrumb();
+    const head = sessionHead();
+    expect(within(crumb).queryByTestId('agent-header-settings')).toBeNull();
     expect(document.querySelector('[data-glance]')).not.toBeNull();
-    expect(within(lead).queryByRole('button', { name: 'More agent actions' })).toBeNull();
-    expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
-    expect(within(row).queryByTestId('agent-header-provider')).toBeNull();
+    expect(within(crumb).queryByRole('button', { name: 'More agent actions' })).toBeNull();
+    expect(within(head).getByRole('button', { name: 'More agent actions' })).toBeDefined();
+    expect(within(head).queryByTestId('agent-header-provider')).toBeNull();
   });
 
   it('c07-auto-working shows one glance line and Settings opens the same chips inline', async () => {
@@ -213,8 +222,7 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-working' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    const title = screen.getByTestId('agent-header-title-row');
-    const heading = within(title).getByRole('heading', { level: 1 });
+    const heading = await pageCrumb();
     expect(within(heading).queryByText('Auto agent')).toBeNull();
     expect(within(heading).queryByText('Experimental')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
@@ -256,9 +264,9 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-idle keeps Mark finished in the menu of the header', async () => {
     mount({ id: 'c07-auto-idle' });
 
-    const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    await pageCrumb();
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
-    fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
+    fireEvent.click(within(sessionHead()).getByRole('button', { name: 'More agent actions' }));
     expect(await screen.findByRole('menuitem', { name: /Mark finished/ }, WAIT)).toBeDefined();
     expect(screen.getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
   });
@@ -422,8 +430,9 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-working titles the Auto root with its goal and holds no Open transcript in the menu', async () => {
     mount({ id: 'c07-auto-working' });
 
-    const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
-    expect(within(title).queryByText(/^Auto$/)).toBeNull();
+    const crumb = await pageCrumb();
+    const title = sessionHead();
+    expect(within(crumb).queryByText(/^Auto$/)).toBeNull();
     expect(within(title).queryByRole('button', { name: 'Open transcript' })).toBeNull();
     fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
     await screen.findByRole('menu', undefined, WAIT);
