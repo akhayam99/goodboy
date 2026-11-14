@@ -663,8 +663,27 @@ snapshot reads "Not recorded": a state, not an error, and nothing is recomputed
 from today's images. The record lives in the one right slot, is never stored,
 and Esc or the close button closes it without a history entry. The record of an
 agent is a pure function of that agent's rows, so a late result for another
-agent does not repaint it. "Open transcript" calls `onOpenTranscript` with the
-agent id.
+agent does not repaint it. "Open transcript" opens the agent's own page; its
+back row returns to the Lead.
+
+### The Lead page
+
+`LeadPage` (`features/session/components/LeadPage/index.tsx`) is the page of an
+Auto root agent, at the address the Auto page always had
+(`s/{session}/workflows/agent/{agent}`). `AgentOverlay` draws it for an agent
+of kind `auto` and `AgentDetailPane` for every other agent; the chat, the
+header and the action bar are `AgentDetailPane` and `AutoDock`, unchanged. The
+layout follows the width of the pane (`leadLayoutOf`): from 1180 up the chat,
+the tree (330) and the record when an agent is selected; from 860 to 1180 the
+chat and the tree, with the record covering the tree and a back arrow; under
+860 the chat alone, and the tree opens from an "Agents" count in the header.
+The tree is `useLeadTree` over the composer's queued rows: `ChatInput` reports
+them through `QueuedNotesReportContext` (`useReportQueuedNotes`), so a queued note is a
+tree node whose Edit and Remove are the composer's own. A click on a line of
+the chat or a row of the tree selects that agent. The selection is window
+local, never stored and never an address (`useLeadSelectionStore`);
+`openLeadAgent` is the door a compact tree on the board or the Work tab calls to
+open the Lead page with an agent selected.
 
 ## Plans
 

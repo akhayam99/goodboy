@@ -6,6 +6,7 @@ import { SceneAutoTreeNav } from '../u26/SceneAutoTreeNav';
 import { shellFoldsOf } from '../../../../shellArrangement/shellFoldsOf';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
+import { LeadPage } from '../../../../../features/session/components/LeadPage';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
@@ -26,6 +27,7 @@ type Props = {
   readonly isPlanOpen?: boolean;
   readonly selected?: 'root' | 'planner';
   readonly mountAct?: 'pending' | 'failing';
+  readonly hasLeadPage?: boolean;
 };
 
 const TRAY_IMAGE_DATA_URL =
@@ -58,6 +60,7 @@ export const AutoChatScene = ({
   isPlanOpen = false,
   selected = 'root',
   mountAct,
+  hasLeadPage = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const sizing = useAppStore(selectDrawerSizing);
@@ -153,12 +156,21 @@ export const AutoChatScene = ({
         )}
         <DrawerColumn
           main={
-            <AgentDetailPane
-              session={AUTO_SESSION}
-              agent={agent}
-              isChatActive
-              onBack={() => undefined}
-            />
+            hasLeadPage ? (
+              <LeadPage
+                session={AUTO_SESSION}
+                agent={agent}
+                isChatActive
+                onBack={() => undefined}
+              />
+            ) : (
+              <AgentDetailPane
+                session={AUTO_SESSION}
+                agent={agent}
+                isChatActive
+                onBack={() => undefined}
+              />
+            )
           }
           drawer={isDrawerOpen ? <DrawerHost /> : null}
           sizing={sizing}

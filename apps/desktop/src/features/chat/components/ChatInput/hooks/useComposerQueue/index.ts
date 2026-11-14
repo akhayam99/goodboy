@@ -12,6 +12,7 @@ import { focusComposerTextarea } from '../../focusComposerTextarea';
 import type { QueuedTurn } from '../../lib';
 import { useMessageQueue } from '../useMessageQueue';
 import { useQueuedRows } from '../useQueuedRows';
+import { useReportQueuedNotes } from '../useReportQueuedNotes';
 import type { useTurnRouting } from '../useTurnRouting';
 
 type Params = {
@@ -83,6 +84,7 @@ export const useComposerQueue = ({
     setAttachments,
     wrapperRef,
   });
+  useReportQueuedNotes({ queued });
 
   const heldId = queue.find((turn) => turn.hold !== undefined)?.id ?? null;
   const sendHeldAnyway = heldId === null ? null : () => forceQueued(heldId);

@@ -475,6 +475,14 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   and names that one parent for the back row (`Back to runs`, `Back to
 {parent agent name}`, `Back to artifacts`, `Back to branch`, `Back to
 overview`); a sub agent's parent is the agent that spawned it.
+- **The Lead page lays out by pane width.** `LeadPage` measures its own pane,
+  not the window (`leadLayoutOf`): from 1180 up it shows chat, tree and the
+  record; from 860 to 1180 chat and tree, the record covering the tree with a
+  back arrow; under 860 the chat, the tree opening from an "Agents" count. The
+  selected agent is window local state (`useLeadSelectionStore`), not an
+  address and not stored: a reload reopens the page with no record. "Open
+  transcript" in the record navigates to the agent's page, whose back row is
+  the Lead (`parentPlace`).
 - **Two Backs, and they differ.** The back row (and ⌘↑) is `parentPlace`: it
   only points inside the session, never at a list outside it, and it reads
   the same after a reload, in a second window and from a link. History Back

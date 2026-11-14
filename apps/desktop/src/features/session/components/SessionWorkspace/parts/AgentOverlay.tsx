@@ -2,6 +2,8 @@ import { PaneShell, Skeleton, SkeletonText } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
 import { AgentHeader } from '../../AgentDetailPane/AgentHeader';
+import { classifyAgent } from '../../../agent-kind';
+import { LeadPage } from '../../LeadPage';
 import { WorkTimeProvider } from '../../../../workTreeModel/components/WorkTimeProvider';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -29,6 +31,12 @@ export const AgentOverlay = ({
       ) ?? null,
   );
 
+  const kindOverride = useAppStore((state) =>
+    selectedAgent === null ? null : (state.agentKindOverride[selectedAgent.id] ?? null),
+  );
+  const kind =
+    selectedAgent === null ? null : classifyAgent({ agent: selectedAgent, override: kindOverride });
+
   const runsLoaded = useAppStore((state) => state.sessionPhaseRuns[sessionId] !== undefined);
 
   return (
@@ -49,13 +57,23 @@ export const AgentOverlay = ({
           </PaneShell>
         ) : (
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-            <AgentDetailPane
-              key={selectedAgent.id}
-              session={session}
-              agent={selectedAgent}
-              isChatActive={isChatActive}
-              onBack={onBack}
-            />
+            {kind === 'auto' ? (
+              <LeadPage
+                key={selectedAgent.id}
+                session={session}
+                agent={selectedAgent}
+                isChatActive={isChatActive}
+                onBack={onBack}
+              />
+            ) : (
+              <AgentDetailPane
+                key={selectedAgent.id}
+                session={session}
+                agent={selectedAgent}
+                isChatActive={isChatActive}
+                onBack={onBack}
+              />
+            )}
           </WorkTimeProvider>
         )}
       </div>

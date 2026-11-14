@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AgentQueuedTurn } from '../../../../store/slices/agentQueue/types';
@@ -25,6 +26,7 @@ type Params = {
 export type LeadTreeModel = Readonly<{
   items: ReadonlyArray<LeadTreeItem>;
   tree: LeadTree | null;
+  delegations: ReadonlyArray<AutoDelegation>;
   onToggleFold: (foldId: string) => void;
   onEditNote: (noteId: string) => void;
   onRemoveNote: (noteId: string) => void;
@@ -33,6 +35,8 @@ export type LeadTreeModel = Readonly<{
 const NO_ITEMS: ReadonlyArray<LeadTreeItem> = [];
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
+
+const NO_DELEGATIONS: ReadonlyArray<AutoDelegation> = [];
 
 const NO_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 
@@ -95,6 +99,7 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
   return {
     items: model.items,
     tree: model.tree,
+    delegations: view?.delegations ?? NO_DELEGATIONS,
     onToggleFold,
     onEditNote: queued.onEdit,
     onRemoveNote: queued.onRemove,
