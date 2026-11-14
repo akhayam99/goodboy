@@ -16,7 +16,7 @@ export const BrowserTabStrip = ({ model }: Props) => {
         className="min-w-0 shrink"
         viewportClassName="flex items-center"
       >
-        <nav aria-label="Browser tabs" className="flex items-center gap-1">
+        <nav aria-label="Browser tabs" className="flex w-full items-center gap-1">
           {model.tabs.map((tab) => (
             <BrowserTabChip
               key={tab.id}

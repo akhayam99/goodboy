@@ -2,7 +2,7 @@ import type { OutputHandoff } from '../../shared/utils/outputHandoff';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import { consoleCounts } from './consoleCounts';
 import { hostOf } from './hostOf';
-import { networkStatusWordOf } from './networkStatusWordOf';
+import { isFailedRequest, networkStatusWordOf } from './networkStatusWordOf';
 import type { BrowserConsoleEntry } from './types';
 
 const CONSOLE_MIME = 'text/markdown';
@@ -78,7 +78,7 @@ export const consoleAttachmentOf = ({ entries, title, url }: Params): OutputHand
   });
   const failed = newestThatFit({
     lines: entries
-      .filter((entry) => entry.kind === 'network')
+      .filter((entry) => entry.kind === 'network' && isFailedRequest({ status: entry.status }))
       .map((entry) => networkLineOf({ entry })),
   });
   const isCut = logged.isCut || failed.isCut;
@@ -87,7 +87,7 @@ export const consoleAttachmentOf = ({ entries, title, url }: Params): OutputHand
     `## Console (${counts.console})`,
     ...(logged.lines.length > 0 ? logged.lines : ['Nothing logged since the last load.']),
     '',
-    `## Failed requests (${counts.network})`,
+    `## Failed requests (${failed.lines.length})`,
     ...(failed.lines.length > 0 ? failed.lines : ['No failed request since the last load.']),
   ].join('\n');
   const text = redactSecrets({

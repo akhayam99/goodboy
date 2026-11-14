@@ -1,4 +1,14 @@
-import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, Square, Terminal, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  PanelLeft,
+  Pin,
+  RotateCw,
+  Square,
+  Terminal,
+  X,
+} from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';
@@ -102,6 +112,14 @@ export const BrowserAddressRow = ({
           />
         )}
         <BrowserMoreMenu model={model} onOpenAsPage={onOpenAsPage} />
+        {onOpenAsPage === undefined ? null : (
+          <IconButton
+            icon={ArrowUpRight}
+            label="Open as page"
+            tooltipSide="top"
+            onClick={onOpenAsPage}
+          />
+        )}
         {consoleToggle === undefined ? null : (
           <IconButton
             icon={Terminal}

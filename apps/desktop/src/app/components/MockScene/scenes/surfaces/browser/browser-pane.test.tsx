@@ -138,7 +138,7 @@ describe('the browser pane scenes', () => {
         node.getAttribute('data-console-level'),
       ),
     ).toEqual(['error', 'warn', 'info', 'log']);
-    expect(within(region).getByRole('tab', { name: /Network/ }).textContent).toBe('Network1');
+    expect(within(region).getByRole('tab', { name: /Network/ }).textContent).toBe('Network3');
     expect(screen.getByRole('button', { name: 'Console' }).getAttribute('aria-pressed')).toBe(
       'true',
     );

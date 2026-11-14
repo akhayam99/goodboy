@@ -1,17 +1,19 @@
-import { StatusDot, TruncatedText, cn, type Tone } from '@goodboy/ui';
-import { networkStatusWordOf } from '../../networkStatusWordOf';
+import { useState } from 'react';
+import { ChevronRight, CircleAlert, Info, Terminal, TriangleAlert } from 'lucide-react';
+import { ICON_SIZE, SelectableRow, TruncatedText, cn } from '@goodboy/ui';
+import { isFailedRequest, networkStatusWordOf } from '../../networkStatusWordOf';
 import type { BrowserConsoleEntry, BrowserConsoleLevel } from '../../types';
 
 type Props = {
   readonly entry: BrowserConsoleEntry;
 };
 
-const LEVEL_TONE = {
-  error: 'danger',
-  warn: 'warning',
-  info: 'info',
-  log: 'neutral',
-} as const satisfies Record<BrowserConsoleLevel, Tone>;
+const LEVEL_ICON = {
+  error: CircleAlert,
+  warn: TriangleAlert,
+  info: Info,
+  log: Terminal,
+} as const satisfies Record<BrowserConsoleLevel, typeof Info>;
 
 const LEVEL_TEXT = {
   error: 'text-danger',
@@ -20,24 +22,62 @@ const LEVEL_TEXT = {
   log: 'text-foreground',
 } as const satisfies Record<BrowserConsoleLevel, string>;
 
-export const BrowserConsoleRow = ({ entry }: Props) => (
-  <div
-    data-console-level={entry.level}
-    className="flex min-w-0 items-center gap-2 rounded-sm px-2 py-0.5 text-code hover:bg-hover"
-  >
-    <StatusDot tone={LEVEL_TONE[entry.level]} size="sm" ariaLabel={entry.level} />
-    {entry.kind === 'network' ? (
-      <span className="shrink-0 text-muted-foreground">
-        {`${entry.method ?? 'GET'} ${networkStatusWordOf({ status: entry.status })}`}
-      </span>
-    ) : null}
-    <TruncatedText className={cn('min-w-0 flex-1', LEVEL_TEXT[entry.level])}>
-      {entry.text}
-    </TruncatedText>
-    {entry.source === null ? null : (
-      <TruncatedText className="max-w-[40%] shrink-0 text-muted-foreground">
-        {entry.source}
-      </TruncatedText>
-    )}
-  </div>
-);
+const LEVEL_ICON_TEXT = {
+  error: 'text-danger',
+  warn: 'text-warning',
+  info: 'text-info',
+  log: 'text-faint-foreground',
+} as const satisfies Record<BrowserConsoleLevel, string>;
+
+export const BrowserConsoleRow = ({ entry }: Props) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const isNetwork = entry.kind === 'network';
+  const status = isNetwork ? networkStatusWordOf({ status: entry.status }) : null;
+  const tone = isNetwork && !isFailedRequest({ status: entry.status }) ? 'log' : entry.level;
+  const Icon = LEVEL_ICON[entry.level];
+  return (
+    <div
+      data-console-level={entry.level}
+      className="flex min-w-0 flex-col rounded-sm hover:bg-hover"
+    >
+      <SelectableRow
+        selected={false}
+        isExpanded={isOpen}
+        ariaLabel={`${entry.level}: ${entry.text}`}
+        onClick={() => setIsOpen(!isOpen)}
+        className="min-w-0 items-center gap-2 px-2 py-0.5 text-code"
+      >
+        <ChevronRight
+          size={ICON_SIZE.row}
+          aria-hidden
+          className={cn(
+            'shrink-0 text-faint-foreground motion-safe:transition-transform',
+            isOpen && 'rotate-90',
+          )}
+        />
+        <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', LEVEL_ICON_TEXT[tone])} />
+        {isNetwork ? (
+          <span className="shrink-0 text-muted-foreground">
+            {`${entry.method ?? 'GET'} ${status}`}
+          </span>
+        ) : null}
+        <TruncatedText className={cn('min-w-0 flex-1', LEVEL_TEXT[tone])}>
+          {entry.text}
+        </TruncatedText>
+        {entry.source === null ? null : (
+          <TruncatedText className="max-w-[40%] shrink-0 text-muted-foreground">
+            {entry.source}
+          </TruncatedText>
+        )}
+      </SelectableRow>
+      {isOpen ? (
+        <pre
+          aria-label="Details"
+          className={cn('whitespace-pre-wrap break-words px-2 pb-1 text-code', LEVEL_TEXT[tone])}
+        >
+          {entry.source === null ? entry.text : `${entry.text}\n${entry.source}`}
+        </pre>
+      ) : null}
+    </div>
+  );
+};

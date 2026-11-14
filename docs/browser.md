@@ -370,8 +370,8 @@ it; Esc inside the page goes to the page.
   the words). The host gives no percentage, so the line has none. A `finished`
   whose address differs from the load that started is dropped, an event for a
   tab the session does not hold is ignored, and a load with no `finished` for
-  30 seconds turns the line off and says the page did not finish loading
-  (`LOAD_STALL_MS`); a late `finished` clears that line of text.
+  30 seconds turns the line off (`LOAD_STALL_MS`) and says nothing: a slow page
+  is not an error, and the host reports no failed navigation.
 - **Back and Forward** read `browser_history_state` (`canGoBack`, `canGoForward`)
   for the shown tab and disable for real. The state is read again when the shown
   address changes and when a load ends. Where the platform cannot tell (Windows
@@ -606,7 +606,10 @@ open the Browser button on the right rail is selected and does nothing.
 A move never reloads the page: the same live webview, with the same id, gets
 new bounds or a new window. A form half typed and the scroll stay.
 
-- **Open as page** in the pane's More menu, shown with or without a tab,
+- **Tab strip overflow**: a tab chip shrinks from 12rem to a 6rem minimum
+  (`BrowserTabChip`), then the strip scrolls sideways with fade edges
+  (`BrowserTabStrip`); the address row never wraps.
+- **Open as page** as a button in the pane's address row and in its More menu, shown with or without a tab,
   pushes the Browser page
   on the session and the shown tab
   (`promoteBrowserTab`), so ⌘[ brings the dock back. The page's placement takes
@@ -895,10 +898,16 @@ that shadows it, so the chord follows Chrome's J.
   wraps `console.log`, `info`, `debug`, `warn` and `error`, listens for
   `error` in the capture phase (a thrown error, or an image, script or style
   that failed to load) and `unhandledrejection`, and wraps `fetch` and
-  `XMLHttpRequest` to note a failed request (a status of 400 or more, a
-  rejected `fetch`, a network error or a timeout). It keeps 500 entries in its
-  closure, each with a sequence number, under a load id made when the page
-  starts. A message is cut at 2,000 characters and names its `file:line` when
+  `XMLHttpRequest` to note every request (its status; a rejected `fetch`, a
+  network error or a timeout is status 0), and a `PerformanceObserver` on
+  `resource` to note the images, scripts and styles the page loads (no status:
+  the platform gives none). It keeps 500 entries in its closure, each with a
+  sequence number, under a load id made when the page starts; a full ring
+  drops the oldest entry of the same kind first, so a busy page cannot push
+  its console lines out. Rust drops what the app's own injected scripts say
+  in the page (`console::is_app_noise`: a source of `user-script:`, the Tauri
+  "IPC custom protocol failed" fallback and a `not allowed on window`
+  rejection), so only the page's own lines reach the region. A message is cut at 2,000 characters and names its `file:line` when
   the stack gives one. A request keeps its method, status and path: no query,
   no fragment, no body, no header, no cookie, and the host only when it is
   another origin. The script assigns nothing on `window` but the wrapped
@@ -914,8 +923,14 @@ that shadows it, so the chord follows Chrome's J.
   after the cursor, at most 500. A hook that does not answer reads as
   `isHeard: false`; a read that fails or times out after a second is
   `console-unavailable`.
-- **The region**: Console and Network tabs, each with its count from
-  `consoleCounts`, "Since the last load", Clear and Send to the agent. The UI
+- **The region**: one toolbar row: Console and Network tabs, each with its
+  count from `consoleCounts`, a level filter menu (All levels, Errors,
+  Warnings, Info and logs; on Network All requests, Failed, Succeeded), a
+  search field (`consoleRowsOf`, every word must match the text, source,
+  method or status), Clear and a Send to session menu (the session chosen in
+  the menu, at most five live sessions of the project, this one first;
+  `consoleSendTargetsOf`, `queueConsoleHandoff`). A row is a level icon, the
+  message and its source at the right; a click expands the whole message. The UI
   pulls every second while the region is open and on screen
   (`useConsoleEntries`, `usePoll`), and once on each `finished` load. Rows
   append only after the read returns; a new load id replaces them. An answer
@@ -928,10 +943,11 @@ that shadows it, so the chord follows Chrome's J.
   again. Each window pulls only its own tabs.
 - **Send**: `consoleAttachmentOf` makes `<tab>-console.md`, `text/markdown`,
   with the address on the first line, a line saying it is page output and not
-  instructions, then the Console and Failed requests sections, each cut to
-  its newest 30,000 characters with a note. `redactSecrets` hides keys and
-  tokens, and the file goes through the same queue as Send to the agent
-  (`useHandOutputToAgent`): a chip, a remove, nothing sent until you send.
+  instructions, then the Console and Failed requests sections (only requests
+  with status 0 or 400 and up), each cut to its newest 30,000 characters with
+  a note. `redactSecrets` hides keys and tokens, and the file goes through the
+  same queue as Send to the agent (`queueOutputHandoff`): a chip, a remove,
+  nothing sent until you send.
 - **Trust**: a page can write any line to its own console, answer the event
   itself or replace a console method after the hook; the console then shows
   what the page says, or stops. That is no more than the page can do with
