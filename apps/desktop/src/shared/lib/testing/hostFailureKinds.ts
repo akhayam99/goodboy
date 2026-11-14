@@ -1,15 +1,13 @@
 import type { HostFailureKind } from '../hostFailure';
 
-export const HOST_FAILURE_KINDS = [
-  'bad_credentials',
-  'denied',
-  'not_found',
-  'rate_limited',
-  'network',
-  'timeout',
-  'failed',
-] as const satisfies ReadonlyArray<HostFailureKind>;
+const KIND_BY_NAME: Readonly<Record<HostFailureKind, HostFailureKind>> = {
+  bad_credentials: 'bad_credentials',
+  denied: 'denied',
+  not_found: 'not_found',
+  rate_limited: 'rate_limited',
+  network: 'network',
+  timeout: 'timeout',
+  failed: 'failed',
+};
 
-type ListedKind = (typeof HOST_FAILURE_KINDS)[number];
-
-export type EveryHostFailureKindIsListed = HostFailureKind extends ListedKind ? true : never;
+export const HOST_FAILURE_KINDS: ReadonlyArray<HostFailureKind> = Object.values(KIND_BY_NAME);

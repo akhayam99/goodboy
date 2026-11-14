@@ -266,7 +266,9 @@ of its own: `SessionHeadFrame` hands it three slots through `SessionHeadSlotsCon
 its state word, spend, Settings, more menu and run controls at the right end of the crumb row,
 and a side column such as the lead's Agents beside the head and the page, full height, with
 its header on the frame first row (`PANE_RHYTHM.firstRow`). The head and the page then
-centre in the space left of that column, so they keep one left edge. The gutter is 24px a side, 16px once the
+centre in the space left of that column, so they keep one left edge. Only the page on screen
+fills the slots: `HeadSlotsGate` gives a kept lens layer that is hidden (under an agent page, or
+an earlier tab) no slot, so a run page under a step page never adds its name or controls. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.

@@ -106,7 +106,9 @@ describe('the c09 orchestrated scenes', () => {
     within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('button', {
       name: 'Runs',
     });
-    expect(screen.getByRole('heading', { name: 'Speed up the export end to end' })).toBeDefined();
+    expect(document.querySelector('[data-crumb-current]')?.textContent).toBe(
+      'Speed up the export end to end',
+    );
     expect(screen.getByText(/times out over 10k rows/)).toBeDefined();
     const facts = nodeOf('[data-orchestrated-facts]');
     const settings = within(facts).getByRole('group', { name: 'Run settings' });

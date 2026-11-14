@@ -8,6 +8,7 @@ import { agentObjectKey } from '../../../actions/agentObjectKey';
 import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 import { classifyAgent } from '../../agent-kind';
+import { AgentBriefCrumb } from './AgentBriefCrumb';
 import { agentHeadingOf } from './agentHeadingOf';
 import { firstLineOf } from './firstLineOf';
 
@@ -68,11 +69,7 @@ export const AgentTitle = ({
     agentHeadingOf({ name: agentDisplayName({ name: agent.name, kind }), kind, brief });
 
   if (brief !== null && displayName === brief && isInline) {
-    return (
-      <TruncatedText className="min-w-0 truncate" onDoubleClick={rename.start}>
-        {firstLineOf({ text: brief }) ?? brief}
-      </TruncatedText>
-    );
+    return <AgentBriefCrumb brief={brief} onRename={rename.start} />;
   }
 
   if (brief !== null && displayName === brief) {

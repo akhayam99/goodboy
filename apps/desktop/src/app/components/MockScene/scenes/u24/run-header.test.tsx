@@ -57,9 +57,9 @@ const renderScene = (id: (typeof SCENE_IDS)[number]) => {
 
 const header = async (): Promise<HTMLElement> => {
   await screen.findByRole('heading', { level: 1 });
-  const node = document.querySelector<HTMLElement>('[data-slot="pane-header"]');
+  const node = document.querySelector<HTMLElement>('[data-session-head]');
   if (node === null) {
-    throw new Error('no pane header');
+    throw new Error('no session head');
   }
   return node;
 };
@@ -101,7 +101,7 @@ describe('the run header scenes on the orchestrated document', () => {
       const bar = await header();
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
       expect(bar.querySelectorAll('[data-slot="pane-title-row"]')).toHaveLength(1);
-      const chip = bar.querySelector('[data-slot="pane-meta"] [data-run-status]');
+      const chip = bar.querySelector('[data-session-head-meta] [data-run-status]');
       expect(chip).not.toBeNull();
       expect(chip?.textContent).not.toBe('');
       const body = document.querySelector('[data-orchestrated-facts]');

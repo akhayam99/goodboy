@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { brandId } from '@goodboy/types';
 import type {
   Agent,
   AgentId,
@@ -289,7 +290,7 @@ describe('QuestionsPane', () => {
 
   it('orders what waits with a blocking ask first, then the oldest', () => {
     const older = question('q-old', 'Is the old question first?', 'planner', {
-      createdAt: '2026-09-27T10:00:00.000Z' as IsoDateTime,
+      createdAt: brandId<IsoDateTime>({ value: '2026-09-27T10:00:00.000Z' }),
     });
     setup({ open: [Q2, older, Q1] });
     const titles = within(group('Needs you'))
