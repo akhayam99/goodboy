@@ -2,7 +2,7 @@ import { createPort } from './createPort';
 
 export type DelegationDecision = 'confirm' | 'decline';
 
-export type DelegationDecisionResult = 'confirmed' | 'declined' | 'lost';
+export type DelegationDecisionResult = 'confirmed' | 'declined' | 'lost' | 'refused';
 
 type DecisionParams = {
   readonly delegationId: string;

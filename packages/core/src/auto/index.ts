@@ -68,9 +68,12 @@ export {
   type AdmissionChild,
   type AdmissionChildRefusal,
   type AdmissionLiveArtifact,
+  type AdmissionPermissions,
   type AdmissionSnapshot,
   type AdmissionVerdict,
 } from './admission';
+
+export { isAdmissionPlanGateOn } from './isAdmissionPlanGateOn';
 
 export {
   admissionChildRefusals,

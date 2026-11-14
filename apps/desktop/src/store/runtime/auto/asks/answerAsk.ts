@@ -56,6 +56,9 @@ export const answerAsk = async ({ runtime, askId, answer }: Params): Promise<Ask
     if (outcome === 'lost') {
       return 'settled';
     }
+    if (outcome === 'refused') {
+      return 'refused';
+    }
     return outcome === 'confirmed' ? 'allowed' : 'declined';
   }
   if (ref.kind === 'push') {

@@ -2,7 +2,7 @@ import { createPort } from './createPort';
 
 export type AskAnswer = 'allow' | 'decline';
 
-export type AskAnswerResult = 'allowed' | 'declined' | 'settled';
+export type AskAnswerResult = 'allowed' | 'declined' | 'settled' | 'refused';
 
 export type AskAnswerParams = {
   readonly askId: string;

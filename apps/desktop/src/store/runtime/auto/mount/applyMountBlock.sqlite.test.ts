@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { isRefusalPayload, mountNoteOf } from '@goodboy/core/auto';
 import { getAutoTree, listAutoOutbox } from '@goodboy/db';
-import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
+import { AUTO_SEED_NOW, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { writeAutoLevel } from '../level/writeAutoLevel';
+import { writeLeadPermission } from '../level/writeLeadPermission';
 import type { MountProjectOutcome } from '../ports';
 import {
   autoTurnEndsWithBlock,
@@ -141,5 +142,24 @@ describe('the mount action of the block', () => {
     const world = await mountTurn('run', { kind: 'unknown' });
 
     expect((await refusalOf(world)).count).toBe(1);
+  });
+
+  it.each([
+    ['ask', 'ask'],
+    ['whenAllowed', 'allowance'],
+    ['allow', 'mount'],
+  ] as const)('reads Add a project %s as the %s mode', async (value, mode) => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await writeLeadPermission({
+      db: world.state.world.db,
+      target: { treeId: world.treeId },
+      change: { key: 'addProject', value },
+      nowMs: AUTO_SEED_NOW,
+    });
+    world.state.ports.setMountProjectOutcome({ kind: 'ask', name: 'ledger-core' });
+    await userSays({ world, id: 'outbox-user-1', text: 'create a worktree on ledger-core' });
+    await autoTurnEndsWithBlock({ world, block: MOUNT });
+
+    expect(world.state.ports.mountProjectCalls[0]?.mode).toBe(mode);
   });
 });

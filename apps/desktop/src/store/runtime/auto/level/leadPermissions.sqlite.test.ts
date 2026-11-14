@@ -9,7 +9,6 @@ import {
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type WorkspaceId } from '@goodboy/types';
 import { SETTING_AUTO_PLAN_APPROVAL } from '../../../../features/settings/settings';
-import { admissionStateOf } from '../admission/admissionStateOf';
 import { makeAutoWorld, WORLD_NOW, WORLD_TREE } from '../testing/autoWorld';
 import { readLeadPermissions } from './readLeadPermissions';
 import { writeAutoLevel } from './writeAutoLevel';
@@ -38,8 +37,7 @@ describe('Lead permissions in the database', () => {
       expect(valuesOf({ permissions })).toEqual(LEAD_PERMISSION_PRESETS[level]);
       expect(permissions.preset).toBe(level);
       expect(permissions.spendLimitUsd).toBe(5);
-      const isEveryChildAsked =
-        admissionStateOf({ snapshot: { level }, isConfirmForced: false }) === 'awaiting_confirm';
+      const isEveryChildAsked = level === 'step';
       expect(permissions.rows.startReaders.value === 'ask').toBe(isEveryChildAsked);
       expect(permissions.rows.startWriters.value === 'ask').toBe(isEveryChildAsked);
       expect(permissions.rows.approvePlan.value === 'ask').toBe(level !== 'run');

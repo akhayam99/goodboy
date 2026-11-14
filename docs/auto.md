@@ -589,7 +589,8 @@ writing to it reopens it to **Deciding**.
   (`routeAutoChildTurn` passes `isBusy`, and `continueChild` answers it after the plain checks).
   Auto's continue passes the admission's artifact checks (`admissionChildRefusals`, fenced in its
   transaction by `inputArtifactStatementsOf`), and Auto's queued message waits as
-  `awaiting_confirm` at Every step or on a forced confirm (`admissionStateOf`). The person's own
+  `awaiting_confirm` when the start row of its role is Ask or on a forced confirm
+  (`admissionStateOf`). The person's own
   message goes on whatever the plan's state, and is refused only when an input artifact was
   discarded. The queue delivery id rides the port (`deliveryId`, kept in the continue's
   request), so a queued message sent again replays its delegation instead of running twice.
@@ -787,9 +788,10 @@ is a compare and swap on the version the drawer shows, then Auto is told once
 discarded one refuse it with a sentence and the drawer stays open. A second
 click, or a second window, on an approved version does not tell Auto again.
 A writer role (Implementer, Tester, Docs, Scribe, CI fixer, Rewriter) taking a
-plan needs its current revision approved, unless the session level is **Never**
-or the global approval switch is off. The admission snapshot reads the stored
-`agents.autoPlanApproval` setting for every handoff through
+plan needs its current revision approved while the Lead's Approve the plan row
+reads Ask (`isAdmissionPlanGateOn`); **Never** and the global approval switch
+both read Skip. The admission snapshot reads the rows for every handoff, and the
+rows read the stored `agents.autoPlanApproval` setting through
 `isAutoPlanApprovalRequired`; only the exact value `false` turns that switch
 off. There is no screen for that setting yet. **Ask for changes** opens the
 chat of Auto: a change written there makes Auto rework the same plan into
@@ -1041,11 +1043,11 @@ It decides by ending its final reply with at most one block:
 - `mount` attaches a project of the workspace, on the branch the user named
   (`project`, optional `branch`, `reason`; `parseMountSpec`). It is how "create a worktree on
   app-web with branch X" is done: the worktree is the deliverable, so no implementer starts to
-  run `git worktree add`. `applyMountBlock` follows the Asks you level through the `mountProject`
-  port (`mountAutoProject`, which calls `ensureProjectMounted` with the branch as written):
-  **Never** mounts at once, **After the plan** mounts only when the materialization gate
-  allows it (the same allowance as `mountTaskFolders`) and otherwise asks, **Every step** always
-  asks. The result is a `refusal` row with a `mount` note (`state` `ask` or `done`), so replay,
+  run `git worktree add`. `applyMountBlock` follows the Add a project row through the
+  `mountProject` port (`mountAutoProject`, which calls `ensureProjectMounted` with the branch as
+  written): Allow (the **Never** preset) mounts at once, When the session allows it (**After the
+  plan**) mounts only when the materialization gate allows it (the same allowance as
+  `mountTaskFolders`) and otherwise asks, Ask (**Every step**) always asks. The result is a `refusal` row with a `mount` note (`state` `ask` or `done`), so replay,
   recovery and the one row per turn work as for a refused delegate. A project that is unknown
   or ambiguous falls back to the folder list. A done mount is written with the code `mounted`
   (`AUTO_MOUNTED_CODE`): it is never a refusal, so it adds no refusal to the count, no strike to
@@ -1065,9 +1067,10 @@ It decides by ending its final reply with at most one block:
 
 The prompt takes an Asks you level, using the same three values as workflows
 with its own default, **After the plan**. Each turn reads the
-level saved for its session (`autoSystemPromptOf`, the same `readAutoLevel` that
-admission uses), so the prompt and the gates follow one setting and a read that fails
-fails the turn instead of guessing a level. **Every step** requires confirmation
+level saved for its session (`autoSystemPromptOf` through `readAutoLevel`; admission
+reads the permission rows, whose presets are these levels), so a tree without its own
+rows gets a prompt and gates from one setting, and a read that fails fails the turn
+instead of guessing a level. **Every step** requires confirmation
 for each child and a planner's plan before a change. **After the plan** lets
 readers start freely, requires a planner's plan and user approval before a
 writer, then continues without asking for each handoff. **Never** makes the
@@ -1101,11 +1104,13 @@ hints. Confirm and decline both check pending state inside their transaction, so
 a late decline cannot cancel a confirmed child. The proposal tests cover rollback,
 retry and competing decisions.
 
-Admission reads the session level from the database for every handoff, after
-resolving the child. **Every step** stores each child as waiting for its own
-Confirm or Cancel. At **Never**, an unapproved plan may be consumed by a
-writer, while revision and artifact checks still apply. Changing the level
-never starts a child already waiting for confirmation. An explicit child
+Admission reads the Lead's permission rows from the database for every
+handoff, after resolving the child ([Admission rows](#admission-rows)). With
+no stored rows they are the session level: **Every step** stores each child
+as waiting for its own Confirm or Cancel. At **Never**, an unapproved plan may
+be consumed by a writer, while revision and artifact checks still apply.
+Changing the level or a row never starts a child already waiting for
+confirmation. An explicit child
 `confirm: true` or an ambiguous revise still requires confirmation at any level.
 A plan feeds one writer per role: a second writer of the same role on a plan
 that an unsettled writer already took is refused `artifact_busy`, in the same
@@ -1122,7 +1127,7 @@ write takes a named session or workspace target, compares and swaps, retries
 one lost race and reports a failed write without updating window state. Picks made in one window
 run in call order per workspace (`changeAutoLevel` queues them), so the last pick wins
 and an older pick never retries over a newer one.
-`readAdmissionSnapshot` reads the persisted level and approval switch;
+`readAdmissionSnapshot` reads the effective rows (`readAdmissionPermissions`);
 `admit.ts` applies the same policy to the stored child state, receipt and
 plan consumption. The level tests in `store/runtime/auto/level/` check
 persistence, failures, second writers and pending confirmations.
@@ -1207,6 +1212,31 @@ A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level with the switch
 on and off, each precedence step, the stale pair) and
 `leadPermissions.sqlite.test.ts` (writes, Reset, two windows, failure).
+
+#### Admission rows
+
+Admission reads four rows, never the level
+(`store/runtime/auto/admission/readAdmissionPermissions.ts`, the Work switch
+from `work.enabled`): Start agents that read decides whether a reader role
+waits for your confirmation, Start agents that write the same for a writer
+role (`admissionStateOf`; After the plan and Free start it, and an explicit
+`confirm: true` still asks), Approve the plan turns the plan gate on for a
+writer that takes a plan (`isAdmissionPlanGateOn`, in
+`admissionChildRefusals` and in the transaction through
+`inputArtifactStatementsOf`), and Add a project picks the mount mode in
+`applyMountBlock`. With no stored rows every outcome equals the level.
+
+A row changed between a proposal and your confirm never loosens it: a waiting
+child stays waiting when its start row turns free, and `confirmDelegation`
+reads Approve the plan again and, when it now asks, checks in its own
+transaction that the writer's plan is approved at the revision it took
+(`readPlanApprovalGuards`). If not, the confirm returns `refused`, the
+proposal stays waiting and the action bar shows `CONFIRM_REFUSED_REASON`; the
+plan was used when the child was proposed, so the way out is to decline it.
+Two confirms start one child (the second reads `lost`). The tests are
+`admission/admissionRows.sqlite.test.ts` (a table per row and value, the
+default only with Work on), `level/admissionLevels.sqlite.test.ts`
+(unchanged, no stored rows) and `level/confirmationLifecycle.sqlite.test.ts`.
 
 ### Asks
 
