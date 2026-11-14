@@ -43,12 +43,12 @@ export const ArtifactShellHeader = ({
 
   const metaLine =
     meta === null ? null : (
-      <div
+      <span
         data-testid="artifact-shell-meta"
-        className="flex min-w-0 text-meta text-muted-foreground"
+        className="flex min-w-0 text-meta font-normal text-muted-foreground"
       >
         {meta}
-      </div>
+      </span>
     );
 
   return (
@@ -61,13 +61,9 @@ export const ArtifactShellHeader = ({
       >
         <PaneTitleRow
           titleTestId="artifact-title"
-          isHeading={!isTitleInDocument}
           title={
             isTitleInDocument ? (
-              <div className="flex min-w-0 items-center">
-                <h1 className="sr-only">{title}</h1>
-                {metaLine}
-              </div>
+              <span className="sr-only">{title}</span>
             ) : (
               <span className="flex min-w-0 items-center gap-2">
                 <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />
@@ -77,6 +73,7 @@ export const ArtifactShellHeader = ({
               </span>
             )
           }
+          badge={isTitleInDocument ? metaLine : null}
           meta={isTitleInDocument ? null : metaLine}
           actions={
             <>

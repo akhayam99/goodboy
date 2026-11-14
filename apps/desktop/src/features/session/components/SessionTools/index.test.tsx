@@ -191,7 +191,7 @@ describe('SessionTools', () => {
     expect(stateOf('browser')).toBe('waiting');
   });
 
-  it('lets a reading panel cover the open tool and brings the tool back when it closes', () => {
+  it('keeps the open tool pressed beside a reading panel and after it closes', () => {
     render(<SessionTools sessionId={SESSION_ID} />);
     const plan = {
       kind: 'artifact-document',
@@ -203,7 +203,7 @@ describe('SessionTools', () => {
       useAppStore.getState().toggleDrawer(plan);
     });
     expect(drawerKind()).toBe('artifact-document');
-    expect(stateOf('terminal')).toBe('waiting');
+    expect(stateOf('terminal')).toBe('pressed');
 
     act(() => {
       useAppStore.getState().toggleDrawer(plan);
