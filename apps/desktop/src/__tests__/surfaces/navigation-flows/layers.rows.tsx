@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { pressShortcut } from '../../helpers/pressKey';
 import { type Row, WAIT, settle, useAppStore } from './harness';
 
-const toolButton = (): Promise<HTMLElement> => screen.findByTestId('pane-toggle-scripts');
+const toolButton = (): Promise<HTMLElement> => screen.findByTestId('pane-toggle-terminal');
 
 const sidePanel = (): HTMLElement => screen.getByRole('complementary', { name: 'Side panel' });
 

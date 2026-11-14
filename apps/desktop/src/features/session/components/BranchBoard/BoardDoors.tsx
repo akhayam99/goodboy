@@ -1,7 +1,9 @@
 import { GitCommitVertical, GitPullRequest, Globe, SquareTerminal } from 'lucide-react';
-import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import { branchPlace, useAppStore } from '../../../../store';
+import { openBranchBrowser } from '../../../browser/openBranchBrowser';
 import type { BranchWorkCounts } from '../../../branch/branchTabFactsOf';
+import { openBranchTerminal } from '../../../terminal/openBranchTerminal';
 import { countWordOf } from '../../central/board/countWordOf';
 import { BoardRemoveButton } from './BoardRemoveButton';
 import { useBoardContext } from './useBoardContext';
@@ -10,8 +12,6 @@ type Props = {
   readonly rowId: string;
   readonly counts: BranchWorkCounts | null;
 };
-
-const TOOL_PENDING = 'Opens in the Tools rail once it lands.';
 
 type CountsParams = {
   readonly counts: BranchWorkCounts | null;
@@ -63,22 +63,22 @@ export const BoardDoors = ({ rowId, counts }: Props) => {
           </span>
         )}
       </Button>
-      <Tooltip content={TOOL_PENDING}>
-        <span className="flex">
-          <Button size="sm" variant="secondary" disabled>
-            <SquareTerminal size={ICON_SIZE.control} aria-hidden />
-            Terminal here
-          </Button>
-        </span>
-      </Tooltip>
-      <Tooltip content={TOOL_PENDING}>
-        <span className="flex">
-          <Button size="sm" variant="secondary" disabled>
-            <Globe size={ICON_SIZE.control} aria-hidden />
-            Browser here
-          </Button>
-        </span>
-      </Tooltip>
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() => openBranchTerminal({ sessionId: session.id, mountPath: fact.mountPath })}
+      >
+        <SquareTerminal size={ICON_SIZE.control} aria-hidden />
+        Terminal here
+      </Button>
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() => openBranchBrowser({ sessionId: session.id })}
+      >
+        <Globe size={ICON_SIZE.control} aria-hidden />
+        Browser here
+      </Button>
       {fact.request === null ? null : (
         <Button
           size="sm"

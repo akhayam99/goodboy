@@ -14,6 +14,7 @@ import type {
 } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
 import { sessionPlace } from '../../../store/slices/navigation/place';
+import { togglePane } from '../../../features/session/panes/togglePane';
 import { type Ctx, type Row, WAIT, settle, useAppStore } from './harness';
 
 const WORKFLOW_ID = 'journey-run-tree-workflow' as WorkflowId;
@@ -137,7 +138,11 @@ const scoutRows = (): ReadonlyArray<string> =>
 
 const foldAndOpenFromTheKeyboard = async (): Promise<void> => {
   const user = userEvent.setup();
-  await user.click(screen.getByTestId('pane-toggle-spawned'));
+  const sessionId = useAppStore.getState().currentSessionId;
+  if (sessionId === null) {
+    throw new Error('no current session');
+  }
+  act(() => togglePane({ sessionId, pane: 'spawned' }));
   const fold = await foldItem();
 
   expect(fold.getAttribute('aria-label')).toMatch(FOLD_LABEL);

@@ -171,10 +171,10 @@ describe('controls hints', () => {
     renderScene('controls-hints');
 
     const row = rowOf('Session tools and Search side by side');
-    const scripts = within(row).getByTestId('pane-toggle-scripts');
+    const scripts = within(row).getByTestId('pane-toggle-terminal');
     const search = within(row).getByRole('button', { name: /^Search or run \(/ });
     expect(scripts.textContent).toBe('');
-    expect(scripts.getAttribute('aria-label')).toBe('Scripts');
+    expect(scripts.getAttribute('aria-label')).toBe('Terminal');
     expect(scripts.querySelector('kbd')).toBeNull();
     expect(search.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');
     expect(search.querySelector('kbd')?.textContent).toBe(shortcutGlyphs('palette.open'));

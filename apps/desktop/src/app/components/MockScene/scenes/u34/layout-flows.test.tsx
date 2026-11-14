@@ -53,8 +53,11 @@ it.each(Object.entries(U34_LAYOUT_FLOW_SCENES))('mounts %s', async (id, Scene) =
   }
   if (id === 'u34-u30-active-tool') {
     const rail = screen.getByRole('toolbar', { name: 'Tools' });
-    expect(rail.querySelector('[data-slot="tool-caption"][data-tone="open"]')?.textContent).toBe(
-      'Agents',
-    );
+    expect(rail.querySelector('[data-slot="tool-caption"][data-tone="open"]')).toBeNull();
+    expect(
+      [...rail.querySelectorAll('[data-slot="tool-caption"]')].map(
+        (caption) => caption.textContent,
+      ),
+    ).toEqual(['Terminal', 'Browser']);
   }
 });

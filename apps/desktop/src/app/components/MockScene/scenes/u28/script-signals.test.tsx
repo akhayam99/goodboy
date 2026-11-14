@@ -45,13 +45,11 @@ describe('script signals scene', () => {
     expect(MOCK_SCENES['script-signals']).toBe(U28_SCRIPT_SIGNALS_SCENES['script-signals']);
   });
 
-  it('shows the failed script and the finished command on the tools column', () => {
+  it('shows the finished command on the tools column and no Scripts button', () => {
     const Scene = U28_SCRIPT_SIGNALS_SCENES['script-signals'];
     render(<Scene />);
 
-    expect(screen.getByTestId('pane-toggle-scripts').getAttribute('aria-label')).toBe(
-      'Scripts, Check posting drift failed. Open its output.',
-    );
+    expect(screen.queryByTestId('pane-toggle-scripts')).toBeNull();
     expect(screen.getByTestId('pane-toggle-terminal').getAttribute('aria-label')).toBe(
       'Terminal, pnpm test finished after 42s',
     );
