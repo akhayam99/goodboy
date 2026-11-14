@@ -646,6 +646,15 @@ note that is sending has no actions and a removed one leaves no node.
 `useLeadTree` loads the delegations, mounts and costs into `leadTreeOf`.
 `LeadTree` shares the row tokens of `RunTree` but not its agent stream.
 
+The Work tab of a branch reads the same model per branch (`branchLeadsOf`, through
+`useBranchLeads`). Each Auto run of the branch group is one Lead line: glyph, the word
+Auto, title, state word, and its spend on this branch (the split of
+`leadSpendByBranchOf` for that mount). Below it the compact `LeadTree` lists only the
+agents the Lead ran on this branch, flat under the Lead. A Lead that also worked on
+another branch says `also on` with that branch, and that note opens its Work tab when
+the Branch page knows the mount. The line has no button of its own: it opens the Lead
+page, and the tree opens it too. A Lead is never listed on a branch it has no run on.
+
 ### The spawn record
 
 `SpawnRecord` (`apps/desktop/src/features/auto/tree/SpawnRecord/index.tsx`) answers why

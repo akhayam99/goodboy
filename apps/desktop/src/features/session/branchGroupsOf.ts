@@ -137,7 +137,7 @@ type ShownCountParams = {
 export const branchGroupShownCountOf = ({ group }: ShownCountParams): number =>
   group.runs.filter((run) => !run.isArchived).length;
 
-const countsOf = ({ runs }: CountParams): BranchGroupCounts => ({
+export const branchGroupCountsOf = ({ runs }: CountParams): BranchGroupCounts => ({
   needsYou: runs.filter((run) => runGroupKeyOf({ run }) === 'needsYou').length,
   running: runs.filter((run) => runGroupKeyOf({ run }) === 'running').length,
   finished: runs.filter((run) => run.isFinished && !run.isArchived).length,
@@ -209,7 +209,7 @@ export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGr
     key: group.key,
     head: group.head,
     runs: group.items,
-    counts: countsOf({ runs: group.items }),
+    counts: branchGroupCountsOf({ runs: group.items }),
     isGone: isGroupGoneOf({ group, mounts }),
   }));
 

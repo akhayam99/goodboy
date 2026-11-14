@@ -9,6 +9,7 @@ import { useMarkBranchWorkLeave } from '../../hooks/useMarkBranchWorkLeave';
 import { markBranchWorkReturn } from '../../markBranchWorkReturn';
 import { openBranchWork } from '../../openBranchWork';
 import { RUNS_GRID_COLUMNS } from '../SessionWorkspace/parts/RunsGrid/runsGridColumns';
+import { BranchWorkLeads } from './BranchWorkLeads';
 import { BranchWorkNotice } from './BranchWorkNotice';
 import { BranchWorkQuestions } from './BranchWorkQuestions';
 import { BranchWorkRuns } from './BranchWorkRuns';
@@ -28,7 +29,8 @@ const WORK_LABEL = 'Work on this branch';
 export const BranchWork = ({ session, work }: Props) => {
   const sessionId = session.id;
   const { view } = work;
-  const { groupKey, mountPath, mounts, runs, questions, artifacts } = view;
+  const { groupKey, mountPath, mounts, runs, leads, story, questions, artifacts } = view;
+  const hasLeads = leads.length > 0;
   useMarkBranchWorkLeave({ groupKey, mountPath });
 
   if (!work.isLoaded) {
@@ -37,7 +39,7 @@ export const BranchWork = ({ session, work }: Props) => {
 
   const hasQuestionsError = view.hasQuestionsError && !view.isQuestionsLoaded;
   const hasArtifactsError = artifacts.error !== null && !artifacts.isLoaded;
-  const isEmpty = runs === null && questions === null && artifacts.group === null;
+  const isEmpty = runs === null && !hasLeads && questions === null && artifacts.group === null;
   if (groupKey === null || (isEmpty && !hasQuestionsError && !hasArtifactsError)) {
     return (
       <PageColumn width="column" className="flex min-w-0 flex-col pb-5">
@@ -54,7 +56,20 @@ export const BranchWork = ({ session, work }: Props) => {
   const leave = () => markBranchWorkReturn({ groupKey, mountPath });
 
   return (
-    <PageColumn width="column" className="flex min-w-0 flex-col pb-5">
+    <PageColumn width="column" className="flex min-w-0 flex-col gap-4 pb-5">
+      {story === null ? null : (
+        <p data-testid="branch-work-story" className="max-w-[760px] text-prose text-foreground">
+          {story}
+        </p>
+      )}
+      {hasLeads ? (
+        <BranchWorkLeads
+          sessionId={sessionId}
+          leads={leads}
+          onToggleFold={view.onToggleLeadFold}
+          onLeave={leave}
+        />
+      ) : null}
       <ListGrid label={WORK_LABEL} columns={RUNS_GRID_COLUMNS} isGrouped>
         {runs === null ? null : (
           <BranchWorkRuns
@@ -62,6 +77,7 @@ export const BranchWork = ({ session, work }: Props) => {
             group={runs}
             mounts={mounts}
             mountPath={mountPath}
+            label={hasLeads ? 'Earlier runs' : NAMES.runs}
             onLeave={leave}
           />
         )}

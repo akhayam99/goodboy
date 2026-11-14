@@ -35,9 +35,10 @@ vi.mock('../../../../shared/lib/repo', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   brandId,
+  type AgentId,
   type ArtifactId,
   type IsoDateTime,
   type MountId,
@@ -49,6 +50,7 @@ import {
 import { aProject, aSession, anAgent } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
+import { aDelegation, aView, FIXTURE_ROOT } from '../../../auto/testing/autoViewFixtures';
 import { branchTabFactsOf } from '../../../branch/branchTabFactsOf';
 import { stackKey } from '../../../../store/slices/navigation/currentStack';
 import { agentPlace, branchPlace } from '../../../../store/slices/navigation/place';
@@ -448,5 +450,163 @@ describe('returning to the Work tab of a branch', () => {
 
     await screen.findByRole('button', { name: '1 used' });
     expect(screen.queryByRole('button', { name: /^Plan Old credit notes/ })).toBeNull();
+  });
+});
+
+const THIRD = aMountView({
+  key: 'third',
+  sessionId: SESSION.id,
+  projectId: PAYMENTS.id,
+  projectName: 'payments-api',
+  branch: 'chore/ledger-cleanup',
+});
+const AUTO_LEAD = anAgent({
+  id: FIXTURE_ROOT,
+  sessionId: SESSION.id,
+  kind: 'auto',
+  status: 'running',
+});
+const CHILD_ON_DUP = anAgent({
+  id: brandId<AgentId>({ value: 'agent-on-dup' }),
+  sessionId: SESSION.id,
+  name: 'Implementer',
+  parentAgentId: AUTO_LEAD.id,
+  mountId: DUP.id,
+});
+const CHILD_ON_RETRY = anAgent({
+  id: brandId<AgentId>({ value: 'agent-on-retry' }),
+  sessionId: SESSION.id,
+  name: 'Tester',
+  parentAgentId: AUTO_LEAD.id,
+  mountId: RETRY.id,
+});
+
+type DelegationParams = {
+  readonly key: string;
+  readonly agentId: AgentId;
+  readonly mountId: MountId;
+};
+
+const delegationOf = ({ key, agentId, mountId }: DelegationParams) => ({
+  ...aDelegation({ key, role: 'implementer', state: 'running' }),
+  childAgentId: agentId,
+  target: { mountId },
+});
+
+describe('the Leads of a branch', () => {
+  beforeEach(() => {
+    useAppStore.setState({
+      sessionMounts: { [SESSION.id]: [DUP, RETRY, THIRD] },
+      sessionPhaseRuns: { [SESSION.id]: [AUTO_LEAD, CHILD_ON_DUP, CHILD_ON_RETRY] },
+      sessionOpenQuestions: { [SESSION.id]: [] },
+      sessionAnsweredQuestions: { [SESSION.id]: [] },
+      autoTreeViews: {
+        [SESSION.id]: [
+          aView({
+            phase: 'delegating',
+            delegations: [
+              delegationOf({ key: 'dup', agentId: CHILD_ON_DUP.id, mountId: DUP.id }),
+              delegationOf({ key: 'retry', agentId: CHILD_ON_RETRY.id, mountId: RETRY.id }),
+            ],
+            rootAsk: 'Stop retried webhooks posting a second credit',
+          }),
+        ],
+      },
+    });
+  });
+
+  it('shows a Lead on both of its branches with Also on, and on no third', async () => {
+    const { unmount } = render(
+      <ToastProvider>
+        <WorkTab session={SESSION} mountId={DUP.id} mountPath={DUP.worktreePath} />
+      </ToastProvider>,
+    );
+
+    const line = await screen.findByTestId('branch-work-lead');
+    expect(line.textContent).toContain(RETRY.branch);
+    screen.getByRole('heading', { level: 2, name: 'Leads' });
+    unmount();
+
+    const other = render(
+      <ToastProvider>
+        <WorkTab session={SESSION} mountId={RETRY.id} mountPath={RETRY.worktreePath} />
+      </ToastProvider>,
+    );
+    expect((await screen.findByTestId('branch-work-lead')).textContent).toContain(DUP.branch);
+    other.unmount();
+
+    render(
+      <ToastProvider>
+        <WorkTab session={SESSION} mountId={THIRD.id} mountPath={THIRD.worktreePath} />
+      </ToastProvider>,
+    );
+    await screen.findByText('Nothing ran on this branch yet');
+    expect(screen.queryByTestId('branch-work-lead')).toBeNull();
+  });
+
+  it('lists only the agents the Lead ran on this branch in its compact tree', async () => {
+    render(
+      <ToastProvider>
+        <WorkTab session={SESSION} mountId={DUP.id} mountPath={DUP.worktreePath} />
+      </ToastProvider>,
+    );
+
+    const tree = await screen.findByRole('tree', { name: 'Agents' });
+    expect(within(tree).getAllByRole('treeitem')).toHaveLength(1);
+    expect(tree.textContent).toContain('Implementer');
+    expect(tree.textContent).not.toContain('Tester');
+    expect(screen.getByTestId('branch-work-story').textContent).toMatch(/^Auto /);
+  });
+
+  it('reads the tab count from the same counts as the Leads it lists', async () => {
+    render(
+      <ToastProvider>
+        <WorkTab session={SESSION} mountId={DUP.id} mountPath={DUP.worktreePath} />
+        <WorkBadge session={SESSION} mountId={DUP.id} mountPath={DUP.worktreePath} />
+      </ToastProvider>,
+    );
+
+    await screen.findByTestId('branch-work-lead');
+    const badge = screen.getByRole('status');
+    expect(badge.textContent).toBe(String(screen.getAllByTestId('branch-work-lead').length));
+    expect(badge.getAttribute('data-work-badge')).toBe('info');
+  });
+
+  it('leads Back from the Lead page to the Work tab', async () => {
+    useAppStore.getState().navigate({
+      to: branchPlace({ sessionId: SESSION.id, mountPath: DUP.worktreePath, tab: 'work' }),
+    });
+    render(
+      <ToastProvider>
+        <WorkTab session={SESSION} mountId={DUP.id} mountPath={DUP.worktreePath} />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Auto Stop retried/ }));
+    cleanup();
+    act(() => useAppStore.getState().up());
+
+    const place = topPlaceOf();
+    expect(place?.at === 'session' ? place.view.target : null).toMatchObject({
+      kind: 'branch',
+      tab: 'work',
+      mountPath: DUP.worktreePath,
+    });
+  });
+
+  it('keeps a branch with runs only as it was', async () => {
+    useAppStore.setState({
+      sessionPhaseRuns: { [SESSION.id]: AGENTS },
+      autoTreeViews: { [SESSION.id]: [] },
+    });
+    render(
+      <ToastProvider>
+        <WorkTab session={SESSION} mountId={DUP.id} mountPath={DUP.worktreePath} />
+      </ToastProvider>,
+    );
+
+    await screen.findByRole('heading', { level: 2, name: 'Runs' });
+    expect(screen.queryByRole('heading', { level: 2, name: 'Leads' })).toBeNull();
+    expect(screen.queryByTestId('branch-work-story')).toBeNull();
   });
 });
