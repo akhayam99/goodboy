@@ -120,29 +120,30 @@ describe('session tools rows stay reachable', () => {
     expect(mounts.map((mount) => mount.worktreePath)).toContain(tab?.cwd);
   });
 
-  it('Explore lens: the Explore toggle opens the files pane', async () => {
+  it('the tools column holds Terminal and Browser only, no Explore, Agents or Scripts button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await press('Explore');
-
-    expect(drawerKind()).toBe('explore');
-    expect(screen.getByRole('region', { name: 'Explore' })).toBeDefined();
+    expect(
+      within(tools())
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('data-testid')),
+    ).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
+    for (const name of ['Explore', 'Agents', /^Scripts/]) {
+      expect(within(tools()).queryByRole('button', { name })).toBeNull();
+    }
   });
 
-  it('Scripts lens: the Scripts row, the palette and the Open scripts toast reach the pane', async () => {
+  it('Scripts lens: the palette and the Open scripts toast still reach the pane', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await press(/^Scripts/);
-    expect(drawerKind()).toBe('scripts');
-    expect(screen.getByRole('region', { name: 'Scripts' })).toBeDefined();
-
     act(() => {
-      useAppStore.getState().closeDrawer();
       openToolPane({ sessionId, pane: 'scripts' });
     });
     await settle();
+
     expect(drawerKind()).toBe('scripts');
+    expect(screen.getByRole('region', { name: 'Scripts' })).toBeDefined();
   });
 });

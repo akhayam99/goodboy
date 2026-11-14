@@ -1097,8 +1097,8 @@ work on one goal without mixing up their chats.
 A **turn** is one message from you and one answer from the agent, with
 everything that streams in between.
 
-**Ask** is a question about the whole session, asked from the Ask tool in the
-session tools column (`SESSION_TOOLS`, shortcut ⌘L). It is not an agent: it never lands on the board, in the agent count or in an
+**Ask** is a question about the whole session, asked from the Context tab
+(shortcut ⌘L). It is not an agent: it never lands on the board, in the agent count or in an
 agent's chat, and it never changes the work. It reads the session record, the
 agents' reports, questions, runs, review comments, branch, pull request and
 the session worktrees, read only, and answers with chips that open what it

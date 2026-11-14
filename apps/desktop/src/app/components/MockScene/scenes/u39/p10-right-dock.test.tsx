@@ -88,16 +88,10 @@ describe('the ux39 right dock scenes', () => {
     expect(rail().closest('[data-studio-motion]')).toBeNull();
   });
 
-  it('ux39-p10-session stacks the session tools above Terminal and Browser', async () => {
+  it('ux39-p10-session holds Terminal and Browser only on the rail', async () => {
     await mount('ux39-p10-session');
 
-    expect(railTools()).toEqual([
-      'pane-toggle-explore',
-      'pane-toggle-spawned',
-      'pane-toggle-scripts',
-      'pane-toggle-terminal',
-      'pane-toggle-browser',
-    ]);
+    expect(railTools()).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
   });
 
   it.each(['ux39-p11-terminal-board', 'ux39-p12-tasks-terminal'] as const)(

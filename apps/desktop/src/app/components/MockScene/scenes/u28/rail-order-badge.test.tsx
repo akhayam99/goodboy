@@ -59,7 +59,7 @@ describe('rail order and badge scenes', () => {
     }
   });
 
-  it('session-tools-order reads files, then work, then the terminal and the browser', () => {
+  it('session-tools-order reads the Tools caption, then the terminal and the browser', () => {
     mount({ name: 'session-tools-order' });
 
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
@@ -67,8 +67,9 @@ describe('rail order and badge scenes', () => {
       within(toolbar)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['Explore', 'Agents', 'Scripts', 'Terminal', 'Browser']);
-    expect(within(toolbar).getAllByRole('separator')).toHaveLength(1);
+    ).toEqual(['Terminal', 'Browser']);
+    expect(toolbar.querySelector('[data-slot="tool-group-caption"]')?.textContent).toBe('Tools');
+    expect(within(toolbar).queryByRole('separator')).toBeNull();
   });
 
   it('sessions-door-counts draws a tone dot and a muted number, red only for a broken one', () => {

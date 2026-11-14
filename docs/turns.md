@@ -1829,8 +1829,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 
 ## Session Ask turns
 
-Ask answers a question about one session from the Ask tool in the session tools
-column (`SESSION_TOOLS`, `ask.open`). It reuses the
+Ask answers a question about one session from the Context tab (`ask.open`). It reuses the
 workspace chat pipeline (same hardening, same `chat_event` channel, same
 stream reader) with a session scope: `ask_turn` in
 `apps/desktop/src-tauri/src/chat.rs`.

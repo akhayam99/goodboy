@@ -357,7 +357,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   still in the session but whose steps did not load says "This run couldn't be
   read" with Retry (`RunMetadataMissing`), never that it is gone.
 
-The tools (Explore, Context, Ask, Agents, Scripts, Terminal, Browser) are panes, not pages:
+The tools (Terminal and Browser) are panes, not pages:
 they open from the right rail at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -711,19 +711,16 @@ opened later keeps the drawer's own motion. Moving between the shell rail and
 a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
 record panel shown as an overlay the rail stays where it is, above that panel's
 scrim, as it does above the shell's. It holds two
-groups by scope. On a session page with no page open, the Session group holds
-Explore, Agents and Scripts (`SESSION_TOOLS`; Context and Ask moved to the Context tab), under the caption
-Session (`ToolGroupCaption`, `text-rail`). At its foot, on every screen, the
-Workspace group holds Terminal and Browser (`WORKSPACE_TOOLS`) with no
-caption, since a 44px column cannot fit the word; a flexible gap keeps it
-anchored to the bottom, one separator sits above it when the Session group
-shows, and the column keeps the same inset at its foot as at its top. A test
+column holds two tools, Terminal and Browser (`RAIL_TOOLS`), under the caption
+Tools (`ToolGroupCaption`, `text-rail`), on every page of the app, in a session
+or outside one. Explore, Agents, Scripts, Context and Ask have no button on it:
+they open from their pages and keyboard shortcuts. A test
 scene or frame without the shell rail keeps the column inside `SessionFrame`
 (`ShellRailContext`).
 Each tool keeps its pane id and shortcut; Terminal shows ``⌃` `` and Browser
 has no shortcut. `SessionToolButton` names every tool below its icon in the
 9px `text-rail` caption role: secondary (`TEXT_ROLE.secondary`) when closed,
-label strength when open, and the Session caption is secondary too, so every
+label strength when open, and the Tools caption is secondary too, so every
 caption keeps its contrast in light mode. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
@@ -867,17 +864,7 @@ Folding the rail leaves the column in place.
   tier pane, so the session rail folds to icons while it is open.
   [browser.md](../browser.md#the-pane) owns its address row, its tabs and the
   rules for the native view.
-- **Context signals ride on Context.** A 6px dot in the Context tool's right
-  slot (on the folded icon, its corner) marks decisions changed since the last
-  look (info), a running summary (info, pulsing) or a failed summary (danger)
-  (`useToolSignal`, over `contextNoteOf`); the row's tooltip and accessible
-  name say why. The group loads the seen marker and the decisions once, as
-  the old chip did.
-- **Scripts and Terminal signal too.** The Scripts button shows a running dot
-  while a script of the session runs and a danger dot for a failed run nobody
-  opened (`scriptsSignalOf`; the drawer marks the run seen in `scriptRunsSeen`
-  when its output is open, so the dot clears on that run and returns on the next
-  failure). The Terminal button shows a dot when a command that ran more than
+- **Terminal signals on its button.** The Terminal button shows a dot when a command that ran more than
   ten seconds ended while the drawer was closed (`useTerminalFinishSignal`, a
   3 second poll of `terminal_list_live` kept to the latest answer, state in
   `terminalFinishes`, cleared when the drawer opens). It says "finished", never

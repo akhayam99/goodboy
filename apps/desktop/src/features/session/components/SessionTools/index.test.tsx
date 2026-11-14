@@ -11,7 +11,6 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { ExploreEntry } from '../../../explore/explore';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -23,16 +22,12 @@ import type { OpenDrawer } from '../../../../store/slices/drawer/state';
 import { brandedId } from '../../../history/testing/brandedId';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { SESSION, WORKSPACE, sessionFixture } from '../../../../__tests__/helpers/actionFixtures';
-import { DrawerHost } from '../../../../app/components/DrawerHost';
-import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   SESSION_ID,
   seedActivityRunScene,
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
 import { SessionTools } from '.';
-import { SESSION_TOOLS, WORKSPACE_TOOLS } from './sessionTools';
-
-const ALL_TOOLS = [...SESSION_TOOLS, ...WORKSPACE_TOOLS];
+import { RAIL_TOOLS } from './sessionTools';
 import { SESSION_TOOL_RAIL_WIDTH } from './sessionToolRailWidth';
 
 let useAppStore: StoryStore;
@@ -50,22 +45,7 @@ afterEach(() => {
   cleanup();
 });
 
-const renderCluster = () =>
-  render(
-    <ToastProvider>
-      <SessionTools sessionId={SESSION_ID} />
-      <DrawerHost />
-    </ToastProvider>,
-  );
-
-const settle = async (): Promise<void> => {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
-};
-
-const toggle = (name: 'terminal' | 'browser' | 'explore' | 'scripts') =>
-  screen.getByTestId(`pane-toggle-${name}`);
+const toggle = (name: 'terminal' | 'browser') => screen.getByTestId(`pane-toggle-${name}`);
 
 const drawerKind = () => useAppStore.getState().drawer?.kind ?? null;
 
@@ -75,379 +55,146 @@ const TERMINAL: OpenDrawer = {
   payload: { terminalId: brandedId<TerminalTabId>({ value: `${SESSION_ID}::t1` }) },
 };
 
-const README: ExploreEntry = {
-  name: 'README.md',
-  relPath: 'README.md',
-  isDir: false,
-  sizeBytes: 120,
-  modifiedAt: null,
-};
+const BROWSER: OpenDrawer = { kind: 'browser', sessionId: SESSION_ID, payload: null };
+
+const stateOf = (name: 'terminal' | 'browser') =>
+  toggle(name).closest('[data-slot="session-tool"]')?.getAttribute('data-state');
 
 describe('SessionTools', () => {
-  it('stacks Explore, Agents, Scripts and Terminal as icons in a vertical toolbar', () => {
-    renderCluster();
+  it('holds Terminal and Browser only, as icons in a vertical toolbar under the Tools caption', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
     expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
     const buttons = within(toolbar).getAllByRole('button');
     expect(buttons.map((button) => button.getAttribute('aria-label')?.split(',')[0])).toEqual([
-      'Explore',
-      'Agents',
-      'Scripts',
       'Terminal',
       'Browser',
     ]);
-    expect(buttons.map((button) => button.textContent)).toEqual(['', '', '', '', '']);
     expect(buttons.every((button) => button.querySelector('svg') !== null)).toBe(true);
-    expect(within(toolbar).queryByRole('button', { name: /^More/ })).toBeNull();
+    expect(within(toolbar).queryByRole('separator')).toBeNull();
+    const order = Array.from(
+      toolbar.querySelectorAll('[data-slot="tool-group-caption"], [data-testid^="pane-toggle-"]'),
+    ).map((node) =>
+      node.getAttribute('data-slot') === 'tool-group-caption'
+        ? `caption:${node.textContent}`
+        : node.getAttribute('data-testid')?.replace('pane-toggle-', ''),
+    );
+    expect(order).toEqual(['caption:Tools', 'terminal', 'browser']);
+    expect(toolbar.style.width).toBe(`${SESSION_TOOL_RAIL_WIDTH}px`);
+    const source = readFileSync(join(__dirname, 'ToolGroupCaption.tsx'), 'utf8');
+    expect(source).toContain('[@media(max-height:480px)]:hidden');
   });
 
-  it('keeps each tool on its pane id and chord whatever its place in the column', () => {
-    renderCluster();
-    expect(SESSION_TOOLS.map((tool) => [tool.pane, tool.shortcut])).toEqual([
-      ['explore', 'lens.explore'],
-      ['spawned', 'session.spawned'],
-      ['scripts', 'lens.scripts'],
-    ]);
-    expect(WORKSPACE_TOOLS.map((tool) => [tool.pane, tool.shortcut])).toEqual([
+  it('is the same rail outside a session', () => {
+    render(<SessionTools sessionId={null} />);
+    const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
+    expect(
+      within(toolbar)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('data-testid')),
+    ).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
+    expect(toolbar.querySelector('[data-slot="tool-group-caption"]')?.textContent).toBe('Tools');
+  });
+
+  it('keeps each tool on its pane id and chord', () => {
+    expect(RAIL_TOOLS.map((tool) => [tool.pane, tool.shortcut])).toEqual([
       ['terminal', 'terminal.studio'],
       ['browser', 'browser.address'],
     ]);
-    const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
-    for (const pane of ['explore', 'spawned', 'scripts', 'terminal', 'browser']) {
-      within(toolbar).getByTestId(`pane-toggle-${pane}`);
-    }
   });
 
-  it('draws one separator between the session and workspace groups, and no more', () => {
-    renderCluster();
-    const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
-    const order = Array.from(
-      toolbar.querySelectorAll(
-        '[data-testid^="pane-toggle-"], [data-testid="session-tools-separator"]',
-      ),
-    ).map((node) => node.getAttribute('data-testid')?.replace('pane-toggle-', ''));
-    expect(order).toEqual([
-      'explore',
-      'spawned',
-      'scripts',
-      'session-tools-separator',
-      'terminal',
-      'browser',
-    ]);
-    const separators = within(toolbar).getAllByRole('separator');
-    expect(separators.every((separator) => separator.tagName === 'SPAN')).toBe(true);
-    expect(within(toolbar).getAllByRole('button').length).toBe(5);
-  });
-
-  it('names each icon with its label and chord in the tooltip on the left', () => {
-    renderCluster();
-
-    for (const tool of ALL_TOOLS) {
-      expect(tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) })).toContain(
-        tool.label,
-      );
+  it('names each icon with its label and chord in the tooltip', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
+    for (const tool of RAIL_TOOLS) {
+      const text = tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) });
+      expect(text).toContain(tool.label);
       if (tool.shortcut !== undefined) {
-        expect(
-          tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) }),
-        ).toContain(shortcutGlyphs(tool.shortcut));
+        expect(text).toContain(shortcutGlyphs(tool.shortcut));
       }
     }
   });
 
-  it('names every tool under its icon, secondary when closed and full strength when open', () => {
-    renderCluster();
-    const captions = ALL_TOOLS.map((tool) =>
+  it('names every tool under its icon, secondary when closed', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
+    const captions = RAIL_TOOLS.map((tool) =>
       screen
         .getByTestId(`pane-toggle-${tool.pane}`)
         .closest('[data-slot="session-tool"]')
         ?.querySelector('[data-slot="tool-caption"]'),
     );
     expect(captions.map((caption) => caption?.textContent)).toEqual(
-      ALL_TOOLS.map((tool) => tool.label),
+      RAIL_TOOLS.map((tool) => tool.label),
     );
     expect(captions.every((caption) => caption?.getAttribute('data-tone') === 'closed')).toBe(true);
-    fireEvent.click(toggle('scripts'));
-    const open = toggle('scripts')
-      .closest('[data-slot="session-tool"]')
-      ?.querySelector('[data-slot="tool-caption"]');
-    expect(open?.getAttribute('data-tone')).toBe('open');
-    expect(
-      captions.filter((caption) => caption?.getAttribute('data-tone') === 'closed'),
-    ).toHaveLength(4);
   });
 
   it('keeps every label inside the 44px rail at the 9px caption size', () => {
     const contentWidth = SESSION_TOOL_RAIL_WIDTH - 2 * 2;
-    const widestGlyphEm = 0.55;
-    const captionPx = 9;
-    for (const tool of ALL_TOOLS) {
-      expect(tool.label.length * widestGlyphEm * captionPx).toBeLessThanOrEqual(contentWidth);
+    for (const tool of RAIL_TOOLS) {
+      expect(tool.label.length * 0.55 * 9).toBeLessThanOrEqual(contentWidth);
     }
   });
 
-  it('hides all captions together on a short window and fits the rail at 600px', () => {
-    renderCluster();
-    const source = readFileSync(join(__dirname, 'SessionToolButton.tsx'), 'utf8');
-    expect(source).toContain('[@media(max-height:480px)]:hidden');
-    expect(document.querySelectorAll('[data-slot="tool-caption"]')).toHaveLength(ALL_TOOLS.length);
-    const button = 32;
-    const caption = 12;
-    const captionGap = 2;
-    const railGap = 8;
-    const headerInset = 8;
-    const groups = new Set(ALL_TOOLS.map((tool) => tool.group)).size;
-    const children = ALL_TOOLS.length + 2 * groups;
-    const needed =
-      headerInset +
-      groups * caption +
-      ALL_TOOLS.length * (button + captionGap + caption) +
-      (children - 1) * railGap +
-      (groups - 1);
-    expect(needed).toBeLessThan(600 - 120);
-  });
-
   it('keeps one tab stop and moves it with the arrow keys, Home and End', () => {
-    renderCluster();
+    render(<SessionTools sessionId={SESSION_ID} />);
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
     const buttons = within(toolbar).getAllByRole('button');
-    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1]);
     act(() => {
       buttons[0]?.focus();
     });
     fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(buttons[1]);
-    fireEvent.keyDown(toolbar, { key: 'End' });
-    expect(document.activeElement).toBe(buttons[4]);
     fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(buttons[0]);
-    fireEvent.keyDown(toolbar, { key: 'ArrowUp' });
-    expect(document.activeElement).toBe(buttons[4]);
-    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, -1, -1, 0]);
+    fireEvent.keyDown(toolbar, { key: 'End' });
+    expect(document.activeElement).toBe(buttons[1]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, 0]);
   });
 
-  it('presses the icon of the open pane', async () => {
-    renderCluster();
-    fireEvent.click(toggle('scripts'));
-    await settle();
-    expect(drawerKind()).toBe('scripts');
-    expect(toggle('scripts').getAttribute('aria-pressed')).toBe('true');
-    expect(toggle('scripts').closest('[data-slot="session-tool"]')?.textContent).toBe('Scripts');
-    expect(toggle('scripts').getAttribute('data-icon-tone')).toBe('info');
-    expect(toggle('explore').getAttribute('aria-pressed')).toBe('false');
-    expect(toggle('explore').hasAttribute('data-icon-tone')).toBe(false);
-  });
-
-  it('opens one pane at a time: a second toggle replaces the first', async () => {
-    renderCluster();
-
-    fireEvent.click(toggle('scripts'));
-    await settle();
-    expect(drawerKind()).toBe('scripts');
-    expect(toggle('scripts').getAttribute('aria-pressed')).toBe('true');
-
-    fireEvent.click(toggle('explore'));
-    await settle();
-    expect(drawerKind()).toBe('explore');
-    expect(toggle('scripts').getAttribute('aria-pressed')).toBe('false');
-    expect(toggle('explore').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('region', { name: 'Explore' })).toBeDefined();
-  });
-
-  it('closes the open pane when its toggle is pressed again', async () => {
-    renderCluster();
-
-    fireEvent.click(toggle('explore'));
-    await settle();
-    fireEvent.click(toggle('explore'));
-    await settle();
-
+  it('presses the tool in the slot and closes it when pressed again', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
+    act(() => {
+      useAppStore.setState({ drawer: TERMINAL });
+    });
+    expect(stateOf('terminal')).toBe('pressed');
+    expect(toggle('terminal').getAttribute('aria-pressed')).toBe('true');
+    expect(toggle('terminal').getAttribute('data-icon-tone')).not.toBeNull();
+    expect(stateOf('browser')).toBe('rest');
+    fireEvent.click(toggle('terminal'));
     expect(drawerKind()).toBeNull();
   });
 
-  it('keeps Explore lit on a file it opened and walks back to the files', async () => {
-    renderCluster();
-    act(() => {
-      useAppStore.getState().openDrawer({
-        kind: 'explore-file',
-        sessionId: SESSION_ID,
-        payload: { sessionDir: '/work/harborline/payments-api', entry: README, from: 'explore' },
-      });
-    });
-    await settle();
-    expect(toggle('explore').getAttribute('aria-pressed')).toBe('true');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Explore' }));
-    await settle();
-
-    expect(drawerKind()).toBe('explore');
-  });
-
-  it('walks a script output opened from Scripts back to the scripts', async () => {
-    renderCluster();
-    act(() => {
-      useAppStore.getState().openDrawer({
-        kind: 'scriptRun',
-        sessionId: SESSION_ID,
-        payload: { scriptKey: 'pnpm test', mountId: null, from: 'scripts' },
-      });
-    });
-    await settle();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Back to scripts' }));
-    await settle();
-
-    expect(drawerKind()).toBe('scripts');
-  });
-
-  it('raises the Scripts dot for a failed run and clears it once that output is opened', async () => {
-    useAppStore.setState({
-      scriptRuns: {
-        [SESSION_ID]: {
-          'pnpm test': {
-            status: 'error',
-            result: { stdout: 'FAIL postings', stderr: '', exitCode: 1 },
-            runId: 'run-9',
-            startedAt: 1_000,
-            completedAt: 13_000,
-            name: 'test',
-          },
-        },
-      },
-      scriptRunsSeen: {},
-    });
-    renderCluster();
-    const signal = () => toggle('scripts').closest('.relative')?.querySelector('[data-signal]');
-    expect(signal()?.getAttribute('data-signal')).toBe('error');
-    expect(tooltipTextOf({ element: toggle('scripts') })).toContain(
-      'test failed. Open its output.',
-    );
-    expect(toggle('scripts').getAttribute('aria-label')).toBe(
-      'Scripts, test failed. Open its output.',
-    );
-
-    act(() => {
-      useAppStore.getState().openDrawer({
-        kind: 'scriptRun',
-        sessionId: SESSION_ID,
-        payload: { scriptKey: 'pnpm test', mountId: null, from: 'scripts' },
-      });
-    });
-    await settle();
-
-    expect(signal()).toBeNull();
-    expect(useAppStore.getState().scriptRunsSeen[SESSION_ID]?.['pnpm test']).toBe('run-9');
-  });
-
-  it('keeps the Scripts dot off for a run that failed before and is opened already', () => {
-    useAppStore.setState({
-      scriptRuns: {
-        [SESSION_ID]: {
-          'pnpm test': {
-            status: 'error',
-            result: { stdout: 'FAIL', stderr: '', exitCode: 1 },
-            runId: 'run-9',
-            startedAt: 1_000,
-            completedAt: 2_000,
-            name: 'test',
-          },
-        },
-      },
-      scriptRunsSeen: { [SESSION_ID]: { 'pnpm test': 'run-9' } },
-    });
-    renderCluster();
-
-    expect(toggle('scripts').closest('.relative')?.querySelector('[data-signal]')).toBeNull();
-  });
-
-  it('captions the Session group, and leaves Terminal and Browser under the separator', () => {
-    renderCluster();
-    const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
-    const order = Array.from(
-      toolbar.querySelectorAll(
-        '[data-slot="tool-group-caption"], [data-testid^="pane-toggle-"], [data-testid="session-tools-separator"]',
-      ),
-    ).map((node) =>
-      node.getAttribute('data-slot') === 'tool-group-caption'
-        ? `caption:${node.textContent}`
-        : node.getAttribute('data-testid')?.replace('pane-toggle-', ''),
-    );
-    expect(order).toEqual([
-      'caption:Session',
-      'explore',
-      'spawned',
-      'scripts',
-      'session-tools-separator',
-      'terminal',
-      'browser',
-    ]);
-    const source = readFileSync(join(__dirname, 'ToolGroupCaption.tsx'), 'utf8');
-    expect(source).toContain('text-rail');
-    expect(source).toContain('[@media(max-height:480px)]:hidden');
-    expect(toolbar.style.width).toBe(`${SESSION_TOOL_RAIL_WIDTH}px`);
-  });
-
   it('rests every tool until one holds the slot or waits behind it', () => {
-    renderCluster();
+    render(<SessionTools sessionId={SESSION_ID} />);
     const states = Array.from(document.querySelectorAll('[data-slot="session-tool"]')).map((node) =>
       node.getAttribute('data-state'),
     );
-    expect(states).toEqual(ALL_TOOLS.map(() => 'rest'));
+    expect(states).toEqual(RAIL_TOOLS.map(() => 'rest'));
     expect(screen.queryByTestId('tool-waiting')).toBeNull();
   });
 
-  it('presses the tool in the slot and rings the one waiting in the back chip', () => {
-    renderCluster();
+  it('rings the tool waiting in the back chip and swaps them when it is pressed', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
     act(() => {
-      useAppStore.setState({
-        drawer: { kind: 'scripts', sessionId: SESSION_ID, payload: null },
-        drawerBack: TERMINAL,
-      });
+      useAppStore.setState({ drawer: BROWSER, drawerBack: TERMINAL });
     });
-    const stateOf = (name: 'scripts' | 'terminal' | 'explore') =>
-      toggle(name).closest('[data-slot="session-tool"]')?.getAttribute('data-state');
-    expect(stateOf('scripts')).toBe('pressed');
+    expect(stateOf('browser')).toBe('pressed');
     expect(stateOf('terminal')).toBe('waiting');
-    expect(stateOf('explore')).toBe('rest');
     expect(screen.getAllByTestId('tool-waiting')).toHaveLength(1);
-    expect(
-      toggle('terminal').closest('.relative')?.querySelector('[data-testid="tool-waiting"]'),
-    ).not.toBeNull();
     expect(toggle('terminal').getAttribute('aria-label')).toBe('Terminal, waiting');
-    expect(toggle('scripts').getAttribute('aria-label')).toBe('Scripts');
-    expect(toggle('terminal').getAttribute('aria-pressed')).toBe('false');
-    expect(toggle('explore').getAttribute('aria-label')).toBe('Explore');
-  });
 
-  it('swaps the ring and the pressed tool when the waiting tool is clicked', () => {
-    renderCluster();
-    act(() => {
-      useAppStore.setState({
-        drawer: { kind: 'scripts', sessionId: SESSION_ID, payload: null },
-        drawerBack: { kind: 'explore', sessionId: SESSION_ID, payload: null },
-      });
-    });
-    const stateOf = (name: 'scripts' | 'explore') =>
-      toggle(name).closest('[data-slot="session-tool"]')?.getAttribute('data-state');
+    fireEvent.click(toggle('terminal'));
 
-    fireEvent.click(toggle('explore'));
-
-    expect(stateOf('explore')).toBe('pressed');
-    expect(stateOf('scripts')).toBe('waiting');
-    expect(screen.getAllByTestId('tool-waiting')).toHaveLength(1);
-    expect(toggle('explore').getAttribute('aria-pressed')).toBe('true');
-    expect(toggle('scripts').getAttribute('aria-label')).toBe('Scripts, waiting');
-
-    fireEvent.click(toggle('scripts'));
-
-    expect(stateOf('scripts')).toBe('pressed');
-    expect(stateOf('explore')).toBe('waiting');
+    expect(stateOf('terminal')).toBe('pressed');
+    expect(stateOf('browser')).toBe('waiting');
   });
 
   it('rings nothing when the back chip holds a reader, and when it holds the pressed tool', () => {
-    renderCluster();
+    render(<SessionTools sessionId={SESSION_ID} />);
     act(() => {
       useAppStore.setState({
-        drawer: { kind: 'explore', sessionId: SESSION_ID, payload: null },
+        drawer: TERMINAL,
         drawerBack: {
           kind: 'conversation',
           sessionId: SESSION_ID,
@@ -457,33 +204,12 @@ describe('SessionTools', () => {
     });
     expect(screen.queryByTestId('tool-waiting')).toBeNull();
     act(() => {
-      useAppStore.setState({
-        drawerBack: { kind: 'explore', sessionId: SESSION_ID, payload: null },
-      });
+      useAppStore.setState({ drawerBack: TERMINAL });
     });
     expect(screen.queryByTestId('tool-waiting')).toBeNull();
   });
 
-  it('shows a running dot on Scripts while a script runs', () => {
-    useAppStore.setState({
-      scriptRuns: {
-        [SESSION_ID]: {
-          dev: { status: 'pending', result: null, runId: 'run-1', startedAt: 1_000, name: 'dev' },
-        },
-      },
-    });
-    renderCluster();
-
-    expect(
-      toggle('scripts')
-        .closest('.relative')
-        ?.querySelector('[data-signal]')
-        ?.getAttribute('data-signal'),
-    ).toBe('running');
-  });
-
   it('keeps focus on the same tool when the rail moves into a page and back', () => {
-    seedActivityRunScene();
     const { rerender } = render(<SessionTools key="shell" sessionId={SESSION_ID} />);
     act(() => toggle('browser').focus());
 
@@ -493,20 +219,7 @@ describe('SessionTools', () => {
 
     rerender(<SessionTools key="shell-again" sessionId={SESSION_ID} />);
     expect(document.activeElement).toBe(toggle('browser'));
-    expect(toggle('explore').tabIndex).toBe(-1);
-  });
-
-  it('keeps only the Workspace group off a session, Terminal and Browser at the bottom', () => {
-    render(<SessionTools sessionId={null} />);
-    const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
-
-    expect(
-      within(toolbar)
-        .getAllByRole('button')
-        .map((button) => button.getAttribute('data-testid')),
-    ).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
-    expect(toolbar.querySelector('[data-slot="tool-group-caption"]')).toBeNull();
-    expect(within(toolbar).queryByRole('separator')).toBeNull();
+    expect(toggle('terminal').tabIndex).toBe(-1);
   });
 
   it('names the running terminals and shows their count on Terminal', () => {

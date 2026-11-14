@@ -89,7 +89,7 @@ describe('r4 session rail scenes', () => {
     expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(card('Linked')).toBeDefined();
     expect(within(tabs()).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
-    expect(within(tools()).getAllByRole('button')).toHaveLength(5);
+    expect(within(tools()).getAllByRole('button')).toHaveLength(2);
     screen.getByRole('button', { name: 'More session actions' });
     screen.getByRole('button', { name: 'Refresh session' });
   });

@@ -24,6 +24,7 @@ import {
   registerTreeRetryPort,
   type TreeRetryPort,
 } from '../../../../../features/auto/treeRetryPort';
+import { togglePane } from '../../../../../features/session/panes/togglePane';
 import { MOCK_SCENES } from '../..';
 import { U25_C07_AUTO_SCENES } from './c07-auto';
 
@@ -95,7 +96,7 @@ describe('c07 Auto scenes', () => {
     expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
     expect(within(await panel()).queryByRole('region', { name: 'Limit' })).toBeNull();
     expect(screen.getByRole('button', { name: /^Limit: \$10\.00/ })).toBeDefined();
-    expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByTestId('pane-toggle-spawned')).toBeNull();
   });
 
   it('c07-auto-substep draws the Scout one level under the Implementer that waits for it', async () => {
@@ -161,7 +162,7 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
     expect(sessionTabs()).toBeDefined();
     expect((await treeRow(/^Implementer, /)).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByTestId('pane-toggle-spawned')).toBeNull();
   });
 
   it('u34-p20-auto-narrow keeps the title in its own heading, the glance below it and no provider mark', async () => {
@@ -418,15 +419,19 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('menuitem', { name: 'Open transcript' })).toBeNull();
   });
 
-  it('closes the Agents panel and opens it again from the tools column, Runs stays selected', async () => {
+  it('closes the Agents panel and opens it again from its shortcut, Runs stays selected', async () => {
     mount({ id: 'c07-auto-working' });
 
     await autoTree();
     expect(selectedTab()).toBe('Runs');
 
-    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
+    const sessionId = useAppStore.getState().currentSessionId;
+    if (sessionId === null) {
+      throw new Error('no current session');
+    }
+    act(() => togglePane({ sessionId, pane: 'spawned' }));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull(), WAIT);
-    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
+    act(() => togglePane({ sessionId, pane: 'spawned' }));
     expect(await autoTree()).toBeDefined();
   });
 

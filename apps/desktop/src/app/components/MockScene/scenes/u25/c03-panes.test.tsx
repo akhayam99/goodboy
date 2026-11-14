@@ -100,7 +100,7 @@ describe('c03 session tools scenes', () => {
     await resetStoryStore();
     await mount('c03-panes-explore-file');
     expect(screen.getByRole('button', { name: 'Back to Explore' })).toBeDefined();
-    expect(pressed()).toEqual(['Explore']);
+    expect(pressed()).toEqual([]);
     expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
   });
 
@@ -138,31 +138,22 @@ describe('c03 session tools scenes', () => {
     ).toEqual([]);
   });
 
-  it('keeps the tool icons with the open one pressed', async () => {
-    await mount('c03-panes-explore');
+  it('keeps Terminal and Browser on the rail with the open one pressed', async () => {
+    await mount('c03-panes-terminal');
     const icons = within(cluster()).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([
-      'Explore',
-      'Agents',
-      'Scripts',
       'Terminal',
       'Browser',
     ]);
-    expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual([
-      'true',
-      'false',
-      'false',
-      'false',
-      'false',
-    ]);
+    expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual(['true', 'false']);
   });
 
-  it.each([
-    ['c03-panes-explore', 'Explore'],
-    ['c03-panes-scripts', 'Scripts'],
-  ] as const)('%s opens its pane, never the closed layout', async (name, label) => {
-    await mount(name);
-    expect(useAppStore.getState().drawer).not.toBeNull();
-    expect(pressed()).toEqual([label]);
-  });
+  it.each(['c03-panes-explore', 'c03-panes-scripts'] as const)(
+    '%s opens its pane, never the closed layout, with no rail button lit',
+    async (name) => {
+      await mount(name);
+      expect(useAppStore.getState().drawer).not.toBeNull();
+      expect(pressed()).toEqual([]);
+    },
+  );
 });

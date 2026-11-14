@@ -10,7 +10,7 @@ import {
 import { usePoll } from '../../../../../shared/lib/usePoll';
 import { formatDuration } from '../../../../../shared/utils/time/formatDuration';
 import { invokeTerminalListLive } from '../../../../terminal/terminal';
-import type { ToolSignal } from '../useToolSignal';
+import type { ToolSignal } from '../ToolSignal';
 import { terminalFinishApplier } from '../terminalFinishApplier';
 import { LONG_COMMAND_MS, type BusySince } from '../terminalFinishesOf';
 
