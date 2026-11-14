@@ -65,6 +65,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionOverviewPane/index.tsx'],
   },
+  ContextDrawer: {
+    kind: 'bare',
+    files: ['features/session/components/ContextDrawer/index.tsx'],
+  },
   SessionOverviewLoading: {
     kind: 'bare',
     files: ['features/session/components/SessionWorkspace/parts/SessionOverviewLoading.tsx'],
@@ -441,7 +445,9 @@ describe('content column contract', () => {
           name !== 'UnderTrailContext' &&
           name !== 'PaneBannerContext' &&
           name !== 'PageTrailContext' &&
-          name !== 'PaneActionsContext',
+          name !== 'PaneActionsContext' &&
+          name !== 'OwnPaneChrome' &&
+          name !== 'Cards',
       );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);
 

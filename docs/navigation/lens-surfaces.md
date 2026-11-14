@@ -90,7 +90,7 @@
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
   Activity. Projects, Linked work, Artifacts and Add project live on the
-  session rail's session level. Next and Unassigned comments open with `SectionHeader`
+  Context tab. Next and Unassigned comments open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
   its row reads the question with the run or agent in gray after it, no totals
@@ -255,7 +255,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
 - **The switcher and Search or run list only destinations the session can
   use.** One function feeds both. Context is a tab of every session: Search or
   run offers **Open Context** (⌘⌥C), and Changes is listed on every session.
-  Provider entries open **Link work** on that provider (the event carries the source), unfold a folded session rail first, and are not offered on an archived session; a provider list address restores to Overview.
+  Provider entries open **Link work** on that provider (the event carries the source), open the Context tab, and are not offered on an archived session; a provider list address restores to Overview.
   Explore is always listed, opens as a pane (see The session tools), and
   browses one project of the session at a time as a tree (`role="tree"`). It
   draws the shared page header (`PaneShell` `page="explore"` inside the

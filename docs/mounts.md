@@ -467,7 +467,7 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).
 - **A worktree names its layers under its row.** The current branch row of the Projects tree in the
-  session rail holds the code host layers as entries: Pull request with its number,
+  Context tab holds the code host layers as entries: Pull request with its number,
   Files with the diff count (`useMountDiffStats`, read from
   `sessionWorktreeRecords`, which `applyMountViews` rewrites on every mount
   change, so a branch attached or forked while the session is open counts at
@@ -661,7 +661,7 @@ action the user can see, or allows one on a mount the user sees as gone.
 ## Worktree rows and the Overview notices
 
 The Overview has no Projects section. A worktree is a one line row of the
-Projects tree in the session rail (`WorktreeRow`: state glyph, the pull request
+Projects tree in the Context tab (`WorktreeRow`: state glyph, the pull request
 title or the branch, at most one chip: failing, conflict or behind). A branch
 is one row with no rows under it; its pages (Pull request, Comments, Changes,
 Commits, Checks) are the tab strip of the Branch page. Its row menu (the `⋯`, a right click, Shift+F10) holds the

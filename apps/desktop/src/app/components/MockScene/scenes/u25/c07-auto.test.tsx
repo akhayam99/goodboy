@@ -58,23 +58,17 @@ const mount = ({ id }: MountParams): void => {
   );
 };
 
-const levelStack = (): HTMLElement => {
-  const stack = document.querySelector<HTMLElement>('[data-level-stack]');
-  if (stack === null) {
-    throw new Error('no level stack');
-  }
-  return stack;
+const sessionTabs = (): HTMLElement => {
+  const lists = screen.getAllByRole('tablist', { name: 'Session pages' });
+  const shown = lists.find((list) => list.querySelector('[aria-selected="true"]') !== null);
+  return shown ?? lists[0] ?? document.body;
 };
 
-const shownLayer = (): HTMLElement => {
-  const layer = document.querySelector<HTMLElement>(
-    `[data-level-layer="${levelStack().dataset.levelStack ?? ''}"]`,
-  );
-  if (layer === null) {
-    throw new Error('no shown layer');
-  }
-  return layer;
-};
+const selectedTab = (): string | null =>
+  within(sessionTabs())
+    .getAllByRole('tab')
+    .find((tab) => tab.getAttribute('aria-selected') === 'true')
+    ?.textContent?.replace(/\d+$/, '') ?? null;
 
 const panel = async (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Agents' }, WAIT);
@@ -92,11 +86,11 @@ describe('c07 Auto scenes', () => {
     }
   });
 
-  it('c07-auto-working keeps the rail on the session and opens the Agents panel with the tree, the limit on the page', async () => {
+  it('c07-auto-working keeps the page tabs on the session and opens the Agents panel with the tree, the limit on the page', async () => {
     mount({ id: 'c07-auto-working' });
 
     const tree = await autoTree();
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(selectedTab()).toBe('Runs');
     expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(4);
     expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
     expect(within(await panel()).queryByRole('region', { name: 'Limit' })).toBeNull();
@@ -165,7 +159,7 @@ describe('c07 Auto scenes', () => {
     screen.getByTestId('agent-header-title-row');
     screen.getByText('Auto started this agent and reads your messages to it.');
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(sessionTabs()).toBeDefined();
     expect((await treeRow(/^Implementer, /)).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
@@ -301,11 +295,11 @@ describe('c07 Auto scenes', () => {
     expect(await autoTree()).toBeDefined();
   });
 
-  it('keeps the rail on the session on a child page', async () => {
+  it('keeps the page tabs on the session on a child page', async () => {
     mount({ id: 'c07-auto-child' });
 
     await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(sessionTabs()).toBeDefined();
   });
 
   it('c07-auto-child-done shows what came back and says Returned to Auto', async () => {
@@ -428,8 +422,7 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-working' });
 
     await autoTree();
-    const entry = within(shownLayer()).getByRole('button', { name: /^Runs/ });
-    expect(entry.getAttribute('aria-current')).toBe('page');
+    expect(selectedTab()).toBe('Runs');
 
     fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull(), WAIT);
@@ -437,23 +430,18 @@ describe('c07 Auto scenes', () => {
     expect(await autoTree()).toBeDefined();
   });
 
-  it('c07-auto-folded folds the rail on the session and keeps the tree in the Agents panel', async () => {
-    mount({ id: 'c07-auto-folded' });
+  it('c07-auto-working keeps the tree rows marked by their state glyph', async () => {
+    mount({ id: 'c07-auto-working' });
 
-    await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-session-rail]');
-      expect(found?.dataset.sessionRail).toBe('session');
-      expect(found?.hasAttribute('data-rail-folded')).toBe(true);
-    }, WAIT);
     const implementer = await treeRow(/^Implementer, .*, Running$/);
     expect(within(implementer).getByRole('img', { name: 'Running' })).toBeDefined();
     expect(await treeRow(/^Tester, .*, Queued$/)).toBeDefined();
   });
 
-  it('c07-auto-session-level keeps the Auto chat in the center with the session level shown', async () => {
+  it('c07-auto-session-level keeps the Auto chat in the center with the page tabs shown', async () => {
     mount({ id: 'c07-auto-session-level' });
 
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('session'), WAIT);
+    await waitFor(() => expect(sessionTabs()).toBeDefined(), WAIT);
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
   });
 
@@ -545,12 +533,12 @@ describe('c07 Auto scenes', () => {
     expect(rows).toHaveLength(2);
     expect(within(list).getByRole('button', { name: /, Agent, Idle$/ })).toBeDefined();
     expect(within(list).getByRole('button', { name: /, Agent, Done$/ })).toBeDefined();
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(sessionTabs()).toBeDefined();
 
     fireEvent.click(rows[0] ?? list);
     await waitFor(() => expect(document.querySelector('[data-auto-dock]')).not.toBeNull());
     expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull();
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(sessionTabs()).toBeDefined();
   });
 
   it('c07-auto-start starts Auto from the Start a run field on the Runs page, with no Auto form', async () => {

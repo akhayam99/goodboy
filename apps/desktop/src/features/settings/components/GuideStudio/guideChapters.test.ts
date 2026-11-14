@@ -258,10 +258,8 @@ describe('the shell chapter', () => {
 
   it('lists every page of the session pages by its registry label', () => {
     const rail = pointOf('shell', 'Session pages');
-    columnPagesOf({ isBranchless: false }).forEach((page) => expect(rail).toContain(page.label));
-    [NAMES.projects, 'Linked', 'Hide session pages'].forEach((word) =>
-      expect(rail).toContain(word),
-    );
+    columnPagesOf().forEach((page) => expect(rail).toContain(page.label));
+    [NAMES.projects, 'Linked'].forEach((word) => expect(rail).toContain(word));
   });
 
   it('puts both adds on the rows they act on and Archive and Delete in the session menu', () => {

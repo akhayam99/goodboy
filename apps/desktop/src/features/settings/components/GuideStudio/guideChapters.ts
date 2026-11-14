@@ -264,11 +264,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: `Overview, Runs, Artifacts and Questions, with counts; Runs holds plans, presets, Auto and agents. Then the Projects card, one tree of folders and branches, and the Linked card. Hide session pages, or ${shortcutGlyphs('innerColumn.toggle')}, folds it to icons.`,
+        desc: 'Tabs under the title: Overview, Changes, Runs, Artifacts, Questions and Context, with counts; Runs holds plans, presets, Auto and agents. Context holds the Projects and Linked cards.',
       },
       {
         term: 'Session actions and +',
-        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete; folded, at the foot.',
+        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete.',
       },
       {
         term: 'Agents panel',

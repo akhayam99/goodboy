@@ -52,9 +52,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   reads it closes a drawer nobody sees. A toggle (`togglePane`, `toggleDrawer`)
   leaves every stacked page first (`leaveStudio`, since
   one `closeStudio` only steps back to the page below), then shows the drawer,
-  and never closes one on a page. The session rail's fold (`useShellFolds`)
-  reads `selectOpenDrawer` on purpose, so the rail keeps its fold across the
-  trip. The session itself does not keep its width: the parked aside leaves the
+  and never closes one on a page. The session itself does not keep its width: the parked aside leaves the
   flow, so the hidden session widens under the page and narrows on return, and
   its transcript re-wraps. Every Escape layer inside a parked drawer is
   suspended, not removed (`DrawerParkedContext`, read by `useEscapeLayer`), so

@@ -54,18 +54,19 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const rail = (): HTMLElement => {
-  const nav = document.querySelector<HTMLElement>('[data-session-rail]');
-  if (nav === null) {
-    throw new Error('no session pages rail');
-  }
-  return nav;
+const tabs = (): HTMLElement => {
+  const lists = screen.getAllByRole('tablist', { name: 'Session pages' });
+  return (
+    lists.find((list) => list.querySelector('[aria-selected="true"]') !== null) ??
+    lists[0] ??
+    document.body
+  );
 };
 
-const pageLabelsOf = (): ReadonlyArray<string> =>
-  within(rail())
-    .getAllByRole('button')
-    .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '');
+const tabLabelsOf = (): ReadonlyArray<string> =>
+  within(tabs())
+    .getAllByRole('tab')
+    .map((tab) => tab.textContent?.replace(/\d+$/, '') ?? '');
 
 describe('the ux39 P7 session pages scenes', () => {
   it('registers every scene in the mock registry', () => {
@@ -74,68 +75,45 @@ describe('the ux39 P7 session pages scenes', () => {
     }
   });
 
-  it('ux39-p7-open lists the pages with Questions marked and no actions block at the foot', async () => {
+  it('ux39-p7-open lists the pages as tabs with Questions counted and the actions in the title row', async () => {
     await mount('ux39-p7-open');
 
-    expect(rail().getAttribute('aria-label')).toBe('Session pages');
-    expect(rail().hasAttribute('data-rail-folded')).toBe(false);
-    expect(rail().querySelector('[data-rail-actions]')).toBeNull();
-    expect(within(rail()).getByRole('button', { name: 'Refresh session' }).tagName).toBe('BUTTON');
-    expect(rail().querySelector('[data-page-value="questions"]')?.getAttribute('data-tone')).toBe(
-      'warning',
-    );
+    expect(tabLabelsOf()).toEqual([
+      'Overview',
+      'Changes',
+      'Runs',
+      'Artifacts',
+      'Questions',
+      'Context',
+    ]);
+    expect(
+      within(tabs())
+        .getByRole('tab', { name: /^Questions/ })
+        .querySelector('[data-tab-count]')?.textContent,
+    ).toBe('1');
+    expect(screen.getByRole('button', { name: 'Refresh session' }).tagName).toBe('BUTTON');
+    expect(within(tabs()).queryByRole('button', { name: 'Refresh session' })).toBeNull();
   });
 
   it('ux39-p7-open-branchless draws the pages of a plain folder', async () => {
     await mount('ux39-p7-open-branchless');
 
-    expect(rail().hasAttribute('data-rail-folded')).toBe(false);
-    expect(within(rail()).getByRole('button', { name: /^Overview/ }).tagName).toBe('BUTTON');
+    expect(within(tabs()).getByRole('tab', { name: /^Overview/ }).tagName).toBe('BUTTON');
+    expect(within(tabs()).getByRole('tab', { name: /^Changes/ }).tagName).toBe('BUTTON');
   });
 
-  it('ux39-p7-folded draws one icon per page with the menu at the foot', async () => {
-    await mount('ux39-p7-folded');
-
-    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-    const actions = rail().querySelector('[data-rail-actions]');
-    expect(actions).not.toBeNull();
-    expect(rail().lastElementChild).toBe(actions);
-    expect(pageLabelsOf()).toContain('Show session pages');
-    expect(within(rail()).getByRole('button', { name: 'More session actions' }).tagName).toBe(
-      'BUTTON',
-    );
-    expect(
-      rail().querySelector('[data-rail-page="page-questions"] span[aria-hidden]'),
-    ).not.toBeNull();
-  });
-
-  it('ux39-p7-folded-branchless draws the plain folder pages as icons', async () => {
-    await mount('ux39-p7-folded-branchless');
-
-    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-    expect(rail().querySelector('[data-rail-actions]')).not.toBeNull();
-    expect(rail().querySelector('[data-rail-page="page-overview"]')).not.toBeNull();
-  });
-
-  it('ux39-p7-folded-menu opens the session menu with five rows at most', async () => {
-    await mount('ux39-p7-folded-menu');
+  it('ux39-p7-session-menu opens the session menu with five rows at most', async () => {
+    await mount('ux39-p7-session-menu');
 
     const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
     expect(items.length).toBeGreaterThan(0);
     expect(items.length).toBeLessThanOrEqual(5);
   });
 
-  it('ux39-p7-runs-waiting counts the waiting run in warning on the Runs row', async () => {
+  it('ux39-p7-runs-waiting counts the waiting run on the Runs tab', async () => {
     await mount('ux39-p7-runs-waiting');
 
-    const value = rail().querySelector('[data-page-value="runs"]');
-    expect(value?.getAttribute('data-tone')).toBe('warning');
-  });
-
-  it('ux39-p7-runs-waiting-folded marks the Runs icon with a dot', async () => {
-    await mount('ux39-p7-runs-waiting-folded');
-
-    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-    expect(rail().querySelector('[data-rail-page="page-runs"] span[aria-hidden]')).not.toBeNull();
+    const runs = within(tabs()).getByRole('tab', { name: /^Runs/ });
+    expect(runs.querySelector('[data-tab-count]')).not.toBeNull();
   });
 });

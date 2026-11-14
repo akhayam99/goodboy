@@ -5,16 +5,8 @@ import { LENS_ICON } from './lens-labels';
 import { columnPagesOf, pagesOf } from './pageRegistry';
 
 describe('the session level pages', () => {
-  it('read Overview, Runs, Artifacts in a session with a worktree', () => {
-    expect(columnPagesOf({ isBranchless: false }).map((page) => page.label)).toEqual([
-      'Overview',
-      'Runs',
-      'Artifacts',
-    ]);
-  });
-
-  it('add Changes after Overview in a branchless session', () => {
-    expect(columnPagesOf({ isBranchless: true }).map((page) => page.label)).toEqual([
+  it('read Overview, Changes, Runs, Artifacts on every session', () => {
+    expect(columnPagesOf().map((page) => page.label)).toEqual([
       'Overview',
       'Changes',
       'Runs',
@@ -23,32 +15,39 @@ describe('the session level pages', () => {
   });
 
   it('fold Orchestrated into the one Runs entry', () => {
-    const runs = columnPagesOf({ isBranchless: false }).find((page) => page.id === 'runs');
+    const runs = columnPagesOf().find((page) => page.id === 'runs');
     expect(runs).toMatchObject({ lens: 'workflows', count: 'runs', shortcut: 'lens.workflows' });
     expect(runs?.currentLenses).toEqual(['workflows', 'orchestrated']);
   });
 
-  it('leave the branch entries to the worktree rows', () => {
-    const labels = columnPagesOf({ isBranchless: false }).map((page) => page.label);
+  it('leave the branch entries to the pull request page', () => {
+    const labels = pagesOf({ hasOpenQuestions: true }).map((page) => page.label);
     for (const child of ['Branch', 'Comments', 'Files', 'Commits', 'Checks', 'Pull request']) {
       expect(labels).not.toContain(child);
     }
   });
 
-  it('add Questions last, only while something is open', () => {
-    const closed = pagesOf({ isBranchless: false, hasOpenQuestions: false });
-    const open = pagesOf({ isBranchless: false, hasOpenQuestions: true });
+  it('add Questions after Artifacts while something is open and Context last', () => {
+    const closed = pagesOf({ hasOpenQuestions: false });
+    const open = pagesOf({ hasOpenQuestions: true });
 
     expect(closed.map((page) => page.id)).not.toContain('questions');
-    expect(open.map((page) => page.id)).toEqual(['overview', 'runs', 'artifacts', 'questions']);
+    expect(open.map((page) => page.id)).toEqual([
+      'overview',
+      'files',
+      'runs',
+      'artifacts',
+      'questions',
+      'context',
+    ]);
   });
 });
 
 describe('the page registry', () => {
-  const every = pagesOf({ isBranchless: true, hasOpenQuestions: true });
+  const every = pagesOf({ hasOpenQuestions: true });
 
-  it('names every page of a session with a worktree after its shortcut', () => {
-    for (const page of pagesOf({ isBranchless: false, hasOpenQuestions: true })) {
+  it('names every page after its shortcut', () => {
+    for (const page of every) {
       expect(SHORTCUTS[page.shortcut].label, page.id).toBe(page.label);
     }
   });

@@ -54,7 +54,6 @@ export {
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
   READER_DRAWER_MIN,
-  RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
   canDrawerPush,
@@ -273,6 +272,8 @@ export {
   PaneActionsContext,
   useInheritedPaneActions,
 } from './components/PaneShell/paneActionsContext';
+export { PaneTabsContext } from './components/PaneShell/paneTabsContext';
+export { OwnPaneChrome } from './components/PaneShell/OwnPaneChrome';
 export { UnderTrailContext } from './components/PaneShell/underTrailContext';
 export { PaneBannerContext } from './components/PaneShell/paneBannerContext';
 export { PageTrailContext } from './components/PaneShell/pageTrailContext';

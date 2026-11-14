@@ -14,6 +14,7 @@ import {
   lens,
   pane,
   openBranchFiles,
+  sessionLevel,
   useAppStore,
   visible,
 } from './harness';
@@ -110,17 +111,20 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     name: 'linked issue chip',
     covers: ['openExternalTaskLens'],
     seed: 'issue',
-    open: () => clickButton(/^Open HBL-377/),
+    open: async () => {
+      await sessionLevel();
+      await clickButton(/^Open HBL-377/);
+    },
     lands: async () => expect((await screen.findAllByText(/HBL-377/)).length).toBeGreaterThan(0),
   },
   {
-    name: 'back arrow returns to the overview',
+    name: 'back arrow returns to the Context tab the branch was opened from',
     covers: ['back'],
     open: async () => {
       await openBranchFiles();
       await clickBackArrow();
     },
-    lands: lens(null),
+    lands: lens('context'),
   },
   {
     name: 'forward arrow returns to the diff',

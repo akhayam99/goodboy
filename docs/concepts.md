@@ -291,7 +291,7 @@ meanings and the state maps against it.
 | Closed           | You closed a failed agent out.                                |
 
 Needs you counts three units, and each tooltip names its own: sessions ("2
-sessions need you") on the Board door, the dock badge and Search or run; questions ("3 questions") on the Questions entry of the session rail;
+sessions need you") on the Board door, the dock badge and Search or run; questions ("3 questions") on the Questions tab of the session;
 items ("4 items need you") on the Overview card and the Runs group. The bell is
 unchanged. `needsYouText` and `countNoun` write every one of them.
 
@@ -1872,7 +1872,7 @@ session up again in Goodboy.
 - No screen may use a different word for any of these. Every surface that
   creates, adds, lists or manages a repository says project: the session
   overview, Settings, Search or run labels, notices and aria-labels alike. The
-  session rail card, the Settings page and the switcher count read
+  Context tab card, the Settings page and the switcher count read
   **Projects** (`NAMES.projects`, "3 projects, 1 plain folder"), and the door
   is **Add project** (`NAMES.addProject`) beside **Add a plain folder**.
   Folder stays in the file picker and for a plain folder. The old words stay

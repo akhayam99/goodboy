@@ -31,16 +31,14 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
-const pageRow = (label: string): HTMLElement => {
-  const row = screen
-    .getAllByRole('button')
-    .find((button) =>
-      (button.getAttribute('aria-label') ?? button.textContent ?? '').trim().startsWith(label),
-    );
-  if (row === undefined) {
-    throw new Error(`no ${label} row in the column`);
+const pageTab = (label: string): HTMLElement => {
+  const tab = screen
+    .getAllByRole('tab')
+    .find((candidate) => (candidate.textContent ?? '').trim().startsWith(label));
+  if (tab === undefined) {
+    throw new Error(`no ${label} tab in the page tabs`);
   }
-  return row;
+  return tab;
 };
 
 const renderShell = async () => {
@@ -49,17 +47,15 @@ const renderShell = async () => {
 };
 
 describe('the shell scene mounts the real session workspace', () => {
-  it('opens the step of its preset run with the rail on the session, Ask and no trail band', async () => {
+  it('opens the step of its preset run with the page tabs on the session, Ask and no trail band', async () => {
     await renderShell();
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
-    expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-      'session',
-    );
+    expect(screen.getAllByRole('tablist', { name: 'Session pages' }).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Back to Runs' })).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 
-  it('moves to Runs and Artifacts from the session level', async () => {
+  it('moves to Runs and Artifacts from the page tabs', async () => {
     await renderShell();
     const moves: ReadonlyArray<readonly [string, string]> = [
       ['Runs', 'workflows'],
@@ -67,7 +63,7 @@ describe('the shell scene mounts the real session workspace', () => {
     ];
     for (const [label, lens] of moves) {
       act(() => {
-        fireEvent.click(pageRow(label));
+        fireEvent.click(pageTab(label));
       });
       await waitFor(() => expect(useAppStore.getState().activeLens[SESSION.id]).toBe(lens));
     }

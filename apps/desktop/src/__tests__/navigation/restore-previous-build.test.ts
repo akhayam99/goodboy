@@ -43,7 +43,6 @@ import { DRAWER_KINDS } from '../../store/slices/drawer/drawerKinds';
 import { IPHONE_SETTINGS_PLACE } from '../../features/settings/iphoneSettingsPlace';
 import { listWindowLayouts } from '../../features/workspace/windowLayout';
 import { useSessionSidebarVisibility } from '../../features/workspace/hooks/useSessionSidebarVisibility';
-import { useSessionRailFold } from '../../app/components/SessionRail/useSessionRailFold';
 import { useLevelCardFold } from '../../app/components/SessionRail/SessionLevel/useLevelCardFold';
 import { useRailTreeOpen } from '../../app/components/SessionRail/SessionLevel/useRailTreeOpen';
 import { PREVIOUS_BUILD_BLOBS } from './previousBuildBlobs';
@@ -55,7 +54,6 @@ const SRC = join(__dirname, '..', '..');
 
 const FORMER_KEYS = {
   sessionSidebarCollapsed: 'goodboy:sessions-sidebar-collapsed',
-  sessionRailCollapsed: 'goodboy:session-rail-collapsed:v1',
   sessionRailFoldedCards: 'goodboy:session-rail-folded-cards:v1',
   sessionRailTreeOpen: 'goodboy:session-rail-tree-open:v1',
 } as const;
@@ -245,16 +243,6 @@ describe('fold states saved by the previous build', () => {
     expect(open.result.current.isCollapsed).toBe(false);
   });
 
-  it('reads the folded session rail and the open one', () => {
-    localStorage.setItem(FORMER_KEYS.sessionRailCollapsed, '1');
-    const folded = renderHook(() => useSessionRailFold({ isNarrow: false }));
-    expect(folded.result.current.isFolded).toBe(true);
-
-    localStorage.setItem(FORMER_KEYS.sessionRailCollapsed, '0');
-    const open = renderHook(() => useSessionRailFold({ isNarrow: false }));
-    expect(open.result.current.isFolded).toBe(false);
-  });
-
   it('reads the folded cards of the session level and ignores a name it does not know', () => {
     localStorage.setItem(
       FORMER_KEYS.sessionRailFoldedCards,
@@ -290,7 +278,6 @@ describe('fold states saved by the previous build', () => {
 
   it('falls back to the defaults on a value no build wrote', () => {
     localStorage.setItem(FORMER_KEYS.sessionSidebarCollapsed, 'maybe');
-    localStorage.setItem(FORMER_KEYS.sessionRailCollapsed, '{');
     localStorage.setItem(FORMER_KEYS.sessionRailFoldedCards, '{');
     localStorage.setItem(FORMER_KEYS.sessionRailTreeOpen, '[');
 
@@ -298,9 +285,6 @@ describe('fold states saved by the previous build', () => {
       renderHook(() => useSessionSidebarVisibility({ hasSidebar: true })).result.current
         .isCollapsed,
     ).toBe(false);
-    expect(renderHook(() => useSessionRailFold({ isNarrow: false })).result.current.isFolded).toBe(
-      false,
-    );
     expect(renderHook(() => useLevelCardFold({ card: 'projects' })).result.current.isOpen).toBe(
       true,
     );

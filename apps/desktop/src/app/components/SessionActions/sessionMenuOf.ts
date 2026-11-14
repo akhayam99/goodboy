@@ -1,5 +1,5 @@
-import { AUTO_LIMIT_COPY } from '../../../../features/auto/autoLimitCopy';
-import { NAMES } from '../../../../shared/utils/names';
+import { AUTO_LIMIT_COPY } from '../../../features/auto/autoLimitCopy';
+import { NAMES } from '../../../shared/utils/names';
 
 type Params = {
   readonly limitUsd: number | null;

@@ -238,6 +238,6 @@ This part is for contributors and agents who change the feature.
 
 `StartFailure` owns the recovery line shared by `StartForm`.
 
-- Linked work: `LevelLinked` owns the list and history fold. `IntegrationPane` returns to Overview after unlink succeeds. `openLens` routes provider shortcuts to Link work with the provider as the event source, `useUnfoldForLink` unfolds a folded rail first, and `buildWorkItems` compares a link with every mount branch.
+- Linked work: `LevelLinked` owns the list and history fold. `IntegrationPane` returns to Overview after unlink succeeds. `openLens` routes provider shortcuts to Link work with the provider as the event source, and `buildWorkItems` compares a link with every mount branch.
 
 - Question arrival: `QuestionsGrid` unfolds Answered and focuses the plain question id in state mode. `QuestionsGridRow` ignores title clicks from nested buttons and links. `apps/desktop/src/features/session/components/SessionWorkspace/parts/QuestionsPane.byBranch.test.tsx` covers answered-only arrival and Also on without opening the drawer.

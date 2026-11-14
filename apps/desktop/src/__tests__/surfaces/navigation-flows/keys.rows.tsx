@@ -51,6 +51,7 @@ import {
   pane,
   openCrumb,
   openPalette,
+  sessionLevel,
   settle,
   useAppStore,
   visible,
@@ -349,10 +350,15 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'column.toggle',
     lands: () => visible('button', /^Show sidebar/),
   }),
-  pressRow({
+  keyRow({
     id: 'innerColumn.toggle',
-    note: 'folds the session rail, the inner column of a session page',
-    lands: () => visible('button', 'Show session pages'),
+    note: 'folds the chat list, the inner column of the Chat studio',
+    open: async () => {
+      await press('chat.new')();
+      await screen.findByRole('complementary', { name: 'Chat list' }, WAIT);
+      await press('innerColumn.toggle')();
+    },
+    lands: () => visible('button', 'Show chat list'),
   }),
   keyRow({
     id: 'chat.new',
@@ -1181,7 +1187,9 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'session.linkWork',
+    note: 'on the Context tab, where the Linked card lives',
     open: async () => {
+      await sessionLevel();
       await settle();
       await pressed('session.linkWork', document.body);
     },

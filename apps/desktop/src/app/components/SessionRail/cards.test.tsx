@@ -14,7 +14,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { aProject, aWorkflowRun, anAgent } from '@goodboy/types/testing';
-import { innerColumnStore } from '@goodboy/ui';
+import { PaneShell } from '@goodboy/ui';
 import type { IsoDateTime, MountId, Session, StepId, Workflow, WorkflowId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -38,12 +38,11 @@ import {
 } from '../../../features/workspace/testing/sessionColumn';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { testTurn } from '../../../features/file-versions/testing/testTurn';
-import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
-import { useCurrentSession } from '../../../store';
 import type { AppStore } from '../../../store/store';
 import type { ColumnActions } from '../SideColumn/columnDoors';
 import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 import { SideColumn } from '../SideColumn';
+import { SessionContextCards } from '../SessionContextCards';
 import { SessionFrame } from './SessionFrame';
 import { CARD_INSET } from './SessionLevel/railInset';
 
@@ -125,7 +124,9 @@ type MountParams = {
 };
 
 const Shell = ({ place = null }: MountParams) => {
-  const current = useCurrentSession();
+  const current = useAppStore(
+    (state) => state.sessions.find((entry) => entry.id === state.currentSessionId) ?? null,
+  );
   const currentSessionId = current?.id ?? null;
   return (
     <ToastProvider>
@@ -138,7 +139,9 @@ const Shell = ({ place = null }: MountParams) => {
       />
       {current === null ? null : (
         <SessionFrame session={current}>
-          <p>page</p>
+          <PaneShell title="Context" scroll="self">
+            <SessionContextCards session={current} />
+          </PaneShell>
         </SessionFrame>
       )}
     </ToastProvider>
@@ -155,200 +158,9 @@ const elementOf = (selector: string, root: ParentNode = document): HTMLElement =
   return element;
 };
 
-const nav = (): HTMLElement => elementOf('[data-column-layer="nav"]');
-
-const rail = (): HTMLElement => elementOf('[data-session-rail]');
-
-const levelOf = (): string | null => rail().getAttribute('data-session-rail');
+const rail = (): HTMLElement => elementOf('[data-page-header]');
 
 const sessionLayer = (): HTMLElement => elementOf('[data-level-layer="session"]');
-
-const pages = () => within(within(sessionLayer()).getByRole('list', { name: 'Pages' }));
-
-const toggle = (): HTMLElement => elementOf('[data-session-rail-toggle]');
-
-describe('the main sidebar beside the session rail', () => {
-  it('keeps the workspace level with the session row selected while the rail holds the session', () => {
-    seed();
-    mountColumn();
-
-    expect(within(nav()).getByRole('button', { name: /^New session/ })).toBeDefined();
-    expect(nav().querySelector('[data-column-door="board"]')).not.toBeNull();
-    expect(nav().querySelector('[data-level-layer]')).toBeNull();
-    const row = nav().querySelector(`[data-select-id="${openId}"]`);
-    expect(row?.getAttribute('aria-current')).toBe('page');
-    expect(levelOf()).toBe('session');
-    expect(within(sessionLayer()).queryByText('Stop retried webhooks')).toBeNull();
-    expect(within(rail()).queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
-    expect(
-      pages()
-        .getAllByRole('button')
-        .map((button) => button.textContent),
-    ).toEqual(['Overview', 'Runs', 'Artifacts', 'Questions']);
-  });
-
-  it('opens another session from its row without changing the main sidebar level', () => {
-    seed();
-    mountColumn();
-
-    const row = nav().querySelector<HTMLElement>(`[data-select-id="${other.id}"]`);
-    expect(row).not.toBeNull();
-    act(() => {
-      row?.click();
-    });
-
-    expect(useAppStore.getState().currentSessionId).toBe(other.id);
-    expect(nav().querySelector('[data-column-door="board"]')).not.toBeNull();
-    expect(
-      nav().querySelector(`[data-select-id="${other.id}"]`)?.getAttribute('aria-current'),
-    ).toBe('page');
-    expect(levelOf()).toBe('session');
-    expect(within(nav()).getAllByText('Ledger export speedup')).toHaveLength(1);
-  });
-
-  it('keeps the session level when Command [ is pressed in the rail on its top level', () => {
-    seed();
-    mountColumn();
-
-    fireEvent.keyDown(within(sessionLayer()).getByRole('button', { name: /^Overview/ }), {
-      key: '[',
-      metaKey: true,
-    });
-
-    expect(levelOf()).toBe('session');
-    expect(useAppStore.getState().currentSessionId).toBe(openId);
-  });
-
-  it('selects the door and unselects the session row while a studio sits over the session', () => {
-    seed();
-    mountColumn({ place: 'inbox' });
-
-    expect(nav().querySelector('[data-column-door="inbox"]')?.getAttribute('aria-current')).toBe(
-      'page',
-    );
-    const row = nav().querySelector(`[data-select-id="${openId}"]`);
-    expect(row?.getAttribute('aria-current')).toBeNull();
-  });
-});
-
-describe('the session level pages', () => {
-  it('opens a page from its row and moves the current mark with it', () => {
-    seed();
-    mountColumn();
-
-    fireEvent.click(pages().getByRole('button', { name: /^Artifacts/ }));
-
-    expect(useAppStore.getState().activeLens[openId]).toBe('plans');
-    expect(
-      pages()
-        .getByRole('button', { name: /^Artifacts/ })
-        .getAttribute('aria-current'),
-    ).toBe('page');
-    expect(
-      pages()
-        .getByRole('button', { name: /^Overview/ })
-        .getAttribute('aria-current'),
-    ).toBe(null);
-  });
-
-  it('lights the selected page icon in its kind color, the label and fill unchanged', () => {
-    seed();
-    mountColumn();
-    const overview = pages().getByRole('button', { name: /^Overview/ });
-    expect(overview.getAttribute('data-icon-tone')).toBe('primary');
-
-    fireEvent.click(pages().getByRole('button', { name: /^Questions/ }));
-
-    const questions = pages().getByRole('button', { name: /^Questions/ });
-    expect(questions.getAttribute('data-icon-tone')).toBe('warning');
-    expect(questions.getAttribute('data-selected')).toBe('true');
-    expect(
-      pages()
-        .getByRole('button', { name: /^Overview/ })
-        .hasAttribute('data-icon-tone'),
-    ).toBe(false);
-  });
-
-  it('shows the running count beside the info dot while one of two runs runs, the total at rest', () => {
-    const workflow = workflowOf();
-    const first = aWorkflowRun({ ordinal: 0, workflowId: workflow.id });
-    const second = aWorkflowRun({ ordinal: 1, workflowId: workflow.id });
-    const withRuns: Session = { ...open, workflowRuns: [first, second] };
-    seed({ session: withRuns });
-    useAppStore.setState({
-      sessionWorkflows: { [openId]: [workflow] },
-      sessionPhaseRuns: {
-        [openId]: [
-          anAgent({
-            sessionId: openId,
-            status: 'running',
-            workflowRunId: first.id,
-            stepId: brandedId<StepId>({ value: 'step-1' }),
-          }),
-        ],
-      },
-    });
-    mountColumn();
-
-    const slot = sessionLayer().querySelector('[data-page-value="runs"]');
-    expect(slot?.textContent).toBe('1');
-    expect(slot?.getAttribute('data-tone')).toBe('info');
-
-    act(() => useAppStore.setState({ sessionPhaseRuns: { [openId]: [] } }));
-    expect(sessionLayer().querySelector('[data-page-value="runs"]')?.textContent).toBe('2');
-  });
-
-  it('keeps Questions last with the open count and a warning dot while one is open', () => {
-    seed();
-    seedColumn({
-      store: useAppStore,
-      sessions: [open, other],
-      currentSessionId: openId,
-      questions: [open],
-    });
-    mountColumn();
-
-    expect(pages().getAllByRole('button').at(-1)?.textContent).toBe('Questions1');
-    expect(
-      sessionLayer().querySelector('[data-page-value="questions"]')?.getAttribute('data-tone'),
-    ).toBe('warning');
-  });
-
-  it('shows Changes and a Folder group in a plain folder session', async () => {
-    seed({ isBranchless: true });
-    const acmeNotes = aProject({
-      workspaceId: harborline.id,
-      name: 'acme-notes',
-      rootPath: '/mock/Documents/acme-notes',
-      kind: 'folder',
-    });
-    useAppStore.setState({
-      projects: [acmeNotes],
-      folderPurpose: { [acmeNotes.id]: 'documents' },
-      sessionProjectMounts: { [openId]: [] },
-    });
-    stubStoryInvoke({
-      file_versions_folder_list_turns: [
-        testTurn({
-          runId: 'run-memo',
-          folderPath: acmeNotes.rootPath,
-          changes: [{ relativePath: 'launch-memo.md' }, { relativePath: 'faq.md' }],
-        }),
-      ],
-    });
-    mountColumn();
-
-    const folder = within(sessionLayer()).getByRole('group', { name: 'Folder' });
-    expect(within(folder).getByText('acme-notes')).toBeDefined();
-    expect(within(folder).getByText('Documents · edits in place')).toBeDefined();
-    expect(within(sessionLayer()).queryByRole('group', { name: 'Projects' })).toBeNull();
-    await vi.waitFor(() => {
-      const changes = pages().getByRole('button', { name: /^Changes/ });
-      expect(changes.querySelector('[data-page-value="files"]')?.textContent).toBe('2');
-    });
-    expect(pages().queryByRole('button', { name: /File versions/ })).toBeNull();
-  });
-});
 
 describe('the session level projects and linked work', () => {
   it('lists each worktree under its project with its pull request number, and opens its branch', async () => {
@@ -373,7 +185,7 @@ describe('the session level projects and linked work', () => {
     const worktree = paymentsRows.getByRole('button', { name: /#418/ });
     expect(worktree.textContent?.startsWith('#418 ')).toBe(true);
     expect(worktree.getAttribute('aria-label')).toContain(`branch goodboy/${openId}`);
-    expect(projects.getByRole('list', { name: 'ledger-core worktrees' })).toBeDefined();
+    projects.getByRole('list', { name: 'ledger-core worktrees' });
 
     await act(async () => {
       fireEvent.click(worktree);
@@ -406,7 +218,7 @@ describe('the session level projects and linked work', () => {
     expect(linked.getByRole('button', { name: 'Open NW-142' }).textContent).toBe(
       'NW-142Retry webhook deliveries on a 502',
     );
-    expect(linked.getByRole('button', { name: 'Link work' })).toBeDefined();
+    linked.getByRole('button', { name: 'Link work' });
   });
 
   it('starts every linked title on one edge and keeps a long key whole, cut at the end by the column', () => {
@@ -505,13 +317,13 @@ describe('the session level projects and linked work', () => {
 
     const linked = within(within(sessionLayer()).getByRole('group', { name: 'Linked' }));
     expect(linked.getAllByRole('button', { name: 'Open issue #418' })).toHaveLength(1);
-    expect(linked.getByText('Same number in another repository')).toBeDefined();
+    linked.getByText('Same number in another repository');
   });
 });
 
 const openSessionMenu = (): HTMLElement => {
   fireEvent.click(
-    within(elementOf('[data-rail-top]', rail())).getByRole('button', {
+    within(rail()).getByRole('button', {
       name: 'More session actions',
     }),
   );
@@ -526,14 +338,13 @@ const menuItem = ({ name }: MenuItemParams): HTMLElement =>
   within(openSessionMenu()).getByRole('menuitem', { name });
 
 describe('the session rail top row and its menu', () => {
-  it('holds the fold toggle, then Pin, Refresh and the session menu, with no foot', () => {
+  it('holds Pin, Refresh and the session menu in the title row, with no foot', () => {
     seed();
     mountColumn();
     expect(sessionLayer().querySelector('[data-level-identity]')).toBeNull();
-    const top = within(elementOf('[data-rail-top]', rail()));
+    const top = within(rail());
 
     expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Hide session pages',
       'Pin session',
       'Refresh session',
       'More session actions',
@@ -549,7 +360,7 @@ describe('the session rail top row and its menu', () => {
     const pinSession = vi.fn(async () => undefined);
     useAppStore.setState({ pinSession });
     mountColumn();
-    const top = within(elementOf('[data-rail-top]', rail()));
+    const top = within(rail());
 
     await act(async () => {
       fireEvent.click(top.getByRole('button', { name: 'Pin session' }));
@@ -574,12 +385,12 @@ describe('the session rail top row and its menu', () => {
       .mockResolvedValueOnce(undefined);
     useAppStore.setState({ pinSession });
     mountColumn();
-    const top = within(elementOf('[data-rail-top]', rail()));
+    const top = within(rail());
 
     await act(async () => {
       fireEvent.click(top.getByRole('button', { name: 'Pin session' }));
     });
-    expect(screen.getByText(/database is locked/)).toBeDefined();
+    screen.getByText(/database is locked/);
     expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
       'false',
     );
@@ -666,7 +477,7 @@ describe('the session rail top row and its menu', () => {
 
     fireEvent.click(menuItem({ name: /^Archive/ }));
     const dialog = within(await screen.findByRole('dialog', { name: 'Stop 1 agent and archive?' }));
-    expect(dialog.getByText(/stay on disk/)).toBeDefined();
+    dialog.getByText(/stay on disk/);
     await act(async () => {
       fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
     });
@@ -719,7 +530,7 @@ describe('the session rail top row and its menu', () => {
 
     fireEvent.click(menuItem({ name: /^Archive/ }));
     const dialog = within(await screen.findByRole('dialog', { name: 'Stop 1 agent and archive?' }));
-    expect(dialog.getByText(/Archive stops it first and keeps what it wrote/)).toBeDefined();
+    dialog.getByText(/Archive stops it first and keeps what it wrote/);
     await act(async () => {
       fireEvent.click(dialog.getByRole('button', { name: 'Stop 1 agent and archive' }));
     });
@@ -744,7 +555,7 @@ describe('the session rail top row and its menu', () => {
     await act(async () => {
       fireEvent.click(archiveItem);
     });
-    expect(screen.getByText(/database is locked/)).toBeDefined();
+    screen.getByText(/database is locked/);
     expect(useAppStore.getState().sessions.map((session) => session.id)).toContain(openId);
 
     const again = menuItem({ name: /^Archive/ });
@@ -769,7 +580,7 @@ describe('the session rail top row and its menu', () => {
     useAppStore.setState({ bulkUnarchiveTask });
     mountColumn();
 
-    const top = within(elementOf('[data-rail-top]', rail()));
+    const top = within(rail());
     expect(top.queryByRole('button', { name: 'Pin session' })).toBeNull();
     const restore = menuItem({ name: /^Restore/ });
     await act(async () => {
@@ -777,287 +588,5 @@ describe('the session rail top row and its menu', () => {
     });
     expect(screen.queryByRole('dialog', { name: 'Archive session?' })).toBeNull();
     expect(bulkUnarchiveTask).toHaveBeenCalledWith([openId]);
-  });
-});
-
-describe('the session rail as the inner column', () => {
-  it('folds and unfolds the rail through the inner column key, remembered', () => {
-    seed();
-    mountColumn();
-    expect(innerColumnStore.current()?.label).toBe('Hide session pages');
-
-    act(() => {
-      innerColumnStore.toggleCurrent();
-    });
-
-    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-    expect(innerColumnStore.current()?.label).toBe('Show session pages');
-    act(() => {
-      innerColumnStore.toggleCurrent();
-    });
-    expect(rail().hasAttribute('data-rail-folded')).toBe(false);
-  });
-});
-
-describe('the folded session rail', () => {
-  it('starts the page icons right under the top row, open and folded, so a fold moves none', () => {
-    seed();
-    mountColumn();
-    const openFrame = elementOf('[data-fold]', rail());
-    expect(openFrame.previousElementSibling).toBe(elementOf('[data-rail-top]', rail()));
-    expect(rail().querySelector('[data-rail-actions]')).toBeNull();
-    cleanup();
-
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    mountColumn();
-    const foldedFrame = elementOf('[data-fold]', rail());
-    expect(foldedFrame.previousElementSibling).toBe(elementOf('[data-rail-top]', rail()));
-    expect(foldedFrame.nextElementSibling).toBe(elementOf('[data-rail-actions]', rail()));
-  });
-
-  it('names itself Session pages and keeps More session actions at the foot', () => {
-    seed();
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    mountColumn();
-
-    expect(rail().getAttribute('aria-label')).toBe('Session pages');
-    const top = within(elementOf('[data-rail-top]', rail()));
-    expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Show session pages',
-    ]);
-    const actions = within(elementOf('[data-rail-actions]', rail()));
-    expect(
-      actions.getAllByRole('button').map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['More session actions']);
-    expect(within(rail()).queryByRole('button', { name: 'Pin session' })).toBeNull();
-    expect(within(rail()).queryByRole('button', { name: 'Refresh session' })).toBeNull();
-  });
-
-  it('opens the same session menu from the folded rail', () => {
-    seed();
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    mountColumn();
-
-    fireEvent.click(
-      within(elementOf('[data-rail-actions]', rail())).getByRole('button', {
-        name: 'More session actions',
-      }),
-    );
-    const labels = within(screen.getByRole('menu'))
-      .getAllByRole('menuitem')
-      .map((item) => item.textContent ?? '');
-    expect(labels.length).toBeLessThanOrEqual(5);
-    expect(labels.some((label) => label.startsWith('Archive'))).toBe(true);
-  });
-
-  it('keeps a failed action retryable after the rail folds', async () => {
-    seed();
-    const pinSession = vi
-      .fn<() => Promise<void>>()
-      .mockRejectedValueOnce(new Error('database is locked'))
-      .mockResolvedValueOnce(undefined);
-    useAppStore.setState({ pinSession });
-    mountColumn();
-    await act(async () => {
-      fireEvent.click(within(rail()).getByRole('button', { name: 'Pin session' }));
-    });
-
-    act(() => {
-      innerColumnStore.toggleCurrent();
-    });
-    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-    await act(async () => {
-      fireEvent.click(within(rail()).getByRole('button', { name: 'Retry' }));
-    });
-
-    expect(pinSession).toHaveBeenCalledTimes(2);
-    expect(within(rail()).queryByRole('button', { name: 'Retry' })).toBeNull();
-  });
-
-  it('draws one branch icon per worktree with its project, branch and state in the tooltip', () => {
-    seed();
-    const payments = mountOf({ session: open, project: paymentsApi });
-    const github = mountGithubOf({ mount: payments, number: 418 });
-    useAppStore.setState({
-      sessionProjectMounts: { [openId]: [payments] },
-      mountGithub: {
-        [payments.mountId]: {
-          ...github,
-          pr: github.pr === null ? null : { ...github.pr, checks: 'failure' },
-        },
-      },
-    });
-    stubStoryInvoke({ worktree_status: () => worktreeStatusOf({}), detect_editors: () => [] });
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    mountColumn();
-
-    const icons = within(elementOf('[data-rail-worktrees]', rail())).getAllByRole('button');
-    expect(icons.map((icon) => icon.getAttribute('aria-label'))).toEqual([
-      `payments-api, #418, goodboy/${openId}, Open, A check failed`,
-    ]);
-  });
-
-  const seedBranches = ({ isPaymentsFailing }: { readonly isPaymentsFailing: boolean }) => {
-    seed();
-    const payments = mountOf({ session: open, project: paymentsApi });
-    const ledger = mountOf({ session: open, project: ledgerCore });
-    const ledgerSecond = {
-      ...ledger,
-      mountId: brandedId<MountId>({ value: `${ledger.mountId}-second` }),
-      branch: 'goodboy/ledger-rounding',
-      worktreePath: `${ledger.worktreePath}-second`,
-      parallelIndex: 1,
-    };
-    const github = mountGithubOf({ mount: payments, number: 418 });
-    useAppStore.setState({
-      sessionProjectMounts: { [openId]: [payments, ledger, ledgerSecond] },
-      mountGithub: {
-        [payments.mountId]: {
-          ...github,
-          pr:
-            github.pr === null || !isPaymentsFailing
-              ? github.pr
-              : { ...github.pr, checks: 'failure' },
-        },
-      },
-    });
-    stubStoryInvoke({
-      worktree_status: () => worktreeStatusOf({}),
-      worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
-      detect_editors: () => [],
-    });
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    mountColumn();
-    return { ledger };
-  };
-
-  it('keeps a glyph for a branch that needs you and folds the quiet ones into one counted button', () => {
-    seedBranches({ isPaymentsFailing: true });
-
-    const worktrees = within(elementOf('[data-rail-worktrees]', rail()));
-    const labels = worktrees.getAllByRole('button').map((icon) => icon.getAttribute('aria-label'));
-    expect(labels).toEqual([
-      `payments-api, #418, goodboy/${openId}, Open, A check failed`,
-      '2 more branches',
-    ]);
-    expect(elementOf('[data-rail-branches-count]').textContent).toBe('2');
-  });
-
-  it('folds every branch into the button when none needs you', () => {
-    seedBranches({ isPaymentsFailing: false });
-
-    const worktrees = within(elementOf('[data-rail-worktrees]', rail()));
-    expect(worktrees.getAllByRole('button').map((icon) => icon.getAttribute('aria-label'))).toEqual(
-      ['3 more branches'],
-    );
-  });
-
-  it('opens a flyout of every branch from the button and opens the picked branch', async () => {
-    const { ledger } = seedBranches({ isPaymentsFailing: true });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: '2 more branches' }));
-    });
-
-    const flyout = within(screen.getByRole('dialog', { name: 'Branches' }));
-    expect(flyout.getAllByRole('button')).toHaveLength(3);
-    flyout.getByRole('button', { name: /A check failed/ });
-
-    await act(async () => {
-      fireEvent.click(flyout.getByRole('button', { name: /ledger-rounding/ }));
-    });
-
-    expect(storySpies.updateSessionWriteDestination).toHaveBeenCalledWith({
-      db: expect.anything(),
-      sessionId: openId,
-      mountId: `${ledger.mountId}-second`,
-    });
-    expect(useAppStore.getState().sessionActiveMount[openId]).toBe(`${ledger.mountId}-second`);
-    expect(useAppStore.getState().activeLens[openId]).toBe('branch');
-    expect(useAppStore.getState().diffMountPath[openId]).toBe(`${ledger.worktreePath}-second`);
-    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
-  });
-
-  it('titles a flyout row by its branch, with the project below', async () => {
-    seedBranches({ isPaymentsFailing: true });
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: '2 more branches' }));
-    });
-
-    const row = within(screen.getByRole('dialog', { name: 'Branches' })).getByRole('button', {
-      name: /ledger-rounding/,
-    });
-    const lines = Array.from(row.querySelectorAll('span > span'), (line) => line.textContent);
-    expect(lines[0]).toBe('goodboy/ledger-rounding');
-    expect(lines[1]?.startsWith('ledger-core')).toBe(true);
-  });
-
-  it('does not reopen the flyout when branches fold again after it closed under it', async () => {
-    seedBranches({ isPaymentsFailing: false });
-    const mounts = useAppStore.getState().sessionProjectMounts[openId] ?? [];
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: '3 more branches' }));
-    });
-    screen.getByRole('dialog', { name: 'Branches' });
-
-    await act(async () => {
-      useAppStore.setState({
-        sessionProjectMounts: { [openId]: mounts.slice(0, 1) },
-      });
-    });
-    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
-
-    await act(async () => {
-      useAppStore.setState({ sessionProjectMounts: { [openId]: mounts } });
-    });
-
-    screen.getByRole('button', { name: '3 more branches' });
-    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
-  });
-
-  it('closes the flyout on Escape', async () => {
-    seedBranches({ isPaymentsFailing: true });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: '2 more branches' }));
-    });
-
-    await act(async () => {
-      fireEvent.keyDown(document, { key: 'Escape' });
-    });
-
-    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
-  });
-
-  it('folds to the page icons and back, and remembers the choice', () => {
-    seed();
-    const { unmount } = mountColumn();
-
-    fireEvent.click(toggle());
-
-    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-    expect(rail().querySelector('[data-rail-level="session"]')).not.toBeNull();
-    expect(within(rail()).getByRole('button', { name: 'Artifacts' })).toBeDefined();
-    expect(within(rail()).queryByRole('button', { name: /^Back to/ })).toBeNull();
-    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
-    expect(nav().querySelector('[data-column-door="board"]')).not.toBeNull();
-
-    unmount();
-    mountColumn();
-    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-
-    fireEvent.click(toggle());
-    expect(rail().hasAttribute('data-rail-folded')).toBe(false);
-    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('0');
-  });
-
-  it('opens a page from its icon', () => {
-    seed();
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    mountColumn();
-
-    fireEvent.click(within(rail()).getByRole('button', { name: 'Artifacts' }));
-
-    expect(useAppStore.getState().activeLens[openId]).toBe('plans');
   });
 });

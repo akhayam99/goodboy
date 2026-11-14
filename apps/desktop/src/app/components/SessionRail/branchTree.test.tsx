@@ -47,7 +47,7 @@ import {
 } from '../../../features/workspace/testing/sessionColumn';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { ObjectMenuProvider } from '../../../features/actions/components/ObjectMenuProvider';
-import { SessionRail } from './index';
+import { SessionContextCards } from '../SessionContextCards';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { runObjectAction } from '../../../features/actions/registry';
 
@@ -101,7 +101,7 @@ const mountRail = async (): Promise<void> => {
   render(
     <ToastProvider>
       <ObjectMenuProvider>
-        <SessionRail session={session} />
+        <SessionContextCards session={session} />
       </ObjectMenuProvider>
     </ToastProvider>,
   );
@@ -168,7 +168,7 @@ const rowButton = (project: string, name: RegExp): HTMLElement =>
 const levelCount = (): number => document.querySelectorAll('[data-level-layer="worktree"]').length;
 
 const railLevel = (): string | null =>
-  screen.getByRole('navigation', { name: 'Session pages' }).getAttribute('data-session-rail');
+  document.querySelector('[data-level-layer]')?.getAttribute('data-level-layer') ?? null;
 
 const menuLabels = async (): Promise<ReadonlyArray<string>> =>
   (await screen.findAllByRole('menuitem')).map((item) => item.textContent ?? '');
@@ -219,15 +219,6 @@ describe('one tree for every branch', () => {
     expect(row.getAttribute('aria-current')).toBe('page');
     expect(document.querySelector('[data-worktree-entries]')).toBeNull();
     expect(rowButton('ledger-core', /#77/).hasAttribute('aria-current')).toBe(false);
-  });
-
-  it('keeps the folded rail on the session pages while a branch is open', async () => {
-    seedTwoProjects({ status: worktreeStatusOf({}) });
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    await mountRail();
-    await openWorktree();
-
-    expect(document.querySelector('[data-rail-level="session"]')).not.toBeNull();
   });
 
   it('opens five rows from the row dots, and every row from a right click and Shift+F10', async () => {
@@ -1021,7 +1012,7 @@ describe('the folder cards of the session level', () => {
     }));
     render(
       <ToastProvider>
-        <SessionRail session={archived} />
+        <SessionContextCards session={archived} />
       </ToastProvider>,
     );
     await settle();

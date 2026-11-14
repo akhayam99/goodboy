@@ -66,13 +66,11 @@ describe('the r1 motion scenes', () => {
     }
   });
 
-  it('r1-motion-shell-open opens the sidebar and the session rail, and its sidebar toggle folds', async () => {
+  it('r1-motion-shell-open opens the sidebar and the session page tabs, and its sidebar toggle folds', async () => {
     await mount('r1-motion-shell-open');
 
     expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
-    expect(document.querySelector('[data-session-rail]')?.hasAttribute('data-rail-folded')).toBe(
-      false,
-    );
+    expect(screen.getAllByRole('tablist', { name: 'Session pages' }).length).toBeGreaterThan(0);
 
     fireEvent.click(sidebarToggle());
 
@@ -80,13 +78,11 @@ describe('the r1 motion scenes', () => {
     expect(document.querySelector('[data-column-layer="nav"]')).toBeNull();
   });
 
-  it('r1-motion-shell-folded folds both rails to their icons, and its sidebar toggle opens', async () => {
+  it('r1-motion-shell-folded folds the sidebar to its icons, and its sidebar toggle opens', async () => {
     await mount('r1-motion-shell-folded');
 
     expect(document.querySelector('[data-column-rail]')).not.toBeNull();
-    expect(document.querySelector('[data-session-rail]')?.hasAttribute('data-rail-folded')).toBe(
-      true,
-    );
+    expect(screen.getAllByRole('tablist', { name: 'Session pages' }).length).toBeGreaterThan(0);
 
     fireEvent.click(sidebarToggle());
 
