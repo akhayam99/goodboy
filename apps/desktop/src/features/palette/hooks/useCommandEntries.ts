@@ -61,6 +61,8 @@ import { runPinnedScript } from '../../scripts/runPinnedScript';
 import { repoEntries } from '../sources/repoEntries';
 import { leadEntries } from '../sources/leadEntries';
 import { useIsWorkOn } from '../../../shared/hooks/useIsWorkOn';
+import { flowRulesOf } from '../../work/flowRulesOf';
+import { openStartWork } from '../../work/openStartWork';
 import { useOpenLeadRows } from './useOpenLeadRows';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
@@ -191,11 +193,16 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     if (sessionId === null) {
       out.push({
         key: 'action:start-run-auto-picks',
-        label: NAMES.startARun,
+        label: flowRulesOf({ isWork }).startLabel,
         kind: 'create',
         group: 'action',
         icon: CONCEPT_ICONS.autoRouting,
-        run: () => openNewSessionAs({ startKind: 'auto' }),
+        run: () =>
+          flowRulesOf({ isWork }).shouldStartOpenComposer
+            ? openStartWork({
+                seed: { sessionId: null, projectId: null, branch: null, text: '' },
+              })
+            : openNewSessionAs({ startKind: 'auto' }),
       });
     }
 

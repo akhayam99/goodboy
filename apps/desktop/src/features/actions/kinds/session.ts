@@ -34,7 +34,7 @@ import { sessionHasUnread } from '../../../store/slices/session-view/sessionHasU
 import { openStartRun } from '../../session/startRun/openStartRun';
 import { stopAllMessageOf } from '../../session/stopAllMessageOf';
 import { stopAllRunningAgents } from '../../session/stopAllRunningAgents';
-import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
+import { startLabelNow } from '../../work/startLabelNow';
 import { refreshSession } from '../../session/refreshSession';
 import { openSessionSpendLimitEdit } from '../../budget/openSessionSpendLimitEdit';
 import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
@@ -425,7 +425,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.startRun',
-    label: RUN_ROUTE_COPY.label,
+    label: startLabelNow,
     icon: CONCEPT_ICONS.workflows,
     group: 'act',
     when: isUnarchived,

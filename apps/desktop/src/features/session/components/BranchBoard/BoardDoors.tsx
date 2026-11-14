@@ -1,6 +1,8 @@
-import { GitCommitVertical, GitPullRequest, Globe, SquareTerminal } from 'lucide-react';
+import { GitCommitVertical, GitPullRequest, Globe, Plus, SquareTerminal } from 'lucide-react';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import { branchPlace, useAppStore } from '../../../../store';
+import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
+import { openStartWork } from '../../../work/openStartWork';
 import type { BranchWorkCounts } from '../../../branch/branchTabFactsOf';
 import { countWordOf } from '../../central/board/countWordOf';
 import { BoardRemoveButton } from './BoardRemoveButton';
@@ -32,6 +34,7 @@ const countsLineOf = ({ counts }: CountsParams): string =>
 export const BoardDoors = ({ rowId, counts }: Props) => {
   const { session, rowById, entryByRowId, diffStatByPath } = useBoardContext();
   const navigate = useAppStore((state) => state.navigate);
+  const isWork = useIsWorkOn();
   const row = rowById.get(rowId);
   const entry = entryByRowId.get(rowId) ?? null;
   if (row === undefined || entry === null) {
@@ -93,6 +96,20 @@ export const BoardDoors = ({ rowId, counts }: Props) => {
           Open the PR page
         </Button>
       )}
+      {isWork && !row.isMerged ? (
+        <Button
+          size="sm"
+          variant="quiet"
+          onClick={() =>
+            openStartWork({
+              seed: { sessionId: session.id, projectId: null, branch: row.branch, text: '' },
+            })
+          }
+        >
+          <Plus size={ICON_SIZE.control} aria-hidden />
+          Start work on this branch
+        </Button>
+      ) : null}
       {row.isMerged ? <BoardRemoveButton mountIds={[fact.mountId]} variant="quiet" /> : null}
       {countsLine === '' ? null : (
         <span

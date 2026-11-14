@@ -18,6 +18,7 @@ export const ROW_START_SCENES = [
   'work-lead-working',
   'work-lead-push',
   'work-lead-dependency',
+  'work-start',
   'settings-app',
   'settings-providers',
   'settings-projects-rows',
