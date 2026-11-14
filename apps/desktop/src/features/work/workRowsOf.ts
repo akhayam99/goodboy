@@ -41,7 +41,7 @@ type RowParams = {
 
 const RUNNING_DELEGATION_STATES: ReadonlySet<string> = new Set(['starting', 'running']);
 
-const rowOf = ({ lead, rootTurns, isWork }: RowParams): WorkRow => {
+const workRowOf = ({ lead, rootTurns, isWork }: RowParams): WorkRow => {
   const { view } = lead;
   const word = autoTreeWordOf({
     view,
@@ -95,7 +95,7 @@ const rowCountOf = ({ rows, filter }: CountParams): number =>
 
 export const workRowsOf = ({ leads, rootTurns, filter, isWork }: Params): WorkRows => {
   const all = leads
-    .map((lead) => rowOf({ lead, rootTurns, isWork }))
+    .map((lead) => workRowOf({ lead, rootTurns, isWork }))
     .sort((a, b) => b.updatedAt - a.updatedAt || a.treeId.localeCompare(b.treeId));
   return {
     rows: all.filter((row) => MATCHES[filter]({ row })),

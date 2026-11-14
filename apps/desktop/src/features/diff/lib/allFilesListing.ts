@@ -1,4 +1,5 @@
 import type { FileDiff } from '@goodboy/types';
+import { baseNameOf } from '@goodboy/types/helpers';
 import type { ExploreEntry } from '../../explore/explore';
 import {
   ancestorPathsOf,
@@ -31,8 +32,6 @@ const parentFolderOf = ({ relPath }: PathParams): string => {
   return slash < 0 ? EXPLORE_ROOT_PATH : relPath.slice(0, slash);
 };
 
-const baseNameOf = ({ relPath }: PathParams): string => relPath.slice(relPath.lastIndexOf('/') + 1);
-
 type SortParams = {
   readonly entries: Iterable<ExploreEntry>;
 };
@@ -41,7 +40,7 @@ const sortedEntries = ({ entries }: SortParams): ReadonlyArray<ExploreEntry> =>
   [...entries].sort((a, b) => Number(b.isDir) - Number(a.isDir) || a.name.localeCompare(b.name));
 
 const diffEntryOf = ({ relPath, isDir }: NewEntryParams): ExploreEntry => ({
-  name: baseNameOf({ relPath }),
+  name: baseNameOf({ path: relPath }),
   relPath,
   isDir,
   sizeBytes: null,

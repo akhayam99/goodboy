@@ -1,3 +1,4 @@
+import { baseNameOf } from '@goodboy/types/helpers';
 import { dependencyGrantsOf } from './dependencyGrant';
 import { isLockfileChangeCovered } from './isLockfileChangeCovered';
 import { isManifestChangeCovered } from './isManifestChangeCovered';
@@ -7,10 +8,6 @@ import { pathsOfPatch } from './patchPaths';
 const HEADER = 'diff --git ';
 const MANIFESTS: ReadonlyArray<string> = PACKAGE_MANAGERS.flatMap((manager) => manager.manifests);
 const LOCKFILES: ReadonlyArray<string> = PACKAGE_MANAGERS.flatMap((manager) => manager.lockfiles);
-
-type TextParams = { readonly text: string };
-
-const baseNameOf = ({ text }: TextParams): string => text.slice(text.lastIndexOf('/') + 1);
 
 type SectionsParams = { readonly patch: string };
 
@@ -39,8 +36,8 @@ export const unattributedDependencyPathsOf = ({
   patch,
   allowedPackages,
 }: Params): ReadonlyArray<string> => {
-  const manifests = paths.filter((path) => MANIFESTS.includes(baseNameOf({ text: path })));
-  const lockfiles = paths.filter((path) => LOCKFILES.includes(baseNameOf({ text: path })));
+  const manifests = paths.filter((path) => MANIFESTS.includes(baseNameOf({ path })));
+  const lockfiles = paths.filter((path) => LOCKFILES.includes(baseNameOf({ path })));
   if (patch === null || allowedPackages.length === 0) {
     return [...manifests, ...lockfiles];
   }

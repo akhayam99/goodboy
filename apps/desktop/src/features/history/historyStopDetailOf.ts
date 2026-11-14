@@ -1,4 +1,5 @@
 import type { SessionEventPayload } from '@goodboy/types';
+import { baseNameOf } from '@goodboy/types/helpers';
 import { historyStopCause } from './historyStopCause';
 
 type Params = {
@@ -10,16 +11,6 @@ type FilesParams = {
 };
 
 const SHOWN_FILES = 2;
-
-type PathParams = {
-  readonly path: string;
-};
-
-const baseNameOf = ({ path }: PathParams): string =>
-  path
-    .split('/')
-    .filter((part) => part.length > 0)
-    .pop() ?? path;
 
 const fileNamesOf = ({ files }: FilesParams): string => {
   const shown = files.slice(0, SHOWN_FILES).map((path) => baseNameOf({ path }));
