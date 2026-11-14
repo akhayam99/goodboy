@@ -200,17 +200,17 @@ describe('DrawerColumn rail', () => {
     expect(railHost()?.closest('[inert]')).toBeNull();
   });
 
-  it('opens the panel inward of the rail: its right edge is the rail left edge', () => {
+  it('opens the dock to the right of the rail: the rail is the dock left edge', () => {
     stubEdgeWidths({ column: 1300 });
     renderWithTools('Scripts');
 
-    expect(card()?.nextElementSibling).toBe(railHost());
-    expect(railHost()?.nextElementSibling).toBeNull();
-    expect(box()?.lastElementChild).toBe(railHost());
+    expect(railHost()?.nextElementSibling).toBe(card());
+    expect(card()?.nextElementSibling).toBeNull();
+    expect(box()?.firstElementChild).toBe(railHost());
     expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET + EDGE_WIDTH}px`);
   });
 
-  it('never moves the rail: one element, last in the container, closed, pushing and over', () => {
+  it('keeps one rail element, first in the container, closed, pushing and over', () => {
     const resize = driveEdgeColumn({ column: 1300 });
     const view = renderWithTools(null);
     const closedHost = railHost();
@@ -233,11 +233,11 @@ describe('DrawerColumn rail', () => {
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
     expect(railHost()).toBe(closedHost);
     expect(railHost()?.parentElement).toBe(closedParent);
-    expect(railHost()?.nextElementSibling).toBeNull();
+    expect(railHost()?.previousElementSibling).toBeNull();
     expect(panel().className).toContain('right-0');
   });
 
-  it('keeps the rail still while a resize drags the panel', () => {
+  it('keeps the rail on the dock edge while a resize drags the panel', () => {
     stubEdgeWidths({ column: 1300 });
     renderWithTools('Scripts');
     const host = railHost();
@@ -246,7 +246,8 @@ describe('DrawerColumn rail', () => {
     fireEvent.mouseMove(window, { clientX: 960 });
 
     expect(railHost()).toBe(host);
-    expect(box()?.lastElementChild).toBe(host);
+    expect(box()?.firstElementChild).toBe(host);
+    expect(handleOf().parentElement?.nextElementSibling).toBe(box());
     expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + 40 + DRAWER_INSET + EDGE_WIDTH}px`);
     fireEvent.mouseUp(window);
   });
@@ -319,11 +320,20 @@ describe('DrawerColumn rail', () => {
     expect(pageOf(container)?.dataset['sheet']).toBe('pushed');
   });
 
-  it('never animates the rail', () => {
+  it('slides rail and dock in together over the page, the rail itself never animating alone', () => {
     stubEdgeWidths({ column: 852 });
     renderWithTools('Scripts');
 
     expect(railHost()?.className).not.toContain('animate');
+    expect(box()?.className).toContain('motion-safe:animate-drawer-dock-in');
     expect(card()?.className).toContain('motion-safe:animate-drawer-overlay-in');
+  });
+
+  it('does not slide the container while the dock pushes the page', () => {
+    stubEdgeWidths({ column: 1300 });
+    renderWithTools('Scripts');
+
+    expect(box()?.className).not.toContain('animate-drawer-dock');
+    expect(panel().className).toContain('motion-safe:transition-[width]');
   });
 });

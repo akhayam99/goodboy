@@ -273,6 +273,10 @@
 
   --animate-drawer-overlay-out: drawer-overlay-out var(--duration-quick) var(--ease-exit) forwards;
 
+  --animate-drawer-dock-in: drawer-dock-in var(--duration-base) var(--ease-enter);
+
+  --animate-drawer-dock-out: drawer-dock-out var(--duration-quick) var(--ease-exit) forwards;
+
   --animate-drawer-fade-out: drawer-fade-out var(--duration-quick) var(--ease-exit) forwards;
   @keyframes drawer-fade-out {
     from {
@@ -468,6 +472,24 @@
     to {
       opacity: 0;
       transform: translateX(8px);
+    }
+  }
+
+  @keyframes drawer-dock-in {
+    from {
+      transform: translateX(var(--goodboy-drawer-panel));
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes drawer-dock-out {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(var(--goodboy-drawer-panel));
     }
   }
 
@@ -832,6 +854,15 @@ body {
 @utility sticky-surface {
   background-color: color-mix(in oklab, var(--color-background) 80%, transparent);
   backdrop-filter: blur(12px) saturate(1.4);
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-background);
+    backdrop-filter: none;
+  }
+}
+
+@utility sticky-surface-head {
+  background-color: color-mix(in oklab, var(--color-background) 86%, transparent);
+  backdrop-filter: blur(8px) saturate(1.2);
   @media (prefers-reduced-transparency: reduce) {
     background-color: var(--color-background);
     backdrop-filter: none;

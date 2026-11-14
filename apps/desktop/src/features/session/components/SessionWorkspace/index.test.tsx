@@ -843,9 +843,9 @@ describe('SessionWorkspace session head', () => {
 
     expect(screen.getAllByTestId('session-head')).toHaveLength(1);
     const frame = container.querySelector('[data-session-head-frame]');
-    expect(frame?.firstElementChild?.firstElementChild?.getAttribute('data-testid')).toBe(
-      'session-head',
-    );
+    const band = frame?.firstElementChild?.firstElementChild ?? null;
+    expect(band?.hasAttribute('data-session-head-band')).toBe(true);
+    expect(band?.firstElementChild?.getAttribute('data-testid')).toBe('session-head');
     expect(frame?.lastElementChild?.hasAttribute('data-session-aside')).toBe(true);
     expect(within(screen.getByTestId('pane-tabs')).queryByRole('navigation')).toBeNull();
   });

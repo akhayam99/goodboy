@@ -326,7 +326,7 @@ a narrow width the dock floats over the page: the page slot lives in its own
 layer (`data-studio-host`, `isolate`), so the dock and its scrim always paint
 above the page. On
 Tasks, Chat and Workflows the page's own panel and the dock open together in
-the order content, page panel, dock, rail: `AppShell` hands the dock to the page
+the order content, page panel, rail, dock: `AppShell` hands the dock to the page
 through `ShellDockContext` (`isDockInStudio` from `useShellRight`), and the
 page's `DrawerColumn` puts its panel in the `detail` slot, so below the push
 width both lie over the page with a scrim. Close keys

@@ -128,7 +128,12 @@ the pinned back row of every `PaneShell`, a self-scrolling one included, so the
 frosted row is what the reader sees there. `sticky-surface-subtle` is the light
 frost (the role at 90% over `blur(3px) saturate(1.2)`) for a header on `subtle`
 (a drawer's pinned title row included) and for a diff file header, which parks right under the pinned zone, so a long
-diff never stacks two strong frosts on every scroll frame. Text on
+diff never stacks two strong frosts on every scroll frame. Under a session head
+the whole head (title row, crumbs or tabs, the page's pinned rows) is one
+surface with one backdrop: `sticky-surface-head`, the quiet frost (the
+background at 86% over `blur(8px) saturate(1.2)`), painted once by the page's
+`RevealRegion` overlay from the top of the head to the bottom of its pinned
+rows, so content reads the same under every head row. Text on
 the frost holds 4.5:1 over any surface or half-inked text under it
 (`sticky-surface.test.ts`). Under `prefers-reduced-transparency: reduce` both
 are the opaque role and the blur is off. A sticky header draws no `shadow-*` and no
@@ -663,7 +668,7 @@ The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: 
 
 A side drawer reserves 464px of content plus gutters; a reader reserves 560px.
 `drawerLayoutOf` excludes the tool rail's measured width as a content inset.
-A right drawer is its own container, never a card inside the sheet: it holds the tool dock (Terminal, Browser) and the tool rail on one `drawer` surface (see Surfaces), flush with the window edge, `frame-edge` and `rounded-l-frame`, with the rail always on the edge and the dock inward of it. A detail panel (artifact, Ask, plan part, check analysis, transcript) is a second container between the page and the dock, on the page's `background`, `rounded-frame` with a `frame-edge` border on four sides; both can be open together. A `DrawerFrame` takes the surface of the container it sits in (`bg-panel-surface` over `panel-on-page` or `panel-on-rail`, pinned header `sticky-surface-panel`), so it never paints a third step. Over the page both add `shadow-xl`. A panel opening or closing eases its own width (`duration-200 ease-enter`, `motion-safe`), and the page content beside it slides with it. Outside the tooltip, `shadow-md` belongs
+A right drawer is its own container, never a card inside the sheet: it holds the tool dock (Terminal, Browser) and the tool rail on one `drawer` surface (see Surfaces), flush with the window edge, `frame-edge` and `rounded-l-frame`, with the rail as the dock's left edge: closed, the rail sits on the window edge; open, the dock fills from the rail to the window edge and the rail rides its left edge. A detail panel (artifact, Ask, plan part, check analysis, transcript) is a second container between the page and the dock, on the page's `background`, `rounded-frame` with a `frame-edge` border on four sides; both can be open together. A `DrawerFrame` takes the surface of the container it sits in (`bg-panel-surface` over `panel-on-page` or `panel-on-rail`, pinned header `sticky-surface-panel`), so it never paints a third step. Over the page both add `shadow-xl`. A panel opening or closing eases its own width (`duration-200 ease-enter`, `motion-safe`), and the page content beside it slides with it. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
@@ -983,7 +988,7 @@ sign share the same period and dip, and the surface they sit on says which
 one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
 `nav-step-in`, `nav-step-in-back`, `pane-in`, `pane-out`, `item-out`, `studio-in`, `studio-out`, `studio-body-in`,
 `layer-in`, `layer-out`, `drawer-fade-out`, `drawer-overlay-in`,
-`drawer-overlay-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
+`drawer-overlay-out`, `drawer-dock-in`, `drawer-dock-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
 `popover-in`, `fold-fade-in`, `fold-fade-out`, `wizard-fade-in`,
 `wizard-fade-out`, `wizard-step-in`, `wizard-step-out`) move content between
 states and sit outside the meanings.
