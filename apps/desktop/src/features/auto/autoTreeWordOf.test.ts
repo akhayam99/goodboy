@@ -7,10 +7,11 @@ import { autoTreeWordOf } from './autoTreeWordOf';
 
 type PhaseParams = {
   readonly phase: AutoPhase;
+  readonly isWork?: boolean;
 };
 
-const wordOf = ({ phase }: PhaseParams) =>
-  autoTreeWordOf({ view: aView({ phase }), rootTurn: null });
+const wordOf = ({ phase, isWork = false }: PhaseParams) =>
+  autoTreeWordOf({ view: aView({ phase }), rootTurn: null, isWork });
 
 describe('autoTreeWordOf', () => {
   it.each([
@@ -25,6 +26,22 @@ describe('autoTreeWordOf', () => {
     expect(wordOf({ phase })).toMatchObject({ state, word });
   });
 
+  it.each([
+    ['stopping', 'stopping', 'Stopped'],
+    ['stopped', 'stopped', 'Stopped'],
+    ['finished', 'done', 'Finished'],
+    ['blocked', 'failed', 'Waits for you'],
+    ['done', 'idle', 'Resting'],
+    ['answering', 'idle', 'Resting'],
+    ['deciding', 'running', 'Working'],
+    ['waiting', 'running', 'Working'],
+  ] as const)(
+    'with Work on reads the phase %s as the state %s and the Lead word %s',
+    (phase, state, word) => {
+      expect(wordOf({ phase, isWork: true })).toMatchObject({ state, word });
+    },
+  );
+
   it('never says Stuck or Blocked for an Auto that stopped replying: it failed', () => {
     const tree = wordOf({ phase: 'blocked' });
 
@@ -37,13 +54,18 @@ describe('autoTreeWordOf', () => {
     expect(wordOf({ phase: 'stopping' }).isLive).toBe(false);
   });
 
-  it('reads a plan that waits as Needs you', () => {
-    const tree = autoTreeWordOf({
-      view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }),
-      rootTurn: null,
-    });
+  it('reads a plan that waits as Needs you, and as Waits for you with the reason plan ready', () => {
+    const view = aView({ phase: 'waiting', artifacts: [aPlanRow()] });
 
-    expect(tree).toMatchObject({ state: 'asking', word: 'Needs you' });
+    expect(autoTreeWordOf({ view, rootTurn: null, isWork: false })).toMatchObject({
+      state: 'asking',
+      word: 'Needs you',
+    });
+    expect(autoTreeWordOf({ view, rootTurn: null, isWork: true })).toMatchObject({
+      state: 'asking',
+      word: 'Waits for you',
+      lead: { stop: 'waitsForYou', reason: 'planReady' },
+    });
   });
 
   it.each([
@@ -53,7 +75,11 @@ describe('autoTreeWordOf', () => {
     const view = aView({ phase: 'blocked' });
 
     expect(
-      autoTreeWordOf({ view: { ...view, tree: { ...view.tree, blockedReason } }, rootTurn: null }),
+      autoTreeWordOf({
+        view: { ...view, tree: { ...view.tree, blockedReason } },
+        rootTurn: null,
+        isWork: false,
+      }),
     ).toMatchObject({ state: 'paused', word: 'Paused', node: 'budget' });
   });
 
@@ -62,7 +88,11 @@ describe('autoTreeWordOf', () => {
     const blockedReason = AUTO_BLOCK_TEXT.limit_no_progress;
 
     expect(
-      autoTreeWordOf({ view: { ...view, tree: { ...view.tree, blockedReason } }, rootTurn: null }),
+      autoTreeWordOf({
+        view: { ...view, tree: { ...view.tree, blockedReason } },
+        rootTurn: null,
+        isWork: false,
+      }),
     ).toMatchObject({ state: 'failed', word: 'Failed' });
   });
 
@@ -70,6 +100,7 @@ describe('autoTreeWordOf', () => {
     const tree = autoTreeWordOf({
       view: aView({ phase: 'waiting', capUsd: 10, spentUsd: 10 }),
       rootTurn: null,
+      isWork: false,
     });
 
     expect(tree).toMatchObject({ state: 'paused', word: 'Paused', node: 'budget' });

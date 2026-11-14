@@ -333,6 +333,7 @@ const showRail = async (view: RenderResult) => {
           view: treeView,
           agents: useAppStore.getState().sessionPhaseRuns[sessionId] ?? [],
           rootRouting: { provider: null, model: null, effort: null },
+          isWork: false,
         }),
         baseLevel: 1,
       }),

@@ -51,7 +51,7 @@ type Props = {
   readonly onBack: () => void;
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
-  readonly agentsToggle?: ReactNode;
+  readonly headerLead?: ReactNode;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
@@ -63,7 +63,7 @@ export const AgentDetailPane = ({
   onBack,
   context,
   runStep,
-  agentsToggle,
+  headerLead,
 }: Props) => {
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
@@ -208,7 +208,7 @@ export const AgentDetailPane = ({
           actions={
             runStep === undefined ? (
               <>
-                {agentsToggle}
+                {headerLead}
                 <AgentHeaderActions
                   key={agent.id}
                   agent={agent}

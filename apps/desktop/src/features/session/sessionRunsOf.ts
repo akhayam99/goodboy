@@ -1,3 +1,4 @@
+import { LEAD_STOP_WORDS } from '@goodboy/core/auto';
 import type {
   Agent,
   AgentId,
@@ -14,7 +15,8 @@ import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { runKindLineOf } from './startKind/runKindLineOf';
 import type { DotState } from '@goodboy/ui';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
-import { autoTreeWordOf, type AutoTreeState, type AutoTreeWord } from '../auto/autoTreeWordOf';
+import { autoDotOf } from '../auto/autoDotOf';
+import { autoTreeWordOf, type AutoTreeWord } from '../auto/autoTreeWordOf';
 import type { AttachedRun } from '../workflows/activeWorkflowRuns';
 import { splitWorkflowRuns } from '../workflows/activeWorkflowRuns';
 import { cutStepIdOf } from '../workflows/cutStepIdOf';
@@ -88,6 +90,7 @@ type Params = {
   readonly revisingStarts: Readonly<Record<string, number>>;
   readonly mounts: ReadonlyArray<SessionMountView>;
   readonly projects: ReadonlyArray<WorkBranchProject>;
+  readonly isWork: boolean;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -251,48 +254,38 @@ const workflowRowsOf = ({
   });
 };
 
-type AutoDotParams = {
-  readonly state: AutoTreeState;
-};
-
-const autoDotOf = ({ state }: AutoDotParams): DotState => {
-  switch (state) {
-    case 'asking':
-    case 'paused':
-      return 'needsYou';
-    case 'failed':
-      return 'failed';
-    case 'running':
-    case 'stopping':
-      return 'running';
-    case 'done':
-      return 'done';
-    case 'stopped':
-      return 'stopped';
-    case 'idle':
-      return 'idle';
-    default: {
-      const exhaustive: never = state;
-      return exhaustive;
-    }
-  }
-};
-
 type AutoRowParams = {
   readonly root: Agent;
   readonly agents: ReadonlyArray<Agent>;
   readonly autoViews: ReadonlyArray<AutoTreeView>;
   readonly rootTurns: Params['rootTurns'];
+  readonly isWork: boolean;
 };
 
-const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): SessionRunRow => {
+type RestingParams = {
+  readonly root: Agent;
+  readonly isWork: boolean;
+};
+
+const restingWordOf = ({ root, isWork }: RestingParams): Pick<AutoTreeWord, 'state' | 'word'> => {
+  if (root.status === 'running') {
+    return { state: 'running', word: isWork ? LEAD_STOP_WORDS.working : NAMES.running };
+  }
+  return { state: 'idle', word: isWork ? LEAD_STOP_WORDS.resting : NAMES.idle };
+};
+
+const autoRowOf = ({
+  root,
+  agents,
+  autoViews,
+  rootTurns,
+  isWork,
+}: AutoRowParams): SessionRunRow => {
   const view = autoViews.find((candidate) => candidate.tree.rootAgentId === root.id);
-  const resting: Pick<AutoTreeWord, 'state' | 'word'> =
-    root.status === 'running'
-      ? { state: 'running', word: 'Running' }
-      : { state: 'idle', word: 'Idle' };
   const state =
-    view === undefined ? resting : autoTreeWordOf({ view, rootTurn: rootTurns[root.id] ?? null });
+    view === undefined
+      ? restingWordOf({ root, isWork })
+      : autoTreeWordOf({ view, rootTurn: rootTurns[root.id] ?? null, isWork });
   const dot = autoDotOf({ state: state.state });
   const children = descendantAgentsOf({ agents, rootId: root.id });
   const agentIds = [root.id, ...children.map((child) => child.id)];
@@ -391,6 +384,7 @@ export const sessionRunsOf = ({
   revisingStarts,
   mounts,
   projects,
+  isWork,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -399,7 +393,7 @@ export const sessionRunsOf = ({
   }));
   const autoRows = kinds
     .filter(({ kind }) => kind === 'auto')
-    .map(({ agent }) => autoRowOf({ root: agent, agents, autoViews, rootTurns }));
+    .map(({ agent }) => autoRowOf({ root: agent, agents, autoViews, rootTurns, isWork }));
   const agentRows = kinds
     .filter(({ kind }) => isAgentsPageKind({ kind }))
     .map(({ agent, kind }) =>

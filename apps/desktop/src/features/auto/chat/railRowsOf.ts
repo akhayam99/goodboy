@@ -1,7 +1,9 @@
-import { substepLinkOf } from '@goodboy/core/auto';
+import { LEAD_STOP_WORDS, substepLinkOf } from '@goodboy/core/auto';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { Agent, AgentId, TurnState } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
+import { flowWordOf } from '../../../shared/lib/flowWordOf';
+import { NAMES } from '../../../shared/utils/names';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type { AgentKind } from '../../session/agent-kind';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
@@ -37,6 +39,7 @@ type RowParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly rootRouting: RailRouting;
   readonly rootTurn?: TurnState | null;
+  readonly isWork: boolean;
 };
 
 type NodeParams = {
@@ -78,17 +81,18 @@ type RootParams = {
   readonly view: AutoTreeView;
   readonly routing: RailRouting;
   readonly rootTurn: TurnState | null;
+  readonly isWork: boolean;
 };
 
-const rootRowOf = ({ view, routing, rootTurn }: RootParams): RailRow => {
-  const state = autoTreeWordOf({ view, rootTurn });
+const rootRowOf = ({ view, routing, rootTurn, isWork }: RootParams): RailRow => {
+  const state = autoTreeWordOf({ view, rootTurn, isWork });
   return {
     id: view.tree.rootAgentId,
     agentId: view.tree.rootAgentId,
     kind: 'root',
     depth: 0,
     role: 'auto',
-    label: 'Auto',
+    label: flowWordOf({ isWork }),
     task: null,
     node: state.node,
     word: state.word,
@@ -102,18 +106,25 @@ const rootRowOf = ({ view, routing, rootTurn }: RootParams): RailRow => {
 
 type RestingParams = RailRouting & {
   readonly agentId: AgentId;
+  readonly isWork: boolean;
 };
 
-export const restingRootRowOf = ({ agentId, provider, model, effort }: RestingParams): RailRow => ({
+export const restingRootRowOf = ({
+  agentId,
+  provider,
+  model,
+  effort,
+  isWork,
+}: RestingParams): RailRow => ({
   id: agentId,
   agentId,
   kind: 'root',
   depth: 0,
   role: 'auto',
-  label: 'Auto',
+  label: flowWordOf({ isWork }),
   task: null,
   node: 'queued',
-  word: 'Idle',
+  word: isWork ? LEAD_STOP_WORDS.resting : NAMES.idle,
   tone: 'neutral',
   provider,
   model,
@@ -126,6 +137,7 @@ export const railRowsOf = ({
   agents,
   rootRouting,
   rootTurn = null,
+  isWork,
 }: RowParams): ReadonlyArray<RailRow> => {
   const latestByChild = new Map<string, DelegationCardModel>();
   const parentOfChild = new Map<string, string>();
@@ -185,5 +197,5 @@ export const railRowsOf = ({
     effort: card.effort,
     isLive: card.status.isLive,
   }));
-  return [rootRowOf({ view, routing: rootRouting, rootTurn }), ...children];
+  return [rootRowOf({ view, routing: rootRouting, rootTurn, isWork }), ...children];
 };
