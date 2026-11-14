@@ -1,6 +1,6 @@
 import type { BoardGroupId, BoardRow, BranchBoard } from './boardTypes';
 
-export type BoardFilter = 'needs-you' | 'checks';
+export type BoardFilter = 'questions';
 
 export type VisibleGroup = Readonly<{
   id: BoardGroupId;
@@ -19,10 +19,7 @@ export const isRowInFilter = ({ row, filter }: MatchParams): boolean => {
   if (filter === null) {
     return true;
   }
-  if (filter === 'needs-you') {
-    return row.needsYouIds.length > 0;
-  }
-  return row.checks === 'failure';
+  return row.askIds.length > 0;
 };
 
 type Params = {

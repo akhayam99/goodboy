@@ -78,17 +78,22 @@ describe('visibleGroupsOf', () => {
     expect(shownCount(visibleGroupsOf({ board, filter: null, isMergedExpanded: false }))).toBe(4);
   });
 
-  it('shows as many rows behind Needs you as the tile counts asks, one ask per row', () => {
-    const groups = visibleGroupsOf({ board, filter: 'needs-you', isMergedExpanded: false });
+  it('shows the branches with an open question behind Questions, one ask per row', () => {
+    const groups = visibleGroupsOf({ board, filter: 'questions', isMergedExpanded: false });
 
-    expect(shownCount(groups)).toBe(sessionKpisOf({ board }).needsYou.count);
+    expect(shownCount(groups)).toBe(sessionKpisOf({ board }).needsYou.askCount);
     expect(groups.map((group) => group.id)).toEqual(['needs-you']);
   });
 
-  it('shows as many rows behind Checks as the tile counts failing', () => {
-    const groups = visibleGroupsOf({ board, filter: 'checks', isMergedExpanded: false });
+  it('shows no group when no branch has an open question', () => {
+    const quiet: BranchBoard = {
+      ...board,
+      rows: board.rows.map((row) => ({ ...row, askIds: [] })),
+    };
 
-    expect(shownCount(groups)).toBe(sessionKpisOf({ board }).checks.failing);
+    expect(visibleGroupsOf({ board: quiet, filter: 'questions', isMergedExpanded: false })).toEqual(
+      [],
+    );
   });
 
   it('folds the merged group only while it is not expanded', () => {
@@ -115,7 +120,7 @@ describe('visibleGroupsOf', () => {
 
   it('matches a row to a filter the same way the groups do', () => {
     const [first] = rows;
-    expect(first === undefined ? false : isRowInFilter({ row: first, filter: 'checks' })).toBe(
+    expect(first === undefined ? false : isRowInFilter({ row: first, filter: 'questions' })).toBe(
       true,
     );
   });

@@ -258,7 +258,6 @@ describe('sessionKpisOf', () => {
     expect(kpis.branches.merged).toBe(
       (inputs.branches ?? []).filter((branch) => branch.isFinished).length,
     );
-    expect(kpis.checks.passing + kpis.checks.failing + kpis.checks.running).toBe(kpis.checks.total);
     expect(board.rows.reduce((sum, row) => sum + row.spendUsd, 0)).toBeCloseTo(kpis.spendUsd);
   });
 
@@ -272,10 +271,9 @@ describe('sessionKpisOf', () => {
     expect(board.rows.find((row) => row.id === 'b')?.spendUsd).toBe(1);
   });
 
-  it('counts a merged branch in the Branches tile but not in Checks', () => {
+  it('counts a merged branch in the Branches tile', () => {
     const board = boardOf({ branches: [branchOf('a'), branchOf('b', { state: 'merged' })] });
     const kpis = sessionKpisOf({ board });
     expect(kpis.branches).toEqual({ merged: 1, total: 2 });
-    expect(kpis.checks.total).toBe(1);
   });
 });
