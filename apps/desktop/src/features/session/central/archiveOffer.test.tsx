@@ -32,13 +32,14 @@ import {
 } from '../../../app/components/MockScene/scenes/u26/centralColumnSeed';
 
 let useAppStore: Awaited<ReturnType<typeof importStore>>;
-let SessionOverviewPane: typeof import('../components/SessionOverviewPane').SessionOverviewPane;
+let OverviewHeaderActions: typeof import('../components/SessionOverviewPane/OverviewHeaderActions').OverviewHeaderActions;
 
 beforeAll(async () => {
   installFakeResizeObserver();
   Element.prototype.scrollIntoView = vi.fn();
   useAppStore = await importStore();
-  ({ SessionOverviewPane } = await import('../components/SessionOverviewPane'));
+  ({ OverviewHeaderActions } =
+    await import('../components/SessionOverviewPane/OverviewHeaderActions'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -109,7 +110,7 @@ const show = async () => {
   render(
     <ToastProvider>
       <AutoReleaseContext.Provider value>
-        <SessionOverviewPane session={mountedSession()} />
+        <OverviewHeaderActions session={mountedSession()} />
       </AutoReleaseContext.Provider>
     </ToastProvider>,
   );

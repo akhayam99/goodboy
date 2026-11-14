@@ -277,7 +277,7 @@ describe('every door to a question', () => {
     expect(state().activeLens[SESSION]).toBe('questions');
   });
 
-  it('goes back to Ask in the Context tab when a reload left no entry behind a question opened from Ask', async () => {
+  it('goes back to the Ask panel when a reload left no entry behind a question opened from Ask', async () => {
     await act(async () => {
       state().navigate({
         to: questionPlace({ sessionId: SESSION, questionId: FIRST }),
@@ -294,8 +294,7 @@ describe('every door to a question', () => {
       state().closeQuestion();
     });
 
-    expect(state().drawer).toBeNull();
-    expect(state().activeLens[SESSION]).toBe('context');
+    expect(state().drawer?.kind).toBe('ask');
   });
 
   it('reopens the question a saved window addressed, by its id', async () => {

@@ -13,9 +13,9 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
-import { selectIsContextTabOpen } from '../contextDrawer/selectIsContextTabOpen';
 import { sessionPlace } from '../navigation/place';
 import { askDraftKeyOf } from './askDraftKeyOf';
+import { selectIsAskOpen } from './selectIsAskOpen';
 import { askInitialState } from './state';
 
 const SESSION = 'session-ledger' as SessionId;
@@ -62,10 +62,7 @@ describe('the Ask draft', () => {
     useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION }) });
     useAppStore.getState().openAsk({ sessionId: SESSION });
 
-    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId: SESSION })).toBe(
-      true,
-    );
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION })).toBe(true);
     expect(useAppStore.getState().askDrafts[`${SESSION}:new`]).toBe('half a thought');
   });
 
