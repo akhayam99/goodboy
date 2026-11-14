@@ -4,6 +4,7 @@ import type { ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import type { DrawerPlacement, DrawerSizing } from '../drawerGeometry';
 import { ResizeHandle } from './ResizeHandle';
+import { ShellDockContext } from '../shellDockContext';
 import { ShellRailContext } from '../shellRailContext';
 import { StudioSlotContext } from '../studioSlotContext';
 import { useResizableWidth } from '../useResizableWidth';
@@ -23,6 +24,7 @@ export type AppShellProps = {
   readonly isDetailParked?: boolean;
   readonly drawerPlacement?: DrawerPlacement;
   readonly studio?: ReactNode;
+  readonly isDockInStudio?: boolean;
   readonly rightRail?: ReactNode;
   readonly isDrawerParked?: boolean;
   readonly className?: string;
@@ -106,6 +108,7 @@ export const AppShell = ({
   isDetailParked,
   drawerPlacement,
   studio,
+  isDockInStudio = false,
   rightRail,
   isDrawerParked,
   className,
@@ -123,6 +126,7 @@ export const AppShell = ({
   const [leftResize, setLeftResize] = useState<ResizeActivity>('idle');
   const isSheetWrapped = hasLeftSidebar && !leftHidden;
   const isStudioShown = studio != null;
+  const isDockHosted = isStudioShown && isDockInStudio;
 
   const layout = buildLayout({
     leftCollapsed: leftSidebarCollapsed,
@@ -195,14 +199,18 @@ export const AppShell = ({
                       data-studio-slot="content"
                       className="absolute inset-0 z-studio flex min-h-0 min-w-0 flex-col overflow-hidden bg-background empty:hidden has-[[data-studio-sheet-owner]]:bg-chrome"
                     >
-                      <StudioSlotContext.Provider value>{studio}</StudioSlotContext.Provider>
+                      <StudioSlotContext.Provider value>
+                        <ShellDockContext.Provider value={isDockHosted ? (drawer ?? null) : null}>
+                          {studio}
+                        </ShellDockContext.Provider>
+                      </StudioSlotContext.Provider>
                     </div>
                   ) : null}
                 </div>
                 {rightRail}
               </div>
             }
-            drawer={drawer ?? null}
+            drawer={isDockHosted ? null : (drawer ?? null)}
             sizing={drawerSizing}
             detail={detail ?? null}
             detailSizing={detailSizing}

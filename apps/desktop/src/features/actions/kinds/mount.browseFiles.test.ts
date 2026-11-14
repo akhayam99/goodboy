@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MountId } from '@goodboy/types';
+import { brandId, type MountId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../../store';
 import { mountFixture } from '../../../__tests__/helpers/actionFixtures';
@@ -10,7 +10,7 @@ import type { MountFacts } from './mountFacts';
 
 const DOOR = mountFixture();
 const MOUNT = mountFixture({
-  mountId: 'mount-ledger-core-rounding' as MountId,
+  mountId: brandId<MountId>({ value: 'mount-ledger-core-rounding' }),
   worktreePath: '/work/harborline/ledger-core-rounding',
   branch: 'hl/rounding',
   parallelIndex: 1,

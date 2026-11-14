@@ -91,6 +91,7 @@ const BoardShellSceneContent = ({ isSessionOpen }: ContentProps) => {
         isDrawerParked={shellRight.isDrawerParked}
         isDetailParked={shellRight.isDetailParked}
         studio={shell.studio}
+        isDockInStudio={shellRight.isDockInStudio}
         topBar={
           <AppTopBar
             sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}

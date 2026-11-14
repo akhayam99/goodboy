@@ -55,7 +55,7 @@ export const DrawerPanelCard = ({
         data-detail-content={slot === 'detail' ? '' : undefined}
         className={cn(
           'flex min-h-0 min-w-0 flex-1 flex-col',
-          !isFloating && pushWidthClass,
+          isFloating ? 'w-full' : pushWidthClass,
           !isFloating && !isExiting && !exit.isResumed && 'motion-safe:animate-drawer-content-in',
           isPushExit && 'motion-safe:animate-drawer-content-out',
         )}

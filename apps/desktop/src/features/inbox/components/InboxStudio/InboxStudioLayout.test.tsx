@@ -47,18 +47,18 @@ describe('InboxStudioLayout', () => {
     expect(screen.getByText('rows')).toBeDefined();
   });
 
-  it('opens the item in the reader pane beside the page container, never inside it', () => {
+  it('opens the item in the detail panel beside the page container, never inside it', () => {
     stubColumnWidth(1600);
     const { container } = render(shell({ drawer: 'record' }));
     const slot = container.querySelector<HTMLElement>('[data-studio-slot="content"]');
     const page = slot?.querySelector<HTMLElement>('[data-container="page"]');
-    const drawer = slot?.querySelector<HTMLElement>('[data-container="drawer"]');
+    const detail = slot?.querySelector<HTMLElement>('[data-container="detail"]');
 
     expect(
       screen.getByRole('complementary', { name: 'Task' }).getAttribute('data-drawer-mode'),
     ).toBe('push');
-    expect(drawer?.textContent).toContain('record');
-    expect(page?.contains(drawer ?? null)).toBe(false);
+    expect(detail?.textContent).toContain('record');
+    expect(page?.contains(detail ?? null)).toBe(false);
   });
 
   it('sizes the pane on the reader tier and saves its width there, not on the side tier', () => {

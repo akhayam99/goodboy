@@ -14,6 +14,7 @@ type ShellRight = {
   readonly rightRail: ReactNode;
   readonly isDrawerMounted: boolean;
   readonly isDrawerParked: boolean;
+  readonly isDockInStudio: boolean;
   readonly isDetailMounted: boolean;
   readonly isDetailParked: boolean;
   readonly dockSizing: DrawerSizing;
@@ -42,6 +43,7 @@ export const useShellRight = ({}: Params): ShellRight => {
     rightRail: isRailInStudio ? null : createElement(ShellToolRail),
     isDrawerMounted,
     isDrawerParked: false,
+    isDockInStudio: isRailInStudio,
     isDetailMounted,
     isDetailParked: isDetailMounted && isStudioShown,
     dockSizing,

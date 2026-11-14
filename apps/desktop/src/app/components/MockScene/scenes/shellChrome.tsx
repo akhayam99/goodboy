@@ -135,6 +135,7 @@ export const ShellFrame = ({
         detailSizing={shellRight.detailSizing}
         isDrawerParked={shellRight.isDrawerParked}
         isDetailParked={shellRight.isDetailParked}
+        isDockInStudio={shellRight.isDockInStudio}
         rightRail={shellRight.rightRail}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
