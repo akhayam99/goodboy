@@ -3,6 +3,7 @@ import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '../cn';
 import { INNER_COLUMN_SHORTCUT } from '../innerColumnStore';
 import { useInnerColumn } from '../useInnerColumn';
+import { PANE_RHYTHM } from '../paneRhythm';
 import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
 import { readStoredWidth, useResizableWidth } from '../useResizableWidth';
 import { IconButton } from './IconButton';
@@ -113,7 +114,7 @@ export const StudioRailLayout = ({
     >
       {isRailShown || onCollapsedChange === undefined || !canUnfold || rail === null ? null : (
         <div data-studio-rail-unfold="" className="flex w-11 shrink-0 flex-col items-center">
-          <div data-grid-row="1" className="flex h-10 shrink-0 items-center">
+          <div data-grid-row="1" className={cn('flex shrink-0 items-center', PANE_RHYTHM.firstRow)}>
             <IconButton
               icon={PanelLeftOpen}
               label={showLabel}
@@ -133,7 +134,10 @@ export const StudioRailLayout = ({
           className="relative flex min-h-0 shrink-0 flex-col"
         >
           {hasHeaderRow ? (
-            <div data-grid-row="1" className="flex h-10 shrink-0 items-center gap-2 px-2">
+            <div
+              data-grid-row="1"
+              className={cn('flex shrink-0 items-center gap-2 px-2', PANE_RHYTHM.firstRow)}
+            >
               {onCollapsedChange === undefined ? null : (
                 <IconButton
                   icon={PanelLeftClose}

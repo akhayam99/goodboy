@@ -836,6 +836,8 @@ side-signals-idle
 side-signals-running
 side-tiles-dark
 side-tiles-light
+sidebar-frame-dark
+sidebar-frame-light
 sidebar-rhythm
 slack-permissions
 slot-back-chip

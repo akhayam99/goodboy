@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { TEXT_ROLE, TruncatedText, UNREAD_TITLE, cn } from '@goodboy/ui';
+import { StatusDot, TEXT_ROLE, TruncatedText, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import { RunRowTitleInput } from './RunRowTitleInput';
@@ -34,13 +34,18 @@ export const RunRowTitle = ({ sessionId, run, rowKey, suffix, onOpen }: Props) =
         <TruncatedText
           className={cn(
             'min-w-0',
-            run.isUnread && UNREAD_TITLE,
+            run.isUnread && 'text-foreground',
             run.isFinished && !run.isUnread && TEXT_ROLE.secondary,
           )}
         >
           {run.title}
         </TruncatedText>
       </span>
+      {run.isUnread ? (
+        <span aria-hidden data-run-unread-dot="" className="flex shrink-0 items-center">
+          <StatusDot tone="unread" size="sm" />
+        </span>
+      ) : null}
       {suffix}
     </>
   );

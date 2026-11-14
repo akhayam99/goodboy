@@ -97,6 +97,7 @@ const { store, hooks } = vi.hoisted(() => {
       agentKindOverride: {},
       sessionLoading: {},
       resolveAgentReturn: {},
+      navigation: {},
       pullRequestModes: {},
       setPullRequestMode: vi.fn(),
       navigate: vi.fn(),

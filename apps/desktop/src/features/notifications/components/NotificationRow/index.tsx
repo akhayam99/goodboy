@@ -1,16 +1,7 @@
 import type { ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
-import {
-  Button,
-  cn,
-  FOCUS_RING,
-  ICON_SIZE,
-  IconButton,
-  StatusDot,
-  tintClasses,
-  Tooltip,
-} from '@goodboy/ui';
+import { Button, cn, FOCUS_RING, ICON_SIZE, IconButton, tintClasses, Tooltip } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -24,6 +15,7 @@ import { ObjectMenuArea } from '../../../actions/ObjectMenuArea';
 import type { NotificationActionTarget } from '../../../actions/types';
 import { NotificationRowActions } from './NotificationRowActions';
 import { NotificationRowDetail } from './NotificationRowDetail';
+import { NotificationUnreadDot } from './NotificationUnreadDot';
 import { useNow } from '../../../../shared/hooks/useNow';
 
 type NotificationRowDensity = 'compact' | 'cozy';
@@ -139,20 +131,11 @@ export const NotificationRow = ({
           aria-label={severity.label}
         />
         <span className="pointer-events-none relative flex min-w-0 items-center gap-2">
-          {isUnread ? (
-            <span
-              data-unread-dot={hasUnreadDebt ? 'warning' : 'primary'}
-              role="img"
-              aria-label="Unread"
-              className="flex shrink-0"
-            >
-              <StatusDot tone={hasUnreadDebt ? 'warning' : 'primary'} size="sm" />
-            </span>
-          ) : null}
+          {isUnread ? <NotificationUnreadDot isDebt={hasUnreadDebt} /> : null}
           <span
             className={cn(
               'truncate text-meta',
-              isUnread ? 'font-medium text-foreground' : 'text-muted-foreground',
+              isUnread ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
             {latest.title}
@@ -208,12 +191,13 @@ export const NotificationRow = ({
               <h3
                 data-unread={isUnread ? '' : undefined}
                 className={cn(
-                  'truncate',
-                  isUnread ? 'text-row text-foreground' : 'text-meta text-muted-foreground',
+                  'truncate text-ui',
+                  isUnread ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >
                 {latest.title}
               </h3>
+              {isUnread ? <NotificationUnreadDot isDebt={hasUnreadDebt} /> : null}
               {actedTag}
               {count}
             </div>

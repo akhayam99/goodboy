@@ -1,4 +1,4 @@
-import { PageColumn, tintClasses } from '@goodboy/ui';
+import { PANE_RHYTHM, PageColumn, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 
@@ -9,7 +9,10 @@ type Props = {
 };
 
 export const SpendRecordTrail = ({ label, onImpact, onSpend }: Props) => (
-  <PageColumn width="column" className="flex h-10 shrink-0 items-center empty:hidden">
+  <PageColumn
+    width="column"
+    className={cn('flex shrink-0 items-center empty:hidden', PANE_RHYTHM.firstRow)}
+  >
     <StudioTrail
       segments={[
         {
