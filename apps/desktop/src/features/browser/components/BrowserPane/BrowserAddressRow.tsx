@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, Square, Terminal, X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
@@ -53,7 +53,10 @@ export const BrowserAddressRow = ({
   );
   return (
     <>
-      <div data-grid-row="1" className="relative flex h-10 shrink-0 items-center gap-1 px-2">
+      <div
+        data-grid-row="1"
+        className={cn('relative flex shrink-0 items-center gap-1 px-2', PANE_RHYTHM.firstRow)}
+      >
         {onToggleList === undefined ? null : (
           <IconButton
             icon={PanelLeft}

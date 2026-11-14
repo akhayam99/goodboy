@@ -50,7 +50,7 @@
   "apps/desktop/src/features/workspace-chat/components/ChatList/index.tsx": 396,
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/index.tsx": 373,
   "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 264,
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": 404,
+  "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": 403,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionFilterPopover/index.tsx": 261,
   "apps/desktop/src/features/worktree/worktree.ts": 972,
   "apps/desktop/src/shared/components/GenericTerminalPanel/index.tsx": 348,

@@ -77,7 +77,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
 
   return (
     <DrawerFrame title="Browser" isHeaderless onClose={onClose}>
-      <div ref={root} className="flex min-h-0 flex-1 flex-col gap-2 pt-1">
+      <div ref={root} className="flex min-h-0 flex-1 flex-col gap-2">
         <BrowserAddressRow
           model={model}
           isAddressShortcutOn={isOnScreen}

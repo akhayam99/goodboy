@@ -194,9 +194,7 @@ export const RunTreeRow = ({
                           density === 'rail' ? 'text-ui' : isNested ? 'text-meta' : 'text-body',
                           item.rowState.phase === 'queued'
                             ? 'text-muted-foreground'
-                            : item.rowState.phase === 'running' || item.hasUnread
-                              ? 'font-medium text-foreground'
-                              : 'text-foreground',
+                            : 'text-foreground',
                         )}
                       >
                         {agent.name}

@@ -176,9 +176,7 @@ export const TimelineRowLabel = ({
           isStep ? 'text-meta' : 'text-body',
           emphasis === 'muted' || isQueued || grade === 'fact' || isMutedJob
             ? 'text-muted-foreground'
-            : item.rowState.phase === 'running' || item.hasUnread
-              ? 'font-medium text-foreground'
-              : 'text-foreground',
+            : 'text-foreground',
         )}
       >
         {segments.map((segment, index) =>

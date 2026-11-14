@@ -22,6 +22,7 @@ import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface, type LensSurface } from '../../lens-surface';
 import { SessionBackRow } from './SessionBackRow';
+import { sessionBackOf } from './SessionBackRow/sessionBackOf';
 import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
 import { escapeLadder } from '../../escapeLadder';
 
@@ -73,7 +74,8 @@ export const SessionWorkspace = ({ session }: Props) => {
   useEscapeLayer(() => escapeLadder({}), isCurrent, true);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
-  const trail = <SessionBackRow sessionId={sessionId} />;
+  const hasBack = useAppStore((state) => sessionBackOf({ state, sessionId }) !== null);
+  const trail = hasBack ? <SessionBackRow sessionId={sessionId} /> : null;
 
   const lensLayers = keptSurfaces.map((target) => {
     const pane = <SessionLensPane session={session} target={target} isShown={showLens} />;

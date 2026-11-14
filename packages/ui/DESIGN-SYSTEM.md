@@ -305,7 +305,9 @@ chrome (top bar chips, doors, rail slots) stays static. A count next to a door
 lives in the dot's tooltip, never as colored text. The Board door is the one exception: it
 says how many sessions need you as a number (see the door pill below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
 
-A session row carries one mark: the state of the node, or an empty 14px slot when the session is idle so titles keep one left edge (`StateNode` with `hasEmptySlot`). Unread is the title in `text-row-strong`, never a second dot on the mark (`UNREAD_TITLE`); only a row with no room for a title (the icon rail) or no 13px weighted role (the pinned and switcher rows at 12px) keeps the quiet dot (`isUnreadDot`).
+A session row carries one mark: the state of the node, or an empty 14px slot when the session is idle so titles keep one right edge (`StateNode` with `hasEmptySlot`).
+
+**A row title keeps one weight whatever its state.** Every title of a session, pinned, done, run, run-tree or notification row stays in its row role (`text-ui`, 13/400 in the sidebar) when it is unread, live, current or selected. State lives in the trailing mark and the text colour only: unread or new activity is the quiet unread dot (`isUnreadDot`: on the node's corner, or alone in the idle slot) plus full foreground; read is muted foreground; selected is the selected surface (`bg-selected`). Weight never marks state, the way Linear and Arc keep one weight down their sidebars and let a dot and colour carry unread. `row-title-weight.test.ts` fails a weight class keyed on unread, new, active, current or selected, and `@goodboy/ui` exports no unread title role.
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the type specimen.
@@ -430,7 +432,8 @@ steps. A door, a session row and a rail entry are one 28px row in `text-ui`
 (13, 400) whatever the glyph, with `ICON_SIZE.row` icons in hint gray at rest
 (only the selected entry's icon takes its kind color), `bg-selected` plus
 foreground for the selected row, and a trailing slot drawn by `countSlotText`
-in faint tabular figures. The selected door reads `text-row` (13, 500). A group
+in faint tabular figures. The selected door keeps `text-ui`: the selected
+surface says it, never a heavier weight. A group
 label (Projects, Linked) is level 5, `text-eyebrow` in faint, with 16px between
 groups; a project name is level 4, `text-row` in foreground. A branch row stays
 mono in `text-code-row` (13/20) in muted, never louder than the project name.
@@ -497,12 +500,37 @@ The Sessions block shares one left edge and one gap. The `Sessions` eyebrow
 `navRail.door`) and the session row icons (`sessionList.pad` plus
 `sessionList.rowInset`) all start at 16px, and the doors and the session rows
 share one vertical gap (`navRail.doorGap` equals `sessionList.rowGap`). The view
-menu trigger is a 28px target (`sessionList.menuTrigger`). The groups of the list
-are spaced by that same gap (`sessionList.listGap`), and a group header has no
-top margin of its own. One separator sits between the doors and the Sessions
-header, with the doors' gap above and below it, and the first row under the
-header is New session, shaped like a session row. `paneRhythm.test.ts` holds the
-three edges and the gaps.
+menu trigger is a 28px target (`sessionList.menuTrigger`).
+
+The column reads as two groups, the way Linear and Arc split their nav from
+their lists. The nav block (New session, Board, Tasks, Workflows, Chat, Impact,
+Monitoring) and the lists (Pinned, Sessions, Done) are siblings 16px apart
+(`navRail.groupGap`, the parent's `gap`). A section label (Pinned, Sessions,
+Done) is its own 24px row in `text-eyebrow`, with 12px above it
+(`sessionList.listGap`) and 4px under it (`sessionList.labelGap`), so it belongs
+to the list below; a fold chevron follows the label, so every label starts on
+the 16px edge. Every row is 28px. Titles truncate at one right edge, and every
+trailing mark (a door's signal, a row's state node, the New session draft dot)
+sits in one 14px column at the row's right padding (`navRail.mark`), so the
+marks read down one vertical line. A door's action (Chat's New chat, Board's
+filter) sits in a 24px slot just before that column (`navRail.action`), only on
+the doors that have one. A ticket key renders before the title in muted
+`text-code` (mono 12/18) on the title's baseline, never in the title's colour.
+Scene `sidebar-frame-dark` and `sidebar-frame-light` show pinned, unread,
+keyed and done rows in the app frame.
+
+**The sidebar and every page share one first row.** The frame's first row is
+40px from the top of the page sheet, its controls centred 24px down
+(`PANE_RHYTHM.firstRow`, `h-10` plus `headerInset`), which is also where a
+title row (`headerInset` plus `headerRow`) centres. The sidebar column starts
+1px down for the sheet's edge (`navRail.edge`) and holds New session in that
+same 40px row, so its first row and the page's first toolbar or title row have
+one top and one centre on Settings, New session, the session pages, Board,
+Tasks, Workflows, Chat, Impact, Monitoring, the Terminal, the Browser and the
+work pages. Row 1 of a split page (`StudioRailLayout`, the Terminal toolbar, the
+Browser address row and tab list, a studio band) uses the same token, so the
+row grid of a page follows from it. `paneRhythm.test.ts` holds the edges, the
+gaps and the first row.
 
 The main sidebar has one icon column. Every leading glyph (New session, the
 doors, the session state nodes, Settings, and the same buttons on the folded

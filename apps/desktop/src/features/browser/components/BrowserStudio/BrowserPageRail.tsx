@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { cn, ICON_SIZE, ScrollFade, SectionLabel, SelectableRow } from '@goodboy/ui';
+import { cn, ICON_SIZE, PANE_RHYTHM, ScrollFade, SectionLabel, SelectableRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
@@ -50,7 +50,7 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
             >
               <div
                 {...(index === 0 && { 'data-grid-row': '1' })}
-                className={cn('flex min-w-0 items-center', index === 0 && 'h-10')}
+                className={cn('flex min-w-0 items-center', index === 0 && PANE_RHYTHM.firstRow)}
               >
                 <SectionLabel
                   label={group.label}

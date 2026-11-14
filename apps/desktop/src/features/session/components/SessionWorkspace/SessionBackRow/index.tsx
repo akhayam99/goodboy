@@ -2,34 +2,19 @@ import type { SessionId } from '@goodboy/types';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { ChevronLeft } from 'lucide-react';
 import { useAppStore } from '../../../../../store';
-import type { AppState } from '../../../../../store/types';
-import { backOf, type Back } from '../../../../../store/slices/navigation/backOf';
-import { captureLocation } from '../../../../../store/slices/navigation/captureLocation';
+import { sessionBackOf } from './sessionBackOf';
 
 type Props = {
   readonly sessionId: SessionId;
 };
 
-type BackParams = {
-  readonly state: AppState;
-  readonly sessionId: SessionId;
-};
-
-const backIn = ({ state, sessionId }: BackParams): Back | null => {
-  const { place } = captureLocation({ state });
-  if (place.at !== 'session' || place.sessionId !== sessionId) {
-    return null;
-  }
-  return backOf({ state, place });
-};
-
 export const SessionBackRow = ({ sessionId }: Props) => {
-  const label = useAppStore((state) => backIn({ state, sessionId })?.label ?? null);
+  const label = useAppStore((state) => sessionBackOf({ state, sessionId })?.label ?? null);
   if (label === null) {
     return null;
   }
   const goBack = () => {
-    const back = backIn({ state: useAppStore.getState(), sessionId });
+    const back = sessionBackOf({ state: useAppStore.getState(), sessionId });
     if (back === null) {
       return;
     }

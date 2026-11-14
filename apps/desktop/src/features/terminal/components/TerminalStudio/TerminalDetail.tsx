@@ -1,4 +1,4 @@
-import { Button, EmptyState, PAGE_MEASURE, PageColumn } from '@goodboy/ui';
+import { Button, EmptyState, PAGE_MEASURE, PANE_RHYTHM, PageColumn, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { displayCwd } from '../../terminalTargets';
@@ -22,7 +22,10 @@ export const TerminalDetail = ({ model, isActive, portsByTerminal }: Props) => {
   if (selected === null || worktree === null) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <div data-grid-row="1" className="flex h-10 shrink-0 items-center justify-end px-3">
+        <div
+          data-grid-row="1"
+          className={cn('flex shrink-0 items-center justify-end px-3', PANE_RHYTHM.firstRow)}
+        >
           <DockTerminalButton selected={null} />
         </div>
         <PageColumn width={PAGE_MEASURE.terminal}>

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { PortChip } from '../PortChip';
 import { LocationRow } from './LocationRow';
@@ -18,7 +19,10 @@ export const TerminalToolbar = ({
   folderAction = null,
   actions = null,
 }: Props) => (
-  <div data-grid-row="1" className="flex h-10 shrink-0 items-center gap-2 px-3">
+  <div
+    data-grid-row="1"
+    className={cn('flex shrink-0 items-center gap-2 px-3', PANE_RHYTHM.firstRow)}
+  >
     {cwd === null ? null : <LocationRow cwd={cwd} />}
     <span className="flex-1" />
     <div className="flex shrink-0 items-center gap-1">

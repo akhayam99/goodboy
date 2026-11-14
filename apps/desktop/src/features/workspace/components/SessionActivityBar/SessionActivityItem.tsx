@@ -1,6 +1,6 @@
 import { memo, useEffect, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { ROW_INTERACTIVE, UNREAD_TITLE, cn, tintClasses } from '@goodboy/ui';
+import { PANE_RHYTHM, ROW_INTERACTIVE, cn, tintClasses } from '@goodboy/ui';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
@@ -141,6 +141,7 @@ const SessionActivityItemView = ({
     node.kind === 'queue' ||
     node.kind === 'done' ||
     node.kind === 'archived';
+  const isQuiet = isCalm && !node.hasUnread && !isActive;
 
   return (
     <div className="relative">
@@ -178,18 +179,21 @@ const SessionActivityItemView = ({
           onModifierClick(sessionId, event);
         }}
         className={cn(
-          'group/session-row relative flex h-7 w-full select-none items-center gap-2 rounded-md px-2 text-left',
-          node.hasUnread ? UNREAD_TITLE : 'text-ui',
+          'group/session-row relative flex h-7 w-full select-none items-center gap-2 rounded-md px-2 text-left text-ui',
           ROW_INTERACTIVE,
-          isCalm ? 'text-muted-foreground' : 'text-foreground',
-          isActive && 'font-medium text-foreground',
+          isQuiet ? 'text-muted-foreground' : 'text-foreground',
           isCurrent && 'bg-selected',
           isSelected && cn(tintClasses('primary').bg, 'text-foreground'),
         )}
       >
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
-        <span data-row-state="" className="flex shrink-0 items-center">
-          <StateNode node={node} isOnSelectedRow={isSelected || isCurrent} hasEmptySlot />
+        <span data-row-state="" className={PANE_RHYTHM.navRail.mark}>
+          <StateNode
+            node={node}
+            isOnSelectedRow={isSelected || isCurrent}
+            hasEmptySlot
+            isUnreadDot
+          />
         </span>
       </button>
       <span id={descriptionId} className="sr-only">
