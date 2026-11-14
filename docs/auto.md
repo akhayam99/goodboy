@@ -623,6 +623,18 @@ writing to it reopens it to **Deciding**.
   children hides the session's permission mode picker: a tree member runs
   with its role's access, not the session mode.
 
+## The agent tree model
+
+`leadTreeOf` (`apps/desktop/src/features/auto/tree/leadTreeOf.ts`) is the one
+model of the agents, notes and plans of a tree. It is a pure function over
+loaded rows: agents are numbered by launch (1, 2, 2.1), a retry folds into the
+agent it retries and keeps its number, a set of two or more settled siblings
+folds to one line until opened, and notes and plans are unnumbered rows placed
+by time among the top agents. Spend counts each agent once. The split per
+branch lives only in `leadSpendByBranchOf`: an agent's spend goes to the row of
+its own branch, the Lead's own turns to its primary branch, or to the group
+without a branch (`mountId` null), and the rows sum to the total.
+
 ## Plans
 
 The plan a Planner writes opens in the right drawer. Its second row shows
