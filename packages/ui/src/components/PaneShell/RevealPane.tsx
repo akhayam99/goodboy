@@ -1,6 +1,7 @@
 import { useContext, useState, type ReactNode } from 'react';
 import { cn } from '../../cn';
 import { PANE_RHYTHM } from '../../paneRhythm';
+import { UnderHeadContext } from '../../underHeadContext';
 import { HeaderRevealContext } from '../../useHeaderReveal/headerRevealContext';
 import { PinnedInsetContext } from '../../useHeaderReveal/pinnedInsetContext';
 import { PageColumn, type PageColumnWidth } from '../PageColumn';
@@ -37,6 +38,7 @@ export const RevealPane = ({
   const [fill, setFill] = useState<HTMLDivElement | null>(null);
   const trail = useContext(PageTrailContext);
   const isOuterUnderTrail = useContext(UnderTrailContext);
+  const isUnderHead = useContext(UnderHeadContext);
   const hasTrail = trail != null;
   const isUnderTrail = isOuterUnderTrail || hasTrail;
   const isEvenInset = hasTrail || isHeaderPinned;
@@ -47,7 +49,10 @@ export const RevealPane = ({
     !isEvenInset && lead == null ? null : (
       <div
         data-slot="reveal-pinned"
-        className={cn('sticky-surface', !isEvenInset && 'has-[[data-slot=pane-lead]:empty]:hidden')}
+        className={cn(
+          !isUnderHead && 'sticky-surface',
+          !isEvenInset && 'has-[[data-slot=pane-lead]:empty]:hidden',
+        )}
       >
         <PageColumn
           width={width}
@@ -79,46 +84,64 @@ export const RevealPane = ({
   return (
     <HeaderRevealContext.Provider value={null}>
       <PinnedInsetContext.Provider value={null}>
-        <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
-          <RevealRegion
-            resetKey={resetKey}
-            pinned={pinned}
-            header={
-              isHeaderPinned ? null : (
-                <PageColumn width={width}>
-                  {headerBlock}
-                  {banner === null ? null : (
-                    <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">{banner}</div>
-                  )}
-                </PageColumn>
-              )
-            }
-          >
-            {isSelfScroll ? (
-              <div
-                data-slot="pane-body"
-                className="flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-inset,0px)]"
-              >
-                <div
-                  ref={setFill}
-                  data-slot="pane-fill"
-                  className="flex min-h-0 min-w-0 flex-1 flex-col"
-                >
-                  <PinnedInsetContext.Provider value={fill}>{children}</PinnedInsetContext.Provider>
-                </div>
-              </div>
-            ) : (
-              <ScrollFade className="min-h-0 flex-1" fadeSize={24} isUnderPinned>
-                <PageColumn width={width} className="pb-5">
-                  <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
-                    {children}
-                  </div>
-                </PageColumn>
-              </ScrollFade>
+        <UnderHeadContext.Provider value={false}>
+          <div
+            data-under-head={isUnderHead ? '' : undefined}
+            className={cn(
+              '@container flex min-h-0 min-w-0 flex-col',
+              isUnderHead
+                ? 'relative -top-[var(--head-inset,0px)] h-[calc(100%+var(--head-inset,0px))] flex-none'
+                : 'h-full flex-1',
             )}
-          </RevealRegion>
-          {dockBlock}
-        </div>
+          >
+            <RevealRegion
+              isUnderHead={isUnderHead}
+              resetKey={resetKey}
+              pinned={pinned}
+              header={
+                isHeaderPinned ? null : (
+                  <PageColumn width={width}>
+                    {headerBlock}
+                    {banner === null ? null : (
+                      <div className="pb-3 has-[[data-slot=pane-banner]:empty]:hidden">
+                        {banner}
+                      </div>
+                    )}
+                  </PageColumn>
+                )
+              }
+            >
+              {isSelfScroll ? (
+                <div
+                  data-slot="pane-body"
+                  className="flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-inset,0px)]"
+                >
+                  <div
+                    ref={setFill}
+                    data-slot="pane-fill"
+                    className="flex min-h-0 min-w-0 flex-1 flex-col"
+                  >
+                    <PinnedInsetContext.Provider value={fill}>
+                      {children}
+                    </PinnedInsetContext.Provider>
+                  </div>
+                </div>
+              ) : (
+                <ScrollFade className="min-h-0 flex-1" fadeSize={24} isUnderPinned>
+                  <PageColumn width={width} className="pb-5">
+                    <div
+                      data-slot="pane-body"
+                      className={cn(PANE_RHYTHM.stack, animationClassName)}
+                    >
+                      {children}
+                    </div>
+                  </PageColumn>
+                </ScrollFade>
+              )}
+            </RevealRegion>
+            {dockBlock}
+          </div>
+        </UnderHeadContext.Provider>
       </PinnedInsetContext.Provider>
     </HeaderRevealContext.Provider>
   );

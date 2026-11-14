@@ -270,7 +270,15 @@ of its own: `SessionHeadFrame` hands it three slots through `SessionHeadSlotsCon
 its state word, spend, Settings, more menu and run controls at the right end of the crumb row,
 and a side column such as the lead's Agents beside the head and the page, full height, with
 its header on the frame first row (`PANE_RHYTHM.firstRow`). The head and the page then
-centre in the space left of that column, so they keep one left edge. The gutter is 24px a side, 16px once the
+centre in the space left of that column, so they keep one left edge. The head sits above
+the page (`data-session-head-band`, `z-40`), and `useHeadInset` writes its height as
+`--head-inset` on the column; the page's outermost `RevealPane` (it reads
+`UnderHeadContext`, which it clears for everything inside it) reaches up by that inset
+(`relative`, `-top` and a height of 100% plus the inset, the same reach-under a
+`ScrollFade` uses, never a margin) and its `RevealRegion` pads the pinned overlay by it, so
+content scrolls under the title row, the crumbs or tabs and the pinned rows alike, behind
+one `sticky-surface-head` frost. A page that is not a `PaneShell` starts below the head as
+before. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
@@ -642,8 +650,11 @@ together), the sliding header of a `RevealRegion` and the sticky rows of a
 list take `sticky-surface`: the background at 80% with `blur(12px) saturate(1.4)`.
 A header on `subtle`, a drawer's title row and a diff file header take
 `sticky-surface-subtle`, the light frost at 90% with `blur(3px) saturate(1.2)`,
-so a row that parks under the pinned zone never stacks two strong frosts. Both
-are opaque under `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
+so a row that parks under the pinned zone never stacks two strong frosts. Under a
+session head the overlay and the sliding header take `sticky-surface-head`
+instead, the quiet frost at 86% with `blur(8px) saturate(1.2)`, and the pinned row
+adds none of its own, so the head is one frosted edge, not a band under its last
+row. All three are opaque under `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
 `bg-background` on the header itself. Its block padding leans down: the pinned zone
 is `pt-3 pb-5` (`PANE_RHYTHM.pinnedInset`), more room below than above, because
 the back row's 24px line already holds 4px above its text, and a header under or inside it adds no

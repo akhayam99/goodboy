@@ -860,6 +860,15 @@ body {
   }
 }
 
+@utility sticky-surface-head {
+  background-color: color-mix(in oklab, var(--color-background) 86%, transparent);
+  backdrop-filter: blur(8px) saturate(1.2);
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-background);
+    backdrop-filter: none;
+  }
+}
+
 @utility sticky-surface-subtle {
   background-color: color-mix(in oklab, var(--color-subtle) 90%, transparent);
   backdrop-filter: blur(3px) saturate(1.2);

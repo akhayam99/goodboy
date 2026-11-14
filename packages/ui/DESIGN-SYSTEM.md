@@ -128,7 +128,12 @@ the pinned back row of every `PaneShell`, a self-scrolling one included, so the
 frosted row is what the reader sees there. `sticky-surface-subtle` is the light
 frost (the role at 90% over `blur(3px) saturate(1.2)`) for a header on `subtle`
 (a drawer's pinned title row included) and for a diff file header, which parks right under the pinned zone, so a long
-diff never stacks two strong frosts on every scroll frame. Text on
+diff never stacks two strong frosts on every scroll frame. Under a session head
+the whole head (title row, crumbs or tabs, the page's pinned rows) is one
+surface with one backdrop: `sticky-surface-head`, the quiet frost (the
+background at 86% over `blur(8px) saturate(1.2)`), painted once by the page's
+`RevealRegion` overlay from the top of the head to the bottom of its pinned
+rows, so content reads the same under every head row. Text on
 the frost holds 4.5:1 over any surface or half-inked text under it
 (`sticky-surface.test.ts`). Under `prefers-reduced-transparency: reduce` both
 are the opaque role and the blur is off. A sticky header draws no `shadow-*` and no
@@ -983,7 +988,7 @@ sign share the same period and dip, and the surface they sit on says which
 one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
 `nav-step-in`, `nav-step-in-back`, `pane-in`, `pane-out`, `item-out`, `studio-in`, `studio-out`, `studio-body-in`,
 `layer-in`, `layer-out`, `drawer-fade-out`, `drawer-overlay-in`,
-`drawer-overlay-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
+`drawer-overlay-out`, `drawer-dock-in`, `drawer-dock-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
 `popover-in`, `fold-fade-in`, `fold-fade-out`, `wizard-fade-in`,
 `wizard-fade-out`, `wizard-step-in`, `wizard-step-out`) move content between
 states and sit outside the meanings.
