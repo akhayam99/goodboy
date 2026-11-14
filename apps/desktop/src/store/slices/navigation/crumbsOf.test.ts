@@ -36,6 +36,7 @@ const SUB_SUB_STEP = brandId<AgentId>({ value: 'agent-sub-sub-step' });
 const ARTIFACT = brandId<ArtifactId>({ value: 'artifact-1' });
 const DYNAMIC_RUN = brandId<WorkflowRunId>({ value: 'run-dynamic' });
 const TITLE = 'Guard the settlement batch';
+const FIRST = 'Overview';
 const NOW = brandId<IsoDateTime>({ value: '2026-09-14T16:40:00.000Z' });
 
 let appState: AppState;
@@ -125,21 +126,21 @@ describe('crumbsOf', () => {
         lens: 'files',
         target: { kind: 'diff', mountPath: null, focus: { kind: 'branch', path: 'src/ledger.ts' } },
       }),
-      [TITLE, 'Changes'],
+      [FIRST, 'Changes'],
     ],
-    ['a Lead', agentAt({ agentId: MAIN }), [TITLE, 'planner']],
-    ['a sub agent', agentAt({ agentId: CHILD }), [TITLE, 'planner', 'scout']],
-    ['a sub sub agent', agentAt({ agentId: GRANDCHILD }), [TITLE, 'planner', 'scout', 'tester']],
-    ['a run', RUN, [TITLE, 'Runs', 'Close the settlement batch']],
+    ['a Lead', agentAt({ agentId: MAIN }), [FIRST, 'planner']],
+    ['a sub agent', agentAt({ agentId: CHILD }), [FIRST, 'planner', 'scout']],
+    ['a sub sub agent', agentAt({ agentId: GRANDCHILD }), [FIRST, 'planner', 'scout', 'tester']],
+    ['a run', RUN, [FIRST, 'Runs', 'Close the settlement batch']],
     [
       'a run step',
       agentAt({ agentId: STEP }),
-      [TITLE, 'Runs', 'Close the settlement batch', 'implementer'],
+      [FIRST, 'Runs', 'Close the settlement batch', 'implementer'],
     ],
     [
       'a sub sub step',
       agentAt({ agentId: SUB_SUB_STEP }),
-      [TITLE, 'Runs', 'Close the settlement batch', 'implementer', 'scout', 'reader'],
+      [FIRST, 'Runs', 'Close the settlement batch', 'implementer', 'scout', 'reader'],
     ],
     [
       'an artifact gone from the list',
@@ -148,9 +149,9 @@ describe('crumbsOf', () => {
         lens: 'plans',
         target: { kind: 'artifact', artifactId: ARTIFACT },
       }),
-      [TITLE, 'Artifacts', 'Artifact'],
+      [FIRST, 'Artifacts', 'Artifact'],
     ],
-    ['a Branch section', branchPlace({ sessionId: S1, tab: 'commits' }), [TITLE, 'Branch']],
+    ['a Branch section', branchPlace({ sessionId: S1, tab: 'commits' }), [FIRST, 'Branch']],
     [
       'a branch file',
       branchPlace({
@@ -158,12 +159,12 @@ describe('crumbsOf', () => {
         tab: 'files',
         focus: { kind: 'branch', path: 'src/ledger.ts' },
       }),
-      [TITLE, 'Branch'],
+      [FIRST, 'Branch'],
     ],
     [
       'a thread',
       branchPlace({ sessionId: S1, tab: 'comments', threadId: 'thread-1' }),
-      [TITLE, 'Branch'],
+      [FIRST, 'Branch'],
     ],
   ])('names the way from the session to %s', (_name, place, labels) => {
     expect(labelsOf({ place })).toEqual(labels);
@@ -196,7 +197,7 @@ describe('crumbsOf', () => {
     });
 
     expect(crumbsOf({ state: named, place: artifact }).map((crumb) => crumb.label)).toEqual([
-      TITLE,
+      FIRST,
       'Artifacts',
       'Settlement plan',
     ]);

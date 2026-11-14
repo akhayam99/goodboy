@@ -27,12 +27,13 @@ in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
   same top on every tab.
 - **A detail swaps the tabs for crumbs.** On an artifact, a branch or pull request, a run, an
   agent or any place that is not a tab (`isTabView`), the head keeps its title row and draws
-  `Session title › Section › Item` in place of the tabs (`SessionCrumbs`, from `crumbsOf` in
+  `Overview › Section › Item` in place of the tabs (`SessionCrumbs`, from `crumbsOf` in
   the navigation store). The crumbs are the `parentPlace` chain from the session Overview to
   the open place, one crumb per object (a branch with a file or a thread open is one crumb);
   each crumb but the last is a link that calls `upTo` with its place, and Esc goes one crumb
-  up (`escapeLadder`, `up`). There is no `Back to` line. The session title in the title row
-  is the h1 on a tab and plain text on a detail, whose own title row holds the h1.
+  up (`escapeLadder`, `up`). There is no `Back to` line. The first crumb reads `Overview`,
+  never the session title, which the title row above it already shows. The session title in
+  the title row is the h1 on a tab and plain text on a detail, whose own title row holds the h1.
 - **Ask** in the title row opens the Ask panel as a detail panel (drawer kind `ask`, a reader
   kind, so `DrawerHost slot="detail"` draws it between the page and the tool dock, in the
   `DrawerFrame` the artifact detail uses), pressed while open; a second press closes it. ⌘L
@@ -660,7 +661,8 @@ activity yet show the plain overview with its actions.
 
 - **Every session place below a tab draws the crumbs in place of the tab strip.**
   `crumbsOf` (store, navigation) walks `parentPlace` from the open place up to the session
-  and prepends the Overview, drawn as the session title. A main agent reads `Session ›
+  and prepends the Overview, drawn as `Overview` (`NAMES.overview`). In the examples below
+  read `Session` as that first crumb. A main agent reads `Session ›
 {agent}`, a sub agent `Session › {parent agent} › {agent}`, a run `Session › Runs ›
 {run title}` (the run's title, else its workflow's name, else `Run`), a run step adds its
   step names, an artifact `Session › Artifacts › {artifact title}`, a branch or pull request

@@ -1,8 +1,6 @@
-import { sessionRowTitle } from '../../../shared/utils/sessionTitle';
 import { NAMES } from '../../../shared/utils/names';
 import type { AppState } from '../../types';
 import { selectMountForPath } from '../project-mounts/selectors';
-import { sessionById } from '../sessions/sessionIndex';
 import { doorMountPath } from './doorMountPath';
 import { isTabView } from './isTabView';
 import { parentPlace } from './parentPlace';
@@ -70,9 +68,7 @@ const branchLabelOf = ({ state, place }: SessionPlaceParams): string => {
 const crumbLabelOf = ({ state, place }: SessionPlaceParams): string => {
   const { sessionId, view } = place;
   if (isOverviewView({ view })) {
-    const session = sessionById(state.sessions, sessionId) ?? null;
-    const tasks = state.sessionExternalTasks[sessionId] ?? [];
-    return sessionRowTitle({ session, tasks }).title;
+    return NAMES.overview;
   }
   if (view.agentId === null && view.target?.kind === 'artifact') {
     const { artifactId } = view.target;

@@ -481,7 +481,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   Otherwise it pushes the parent (`upTo({ to })`, which `up()` and every crumb
   call). Closing an app studio is Back to the entry below it, so Up from a
   studio and Close land in the same place. `crumbsOf` walks `parentPlace` up to
-  the session and names every step for the session crumbs (`Session › Runs › {run}`,
+  the session and names every step for the session crumbs, the first one reading
+  `Overview` (`Session › Runs › {run}`,
   `Session › {parent agent} › {agent}`, `Session › Artifacts › {artifact}`,
   `Session › {branch}`); a sub agent's parent is the agent that spawned it.
 - **The Lead page lays out by pane width.** `LeadPage` measures its own pane,
