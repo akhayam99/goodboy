@@ -3,6 +3,7 @@ import type { AutoDelegation } from '@goodboy/db';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type { DelegationCardModel } from './delegationCardOf';
 import { isJsonRecord, listField, textField } from './readJson';
+import { readableTaskOf } from './readableTaskOf';
 
 export type NextActionChoice = Readonly<{
   key: string;
@@ -47,7 +48,10 @@ const alternativesOf = ({
 
 export const nextActionOf = ({ view, delegation, card }: Params): NextAction => ({
   delegationId: delegation.id,
-  title: card.task ?? card.roleLabel,
+  title:
+    card.task === null
+      ? card.roleLabel
+      : readableTaskOf({ text: card.task, artifacts: view.artifacts }),
   choices: [
     { key: 'primary', label: primaryLabelOf({ view, delegation, card }), role: null },
     ...alternativesOf({ delegation }),

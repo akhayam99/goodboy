@@ -4,7 +4,9 @@ import { SessionWorkspace } from '../../../../../../features/session/components/
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../../store';
 import { agentPlace } from '../../../../../../store/slices/navigation/place';
+import { SETTING_WORK_ENABLED } from '../../../../../../shared/lib/workSetting';
 import { seedActivityRunScene } from '../../activityRunSeed';
+import { leadNextStepView } from './leadNextStepView';
 import { ShellFrame, seedShellChrome } from '../../shellChrome';
 import {
   AUTO_PLAN,
@@ -18,9 +20,10 @@ import {
 type Props = {
   readonly state: AutoSceneState;
   readonly theme: 'dark' | 'light';
+  readonly isLead?: boolean;
 };
 
-export const RunPageScene = ({ state, theme }: Props) => {
+export const RunPageScene = ({ state, theme, isLead = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -33,7 +36,13 @@ export const RunPageScene = ({ state, theme }: Props) => {
       telemetryAt: AUTO_SESSION.updatedAt,
       lens: null,
     });
-    const scene = autoSceneOf({ state });
+    const seeded = autoSceneOf({ state });
+    const scene = isLead ? { ...seeded, view: leadNextStepView({ view: seeded.view }) } : seeded;
+    if (isLead) {
+      useAppStore.setState((current) => ({
+        settings: { ...current.settings, [SETTING_WORK_ENABLED]: 'true' },
+      }));
+    }
     useAppStore.setState({
       sessionPhaseRuns: { [AUTO_SESSION.id]: scene.agents },
       agentKindOverride: { [AUTO_ROOT_ID]: 'auto' },
@@ -59,7 +68,7 @@ export const RunPageScene = ({ state, theme }: Props) => {
       mode: 'replace',
     });
     setIsReady(true);
-  }, [state, theme]);
+  }, [state, theme, isLead]);
 
   if (!isReady) {
     return null;

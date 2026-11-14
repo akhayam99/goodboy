@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { Button, ChoiceChips, FormActions, Input, StatusDot, TruncatedText } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
+import { useLoadedFlowWord } from '../../../../shared/hooks/useLoadedFlowWord';
 import { AUTO_STATE_TONE } from '../autoStateTone';
 import type { NextAction } from '../nextActionOf';
 import { useNextAction } from './useNextAction';
@@ -18,6 +19,7 @@ const TONE = AUTO_STATE_TONE.waitingOnYou;
 
 export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntold }: Props) => {
   const model = useNextAction({ sessionId, rootAgentId, action, untold, onUntold });
+  const flow = useLoadedFlowWord();
   const cardRef = useRef<HTMLElement>(null);
   const hintRef = useRef<HTMLInputElement>(null);
   const [isHintOpen, setIsHintOpen] = useState(false);
@@ -46,14 +48,14 @@ export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntol
       </div>
       {untold !== null ? (
         <FormActions error={model.error}>
-          <p className="min-w-0 flex-1 text-muted-foreground">Declined. Auto was not told.</p>
+          <p className="min-w-0 flex-1 text-muted-foreground">{`Declined. ${flow} was not told.`}</p>
           <Button
             size="sm"
             isBusy={model.isBusy}
-            busyLabel="Telling Auto"
+            busyLabel={`Telling ${flow}`}
             onClick={() => void model.tell()}
           >
-            Tell Auto
+            {`Tell ${flow}`}
           </Button>
         </FormActions>
       ) : model.lostNote !== null ? (
@@ -67,6 +69,7 @@ export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntol
             value={model.pickedKey}
             onChange={model.pick}
             keyScope={cardRef}
+            orientation="vertical"
             options={action.choices.map((choice, index) => ({
               value: choice.key,
               label: choice.label,

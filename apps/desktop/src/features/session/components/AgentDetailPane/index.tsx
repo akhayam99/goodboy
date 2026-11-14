@@ -2,22 +2,14 @@ import { useContext, useMemo, useState, type ReactNode } from 'react';
 import { PaneShell } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
-import {
-  useAppStore,
-  useSessionAnsweredQuestions,
-  useSessionOpenQuestions,
-  useTranscript,
-} from '../../../../store';
+import { useAppStore, useTranscript } from '../../../../store';
 import { classifyAgent } from '../../agent-kind';
 import { agentBriefOf } from './agentBriefOf';
 import type { OpenTranscriptAt } from '../../../chat/openTranscriptAt';
 import { AgentHeaderActions } from '../AgentHeaderActions';
-import { isQuestionDelegate } from '../../../context/questionDelegate';
-import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { AgentRunSettings } from './AgentRunSettings';
-import { AgentAnsweringFor } from './AgentAnsweringFor';
-import { AgentConversationEnd } from './AgentConversationEnd';
 import { AgentHeader } from './AgentHeader';
+import { useAgentInsertions } from './useAgentInsertions';
 import { AgentPaneTitle } from './AgentPaneTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
@@ -30,6 +22,7 @@ import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import { AgentHeadSlots } from './AgentHeadSlots';
+import { DockStopButton } from '../../../../shared/components/DockStopButton';
 
 type RunStepFrame = {
   readonly heading: ReactNode;
@@ -47,6 +40,7 @@ type Props = {
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
   readonly headerLead?: ReactNode;
+  readonly headerState?: ReactNode;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
@@ -59,6 +53,7 @@ export const AgentDetailPane = ({
   context,
   runStep,
   headerLead,
+  headerState,
 }: Props) => {
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
@@ -81,57 +76,13 @@ export const AgentDetailPane = ({
   const events = useTranscript(agent.id);
   const briefLine = useMemo(() => agentBriefOf({ events }), [events]);
   const brief = autoChat.childTask ?? briefLine;
-  const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
-  const openQuestions = useSessionOpenQuestions(session.id);
-  const answeredQuestions = useSessionAnsweredQuestions(session.id);
-
-  const answeredQuestion = useMemo(() => {
-    if (!isQuestionDelegate({ agent })) {
-      return null;
-    }
-    return (
-      [...openQuestions, ...answeredQuestions].find(
-        (question) => question.id === agent.sourceThreadId,
-      ) ?? null
-    );
-  }, [agent, openQuestions, answeredQuestions]);
-  const asker = runs?.find((run) => run.id === agent.parentAgentId) ?? null;
-
-  const insertions = useMemo((): ReadonlyArray<TranscriptInsertion> => {
-    const leading: ReadonlyArray<TranscriptInsertion> =
-      answeredQuestion === null
-        ? []
-        : [
-            {
-              key: `answering-for-${agent.id}`,
-              beforeMs: 0,
-              node: (
-                <AgentAnsweringFor
-                  sessionId={session.id}
-                  question={answeredQuestion}
-                  asker={asker}
-                />
-              ),
-            },
-          ];
-    const hasEnd =
-      !isAutoRoot &&
-      (agent.status === 'completed' || (runs ?? []).some((run) => run.parentAgentId === agent.id));
-    const end: ReadonlyArray<TranscriptInsertion> = hasEnd
-      ? [
-          {
-            key: `conversation-end-${agent.id}`,
-            beforeMs: null,
-            node: <AgentConversationEnd session={session} agent={agent} />,
-          },
-        ]
-      : [];
-    const tail: ReadonlyArray<TranscriptInsertion> =
-      runStep === undefined
-        ? []
-        : [{ key: `run-tail-${agent.id}`, beforeMs: null, node: runStep.tail }];
-    return [...leading, ...(autoChat.insertions ?? []), ...end, ...tail];
-  }, [agent, answeredQuestion, asker, autoChat.insertions, isAutoRoot, runs, session, runStep]);
+  const insertions = useAgentInsertions({
+    session,
+    agent,
+    isAutoRoot,
+    autoInsertions: autoChat.insertions,
+    runTail: runStep?.tail,
+  });
 
   const openTranscript: OpenTranscriptAt = ({ turn }) =>
     openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id, turn } });
@@ -148,9 +99,12 @@ export const AgentDetailPane = ({
         isRunStep={runStep !== undefined}
       />
     );
+  const headStop = isInHead ? autoChat.stop : null;
   const actions =
     runStep === undefined ? (
       <>
+        {isInHead ? null : headerState}
+        {headStop === null ? null : <DockStopButton stop={headStop} />}
         {headerLead}
         <AgentHeaderActions
           key={agent.id}
@@ -173,6 +127,7 @@ export const AgentDetailPane = ({
         asksSlotRef={setAsksSlot}
         isInHead={isInHead}
         trailing={isInHead ? actions : null}
+        {...(isInHead && headerState !== undefined && { state: headerState })}
       />
     ) : null;
   const lead = (
@@ -206,7 +161,7 @@ export const AgentDetailPane = ({
       {...(runStep === undefined && { controlSlots: { asks: asksSlot } })}
       {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
       {...(runStep?.liveSentence !== undefined && { liveSentence: runStep.liveSentence })}
-      composerStop={autoChat.stop}
+      composerStop={headStop === null ? autoChat.stop : { ...headStop, isButtonInHead: true }}
       isFailureOwned={autoChat.isFailureOwned}
       {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
       hasComposer={hasComposer}

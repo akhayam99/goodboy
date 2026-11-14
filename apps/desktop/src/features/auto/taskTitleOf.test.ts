@@ -23,6 +23,16 @@ describe('taskTitleOf', () => {
     ).toBe('Move every notify-relay retry into the shared ledger-core…');
   });
 
+  it('never shows a raw artifact id', () => {
+    expect(
+      taskTitleOf({
+        request: {
+          task: 'Revise plan artifact 9cadae67-3b1f-4c2e-9a51-7d0e8f2b4c11 for two webhooks.',
+        },
+      }),
+    ).toBe('Revise plan for two webhooks');
+  });
+
   it('gives nothing for an old row with no title and no task', () => {
     expect(taskTitleOf({ request: {} })).toBeNull();
     expect(taskTitleOf({ request: { title: 7, task: '  ' } })).toBeNull();

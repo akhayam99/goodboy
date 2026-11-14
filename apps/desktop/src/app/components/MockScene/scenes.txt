@@ -788,6 +788,9 @@ run-header-held
 run-header-paused
 run-page-done
 run-page-done-light
+run-page-lead-next
+run-page-lead-next-light
+run-page-lead-working
 run-page-many
 run-page-plan
 run-page-plan-light

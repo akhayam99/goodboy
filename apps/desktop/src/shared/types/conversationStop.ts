@@ -6,6 +6,7 @@ export type ConversationStop = Readonly<{
   phase: StopPhase;
   sentence: string | null;
   stop: () => void;
+  isButtonInHead?: boolean;
 }>;
 
 export type ConversationLive = Readonly<{

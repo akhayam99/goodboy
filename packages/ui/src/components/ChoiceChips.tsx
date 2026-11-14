@@ -19,6 +19,7 @@ export type ChoiceChipsProps<T extends string = string> = {
   readonly onChange: (value: T) => void;
   readonly ariaLabel: string;
   readonly keyScope?: RefObject<HTMLElement | null>;
+  readonly orientation?: 'horizontal' | 'vertical';
   readonly className?: string;
 };
 
@@ -68,9 +69,11 @@ export const ChoiceChips = <T extends string>({
   onChange,
   ariaLabel,
   keyScope,
+  orientation = 'horizontal',
   className,
 }: ChoiceChipsProps<T>) => {
   const groupRef = useRef<HTMLDivElement>(null);
+  const isVertical = orientation === 'vertical';
   const isNumbered = options.length <= MAX_NUMBERED;
   const selectedIndex = options.findIndex((option) => option.value === value);
   const firstEnabled = options.findIndex((option) => option.isDisabled !== true);
@@ -105,9 +108,9 @@ export const ChoiceChips = <T extends string>({
     <div
       ref={groupRef}
       role="listbox"
-      aria-orientation="horizontal"
+      aria-orientation={orientation}
       aria-label={ariaLabel}
-      className={cn('flex flex-wrap gap-2', className)}
+      className={cn(isVertical ? 'flex flex-col gap-1' : 'flex flex-wrap gap-2', className)}
     >
       {options.map((option, index) => {
         const isActive = option.value === value;
@@ -137,6 +140,7 @@ export const ChoiceChips = <T extends string>({
               'h-auto min-h-7 max-w-full justify-start whitespace-normal border-border-soft bg-transparent py-1 text-left',
               SELECTED_ROW_CLASSES,
               'data-[selected=true]:border-border',
+              isVertical && 'w-full border-transparent',
             )}
           >
             {isNumbered ? (
@@ -144,9 +148,16 @@ export const ChoiceChips = <T extends string>({
                 {index + 1}
               </span>
             ) : null}
-            <span className="min-w-0 break-words text-row">{option.label}</span>
+            <span className={cn('min-w-0 break-words text-row', isVertical && 'flex-1')}>
+              {option.label}
+            </span>
             {option.isRecommended === true ? (
-              <span className="shrink-0 text-meta font-normal text-muted-foreground">
+              <span
+                className={cn(
+                  'shrink-0 text-meta font-normal',
+                  isVertical ? 'text-faint-foreground' : 'text-muted-foreground',
+                )}
+              >
                 Recommended
               </span>
             ) : null}

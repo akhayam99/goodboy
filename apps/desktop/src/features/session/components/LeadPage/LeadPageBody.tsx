@@ -13,6 +13,7 @@ import { useLeadSelectionStore } from '../../hooks/useLeadSelectionStore';
 import { leadAgentCountOf } from '../../../auto/tree/leadAgentCountOf';
 import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import { HeadSlotPortal } from '../HeadSlotPortal';
+import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
 import { LeadHeaderWord } from './LeadHeaderWord';
 import { LeadPageRailHead } from './LeadPageRailHead';
 import { LeadPageRecord } from './LeadPageRecord';
@@ -45,6 +46,7 @@ export const LeadPageBody = ({
 }: Props) => {
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const slots = useContext(SessionHeadSlotsContext);
+  const isWork = useIsWorkOn();
   const isInHead = slots !== null;
   const layout = leadLayoutOf({ width: usePaneWidth({ node: slots?.frame ?? root }) });
   const [isAgentsOpen, setIsAgentsOpen] = useState(false);
@@ -111,21 +113,19 @@ export const LeadPageBody = ({
         onOpenTranscript={onOpenTranscript}
       />
     );
-  const headerLead = (
-    <>
-      <LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />
-      {isNarrow ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-expanded={isAgentsOpen}
-          onClick={() => setIsAgentsOpen(!isAgentsOpen)}
-        >
-          {`Agents ${agentCount}`}
-        </Button>
-      ) : null}
-    </>
-  );
+  const headerState = isWork ? (
+    <LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />
+  ) : undefined;
+  const headerLead = isNarrow ? (
+    <Button
+      variant="ghost"
+      size="sm"
+      aria-expanded={isAgentsOpen}
+      onClick={() => setIsAgentsOpen(!isAgentsOpen)}
+    >
+      {`Agents ${agentCount}`}
+    </Button>
+  ) : null;
 
   const rails = isNarrow ? null : (
     <>
@@ -171,6 +171,7 @@ export const LeadPageBody = ({
               isChatActive={isChatActive}
               onBack={onBack}
               headerLead={headerLead}
+              {...(headerState !== undefined && { headerState })}
             />
           </AutoSelectAgentContext.Provider>
         </QueuedNotesReportContext.Provider>
