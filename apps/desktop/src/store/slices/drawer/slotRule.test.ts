@@ -30,7 +30,7 @@ const TERMINAL: DrawerRequest = {
   payload: { terminalId: brandId<TerminalTabId>({ value: 'term-1' }) },
 };
 
-const EXPLORE: DrawerRequest = { kind: 'explore', sessionId: SESSION_ID, payload: null };
+const EXPLORE: DrawerRequest = { kind: 'scripts', sessionId: SESSION_ID, payload: null };
 
 const PLAN: DrawerRequest = {
   kind: 'artifact-document',

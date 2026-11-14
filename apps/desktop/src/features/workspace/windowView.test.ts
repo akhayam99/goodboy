@@ -41,9 +41,9 @@ describe('windowView reload intent', () => {
       studio: null,
       focus: {
         drawer: {
-          kind: 'context' as const,
+          kind: 'scripts' as const,
           sessionId: session,
-          payload: { section: 'summary' as const, view: 'current' as const },
+          payload: null,
         },
         scroll: { timeline: 240 },
       },

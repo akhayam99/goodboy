@@ -65,9 +65,9 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionOverviewPane/index.tsx'],
   },
-  ContextDrawer: {
-    kind: 'bare',
-    files: ['features/session/components/ContextDrawer/index.tsx'],
+  ContextTab: {
+    kind: 'shell',
+    files: ['features/session/components/ContextTab/index.tsx'],
   },
   SessionOverviewLoading: {
     kind: 'bare',

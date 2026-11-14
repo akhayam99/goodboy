@@ -141,7 +141,7 @@ export const useAppShortcuts = ({
       const openDrawerKind = selectOpenDrawer(state)?.kind ?? null;
       const isBelowPage =
         state.appStudio !== null ||
-        (openDrawerKind !== null && openDrawerKind !== 'ask') ||
+        openDrawerKind !== null ||
         (state.selectedAgentId[sessionId] ?? null) !== null ||
         (kind === 'workflows' && (state.focusedWorkflowRunId[sessionId] ?? null) !== null) ||
         (kind === 'plans' &&

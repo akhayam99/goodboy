@@ -33,14 +33,6 @@ export type DrawerContent =
       };
     }
   | {
-      readonly kind: 'context';
-      readonly payload: {
-        readonly section: ContextDrawerSection;
-        readonly view: ContextDrawerView;
-        readonly highlight?: ReadonlyArray<number>;
-      };
-    }
-  | {
       readonly kind: 'explore-file';
       readonly payload: {
         readonly sessionDir: string;
@@ -70,20 +62,12 @@ export type DrawerContent =
       };
     }
   | {
-      readonly kind: 'explore';
-      readonly payload: null;
-    }
-  | {
       readonly kind: 'scripts';
       readonly payload: { readonly projectId: ProjectId } | null;
     }
   | {
       readonly kind: 'conversation';
       readonly payload: { readonly threadId: string };
-    }
-  | {
-      readonly kind: 'ask';
-      readonly payload: null;
     }
   | {
       readonly kind: 'question';

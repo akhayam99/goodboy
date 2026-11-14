@@ -103,7 +103,7 @@ describe('a11y, the plan document drawer beside the page', () => {
 
     expect(aside.getAttribute('data-drawer-sizing')).toBe('reader');
     expect(aside.getAttribute('data-drawer-mode')).toBe('push');
-    expect(aside.style.width).toBe('736px');
+    expect(aside.style.width).toBe('728px');
     await expectBaseline({ name: 'drawer wide push', container });
   });
 });

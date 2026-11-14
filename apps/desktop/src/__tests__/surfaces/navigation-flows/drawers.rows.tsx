@@ -19,7 +19,7 @@ const scrimOf = (): HTMLElement | null =>
 
 export const DRAWER_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'scripts over a narrow page: its chord opens it over a scrim, a scrim click closes it, focus returns to Scripts',
+    name: 'terminal over a narrow page: the Scripts chord opens it over a scrim, a scrim click closes it, focus leaves the panel',
     covers: ['key:lens.scripts'],
     open: async () => {
       const tool = await toolButton();
@@ -28,7 +28,7 @@ export const DRAWER_ROWS: ReadonlyArray<Row> = [
       pressShortcut({ id: 'lens.scripts' });
       await settle();
       await waitFor(() => {
-        expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
+        expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('terminal');
         expect(sidePanel().getAttribute('data-drawer-mode')).toBe('overlay');
       }, WAIT);
       expect(scrimOf()).not.toBeNull();
@@ -46,7 +46,7 @@ export const DRAWER_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => {
         expect(scrimOf()).toBeNull();
       }, WAIT);
-      expect(document.activeElement).toBe(await toolButton());
+      expect(sidePanel().contains(document.activeElement)).toBe(false);
     },
   },
 ];

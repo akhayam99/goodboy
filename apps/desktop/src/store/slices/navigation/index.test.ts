@@ -762,7 +762,7 @@ describe('navigation slice', () => {
 
   it('keeps Ask open across every page of its session', () => {
     const store = makeStore();
-    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().openDrawer(ask);
 
@@ -778,7 +778,7 @@ describe('navigation slice', () => {
 
   it('closes Ask when you leave its session, and Back brings it back', () => {
     const store = makeStore();
-    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().openDrawer(ask);
 
@@ -795,7 +795,7 @@ describe('navigation slice', () => {
 
   it('lets a reader replace Ask, then brings Ask back from the chip on a forward move', () => {
     const store = makeStore();
-    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
     store.getState().openDrawer(ask);
     store.getState().openDrawer(DRAFTS);
@@ -807,7 +807,7 @@ describe('navigation slice', () => {
   it('closes Ask from the chip when a forward move leaves its session', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    store.getState().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+    store.getState().openDrawer({ kind: 'spawned', sessionId: S1, payload: null });
     store.getState().openDrawer(DRAFTS);
     store.getState().navigate({ to: sessionPlace({ sessionId: S2 }) });
     expect(store.getState().drawer).toBeNull();

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
-import { askDrawerRegistration } from '../../features/session/ask/askDrawerRegistration';
 import { browserDrawerRegistration } from '../../features/browser/browserDrawerRegistration';
 import { checkAnalysisDrawerRegistration } from '../../features/branch/checkAnalysisDrawerRegistration';
 import { fileDiffDrawerRegistration } from '../../features/diff/fileDiffDrawerRegistration';
@@ -15,7 +14,6 @@ type RegisteredDrawer = Extract<
   DrawerRequest,
   {
     readonly kind:
-      | 'ask'
       | 'browser'
       | 'check-analysis'
       | 'file-diff'
@@ -38,8 +36,6 @@ export const renderRegisteredDrawer = ({
   openDrawer,
 }: RenderParams): ReactNode => {
   switch (drawer.kind) {
-    case 'ask':
-      return askDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'browser':
       return browserDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'check-analysis':

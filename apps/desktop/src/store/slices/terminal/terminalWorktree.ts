@@ -57,6 +57,15 @@ export const terminalWorktreeKeyIn = ({ state, tab }: StateTabParams): string =>
       tab.owner.kind === 'session' ? (state.sessionProjectMounts[tab.owner.sessionId] ?? []) : [],
   });
 
+type KeyMountParams = {
+  readonly key: string;
+};
+
+export const mountIdOfWorktreeKey = ({ key }: KeyMountParams): string | null => {
+  const at = key.indexOf(MOUNT_SEGMENT);
+  return at < 0 ? null : key.slice(at + MOUNT_SEGMENT.length);
+};
+
 type FindParams = {
   readonly state: Pick<AppStore, 'sessionProjectMounts' | 'terminalTabs'>;
   readonly tabId: string;

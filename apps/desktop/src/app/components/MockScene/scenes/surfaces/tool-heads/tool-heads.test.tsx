@@ -8,9 +8,6 @@ describe('the tool head scenes', () => {
 
     expect(ids).toEqual([
       'u36-p18-ask-answer',
-      'u36-p18-explore-changed',
-      'u36-p18-explore-empty',
-      'u36-p18-explore-head',
       'u36-p18-scripts-suggested',
       'u36-p18-terminal-head',
       'u36-p18-tools-column',

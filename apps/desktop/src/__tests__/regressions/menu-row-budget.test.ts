@@ -36,7 +36,8 @@ const DATA_DRIVEN: Readonly<Record<string, string>> = {
     'registry actions of one hit, capped at two by RELATED_LIMIT and pinned in SearchMode/index.test.tsx',
   'features/chat/components/ChatInput/parts/ComposerPlusMenu.tsx':
     'one row per prefix group the composer knows',
-  'features/diff/FilesMode/ExploreProjectChip.tsx': 'a picker over the projects of the workspace',
+  'features/diff/FilesMode/ExploreProjectChip/index.tsx':
+    'a picker over the projects of the workspace',
   'features/integrations/jira/AssigneePicker.tsx': 'a picker over the people of a Jira project',
   'features/integrations/jira/TransitionMenu.tsx': 'the transitions Jira offers for one issue',
   'features/integrations/linear/LinearAssigneeMenu.tsx': 'a picker over the people of a team',

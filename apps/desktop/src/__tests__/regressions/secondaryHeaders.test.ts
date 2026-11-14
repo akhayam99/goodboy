@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest';
 const SRC = join(__dirname, '..', '..');
 
 const SECONDARY_PAGE_FILES: ReadonlyArray<string> = [
-  'features/explore/components/ExplorePane/index.tsx',
   'features/companion/components/IphonePage/index.tsx',
   'features/settings/components/SettingsStudio/AppScopePanel.tsx',
   'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx',

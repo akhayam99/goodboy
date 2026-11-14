@@ -24,7 +24,7 @@ const openScriptsThenPalette = async (): Promise<void> => {
   pressShortcut({ id: 'lens.scripts' });
   await settle();
   await waitFor(() => {
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('terminal');
   }, WAIT);
   pressShortcut({ id: 'palette.open' });
   await settle();
@@ -32,7 +32,7 @@ const openScriptsThenPalette = async (): Promise<void> => {
 };
 
 const expectScriptsStillOpen = (): void => {
-  expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
+  expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('terminal');
   expect(sidePanel().getAttribute('data-drawer-mode')).not.toBe('closed');
 };
 

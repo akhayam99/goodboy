@@ -20,7 +20,15 @@ import {
   buildTimelineGroups,
   type TimelineTopLevelEntry,
 } from '../../../timeline/buildTimelineGroups';
-import type { DoneModel, DoneSource } from '../doneTypes';
+
+type DoneModel = {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+  readonly events: ReadonlyArray<SessionEvent>;
+  readonly autoTrees: ReadonlyArray<AutoTreeView>;
+  readonly agents: ReadonlyArray<Agent>;
+  readonly checkNameByAgentId: ReadonlyMap<string, string>;
+  readonly now: number;
+};
 
 export const SESSION_ID = brandId<SessionId>({ value: 'session-harborline' });
 export const RUN_ID = brandId<WorkflowRunId>({ value: 'run-build' });
@@ -163,20 +171,4 @@ export const modelOf = ({
     checkNameByAgentId,
     now: NOW.getTime(),
   };
-};
-
-export const sourceOf = ({
-  model,
-  id,
-}: {
-  readonly model: DoneModel;
-  readonly id: string;
-}): DoneSource => {
-  const entry: TimelineTopLevelEntry | undefined = model.entries.find(
-    (candidate) => candidate.id === id,
-  );
-  if (entry?.kind !== 'run' && entry?.kind !== 'agent' && entry?.kind !== 'event') {
-    throw new Error(`no done source ${id}`);
-  }
-  return entry;
 };

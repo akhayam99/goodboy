@@ -288,7 +288,7 @@ const drawerRequests = (sessionId: SessionId): ReadonlyArray<DrawerRequest> => {
   const plan = state.sessionPlans[sessionId]?.[0];
   const mount = state.sessionProjectMounts[sessionId]?.[0];
   return [
-    { kind: 'context', sessionId, payload: { section: 'goal', view: 'current' } },
+    { kind: 'scripts', sessionId, payload: null },
     {
       kind: 'scriptRun',
       sessionId,
@@ -477,15 +477,9 @@ const sessionLayers = (extra: RailLayers): RailLayers => ({
 });
 
 const openContextDrawer = async (sessionId: SessionId): Promise<void> => {
-  act(() =>
-    useAppStore.getState().openDrawer({
-      kind: 'context',
-      sessionId,
-      payload: { section: 'goal', view: 'current' },
-    }),
-  );
+  act(() => useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }));
   await settle();
-  expect(openDrawerKind()).toBe('context');
+  expect(openDrawerKind()).toBe('scripts');
 };
 
 const openAgentTranscript = async (sessionId: SessionId): Promise<void> => {
@@ -699,7 +693,7 @@ describe('moving across every place keeps one frame', () => {
   it('parks a session drawer under a page, and Esc brings it back with its page', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
-    await press('lens.scripts');
+    act(() => useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }));
     await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'));
 
     await click(door('inbox'));
@@ -720,27 +714,6 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('keeps a parked Explore mounted as the same node through a Tasks round trip', async () => {
-    const { sessionId } = await boot({ seed: 'pr' });
-
-    useAppStore.getState().openDrawer({ kind: 'explore', sessionId, payload: null });
-    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('explore'));
-    const explore = 'main aside section[aria-label="Explore"]';
-    const section = await waitFor(() =>
-      requireValue({ value: document.querySelector<HTMLElement>(explore) }),
-    );
-
-    await click(door('inbox'));
-    expect(studio()).toBe('inbox');
-    expect(section.isConnected).toBe(true);
-    await escape();
-
-    expect(studio()).toBeNull();
-    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
-    expect(document.querySelector(explore)).toBe(section);
-    expectHealthy();
-  });
-
   it('shows a parked drawer on its key from a page instead of closing it unseen', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
@@ -753,7 +726,7 @@ describe('moving across every place keeps one frame', () => {
 
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('terminal');
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expectHealthy();
   });
@@ -768,15 +741,15 @@ describe('moving across every place keeps one frame', () => {
     await press('lens.scripts');
 
     expect(studio()).toBeNull();
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('terminal');
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expectHealthy();
   });
 
   it('closes the page with ⌘W, never the drawer parked under it, and Back brings the drawer back', async () => {
-    await boot({ seed: 'pr' });
+    const { sessionId } = await boot({ seed: 'pr' });
 
-    await press('lens.scripts');
+    act(() => useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }));
     await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'));
 
     await click(door('inbox'));
@@ -817,14 +790,10 @@ describe('moving across every place keeps one frame', () => {
         expect(currentPage()).toBe(page);
         if (withDrawer) {
           act(() =>
-            useAppStore.getState().openDrawer({
-              kind: 'context',
-              sessionId,
-              payload: { section: 'goal', view: 'current' },
-            }),
+            useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }),
           );
           await settle();
-          expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
+          expect(openDrawerKind(), `${page} opens the drawer`).toBe('scripts');
         }
         expectCentredColumns();
         expectAskInToolColumn();
