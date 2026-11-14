@@ -101,15 +101,15 @@ describe('the u24 prpage files scenes', () => {
     }
   });
 
-  it('keeps the file cards inside one page column', async () => {
+  it('keeps the file cards inside the one diff column beside the file rail', async () => {
     renderScene({ name: 'branch-files-both' });
     await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
 
     const cards = Array.from(document.querySelectorAll('[data-file-card]'));
     expect(cards.length).toBeGreaterThan(1);
-    for (const card of cards) {
-      expect(card.closest('[data-page-column]')).not.toBeNull();
-    }
+    const columns = new Set(cards.map((card) => card.closest('[data-changes-diff]')));
+    expect(columns.size).toBe(1);
+    expect(columns.has(null)).toBe(false);
   });
 
   it('shows Viewed, Comment and one menu on every file header, the rest inside the menu', async () => {

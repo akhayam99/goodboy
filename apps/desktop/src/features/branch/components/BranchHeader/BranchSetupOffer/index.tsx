@@ -1,5 +1,5 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import { WorktreeSetupOffer } from '../../../../worktree/WorktreeSetupOffer';
+import { WorktreeSetupOffer, type SetupOfferLayout } from '../../../../worktree/WorktreeSetupOffer';
 import { useAppStore } from '../../../../../store';
 import { projectById } from '../../../../../store/slices/projects/projectIndex';
 import { selectMountById } from '../../../../../store/slices/project-mounts/selectors';
@@ -7,9 +7,10 @@ import { selectMountById } from '../../../../../store/slices/project-mounts/sele
 type Props = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
+  readonly layout?: SetupOfferLayout;
 };
 
-export const BranchSetupOffer = ({ sessionId, mountId }: Props) => {
+export const BranchSetupOffer = ({ sessionId, mountId, layout = 'card' }: Props) => {
   const worktreePath = useAppStore(
     (state) => selectMountById({ state, sessionId, mountId })?.worktreePath ?? null,
   );
@@ -35,6 +36,7 @@ export const BranchSetupOffer = ({ sessionId, mountId }: Props) => {
       worktreePath={worktreePath}
       projectName={projectName}
       branch={branch}
+      layout={layout}
     />
   );
 };

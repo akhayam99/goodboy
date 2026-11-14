@@ -252,7 +252,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   for the rail, like Notifications with its filter button, drops the strip
   while the pane is too narrow to dock, `canUnfold`), and `useStudioRailFold` remembers the choice per surface
   (`goodboy:studio-rail-folded:<studio>:v1`). Chat, Terminal, the Guide, the
-  changelog, Settings and Notifications fold this way.
+  changelog, Settings, Notifications and the file list of Changes fold this way.
   **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
   on: each foldable column registers with `useInnerColumn` while its page
   shows (the session pages while no studio covers it, a page rail through

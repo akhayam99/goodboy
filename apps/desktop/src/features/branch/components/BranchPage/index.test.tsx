@@ -471,8 +471,15 @@ const headerColumn = (): string | null =>
     ?.closest('[data-page-column]')
     ?.getAttribute('data-width') ?? null;
 
+type SectionParams = {
+  readonly name: RegExp;
+};
+
+const widthOfSection = ({ name }: SectionParams): string =>
+  name.source === '^Changes' ? 'full' : 'column';
+
 describe('Branch page column', () => {
-  it('keeps the header and the body of Comments, Changes and Commits on the column at every section', async () => {
+  it('keeps the header and the body of every section on the column while there is no branch', async () => {
     await mount();
 
     for (const name of [/^Comments/, /^Changes/, /^Commits/]) {
@@ -484,7 +491,7 @@ describe('Branch page column', () => {
     }
   });
 
-  it('keeps the diff and the commit graph on the column once the session has a worktree', async () => {
+  it('keeps the commit graph on the column and the diff on the full width once the session has a worktree', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     withCommits();
@@ -498,10 +505,12 @@ describe('Branch page column', () => {
     for (const name of [/^Comments/, /^Changes/, /^Commits/]) {
       await visit(name);
 
-      expect(headerColumn()).toBe('column');
-      expect(bodyColumnWidths().length).toBeGreaterThan(0);
-      expect(bodyColumnWidths().every((width) => width === 'column')).toBe(true);
+      expect(headerColumn()).toBe(widthOfSection({ name }));
+      expect(bodyColumnWidths().every((width) => width === widthOfSection({ name }))).toBe(true);
     }
+    expect(document.querySelector('[data-changes-page]')).toBeNull();
+    await visit(/^Changes/);
+    expect(document.querySelector('[data-changes-page] [data-studio-rail="page"]')).not.toBeNull();
   });
 
   it('keeps one h1 on one column element from Overview through every section and back', async () => {
@@ -807,9 +816,9 @@ describe('Branch page entries in the sidebar', () => {
   };
 
   const fileRail = (): HTMLElement | null =>
-    document.querySelector<HTMLElement>('[data-slot="diff-file-rail"] aside[aria-label="Files"]');
+    document.querySelector<HTMLElement>('[data-changes-page] aside[aria-label="Files"]');
 
-  it('counts Changes on its tab and puts the file list on the right of the page', async () => {
+  it('counts Changes on its tab and puts the file list left of the diff, under the header', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedShownPullRequest();
     await mountFiles();
@@ -825,13 +834,14 @@ describe('Branch page entries in the sidebar', () => {
     expect(railRow(/^Changes/).getAttribute('aria-selected')).toBe('true');
     expect(railRow(/^Changes/).hasAttribute('aria-expanded')).toBe(false);
     expect(railOf().contains(rail)).toBe(false);
-    expect(document.querySelector('[data-branch-pane]')?.lastElementChild?.contains(rail)).toBe(
-      true,
-    );
+    expect(rail.parentElement?.firstElementChild).toBe(rail);
     const tree = within(rail).getByRole('navigation', { name: 'Changed files' });
     expect(headerColumnElement().contains(tree)).toBe(false);
-    expect(within(rail).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
+    expect(
+      headerColumnElement().compareDocumentPosition(rail) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    within(rail).getByRole('searchbox', { name: 'Filter files' });
+    screen.getByRole('button', { name: /^Next unviewed/ });
 
     for (const name of [/^Comments/, /^Commits/, /^Checks/]) {
       await visit(name);
@@ -1025,19 +1035,14 @@ describe('Branch page tab and head facts', () => {
     expect(stripCount(/^Commits/)).toBe('3');
 
     const rail = document.querySelector<HTMLElement>(
-      '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
+      '[data-changes-page] aside[aria-label="Files"]',
     );
     expect(rail).not.toBeNull();
-    within(rail!).getByText(/Viewed 0 of 2/);
+    screen.getByText(/Viewed 0 of 2/);
     screen.getByText('· All 3 commits');
     expect(stripCount(/^Changes/)).toBe('2+2 -0');
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
-      new DOMRect(0, 0, 700, 600),
-    );
-    act(() => observers?.resizeAll());
-    await settle();
-    const toggle = screen.getByRole('button', { name: /^Files/ });
-    expect((toggle.textContent ?? '').replace(/^Files/, '')).toBe(stripCount(/^Changes/));
+    const head = rail?.querySelector('[data-grid-row="1"]')?.textContent ?? '';
+    expect(head.replace(/^Changed /, '').replace('All files', '')).toBe(stripCount(/^Changes/));
   });
 
   it('keeps the rail on the loaded diff when the polled summary disagrees', async () => {
@@ -1059,10 +1064,10 @@ describe('Branch page tab and head facts', () => {
     await settle();
 
     expect(stripCount(/^Changes/)).toBe('5+5 -0');
-    const rail = document.querySelector<HTMLElement>(
-      '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
-    );
-    within(rail!).getByText(/Viewed 0 of 2/);
+    expect(
+      document.querySelector<HTMLElement>('[data-changes-page] aside[aria-label="Files"]'),
+    ).not.toBeNull();
+    screen.getByText(/Viewed 0 of 2/);
   });
 
   it('keeps the Changes tab on the branch when the summary fails and the scope changes', async () => {

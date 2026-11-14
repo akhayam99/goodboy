@@ -72,9 +72,7 @@ const DiffTreeScene = () => {
         kindsOf={NO_KINDS_OF}
         isReadOnly={false}
         onToggleViewed={NOTHING}
-        onNextUnviewed={NOTHING}
         onLeave={NOTHING}
-        onFold={NOTHING}
       />
     </div>
   );

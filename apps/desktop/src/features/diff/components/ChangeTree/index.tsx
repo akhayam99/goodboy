@@ -21,13 +21,13 @@ import type { CommentKinds } from '../../lib/commentKinds';
 import type { DiffFileActions } from '../DiffView/types';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { rowHeightOf } from '../../lib/rowHeightOf';
+import { viewedCountOf } from '../../lib/viewedCountOf';
 import { WINDOW_MIN_ROWS, layoutRows, windowOf } from '../../../../shared/utils/windowRows';
 import { useRowWindow } from '../../hooks/useRowWindow';
 import { FileRow } from './FileRow';
 import { revealTreeRow } from './revealTreeRow';
 import { FolderRow } from './FolderRow';
 import { TreeHead } from './TreeHead';
-import { TreeTitle } from './TreeTitle';
 import { nameLengthOf } from './nameLengthOf';
 import { treeKeyAction } from './treeKeys';
 
@@ -60,10 +60,7 @@ type Props = {
   readonly isReadOnly: boolean;
   readonly onToggleViewed: (file: FileDiff) => void;
   readonly fileActions?: DiffFileActions | null;
-  readonly onNextUnviewed: () => void;
   readonly onLeave: () => void;
-  readonly onFold: () => void;
-  readonly modeControl?: ReactNode;
   readonly listSlot?: (params: ListSlotParams) => ReactNode;
 };
 
@@ -71,7 +68,7 @@ type ListSlotParams = {
   readonly hasDelta: boolean;
 };
 
-const DELTA_MIN_RAIL_PX = 300;
+const DELTA_MIN_RAIL_PX = 280;
 
 type RowIdParams = {
   readonly id: string;
@@ -95,10 +92,7 @@ export const ChangeTree = ({
   isReadOnly,
   onToggleViewed,
   fileActions = null,
-  onNextUnviewed,
   onLeave,
-  onFold,
-  modeControl = null,
   listSlot,
 }: Props) => {
   const rows = useMemo(() => visibleRows({ rows: tree.rows, collapsed }), [tree.rows, collapsed]);
@@ -114,11 +108,10 @@ export const ChangeTree = ({
     () => new Map(allFiles.map((file) => [file.path, stateOf(file)] as const)),
     [allFiles, stateOf],
   );
-  const viewedCount = useMemo(
-    () => [...states.values()].filter((state) => state === 'viewed').length,
-    [states],
+  const unviewedCount = useMemo(
+    () => allFiles.length - viewedCountOf({ files: allFiles, stateOf }),
+    [allFiles, stateOf],
   );
-  const unviewedCount = allFiles.length - viewedCount;
   const commentedCount = useMemo(
     () => allFiles.filter((file) => commentCountOf(file.path) > 0).length,
     [allFiles, commentCountOf],
@@ -220,8 +213,6 @@ export const ChangeTree = ({
       aria-label="Changed files"
       className="flex min-h-0 w-full min-w-0 flex-col"
     >
-      <TreeTitle viewedCount={viewedCount} total={total} onNext={onNextUnviewed} onFold={onFold} />
-      {modeControl}
       <TreeHead
         total={total}
         unviewed={unviewedCount}

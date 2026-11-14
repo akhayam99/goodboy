@@ -18,9 +18,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly controls: BranchControls;
   readonly isPushNext: boolean;
+  readonly isSetupOfferShown: boolean;
 };
 
-export const BranchNotices = ({ sessionId, controls, isPushNext }: Props) => {
+export const BranchNotices = ({ sessionId, controls, isPushNext, isSetupOfferShown }: Props) => {
   const pushFailure = pushFailureOf({ error: controls.diffControls.failure?.error });
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
   return (
@@ -32,7 +33,9 @@ export const BranchNotices = ({ sessionId, controls, isPushNext }: Props) => {
           {...(pushFailure === null ? {} : { onInstalled: controls.diffControls.retry })}
         />
       )}
-      {activeMountId !== null && <BranchSetupOffer sessionId={sessionId} mountId={activeMountId} />}
+      {isSetupOfferShown && activeMountId !== null && (
+        <BranchSetupOffer sessionId={sessionId} mountId={activeMountId} />
+      )}
       {pushFailure === null && activeMountId !== null && (
         <PushFixStatus sessionId={sessionId} mountId={activeMountId} />
       )}
