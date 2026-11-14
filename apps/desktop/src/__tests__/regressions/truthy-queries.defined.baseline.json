@@ -178,8 +178,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/u27/one-flow.test.tsx": 1,
   "apps/desktop/src/app/components/PanelBoundary/index.test.tsx": 8,
   "apps/desktop/src/app/components/SessionRail/branchTree.test.tsx": 14,
-  "apps/desktop/src/app/components/SessionRail/levels.test.tsx": 11,
-  "apps/desktop/src/app/components/SessionRail/motion.test.tsx": 1,
   "apps/desktop/src/app/components/SideColumn/index.test.tsx": 11,
   "apps/desktop/src/app/components/SideColumn/RailSessions.test.tsx": 4,
   "apps/desktop/src/app/components/SpawnedPanel/index.test.tsx": 3,

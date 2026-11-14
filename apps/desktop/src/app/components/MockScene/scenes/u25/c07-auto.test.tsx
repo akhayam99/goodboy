@@ -282,6 +282,8 @@ describe('c07 Auto scenes', () => {
       throw new Error('no Tester line');
     }
     fireEvent.click(within(tester).getByRole('button', { name: /^Open / }));
+    const record = await screen.findByRole('complementary', { name: /^Record of/ }, WAIT);
+    fireEvent.click(within(record).getByRole('button', { name: 'Open transcript' }));
     expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
     expect((await treeRow(/^Tester, /)).getAttribute('aria-selected')).toBe('true');
 

@@ -17,6 +17,7 @@ import { brandedId } from '../../features/history/testing/brandedId';
 import { bindAgentRowsToSqlite, stubProviderRouting } from '../helpers/journeyHarness';
 import { ToastProvider } from '../../shared/components/Toast';
 import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
+import { ArchivePrimary } from '../../features/session/components/SessionOverviewPane/ArchivePrimary';
 import { CentralColumn } from '../../features/session/components/SessionOverviewPane/CentralColumn';
 import { WorkTimeProvider } from '../../features/workTreeModel/WorkTimeProvider';
 import { SessionKickoff } from '../../features/session/components/SessionKickoff';
@@ -298,8 +299,10 @@ const mountOf = () => {
   return mount;
 };
 
+const REMOVE_NOTE = 'Remove 1 worktree';
+
 const nextCardOf = (view: RenderResult): HTMLElement | null =>
-  view.container.querySelector<HTMLElement>('[data-overview-card="branches"]');
+  view.container.querySelector<HTMLElement>('[data-slot="branch-board-section"]');
 
 const nextCard = (view: RenderResult): HTMLElement => {
   const card = nextCardOf(view);
@@ -317,12 +320,25 @@ const showNext = (view: RenderResult): string => {
   view.rerender(
     <ToastProvider>
       <WorkTimeProvider sessionId={session.id} workspaceId={session.workspaceId}>
+        <ArchivePrimary session={session} />
         <CentralColumn session={session} />
       </WorkTimeProvider>
     </ToastProvider>,
   );
   return nextCardOf(view)?.textContent ?? '';
 };
+
+const showWaiting = (view: RenderResult): string => {
+  showNext(view);
+  const toggle = within(view.container).queryByRole('button', { name: 'Work not on a branch' });
+  if (toggle !== null && toggle.getAttribute('aria-expanded') === 'false') {
+    fireEvent.click(toggle);
+  }
+  return showNext(view);
+};
+
+const isArchiveOffered = (view: RenderResult): boolean =>
+  within(view.container).queryByRole('button', { name: 'Archive session' }) !== null;
 
 const isGhPayload = (value: unknown): value is GhPayload =>
   typeof value === 'object' && value !== null && 'args' in value && Array.isArray(value.args);
@@ -349,7 +365,7 @@ describe('journey: from a task to a merged pull request', () => {
     expect(mountOf()).toMatchObject({ branch: WORKTREE.branchName, isAttached: true });
 
     const view = render(<ToastProvider>{null}</ToastProvider>);
-    expect(showNext(view)).toBe('');
+    expect(showNext(view)).not.toContain(REMOVE_NOTE);
     expect(await linkRows()).toEqual([]);
 
     const created = render(
@@ -394,16 +410,17 @@ describe('journey: from a task to a merged pull request', () => {
       number: 418,
       state: 'approved',
     });
-    expect(showNext(view)).not.toContain('merged');
+    expect(showNext(view)).not.toContain(REMOVE_NOTE);
 
     prState = 'MERGED';
     await useAppStore.getState().refreshSessionPr(sessionId, { force: true });
 
-    await vi.waitFor(() => expect(showNext(view)).toContain('Remove the ledger-core worktree'));
+    await vi.waitFor(() => expect(showNext(view)).toContain(REMOVE_NOTE));
     expect(await linkRows()).toEqual([
       expect.objectContaining({ pr_number: 418, state: 'merged', merged_at: expect.any(Number) }),
     ]);
-    expect(showNext(view)).toContain('Archive this session');
+    showNext(view);
+    expect(isArchiveOffered(view)).toBe(true);
   });
 
   it('offers to move HBL-412 to Done only after the merge, moves it on one click and takes it back with Undo', async () => {
@@ -427,14 +444,13 @@ describe('journey: from a task to a merged pull request', () => {
     await act(async () => {
       await useAppStore.getState().refreshSessionPr(sessionId, { force: true });
     });
-    await vi.waitFor(() => expect(showNext(view)).toContain('Move HBL-412 to Done'));
+    await vi.waitFor(() => expect(showWaiting(view)).toContain('Move HBL-412 to Done'));
     expect(linearWrites).toEqual([]);
 
-    showNext(view);
     fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Move/ }));
 
     await vi.waitFor(() => expect(linearWrites).toEqual(['state-done']));
-    await vi.waitFor(() => expect(showNext(view)).not.toContain('Move HBL-412'));
+    await vi.waitFor(() => expect(showWaiting(view)).not.toContain('Move HBL-412'));
     expect(useAppStore.getState().trackerMoveSettled[sessionId]).toEqual([
       `linear:${ISSUE.externalId}`,
     ]);
@@ -456,7 +472,10 @@ describe('journey: from a task to a merged pull request', () => {
     await act(async () => {
       await useAppStore.getState().refreshSessionPr(sessionId, { force: true });
     });
-    await vi.waitFor(() => expect(showNext(view)).toContain('Archive this session'));
+    await vi.waitFor(() => {
+      showNext(view);
+      expect(isArchiveOffered(view)).toBe(true);
+    });
 
     expect(showNext(view)).not.toContain('Move HBL-412');
     expect(linearWrites).toEqual([]);

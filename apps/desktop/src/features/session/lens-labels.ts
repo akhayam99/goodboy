@@ -45,15 +45,3 @@ export const SIMPLE_LENSES = new Set<LensKind>([
   'files',
   'context',
 ]);
-
-type LabelParams = {
-  readonly lens: LensKind;
-  readonly isBranchless: boolean;
-};
-
-export const lensLabelFor = ({ lens, isBranchless }: LabelParams): string => {
-  if (lens === 'files' && isBranchless) {
-    return 'Changes';
-  }
-  return LENS_LABEL[lens];
-};
