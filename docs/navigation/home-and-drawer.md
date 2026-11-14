@@ -109,11 +109,23 @@ sheet (its `bg-background`, its 1px `frame-edge` border, `data-container="page"`
 and the drawer container is its sibling (`data-container="drawer"`), each with
 its own size, drawn from the same top to the same bottom. With no drawer the
 page container is today's sheet: rounded on the left where the chrome wraps it,
-flush with the window's right edge. While a drawer pushes, the page container
-rounds all four corners (`rounded-frame`), the drawer container stands 8px to
-its right (the resize handle sits in that gap) and 8px from the window's right
-edge, with the same edge and radius, and the pair keeps an 8px inset above the
-window's bottom edge. The drawer container is one step quieter than the page
+flush with the window's right edge. Wherever the tool rail is there (every page
+of the app) the page container rounds all four corners (`rounded-frame`) and the
+drawer container stands 8px to its right (the resize handle sits in that gap),
+flush with the window's right edge and rounded on its two left corners, and the
+pair keeps an 8px inset above the window's bottom edge.
+
+**The rail is the anchor, and a panel opens inward of it.** The drawer container
+holds the panel and the rail: one surface, with the rail as its last child
+(`data-drawer-edge`, fed through `DrawerEdgeContext`). Closed, the container is
+the rail alone, 44px wide. The rail is the same element at the same place closed,
+pushing, over the page and while a handle drags. The reason: the rail holds the
+button that opens a panel and the one that closes it; a panel that opened outward
+would move that button away from the pointer and the second press of the same
+gesture would land on something else. Every drawer of the app obeys it, not only
+Tools: Ask, Context, a reader, the spawn record, Terminal and Browser all open
+between the page and the rail, with no gap, line or radius between panel and rail.
+The drawer container is one step quieter than the page
 (`bg-drawer`, recessed between chrome and background in both themes): it reads
 as secondary, never louder, never tinted, and never a border to fake the
 difference. `AppShell` hosts it through `DrawerColumn`'s `frame="sheet"`. The
@@ -163,15 +175,17 @@ focus was on the page it moves into the drawer, never to the body.
 
 **Over the page, the drawer container runs the full height of the sheet.** It
 has no inset: flush with the sheet's top, bottom and right edges, left corners
-rounded (`rounded-l-frame`), a left border only, `shadow-xl`, the same
-`bg-drawer`; the page container goes back to its resting sheet shape under it. A scrim
+rounded (`rounded-l-frame`), `shadow-xl` under the whole container (panel and
+rail), the same `bg-drawer`; a spacer of the closed width keeps the page where
+it was under it. A scrim
 (`bg-scrim`, 120ms fade, none under reduced motion) covers the page below the
 card, and the page is `inert`, so nothing under it takes a click, a Tab or a
 screen reader. A click on the scrim asks the top layer of the escape stack
 (`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
 unsent draft inside the drawer answers first, exactly as it does to Esc.
 Pushing has no scrim and nothing is inert. Closed, the
-aside is 0px wide and `inert`. Opening and closing ease the track's width in
+aside is the 8px gutter plus the rail (0px with no rail) and the rail stays
+live; only the panel is `inert`. Opening and closing ease the track's width in
 220ms (`DURATION_BASE_MS`, none under reduced motion) with its right edge fixed, and the
 centred column slides with it: the card grows leftward from the window edge,
 its content held at its final width on that edge so nothing reflows, and the
@@ -181,15 +195,16 @@ preference: a pane folds nothing.
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
-aside stays in the flow, its width eases to 0 in 220ms and the card keeps a
-frozen copy of its content that fades in 120ms (`drawer-content-out`); with
-nothing laid out or under reduced motion it closes at once. Closed from
-over the page, the aside stays out of the flow with no width transition, so the
-page keeps its width at every frame, and the card and scrim stay mounted for
+aside stays in the flow, its width eases to the closed width in 220ms and the
+panel keeps a frozen copy of its content that fades in 120ms (`drawer-content-out`);
+with nothing laid out or under reduced motion it closes at once. Closed from
+over the page, the aside stays out of the flow with no width transition and its
+spacer holds the closed width, so the page keeps its width at every frame, and
+the panel and scrim stay mounted for
 `DRAWER_EXIT_MS` (160ms) while they fade and slide 8px right (`drawer-overlay-out`;
 only the fade, `drawer-fade-out`, under reduced motion). The exit card is a
 frozen copy of the DOM the drawer had, so its escape layers, focus and handlers
-are gone the moment it closes (a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken during the render that closes the drawer, before React commits it, because a host that reads the same store, such as `DrawerHost`, empties itself in that same commit): the aside, the card and the scrim are `inert` or
+are gone the moment it closes (the rail is not part of the copy and never animates; a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken during the render that closes the drawer, before React commits it, because a host that reads the same store, such as `DrawerHost`, empties itself in that same commit): the aside, the card and the scrim are `inert` or
 `pointer-events-none`, the page is not `inert`, and a click on the page behind
 works at once. Reopening during the exit cancels it and shows the drawer as it
 stands, without playing the entry again.

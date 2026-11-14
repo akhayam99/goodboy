@@ -116,14 +116,16 @@ describe('c03 session tools scenes', () => {
     expect(pressed()).toEqual(['Context']);
   });
 
-  it('keeps the tools in a column right of the content, not in the page tabs, and no page header holds a pane toggle', async () => {
+  it('keeps the tools in the drawer container on the window edge, not in the page tabs, and no page header holds a pane toggle', async () => {
     await mount('c03-panes-closed');
     const tabs = screen.getByRole('tablist', { name: 'Session pages' });
     expect(within(tabs).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
     const frame = tabs.closest('[data-session-frame]');
     const tools = screen.getByRole('toolbar', { name: 'Tools' });
     expect(frame?.contains(tools)).toBe(false);
-    expect(tools.closest('[data-drawer-main]')).toBe(frame?.closest('[data-drawer-main]'));
+    expect(tools.closest('[data-drawer-main]')).toBeNull();
+    expect(tools.closest('[data-container="drawer"]')).not.toBeNull();
+    expect(tools.closest('[data-drawer-edge]')?.nextElementSibling).toBeNull();
     const headers = [...document.querySelectorAll('[data-slot="pane-title-row"]')];
     expect(headers.length).toBeGreaterThan(0);
     expect(

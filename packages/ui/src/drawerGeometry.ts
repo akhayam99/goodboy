@@ -110,13 +110,14 @@ export const drawerLayoutOf = ({
 type AsideParams = {
   readonly width: number;
   readonly mode: DrawerMode;
+  readonly railWidth?: number;
 };
 
-export const drawerAsideWidthOf = ({ width, mode }: AsideParams): number => {
+export const drawerAsideWidthOf = ({ width, mode, railWidth = 0 }: AsideParams): number => {
   if (mode === 'closed') {
-    return 0;
+    return railWidth > 0 ? railWidth + DRAWER_INSET : 0;
   }
-  return mode === 'overlay' ? width + DRAWER_INSET : drawerTrackOf(width);
+  return width + DRAWER_INSET + railWidth;
 };
 
 type SizedParams = {

@@ -19,6 +19,5 @@
   "apps/desktop/src/store/store.sendturn-agent-routing.test.ts": 2789,
   "apps/desktop/src/store/store.summarizer-queue.test.ts": 1198,
   "packages/core/src/context/extractors.test.ts": 1400,
-  "packages/db/src/queries/session-workflow.test.ts": 1153,
-  "packages/ui/src/__tests__/DrawerColumn.test.tsx": 1105
+  "packages/db/src/queries/session-workflow.test.ts": 1153
 }

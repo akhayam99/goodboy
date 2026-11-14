@@ -214,13 +214,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     covers: ['studio:terminal'],
     door: 'visible',
     open: async () => {
-      const [terminal] = screen
-        .getAllByTestId('pane-toggle-terminal')
-        .filter((button) => button.closest('[data-drawer-edge]') === null);
-      if (terminal === undefined) {
-        throw new Error('No Terminal button on the right rail');
-      }
-      await click(terminal);
+      await click(screen.getByTestId('pane-toggle-terminal'));
       await clickButton(/^Open as page$/);
     },
     lands: async () => {

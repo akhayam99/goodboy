@@ -452,4 +452,3 @@ export { Disclosure } from './components/Disclosure';
 export type { DisclosureProps } from './components/Disclosure';
 
 export { DrawerContentContext } from './drawerContentContext';
-export { useDrawerContentInset } from './useDrawerContentInset';

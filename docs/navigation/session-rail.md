@@ -694,15 +694,17 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 
 ## The session tools
 
-The right rail is one 44px column at the sheet's right edge on every screen of
+The right rail is one 44px column at the window's right edge on every screen of
 a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
 the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
-Workflows). Those three pages fade their content in and out while the rail
+Workflows). It lives in the drawer container, never in the page container, and
+every panel opens inward of it (see home-and-drawer.md, The rail is the anchor).
+Those three pages fade their content in and out while the rail
 stays still (`StudioFrame` animates its `data-studio-motion` nodes, never the
-`StudioRail`); a record panel open with the page fades in with it, and one
+rail); a record panel open with the page fades in with it, and one
 opened later keeps the drawer's own motion. Moving between the shell rail and
 a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
-record panel shown as an overlay the rail copies itself above that panel's
+record panel shown as an overlay the rail stays where it is, above that panel's
 scrim, as it does above the shell's. It holds two
 groups by scope. On a session page with no page open, the Session group holds
 Explore, Context, Ask, Agents and Scripts (`SESSION_TOOLS`), under the caption

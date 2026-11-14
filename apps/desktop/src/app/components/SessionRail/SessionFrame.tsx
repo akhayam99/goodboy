@@ -5,11 +5,9 @@ import {
   PaneActionsContext,
   PaneTabsContext,
   ShellRailContext,
-  useDrawerContentInset,
 } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { SessionTools } from '../../../features/session/components/SessionTools';
-import { SESSION_TOOL_RAIL_WIDTH } from '../../../features/session/components/SessionTools/sessionToolRailWidth';
 import { SessionCostChip } from '../../../features/session/components/SessionOverviewPane/SessionCostChip';
 import { ContextCardsContext } from '../../../features/session/contextCardsContext';
 import { SessionHeaderActions } from '../SessionActions/SessionHeaderActions';
@@ -24,7 +22,6 @@ type Props = {
 export const SessionFrame = ({ session, children }: Props) => {
   const edgeHost = useContext(DrawerEdgeContext);
   const isRailInShell = useContext(ShellRailContext);
-  useDrawerContentInset({ width: SESSION_TOOL_RAIL_WIDTH });
   return (
     <PaneTabsContext.Provider value={<SessionPageTabs session={session} />}>
       <PaneActionsContext.Provider value={<SessionHeaderActions session={session} />}>
@@ -38,15 +35,14 @@ export const SessionFrame = ({ session, children }: Props) => {
               />
             </div>
             <div className="relative h-full min-w-0 flex-1">{children}</div>
-            {isRailInShell ? null : (
+            {isRailInShell ? null : edgeHost === null ? (
               <SessionTools key={`tools-${session.id}`} sessionId={session.id} />
+            ) : (
+              createPortal(
+                <SessionTools key={`tools-${session.id}`} sessionId={session.id} />,
+                edgeHost,
+              )
             )}
-            {isRailInShell || edgeHost === null
-              ? null
-              : createPortal(
-                  <SessionTools key={`edge-tools-${session.id}`} sessionId={session.id} />,
-                  edgeHost,
-                )}
           </div>
         </ContextCardsContext.Provider>
       </PaneActionsContext.Provider>
