@@ -174,6 +174,13 @@ export type ReadCommittedFilesParams = Readonly<{
   head: string;
 }>;
 
+export type ReadHostChangesParams = Readonly<{
+  sessionId: SessionId;
+  worktreePath: string;
+  branch: string;
+  head: string;
+}>;
+
 export type ReadRemoteHeadParams = Readonly<{
   worktreePath: string;
   branch: string | null;
@@ -332,6 +339,7 @@ export type AutoPorts = Readonly<{
   startChildTurn: (params: StartChildTurnParams) => Promise<ChildStartOutcome>;
   readMountSnapshot: (params: ReadMountSnapshotParams) => Promise<MountSnapshot | null>;
   readCommittedFiles: (params: ReadCommittedFilesParams) => Promise<ReadonlyArray<string>>;
+  readHostChanges: (params: ReadHostChangesParams) => Promise<ReadonlyArray<string>>;
   readRemoteHead: (params: ReadRemoteHeadParams) => Promise<RemoteRead>;
   readBranchFacts: (params: ReadBranchFactsParams) => Promise<BranchFactsParts>;
   listChecks: (params: ListChecksParams) => Promise<AutoCheckList>;

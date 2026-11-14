@@ -265,9 +265,15 @@ pub async fn worktree_diff_range(
     worktree_path: String,
     base: String,
     head: String,
+    is_from_merge_base: Option<bool>,
 ) -> Result<String, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
-        worktree_diff_range_blocking(worktree_path, base, head)
+        worktree_diff_range_blocking(
+            worktree_path,
+            base,
+            head,
+            is_from_merge_base.unwrap_or(false),
+        )
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
@@ -277,6 +283,7 @@ pub(super) fn worktree_diff_range_blocking(
     worktree_path: String,
     base: String,
     head: String,
+    is_from_merge_base: bool,
 ) -> Result<String, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
@@ -284,6 +291,9 @@ pub(super) fn worktree_diff_range_blocking(
     }
     let from = resolve_commit(p, validated_rev(&base)?)?;
     let to = resolve_commit(p, validated_rev(&head)?)?;
+    if is_from_merge_base {
+        return git_plain_paths(p, &["diff", &format!("{from}...{to}")]);
+    }
     git_plain_paths(p, &["diff", &from, &to])
 }
 

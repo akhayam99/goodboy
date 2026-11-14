@@ -1433,15 +1433,27 @@ to its result here.
   runs, the publish plan holds, the Scribe opens no pull request, a revise does
   not reach `landAttemptRevision`, and the Lead reads the one refusal and may
   start the agent again. Nothing to undo: nothing landed.
-- **At publish.** `planPublish` checks the commits it would push (start of the
-  attempt to the checked commit) against the same list on every plan, at the
-  settle and on a retry, and holds with `so nothing was pushed`; an unread
-  list is held and retryable.
-- The refused change stays in the worktree: a later attempt starts from it, so
-  its own diff and its publish no longer see it.
-- `changeGate.test.ts` and `launchGuard/changeGate.sqlite.test.ts` (a lockfile
-  around the deny rule, a protected file, an unread list, a covered change, Allow
-  as today, a row tightened before a retry, an allowed package) cover it.
+- **At publish.** `planPublish` checks what the host would receive, not the
+  attempt's own range, on every plan, at the settle and on a retry. The
+  `readHostChanges` port (`launchGuard/readHostChanges.ts`) lists every path
+  between the branch head on the host (`worktreeRemoteHead`) and the commit to
+  push; when the branch is not on the host yet, or its head is not in the local
+  repository, it diffs from the merge base with the mount's base branch
+  (`worktreeDiffFromMergeBase`, a three dot `worktree_diff_range`, `origin/<base>`
+  first). A gated
+  path holds the publish with `so nothing was pushed`; a list that cannot be
+  read holds it with the error and offers a retry.
+- A refused change stays in the worktree and a later attempt may work on top
+  of it. Its own diff no longer shows the change, so it can land, but the
+  publish still sees it on the way to the host and holds until an allowance
+  covers it.
+- `changeGate.test.ts`, `launchGuard/readHostChanges.test.ts`,
+  `launchGuard/changeGate.sqlite.test.ts` (a lockfile around the deny rule, a
+  protected file, an unread list, a covered change, Allow as today, a row
+  tightened before a retry, an allowed package landed and pushed, a refused
+  lockfile behind a clean retry, an unreadable host list) and the Rust
+  `a_range_diff_from_the_merge_base_leaves_out_what_the_base_changed_since`
+  cover it.
 
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
 the root agent id to its text (`store/runtime/runGuidance/`, compare and swap

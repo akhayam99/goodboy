@@ -350,6 +350,7 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
   const { push } = await readPublishPermissions({ db: ctx.db, treeId: delegation.treeId });
   const planned = await planPublish({
     ports: ctx.ports,
+    sessionId: params.sessionId,
     worktreePath,
     branch: record.branch,
     wanted,

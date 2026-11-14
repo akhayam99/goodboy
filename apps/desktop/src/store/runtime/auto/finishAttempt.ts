@@ -479,6 +479,7 @@ const publishRecordOf = async ({
   const { push } = await readPublishPermissions({ db: ctx.db, treeId: delegation.treeId });
   return planPublish({
     ports: ctx.ports,
+    sessionId: params.tree.sessionId,
     worktreePath,
     branch: typeof branch === 'string' && branch !== '' ? branch : null,
     wanted,

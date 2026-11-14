@@ -5,7 +5,6 @@ import {
   isChangeGateOn,
   isPublishAskedOf,
   publishGateOf,
-  type ChangeGateVerdict,
   type ChangeRules,
   type DelegatePublish,
   type LeadPermissionValue,
@@ -13,13 +12,14 @@ import {
   type ResultChecksRun,
   type ResultPublish,
 } from '@goodboy/core/auto';
+import type { SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { snapshotOf } from './attemptBaseline';
 import type { AutoPorts } from './ports';
-import { readCommittedFilesOf } from './readCommittedFiles';
 
 export type PlanPublishParams = Readonly<{
   ports: AutoPorts;
+  sessionId: SessionId;
   worktreePath: string;
   branch: string | null;
   wanted: DelegatePublish;
@@ -86,31 +86,48 @@ const isSameTree = async ({
   }
 };
 
-type ChangesParams = {
+type HostHoldParams = {
   readonly ports: AutoPorts;
+  readonly sessionId: SessionId;
   readonly worktreePath: string;
-  readonly baseline: unknown;
+  readonly wanted: DelegatePublish;
+  readonly branch: string;
   readonly sha: string;
+  readonly tries: number;
   readonly changes: ChangeRules;
 };
 
-const changeGateOfPush = async ({
+const hostChangeHoldOf = async ({
   ports,
+  sessionId,
   worktreePath,
-  baseline,
+  wanted,
+  branch,
   sha,
+  tries,
   changes,
-}: ChangesParams): Promise<ChangeGateVerdict> => {
+}: HostHoldParams): Promise<ResultPublish | null> => {
   if (!isChangeGateOn({ rules: changes })) {
-    return { kind: 'clear' };
+    return null;
   }
-  const paths = await readCommittedFilesOf({
-    ports,
-    worktreePath,
-    baseline: snapshotOf({ baseline }),
-    result: { head: sha, entries: [], isPartial: false },
-  });
-  return changeGateOf({ rules: changes, paths });
+  try {
+    const paths = await ports.readHostChanges({ sessionId, worktreePath, branch, head: sha });
+    const verdict = changeGateOf({ rules: changes, paths });
+    if (verdict.kind === 'clear') {
+      return null;
+    }
+    const message = changeRefusalOf({ verdict, stage: 'publish' });
+    return held({ wanted, branch, sha, message, isRetryable: false, tries });
+  } catch (error) {
+    return held({
+      wanted,
+      branch,
+      sha,
+      message: `${changeRefusalOf({ verdict: { kind: 'unread' }, stage: 'publish' })} (${formatError(error)})`,
+      isRetryable: true,
+      tries,
+    });
+  }
 };
 
 export const planPublish = async (params: PlanPublishParams): Promise<ResultPublish> => {
@@ -142,22 +159,18 @@ export const planPublish = async (params: PlanPublishParams): Promise<ResultPubl
       tries,
     });
   }
-  const changeGate = await changeGateOfPush({
+  const hostHold = await hostChangeHoldOf({
     ports,
+    sessionId: params.sessionId,
     worktreePath,
-    baseline,
+    wanted,
+    branch,
     sha,
+    tries,
     changes: params.changes,
   });
-  if (changeGate.kind !== 'clear') {
-    return held({
-      wanted,
-      branch,
-      sha,
-      message: changeRefusalOf({ verdict: changeGate, stage: 'publish' }),
-      isRetryable: changeGate.kind === 'unread',
-      tries,
-    });
+  if (hostHold !== null) {
+    return hostHold;
   }
   const remote = params.remote;
   const record: ResultPublish = {

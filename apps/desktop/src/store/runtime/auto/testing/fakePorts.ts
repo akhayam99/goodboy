@@ -19,6 +19,7 @@ import type {
   PushBranchParams,
   ReadBranchFactsParams,
   ReadCommittedFilesParams,
+  ReadHostChangesParams,
   ReadRemoteHeadParams,
   RefreshSessionArtifactsParams,
   RestoreBackupOutcome,
@@ -153,6 +154,8 @@ export type FakePorts = AutoPorts &
     setRemoteReads: (path: string, reads: ReadonlyArray<RemoteRead>) => void;
     committedReads: Array<ReadCommittedFilesParams>;
     setCommittedFiles: (path: string, files: ReadonlyArray<string> | Error) => void;
+    hostReads: Array<ReadHostChangesParams>;
+    setHostChanges: (path: string, files: ReadonlyArray<string> | Error) => void;
     checkRuns: Array<RunCheckParams>;
     checkLists: Array<ListChecksParams>;
     setChecks: (checks: ReadonlyArray<AutoCheckScript>) => void;
@@ -211,6 +214,8 @@ export const makeFakePorts = ({
   const branchFacts = new Map<string, BranchFactsParts | Error | 'hang'>();
   const committedFiles = new Map<string, ReadonlyArray<string> | Error>();
   const committedReads: Array<ReadCommittedFilesParams> = [];
+  const hostChanges = new Map<string, ReadonlyArray<string> | Error>();
+  const hostReads: Array<ReadHostChangesParams> = [];
   const checkRuns: Array<RunCheckParams> = [];
   const checkLists: Array<ListChecksParams> = [];
   const checkResults = new Map<string, CheckReport['status'] | Error>();
@@ -282,6 +287,10 @@ export const makeFakePorts = ({
     committedReads,
     setCommittedFiles: (path, next) => {
       committedFiles.set(path, next);
+    },
+    hostReads,
+    setHostChanges: (path, next) => {
+      hostChanges.set(path, next);
     },
     checkRuns,
     checkLists,
@@ -386,6 +395,14 @@ export const makeFakePorts = ({
         throw next;
       }
       return next;
+    },
+    readHostChanges: async (params) => {
+      hostReads.push(params);
+      const next = hostChanges.get(params.worktreePath) ?? committedFiles.get(params.worktreePath);
+      if (next instanceof Error) {
+        throw next;
+      }
+      return next ?? [];
     },
     readRemoteHead: async (params) => {
       remoteReads.push(params);

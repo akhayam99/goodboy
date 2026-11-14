@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LeadPermissionValue } from '@goodboy/core/auto';
+import { publishOfResult, type LeadPermissionValue, type MountSnapshot } from '@goodboy/core/auto';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { readAutoTreeViews } from '../../../slices/auto-view/readAutoTreeViews';
 import { createAskAnswerer } from '../asks/createAskAnswerer';
@@ -65,16 +65,20 @@ const writeRows = async ({ world, dependencies, protectedFiles }: RowsParams) =>
 
 type PushParams = Rows & {
   readonly committed: ReadonlyArray<string> | Error;
+  readonly hostChanges?: ReadonlyArray<string> | Error;
   readonly isRed?: boolean;
 };
 
-const pushedWorld = async ({ committed, isRed = false, ...rows }: PushParams) => {
+const pushedWorld = async ({ committed, hostChanges, isRed = false, ...rows }: PushParams) => {
   const world = await makeRuntimeWorld();
   await writeRows({ world, ...rows });
   await userSays({ world, id: 'outbox-user-1', text: 'add the retries and push them' });
   world.state.ports.setChecks([TYPECHECK]);
   world.state.ports.setSnapshots(LEDGER_PATH, [START, END]);
   world.state.ports.setCommittedFiles(LEDGER_PATH, committed);
+  if (hostChanges !== undefined) {
+    world.state.ports.setHostChanges(LEDGER_PATH, hostChanges);
+  }
   if (isRed) {
     world.state.ports.setCheckResult(TYPECHECK.id, 'fail');
   }
@@ -187,7 +191,18 @@ describe('the landing backstop at the end of an attempt', () => {
 
 const DEPENDENCY_NEED = 'nock 14.0.1: stubs the host in the retry tests';
 
-const allowedWorld = async () => {
+const TESTER = {
+  role: 'tester',
+  task: 'cover the payments-api retries',
+  reason: 'tests are the work of a tester',
+  mount: LEDGER_MOUNT.id,
+};
+
+type AllowedParams = {
+  readonly child: Readonly<Record<string, unknown>>;
+};
+
+const allowedWorld = async ({ child }: AllowedParams) => {
   const world = await makeRuntimeWorld({ capUsd: 10 });
   world.state.ports.setMounts([LEDGER_MOUNT]);
   world.state.ports.setChecks([TYPECHECK]);
@@ -195,19 +210,7 @@ const allowedWorld = async () => {
   world.state.ports.setCommittedFiles(LEDGER_PATH, ['test/retry.test.ts', 'pnpm-lock.yaml']);
   await writeRows({ world, dependencies: 'ask' });
   await userSays({ world, id: 'outbox-user-1', text: 'cover the payments-api retries' });
-  const outcome = await autoDelegates({
-    world,
-    spec: {
-      children: [
-        {
-          role: 'tester',
-          task: 'cover the payments-api retries',
-          reason: 'tests are the work of a tester',
-          mount: LEDGER_MOUNT.id,
-        },
-      ],
-    },
-  });
+  const outcome = await autoDelegates({ world, spec: { children: [child] } });
   if (!outcome.isOk) {
     throw new Error(`the delegate was refused: ${outcome.error ?? ''}`);
   }
@@ -228,38 +231,118 @@ const childEnds = async ({ world, index, tail }: ChildParams) => {
   await childTurnEnds({ world, index, text: tail.replace('ID', turn.childAgentId) });
 };
 
+const allowAndRestart = async ({ world }: WorldParams) => {
+  await childEnds({
+    world,
+    index: 0,
+    tail: `I stopped before the install.\n<<step-done id="ID" status="returned" needs="dependency">>\n${DEPENDENCY_NEED}`,
+  });
+  if (world.state.ports.autoTurns.length > 1) {
+    await autoTurnEnds({ world, text: 'Waiting for the user.' });
+  }
+  const views = await readAutoTreeViews({
+    db: world.state.world.db,
+    sessionId: AUTO_SEED_SESSION,
+  });
+  const [ask] = views.flatMap((view) => leadAsksOf({ view }));
+  if (ask === undefined) {
+    throw new Error('a dependency ask was expected');
+  }
+  const answer = createAskAnswerer({ runtimeOf: () => world.runtime });
+  expect(await answer({ askId: ask.id, answer: 'allow' })).toBe('allowed');
+  await world.runtime.settled();
+  await autoTurnEnds({ world, text: 'The agent starts again.' });
+  world.state.ports.setSnapshots(LEDGER_PATH, [END]);
+  await childEnds({ world, index: 1, tail: 'Covered.\n<<step-done id="ID">>' });
+};
+
+const retriedOf = async ({ world }: WorldParams) => {
+  const retried = (await delegationsOf(world)).find((delegation) => delegation.retryOf !== null);
+  if (retried === undefined) {
+    throw new Error('a retried delegation was expected');
+  }
+  return retried;
+};
+
 describe('the landing backstop after an allowance', () => {
   it('lands the lockfile of the package the user allowed', async () => {
-    const world = await allowedWorld();
-    await childEnds({
-      world,
-      index: 0,
-      tail: `I stopped before the install.\n<<step-done id="ID" status="returned" needs="dependency">>\n${DEPENDENCY_NEED}`,
-    });
-    if (world.state.ports.autoTurns.length > 1) {
-      await autoTurnEnds({ world, text: 'Waiting for the user.' });
-    }
-    const views = await readAutoTreeViews({
-      db: world.state.world.db,
-      sessionId: AUTO_SEED_SESSION,
-    });
-    const [ask] = views.flatMap((view) => leadAsksOf({ view }));
-    if (ask === undefined) {
-      throw new Error('a dependency ask was expected');
-    }
-    const answer = createAskAnswerer({ runtimeOf: () => world.runtime });
-    expect(await answer({ askId: ask.id, answer: 'allow' })).toBe('allowed');
-    await world.runtime.settled();
-    await autoTurnEnds({ world, text: 'The agent starts again.' });
-    world.state.ports.setSnapshots(LEDGER_PATH, [END]);
-    await childEnds({ world, index: 1, tail: 'Covered.\n<<step-done id="ID">>' });
+    const world = await allowedWorld({ child: TESTER });
+    await allowAndRestart({ world });
 
-    const retried = (await delegationsOf(world)).find((delegation) => delegation.retryOf !== null);
-    expect(retried).toMatchObject({ outcome: 'completed', reason: null });
+    expect(await retriedOf({ world })).toMatchObject({ outcome: 'completed', reason: null });
     expect(world.state.ports.committedReads.at(-1)).toMatchObject({
       base: 'base000',
       head: 'abc123',
     });
     expect(world.state.ports.checkRuns).toHaveLength(1);
+  });
+
+  it('pushes the lockfile of the package the user allowed', async () => {
+    const world = await allowedWorld({ child: implementer(LEDGER_PUSH) });
+    await writeRows({ world, protectedFiles: 'ask' });
+    await allowAndRestart({ world });
+
+    expect(await retriedOf({ world })).toMatchObject({ outcome: 'completed', reason: null });
+    expect(world.state.ports.hostReads.at(-1)).toMatchObject({
+      branch: 'ak/ledger-export',
+      head: 'abc123',
+    });
+    expect(world.state.ports.pushes).toHaveLength(1);
+  });
+});
+
+const LATER: MountSnapshot = { head: 'def456', entries: [], isPartial: false };
+
+describe('the landing backstop over what the host would receive', () => {
+  it('refuses to push a lockfile a refused attempt left behind, after a clean retry', async () => {
+    const world = await pushedWorld({
+      dependencies: 'ask',
+      committed: ['src/retry.ts', 'pnpm-lock.yaml'],
+    });
+    const [refused] = await delegationsOf(world);
+    if (refused === undefined) {
+      throw new Error('the refused delegation was expected');
+    }
+    world.state.ports.setSnapshots(LEDGER_PATH, [END]);
+    const outcome = await autoDelegates({
+      world,
+      requestId: 'request-retry',
+      spec: { children: [{ retryOf: refused.id, reason: 'without the lockfile this time' }] },
+    });
+    expect(outcome.isOk).toBe(true);
+    await autoTurnEnds({ world });
+    world.state.ports.setSnapshots(LEDGER_PATH, [LATER]);
+    world.state.ports.setCommittedFiles(LEDGER_PATH, ['src/retry.ts']);
+    world.state.ports.setHostChanges(LEDGER_PATH, ['src/retry.ts', 'pnpm-lock.yaml']);
+    await childEnds({ world, index: 1, tail: 'Done.\n<<step-done id="ID">>' });
+
+    const retried = await retriedOf({ world });
+    expect(retried.outcome).toBe('completed');
+    expect(world.state.ports.checkRuns).toHaveLength(1);
+    expect(world.state.ports.pushes).toEqual([]);
+    expect(world.state.ports.hostReads.at(-1)).toMatchObject({ head: 'def456' });
+    expect(publishOfResult({ result: retried.result })).toMatchObject({
+      state: 'failed',
+      message: 'it changed pnpm-lock.yaml, which no allowance covers, so nothing was pushed',
+      isRetryable: false,
+    });
+  });
+
+  it('holds the push and offers a retry when the files to push cannot be listed', async () => {
+    const world = await pushedWorld({ dependencies: 'ask', committed: ['src/retry.ts'] });
+    expect(world.state.ports.pushes).toHaveLength(1);
+
+    const held = await pushedWorld({
+      dependencies: 'ask',
+      committed: ['src/retry.ts'],
+      hostChanges: new Error('origin is not reachable'),
+    });
+    expect(held.state.ports.pushes).toEqual([]);
+    expect(await recordOf(held)).toMatchObject({
+      state: 'failed',
+      message:
+        'the changed files could not be read, so nothing was pushed (origin is not reachable)',
+      isRetryable: true,
+    });
   });
 });
