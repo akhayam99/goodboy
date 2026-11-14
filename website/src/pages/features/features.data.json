@@ -1157,12 +1157,16 @@
       "id": "agents",
       "title": "Work with agents directly",
       "lead": "Ask questions, give each helper a job, and steer it from the keyboard or a real terminal.",
-      "groups": ["Agents", "Keyboard and terminal"],
+      "groups": ["Agents", "Work", "Keyboard and terminal"],
       "mocks": ["askcode"],
       "guides": [
         {
           "area": "agents",
           "label": "Agents"
+        },
+        {
+          "area": "work",
+          "label": "Work"
         },
         {
           "area": "keyboard",
@@ -1315,6 +1319,24 @@
           "text": "Get agents and summaries in the language of your goal.",
           "group": "Agents",
           "also": "one language"
+        },
+        {
+          "title": "Work section",
+          "text": "Open Work to see every Lead of the workspace in one list, and see which ones need you.",
+          "group": "Work",
+          "main": true
+        },
+        {
+          "title": "Lead",
+          "text": "A Lead reads one of five words: Working, Waits for you, Resting, Stopped or Finished.",
+          "group": "Work",
+          "main": true
+        },
+        {
+          "title": "Permission rows",
+          "text": "A Lead's autonomy is nine rows you can read and change.",
+          "group": "Work",
+          "main": true
         },
         {
           "title": "Terminal",

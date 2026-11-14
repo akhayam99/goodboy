@@ -1207,7 +1207,7 @@ clears the own rows; on a Lead it pins a row only where a workspace default
 would still disagree with the preset. `LeadPermissionsChip` mounts the panel
 from `AutoLevelChip` (through `WorkAwareChip`) in Start work and on the Lead
 page when Work is on; with Work off the level chip stays. Workspace settings
-show it as **Autonomy defaults** in place of the **Auto asks you** row.
+show it as the **Asks you** band (`AutonomyDefaultsBand`) in place of the **Auto asks you** row.
 A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level with the switch
 on and off, each precedence step, the stale pair) and

@@ -130,7 +130,7 @@ Choose how **Start a run** handles a new ask in this workspace: **Let Auto pick*
 
 Choose how much Auto may do alone in this workspace: **Every step**, **After the plan** (the default) or **Never**. It is separate from the workflow **Asks you** default, so workflows can keep asking at every step while Auto goes on after the plan. Each Auto can change its own level from its page.
 
-With the Work switch on, this row becomes **Autonomy defaults**. The three levels are presets. Each permission is its own row: the plan, agents that read or write, push, pull request, dependencies, protected files, add a project and close the work. Four rules never change. One sentence says what a new Lead asks you before. A row saves when you change it, and **Reset** returns it to the level.
+With the Work switch on, this row gives way to a band named **Asks you**. The three levels are presets. Each permission is its own row: the plan, agents that read or write, push, pull request, dependencies, protected files, add a project and close the work. Four rules never change. One sentence says what a new Lead asks you before. A row saves when you change it, and **Reset** returns it to the level.
 
 ### Monitoring
 

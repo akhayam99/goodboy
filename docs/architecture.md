@@ -1122,7 +1122,12 @@ kept.
   follows the workspace default), `auto_attempts.launch_snapshot` (what the
   attempt was handed at launch, written once, NULL reads "Not recorded") and the
   `auto_grants` table, which goes with its tree. `setAutoTreePermissionsIfUnchanged`
-  is the one writer of the column and compares the JSON it read.
+  is the one writer of the column and compares the JSON it read. The migration
+  is a one-way step: a build from before it refuses the database
+  (`DatabaseFromNewerBuildError`, `packages/db/src/migrations/downgradeGuard.ts`)
+  and offers the snapshot taken before the migration ran
+  (`migrationSnapshotStorage` in `shared/lib/dbBoot.ts`). The everyday way back
+  is the Work switch, not an older build.
 - `store/runtime/auto/scheduler.ts` is the one writer of tree state. A window
   writes only while it holds the lease, so a second window reads. Every
   transition names the phase revision, generation and phase it expects, and a
