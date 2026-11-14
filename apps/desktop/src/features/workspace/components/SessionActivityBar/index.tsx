@@ -284,14 +284,28 @@ export const SessionActivityBar = ({
     return group.total;
   };
 
+  const fold = isFoldShown ? (
+    <button
+      type="button"
+      data-fold
+      aria-expanded={prefs.isFoldOpen}
+      onClick={toggleFold}
+      className={cn(
+        'flex h-7 w-full items-center gap-2 rounded-md pr-2 text-left text-meta text-faint-foreground hover:text-foreground',
+        SUB_ROW_INSET,
+        ROW_INTERACTIVE,
+      )}
+    >
+      <span>{prefs.isFoldOpen ? 'Show fewer' : `Show ${column.hiddenCount} more`}</span>
+    </button>
+  ) : null;
+  const lastListKey = column.groups.filter((group) => group.key !== DONE_GROUP_KEY).at(-1)?.key;
+
   const renderGroup = ({ group }: GroupParams) => {
-    const presentation = sessionGroupPresentation({
-      key: group.key,
-      groupMode: prefs.group,
-    });
+    const presentation = sessionGroupPresentation({ key: group.key, groupMode: prefs.group });
     const isHeadered = isHeaderedOf({ group });
     return (
-      <div key={group.key} className="flex flex-col gap-0.5">
+      <div key={group.key} className={cn('flex flex-col', PANE_RHYTHM.sessionList.labelGap)}>
         {isHeadered ? (
           <SessionGroupHeader
             label={presentation?.label ?? group.label ?? group.key}
@@ -312,6 +326,7 @@ export const SessionActivityBar = ({
             {group.sessions.map((session) => renderRow(session, false))}
           </ul>
         )}
+        {group.key === lastListKey ? fold : null}
       </div>
     );
   };
@@ -342,22 +357,6 @@ export const SessionActivityBar = ({
             .filter((group) => group.key !== DONE_GROUP_KEY)
             .map((group) => renderGroup({ group }))}
 
-          {isFoldShown ? (
-            <button
-              type="button"
-              data-fold
-              aria-expanded={prefs.isFoldOpen}
-              onClick={toggleFold}
-              className={cn(
-                'flex h-7 w-full items-center gap-2 rounded-md pr-2 text-left text-meta text-faint-foreground hover:text-foreground',
-                SUB_ROW_INSET,
-                ROW_INTERACTIVE,
-              )}
-            >
-              <span>{prefs.isFoldOpen ? 'Show fewer' : `Show ${column.hiddenCount} more`}</span>
-            </button>
-          ) : null}
-
           {column.groups
             .filter((group) => group.key === DONE_GROUP_KEY)
             .map((group) => renderGroup({ group }))}
@@ -377,7 +376,7 @@ export const SessionActivityBar = ({
           ) : null}
 
           {shownArchived.length > 0 ? (
-            <div className="flex flex-col gap-0.5">
+            <div className={cn('flex flex-col', PANE_RHYTHM.sessionList.labelGap)}>
               {column.isGrouped ? (
                 <span className="flex h-6 items-center px-2">
                   <Eyebrow label="Archived" muted />

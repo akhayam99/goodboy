@@ -22,7 +22,7 @@ type BaseProps = {
 };
 
 type TitleProps = {
-  readonly title: ReactNode;
+  readonly title?: ReactNode;
   readonly badge?: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
@@ -68,6 +68,17 @@ export const PageHeader = (props: PageHeaderProps) => {
         {inheritedActions}
       </>
     );
+  const hasTitleRow = props.title != null || titleActions != null;
+  const isEmpty =
+    props.row === undefined &&
+    !hasTitleRow &&
+    !isTrailInline &&
+    props.toolbar == null &&
+    props.subheader == null &&
+    tabs == null;
+  if (isEmpty) {
+    return null;
+  }
   const header = (
     <div
       data-slot="pane-header"
@@ -98,12 +109,14 @@ export const PageHeader = (props: PageHeaderProps) => {
           props.row
         ) : (
           <>
-            <PaneTitleRow
-              title={props.title}
-              badge={props.badge}
-              meta={props.meta}
-              actions={titleActions}
-            />
+            {hasTitleRow ? (
+              <PaneTitleRow
+                title={props.title}
+                badge={props.badge}
+                meta={props.meta}
+                actions={titleActions}
+              />
+            ) : null}
             {props.toolbar != null ? (
               <div data-slot="pane-toolbar" className="flex h-9 min-w-0 items-center">
                 {props.toolbar}

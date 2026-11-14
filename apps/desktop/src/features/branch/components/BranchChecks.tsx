@@ -11,6 +11,7 @@ import { branchGithubOf } from '../../../store/slices/github/branchGithubOf';
 import { selectedReviewEntryOf } from '../../../store/slices/review-source/activeReviewSource';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { useSessionRepo } from '../../../store/slices/worktrees/useSessionRepo';
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 import { useActionControls } from '../../actions/useActionControls';
 import { useGithubConnection } from '../../integrations/github/useGithubConnection';
 import { openToolSettings } from '../../integrations/openToolSettings';
@@ -159,7 +160,7 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
           description="Checks run once the pull request exists."
           action={
             <Button
-              variant="secondary"
+              {...actionButtonLookOf({ verb: CREATE_ACTION_ID, variant: 'secondary' })}
               size="sm"
               disabled={createAction === undefined || createAction.blockedReason !== null}
               onClick={() => create.trigger({ actionId: CREATE_ACTION_ID })}

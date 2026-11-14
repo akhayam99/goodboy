@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { PageColumn, type PageColumnWidth } from '@goodboy/ui';
+import { PANE_RHYTHM, PageColumn, cn, type PageColumnWidth } from '@goodboy/ui';
 import { StudioBackButton } from './StudioBackButton';
 
 type Props = {
@@ -19,7 +19,7 @@ export const StudioBand = ({
   trailSlotRef,
   onClose,
 }: Props) => (
-  <header aria-label={label} data-studio-band="" className="h-10 shrink-0">
+  <header aria-label={label} data-studio-band="" className={cn('shrink-0', PANE_RHYTHM.firstRow)}>
     <PageColumn width={width} className="flex h-full items-center gap-3">
       {isClosable ? <StudioBackButton onBack={onClose} /> : null}
       <div

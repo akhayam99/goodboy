@@ -64,7 +64,7 @@ describe.each(['light', 'dark'])('u36 Context and linked work in %s', (theme) =>
         return;
       }
       if (name === 'u36-p19b-questions-answered') {
-        const list = await screen.findByRole('list', { name: 'Questions' });
+        const list = await screen.findByRole('list', { name: 'Answered questions' });
         expect(within(list).queryAllByRole('button', { name: /^(Hide|Show)$/ })).toHaveLength(1);
         fireEvent.click(within(list).getByRole('button', { name: 'Show' }));
         expect(within(list).getAllByRole('button').length).toBeGreaterThan(1);
@@ -75,7 +75,7 @@ describe.each(['light', 'dark'])('u36 Context and linked work in %s', (theme) =>
           'Connection lost. Open the record in its provider or reconnect in Settings.',
         );
         screen.getByRole('button', { name: 'More actions for HBL-142' });
-        screen.getByRole('button', { name: 'Back to overview' });
+        expect(document.querySelector('[data-session-back]')).toBeNull();
         return;
       }
       const linked = await screen.findByRole('list', { name: 'Linked work' });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AppShell, ScrollFade } from '@goodboy/ui';
+import { AppShell, ScrollFade, UnderTrailContext } from '@goodboy/ui';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../../store';
@@ -7,6 +7,7 @@ import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDra
 import { shellArrangement } from '../../../../shellArrangement';
 import { DrawerHost } from '../../../DrawerHost';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
+import { SessionHead } from '../../../SessionHead';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SESSION } from '../activityRunSeed';
@@ -68,9 +69,14 @@ export const LayoutFlowScene = ({
     return null;
   }
   const overview = (
-    <ScrollFade className="h-full">
-      <SessionOverviewPane session={LIMITS_SESSION} />
-    </ScrollFade>
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <SessionHead session={LIMITS_SESSION} />
+      <UnderTrailContext.Provider value>
+        <ScrollFade className="min-h-0 flex-1">
+          <SessionOverviewPane session={LIMITS_SESSION} />
+        </ScrollFade>
+      </UnderTrailContext.Provider>
+    </div>
   );
   if (isNarrowRow) {
     return (

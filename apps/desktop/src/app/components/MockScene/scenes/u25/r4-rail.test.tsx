@@ -108,13 +108,13 @@ describe('r4 session rail scenes', () => {
     ).toBe('false');
   });
 
-  it('r4-rail-tools-open shows the Context tab with every section, the cards and Ask', async () => {
+  it('r4-rail-tools-open shows the Context tab with every section and the cards, Ask apart', async () => {
     await mount('r4-rail-tools-open');
 
     expect(useAppStore.getState().drawer).toBeNull();
     const tab = screen.getByTestId('context-tab');
     within(tab).getByRole('region', { name: 'Goal' });
-    within(tab).getByRole('region', { name: 'Ask' });
+    expect(within(tab).queryByRole('region', { name: 'Ask' })).toBeNull();
     within(tab).getByRole('group', { name: 'Projects' });
     const pressed = within(tools())
       .getAllByRole('button')

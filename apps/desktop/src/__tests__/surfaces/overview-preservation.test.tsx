@@ -66,9 +66,9 @@ const mountScene = async ({ name }: SceneParams): Promise<void> => {
 };
 
 const header = () => {
-  const node = document.querySelector<HTMLElement>('[data-slot="pane-header"]');
+  const node = document.querySelector<HTMLElement>('[data-session-head]');
   if (node === null) {
-    throw new Error('no Overview header');
+    throw new Error('no session head');
   }
   return within(node);
 };

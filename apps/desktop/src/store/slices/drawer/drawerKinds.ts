@@ -20,16 +20,14 @@ const READER = { surface: 'reader', sizing: 'side', pane: null, openerPane: null
 const WIDE_READER = { ...READER, sizing: 'reader' } as const;
 
 export const DRAWER_KINDS = {
-  ask: { ...TOOL, pane: 'ask' },
-  context: { ...TOOL, pane: 'context' },
-  explore: { ...TOOL, pane: 'explore' },
   scripts: { ...TOOL, pane: 'scripts' },
   spawned: { ...TOOL, pane: 'spawned' },
   terminal: { ...TOOL, pane: 'terminal' },
   browser: { ...TOOL, sizing: 'browser', pane: 'browser' },
-  'explore-file': { ...WIDE_READER, surface: 'tool', openerPane: 'explore' },
+  'explore-file': WIDE_READER,
   scriptRun: { ...READER, surface: 'tool', openerPane: 'scripts' },
-  question: { ...READER, surface: 'item', openerPane: 'ask' },
+  ask: READER,
+  question: { ...READER, surface: 'item', openerPane: null },
   new: { ...WIDE_READER, surface: 'form' },
   'fix-comments': { ...READER, surface: 'form' },
   artifact: READER,

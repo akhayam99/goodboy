@@ -4,12 +4,6 @@ import {
   type ActionCardModel,
   type AutoActionTarget,
 } from '../../../../../features/session/central/next/actionCardsOf';
-import type {
-  ActionCardActions,
-  CardActions,
-  CardVerb,
-} from '../../../../../features/session/central/next/useActionCardActions';
-import { foldSecondVerb } from '../../../../../features/session/central/next/foldSecondVerb';
 import type { NeedsYouOwner } from '../../../../../features/session/timeline/needsYou';
 import type { SessionSuggestion } from '../../../../../features/suggestions/types';
 import { SESSION_ID } from '../resolveSeed';
@@ -105,14 +99,6 @@ type MomentParams = {
   readonly moment: CentralNextMoment;
 };
 
-type LabelParams = {
-  readonly label: string;
-};
-
-type CardParams = {
-  readonly card: ActionCardModel;
-};
-
 export const centralNextCards = ({ moment }: MomentParams): ReadonlyArray<ActionCardModel> => {
   switch (moment) {
     case 'mid':
@@ -134,82 +120,4 @@ export const centralNextCards = ({ moment }: MomentParams): ReadonlyArray<Action
       return exhaustive;
     }
   }
-};
-
-const verbOf = ({ label }: LabelParams): CardVerb => ({
-  label,
-  ariaLabel: undefined,
-  isDisabled: false,
-  isBusy: false,
-  confirmRole: null,
-  confirm: null,
-  hasPicker: false,
-  run: () => undefined,
-});
-
-const SUGGESTION_VERB: Partial<Record<SessionSuggestion['kind'], string>> = {
-  'fix-checks': 'Fix',
-  'rebase-project': 'Rebase',
-  'mark-ready': 'Mark ready',
-};
-
-const baseActionsOf = ({ card }: CardParams): CardActions => {
-  const { source } = card;
-  switch (source.kind) {
-    case 'owner':
-      return {
-        main: verbOf({ label: 'Answer' }),
-        second: null,
-        failure: null,
-        isBusy: false,
-        agentKind: null,
-        menu: null,
-        foldedTarget: null,
-      };
-    case 'auto':
-      return {
-        main: { ...verbOf({ label: 'Retry' }), ariaLabel: `Retry "${source.target.role}"` },
-        second: verbOf({ label: 'Open Auto' }),
-        failure: null,
-        isBusy: false,
-        agentKind: null,
-        menu: null,
-        foldedTarget: null,
-      };
-    case 'suggestion':
-      return {
-        main: verbOf({ label: SUGGESTION_VERB[source.suggestion.kind] ?? 'Open' }),
-        second: source.suggestion.kind === 'fix-checks' ? verbOf({ label: 'Open check' }) : null,
-        failure: null,
-        isBusy: false,
-        agentKind: null,
-        menu: {
-          target: {
-            kind: 'suggestion',
-            sessionId: SESSION_ID,
-            suggestion: source.suggestion,
-            startsRole: null,
-            isAutoOn: false,
-            onNotNow: () => undefined,
-          },
-          pendingChoiceIds: new Set(),
-          isHeld: false,
-          isDisabled: false,
-          trackChoice: ({ task }) => task(),
-        },
-        foldedTarget: null,
-      };
-    default: {
-      const exhaustive: never = source;
-      return exhaustive;
-    }
-  }
-};
-
-export const centralNextActionsFor: ActionCardActions['actionsFor'] = ({
-  card,
-  isNarrow = false,
-}) => {
-  const actions = baseActionsOf({ card });
-  return isNarrow ? foldSecondVerb({ actions, sessionId: SESSION_ID }) : actions;
 };

@@ -59,17 +59,24 @@ const mount = ({ id }: MountParams): void => {
   );
 };
 
-const sessionTabs = (): HTMLElement => {
-  const lists = screen.getAllByRole('tablist', { name: 'Session pages' });
-  const shown = lists.find((list) => list.querySelector('[aria-selected="true"]') !== null);
-  return shown ?? lists[0] ?? document.body;
+const sessionHead = (): HTMLElement => {
+  const head = document.querySelector<HTMLElement>('[data-session-head]');
+  if (head === null) {
+    throw new Error('no session head');
+  }
+  return head;
 };
 
-const selectedTab = (): string | null =>
-  within(sessionTabs())
-    .getAllByRole('tab')
-    .find((tab) => tab.getAttribute('aria-selected') === 'true')
-    ?.textContent?.replace(/\d+$/, '') ?? null;
+const crumbLabels = (): ReadonlyArray<string> =>
+  [...document.querySelectorAll('[data-session-crumbs] li')].map(
+    (crumb) => crumb.textContent ?? '',
+  );
+
+const homeLens = (): string | null => {
+  const state = useAppStore.getState();
+  const sessionId = state.currentSessionId;
+  return sessionId === null ? null : (state.activeLens[sessionId] ?? null);
+};
 
 const panel = async (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Agents' }, WAIT);
@@ -91,7 +98,8 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-working' });
 
     const tree = await autoTree();
-    expect(selectedTab()).toBe('Runs');
+    expect(homeLens()).toBe('workflows');
+    expect(sessionHead().getAttribute('data-head-nav')).toBe('crumbs');
     expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(4);
     expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
     expect(within(await panel()).queryByRole('region', { name: 'Limit' })).toBeNull();
@@ -160,7 +168,7 @@ describe('c07 Auto scenes', () => {
     screen.getByTestId('agent-header-title-row');
     screen.getByText('Auto started this agent and reads your messages to it.');
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
-    expect(sessionTabs()).toBeDefined();
+    expect(sessionHead()).toBeDefined();
     expect((await treeRow(/^Implementer, /)).getAttribute('aria-selected')).toBe('true');
     expect(screen.queryByTestId('pane-toggle-spawned')).toBeNull();
   });
@@ -264,7 +272,8 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
     expect(screen.queryByPlaceholderText('Message Auto')).toBeNull();
-    expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
+    expect(document.querySelector('[data-session-back]')).toBeNull();
+    expect(crumbLabels().at(-2)).toBe('Auto');
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(screen.queryByText('Implementer · Implementer')).toBeNull();
     expect(
@@ -298,11 +307,11 @@ describe('c07 Auto scenes', () => {
     expect(await autoTree()).toBeDefined();
   });
 
-  it('keeps the page tabs on the session on a child page', async () => {
+  it('keeps the session head with its crumbs on a child page', async () => {
     mount({ id: 'c07-auto-child' });
 
     await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
-    expect(sessionTabs()).toBeDefined();
+    expect(sessionHead().getAttribute('data-head-nav')).toBe('crumbs');
   });
 
   it('c07-auto-child-done shows what came back and says Returned to Auto', async () => {
@@ -425,7 +434,7 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-working' });
 
     await autoTree();
-    expect(selectedTab()).toBe('Runs');
+    expect(homeLens()).toBe('workflows');
 
     const sessionId = useAppStore.getState().currentSessionId;
     if (sessionId === null) {
@@ -448,7 +457,7 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-session-level keeps the Auto chat in the center with the page tabs shown', async () => {
     mount({ id: 'c07-auto-session-level' });
 
-    await waitFor(() => expect(sessionTabs()).toBeDefined(), WAIT);
+    await waitFor(() => expect(sessionHead()).toBeDefined(), WAIT);
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
   });
 
@@ -540,12 +549,12 @@ describe('c07 Auto scenes', () => {
     expect(rows).toHaveLength(2);
     expect(within(list).getByRole('button', { name: /, Agent, Idle$/ })).toBeDefined();
     expect(within(list).getByRole('button', { name: /, Agent, Done$/ })).toBeDefined();
-    expect(sessionTabs()).toBeDefined();
+    expect(sessionHead()).toBeDefined();
 
     fireEvent.click(rows[0] ?? list);
     await waitFor(() => expect(document.querySelector('[data-auto-dock]')).not.toBeNull());
     expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull();
-    expect(sessionTabs()).toBeDefined();
+    expect(sessionHead()).toBeDefined();
   });
 
   it('c07-auto-start starts Auto from the Start a run field on the Runs page, with no Auto form', async () => {

@@ -50,7 +50,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { backOf } from '../../../../../store/slices/navigation/backOf';
+import { parentPlace } from '../../../../../store/slices/navigation/parentPlace';
 import { captureLocation } from '../../../../../store/slices/navigation/captureLocation';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
@@ -176,11 +176,12 @@ describe('Questions by branch', () => {
     screen.getByRole('heading', { name: 'No branch' });
   });
 
-  it('folds the answered ones of a branch behind their count', async () => {
+  it('keeps the answered ones behind the Answered section, grouped by branch once it opens', async () => {
     render(<QuestionsPane session={SESSION} />);
 
-    await screen.findByRole('button', { name: '1 answered' });
-    expect(screen.queryByText('Keep the old table for a month?')).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Show' }));
+    await screen.findByText('Keep the old table for a month?');
+    expect(screen.getAllByRole('heading', { level: 2, name: DUP.branch })).toHaveLength(2);
   });
 
   it('moves both copies when the question is staged from one of them', async () => {
@@ -192,9 +193,12 @@ describe('Questions by branch', () => {
     act(() => useOpenQuestions.getState().stageAnswer(SHARED.id));
 
     await waitFor(() =>
-      expect(rowsTitled('Should the limit apply per endpoint\\?')).toHaveLength(1),
+      expect(
+        screen.queryAllByRole('button', { name: /^Should the limit apply per endpoint\?/ }),
+      ).toHaveLength(0),
     );
-    screen.getByRole('button', { name: '2 answered' });
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(rowsTitled('Should the limit apply per endpoint\\?')).toHaveLength(2);
   });
 
   it('marks the open question in its first group only', async () => {
@@ -336,6 +340,7 @@ describe('Questions by branch', () => {
 
     const state = useAppStore.getState();
     const here = captureLocation({ state }).place;
-    expect(backOf({ state, place: here })?.label).toBe('Back to branch');
+    const parent = parentPlace({ state, place: here });
+    expect(parent?.at === 'session' ? parent.view.target?.kind : null).toBe('branch');
   });
 });

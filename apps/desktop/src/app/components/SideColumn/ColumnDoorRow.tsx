@@ -42,6 +42,7 @@ export const ColumnDoorRow = ({
   onSelect,
 }: Props) => {
   const name = signal === undefined ? label : `${label}, ${signal.fact}`;
+  const hasAction = create !== undefined || (action !== undefined && action !== null);
   const door = (
     <button
       type="button"
@@ -58,10 +59,10 @@ export const ColumnDoorRow = ({
         PANE_RHYTHM.navRail.door,
         'group flex w-full min-w-0 shrink-0 items-center gap-2 rounded-md motion-safe:transition-colors',
         FOCUS_RING,
+        'text-ui',
         isCurrent
-          ? 'cursor-default bg-selected text-row text-foreground'
+          ? 'cursor-default bg-selected text-foreground'
           : cn(
-              'text-ui',
               isQuiet ? 'text-faint-foreground' : 'text-muted-foreground',
               'hover:bg-hover hover:text-foreground',
             ),
@@ -90,10 +91,10 @@ export const ColumnDoorRow = ({
           />
         )}
       </span>
-      <span data-door-slot="signal" className="flex min-w-5 shrink-0 items-center justify-end">
+      {hasAction ? <span data-door-slot="action" aria-hidden className="size-6 shrink-0" /> : null}
+      <span data-door-slot="signal" className={PANE_RHYTHM.navRail.mark}>
         {signal === undefined ? null : <DoorSignalMark signal={signal} />}
       </span>
-      <span data-door-slot="action" aria-hidden className="size-6 shrink-0" />
     </button>
   );
   return (
@@ -114,10 +115,7 @@ export const ColumnDoorRow = ({
         />
       )}
       {action === undefined || action === null ? null : (
-        <div
-          data-door-action={id}
-          className="absolute right-0.5 top-0.5 flex size-6 items-center justify-center"
-        >
+        <div data-door-action={id} className={PANE_RHYTHM.navRail.action}>
           {action}
         </div>
       )}

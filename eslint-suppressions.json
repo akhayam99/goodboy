@@ -1224,7 +1224,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/drawer-chrome.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/drawerChrome/FloatingSurfacesScene.tsx": {
@@ -2848,24 +2848,6 @@
       "count": 1
     },
     "react-hooks/exhaustive-deps": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/navigation.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },

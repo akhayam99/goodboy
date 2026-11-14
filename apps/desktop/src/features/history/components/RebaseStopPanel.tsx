@@ -9,6 +9,7 @@ import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintSco
 import { StartHint } from '../../../shared/components/StartHint';
 import { START_HINT_COPY } from '../../../shared/components/startHintCopy';
 import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 import type { ActionConfirm, DiffActionTarget } from '../../actions/types';
 import { useActionControls } from '../../actions/useActionControls';
 import type { useJobBannerActions } from '../hooks/useJobBannerActions';
@@ -292,10 +293,8 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       case 'no-provider':
       case 'fixing-push':
         return [];
-      default: {
-        const exhaustive: never = state;
-        return exhaustive;
-      }
+      default:
+        return state satisfies never;
     }
   })();
 
@@ -329,7 +328,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           trigger={({ arm }) => (
             <Button
               size="sm"
-              variant={verb.variant}
+              {...actionButtonLookOf({ verb: verb.label, variant: verb.variant })}
               data-rebase-verb={verb.key}
               disabled={isBusy || blockedReason !== null}
               isBusy={isPending}
@@ -345,7 +344,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       <Button
         key={verb.key}
         size="sm"
-        variant={verb.variant}
+        {...actionButtonLookOf({ verb: verb.label, variant: verb.variant })}
         data-rebase-verb={verb.key}
         disabled={isBusy || blockedReason !== null}
         isBusy={isPending}
@@ -422,10 +421,8 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       case 'no-provider':
       case 'fixing-push':
         return null;
-      default: {
-        const exhaustive: never = state;
-        return exhaustive;
-      }
+      default:
+        return state satisfies never;
     }
   })();
 

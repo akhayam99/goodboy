@@ -35,6 +35,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.connectIntegration,
   },
   { id: 'command-palette', pattern: /\bCommand palette\b/i, use: NAMES.searchOrRun },
+  { id: 'open-as-page', pattern: /\bOpen as page\b/, use: NAMES.openFullPage },
   { id: 'autorun', pattern: /\bAutorun\b/i, use: NAMES.autopilot },
   { id: 'run-on-its-own', pattern: /\bRun on its own\b/i, use: NAMES.autopilot },
   { id: 'ask-before-each-step', pattern: /\bAsk before each step\b/i, use: NAMES.everyStep },

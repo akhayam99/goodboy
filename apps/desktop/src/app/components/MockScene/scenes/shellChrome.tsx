@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AppShell } from '@goodboy/ui';
+import { AppShell, UnderTrailContext } from '@goodboy/ui';
 import type {
   IsoDateTime,
   ProviderRunId,
@@ -14,6 +14,8 @@ import { useShellRight } from '../../../hooks/useShellRight';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
+import { SessionHead } from '../../SessionHead';
+import { SessionHeadContext } from '../../../../features/session/sessionHeadContext';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
@@ -108,7 +110,7 @@ export const ShellFrame = ({
   sidebar = 'collapsed',
   hasOwnTrail = false,
 }: ShellFrameProps) => {
-  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
+  const shellRight = useShellRight({});
   const rail = useSceneSidebar({ isCollapsed: sidebar === 'collapsed' });
   const arrangement = shellArrangement({
     hasWorkspace: true,
@@ -127,9 +129,13 @@ export const ShellFrame = ({
             onOpenScript={noop}
           />
         }
-        drawer={isDrawerMounted ? <DrawerHost /> : null}
-        isDrawerParked={isDrawerParked}
-        rightRail={rightRail}
+        drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
+        drawerSizing={shellRight.dockSizing}
+        detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
+        detailSizing={shellRight.detailSizing}
+        isDrawerParked={shellRight.isDrawerParked}
+        isDetailParked={shellRight.isDetailParked}
+        rightRail={shellRight.rightRail}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           <ShellLeft
@@ -145,8 +151,13 @@ export const ShellFrame = ({
             {hasOwnTrail ? (
               main
             ) : (
-              <div className="@container flex h-full w-full min-w-0 flex-col">
-                <div className="min-h-0 flex-1">{main}</div>
+              <div className="@container flex h-full w-full min-w-0 flex-col gap-2">
+                <SessionHead session={session} />
+                <UnderTrailContext.Provider value>
+                  <SessionHeadContext.Provider value={null}>
+                    <div className="min-h-0 flex-1">{main}</div>
+                  </SessionHeadContext.Provider>
+                </UnderTrailContext.Provider>
               </div>
             )}
           </SessionFrame>

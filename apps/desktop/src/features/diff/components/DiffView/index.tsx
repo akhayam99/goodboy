@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { PageColumn, ScrollFade, Skeleton } from '@goodboy/ui';
+import { ScrollFade, Skeleton } from '@goodboy/ui';
 import { useSnapToTop } from '../../hooks/useSnapToTop';
 import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
 import type { FileDiff } from '@goodboy/types';
@@ -23,6 +23,8 @@ import type { FileSidesLoader } from '../../hooks/useFileSides';
 import { PeekHost, type IdentifierPeekConfig } from '../IdentifierPeek/PeekHost';
 import { DiffFile } from './DiffFile';
 import { DisplayMenu } from './DisplayMenu';
+import { PaneFrame } from './PaneFrame';
+import { ToolbarRow } from './ToolbarRow';
 import type { DiffBodies, DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
 export type { DiffComments, DiffThread } from './types';
@@ -48,7 +50,7 @@ type Props = {
   readonly registerScroller?: (scroll: ((path: string) => void) | null) => void;
   readonly registerFileFocus?: (focus: ((path: string) => void) | null) => void;
   readonly onActivePathChange?: (path: string) => void;
-  readonly presentation?: 'pane' | 'peek' | 'inline';
+  readonly presentation?: 'pane' | 'peek' | 'inline' | 'split';
   readonly footer?: ReactNode;
   readonly isReadOnly?: boolean;
   readonly isWholeFile?: boolean;
@@ -502,18 +504,14 @@ export const DiffView = ({
     );
   }
 
-  const toolbar = (
-    <div
-      data-slot="diff-toolbar"
-      className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
-    >
-      <div className="flex min-w-0 items-center gap-2">{toolbarStart}</div>
-      <div className="flex shrink-0 items-center gap-2">
-        <DisplayMenu fit={fit} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
-        {toolbarEnd}
-      </div>
-    </div>
+  const isSplit = presentation === 'split';
+  const end = (
+    <>
+      <DisplayMenu fit={fit} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
+      {toolbarEnd}
+    </>
   );
+  const toolbar = <ToolbarRow start={toolbarStart} end={end} isRow={isSplit} />;
 
   if (presentation === 'inline') {
     return (
@@ -526,21 +524,18 @@ export const DiffView = ({
   }
 
   return (
-    <div data-slot="diff-view" className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="shrink-0">
-        <PageColumn width={columnWidth} className="flex flex-col gap-3 pb-3">
+    <PaneFrame
+      isSplit={isSplit}
+      columnWidth={columnWidth}
+      viewportRef={viewportRef}
+      head={
+        <>
           {toolbar}
           {belowToolbar}
-        </PageColumn>
-      </div>
-      <ScrollFade
-        className="min-h-0 flex-1"
-        viewportRef={viewportRef}
-        fadeSize={24}
-        fadeEdges="end"
-      >
-        <PageColumn width={columnWidth}>{content}</PageColumn>
-      </ScrollFade>
-    </div>
+        </>
+      }
+    >
+      {content}
+    </PaneFrame>
   );
 };

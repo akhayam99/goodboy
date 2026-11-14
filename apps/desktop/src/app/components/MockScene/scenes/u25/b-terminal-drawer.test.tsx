@@ -99,7 +99,7 @@ describe('the terminal drawer scenes', () => {
     );
     expect(within(drawer).queryByRole('heading', { name: 'Terminal' })).toBeNull();
     expect(within(drawer).queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
-    expect(within(drawer).getByRole('button', { name: 'Open as page' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Open full page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
     const tabs = within(drawer).getAllByRole('tab');
@@ -118,10 +118,10 @@ describe('the terminal drawer scenes', () => {
     expect(picker.textContent).toBe('payments-api · hl/fix-webhook-idempotency');
     expect(picker.textContent).not.toContain('gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
-    expect(header?.contains(within(drawer).getByRole('button', { name: 'Open as page' }))).toBe(
+    expect(header?.contains(within(drawer).getByRole('button', { name: 'Open full page' }))).toBe(
       true,
     );
-    expect(within(drawer).queryByText('Open as page')).toBeNull();
+    expect(within(drawer).queryByText('Open full page')).toBeNull();
   });
 
   it('switches tabs inside the drawer without leaving the worktree', async () => {
@@ -181,6 +181,31 @@ describe('the terminal drawer scenes', () => {
     expect(Object.values(store.getState().terminalTabs).flat()).toHaveLength(before);
   });
 
+  it('says so in place when the mount of its worktree is removed, and keeps the panel open', async () => {
+    renderScene({ name: 'terminal-drawer-session' });
+    await settle();
+    const mounts = store.getState().sessionProjectMounts[SESSION_ID] ?? [];
+    const removed = mounts.find((mount) => mount.mountId === 'mock-run-mount-payments');
+    expect(removed).toBeDefined();
+
+    act(() => {
+      store.setState((current) => ({
+        sessionProjectMounts: {
+          ...current.sessionProjectMounts,
+          [SESSION_ID]: mounts.filter((mount) => mount.mountId !== 'mock-run-mount-payments'),
+        },
+      }));
+    });
+    await settle();
+
+    const drawer = screen.getByRole('region', { name: 'Terminal' });
+    expect(within(drawer).getByRole('status').textContent).toBe(
+      'This worktree was removed, so its terminals ended.',
+    );
+    expect(store.getState().drawer?.kind).toBe('terminal');
+    expect(within(drawer).queryByTestId('terminal-panel')).toBeNull();
+  });
+
   it('moves the same worktree and tab to the Terminal page from the drawer', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
@@ -188,7 +213,7 @@ describe('the terminal drawer scenes', () => {
     fireEvent.click(within(drawer).getByRole('tab', { name: 'dev server' }));
     await settle();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open as page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
 
     expect(store.getState().drawer?.kind).toBe('terminal');
     const studio = store.getState().appStudio;

@@ -163,6 +163,8 @@ describe('Auto: every capability keeps a home in Auto', () => {
       ),
     ).toBeDefined();
     expect(screen.queryByText('Open Auto')).toBeNull();
-    expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
+    expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toBe(
+      'Auto',
+    );
   });
 });

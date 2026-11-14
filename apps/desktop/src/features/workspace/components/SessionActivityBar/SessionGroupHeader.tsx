@@ -20,6 +20,12 @@ export const SessionGroupHeader = ({
 }: Props) => {
   const content = (
     <>
+      <Eyebrow label={label} tone={tone} />
+      {total === null ? null : (
+        <span aria-hidden className="text-meta tabular-nums text-faint-foreground">
+          {total}
+        </span>
+      )}
       {onToggle === undefined ? null : (
         <ChevronRight
           size={ICON_SIZE.row}
@@ -29,12 +35,6 @@ export const SessionGroupHeader = ({
             !isCollapsed && 'rotate-90',
           )}
         />
-      )}
-      <Eyebrow label={label} tone={tone} />
-      {total === null ? null : (
-        <span aria-hidden className="text-meta tabular-nums text-faint-foreground">
-          {total}
-        </span>
       )}
     </>
   );

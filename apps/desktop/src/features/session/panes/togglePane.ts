@@ -1,9 +1,9 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
 import { selectSlotBack } from '../../../store/slices/drawer/selectSlotBack';
 import { leaveStudio } from '../../../store/slices/navigation/leaveStudio';
-import { openExplorePane } from '../../explore/openExplorePane';
-import { openScriptsPane } from '../../scripts/openScriptsPane';
+import { openBranchTerminal } from '../../terminal/openBranchTerminal';
 import { toggleBrowserDock } from '../../browser/toggleBrowserDock';
 import { toggleTerminalDock } from '../../terminal/toggleTerminalDock';
 import type { ClusterPane } from './clusterPane';
@@ -33,8 +33,9 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
   if (isShown && isOnPage) {
     return;
   }
-  if (isShown) {
-    state.closeDrawer();
+  const detail = selectDetailDrawer({ state });
+  if (isShown && detail !== null) {
+    state.closeDrawerEntry({ entry: detail });
     return;
   }
   const back = selectSlotBack({ state });
@@ -43,20 +44,8 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
     return;
   }
   switch (pane) {
-    case 'ask':
-      state.openAsk({ sessionId });
-      return;
-    case 'explore':
-      openExplorePane({ state, sessionId, mountPath: null });
-      return;
-    case 'context':
-      state.openContextDrawer({
-        sessionId,
-        section: 'goal',
-      });
-      return;
     case 'scripts':
-      openScriptsPane({ state, sessionId, projectId: null });
+      openBranchTerminal({ sessionId, mountPath: null });
       return;
     case 'spawned':
       state.openDrawer({ kind: 'spawned', sessionId, payload: null });

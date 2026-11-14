@@ -7,10 +7,13 @@ export const ROW_START_SCENES = [
   'terminal-drawer-session',
   'c03-panes-terminal',
   'c03-panes-scripts',
-  'c03-panes-explore',
   'c05-overview-running',
   'branch-files',
   'changes-files-all',
+  'changes-3-files',
+  'changes-3-files-dark',
+  'changes-300-files',
+  'changes-300-files-dark',
   'branch-comments',
   'branch-checks',
   'branch-commits',
@@ -31,12 +34,45 @@ export const ROW_START_SCENES = [
   'workflow-run',
   'c12-tasks-all',
   'tasks-rail',
+  'sidebar-frame-dark',
+  'sidebar-frame-light',
+  'board-shell',
+  'u37-composer-new-session-dark',
+  'u37-composer-new-session-light',
+  'chat-room',
+  'impact',
+  'frame-studio-workflows',
+  'session-head-overview',
+  'session-head-overview-light',
+  'session-head-runs',
+  'session-head-artifacts',
+  'session-head-questions',
+  'session-head-context',
+  'session-head-branch',
+  'session-head-branch-light',
 ];
 export const ROW_START_WIDTHS = [1440];
 export const ROW_START_READY = '[data-studio-rail], [data-page-header], [data-page-column]';
 export const ROW_START_TOLERANCE_PX = 1;
 
-export const rowStartProbe = () => {
+export const rowStartProbe = async () => {
+  const settleBy = performance.now() + 3000;
+  while (performance.now() < settleBy) {
+    const running = document
+      .getAnimations()
+      .filter(
+        (animation) =>
+          animation.playState === 'running' &&
+          animation.effect?.getComputedTiming().iterations !== Infinity,
+      );
+    if (running.length === 0) {
+      break;
+    }
+    await Promise.race([
+      Promise.allSettled(running.map((animation) => animation.finished)),
+      new Promise((resolvePromise) => setTimeout(resolvePromise, 200)),
+    ]);
+  }
   const CONTROLS =
     'button, a[href], input, select, textarea, [role="tab"], [role="button"], h1, h2, h3, h4';
   const isShown = (element) => {
@@ -80,6 +116,51 @@ export const rowStartProbe = () => {
       rows,
     };
   };
+  const readFrame = () => {
+    const sidebar = document.querySelector('[data-side-column]');
+    const main = document.querySelector('main [data-studio-host]');
+    if (sidebar === null || main === null) {
+      return null;
+    }
+    const side = controlsIn(sidebar)[0];
+    const floor = main.getBoundingClientRect().top;
+    const isOnScreen = (element) => {
+      const box = element.getBoundingClientRect();
+      if (
+        box.top < floor ||
+        box.bottom > window.innerHeight ||
+        element.closest('[inert]') !== null
+      ) {
+        return false;
+      }
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return hit !== null && (hit === element || element.contains(hit));
+    };
+    const page = controlsIn(main)
+      .filter(isOnScreen)
+      .sort((one, other) => one.getBoundingClientRect().top - other.getBoundingClientRect().top);
+    const head = page[0];
+    if (side === undefined || head === undefined) {
+      return null;
+    }
+    const headBox = head.getBoundingClientRect();
+    const line = page
+      .map((element) => ({ label: labelOf(element), box: element.getBoundingClientRect() }))
+      .filter(({ box }) => {
+        const overlap = Math.min(headBox.bottom, box.bottom) - Math.max(headBox.top, box.top);
+        return overlap >= Math.min(headBox.height, box.height) / 2;
+      });
+    const sideBox = side.getBoundingClientRect();
+    return {
+      sidebar: { label: labelOf(side), top: sideBox.top, bottom: sideBox.bottom },
+      page: {
+        label: line.map(({ label }) => label).join(', '),
+        top: Math.min(...line.map(({ box }) => box.top)),
+        bottom: Math.max(...line.map(({ box }) => box.bottom)),
+      },
+    };
+  };
+  const frame = readFrame();
   const splits = [...document.querySelectorAll('[data-studio-rail]')].map((split) => ({
     kind: 'split',
     columns: [...split.children]
@@ -87,15 +168,42 @@ export const rowStartProbe = () => {
       .map(read),
   }));
   if (splits.length > 0) {
-    return { containers: splits };
+    return { containers: splits, frame };
   }
   const page = document.querySelector('[data-page-column]') ?? document.querySelector('main');
-  return { containers: page === null ? [] : [{ kind: 'page', columns: [read(page)] }] };
+  return { containers: page === null ? [] : [{ kind: 'page', columns: [read(page)] }], frame };
 };
 
 const round = (value) => Math.round(value * 10) / 10;
 
 const spread = (values) => Math.max(...values) - Math.min(...values);
+
+const centerOf = ({ top, bottom }) => (top + bottom) / 2;
+
+export const frameRowFailures = ({ scene, width, frame, tolerance = ROW_START_TOLERANCE_PX }) => {
+  if (frame === null || frame === undefined) {
+    return [];
+  }
+  const { sidebar, page } = frame;
+  const isSameHeight =
+    Math.abs(sidebar.bottom - sidebar.top - (page.bottom - page.top)) <= tolerance;
+  const isCentered = Math.abs(centerOf(sidebar) - centerOf(page)) <= tolerance;
+  const isTopped = !isSameHeight || Math.abs(sidebar.top - page.top) <= tolerance;
+  if (isCentered && isTopped) {
+    return [];
+  }
+  return [
+    {
+      scene,
+      width,
+      check: 'the sidebar first row and the page first row share one top and one center line',
+      rows: [
+        `${sidebar.label}: ${round(sidebar.top)} to ${round(sidebar.bottom)}`,
+        `${page.label}: ${round(page.top)} to ${round(page.bottom)}`,
+      ],
+    },
+  ];
+};
 
 export const rowStartFailures = ({
   scene,
@@ -104,10 +212,10 @@ export const rowStartFailures = ({
   tolerance = ROW_START_TOLERANCE_PX,
 }) => {
   const containers = measured?.containers ?? [];
+  const failures = frameRowFailures({ scene, width, frame: measured?.frame, tolerance });
   if (containers.length === 0) {
-    return [{ scene, width, check: 'a page with columns is on screen' }];
+    return [...failures, { scene, width, check: 'a page with columns is on screen' }];
   }
-  const failures = [];
   for (const container of containers) {
     const columns = container.columns.filter((column) => column.first !== null);
     const centers = columns.map(({ first }) => (first.top + first.bottom) / 2);

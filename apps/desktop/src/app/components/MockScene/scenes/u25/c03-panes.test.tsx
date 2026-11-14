@@ -77,10 +77,9 @@ describe('c03 session tools scenes', () => {
     expect(pressed()).toEqual([]);
   });
 
-  it('opens Ask in the Context tab', async () => {
+  it('opens Ask as a detail panel', async () => {
     await mount('c03-panes-ask');
-    expect(useAppStore.getState().drawer).toBeNull();
-    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('context');
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION_ID });
     screen.getByRole('region', { name: 'Ask' });
     expect(pressed()).toEqual([]);
   });
@@ -94,13 +93,9 @@ describe('c03 session tools scenes', () => {
     );
   });
 
-  it('opens Explore and a file from it with the way back', async () => {
-    await mount('c03-panes-explore');
-    expect(screen.getByRole('region', { name: 'Explore' })).toBeDefined();
-    cleanup();
-    await resetStoryStore();
+  it('opens a file from the file list as a reader', async () => {
     await mount('c03-panes-explore-file');
-    expect(screen.getByRole('button', { name: 'Back to Explore' })).toBeDefined();
+    expect(useAppStore.getState().drawer?.kind).toBe('explore-file');
     expect(pressed()).toEqual([]);
     expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
   });
@@ -149,12 +144,9 @@ describe('c03 session tools scenes', () => {
     expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual(['true', 'false']);
   });
 
-  it.each(['c03-panes-explore', 'c03-panes-scripts'] as const)(
-    '%s opens its pane, never the closed layout, with no rail button lit',
-    async (name) => {
-      await mount(name);
-      expect(useAppStore.getState().drawer).not.toBeNull();
-      expect(pressed()).toEqual([]);
-    },
-  );
+  it('c03-panes-scripts opens its pane, never the closed layout, with no rail button lit', async () => {
+    await mount('c03-panes-scripts');
+    expect(useAppStore.getState().drawer).not.toBeNull();
+    expect(pressed()).toEqual([]);
+  });
 });

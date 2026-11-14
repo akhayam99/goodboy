@@ -18,7 +18,7 @@ Open a real login shell in the workspace folder or any linked worktree.
 
 **The Terminal page**
 
-- **Open as page** in the dock makes the terminal full size, with every terminal of the workspace beside it. **Dock** puts it back on the same tab, and so does Back.
+- **Open full page** in the dock makes the terminal full size, with every terminal of the workspace beside it. **Dock** puts it back on the same tab, and so does Back.
 - It says **No terminal yet** until you open one. **Dock** stays there too, and opens a terminal in the dock.
 - It groups terminals by session. Each group shows its row count from two.
 - One line per worktree shows the project, the branch and a dot while a shell runs a process.
@@ -92,12 +92,12 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - Keys on this page are the Mac keys. On Linux, ⌘ reads as Ctrl, and a few chords differ: **⌘I** is **Ctrl+Shift+I**.
 - A **⌘⌥** key opens each view. On Linux the chord is **Ctrl+Shift+Alt** with the same letter or digit, since a bare Ctrl+Alt chord belongs to the desktop there.
 - **⌘⌥C** opens the session's Context tab. The former Goal, Decisions and Summary chords are retired; section links still reach their card. On a page such as Tasks, a session key leaves the page first.
-- **⌘⌥F** opens the session's Changes tab, on every session. On a pull request page it picks that page's Changes tab.
-- **⌘⌥X** opens the Changes tab on All files, where Explore used to open.
+- **⌘⌥F** opens the Changes tab of the session's branch on its Branch page, or the session's file versions when it has no branch. On a pull request page it picks that page's Changes tab.
+- **⌘⌥X** opens that Changes tab on All files, where Explore used to open.
 - **⌘⌥A** opens Runs on what is running, where the Agents panel used to open.
 - **⌘1** to **⌘9** switch workspaces.
 - **⌘[** and **⌘]** walk your history: the last 50 places of this window, empty after a reload.
-- **⌘↑** is the back row: it goes to the parent of the page, and the same after a reload. The page of a top agent goes back to its session's Overview, or to the Work tab of the pull request you opened it from. A session tab has no parent, so ⌘↑ goes to the board.
+- **⌘↑** and **Esc** go one crumb up: to the parent of the page, and the same after a reload. The page of a top agent goes back to its session's Overview, or to the Work tab of the pull request you opened it from. A session tab has no parent, so ⌘↑ goes to the board.
 - **⌥⌘↓** goes to the next session that needs you.
 - **⌘/** opens the full list.
 
@@ -202,12 +202,12 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. The button counts the open tabs.
 - The address bar shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back. The icon is the site's own when it has one, and a letter when it has none.
 - While a page loads, a thin line breathes under the address row and Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
-- **More** holds **Send to the agent**, Open in your browser, **Open as page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
+- **More** holds **Send to the agent**, Open in your browser, **Open full page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
 - **Send to the agent** puts the text you see on the page on the message box as a chip with the title, the site and the word count. It also sits in the right-click menu of a tab, and **⌘⇧S** does the same for the shown tab.
 - The page is read when you press it, never before. Nothing goes to the agent until you send the message, and the × on the chip takes it away.
 - A page over 60,000 characters is cut, and the text says so at the end. A key or a token in the text is hidden.
 - A page that moved to another site since you pressed is not read. A failure says why under the address row, with **Retry**.
-- **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Beside the session**, at the right of the trail, puts it back. The page never reloads, so a half-typed form stays.
+- **Open full page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Beside the session**, at the right of the trail, puts it back. The page never reloads, so a half-typed form stays.
 - The page has no title band: the trail, the address row, then the page. The first button of the address row folds the tab list, and **New tab** is the last row of the list.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - The address is a command field. Type an address and press **Enter** to open it beside the session, or **⌘Enter** to open it in your browser. A localhost address opens your dev server.
@@ -246,6 +246,6 @@ This part is for contributors and agents who change the feature.
 - Browser doors: [browser.md](../browser.md#doors) owns `openInBrowser`, the click rule, the peek and the `browser.address` scope beside `ask.open`.
 - Send to the agent: `sendPageToAgent` reads through `browser_page_text` and queues the file for the agent `useHandOutputToAgent` names; [browser.md](../browser.md#doors) owns the rule and `browser.sendToAgent` is the key.
 - Browser console: `useConsoleEntries` pulls `browser_console_read`, and `applyConsoleRead` keeps the latest cursor. `BrowserConsole` draws the region and `consoleAttachmentOf` the file. [browser.md](../browser.md#console) owns the hook, the read and the caps. `browser.console` is the key.
-- Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
+- Files: the Changes page switches between **Changed** and **All files** (`useChangesMode`); the file chord opens it on All files.
 
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.

@@ -16,7 +16,9 @@ export const PANE_RHYTHM = {
   inset: 'px-6',
   headerInset: 'pt-2',
   pinnedInset: 'pt-3 pb-5',
+  pinnedUnderBand: 'pb-5',
   headerRow: 'h-8',
+  firstRow: 'h-10 pt-2',
   headerMeta: 'h-4',
   header: 'px-6 py-5',
   body: 'px-6 py-5',
@@ -47,6 +49,8 @@ export const PANE_RHYTHM = {
   },
   navRail: {
     inset: 'px-2',
+    edge: 'pt-px',
+    groupGap: 'gap-4',
     body: 'px-2 py-3',
     row: 'px-2 min-h-8',
     rowTwo: 'px-2 py-1 min-h-12',
@@ -54,6 +58,8 @@ export const PANE_RHYTHM = {
     door: 'h-7 px-2',
     doorGap: 'gap-1',
     icon: 'flex w-3 shrink-0 items-center justify-center',
+    mark: 'flex min-w-3.5 shrink-0 items-center justify-center',
+    action: 'absolute right-7.5 top-0.5 flex size-6 items-center justify-center',
   },
   property: {
     group: 'flex flex-col gap-1',
@@ -87,7 +93,8 @@ export const PANE_RHYTHM = {
     rowInset: 'px-2',
     headerInset: 'pl-4 pr-2',
     rowGap: 'gap-1',
-    listGap: 'gap-1',
+    listGap: 'gap-3',
+    labelGap: 'gap-1',
     menuTrigger: 'size-7',
   },
 } as const;

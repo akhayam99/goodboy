@@ -36,12 +36,12 @@ afterEach(() => {
 
 describe('closeSlot', () => {
   it('closes the top of the slot and brings the chip back', () => {
-    store.getState().openDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
-    store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'spawned', sessionId: SESSION_ID, payload: null });
 
     closeSlot({});
 
-    expect(store.getState().drawer?.kind).toBe('explore');
+    expect(store.getState().drawer?.kind).toBe('scripts');
     expect(store.getState().drawerBack).toBeNull();
   });
 
@@ -79,7 +79,7 @@ describe('closeSlot', () => {
       sessionId: SESSION_ID,
       payload: { questionId: QUESTION_ID, from: 'ask' },
     });
-    store.getState().openDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
     store.getState().openDrawer({
       kind: 'question',
       sessionId: SESSION_ID,
@@ -87,7 +87,7 @@ describe('closeSlot', () => {
     });
 
     store.getState().closeQuestion();
-    expect(store.getState().drawer?.kind).toBe('explore');
+    expect(store.getState().drawer?.kind).toBe('scripts');
     expect(store.getState().drawerBack).toBeNull();
 
     closeSlot({});
@@ -95,21 +95,21 @@ describe('closeSlot', () => {
   });
 
   it('leaves a drawer parked under a page alone', () => {
-    store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'spawned', sessionId: SESSION_ID, payload: null });
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 
     closeSlot({});
 
-    expect(store.getState().drawer?.kind).toBe('ask');
+    expect(store.getState().drawer?.kind).toBe('spawned');
     expect(store.getState().appStudio?.kind).toBe('impact');
   });
 
   it('leaves the drawer alone while a dialog is open over it', () => {
-    store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'spawned', sessionId: SESSION_ID, payload: null });
     document.body.innerHTML = '<div role="dialog"></div>';
 
     closeSlot({});
 
-    expect(store.getState().drawer?.kind).toBe('ask');
+    expect(store.getState().drawer?.kind).toBe('spawned');
   });
 });

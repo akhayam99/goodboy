@@ -3,7 +3,7 @@ import { DrawerColumn } from '@goodboy/ui';
 import { brandedId } from '../../../../../../features/history/testing/brandedId';
 import type { TerminalTabId } from '../../../../../../shared/types/terminal';
 import { useAppStore } from '../../../../../../store';
-import { selectDrawerSizing } from '../../../../../../store/slices/drawer/selectDrawerSizing';
+import { useShellRight } from '../../../../../hooks/useShellRight';
 import type { OpenDrawer } from '../../../../../../store/slices/drawer/state';
 import { sessionTerminalOwner } from '../../../../../../store/slices/terminal/terminalOwner';
 import { SlotSceneRail } from './SlotSceneRail';
@@ -74,8 +74,7 @@ const seedSlot = ({ state }: SeedParams): void => {
 
 export const SlotBackChipScene = ({ state, hasRail = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
-  const sizing = useAppStore(selectDrawerSizing);
-  const isDrawerOpen = useAppStore((s) => s.drawer !== null);
+  const shellRight = useShellRight({});
 
   useEffect(() => {
     seedSlot({ state });
@@ -100,8 +99,10 @@ export const SlotBackChipScene = ({ state, hasRail = false }: Props) => {
             {hasRail ? <SlotSceneRail sessionId={PLAN_DRAWER_SESSION_ID} /> : null}
           </>
         }
-        drawer={isDrawerOpen ? <DrawerHost /> : null}
-        sizing={sizing}
+        drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
+        sizing={shellRight.dockSizing}
+        detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
+        detailSizing={shellRight.detailSizing}
         ariaLabel="Side panel"
         resizeLabel="Resize side panel"
       />

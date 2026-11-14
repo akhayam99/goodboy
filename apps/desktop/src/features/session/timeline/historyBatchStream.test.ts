@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SessionEvent } from '@goodboy/types';
-import { doneRowsOf } from '../central/done/doneRowsOf';
 import { eventOf, modelOf, NOW } from '../central/done/testing/doneFixtures';
 import {
   branchEvents,
@@ -32,9 +31,6 @@ const batchOf = (item: TimelineStreamItem | undefined) =>
 
 const foldedOf = ({ events }: { readonly events: ReadonlyArray<SessionEvent> }) =>
   rowsOf(streamOf({ events })).find((item) => batchOf(item) !== undefined);
-
-const doneRowOf = ({ events }: { readonly events: ReadonlyArray<SessionEvent> }) =>
-  doneRowsOf({ model: modelOf({ events }) }).flatMap((day) => day.rows)[0];
 
 describe('the log folds a batch of history events', () => {
   it('folds the 18 lines of one Rebase all into one entry', () => {
@@ -90,20 +86,5 @@ describe('the log folds a batch of history events', () => {
     );
 
     expect(ids).toEqual(['event:ev-pr', 'event:ps-8']);
-  });
-
-  it('is the entry that Show in log on the done row targets', () => {
-    const events = [request, ...nine({ count: 9, batchId: 'run-1' })];
-
-    const folded = foldedOf({ events });
-
-    expect(doneRowOf({ events })?.entryId).toBe(folded?.id);
-    expect(doneRowOf({ events })?.title).toBe(batchOf(folded)?.title);
-  });
-
-  it('keeps the same target for a legacy batch', () => {
-    const events = [request, ...nine({ count: 9 })];
-
-    expect(doneRowOf({ events })?.entryId).toBe(foldedOf({ events })?.id);
   });
 });

@@ -9,10 +9,7 @@ type Props = RowTitle & {
 export const SessionRowTitle = ({ keys, title, className, titleClassName }: Props) => (
   <span className={cn('flex min-w-0 items-baseline gap-2', className)}>
     {keys.length === 0 ? null : (
-      <span
-        data-testid="session-row-keys"
-        className="shrink-0 font-mono text-meta text-muted-foreground"
-      >
+      <span data-testid="session-row-keys" className="shrink-0 text-code text-muted-foreground">
         {keys.join(' ')}
       </span>
     )}

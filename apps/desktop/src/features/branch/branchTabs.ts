@@ -21,7 +21,7 @@ export type BranchScope = {
 export const BRANCH_TAB_REGISTRY: BranchTabRegistry = {
   pr: {
     id: 'pr',
-    label: 'Overview',
+    label: NAMES.conversation,
     address: 'pr',
     shortcut: 'lens.pr',
     isAvailable: true,

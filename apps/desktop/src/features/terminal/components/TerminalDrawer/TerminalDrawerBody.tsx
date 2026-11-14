@@ -9,6 +9,7 @@ import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { useAppStore } from '../../../../store';
 import { workspaceTerminalOwner } from '../../../../store/slices/terminal/terminalOwner';
+import { mountIdOfWorktreeKey } from '../../../../store/slices/terminal/terminalWorktree';
 import { useTerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { openSessionFolderTerminal } from '../../openSessionFolderTerminal';
 import { openSessionTerminal } from '../../openSessionTerminal';
@@ -22,6 +23,7 @@ import { TerminalScriptsMenu } from '../TerminalStudio/TerminalScriptsMenu';
 import { TerminalStripActions } from '../TerminalStudio/TerminalStripActions';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
 import { TerminalScopePicker } from './TerminalScopePicker';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -81,8 +83,17 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
     model.newTab();
   };
 
+  const isMountRemoved = useAppStore((state) => {
+    const mountId = mountIdOfWorktreeKey({ key: worktreeKey });
+    if (mountId === null || sessionId === null) {
+      return false;
+    }
+    return !(state.sessionProjectMounts[sessionId] ?? []).some(
+      (mount) => mount.mountId === mountId,
+    );
+  });
   const wasLive = useRef(false);
-  const isRemoved = isGone && wasLive.current;
+  const isRemoved = isGone && wasLive.current && isMountRemoved;
   if (!isGone) {
     wasLive.current = true;
   }
@@ -155,7 +166,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
         </span>
       }
       page={{
-        label: 'Open as page',
+        label: NAMES.openFullPage,
         onOpen: () => openTerminalOnPage({ terminalId: selected.id, sessionId }),
       }}
       onClose={onClose}

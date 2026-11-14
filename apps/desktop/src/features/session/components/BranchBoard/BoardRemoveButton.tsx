@@ -30,6 +30,7 @@ export const BoardRemoveButton = ({ mountIds, variant }: Props) => {
     <Button
       size="sm"
       variant={variant}
+      intent="destructive"
       isBusy={removal.isBusy}
       disabled={removal.isBusy}
       onClick={() => setIsConfirming(true)}

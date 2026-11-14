@@ -332,14 +332,17 @@ describe('SideColumn', () => {
     ).toBe(true);
   });
 
-  it('gives every door the same signal slot and action slot so trailing info shares an edge', () => {
+  it('ends every door on the trailing mark column, with an action slot only before it', () => {
     mountColumn({ place: 'board' });
     const nav = navLayer();
 
     for (const { id } of columnDoorsOf({ isWork: false })) {
       const door = nav.querySelector(`[data-column-door-row="${id}"] [data-column-door]`);
-      expect(door?.querySelectorAll('[data-door-slot="signal"]')).toHaveLength(1);
-      expect(door?.querySelectorAll('[data-door-slot="action"]')).toHaveLength(1);
+      const signal = door?.querySelectorAll('[data-door-slot="signal"]');
+      expect(signal).toHaveLength(1);
+      expect(door?.lastElementChild?.getAttribute('data-door-slot')).toBe('signal');
+      const hasAction = id === 'board' || id === 'chat';
+      expect(door?.querySelectorAll('[data-door-slot="action"]')).toHaveLength(hasAction ? 1 : 0);
     }
   });
 

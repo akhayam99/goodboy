@@ -82,8 +82,22 @@ describe('PANE_RHYTHM', () => {
       expect(PANE_RHYTHM.sessionList.rowGap).toBe(PANE_RHYTHM.navRail.doorGap);
     });
 
-    it('spaces the groups of the list by the same gap as the doors', () => {
-      expect(PANE_RHYTHM.sessionList.listGap).toBe(PANE_RHYTHM.navRail.doorGap);
+    it('puts more space above a section label than below it, so the label belongs to its list', () => {
+      const above = pxOf({ classes: PANE_RHYTHM.sessionList.listGap, prefix: 'gap' });
+      const below = pxOf({ classes: PANE_RHYTHM.sessionList.labelGap, prefix: 'gap' });
+      expect(above).toBe(12);
+      expect(below).toBe(4);
+      expect(PANE_RHYTHM.navRail.groupGap).toBe('gap-4');
+    });
+
+    it('opens the column on the frame first row: the sheet edge, then the 40px row of every page', () => {
+      expect(PANE_RHYTHM.navRail.edge).toBe('pt-px');
+      expect(PANE_RHYTHM.firstRow).toBe(`h-10 ${PANE_RHYTHM.headerInset}`);
+    });
+
+    it('aligns the door marks and the row marks on one trailing column', () => {
+      expect(PANE_RHYTHM.navRail.mark).toContain('min-w-3.5');
+      expect(PANE_RHYTHM.navRail.action).toContain('right-7.5');
     });
 
     it('gives the view menu a 28px target, as tall as a door and a row', () => {

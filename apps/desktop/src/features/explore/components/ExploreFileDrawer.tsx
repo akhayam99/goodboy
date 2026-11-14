@@ -25,7 +25,7 @@ import { useExploreOpen } from '../../diff/FilesMode/useExploreOpen';
 import { useExplorePreview } from '../../diff/FilesMode/useExplorePreview';
 import { useExploreWrap } from '../hooks/useExploreWrap';
 import { ExploreOpenError } from './ExploreOpenError';
-import { ExplorePreviewPanel, type ExplorePreviewView } from './ExplorePane/ExplorePreviewPanel';
+import { ExplorePreviewPanel, type ExplorePreviewView } from './ExplorePreviewPanel';
 
 type RenderChangesParams = {
   readonly sessionDir: string;

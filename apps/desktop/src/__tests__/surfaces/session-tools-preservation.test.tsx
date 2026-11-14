@@ -81,14 +81,14 @@ const paneToggles = (): ReadonlyArray<Element> =>
 const drawerKind = (): string | null => useAppStore.getState().drawer?.kind ?? null;
 
 describe('session tools rows stay reachable', () => {
-  it('Ask lives in the Context tab: ask.open lands there and the tools hold no Ask button', async () => {
+  it('Ask is a detail panel: ask.open opens it beside the page and the tools hold no Ask button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
     act(() => useAppStore.getState().openAsk({ sessionId }));
     await settle();
-    expect(drawerKind()).toBeNull();
-    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(true);
+    expect(drawerKind()).toBe('ask');
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(false);
 
     act(() => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
@@ -134,7 +134,7 @@ describe('session tools rows stay reachable', () => {
     }
   });
 
-  it('Scripts lens: the palette and the Open scripts toast still reach the pane', async () => {
+  it('Scripts lens: the palette and the Open scripts toast reach the Terminal and its Scripts menu', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
@@ -143,7 +143,6 @@ describe('session tools rows stay reachable', () => {
     });
     await settle();
 
-    expect(drawerKind()).toBe('scripts');
-    expect(screen.getByRole('region', { name: 'Scripts' })).toBeDefined();
+    expect(drawerKind()).toBe('terminal');
   });
 });

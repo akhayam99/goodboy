@@ -82,13 +82,13 @@ describe('the u24 prpage frame scenes', () => {
     }
   });
 
-  it('draws Overview, Changes and Commits and no Comments or Checks with no pull request', async () => {
+  it('draws Conversation, Changes and Commits and no Comments or Checks with no pull request', async () => {
     renderScene({ name: 'branch-nopr' });
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Changes', 'Commits', 'Work']);
-    expect(sectionRow(/^Overview/).textContent).toBe('Overview');
+    expect(sectionNames()).toEqual(['Conversation', 'Changes', 'Commits', 'Work']);
+    expect(sectionRow(/^Conversation/).textContent).toBe('Conversation');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
   });
 
@@ -97,7 +97,7 @@ describe('the u24 prpage frame scenes', () => {
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Comments', 'Changes', 'Commits', 'Work']);
+    expect(sectionNames()).toEqual(['Conversation', 'Comments', 'Changes', 'Commits', 'Work']);
     expect(
       within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', {
         name: /^Comments/,
@@ -111,7 +111,7 @@ describe('the u24 prpage frame scenes', () => {
     await settle();
 
     expect(sectionNames()).toEqual([
-      'Overview',
+      'Conversation',
       'Comments',
       'Changes',
       'Commits',

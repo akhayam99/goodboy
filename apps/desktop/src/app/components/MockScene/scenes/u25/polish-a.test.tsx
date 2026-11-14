@@ -39,11 +39,8 @@ const mount = ({ id }: { readonly id: keyof typeof U25_POLISH_A_SCENES }): void 
 
 describe('the polish-a scenes', () => {
   it('registers every scene for the capture', () => {
-    expect(Object.keys(U25_POLISH_A_SCENES).sort()).toEqual([
-      'artifact-plan-fill',
-      'explore-dot-warning',
-    ]);
-    expect(MOCK_SCENES['explore-dot-warning']).toBe(U25_POLISH_A_SCENES['explore-dot-warning']);
+    expect(Object.keys(U25_POLISH_A_SCENES).sort()).toEqual(['artifact-plan-fill']);
+    expect(MOCK_SCENES['artifact-plan-fill']).toBe(U25_POLISH_A_SCENES['artifact-plan-fill']);
   });
 
   it('artifact-plan-fill gives the page prose the full column', async () => {
@@ -55,13 +52,5 @@ describe('the polish-a scenes', () => {
     for (const node of prose) {
       expect(node.getAttribute('data-measure')).toBe('full');
     }
-  });
-
-  it('explore-dot-warning tints the folder dot like the M letter', async () => {
-    mount({ id: 'explore-dot-warning' });
-
-    const docs = await screen.findByRole('treeitem', { name: 'docs' }, WAIT);
-    const mark = within(docs).getByLabelText('2 changed files');
-    expect(mark.firstElementChild?.getAttribute('data-tone')).toBe('warning');
   });
 });

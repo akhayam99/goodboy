@@ -182,58 +182,29 @@ const withoutRemovedDrawer = ({ location }: Params): Location => {
     : { ...location, place, focus: { ...location.focus, drawer: null } };
 };
 
-const withoutFormerSection = ({ location }: Params): Location => {
-  const drawer = location.focus.drawer;
-  if (drawer?.kind !== 'context') {
-    return location;
-  }
-  const current: unknown = Reflect.get(drawer.payload, 'section');
-  const former: unknown = Reflect.get(drawer.payload, 'tab');
-  const value = current ?? former;
-  const section = value === 'learned' ? 'explanations' : value;
-  if (
-    section !== 'goal' &&
-    section !== 'decisions' &&
-    section !== 'summary' &&
-    section !== 'explanations'
-  ) {
-    return location;
-  }
-  if (current === section) {
-    return location;
-  }
-  return {
-    ...location,
-    focus: {
-      ...location.focus,
-      drawer: {
-        ...drawer,
-        payload: {
-          section,
-          view: drawer.payload.view,
-          ...(drawer.payload.highlight === undefined
-            ? {}
-            : { highlight: drawer.payload.highlight }),
-        },
-      },
-    },
-  };
-};
-
 type PanelFold = {
   readonly place: Place;
   readonly rows: Rows;
 };
 
-type ContextPanelParams = {
-  readonly drawer: Extract<OpenDrawer, { readonly kind: 'context' }>;
+type FieldParams = {
+  readonly payload: unknown;
+  readonly key: string;
 };
 
-const contextRowOf = ({ drawer }: ContextPanelParams): string => {
-  if (Reflect.get(drawer.payload, 'view') === 'versions') {
+const fieldOf = ({ payload, key }: FieldParams): unknown =>
+  typeof payload === 'object' && payload !== null ? Reflect.get(payload, key) : undefined;
+
+type ContextPanelParams = {
+  readonly payload: unknown;
+};
+
+const contextRowOf = ({ payload }: ContextPanelParams): string => {
+  if (fieldOf({ payload, key: 'view' }) === 'versions') {
     return 'history';
   }
-  const section: unknown = Reflect.get(drawer.payload, 'section');
+  const value = fieldOf({ payload, key: 'section' }) ?? fieldOf({ payload, key: 'tab' });
+  const section = value === 'learned' ? 'explanations' : value;
   return CONTEXT_SECTIONS.has(section) ? String(section) : 'goal';
 };
 
@@ -256,19 +227,14 @@ const foldOfPanel = ({ drawer }: DrawerParams): PanelFold | null => {
     return null;
   }
   const { sessionId } = drawer;
-  if (drawer.kind === 'context') {
+  const kind = String(drawer.kind);
+  if (kind === 'context') {
     return {
       place: sessionPlace({ sessionId, lens: 'context' }),
-      rows: { [PLACE_ROWS.contextSection]: contextRowOf({ drawer }) },
+      rows: { [PLACE_ROWS.contextSection]: contextRowOf({ payload: drawer.payload }) },
     };
   }
-  if (drawer.kind === 'ask') {
-    return {
-      place: sessionPlace({ sessionId, lens: 'context' }),
-      rows: { [PLACE_ROWS.contextSection]: 'ask' },
-    };
-  }
-  if (drawer.kind === 'explore') {
+  if (kind === 'explore') {
     return { place: sessionPlace({ sessionId, lens: 'files' }), rows: ALL_FILES };
   }
   if (drawer.kind === 'spawned') {
@@ -306,8 +272,6 @@ const withoutRemovedPanel = ({ location }: Params): Location => {
 export const withoutRemovedPages = ({ location }: Params): Location =>
   withoutRemovedPanel({
     location: withoutRemovedLens({
-      location: withoutFormerSection({
-        location: withoutRemovedDrawer({ location: withoutRemovedStudio({ location }) }),
-      }),
+      location: withoutRemovedDrawer({ location: withoutRemovedStudio({ location }) }),
     }),
   });

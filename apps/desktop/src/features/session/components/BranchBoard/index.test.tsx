@@ -218,18 +218,39 @@ describe('the branch board on the Overview', () => {
     expect(reopened?.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('filters the board with Needs you and Clear, and the line says so', async () => {
+  it('shows Questions, Artifacts, Spend and Time tiles and no Checks or Needs you tile', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+    const tiles = document.querySelector<HTMLElement>('[data-slot="session-kpis"]');
+    if (tiles === null) {
+      throw new Error('The tiles must show.');
+    }
+    const text = tiles.textContent ?? '';
+
+    for (const label of ['Branches', 'Questions', 'Artifacts', 'Spend', 'Time']) {
+      expect(text).toContain(label);
+    }
+    expect(text).not.toContain('Checks');
+    expect(text).not.toContain('Needs you');
+    expect(text).not.toContain('Agents working');
+  });
+
+  it('filters the board with Questions and Clear, and the line says so', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
     const before = rowButtons().length;
 
-    fireEvent.click(screen.getByRole('button', { name: /Needs you/ }));
-    const needsLine = document.querySelector<HTMLElement>('[data-board-filter="needs-you"]');
+    fireEvent.click(screen.getByRole('button', { name: /Questions/ }));
+    const needsLine = document.querySelector<HTMLElement>('[data-board-filter="questions"]');
     if (needsLine === null) {
       throw new Error('The filter line must show.');
     }
-    expect(needsLine.textContent).toContain('Needs you');
+    expect(needsLine.textContent).toMatch(/open question/);
     expect(rowButtons().length).toBeLessThanOrEqual(before);
+    if (rowButtons().length === 0) {
+      expect(document.querySelector('[data-board-group]')).toBeNull();
+      expect(needsLine.getAttribute('data-board-filter-empty')).toBe('true');
+    }
 
     fireEvent.click(within(needsLine).getByRole('button', { name: 'Clear' }));
     expect(document.querySelector('[data-board-filter]')).toBeNull();

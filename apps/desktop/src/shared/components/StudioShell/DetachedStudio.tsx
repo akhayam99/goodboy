@@ -1,4 +1,4 @@
-import { cn, PageColumn, PaneActionsContext, SHEET_CLASSES } from '@goodboy/ui';
+import { cn, PageColumn, PANE_RHYTHM, PaneActionsContext, SHEET_CLASSES } from '@goodboy/ui';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 import { closeLabelOf } from './closeLabelOf';
 import { HeaderCloseButton } from './HeaderCloseButton';
@@ -34,7 +34,11 @@ export const DetachedStudio = ({
       )}
     >
       {isBandAccessory || isBandClose ? (
-        <header aria-label={title} data-studio-band="" className="h-10 shrink-0">
+        <header
+          aria-label={title}
+          data-studio-band=""
+          className={cn('shrink-0', PANE_RHYTHM.firstRow)}
+        >
           <PageColumn className="flex h-full items-center justify-end gap-3">
             {headerAccessory}
             {isBandClose ? <StudioCloseButton label={label} onClose={requestClose} /> : null}

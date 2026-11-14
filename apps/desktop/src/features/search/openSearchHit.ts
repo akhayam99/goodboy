@@ -83,14 +83,7 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       });
       return true;
     case 'decision':
-      store.navigate({
-        to: sessionPlace({ sessionId }),
-        drawer: {
-          kind: 'context',
-          sessionId,
-          payload: { section: 'decisions', view: 'current', highlight: [target.number] },
-        },
-      });
+      store.openContextDrawer({ sessionId, section: 'decisions', highlight: [target.number] });
       return true;
     case 'question':
       openQuestion({ state: store, sessionId, questionId: target.questionId });

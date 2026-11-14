@@ -60,18 +60,12 @@ describe('the right rail scenes', () => {
     ]);
   });
 
-  it('waiting: the plan holds the slot and the rail rings Terminal', async () => {
+  it('waiting: the plan opens beside the Terminal dock, so the rail presses Terminal', async () => {
     renderScene('session-rail-waiting');
 
-    const terminal = await screen.findByRole(
-      'button',
-      { name: /^Terminal(, \d+ running)?, waiting$/ },
-      WAIT,
-    );
-    expect(terminal.closest('[data-slot="session-tool"]')?.getAttribute('data-state')).toBe(
-      'waiting',
-    );
-    expect(screen.getAllByTestId('tool-waiting')).toHaveLength(1);
+    const terminal = await screen.findByTestId('pane-toggle-terminal', undefined, WAIT);
+    expect(terminal.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByTestId('tool-waiting')).toBeNull();
   });
 
   it('pressed: Terminal holds the slot and nothing rings while the plan waits', async () => {

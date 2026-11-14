@@ -105,7 +105,6 @@ const STUDIO_BLOBS: ReadonlyArray<ExpectedBlob> = Object.entries(STUDIOS).map(([
 }));
 
 const FOLDED_DRAWER_LENSES: Readonly<Record<string, string>> = {
-  ask: 'context',
   context: 'context',
   explore: 'files',
   spawned: 'workflows',

@@ -87,8 +87,8 @@ describe('the task move scenes', () => {
       screen.getByRole('button', { name: 'Move NW-142 from api · feat/create-orders-endpoint' }),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
-    expect(document.querySelector('[data-session-back]')?.textContent).toMatch(/^Back to /);
-    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    expect(document.querySelector('[data-session-back]')).toBeNull();
+    expect(document.querySelector('[data-slot="trail"]')).toBeNull();
   });
 
   it.each(Object.keys(U24_TASK_MOVE_SCENES))(

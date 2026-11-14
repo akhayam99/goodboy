@@ -3,7 +3,7 @@ import { DrawerFrame } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReloadSurface } from '../../../../shared/hooks/useReloadSurface';
-import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
+import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { browserTabListPref } from '../../browserTabListPref';
 import type { BrowserTabListMode } from '../../types';
@@ -49,7 +49,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
   const shownTab = model.shown?.tab ?? null;
   const title = shownTab === null ? '' : model.titleOf({ tab: shownTab });
   const hasTabs = model.tabs.length > 0 || model.pins.length > 0;
-  const isOnScreen = useAppStore((state) => selectDrawerPanel(state)?.kind === 'browser');
+  const isOnScreen = useAppStore((state) => selectDockDrawer({ state })?.kind === 'browser');
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const consoleLog = useConsoleEntries({
     sessionId,
@@ -77,7 +77,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
 
   return (
     <DrawerFrame title="Browser" isHeaderless onClose={onClose}>
-      <div ref={root} className="flex min-h-0 flex-1 flex-col gap-2 pt-1">
+      <div ref={root} className="flex min-h-0 flex-1 flex-col gap-2">
         <BrowserAddressRow
           model={model}
           isAddressShortcutOn={isOnScreen}

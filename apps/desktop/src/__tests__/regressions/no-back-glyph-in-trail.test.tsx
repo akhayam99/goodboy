@@ -21,7 +21,7 @@ const TRAIL = '[data-slot="trail"]';
 const BACK_GLYPH = '.lucide-chevron-left, .lucide-arrow-left';
 const BACK_CHARACTERS = /[‹←]/;
 const SESSION_SCENE = 'shell';
-const SESSION_TABS = '[role="tablist"][aria-label="Session pages"]';
+const SESSION_TABS = '[data-session-head]';
 
 const KEPT = [
   'SettingsColumnNav.tsx',

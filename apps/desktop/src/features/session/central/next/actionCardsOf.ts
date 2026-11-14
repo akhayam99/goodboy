@@ -90,6 +90,10 @@ const suggestionMountIdOf = ({ suggestion }: SuggestionParams): string | null =>
   if ('mountId' in suggestion.payload) {
     return suggestion.payload.mountId;
   }
+  if (suggestion.kind === 'rebase-project') {
+    const [only, ...others] = suggestion.payload.targets;
+    return only !== undefined && others.length === 0 ? only.mountId : null;
+  }
   const { targetKey } = suggestion;
   if (targetKey !== null && targetKey.startsWith(PR_TARGET_PREFIX)) {
     return targetKey.slice(PR_TARGET_PREFIX.length);

@@ -42,7 +42,7 @@ export const NewSessionRow = ({ workspaceId, isCurrent, onNavigate }: Props) => 
         </span>
         <span className="min-w-0 flex-1 truncate">New session</span>
         {isDraftWaiting ? (
-          <span aria-hidden data-slot="draft-dot" className="flex shrink-0">
+          <span aria-hidden data-slot="draft-dot" className={PANE_RHYTHM.navRail.mark}>
             <StatusDot tone="primary" size="sm" />
           </span>
         ) : null}

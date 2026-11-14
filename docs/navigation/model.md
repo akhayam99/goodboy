@@ -480,19 +480,19 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **Up goes to the parent.** When the previous entry is the parent, Up is Back.
   Otherwise it pushes the parent (`upTo({ to })`, which `up()` and every crumb
   call). Closing an app studio is Back to the entry below it, so Up from a
-  studio and Close land in the same place. `backOf` reads `parentPlace` once
-  and names that one parent for the back row (`Back to runs`, `Back to
-{parent agent name}`, `Back to artifacts`, `Back to branch`, `Back to
-overview`); a sub agent's parent is the agent that spawned it.
+  studio and Close land in the same place. `crumbsOf` walks `parentPlace` up to
+  the session and names every step for the session crumbs (`Session › Runs › {run}`,
+  `Session › {parent agent} › {agent}`, `Session › Artifacts › {artifact}`,
+  `Session › {branch}`); a sub agent's parent is the agent that spawned it.
 - **The Lead page lays out by pane width.** `LeadPage` measures its own pane,
   not the window (`leadLayoutOf`): from 1180 up it shows chat, tree and the
   record; from 860 to 1180 chat and tree, the record covering the tree with a
   back arrow; under 860 the chat, the tree opening from an "Agents" count. The
   selected agent is window local state (`useLeadSelectionStore`), not an
   address and not stored: a reload reopens the page with no record. "Open
-  transcript" in the record navigates to the agent's page, whose back row is
+  transcript" in the record navigates to the agent's page, whose parent crumb is
   the Lead (`parentPlace`).
-- **Two Backs, and they differ.** The back row (and ⌘↑) is `parentPlace`: it
+- **Two Backs, and they differ.** The crumbs, Esc and ⌘↑ follow `parentPlace`: it
   only points inside the session, never at a list outside it, and it reads
   the same after a reload, in a second window and from a link. History Back
   (⌘[) walks this window's stack of 50 and is empty after a reload. A top
@@ -501,18 +501,16 @@ overview`); a sub agent's parent is the agent that spawned it.
   and `upTo` writes its id into `focus.returnRows['board.lead']` so the board
   brings its row into view; opened from the Work tab of a pull request it goes
   back to that tab, read from `focus.runGroup`, which the window layout saves.
-  A session tab (Overview, Runs, Artifacts, Questions, Context, Changes) is the
-  top of its session and has no back row; a file open in Changes goes back to
-  Changes.
-- **The Changes tab is a place on every session.** A `files` place keeps its
-  `diff` target and no longer turns into the pull request page:
-  `canonicalLocation` fills a missing mount with the branch you looked at
-  last (`doorMountPath`), and `captureLocation` saves it, so a reload reopens
-  the same branch. On a session with a branch, `SessionLensPane` draws the
-  place with `BranchPage` pinned on its Changes section (`pinnedTab`); a
-  folder session keeps `FilesPane`. The Context tab draws the Context panel
-  body in the page until it has its own. A stored `diff` target with `page: 'history'` still opens
-  the pull request's Commits.
+  A session tab (Overview, Runs, Artifacts, Questions, Context) is the top of
+  its session and has no crumbs; a file open in a branchless session's Changes
+  goes back to Changes, then to the Overview.
+- **Changes is a place of a branch.** On a session with a branch,
+  `canonicalLocation` turns a `files` place into the Branch page Changes tab
+  (`branchPlace` with `tab: 'files'`), on the place's mount or else the branch you
+  looked at last (`doorMountPath`), keeping its file focus; the single-branch
+  Changes shortcut, the board door, the palette and the chord all land there. A
+  folder session keeps `FilesPane` on its `files` place. A stored `diff` target
+  with `page: 'history'` still opens the pull request's Commits.
 - **Stored places.** One fold, `withoutRemovedPages`, maps every place an older
   build saved to its new home, and `PLACE_ROWS` (`placeRows.ts`) names the
   `focus.returnRows` keys that carry what a place needs without a new stored
@@ -521,9 +519,9 @@ overview`); a sub agent's parent is the agent that spawned it.
   | Stored                                                           | Opens as                                                                   |
   | ---------------------------------------------------------------- | -------------------------------------------------------------------------- |
   | Overview, Runs, Artifacts, Questions                             | the same place                                                             |
-  | Changes page                                                     | the Changes tab, on its branch                                             |
+  | Changes page                                                     | the Branch page Changes tab, on its branch                                 |
   | Context panel, any section, or the Goal, Decisions, Summary lens | the Context tab, `context.section` = that section (`history` for versions) |
-  | Ask panel                                                        | the Context tab, `context.section` = `ask`                                 |
+  | Ask panel                                                        | unchanged, the Ask panel                                                   |
   | Agents panel or Agents page                                      | Runs, `runs.filter` = `running`                                            |
   | Scripts panel, a script run                                      | unchanged, the Scripts drawer                                              |
   | Explore panel or page                                            | the Changes tab, `changes.mode` = `all`                                    |

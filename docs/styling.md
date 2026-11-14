@@ -256,11 +256,11 @@ Every main pane renders through `PaneShell`, and its crumb, header and body
 sit in one `PageColumn`. At rest the column is centred in the pane, with equal
 space either side: Overview, Runs, Agents, Artifacts, the session pages, Chat,
 Workflows, Tasks detail, settings pages, agent and pull request detail. The
-header, the back row (`Back to X` and the Ask button), the body and
-the footer share the same column edges, so moving from Overview to Runs to
-Agents to a settings page never shifts the first letter. The Ask button is the
-last item of the trail's `PageColumn`: its right edge is the column's right
-edge, the header actions' right edge. The gutter is 24px a side, 16px once the
+session head (the title row and the tabs or crumbs, drawn once by `SessionWorkspace` on
+the `column` measure), the page header, the body and the footer share the same column
+edges, so moving from Overview to Runs to Agents to a settings page never shifts the first
+letter, and the head never moves between tabs. Its actions end at the column's right edge,
+the page header actions' right edge. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
@@ -305,14 +305,22 @@ session overview and the agent transcript and fails a height outside 40, 48 and
 
 The columns of a split page (`StudioRailLayout`) start on one row grid: the
 first row is 40px in every column (`data-grid-row="1"`: the rail toggle and the
-page toolbar), the next rows are marked `data-grid-row="2"` and `"3"` and never
-take a top offset or a sibling gap of their own. The Terminal page is the
+page toolbar, drawn with `PANE_RHYTHM.firstRow`, so its controls centre 24px
+down like a title row), the next rows are marked `data-grid-row="2"` and `"3"`
+and never take a top offset or a sibling gap of their own. The Terminal page is the
 model: toggle and folder pill with the Dock and Copy folder path actions on
 row 1, New terminal and the tab strip on row 2, the folder list and the shell
 on row 3. `validate-scenes --only row-start` measures the scenes in
 `validateScenesRowStart.mjs` at 1440 and fails a first row whose center line
 drifts over 1px between columns, a toolbar whose controls share no center line
-and a grid row whose top or bottom differs between columns.
+and a grid row whose top or bottom differs between columns. On every scene that
+renders the app frame it also runs the frame check: the main sidebar's first
+row (New session) against the page's first row (the topmost visible controls of
+`[data-studio-host]` and the controls on their line), centres within 1px and
+tops within 1px when the two rows are the same height. It waits for running
+animations to finish and skips controls hidden behind a sticky header. The
+`sidebar-frame-dark` and `sidebar-frame-light` scenes, Settings, New session, a
+session overview, Board, Tasks, Chat, Impact and Workflows are on its list.
 
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:

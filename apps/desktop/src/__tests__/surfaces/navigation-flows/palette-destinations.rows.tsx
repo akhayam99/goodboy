@@ -67,11 +67,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await visible('region', 'Decision records');
-      await visible('region', 'Ask');
+      expect(screen.queryByRole('region', { name: 'Ask' })).toBeNull();
     },
   },
   {
-    name: 'Ask beside the context, from its chord',
+    name: 'Ask as a detail panel, from its chord',
     covers: ['openAsk', 'drawer:ask'],
     open: async (ctx) => {
       useAppStore.getState().openAsk({ sessionId: ctx.sessionId });
@@ -120,7 +120,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Terminal$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -141,7 +141,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^New terminal in this session$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -161,7 +161,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -199,7 +199,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await waitFor(
-        () => expect(getSection(/^Overview/).getAttribute('aria-selected')).toBe('true'),
+        () => expect(getSection(/^Conversation/).getAttribute('aria-selected')).toBe('true'),
         WAIT,
       );
       expect(opened).not.toHaveBeenCalled();

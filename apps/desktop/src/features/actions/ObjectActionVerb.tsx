@@ -3,6 +3,7 @@ import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 import { ArmedActionPopover } from '../../shared/components/HeaderConfirm/ArmedActionPopover';
 import type { ArmedAction } from '../../shared/components/HeaderConfirm/armedAction';
+import { actionButtonLookOf } from './actionButtonLookOf';
 import { useActionEnv } from './useActionEnv';
 import { useObjectActions } from './useObjectActions';
 import type { ObjectTarget } from './types';
@@ -31,7 +32,7 @@ export const ObjectActionVerb = ({ target, actionId }: Props) => {
   };
   const verb = (
     <Button
-      variant="quiet"
+      {...actionButtonLookOf({ verb: action.id, variant: 'quiet' })}
       size="sm"
       disabled={isBlocked}
       aria-label={action.ariaLabel ?? undefined}

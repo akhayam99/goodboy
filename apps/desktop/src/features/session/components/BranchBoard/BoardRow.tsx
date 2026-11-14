@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from '@goodboy/ui';
 import { agentsWordOf, checksWordsOf, stageWordOf } from '../../central/board/boardRowWordsOf';
+import { BoardBranchName } from './BoardBranchName';
 import { BoardOpenRow } from './BoardOpenRow';
 import { BoardRowAction } from './BoardRowAction';
 import { useBoardContext } from './useBoardContext';
@@ -68,7 +69,7 @@ const BoardRowView = ({ rowId, isOpen }: Props) => {
                   </span>
                 </Tooltip>
               ) : null}
-              <span className="min-w-0 truncate text-code text-foreground">{row.branch}</span>
+              <BoardBranchName name={row.branch} />
             </span>
           )}
           <span className="min-w-0 truncate text-meta text-muted-foreground">

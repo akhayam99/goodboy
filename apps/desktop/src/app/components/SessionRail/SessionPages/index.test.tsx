@@ -70,11 +70,11 @@ describe('the session pages rows', () => {
     expect(labels.filter((label) => label.startsWith('Runs'))).toHaveLength(1);
   });
 
-  it('draws the six pages of a session in the tab order', () => {
+  it('draws the five pages of a session in the tab order', () => {
     const open = renderPages();
     const names = open.getAllByRole('button').map((row) => row.querySelector('span')?.textContent);
 
-    expect(names).toEqual(['Overview', 'Changes', 'Runs', 'Artifacts', 'Questions', 'Context']);
+    expect(names).toEqual(['Overview', 'Runs', 'Artifacts', 'Questions', 'Context']);
   });
 
   it('puts the label, the fact and the shortcut in one tooltip on an open row', async () => {

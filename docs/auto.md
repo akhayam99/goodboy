@@ -449,16 +449,14 @@ writing to it reopens it to **Deciding**.
   maps to (`delegationReasonTextOf`, shared with the result card), else
   nothing (`delegationSentenceOf`). A done child shows the result it declared in `delegation.result`,
   then the summary Auto accepted, never the working `outputSummary`, and no
-  "Auto asked:" line (`autoGroupOf`, `autoChildCopyOf`). While a child is stuck
-  and Auto is live, Auto sits in the Needs you card as one block: the sentence,
-  **Open Auto**, **Stop** and **Retry** on its right, and its agents fold under it
-  (`AutoGroup.isStuck`), not Auto's own phase.
+  "Auto asked:" line (`autoGroupOf`). While a child is stuck
+  and Auto is live, the board row of its branch shows it as stuck (`AutoGroup.isStuck`),
+  not Auto's own phase.
 - **Stopped and replaced children are not stuck.** A delegation that settled
   `stopped` (you or Auto stopped it, or you declined its start, reason
   `declined`) is the child state `stopped`, which `autoStuckKindOf` does not
-  count: it leaves Next and the Running card's stuck actions, reads **Stopped** on the
-  rail, and shows among the latest finished items of the Done card and in
-  the full log (`doneRowsOf`). A settled
+  count: it leaves Next and the stuck actions, reads **Stopped** on the
+  rail, and shows in the full log. A settled
   child that did not complete is superseded, state `retried`, when a later
   delegation takes the same role on the same branch (`target.mountId`), with or
   without `retryOf` (`autoGroupOf`).

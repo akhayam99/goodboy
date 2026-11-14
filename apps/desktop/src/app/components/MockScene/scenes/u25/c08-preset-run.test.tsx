@@ -53,8 +53,7 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const hasSessionTabs = (): boolean =>
-  screen.queryAllByRole('tablist', { name: 'Session pages' }).length > 0;
+const hasSessionTabs = (): boolean => document.querySelector('[data-session-head]') !== null;
 
 const runPanel = (): HTMLElement => {
   const panel = document.querySelector<HTMLElement>('[data-spawned-panel="run"]');

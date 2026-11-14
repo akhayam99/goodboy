@@ -30,7 +30,7 @@ Hand the next agent where things stand. After a reply the drawer shows **Next** 
 
 ### Context drawer
 
-Open goal, decisions, summary and explanations in the **Context** tab, with Projects, Linked and **Ask** beside them, and copy them with **Copy context**. It opens on Goal. Each card has its title and a count from two. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Who reads this**. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
+Open goal, decisions, summary and explanations in the **Context** tab, with Projects and Linked beside them, and copy them with **Copy context**. It opens on Goal. Each card has its title and a count from two. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Who reads this**. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
@@ -58,5 +58,5 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 ## Under the hood
 
 - Decision marks: `DecisionsSection` renders one list and `markContextRead` clears marks after persistence.
-- Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, `summaryStateOf` owns its Overview sentence, and `shareableContext` keeps the complete text.
+- Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, and `shareableContext` keeps the complete text.
 - Card controls: `SlotSourceActions` keeps the three menu entries together.

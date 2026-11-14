@@ -26,7 +26,7 @@ type BaseProps = {
 };
 
 type TitleHeaderProps = {
-  readonly title: ReactNode;
+  readonly title?: ReactNode;
   readonly badge?: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;

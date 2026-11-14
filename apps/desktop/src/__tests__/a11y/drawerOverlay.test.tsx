@@ -54,7 +54,7 @@ const mount = async ({
   scene = 'drawer-overlay-narrow',
 }: {
   readonly width: number;
-  readonly scene?: 'drawer-overlay-narrow' | 'drawer-wide-push';
+  readonly scene?: 'drawer-overlay-narrow' | 'drawer-wide-push' | 'panel-frame-detail-terminal';
 }) => {
   stubDrawerColumnWidth(width);
   const Scene = MOCK_SCENES[scene];
@@ -96,6 +96,31 @@ describe('a11y, the Ask drawer over the page', () => {
   });
 });
 
+describe('a11y, a detail panel and the Terminal dock open together', () => {
+  it('lays both over a narrow page with one scrim, the page inert, and has no violation', async () => {
+    const container = await mount({ width: 900, scene: 'panel-frame-detail-terminal' });
+    const aside = screen.getByRole('complementary', { name: 'Side panel' });
+
+    expect(aside.getAttribute('data-drawer-mode')).toBe('overlay');
+    expect(container.querySelectorAll('[data-drawer-scrim]')).toHaveLength(1);
+    expect(container.querySelector('[data-drawer-main]')?.hasAttribute('inert')).toBe(true);
+    expect(aside.querySelector('[data-detail-card]')?.hasAttribute('inert')).toBe(false);
+    expect(aside.querySelector('[data-drawer-card]')?.hasAttribute('inert')).toBe(false);
+    await expectBaseline({ name: 'detail and dock over the page', container });
+  });
+
+  it('pushes both beside a wide page with nothing inert, and has no violation', async () => {
+    const container = await mount({ width: 1800, scene: 'panel-frame-detail-terminal' });
+
+    expect(
+      screen.getByRole('complementary', { name: 'Side panel' }).getAttribute('data-drawer-mode'),
+    ).toBe('push');
+    expect(container.querySelector('[data-drawer-scrim]')).toBeNull();
+    expect(container.querySelector('[data-drawer-main]')?.hasAttribute('inert')).toBe(false);
+    await expectBaseline({ name: 'detail and dock beside the page', container });
+  });
+});
+
 describe('a11y, the plan document drawer beside the page', () => {
   it('pushes at the reader width of 720 with the page kept beside it, and has no violation', async () => {
     const container = await mount({ width: 1440, scene: 'drawer-wide-push' });
@@ -103,7 +128,7 @@ describe('a11y, the plan document drawer beside the page', () => {
 
     expect(aside.getAttribute('data-drawer-sizing')).toBe('reader');
     expect(aside.getAttribute('data-drawer-mode')).toBe('push');
-    expect(aside.style.width).toBe('736px');
+    expect(aside.style.width).toBe('728px');
     await expectBaseline({ name: 'drawer wide push', container });
   });
 });

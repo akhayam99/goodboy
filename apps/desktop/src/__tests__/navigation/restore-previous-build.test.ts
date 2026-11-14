@@ -51,6 +51,7 @@ const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
 const AGENT = brandId<AgentId>({ value: 'agent-1' });
 const SRC = join(__dirname, '..', '..');
+const RETIRED_DRAWER_KINDS: ReadonlyArray<string> = ['context', 'explore'];
 
 const FORMER_KEYS = {
   sessionSidebarCollapsed: 'goodboy:sessions-sidebar-collapsed',
@@ -137,9 +138,26 @@ describe('layouts saved by the previous build', () => {
     expect(PREVIOUS_BUILD_BLOBS.studios.map((entry) => entry.kind).sort()).toEqual(
       [...studioKindsInSource()].sort(),
     );
-    expect(PREVIOUS_BUILD_BLOBS.drawers.map((entry) => entry.kind).sort()).toEqual(
+    const kinds = PREVIOUS_BUILD_BLOBS.drawers.map((entry) => entry.kind);
+    expect(kinds.filter((kind) => !RETIRED_DRAWER_KINDS.includes(kind)).sort()).toEqual(
       Object.keys(DRAWER_KINDS).sort(),
     );
+    expect(kinds.filter((kind) => RETIRED_DRAWER_KINDS.includes(kind)).sort()).toEqual(
+      [...RETIRED_DRAWER_KINDS].sort(),
+    );
+  });
+
+  it('folds every retired drawer kind of the previous build to its page', async () => {
+    const retired = PREVIOUS_BUILD_BLOBS.drawers.filter((entry) =>
+      RETIRED_DRAWER_KINDS.includes(entry.kind),
+    );
+
+    for (const entry of retired) {
+      const state = await restoredFrom({ entry });
+      expect(entry.foldedLens).not.toBeNull();
+      expect(state.drawer).toBeNull();
+      expect(state.activeLens[SESSION]).toBe(entry.foldedLens);
+    }
   });
 
   it.each(PREVIOUS_BUILD_BLOBS.places)('loads the $name place and restores it', async (entry) => {

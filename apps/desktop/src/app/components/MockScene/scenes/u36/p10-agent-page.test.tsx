@@ -166,7 +166,9 @@ describe('one agent, one page', () => {
 
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
     screen.getByText('1 file changed');
-    expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
+    expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toBe(
+      'Auto',
+    );
   });
 
   it.each(['process_error', 'no_closing_envelope'])(
@@ -283,7 +285,7 @@ describe('one agent, one page', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Failed here' }, WAIT));
 
     await screen.findByText('Harborline provider failed.', undefined, WAIT);
-    const drawer = document.querySelector('[data-drawer-card]');
+    const drawer = document.querySelector('[data-detail-card]');
     if (!(drawer instanceof HTMLElement)) {
       throw new Error('Steps did not open');
     }

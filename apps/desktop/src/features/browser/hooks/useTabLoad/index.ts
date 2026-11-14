@@ -13,18 +13,15 @@ type TabParams = {
 type Params = {
   readonly sessionId: SessionId;
   readonly onFinished: (params: TabParams) => void;
-  readonly onStalled: (params: TabParams) => void;
 };
 
 type LoadParams = {
   readonly load: BrowserTabLoad;
 };
 
-export const useTabLoad = ({ sessionId, onFinished, onStalled }: Params): void => {
+export const useTabLoad = ({ sessionId, onFinished }: Params): void => {
   const onFinishedRef = useRef(onFinished);
   onFinishedRef.current = onFinished;
-  const onStalledRef = useRef(onStalled);
-  onStalledRef.current = onStalled;
 
   useEffect(() => {
     let isLive = true;
@@ -61,9 +58,7 @@ export const useTabLoad = ({ sessionId, onFinished, onStalled }: Params): void =
         load.tabId,
         setTimeout(() => {
           timers.delete(load.tabId);
-          if (useAppStore.getState().expireBrowserLoad({ tabId: load.tabId, startedAt })) {
-            onStalledRef.current({ tabId: load.tabId });
-          }
+          useAppStore.getState().expireBrowserLoad({ tabId: load.tabId, startedAt });
         }, LOAD_STALL_MS),
       );
     };

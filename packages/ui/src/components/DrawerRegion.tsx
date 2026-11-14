@@ -14,9 +14,9 @@ export const DrawerRegion = ({ header, stepAside, children }: Props) => {
   return (
     <PinnedInsetContext.Provider value={null}>
       <RevealRegion
-        surface="subtle"
+        surface="panel"
         pinned={
-          <div data-slot="reveal-pinned" className="sticky-surface-subtle">
+          <div data-slot="reveal-pinned" className="sticky-surface-panel">
             {header}
           </div>
         }

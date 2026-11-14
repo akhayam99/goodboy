@@ -81,19 +81,19 @@ const CONTEXT_PAGE = lensPage({
   count: null,
 });
 
-export const columnPagesOf = (): ReadonlyArray<Page> => [
-  OVERVIEW_PAGE,
-  CHANGES_PAGE,
-  RUNS_PAGE,
-  ARTIFACTS_PAGE,
-];
+export const columnPagesOf = (): ReadonlyArray<Page> => [OVERVIEW_PAGE, RUNS_PAGE, ARTIFACTS_PAGE];
 
 type PagesParams = {
   readonly hasOpenQuestions: boolean;
+  readonly hasOneBranch?: boolean;
 };
 
-export const pagesOf = ({ hasOpenQuestions }: PagesParams): ReadonlyArray<Page> => [
+export const pagesOf = ({
+  hasOpenQuestions,
+  hasOneBranch = false,
+}: PagesParams): ReadonlyArray<Page> => [
   ...columnPagesOf(),
   ...(hasOpenQuestions ? [QUESTIONS_PAGE] : []),
   CONTEXT_PAGE,
+  ...(hasOneBranch ? [CHANGES_PAGE] : []),
 ];

@@ -27,12 +27,13 @@ import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from '../../sto
 import { parseLocation } from '../../../features/workspace/windowLayout';
 import { createDrawerSlice } from '../drawer';
 import { createNavigationSlice } from '.';
-import { backOf } from './backOf';
+import { parentPlace } from './parentPlace';
 import { canonicalLocation } from './canonicalLocation';
 import { captureWindowLocation } from './captureWindowLocation';
 import { agentPlace, branchPlace, sessionPlace } from './place';
 import { PLACE_ROWS } from './placeRows';
 import type { Location, Place } from './types';
+import type { DiffFocus } from '../session-view/types';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
 const S1 = brandId<SessionId>({ value: 'session-ledger-core' });
@@ -107,8 +108,10 @@ const placeOf = ({ store }: StoreParams): Place =>
 const topOf = ({ store }: StoreParams): Location =>
   captureWindowLocation({ state: store.getState() });
 
-const backRowOf = ({ store }: StoreParams): Place | null =>
-  backOf({ state: store.getState(), place: placeOf({ store }) })?.to ?? null;
+const backRowOf = ({ store }: StoreParams): Place | null => {
+  const parent = parentPlace({ state: store.getState(), place: placeOf({ store }) });
+  return parent === null || parent.at !== 'session' ? null : parent;
+};
 
 const depthOf = ({ store }: StoreParams): number =>
   store.getState().navigation[WS]?.entries.length ?? 0;
@@ -246,8 +249,8 @@ describe('two windows', () => {
   });
 });
 
-describe('the Changes tab on every session', () => {
-  it('stays on the session on a session with branches, on its branch', () => {
+describe('Changes, a place of a branch', () => {
+  it('opens the Branch page Changes tab of the branch on a session with branches', () => {
     const store = windowStore({ hasBranch: true });
 
     const { place } = canonicalLocation({
@@ -255,13 +258,23 @@ describe('the Changes tab on every session', () => {
       request: sessionPlace({ sessionId: S1, lens: 'files' }),
     });
 
-    expect(place).toEqual(
-      sessionPlace({
+    expect(place).toEqual(branchPlace({ sessionId: S1, mountPath: WORKTREE, tab: 'files' }));
+  });
+
+  it('keeps the file a Changes request names', () => {
+    const store = windowStore({ hasBranch: true });
+    const focus: DiffFocus = { kind: 'branch', path: 'src/ledger.ts' };
+
+    const { place } = canonicalLocation({
+      state: store.getState(),
+      request: sessionPlace({
         sessionId: S1,
         lens: 'files',
-        target: { kind: 'diff', mountPath: WORKTREE, focus: null },
+        target: { kind: 'diff', mountPath: WORKTREE, focus },
       }),
-    );
+    });
+
+    expect(place).toEqual(branchPlace({ sessionId: S1, mountPath: WORKTREE, tab: 'files', focus }));
   });
 
   it('keeps a session without branches on its Changes page', () => {
@@ -290,19 +303,16 @@ describe('the Changes tab on every session', () => {
     ).toEqual(branchPlace({ sessionId: S1, mountPath: WORKTREE, tab: 'commits' }));
   });
 
-  it('saves the branch the Changes tab shows', async () => {
+  it('reopens the branch Changes tab after a reload', async () => {
     const before = windowStore({ hasBranch: true });
     before.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'files' }) });
 
     const after = await reloaded({ store: before, hasBranch: true });
 
-    expect(placeOf({ store: after })).toEqual(
-      sessionPlace({
-        sessionId: S1,
-        lens: 'files',
-        target: { kind: 'diff', mountPath: WORKTREE, focus: null },
-      }),
-    );
+    expect(placeOf({ store: after })).toMatchObject({
+      at: 'session',
+      view: { lens: 'branch', target: { kind: 'branch', mountPath: WORKTREE, tab: 'files' } },
+    });
   });
 
   it('opens an unknown stored page on the Overview', async () => {

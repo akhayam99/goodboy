@@ -3,20 +3,26 @@ import type { BoardFilter } from '../../central/board/visibleGroupsOf';
 
 type Props = {
   readonly filter: BoardFilter;
+  readonly isEmpty: boolean;
   readonly onClear: () => void;
 };
 
-const FILTER_LABEL: Readonly<Record<BoardFilter, string>> = {
-  'needs-you': 'Needs you',
-  checks: 'Checks',
+const FILTER_WORDS: Readonly<
+  Record<BoardFilter, { readonly some: string; readonly none: string }>
+> = {
+  questions: {
+    some: 'Showing the branches with open questions',
+    none: 'No branch has an open question',
+  },
 };
 
-export const BoardFilterNote = ({ filter, onClear }: Props) => (
+export const BoardFilterNote = ({ filter, isEmpty, onClear }: Props) => (
   <p
     data-board-filter={filter}
+    data-board-filter-empty={isEmpty}
     className="flex items-center gap-2 px-2 text-meta text-muted-foreground"
   >
-    <span>Showing the branches behind &quot;{FILTER_LABEL[filter]}&quot;</span>
+    <span>{isEmpty ? FILTER_WORDS[filter].none : FILTER_WORDS[filter].some}</span>
     <Button size="sm" variant="quiet" onClick={onClear}>
       Clear
     </Button>
