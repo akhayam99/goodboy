@@ -2,6 +2,7 @@ import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { treeIndentPx } from '@goodboy/ui';
 import { agentPlace, useAppStore } from '../../../../../store';
 import { LeadTree } from '../../../../auto/tree/LeadTree';
+import { useFlowWord } from '../../../../../shared/hooks/useFlowWord';
 import { useCanOpenBranchWork } from '../../../hooks/useCanOpenBranchWork';
 import { openBranchWorkTab } from '../../../openBranchWorkTab';
 import type { BranchLead } from '../../../branchLeadsOf';
@@ -25,6 +26,7 @@ type BranchParams = {
 const ignore = (): void => undefined;
 
 export const BranchWorkLeads = ({ sessionId, leads, onToggleFold, onLeave }: Props) => {
+  const word = useFlowWord();
   const canOpenBranch = useCanOpenBranchWork({ sessionId });
   const open = ({ agentId }: OpenParams) => {
     useAppStore.getState().navigate({ to: agentPlace({ sessionId, agentId }) });
@@ -34,7 +36,7 @@ export const BranchWorkLeads = ({ sessionId, leads, onToggleFold, onLeave }: Pro
   return (
     <section aria-labelledby="branch-work-leads" className="flex min-w-0 flex-col gap-1">
       <h2 id="branch-work-leads" className="text-row-strong text-foreground">
-        Leads
+        {`${word}s`}
       </h2>
       {leads.map((lead) => (
         <div key={lead.id} className="flex min-w-0 flex-col gap-0.5">

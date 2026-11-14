@@ -856,6 +856,7 @@ settings-theme-dark
 settings-theme-light
 settings-theme-system
 settings-tools
+settings-work
 settings-workspace
 shell
 side-info-doors

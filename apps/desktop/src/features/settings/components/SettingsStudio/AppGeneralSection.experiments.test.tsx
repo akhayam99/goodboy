@@ -45,12 +45,12 @@ afterEach(cleanup);
 
 describe('General page without an Auto switch', () => {
   it.each([true, false])(
-    'has no Experiments band and no Auto switch, release gate open %s',
+    'has the Work switch and no Auto switch, release gate open %s',
     (isReleased) => {
       mount({ isReleased });
 
       expect(screen.getByRole('heading', { name: 'Search' })).toBeDefined();
-      expect(screen.queryByRole('heading', { name: 'Experiments' })).toBeNull();
+      screen.getByRole('switch', { name: 'Work (experimental)' });
       expect(screen.queryByRole('switch', { name: 'Auto agent' })).toBeNull();
     },
   );

@@ -524,7 +524,7 @@ describe('the Leads of a branch', () => {
 
     const line = await screen.findByTestId('branch-work-lead');
     expect(line.textContent).toContain(RETRY.branch);
-    screen.getByRole('heading', { level: 2, name: 'Leads' });
+    screen.getByRole('heading', { level: 2, name: 'Autos' });
     unmount();
 
     const other = render(
