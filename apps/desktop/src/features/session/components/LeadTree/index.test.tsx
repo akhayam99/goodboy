@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import type { AgentId } from '@goodboy/types';
 import { nextAgentId } from '@goodboy/types/testing';
 import { LeadTree, type LeadTreeDensity } from '.';
-import type { LeadTreeItem } from '../leadTreeItemsOf';
+import type { LeadTreeItem } from '../../../auto/tree/leadTreeItemsOf';
 
 afterEach(cleanup);
 
@@ -21,8 +21,11 @@ const scout: LeadTreeItem = {
   agentId: SCOUT_ID,
   depth: 0,
   number: '1',
+  agentKind: 'scout',
   role: 'Scout',
   title: 'Where the retry config lives',
+  node: 'done',
+  word: 'Done',
   isSettled: true,
   spendUsd: 0.31,
 };
@@ -33,8 +36,11 @@ const implementer: LeadTreeItem = {
   agentId: IMPLEMENTER_ID,
   depth: 0,
   number: '2',
+  agentKind: 'implementer',
   role: 'Implementer',
   title: 'Key the guard on the event id',
+  node: 'running',
+  word: 'Running',
   isSettled: false,
   spendUsd: 0,
 };
@@ -133,6 +139,30 @@ describe('LeadTree', () => {
     expect(screen.queryByText('Where the retry config lives')).toBeNull();
     await user.click(screen.getByRole('treeitem', { name: /Implementer/ }));
     expect(onSelect).toHaveBeenCalledWith(IMPLEMENTER_ID);
+  });
+
+  it('draws the run as a trace: a child hangs on an elbow, only a waiting row says its state', () => {
+    const reviewer: LeadTreeItem = {
+      ...implementer,
+      id: 'd3',
+      agentId: nextAgentId(),
+      depth: 1,
+      number: '2.1',
+      agentKind: 'reviewer',
+      role: 'Reviewer',
+      title: 'Check the key is built once per credit',
+      node: 'question',
+      word: 'Needs you',
+    };
+    const { container } = render(<Harness items={[scout, implementer, reviewer]} />);
+    expect(container.querySelectorAll('[data-spawned-rail]')).toHaveLength(3);
+    expect(container.querySelectorAll('[data-spawned-rail] path').length).toBeGreaterThan(0);
+    screen.getByText('Needs you');
+    expect(screen.queryByText('Done')).toBeNull();
+    expect(screen.queryByText('Running')).toBeNull();
+    expect(screen.getByRole('treeitem', { name: /Reviewer/ }).getAttribute('aria-label')).toBe(
+      '2.1 Reviewer, Check the key is built once per credit, Needs you',
+    );
   });
 
   it('shows spend once settled', () => {

@@ -843,7 +843,8 @@ describe('SessionWorkspace session head', () => {
 
     expect(screen.getAllByTestId('session-head')).toHaveLength(1);
     const frame = container.querySelector('[data-session-head-frame]');
-    const band = frame?.firstElementChild?.firstElementChild ?? null;
+    expect(frame?.firstElementChild?.hasAttribute('data-session-lead')).toBe(true);
+    const band = frame?.children[1]?.firstElementChild ?? null;
     expect(band?.hasAttribute('data-session-head-band')).toBe(true);
     expect(band?.firstElementChild?.getAttribute('data-testid')).toBe('session-head');
     expect(frame?.lastElementChild?.hasAttribute('data-session-aside')).toBe(true);

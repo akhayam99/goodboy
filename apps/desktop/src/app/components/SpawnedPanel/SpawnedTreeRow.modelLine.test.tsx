@@ -12,7 +12,7 @@ import { anAgent } from '@goodboy/types/testing';
 import { brandId, type AgentId } from '@goodboy/types';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { SpawnedTreeRow } from './SpawnedTreeRow';
-import { spawnedRailOf } from './spawnedRailOf';
+import { spawnedRailOf } from '../../../features/workTreeModel/spawnedRailOf';
 
 const AGENT_ID = brandId<AgentId>({ value: 'agent-impl' });
 

@@ -21,6 +21,7 @@ export const SessionHeadFrame = ({ head, children }: Props) => {
   const [title, setTitle] = useState<HTMLElement | null>(null);
   const [meta, setMeta] = useState<HTMLElement | null>(null);
   const [aside, setAside] = useState<HTMLElement | null>(null);
+  const [lead, setLead] = useState<HTMLElement | null>(null);
   const [claims, setClaims] = useState<Claims>(NO_CLAIMS);
   const columnRef = useRef<HTMLDivElement | null>(null);
   const headRef = useRef<HTMLDivElement | null>(null);
@@ -36,6 +37,7 @@ export const SessionHeadFrame = ({ head, children }: Props) => {
       title,
       meta,
       aside,
+      lead,
       frame,
       isTitleClaimed: claims.title > 0,
       isHeadingClaimed: claims.heading > 0,
@@ -43,11 +45,12 @@ export const SessionHeadFrame = ({ head, children }: Props) => {
       setMeta,
       claim,
     }),
-    [title, meta, aside, frame, claims, claim],
+    [title, meta, aside, lead, frame, claims, claim],
   );
   return (
     <SessionHeadSlotsContext.Provider value={slots}>
       <div ref={setFrame} data-session-head-frame="" className="flex h-full w-full min-w-0">
+        <div ref={setLead} data-session-lead="" className="flex shrink-0 empty:hidden" />
         <div ref={columnRef} className="@container relative flex h-full min-w-0 flex-1 flex-col">
           <div ref={headRef} data-session-head-band="" className="relative z-40 shrink-0 pb-2">
             {head}

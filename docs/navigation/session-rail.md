@@ -791,7 +791,7 @@ Folding the rail leaves the column in place.
   rows and status sentence are status, not parallel links to the Runs list.
   The tree reads top down, like the step list of the run page: each parent
   above its children, the first step on top, each child joined to its parent's
-  lane by the fork curve (`spawnedRailOf` lays the rows out with
+  lane by the fork curve (`spawnedRailOf` in `features/workTreeModel` lays the rows out with
   `layoutTimelineRail`, `SpawnedRailCell` draws them with `TimelineRail`; a
   queued child dashes its lane). Every reader of the order goes through
   `spawnedTreeItemsOf`, which is DOM order. A focused Auto launch is the same

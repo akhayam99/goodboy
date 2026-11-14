@@ -99,7 +99,6 @@ export const LeadPageBody = ({
       items={items}
       selectedAgentId={selectedId}
       onSelect={onSelect}
-      onToggleFold={model.onToggleFold}
       onEditNote={model.onEditNote}
       onRemoveNote={model.onRemoveNote}
     />

@@ -1,5 +1,5 @@
 import { useContext, useMemo, type ReactNode } from 'react';
-import { SessionHeadSlotsContext, type SessionHeadSlots } from '../sessionHeadSlotsContext';
+import { SessionHeadSlotsContext, type SessionHeadSlots } from '../../sessionHeadSlotsContext';
 
 type Props = {
   readonly isOpen: boolean;
@@ -14,7 +14,7 @@ export const HeadSlotsGate = ({ isOpen, children }: Props) => {
     if (slots === null || isOpen) {
       return slots;
     }
-    return { ...slots, title: null, meta: null, aside: null, claim: noClaim };
+    return { ...slots, title: null, meta: null, aside: null, lead: null, claim: noClaim };
   }, [slots, isOpen]);
   return (
     <SessionHeadSlotsContext.Provider value={gated}>{children}</SessionHeadSlotsContext.Provider>

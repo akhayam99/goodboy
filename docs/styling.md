@@ -270,7 +270,9 @@ of its own: `SessionHeadFrame` hands it three slots through `SessionHeadSlotsCon
 its state word, spend, Settings, more menu and run controls at the right end of the crumb row,
 and a side column such as the lead's Agents beside the head and the page, full height, with
 its header on the frame first row (`PANE_RHYTHM.firstRow`). The head and the page then
-centre in the space left of that column, so they keep one left edge. Only the page on screen
+centre in the space left of that column, so they keep one left edge. The frame has the same
+slot on its left (`data-session-lead`), which holds the file list of the branch Changes tab
+(`useBranchRailSlot`). Only the page on screen
 fills the slots: `HeadSlotsGate` gives a kept lens layer that is hidden (under an agent page, or
 an earlier tab) no slot, so a run page under a step page never adds its name or controls. The head sits above
 the page (`data-session-head-band`, `z-40`), and `useHeadInset` writes its height as
@@ -391,7 +393,10 @@ Five rules:
    that is not `StudioDetail` takes `h-full`: `flex-1` there does nothing, and an empty
    child (the Browser page's native view) measures zero high.
 2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
-   (288, resizable 220 to 420). No page draws a second rail column.
+   (288, resizable 220 to 420). No page draws a second rail column. The one exception is the
+   file list of the branch Changes tab: it is portaled into the session frame's left slot as a
+   full height column (`railWidth="wide"`, 340, resizable to 560) so the session head and the
+   diff keep the 960 column, the mirror of the Agents column of a run page.
 3. **Stage pages are only the Board, the Terminal and the Browser.** Nothing else is fluid.
 4. **The page title row and the drawer header share one line.** `DrawerFrame` draws its
    header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 8px

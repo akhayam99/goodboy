@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { brandId, type AgentId } from '@goodboy/types';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
-import { LeadTree } from '../../../../../../features/auto/tree/LeadTree';
+import { LeadTree } from '../../../../../../features/session/components/LeadTree';
 import type { LeadTreeItem } from '../../../../../../features/auto/tree/leadTreeItemsOf';
 
 type Theme = 'dark' | 'light';
@@ -33,8 +33,11 @@ const ITEMS: ReadonlyArray<LeadTreeItem> = [
     agentId: IMPLEMENTER_ID,
     depth: 0,
     number: '2',
+    agentKind: 'implementer',
     role: 'Implementer',
     title: 'Key the guard on the event id',
+    node: 'running',
+    word: 'Running',
     isSettled: false,
     spendUsd: 0,
   },
@@ -44,8 +47,11 @@ const ITEMS: ReadonlyArray<LeadTreeItem> = [
     agentId: SCOUT_ID,
     depth: 1,
     number: '2.1',
+    agentKind: 'scout',
     role: 'Scout',
     title: 'Where the batch endpoint reads the id',
+    node: 'done',
+    word: 'Done',
     isSettled: true,
     spendUsd: 0.08,
   },
@@ -55,8 +61,11 @@ const ITEMS: ReadonlyArray<LeadTreeItem> = [
     agentId: TESTER_ID,
     depth: 0,
     number: '3',
+    agentKind: 'tester',
     role: 'Tester',
     title: 'Redelivery test for POST /webhooks',
+    node: 'queued',
+    word: 'Queued',
     isSettled: false,
     spendUsd: 0,
   },

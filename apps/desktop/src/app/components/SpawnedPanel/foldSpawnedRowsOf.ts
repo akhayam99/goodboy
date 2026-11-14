@@ -1,6 +1,6 @@
 import { runAgentCountOf } from '../../../features/session/runAgentCountOf';
 import { helperUrgencyOf, type HelperUrgency } from './helperUrgencyOf';
-import { parentIdsOf } from './parentIdsOf';
+import { parentIdsOf } from '../../../features/workTreeModel/parentIdsOf';
 import type { SpawnedRow } from './spawnedRow';
 
 type HelpersSummary = Readonly<{

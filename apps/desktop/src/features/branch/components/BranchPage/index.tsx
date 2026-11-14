@@ -18,7 +18,6 @@ import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFl
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { useBranchReview } from '../../../resolve/hooks/useBranchReview';
 import { usePushRequest } from '../../hooks/usePushRequest';
-import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { useBitbucketRemote } from '../../hooks/useBitbucketRemote';
 import { useBranchIdentity } from '../../hooks/useBranchIdentity';
@@ -51,7 +50,7 @@ import { BranchBodyTop } from './BranchBodyTop';
 import { BranchDetail } from './BranchDetail';
 import { BranchScroll } from './BranchScroll';
 import { BranchWorkBody } from './BranchWorkBody';
-import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
+import { BranchPaneRoot } from './BranchPaneRoot';
 
 const NO_PREFILL = { title: '', body: '' };
 
@@ -448,7 +447,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
             isPushNext={!isStepHidden && controls.primary?.actionId === 'diff.push'}
             isSetupOfferShown={!isChanges}
-            width={isChanges ? 'full' : 'column'}
             baseRow={baseRow}
             onOpenComments={() => selectTab('comments')}
           />
@@ -459,12 +457,12 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
 
   return (
-    <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
-      <TabActionsSlotContext.Provider value={tabActionsSlot}>
-        <div data-branch-pane="" className="relative flex h-full min-h-0 min-w-0 flex-1">
-          {detail}
-        </div>
-      </TabActionsSlotContext.Provider>
-    </BranchDiffContext.Provider>
+    <BranchPaneRoot
+      isActive={isActive}
+      diff={identity.mountPath === null ? null : diff}
+      tabActionsSlot={tabActionsSlot}
+    >
+      {detail}
+    </BranchPaneRoot>
   );
 };

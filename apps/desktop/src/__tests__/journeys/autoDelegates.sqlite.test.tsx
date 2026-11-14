@@ -31,7 +31,7 @@ import type {
 import { railRowsOf } from '../../features/auto/chat/railRowsOf';
 import { autoSpawnedRowsOf } from '../../app/components/SpawnedPanel/autoSpawnedRowsOf';
 import type { SpawnedRow } from '../../app/components/SpawnedPanel/spawnedRow';
-import { spawnedRailOf } from '../../app/components/SpawnedPanel/spawnedRailOf';
+import { spawnedRailOf } from '../../features/workTreeModel/spawnedRailOf';
 import { SpawnedTree } from '../../app/components/SpawnedPanel/SpawnedTree';
 import { SpawnedTreeRow } from '../../app/components/SpawnedPanel/SpawnedTreeRow';
 import { brandedId } from '../../features/history/testing/brandedId';
