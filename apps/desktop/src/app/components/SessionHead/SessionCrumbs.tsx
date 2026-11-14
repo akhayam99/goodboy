@@ -56,7 +56,7 @@ export const SessionCrumbs = ({ session }: Props) => {
               key={`${index}:${label}`}
               className={cn(
                 'flex min-w-0 items-center gap-1',
-                isCurrent ? 'flex-1' : index === 0 ? 'max-w-64 shrink' : 'shrink',
+                isCurrent ? 'min-w-32 flex-1' : index === 0 ? 'max-w-64 shrink' : 'shrink',
               )}
             >
               {index === 0 ? null : (
