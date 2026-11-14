@@ -568,7 +568,36 @@ export const visible = async (role: string, name: RegExp | string): Promise<void
   expect(await screen.findByRole(role, { name }, WAIT)).toBeDefined();
 };
 
-export const heading = (name: RegExp | string): Promise<void> => visible('heading', name);
+export const crumbNamed = async (name: string): Promise<void> => {
+  await waitFor(
+    () =>
+      expect(
+        within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('button', {
+          name,
+        }),
+      ).toBeDefined(),
+    WAIT,
+  );
+};
+
+const SESSION_TAB_NAMES: ReadonlySet<string> = new Set([
+  'Runs',
+  'Artifacts',
+  'Questions',
+  'Context',
+]);
+
+export const heading = (name: RegExp | string): Promise<void> =>
+  typeof name === 'string' && SESSION_TAB_NAMES.has(name)
+    ? tabSelected(name)()
+    : visible('heading', name);
+
+export const tabSelected = (label: string) => async (): Promise<void> => {
+  await waitFor(
+    () => expect(sessionTab(new RegExp(`^${label}`)).getAttribute('aria-selected')).toBe('true'),
+    WAIT,
+  );
+};
 
 export const studio = async (title: string): Promise<void> => {
   await waitFor(
@@ -615,7 +644,7 @@ export const pane = (name: PaneName) => async (ctx: Ctx) => {
 type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
-  pr: /^Overview/,
+  pr: /^Conversation/,
   comments: /^Comments/,
   files: /^Changes/,
   commits: /^Commits/,
@@ -646,7 +675,7 @@ export const branchTab = (tab: BranchTabName) => async (ctx: Ctx) => {
 };
 
 export const changesTab = async (ctx: Ctx): Promise<void> => {
-  await lens('files')(ctx);
+  await branchTab('files')(ctx);
   expect(await screen.findByRole('button', { name: /^Compared with / })).toBeDefined();
 };
 
@@ -696,18 +725,22 @@ const overviewLands = async (): Promise<void> =>
 export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },
   { label: 'Branch', lens: 'branch', lands: branchTab('pr') },
-  { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
-  { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
-  { label: 'Changes', lens: 'files', lands: changesTab },
+  { label: 'Runs', lens: 'workflows', lands: tabSelected('Runs') },
+  { label: 'Artifacts', lens: 'plans', lands: tabSelected('Artifacts') },
   {
-    label: 'Context',
-    lens: 'context',
-    lands: async () => {
-      expect(
-        (await screen.findAllByRole('heading', { name: 'Context' }, WAIT)).length,
-      ).toBeGreaterThan(0);
-    },
+    label: 'Changes',
+    note: 'the shortcut of a session with one branch',
+    lens: 'branch',
+    beforeOpen: ({ sessionId }) =>
+      useAppStore.setState((state) => ({
+        sessionProjectMounts: {
+          ...state.sessionProjectMounts,
+          [sessionId]: (state.sessionProjectMounts[sessionId] ?? []).slice(0, 1),
+        },
+      })),
+    lands: changesTab,
   },
+  { label: 'Context', lens: 'context', lands: tabSelected('Context') },
   {
     label: 'Questions',
     note: 'while one is open',
@@ -716,17 +749,17 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
       useAppStore.setState({
         sessionOpenQuestions: { [sessionId]: [openQuestionFor({ sessionId })] },
       }),
-    lands: () => heading('Questions'),
+    lands: tabSelected('Questions'),
   },
 ];
 
 export const LENS_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },
-  { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
-  { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
-  { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
+  { label: 'Runs', lens: 'workflows', lands: tabSelected('Runs') },
+  { label: 'Questions', lens: 'questions', lands: tabSelected('Questions') },
+  { label: 'Artifacts', lens: 'plans', lands: tabSelected('Artifacts') },
   { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
-  { label: 'Changes', lens: 'files', lands: changesTab },
+  { label: 'Changes', lens: 'branch', lands: changesTab },
   {
     label: 'Pull request',
     lens: 'branch',

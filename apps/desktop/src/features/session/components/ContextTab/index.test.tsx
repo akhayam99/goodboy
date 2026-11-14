@@ -16,6 +16,7 @@ import {
   seedActivityRunScene,
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedSessionAsk } from '../../../../app/components/MockScene/scenes/sessionAskSeed';
+import { AskDrawer } from '../../ask/components/AskDrawer';
 import { currentStack } from '../../../../store/slices/navigation/currentStack';
 import { selectIsContextTabOpen } from '../../../../store/slices/contextDrawer/selectIsContextTabOpen';
 import { ContextCardsContext } from '../../contextCardsContext';
@@ -79,7 +80,7 @@ const TASK: SessionExternalTask = {
 };
 
 describe('the Context tab', () => {
-  it('holds every section of the old panel: goal, decisions, summary, explanations and Ask', async () => {
+  it('holds every section of the old panel, goal, decisions, summary and explanations, and no Ask', async () => {
     mount();
 
     const tab = await screen.findByTestId('context-tab');
@@ -87,7 +88,7 @@ describe('the Context tab', () => {
     within(tab).getByRole('region', { name: 'Decision records' });
     within(tab).getByRole('region', { name: 'Summary' });
     within(tab).getByRole('region', { name: 'Explanations' });
-    within(tab).getByRole('region', { name: 'Ask' });
+    expect(within(tab).queryByRole('region', { name: 'Ask' })).toBeNull();
     within(tab).getByRole('button', { name: 'Copy context' });
   });
 
@@ -134,29 +135,30 @@ describe('the Context tab', () => {
     within(tab).getByRole('group', { name: 'Linked' });
   });
 
-  it('keeps the conversation of Ask when the tab is left and opened again, and starts no agent', async () => {
+  it('keeps the conversation of the Ask panel when it is closed and opened again, and starts no agent', async () => {
     const startedAgents = vi.fn();
     store.setState({ createSession: startedAgents });
     act(() => seedSessionAsk({ state: 'answer', session: session() }));
     const agentsBefore = store.getState().sessionPhaseRuns[SESSION_ID];
-    const view = mount();
+    const panel = () => render(<AskDrawer sessionId={SESSION_ID} onClose={vi.fn()} />);
+    const view = panel();
     await screen.findByTestId('ask-answer');
     const turns = screen.getAllByTestId('ask-answer').length;
 
     view.unmount();
-    mount();
+    panel();
 
     expect(await screen.findAllByTestId('ask-answer')).toHaveLength(turns);
     expect(startedAgents).not.toHaveBeenCalled();
     expect(store.getState().sessionPhaseRuns[SESSION_ID]).toBe(agentsBefore);
   });
 
-  it('opens the tab with the Ask input focused from ask.open, and leaves the input alone on a plain visit', async () => {
-    mount();
-    const field = await screen.findByRole('textbox', { name: 'Ask about this session' });
-    expect(document.activeElement).not.toBe(field);
-
+  it('opens Ask as a detail panel from ask.open, with its input focused', async () => {
     act(() => store.getState().openAsk({ sessionId: SESSION_ID }));
+    expect(store.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION_ID });
+
+    render(<AskDrawer sessionId={SESSION_ID} onClose={vi.fn()} />);
+    const field = await screen.findByRole('textbox', { name: 'Ask about this session' });
     await waitFor(() => expect(document.activeElement).toBe(field));
   });
 });

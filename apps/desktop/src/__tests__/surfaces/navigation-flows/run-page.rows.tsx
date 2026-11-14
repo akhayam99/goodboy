@@ -207,7 +207,8 @@ const openRunPage = async (ctx: Ctx): Promise<void> => {
   act(() => useAppStore.getState().navigate({ to: runPage(ctx) }));
   await settle();
   await screen.findByRole('region', RUN_TAIL, WAIT);
-  expect(screen.getAllByRole('tablist', { name: 'Session pages' }).length).toBeGreaterThan(0);
+  const crumbs = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
+  expect(crumbs.getByRole('button', { name: 'Runs' })).toBeDefined();
 };
 
 const backToTheList = async (ctx: Ctx): Promise<void> => {
@@ -243,7 +244,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: backToTheList,
   },
   {
-    name: 'Esc on a step page does what its back row does and lands on its run',
+    name: 'Esc on a step page goes one crumb up and lands on its run',
     covers: ['navigate', 'up'],
     open: async (ctx) => {
       await openRunPage(ctx);
@@ -269,7 +270,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'Esc on the Runs tab stays there, since a session tab has no back row',
+    name: 'Esc on the Runs tab stays there, since a session tab has no crumbs',
     covers: ['navigate'],
     open: async (ctx) => {
       act(() =>
@@ -286,7 +287,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
         () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('workflows'),
         WAIT,
       );
-      expect(screen.queryByRole('button', { name: /^Back to / })).toBeNull();
+      expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
     },
   },
   {

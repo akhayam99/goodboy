@@ -50,7 +50,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { backOf } from '../../../../../store/slices/navigation/backOf';
+import { parentPlace } from '../../../../../store/slices/navigation/parentPlace';
 import { captureLocation } from '../../../../../store/slices/navigation/captureLocation';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
@@ -340,6 +340,7 @@ describe('Questions by branch', () => {
 
     const state = useAppStore.getState();
     const here = captureLocation({ state }).place;
-    expect(backOf({ state, place: here })?.label).toBe('Back to branch');
+    const parent = parentPlace({ state, place: here });
+    expect(parent?.at === 'session' ? parent.view.target?.kind : null).toBe('branch');
   });
 });

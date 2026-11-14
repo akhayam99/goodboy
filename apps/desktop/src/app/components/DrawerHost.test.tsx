@@ -126,6 +126,12 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'question', sessionId: SESSION, payload: { questionId: QUESTION } },
   },
   {
+    kind: 'ask',
+    region: 'Ask',
+    seed: seedSession,
+    drawer: { kind: 'ask', sessionId: SESSION, payload: null },
+  },
+  {
     kind: 'new',
     region: 'Write a report',
     seed: seedSession,

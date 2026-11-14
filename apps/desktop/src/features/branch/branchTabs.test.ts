@@ -128,7 +128,7 @@ beforeEach(() => {
 });
 
 describe('the Branch sections by state', () => {
-  it('gives Overview, Files, Commits and Work with no pull request and no comment', () => {
+  it('gives Conversation, Files, Commits and Work with no pull request and no comment', () => {
     expect(tabIds('none', false)).toEqual(['pr', 'files', 'commits', 'work']);
   });
 
@@ -146,10 +146,10 @@ describe('the Branch sections by state', () => {
     expect(tabIds('none', false)).not.toContain('checks');
   });
 
-  it('labels the first section Overview in every state', () => {
+  it('labels the first section Conversation in every state', () => {
     for (const { pr, hasNote } of CASES) {
       const scope = { state: pr ?? 'none', hasComments: hasNote } as const;
-      expect(branchTabsOf(scope)[0]?.label).toBe('Overview');
+      expect(branchTabsOf(scope)[0]?.label).toBe('Conversation');
     }
   });
 
@@ -167,7 +167,7 @@ describe('the Branch sections by state', () => {
     ).toEqual(['comments', 'files', 'commits', 'checks', 'work']);
   });
 
-  it('names each section by the label of its shortcut, Overview aside', () => {
+  it('names each section by the label of its shortcut, Conversation aside', () => {
     for (const tab of Object.values(BRANCH_TAB_REGISTRY)) {
       if (tab.shortcut !== null && tab.id !== 'pr') {
         expect(SHORTCUTS[tab.shortcut].label).toBe(tab.label);
@@ -239,7 +239,7 @@ describe('the door resolver', () => {
     ).toBe('comments');
   });
 
-  it('lands the Checks door with no pull request on Overview', () => {
+  it('lands the Checks door with no pull request on Conversation', () => {
     expect(
       landed({
         pr: null,

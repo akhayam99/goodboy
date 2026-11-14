@@ -4,6 +4,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 
 import { useShortcut } from '../../../../../shared/keyboard/useShortcut';
+import { isFocusInsideAsk } from '../../../ask/isFocusInsideAsk';
 import { NewFormMenuList } from '../../../../actions/NewFormMenuList';
 
 type Props = {
@@ -15,7 +16,18 @@ export const OverviewActions = ({ session }: Props) => {
   const isStudioOpen = useAppStore((state) => state.appStudio !== null);
   const dropdown = useDropdown({ align: 'end', width: 'min-w-50', expectedHeight: 220 });
 
-  useShortcut('overview.newHere', dropdown.toggle, !isStudioOpen);
+  useShortcut(
+    'overview.newHere',
+    () => {
+      if (isFocusInsideAsk({})) {
+        return false;
+      }
+      dropdown.toggle();
+      return true;
+    },
+    !isStudioOpen,
+    { canDecline: true },
+  );
 
   return (
     <AnchoredPopover

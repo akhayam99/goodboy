@@ -50,7 +50,7 @@ import { openStartRun } from '../../session/startRun/openStartRun';
 import { openPlanAnywhere } from '../../plans/openPlanAnywhere';
 import { requestAskReset } from '../../session/ask/requestAskReset';
 import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
-import { selectIsContextTabOpen } from '../../../store/slices/contextDrawer/selectIsContextTabOpen';
+import { selectIsAskOpen } from '../../../store/slices/ask/selectIsAskOpen';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
 import { markAllReadEntries } from '../sources/markAllReadEntries';
@@ -115,7 +115,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const plans = useSessionPlans(sessionId);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const isAskOpen = useAppStore(
-    (s) => sessionId !== null && selectIsContextTabOpen({ state: s, sessionId }),
+    (s) => sessionId !== null && selectIsAskOpen({ state: s, sessionId }),
   );
   const isAskReplying = useAppStore((s) =>
     sessionId === null ? false : isAskStreaming({ state: s, sessionId }),

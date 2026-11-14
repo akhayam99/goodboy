@@ -76,7 +76,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (!isLoaded && hasLoadError) {
     return (
-      <PaneShell page="questions" title={TITLE}>
+      <PaneShell page="questions">
         <ContextLoadFailure title={TITLE} onRetry={reload} />
       </PaneShell>
     );
@@ -84,7 +84,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (!isLoaded) {
     return (
-      <PaneShell page="questions" title={TITLE}>
+      <PaneShell page="questions">
         <div role="status" aria-label="Loading questions" className="flex flex-col">
           {Array.from({ length: SKELETON_ROWS }).map((_, index) => (
             <div key={index} className="flex h-8 items-center gap-3">
@@ -99,7 +99,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (rows.length === 0) {
     return (
-      <PaneShell page="questions" title={TITLE}>
+      <PaneShell page="questions">
         <EmptyState
           size="page"
           icon={CONCEPT_ICONS.questions}
@@ -111,7 +111,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   }
 
   return (
-    <PaneShell page="questions" title={TITLE}>
+    <PaneShell page="questions">
       <QuestionsGrid
         sessionId={sessionId}
         groups={groups}

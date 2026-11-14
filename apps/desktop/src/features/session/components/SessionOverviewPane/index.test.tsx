@@ -34,6 +34,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
+import { PaneTitleRow } from '@goodboy/ui';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -44,10 +45,14 @@ import {
 
 let useAppStore: StoryStore;
 let SessionOverviewPane: typeof import('./index').SessionOverviewPane;
+let OverviewTitle: typeof import('./OverviewTitle').OverviewTitle;
+let OverviewHeaderActions: typeof import('./OverviewHeaderActions').OverviewHeaderActions;
 
 beforeAll(async () => {
   useAppStore = await importStore();
   ({ SessionOverviewPane } = await import('./index'));
+  ({ OverviewTitle } = await import('./OverviewTitle'));
+  ({ OverviewHeaderActions } = await import('./OverviewHeaderActions'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -78,6 +83,10 @@ type PaneParams = {
 const renderPane = ({ session = SESSION }: PaneParams = {}) =>
   render(
     <ToastProvider>
+      <PaneTitleRow
+        title={<OverviewTitle session={session} />}
+        actions={<OverviewHeaderActions session={session} />}
+      />
       <SessionOverviewPane session={session} />
     </ToastProvider>,
   );
@@ -97,7 +106,7 @@ describe('SessionOverviewPane', () => {
     expect(Array.from(body?.querySelectorAll(':scope > section') ?? [])).toEqual([column]);
     expect(screen.queryByRole('region', { name: 'Notices' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
-    expect(header?.getAttribute('data-rhythm')).toBe('section');
+    expect(header).toBeNull();
   });
 
   it('reads a stored Classic choice as the cards, with no Activity and no toggle', () => {
@@ -155,6 +164,7 @@ describe('SessionOverviewPane', () => {
     expect(renamed?.goal).toBe('Key redeliveries by event id');
     rerender(
       <ToastProvider>
+        <PaneTitleRow title={<OverviewTitle session={renamed ?? SESSION} />} />
         <SessionOverviewPane session={renamed ?? SESSION} />
       </ToastProvider>,
     );

@@ -18,6 +18,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return 'scripts';
     case 'conversation':
       return `conversation:${content.payload.threadId}`;
+    case 'ask':
+      return 'ask';
     case 'question':
       return `question:${content.payload.questionId}`;
     case 'new':

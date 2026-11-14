@@ -41,6 +41,16 @@ export const ArtifactShellHeader = ({
     viewing: viewingId === null ? null : { kind: 'artifact', id: viewingId },
   });
 
+  const metaLine =
+    meta === null ? null : (
+      <div
+        data-testid="artifact-shell-meta"
+        className="flex min-w-0 text-meta text-muted-foreground"
+      >
+        {meta}
+      </div>
+    );
+
   return (
     <ArtifactHeaderMenuContext.Provider value={register}>
       <div
@@ -51,9 +61,13 @@ export const ArtifactShellHeader = ({
       >
         <PaneTitleRow
           titleTestId="artifact-title"
+          isHeading={!isTitleInDocument}
           title={
             isTitleInDocument ? (
-              <span className="sr-only">{title}</span>
+              <span className="flex min-w-0 items-center">
+                <span className="sr-only">{title}</span>
+                {metaLine}
+              </span>
             ) : (
               <span className="flex min-w-0 items-center gap-2">
                 <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />
@@ -63,13 +77,7 @@ export const ArtifactShellHeader = ({
               </span>
             )
           }
-          meta={
-            meta === null ? null : (
-              <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-6">
-                {meta}
-              </div>
-            )
-          }
+          meta={isTitleInDocument ? null : metaLine}
           actions={
             <>
               {chip}

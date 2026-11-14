@@ -107,7 +107,7 @@
   second `Answer` on the timeline row.
 - **The focused issue page says where the issue lives.** The issue is an
   address (`external-task` target, `focusedExternalTask`): a card opens it
-  through `openExternalTaskLens`, so the back row reads `Back to overview`.
+  through `openExternalTaskLens`, so the crumbs read `Session › {provider}`.
   The rail owns the linked work list and its history fold. The page draws no back
   button of its own. `Remove link from this session` sits in the record's `⋯`, asks first and
   leaves an Undo toast; once the unlink lands, the address is replaced by the
@@ -146,8 +146,8 @@
   = pick one thing in ten seconds; drawer = reference next to the work; page =
   the work. The session context and the Explore file preview open there.
   Creating or configuring stays in a popover, navigating stays in the sidebar,
-  and an object you work on is a child page under one back row, not a trail
-  ([Back row](session-rail.md#back-row)). See
+  and an object you work on is a child page under the session crumbs, not a studio trail
+  ([Crumbs](session-rail.md#crumbs)). See
   [The right drawer](home-and-drawer.md#the-right-drawer).
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](branch-page.md#the-branch-page).
@@ -299,7 +299,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from Search or run, never
-  from a rail, and the page it opens has one back row, no trail.** Rows and chips inside the
+  from a rail, and the page it opens has the session crumbs, no trail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts
   and dots are read-only signals on the row that routes there. Session
   lifecycle actions are not navigation and do not belong on those rows. A

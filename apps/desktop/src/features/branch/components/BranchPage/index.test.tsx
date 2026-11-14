@@ -272,14 +272,14 @@ const aNote = (): DiffComment => ({
 });
 
 describe('Branch page header and sections', () => {
-  it('names the pull request and lists Overview, Comments, Changes, Commits, Checks and Work in the rail', async () => {
+  it('names the pull request and lists Conversation, Comments, Changes, Commits, Checks and Work in the rail', async () => {
     await mount();
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       useAppStore.getState().sessionGithub[SESSION.id]?.pr?.title,
     );
     expect(sectionNames()).toEqual([
-      'Overview',
+      'Conversation',
       'Comments',
       'Changes',
       'Commits',
@@ -295,7 +295,7 @@ describe('Branch page header and sections', () => {
     const strip = screen.getByRole('tablist', { name: 'Branch pages' });
     const tabs = within(strip).getAllByRole('tab');
     expect(tabs.map((tab) => (tab.textContent ?? '').replace(/[^A-Za-z ]/g, '').trim())).toEqual([
-      'Overview',
+      'Conversation',
       'Comments',
       'Changes',
       'Commits',
@@ -340,12 +340,12 @@ describe('Branch page header and sections', () => {
 });
 
 describe('Branch page sections by state', () => {
-  it('keeps Overview, Changes, Commits and Work with no pull request and no comment, and no Checks', async () => {
+  it('keeps Conversation, Changes, Commits and Work with no pull request and no comment, and no Checks', async () => {
     await mount();
     dropRequest();
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Changes', 'Commits', 'Work']);
+    expect(sectionNames()).toEqual(['Conversation', 'Changes', 'Commits', 'Work']);
   });
 
   it('adds Comments to a branch with no pull request once one local note exists', async () => {
@@ -356,7 +356,7 @@ describe('Branch page sections by state', () => {
     });
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Comments', 'Changes', 'Commits', 'Work']);
+    expect(sectionNames()).toEqual(['Conversation', 'Comments', 'Changes', 'Commits', 'Work']);
     expect(railRow(/^Comments/).textContent).toBe('Comments');
   });
 
@@ -368,7 +368,7 @@ describe('Branch page sections by state', () => {
       await settle();
 
       expect(sectionNames()).toEqual([
-        'Overview',
+        'Conversation',
         'Comments',
         'Changes',
         'Commits',
@@ -392,7 +392,7 @@ describe('Branch page sections by state', () => {
   it('puts no primary in the header of a merged pull request and says its state once, under the title', async () => {
     await mount();
     patchRequest({ state: 'merged', isDraft: false });
-    await visit(/^Overview/);
+    await visit(/^Conversation/);
 
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
     const states = document.querySelectorAll('[data-slot="branch-state"]');
@@ -408,7 +408,7 @@ describe('Branch page sections by state', () => {
   it('shows the queue in the merge box of a queued pull request and no primary', async () => {
     await mount();
     patchRequest({ state: 'queued', isDraft: false, mergeQueue: { position: 3 } });
-    await visit(/^Overview/);
+    await visit(/^Conversation/);
 
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
     const merge = document.querySelector('[data-merge-box] [data-verdict]');
@@ -504,19 +504,19 @@ describe('Branch page column', () => {
     }
   });
 
-  it('keeps one h1 on one column element from Overview through every section and back', async () => {
+  it('keeps one h1 on one column element from Conversation through every section and back', async () => {
     await mount();
     const column = headerColumnElement();
     const title = screen.getByRole('heading', { level: 1 });
 
     for (const name of [
-      /^Overview/,
+      /^Conversation/,
       /^Comments/,
       /^Changes/,
       /^Commits/,
       /^Checks/,
       /^Changes/,
-      /^Overview/,
+      /^Conversation/,
     ]) {
       await visit(name);
 
@@ -729,14 +729,14 @@ describe('Branch page Checks and Changes', () => {
     expect(screen.getByRole('region', { name: 'Checks' })).toBeDefined();
   });
 
-  it('starts Checks with the header shown and its own scroll after the header hid on Overview', async () => {
+  it('starts Checks with the header shown and its own scroll after the header hid on Conversation', async () => {
     const resize = installFakeResizeObserver();
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
       callback(0);
       return 0;
     });
     await mount();
-    await visit(/^Overview/);
+    await visit(/^Conversation/);
     const regionNode = (): HTMLElement => {
       const node = document.querySelector<HTMLElement>('[data-slot="reveal-region"]');
       if (node === null) {
@@ -769,12 +769,12 @@ describe('Branch page Checks and Changes', () => {
     expect(regionNode().getAttribute('data-reveal-header')).toBe('shown');
   });
 
-  it('offers the new pull request form on Overview and lets the other sections render', async () => {
+  it('offers the new pull request form on Conversation and lets the other sections render', async () => {
     await mount();
     dropRequest();
-    await visit(/^Overview/);
+    await visit(/^Conversation/);
     expect(screen.queryByRole('heading', { name: 'No pull request yet' })).toBeNull();
-    expect(railRow(/^Overview/).textContent).toBe('Overview');
+    expect(railRow(/^Conversation/).textContent).toBe('Conversation');
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
 

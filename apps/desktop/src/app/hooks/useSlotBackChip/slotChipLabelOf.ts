@@ -59,6 +59,8 @@ export const slotChipLabelOf = ({ drawer, artifacts }: Params): SlotChipLabel =>
       return { kind: 'File', title: drawer.payload.entry.name };
     case 'scriptRun':
       return { kind: 'Script', title: drawer.payload.scriptKey };
+    case 'ask':
+      return { kind: 'Ask', title: null };
     case 'question':
       return { kind: 'Question', title: null };
     case 'new':

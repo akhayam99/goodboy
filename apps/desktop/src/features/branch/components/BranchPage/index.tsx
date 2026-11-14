@@ -60,10 +60,9 @@ type Props = {
   readonly session: Session;
   readonly workingDir: string | null;
   readonly isActive?: boolean;
-  readonly pinnedTab?: BranchTab;
 };
 
-export const BranchPage = ({ session, workingDir, isActive = true, pinnedTab }: Props) => {
+export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const sessionId = session.id as SessionId;
   const identity = useBranchIdentity({ sessionId });
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
@@ -125,8 +124,8 @@ export const BranchPage = ({ session, workingDir, isActive = true, pinnedTab }: 
       pr === null ? ('none' as const) : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
     hasComments,
   };
-  const tabs = pinnedTab === undefined ? branchTabsOf(scope) : [];
-  const tab = resolveBranchTab({ tab: useBranchTab({ sessionId, pinned: pinnedTab }), scope });
+  const tabs = branchTabsOf(scope);
+  const tab = resolveBranchTab({ tab: useBranchTab({ sessionId }), scope });
   const isReadOnly = isBranchReadOnly(scope);
   const { hasPushFailure, isPushBusy, pushCount, review } = useBranchReviewState({
     entries: branchReview.entries,

@@ -95,12 +95,12 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       await openBranchPage();
       await branchTab('pr')(ctx);
-      for (const name of [/^Overview/, /^Comments/, /^Changes/, /^Commits/, /^Checks/]) {
+      for (const name of [/^Conversation/, /^Comments/, /^Changes/, /^Commits/, /^Checks/]) {
         await visitTab(name);
         expect(trailBands()).toBe(0);
         expect(headerColumn()).toBe('column');
       }
-      for (const name of [/^Overview/, /^Comments/, /^Changes/, /^Commits/]) {
+      for (const name of [/^Conversation/, /^Comments/, /^Changes/, /^Commits/]) {
         await visitTab(name);
         expect(bodyColumns().length).toBeGreaterThan(0);
         expect(bodyColumns().every((width) => width === 'column')).toBe(true);

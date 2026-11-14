@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AppShell } from '@goodboy/ui';
+import { AppShell, UnderTrailContext } from '@goodboy/ui';
 import type {
   IsoDateTime,
   ProviderRunId,
@@ -14,6 +14,7 @@ import { useShellRight } from '../../../hooks/useShellRight';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
+import { SessionHead } from '../../SessionHead';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
@@ -145,8 +146,11 @@ export const ShellFrame = ({
             {hasOwnTrail ? (
               main
             ) : (
-              <div className="@container flex h-full w-full min-w-0 flex-col">
-                <div className="min-h-0 flex-1">{main}</div>
+              <div className="@container flex h-full w-full min-w-0 flex-col gap-2">
+                <SessionHead session={session} />
+                <UnderTrailContext.Provider value>
+                  <div className="min-h-0 flex-1">{main}</div>
+                </UnderTrailContext.Provider>
               </div>
             )}
           </SessionFrame>

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useAskFollow } from '../../hooks/useAskFollow';
 import { RotateCcw } from 'lucide-react';
-import { Band, DrawerFrame, EmptyState, IconButton, SectionHeader } from '@goodboy/ui';
+import { DrawerFrame, EmptyState, IconButton } from '@goodboy/ui';
 import type { ArtifactId, ChatMessage, ChatMessageId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -24,13 +24,12 @@ import { AskTurn } from './AskTurn';
 
 type Props = {
   readonly session: Session;
-  readonly isPage?: boolean;
   readonly onClose: () => void;
 };
 
 const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
-export const AskDrawerBody = ({ session, isPage = false, onClose }: Props) => {
+export const AskDrawerBody = ({ session, onClose }: Props) => {
   const sessionId = session.id;
   const threadId = useAppStore((state) => state.askThreadId[sessionId] ?? null);
   const threads = useAppStore((state) => state.askThreads[sessionId]);
@@ -120,7 +119,7 @@ export const AskDrawerBody = ({ session, isPage = false, onClose }: Props) => {
         sessionId={sessionId}
         isStreaming={stream !== undefined}
         isStopping={stream?.isStopping === true}
-        isAutoFocused={!isPage}
+        isAutoFocused
         onSend={ask}
         onStop={() => void stopAskReply({ sessionId })}
       />
@@ -176,18 +175,6 @@ export const AskDrawerBody = ({ session, isPage = false, onClose }: Props) => {
         <div ref={endRef} />
       </div>
     );
-
-  if (isPage) {
-    return (
-      <section data-testid="context-ask" aria-label="Ask" className="min-w-0">
-        <Band inset="content" className="min-w-0">
-          <SectionHeader label="Ask" headingLevel={2} action={resetButton} />
-          {body}
-          <div className="sticky bottom-0 bg-background pt-1">{composer}</div>
-        </Band>
-      </section>
-    );
-  }
 
   return (
     <DrawerFrame

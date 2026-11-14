@@ -81,14 +81,14 @@ const paneToggles = (): ReadonlyArray<Element> =>
 const drawerKind = (): string | null => useAppStore.getState().drawer?.kind ?? null;
 
 describe('session tools rows stay reachable', () => {
-  it('Ask lives in the Context tab: ask.open lands there and the tools hold no Ask button', async () => {
+  it('Ask is a detail panel: ask.open opens it beside the page and the tools hold no Ask button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
     act(() => useAppStore.getState().openAsk({ sessionId }));
     await settle();
-    expect(drawerKind()).toBeNull();
-    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(true);
+    expect(drawerKind()).toBe('ask');
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(false);
 
     act(() => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });

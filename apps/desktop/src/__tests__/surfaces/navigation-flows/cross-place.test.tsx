@@ -471,8 +471,10 @@ const expectOneRail = ({
   }
 };
 
+const HEADER = '[data-session-head], [data-slot="pane-header"]';
+
 const sessionLayers = (extra: RailLayers): RailLayers => ({
-  header: shown('[data-slot="pane-header"]'),
+  header: shown(HEADER),
   ...extra,
 });
 
@@ -774,8 +776,7 @@ describe('moving across every place keeps one frame', () => {
     await click(sessionRow(sessionId));
 
     const PAGES = ['Overview', 'Runs', 'Artifacts'] as const;
-    const trailColumn = (): string =>
-      shown('[data-slot="pane-header"]')?.closest('[data-page-column]')?.className ?? '';
+    const trailColumn = (): string => shown(HEADER)?.closest('[data-page-column]')?.className ?? '';
     const columnTiers = (): ReadonlySet<string> =>
       new Set(
         visiblePageColumns()
@@ -938,13 +939,14 @@ describe('moving across every place keeps one frame', () => {
 
       act(() => seedSessionAsk({ state: 'answer', session: currentSession(sessionId) }));
       await settle();
-      expect(openDrawerKind()).toBeNull();
-      expectPlace({ session: sessionId, lens: 'context', studio: null, doors: [] });
-      const chip = await askChipAwayFrom({ lens: 'context' });
+      expect(openDrawerKind()).toBe('ask');
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+      const chip = await askChipAwayFrom({ lens: 'branch' });
       await click(chip.button);
       expect(lensOf()).toBe(chip.lens);
       await click(historyButton('Back'));
-      expectPlace({ session: sessionId, lens: 'context', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+      await escape();
       await openPage('Branch');
       await click(getSection(/^Comments/));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });

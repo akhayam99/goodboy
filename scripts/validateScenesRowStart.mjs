@@ -7,7 +7,6 @@ export const ROW_START_SCENES = [
   'terminal-drawer-session',
   'c03-panes-terminal',
   'c03-panes-scripts',
-  'c03-panes-explore',
   'c05-overview-running',
   'branch-files',
   'changes-files-all',
@@ -36,6 +35,14 @@ export const ROW_START_SCENES = [
   'chat-room',
   'impact',
   'frame-studio-workflows',
+  'session-head-overview',
+  'session-head-overview-light',
+  'session-head-runs',
+  'session-head-artifacts',
+  'session-head-questions',
+  'session-head-context',
+  'session-head-branch',
+  'session-head-branch-light',
 ];
 export const ROW_START_WIDTHS = [1440];
 export const ROW_START_READY = '[data-studio-rail], [data-page-header], [data-page-column]';

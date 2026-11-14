@@ -73,10 +73,12 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   expectOnPagePrimitive({ page, title });
   if (!isStudio) {
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
-    const hasPageTrail = document.querySelector('[data-slot="page-trail"]') !== null;
+    const hasBandAbove =
+      document.querySelector('[data-slot="page-trail"]') !== null ||
+      document.querySelector('[data-session-head]') !== null;
     expect(
       title.closest('[data-slot="pane-header"]')?.hasAttribute('data-under-trail') ?? false,
-    ).toBe(hasPageTrail);
+    ).toBe(hasBandAbove);
     return;
   }
   const frame = title.closest('[data-studio-frame]');
@@ -102,13 +104,21 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   expect(frame?.querySelector('[data-studio-band] [data-page-column]')).not.toBeNull();
 };
 
+const expectOnSessionHead = (): void => {
+  const title = onlyH1({ scope: document });
+  const head = title.closest<HTMLElement>('[data-session-head]');
+  expect(head, 'a session tab draws its title in the session head').not.toBeNull();
+  expect(titleRowOf(title)?.parentElement?.parentElement).toBe(head);
+  expect(head?.className.split(' ')).toContain('pt-2');
+  expect(head?.getAttribute('data-head-nav')).toBe('tabs');
+  expect(document.querySelector('[data-slot="page-trail"]')).toBeNull();
+};
+
 const landsOnSessionPage =
-  ({ page, title }: { readonly page: FramePage; readonly title: RegExp | string | null }) =>
+  ({ title }: { readonly title: string }) =>
   async (): Promise<void> => {
-    if (title !== null) {
-      await heading(title);
-    }
-    await waitFor(() => expectOnGrid({ page, isStudio: false }), WAIT);
+    await heading(title);
+    await waitFor(() => expectOnSessionHead(), WAIT);
   };
 
 export const FRAME_ROWS: ReadonlyArray<Row> = [
@@ -130,7 +140,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'frame: the Overview title is the one h1 on the page header row',
+    name: 'frame: the Overview title is the one h1, on the session head row',
     covers: [],
     open: async () => {
       await settle();
@@ -138,7 +148,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) => {
       await lens(null)(ctx);
       expect((await screen.findByTestId('overview-title')).closest('h1')).not.toBeNull();
-      await waitFor(() => expectOnGrid({ page: 'overview', isStudio: false }), WAIT);
+      await waitFor(() => expectOnSessionHead(), WAIT);
     },
   },
   {
@@ -157,22 +167,22 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'frame: the Runs title sits on the grid',
+    name: 'frame: the Runs tab keeps the session head on the grid',
     covers: ['navigate'],
     open: async () => {
       await openCrumb(/^Runs/);
     },
-    lands: landsOnSessionPage({ page: 'runs', title: 'Runs' }),
+    lands: landsOnSessionPage({ title: 'Runs' }),
   },
   {
-    name: 'frame: the Questions title sits on the grid',
+    name: 'frame: the Questions tab keeps the session head on the grid',
     covers: ['navigate'],
     open: async (ctx) => {
       QUESTIONS_ROW?.beforeOpen?.(ctx);
       await settle();
       await openCrumb(/^Questions/);
     },
-    lands: landsOnSessionPage({ page: 'questions', title: 'Questions' }),
+    lands: landsOnSessionPage({ title: 'Questions' }),
   },
   {
     name: 'frame: the Tasks page draws no band, its title alone on the column',
