@@ -542,7 +542,13 @@ fail counts as skipped; Bitbucket: its commit statuses; a token that cannot read
 notice with `Open GitLab settings`); while it is off the tab says Goodboy does
 not show that host's checks yet (`checksViewOf`).
 
-**Work.** The last tab holds what Goodboy did on the branch: `Runs`, `Questions` and `Artifacts`,
+**Work.** On a branch with an Auto run the tab opens with a story line and a `Leads` block
+(`BranchWorkLeads`, over `branchLeadsOf`): one line per Lead (glyph, `Auto`, title, state word, spend
+on this branch, and `also on` naming each other branch it worked on), with the compact `LeadTree` of the
+agents it ran here. The line opens the Lead page and has no button of its own; its `Back` leads to this tab.
+The Lead leaves the `Runs` group, which is then headed `Earlier runs`; a branch with no Auto run
+renders as before. The tab count reads `branchWorkCountsOf`, which still counts the Lead as a run, so it
+equals what the board cell of the same branch reads. The last tab holds what Goodboy did on the branch: `Runs`, `Questions` and `Artifacts`,
 each the branch group the session page draws for this mount (`branchGroupKeyOfMount`), with the same
 rows, folds (`N finished`, `N answered`, `N used`) and counts, so the two can never disagree. A fold
 owns its count: while a group folds, its header summary leaves the finished out, so `1 finished`

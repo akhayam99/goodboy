@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { PaneShell } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
@@ -32,7 +32,7 @@ import { AgentDockLead } from './AgentDockLead';
 import { AgentComposerNotice } from './AgentComposerNotice';
 import { agentHeaderOmitOf } from './agentHeaderOmitOf';
 import { useRewriterComposer } from '../../hooks/useRewriterComposer';
-import { MOVE_TO_AUTO_EVENT, isMoveToAutoFor } from '../../../auto/adopt/moveToAutoEvent';
+import { useMoveToAutoOpen } from '../../hooks/useMoveToAutoOpen';
 import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
 
@@ -51,6 +51,7 @@ type Props = {
   readonly onBack: () => void;
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
+  readonly agentsToggle?: ReactNode;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
@@ -62,6 +63,7 @@ export const AgentDetailPane = ({
   onBack,
   context,
   runStep,
+  agentsToggle,
 }: Props) => {
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
@@ -76,7 +78,7 @@ export const AgentDetailPane = ({
   const isAutoRoot = kind === 'auto';
   const membership = useAutoMembership({ sessionId: session.id, agentId: agent.id });
   const adoption = membership.adoption;
-  const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const { isMoveOpen, setIsMoveOpen } = useMoveToAutoOpen({ agentId: agent.id });
   const [hasNextAction, setHasNextAction] = useState(false);
   const [asksSlot, setAsksSlot] = useState<HTMLElement | null>(null);
   const openDrawer = useAppStore((state) => state.openDrawer);
@@ -88,20 +90,6 @@ export const AgentDetailPane = ({
   const routing = useAgentHeaderRouting({ session, agent });
   const openQuestions = useSessionOpenQuestions(session.id);
   const answeredQuestions = useSessionAnsweredQuestions(session.id);
-
-  useEffect(() => {
-    setIsMoveOpen(false);
-  }, [agent.id]);
-
-  useEffect(() => {
-    const open = (event: Event) => {
-      if (isMoveToAutoFor({ event, agentId: agent.id })) {
-        setIsMoveOpen(true);
-      }
-    };
-    window.addEventListener(MOVE_TO_AUTO_EVENT, open);
-    return () => window.removeEventListener(MOVE_TO_AUTO_EVENT, open);
-  }, [agent.id]);
 
   const answeredQuestion = useMemo(() => {
     if (!isQuestionDelegate({ agent })) {
@@ -219,14 +207,17 @@ export const AgentDetailPane = ({
           }
           actions={
             runStep === undefined ? (
-              <AgentHeaderActions
-                key={agent.id}
-                agent={agent}
-                sessionId={session.id}
-                hasStateButton={false}
-                omit={agentHeaderOmitOf({ isAutoRoot })}
-                onDeleted={onBack}
-              />
+              <>
+                {agentsToggle}
+                <AgentHeaderActions
+                  key={agent.id}
+                  agent={agent}
+                  sessionId={session.id}
+                  hasStateButton={false}
+                  omit={agentHeaderOmitOf({ isAutoRoot })}
+                  onDeleted={onBack}
+                />
+              </>
             ) : (
               runStep.actions
             )

@@ -47,12 +47,10 @@ it.each(Object.entries(U34_LAYOUT_FLOW_SCENES))('mounts %s', async (id, Scene) =
   const title = await screen.findByRole('heading', { level: 1 });
   expect(title.textContent).toMatch(/limit check/);
   expect(title.textContent).not.toMatch(/webhooks/);
-  expect(container.querySelector('[data-running-rows]')).not.toBeNull();
+  expect(container.querySelector('[data-slot="branch-board"]')).not.toBeNull();
   if (id !== 'u34-u29-narrow-running') {
     expect(container.querySelector('[data-side-column], [data-column-rail]')).not.toBeNull();
   }
-  const isFourBranches = id.startsWith('u34-p18');
-  expect(container.querySelectorAll('[data-live-where]').length > 0).toBe(isFourBranches);
   if (id === 'u34-u30-active-tool') {
     const rail = screen.getByRole('toolbar', { name: 'Tools' });
     expect(rail.querySelector('[data-slot="tool-caption"][data-tone="open"]')?.textContent).toBe(

@@ -15,6 +15,9 @@ export type StatCardProps = {
   readonly status?: ReactNode;
   readonly reservesDeltaRow?: boolean;
   readonly onClick?: () => void;
+  readonly isPressed?: boolean;
+  readonly unit?: string;
+  readonly valueTone?: Tone;
   readonly className?: string;
 };
 
@@ -22,6 +25,8 @@ const valueSizeClasses: Record<'lg' | 'xl', string> = {
   lg: 'text-title',
   xl: 'text-display',
 };
+
+const PIN_TO_BOTTOM = 'mt-auto';
 
 const warningTint = tintClasses('warning');
 
@@ -36,9 +41,26 @@ export const StatCard = ({
   status,
   reservesDeltaRow = false,
   onClick,
+  isPressed,
+  unit,
+  valueTone,
   className,
 }: StatCardProps) => {
   const tint = tone ? tintClasses(tone) : null;
+  const valueClass = cn(
+    'tabular-nums',
+    valueTone === undefined ? 'text-foreground' : tintClasses(valueTone).text,
+    valueSizeClasses[valueSize],
+  );
+  const valueNode =
+    unit === undefined ? (
+      <span className={cn(PIN_TO_BOTTOM, valueClass)}>{value}</span>
+    ) : (
+      <span className={cn(PIN_TO_BOTTOM, 'flex min-w-0 items-baseline gap-2')}>
+        <span className={valueClass}>{value}</span>
+        <span className="min-w-0 truncate text-ui text-muted-foreground">{unit}</span>
+      </span>
+    );
 
   const body = (
     <>
@@ -58,9 +80,7 @@ export const StatCard = ({
         <div data-stat-label="" className="min-w-0">
           <Eyebrow label={label} className="line-clamp-2" />
         </div>
-        <span className={cn('mt-auto tabular-nums text-foreground', valueSizeClasses[valueSize])}>
-          {value}
-        </span>
+        {valueNode}
         {hint || status || reservesDeltaRow ? (
           <div
             data-stat-delta=""
@@ -89,7 +109,13 @@ export const StatCard = ({
       <button
         type="button"
         onClick={onClick}
-        className={cn(shell, 'text-left motion-safe:transition-colors hover:bg-hover', FOCUS_RING)}
+        aria-pressed={isPressed}
+        className={cn(
+          shell,
+          'text-left motion-safe:transition-colors hover:bg-hover',
+          isPressed === true && 'border-border bg-selected',
+          FOCUS_RING,
+        )}
       >
         {body}
       </button>

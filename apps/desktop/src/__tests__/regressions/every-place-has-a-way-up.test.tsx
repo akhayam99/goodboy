@@ -60,6 +60,8 @@ const WAYS_UP = new Set([
 ]);
 
 const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
+  'features/session/components/LeadPage/LeadPageRecord.tsx':
+    'closes the record and shows the agents it covered, not a way up out of the page',
   'features/browser/components/BrowserPane/BrowserAddressRow.tsx':
     "the page's own history in the browser pane, not a way up in Goodboy",
   'features/chat/components/HandoffBlock/HandoffPanel.tsx': 'a pager between handoffs',

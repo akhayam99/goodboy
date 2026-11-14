@@ -310,6 +310,17 @@ A session row carries one mark: the state of the node, or an empty 14px slot whe
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the type specimen.
 
+### Tile as filter
+
+`StatCard` is a button when it has `onClick`. A tile that counts rows of the
+list below it is that button and filters the list: `isPressed` fills it
+(`aria-pressed`) while its filter holds, and a second press clears it. A tile
+that counts something no row shows (spend, time) has no `onClick` and stays a
+plain tile. `unit` is the quiet word after the number ("of 4 merged"), and
+`valueTone` colors the number (`warning` for what waits, `danger` for what
+fails, `success` for done). The session Overview draws its five tiles this way
+(`BoardTiles`) and says what is filtered in one line with a **Clear** button.
+
 ### Counts, fact lines and durations
 
 Three helpers in `apps/desktop/src/shared/utils/` own how a number, a fact line

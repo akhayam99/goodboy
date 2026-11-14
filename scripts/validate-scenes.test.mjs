@@ -32,6 +32,7 @@ import { listGridFitFailures } from './validateScenesListGridFit.mjs';
 import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
+import { rowStartFailures } from './validateScenesRowStart.mjs';
 import { titleBandFailures } from './validateScenesTitleBand.mjs';
 import { pageColumnFailures } from './validateScenesPageColumn.mjs';
 import { frostFailures } from './validateScenesFrost.mjs';
@@ -1797,6 +1798,61 @@ describe('questionCardFailures', () => {
         (failure) => failure.check,
       ),
       ['the scene shows question cards'],
+    );
+  });
+});
+
+describe('rowStartFailures', () => {
+  const column = ({ top = 41, bottom = 81, line, rows = {} } = {}) => ({
+    label: 'col',
+    first: { label: 'first', top, bottom },
+    line: line ?? [{ label: 'first', center: (top + bottom) / 2 }],
+    rows,
+  });
+  const failuresOf = (columns) =>
+    rowStartFailures({
+      scene: 'fixture',
+      width: 1440,
+      measured: { containers: [{ kind: 'split', columns }] },
+    }).map((failure) => failure.check);
+
+  it('passes two columns whose first rows share a center line', () => {
+    assert.deepEqual(failuresOf([column(), column({ top: 53, bottom: 69 })]), []);
+  });
+
+  it('fails the terminal drift of a toggle and a tab strip', () => {
+    assert.deepEqual(
+      failuresOf([column({ top: 53, bottom: 81 }), column({ top: 53, bottom: 69 })]),
+      ['the first row of each column shares a center line'],
+    );
+  });
+
+  it('fails a toolbar whose controls sit on two center lines', () => {
+    const skewed = column({
+      line: [
+        { label: 'folder', center: 61 },
+        { label: 'Dock', center: 66 },
+      ],
+    });
+    assert.deepEqual(failuresOf([skewed]), ['the controls of a toolbar row share a center line']);
+  });
+
+  it('fails a grid row with a different top in the two columns', () => {
+    assert.deepEqual(
+      failuresOf([
+        column({ rows: { 2: { top: 81, bottom: 121 } } }),
+        column({ rows: { 2: { top: 85, bottom: 121 } } }),
+      ]),
+      ['grid row 2 has the same top and bottom in every column'],
+    );
+  });
+
+  it('fails a scene with no page', () => {
+    assert.deepEqual(
+      rowStartFailures({ scene: 'fixture', width: 1440, measured: { containers: [] } }).map(
+        (failure) => failure.check,
+      ),
+      ['a page with columns is on screen'],
     );
   });
 });

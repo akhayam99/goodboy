@@ -685,7 +685,12 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
   the action registry whose pick opens its form in the New drawer; filled only
   while nothing runs and Next holds no row) and, on an archived session,
-  Restore. Context lives in the session tools.
+  Restore. **Archive session** is also the filled button of the header when
+  every branch is merged, no agent works and no question is open
+  (`ArchivePrimary`, `isArchivePrimaryOf`); otherwise Archive stays in the
+  menu above with the same guards. Below the header the Overview is five tiles
+  and a board with one row per branch (`BranchBoard`). Context lives in the
+  session tools.
 
 ## The session tools
 
