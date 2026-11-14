@@ -12,6 +12,73 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.35.0
+
+Pull requests get an overview with faces and a rail, pages share one title band, the browser gains a console and width presets, and launch is faster.
+
+This version updates your data in one direction. To go back to 0.34, restore the backup Goodboy made before updating.
+
+### New
+
+#### Images and video in pull request bodies
+<!-- gb area=review pr=2224 -->
+
+Images, collapsible details and video in a description or a comment show in place. Avatars load through the app, and a sign-in token goes only to the attachment host of its own tool.
+
+#### Browser console and network rows
+<!-- gb area=sessions pr=2224 -->
+
+The Console button after More, or `⌘⇧J`, opens a console under the page. It lists what the page logged with its errors, and the requests that failed. Send to the agent puts both lists on the message box as one file.
+
+#### Browser width presets
+<!-- gb area=sessions pr=2224 -->
+
+Develop holds Desktop, Tablet and Phone. A preset shows the page at that width and sends a matching user agent, so a site answers as it would on that device. A closed tab forgets its preset.
+
+#### Send a browser page to an agent
+<!-- gb area=sessions pr=2224 -->
+
+`⌘⇧S`, or Send to the agent under More, puts the text you see on the page on the message box as a chip. Nothing goes to the agent until you send the message.
+
+### Improved
+
+#### A pull request overview with a rail
+<!-- gb area=review image=pr-overview pr=2224 -->
+
+The overview is a reading column and a rail. The column holds the merge verdict, the description in a card and a timeline folded into groups, each person with a face. The rail lists Reviewers, Checks, People and Linked issues.
+
+GitLab and Bitbucket merge requests get the same rail and the same folded timeline.
+
+#### The Terminal page drops its title band
+<!-- gb area=sessions image=terminal-page pr=2224 -->
+
+Close sits in the top row and Dock joins the tab row, after Change folder and the port. The page keeps its name for screen readers and gives the room to the terminal.
+
+#### One title band for every page
+<!-- gb area=app pr=2224 -->
+
+Every page opens on the same 48px band, with underlined page tabs and a centred reading column. Text passes under a frosted pinned row, and the review pane uses the same comment body and person chip as the pull request page.
+
+#### Links, files and folders open in one place
+<!-- gb area=app pr=2224 -->
+
+A link in text, a file, a folder, a plan and a report open through one router that follows the Links setting. A click with a modifier key keeps its meaning, and a failure to open says so.
+
+#### Pull request actions show their result in place
+<!-- gb area=review pr=2224 -->
+
+An action runs once per pull request. A second press waits, and the result shows on one line with Retry, with no toast on top.
+
+#### A faster launch with skeletons
+<!-- gb area=app pr=2224 -->
+
+The shell shows as soon as the workspace is known, with skeletons for what has not loaded. Launch reads run together, sessions load light rows first, and the browser stops polling while nobody looks at it.
+
+### Fixed
+
+- Focus returns to the rail button that opened an overlay once it closes. <!-- gb area=app pr=2224 -->
+- A launch that fails while you switch workspace restores the shell instead of leaving it half loaded. <!-- gb area=app pr=2224 -->
+
 ## Goodboy v0.34.0
 
 The browser shows each page by its title, finds text in it, suggests from your tabs as you type and opens local files beside the session.
