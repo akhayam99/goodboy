@@ -4,7 +4,7 @@
 
 ## Session page tabs
 
-**No left rail.** The column always shows the workspace: New session, the doors, then the
+**No session column.** The sidebar always shows the workspace: New session, the doors, then the
 Pinned and Sessions lists. A session row opens the session on its Overview. The session's
 pages are page tabs directly under the session title (`SessionPageTabs`, built on `PageTabs`):
 Overview, Runs, Artifacts, Questions and Context, on every session, with or without a
@@ -342,7 +342,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
 - **A preset run keeps the rail on the session.** Opening a run with a fixed
   step list (a saved workflow or Describe steps; `executionMode` not
   `dynamic`) shows the run page in the center and leaves the rail on level 1;
-  its spawned agents are in the Agents panel (see The session tools). Esc on
+  its spawned agents are in the Agents column of the run page. Esc on
   the run page goes one crumb up and lands on the Runs list, through
   history when the list is the page below.
   An orchestrated run shows its document with **Orchestrated** selected

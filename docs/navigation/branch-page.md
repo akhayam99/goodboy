@@ -446,7 +446,7 @@ A click on a changed or deleted file scrolls to its diff; a click on an unchange
 The filter searches the loaded and changed files in `All files`; viewed, next and the keys count
 changed files only. The mode is kept per session and folder in `exploreChangedView` and
 `PLACE_ROWS.changesMode` opens it on `All files`. The scope pill first in the toolbar
-(`ChangesScopePill`, the project and branch chip) picks the branch on the session Changes tab and is
+(`ChangesScopePill`, the project and branch chip) picks the branch on the session's Changes page and is
 a label on a pull request page. With no change, `No changes against main` offers `All files`.
 Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one

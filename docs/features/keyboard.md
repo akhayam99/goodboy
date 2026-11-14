@@ -93,8 +93,8 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - A **⌘⌥** key opens each view. On Linux the chord is **Ctrl+Shift+Alt** with the same letter or digit, since a bare Ctrl+Alt chord belongs to the desktop there.
 - **⌘⌥C** opens the session's Context tab. The former Goal, Decisions and Summary chords are retired; section links still reach their card. On a page such as Tasks, a session key leaves the page first.
 - **⌘⌥F** opens the Changes tab of the session's branch on its Branch page, or the session's file versions when it has no branch. On a pull request page it picks that page's Changes tab.
-- **⌘⌥X** opens that Changes tab on All files, where Explore used to open.
-- **⌘⌥A** opens Runs on what is running, where the Agents panel used to open.
+- **⌘⌥X** opens that Changes tab on All files.
+- **⌘⌥A** opens Runs on what is running.
 - **⌘1** to **⌘9** switch workspaces.
 - **⌘[** and **⌘]** walk your history: the last 50 places of this window, empty after a reload.
 - **⌘↑** and **Esc** go one crumb up: to the parent of the page, and the same after a reload. The page of a top agent goes back to its session's Overview, or to the Work tab of the pull request you opened it from. A session tab has no parent, so ⌘↑ goes to the board.
@@ -186,14 +186,12 @@ Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim,
 
 ### Explore
 
-Browse the session folder as a file tree, with a preview of the selected file beside it, **Open** and **Copy**. Files that changed against the base branch carry a letter, and the **Changed only** switch beside the project chip lists only those. **Ask about this file** on a file row opens **Start a run** with the file attached: write the ask, and Auto routes it like any other.
+Browse the session folder as a file tree on the **Changes** page of a branch. **All files** beside **Changed** swaps the list of changed files for the whole folder, and **⌘⌥X** opens it there.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-explore-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-explore-light.webp" alt="Explore in Harborline: the session folder of payments-api as a file tree with a letter M or A on the files that changed against the base branch, the All files and Changed 7 switch, and the rounding.ts changes on the right with its Preview and Changes tabs and Open">
-</picture>
-
-<sub>Screenshot from Goodboy 0.27.1</sub>
+- A changed file carries a letter and its line counts. An unchanged file is muted.
+- A click on a changed file scrolls to its diff. A click on an unchanged file reads it in place, with its line count, **Open in editor** and **Back to the changes**.
+- The filter field searches the loaded and changed files. **Hide files** folds the list, and **F** or **/** bring it back.
+- A branch with no change says **No changes against main** and offers **All files**.
 
 ### Browser
 

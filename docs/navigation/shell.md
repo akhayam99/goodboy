@@ -445,7 +445,7 @@ hide animation or overlay can move it.
   its toggle folds the column: the one toggle is the first control of the top
   bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⌘B),
   and no pane, no page and no window width folds or unfolds it. A session has no
-  left rail: its pages are the page tabs under the title, so no pane folds anything.
+  column of its own: its pages are the page tabs under the title, so no pane folds anything.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
   work row, so it can hover over main without taking layout space. A studio is
   a page in the one main slot: it draws inside the content sheet, over the page
@@ -896,8 +896,8 @@ Auto is described in [auto.md](../auto.md); this is where it sits. Auto is alway
 on: Settings has no Auto switch, and the **Experimental** marker sits on the
 Auto start of the New menu. An Auto conversation is a row of the one **Runs**
 tab of the session. The tree of an Auto agent, and of each
-child of an Auto tree, is the Agents panel of the session tools (see The session
-tools), never a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
+child of an Auto tree, is the Agents column of the run page (see The Lead page
+in auto.md), never a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The
 plan drawer swaps its toolbar for `AutoPlanToolbar` when the plan belongs to an
 Auto tree, and the Overview timeline hides the children of a tree and draws its

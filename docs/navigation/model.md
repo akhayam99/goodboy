@@ -514,10 +514,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   | Changes page                                                     | the Branch page Changes tab, on its branch                                 |
   | Context panel, any section, or the Goal, Decisions, Summary lens | the Context tab, `context.section` = that section (`history` for versions) |
   | Ask panel                                                        | unchanged, the Ask panel                                                   |
-  | Agents panel or Agents page                                      | Runs, `runs.filter` = `running`                                            |
+  | An address of the old Agents drawer or Agents page               | Runs, `runs.filter` = `running`                                            |
   | Scripts panel, a script run                                      | unchanged, the Scripts drawer                                              |
-  | Explore panel or page                                            | the Changes tab, `changes.mode` = `all`                                    |
-  | A file opened from the Explore tree                              | the Changes tab on that file, `changes.mode` = `all`                       |
+  | An address of the old Explore drawer or page                     | the Changes tab, `changes.mode` = `all`                                    |
+  | A file opened from the old Explore tree                          | the Changes tab on that file, `changes.mode` = `all`                       |
   | A file opened from a link, the full log, a reading panel         | unchanged                                                                  |
   | An unknown lens                                                  | the session Overview                                                       |
 

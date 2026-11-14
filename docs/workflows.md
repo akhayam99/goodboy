@@ -514,7 +514,7 @@ Asking for a certain provider or model on a step is a hint too.
 ### Limit
 
 Each run can have a limit in dollars. You set it on the run (the limit
-in the foot of the Agents panel on a run or the **Limit** chip of the run page) or in the creation form. You also choose what happens when
+in the Agents column of a run or the **Limit** chip of the run page) or in the creation form. You also choose what happens when
 the run reaches it: **Pause workflows** or **Warn only**, the same editor
 and words as the session's limit. The limit starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
@@ -603,7 +603,7 @@ group. The Work tab draws the question and artifact groups of the branch the sam
 (`questionGroupCountOf`, `artifactBranchCountOf`), its **All questions** and **All artifacts**
 go through `openBranchWork`, and Back from Questions or Artifacts returns to Work
 (`parentPlace`). The artifacts section is registered by the artifacts feature
-(`branchWorkArtifactsRegistration`), so no cross feature import grows. In the Agents panel an agent row
+(`branchWorkArtifactsRegistration`), so no cross feature import grows. In the Agents column an agent row
 names its branch only when its run touches two or more (`agentBranchLabelsOf`).
 Words say state and verbs are verbs: an agent you
 stopped reads **Stopped** and a run that has not started reads **Ready**, and
@@ -620,7 +620,7 @@ the row before the title is cut, then the model (below 920) and the origin
 (below 928, only while no row has a model, `yieldsTo`) (`runsGridColumns.ts`). A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
-of the Agents panel reads. `runRowFactsOf` computes no word of its own: it reads `runStateOf`, the one function that holds the word, the page word, the tone, the primary kind and whether the run needs you for every way a run stops. The run tail and the glance read the same table (`runStateOfPrimary`), so a halted step is **Needs you** on the run page and **Not finished** or **Failed** in the list, from one place. The page opens on the list with a quiet **Start a run** row that opens
+of the Agents column reads. `runRowFactsOf` computes no word of its own: it reads `runStateOf`, the one function that holds the word, the page word, the tone, the primary kind and whether the run needs you for every way a run stops. The run tail and the glance read the same table (`runStateOfPrimary`), so a halted step is **Needs you** on the run page and **Not finished** or **Failed** in the list, from one place. The page opens on the list with a quiet **Start a run** row that opens
 the field (`StartRun`, see [Start a run](features/start.md#start-a-run)) in place and **Esc** closes it;
 a session with no run shows the field alone.
 
@@ -688,7 +688,7 @@ the session inherits the workspace default, so undo of a first session default
 deletes the key while it still holds the shape it set
 (`removeSettingIfUnchanged` in the settings slice, which also drops it from
 `settings`) instead of writing `auto`. Opening a preset run shows its page; the session rail stays
-on the session and the run's agents are in the Agents panel.
+on the session and the run's agents are in the Agents column.
 
 Orchestrated runs have no page of their own since ux27 one flow unit 1: they
 are rows of the one Runs page, beside preset runs, Auto conversations and the
@@ -705,8 +705,8 @@ orchestrated run: one head (`RunPageHead`: the title, double click or Rename to
 rename it, the branch chips, one primary, the run `⋯`), the goal and the glance
 line (`OrchestratedGoal`), the step list top down (`OrchestratedChecklist`), then
 what only that kind has. A step opens one way for every kind, as its page. The
-Agents panel of the session tools holds the run's identity row and its agents as
-a tree ([The session tools](navigation/session-rail.md#the-session-tools)).
+Agents column of the run page holds the run's agents as
+a tree ([The Lead page](auto.md#the-lead-page)).
 Hovering a row opens a fact card with the name and the state (`runHeadCardOf` for
 the run, `runAgentCardOf` for an agent, with its role glyph), never a joined
 tooltip line.
