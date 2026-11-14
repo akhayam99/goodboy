@@ -1964,3 +1964,18 @@ missing line falls back to the outcome word ("Done", "Failed: reason"), and a
 message with neither shows no line. The tone of the line is data
 (`success`, `danger`, `warning`, `neutral`); the screens that draw it come with
 the reading order work.
+
+### Action bar asks
+
+`AutoDock` draws the first push, pull request, dependency or protected file ask
+of `leadAsksOf` (`chat/askBarOf.ts`) in `AutoDockAsk`, after the plan and the
+next step: one state, one primary, one quiet answer. The labels are Push or
+Force push / Don't push, Open the pull request / Not yet, and Allow the named
+package or file / Do it without. More asks show as "+N more". The right end
+names the permission row, its value and its source (read in `chat/hooks/useAskPermissionRow/index.ts`). An
+answer goes through `answerAsk` by ask id (`chat/hooks/useAnswerAsk/index.ts`): a second answer to
+the same ask is dropped, a failure or a `refused` answer (with
+`CONFIRM_REFUSED_REASON`) keeps the ask and shows the reason in the bar, and an
+ask answered anywhere else leaves the bar on the next read. `PublishRunRow`
+draws a held plain push as well as a force push, with Push now after a
+declined plain push. The scenes are `work-lead-push` and `work-lead-dependency`.

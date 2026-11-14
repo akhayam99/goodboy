@@ -9,6 +9,7 @@ type Params = {
 export type PublishRow = Readonly<{
   delegationId: string;
   branch: string;
+  isForce: boolean;
   line: PublishLine;
 }>;
 
@@ -16,14 +17,23 @@ type AskedParams = {
   readonly publish: ResultPublish;
 };
 
-const isAskedOf = ({ publish }: AskedParams): boolean =>
-  publish.mode === 'force' &&
-  (publish.state === 'awaiting_confirm' ||
-    publish.state === 'pushing' ||
-    publish.state === 'declined' ||
-    publish.isConfirmed ||
-    publish.startedAt !== null ||
-    (publish.state === 'failed' && publish.tries > 0));
+const isForceAskedOf = ({ publish }: AskedParams): boolean =>
+  publish.state === 'awaiting_confirm' ||
+  publish.state === 'pushing' ||
+  publish.state === 'declined' ||
+  publish.isConfirmed ||
+  publish.startedAt !== null ||
+  (publish.state === 'failed' && publish.tries > 0);
+
+const isHeldPushOf = ({ publish }: AskedParams): boolean =>
+  publish.state === 'awaiting_confirm' || publish.state === 'declined' || publish.isConfirmed;
+
+const isAskedOf = ({ publish }: AskedParams): boolean => {
+  if (publish.mode === 'force') {
+    return isForceAskedOf({ publish });
+  }
+  return publish.mode === 'push' && isHeldPushOf({ publish });
+};
 
 export const publishRowsOf = ({ delegations }: Params): ReadonlyArray<PublishRow> =>
   delegations.flatMap((delegation) => {
@@ -38,6 +48,7 @@ export const publishRowsOf = ({ delegations }: Params): ReadonlyArray<PublishRow
       {
         delegationId: delegation.id,
         branch: publish.branch ?? 'the branch',
+        isForce: publish.mode === 'force',
         line: publishLineOf({ publish }),
       },
     ];

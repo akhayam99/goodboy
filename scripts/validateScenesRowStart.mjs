@@ -16,6 +16,8 @@ export const ROW_START_SCENES = [
   'c03-panes-ask',
   'work-lead-plan',
   'work-lead-working',
+  'work-lead-push',
+  'work-lead-dependency',
   'settings-app',
   'settings-providers',
   'settings-projects-rows',

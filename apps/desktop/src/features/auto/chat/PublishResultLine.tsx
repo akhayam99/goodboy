@@ -7,9 +7,10 @@ type Props = {
   readonly isBusy: boolean;
   readonly onRetry: () => void;
   readonly onPutBack: () => void;
+  readonly onPushNow: () => void;
 };
 
-export const PublishResultLine = ({ row, isBusy, onRetry, onPutBack }: Props) => {
+export const PublishResultLine = ({ row, isBusy, onRetry, onPutBack, onPushNow }: Props) => {
   const { line } = row;
   if (line.state === 'failed') {
     return (
@@ -17,7 +18,7 @@ export const PublishResultLine = ({ row, isBusy, onRetry, onPutBack }: Props) =>
         tone="danger"
         placement="inline"
         role="alert"
-        title={`Couldn't force push ${row.branch}`}
+        title={`Couldn't ${row.isForce ? 'force push' : 'push'} ${row.branch}`}
         body={line.text}
         actions={
           line.canRetry ? (
@@ -42,6 +43,17 @@ export const PublishResultLine = ({ row, isBusy, onRetry, onPutBack }: Props) =>
         <StatusDot tone={line.tone} size="sm" pulsing={isPushing} />
         <span className="min-w-0 truncate">{line.text}</span>
       </p>
+      {line.state === 'declined' && !row.isForce ? (
+        <Button
+          size="sm"
+          variant="secondary"
+          isBusy={isBusy}
+          busyLabel="Pushing"
+          onClick={onPushNow}
+        >
+          Push now
+        </Button>
+      ) : null}
       {line.canPutBack ? (
         <Button
           variant="ghost"
