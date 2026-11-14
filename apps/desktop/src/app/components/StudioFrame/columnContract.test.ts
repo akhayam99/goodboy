@@ -297,14 +297,14 @@ describe('content column contract', () => {
     expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
   });
 
-  it('puts the agent transcript, its composer and the rows above it on the 720 measure, no exception', () => {
+  it('puts the agent transcript, its composer and the rows above it on the 720 reading column, no exception', () => {
     const files = [
       'features/chat/components/ChatView/index.tsx',
       'features/chat/components/ChatInput/index.tsx',
       'features/chat/components/ChatView/parts/WorkflowAdvanceStack/index.tsx',
     ];
 
-    expect(PAGE_MEASURE.agent).toBe('measure');
+    expect(PAGE_MEASURE.agent).toBe('reading');
     expect(read('features/chat/components/ConversationColumn.tsx')).toMatch(
       /<PageColumn\s+width=\{PAGE_MEASURE\.agent\}/,
     );
@@ -448,6 +448,7 @@ describe('content column contract', () => {
           name !== 'PageTrailContext' &&
           name !== 'PaneActionsContext' &&
           name !== 'Head' &&
+          name !== 'SessionHeadFrame' &&
           name !== 'Cards',
       );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);

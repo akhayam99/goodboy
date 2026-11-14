@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, ICON_SIZE, cn } from '@goodboy/ui';
@@ -6,6 +7,7 @@ import { useAppStore } from '../../../store';
 import type { AppState } from '../../../store/types';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
 import { crumbsOf, type Crumb } from '../../../store/slices/navigation/crumbsOf';
+import { SessionHeadSlotsContext } from '../../../features/session/sessionHeadSlotsContext';
 
 type Props = {
   readonly session: Session;
@@ -32,6 +34,7 @@ const sessionCrumbsOf = ({ state, sessionId }: CrumbParams): ReadonlyArray<Crumb
 
 export const SessionCrumbs = ({ session }: Props) => {
   const sessionId = session.id;
+  const slots = useContext(SessionHeadSlotsContext);
   const labels = useAppStore(
     useShallow((state) => sessionCrumbsOf({ state, sessionId }).map((crumb) => crumb.label)),
   );
@@ -65,10 +68,15 @@ export const SessionCrumbs = ({ session }: Props) => {
               )}
               {isCurrent ? (
                 <span
+                  ref={slots?.setTitle}
                   aria-current="page"
-                  className={cn('min-w-0 truncate text-meta text-foreground', index > 0 && 'px-1')}
+                  data-crumb-current=""
+                  className={cn(
+                    'flex min-w-0 items-center gap-2 truncate text-meta text-foreground',
+                    index > 0 && 'px-1',
+                  )}
                 >
-                  {label}
+                  {slots?.isTitleClaimed === true ? null : label}
                 </span>
               ) : (
                 <Button

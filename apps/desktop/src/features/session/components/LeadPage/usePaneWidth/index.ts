@@ -1,13 +1,12 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useState } from 'react';
 
 type Params = {
-  readonly ref: RefObject<HTMLElement | null>;
+  readonly node: HTMLElement | null;
 };
 
-export const usePaneWidth = ({ ref }: Params): number | null => {
+export const usePaneWidth = ({ node }: Params): number | null => {
   const [width, setWidth] = useState<number | null>(null);
   useEffect(() => {
-    const node = ref.current;
     if (node === null) {
       return;
     }
@@ -26,6 +25,6 @@ export const usePaneWidth = ({ ref }: Params): number | null => {
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, [ref]);
+  }, [node]);
   return width;
 };

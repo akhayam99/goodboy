@@ -127,7 +127,7 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   overview: 'column',
   runs: 'column',
   run: 'column',
-  agent: 'measure',
+  agent: 'reading',
   artifacts: 'column',
   report: 'column',
   questions: 'column',
@@ -328,7 +328,7 @@ describe('one measure per page kind', () => {
 
     expect([...sessionMeasures]).toEqual(['column']);
     expect(PAGE_MEASURE.overview).toBe(PAGE_MEASURE.runs);
-    expect(PAGE_MEASURE.agent).toBe('measure');
+    expect(PAGE_MEASURE.agent).toBe('reading');
   });
 
   it('keeps the measure of every page kind', () => {

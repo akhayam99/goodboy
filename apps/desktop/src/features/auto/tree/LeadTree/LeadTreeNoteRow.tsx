@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { Button, cn, ICON_SIZE } from '@goodboy/ui';
+import { LEAD_TREE_CURSOR } from './leadTreeCursor';
 import { leadTreeIndentOf } from './leadTreeIndentOf';
 
 type Props = {
@@ -26,7 +27,7 @@ export const LeadTreeNoteRow = memo(
       data-active={isActive}
       className={cn(
         'flex min-w-0 items-center gap-2 rounded-md px-2 py-1',
-        isActive && 'ring-1 ring-focus-ring',
+        isActive && LEAD_TREE_CURSOR,
       )}
       style={leadTreeIndentOf({ depth })}
     >

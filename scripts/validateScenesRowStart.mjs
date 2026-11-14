@@ -50,6 +50,12 @@ export const ROW_START_SCENES = [
   'session-head-context',
   'session-head-branch',
   'session-head-branch-light',
+  'run-page-plan',
+  'run-page-plan-light',
+  'run-page-working',
+  'run-page-done',
+  'run-page-done-light',
+  'run-page-many',
 ];
 export const ROW_START_WIDTHS = [1440];
 export const ROW_START_READY = '[data-studio-rail], [data-page-header], [data-page-column]';

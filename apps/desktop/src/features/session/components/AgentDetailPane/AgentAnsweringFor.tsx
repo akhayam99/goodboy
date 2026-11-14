@@ -26,7 +26,8 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
         <blockquote
           key={landing.fadeKey}
           {...landing.fade}
-          className="border-l-2 border-border pl-2 text-body text-foreground"
+          data-answering-question=""
+          className="text-body text-foreground"
         >
           <Markdown text={question.text} className="min-w-0 gap-2 break-words leading-relaxed" />
         </blockquote>
@@ -35,7 +36,7 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
             type="button"
             onClick={() => navigate({ to: agentPlace({ sessionId, agentId: asker.id }) })}
             className={cn(
-              'self-start rounded-sm px-2 py-0.5 text-chip text-muted-foreground',
+              'self-start rounded-sm py-0.5 text-chip text-muted-foreground',
               'transition-colors duration-150 hover:text-foreground',
               FOCUS_RING,
             )}

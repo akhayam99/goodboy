@@ -786,6 +786,12 @@ run-header-archived
 run-header-failed
 run-header-held
 run-header-paused
+run-page-done
+run-page-done-light
+run-page-many
+run-page-plan
+run-page-plan-light
+run-page-working
 runs-list-empty
 scribe-failed
 scribe-proposal-creating

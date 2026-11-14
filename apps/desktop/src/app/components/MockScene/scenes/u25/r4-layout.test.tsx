@@ -117,13 +117,14 @@ describe('r4 layout scenes', () => {
     ).toBe(true);
   });
 
-  it('puts the agent conversation of a session on the 720 measure, header included', async () => {
+  it('puts the agent conversation of a session on the 720 reading column, its name in the session crumbs', async () => {
     const container = await mount('r4-layout-session');
 
-    const header = pageHeaderOf(container);
-    expect(header.closest('[data-page-column]')?.getAttribute('data-width')).toBe(
-      PAGE_MEASURE.agent,
-    );
+    expect(container.querySelector('[data-page-header]')).toBeNull();
+    const conversation = container.querySelector('[data-slot=pane-fill] [data-page-column]');
+    expect(conversation?.getAttribute('data-width')).toBe(PAGE_MEASURE.agent);
+    expect(container.querySelector('[data-crumb-current]')?.textContent).not.toBe('');
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
   it('puts the Terminal empty state on the terminal measure, with no title band', async () => {
