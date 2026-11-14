@@ -89,6 +89,20 @@ describe('the launch guard', () => {
     expect(rules?.env).toEqual([]);
     expect(rules?.deniedTools).toContain('Edit(CODEOWNERS)');
     expect(rules?.deniedTools).not.toContain('Edit(**/package.json)');
+    expect(rules?.deniedTools).not.toContain('Bash(pnpm add *)');
+    expect(rules?.deniedTools).toContain('Edit(**/pnpm-lock.yaml)');
+  });
+
+  it('keeps no dependency allowance once the row allows every dependency', () => {
+    const guard = launchGuardOf({
+      rows: { dependencies: 'allow', protectedFiles: 'ask' },
+      allowances: [{ kind: 'dependency', subject: 'nock@14.0.1' }],
+    });
+
+    expect(guard?.allowedPackages).toEqual([]);
+    expect(guard === null ? null : launchGuardRulesOf({ guard })?.deniedTools).not.toContain(
+      'Edit(**/pnpm-lock.yaml)',
+    );
   });
 
   it('lifts only the pattern that holds an allowed protected path', () => {

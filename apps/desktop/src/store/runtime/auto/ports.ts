@@ -181,6 +181,11 @@ export type ReadHostChangesParams = Readonly<{
   head: string;
 }>;
 
+export type HostChanges = Readonly<{
+  paths: ReadonlyArray<string>;
+  patch: string;
+}>;
+
 export type ReadRemoteHeadParams = Readonly<{
   worktreePath: string;
   branch: string | null;
@@ -249,6 +254,7 @@ export type PublishScribeParams = Readonly<{
   mountId: string;
   agentId: AgentId;
   output: ExtractedScribeText;
+  sha: string;
 }>;
 
 export type ScribePublication =
@@ -339,7 +345,8 @@ export type AutoPorts = Readonly<{
   startChildTurn: (params: StartChildTurnParams) => Promise<ChildStartOutcome>;
   readMountSnapshot: (params: ReadMountSnapshotParams) => Promise<MountSnapshot | null>;
   readCommittedFiles: (params: ReadCommittedFilesParams) => Promise<ReadonlyArray<string>>;
-  readHostChanges: (params: ReadHostChangesParams) => Promise<ReadonlyArray<string>>;
+  readCommittedPatch: (params: ReadCommittedFilesParams) => Promise<string>;
+  readHostChanges: (params: ReadHostChangesParams) => Promise<HostChanges>;
   readRemoteHead: (params: ReadRemoteHeadParams) => Promise<RemoteRead>;
   readBranchFacts: (params: ReadBranchFactsParams) => Promise<BranchFactsParts>;
   listChecks: (params: ListChecksParams) => Promise<AutoCheckList>;

@@ -73,7 +73,7 @@ export const openScribePullRequest = (set: SetFn, get: GetFn) => {
     }
   };
 
-  return async ({ key }: OpenScribePullRequestInput): Promise<void> => {
+  return async ({ key, pushSha }: OpenScribePullRequestInput): Promise<void> => {
     const work = get().scribeWork[key];
     if (
       work === undefined ||
@@ -103,6 +103,7 @@ export const openScribePullRequest = (set: SetFn, get: GetFn) => {
         draft: work.task.isDraft,
         isScribeBody: true,
         ...(work.task.base === null ? {} : { base: work.task.base }),
+        ...(pushSha === undefined ? {} : { pushSha }),
       });
       const pr = get().mountGithub[work.mountId]?.pr ?? null;
       const number = created.number ?? pr?.number ?? null;

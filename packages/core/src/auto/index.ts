@@ -151,6 +151,7 @@ export {
   changeGateOf,
   changeRefusalOf,
   isChangeGateOn,
+  isDependencyPatchNeeded,
   type ChangeGateVerdict,
   type ChangeRules,
   type ChangeStage,

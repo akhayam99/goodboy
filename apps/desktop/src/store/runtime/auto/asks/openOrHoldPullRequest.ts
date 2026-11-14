@@ -1,5 +1,7 @@
 import type { ResultPullRequest } from '@goodboy/core/auto';
-import type { AutoDelegation } from '@goodboy/db';
+import { insertAutoGrantStatement, type AutoDelegation, type AutoGrantId } from '@goodboy/db';
+import { brandId } from '@goodboy/types';
+import { readPublishPermissions } from '../level/readPublishPermissions';
 import type { AgentVerbContext } from '../verbContext';
 import { bumpTreeStatement } from './bumpTreeStatement';
 import { heldForPushStatements } from './heldForPushStatements';
@@ -14,14 +16,48 @@ type Params = {
   readonly record: ResultPullRequest;
 };
 
+const askFirst = async ({ ctx, delegation, record }: Params): Promise<boolean> => {
+  const nowMs = ctx.now();
+  const grantId = brandId<AutoGrantId>({ value: `grant-pr-held-${delegation.id}` });
+  return isStatementsWritten({
+    ctx,
+    statements: [
+      insertAutoGrantStatement({
+        grant: {
+          id: grantId,
+          treeId: delegation.treeId,
+          delegationId: delegation.id,
+          attemptId: null,
+          textVersion: record.textVersion,
+          kind: 'pull_request',
+          subject: record.mountId,
+          nowMs,
+        },
+      }),
+      pullRequestRecordStatement({
+        delegation,
+        record: { ...record, state: 'awaiting_confirm', grantId, message: null, startedAt: null },
+        fromState: record.state,
+      }),
+      bumpTreeStatement({ delegation, nowMs }),
+    ],
+  });
+};
+
 export const openOrHoldPullRequest = async ({
   ctx,
   delegation,
   record,
 }: Params): Promise<boolean> => {
+  if (record.grantId === null) {
+    const { pullRequest } = await readPublishPermissions({ db: ctx.db, treeId: delegation.treeId });
+    if (pullRequest === 'ask') {
+      return askFirst({ ctx, delegation, record });
+    }
+  }
   const gate = await pullRequestPushGateOf({ ctx, delegation });
   if (gate.kind === 'go') {
-    return publishHeldPullRequest({ ctx, delegation, record });
+    return publishHeldPullRequest({ ctx, delegation, record, sha: gate.sha });
   }
   const nowMs = ctx.now();
   if (gate.kind === 'blocked') {

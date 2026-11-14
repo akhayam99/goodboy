@@ -1,8 +1,5 @@
 import {
   CHECKS_RED_HOLD,
-  changeGateOf,
-  changeRefusalOf,
-  isChangeGateOn,
   isPublishAskedOf,
   publishGateOf,
   type ChangeRules,
@@ -15,6 +12,7 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { snapshotOf } from './attemptBaseline';
+import { hostChangeRefusalOf } from './launchGuard/hostChangeRefusalOf';
 import type { AutoPorts } from './ports';
 
 export type PlanPublishParams = Readonly<{
@@ -107,27 +105,25 @@ const hostChangeHoldOf = async ({
   tries,
   changes,
 }: HostHoldParams): Promise<ResultPublish | null> => {
-  if (!isChangeGateOn({ rules: changes })) {
+  const refusal = await hostChangeRefusalOf({
+    ports,
+    sessionId,
+    worktreePath,
+    branch,
+    sha,
+    changes,
+  });
+  if (refusal === null) {
     return null;
   }
-  try {
-    const paths = await ports.readHostChanges({ sessionId, worktreePath, branch, head: sha });
-    const verdict = changeGateOf({ rules: changes, paths });
-    if (verdict.kind === 'clear') {
-      return null;
-    }
-    const message = changeRefusalOf({ verdict, stage: 'publish' });
-    return held({ wanted, branch, sha, message, isRetryable: false, tries });
-  } catch (error) {
-    return held({
-      wanted,
-      branch,
-      sha,
-      message: `${changeRefusalOf({ verdict: { kind: 'unread' }, stage: 'publish' })} (${formatError(error)})`,
-      isRetryable: true,
-      tries,
-    });
-  }
+  return held({
+    wanted,
+    branch,
+    sha,
+    message: refusal.message,
+    isRetryable: refusal.isRetryable,
+    tries,
+  });
 };
 
 export const planPublish = async (params: PlanPublishParams): Promise<ResultPublish> => {

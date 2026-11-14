@@ -1254,8 +1254,10 @@ not in this list.
 A grant row (`packages/db/src/queries/auto-grants.ts`) is bound to the attempt
 that asked, or for a pull request to one version of its text, and its state is
 asked, allowed, declined or used. It is current while its attempt is the latest
-attempt of its delegation in the tree's generation, or while no newer text was
-asked for the same subject. `answerAutoGrantStatement` moves only a current,
+attempt of its delegation in the tree's generation; a pull request grant has no
+attempt and is current while its delegation is of the tree's generation and no
+newer text was asked for the same subject, so Stop turns its ask stale.
+`answerAutoGrantStatement` moves only a current,
 asked row, so a second answer and an answer for a superseded attempt or text are
 dropped. An allowance is used up at launch: `startAttempt` reads
 `listAutoGrantAllowances` and puts `markAutoGrantUsedStatement` in the
@@ -1313,10 +1315,16 @@ publishes.
   hands a pull request grant to `answerPullRequest`: Open moves the grant
   through `answerGrant`, claims the record (`awaiting_confirm`, `failed` or
   `declined` to `opening`, guarded on its state, a stale `opening` only after
-  `PUSH_LIVE_WINDOW_MS`), calls the `publishScribePullRequest` port with the held
-  title and body unchanged, then writes `opened` with the number and link and
-  the grant `used` in one transaction, or `failed` with the reason and the text
-  kept. Open again on a failed or declined record retries once per claim; a
+  `PUSH_LIVE_WINDOW_MS`; the same transaction checks that the delegation is of
+  the tree's generation and that its grant is a current allowance,
+  `allowedAutoGrantGuard`), calls the `publishScribePullRequest` port with the
+  held title and body unchanged and the commit the push gate checked, then
+  writes `opened` with the number and link and the grant `used` in one
+  transaction, or `failed` with the reason and the text kept. When that last
+  save still fails after three tries, `publishHeldPullRequest` throws with the
+  number and link, so the answer reports it; the record stays `opening` and a
+  later claim takes it once it is stale. Open again on a failed or declined record
+  retries once per claim (a declined grant moves back to allowed first); a
   second Open while one runs is settled. Not yet writes `declined` and keeps the
   text. A newer text on the same mount (an update) asks again, and the answer
   for the older text is dropped because its grant is no longer current. At Allow
@@ -1326,9 +1334,16 @@ publishes.
   signature to the body, as on the Branch page.
 - **A pull request honours the push row.** Opening a pull request pushes the
   branch (`createPrForSession`), so before any publication `openOrHoldPullRequest`
-  runs `pullRequestPushGateOf`: at push Ask it reads the local head and the
-  online head, and goes only when the head is online or a publish record of the
-  tree already pushed that commit. Otherwise the pull request record moves to
+  runs `pullRequestPushGateOf`. It reads the local head and the online head, and
+  every go carries that head: the port pushes exactly that commit
+  (`pushSha`, a pinned plain push), never the branch as it is by then. It goes
+  at once when the head is online or a publish record of the tree already
+  pushed that commit. Otherwise the commit would reach the host, so it first
+  runs the same host change check as a writer push (`hostChangeRefusalOf`, see
+  [Landing backstop](#landing-backstop)): a refused or unread change fails the
+  publication with the reason and raises no push ask. At When checks pass a
+  writer push of that commit that was held keeps the pull request held with its
+  reason; otherwise it goes. At push Ask the pull request record moves to
   `awaiting_push` with a line ("The pull request opens after you push <branch>
   at <sha>") and the push ask for that commit is reused (a writer's record for
   the same branch and commit) or raised on the Scribe's own delegation as a
@@ -1338,15 +1353,21 @@ publishes.
   gate again for the held pull requests of each pushed or declined mount: Push
   opens them once (the claim guards it), Don't push keeps them held with "Not
   opened: you declined the push of <branch>, and the pull request needs it online
-  first", and Push now opens them. A branch or head that cannot be read fails the
-  publication with a reason, never opens it.
+  first", and Push now opens them. A held pull request without a grant (held at
+  Allow) is checked against the Pull request row of now: when it says Ask the
+  release asks for it (`grant-pr-held-<delegation>`) instead of opening it. A
+  branch or head that cannot be read fails the publication with a reason, never
+  opens it.
 - `publishGates.sqlite.test.ts` covers the held push, Push, Don't push and Push
   now, a retry that pushes once, a newer commit, the workspace default, force at
   both values, the held text, Open twice, Not yet, a refused host and Open
   again, an update, Allow as today, the pull request behind the push row (push
   Ask with pull request Allow, push Ask with pull request Ask and Don't push then
-  Push now, a reused writer push ask, a commit already online), and one case per
-  host (GitHub, GitLab, Bitbucket). The scene data for `work-lead-push` is
+  Push now, a reused writer push ask, a commit already online), the pinned
+  commit, a refused host change at both push values, a row turned to Ask while
+  the pull request waited, a stale generation on the answer and on Open again, a
+  failed save after the host opened it, and one case per host (GitHub, GitLab,
+  Bitbucket). The scene data for `work-lead-push` is
   `features/auto/testing/workLeadPushView.ts`.
 
 ### Launch guard
@@ -1384,9 +1405,13 @@ and the row's help line says so.
   Claude or Codex and any reserved name), and for Codex no
   `sandbox_workspace_write.network_access=true`. Codex has no per-file rule:
   for protected files the backstop is the enforcement.
-- **An allowance lifts one.** A dependency allowance lifts the dependency rules
-  and settings for that attempt and keeps the protected ones; a protected file
-  allowance lifts only the pattern that holds its path.
+- **An allowance lifts one.** A dependency allowance lifts the command rules
+  and settings for that attempt so the package manager can add the package,
+  keeps the deny rules on hand edits of lockfiles and keeps the protected ones;
+  it names one package (and its version when the need gave one), and the
+  backstop refuses any other dependency change. A protected file allowance
+  lifts only the pattern that holds its path. A dependency allowance is dropped
+  when the row already allows every dependency.
 - **The brief.** `launchGuardBriefOf` (`kickoff.ts`) is added to the brief at
   launch: do not add or upgrade, installing what the lockfile holds is fine,
   and when a new one is needed end with `needs="dependency"` (or
@@ -1416,10 +1441,17 @@ a manifest. The backstop is the net behind the launch guard, not the
 permission. `changeGateOf` (`packages/core/src/auto/changeGate.ts`) takes the
 rules (`readChangeRules` in `store/runtime/auto/launchGuard/`: both rows read
 now with `readLaunchPermissions`, a failed read asks both, plus the allowances
-in the attempt's stored guard) and the changed paths. A manifest or lockfile of
-any manager, in any folder, is refused while the dependencies row asks and the
-attempt holds no dependency allowance; a protected file is refused while its
-row asks and no allowed path names it. With both rows at Allow nothing is read
+in the attempt's stored guard), the changed paths and, when the attempt holds a
+dependency allowance, the patch (`isDependencyPatchNeeded`). A manifest or
+lockfile of any manager, in any folder, is refused while the dependencies row
+asks, unless an allowance explains it (`unattributedDependencyPathsOf`,
+`dependencyChanges.ts`): every changed line of the manifest must be the allowed
+package at the allowed version (a moved line, a block opener or the old version
+it replaces passes), and a lockfile passes only when the same patch holds such
+a manifest change and every changed manifest passes. The lockfile itself is not
+parsed: a lockfile no manifest change explains, a manifest with no patch (not
+committed) and a patch that cannot be read are refused. A protected file is
+refused while its row asks and no allowed path names it. With both rows at Allow nothing is read
 and the result goes on as before. A row tightened while the agent runs applies
 to its result here.
 
@@ -1440,9 +1472,10 @@ to its result here.
   push; when the branch is not on the host yet, or its head is not in the local
   repository, it diffs from the merge base with the mount's base branch
   (`worktreeDiffFromMergeBase`, a three dot `worktree_diff_range`, `origin/<base>`
-  first). A gated
+  first), and returns that patch with the paths. A gated
   path holds the publish with `so nothing was pushed`; a list that cannot be
-  read holds it with the error and offers a retry.
+  read holds it with the error and offers a retry. The pull request path runs
+  the same check (`hostChangeRefusalOf`) before its push.
 - A refused change stays in the worktree and a later attempt may work on top
   of it. Its own diff no longer shows the change, so it can land, but the
   publish still sees it on the way to the host and holds until an allowance
@@ -1450,8 +1483,9 @@ to its result here.
 - `changeGate.test.ts`, `launchGuard/readHostChanges.test.ts`,
   `launchGuard/changeGate.sqlite.test.ts` (a lockfile around the deny rule, a
   protected file, an unread list, a covered change, Allow as today, a row
-  tightened before a retry, an allowed package landed and pushed, a refused
-  lockfile behind a clean retry, an unreadable host list) and the Rust
+  tightened before a retry, an allowed package landed and pushed, another
+  package beside the allowed one, a refused lockfile behind a clean retry, an
+  unreadable host list) and the Rust
   `a_range_diff_from_the_merge_base_leaves_out_what_the_base_changed_since`
   cover it.
 
@@ -1941,7 +1975,7 @@ row, the line goes, and an admitted retry draws its delegation line. The mount o
 (`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
 writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
 one fits (Auto never guesses a write) and `mount_missing` when none does. Before a writer is
-refused `mount_missing`, `pickChildMount` lets it pick a folder the way a single agent does
+refused `mount_missing` while Add a project is not Ask, `pickChildMount` lets it pick a folder the way a single agent does
 (`mountTaskFolders`, the same rule as a new session's start, see
 [mounts.md](mounts.md#who-picks-the-folders)): the workspace project its `mount` names, or, with
 no mount named and none usable, the only repo, the repo of a linked task, or the repos its task

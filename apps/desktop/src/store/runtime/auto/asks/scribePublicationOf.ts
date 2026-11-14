@@ -11,6 +11,8 @@ import type { AgentVerbContext } from '../verbContext';
 import { holdScribePullRequest } from './holdScribePullRequest';
 import { pullRequestPushGateOf } from './pullRequestPushGateOf';
 
+const NO_TEXT = 'Scribe wrote no title or description.';
+
 type Params = {
   readonly ctx: AgentVerbContext;
   readonly tree: AutoTree;
@@ -52,11 +54,14 @@ export const scribePublicationOf = async ({
       raisedPush: null,
     };
   }
-  const gate = hasText ? await pullRequestPushGateOf({ ctx, delegation }) : null;
-  if (gate !== null && gate.kind === 'blocked') {
+  if (!hasText) {
+    return { kind: 'failed', message: NO_TEXT };
+  }
+  const gate = await pullRequestPushGateOf({ ctx, delegation });
+  if (gate.kind === 'blocked') {
     return { kind: 'failed', message: gate.message };
   }
-  if (gate !== null && gate.kind === 'held') {
+  if (gate.kind === 'held') {
     return {
       kind: 'done',
       line: gate.message,
@@ -84,6 +89,7 @@ export const scribePublicationOf = async ({
     mountId,
     agentId: delegation.childAgentId,
     output,
+    sha: gate.sha,
   });
   if (published.kind === 'failed') {
     return published;

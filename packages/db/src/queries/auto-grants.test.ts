@@ -112,7 +112,7 @@ const ask = async ({
         grant: {
           id: grantId,
           treeId,
-          delegationId: isText ? null : delegationId,
+          delegationId,
           attemptId: isText ? null : attemptId,
           textVersion: isText ? (textVersion ?? 'text-1') : null,
           kind,
@@ -198,6 +198,15 @@ describe('auto grants', () => {
     });
     expect((await answer({ db, grantId: older })).status).toBe('aborted');
     expect((await answer({ db, grantId: newer })).status).toBe('committed');
+  });
+
+  it('drops an answer for a pull request ask of an older generation', async () => {
+    const db = await world();
+    const grantId = await ask({ db, id: 'grant-pr-1', kind: 'pull_request', subject: 'branch-1' });
+    await db.execute('UPDATE auto_trees SET generation = 2 WHERE id = ?', [treeId]);
+    expect(await getAutoGrant({ db, grantId })).toMatchObject({ isCurrent: false });
+    expect((await answer({ db, grantId })).status).toBe('aborted');
+    expect(await getAutoGrant({ db, grantId })).toMatchObject({ state: 'asked' });
   });
 
   it('lists an allowance until a launch uses it, once', async () => {
