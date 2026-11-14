@@ -320,7 +320,7 @@ its surface (tool, item, reader or form), its tier and the tool pane it lights.
 The build fails on a kind with no row, and `drawerKinds.test.ts` matches the rows
 to the kinds written in `state.ts`.
 
-The session has no left rail to fold: a drawer pushes the page while the content
+The session has no column of its own to fold: a drawer pushes the page while the content
 keeps room for the push rule and overlays it when it cannot.
 
 **Header grammar.** The close control always reads `Close`, in every drawer: the

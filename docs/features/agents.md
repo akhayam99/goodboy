@@ -35,7 +35,7 @@ Find an agent, then read who it is before you read its work. **Runs** in a sessi
 
 ### One page per agent
 
-Open any agent or step on its own page, in every kind of run. Every door lands there: the Runs grid, the Agents panel, a chat card and a notification. The page says who the agent is, why it started, its brief and what came back. Its composer talks to that agent. The panel beside a chat reads **Steps** and keeps the error that **Failed here** points at. A failed Auto child has one **Retry** in the dock. The agent menu holds five rows at most.
+Open any agent or step on its own page, in every kind of run. Every door lands there: the Runs grid, the Agents column, a chat card and a notification. The page says who the agent is, why it started, its brief and what came back. Its composer talks to that agent. The panel beside a chat reads **Steps** and keeps the error that **Failed here** points at. A failed Auto child has one **Retry** in the dock. The agent menu holds five rows at most.
 
 ### What the agent received
 
@@ -73,7 +73,14 @@ Keep talking while an agent works. **Enter** queues your message for its next tu
 
 Write to an agent the same way everywhere. Every message and document field takes markdown with **Write** and **Preview**, and files by paste, drop or **Attach**. A message sends on **Enter** with the same **Send** button in the session, Ask and Chat composers, and a document saves on **⌘Enter**. What you type in the message box, in **New session** and in an answer to a question survives a reload and an archive, and a send that lands clears it. When every provider is over its limit, a button that sends says so instead of doing nothing.
 
-**Agents** on the right rail shows the tree of the run or Auto you have open. With none open it shows what is live. **All runs** at the foot goes to Runs, the one list of work. An agent you started yourself is a launch of one row with its state word. Picking a row opens that agent in the center and keeps the panel open, so hopping is one click. The panel stays open on every page of the session, and a row never opens it for you. **j** and **k** hop from the keyboard. With nothing live it says "Nothing live right now".
+### Agents column
+
+See every agent of a run beside its page. The page of an Auto run keeps one session head, with the crumbs **Overview › the run**, and an **Agents** column on its right. The header reads **Agents** with a count that includes every agent, folded ones too. The column holds the tree of that run: one row per agent with its role, state and time, and the activity trace on its left edge.
+
+- On a wide window the column is always open. On a narrower one, **Agents** with its count in the header opens it.
+- Picking a row selects that agent and shows its record beside the chat. **Open transcript** in the record goes to that agent's own page.
+- A note you queued in the composer shows as a row of the tree, with **Edit** and **Remove**.
+- **Stop** sits in the head, on the crumb row. **Esc** goes one crumb up.
 
 Each agent row shows its model by name with the effort, muted. It hides when the panel is too narrow to keep the title whole.
 
@@ -140,9 +147,9 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 
 - The **Work** list shows Auto, then every agent it started with its state.
 - Each agent has a short name for what it does, such as **Review the payments-api side**. Auto gives it, or the first sentence of the task stands in. The role is the glyph beside it.
-- The same name shows in the **Agents** panel, the chat lines, the result cards and what Auto reads.
-- In the **Agents** panel, each Auto conversation is titled by what you asked it.
-- Open a conversation there and Auto sits on top. Its subagents sit below in four groups: **Running**, **Needs you**, **Queued** and **Done**, each with a count of its subagents. Queued holds queued and ready agents; Needs you holds any agent that needs you. One line under the title sums them up, such as "2 running, 1 needs you, 1 queued, 7 done". With no subagent yet there is no summary and no group, only "No agents started yet".
+- The same name shows in the **Agents** column, the chat lines, the result cards and what Auto reads.
+- Each Auto conversation is titled by what you asked it.
+- Open a conversation and Auto sits on top of its column. Its subagents sit below in four groups: **Running**, **Needs you**, **Queued** and **Done**, each with a count of its subagents. Queued holds queued and ready agents; Needs you holds any agent that needs you. One line under the title sums them up, such as "2 running, 1 needs you, 1 queued, 7 done". With no subagent yet there is no summary and no group, only "No agents started yet".
 - An agent takes two lines. The first is its name, at most two lines long. The second is its role, then who asked it when another agent did ("from Planner"), then its time. A working agent reads stronger, in medium weight; waiting and done agents read quieter.
 - **Done** is folded. Open or fold it with a click or the arrow keys. It stays open while the agent you opened is in it, and once Auto has stopped working and every helper is done. Your choice to open or fold it holds in every other case.
 - Inside a group the agent started last comes first, a helper of another agent included. A new agent arrives at the top of its group without moving what you are reading. Keyboard focus stays on a row that changes group.
