@@ -77,7 +77,8 @@ export type AutoSceneState =
   | 'bothQueues'
   | 'notDelivered'
   | 'waitingTwo'
-  | 'deliveredTwo';
+  | 'deliveredTwo'
+  | 'leadWorking';
 
 const GOAL_TEXT =
   'Why does the ledger retry post a second credit? Fix it and add a test for the retry path.';
@@ -417,6 +418,14 @@ const QUEUE_IMAGES: ReadonlyArray<MessageAttachment> = [
 ];
 
 const BOTH_QUEUES_TEXT = 'Also keep the retry window at 30 seconds, see the timeline.';
+
+const LEAD_READ_ID = 'mock-auto-outbox-user-read';
+
+const LEAD_READ_TEXT = 'Leave the ledger export alone.';
+
+const LEAD_NOTE_ID = 'mock-auto-outbox-user-note';
+
+const LEAD_NOTE_TEXT = 'Also cover the batch endpoint.';
 
 const QUEUED_PAIR = [
   {
@@ -1017,6 +1026,46 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
                 },
               ]
             : []),
+        ],
+      };
+    }
+    case 'leadWorking': {
+      const working = autoSceneOf({ state: 'working' });
+      return {
+        ...working,
+        view: {
+          ...working.view,
+          pendingMessages: [
+            {
+              rowId: LEAD_NOTE_ID,
+              createdAt: Date.parse(at({ time: '12:11:00' })),
+              text: LEAD_NOTE_TEXT,
+              images: [],
+            },
+          ],
+          readMessages: [
+            {
+              rowId: LEAD_READ_ID,
+              createdAt: Date.parse(at({ time: '12:10:00' })),
+              text: LEAD_READ_TEXT,
+              turn: 3,
+            },
+          ],
+        },
+        events: [
+          ...working.events,
+          operatorText({
+            time: '12:10:00',
+            text: LEAD_READ_TEXT,
+            run: RUN_THREE,
+            outboxId: LEAD_READ_ID,
+          }),
+          operatorText({
+            time: '12:11:00',
+            text: LEAD_NOTE_TEXT,
+            run: RUN_THREE,
+            outboxId: LEAD_NOTE_ID,
+          }),
         ],
       };
     }

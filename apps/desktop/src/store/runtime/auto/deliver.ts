@@ -18,6 +18,7 @@ import {
   autoTreePhaseStatement,
   claimAutoOutboxStatement,
   getAutoTree,
+  getSetting,
   reserveAutoReservationStatement,
   listAutoDelegations,
   listAutoOutbox,
@@ -36,6 +37,8 @@ import type { OwnTurns } from './createOwnTurns';
 import { chooseDeliveryRows } from './deliveryRows';
 import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
+import { flowRulesOf } from '../../../features/work/flowRulesOf';
+import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { userOnceAllowsOf } from '../../slices/permissions/userOnceAllowsOf';
 import { userImagesOf } from './userImagesOf';
 import type { AgentVerbContext } from './verbContext';
@@ -151,7 +154,7 @@ const claimStatements = ({
     storeAutoOutboxDeliveryStatement({
       outboxId: primary.id,
       claimedBy: ownerId,
-      delivery: { text, rowIds: rows.map((row) => row.id) },
+      delivery: { text, rowIds: rows.map((row) => row.id), turn: tree.turnsUsed + 1 },
       abortCode: ABORT_STORE,
     }),
     {
@@ -267,6 +270,14 @@ const hasNoRunningChild = async ({ ctx, tree, pending }: IdleParams): Promise<bo
   );
 };
 
+const isMessageAtOnce = async ({ ctx, tree, pending }: IdleParams): Promise<boolean> => {
+  if (tree.phase !== 'waiting' || !pending.some((row) => row.kind === 'user')) {
+    return false;
+  }
+  const raw = await getSetting(ctx.db, SETTING_WORK_ENABLED);
+  return flowRulesOf({ isWork: raw === 'true' }).isMessageDeliveredAtOnce;
+};
+
 export const deliverNext = async ({
   ctx,
   treeId,
@@ -287,11 +298,13 @@ export const deliverNext = async ({
   }
   const pending = await listAutoOutbox({ db: ctx.db, treeId, states: ['pending'] });
   const isIdle = await hasNoRunningChild({ ctx, tree, pending });
+  const isAtOnce = await isMessageAtOnce({ ctx, tree, pending });
   const rows = chooseDeliveryRows({
     phase: tree.phase,
     generation: tree.generation,
     pending,
     isIdle,
+    isAtOnce,
     sendNowId: sendNowId ?? null,
   });
   const primary = rows[0];

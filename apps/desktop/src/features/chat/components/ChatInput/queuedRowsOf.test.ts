@@ -105,6 +105,26 @@ describe('queuedRowsOf', () => {
     });
   });
 
+  it('says Not read yet without Send now when the switch delivers at once', () => {
+    const waiting = aView({
+      phase: 'waiting',
+      delegations: [RUNNING],
+      pendingMessages: [message('a', 0)],
+    });
+    const deciding = aView({ phase: 'deciding', pendingMessages: [message('b', 0)] });
+    const stopped = aView({ phase: 'stopped', pendingMessages: [message('c', 0)] });
+
+    expect(queuedRowsOf({ queue: [], view: waiting, ...AT_REST, isAtOnce: true })[0]).toMatchObject(
+      { statusText: 'Not read yet', action: null },
+    );
+    expect(
+      queuedRowsOf({ queue: [], view: deciding, ...AT_REST, isAtOnce: true })[0],
+    ).toMatchObject({ statusText: 'Not read yet', action: null });
+    expect(
+      queuedRowsOf({ queue: [], view: stopped, ...AT_REST, isAtOnce: true })[0]?.statusText,
+    ).toBe('Not delivered');
+  });
+
   it('keeps a message that moves from the tray to the outbox in one place, once', () => {
     const view = aView({
       phase: 'waiting',
