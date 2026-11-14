@@ -13,6 +13,7 @@ type Props = {
   readonly runLine: string;
   readonly age: string;
   readonly isSelected: boolean;
+  readonly actionLabel?: string;
   readonly onOpen: () => void;
 };
 
@@ -26,6 +27,7 @@ export const QuestionsGridRow = ({
   runLine,
   age,
   isSelected,
+  actionLabel,
   onOpen,
 }: Props) => {
   const menu = useObjectMenuTrigger({
@@ -93,6 +95,7 @@ export const QuestionsGridRow = ({
         byKey: {
           state: isBlocking ? <StateDot state="needsYou" label={BLOCKING} /> : null,
           title: suffixedCell === null ? plainCell : '',
+          action: actionLabel ?? null,
           age,
         },
       }}

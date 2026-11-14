@@ -3,7 +3,7 @@ import { DrawerFrame, EmptyLine, FOCUS_RING, SkeletonText, cn } from '@goodboy/u
 import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { LiveQuestionCard } from '../../context/components/QuestionsTab/LiveQuestionCard';
+import { QuestionAnswerCard } from './QuestionAnswerCard';
 import { useQuestionsLens } from '../hooks/useQuestionsLens';
 import { useNow } from '../../../shared/hooks/useNow';
 import { AGENT_KIND_META, type AgentKind } from '../agent-kind';
@@ -133,7 +133,7 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
           <SkeletonText lines={3} />
         )
       ) : (
-        <LiveQuestionCard
+        <QuestionAnswerCard
           key={row.question.id}
           question={row.question}
           sessionId={sessionId}

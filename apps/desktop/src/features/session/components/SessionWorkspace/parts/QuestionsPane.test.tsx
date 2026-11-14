@@ -231,7 +231,7 @@ describe('QuestionsPane', () => {
 
   it('shows the shared empty state only when nothing was ever asked', () => {
     setup({ open: [] });
-    screen.getByRole('heading', { level: 2, name: 'No questions yet' });
+    screen.getByRole('heading', { level: 2, name: 'Nothing waits for you' });
     screen.getByText("Agents bring you the choices they can't make.");
   });
 
@@ -244,8 +244,10 @@ describe('QuestionsPane', () => {
         (node) => node.textContent,
       ),
     ).toEqual(['3']);
-    expect(document.querySelectorAll('[data-list-grid]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-list-grid]')).toHaveLength(2);
     expect(within(group('Needs you')).getAllByRole('button')).toHaveLength(3);
+    expect(within(group('Answered')).queryAllByRole('button')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
     expect(within(group('Answered')).getAllByRole('button')).toHaveLength(1);
     expect(screen.queryByRole('article')).toBeNull();
     expect(screen.queryByText('No questions')).toBeNull();
@@ -253,8 +255,9 @@ describe('QuestionsPane', () => {
 
   it('folds Answered behind its count once nothing waits, and Show opens it', () => {
     setup({ open: [], answered: [ANSWERED_A1, ANSWERED_A2] });
-    expect(screen.queryByText('No questions yet')).toBeNull();
-    expect(screen.queryByText('No questions')).toBeNull();
+    expect(screen.queryByText('Nothing waits for you')).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('Nothing waits for you. 2 answered.');
+    expect(screen.queryByTestId('questions-filter-all')).toBeNull();
     expect(screen.getAllByRole('heading', { level: 2 })[0]?.textContent).toBe('Answered');
     expect(document.querySelector('[data-list-grid-count]')?.textContent).toBe('2');
     expect(within(group('Answered')).queryAllByRole('button')).toHaveLength(0);
@@ -264,11 +267,63 @@ describe('QuestionsPane', () => {
     expect(within(group('Answered')).queryAllByRole('button')).toHaveLength(0);
   });
 
-  it('keeps Answered open while something waits, and Hide folds it', () => {
+  it('keeps Answered folded while something waits, and Show opens it', () => {
     setup({ answered: [ANSWERED_A1, ANSWERED_A2] });
-    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
     expect(within(group('Answered')).queryAllByRole('button')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('searches the answered questions by question and by answer', () => {
+    setup({ answered: [ANSWERED_A1, ANSWERED_A2] });
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    const search = screen.getByRole('searchbox', { name: 'Search answered questions' });
+    fireEvent.change(search, { target: { value: 'squash' } });
+    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(1);
+    fireEvent.change(search, { target: { value: 'main' } });
+    within(group('Answered')).getByRole('button', {
+      name: (name) => name.startsWith('Which branch should the fix land on?'),
+    });
+    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(1);
+  });
+
+  it('orders what waits with a blocking ask first, then the oldest', () => {
+    const older = question('q-old', 'Is the old question first?', 'planner', {
+      createdAt: '2026-09-27T10:00:00.000Z' as IsoDateTime,
+    });
+    setup({ open: [Q2, older, Q1] });
+    const titles = within(group('Needs you'))
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label')?.split(', ')[0]);
+    expect(titles).toEqual([
+      'Which queue should retries run on?',
+      'Is the old question first?',
+      'Which events should be retried?',
+    ]);
+  });
+
+  it('filters what waits by chip, and each chip counts the rows it shows', () => {
+    setup();
+    const all = screen.getByTestId('questions-filter-all');
+    const blocking = screen.getByTestId('questions-filter-blocking');
+    expect(all.textContent).toBe('All open3');
+    expect(blocking.textContent).toBe('Blocking1');
+    fireEvent.click(blocking);
+    expect(within(group('Needs you')).getAllByRole('button')).toHaveLength(1);
+    fireEvent.click(all);
+    expect(within(group('Needs you')).getAllByRole('button')).toHaveLength(3);
+  });
+
+  it('answers a waiting question in its row, with no drawer', () => {
+    setup();
+    const waiting = row('Which events should be retried?');
+    expect(screen.queryByRole('article')).toBeNull();
+    fireEvent.click(waiting);
+    const card = screen.getByRole('article', { name: 'Which events should be retried?' });
+    within(card).getByText('Yes');
+    expect(actions.navigate).not.toHaveBeenCalled();
+    fireEvent.click(row('Which events should be retried?'));
+    expect(screen.queryByRole('article')).toBeNull();
   });
 
   it('opens the fold on the answered question the drawer shows', () => {
@@ -322,21 +377,15 @@ describe('QuestionsPane', () => {
 
   it('reads a row as the question with its answer and the asker on a second line, and the age', () => {
     setup({ answered: [ANSWERED_A1] });
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
     const answered = row('Which branch should the fix land on?');
     const cells = Array.from(answered.querySelectorAll<HTMLElement>('[data-list-grid-cell]'));
-    expect(cells.map((cell) => cell.getAttribute('data-list-grid-cell'))).toEqual([
-      'state',
-      'title',
-      'age',
-    ]);
-    const lines = Array.from(cells[1]?.querySelectorAll<HTMLElement>('.truncate') ?? []).map(
+    expect(cells.map((cell) => cell.getAttribute('data-list-grid-cell'))).toEqual(['title', 'age']);
+    const lines = Array.from(cells[0]?.querySelectorAll<HTMLElement>('.truncate') ?? []).map(
       (line) => line.textContent,
     );
     expect(lines).toEqual(['Which branch should the fix land on?', 'You: main · Reviewer']);
-    expect(cells.map((cell) => cell.textContent).filter((_, index) => index !== 1)).toEqual([
-      '',
-      formatAge({ from: NOW, now: Date.now() }),
-    ]);
+    expect(cells[1]?.textContent).toBe(formatAge({ from: NOW, now: Date.now() }));
   });
 
   it('marks a blocking ask with one dot in its own cell', () => {
@@ -347,20 +396,21 @@ describe('QuestionsPane', () => {
     expect(within(quiet).queryByRole('img', { name: 'Blocking' })).toBeNull();
   });
 
-  it('opens the question from its row on its address, one step after the list', () => {
-    setup();
-    fireEvent.click(row('Keep the old dispatch path?'));
+  it('opens an answered question from its row on its address, one step after the list', () => {
+    setup({ answered: [ANSWERED_A1] });
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    fireEvent.click(row('Which branch should the fix land on?'));
     expect(actions.navigate).toHaveBeenCalledWith({
-      to: questionPlace({ sessionId: SESSION_ID, questionId: Q3.id }),
+      to: questionPlace({ sessionId: SESSION_ID, questionId: ANSWERED_A1.id }),
       mode: 'push',
     });
   });
 
-  it('switches to another question from its row in place, so Close still leaves the list', () => {
-    setup({ openedId: Q2.id });
-    fireEvent.click(row('Keep the old dispatch path?'));
+  it('switches to another answered question from its row in place, so Close still leaves the list', () => {
+    setup({ openedId: ANSWERED_A2.id, answered: [ANSWERED_A1, ANSWERED_A2] });
+    fireEvent.click(row('Which branch should the fix land on?'));
     expect(actions.navigate).toHaveBeenCalledWith({
-      to: questionPlace({ sessionId: SESSION_ID, questionId: Q3.id }),
+      to: questionPlace({ sessionId: SESSION_ID, questionId: ANSWERED_A1.id }),
       mode: 'replace',
     });
   });

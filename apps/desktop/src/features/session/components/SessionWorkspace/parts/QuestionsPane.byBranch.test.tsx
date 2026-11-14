@@ -176,11 +176,12 @@ describe('Questions by branch', () => {
     screen.getByRole('heading', { name: 'No branch' });
   });
 
-  it('folds the answered ones of a branch behind their count', async () => {
+  it('keeps the answered ones behind the Answered section, grouped by branch once it opens', async () => {
     render(<QuestionsPane session={SESSION} />);
 
-    await screen.findByRole('button', { name: '1 answered' });
-    expect(screen.queryByText('Keep the old table for a month?')).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Show' }));
+    await screen.findByText('Keep the old table for a month?');
+    expect(screen.getAllByRole('heading', { level: 2, name: DUP.branch })).toHaveLength(2);
   });
 
   it('moves both copies when the question is staged from one of them', async () => {
@@ -192,9 +193,12 @@ describe('Questions by branch', () => {
     act(() => useOpenQuestions.getState().stageAnswer(SHARED.id));
 
     await waitFor(() =>
-      expect(rowsTitled('Should the limit apply per endpoint\\?')).toHaveLength(1),
+      expect(
+        screen.queryAllByRole('button', { name: /^Should the limit apply per endpoint\?/ }),
+      ).toHaveLength(0),
     );
-    screen.getByRole('button', { name: '2 answered' });
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(rowsTitled('Should the limit apply per endpoint\\?')).toHaveLength(2);
   });
 
   it('marks the open question in its first group only', async () => {

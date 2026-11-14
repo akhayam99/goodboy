@@ -39,7 +39,7 @@ const SKELETON_ROWS = 3;
 
 export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const sessionId = session.id as SessionId;
-  const { model, agents, isLoaded, hasLoadError, reload } = useQuestionsLens({
+  const { model, agents, isLoaded, hasLoadError, reload, beginUndo } = useQuestionsLens({
     sessionId,
     load: 'on-mount',
   });
@@ -103,7 +103,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         <EmptyState
           size="page"
           icon={CONCEPT_ICONS.questions}
-          title="No questions yet"
+          title="Nothing waits for you"
           description="Agents bring you the choices they can't make."
         />
       </PaneShell>
@@ -122,6 +122,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         agents={agents}
         kindOverrides={kindOverrides}
         selectedId={openedId}
+        onDismissed={({ question }) => beginUndo(question)}
         onOpenBranch={openBranch}
         canOpenBranch={canOpenBranch}
         onGroupByChange={(next) => setGroupBy({ sessionId, groupBy: next.groupBy })}
