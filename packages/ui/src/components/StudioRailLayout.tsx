@@ -112,18 +112,17 @@ export const StudioRailLayout = ({
       className={cn('flex h-full min-h-0 flex-1', isPage ? 'bg-background' : 'bg-chrome')}
     >
       {isRailShown || onCollapsedChange === undefined || !canUnfold || rail === null ? null : (
-        <div
-          data-studio-rail-unfold=""
-          className="flex w-11 shrink-0 flex-col items-center gap-1 pt-3"
-        >
-          <IconButton
-            icon={PanelLeftOpen}
-            label={showLabel}
-            shortcut={INNER_COLUMN_SHORTCUT}
-            tooltipSide="right"
-            aria-pressed={false}
-            onClick={() => onCollapsedChange(false)}
-          />
+        <div data-studio-rail-unfold="" className="flex w-11 shrink-0 flex-col items-center">
+          <div data-grid-row="1" className="flex h-10 shrink-0 items-center">
+            <IconButton
+              icon={PanelLeftOpen}
+              label={showLabel}
+              shortcut={INNER_COLUMN_SHORTCUT}
+              tooltipSide="right"
+              aria-pressed={false}
+              onClick={() => onCollapsedChange(false)}
+            />
+          </div>
           {foldedActions}
         </div>
       )}
@@ -134,7 +133,7 @@ export const StudioRailLayout = ({
           className="relative flex min-h-0 shrink-0 flex-col"
         >
           {hasHeaderRow ? (
-            <div className="flex shrink-0 items-center gap-2 px-2 pt-3">
+            <div data-grid-row="1" className="flex h-10 shrink-0 items-center gap-2 px-2">
               {onCollapsedChange === undefined ? null : (
                 <IconButton
                   icon={PanelLeftClose}
