@@ -791,6 +791,8 @@ run-page-done-light
 run-page-many
 run-page-plan
 run-page-plan-light
+run-page-trace
+run-page-trace-light
 run-page-working
 runs-list-empty
 scribe-failed

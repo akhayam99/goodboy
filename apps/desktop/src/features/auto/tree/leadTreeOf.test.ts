@@ -24,6 +24,7 @@ const treeOf = ({
   notes = [],
   plans = [],
   openFoldIds = new Set<string>(),
+  canFold = true,
   leadSpendUsd = 0,
   primaryMountId = 'm1',
 }: {
@@ -31,6 +32,7 @@ const treeOf = ({
   readonly notes?: ReadonlyArray<{ readonly id: string; readonly createdAt: number }>;
   readonly plans?: ReadonlyArray<{ readonly id: string; readonly createdAt: number }>;
   readonly openFoldIds?: ReadonlySet<string>;
+  readonly canFold?: boolean;
   readonly leadSpendUsd?: number;
   readonly primaryMountId?: string | null;
 }) =>
@@ -42,6 +44,7 @@ const treeOf = ({
     leadSpendUsd,
     primaryMountId,
     openFoldIds,
+    canFold,
   });
 
 const numbersOf = (rows: ReturnType<typeof treeOf>['rows']) =>
@@ -71,6 +74,15 @@ describe('leadTreeOf', () => {
     const open = treeOf({ delegations, openFoldIds: new Set([`fold:${LEAD}`]) });
     expect(open.rows.map((row) => row.kind)).toEqual(['fold', 'agent', 'agent', 'agent']);
     expect(numbersOf(open.rows)).toEqual(['1', '2', '3']);
+  });
+
+  it('draws every settled agent on its own row when folding is off', () => {
+    const delegations = [1, 2, 3].map((n) =>
+      delegation({ id: `s${n}`, createdAt: n, role: 'scout', isSettled: true }),
+    );
+    const tree = treeOf({ delegations, canFold: false });
+    expect(tree.rows.map((row) => row.kind)).toEqual(['agent', 'agent', 'agent']);
+    expect(tree.rows.map((row) => row.depth)).toEqual([0, 0, 0]);
   });
 
   it('does not fold while one member is live or a descendant is live', () => {

@@ -101,6 +101,7 @@ const branchLeadOf = ({
     leadSpendUsd: 0,
     primaryMountId: null,
     openFoldIds,
+    canFold: true,
   });
   return {
     ...base,

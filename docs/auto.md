@@ -627,16 +627,24 @@ writing to it reopens it to **Deciding**.
 model of the agents, notes and plans of a tree. It is a pure function over
 loaded rows: agents are numbered by launch (1, 2, 2.1), a retry folds into the
 agent it retries and keeps its number, a set of two or more settled siblings
-folds to one line until opened, and notes and plans are unnumbered rows placed
-by time among the top agents. Spend counts each agent once. The split per
+folds to one line until opened when the caller lets it fold (`canFold`: the
+Work tab does, the Lead page never does), and notes and plans are unnumbered
+rows placed by time among the top agents. Spend counts each agent once. The split per
 branch lives only in `leadSpendByBranchOf`: an agent's spend goes to the row of
 its own branch, the Lead's own turns to its primary branch, or to the group
 without a branch (`mountId` null), and the rows sum to the total.
 
-`LeadTree` (`features/auto/tree/LeadTree.tsx`) draws that model in two
-densities. A row shows the glyph, the role name, the title, a clock while the
-agent works and its own spend once settled; a compact row drops the title and
-number. Arrow keys move a cursor, Enter selects an agent or toggles a fold, and
+`LeadTree` (`features/session/components/LeadTree/index.tsx`) draws that model as
+the activity trace, in two densities. Every row is one 28px line on the trace
+rail (`spawnedRailOf` in `features/workTreeModel` lays it out, `SpawnedRailCell`
+beside `TimelineRail` draws it: the rail of the Agents drawer and the Full log): a spine through the top agents and an elbow
+for each child. The marker is the state node (a check when done, a breathing dot
+while it works, amber for Needs you, red for Failed), then the number, the role
+glyph, the role name and the title, cut in the middle with the whole title on
+hover. The state word shows only when it is neither Done nor Running. A working
+agent shows its clock, a settled one its own spend. The node and the word come
+from `delegationCardOf` (`delegationNodeOf`), the same status the Auto chat
+rail reads. A compact row drops the title and number. Arrow keys move a cursor, Enter selects an agent or toggles a fold, and
 a fold never changes the selected agent id. A queued note is a node with the
 word Queued, Edit and Remove (`noteNodesOf`, over `queuedRowsOf`); both call
 the queue functions the composer tray uses, so a failure keeps the node. A
@@ -684,6 +692,8 @@ layout follows the width of the pane (`leadLayoutOf`): from 1180 up the chat,
 the tree (330) and the record when an agent is selected; from 860 to 1180 the
 chat and the tree, with the record covering the tree and a back arrow; under
 860 the chat alone, and the tree opens from an "Agents" count in the header.
+The tree never folds: its header ("Agents 15") counts every agent and every
+agent keeps its own row.
 The tree is `useLeadTree` over the composer's queued rows: `ChatInput` reports
 them through `QueuedNotesReportContext` (`useReportQueuedNotes`), so a queued note is a
 tree node whose Edit and Remove are the composer's own. A click on a line of

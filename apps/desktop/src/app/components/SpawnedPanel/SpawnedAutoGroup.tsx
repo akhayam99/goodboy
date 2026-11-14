@@ -5,7 +5,7 @@ import { DelegationClock } from '../../../features/auto/chat/DelegationClock';
 import { foldSpawnedRowsOf } from './foldSpawnedRowsOf';
 import { openSpawned } from '../../../features/session/openSpawned';
 import { helpersWordOf } from './helpersWordOf';
-import { spawnedRailOf } from './spawnedRailOf';
+import { spawnedRailOf } from '../../../features/workTreeModel/spawnedRailOf';
 import { SpawnedFoldRow } from './SpawnedFoldRow';
 import { ObjectMenuArea } from '../../../features/actions/components/ObjectMenuArea';
 import { SpawnedTreeRow } from './SpawnedTreeRow';

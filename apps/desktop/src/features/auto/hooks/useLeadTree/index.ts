@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -27,12 +27,13 @@ export type LeadTreeModel = Readonly<{
   items: ReadonlyArray<LeadTreeItem>;
   tree: LeadTree | null;
   delegations: ReadonlyArray<AutoDelegation>;
-  onToggleFold: (foldId: string) => void;
   onEditNote: (noteId: string) => void;
   onRemoveNote: (noteId: string) => void;
 }>;
 
 const NO_ITEMS: ReadonlyArray<LeadTreeItem> = [];
+
+const NO_FOLDS: ReadonlySet<string> = new Set();
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
@@ -49,7 +50,6 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
     () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
     [agentRunHistory, agents, telemetry],
   );
-  const [openFoldIds, setOpenFoldIds] = useState<ReadonlySet<string>>(new Set());
   const view = useMemo(
     () => autoTreeOfAgent({ views, agentId: rootAgentId })?.view ?? null,
     [views, rootAgentId],
@@ -80,27 +80,18 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
       leadAgentId: rootAgentId,
       leadSpendUsd: spendByAgentId.get(rootAgentId) ?? 0,
       primaryMountId: view.tree.primaryMountId,
-      openFoldIds,
+      openFoldIds: NO_FOLDS,
+      canFold: false,
     });
     return {
       tree,
       items: leadTreeItemsOf({ tree, agentsById: facts.agentsById, notes: notes.nodes }),
     };
-  }, [view, rows, queue, agents, spendByAgentId, rootAgentId, openFoldIds]);
-  const onToggleFold = useCallback((foldId: string) => {
-    setOpenFoldIds((current) => {
-      const next = new Set(current);
-      if (!next.delete(foldId)) {
-        next.add(foldId);
-      }
-      return next;
-    });
-  }, []);
+  }, [view, rows, queue, agents, spendByAgentId, rootAgentId]);
   return {
     items: model.items,
     tree: model.tree,
     delegations: view?.delegations ?? NO_DELEGATIONS,
-    onToggleFold,
     onEditNote: queued.onEdit,
     onRemoveNote: queued.onRemove,
   };

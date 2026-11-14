@@ -4,7 +4,7 @@ import {
   type RailGroupInput,
   type RailRow,
   type RailRowInput,
-} from '../../../features/workTreeModel/railGeometry';
+} from './railGeometry';
 import { parentIdsOf } from './parentIdsOf';
 
 type SpawnedRailNode = Readonly<{
