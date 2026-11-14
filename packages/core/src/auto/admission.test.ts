@@ -8,6 +8,7 @@ import {
   type AdmissionChild,
   type AdmissionSnapshot,
 } from './admission';
+import { LEAD_PERMISSION_PRESETS } from './permissions';
 import type { AdmissionParentFacts } from './substepAdmission';
 
 const NOW = 1_700_000_000_000;
@@ -55,6 +56,7 @@ const snapshot = (patch: Partial<AdmissionSnapshot> = {}): AdmissionSnapshot => 
   remainingUsd: 5,
   artifacts: [],
   isPlanApprovalRequired: true,
+  permissions: LEAD_PERMISSION_PRESETS.plan,
   ...patch,
 });
 
@@ -419,7 +421,10 @@ describe('diagnoseAdmission', () => {
     it.each(['step', 'plan', 'run'] as const)(
       'applies the %s level to an unapproved plan without relaxing revision checks',
       (level) => {
-        const current = snapshot({ level, artifacts: [planFacts()] });
+        const current = snapshot({
+          permissions: LEAD_PERMISSION_PRESETS[level],
+          artifacts: [planFacts()],
+        });
         expect(codeOf(diagnoseAdmission({ snapshot: current, children: [implementer()] }))).toBe(
           level === 'run' ? 'ok' : 'artifact_unapproved',
         );
@@ -427,6 +432,24 @@ describe('diagnoseAdmission', () => {
           'stale_revision',
         );
         expect(codeOf(diagnoseAdmission({ snapshot: current, children: [scout()] }))).toBe('ok');
+      },
+    );
+
+    it.each([
+      ['ask', 'free', 'artifact_unapproved'],
+      ['ask', 'ask', 'artifact_unapproved'],
+      ['skip', 'ask', 'ok'],
+      ['skip', 'free', 'ok'],
+    ] as const)(
+      'reads Approve the plan %s with writers %s as the plan gate',
+      (approvePlan, startWriters, code) => {
+        const current = snapshot({
+          permissions: { ...LEAD_PERMISSION_PRESETS.plan, approvePlan, startWriters },
+          artifacts: [planFacts()],
+        });
+        expect(codeOf(diagnoseAdmission({ snapshot: current, children: [implementer()] }))).toBe(
+          code,
+        );
       },
     );
 

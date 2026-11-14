@@ -390,7 +390,11 @@ export const continueChild = async ({
           state:
             from === 'user'
               ? 'accepted'
-              : admissionStateOf({ snapshot, isConfirmForced: input.isConfirmForced }),
+              : admissionStateOf({
+                  permissions: snapshot.permissions,
+                  role: input.role,
+                  isConfirmForced: input.isConfirmForced,
+                }),
           retryOf: delegation.id,
           reviseOf: null,
           baseRevision: null,

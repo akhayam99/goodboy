@@ -9,6 +9,8 @@ import {
 } from '@goodboy/db';
 import type { ArtifactId, AutoDelegationId } from '@goodboy/types';
 import { brandId } from '@goodboy/types';
+import { readPlanApprovalGuards } from './admission/readPlanApprovalGuards';
+import { writerInputRefsOf } from './admission/writerInputRefsOf';
 import { attemptEnvelope } from './attemptEnvelope';
 import type { AgentVerbContext } from './verbContext';
 
@@ -19,10 +21,11 @@ export type ConfirmDelegationParams = Readonly<{
   hint?: string;
 }>;
 
-export type ConfirmDelegationOutcome = 'confirmed' | 'declined' | 'lost';
+export type ConfirmDelegationOutcome = 'confirmed' | 'declined' | 'lost' | 'refused';
 
 const ABORT_TREE = 'confirm_tree';
 const ABORT_STATE = 'confirm_state';
+const ABORT_PLAN = 'confirm_plan';
 
 export const confirmDelegation = async ({
   ctx,
@@ -52,9 +55,21 @@ export const confirmDelegation = async ({
     const task = typeof request['task'] === 'string' ? request['task'] : '';
     const kickoff = typeof request['kickoff'] === 'string' ? request['kickoff'] : '';
     const hintNote = `\n\nUSER HINT\n${userHint}`;
+    const refs = writerInputRefsOf({ delegation });
+    const planGuards =
+      refs.length === 0
+        ? []
+        : await readPlanApprovalGuards({
+            db: ctx.db,
+            treeId: delegation.treeId,
+            refs,
+            isPlanApprovalRequired: ctx.ports.isPlanApprovalRequired(),
+            abortCode: ABORT_PLAN,
+          });
     const outcome = await ctx.db.transaction({
       statements: [
         guard,
+        ...planGuards,
         ...(userHint === ''
           ? []
           : [
@@ -86,6 +101,9 @@ export const confirmDelegation = async ({
         },
       ],
     });
+    if (outcome.status === 'aborted' && outcome.abortCode === ABORT_PLAN) {
+      return 'refused';
+    }
     return outcome.status === 'committed' ? 'confirmed' : 'lost';
   }
   const artifactId = delegation.reviseOf;

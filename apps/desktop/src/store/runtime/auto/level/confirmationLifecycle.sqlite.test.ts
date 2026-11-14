@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { storedResultOf } from '@goodboy/core/auto';
-import { listAutoDelegations, listAutoOutbox } from '@goodboy/db';
-import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
+import { getAutoDelegation, listAutoDelegations, listAutoOutbox, type Database } from '@goodboy/db';
+import { AUTO_SEED_NOW, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
+import { brandId, type AutoDelegationId } from '@goodboy/types';
+import { confirmDelegation } from '../confirmDelegation';
+import {
+  batchInput,
+  childInput,
+  makeAutoWorld,
+  planRef,
+  registerPlan,
+  WORLD_TREE,
+} from '../testing/autoWorld';
+import { makeFakePorts } from '../testing/fakePorts';
 import {
   autoDelegates,
   autoTurnEnds,
@@ -11,6 +22,7 @@ import {
   userSays,
 } from '../testing/runtimeWorld';
 import { writeAutoLevel } from './writeAutoLevel';
+import { writeLeadPermission } from './writeLeadPermission';
 
 const target = { sessionId: AUTO_SEED_SESSION };
 const scout = { role: 'scout', task: 'read ledger-core', reason: 'find the callers' };
@@ -32,6 +44,19 @@ const declineOneStep = async ({ world }: DeclineParams) => {
   await world.runtime.confirm({ delegationId: delegation.id, decision: 'decline' });
   return delegation;
 };
+
+type ApprovePlanParams = {
+  readonly db: Database;
+  readonly value: 'ask' | 'skip';
+};
+
+const setApprovePlan = ({ db, value }: ApprovePlanParams): Promise<void> =>
+  writeLeadPermission({
+    db,
+    target: { treeId: WORLD_TREE },
+    change: { key: 'approvePlan', value },
+    nowMs: AUTO_SEED_NOW,
+  });
 
 describe('Auto confirmation lifecycle', () => {
   it('keeps confirmation pending after a level change, a drive and recovery', async () => {
@@ -97,6 +122,77 @@ describe('Auto confirmation lifecycle', () => {
     await autoTurnEnds({ world });
     await userSays({ world, id: 'outbox-next', text: 'plan it again' });
     expect(world.errors).toEqual([]);
+  });
+
+  it('keeps a proposal waiting when Start agents that read loosens after it', async () => {
+    const world = await makeRuntimeWorld();
+    const db = world.state.world.db;
+    const tree = { treeId: world.treeId };
+    await writeLeadPermission({
+      db,
+      target: tree,
+      change: { key: 'startReaders', value: 'ask' },
+      nowMs: AUTO_SEED_NOW,
+    });
+    await userSays({ world, id: 'outbox-acme', text: 'read ledger-core' });
+    await autoDelegates({ world, spec: [scout] });
+    await autoTurnEnds({ world });
+    await writeLeadPermission({
+      db,
+      target: tree,
+      change: { key: 'startReaders', value: 'free' },
+      nowMs: AUTO_SEED_NOW,
+    });
+    await world.runtime.drive(world.treeId);
+    expect(world.state.ports.childTurns).toHaveLength(0);
+    const delegation = (await listAutoDelegations({ db, treeId: world.treeId }))[0];
+    expect(delegation?.state).toBe('awaiting_confirm');
+    expect(
+      await world.runtime.confirm({
+        delegationId: delegation?.id ?? brandId<AutoDelegationId>({ value: 'missing' }),
+        decision: 'confirm',
+      }),
+    ).toBe('confirmed');
+  });
+
+  it('refuses a confirm after Approve the plan tightened and keeps the proposal', async () => {
+    const world = await makeAutoWorld({
+      agentIds: ['agent-planner'],
+      planIds: [{ id: 'plan-acme', agentId: 'agent-planner' }],
+    });
+    await registerPlan({ world, id: 'plan-acme', agentId: 'agent-planner' });
+    const ctx = {
+      db: world.db,
+      scheduler: world.scheduler,
+      ports: makeFakePorts(),
+      now: world.clock.now,
+    };
+    const db = world.db;
+    await setApprovePlan({ db, value: 'skip' });
+    const child = childInput({
+      key: 'implementer',
+      role: 'implementer',
+      inputArtifacts: [planRef({ id: 'plan-acme', revision: 1 })],
+    });
+    await world.scheduler.admit(batchInput({ children: [child] }));
+    const delegationId = child.delegationId;
+    expect(await getAutoDelegation({ db: world.db, delegationId })).toMatchObject({
+      state: 'awaiting_confirm',
+    });
+    await setApprovePlan({ db, value: 'ask' });
+    expect(await confirmDelegation({ ctx, delegationId, decision: 'confirm' })).toBe('refused');
+    expect(await getAutoDelegation({ db: world.db, delegationId })).toMatchObject({
+      state: 'awaiting_confirm',
+    });
+    await setApprovePlan({ db, value: 'skip' });
+    const twice = await Promise.all([
+      confirmDelegation({ ctx, delegationId, decision: 'confirm' }),
+      confirmDelegation({ ctx, delegationId, decision: 'confirm' }),
+    ]);
+    expect([...twice].sort()).toEqual(['confirmed', 'lost']);
+    expect(await getAutoDelegation({ db: world.db, delegationId })).toMatchObject({
+      state: 'accepted',
+    });
   });
 
   it('delivers a result stored without its fields instead of failing every turn', async () => {

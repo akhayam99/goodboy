@@ -36,10 +36,12 @@ const isStopResult = resultOfValues<TreeStopResult>({ values: ['stopped', 'stuck
 const isTurnResult = resultOfValues<AutoUserTurnResult>({ values: ['queued', 'lost'] });
 
 const isDecisionResult = resultOfValues<DelegationDecisionResult>({
-  values: ['confirmed', 'declined', 'lost'],
+  values: ['confirmed', 'declined', 'lost', 'refused'],
 });
 
-const isAskResult = resultOfValues<AskAnswerResult>({ values: ['allowed', 'declined', 'settled'] });
+const isAskResult = resultOfValues<AskAnswerResult>({
+  values: ['allowed', 'declined', 'settled', 'refused'],
+});
 
 type ResultKindsParams = {
   readonly kinds: ReadonlyArray<string>;
