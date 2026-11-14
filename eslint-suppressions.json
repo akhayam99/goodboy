@@ -414,7 +414,7 @@
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/sidebar-nav.rows.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
+      "count": 7
     }
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/sidebar-states.rows.tsx": {

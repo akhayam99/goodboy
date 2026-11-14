@@ -150,7 +150,7 @@ describe('Branch page capabilities from the branch tree', () => {
   });
 
   it('a stopped rebase keeps Abort on the stop panel under the page header, its one home', async () => {
-    await mount('c04-worktree-rebasing');
+    await mount('c04-worktree-rebasing-page');
 
     expect(screen.getAllByRole('button', { name: 'Abort rebase' }).length).toBe(1);
     const labels = await branchMenu();

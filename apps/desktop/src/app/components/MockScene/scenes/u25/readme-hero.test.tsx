@@ -76,7 +76,7 @@ describe('readme hero scene', () => {
     expect(labels).toEqual([]);
     expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(within(rail).getByRole('group', { name: 'Linked' })).toBeDefined();
-    expect(useAppStore.getState().drawer?.kind).toBe('context');
+    expect(useAppStore.getState().drawer).toBeNull();
 
     const agents = useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? [];
     const providers = new Set(agents.map((agent) => agent.providerOverride));

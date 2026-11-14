@@ -41,6 +41,13 @@ const REBASING: WorktreeSceneConfig = {
   gitState: 'rebasing',
 };
 
+const REBASING_PAGE: WorktreeSceneConfig = {
+  variant: 'github',
+  level: 'worktree',
+  tab: 'pr',
+  gitState: 'rebasing',
+};
+
 export const U25_C04_WORKTREE_SCENES = {
   'c04-session-worktrees': () => <WorktreeScene config={SESSION_ROWS} />,
   'c04-worktree-pr-behind': () => <WorktreeScene config={PR_BEHIND} />,
@@ -53,4 +60,5 @@ export const U25_C04_WORKTREE_SCENES = {
   'c04-worktree-comments': () => <WorktreeScene config={COMMENTS} />,
   'c04-worktree-checks': () => <WorktreeScene config={CHECKS} />,
   'c04-worktree-rebasing': () => <WorktreeScene config={REBASING} />,
+  'c04-worktree-rebasing-page': () => <WorktreeScene config={REBASING_PAGE} />,
 };

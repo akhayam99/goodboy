@@ -1,6 +1,4 @@
 import { useAppStore } from '../../../../../store';
-import { openPaneOf } from '../../../../../features/session/panes/openPaneOf';
-import { togglePane } from '../../../../../features/session/panes/togglePane';
 import { SESSION_ID } from '../activityRunSeed';
 import { seedBrandLimits } from '../brand/limitsSeed';
 import { seedR4Rail } from './r4RailSeed';
@@ -20,13 +18,6 @@ const seedHeroGoal = (): void => {
   }));
 };
 
-const openContext = (): void => {
-  if (openPaneOf({ state: useAppStore.getState(), sessionId: SESSION_ID }) === 'context') {
-    return;
-  }
-  togglePane({ sessionId: SESSION_ID, pane: 'context' });
-};
-
 export const seedReadmeHero = (): void => {
   const items = useAppStore.getState().sessionResolveQueueItems[SESSION_ID];
   seedR4Rail({ isCardFolded: false });
@@ -41,5 +32,4 @@ export const seedReadmeHero = (): void => {
   useAppStore.setState((state) => ({
     activeLens: { ...state.activeLens, [SESSION_ID]: 'context' },
   }));
-  openContext();
 };

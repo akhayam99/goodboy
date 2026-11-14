@@ -542,7 +542,7 @@ covered.
   bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
   units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
   door, the dock badge and Search or run; questions ("3 questions") on the
-  Questions tab; items ("4 items need you") on the Overview card and
+  Questions tab of the session; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
   row opens the session hover card (facts only) after the pointer rests, the

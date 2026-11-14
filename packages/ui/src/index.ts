@@ -273,6 +273,7 @@ export {
   useInheritedPaneActions,
 } from './components/PaneShell/paneActionsContext';
 export { PaneTabsContext } from './components/PaneShell/paneTabsContext';
+export { OwnPaneChrome } from './components/PaneShell/OwnPaneChrome';
 export { UnderTrailContext } from './components/PaneShell/underTrailContext';
 export { PaneBannerContext } from './components/PaneShell/paneBannerContext';
 export { PageTrailContext } from './components/PaneShell/pageTrailContext';

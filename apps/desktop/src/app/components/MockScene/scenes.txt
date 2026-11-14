@@ -246,6 +246,7 @@ c04-worktree-no-pr-fix
 c04-worktree-pr-behind
 c04-worktree-pr-draft
 c04-worktree-rebasing
+c04-worktree-rebasing-page
 c05-overview-archived
 c05-overview-blank
 c05-overview-lanes

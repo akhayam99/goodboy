@@ -38,7 +38,6 @@ import {
 } from '../../../features/workspace/testing/sessionColumn';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { testTurn } from '../../../features/file-versions/testing/testTurn';
-import { useCurrentSession } from '../../../store';
 import type { AppStore } from '../../../store/store';
 import type { ColumnActions } from '../SideColumn/columnDoors';
 import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
@@ -125,7 +124,9 @@ type MountParams = {
 };
 
 const Shell = ({ place = null }: MountParams) => {
-  const current = useCurrentSession();
+  const current = useAppStore(
+    (state) => state.sessions.find((entry) => entry.id === state.currentSessionId) ?? null,
+  );
   const currentSessionId = current?.id ?? null;
   return (
     <ToastProvider>
@@ -184,7 +185,7 @@ describe('the session level projects and linked work', () => {
     const worktree = paymentsRows.getByRole('button', { name: /#418/ });
     expect(worktree.textContent?.startsWith('#418 ')).toBe(true);
     expect(worktree.getAttribute('aria-label')).toContain(`branch goodboy/${openId}`);
-    expect(projects.getByRole('list', { name: 'ledger-core worktrees' })).toBeDefined();
+    projects.getByRole('list', { name: 'ledger-core worktrees' });
 
     await act(async () => {
       fireEvent.click(worktree);
@@ -217,7 +218,7 @@ describe('the session level projects and linked work', () => {
     expect(linked.getByRole('button', { name: 'Open NW-142' }).textContent).toBe(
       'NW-142Retry webhook deliveries on a 502',
     );
-    expect(linked.getByRole('button', { name: 'Link work' })).toBeDefined();
+    linked.getByRole('button', { name: 'Link work' });
   });
 
   it('starts every linked title on one edge and keeps a long key whole, cut at the end by the column', () => {
@@ -316,7 +317,7 @@ describe('the session level projects and linked work', () => {
 
     const linked = within(within(sessionLayer()).getByRole('group', { name: 'Linked' }));
     expect(linked.getAllByRole('button', { name: 'Open issue #418' })).toHaveLength(1);
-    expect(linked.getByText('Same number in another repository')).toBeDefined();
+    linked.getByText('Same number in another repository');
   });
 });
 
@@ -337,14 +338,13 @@ const menuItem = ({ name }: MenuItemParams): HTMLElement =>
   within(openSessionMenu()).getByRole('menuitem', { name });
 
 describe('the session rail top row and its menu', () => {
-  it('holds the fold toggle, then Pin, Refresh and the session menu, with no foot', () => {
+  it('holds Pin, Refresh and the session menu in the title row, with no foot', () => {
     seed();
     mountColumn();
     expect(sessionLayer().querySelector('[data-level-identity]')).toBeNull();
     const top = within(rail());
 
     expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Hide session pages',
       'Pin session',
       'Refresh session',
       'More session actions',
@@ -390,7 +390,7 @@ describe('the session rail top row and its menu', () => {
     await act(async () => {
       fireEvent.click(top.getByRole('button', { name: 'Pin session' }));
     });
-    expect(screen.getByText(/database is locked/)).toBeDefined();
+    screen.getByText(/database is locked/);
     expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
       'false',
     );
@@ -477,7 +477,7 @@ describe('the session rail top row and its menu', () => {
 
     fireEvent.click(menuItem({ name: /^Archive/ }));
     const dialog = within(await screen.findByRole('dialog', { name: 'Stop 1 agent and archive?' }));
-    expect(dialog.getByText(/stay on disk/)).toBeDefined();
+    dialog.getByText(/stay on disk/);
     await act(async () => {
       fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
     });
@@ -530,7 +530,7 @@ describe('the session rail top row and its menu', () => {
 
     fireEvent.click(menuItem({ name: /^Archive/ }));
     const dialog = within(await screen.findByRole('dialog', { name: 'Stop 1 agent and archive?' }));
-    expect(dialog.getByText(/Archive stops it first and keeps what it wrote/)).toBeDefined();
+    dialog.getByText(/Archive stops it first and keeps what it wrote/);
     await act(async () => {
       fireEvent.click(dialog.getByRole('button', { name: 'Stop 1 agent and archive' }));
     });
@@ -555,7 +555,7 @@ describe('the session rail top row and its menu', () => {
     await act(async () => {
       fireEvent.click(archiveItem);
     });
-    expect(screen.getByText(/database is locked/)).toBeDefined();
+    screen.getByText(/database is locked/);
     expect(useAppStore.getState().sessions.map((session) => session.id)).toContain(openId);
 
     const again = menuItem({ name: /^Archive/ });

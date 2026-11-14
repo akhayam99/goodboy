@@ -3,9 +3,8 @@ import type { AgentId, Session, SessionId } from '@goodboy/types';
 import {
   cn,
   useEscapeLayer,
-  PaneActionsContext,
+  OwnPaneChrome,
   PaneBannerContext,
-  PaneTabsContext,
   PageTrailContext,
   PaneSwap,
 } from '@goodboy/ui';
@@ -82,13 +81,7 @@ export const SessionWorkspace = ({ session }: Props) => {
       key: target,
       content: (
         <PageTrailContext.Provider value={showLens && target !== 'overview' ? trail : null}>
-          {target === 'branch' ? (
-            <PaneTabsContext.Provider value={null}>
-              <PaneActionsContext.Provider value={null}>{pane}</PaneActionsContext.Provider>
-            </PaneTabsContext.Provider>
-          ) : (
-            pane
-          )}
+          {target === 'branch' ? <OwnPaneChrome>{pane}</OwnPaneChrome> : pane}
         </PageTrailContext.Provider>
       ),
     };

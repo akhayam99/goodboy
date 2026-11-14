@@ -340,7 +340,7 @@ const pageRow = (label: string): HTMLElement => {
   if (pages === null) {
     throw new Error('the page shows no session tabs');
   }
-  const found = within(pages as HTMLElement)
+  const found = within(pages instanceof HTMLElement ? pages : document.body)
     .getAllByRole('tab')
     .find((tab) => tab.textContent?.startsWith(label));
   expect(found, `no ${label} page tab`).toBeDefined();
