@@ -202,10 +202,16 @@ const sessionPageCounts = async (): Promise<ReadonlyArray<string>> => {
       <QuestionsPane session={SESSION} />
     </ToastProvider>,
   );
-  const groups = await screen.findAllByRole('heading', { level: 2, name: DUP.branch });
-  const counts = groups.map((heading) => countBeside({ heading }));
+  const first = await screen.findAllByRole('heading', { level: 2, name: DUP.branch });
+  const fold = screen.queryByRole('button', { name: 'Show' });
+  if (fold !== null) {
+    fireEvent.click(fold);
+  }
+  const groups = screen.getAllByRole('heading', { level: 2, name: DUP.branch });
+  const [runs, ...questions] = groups.map((heading) => countBeside({ heading }));
   cleanup();
-  return counts;
+  expect(first.length).toBeGreaterThan(0);
+  return [runs ?? '1', String(questions.reduce((sum, count) => sum + Number(count), 0))];
 };
 
 describe('the Work tab of a branch', () => {

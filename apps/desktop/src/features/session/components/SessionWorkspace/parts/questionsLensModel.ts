@@ -33,6 +33,18 @@ type Params = {
 const newestAnsweredFirst = (first: OpenQuestion, second: OpenQuestion): number =>
   (second.answeredAt ?? second.createdAt).localeCompare(first.answeredAt ?? first.createdAt);
 
+type PairParams = {
+  readonly first: OpenQuestion;
+  readonly second: OpenQuestion;
+};
+
+const blockingThenOldest = ({ first, second }: PairParams): number => {
+  if (first.isBlocking !== second.isBlocking) {
+    return first.isBlocking ? -1 : 1;
+  }
+  return first.createdAt.localeCompare(second.createdAt);
+};
+
 export const buildQuestionsLens = ({
   open,
   answered,
@@ -42,7 +54,9 @@ export const buildQuestionsLens = ({
 }: Params): QuestionsLensModel => {
   const live = open.filter((question) => question.id !== dismissed?.id);
   const partition = partitionDelegatedQuestions({ questions: live, agents });
-  const waiting = partition.answerable.filter((question) => !staged.includes(question.id));
+  const waiting = partition.answerable
+    .filter((question) => !staged.includes(question.id))
+    .sort((first, second) => blockingThenOldest({ first, second }));
   const stagedRows = partition.answerable
     .filter((question) => staged.includes(question.id))
     .map((question): QuestionRow => ({ question, kind: 'staged' }));
@@ -51,7 +65,9 @@ export const buildQuestionsLens = ({
 
   return {
     waiting: waiting.map((question) => ({ question, kind: 'waiting' })),
-    delegated: partition.waiting.map((question) => ({ question, kind: 'delegated' })),
+    delegated: [...partition.waiting]
+      .sort((first, second) => blockingThenOldest({ first, second }))
+      .map((question) => ({ question, kind: 'delegated' })),
     recent: [...stagedRows, ...dismissedRows],
     answered: [...answered]
       .sort(newestAnsweredFirst)
