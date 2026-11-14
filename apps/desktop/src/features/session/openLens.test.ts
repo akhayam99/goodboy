@@ -21,9 +21,12 @@ vi.mock('../../store', async () => ({
 }));
 
 vi.mock('../actions/dispatchAfterNavigation', () => ({ dispatchAfterNavigation: vi.fn() }));
+vi.mock('./openPlaceRows', () => ({ openPlaceRows: vi.fn() }));
 
+import { PLACE_ROWS } from '../../store/slices/navigation/placeRows';
 import { dispatchAfterNavigation } from '../actions/dispatchAfterNavigation';
 import { linkIssueEventName } from '../actions/kinds/session';
+import { openPlaceRows } from './openPlaceRows';
 import { openLens } from './openLens';
 import { openToolPane } from './panes/openToolPane';
 
@@ -58,15 +61,15 @@ describe('openLens and openToolPane', () => {
     expect(state.navigate).not.toHaveBeenCalled();
   });
 
-  it('goes to the session first when the Explore pane is asked from elsewhere', () => {
+  it('opens the Explore pane as the Changes page with every file, from anywhere', () => {
     state.currentSessionId = null;
     openToolPane({ sessionId: SESSION_ID, pane: 'explore' });
-    expect(state.navigate).toHaveBeenCalledWith(toLens(null));
-    expect(state.openDrawer).toHaveBeenCalledWith({
-      kind: 'explore',
+    expect(openPlaceRows).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      payload: null,
+      lens: 'files',
+      rows: { [PLACE_ROWS.changesMode]: 'all' },
     });
+    expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
   it('asks Link work from the provider, on the Context tab, with that source in the event', () => {

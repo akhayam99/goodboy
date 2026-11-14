@@ -48,10 +48,3 @@ export const anAutoCard = ({ target }: AutoParams): ActionCardModel => ({
   source: { kind: 'auto', target },
   folded: [],
 });
-
-type BandParams = {
-  readonly band: NextStepBand;
-  readonly base: ActionCardModel;
-};
-
-export const inBand = ({ band, base }: BandParams): ActionCardModel => ({ ...base, band });

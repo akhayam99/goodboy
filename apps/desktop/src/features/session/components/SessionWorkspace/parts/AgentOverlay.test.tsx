@@ -1,18 +1,43 @@
 // @vitest-environment happy-dom
-import { useState } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { brandId, type AgentId, type SessionId } from '@goodboy/types';
-import { aSession, anAgent } from '@goodboy/types/testing';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
-const storeState: { sessionPhaseRuns: Record<string, ReadonlyArray<unknown>> } = {
-  sessionPhaseRuns: {},
+import { useState } from 'react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { brandId, type Agent, type AgentId, type SessionId } from '@goodboy/types';
+import { aSession, anAgent } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  stubStoryInvoke({ db_select: [], db_execute: { rowsAffected: 0 }, turn_quiet: [] });
+});
+
+type RunsParams = {
+  readonly runs: Record<string, ReadonlyArray<Agent>>;
 };
 
-vi.mock('../../../../../store', () => ({
-  EMPTY_ARRAY: [],
-  useAppStore: (selector: (s: typeof storeState) => unknown) => selector(storeState),
-}));
+const setRuns = ({ runs }: RunsParams): void => {
+  useAppStore.setState({ sessionPhaseRuns: runs });
+};
+
 vi.mock('../../AgentDetailPane', () => ({
   AgentDetailPane: () => {
     const [isBriefOpen, setIsBriefOpen] = useState(false);
@@ -32,7 +57,6 @@ const second = anAgent({ id: brandId<AgentId>({ value: 'agent-2' }), sessionId }
 
 afterEach(() => {
   cleanup();
-  storeState.sessionPhaseRuns = {};
 });
 
 describe('AgentOverlay', () => {
@@ -53,7 +77,7 @@ describe('AgentOverlay', () => {
   });
 
   it('offers a way back when the loaded session no longer has the agent', () => {
-    storeState.sessionPhaseRuns = { [sessionId]: [] };
+    setRuns({ runs: { [sessionId]: [] } });
     const onBack = vi.fn();
     render(
       <AgentOverlay
@@ -73,7 +97,7 @@ describe('AgentOverlay', () => {
   });
 
   it('starts the next agent with a closed brief and no leftover edit', () => {
-    storeState.sessionPhaseRuns = { [sessionId]: [first, second] };
+    setRuns({ runs: { [sessionId]: [first, second] } });
     const view = (selectedAgentId: AgentId) => (
       <AgentOverlay
         session={session}

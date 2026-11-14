@@ -1949,8 +1949,7 @@ describe('actions run against the real store', () => {
     expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
     expect(useAppStore.getState().branchTab[SESSION]).toBe('files');
     await run(SESSION_TARGET, 'session.diff');
-    expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
-    expect(useAppStore.getState().branchTab[SESSION]).toBe('files');
+    expect(useAppStore.getState().activeLens[SESSION]).toBe('files');
   });
 
   it('never runs a blocked verb', async () => {

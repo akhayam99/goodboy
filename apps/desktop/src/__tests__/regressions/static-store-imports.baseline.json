@@ -17,8 +17,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/u26/p11.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u26/rebase.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u27/agents-tree.test.tsx": 1,
-  "apps/desktop/src/app/components/SessionRail/levels.test.tsx": 1,
-  "apps/desktop/src/app/components/SessionRail/motion.test.tsx": 1,
   "apps/desktop/src/app/components/SpawnedPanel/index.test.tsx": 1,
   "apps/desktop/src/app/hooks/useAppOverlays/index.test.tsx": 1,
   "apps/desktop/src/app/hooks/useAppOverlays/useSessionSurfaceEvents.test.tsx": 1,
