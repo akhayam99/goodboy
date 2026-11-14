@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { exploreRead, type ExploreContent, type ExploreEntry } from '../../explore';
+import { exploreRead, type ExploreContent, type ExploreEntry } from '../../../explore/explore';
 
 export type ExplorePreviewState =
   | {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
-import { exploreList } from '../../explore';
-import { EXPLORE_ROOT_PATH, type ExploreListing } from '../../exploreRows';
+import { exploreList } from '../../../explore/explore';
+import { EXPLORE_ROOT_PATH, type ExploreListing } from '../../../explore/exploreRows';
 
 type Params = {
   readonly sessionDir: string | null;

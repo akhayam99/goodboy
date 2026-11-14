@@ -104,7 +104,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   to another place. Only one level shows, so a session never carries a nested
   card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
-  Overview, Changes (with the count of changed files) in a branchless session only, Runs,
+  Overview, Changes (with the count of changed files; its `Changed` and `All files` modes
+  hold the files of the session, see the Changes section of branch-page.md), Runs,
   Artifacts, and Questions last, always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
   **Runs is the one entry for work** (ux27 one flow, unit 1): it folds the

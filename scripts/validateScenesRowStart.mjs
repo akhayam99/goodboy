@@ -5,6 +5,7 @@ export const ROW_START_SCENES = [
   'browser-pane-rail',
   'c05-overview-running',
   'branch-files',
+  'changes-files-all',
   'branch-comments',
   'branch-checks',
   'branch-commits',

@@ -10,10 +10,12 @@ import { selectSelectedMountId } from '../../../../store/slices/project-mounts/s
 import { selectWritableMounts } from '../../../../store/slices/project-mounts/selectors';
 import { branchMenuGroups } from '../../../session/trail/menus/branchMenu';
 import { scratchDirPrepare } from '../../../worktree/worktree';
-import { selectExploreMount, type ExploreTarget } from '../../selectExploreMount';
+import { selectExploreMount, type ExploreTarget } from '../../../explore/selectExploreMount';
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly pinnedPath?: string;
+  readonly onPick?: (params: PickParams) => void;
 };
 
 type PickParams = {
@@ -33,8 +35,9 @@ export type ExploreRootView = {
   readonly pick: (params: PickParams) => void;
 };
 
-export const useExploreRoot = ({ sessionId }: Params): ExploreRootView => {
-  const requestedPath = useAppStore((state) => state.exploreMountPath[sessionId] ?? null);
+export const useExploreRoot = ({ sessionId, pinnedPath, onPick }: Params): ExploreRootView => {
+  const storedPath = useAppStore((state) => state.exploreMountPath[sessionId] ?? null);
+  const requestedPath = pinnedPath ?? storedPath;
   const views = useAppStore((state) => state.sessionMounts?.[sessionId]);
   const projectMounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId]);
   const activeMountId = useAppStore((state) => selectSelectedMountId({ state, sessionId }));
@@ -100,8 +103,14 @@ export const useExploreRoot = ({ sessionId }: Params): ExploreRootView => {
   );
 
   const pick = useCallback(
-    ({ mountPath }: PickParams) => setExploreMountPath({ sessionId, mountPath }),
-    [sessionId, setExploreMountPath],
+    ({ mountPath }: PickParams) => {
+      if (onPick !== undefined) {
+        onPick({ mountPath });
+        return;
+      }
+      setExploreMountPath({ sessionId, mountPath });
+    },
+    [onPick, sessionId, setExploreMountPath],
   );
 
   const groups = useMemo(

@@ -33,6 +33,18 @@ const FILES_NARROW: WorktreeSceneConfig = {
   tab: 'files',
   fileRail: 'overlay',
 };
+const FILES_ALL: WorktreeSceneConfig = {
+  variant: 'github',
+  level: 'worktree',
+  tab: 'files',
+  filesMode: 'all',
+};
+const FILES_READING: WorktreeSceneConfig = {
+  variant: 'github',
+  level: 'worktree',
+  tab: 'files',
+  filesMode: 'reading',
+};
 const COMMENTS: WorktreeSceneConfig = { variant: 'github', level: 'worktree', tab: 'comments' };
 const CHECKS: WorktreeSceneConfig = { variant: 'merge-blocked', level: 'worktree', tab: 'checks' };
 const REBASING: WorktreeSceneConfig = {
@@ -57,6 +69,8 @@ export const U25_C04_WORKTREE_SCENES = {
   'c04-worktree-files': () => <WorktreeScene config={FILES} />,
   'c04-worktree-files-folded': () => <WorktreeScene config={FILES_FOLDED} />,
   'c04-worktree-files-narrow': () => <WorktreeScene config={FILES_NARROW} />,
+  'changes-files-all': () => <WorktreeScene config={FILES_ALL} />,
+  'changes-files-reading': () => <WorktreeScene config={FILES_READING} />,
   'c04-worktree-comments': () => <WorktreeScene config={COMMENTS} />,
   'c04-worktree-checks': () => <WorktreeScene config={CHECKS} />,
   'c04-worktree-rebasing': () => <WorktreeScene config={REBASING} />,
