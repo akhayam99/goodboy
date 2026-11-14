@@ -1,5 +1,6 @@
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 import { actionButtonStateOf } from '../../actions/actionButtonStateOf';
 import type { ResolvedAction } from '../../actions/types';
 import type { ActionControls } from '../../actions/useActionControls';
@@ -25,7 +26,7 @@ export const RebasePromptVerb = ({ controls, action, label, variant, className }
   const button = (
     <Button
       size="sm"
-      variant={variant}
+      {...actionButtonLookOf({ verb: action.id, variant })}
       className={className}
       data-rebase-verb={action.id}
       disabled={action.blockedReason !== null || controls.pendingId !== null}

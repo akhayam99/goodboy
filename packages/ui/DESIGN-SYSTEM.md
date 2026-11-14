@@ -771,6 +771,25 @@ never 20, 28 or 40px.
 `gap-10` and their `gap-x`, `gap-y`, `space-x` and `space-y` twins fail
 `scale-rules.test.ts`.
 
+## Action intent
+
+A `Button` carries an `intent` next to its variant. One map,
+`actionIntentOf({ verb })` in `features/actions/actionIntentOf.ts`, gives every
+action verb its intent, and `actionButtonLookOf` turns it into the intent and
+variant a call site passes. The `action-intents` scene shows every pair.
+
+| Intent        | Verbs                                      | Filled                                 | Outline | Quiet |
+| ------------- | ------------------------------------------ | -------------------------------------- | ------- | ----- |
+| `primary`     | push, open PR, review, run, continue       | the one next step of the row or header | no      | no    |
+| `neutral`     | everything else                            | no                                     | yes     | yes   |
+| `caution`     | rebase, force push, reset, rewrite history | only inside a confirm                  | default | yes   |
+| `destructive` | remove worktree, delete branch, discard    | only inside a confirm                  | default | yes   |
+
+Success is a state, never a button. Only caution and destructive use a tone,
+and only on the outline or quiet variant at rest. A row and a header hold at
+most one filled button. `ButtonVariant` `primary` is the filled look, `secondary`
+the outline look, `ghost` and `quiet` the quiet look.
+
 ## Color and tone resolution
 
 - **One tint helper, one stage map.** Tones go through `tintClasses(tone)`.

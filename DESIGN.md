@@ -274,6 +274,10 @@ about its effect is a worse defect than one that reads badly.
   filled button. A confirm is neutral with a tone line, never a tinted
   box ([packages/ui/design/layout.md](packages/ui/design/layout.md) → Action
   zones).
+- **Tone only for risk.** A button has an intent: rebase and force push are
+  caution, remove worktree and delete branch are destructive, both outline or
+  quiet at rest and filled only in a confirm; every other verb is neutral or
+  the one primary ([packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md#action-intent)).
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
   notification inbox is the _log_. Nothing lives only in a toast.
 - **A toast says what already happened.** `success` means finished. `info`

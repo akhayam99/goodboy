@@ -1,6 +1,7 @@
 import { GitPullRequest } from 'lucide-react';
 import { Button, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { useActionControls } from '../../../actions/useActionControls';
 
 type Props = {
@@ -23,7 +24,7 @@ export const NoPullRequestState = ({ sessionId }: Props) => {
       action={
         <Button
           size="sm"
-          variant="secondary"
+          {...actionButtonLookOf({ verb: CREATE_ACTION_ID, variant: 'secondary' })}
           disabled={createAction === undefined || createAction.blockedReason !== null}
           onClick={() => create.trigger({ actionId: CREATE_ACTION_ID })}
         >
