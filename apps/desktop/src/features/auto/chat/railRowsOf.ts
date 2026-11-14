@@ -10,6 +10,7 @@ import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { autoTreeWordOf } from '../autoTreeWordOf';
 import { isAutoDelegationReplaced } from '../isAutoDelegationReplaced';
 import { delegationCardOf, type DelegationCardModel } from './delegationCardOf';
+import { delegationNodeOf } from './delegationNodeOf';
 
 export type RailRow = Readonly<{
   id: string;
@@ -40,41 +41,6 @@ type RowParams = {
   readonly rootRouting: RailRouting;
   readonly rootTurn?: TurnState | null;
   readonly isWork: boolean;
-};
-
-type NodeParams = {
-  readonly card: DelegationCardModel;
-};
-
-const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
-  if (card.status.node !== undefined) {
-    return card.status.node;
-  }
-  switch (card.status.state) {
-    case 'done':
-      return 'done';
-    case 'failed':
-    case 'timedOut':
-      return 'failed';
-    case 'blocked':
-      return 'alert';
-    case 'returned':
-      return 'skipped';
-    case 'stopped':
-      return 'stopped';
-    case 'queued':
-      return 'queued';
-    case 'stopping':
-    case 'confirming':
-    case 'starting':
-    case 'running':
-    case 'paused':
-      return 'running';
-    default: {
-      const exhaustive: never = card.status.state;
-      return exhaustive;
-    }
-  }
 };
 
 type RootParams = {
@@ -189,7 +155,7 @@ export const railRowsOf = ({
     role: card.role,
     label: labels.get(card.childAgentId) ?? card.roleLabel,
     task: card.task,
-    node: delegationNodeOf({ card }),
+    node: delegationNodeOf({ status: card.status }),
     word: card.status.word,
     tone: card.status.tone,
     provider: card.provider,

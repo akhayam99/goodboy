@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { cn, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
+import { cn, PageColumn, useStudioRailFold } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
@@ -12,7 +12,6 @@ import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { useTreeFocus } from '../../hooks/useTreeFocus';
 import { nextUnviewedPath } from '../../lib/fileOrder';
 import { viewedCountOf } from '../../lib/viewedCountOf';
-import { ModeControl } from '../ChangeTree/ModeControl';
 import { TreeLoading } from '../ChangeTree/TreeLoading';
 import { FileReader } from '../FileReader';
 import { DiffView } from '../DiffView';
@@ -21,6 +20,10 @@ import type { FilesFact } from '../../filesFact';
 import { CHANGES_RAIL_SURFACE } from '../../changesRailSurface';
 import { useIdentifierPeek } from '../../hooks/useIdentifierPeek';
 import { BranchCommitsNotice } from './BranchCommitsNotice';
+import { ChangesDetail } from './ChangesDetail';
+import { ChangesFrame } from './ChangesFrame';
+import { ChangesRailLayout } from './ChangesRailLayout';
+import type { BranchRailSlot } from '../../../branch/branchRailSlotContext';
 import { ChangesPlainBody } from './ChangesPlainBody';
 import { ChangesRail } from './ChangesRail';
 import { ChangesScopePill } from './ChangesScopePill';
@@ -36,6 +39,13 @@ type Props = {
   readonly filesFact?: FilesFact;
   readonly commitTotal?: number | null;
   readonly notice?: ReactNode;
+  readonly railSlot?: BranchRailSlot | null;
+};
+
+const FRAME_FOLD_BELOW_PX = 1060;
+
+type LayoutParams = {
+  readonly shown: ReactNode;
 };
 
 export const ChangesPage = ({
@@ -48,13 +58,19 @@ export const ChangesPage = ({
   filesFact,
   commitTotal = null,
   notice = null,
+  railSlot = null,
 }: Props) => {
   const review = useReviewState({ sessionId, worktreePath, diff });
   const baseBranch = useAppStore((s) =>
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
-  const fold = useStudioRailFold({ surface: CHANGES_RAIL_SURFACE });
+  const fold = useStudioRailFold({
+    surface: CHANGES_RAIL_SURFACE,
+    pane: railSlot?.pane ?? null,
+    ...(railSlot !== null && { foldBelow: FRAME_FOLD_BELOW_PX }),
+  });
   const { setFolded, canDock } = fold;
+  const isFramed = railSlot !== null;
   const [railBody, setRailBody] = useState<HTMLDivElement | null>(null);
   const openRail = useCallback(() => setFolded(false), [setFolded]);
   const dismissRail = useCallback(() => {
@@ -68,7 +84,6 @@ export const ChangesPage = ({
   const isFilteredOut = hasTree && review.tree.files.length === 0;
   const reading = useFilesReading({ sessionId, worktreePath, review, dismissTree: panel.dismiss });
   const { isAll, openFile, pickFile } = reading;
-  const isReading = openFile !== null;
 
   useDiffKeys({
     enabled: hasTree,
@@ -139,66 +154,74 @@ export const ChangesPage = ({
   const belowToolbar = (
     <>
       {notice === null ? null : (
-        <div className="shrink-0 pb-2 pl-4 pr-6 empty:hidden">{notice}</div>
+        <div className={cn('shrink-0 pb-2 empty:hidden', !isFramed && 'pl-4 pr-6')}>{notice}</div>
       )}
       {diff.metaError === null ? null : <BranchCommitsNotice error={diff.metaError} />}
     </>
   );
-  const ownToolbar = (
+  const ownToolbar = isFramed ? (
+    <PageColumn width="column" className="flex shrink-0 flex-col gap-3 pb-3">
+      <ToolbarRow start={selector} end={end} isRow={false} />
+      {belowToolbar}
+    </PageColumn>
+  ) : (
     <>
       <ToolbarRow start={selector} end={end} isRow />
       {belowToolbar}
     </>
   );
+  const plainBody = (
+    <ChangesPlainBody
+      diff={diff}
+      baseBranch={baseBranch}
+      isAll={isAll}
+      onShowAllFiles={() => reading.selectMode('all')}
+      onClearFilters={review.clearFilters}
+    />
+  );
 
   const isDiffShown = hasTree && !isFilteredOut;
-
   const detail = (
-    <div data-changes-diff="" className="flex h-full min-h-0 min-w-0 flex-col">
-      {isDiffShown && !isReading ? null : ownToolbar}
-      <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col', isReading && 'hidden')}>
-        {isDiffShown ? (
-          <DiffView
-            files={review.tree.files}
-            bodies={diff.bodies}
-            loadFileSides={loadFileSides}
-            comments={review.comments}
-            viewed={review.viewed}
-            fileActions={fileActions}
-            focusPath={diff.focusPath}
-            focusThreadId={diff.focusThreadId}
-            onFocusHandled={diff.clearFocus}
-            registerScroller={review.registerScroller}
-            registerFileFocus={review.registerFileFocus}
-            onActivePathChange={review.setActivePath}
-            isReadOnly={isReadOnly}
-            presentation="split"
-            identifierPeek={identifierPeek}
-            toolbarStart={selector}
-            toolbarEnd={end}
-            belowToolbar={belowToolbar}
+    <ChangesDetail
+      isFramed={isFramed}
+      isDiffShown={isDiffShown}
+      toolbar={ownToolbar}
+      plainBody={plainBody}
+      fileReader={
+        openFile === null ? null : (
+          <FileReader
+            key={`${worktreePath}:${openFile.relPath}`}
+            sessionId={sessionId}
+            sessionDir={worktreePath}
+            entry={openFile}
+            baseBranch={baseBranch ?? 'its base branch'}
+            onBack={reading.backToChanges}
           />
-        ) : (
-          <ChangesPlainBody
-            diff={diff}
-            baseBranch={baseBranch}
-            isAll={isAll}
-            onShowAllFiles={() => reading.selectMode('all')}
-            onClearFilters={review.clearFilters}
-          />
-        )}
-      </div>
-      {openFile === null ? null : (
-        <FileReader
-          key={`${worktreePath}:${openFile.relPath}`}
-          sessionId={sessionId}
-          sessionDir={worktreePath}
-          entry={openFile}
-          baseBranch={baseBranch ?? 'its base branch'}
-          onBack={reading.backToChanges}
+        )
+      }
+      diffView={
+        <DiffView
+          files={review.tree.files}
+          bodies={diff.bodies}
+          loadFileSides={loadFileSides}
+          comments={review.comments}
+          viewed={review.viewed}
+          fileActions={fileActions}
+          focusPath={diff.focusPath}
+          focusThreadId={diff.focusThreadId}
+          onFocusHandled={diff.clearFocus}
+          registerScroller={review.registerScroller}
+          registerFileFocus={review.registerFileFocus}
+          onActivePathChange={review.setActivePath}
+          isReadOnly={isReadOnly}
+          presentation={isFramed ? 'pane' : 'split'}
+          identifierPeek={identifierPeek}
+          toolbarStart={selector}
+          toolbarEnd={end}
+          belowToolbar={belowToolbar}
         />
-      )}
-    </div>
+      }
+    />
   );
 
   const railContent = diff.loading ? (
@@ -220,38 +243,23 @@ export const ChangesPage = ({
     />
   ) : null;
 
+  const layoutOf = ({ shown }: LayoutParams) => (
+    <ChangesRailLayout
+      isFramed={isFramed}
+      isCollapsed={fold.isCollapsed}
+      onCollapsedChange={setFolded}
+      hasHeader={railContent !== null && !diff.loading}
+      mode={isAll ? 'all' : 'changed'}
+      onMode={reading.selectMode}
+      count={filesTotal}
+      fact={filesHead}
+      rail={railContent}
+      onRailBody={setRailBody}
+      detail={shown}
+    />
+  );
+
   return (
-    <div
-      ref={fold.paneRef}
-      data-changes-page=""
-      className="flex min-h-0 min-w-0 flex-1 flex-col pl-4 @max-[720px]:pl-2"
-    >
-      <StudioRailLayout
-        railLabel="Files"
-        railWidth="standard"
-        surface={CHANGES_RAIL_SURFACE}
-        placement="page"
-        isCollapsed={fold.isCollapsed}
-        onCollapsedChange={setFolded}
-        railHeader={
-          railContent === null || diff.loading ? null : (
-            <ModeControl
-              mode={isAll ? 'all' : 'changed'}
-              onMode={reading.selectMode}
-              count={filesTotal}
-              fact={filesHead}
-            />
-          )
-        }
-        rail={
-          railContent === null ? null : (
-            <div ref={setRailBody} className="flex min-h-0 flex-1 flex-col">
-              {railContent}
-            </div>
-          )
-        }
-        detail={detail}
-      />
-    </div>
+    <ChangesFrame railSlot={railSlot} paneRef={fold.paneRef} detail={detail} layoutOf={layoutOf} />
   );
 };

@@ -1,7 +1,7 @@
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { treeIndentPx } from '@goodboy/ui';
 import { agentPlace, useAppStore } from '../../../../../store';
-import { LeadTree } from '../../../../auto/tree/LeadTree';
+import { LeadTree } from '../../LeadTree';
 import { useFlowWord } from '../../../../../shared/hooks/useFlowWord';
 import { useCanOpenBranchWork } from '../../../hooks/useCanOpenBranchWork';
 import { openBranchWorkTab } from '../../../openBranchWorkTab';

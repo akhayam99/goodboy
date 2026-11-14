@@ -14,16 +14,24 @@ import {
   AUTO_ROOT_ID,
   AUTO_SESSION,
   autoSceneOf,
+  type AutoSceneData,
   type AutoSceneState,
 } from '../../u24/autoSceneSeed';
+
+type ExtendParams = {
+  readonly scene: AutoSceneData;
+};
 
 type Props = {
   readonly state: AutoSceneState;
   readonly theme: 'dark' | 'light';
   readonly isLead?: boolean;
+  readonly extend?: (params: ExtendParams) => AutoSceneData;
 };
 
-export const RunPageScene = ({ state, theme, isLead = false }: Props) => {
+const keepScene = ({ scene }: ExtendParams): AutoSceneData => scene;
+
+export const RunPageScene = ({ state, theme, isLead = false, extend = keepScene }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -36,7 +44,7 @@ export const RunPageScene = ({ state, theme, isLead = false }: Props) => {
       telemetryAt: AUTO_SESSION.updatedAt,
       lens: null,
     });
-    const seeded = autoSceneOf({ state });
+    const seeded = extend({ scene: autoSceneOf({ state }) });
     const scene = isLead ? { ...seeded, view: leadNextStepView({ view: seeded.view }) } : seeded;
     if (isLead) {
       useAppStore.setState((current) => ({
@@ -68,7 +76,7 @@ export const RunPageScene = ({ state, theme, isLead = false }: Props) => {
       mode: 'replace',
     });
     setIsReady(true);
-  }, [state, theme, isLead]);
+  }, [state, theme, isLead, extend]);
 
   if (!isReady) {
     return null;

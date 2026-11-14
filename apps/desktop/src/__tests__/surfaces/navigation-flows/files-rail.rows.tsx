@@ -30,7 +30,7 @@ let frame: Frame | null = null;
 
 const stubPane = ({ width }: { readonly width: number }): void => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    return this.hasAttribute('data-changes-page')
+    return this.hasAttribute('data-session-head-frame') || this.hasAttribute('data-branch-pane')
       ? new DOMRect(0, 0, width, 800)
       : new DOMRect(0, 0, 0, 0);
   });

@@ -1,5 +1,7 @@
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId } from '@goodboy/types';
+import { delegationCardOf } from '../chat/delegationCardOf';
+import { delegationNodeOf } from '../chat/delegationNodeOf';
 import { delegationMountIdOf } from '../delegationMountIdOf';
 import { taskTitleOf } from '../taskTitleOf';
 import type { LeadTreeAgentFact } from './leadTreeItemsOf';
@@ -29,9 +31,13 @@ export const leadTreeDelegationsOf = ({
     .filter((delegation) => !delegation.isAdopted)
     .map((delegation): LeadTreeDelegation => {
       const agent = agentById.get(delegation.childAgentId);
+      const card = delegationCardOf({ delegation, childAgent: agent ?? null });
       agentsById.set(delegation.childAgentId, {
         agentId: delegation.childAgentId,
         title: taskTitleOf({ request: delegation.request }) ?? agent?.name ?? '',
+        agentKind: card.role,
+        node: delegationNodeOf({ status: card.status }),
+        word: card.status.word,
       });
       return {
         id: delegation.id,

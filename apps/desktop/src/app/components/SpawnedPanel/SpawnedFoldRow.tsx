@@ -5,7 +5,7 @@ import type { RailRow } from '../../../features/workTreeModel/railGeometry';
 import { HelperUrgencyWord } from './HelperUrgencyWord';
 import type { HelperUrgency } from './helperUrgencyOf';
 import type { SpawnedFold } from './runSpawnedRowsOf';
-import { SpawnedRailCell } from './SpawnedRailCell';
+import { SpawnedRailCell } from '../../../features/session/components/SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import { SpawnedTreeContext } from './spawnedTreeContext';
 
 type SetParams = {

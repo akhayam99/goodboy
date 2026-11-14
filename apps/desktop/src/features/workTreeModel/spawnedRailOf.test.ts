@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { railColumnX } from '../../../features/workTreeModel/railGeometry';
+import { railColumnX } from './railGeometry';
 import { spawnedRailOf } from './spawnedRailOf';
 
 const NODES = [
