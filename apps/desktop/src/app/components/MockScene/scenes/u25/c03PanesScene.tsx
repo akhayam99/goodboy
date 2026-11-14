@@ -10,11 +10,9 @@ import { sessionTerminalOwner } from '../../../../../store/slices/terminal/termi
 import { ActivityRunScene } from '../ActivityRunScene';
 import { SESSION_ID } from '../activityRunSeed';
 import { mockSceneIpc } from '../mockSceneIpc';
-import { useSceneRailFold } from '../useSceneRailFold';
 import { shellPromptLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 
-export type PanesSceneState =
-  ClusterPane | 'closed' | 'folded' | 'drilled' | 'explore-file' | 'script-output';
+export type PanesSceneState = ClusterPane | 'closed' | 'explore-file' | 'script-output';
 
 const PAYMENTS = '~/code/harborline/payments-api-backfill';
 const RELAY = '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z';
@@ -97,17 +95,6 @@ const openState = ({ state }: SeedParams): void => {
   if (state === 'closed') {
     return;
   }
-  if (state === 'folded') {
-    openPane({ pane: 'ask' });
-    return;
-  }
-  if (state === 'drilled') {
-    useAppStore.setState((current) => ({
-      activeLens: { ...current.activeLens, [SESSION_ID]: 'branch' },
-    }));
-    openPane({ pane: 'explore' });
-    return;
-  }
   if (state === 'explore-file') {
     store.openDrawer({
       kind: 'explore-file',
@@ -164,7 +151,5 @@ type Props = {
 
 export const PanesScene = ({ state }: Props) => {
   const seed = useCallback(() => openState({ state }), [state]);
-  useSceneRailFold({ isFolded: state === 'folded' });
-
   return <ActivityRunScene onSeeded={seed} isPageFollowed />;
 };

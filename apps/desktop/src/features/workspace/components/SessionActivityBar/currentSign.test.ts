@@ -20,11 +20,7 @@ const ALL_LENSES: ReadonlyArray<LensKind | null> = [
   'github_issue',
 ];
 
-const cardPages = (hasOpenQuestions: boolean): ReadonlyArray<Page> =>
-  pagesOf({
-    isBranchless: false,
-    hasOpenQuestions,
-  });
+const cardPages = (hasOpenQuestions: boolean): ReadonlyArray<Page> => pagesOf({ hasOpenQuestions });
 
 const NO_PAGES: ReadonlyArray<Page> = [];
 

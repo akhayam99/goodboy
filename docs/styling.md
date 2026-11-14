@@ -299,6 +299,17 @@ row. `validate-scenes --only header-line` measures all four on
 session overview and the agent transcript and fails a height outside 40, 48 and
 64 (plus 36 per tab row or toolbar, which it does not count).
 
+The columns of a split page (`StudioRailLayout`) start on one row grid: the
+first row is 40px in every column (`data-grid-row="1"`: the rail toggle and the
+page toolbar), the next rows are marked `data-grid-row="2"` and `"3"` and never
+take a top offset or a sibling gap of their own. The Terminal page is the
+model: toggle and folder pill with the Dock and Copy folder path actions on
+row 1, New terminal and the tab strip on row 2, the folder list and the shell
+on row 3. `validate-scenes --only row-start` measures the scenes in
+`validateScenesRowStart.mjs` at 1440 and fails a first row whose center line
+drifts over 1px between columns, a toolbar whose controls share no center line
+and a grid row whose top or bottom differs between columns.
+
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
 

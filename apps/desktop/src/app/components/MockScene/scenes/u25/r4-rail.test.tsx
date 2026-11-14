@@ -55,57 +55,19 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const rail = (): HTMLElement => screen.getByRole('navigation', { name: 'Session pages' });
+const tabs = (): HTMLElement => screen.getByRole('tablist', { name: 'Session pages' });
 
 const tools = (): HTMLElement => screen.getByRole('toolbar', { name: 'Tools' });
 
-const card = (name: string): HTMLElement => within(rail()).getByRole('group', { name });
-
-const SPACING_PX = 4;
-
-const CARD_EXTRA_SIDE_PX = SPACING_PX;
-
-type Side = 'left' | 'right';
-
-const SIDE_CLASS: Readonly<Record<Side, RegExp>> = {
-  left: /^(?:p|px|pl)-(\d+(?:\.5)?)$/,
-  right: /^(?:p|px|pr)-(\d+(?:\.5)?)$/,
-};
-
-type InsetParams = {
-  readonly element: Element;
-  readonly side: Side;
-  readonly isOwnPaddingCounted: boolean;
-};
-
-const paddingOf = ({ element, side }: Omit<InsetParams, 'isOwnPaddingCounted'>): number =>
-  (element.getAttribute('class') ?? '')
-    .split(/\s+/)
-    .map((token) => SIDE_CLASS[side].exec(token)?.[1])
-    .filter((value): value is string => value !== undefined)
-    .reduce((sum, value) => sum + Number(value) * SPACING_PX, 0);
-
-const insetOf = ({ element, side, isOwnPaddingCounted }: InsetParams): number => {
-  const level = element.closest('[data-session-level]');
-  if (level === null) {
-    throw new Error('the element sits outside the session level');
+const cardsLayer = (): HTMLElement => {
+  const layer = document.querySelector<HTMLElement>('[data-level-layer="session"]');
+  if (layer === null) {
+    throw new Error('the Context tab shows no cards');
   }
-  let total = isOwnPaddingCounted ? paddingOf({ element, side }) : 0;
-  let node = element.parentElement;
-  while (node !== null && node !== level) {
-    total += paddingOf({ element: node, side });
-    node = node.parentElement;
-  }
-  return total;
+  return layer;
 };
 
-const elementIn = (scope: ParentNode, selector: string): Element => {
-  const element = scope.querySelector(selector);
-  if (element === null) {
-    throw new Error(`no ${selector}`);
-  }
-  return element;
-};
+const card = (name: string): HTMLElement => within(cardsLayer()).getByRole('group', { name });
 
 const entryLabels = (scope: HTMLElement): ReadonlyArray<string> =>
   [...scope.querySelectorAll('[data-worktree-entries] [data-entry-label]')].map(
@@ -119,55 +81,17 @@ describe('r4 session rail scenes', () => {
     }
   });
 
-  it('r4-rail-session draws the cards with one line per branch and no pages until one is current, the tools outside the rail', async () => {
+  it('r4-rail-session draws the cards in the Context tab with one line per branch, the tools outside the tabs', async () => {
     await mount('r4-rail-session');
 
     const projects = card('Projects');
     expect(entryLabels(projects)).toEqual([]);
     expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(card('Linked')).toBeDefined();
-    expect(within(rail()).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
+    expect(within(tabs()).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
     expect(within(tools()).getAllByRole('button')).toHaveLength(7);
-    const top = within(rail().querySelector<HTMLElement>('[data-rail-top]') ?? rail());
-    top.getByRole('button', { name: 'More session actions' });
-    top.getByRole('button', { name: 'Refresh session' });
-    expect(rail().querySelector('[data-session-foot]')).toBeNull();
-  });
-
-  it('r4-rail-session lines the cards up with the page rows, edges, icons and slots', async () => {
-    await mount('r4-rail-session');
-
-    const navRow = elementIn(rail(), '[data-testid="session-pages"] button');
-    const navIcon = elementIn(navRow, 'svg');
-    const navSlot = elementIn(rail(), '[data-page-value="runs"]');
-    const projects = card('Projects');
-    const headerLabel = elementIn(projects, 'h2 button span');
-    const folderName = elementIn(
-      projects,
-      '[data-card-project] [data-project-row] > button > span',
-    );
-
-    const navLeft = insetOf({ element: navIcon, side: 'left', isOwnPaddingCounted: false });
-    expect(insetOf({ element: headerLabel, side: 'left', isOwnPaddingCounted: false })).toBe(
-      navLeft + CARD_EXTRA_SIDE_PX,
-    );
-    expect(insetOf({ element: folderName, side: 'left', isOwnPaddingCounted: false })).toBe(
-      navLeft + CARD_EXTRA_SIDE_PX,
-    );
-    expect(insetOf({ element: projects, side: 'left', isOwnPaddingCounted: false })).toBe(
-      insetOf({ element: navRow, side: 'left', isOwnPaddingCounted: false }),
-    );
-    expect(insetOf({ element: projects, side: 'right', isOwnPaddingCounted: false })).toBe(
-      insetOf({ element: navRow, side: 'right', isOwnPaddingCounted: false }),
-    );
-    const navRight = insetOf({ element: navSlot, side: 'right', isOwnPaddingCounted: false });
-    expect(
-      insetOf({
-        element: elementIn(projects, '[data-worktree-actions]'),
-        side: 'right',
-        isOwnPaddingCounted: false,
-      }),
-    ).toBe(navRight);
+    screen.getByRole('button', { name: 'More session actions' });
+    screen.getByRole('button', { name: 'Refresh session' });
   });
 
   it('r4-rail-cards-folded folds both cards and keeps the failing check as one header dot', async () => {
@@ -184,19 +108,6 @@ describe('r4 session rail scenes', () => {
     ).toBe('false');
   });
 
-  it('r4-rail-worktree marks the current branch as the page with one row and one pill', async () => {
-    await mount('r4-rail-worktree');
-
-    expect(rail().getAttribute('data-session-rail')).toBe('session');
-    const projects = card('Projects');
-    expect(entryLabels(projects)).toEqual([]);
-    const current = projects.querySelector('[data-worktree-current]');
-    expect(current?.querySelector('[aria-current="page"]')).not.toBeNull();
-    expect(current?.querySelector('[data-testid="branch-row-chip"]')?.textContent).toBe(
-      '1 failing',
-    );
-  });
-
   it('r4-rail-tools-open presses Context while its drawer is open', async () => {
     await mount('r4-rail-tools-open');
 
@@ -207,14 +118,6 @@ describe('r4 session rail scenes', () => {
       .map((button) => button.getAttribute('aria-label'));
     expect(pressed).toEqual(['Context']);
     expect(document.querySelector('[data-slot="page-trail"]')).toBeNull();
-  });
-
-  it('r4-rail-folded folds the rail with no foot and keeps the tools column', async () => {
-    await mount('r4-rail-folded');
-
-    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
-    expect(rail().querySelector('[data-session-foot]')).toBeNull();
-    expect(within(tools()).getAllByRole('button')).toHaveLength(7);
   });
 
   it('r4-rail-tree draws many branches one line each in rank order, with the finished ones folded', async () => {

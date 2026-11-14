@@ -66,8 +66,8 @@ const headerOf = (): HTMLElement => {
 };
 
 const currentPage = (): string | null =>
-  document.querySelector('[data-testid="session-pages"] [aria-current="page"]')?.textContent ??
-  null;
+  document.querySelector('[role="tablist"][aria-label="Session pages"] [aria-selected="true"]')
+    ?.textContent ?? null;
 
 type Case = {
   readonly page: IntroPage;

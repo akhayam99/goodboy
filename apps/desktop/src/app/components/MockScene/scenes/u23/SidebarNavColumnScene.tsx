@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAppStore, useCurrentSession } from '../../../../../store';
-import { SessionRail } from '../../../SessionRail';
+import { SessionLevel } from '../../../SessionRail/SessionLevel';
+import { SessionPageTabs } from '../../../SessionPageTabs';
+import { SessionHeaderActions } from '../../../SessionActions/SessionHeaderActions';
 import { SideColumn } from '../../../SideColumn';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import type { ColumnPlace } from '../../../../../shared/navigation/columnPlace';
@@ -70,7 +72,20 @@ export const SidebarNavColumnScene = ({
             actions={ACTIONS}
           />
         </div>
-        {isSessionLevel ? <SessionRail session={current ?? seed.session} /> : null}
+        {isSessionLevel ? (
+          <aside
+            aria-label="Session level"
+            className="flex h-full w-[640px] shrink-0 flex-col gap-3 bg-background pt-3"
+          >
+            <div className="flex items-center justify-between gap-3 px-4">
+              <SessionPageTabs session={current ?? seed.session} />
+              <SessionHeaderActions session={current ?? seed.session} />
+            </div>
+            <div className="w-60">
+              <SessionLevel session={current ?? seed.session} isActive />
+            </div>
+          </aside>
+        ) : null}
       </div>
     );
   }

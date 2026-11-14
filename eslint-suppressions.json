@@ -414,7 +414,7 @@
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/sidebar-nav.rows.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
+      "count": 7
     }
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/sidebar-states.rows.tsx": {
@@ -7000,11 +7000,6 @@
   },
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/useWorkspaceWindowState/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace/hooks/useCardPages/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },

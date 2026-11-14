@@ -89,7 +89,6 @@ export const LevelLinked = ({ session, isActive }: Props) => {
       ? (s.focusedGithubIssueNumber[sessionId] ?? null)
       : null,
   );
-  const isOverview = useAppStore((s) => (s.activeLens[sessionId] ?? null) === null);
   const mountBranches = groups.flatMap((group) =>
     [...group.rows, ...group.finishedRows].map((row) => ({
       branch: row.branch,
@@ -127,9 +126,7 @@ export const LevelLinked = ({ session, isActive }: Props) => {
         meta: <span className="text-meta tabular-nums text-faint-foreground">{count}</span>,
       })}
       {...(!isArchived && {
-        action: (
-          <LinkIssueAction session={session} isShortcutOn={isActive && isOverview} look="level" />
-        ),
+        action: <LinkIssueAction session={session} isShortcutOn={isActive} look="level" />,
       })}
     >
       <ul aria-label="Linked work" className="flex flex-col">

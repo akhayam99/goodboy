@@ -177,8 +177,7 @@ centred column slides with it: the card grows leftward from the window edge,
 its content held at its final width on that edge so nothing reflows, and the
 content fades in once there is room; over the page it slides in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never writes the sidebar
-preference: a pane folds nothing but the session rail, and only a reader or
-browser tier pane does that (`shellFoldsOf`, see Surfaces).
+preference: a pane folds nothing.
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
@@ -259,12 +258,8 @@ its surface (tool, item, reader or form), its tier and the tool pane it lights.
 The build fails on a kind with no row, and `drawerKinds.test.ts` matches the rows
 to the kinds written in `state.ts`.
 
-Opening a side drawer folds the session rail when its expanded width would
-leave too little content for the push rule. A reader folds it at every width.
-Closing restores the saved fold. Unfolding by hand keeps the rail open for
-that drawer, including through resize; the drawer overlays when it cannot
-push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold, and
-neither the fold nor that unfold ever writes the saved choice.
+The session has no left rail to fold: a drawer pushes the page while the content
+keeps room for the push rule and overlays it when it cannot.
 
 **Header grammar.** The close control always reads `Close`, in every drawer: the
 region is already named by its title (`<section aria-label={title}>`), so no

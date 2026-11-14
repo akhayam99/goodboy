@@ -153,7 +153,7 @@ const mountOf = ({ index }: MountParams): SessionProjectMount => {
 describe('orchestrated rows stay reachable from the orchestrated document', () => {
   it('Orchestrated runs: listed in Runs, and the New menu keeps only Report and Wireframe as forms', async () => {
     await mount('c09-orchestrated-empty');
-    expect(screen.getByRole('button', { name: /^Runs/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Runs/ })).toBeDefined();
     expect(Object.keys(NEW_DRAWER_FORMS)).toEqual(['report', 'wireframe']);
   });
 

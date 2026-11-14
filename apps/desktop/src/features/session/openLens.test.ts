@@ -69,9 +69,9 @@ describe('openLens and openToolPane', () => {
     });
   });
 
-  it('asks Link work from the provider, on the overview, with that source in the event', () => {
+  it('asks Link work from the provider, on the Context tab, with that source in the event', () => {
     openLens({ sessionId: SESSION_ID, lens: 'jira_issues' });
-    expect(state.navigate).toHaveBeenCalledWith(toLens(null));
+    expect(state.navigate).toHaveBeenCalledWith(toLens('context'));
     expect(dispatchAfterNavigation).toHaveBeenCalledWith({
       name: linkIssueEventName({ sessionId: SESSION_ID }),
       detail: { source: 'jira' },

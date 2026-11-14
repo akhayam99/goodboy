@@ -37,21 +37,15 @@ const COMMENTS: WorktreeSceneConfig = { variant: 'github', level: 'worktree', ta
 const CHECKS: WorktreeSceneConfig = { variant: 'merge-blocked', level: 'worktree', tab: 'checks' };
 const REBASING: WorktreeSceneConfig = {
   variant: 'github',
+  level: 'session',
+  gitState: 'rebasing',
+};
+
+const REBASING_PAGE: WorktreeSceneConfig = {
+  variant: 'github',
   level: 'worktree',
   tab: 'pr',
   gitState: 'rebasing',
-};
-const MENU: WorktreeSceneConfig = {
-  variant: 'github',
-  level: 'worktree',
-  tab: 'pr',
-  isMenuOpen: true,
-};
-const FOLDED: WorktreeSceneConfig = {
-  variant: 'github',
-  level: 'worktree',
-  tab: 'files',
-  isFolded: true,
 };
 
 export const U25_C04_WORKTREE_SCENES = {
@@ -66,6 +60,5 @@ export const U25_C04_WORKTREE_SCENES = {
   'c04-worktree-comments': () => <WorktreeScene config={COMMENTS} />,
   'c04-worktree-checks': () => <WorktreeScene config={CHECKS} />,
   'c04-worktree-rebasing': () => <WorktreeScene config={REBASING} />,
-  'c04-worktree-menu': () => <WorktreeScene config={MENU} />,
-  'c04-worktree-folded': () => <WorktreeScene config={FOLDED} />,
+  'c04-worktree-rebasing-page': () => <WorktreeScene config={REBASING_PAGE} />,
 };

@@ -1,4 +1,4 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense, useContext, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Session, SessionId } from '@goodboy/types';
 import { EmptyState, PaneShell, SkeletonSwap } from '@goodboy/ui';
@@ -6,7 +6,9 @@ import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../..
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
 import { resolveActiveMountPath } from '../../../../../store/slices/worktrees/resolveActiveMountPath';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/utils/names';
 import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
+import { ContextCardsContext } from '../../../contextCardsContext';
 import { openLens } from '../../../openLens';
 import type { LensSurface } from '../../../lens-surface';
 import { ContextDrawer } from '../../ContextDrawer';
@@ -38,6 +40,7 @@ type Props = {
 
 export const SessionLensPane = ({ session, target, isShown }: Props) => {
   const sessionId: SessionId = session.id;
+  const Cards = useContext(ContextCardsContext);
   const focusedGithubIssueNumber = useAppStore(
     (s) => s.focusedGithubIssueNumber[sessionId] ?? null,
   );
@@ -135,12 +138,17 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
   }
   if (target === 'context') {
     return (
-      <ContextDrawer
-        sessionId={sessionId}
-        section="goal"
-        view="current"
-        onClose={() => openLens({ sessionId, lens: null })}
-      />
+      <PaneShell title={NAMES.context} scroll="self">
+        <div className="flex min-h-0 flex-1 flex-col">
+          {Cards === null ? null : <Cards session={session} />}
+          <ContextDrawer
+            sessionId={sessionId}
+            section="goal"
+            view="current"
+            onClose={() => openLens({ sessionId, lens: null })}
+          />
+        </div>
+      </PaneShell>
     );
   }
   if (target === 'files' && hasBranch) {

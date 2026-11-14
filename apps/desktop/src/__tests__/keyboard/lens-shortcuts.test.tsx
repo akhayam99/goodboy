@@ -407,9 +407,9 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'Digit6', key: '6', metaKey: true, altKey: true });
 
     expect(lensCalls()).toEqual([
-      ['session-1', null],
-      ['session-1', null],
-      ['session-1', null],
+      ['session-1', 'context'],
+      ['session-1', 'context'],
+      ['session-1', 'context'],
     ]);
   });
 

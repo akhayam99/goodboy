@@ -14,7 +14,7 @@ export const openLens = ({ sessionId, lens }: Params): void => {
   const state = useAppStore.getState();
   const source = providerOfListLens({ lens });
   if (source !== null) {
-    state.navigate({ to: lensPlace({ state, sessionId, lens: null }) });
+    state.navigate({ to: lensPlace({ state, sessionId, lens: 'context' }) });
     dispatchAfterNavigation({ name: linkIssueEventName({ sessionId }), detail: { source } });
     return;
   }

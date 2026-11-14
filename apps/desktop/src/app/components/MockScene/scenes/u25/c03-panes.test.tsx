@@ -98,9 +98,6 @@ describe('c03 session tools scenes', () => {
     await mount('c03-panes-explore-file');
     expect(screen.getByRole('button', { name: 'Back to Explore' })).toBeDefined();
     expect(pressed()).toEqual(['Explore']);
-    expect(document.querySelector('[data-session-rail]')?.hasAttribute('data-rail-folded')).toBe(
-      true,
-    );
     expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
   });
 
@@ -119,11 +116,11 @@ describe('c03 session tools scenes', () => {
     expect(pressed()).toEqual(['Context']);
   });
 
-  it('keeps the tools in a column right of the content, not in the rail, and no page header holds a pane toggle', async () => {
+  it('keeps the tools in a column right of the content, not in the page tabs, and no page header holds a pane toggle', async () => {
     await mount('c03-panes-closed');
-    const rail = screen.getByRole('navigation', { name: 'Session pages' });
-    expect(within(rail).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
-    const frame = rail.closest('[data-session-frame]');
+    const tabs = screen.getByRole('tablist', { name: 'Session pages' });
+    expect(within(tabs).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
+    const frame = tabs.closest('[data-session-frame]');
     const tools = screen.getByRole('toolbar', { name: 'Tools' });
     expect(frame?.contains(tools)).toBe(false);
     expect(tools.closest('[data-drawer-main]')).toBe(frame?.closest('[data-drawer-main]'));
@@ -134,8 +131,8 @@ describe('c03 session tools scenes', () => {
     ).toEqual([]);
   });
 
-  it('keeps the tool icons with the open one pressed while the rail is folded', async () => {
-    await mount('c03-panes-folded');
+  it('keeps the tool icons with the open one pressed', async () => {
+    await mount('c03-panes-ask');
     const icons = within(cluster()).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([
       'Explore',
@@ -157,20 +154,11 @@ describe('c03 session tools scenes', () => {
     ]);
   });
 
-  it('keeps the same tools while a branch is open in the rail', async () => {
-    await mount('c03-panes-drilled');
-    const rail = screen.getByRole('navigation', { name: 'Session pages' });
-    expect(rail.getAttribute('data-session-rail')).toBe('session');
-    expect(pressed()).toEqual(['Explore']);
-    expect(within(cluster()).getAllByRole('button')).toHaveLength(7);
-  });
-
   it.each([
     ['c03-panes-ask', 'Ask this session'],
     ['c03-panes-explore', 'Explore'],
     ['c03-panes-context', 'Context'],
     ['c03-panes-scripts', 'Scripts'],
-    ['c03-panes-folded', 'Ask this session'],
   ] as const)('%s opens its pane, never the closed layout', async (name, label) => {
     await mount(name);
     expect(useAppStore.getState().drawer).not.toBeNull();

@@ -1,8 +1,9 @@
 import { brandId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useEffect } from 'react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { useContext, useEffect } from 'react';
+import { PaneActionsContext, PaneTabsContext } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -168,6 +169,8 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
     PaneShell: ({ title, header, meta, children }: PaneShellMockProps) => (
       <div>
         {header ?? <h1>{title}</h1>}
+        <div data-testid="pane-tabs">{useContext(actual.PaneTabsContext)}</div>
+        <div data-testid="pane-actions">{useContext(actual.PaneActionsContext)}</div>
         {meta != null && title != null ? (
           <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span>
         ) : null}
@@ -203,14 +206,26 @@ vi.mock('./parts/WorkflowsPane', () => ({
     );
   },
 }));
-vi.mock('../SessionOverviewPane', () => ({
-  SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
-}));
+vi.mock('../SessionOverviewPane', async () => {
+  const { PaneShell } = await import('@goodboy/ui');
+  return {
+    SessionOverviewPane: () => (
+      <PaneShell title="Overview">
+        <div role="region" aria-label="Session overview" />
+      </PaneShell>
+    ),
+  };
+});
 vi.mock('../../../branch/components/BranchPage', async () => {
   const { useStudioBand } =
     await import('../../../../shared/components/StudioShell/studioBandContext');
+  const { PaneShell } = await import('@goodboy/ui');
   return {
-    BranchPage: () => <div data-testid="branch-page">{useStudioBand()}</div>,
+    BranchPage: () => (
+      <PaneShell title="Branch">
+        <div data-testid="branch-page">{useStudioBand()}</div>
+      </PaneShell>
+    ),
   };
 });
 vi.mock('../../../bootstrap/FirstLapBanner', () => ({ FirstLapBanner: () => null }));
@@ -804,5 +819,47 @@ describe('SessionWorkspace integration lenses', () => {
     render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('integration-pane').textContent).toBe(provider);
+  });
+});
+
+const renderWithTabs = () =>
+  render(
+    <PaneTabsContext.Provider value={<nav aria-label="Session pages" />}>
+      <PaneActionsContext.Provider value={<div data-testid="session-actions" />}>
+        <SessionWorkspace session={session} />
+      </PaneActionsContext.Provider>
+    </PaneTabsContext.Provider>,
+  );
+
+describe('SessionWorkspace page tabs', () => {
+  it('hands the session tabs and actions to the title of the overview', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+
+    renderWithTabs();
+
+    within(screen.getByTestId('pane-tabs')).getByRole('navigation', { name: 'Session pages' });
+    within(screen.getByTestId('pane-actions')).getByTestId('session-actions');
+  });
+
+  it('hands them to a session with a branch too', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+    store.sessionBranches = { [SESSION_ID]: 'fix-duplicate-credit' };
+
+    renderWithTabs();
+
+    within(screen.getByTestId('pane-tabs')).getByRole('navigation');
+  });
+
+  it('never draws a second tab row over the pull request page', async () => {
+    store.activeLens = { [SESSION_ID]: 'branch' };
+    store.selectedAgentId = {};
+
+    renderWithTabs();
+
+    await screen.findByTestId('branch-page');
+    expect(screen.queryByRole('navigation', { name: 'Session pages' })).toBeNull();
+    expect(screen.queryByTestId('session-actions')).toBeNull();
   });
 });

@@ -75,14 +75,6 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const worktreeLayer = (): HTMLElement => {
-  const layer = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
-  if (layer === null) {
-    throw new Error('the scene shows no session level');
-  }
-  return layer;
-};
-
 describe('the c04 worktree level scenes', () => {
   it('registers every scene in the mock registry', () => {
     for (const name of Object.keys(U25_C04_WORKTREE_SCENES)) {
@@ -101,13 +93,11 @@ describe('the c04 worktree level scenes', () => {
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
-  it('c04-worktree-pr-behind shows the current branch, the property block, no rail status line', async () => {
+  it('c04-worktree-pr-behind shows the session page tabs, the property block, no status line', async () => {
     await mount('c04-worktree-pr-behind');
 
-    const level = within(worktreeLayer());
-    expect(level.getByRole('button', { name: /^payments-api, / })).toBeDefined();
-    expect(level.queryByRole('status')).toBeNull();
-    expect(level.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
+    expect(screen.getByRole('tablist', { name: 'Session pages' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
     expect(stripNames()).toEqual(['Overview', 'Comments', 'Changes', 'Commits', 'Checks', 'Work']);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Merge status' }).textContent).toContain(
@@ -145,7 +135,6 @@ describe('the c04 worktree level scenes', () => {
     await mount('c04-worktree-files');
 
     expect(stripTab({ name: /^Changes/ }).getAttribute('aria-selected')).toBe('true');
-    expect(within(worktreeLayer()).queryByRole('navigation', { name: 'Changed files' })).toBeNull();
     const rail = screen.getByRole('complementary', { name: 'Files' });
     expect(rail.getAttribute('data-file-rail')).toBe('docked');
     expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
@@ -188,27 +177,8 @@ describe('the c04 worktree level scenes', () => {
   it('c04-worktree-rebasing says the stopped rebase in one pill', async () => {
     await mount('c04-worktree-rebasing');
 
-    const level = within(worktreeLayer());
-    expect(level.queryByRole('status')).toBeNull();
-    expect(level.queryByRole('button', { name: 'Abort rebase' })).toBeNull();
     expect(document.querySelector('[data-chip-kind="conflict"]')?.textContent).toBe(
       'Rebase stopped',
     );
-  });
-
-  it('c04-worktree-menu opens the worktree menu', async () => {
-    await mount('c04-worktree-menu');
-
-    expect(screen.getByRole('menuitem', { name: /Close branch/ })).toBeDefined();
-  });
-
-  it('c04-worktree-folded keeps the session pages as icons', async () => {
-    await mount('c04-worktree-folded');
-
-    const rail = document.querySelector('[data-session-rail]');
-    expect(rail?.getAttribute('data-session-rail')).toBe('session');
-    expect(rail?.hasAttribute('data-rail-folded')).toBe(true);
-    expect(rail?.querySelector('[data-rail-level="session"]')).not.toBeNull();
-    expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
   });
 });

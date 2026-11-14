@@ -7,7 +7,7 @@ import { branchPlace, sessionPlace } from '../../../../../store/slices/navigatio
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
-import { useSceneRailFold } from '../useSceneRailFold';
+import { SessionContextCards } from '../../../SessionContextCards';
 import { useSceneFileRailFold } from '../useSceneFileRailFold';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { CTX_COMMITS, CTX_STATUS } from '../brand/contextBranch';
@@ -77,8 +77,6 @@ export type WorktreeSceneConfig = {
   readonly gitState?: 'level' | 'behind' | 'rebasing';
   readonly hasMoreProjects?: boolean;
   readonly hasFixableNote?: boolean;
-  readonly isMenuOpen?: boolean;
-  readonly isFolded?: boolean;
   readonly fileRail?: 'docked' | 'folded' | 'overlay';
 };
 
@@ -196,32 +194,6 @@ const seedFixableNote = (): void => {
   });
 };
 
-const MENU_SELECTOR = '[data-worktree-open] [data-worktree-actions] button[aria-haspopup="menu"]';
-
-const MENU_POLL_MS = 100;
-
-const MENU_TRIES = 40;
-
-type OpenMenuParams = {
-  readonly triesLeft: number;
-};
-
-const openMenuWhenReady = ({ triesLeft }: OpenMenuParams): void => {
-  const trigger = document.querySelector<HTMLElement>(MENU_SELECTOR);
-  if (trigger !== null) {
-    trigger.click();
-    return;
-  }
-  if (triesLeft <= 0) {
-    return;
-  }
-  window.setTimeout(() => openMenuWhenReady({ triesLeft: triesLeft - 1 }), MENU_POLL_MS);
-};
-
-const openMenu = (): void => {
-  window.setTimeout(() => openMenuWhenReady({ triesLeft: MENU_TRIES }), MENU_POLL_MS);
-};
-
 const openFiles = (): void => {
   window.setTimeout(() => {
     const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
@@ -240,7 +212,6 @@ type Props = {
 export const WorktreeScene = ({ config, children = null }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const session = useCurrentSession();
-  useSceneRailFold({ isFolded: config.isFolded === true });
   useSceneFileRailFold({ isFolded: config.fileRail === 'folded' });
   useEffect(() => {
     applyPrPageSeed({ variant: config.variant });
@@ -263,9 +234,6 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
           : sessionPlace({ sessionId: SESSION_ID }),
     });
     setIsReady(true);
-    if (config.isMenuOpen === true) {
-      openMenu();
-    }
     if (config.fileRail === 'overlay') {
       openFiles();
     }
@@ -296,6 +264,7 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
           ) : (
             <div className="flex flex-col gap-4 p-6">
               <h1 className="text-title text-foreground">{SESSION.goal}</h1>
+              <SessionContextCards session={session ?? SESSION} />
               {children}
             </div>
           )}

@@ -6,6 +6,7 @@ import {
   type Row,
   WAIT,
   both,
+  branchPageReady,
   branchTab,
   changesTab,
   click,
@@ -21,25 +22,6 @@ import {
   useAppStore,
   findSection,
 } from './harness';
-
-const worktreeMarked = async (): Promise<void> => {
-  await waitFor(() => {
-    const identity = document.querySelector(
-      '[data-level-layer="session"]:not([inert]) [data-worktree-current]',
-    );
-    expect(identity).not.toBeNull();
-  }, WAIT);
-};
-
-const worktreeLevelShown = async (): Promise<void> => {
-  await waitFor(
-    () =>
-      expect(
-        document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]'),
-      ).not.toBeNull(),
-    WAIT,
-  );
-};
 
 const stackDepth = (): number => {
   const state = useAppStore.getState();
@@ -90,29 +72,29 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: both(branchTab('pr'), ownPage),
   },
   {
-    name: 'worktree level: the Comments entry opens the Branch on its Comments',
+    name: 'branch page: the Comments tab opens the Branch on its Comments',
     covers: ['lens:branch'],
     open: async (ctx) => {
       seedReviewComment(ctx);
       await settle();
       await openWorktreeEntry(/^Comments/);
     },
-    lands: both(branchTab('comments'), worktreeMarked),
+    lands: branchTab('comments'),
   },
   {
-    name: 'door: Files lands on the Changes tab with its worktree row current',
+    name: 'door: Files lands on the Changes tab',
     covers: ['navigate', 'sidebar:files-door'],
     open: () => openPalette(/^Open changes/),
-    lands: both(changesTab, worktreeMarked),
+    lands: changesTab,
   },
   {
-    name: 'door: Comments lands on the Branch Comments tab with the worktree level on screen',
+    name: 'door: Comments lands on the Branch Comments tab',
     covers: ['navigate', 'sidebar:comments-door'],
     open: () => openPalette(/^Open comments/),
-    lands: both(branchTab('comments'), worktreeLevelShown),
+    lands: both(branchTab('comments'), branchPageReady),
   },
   {
-    name: 'tabs: switching a tab edits the address in place, and Back leaves the Branch',
+    name: 'tabs: switching a tab edits the address in place, and Back leaves the Branch for the Context tab',
     covers: ['back', 'branch:tabs-in-place'],
     open: async () => {
       await openBranchFiles();
@@ -123,6 +105,6 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
       expect(stackDepth()).toBe(depth);
       await clickBackArrow();
     },
-    lands: lens(null),
+    lands: lens('context'),
   },
 ];

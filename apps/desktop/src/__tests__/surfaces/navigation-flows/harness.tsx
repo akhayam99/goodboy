@@ -488,25 +488,29 @@ export const clickFirstButton = async (name: RegExp): Promise<void> => {
   await click(first!);
 };
 
-const sessionLevel = async (): Promise<HTMLElement> => {
-  await waitFor(() =>
-    expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull(),
-  );
-  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
+const LEVEL = '[data-level-layer="session"]';
+
+const sessionTab = (label: RegExp): HTMLElement =>
+  within(screen.getByRole('tablist', { name: 'Session pages' })).getByRole('tab', { name: label });
+
+export const sessionLevel = async (): Promise<HTMLElement> => {
+  if (document.querySelector(LEVEL) === null) {
+    await click(await waitFor(() => sessionTab(/^Context/), WAIT));
+  }
+  await waitFor(() => expect(document.querySelector(LEVEL)).not.toBeNull(), WAIT);
+  const level = document.querySelector<HTMLElement>(LEVEL);
   if (level === null) {
-    throw new Error('the sidebar is not on a session level');
+    throw new Error('the session shows no Projects and Linked cards');
   }
   return level;
 };
 
 export const openCrumb = async (label: RegExp): Promise<void> => {
-  const level = within(await sessionLevel());
   if (label.test('Branch')) {
-    if (
-      document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]')
-    ) {
+    if (document.querySelector(`${LEVEL} [data-worktree-current]`)) {
       return;
     }
+    const level = within(await sessionLevel());
     const projects = within(level.getByRole('group', { name: 'Projects' }));
     const [first] = projects.getAllByRole('button').filter((row) => row.closest('li') !== null);
     if (first === undefined) {
@@ -515,23 +519,7 @@ export const openCrumb = async (label: RegExp): Promise<void> => {
     await click(first);
     return;
   }
-  await click(
-    within(level.getByRole('list', { name: 'Pages' })).getByRole('button', { name: label }),
-  );
-};
-
-const worktreeLevel = async (): Promise<HTMLElement> => {
-  await openCrumb(/Branch/);
-  await waitFor(() =>
-    expect(
-      document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]'),
-    ).not.toBeNull(),
-  );
-  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
-  if (level === null) {
-    throw new Error('the sidebar is not on the session level');
-  }
-  return level;
+  await click(await waitFor(() => sessionTab(label), WAIT));
 };
 
 export const branchPageReady = (): Promise<void> =>
@@ -546,16 +534,14 @@ export const branchPageReady = (): Promise<void> =>
   );
 
 export const openWorktreeEntry = async (name: RegExp): Promise<void> => {
-  await worktreeLevel();
+  await openCrumb(/Branch/);
   await branchPageReady();
   await click(await findSection(name));
 };
 
 export const openWorktreeMenu = async (): Promise<void> => {
-  const level = await worktreeLevel();
-  const trigger = level.querySelector<HTMLElement>(
-    '[data-worktree-current] [data-worktree-actions] button',
-  );
+  const level = await sessionLevel();
+  const trigger = level.querySelector<HTMLElement>('[data-worktree-actions] button');
   const row = trigger?.closest('[data-worktree-actions]')?.parentElement ?? null;
   if (row === null) {
     throw new Error('the current branch row draws no menu button');
@@ -717,6 +703,16 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Branch', lens: 'branch', lands: branchTab('pr') },
   { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
+  { label: 'Changes', lens: 'files', lands: changesTab },
+  {
+    label: 'Context',
+    lens: 'context',
+    lands: async () => {
+      expect(
+        (await screen.findAllByRole('heading', { name: 'Context' }, WAIT)).length,
+      ).toBeGreaterThan(0);
+    },
+  },
   {
     label: 'Questions',
     note: 'while one is open',

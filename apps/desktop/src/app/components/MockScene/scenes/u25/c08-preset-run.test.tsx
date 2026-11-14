@@ -53,8 +53,8 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const levelOf = (): string | null =>
-  document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail') ?? null;
+const hasSessionTabs = (): boolean =>
+  screen.queryAllByRole('tablist', { name: 'Session pages' }).length > 0;
 
 const runPanel = (): HTMLElement => {
   const panel = document.querySelector<HTMLElement>('[data-spawned-panel="run"]');
@@ -90,7 +90,7 @@ describe('the c08 preset run scenes', () => {
   it('c08-runs lists the runs on one grid, grouped, without archived runs', async () => {
     await mount('c08-runs');
 
-    expect(levelOf()).toBe('session');
+    expect(hasSessionTabs()).toBe(true);
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
     const grid = screen.getByRole('list', { name: 'Runs' });
     expect(within(grid).getByRole('heading', { name: 'Running' })).toBeDefined();
@@ -110,10 +110,10 @@ describe('the c08 preset run scenes', () => {
     expect(within(grid).queryByText('First try at the flaky export tests')).toBeNull();
   });
 
-  it('c08-run-working keeps the rail on the session, shows the run in the Agents panel and embeds the running step', async () => {
+  it('c08-run-working keeps the page tabs on the session, shows the run in the Agents panel and embeds the running step', async () => {
     await mount('c08-run-working');
 
-    expect(levelOf()).toBe('session');
+    expect(hasSessionTabs()).toBe(true);
     const panel = within(runPanel());
     expect(panel.queryByRole('button', { name: 'Back to Runs' })).toBeNull();
     expect(panel.getByText('Fix flaky tests in the ledger export')).toBeDefined();
@@ -240,11 +240,10 @@ describe('the c08 preset run scenes', () => {
     expect(within(menu).getByText('Archive run')).toBeDefined();
   });
 
-  it('c08-run-folded folds the rail on the session and keeps one tree row per step in the panel', async () => {
-    await mount('c08-run-folded');
+  it('c08-run-working keeps one tree row per step in the panel', async () => {
+    await mount('c08-run-working');
 
-    expect(levelOf()).toBe('session');
-    expect(document.querySelector('[data-rail-level="run"]')).toBeNull();
+    expect(hasSessionTabs()).toBe(true);
     const tree = within(runPanel()).getByRole('tree', { name: 'Run agents' });
     expect(within(tree).getAllByRole('treeitem').length).toBeGreaterThan(1);
     expect(within(tree).getByRole('treeitem', { name: /Implementer/ })).toBeDefined();

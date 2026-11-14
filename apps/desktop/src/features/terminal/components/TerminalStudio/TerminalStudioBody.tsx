@@ -3,6 +3,7 @@ import { StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
+import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { pickerRowCount } from '../../pickerRowCount';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
@@ -16,6 +17,7 @@ type Props = {
 
 export const TerminalStudioBody = ({ model, isActive }: Props) => {
   const fold = useStudioRailFold({ surface: 'terminal' });
+  const portsByTerminal = useTerminalPorts();
   const hasPicker =
     model.groups.length > 0 && pickerRowCount({ clusters: model.pickerClusters }) > 1;
   useShortcut(
@@ -53,8 +55,14 @@ export const TerminalStudioBody = ({ model, isActive }: Props) => {
         placement="page"
         isCollapsed={fold.isCollapsed}
         onCollapsedChange={fold.setFolded}
-        rail={model.groups.length === 0 ? null : <TerminalRail model={model} />}
-        detail={<TerminalDetail model={model} isActive={isActive} />}
+        rail={
+          model.groups.length === 0 ? null : (
+            <TerminalRail model={model} portsByTerminal={portsByTerminal} />
+          )
+        }
+        detail={
+          <TerminalDetail model={model} isActive={isActive} portsByTerminal={portsByTerminal} />
+        }
       />
     </div>
   );

@@ -206,9 +206,7 @@ const openRunPage = async (ctx: Ctx): Promise<void> => {
   act(() => useAppStore.getState().navigate({ to: runPage(ctx) }));
   await settle();
   await screen.findByRole('region', RUN_TAIL, WAIT);
-  expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-    'session',
-  );
+  expect(screen.getAllByRole('tablist', { name: 'Session pages' }).length).toBeGreaterThan(0);
 };
 
 const backToTheList = async (ctx: Ctx): Promise<void> => {

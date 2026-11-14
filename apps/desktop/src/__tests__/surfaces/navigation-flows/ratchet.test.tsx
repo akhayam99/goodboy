@@ -143,14 +143,12 @@ describe('navigation flow table ratchet', () => {
   it('has a row for every crumb menu entry and palette destination', async () => {
     const declared = declaredTokens();
     await boot({ seed: 'pr' });
-    const pages = document.querySelector<HTMLElement>(
-      '[data-level-layer="session"] [data-testid="session-pages"]',
-    );
-    expect(pages).not.toBeNull();
-    const crumbs = within(pages ?? document.body)
-      .getAllByRole('button')
+    const pages = await screen.findByRole('tablist', { name: 'Session pages' });
+    const crumbs = within(pages)
+      .getAllByRole('tab')
       .map((item) => {
-        const text = (item.textContent ?? '').trim();
+        const count = item.querySelector('[data-tab-count]')?.textContent ?? '';
+        const text = (item.textContent ?? '').slice(0, -count.length || undefined).trim();
         const known = CRUMB_ROWS.find((row) => text.startsWith(row.label));
         return `crumb:${known?.label ?? text}`;
       });

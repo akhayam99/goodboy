@@ -149,10 +149,10 @@ const seedShipAFix = (): void => {
 };
 
 const SESSION_PAGES: ReadonlyArray<readonly [string, string | null]> = [
-  ['Branch', 'branch'],
   ['Runs', 'workflows'],
   ['Artifacts', 'plans'],
   ['Overview', null],
+  ['Branch', 'branch'],
 ];
 
 const STUDIO_DOORS: ReadonlyArray<readonly [string, string]> = [
@@ -251,7 +251,7 @@ const expectAskInToolColumn = (): void => {
     ask?.closest('[role="toolbar"][aria-label="Tools"]'),
     'Ask sits in the session tools column',
   ).not.toBeNull();
-  expect(ask?.closest('nav[aria-label="Session pages"]') ?? null).toBeNull();
+  expect(ask?.closest('[role="tablist"][aria-label="Session pages"]') ?? null).toBeNull();
   expect(ask?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
   expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
@@ -331,44 +331,44 @@ const sessionRow = (sessionId: SessionId): HTMLElement => {
   return requireValue({ value: found });
 };
 
-const SESSION_LEVEL = '[data-level-layer="session"]:not([inert])';
+const SESSION_TABS = '[role="tablist"][aria-label="Session pages"]';
 
-const PROJECTS = `${SESSION_LEVEL} [aria-labelledby="level-projects-label"]`;
+const BRANCH_TABS = '[role="tablist"][aria-label="Branch pages"]';
 
 const pageRow = (label: string): HTMLElement => {
-  if (label === 'Branch') {
-    const worktree = document.querySelector<HTMLElement>(`${PROJECTS} li button`);
-    if (worktree === null) {
-      throw new Error('no worktree row on the session level');
-    }
-    return worktree;
-  }
-  const pages = document.querySelector<HTMLElement>(
-    `${SESSION_LEVEL} [data-testid="session-pages"]`,
-  );
+  const pages = shown(SESSION_TABS);
   if (pages === null) {
-    throw new Error('the sidebar is not on a session level');
+    throw new Error('the page shows no session tabs');
   }
-  const found = within(pages)
-    .getAllByRole('button')
-    .find((button) => button.textContent?.startsWith(label));
-  expect(found, `no ${label} page row`).toBeDefined();
+  const found = within(pages instanceof HTMLElement ? pages : document.body)
+    .getAllByRole('tab')
+    .find((tab) => tab.textContent?.startsWith(label));
+  expect(found, `no ${label} page tab`).toBeDefined();
   return requireValue({ value: found });
 };
 
-const CURRENT_BRANCH = '[data-level-layer="session"]:not([inert]) [data-worktree-current]';
-
 const openPage = async (label: string): Promise<void> => {
+  if (label === 'Branch') {
+    if (shown(BRANCH_TABS) === null) {
+      await openCrumb(/Branch/);
+    }
+    return;
+  }
   await click(pageRow(label));
 };
 
 const currentPage = (): string | null => {
-  if (document.querySelector(CURRENT_BRANCH) !== null) {
+  if (shown(BRANCH_TABS) !== null) {
     return 'Branch';
   }
-  const pages = document.querySelector(`${SESSION_LEVEL} [data-testid="session-pages"]`);
-  const current = pages?.querySelector('[aria-current="page"]');
-  return current?.querySelector('span')?.textContent ?? null;
+  const pages = shown(SESSION_TABS);
+  const current = pages?.querySelector('[aria-selected="true"]');
+  if (current === null || current === undefined) {
+    return null;
+  }
+  const count = current.querySelector('[data-tab-count]')?.textContent ?? '';
+  const text = current.textContent ?? '';
+  return text.slice(0, text.length - count.length);
 };
 
 const otherSession = (sessionId: SessionId): SessionId => {
@@ -673,7 +673,7 @@ describe('moving across every place keeps one frame', () => {
     }
     expect(rail.querySelector('[data-column-door="board"]')).not.toBeNull();
     expect(document.querySelector('[data-side-column]')).toBeNull();
-    expect(document.querySelector('[data-session-rail="session"]')).not.toBeNull();
+    expect(shown(SESSION_TABS)).not.toBeNull();
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
@@ -1021,8 +1021,8 @@ describe('moving across every place keeps one frame', () => {
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
       expect(peek.querySelector('[data-column-door="board"]')).not.toBeNull();
-      expect(document.querySelector(CURRENT_BRANCH)).not.toBeNull();
-      await click(pageRow('Overview'));
+      expect(currentPage()).toBe('Branch');
+      await press('lens.overview');
       await click(
         requireValue({ value: peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) }),
       );
@@ -1068,9 +1068,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
-      expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-        'session',
-      );
+      expect(shown(SESSION_TABS)).not.toBeNull();
       await escape();
       expect(currentPage()).toBe('Runs');
       const page = requireValue({

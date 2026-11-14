@@ -1,28 +1,42 @@
-# The session rail and its tools
+# The session page tabs and its tools
 
-> **Read this when** you change the rail of a session, its back row, the tools beside the page or the Scripts pane. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
+> **Read this when** you change the page tabs of a session, its back row, the tools beside the page or the Scripts pane. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
 
-## Session rail
+## Session page tabs
 
-**The column never changes level; the session rail does.** The column always
-shows the workspace: New session, the doors, then the Pinned and Sessions
-lists. Clicking a session row selects that row, opens the session on its
-Overview and shows the session pages at the left of the page, inside the
-content sheet. **Session pages** is the one name of this rail: the navigation
-landmark, the toggle (**Hide session pages** and **Show session pages**), the
-palette entry for ⌥⌘B and the Guide all say it. The rail has one level, the session: its Projects tree holds every
-branch, and neither the open rail nor the folded rail drills. A branch's pages are the
-tab strip of the Branch page, so the rail never repeats them. A preset run and Auto
-never drill either: what they spawned lives in the Agents panel of the session tools
-(see The session tools). The host is `SessionRail` (`app/components/SessionRail`),
-mounted once for the open session by `SessionFrame` beside the kept-alive
-session pages. The rail is 240px by
-default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
-rows are the column's rows (28px, `SelectableRow`, the same type roles).
-Under any page that sits over the session (Tasks, Help, What's new,
-Notifications, New workspace and the rest) the rail is inactive: the fold key
-folds the column on the left, and the open session row is not lit
-(`SessionRail/innerColumn.test.tsx`).
+**No left rail.** The column always shows the workspace: New session, the doors, then the
+Pinned and Sessions lists. A session row opens the session on its Overview. The session's
+pages are page tabs directly under the title band (`SessionPageTabs`, built on `PageTabs`):
+Overview, Changes, Runs, Artifacts, Questions and Context, on every session, with or without
+a branch. Counts sit on Runs, Artifacts and Questions (`pageSlotOf`, the same words as the
+sidebar flyout). The six pages come from one list (`pagesOf` in
+`features/session/pageRegistry.ts`); the sidebar flyout of the open session (`SessionPages`)
+draws the same list.
+
+- **How the row reaches a page.** `SessionWorkspace` provides the row and the session actions
+  (Pin, Refresh, More session actions, `SessionHeaderActions`) through `PaneTabsContext` and
+  `PaneActionsContext`; the `PageHeader` of every `PaneShell` reads them, so each page draws
+  the row under its own title and nothing is drawn twice. `PaneShell` hands neither to its
+  content.
+- **The tab is the stored place.** The selected tab is read from the open lens
+  (`currentSignOf` over `useSessionPageLens`), so a reload that restores the place restores
+  the tab. A lens the tabs do not own (an integration list) selects no tab; a place that no
+  longer exists opens Overview. Pressing a tab opens that lens (`openSessionPage`) and writes
+  nothing else.
+- **A pull request page shows its own tab row.** On the Branch page `SessionWorkspace`
+  provides no tabs and no session actions, so the page keeps its row and its header (see
+  [branch-page.md](branch-page.md)). Never two rows.
+- **Changes on every session.** A branchless session shows its file versions; a session with
+  a branch shows the Branch page pinned on its Changes section, without its own strip.
+- **Context** shows the existing Context panel until the Context tab replaces it; the Projects
+  and Linked cards (`SessionLevel`) wait for that tab.
+- **No fold, no width.** The rail's fold, its width and its page-column fold key are gone with
+  it; `SessionFrame` keeps the session tools rail and its drawer inset only.
+
+## The Projects and Linked cards
+
+The text below was written for the rail. The cards it names (`SessionLevel/LevelProjects`,
+`LevelLinked`, `LevelFolder`) keep their behavior and move into the Context tab.
 
 - **Level 1 reads top to bottom:** the pages, then the Projects card and the
   Linked card, then the foot. The session level has no identity row: the
@@ -197,18 +211,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   row makes its branch current and opens its pages in place (`switchBranchMount`
   pushes the Branch page into the center); a click on the current row folds or
   opens its pages. Only the current branch shows pages, so the card does not grow
-  when you are busy. Folded, the
-  rail draws a pull request state icon under the page icons only for a worktree
-  that needs you (a dot) or is shown now (`RailWorktrees`), with its tooltip
-  "project, branch, state word, worst state" and the worst state dot on its corner
-  (`railBranchesSplitOf` over `useRailBranchEntries`). Every other worktree folds into
-  one branches button: the branch glyph with a neutral count badge and the label
-  "3 more branches" (`RailBranchesButton`). Its flyout (`RailFlyout`, key `branches`)
-  lists every worktree of the session with project, branch, pull request state,
-  reason and dot (`RailBranchRow`), and a row opens the branch like its icon does. One
-  quiet worktree keeps its own icon, so the button never counts one. The
-  folded rail never draws the session node, and a worktree icon there opens the
-  Branch page, whose tab strip holds the pages of the branch. **Rebase all**
+  when you are busy. **Rebase all**
   (`features/history/RebaseAllCard`) is the first line of the card: `n branches behind`
   with a Rebase all button, then, while a batch runs, `Rebasing 2 of 9` with
   Abort in the same 28px line and the same button size, and Dismiss once it
@@ -306,19 +309,9 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   rail: a thin icon toolbar at the right edge of the session content, between
   the page and the open drawer (see The session tools), the same on every
   page of the session, folded rail or not.
-- **Folded (44px).** The rail's own toggle (`SessionRailToggle`, **Hide
-  session pages** or **Show session pages**, ⌥⌘B) folds it to the current level
-  as icons with right tooltips (`SessionRailIcons`): one icon per page with its
-  dot, then the pull request number per worktree, with its state and dot reason
-  in the tooltip. At its foot the folded rail keeps **More session
-  actions** (`⋯`, the same menu as open, `data-rail-actions`), with a **Retry**
-  icon above it after a failed action. The block sits below the icons, so a fold
-  moves no page or worktree icon. Pin and Refresh show only when open;
-  ⌘⇧R and the sidebar row's right click menu keep them. The folded rail has no
-  Projects foot; the right rail beside the content stays as it is.
-  ⌘B folds the column only, which shows New, the doors and the pinned session
-  nodes on every screen. Folding the session pages leaves the diff page's file
-  rail as it is.
+- **Nothing folds.** The page tabs have no folded state. ⌘B folds the column only, which
+  shows New, the doors and the pinned session nodes on every screen. The diff page's file
+  rail keeps its own fold.
 - **A preset run keeps the rail on the session.** Opening a run with a fixed
   step list (a saved workflow or Describe steps; `executionMode` not
   `dynamic`) shows the run page in the center and leaves the rail on level 1;
@@ -692,7 +685,12 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
   the action registry whose pick opens its form in the New drawer; filled only
   while nothing runs and Next holds no row) and, on an archived session,
-  Restore. Context lives in the session tools.
+  Restore. **Archive session** is also the filled button of the header when
+  every branch is merged, no agent works and no question is open
+  (`ArchivePrimary`, `isArchivePrimaryOf`); otherwise Archive stays in the
+  menu above with the same guards. Below the header the Overview is five tiles
+  and a board with one row per branch (`BranchBoard`). Context lives in the
+  session tools.
 
 ## The session tools
 

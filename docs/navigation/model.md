@@ -118,8 +118,8 @@
   (see The session tools), and the folded rail shows the same six doors. A pinned port that is down puts the warning dot on it, named "Monitoring,
   pinned port :5173 is down" (`monitoringSignal` lists the down pins,
   `doorSignalOf` names them). Inside a session the column stays the same and marks the open
-  session's row; the session's own levels live in the session rail at the left
-  of the page (see Session rail). The column is on every screen with a workspace: the board, a
+  session's row; the session's own pages are the page tabs under
+  its title (see Session page tabs). The column is on every screen with a workspace: the board, a
   session, the draft and every studio, Settings included. No page changes it:
   Settings is a page with its own scopes rail beside the live column (see
   Studios).
@@ -215,7 +215,7 @@
   nothing. Every control reads it from one place (`columnPlaceOf`, through `selectColumnPlace` and
   `useColumnPlace`), so no page leaves two lit. Inside a session no door does:
   the open session's row is the column's sign and the current page row is the
-  session rail's (see Session rail), one sign per navigation column. Under any
+  page tabs' (see Session page tabs), one sign per navigation surface. Under any
   page the session row is remembered, never current. A popover trigger that is
   not the page's own control (the Usage chips) is never selected: it only
   reports `aria-expanded`; the bell is selected only while its page is open, and

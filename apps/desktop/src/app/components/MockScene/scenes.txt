@@ -221,7 +221,6 @@ c01-tail-stopped
 c01-tail-waiting
 c01-tail-working
 c02-level-branchless
-c02-level-folded
 c02-level-main-folded
 c02-level-session
 c02-level-session-agents
@@ -231,10 +230,8 @@ c02-shell-overview
 c03-panes-ask
 c03-panes-closed
 c03-panes-context
-c03-panes-drilled
 c03-panes-explore
 c03-panes-explore-file
-c03-panes-folded
 c03-panes-script-output
 c03-panes-scripts
 c03-panes-terminal
@@ -244,13 +241,12 @@ c04-worktree-comments
 c04-worktree-files
 c04-worktree-files-folded
 c04-worktree-files-narrow
-c04-worktree-folded
-c04-worktree-menu
 c04-worktree-no-pr
 c04-worktree-no-pr-fix
 c04-worktree-pr-behind
 c04-worktree-pr-draft
 c04-worktree-rebasing
+c04-worktree-rebasing-page
 c05-overview-archived
 c05-overview-blank
 c05-overview-lanes
@@ -276,7 +272,6 @@ c07-auto-capped
 c07-auto-child
 c07-auto-child-done
 c07-auto-child-push
-c07-auto-folded
 c07-auto-idle
 c07-auto-images
 c07-auto-limit-popover
@@ -293,7 +288,6 @@ c08-run-approval
 c08-run-archived
 c08-run-capped
 c08-run-done
-c08-run-folded
 c08-run-menu
 c08-run-overview
 c08-run-ready
@@ -724,13 +718,10 @@ r4-questions
 r4-questions-drawer
 r4-rail-cards-folded
 r4-rail-delete
-r4-rail-folded
 r4-rail-narrow
 r4-rail-session
 r4-rail-tools-open
 r4-rail-tree
-r4-rail-tree-menu
-r4-rail-worktree
 r4-report-bug
 r4-repos-behind
 r4-repos-closed
@@ -1198,7 +1189,6 @@ u33-run-stopped-questions
 u34-help-search
 u34-needs-you-question
 u34-needs-you-run-question
-u34-p18-folded-branches-4
 u34-p18-running-4-branches
 u34-p20-auto-narrow
 u34-p21-mount-ask
@@ -1415,13 +1405,10 @@ ux39-p11-terminal-page
 ux39-p11-terminal-session
 ux39-p12-tasks-terminal
 ux39-p4-column-folded
-ux39-p7-folded
-ux39-p7-folded-branchless
-ux39-p7-folded-menu
 ux39-p7-open
 ux39-p7-open-branchless
 ux39-p7-runs-waiting
-ux39-p7-runs-waiting-folded
+ux39-p7-session-menu
 ux39-p9-impact-parked
 ux39-p9-session-drawer
 ux39-p9-tasks-parked

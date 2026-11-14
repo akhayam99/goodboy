@@ -9,7 +9,6 @@ import {
   LEFT_SIDEBAR_MAX,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
-  RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   canDrawerPush,
   drawerAsideWidthOf,
@@ -28,7 +27,7 @@ const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const WINDOWS = [1280, 1440] as const;
 const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
 const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
-  side: [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX],
+  side: [400, RIGHT_DRAWER_MAX],
   reader: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
   browser: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
 };

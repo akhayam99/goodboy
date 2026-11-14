@@ -3,4 +3,5 @@ export const PLACE_ROWS = {
   changesMode: 'changes.mode',
   runsFilter: 'runs.filter',
   boardLead: 'board.lead',
+  boardRow: 'board.row',
 } as const satisfies Readonly<Record<string, string>>;
