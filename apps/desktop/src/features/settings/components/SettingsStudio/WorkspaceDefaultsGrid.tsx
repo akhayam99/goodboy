@@ -7,7 +7,9 @@ import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
+import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
 import { AutoLevelDefaultRow } from './AutoLevelDefaultRow';
+import { AutonomyDefaultsBand } from './AutonomyDefaultsBand';
 import { BranchTemplateField } from './BranchTemplateField';
 import { RunDefaultField } from './RunDefaultField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
@@ -45,6 +47,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
     (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultBranchPrefix,
   );
   const reportError = useAppStore((s) => s.reportError);
+  const isWorkOn = useIsWorkOn();
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [busy, setBusy] = useState(false);
@@ -190,8 +193,9 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
           />
         </WorkspaceFieldRow>
         <RunDefaultField workspaceId={workspaceId} />
-        <AutoLevelDefaultRow workspaceId={workspaceId} />
+        {isWorkOn ? null : <AutoLevelDefaultRow workspaceId={workspaceId} />}
       </Band>
+      {isWorkOn ? <AutonomyDefaultsBand workspaceId={workspaceId} /> : null}
     </>
   );
 };

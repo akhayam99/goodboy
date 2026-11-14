@@ -104,6 +104,7 @@ export const startSettingItemsOf = ({
             error={null}
             workspaceName={workspaceName}
             isDisabled={isDisabled}
+            permissions={{ workspaceId, sessionId, treeId: null }}
             onPick={level.onPick}
           />
         ) : asks === 'steps' ? (

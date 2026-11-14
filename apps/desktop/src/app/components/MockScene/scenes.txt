@@ -1433,6 +1433,8 @@ work-lead-tree
 work-lead-tree-compact
 work-lead-tree-light
 work-lead-working
+work-permissions
+work-permissions-custom
 workflow
 workflow-run
 workflow-run-finished-sets
