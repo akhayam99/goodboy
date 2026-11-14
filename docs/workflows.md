@@ -787,7 +787,9 @@ Restart only when the run is held on a failed step that no row of the run
 shows.
 
 The workflow detail draws the run as a run tree (`RunTree`), the same stream
-the activity feed builds, limited to one run (`buildRunTreeStream`). Time runs
+the activity feed builds, limited to one run (`buildRunTreeStream`). The Auto
+Lead page draws its own tree (`LeadTree`, [auto.md](./auto.md)) and does not
+read this stream. Time runs
 the same way: the first step sits on top, steps follow in the order they ran,
 and queued steps come last, dashed. There is no NOW: the story ends on the last
 step, as the agent tree does. The run lane starts on the first step, so the
