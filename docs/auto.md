@@ -635,6 +635,17 @@ branch lives only in `leadSpendByBranchOf`: an agent's spend goes to the row of
 its own branch, the Lead's own turns to its primary branch, or to the group
 without a branch (`mountId` null), and the rows sum to the total.
 
+`LeadTree` (`features/auto/tree/LeadTree.tsx`) draws that model in two
+densities. A row shows the glyph, the role name, the title, a clock while the
+agent works and its own spend once settled; a compact row drops the title and
+number. Arrow keys move a cursor, Enter selects an agent or toggles a fold, and
+a fold never changes the selected agent id. A queued note is a node with the
+word Queued, Edit and Remove (`noteNodesOf`, over `queuedRowsOf`); both call
+the queue functions the composer tray uses, so a failure keeps the node. A
+note that is sending has no actions and a removed one leaves no node.
+`useLeadTree` loads the delegations, mounts and costs into `leadTreeOf`.
+`LeadTree` shares the row tokens of `RunTree` but not its agent stream.
+
 ### The spawn record
 
 `SpawnRecord` (`apps/desktop/src/features/auto/tree/SpawnRecord/index.tsx`) answers why
