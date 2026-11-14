@@ -15,6 +15,16 @@ the session rail ("Agent · Auto agent"), so the rail has no Auto entry
 to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
 agents started by hand keep working.
 
+One app-wide setting, **Work (experimental)** (`SETTING_WORK_ENABLED`, under
+Experiments on the General page, off by default), moves doors, names and
+engine rules, never views. Off: no Work section, the word Auto, "Start a run"
+opens the router, the level chip. On: Work, the word Lead, one composer,
+permission rows. `flowWordOf` (`shared/lib/flowWordOf.ts`, read through
+`useFlowWord`) is the only place that picks Auto or Lead, aria-labels
+included; `flowRulesOf` in the same folder holds the rest of the matrix and
+its table test pins both positions. A flip never loosens a running Lead and never loses a pending
+ask; a failed write keeps the old flow and shows the error on the row.
+
 ## Status
 
 The feature is on: `AUTO_GATES.isDelegationEnabled` is `true` and is the only gate. Settings has
