@@ -43,7 +43,6 @@
   "apps/desktop/src/features/companion/commandExecutor.test.ts": 1,
   "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.test.tsx": 1,
   "apps/desktop/src/features/context/hooks/useAnswerQuestion/index.test.ts": 1,
-  "apps/desktop/src/features/diff/components/SessionDiffPane/index.test.tsx": 3,
   "apps/desktop/src/features/history/components/CommitsHistory/index.test.tsx": 2,
   "apps/desktop/src/features/history/components/CommitsHistory/useHistoryRunFlow/index.test.ts": 1,
   "apps/desktop/src/features/impact/components/ImpactStudio/spend.test.tsx": 1,

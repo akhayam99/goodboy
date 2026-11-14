@@ -48,9 +48,7 @@ export const FilterScene = ({}: Props) => {
         kindsOf={() => NO_KINDS}
         isReadOnly={false}
         onToggleViewed={() => undefined}
-        onNextUnviewed={() => undefined}
         onLeave={() => undefined}
-        onFold={() => undefined}
       />
     </div>
   );

@@ -40,13 +40,13 @@ vi.mock('../DiffViewSelector', () => ({
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useMemo, useState } from 'react';
-import type { FileDiff, SessionId } from '@goodboy/types';
+import { brandId, type FileDiff, type SessionId } from '@goodboy/types';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
-import { SessionDiffPane } from './index';
+import { ChangesPage } from './index';
 
-const SESSION_ID = 'session-1' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const WORKTREE = '/w/ledger';
 const FILE_COUNT = 60;
 
@@ -99,9 +99,9 @@ const Host = ({ initialFocus = null }: HostProps) => {
       refresh: vi.fn(),
       viewed: {
         stateOf: (file) => (viewedPaths.includes(file.path) ? 'viewed' : 'none'),
-        onToggle: (file, next) =>
+        onToggle: (file, isViewed) =>
           setViewedPaths((current) =>
-            next ? [...current, file.path] : current.filter((path) => path !== file.path),
+            isViewed ? [...current, file.path] : current.filter((path) => path !== file.path),
           ),
       },
       focusPath,
@@ -111,12 +111,7 @@ const Host = ({ initialFocus = null }: HostProps) => {
     [focusPath, viewedPaths],
   );
   return (
-    <SessionDiffPane
-      sessionId={SESSION_ID}
-      workingDir={WORKTREE}
-      worktreePath={WORKTREE}
-      diff={diff}
-    />
+    <ChangesPage sessionId={SESSION_ID} workingDir={WORKTREE} worktreePath={WORKTREE} diff={diff} />
   );
 };
 
@@ -126,7 +121,7 @@ const renderNarrow = (): void => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
     this: HTMLElement,
   ) {
-    return this.hasAttribute('data-diff-pane') ? new DOMRect(0, 0, 700, 800) : rectOf.call(this);
+    return this.hasAttribute('data-changes-page') ? new DOMRect(0, 0, 700, 800) : rectOf.call(this);
   });
   render(<Host />);
   act(() => observers.resizeAll());
@@ -166,7 +161,7 @@ const treeRow = (index: number) =>
     name: new RegExp(`^f${String(index).padStart(2, '0')}\\.ts`),
   });
 
-describe('SessionDiffPane with the real DiffView', () => {
+describe('ChangesPage with the real DiffView', () => {
   it('scrolls the content to the file whose tree row was clicked', async () => {
     render(<Host />);
 

@@ -2851,24 +2851,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/navigation.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/diff/components/SyntaxText.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1

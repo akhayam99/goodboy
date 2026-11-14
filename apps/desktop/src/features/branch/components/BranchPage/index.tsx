@@ -9,8 +9,7 @@ import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pullRequestViewOf';
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { DiffRailContext, type DiffRailHost } from '../../../diff/diffRailHost';
-import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
+import { DiffBaseBranchRow } from '../../../diff/components/ChangesPage/DiffBaseBranchRow';
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
@@ -67,6 +66,7 @@ export const BranchPage = ({ session, workingDir, isActive = true, pinnedTab }: 
   const sessionId = session.id as SessionId;
   const identity = useBranchIdentity({ sessionId });
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
+  const isReviewWriting = useAppStore((s) => s.pullRequestModes[sessionId] === 'write_review');
   const navigate = useAppStore((s) => s.navigate);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const historyMountId = identity.mount?.mountId ?? null;
@@ -75,8 +75,6 @@ export const BranchPage = ({ session, workingDir, isActive = true, pinnedTab }: 
   );
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
-  const [page, setPage] = useState<HTMLElement | null>(null);
-  const [fileSlot, setFileSlot] = useState<HTMLElement | null>(null);
   const historyCommits = useAppStore((s) =>
     historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits ?? null),
   );
@@ -391,12 +389,14 @@ export const BranchPage = ({ session, workingDir, isActive = true, pinnedTab }: 
     notPushed: pushCount,
   });
   const openedAt = pullRequestView.view?.createdAt ?? null;
-  const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
+  const isWritingReview = isReviewWriting && pr !== null && pr.state === 'open';
+  const isChanges = tab === 'files' && identity.mountPath !== null && !isWritingReview;
 
   const detail = (
     <BranchDetail>
       <PaneShell
         page="branch"
+        width={isChanges ? 'full' : undefined}
         scroll="self"
         revealKey={tab}
         headerRhythm="section"
@@ -449,6 +449,8 @@ export const BranchPage = ({ session, workingDir, isActive = true, pinnedTab }: 
             review={branchReview}
             isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
             isPushNext={!isStepHidden && controls.primary?.actionId === 'diff.push'}
+            isSetupOfferShown={!isChanges}
+            width={isChanges ? 'full' : 'column'}
             baseRow={baseRow}
             onOpenComments={() => selectTab('comments')}
           />
@@ -461,22 +463,9 @@ export const BranchPage = ({ session, workingDir, isActive = true, pinnedTab }: 
   return (
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
       <TabActionsSlotContext.Provider value={tabActionsSlot}>
-        <DiffRailContext.Provider value={railSlot}>
-          <div
-            ref={setPage}
-            data-branch-pane=""
-            className="relative flex h-full min-h-0 min-w-0 flex-1"
-          >
-            {detail}
-            {tab === 'files' ? (
-              <div
-                ref={setFileSlot}
-                data-slot="diff-file-rail"
-                className="flex h-full min-h-0 shrink-0 empty:hidden"
-              />
-            ) : null}
-          </div>
-        </DiffRailContext.Provider>
+        <div data-branch-pane="" className="relative flex h-full min-h-0 min-w-0 flex-1">
+          {detail}
+        </div>
       </TabActionsSlotContext.Provider>
     </BranchDiffContext.Provider>
   );

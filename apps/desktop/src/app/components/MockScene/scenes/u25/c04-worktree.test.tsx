@@ -33,7 +33,7 @@ class NarrowBranchPane {
     this.callback = callback;
   }
   observe(target: Element) {
-    if (target.hasAttribute('data-branch-pane')) {
+    if (target.hasAttribute('data-changes-page')) {
       this.callback([{ contentRect: { width: NARROW_PANE_PX } }]);
     }
   }
@@ -131,34 +131,29 @@ describe('the c04 worktree level scenes', () => {
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 
-  it('c04-worktree-files selects Changes and docks the file list on the right of the diff', async () => {
+  it('c04-worktree-files selects Changes and docks the file list on the left of the diff', async () => {
     await mount('c04-worktree-files');
 
     expect(stripTab({ name: /^Changes/ }).getAttribute('aria-selected')).toBe('true');
     const rail = screen.getByRole('complementary', { name: 'Files' });
-    expect(rail.getAttribute('data-file-rail')).toBe('docked');
-    expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
+    expect(rail.parentElement?.firstElementChild).toBe(rail);
+    within(rail).getByRole('navigation', { name: 'Changed files' });
   });
 
-  it('c04-worktree-files-folded folds the file list and offers Files in the diff toolbar', async () => {
+  it('c04-worktree-files-folded folds the file list and offers Show files at its edge', async () => {
     await mount('c04-worktree-files-folded');
 
     expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
-    const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
-    if (toolbar === null) {
-      throw new Error('the folded scene draws no diff toolbar');
-    }
-    expect(within(toolbar).getAllByRole('button')[0]?.textContent).toBe('Files6+53 -24');
+    screen.getByRole('button', { name: 'Show files' });
     expect(screen.queryByText('Split needs a wider window')).toBeNull();
   });
 
-  it('c04-worktree-files-narrow opens the file list over the diff of a narrow page', async () => {
+  it('c04-worktree-files-narrow opens the file list beside the diff of a narrow page', async () => {
     vi.stubGlobal('ResizeObserver', NarrowBranchPane);
     await mount('c04-worktree-files-narrow');
 
     const rail = screen.getByRole('complementary', { name: 'Files' });
-    expect(rail.getAttribute('data-file-rail')).toBe('overlay');
-    expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
+    within(rail).getByRole('navigation', { name: 'Changed files' });
     vi.unstubAllGlobals();
   });
 

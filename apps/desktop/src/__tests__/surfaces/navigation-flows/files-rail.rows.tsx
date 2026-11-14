@@ -18,7 +18,7 @@ import {
 
 const THIRD_FILE = /^seenEvents\.ts/;
 
-const OVERLAY_PANE = 700;
+const NARROW_PANE = 700;
 const DOCKED_PANE = 1920;
 
 type Frame = {
@@ -30,7 +30,7 @@ let frame: Frame | null = null;
 
 const stubPane = ({ width }: { readonly width: number }): void => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    return this.hasAttribute('data-branch-pane')
+    return this.hasAttribute('data-changes-page')
       ? new DOMRect(0, 0, width, 800)
       : new DOMRect(0, 0, 0, 0);
   });
@@ -55,10 +55,7 @@ const treeNav = (): HTMLElement =>
     name: 'Changed files',
   });
 
-const toolbarFiles = (): HTMLElement | null => {
-  const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
-  return toolbar === null ? null : within(toolbar).queryByRole('button', { name: /^Files/ });
-};
+const showFiles = (): HTMLElement | null => screen.queryByRole('button', { name: 'Show files' });
 
 const treeOf = (): HTMLElement => within(treeNav()).getByRole('tree', { name: 'Changed files' });
 
@@ -143,7 +140,8 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
       await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
       expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
 
-      expect(fileRail()?.getAttribute('data-file-rail')).toBe('docked');
+      expect(fileRail()).not.toBeNull();
+      expect(showFiles()).toBeNull();
       expect(railNav()?.querySelector('[role="tree"]')).toBeNull();
       await downToThirdFile();
       expect(thirdRow().getAttribute('aria-current')).toBe('true');
@@ -188,22 +186,22 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'files rail: on a narrow page J walks with the rail away, F opens it over the diff, a pick closes it',
-    covers: ['navigate', 'files-rail:overlay'],
+    name: 'files rail: on a narrow page J walks with the rail folded, F opens it beside the diff, a pick folds it',
+    covers: ['navigate', 'files-rail:narrow'],
     open: async (ctx) => {
-      stubPane({ width: OVERLAY_PANE });
+      stubPane({ width: NARROW_PANE });
       await openBranchOnComments(ctx);
       await visit({ ctx, tab: 'files' });
-      await waitFor(() => expect(toolbarFiles()).not.toBeNull(), WAIT);
+      await waitFor(() => expect(showFiles()).not.toBeNull(), WAIT);
       expect(fileRail()).toBeNull();
 
       await downToThirdFile();
       await press('diff.focusTree');
-      expect(fileRail()?.getAttribute('data-file-rail')).toBe('overlay');
+      expect(fileRail()).not.toBeNull();
       expectCursorOnThirdRow();
       await click(within(thirdRow()).getByRole('button', { name: THIRD_FILE }));
       expect(fileRail()).toBeNull();
-      expect(toolbarFiles()).not.toBeNull();
+      expect(showFiles()).not.toBeNull();
     },
     lands: async (ctx) => {
       await branchTab('files')(ctx);

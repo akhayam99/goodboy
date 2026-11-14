@@ -1,15 +1,12 @@
-import type { ReactNode } from 'react';
-import { EmptyState, PageColumn } from '@goodboy/ui';
+import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly baseBranch: string | null;
-  readonly selector: ReactNode;
 };
 
-export const AllFilesEmpty = ({ baseBranch, selector }: Props) => (
-  <PageColumn className="flex min-w-0 flex-col gap-3">
-    <div className="flex min-w-0 items-center gap-2">{selector}</div>
+export const AllFilesEmpty = ({ baseBranch }: Props) => (
+  <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-12">
     <EmptyState
       size="section"
       tone={CONCEPT_TONE.diff}
@@ -17,5 +14,5 @@ export const AllFilesEmpty = ({ baseBranch, selector }: Props) => (
       title={`No changes against ${baseBranch ?? 'its base branch'}`}
       description="Pick a file in the list to read it."
     />
-  </PageColumn>
+  </div>
 );

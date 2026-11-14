@@ -130,7 +130,7 @@ A description Goodboy wrote is updated after a history push, so it keeps matchin
 
 ### Read the code
 
-Read the branch against its base in **Changes**, unified or split. The changed files sit in a list on the right of the diff that tracks what you marked **Viewed**, with a filter, **All**, **Unviewed** and **Commented** in one menu, and **Viewed 2 of 6** with **Next** at its top. Drag its edge to make it wider or fold it away; it stays that way, and **Changes** in the diff toolbar brings it back. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header refreshes after a local commit edit; **Force push** waits in **⋯** behind its confirm.
+Read the branch against its base in **Changes**, unified or split. The changed files sit in a list on the left that tracks what you marked **Viewed**, with a filter and **All**, **Unviewed** and **Commented** in one menu; the diff scrolls beside it, with **Viewed 2 of 6** and **Next** in its toolbar. Drag the list's edge to widen it or hide it; **Show files** brings it back. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header refreshes after a local commit edit; **Force push** waits in **⋯** behind its confirm.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-dark.webp">

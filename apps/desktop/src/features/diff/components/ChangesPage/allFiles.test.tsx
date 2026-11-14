@@ -49,7 +49,7 @@ import {
 } from '../../../../store/storyHarness';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
-import { SessionDiffPane } from './index';
+import { ChangesPage } from './index';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const OTHER_SESSION_ID = brandId<SessionId>({ value: 'session-2' });
@@ -157,7 +157,7 @@ const Host = ({
   worktreePath = WORKTREE,
   sessionId = SESSION_ID,
 }: HostProps) => (
-  <SessionDiffPane
+  <ChangesPage
     sessionId={sessionId}
     workingDir={worktreePath}
     worktreePath={worktreePath}
