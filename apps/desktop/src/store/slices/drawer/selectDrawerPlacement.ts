@@ -1,7 +1,6 @@
 import type { DrawerPlacement } from '@goodboy/ui';
-import type { AppState } from '../../types';
-import { selectOpenDrawer } from './selectOpenDrawer';
+import { selectDetailDrawer } from './selectDetailDrawer';
 
 export const selectDrawerPlacement = (
-  state: Pick<AppState, 'drawer' | 'currentSessionId'>,
-): DrawerPlacement => (selectOpenDrawer(state)?.kind === 'new' ? 'overlay' : 'auto');
+  state: Parameters<typeof selectDetailDrawer>[0]['state'],
+): DrawerPlacement => (selectDetailDrawer({ state })?.kind === 'new' ? 'overlay' : 'auto');

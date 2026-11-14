@@ -8,7 +8,7 @@ type Props = {
   readonly header: ReactNode;
   readonly pinned?: ReactNode;
   readonly resetKey?: string | null;
-  readonly surface?: 'background' | 'subtle';
+  readonly surface?: 'background' | 'subtle' | 'panel';
   readonly hasLanes?: boolean;
   readonly children: ReactNode;
 };
@@ -16,6 +16,7 @@ type Props = {
 const SURFACE_CLASS = {
   background: 'sticky-surface',
   subtle: 'sticky-surface-subtle',
+  panel: 'sticky-surface-panel',
 } as const satisfies Record<NonNullable<Props['surface']>, string>;
 
 export const RevealRegion = ({

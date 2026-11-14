@@ -16,6 +16,7 @@ import type { BrowserPaneModel } from '../../types';
 import { browserMoreOffOf } from './browserMoreRows';
 import { widthSelectOf } from './widthSelectOf';
 import { DEVICE_PRESETS, devicePresetOf } from '../../devicePresets';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly model: BrowserPaneModel;
@@ -87,7 +88,7 @@ export const BrowserMoreMenu = ({ model, onOpenAsPage }: Props) => {
           {
             kind: 'item' as const,
             key: 'openAsPage',
-            label: 'Open as page',
+            label: NAMES.openFullPage,
             icon: ArrowUpRight,
             onSelect: onOpenAsPage,
           },

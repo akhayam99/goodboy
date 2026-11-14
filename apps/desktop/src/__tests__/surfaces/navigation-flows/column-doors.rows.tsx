@@ -179,7 +179,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: () => click(railTool('terminal')),
     lands: both(
-      () => visible('button', 'Open as page'),
+      () => visible('button', 'Open full page'),
       async () => expect(railTool('terminal').getAttribute('aria-pressed')).toBe('true'),
       async () => expect(useAppStore.getState().appStudio).toBeNull(),
     ),
@@ -190,7 +190,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await click(railTool('terminal'));
-      await clickButton(/^Open as page$/);
+      await clickButton(/^Open full page$/);
     },
     lands: both(
       () => studio('Terminal'),
@@ -216,7 +216,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       await click(railTool('browser'));
       await clickButton('More');
-      await clickMenuItem(/^Open as page$/);
+      await clickMenuItem(/^Open full page$/);
     },
     lands: both(
       () => studio('Browser'),

@@ -11,6 +11,7 @@ import { mockSceneIpc } from '../mockSceneIpc';
 import { devServerLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 import { seedFrame, type FrameContext } from '../audit/frameSeed';
 import { seedBrowserTab } from './seedBrowserTab';
+import { seedArtifactDetail } from '../u42/seedArtifactDetail';
 
 export type RightDock = 'terminal' | 'browser' | null;
 
@@ -19,6 +20,7 @@ type Props = {
   readonly view: string;
   readonly held: RightDock;
   readonly isRailCollapsed?: boolean;
+  readonly hasDetail?: boolean;
 };
 
 const DEV_SERVER = brandedId<TerminalTabId>({ value: 'ux39-harborline-dev' });
@@ -27,9 +29,10 @@ type SeedParams = {
   readonly context: FrameContext;
   readonly view: string;
   readonly held: RightDock;
+  readonly hasDetail: boolean;
 };
 
-const seedDock = ({ context, view, held }: SeedParams): void => {
+const seedDock = ({ context, view, held, hasDetail }: SeedParams): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId;
   const sessionId = context === 'session' ? state.currentSessionId : null;
@@ -64,6 +67,9 @@ const seedDock = ({ context, view, held }: SeedParams): void => {
     });
     state.openDrawer({ kind: 'terminal', sessionId: null, payload: { terminalId: DEV_SERVER } });
   }
+  if (hasDetail && sessionId !== null && workspaceId !== null) {
+    seedArtifactDetail({ sessionId, workspaceId });
+  }
   if (held === 'browser') {
     state.openDrawer(
       sessionId === null
@@ -73,14 +79,20 @@ const seedDock = ({ context, view, held }: SeedParams): void => {
   }
 };
 
-export const P10RightDockScene = ({ context, view, held, isRailCollapsed = false }: Props) => {
+export const P10RightDockScene = ({
+  context,
+  view,
+  held,
+  isRailCollapsed = false,
+  hasDetail = false,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     seedFrame({ context });
-    seedDock({ context, view, held });
+    seedDock({ context, view, held, hasDetail });
     setIsReady(true);
-  }, [context, view, held]);
+  }, [context, view, held, hasDetail]);
 
   if (!isReady) {
     return null;

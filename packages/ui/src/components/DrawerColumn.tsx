@@ -1,40 +1,36 @@
 import { DrawerContentContext } from '../drawerContentContext';
 import { useDrawerColumnWidth } from '../useDrawerColumnWidth';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  type CSSProperties,
-  type ReactNode,
-  type Ref,
-} from 'react';
+import { useCallback, useRef, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { cn } from '../cn';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
-import { DrawerParkedContext } from '../drawerParkedContext';
 import { dismissTopEscapeLayer } from '../escape';
 import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
 import { ResizeHandle } from './ResizeHandle';
-import { useDrawerExit } from '../useDrawerExit';
+import { DrawerPanelCard } from './DrawerPanelCard';
+import { useDrawerPanel } from '../useDrawerPanel';
 import { useEdgeHost } from '../useEdgeHost';
-import { mountExitSnapshot } from '../exitSnapshot';
 import { useDrawerTierWidths } from '../useDrawerTierWidths';
 import {
-  drawerAsideWidthOf,
-  drawerLayoutOf,
+  DRAWER_INSET,
+  panelAsideWidthOf,
+  panelPairLayoutOf,
   type DrawerMode,
   type DrawerPlacement,
   type DrawerSizing,
 } from '../drawerGeometry';
 import { unmeasuredLayoutOf } from '../unmeasuredLayoutOf';
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
-
 export type DrawerColumnFrame = 'sheet' | 'none';
 
 const PANEL_VAR = '--goodboy-drawer-panel';
 
+const DETAIL_VAR = '--goodboy-detail-panel';
+
 const PUSH_CONTENT = 'w-[calc(var(--goodboy-drawer-panel)-1px)]';
+
+const DETAIL_CONTENT = 'w-[calc(var(--goodboy-detail-panel)-2px)]';
+
+const SLIDE = 'motion-safe:transition-[width] duration-200 ease-enter';
 
 const SCRIM_RADIUS: Readonly<Record<SheetEdge, string>> = {
   wrapped: 'rounded-l-frame',
@@ -42,10 +38,24 @@ const SCRIM_RADIUS: Readonly<Record<SheetEdge, string>> = {
   pushed: 'rounded-frame',
 };
 
+type LiveWidths = {
+  readonly mode: DrawerMode;
+  readonly rail: number;
+  readonly dock: number;
+  readonly detail: number;
+};
+
+type PanelVars = CSSProperties & Readonly<Record<typeof PANEL_VAR | typeof DETAIL_VAR, string>>;
+
 export type DrawerColumnProps = {
   readonly main: ReactNode;
   readonly drawer?: ReactNode | null;
   readonly drawerKey?: string;
+  readonly detail?: ReactNode | null;
+  readonly detailKey?: string;
+  readonly detailSizing?: DrawerSizing;
+  readonly isDetailParked?: boolean;
+  readonly detailResizeLabel?: string;
   readonly ariaLabel: string;
   readonly resizeLabel: string;
   readonly drawerRef?: Ref<HTMLElement>;
@@ -62,6 +72,11 @@ export const DrawerColumn = ({
   main,
   drawer,
   drawerKey = 'drawer',
+  detail,
+  detailKey = 'detail',
+  detailSizing = 'side',
+  isDetailParked = false,
+  detailResizeLabel = 'Resize detail panel',
   ariaLabel,
   resizeLabel,
   drawerRef,
@@ -77,59 +92,93 @@ export const DrawerColumn = ({
   const edge = useEdgeHost();
   const asideRef = useRef<HTMLElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const contentRef = useRef<HTMLDivElement | null>(null);
+  const groupRef = useRef<HTMLDivElement | null>(null);
   const isOpen = drawer != null;
-  const modeRef = useRef<DrawerMode>('closed');
-  const railRef = useRef(0);
-  railRef.current = edge.width;
-  const onPreview = (next: number) => {
-    const track = `${drawerAsideWidthOf({ width: next, mode: modeRef.current, railWidth: railRef.current })}px`;
+  const isDetailOpen = detail != null;
+  const hasDetailGroup = detail !== undefined;
+  const live = useRef<LiveWidths>({ mode: 'closed', rail: 0, dock: 0, detail: 0 });
+  const previewAside = useCallback(() => {
+    const { mode, rail, dock, detail: detailPx } = live.current;
+    const track = `${panelAsideWidthOf({ dockWidth: dock, detailWidth: detailPx, railWidth: rail })}px`;
     asideRef.current?.style.setProperty('width', track);
-    asideRef.current?.style.setProperty(PANEL_VAR, `${next}px`);
-    if (modeRef.current === 'overlay') {
+    if (mode === 'overlay') {
       trackRef.current?.style.setProperty('min-width', track);
     }
-  };
-  const resizable = useDrawerTierWidths({ sizing, onPreview });
+  }, []);
+  const previewDock = useCallback(
+    (next: number) => {
+      live.current = { ...live.current, dock: live.current.dock > 0 ? next : 0 };
+      asideRef.current?.style.setProperty(PANEL_VAR, `${next}px`);
+      previewAside();
+    },
+    [previewAside],
+  );
+  const previewDetail = useCallback(
+    (next: number) => {
+      live.current = { ...live.current, detail: next };
+      asideRef.current?.style.setProperty(DETAIL_VAR, `${next}px`);
+      groupRef.current?.style.setProperty('width', `${next + DRAWER_INSET}px`);
+      previewAside();
+    },
+    [previewAside],
+  );
+  const resizable = useDrawerTierWidths({ sizing, onPreview: previewDock });
+  const detailWidths = useDrawerTierWidths({ sizing: detailSizing, onPreview: previewDetail });
   const railWidth = edge.width;
+  const dockSpec = { sizing, savedWidth: resizable.width, isOpen };
+  const detailSpec = { sizing: detailSizing, savedWidth: detailWidths.width, isOpen: isDetailOpen };
+  const lead = isDetailOpen && !isOpen ? detailSpec : dockSpec;
+  const unmeasured = unmeasuredLayoutOf({
+    savedWidth: lead.savedWidth,
+    sizing: lead.sizing,
+    placement,
+  });
   const layout =
     column.width === null
-      ? unmeasuredLayoutOf({ savedWidth: resizable.width, sizing, placement })
-      : drawerLayoutOf({
+      ? {
+          mode: unmeasured.mode,
+          dock: unmeasuredLayoutOf({ savedWidth: resizable.width, sizing, placement }),
+          detail: unmeasuredLayoutOf({
+            savedWidth: detailWidths.width,
+            sizing: detailSizing,
+            placement,
+          }),
+        }
+      : panelPairLayoutOf({
           main: column.width,
           contentInset: railWidth,
-          sizing,
-          savedWidth: resizable.width,
-          placement,
           edgeWidth: railWidth,
+          placement,
+          dock: dockSpec,
+          detail: detailSpec,
         });
-  const mode: DrawerMode = isOpen ? layout.mode : 'closed';
-  modeRef.current = mode;
+  const isAnyOpen = isOpen || isDetailOpen;
+  const mode: DrawerMode = isAnyOpen ? layout.mode : 'closed';
   const isOverlay = mode === 'overlay';
-  const isOverlayOpen = isOpen && isOverlay;
-  const exit = useDrawerExit({ isOpen, layoutMode: layout.mode, cardRef, contentRef });
-  const isExiting = exit.isExiting;
-  const isOverlayExit = isExiting && exit.lastMode === 'overlay';
-  const isPushExit = isExiting && exit.lastMode === 'push';
-  const isFloating = !isParked && (isOverlay || isOverlayExit);
+  const dockPanel = useDrawerPanel({ isOpen, layoutMode: layout.mode, isParked });
+  const detailPanel = useDrawerPanel({
+    isOpen: isDetailOpen,
+    layoutMode: layout.mode,
+    isParked: isDetailParked,
+  });
+  const isDockShown = isOpen && !isParked;
+  const isDetailShown = isDetailOpen && !isDetailParked;
+  const isOverlayExit = dockPanel.isOverlayExit || detailPanel.isOverlayExit;
+  const isAnyExiting = dockPanel.exit.isExiting || detailPanel.exit.isExiting;
+  const isOverlayShown = (isOverlay && (isDockShown || isDetailShown)) || isOverlayExit;
+  const isFloating = isOverlayShown;
   const hasRail = railWidth > 0;
-  const asideMode: DrawerMode = isParked ? 'closed' : isOverlayExit ? 'overlay' : mode;
-  const asideWidth = drawerAsideWidthOf({ width: layout.width, mode: asideMode, railWidth });
-  const spacerWidth = drawerAsideWidthOf({ width: 0, mode: 'closed', railWidth });
-  const isEdgeShown = (isOverlayOpen || isOverlayExit) && !isParked;
-  const asideStyle: CSSProperties & Readonly<Record<typeof PANEL_VAR, string>> = {
+  const dockPx = isDockShown || (dockPanel.isOverlayExit && !isParked) ? layout.dock.width : 0;
+  const detailPx =
+    isDetailShown || (detailPanel.isOverlayExit && !isDetailParked) ? layout.detail.width : 0;
+  live.current = { mode, rail: railWidth, dock: dockPx, detail: detailPx };
+  const asideWidth = panelAsideWidthOf({ dockWidth: dockPx, detailWidth: detailPx, railWidth });
+  const spacerWidth = panelAsideWidthOf({ dockWidth: 0, detailWidth: 0, railWidth });
+  const asideStyle: PanelVars = {
     width: asideWidth,
-    [PANEL_VAR]: `${layout.width}px`,
+    [PANEL_VAR]: `${layout.dock.width}px`,
+    [DETAIL_VAR]: `${layout.detail.width}px`,
   };
-  const mountSnapshot = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (node !== null && exit.snapshot !== null) {
-        mountExitSnapshot({ host: node, snapshot: exit.snapshot });
-      }
-    },
-    [exit.snapshot],
-  );
   const setAside = useCallback(
     (node: HTMLElement | null) => {
       asideRef.current = node;
@@ -144,23 +193,16 @@ export const DrawerColumn = ({
     [drawerRef],
   );
 
-  useEffect(() => {
-    const card = cardRef.current;
-    if (!isOverlayOpen || isParked || card === null || card.contains(document.activeElement)) {
-      return;
-    }
-    (card.querySelector<HTMLElement>(FOCUSABLE) ?? card).focus({ preventScroll: true });
-  }, [isOverlayOpen, isParked]);
-
-  const isPushed = mode === 'push' && !isParked;
+  const isPushed = mode === 'push' && (isDockShown || isDetailShown);
   const isSheet = frame === 'sheet';
   const isBesideRail = hasRail || isPushed;
   const sheetState: SheetEdge = isBesideRail ? 'pushed' : sheetEdge;
+  const isContainerIdle = hasDetailGroup && !isOpen && !dockPanel.exit.isExiting && !hasRail;
+  const dockContent = { columnWidth: column.width, savedWidth: resizable.width, mode };
+  const detailContent = { columnWidth: column.width, savedWidth: detailWidths.width, mode };
 
   return (
-    <DrawerContentContext.Provider
-      value={{ columnWidth: column.width, savedWidth: resizable.width, mode }}
-    >
+    <DrawerContentContext.Provider value={dockContent}>
       <div
         ref={column.ref}
         className={cn(
@@ -172,7 +214,7 @@ export const DrawerColumn = ({
         <div
           data-container="page"
           data-drawer-main=""
-          inert={isOverlay && !isParked}
+          inert={isOverlay && (isDockShown || isDetailShown)}
           {...(isSheet && { 'data-sheet': sheetState, 'data-left-resize': leftResize })}
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col',
@@ -182,17 +224,20 @@ export const DrawerColumn = ({
         >
           <DrawerEdgeContext.Provider value={edge.host}>{main}</DrawerEdgeContext.Provider>
         </div>
-        {isEdgeShown ? (
+        {isOverlayShown ? (
           <div
             aria-hidden
             data-drawer-scrim=""
-            onMouseDown={isExiting ? undefined : (event) => event.preventDefault()}
-            onClick={isExiting ? undefined : () => dismissTopEscapeLayer()}
+            onMouseDown={isAnyExiting ? undefined : (event) => event.preventDefault()}
+            onClick={isAnyExiting ? undefined : () => dismissTopEscapeLayer()}
             className={cn(
               'absolute inset-0 z-10 bg-scrim',
               isSheet && SCRIM_RADIUS[sheetState],
-              isOverlayExit && 'pointer-events-none animate-drawer-fade-out',
-              !isOverlayExit && !exit.isResumed && 'motion-safe:animate-fade-in',
+              isOverlayExit && !isOverlay && 'pointer-events-none animate-drawer-fade-out',
+              !isOverlayExit &&
+                !dockPanel.exit.isResumed &&
+                !detailPanel.exit.isResumed &&
+                'motion-safe:animate-fade-in',
             )}
           />
         ) : null}
@@ -207,10 +252,11 @@ export const DrawerColumn = ({
         <aside
           ref={setAside}
           aria-label={ariaLabel}
-          data-drawer-mode={isParked ? 'closed' : mode}
+          data-drawer-mode={isParked && !isDetailShown ? 'closed' : mode}
           data-drawer-parked={isParked ? '' : undefined}
-          data-drawer-exit={isExiting ? '' : undefined}
+          data-drawer-exit={isAnyExiting ? '' : undefined}
           data-drawer-sizing={sizing}
+          data-detail-open={isDetailShown ? '' : undefined}
           style={asideStyle}
           className={cn(
             'flex min-h-0 shrink-0 justify-end',
@@ -228,14 +274,67 @@ export const DrawerColumn = ({
             ref={trackRef}
             style={{ minWidth: isFloating ? asideWidth : 0 }}
           >
+            {hasDetailGroup ? (
+              <div
+                ref={groupRef}
+                data-detail-group=""
+                style={{ width: detailPx > 0 ? detailPx + DRAWER_INSET : 0 }}
+                className={cn('flex min-h-0 shrink-0 overflow-clip', !isFloating && SLIDE)}
+              >
+                <div
+                  className={cn(
+                    'flex w-2 shrink-0 justify-center',
+                    isOverlay && 'pointer-events-auto',
+                  )}
+                >
+                  {isDetailShown ? (
+                    <ResizeHandle
+                      {...detailWidths.handleProps}
+                      max={layout.detail.dragMax}
+                      value={layout.detail.width}
+                      side="right"
+                      ariaLabel={detailResizeLabel}
+                    />
+                  ) : null}
+                </div>
+                <div
+                  data-container="detail"
+                  className={cn(
+                    'panel-on-page relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-frame border border-frame-edge bg-background',
+                    isFloating && 'pointer-events-auto shadow-xl',
+                  )}
+                >
+                  {isDetailOpen || detailPanel.exit.isExiting ? (
+                    <DrawerContentContext.Provider value={detailContent}>
+                      <DrawerPanelCard
+                        slot="detail"
+                        panel={detailPanel}
+                        node={detail}
+                        panelKey={detailKey}
+                        isOpen={isDetailOpen}
+                        isParked={isDetailParked}
+                        isOverlay={isOverlay}
+                        isFloating={isFloating}
+                        parkedWidth={layout.detail.width}
+                        pushWidthClass={DETAIL_CONTENT}
+                      />
+                    </DrawerContentContext.Provider>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
             <div
-              className={cn('flex w-2 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}
+              className={cn(
+                'flex w-2 shrink-0 justify-center',
+                isOverlay && 'pointer-events-auto',
+                isContainerIdle && 'hidden',
+              )}
             >
-              {isOpen && !isParked ? (
+              {isDockShown ? (
                 <ResizeHandle
                   {...resizable.handleProps}
-                  max={layout.dragMax}
-                  value={layout.width}
+                  max={layout.dock.dragMax}
+                  value={layout.dock.width}
                   side="right"
                   ariaLabel={resizeLabel}
                 />
@@ -244,53 +343,24 @@ export const DrawerColumn = ({
             <div
               data-container="drawer"
               className={cn(
-                'relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l border-frame-edge bg-drawer',
+                'panel-on-rail relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l border-frame-edge bg-drawer',
                 isFloating && 'pointer-events-auto shadow-xl',
+                isContainerIdle && 'border-0',
               )}
             >
-              {isOpen || isExiting ? (
-                <div
-                  ref={cardRef}
-                  data-drawer-card=""
-                  tabIndex={isOverlay ? -1 : undefined}
-                  inert={!isOpen || isParked || isExiting}
-                  style={isParked ? { width: layout.width } : undefined}
-                  className={cn(
-                    'flex min-h-0 min-w-0 flex-col items-end overflow-clip',
-                    isParked ? 'invisible absolute inset-y-0 left-0' : 'flex-1',
-                    isOverlay && 'focus-visible:outline-none',
-                    isOverlay && !exit.isResumed && 'motion-safe:animate-drawer-overlay-in',
-                    isExiting && 'pointer-events-none',
-                    isOverlayExit &&
-                      'motion-safe:animate-drawer-overlay-out motion-reduce:animate-drawer-fade-out',
-                  )}
-                >
-                  <div
-                    data-drawer-content=""
-                    className={cn(
-                      'flex min-h-0 min-w-0 flex-1 flex-col',
-                      !isFloating && PUSH_CONTENT,
-                      !isFloating &&
-                        !isExiting &&
-                        !exit.isResumed &&
-                        'motion-safe:animate-drawer-content-in',
-                      isPushExit && 'motion-safe:animate-drawer-content-out',
-                    )}
-                  >
-                    <div
-                      key={isExiting ? `${drawerKey}:exit` : drawerKey}
-                      ref={isExiting ? mountSnapshot : contentRef}
-                      className={cn(
-                        'flex min-h-0 min-w-0 flex-1 flex-col',
-                        !isExiting && 'motion-safe:animate-drawer-swap',
-                      )}
-                    >
-                      <DrawerParkedContext.Provider value={isParked}>
-                        {isOpen ? drawer : null}
-                      </DrawerParkedContext.Provider>
-                    </div>
-                  </div>
-                </div>
+              {isOpen || dockPanel.exit.isExiting ? (
+                <DrawerPanelCard
+                  slot="drawer"
+                  panel={dockPanel}
+                  node={drawer}
+                  panelKey={drawerKey}
+                  isOpen={isOpen}
+                  isParked={isParked}
+                  isOverlay={isOverlay}
+                  isFloating={isFloating}
+                  parkedWidth={layout.dock.width}
+                  pushWidthClass={PUSH_CONTENT}
+                />
               ) : null}
               <div
                 ref={edge.setHost}

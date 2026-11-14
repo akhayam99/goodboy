@@ -223,9 +223,7 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
       expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {
         expect(cardRight).toBe(columnWidth);
-        expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx + DRAWER_INSET).toBe(
-          columnWidth,
-        );
+        expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx).toBe(columnWidth);
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })).toBe(true);
         return;
       }

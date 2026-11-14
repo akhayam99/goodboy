@@ -3,7 +3,7 @@ import { cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useAppStore, useMountDiffStats } from '../../../../store';
-import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
 import type { BranchEntry } from '../../central/branches/branchStoryOf';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
@@ -56,7 +56,7 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
   const [isMergedExpanded, setIsMergedExpanded] = useState(false);
   const aloneRowId = board.isAlone ? (board.rows[0]?.id ?? null) : null;
   const { openIds, toggle } = useOpenRows({ aloneRowId });
-  const isToolPushing = useAppStore((state) => selectOpenDrawer(state)?.kind === 'terminal');
+  const isToolPushing = useAppStore((state) => selectDockDrawer({ state })?.kind === 'terminal');
   const { ref: widthRef, width } = useElementWidth();
   const isNarrow = isToolPushing || (width !== null && width < WIDE_MIN_PX);
   const diffStatByPath = useMountDiffStats(sessionId);

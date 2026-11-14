@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
 import { selectSlotBack } from '../../../store/slices/drawer/selectSlotBack';
 import { leaveStudio } from '../../../store/slices/navigation/leaveStudio';
 import { openBranchTerminal } from '../../terminal/openBranchTerminal';
@@ -32,8 +33,9 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
   if (isShown && isOnPage) {
     return;
   }
-  if (isShown) {
-    state.closeDrawer();
+  const detail = selectDetailDrawer({ state });
+  if (isShown && detail !== null) {
+    state.closeDrawerEntry({ entry: detail });
     return;
   }
   const back = selectSlotBack({ state });

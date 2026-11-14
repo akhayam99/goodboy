@@ -1,7 +1,9 @@
 import { createElement, type ReactNode } from 'react';
+import type { DrawerSizing } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { selectDrawerPanel } from '../../../store/slices/drawer/selectDrawerPanel';
-import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
+import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
+import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
+import { selectDockDrawer } from '../../../store/slices/drawer/selectDockDrawer';
 import { ShellToolRail } from '../../components/ShellToolRail';
 import { STUDIO_META } from '../../components/StudioFrame/studioMeta';
 
@@ -11,6 +13,10 @@ type ShellRight = {
   readonly rightRail: ReactNode;
   readonly isDrawerMounted: boolean;
   readonly isDrawerParked: boolean;
+  readonly isDetailMounted: boolean;
+  readonly isDetailParked: boolean;
+  readonly dockSizing: DrawerSizing;
+  readonly detailSizing: DrawerSizing;
 };
 
 export const useShellRight = ({}: Params): ShellRight => {
@@ -19,16 +25,22 @@ export const useShellRight = ({}: Params): ShellRight => {
     const meta = kind === null ? null : STUDIO_META[kind];
     return meta !== null && 'canHostDrawer' in meta && meta.canHostDrawer;
   });
-  const isDrawerMounted = useAppStore((state) => {
-    const open = selectOpenDrawer(state);
-    return open !== null && open.kind !== state.appStudio?.kind;
-  });
-  const isDrawerParked = useAppStore(
-    (state) => selectOpenDrawer(state) !== null && selectDrawerPanel(state) === null,
+  const isDrawerMounted = useAppStore((state) => selectDockDrawer({ state }) !== null);
+  const isDetailMounted = useAppStore((state) => selectDetailDrawer({ state }) !== null);
+  const isStudioShown = useAppStore((state) => state.appStudio !== null);
+  const dockSizing = useAppStore((state) =>
+    drawerSizingOf({ drawer: selectDockDrawer({ state }) }),
+  );
+  const detailSizing = useAppStore((state) =>
+    drawerSizingOf({ drawer: selectDetailDrawer({ state }) }),
   );
   return {
     rightRail: isRailInStudio ? null : createElement(ShellToolRail),
     isDrawerMounted,
-    isDrawerParked,
+    isDrawerParked: false,
+    isDetailMounted,
+    isDetailParked: isDetailMounted && isStudioShown,
+    dockSizing,
+    detailSizing,
   };
 };

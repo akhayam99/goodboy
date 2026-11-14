@@ -19,7 +19,6 @@ import {
   drawerAsideWidthOf,
   drawerLayoutOf,
   drawerModeOf,
-  drawerTrackOf,
   drawerWidthOf,
   mainWidthOf,
   pageBoxOf,
@@ -155,7 +154,7 @@ describe('the browser tier', () => {
       drawerWidthPx: 1400,
       sizing: 'browser',
     });
-    expect(box.width).toBe(2100 - drawerTrackOf(1400));
+    expect(box.width).toBe(2100 - drawerAsideWidthOf({ width: 1400, mode: 'push' }));
   });
 });
 
@@ -365,7 +364,7 @@ describe('drawer geometry across the width matrix', () => {
         expect(mainPx).toBeGreaterThanOrEqual(
           (sizing === 'reader' ? 560 : COLUMN_MIN_PUSH) + COLUMN_GUTTERS,
         );
-        expect(mainPx + drawerTrackOf(drawerWidthPx)).toBe(columnWidth);
+        expect(mainPx + drawerAsideWidthOf({ width: drawerWidthPx, mode })).toBe(columnWidth);
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx, sizing })).toBe(true);
         return;
       }
@@ -461,7 +460,7 @@ describe('page box: the centred column against the drawer', () => {
         sizing: 'side',
       });
       const open = pageBoxOf({ paneWidth, tier: 'column', drawerWidthPx });
-      const drawerLeft = paneWidth - drawerTrackOf(drawerWidthPx);
+      const drawerLeft = paneWidth - drawerAsideWidthOf({ width: drawerWidthPx, mode });
 
       if (mode === 'overlay') {
         expect(open).toEqual(rest);
@@ -484,7 +483,7 @@ describe('page box: the centred column against the drawer', () => {
         sizing: 'reader',
       });
       const open = pageBoxOf({ paneWidth, tier: 'column', drawerWidthPx, sizing: 'reader' });
-      const drawerLeft = paneWidth - drawerTrackOf(drawerWidthPx);
+      const drawerLeft = paneWidth - drawerAsideWidthOf({ width: drawerWidthPx, mode });
 
       if (mode === 'overlay') {
         expect(open).toEqual(rest);

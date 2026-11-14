@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { DrawerBackChipContext } from '@goodboy/ui';
 import { useAppStore } from '../../store';
-import { selectOpenDrawer } from '../../store/slices/drawer/selectOpenDrawer';
+import { selectSlotDrawer, type DrawerSlot } from '../../store/slices/drawer/selectSlotDrawer';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
@@ -177,14 +177,26 @@ const renderDrawer = ({
   }
 };
 
-export const DrawerHost = () => {
-  const drawer = useAppStore(selectOpenDrawer);
-  const backChip = useSlotBackChip({ back: useAppStore((state) => selectSlotBack({ state })) });
-  const closeDrawer = useAppStore((s) => s.closeDrawer);
-  const closeQuestion = useAppStore((s) => s.closeQuestion);
+type Props = {
+  readonly slot?: DrawerSlot;
+};
+
+export const DrawerHost = ({ slot = 'top' }: Props) => {
+  const drawer = useAppStore((state) => selectSlotDrawer({ state, slot }));
+  const isTop = useAppStore((state) => drawer !== null && state.drawer === drawer);
+  const back = useAppStore((state) => (isTop ? selectSlotBack({ state }) : null));
+  const backChip = useSlotBackChip({ back });
+  const closeEntry = useAppStore((s) => s.closeDrawerEntry);
+  const closeTopQuestion = useAppStore((s) => s.closeQuestion);
   const openDrawer = useAppStore((s) => s.openDrawer);
+  const closeDrawer = () => {
+    if (drawer !== null) {
+      closeEntry({ entry: drawer });
+    }
+  };
+  const closeQuestion = isTop ? closeTopQuestion : closeDrawer;
   const isReading = useAppStore((s) => {
-    const open = selectOpenDrawer(s);
+    const open = selectSlotDrawer({ state: s, slot });
     return (
       open?.kind === 'artifact-document' &&
       readingArtifactOf({

@@ -26,22 +26,28 @@ it.each(WIDTHS)('folds only when the content beside a side drawer needs it at %i
 });
 
 it.each([
-  [1100, true, 'overlay', 766],
-  [1280, true, 'push', 530],
-  [1350, true, 'push', 600],
-  [1460, false, 'push', 514],
-  [1550, false, 'push', 604],
+  [1100, true, 'overlay', 758],
+  [1280, true, 'push', 538],
+  [1350, true, 'push', 608],
+  [1460, false, 'push', 522],
+  [1550, false, 'push', 612],
 ] as const)(
   'keeps fold and drawer geometry in agreement at %ipx',
   (width, isFolded, mode, contentWidth) => {
     const main = width - 246;
-    const contentInset = (isFolded ? 44 : 240) + 44;
+    const toolRail = 44;
+    const sessionRail = isFolded ? 44 : 240;
+    const contentInset = sessionRail + toolRail;
     expect(shellFoldsOf({ paneSizing: 'side', columnWidth: main }).isRailNarrow).toBe(isFolded);
     const layout = drawerLayoutOf({ main, sizing: 'side', savedWidth: 400, contentInset });
     expect(layout.mode).toBe(mode);
     expect(
-      mainWidthOf({ columnWidth: main, mode: layout.mode, drawerWidthPx: layout.width }) -
-        contentInset,
+      mainWidthOf({
+        columnWidth: main,
+        mode: layout.mode,
+        drawerWidthPx: layout.width,
+        railWidth: toolRail,
+      }) - sessionRail,
     ).toBe(contentWidth);
   },
 );
