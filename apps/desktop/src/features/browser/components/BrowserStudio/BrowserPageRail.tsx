@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { ICON_SIZE, ScrollFade, SectionLabel, SelectableRow } from '@goodboy/ui';
+import { cn, ICON_SIZE, ScrollFade, SectionLabel, SelectableRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
@@ -37,7 +37,7 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
     useShallow((state) => groups.map((group) => state.browserLiveTabs[group.sessionId])),
   );
   return (
-    <nav aria-label="Tabs by session" className="flex min-h-0 flex-1 flex-col px-2 pt-2">
+    <nav aria-label="Tabs by session" className="flex min-h-0 flex-1 flex-col px-2">
       <ScrollFade viewportClassName="flex flex-col gap-4 pb-2">
         {groups.map((group, index) => {
           const isHere = group.sessionId === sessionId;
@@ -48,11 +48,16 @@ export const BrowserPageRail = ({ groups, sessionId, model, onPick }: Props) => 
               data-browser-group={group.isPins ? 'pins' : 'session'}
               className="flex flex-col gap-1"
             >
-              <SectionLabel
-                label={group.label}
-                headingLevel={2}
-                {...(group.tabs.length > 1 && { count: group.tabs.length })}
-              />
+              <div
+                {...(index === 0 && { 'data-grid-row': '1' })}
+                className={cn('flex min-w-0 items-center', index === 0 && 'h-10')}
+              >
+                <SectionLabel
+                  label={group.label}
+                  headingLevel={2}
+                  {...(group.tabs.length > 1 && { count: group.tabs.length })}
+                />
+              </div>
               <div className="flex flex-col gap-0.5">
                 {group.tabs.map((tab) => (
                   <BrowserTabRow

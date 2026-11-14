@@ -29,6 +29,7 @@ type Props = {
   readonly onNew: () => void;
   readonly onCloseLastIdle?: () => void;
   readonly isShortcutEnabled?: boolean;
+  readonly hasPorts?: boolean;
   readonly folderAction?: ReactNode;
   readonly actions?: ReactNode;
   readonly sessionId?: SessionId | null;
@@ -49,6 +50,7 @@ export const TerminalTabStrip = ({
   onNew,
   onCloseLastIdle,
   isShortcutEnabled = true,
+  hasPorts = true,
   folderAction = null,
   actions = null,
   sessionId = null,
@@ -58,7 +60,7 @@ export const TerminalTabStrip = ({
   const stripId = useId();
   const [armedId, setArmedId] = useState<string | null>(null);
   const selectedPorts =
-    (selectedId === null ? undefined : portsByTerminal.get(selectedId)) ?? NO_PORTS;
+    (selectedId === null || !hasPorts ? undefined : portsByTerminal.get(selectedId)) ?? NO_PORTS;
   const domIdOf = (tab: TerminalTab): string => `${stripId}-${tab.id}`;
 
   useShortcut(

@@ -53,7 +53,7 @@ export const BrowserAddressRow = ({
   );
   return (
     <>
-      <div className="relative flex h-9 shrink-0 items-center gap-1 px-2">
+      <div data-grid-row="1" className="relative flex h-10 shrink-0 items-center gap-1 px-2">
         {onToggleList === undefined ? null : (
           <IconButton
             icon={PanelLeft}
