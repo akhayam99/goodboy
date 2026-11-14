@@ -399,6 +399,93 @@ describe('a pull request when its row says Ask', () => {
   });
 });
 
+describe('a pull request while the push row says Ask', () => {
+  it('holds a pull request at Allow behind a push ask for the commit, then opens it', async () => {
+    const world = await worldOf({ push: 'ask', pullRequest: 'allow' });
+    await runChild({ world, child: scribe({}), text: scribeText });
+
+    expect(world.state.ports.publications).toEqual([]);
+    expect(world.state.ports.pushes).toEqual([]);
+    expect(await pullRequestRecordOf(world)).toMatchObject({
+      state: 'awaiting_push',
+      grantId: null,
+      title: TITLE,
+      message: 'The pull request opens after you push ak/ledger-export at abc123',
+    });
+    const ask = await onlyAskOf(world);
+    expect(ask).toMatchObject({ kind: 'push', subject: 'ak/ledger-export' });
+    expect(ask.id).toContain(':abc123');
+
+    expect(await answererOf(world)({ askId: ask.id, answer: 'allow' })).toBe('allowed');
+
+    expect(world.state.ports.pushes).toHaveLength(1);
+    expect(world.state.ports.pushes[0]).toMatchObject({ sha: 'abc123', isForce: false });
+    expect(world.state.ports.publications).toHaveLength(1);
+    expect(world.state.ports.publications[0]?.output).toMatchObject({
+      prTitle: TITLE,
+      prBody: BODY,
+    });
+    expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'opened', number: 421 });
+    expect(await asksOf(world)).toEqual([]);
+  });
+
+  it("raises the push ask on Open, keeps the pull request held on Don't push, opens after Push now", async () => {
+    const world = await worldOf({ push: 'ask', pullRequest: 'ask' });
+    await runChild({ world, child: scribe({}), text: scribeText });
+    const pullRequestAsk = await onlyAskOf(world);
+    expect(pullRequestAsk.kind).toBe('pull_request');
+
+    expect(await answererOf(world)({ askId: pullRequestAsk.id, answer: 'allow' })).toBe('allowed');
+    expect(world.state.ports.publications).toEqual([]);
+    expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'awaiting_push' });
+    const pushAsk = await onlyAskOf(world);
+    expect(pushAsk.kind).toBe('push');
+
+    expect(await answererOf(world)({ askId: pushAsk.id, answer: 'decline' })).toBe('declined');
+    expect(world.state.ports.pushes).toEqual([]);
+    expect(world.state.ports.publications).toEqual([]);
+    expect(await pullRequestRecordOf(world)).toMatchObject({
+      state: 'awaiting_push',
+      message:
+        'Not opened: you declined the push of ak/ledger-export, and the pull request needs it online first',
+    });
+
+    const ids = (await delegationsOf(world)).map((delegation) => delegation.id);
+    const now = await world.runtime.publish({ act: 'confirm', delegationIds: ids });
+    expect(now.rows[0]).toMatchObject({ state: 'pushed' });
+    expect(world.state.ports.pushes).toHaveLength(1);
+    expect(world.state.ports.publications).toHaveLength(1);
+    expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'opened' });
+  });
+
+  it('reuses the push ask a writer already raised for the same commit', async () => {
+    const world = await worldOf({ push: 'ask', pullRequest: 'allow' });
+    await runChild({ world, child: pusher({}), text: done });
+    const writerAsk = await onlyAskOf(world);
+    await runChild({ world, child: scribe({}), text: scribeText, index: 1 });
+
+    expect((await asksOf(world)).map((ask) => ask.id)).toEqual([writerAsk.id]);
+    await answererOf(world)({ askId: writerAsk.id, answer: 'allow' });
+
+    expect(world.state.ports.pushes).toHaveLength(1);
+    expect(world.state.ports.publications).toHaveLength(1);
+    const scribeRow = (await delegationsOf(world)).find((row) => row.role === 'scribe');
+    expect(pullRequestOfResult({ result: scribeRow?.result })).toMatchObject({ state: 'opened' });
+  });
+
+  it('opens at once when the commit is already on the host', async () => {
+    const world = await worldOf({ push: 'ask', pullRequest: 'allow' });
+    world.state.ports.setRemoteReads(pathOf({ mount: LEDGER_MOUNT }), [
+      { kind: 'sha', branch: 'ak/ledger-export', sha: 'abc123' },
+    ]);
+    await runChild({ world, child: scribe({}), text: scribeText });
+
+    expect(world.state.ports.publications).toHaveLength(1);
+    expect(world.state.ports.pushes).toEqual([]);
+    expect(await asksOf(world)).toEqual([]);
+  });
+});
+
 describe.each([
   ['GitHub', LEDGER_MOUNT],
   ['GitLab', GITLAB_MOUNT],

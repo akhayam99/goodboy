@@ -4,7 +4,6 @@ import {
   parseChildClosing,
   parseRevisionFromTurn,
   publishOfRequest,
-  pullRequestAskTextOf,
   remoteVerdictOf,
   AUTO_TREE_LIMITS,
   type ChecksVerdict,
@@ -17,7 +16,6 @@ import {
   type ResultRemote,
 } from '@goodboy/core/auto';
 import { captureArtifactFromTurnText } from '@goodboy/core/artifacts';
-import { extractScribeText } from '@goodboy/core/context';
 import { sha256Hex } from '@goodboy/core/slug';
 import {
   getArtifact,
@@ -35,7 +33,7 @@ import { brandId, type ArtifactId, type AutoOutboxId } from '@goodboy/types';
 import { remoteOf, snapshotOf } from './attemptBaseline';
 import { attemptEnvelope, delegationRoleOf, isArtifactRole } from './attemptEnvelope';
 import { landAttemptRevision, type RevisionLanding } from './landAttemptRevision';
-import { holdScribePullRequest } from './asks/holdScribePullRequest';
+import { scribePublicationOf } from './asks/scribePublicationOf';
 import { readPublishPermissions } from './level/readPublishPermissions';
 import { planPublish } from './planPublish';
 import { returnedRevise } from './reviseFailure/returnedRevise';
@@ -378,6 +376,7 @@ type PublishedOutcomeParams = PlainOutcomeParams & {
 type PublishedOutcome = PlainOutcome & {
   readonly declared: DelegationResultV1['declared'];
   readonly pullRequest: ResultPullRequest | null;
+  readonly raisedPush?: ResultPublish | null;
 };
 
 type LeadLineParams = {
@@ -406,33 +405,13 @@ const publishedOutcomeOf = async ({
   if (!isPublishable) {
     return { ...plain, declared: envelope.declared, pullRequest: null };
   }
-  const output = extractScribeText(ended.assistantText);
-  const hasText = output.prTitle !== null || output.prBody !== null;
-  const { pullRequest } = await readPublishPermissions({ db: ctx.db, treeId: tree.id });
-  if (hasText && pullRequest === 'ask') {
-    const held = await holdScribePullRequest({ ctx, delegation, attempt, mountId, output });
-    if (held.kind === 'failed') {
-      return {
-        outcome: 'failed',
-        reason: held.message,
-        declared: envelope.declared,
-        pullRequest: null,
-      };
-    }
-    return {
-      ...plain,
-      declared: withLeadLine({
-        declared: envelope.declared,
-        line: pullRequestAskTextOf({ pullRequest: held.pullRequest }),
-      }),
-      pullRequest: held.pullRequest,
-    };
-  }
-  const published = await ctx.ports.publishScribePullRequest({
-    sessionId: tree.sessionId,
+  const published = await scribePublicationOf({
+    ctx,
+    tree,
+    delegation,
+    attempt,
     mountId,
-    agentId: delegation.childAgentId,
-    output,
+    assistantText: ended.assistantText,
   });
   if (published.kind === 'failed') {
     return {
@@ -444,11 +423,9 @@ const publishedOutcomeOf = async ({
   }
   return {
     ...plain,
-    declared: withLeadLine({
-      declared: envelope.declared,
-      line: `Pull request #${published.number} is open: ${published.url}`,
-    }),
-    pullRequest: null,
+    declared: withLeadLine({ declared: envelope.declared, line: published.line }),
+    pullRequest: published.pullRequest,
+    raisedPush: published.raisedPush,
   };
 };
 
@@ -544,12 +521,12 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
     durationMs: ended.durationMs,
   });
   const plain = plainOutcomeOf({ params, envelope });
-  const { outcome, reason, declared, pullRequest } = await publishedOutcomeOf({
+  const { outcome, reason, declared, pullRequest, raisedPush } = await publishedOutcomeOf({
     params,
     envelope,
     plain,
   });
-  const publish = await publishRecordOf({ params, outcome, verification });
+  const publish = (await publishRecordOf({ params, outcome, verification })) ?? raisedPush ?? null;
   const settled: SettleAttemptOutcome = await ctx.scheduler.settleAttempt({
     attemptId: attempt.id,
     generation: ended.generation,

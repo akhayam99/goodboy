@@ -1204,11 +1204,29 @@ publishes.
   `output`, so the title and body the ask shows are the ones handed to the host
   call; the host path still adds its closing references and the hidden Scribe
   signature to the body, as on the Branch page.
+- **A pull request honours the push row.** Opening a pull request pushes the
+  branch (`createPrForSession`), so before any publication `openOrHoldPullRequest`
+  runs `pullRequestPushGateOf`: at push Ask it reads the local head and the
+  online head, and goes only when the head is online or a publish record of the
+  tree already pushed that commit. Otherwise the pull request record moves to
+  `awaiting_push` with a line ("The pull request opens after you push <branch>
+  at <sha>") and the push ask for that commit is reused (a writer's record for
+  the same branch and commit) or raised on the Scribe's own delegation as a
+  plain push record (`heldForPushStatements`; `publishAct` accepts a plain push
+  record on a Scribe). At pull request Allow this happens at the settle; at Ask
+  it happens on Open. After every publish act, `releaseHeldPullRequests` runs the
+  gate again for the held pull requests of each pushed or declined mount: Push
+  opens them once (the claim guards it), Don't push keeps them held with "Not
+  opened: you declined the push of <branch>, and the pull request needs it online
+  first", and Push now opens them. A branch or head that cannot be read fails the
+  publication with a reason, never opens it.
 - `publishGates.sqlite.test.ts` covers the held push, Push, Don't push and Push
   now, a retry that pushes once, a newer commit, the workspace default, force at
   both values, the held text, Open twice, Not yet, a refused host and Open
-  again, an update, Allow as today, and one case per host (GitHub, GitLab,
-  Bitbucket). The scene data for `work-lead-push` is
+  again, an update, Allow as today, the pull request behind the push row (push
+  Ask with pull request Allow, push Ask with pull request Ask and Don't push then
+  Push now, a reused writer push ask, a commit already online), and one case per
+  host (GitHub, GitLab, Bitbucket). The scene data for `work-lead-push` is
   `features/auto/testing/workLeadPushView.ts`.
 
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of

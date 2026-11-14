@@ -20,10 +20,12 @@ const PUSH: ResultPublish = {
   isContentChanging: false,
 };
 
+const GRANT_ID = 'grant-pr-attempt-scribe';
+
 const PULL_REQUEST: ResultPullRequest = {
   state: 'awaiting_confirm',
   mountId: 'mount-ledger-core',
-  grantId: 'grant-pr-attempt-scribe',
+  grantId: GRANT_ID,
   textVersion: 'attempt-scribe:4f1c2a9b7d3e6f80',
   title: 'Export the ledger as CSV',
   body: 'Adds a CSV export to ledger-core.\n\nThe notify-relay digest links to it.',
@@ -64,7 +66,7 @@ type GrantParams = {
 };
 
 const pullRequestGrantOf = ({ treeId }: GrantParams): AutoGrant => ({
-  id: brandId<AutoGrantId>({ value: PULL_REQUEST.grantId }),
+  id: brandId<AutoGrantId>({ value: GRANT_ID }),
   treeId,
   delegationId: brandId<AutoDelegationId>({ value: scribe.id }),
   attemptId: null,

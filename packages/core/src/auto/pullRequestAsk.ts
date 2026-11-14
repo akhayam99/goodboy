@@ -1,12 +1,13 @@
 import { isRecord } from '@goodboy/types/helpers';
 import { sha256Hex } from '../slug/sha256';
 
-type PullRequestAskState = 'awaiting_confirm' | 'opening' | 'opened' | 'declined' | 'failed';
+type PullRequestAskState =
+  'awaiting_confirm' | 'awaiting_push' | 'opening' | 'opened' | 'declined' | 'failed';
 
 export type ResultPullRequest = Readonly<{
   state: PullRequestAskState;
   mountId: string;
-  grantId: string;
+  grantId: string | null;
   textVersion: string;
   title: string | null;
   body: string | null;
@@ -18,6 +19,7 @@ export type ResultPullRequest = Readonly<{
 
 const STATES: ReadonlyArray<PullRequestAskState> = [
   'awaiting_confirm',
+  'awaiting_push',
   'opening',
   'opened',
   'declined',
@@ -57,15 +59,14 @@ export const pullRequestOfResult = ({ result }: ResultParams): ResultPullRequest
   }
   const state = STATES.find((candidate) => candidate === raw['state']);
   const mountId = exactTextOf({ value: raw['mountId'] });
-  const grantId = exactTextOf({ value: raw['grantId'] });
   const textVersion = exactTextOf({ value: raw['textVersion'] });
-  if (state === undefined || mountId === null || grantId === null || textVersion === null) {
+  if (state === undefined || mountId === null || textVersion === null) {
     return null;
   }
   return {
     state,
     mountId,
-    grantId,
+    grantId: exactTextOf({ value: raw['grantId'] }),
     textVersion,
     title: exactTextOf({ value: raw['title'] }),
     body: exactTextOf({ value: raw['body'] }),
@@ -85,6 +86,8 @@ export const pullRequestAskTextOf = ({ pullRequest }: TextParams): string => {
   switch (pullRequest.state) {
     case 'awaiting_confirm':
       return `The pull request waits for you to open it: ${title}`;
+    case 'awaiting_push':
+      return pullRequest.message ?? `The pull request waits for the push of its branch: ${title}`;
     case 'opening':
       return `Opening the pull request: ${title}`;
     case 'opened':

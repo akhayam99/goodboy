@@ -54,6 +54,9 @@ describe('the pull request text a Lead holds for you', () => {
         },
       }),
     ).toBe('Pull request #421 is open: https://github.com/harborline/ledger-core/pull/421');
+    expect(
+      pullRequestAskTextOf({ pullRequest: { ...HELD, state: 'awaiting_push', grantId: null } }),
+    ).toBe('The pull request waits for the push of its branch: Add the ledger export');
     expect(pullRequestAskTextOf({ pullRequest: { ...HELD, state: 'declined' } })).toBe(
       'Not opened yet, the text is kept: Add the ledger export',
     );

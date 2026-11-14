@@ -22,6 +22,7 @@ import type {
   PublishRowResult,
 } from '../../../features/auto/publishPort';
 import { remoteOf } from './attemptBaseline';
+import { releaseHeldPullRequests } from './asks/releaseHeldPullRequests';
 import { delegationRoleOf } from './attemptEnvelope';
 import { executePublish } from './executePublish';
 import { readPublishPermissions } from './level/readPublishPermissions';
@@ -328,11 +329,14 @@ const remoteNowOf = async ({
 const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
   const { ctx, delegation, worktreePath, record } = params;
   const wanted = publishOfRequest({ request: delegation.request });
-  if (!canRetryPublish({ publish: record }) || wanted === null) {
+  if (!canRetryPublish({ publish: record })) {
     return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
   }
   if (record.isConfirmed && record.mode === 'push') {
     return pushRow({ ...params, toPush: record, fromState: record.state });
+  }
+  if (wanted === null) {
+    return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
   }
   const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
   const baseline = attempts.filter((attempt) => attempt.state === 'ended').at(-1)?.baseline;
@@ -494,7 +498,7 @@ const actOnOne = async ({ ctx, act, delegationId }: OneParams): Promise<PublishR
     typeof mountId !== 'string' ||
     typeof worktreePath !== 'string' ||
     typeof sessionId !== 'string' ||
-    delegationRoleOf({ delegation }) === 'scribe'
+    (delegationRoleOf({ delegation }) === 'scribe' && record.mode !== 'push')
   ) {
     return refused({ delegationId, message: NOTHING_TO_ACT_ON });
   }
@@ -530,5 +534,6 @@ export const publishAct = async ({
   for (const delegationId of delegationIds) {
     rows.push(await actOnOne({ ctx, act, delegationId }));
   }
+  await releaseHeldPullRequests({ ctx, rows });
   return { kind: 'done', rows };
 };
