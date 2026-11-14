@@ -97,8 +97,6 @@ const featureSource = ({ path }: SourceParams): string =>
 
 const OVERVIEW_LABEL_FILES = [
   'session/central/cards/OverviewCard.tsx',
-  'session/central/cards/NewSinceCard.tsx',
-  'session/central/now/LiveSection.tsx',
   'session/central/branches/BranchList/index.tsx',
 ];
 

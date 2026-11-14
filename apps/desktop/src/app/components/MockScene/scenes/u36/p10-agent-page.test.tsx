@@ -97,7 +97,7 @@ const NOTIFICATION = {
   agentId: IMPLEMENTER_ID,
 } as const;
 
-const DOORS: ReadonlyArray<readonly [string, () => void]> = [
+const DOORS: ReadonlyArray<readonly [string, () => void | Promise<void>]> = [
   [
     'the palette and a right click',
     () =>
@@ -124,7 +124,7 @@ const DOORS: ReadonlyArray<readonly [string, () => void]> = [
   ],
   [
     'a card row of the chat',
-    () => {
+    async () => {
       const line = screen
         .getAllByRole('list', { name: 'Delegations' })
         .flatMap((list) => within(list).getAllByRole('listitem'))
@@ -133,6 +133,8 @@ const DOORS: ReadonlyArray<readonly [string, () => void]> = [
         throw new Error('no Implementer line');
       }
       fireEvent.click(within(line).getByRole('button', { name: /^Open / }));
+      const record = await screen.findByRole('complementary', { name: /^Record of/ }, WAIT);
+      fireEvent.click(within(record).getByRole('button', { name: 'Open transcript' }));
     },
   ],
 ];
@@ -147,7 +149,9 @@ describe('one agent, one page', () => {
   it.each(DOORS)('%s lands on the agent page with one box and no panel', async (_door, open) => {
     await mountOnAuto();
 
-    act(() => open());
+    await act(async () => {
+      await open();
+    });
 
     await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
     expect(useAppStore.getState().selectedAgentId[AUTO_SESSION.id]).toBe(IMPLEMENTER_ID);
