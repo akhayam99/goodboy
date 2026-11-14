@@ -8,11 +8,11 @@ import {
   selectActiveMount,
   selectWritableMounts,
 } from '../../../../store/slices/project-mounts/selectors';
-import { exploreOpen, type ExploreEntry } from '../../explore';
-import { fileKindOf } from '../../fileKindOf';
-import { openActionOf, type ExploreOpenAction } from '../../openAction';
-import { openFailureOf, type ExploreOpenFailure } from '../../openFailure';
-import { resolveExploreEditor } from '../../resolveExploreEditor';
+import { exploreOpen, type ExploreEntry } from '../../../explore/explore';
+import { fileKindOf } from '../../../explore/fileKindOf';
+import { openActionOf, type ExploreOpenAction } from '../../../explore/openAction';
+import { openFailureOf, type ExploreOpenFailure } from '../../../explore/openFailure';
+import { resolveExploreEditor } from '../../../explore/resolveExploreEditor';
 
 type Params = {
   readonly sessionId: SessionId;

@@ -14,6 +14,7 @@ import { CTX_COMMITS, CTX_STATUS } from '../brand/contextBranch';
 import { handlersFor } from '../brand/DiffStage';
 import { APPLY_WEBHOOK_PATH, BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { mockSceneIpc } from '../mockSceneIpc';
+import { c04FilesIpc } from './c04FilesListing';
 import { NOTE_IDS, resolveNotesFor, type NotePlace } from '../resolveNotesSeed';
 import { SESSION, SESSION_ID } from '../resolveSeed';
 import {
@@ -77,6 +78,7 @@ export type WorktreeSceneConfig = {
   readonly hasMoreProjects?: boolean;
   readonly hasFixableNote?: boolean;
   readonly fileRail?: 'docked' | 'folded' | 'overlay';
+  readonly filesMode?: 'all' | 'reading';
 };
 
 const NARROW_PAGE_PX = 820;
@@ -108,6 +110,9 @@ const installIpc = ({ gitState }: StatusParams): void => {
     }
     if (command === 'worktree_status') {
       return statusOf({ gitState });
+    }
+    if (command === 'explore_list' || command === 'explore_read') {
+      return c04FilesIpc({ command, payload });
     }
     if (command === 'worktree_remote_url') {
       return 'git@github.com:harborline/payments-api.git';
@@ -193,6 +198,14 @@ const seedFixableNote = (): void => {
   });
 };
 
+const OPEN_ROWS_MS = 700;
+
+const openReadme = (): void => {
+  window.setTimeout(() => {
+    document.querySelector<HTMLElement>('[data-tree-row="README.md"] button')?.click();
+  }, OPEN_ROWS_MS);
+};
+
 const openFiles = (): void => {
   window.setTimeout(() => {
     const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
@@ -222,6 +235,12 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
       seedFixableNote();
     }
     const state = useAppStore.getState();
+    if (config.filesMode !== undefined) {
+      state.setExploreChangedView({
+        sessionId: SESSION_ID,
+        view: { mountPath: PR_PAGE_WORKTREE, mode: 'all', collapsed: {} },
+      });
+    }
     state.navigate({
       to:
         config.level === 'worktree'
@@ -235,6 +254,9 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
     setIsReady(true);
     if (config.fileRail === 'overlay') {
       openFiles();
+    }
+    if (config.filesMode === 'reading') {
+      openReadme();
     }
   }, [config]);
 

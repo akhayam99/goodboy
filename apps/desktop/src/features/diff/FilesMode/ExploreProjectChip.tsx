@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { AnchoredPopover, Chip, ICON_SIZE, type MenuEntry, useDropdown } from '@goodboy/ui';
 import type { CrumbMenuGroup } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { AppMenuList } from '../../../actions/AppMenuList';
-import type { ExploreTarget } from '../../selectExploreMount';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { AppMenuList } from '../../actions/AppMenuList';
+import type { ExploreTarget } from '../../explore/selectExploreMount';
 import { ExploreBranchName } from './ExploreBranchName';
 
 const MIN_MENU_ROWS = 2;

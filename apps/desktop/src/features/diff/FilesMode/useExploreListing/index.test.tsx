@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import { stubStoryInvoke } from '../../../../store/storyHarness';
-import { EXPLORE_ROOT_PATH, type ExploreListing } from '../../exploreRows';
+import { EXPLORE_ROOT_PATH, type ExploreListing } from '../../../explore/exploreRows';
 import { useExploreListing } from './index';
 
 type ProbeParams = {
