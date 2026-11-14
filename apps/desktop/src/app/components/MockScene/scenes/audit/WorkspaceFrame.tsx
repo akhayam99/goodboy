@@ -39,6 +39,7 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
         isDetailParked={shellRight.isDetailParked}
         rightRail={shellRight.rightRail}
         studio={shell.studio}
+        isDockInStudio={shellRight.isDockInStudio}
         topBar={
           <AppTopBar
             sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}

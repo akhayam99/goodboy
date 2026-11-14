@@ -17,8 +17,8 @@ unit that changes the skeleton edits this section first.
    edge on every screen of a workspace: the session tools on a session page,
    Terminal and Browser at its foot everywhere. Terminal and Browser stay open
    across every move, and on Tasks, Chat and Workflows the page's own panel and
-   the dock replace each other (`toolsStay.test.ts`, `useOneRightPanel`,
-   `p10-right-dock.test.tsx`). Owned by The session tools
+   the dock stay open together, the panel left of the dock (`toolsStay.test.ts`,
+   `StudioFrame/panelAndDock.test.tsx`, `p10-right-dock.test.tsx`). Owned by The session tools
    ([session-rail.md](./session-rail.md)).
 3. **One home, one name. Target.** Owned by Column doors.
 4. **A page replaces the page. Target.** Owned by Surfaces.
@@ -325,9 +325,11 @@ store but are not mounted (`useShellRight`), so no shortcut answers twice. At
 a narrow width the dock floats over the page: the page slot lives in its own
 layer (`data-studio-host`, `isolate`), so the dock and its scrim always paint
 above the page. On
-Tasks, Chat and Workflows the page's own panel and the dock are one slot:
-opening the dock closes the panel, and opening a panel closes the workspace
-tools (`useOneRightPanel`, `closeWorkspaceTools`). Close keys
+Tasks, Chat and Workflows the page's own panel and the dock open together in
+the order content, page panel, dock, rail: `AppShell` hands the dock to the page
+through `ShellDockContext` (`isDockInStudio` from `useShellRight`), and the
+page's `DrawerColumn` puts its panel in the `detail` slot, so below the push
+width both lie over the page with a scrim. Close keys
 read `selectDrawerPanel`, which is null under a studio unless a workspace tool
 shows beside it, and the history entry keeps the drawer. A workspace switch
 empties the slot. Esc inside a parked drawer is suspended, so it reaches the

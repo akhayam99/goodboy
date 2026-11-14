@@ -208,15 +208,4 @@ describe('a workspace tool stays across every move inside the window', () => {
     expect(state().drawer?.kind).toBe('spawned');
     expect(state().drawerBack).toEqual(TERMINAL);
   });
-
-  it('closes only the workspace tools when a page panel takes the right side', () => {
-    const explore: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
-    state().openDrawer(explore);
-    state().openDrawer(TERMINAL);
-
-    state().closeWorkspaceTools();
-
-    expect(state().drawer).toEqual(explore);
-    expect(state().drawerBack).toBeNull();
-  });
 });

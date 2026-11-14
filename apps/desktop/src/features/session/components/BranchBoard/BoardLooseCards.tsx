@@ -17,7 +17,7 @@ export const BoardLooseCards = () => {
     >
       {cards.map((card, index) => (
         <div key={card.id} className="flex min-h-8 min-w-0 items-center gap-2 text-meta">
-          <BoardRowAction rowId={LOOSE_ROW_ID} index={index} />
+          <BoardRowAction rowId={LOOSE_ROW_ID} index={index} isLead={index === 0} />
           <BoardCardSecond rowId={LOOSE_ROW_ID} index={index} />
         </div>
       ))}

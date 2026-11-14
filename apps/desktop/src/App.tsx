@@ -171,8 +171,7 @@ export const App = () => {
       if (prev[prev.length - 1] === id) {
         return prev;
       }
-      const filtered = prev.filter((x) => x !== id);
-      const next = [...filtered, id];
+      const next = [...prev.filter((x) => x !== id), id];
       return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next;
     });
   }, [currentSession?.id]);
@@ -304,6 +303,7 @@ export const App = () => {
             />
           }
           studio={studio}
+          isDockInStudio={shellRight.isDockInStudio}
         />
         <Fragment key="layers">{layers}</Fragment>
       </ObjectMenuProvider>

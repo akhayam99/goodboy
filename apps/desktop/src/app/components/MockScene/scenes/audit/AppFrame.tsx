@@ -138,6 +138,7 @@ export const AppFrame = ({
           detail: shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null,
           isDrawerParked: shellRight.isDrawerParked,
           isDetailParked: shellRight.isDetailParked,
+          isDockInStudio: shellRight.isDockInStudio,
           drawerSizing: shellRight.dockSizing,
           detailSizing: shellRight.detailSizing,
           drawerPlacement,

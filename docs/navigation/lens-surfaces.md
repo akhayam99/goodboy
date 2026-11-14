@@ -268,7 +268,9 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
   "This worktree is gone". The `mount.browseFiles` action (Browse files) opens
-  All files on a given mount (`openExplorePane`), and an `explore` target in a
+  All files on the Files tab of that mount's branch page, never the first
+  branch (`openExplorePane` passes the mount to `openPlaceRows`), and an
+  `explore` target in a
   stored place (`s/{session}/explore/{mount}`) still parses and lands on the
   Overview. Opening a file or a
   folder from any control goes through `openTarget` (`features/open/`): the
