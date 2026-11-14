@@ -1409,6 +1409,40 @@ and the row's help line says so.
   `turn/fake_cli_tests.rs` (rules, settings and network at Ask, byte-equal at
   Allow, an allowance that lifts one) cover it.
 
+### Landing backstop
+
+Deny rules match commands, so an agent that works around one can still change
+a manifest. The backstop is the net behind the launch guard, not the
+permission. `changeGateOf` (`packages/core/src/auto/changeGate.ts`) takes the
+rules (`readChangeRules` in `store/runtime/auto/launchGuard/`: both rows read
+now with `readLaunchPermissions`, a failed read asks both, plus the allowances
+in the attempt's stored guard) and the changed paths. A manifest or lockfile of
+any manager, in any folder, is refused while the dependencies row asks and the
+attempt holds no dependency allowance; a protected file is refused while its
+row asks and no allowed path names it. With both rows at Allow nothing is read
+and the result goes on as before. A row tightened while the agent runs applies
+to its result here.
+
+- **At the end of an attempt.** `finishAttempt.ts` reads the changed files
+  first (`attributeChanges` `changedPaths`, the whole list, not the capped
+  `changedFiles`) and asks `landingRefusalOf`. A list that cannot be read in
+  full (a snapshot or the committed diff missing) is refused: closed, not open.
+  A refused result settles `failed` with the reason from `changeRefusalOf`,
+  which names the files and says nothing ran and nothing landed.
+  `verifyAttempt` is not called, so a changed script never
+  runs, the publish plan holds, the Scribe opens no pull request, a revise does
+  not reach `landAttemptRevision`, and the Lead reads the one refusal and may
+  start the agent again. Nothing to undo: nothing landed.
+- **At publish.** `planPublish` checks the commits it would push (start of the
+  attempt to the checked commit) against the same list on every plan, at the
+  settle and on a retry, and holds with `so nothing was pushed`; an unread
+  list is held and retryable.
+- The refused change stays in the worktree: a later attempt starts from it, so
+  its own diff and its publish no longer see it.
+- `changeGate.test.ts` and `launchGuard/changeGate.sqlite.test.ts` (a lockfile
+  around the deny rule, a protected file, an unread list, a covered change, Allow
+  as today, a row tightened before a retry, an allowed package) cover it.
+
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
 the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
 like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`

@@ -1,7 +1,12 @@
 import {
   CHECKS_RED_HOLD,
+  changeGateOf,
+  changeRefusalOf,
+  isChangeGateOn,
   isPublishAskedOf,
   publishGateOf,
+  type ChangeGateVerdict,
+  type ChangeRules,
   type DelegatePublish,
   type LeadPermissionValue,
   type RemoteRead,
@@ -11,6 +16,7 @@ import {
 import { formatError } from '@goodboy/ui';
 import { snapshotOf } from './attemptBaseline';
 import type { AutoPorts } from './ports';
+import { readCommittedFilesOf } from './readCommittedFiles';
 
 export type PlanPublishParams = Readonly<{
   ports: AutoPorts;
@@ -26,6 +32,7 @@ export type PlanPublishParams = Readonly<{
   endHead: string | null;
   tries: number;
   push: LeadPermissionValue<'push'>;
+  changes: ChangeRules;
 }>;
 
 const CONTENT_CHANGED =
@@ -79,6 +86,33 @@ const isSameTree = async ({
   }
 };
 
+type ChangesParams = {
+  readonly ports: AutoPorts;
+  readonly worktreePath: string;
+  readonly baseline: unknown;
+  readonly sha: string;
+  readonly changes: ChangeRules;
+};
+
+const changeGateOfPush = async ({
+  ports,
+  worktreePath,
+  baseline,
+  sha,
+  changes,
+}: ChangesParams): Promise<ChangeGateVerdict> => {
+  if (!isChangeGateOn({ rules: changes })) {
+    return { kind: 'clear' };
+  }
+  const paths = await readCommittedFilesOf({
+    ports,
+    worktreePath,
+    baseline: snapshotOf({ baseline }),
+    result: { head: sha, entries: [], isPartial: false },
+  });
+  return changeGateOf({ rules: changes, paths });
+};
+
 export const planPublish = async (params: PlanPublishParams): Promise<ResultPublish> => {
   const { ports, worktreePath, branch, wanted, baseline, checksRun, tries } = params;
   const gate = publishGateOf({
@@ -105,6 +139,23 @@ export const planPublish = async (params: PlanPublishParams): Promise<ResultPubl
       sha,
       message: 'the branch or the checked commit is unknown',
       isRetryable: false,
+      tries,
+    });
+  }
+  const changeGate = await changeGateOfPush({
+    ports,
+    worktreePath,
+    baseline,
+    sha,
+    changes: params.changes,
+  });
+  if (changeGate.kind !== 'clear') {
+    return held({
+      wanted,
+      branch,
+      sha,
+      message: changeRefusalOf({ verdict: changeGate, stage: 'publish' }),
+      isRetryable: changeGate.kind === 'unread',
       tries,
     });
   }
