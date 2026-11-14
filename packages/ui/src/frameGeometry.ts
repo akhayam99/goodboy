@@ -130,7 +130,7 @@ export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
   questions: 'column',
   artifacts: 'column',
   branch: 'column',
-  branchChanges: 'full',
+  branchChanges: 'column',
   inbox: 'column',
   workflows: 'column',
   impact: 'column',

@@ -9,7 +9,7 @@ import type { RailRow } from '../../../features/workTreeModel/railGeometry';
 import { HelperUrgencyWord } from './HelperUrgencyWord';
 import { helpersWordOf } from './helpersWordOf';
 import { SpawnedBranchContext } from './spawnedBranchContext';
-import { SpawnedRailCell } from './SpawnedRailCell';
+import { SpawnedRailCell } from '../../../features/session/components/SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import type { SpawnedRowFold, SpawnedRowModelSource } from './spawnedRow';
 import { SpawnedTreeContext } from './spawnedTreeContext';
 

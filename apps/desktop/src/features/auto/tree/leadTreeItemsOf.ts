@@ -1,4 +1,6 @@
 import type { AgentId } from '@goodboy/types';
+import type { WorkNodeState } from '@goodboy/ui';
+import type { AgentKind } from '../../session/agent-kind';
 import type { LeadTree } from './leadTreeOf';
 import type { NoteNode } from './noteNodesOf';
 import { roleNameOf } from './roleNameOf';
@@ -11,8 +13,11 @@ export type LeadTreeItem =
       agentId: AgentId;
       depth: number;
       number: string;
+      agentKind: AgentKind;
       role: string;
       title: string;
+      node: WorkNodeState;
+      word: string;
       isSettled: boolean;
       spendUsd: number;
     }>
@@ -38,6 +43,9 @@ export type LeadTreeItem =
 export type LeadTreeAgentFact = Readonly<{
   agentId: AgentId;
   title: string;
+  agentKind: AgentKind;
+  node: WorkNodeState;
+  word: string;
 }>;
 
 type Params = {
@@ -65,8 +73,11 @@ export const leadTreeItemsOf = ({
           agentId: fact.agentId,
           depth: row.depth,
           number: row.number,
+          agentKind: fact.agentKind,
           role: roleNameOf({ role: row.role }),
           title: fact.title,
+          node: fact.node,
+          word: fact.word,
           isSettled: row.isSettled,
           spendUsd: row.ownSpendUsd,
         },

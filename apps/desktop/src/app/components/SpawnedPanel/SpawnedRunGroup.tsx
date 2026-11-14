@@ -10,7 +10,7 @@ import { useRunTree } from '../../../features/workflows/components/RunTree/useRu
 import { openSpawned } from '../../../features/session/openSpawned';
 import { runSpawnedRowsOf } from './runSpawnedRowsOf';
 import { SpawnedFoldRow } from './SpawnedFoldRow';
-import { spawnedRailOf } from './spawnedRailOf';
+import { spawnedRailOf } from '../../../features/workTreeModel/spawnedRailOf';
 import { SpawnedRunHead } from './SpawnedRunHead';
 import { ObjectMenuArea } from '../../../features/actions/components/ObjectMenuArea';
 import { SpawnedTreeRow } from './SpawnedTreeRow';

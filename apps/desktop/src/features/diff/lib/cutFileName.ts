@@ -5,6 +5,7 @@ type Params = {
 
 const ELLIPSIS = '…';
 const TAIL_STEPS: ReadonlyArray<number> = [6, 4, 2, 0];
+const HEAD_KEEP = 3;
 
 type SplitParams = {
   readonly name: string;
@@ -43,6 +44,7 @@ export const cutFileName = ({ name, maxLength }: Params): string => {
       return head.slice(0, room) + ELLIPSIS + tail;
     }
   }
-  const keep = Math.max(1, maxLength - ELLIPSIS.length);
-  return ELLIPSIS + name.slice(name.length - keep);
+  const head = Math.min(HEAD_KEEP, Math.max(1, maxLength - ELLIPSIS.length - 1));
+  const keep = Math.max(1, maxLength - ELLIPSIS.length - head);
+  return name.slice(0, head) + ELLIPSIS + name.slice(name.length - keep);
 };

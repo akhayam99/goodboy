@@ -12,6 +12,7 @@ import { ResizeHandle } from './ResizeHandle';
 export const STUDIO_RAIL_WIDTHS = {
   narrow: 256,
   standard: 288,
+  wide: 340,
 } as const satisfies Record<string, number>;
 
 export const STUDIO_RAIL_MIN = 220;
@@ -161,16 +162,18 @@ export const StudioRailLayout = ({
           </div>
         </aside>
       )}
-      <div
-        {...(!isPage && { 'data-sheet': 'wrapped', 'data-left-resize': activity })}
-        className={cn(
-          'min-h-0 min-w-0 flex-1 overflow-hidden bg-background',
-          !isPage && SHEET_CLASSES.wrapped,
-          detailClassName,
-        )}
-      >
-        {detail}
-      </div>
+      {detail === null ? null : (
+        <div
+          {...(!isPage && { 'data-sheet': 'wrapped', 'data-left-resize': activity })}
+          className={cn(
+            'min-h-0 min-w-0 flex-1 overflow-hidden bg-background',
+            !isPage && SHEET_CLASSES.wrapped,
+            detailClassName,
+          )}
+        >
+          {detail}
+        </div>
+      )}
     </div>
   );
 };

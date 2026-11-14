@@ -12,15 +12,23 @@ import {
   AUTO_ROOT_ID,
   AUTO_SESSION,
   autoSceneOf,
+  type AutoSceneData,
   type AutoSceneState,
 } from '../../u24/autoSceneSeed';
+
+type ExtendParams = {
+  readonly scene: AutoSceneData;
+};
 
 type Props = {
   readonly state: AutoSceneState;
   readonly theme: 'dark' | 'light';
+  readonly extend?: (params: ExtendParams) => AutoSceneData;
 };
 
-export const RunPageScene = ({ state, theme }: Props) => {
+const keepScene = ({ scene }: ExtendParams): AutoSceneData => scene;
+
+export const RunPageScene = ({ state, theme, extend = keepScene }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -33,7 +41,7 @@ export const RunPageScene = ({ state, theme }: Props) => {
       telemetryAt: AUTO_SESSION.updatedAt,
       lens: null,
     });
-    const scene = autoSceneOf({ state });
+    const scene = extend({ scene: autoSceneOf({ state }) });
     useAppStore.setState({
       sessionPhaseRuns: { [AUTO_SESSION.id]: scene.agents },
       agentKindOverride: { [AUTO_ROOT_ID]: 'auto' },
@@ -59,7 +67,7 @@ export const RunPageScene = ({ state, theme }: Props) => {
       mode: 'replace',
     });
     setIsReady(true);
-  }, [state, theme]);
+  }, [state, theme, extend]);
 
   if (!isReady) {
     return null;

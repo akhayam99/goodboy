@@ -73,13 +73,14 @@ describe('frameGeometryOf', () => {
 });
 
 describe('PAGE_MEASURE', () => {
-  it('reads the 720 measure only on the chat room and the agent conversation, and the full width only on the work surfaces', () => {
+  it('reads the 720 measure only on the chat room and the agent conversation, the full width only on the stage surfaces, and the branch Changes tab on the branch column', () => {
     const measureOf = (width: PageColumnWidth) =>
       FRAME_PAGES.filter((page) => PAGE_MEASURE[page] === width);
 
     expect(measureOf('measure')).toEqual(['chat']);
     expect(measureOf('reading')).toEqual(['agent']);
-    expect(measureOf('full')).toEqual(['board', 'terminal', 'browser', 'branchChanges']);
+    expect(measureOf('full')).toEqual(['board', 'terminal', 'browser']);
+    expect(PAGE_MEASURE.branchChanges).toBe(PAGE_MEASURE.branch);
     expect(PAGE_MEASURE.overview).toBe(PAGE_MEASURE.runs);
     expect(Object.keys(PAGE_MEASURE).sort()).toEqual([...FRAME_PAGES].sort());
   });

@@ -400,8 +400,8 @@ properties (Origin, Attempts, Fix commit) sit inline under the thread at every w
 actions of the comment sit at the end of the drawer content through `FormActions` (`CommentDrawerActions`), never in a bar pinned to the page bottom; the `⋯` in the drawer header holds the transcript, Resolve without a reply, Open on the host and Copy link, and shows only with two or more of them (one rare verb shows as a quiet button instead).
 Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
 `PageColumn width="column"`), the header and Ask included, so nothing
-moves from one section to the next, except that Changes with a branch takes the full width for
-its file rail and diff (see Changes below). The Comments section is one full-width
+moves from one section to the next, Changes included: the session title, its crumbs, the
+Branch header, the tabs and the diff share one left edge. The Comments section is one full-width
 list at every pane width, with no back link; the open comment is the drawer, and the last row
 opened stays marked after the drawer closes. The entry slots read nothing until the data for the current branch arrives and nothing at zero (`branchTabFactsOf`, one function for the tab and the head of its page). After a branch or mount switch a count read for the previous target is never shown: `useSessionDiff` keys its commits and status by worktree path and base, so the count stays unknown, and a failed read shows the error with no count. Pull request: `Draft`, `Merged` or `Closed`. Comments: the open ones of the branch scope, the same entries the Comments page lists (host threads and local notes, `useBranchReview().branchEntries`), in warning tone when some need you. Changes: the file count and `+added -removed` of the branch; inside Changes the rail head and `Viewed N of M` count the files and lines of the loaded diff (`filesHeadFactOf`), the same snapshot as the listed files, while the tab keeps the polled branch summary. Commits: the branch's commit total (the ahead count), `↑N` (tooltip `N not pushed`) only when no total is known and some are unpushed; the diff selector says `All N commits` with the same total, and its list is cut against the same base as that total (`listBranchCommits` passes the mount's `baseBranch` to `worktree_commits`), `All commits` when a capped list has no total, and the picker lists `Showing latest 100` whenever the list is capped (`branchCommitsLabel`). The unpushed count is `branchPushFactsOf(...).toPush`: the history draft's unpushed commits once the branch has an upstream, else the status: the upstream's ahead count, a diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed its commits over main. `branchPushFactsOf` in `shared/lib/branchPushState.ts` is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action registry facts and the rail all read it, so a diverged branch never reads `Pushed`. Checks: the failing (danger) or running (info) count, else the passed count. Work: the runs that need you, the questions that wait for you and the artifacts that need you, each wait counted once (a question or artifact whose agent belongs to a run that needs you, or whose asker already counts, is the same wait, and the tooltip names it: `1 run needs you with 1 question`, from `held`), in warning, else the runs working (info), else the runs, questions and artifacts of the branch together, all from the session pages' branch group of the mount (`branchWorkCountsOf`, read once the questions and artifacts loaded, so the badge never climbs while they arrive). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
@@ -409,22 +409,25 @@ draft is not there yet, so the Commits count is a number on the Comments section
 
 **Changes.** The branch against its base as one two-column page under the Branch header
 (`ChangesPage` in `features/diff/components`, mounted by `BranchFiles`, the one entry for the
-pull request page and the session's Changes shortcut). On Changes the header and the body take
-the full width of the pane (`PaneShell width="full"`), the only section that leaves the 960
-column, the way the Files changed tab of a forge does. The body is a page `StudioRailLayout`
-(`surface` `changes-files`): the file list is the rail on the left, the diff the column beside
-it, and each scrolls on its own. Both start on the same row: the rail's first row (Hide files,
-then `Changed N | All files` with the diff totals, `ModeControl`) and the diff toolbar
-(`ToolbarRow`, 40 high, `data-grid-row="1"`) share one line, which `validate-scenes --only
-row-start` checks on `changes-3-files` and `changes-300-files`. The toolbar reads the scope
+pull request page and the session's Changes shortcut). On Changes the header and the diff stay on
+the 960 column of every other section (`PAGE_MEASURE.branchChanges` is `column`), and the file
+list is its own full height column on the left of the page, the mirror of the Agents column of a
+run page: `BranchPaneRoot` reads the frame's left slot through `useBranchRailSlot`
+(`data-session-lead` of `SessionHeadFrame`, or the Branch page's own `data-branch-lead` outside a
+session frame) and hands it to `ChangesPage` (`BranchRailSlotContext`). The rail, a page
+`StudioRailLayout` (`surface` `changes-files`), is portaled there only while the page is on
+screen (`HeadSlotsGate` gives a hidden layer no left slot), with a border on its right. Its first row (Hide files, then `Changed N | All files` with
+the diff totals, `ModeControl`) sits on the session title line, and the rail and the diff scroll
+on their own. The diff column keeps the toolbar's own inset (`ToolbarRow`, 40 high), so the scope
+pill, the file headers and the Branch title start on one x. The toolbar reads the scope
 pill, `Compared with main · All 5 commits ⌄`, then `Display ⌄`, `Viewed N of M`, `Next` and
 the keyboard button (`ReviewProgress`, the viewed count from `viewedCountOf`, the same function
 the filter's Unviewed count reads); file headers stick under it. The worktree setup offer of
 the branch is a slim row under the toolbar (`WorktreeSetupOffer layout="row"`), never a card
-above the page; every other branch notice stays above the two columns. The rail opens at 288px,
-resizes from 220 to 420 and remembers its width and fold per surface like every page rail (see
+above the page; every other branch notice stays above the diff. The rail opens at 340px,
+resizes from 220 to 560 and remembers its width and fold per surface like every page rail (see
 Studios); Hide files folds it to the Show files strip, and `F` or `/` open it again. Under a
-pane of 880px it folds without writing the saved choice, `F`, `/` or Show files open it beside
+frame of 1060px (the session frame, rail included) it folds without writing the saved choice, `F`, `/` or Show files open it beside
 the diff and a pick folds it again. The tree and the diff share one `useReviewState` and the
 keys stay in `useDiffKeys`. The rail lists rows in a window (`useRowWindow`), the diff mounts
 files in batches of 20 and draws a body only once it scrolls near (`content-visibility`,
@@ -458,8 +461,9 @@ it was viewed; none on a merged or closed pull request), then the name (a rename
 tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 280 or more, and
 the status letter. `+N` and `−N` sit in two fixed right-aligned columns (`Delta`), and a closed
 folder keeps the status letter's slot empty, so every count lines up down the list. A name too long for the rail keeps its first six characters and its last
-six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`); the full name stays
-for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
+six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`), and a name too short for
+that keeps its first three characters (`ind…dule.css`): a name is cut in the middle, never at its
+start. The full name stays for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
 its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
 the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
 returns to the diff (and folds a rail opened on a narrow pane). A keyboard button beside

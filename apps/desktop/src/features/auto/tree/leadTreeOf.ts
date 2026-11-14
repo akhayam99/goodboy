@@ -67,6 +67,7 @@ type Params = {
   readonly leadSpendUsd: number;
   readonly primaryMountId: string | null;
   readonly openFoldIds: ReadonlySet<string>;
+  readonly canFold: boolean;
 };
 
 type Chain = {
@@ -205,11 +206,21 @@ type EmitParams = {
   readonly parentKey: string;
   readonly depth: number;
   readonly openFoldIds: ReadonlySet<string>;
+  readonly canFold: boolean;
   readonly rows: LeadTreeRow[];
 };
 
-const emitNodes = ({ nodes, prefix, parentKey, depth, openFoldIds, rows }: EmitParams): void => {
-  const isFoldable = nodes.length > 1 && nodes.every((node) => isNodeDeepSettled({ node }));
+const emitNodes = ({
+  nodes,
+  prefix,
+  parentKey,
+  depth,
+  openFoldIds,
+  canFold,
+  rows,
+}: EmitParams): void => {
+  const isFoldable =
+    canFold && nodes.length > 1 && nodes.every((node) => isNodeDeepSettled({ node }));
   const foldId = `fold:${parentKey}`;
   const isOpen = openFoldIds.has(foldId);
   if (isFoldable) {
@@ -251,6 +262,7 @@ const emitNodes = ({ nodes, prefix, parentKey, depth, openFoldIds, rows }: EmitP
       parentKey: node.latest.id,
       depth: (isFoldable ? depth + 1 : depth) + 1,
       openFoldIds,
+      canFold,
       rows,
     });
   });
@@ -273,6 +285,7 @@ export const leadTreeOf = ({
   leadSpendUsd,
   primaryMountId,
   openFoldIds,
+  canFold,
 }: Params): LeadTree => {
   const unique = uniqueByAgent({ delegations });
   const chains = chainsOf({ delegations: unique });
@@ -288,6 +301,7 @@ export const leadTreeOf = ({
     parentKey: leadAgentId,
     depth: 0,
     openFoldIds,
+    canFold,
     rows: agentRows,
   });
   const isTopFolded = agentRows[0]?.kind === 'fold';

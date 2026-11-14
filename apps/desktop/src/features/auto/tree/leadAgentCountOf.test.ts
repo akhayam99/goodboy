@@ -18,8 +18,11 @@ const agent = ({ id }: AgentParams): LeadTreeItem => ({
   agentId: brandId<AgentId>({ value: id }),
   depth: 0,
   number: '1',
+  agentKind: 'implementer',
   role: 'Implementer',
   title: 'Post one credit per retry',
+  node: 'done',
+  word: 'Done',
   isSettled: true,
   spendUsd: 0.4,
 });
