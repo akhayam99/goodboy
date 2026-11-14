@@ -1,4 +1,5 @@
-import { useMemo, type ReactNode } from 'react';
+import { useContext, useMemo, type ReactNode } from 'react';
+import { AutoSelectAgentContext } from '../autoSelectAgentContext';
 import type { Agent, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
@@ -40,7 +41,9 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
   const agents = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const rootTurn = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const actions = useAutoTreeActions({ sessionId: session.id });
-  const { openChild, openArtifact } = actions;
+  const selectAgent = useContext(AutoSelectAgentContext);
+  const { openChild: openChildPage, openArtifact } = actions;
+  const openChild = selectAgent ?? openChildPage;
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId: agent.id }), [views, agent.id]);
   const view = tree?.kind === 'root' ? tree.view : null;
   const child = useAutoChildChat({ session, agent, tree });
