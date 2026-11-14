@@ -205,7 +205,7 @@ describe('a workspace tool stays across every move inside the window', () => {
     expect(state().drawer).toEqual(TERMINAL);
     expect(state().drawerBack).toBeNull();
     state().back();
-    expect(state().drawer?.kind).toBe('ask');
+    expect(state().drawer?.kind).toBe('spawned');
     expect(state().drawerBack).toEqual(TERMINAL);
   });
 

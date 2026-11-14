@@ -1,9 +1,22 @@
 import { leaveStudio } from '../navigation/leaveStudio';
 import { drawerKey } from './drawerKey';
 import { isWorkspaceTool } from './isWorkspaceTool';
-import { selectDrawerPanel } from './selectDrawerPanel';
-import type { DrawerRequest } from './state';
+import { selectDetailDrawer } from './selectDetailDrawer';
+import { selectDockDrawer } from './selectDockDrawer';
+import type { DrawerRequest, OpenDrawer } from './state';
 import type { GetFn } from './types';
+
+type ShownParams = {
+  readonly state: ReturnType<GetFn>;
+  readonly request: DrawerRequest;
+};
+
+const shownFor = ({ state, request }: ShownParams): OpenDrawer | null => {
+  if (isWorkspaceTool({ content: request })) {
+    return selectDockDrawer({ state });
+  }
+  return state.appStudio === null ? selectDetailDrawer({ state }) : null;
+};
 
 export const toggleDrawer = (get: GetFn) => {
   return (request: DrawerRequest): void => {
@@ -13,18 +26,19 @@ export const toggleDrawer = (get: GetFn) => {
     if (isOnPage) {
       leaveStudio({ get });
     }
-    const current = selectDrawerPanel(get());
+    const state = get();
+    const shown = shownFor({ state, request });
     const isSame =
-      current !== null &&
-      current.sessionId === request.sessionId &&
-      drawerKey(current) === drawerKey(request);
+      shown !== null &&
+      shown.sessionId === request.sessionId &&
+      drawerKey(shown) === drawerKey(request);
     if (isSame && isOnPage) {
       return;
     }
     if (isSame) {
-      get().closeDrawer();
+      state.closeDrawerEntry({ entry: shown });
       return;
     }
-    get().openDrawer(request);
+    state.openDrawer(request);
   };
 };

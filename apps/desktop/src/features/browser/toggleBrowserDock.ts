@@ -1,5 +1,5 @@
 import { useAppStore } from '../../store';
-import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
+import { selectDockDrawer } from '../../store/slices/drawer/selectDockDrawer';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 
 type Params = {
@@ -11,10 +11,10 @@ export const toggleBrowserDock = ({ isToggle }: Params): void => {
   if (state.currentWorkspaceId === null || state.appStudio?.kind === 'browser') {
     return;
   }
-  const shown = selectDrawerPanel(state);
+  const shown = selectDockDrawer({ state });
   if (shown?.kind === 'browser') {
     if (isToggle) {
-      state.closeDrawer();
+      state.closeDrawerEntry({ entry: shown });
     }
     return;
   }

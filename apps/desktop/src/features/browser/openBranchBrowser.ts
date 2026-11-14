@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
+import { selectDockDrawer } from '../../store/slices/drawer/selectDockDrawer';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -8,7 +8,7 @@ type Params = {
 
 export const openBranchBrowser = ({ sessionId }: Params): void => {
   const state = useAppStore.getState();
-  const shown = selectDrawerPanel(state);
+  const shown = selectDockDrawer({ state });
   if (shown?.kind === 'browser' && shown.sessionId === sessionId) {
     return;
   }

@@ -891,7 +891,7 @@ describe('the browser pane', () => {
     expect(rows.map((row) => row.textContent)).toEqual([
       sendRow(),
       'Open in your browser',
-      'Open as page',
+      'Open full page',
       'Copy address',
       'Duplicate',
       'DevelopDesktop',
@@ -910,7 +910,7 @@ describe('the browser pane', () => {
     expect(rows.map((row) => row.textContent)).toEqual([
       sendRow(),
       'Open in your browser',
-      'Open as page',
+      'Open full page',
       'Copy address',
       'Duplicate',
       'DevelopDesktop',

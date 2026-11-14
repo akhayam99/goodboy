@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -66,34 +66,43 @@ describe('the side slot scenes', () => {
     ]);
   });
 
-  it('plan: the plan holds the slot and Terminal waits in the chip', async () => {
+  it('plan: the plan opens as the detail panel beside the Terminal dock, with no chip', async () => {
     renderScene('slot-back-chip');
 
-    await screen.findByTestId('plan-drawer', undefined, WAIT);
-    screen.getByRole('button', { name: 'Back to Terminal' });
+    const plan = await screen.findByTestId('plan-drawer', undefined, WAIT);
+    expect(plan.closest('[data-container="detail"]')).not.toBeNull();
+    expect(document.querySelector('[data-container="drawer"] [data-drawer-card]')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back to Terminal' })).toBeNull();
   });
 
-  it('swapped: the chip brings Terminal back and names the plan', async () => {
+  it('swapped: closing the plan leaves the Terminal dock open alone', async () => {
     renderScene('slot-back-chip');
+    const plan = await screen.findByTestId('plan-drawer', undefined, WAIT);
+    const detail = plan.closest<HTMLElement>('[data-container="detail"]');
+    if (detail === null) {
+      throw new Error('the plan sits in the detail panel');
+    }
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Back to Terminal' }, WAIT));
+    fireEvent.click(within(detail).getAllByRole('button', { name: 'Close' })[0]!);
 
     await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('terminal'), WAIT);
-    await screen.findByRole('button', { name: PLAN_CHIP });
+    expect(useAppStore.getState().drawerBack).toBeNull();
   });
 
-  it('swapped scene: Terminal holds the slot and the plan waits in the chip', async () => {
+  it('swapped scene: Terminal on top still shows the plan beside it, no chip', async () => {
     renderScene('slot-back-chip-swapped');
 
-    await screen.findByRole('button', { name: PLAN_CHIP }, WAIT);
-    expect(screen.queryByTestId('plan-drawer')).toBeNull();
+    await screen.findByTestId('plan-drawer', undefined, WAIT);
+    expect(screen.queryByRole('button', { name: PLAN_CHIP })).toBeNull();
   });
 
-  it('narrow: the same slot sits over the page', async () => {
+  it('narrow: the same pair keeps both panels in one side column', async () => {
     renderScene('slot-back-chip-narrow');
 
-    await screen.findByTestId('plan-drawer', undefined, WAIT);
+    const plan = await screen.findByTestId('plan-drawer', undefined, WAIT);
     expect(screen.getByTestId('slot-back-chip-scene').getAttribute('data-state')).toBe('narrow');
-    screen.getByRole('button', { name: 'Back to Terminal' });
+    const side = screen.getByRole('complementary', { name: 'Side panel' });
+    expect(side.contains(plan)).toBe(true);
+    expect(side.querySelector('[data-drawer-card]')).not.toBeNull();
   });
 });

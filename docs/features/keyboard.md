@@ -18,7 +18,7 @@ Open a real login shell in the workspace folder or any linked worktree.
 
 **The Terminal page**
 
-- **Open as page** in the dock makes the terminal full size, with every terminal of the workspace beside it. **Dock** puts it back on the same tab, and so does Back.
+- **Open full page** in the dock makes the terminal full size, with every terminal of the workspace beside it. **Dock** puts it back on the same tab, and so does Back.
 - It says **No terminal yet** until you open one. **Dock** stays there too, and opens a terminal in the dock.
 - It groups terminals by session. Each group shows its row count from two.
 - One line per worktree shows the project, the branch and a dot while a shell runs a process.
@@ -202,12 +202,12 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. The button counts the open tabs.
 - The address bar shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back. The icon is the site's own when it has one, and a letter when it has none.
 - While a page loads, a thin line breathes under the address row and Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
-- **More** holds **Send to the agent**, Open in your browser, **Open as page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
+- **More** holds **Send to the agent**, Open in your browser, **Open full page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
 - **Send to the agent** puts the text you see on the page on the message box as a chip with the title, the site and the word count. It also sits in the right-click menu of a tab, and **⌘⇧S** does the same for the shown tab.
 - The page is read when you press it, never before. Nothing goes to the agent until you send the message, and the × on the chip takes it away.
 - A page over 60,000 characters is cut, and the text says so at the end. A key or a token in the text is hidden.
 - A page that moved to another site since you pressed is not read. A failure says why under the address row, with **Retry**.
-- **Open as page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Beside the session**, at the right of the trail, puts it back. The page never reloads, so a half-typed form stays.
+- **Open full page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Beside the session**, at the right of the trail, puts it back. The page never reloads, so a half-typed form stays.
 - The page has no title band: the trail, the address row, then the page. The first button of the address row folds the tab list, and **New tab** is the last row of the list.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - The address is a command field. Type an address and press **Enter** to open it beside the session, or **⌘Enter** to open it in your browser. A localhost address opens your dev server.

@@ -20,6 +20,7 @@ import { BrowserCommandPanel } from './BrowserCommandPanel';
 import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
+import { NAMES } from '../../../../shared/utils/names';
 
 type ConsoleToggle = {
   readonly isOpen: boolean;
@@ -118,7 +119,7 @@ export const BrowserAddressRow = ({
         {onOpenAsPage === undefined ? null : (
           <IconButton
             icon={ArrowUpRight}
-            label="Open as page"
+            label={NAMES.openFullPage}
             tooltipSide="top"
             onClick={onOpenAsPage}
           />

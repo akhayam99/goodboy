@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { copyToClipboard } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
+import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { openLinkOrThrow } from '../../../open/openLinkOrThrow';
@@ -94,7 +94,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const { states, reconcile } = useTabStates();
-  const isOnScreen = useAppStore((state) => selectDrawerPanel(state)?.kind === 'browser');
+  const isOnScreen = useAppStore((state) => selectDockDrawer({ state })?.kind === 'browser');
   const hasAwakeTab = Object.values(live ?? {}).some((liveId) => {
     const state = states.get(liveId);
     return state !== 'asleep' && state !== 'closed';

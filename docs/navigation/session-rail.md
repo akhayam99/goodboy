@@ -742,7 +742,7 @@ Terminal and Browser are workspace tools: their dock opens with
 menu, ⌃`and ⌘⌥T. On a session page the dock opens on the session's terminal
 or tabs; anywhere else on the workspace's (the workspace folder terminal, or
 the session the Browser page would pick, with an empty state when there is
-none). The drawer request may carry`sessionId: null`. Open as page in the dock
+none). The drawer request may carry`sessionId: null`. Open full page in the dock
 header grows it into its page (`openTerminalOnPage`, `promoteBrowserTab`, a
 push); while that page is open the dock stays in the store but is not mounted,
 so Back brings it again on the same tab, and Dock on the page header moves it
