@@ -28,7 +28,11 @@ export const SessionHead = ({ session }: Props) => {
       <header
         data-session-head=""
         data-head-nav={isDetail ? 'crumbs' : 'tabs'}
-        className={cn('flex min-w-0 shrink-0 flex-col gap-2', PANE_RHYTHM.headerInset)}
+        className={cn(
+          'flex min-w-0 shrink-0 flex-col',
+          PANE_RHYTHM.head.rows,
+          PANE_RHYTHM.headerInset,
+        )}
       >
         <PaneTitleRow
           title={<OverviewTitle session={session} />}

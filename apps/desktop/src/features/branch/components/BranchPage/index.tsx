@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
-import { PageColumn, PaneShell } from '@goodboy/ui';
+import { PANE_RHYTHM, PageColumn, PaneShell, cn } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
@@ -406,7 +406,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           />
         }
         header={
-          <div className="flex min-w-0 flex-col">
+          <div className={cn('flex min-w-0 flex-col', PANE_RHYTHM.block)}>
             <BranchHeader
               sessionId={sessionId}
               host={host}

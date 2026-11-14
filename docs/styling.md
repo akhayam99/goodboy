@@ -282,7 +282,11 @@ the page (`data-session-head-band`, `z-40`), and `useHeadInset` writes its heigh
 `ScrollFade` uses, never a margin) and its `RevealRegion` pads the pinned overlay by it, so
 content scrolls under the title row, the crumbs or tabs and the pinned rows alike, behind
 one `sticky-surface-head` frost. A page that is not a `PaneShell` starts below the head as
-before. The gutter is 24px a side, 16px once the
+before. The head breathes through two tokens, never per page: `PANE_RHYTHM.head.rows`
+(12px between the title row and the tabs or crumbs) and `PANE_RHYTHM.head.under` (20px under
+the head before the page starts). Inside a page header the blocks (the title with its meta
+line, the tabs, the toolbar) sit `PANE_RHYTHM.block` (12px) apart; a title and its meta line
+stay one block. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.

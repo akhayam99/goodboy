@@ -13,37 +13,43 @@ type Props = {
 const AUTO_CHILD_LINE = 'Auto started this agent and reads your messages to it.';
 
 export const AutoChildBrief = ({ card, routing, images }: Props) => (
-  <section aria-label="Why Auto started it" className="flex min-w-0 flex-col gap-1 text-ui">
-    <p className="text-muted-foreground">{AUTO_CHILD_LINE}</p>
-    {card.reason === null ? null : (
-      <p className="text-foreground">
-        <span className="text-muted-foreground">Why Auto chose {card.roleLabel}: </span>
-        {card.reason}
+  <section aria-label="Why Auto started it" className="flex min-w-0 flex-col gap-3 text-ui">
+    <div className="flex min-w-0 flex-col gap-1">
+      <p className="text-muted-foreground">{AUTO_CHILD_LINE}</p>
+      {card.reason === null ? null : (
+        <p className="text-foreground">
+          <span className="text-muted-foreground">Why Auto chose {card.roleLabel}: </span>
+          {card.reason}
+        </p>
+      )}
+      {card.roleKept === null ? null : (
+        <p className="text-foreground">
+          <span className="text-muted-foreground">Why not {card.roleKept.fitLabel}: </span>
+          {card.roleKept.reason}
+        </p>
+      )}
+    </div>
+    <div className="flex min-w-0 flex-col gap-2">
+      <p className="flex min-w-0 items-center text-muted-foreground">
+        <RoutingLabel
+          provider={routing.provider}
+          model={routing.model}
+          effort={routing.effort}
+          muted
+        />
       </p>
-    )}
-    {card.roleKept === null ? null : (
-      <p className="text-foreground">
-        <span className="text-muted-foreground">Why not {card.roleKept.fitLabel}: </span>
-        {card.roleKept.reason}
-      </p>
-    )}
-    <p className="flex min-w-0 items-center text-muted-foreground">
-      <RoutingLabel
-        provider={routing.provider}
-        model={routing.model}
-        effort={routing.effort}
-        muted
-      />
-    </p>
-    {card.routingNote === null ? null : <p className="text-faint-foreground">{card.routingNote}</p>}
-    {images.length === 0 ? null : (
-      <ul aria-label="Images Auto passed on" className="flex min-w-0 flex-wrap gap-1">
-        {images.map((image) => (
-          <li key={image.id}>
-            <Chip tone="neutral" kind="reference" label={image.fileName} />
-          </li>
-        ))}
-      </ul>
-    )}
+      {card.routingNote === null ? null : (
+        <p className="text-faint-foreground">{card.routingNote}</p>
+      )}
+      {images.length === 0 ? null : (
+        <ul aria-label="Images Auto passed on" className="flex min-w-0 flex-wrap gap-1">
+          {images.map((image) => (
+            <li key={image.id}>
+              <Chip tone="neutral" kind="reference" label={image.fileName} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   </section>
 );

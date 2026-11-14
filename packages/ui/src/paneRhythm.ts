@@ -15,6 +15,11 @@ export const HEADER_META_PX = 16;
 export const PANE_RHYTHM = {
   inset: 'px-6',
   headerInset: 'pt-2',
+  head: {
+    rows: 'gap-3',
+    under: 'pb-5',
+  },
+  block: 'gap-3',
   pinnedInset: 'pt-3 pb-5',
   pinnedUnderBand: 'pb-5',
   headerRow: 'h-8',
