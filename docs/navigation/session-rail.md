@@ -864,6 +864,13 @@ Folding the rail leaves the column in place.
   tier pane, so the session rail folds to icons while it is open.
   [browser.md](../browser.md#the-pane) owns its address row, its tabs and the
   rules for the native view.
+- **Terminal holds the scripts.** The folder pill ends with "All terminals"
+  (the Terminal page). A Scripts menu ends the tab row (`TerminalScriptsMenu`):
+  a pick opens a new tab in the pill's folder and types the command
+  (`scriptCommandOf`). The panel loads on first open (`LazyTerminalDrawer`). A
+  worktree that goes away under an open terminal shows "This worktree was
+  removed" instead of closing silently. The Scripts chord still opens the old
+  drawer until it is removed.
 - **Terminal signals on its button.** The Terminal button shows a dot when a command that ran more than
   ten seconds ended while the drawer was closed (`useTerminalFinishSignal`, a
   3 second poll of `terminal_list_live` kept to the latest answer, state in

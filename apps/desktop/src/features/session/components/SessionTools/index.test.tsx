@@ -17,6 +17,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import type { ArtifactId } from '@goodboy/types';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import type { OpenDrawer } from '../../../../store/slices/drawer/state';
 import { brandedId } from '../../../history/testing/brandedId';
@@ -188,6 +189,28 @@ describe('SessionTools', () => {
 
     expect(stateOf('terminal')).toBe('pressed');
     expect(stateOf('browser')).toBe('waiting');
+  });
+
+  it('lets a reading panel cover the open tool and brings the tool back when it closes', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
+    const plan = {
+      kind: 'artifact-document',
+      sessionId: SESSION_ID,
+      payload: { artifactId: brandedId<ArtifactId>({ value: 'plan-1' }), revision: null },
+    } as const;
+    act(() => {
+      useAppStore.getState().openDrawer(TERMINAL);
+      useAppStore.getState().toggleDrawer(plan);
+    });
+    expect(drawerKind()).toBe('artifact-document');
+    expect(stateOf('terminal')).toBe('waiting');
+
+    act(() => {
+      useAppStore.getState().toggleDrawer(plan);
+    });
+
+    expect(drawerKind()).toBe('terminal');
+    expect(stateOf('terminal')).toBe('pressed');
   });
 
   it('rings nothing when the back chip holds a reader, and when it holds the pressed tool', () => {

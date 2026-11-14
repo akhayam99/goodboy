@@ -175,6 +175,20 @@ describe('the branch board on the Overview', () => {
     expect(scroller.scrollTop).toBe(0);
   });
 
+  it('opening a row leaves the open tool and the slot as they were', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+    const before = useAppStore.getState().drawer;
+    const first = firstRowButton();
+
+    fireEvent.click(first);
+    expect(first.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(first);
+
+    expect(useAppStore.getState().drawer).toBe(before);
+    expect(useAppStore.getState().drawerBack).toBeNull();
+  });
+
   it('keeps a row open when it changes group', async () => {
     seedCentralColumn({ kind: 'finished' });
     await show();

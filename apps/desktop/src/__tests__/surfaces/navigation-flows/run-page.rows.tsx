@@ -16,6 +16,7 @@ import {
 import { STORY_NOW } from '../../../store/storyHarness';
 import { BOARD_PLACE, agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import { openLens } from '../../../features/session/openLens';
+import { togglePane } from '../../../features/session/panes/togglePane';
 import { aPlan, aStoredPlan } from '../../../test/planFixtures';
 import userEvent from '@testing-library/user-event';
 import {
@@ -314,7 +315,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     covers: ['openDrawer'],
     open: async (ctx) => {
       await openRunPage(ctx);
-      await click(screen.getByTestId('pane-toggle-spawned'));
+      act(() => togglePane({ sessionId: ctx.sessionId, pane: 'spawned' }));
       const panel = await screen.findByRole('region', { name: 'Agents' }, WAIT);
       const tree = within(panel).getByRole('tree', { name: 'Run agents' });
       const [first] = within(tree).getAllByRole('treeitem');
@@ -325,7 +326,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => {
         expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).not.toBeNull();
       }, WAIT);
-      expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
+      expect(useAppStore.getState().drawer?.kind).toBe('spawned');
     },
     lands: async () => {
       await waitFor(() => {

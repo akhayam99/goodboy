@@ -29,6 +29,7 @@ let useAppStore: StoryStore;
 
 beforeAll(async () => {
   useAppStore = await importStore();
+  await import('../../../../../features/terminal/components/TerminalDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
