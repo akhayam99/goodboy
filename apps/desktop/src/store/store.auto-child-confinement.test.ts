@@ -319,6 +319,50 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
     await operatorTurn({ sessionId, agentId });
 
     expect(lastSpawn()).toMatchObject({ confinedRole: 'implementer', isAutoChild: true });
+    expect(lastSpawn()?.launchGuard).toBeUndefined();
+  });
+
+  it('carries the stored launch guard of the latest attempt to the spawn', async () => {
+    const { sessionId, agentId } = await childSession({ kind: 'implementer' });
+    const delegation = delegationOf({ childAgentId: agentId, role: 'implementer' });
+    stored = delegation;
+    const dbMod = await import('@goodboy/db');
+    vi.mocked(dbMod.listAutoAttemptsOfDelegation).mockResolvedValueOnce([
+      {
+        id: delegation.firstAttemptId,
+        delegationId: delegation.id,
+        treeId: delegation.treeId,
+        generation: delegation.generation,
+        ordinal: 1,
+        state: 'running',
+        outcome: null,
+        runId: null,
+        questionId: null,
+        baseline: null,
+        resultSnapshot: null,
+        writeSet: {
+          worktreePath: '/tmp/wt',
+          guard: {
+            dependencies: 'ask',
+            protectedFiles: 'allow',
+            allowedPackages: [],
+            allowedPaths: [],
+          },
+        },
+        launchSnapshot: null,
+        startedAt: 0,
+        endedAt: null,
+        endReason: null,
+      },
+    ]);
+
+    await operatorTurn({ sessionId, agentId });
+
+    expect(lastSpawn()?.launchGuard).toMatchObject({
+      isNetworkOff: true,
+      env: expect.arrayContaining([{ name: 'pnpm_config_offline', value: 'true' }]),
+      deniedTools: expect.arrayContaining(['Bash(pnpm add:*)', 'Edit(**/pnpm-lock.yaml)']),
+    });
   });
 
   it('leaves a turn on an agent that is not an Auto child as it was', async () => {

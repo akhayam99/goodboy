@@ -66,6 +66,7 @@ pub(super) struct Run {
     pub(super) leases: crate::worktree_writer::WriterLeases,
     pub(super) recorder: Recorder,
     pub(super) events: Receiver<(String, Value)>,
+    pub(super) guard: Option<crate::providers::launch_guard::LaunchGuardArgs>,
 }
 
 impl Run {
@@ -77,6 +78,7 @@ impl Run {
             leases: crate::worktree_writer::WriterLeases::new(),
             recorder: Recorder(Arc::new(Mutex::new(sender))),
             events,
+            guard: None,
         }
     }
 
@@ -147,6 +149,7 @@ impl Run {
             blocks_push,
             is_auto_child,
             excludes_tmp: false,
+            launch_guard: self.guard.as_ref(),
         };
         spawn_one(
             &self.recorder,
@@ -277,6 +280,7 @@ fn expected_argv(binary: &str, run: &Run) -> Vec<String> {
         blocks_push: true,
         is_auto_child: false,
         excludes_tmp: false,
+        launch_guard: None,
     };
     let mut argv = turn_args(binary, &args);
     argv.extend(crate::providers::cli_probe::partial_output_args(
@@ -920,4 +924,145 @@ fn a_clean_turn_reports_nothing_stopped() {
 
     assert!(reaped_pids(&events).is_empty());
     assert_eq!(end_of(&events)["exit_code"], 0);
+}
+
+const GUARD_ENV: &[(&str, &str)] = &[
+    ("npm_config_offline", "true"),
+    ("pnpm_config_offline", "true"),
+    ("pnpm_config_frozen_lockfile", "true"),
+    ("PIP_NO_INDEX", "1"),
+    ("UV_OFFLINE", "1"),
+    ("UV_FROZEN", "1"),
+    ("CARGO_NET_OFFLINE", "true"),
+];
+
+const GUARD_KEYS: &[&str] = &[
+    "npm_config_offline",
+    "pnpm_config_offline",
+    "pnpm_config_frozen_lockfile",
+    "PIP_NO_INDEX",
+    "UV_OFFLINE",
+    "UV_FROZEN",
+    "CARGO_NET_OFFLINE",
+];
+
+const DEPENDENCY_RULES: &[&str] = &[
+    "Bash(pnpm add:*)",
+    "Bash(pnpm add *)",
+    "Edit(**/package.json)",
+    "Write(**/pnpm-lock.yaml)",
+];
+
+const PROTECTED_RULES: &[&str] = &["Edit(.github/workflows/**)", "Write(CODEOWNERS)"];
+
+const CODEX_NETWORK: &str = "sandbox_workspace_write.network_access=true";
+
+fn guard_of(
+    rules: &[&str],
+    env: &[(&str, &str)],
+    is_network_off: bool,
+) -> crate::providers::launch_guard::LaunchGuardArgs {
+    crate::providers::launch_guard::LaunchGuardArgs {
+        denied_tools: rules.iter().map(|rule| rule.to_string()).collect(),
+        env: env
+            .iter()
+            .map(
+                |(name, value)| crate::providers::launch_guard::LaunchGuardEnv {
+                    name: name.to_string(),
+                    value: value.to_string(),
+                },
+            )
+            .collect(),
+        is_network_off,
+    }
+}
+
+fn guarded_child(
+    binary: &str,
+    guard: Option<crate::providers::launch_guard::LaunchGuardArgs>,
+) -> (Run, Vec<String>) {
+    let mut run = Run::new("ok");
+    run.guard = guard;
+    run.spawn_shaped(binary, PROMPT, "bypassPermissions", None, false, true)
+        .unwrap();
+    run.turn_events_until_end();
+    let work_dir = run.fake.work_dir();
+    let argv = argv_of(&run)
+        .into_iter()
+        .map(|arg| arg.replace(&work_dir, "{work_dir}"))
+        .collect();
+    (run, argv)
+}
+
+fn denied_of(argv: &[String]) -> Vec<String> {
+    let at = argv
+        .iter()
+        .position(|arg| arg == "--disallowedTools")
+        .expect("a deny list");
+    argv[at + 1].split(',').map(str::to_string).collect()
+}
+
+#[test]
+fn an_auto_child_whose_rows_ask_starts_with_the_deny_rules_and_offline_managers() {
+    let _env = ParentEnv::set(GUARD_KEYS);
+    let rules: Vec<&str> = DEPENDENCY_RULES
+        .iter()
+        .chain(PROTECTED_RULES)
+        .copied()
+        .collect();
+    for binary in ["claude", "codex"] {
+        let (run, argv) = guarded_child(binary, Some(guard_of(&rules, GUARD_ENV, true)));
+        for (name, value) in GUARD_ENV {
+            assert_eq!(env_of(&run, name), *value, "{binary} {name}");
+        }
+        if binary == "claude" {
+            let denied = denied_of(&argv);
+            for rule in &rules {
+                assert!(denied.contains(&rule.to_string()), "{rule}");
+            }
+            assert_eq!(denied.last().map(String::as_str), Some("mcp__*"));
+            continue;
+        }
+        assert!(!argv.iter().any(|arg| arg == CODEX_NETWORK), "{argv:?}");
+        assert!(argv.iter().any(|arg| arg == "workspace-write"), "{argv:?}");
+    }
+}
+
+#[test]
+fn an_auto_child_whose_rows_allow_spawns_byte_equal_to_today() {
+    let _env = ParentEnv::set(GUARD_KEYS);
+    for binary in ["claude", "codex"] {
+        let (bare_run, bare) = guarded_child(binary, None);
+        let (empty_run, empty) = guarded_child(binary, Some(guard_of(&[], &[], false)));
+        assert_eq!(bare, empty, "{binary}");
+        for name in GUARD_KEYS {
+            assert_eq!(env_of(&bare_run, name), "parent-value", "{binary} {name}");
+            assert_eq!(env_of(&empty_run, name), "parent-value", "{binary} {name}");
+        }
+        if binary == "codex" {
+            assert!(bare.iter().any(|arg| arg == CODEX_NETWORK), "{bare:?}");
+        }
+    }
+}
+
+#[test]
+fn a_dependency_allowance_lifts_the_dependency_rules_and_keeps_the_protected_ones() {
+    let _env = ParentEnv::set(GUARD_KEYS);
+    for binary in ["claude", "codex"] {
+        let (run, argv) = guarded_child(binary, Some(guard_of(PROTECTED_RULES, &[], false)));
+        for name in GUARD_KEYS {
+            assert_eq!(env_of(&run, name), "parent-value", "{binary} {name}");
+        }
+        if binary == "claude" {
+            let denied = denied_of(&argv);
+            for rule in PROTECTED_RULES {
+                assert!(denied.contains(&rule.to_string()), "{rule}");
+            }
+            for rule in DEPENDENCY_RULES {
+                assert!(!denied.contains(&rule.to_string()), "{rule}");
+            }
+            continue;
+        }
+        assert!(argv.iter().any(|arg| arg == CODEX_NETWORK), "{argv:?}");
+    }
 }

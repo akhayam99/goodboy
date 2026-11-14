@@ -2,6 +2,8 @@ import {
   composeAnswerKickoff,
   isAutoProviderResuming,
   isAutoWriterRole,
+  launchGuardBriefOf,
+  storedLaunchGuardOf,
   type AutoDelegationRole,
 } from '@goodboy/core/auto';
 import {
@@ -23,6 +25,7 @@ import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
 import { launchImagesOf } from './launchSnapshot/launchImagesOf';
 import { launchSnapshotFor } from './launchSnapshot/launchSnapshotFor';
+import { readLaunchPermissions } from './level/readLaunchPermissions';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
 import { routedModelOf } from '../../slices/turn/childTurn/routedModelOf';
 import { readSnapshot } from './readSnapshot';
@@ -90,6 +93,7 @@ const attemptToLaunch = async ({
       baseline: { ...snapshotJson({ snapshot, nowMs: ctx.now() }), ...remoteJson({ remote }) },
       writeSet: isWriter ? { worktreePath: target.worktreePath } : null,
       launchSnapshot,
+      guardRows: isWriter ? await readLaunchPermissions({ db: ctx.db, treeId: tree.id }) : null,
     });
     return started.kind === 'started' ? started.attempt : null;
   }
@@ -127,7 +131,11 @@ type TextParams = {
 const kickoffTextOf = ({ delegation, attempt }: TextParams): string => {
   const resume = resumeOf({ baseline: attempt.baseline });
   const kickoff = delegation.request['kickoff'];
-  const brief = typeof kickoff === 'string' ? kickoff : '';
+  const guard = storedLaunchGuardOf({ writeSet: attempt.writeSet });
+  const guardBrief =
+    guard === null ? null : launchGuardBriefOf({ guard, childAgentId: delegation.childAgentId });
+  const stored = typeof kickoff === 'string' ? kickoff : '';
+  const brief = guardBrief === null ? stored : `${stored}\n\n${guardBrief}`;
   if (resume !== null) {
     const provider = delegation.routing['provider'];
     const isResuming = typeof provider === 'string' && isAutoProviderResuming({ provider });

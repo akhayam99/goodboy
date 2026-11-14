@@ -1,5 +1,14 @@
-import { parseAutoDelegationRole, type AutoDelegationRole } from '@goodboy/core/auto';
-import { getLatestAutoDelegationOfChild, type AutoDelegation } from '@goodboy/db';
+import {
+  parseAutoDelegationRole,
+  storedLaunchGuardOf,
+  type AutoDelegationRole,
+  type LaunchGuard,
+} from '@goodboy/core/auto';
+import {
+  getLatestAutoDelegationOfChild,
+  listAutoAttemptsOfDelegation,
+  type AutoDelegation,
+} from '@goodboy/db';
 import type { AgentId, AutoDelegationId, AutoTreeId, ProviderId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { routedModelOf } from './routedModelOf';
@@ -9,6 +18,7 @@ export type ChildTurn = Readonly<{
   treeId: AutoTreeId;
   role: AutoDelegationRole;
   route: Readonly<{ provider: ProviderId; model: string }>;
+  guard: LaunchGuard | null;
 }>;
 
 export type ChildTurnResolution =
@@ -20,25 +30,37 @@ type Params = Readonly<{
   agentId: AgentId;
 }>;
 
-type DelegationRead = Readonly<{
+type ChildRead = Readonly<{
   isRead: boolean;
   delegation: AutoDelegation | null;
+  guard: LaunchGuard | null;
 }>;
 
 const NOT_A_CHILD = { kind: 'none' } satisfies ChildTurnResolution;
 
 const UNRESOLVED = { kind: 'unresolved' } satisfies ChildTurnResolution;
 
-const UNREAD: DelegationRead = { isRead: false, delegation: null };
+const UNREAD: ChildRead = { isRead: false, delegation: null, guard: null };
 
-export const resolveChildTurn = async ({ agentId }: Params): Promise<ChildTurnResolution> => {
-  const read = await getLatestAutoDelegationOfChild({
+const readChild = async ({ agentId }: Params): Promise<ChildRead> => {
+  const delegation = await getLatestAutoDelegationOfChild({
     db: tauriDatabase,
     childAgentId: agentId,
-  }).then(
-    (delegation): DelegationRead => ({ isRead: true, delegation }),
-    () => UNREAD,
-  );
+  });
+  if (delegation === null) {
+    return { isRead: true, delegation, guard: null };
+  }
+  const attempts = await listAutoAttemptsOfDelegation({
+    db: tauriDatabase,
+    delegationId: delegation.id,
+  });
+  const latest = attempts[attempts.length - 1];
+  const guard = latest === undefined ? null : storedLaunchGuardOf({ writeSet: latest.writeSet });
+  return { isRead: true, delegation, guard };
+};
+
+export const resolveChildTurn = async ({ agentId }: Params): Promise<ChildTurnResolution> => {
+  const read = await readChild({ agentId }).catch((): ChildRead => UNREAD);
   if (!read.isRead) {
     return UNRESOLVED;
   }
@@ -52,6 +74,12 @@ export const resolveChildTurn = async ({ agentId }: Params): Promise<ChildTurnRe
   }
   return {
     kind: 'child',
-    child: { delegationId: read.delegation.id, treeId: read.delegation.treeId, role, route },
+    child: {
+      delegationId: read.delegation.id,
+      treeId: read.delegation.treeId,
+      role,
+      route,
+      guard: read.guard,
+    },
   };
 };

@@ -33,6 +33,7 @@ import { brandId, type ArtifactId, type AutoOutboxId } from '@goodboy/types';
 import { remoteOf, snapshotOf } from './attemptBaseline';
 import { attemptEnvelope, delegationRoleOf, isArtifactRole } from './attemptEnvelope';
 import { landAttemptRevision, type RevisionLanding } from './landAttemptRevision';
+import { needGrantsOf } from './launchGuard/needGrantsOf';
 import { scribePublicationOf } from './asks/scribePublicationOf';
 import { readPublishPermissions } from './level/readPublishPermissions';
 import { planPublish } from './planPublish';
@@ -530,6 +531,14 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
   const settled: SettleAttemptOutcome = await ctx.scheduler.settleAttempt({
     attemptId: attempt.id,
     generation: ended.generation,
+    grants: needGrantsOf({
+      newId: ctx.ports.newId,
+      nowMs: ctx.now(),
+      delegation,
+      attempt,
+      closing,
+      outcome,
+    }),
     ending: {
       kind: 'ended',
       outcome,

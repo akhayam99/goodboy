@@ -1,5 +1,6 @@
 import { isNullableString } from '../../shared/utils/isNullableString';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
+import type { LaunchGuardRules } from '@goodboy/core/auto';
 import { createJsonLineAssembler, type ParseContext } from '@goodboy/core/providers';
 import {
   PROVIDER_IDS,
@@ -118,6 +119,7 @@ type SpawnArgs = {
   readonly blocksPush?: boolean;
   readonly isAutoChild?: boolean;
   readonly excludesTmp?: boolean;
+  readonly launchGuard?: LaunchGuardRules;
   readonly hasAdmission?: boolean;
   readonly writerLease?: {
     readonly path: string;

@@ -8,7 +8,7 @@ import { parseSubstepNeeds, type AutoSubstepRole } from './substep';
 export type ChildCompletion = 'done' | 'blocked' | 'none';
 
 export type ChildNeeds =
-  | Readonly<{ kind: 'shell' | 'writer' | 'decision' | 'user' }>
+  | Readonly<{ kind: 'shell' | 'writer' | 'decision' | 'user' | 'dependency' | 'protected_file' }>
   | Readonly<{ kind: 'role'; role: AutoDelegationRole }>;
 
 export type ChildReturn = Readonly<{
@@ -39,7 +39,14 @@ const SPACE_CHAR_RE = /\s/;
 const WHITESPACE_RE = /\s+/g;
 const LEGACY_BLOCK_STATUS = 'blocked';
 const RETURN_STATUSES: ReadonlySet<string> = new Set(['returned', LEGACY_BLOCK_STATUS]);
-const PLAIN_NEEDS = ['shell', 'writer', 'decision', 'user'] as const;
+const PLAIN_NEEDS = [
+  'shell',
+  'writer',
+  'decision',
+  'user',
+  'dependency',
+  'protected_file',
+] as const;
 const ROLE_NEEDS_PREFIX = 'role:';
 const ARTIFACT_OPEN = '<<artifact';
 const ARTIFACT_CLOSE = '<</artifact>>';

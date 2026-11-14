@@ -1,3 +1,4 @@
+import { launchGuardRulesOf } from '@goodboy/core/auto';
 import { resolveStoredModelSelection } from '@goodboy/core/providers';
 import { turnReducer } from '@goodboy/core/turn';
 import { updateSessionState } from '@goodboy/db';
@@ -72,6 +73,8 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
   if (ctx.hasAdmission) {
     await publishTurnSpawn({ agentId: activeAgentId, runId, nowMs: Date.now() });
   }
+  const childGuard = ctx.childTurn?.guard ?? null;
+  const launchGuard = childGuard === null ? null : launchGuardRulesOf({ guard: childGuard });
   for await (const rawEvent of runTurn(
     {
       runId,
@@ -100,6 +103,7 @@ export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
         isAutoChild: true,
       }),
       ...(rewriterCopy !== null && { excludesTmp: true }),
+      ...(launchGuard !== null && { launchGuard }),
       ...(apiKeyBinding ?? {}),
       ...claudeFlags,
     },

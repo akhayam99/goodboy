@@ -1,4 +1,4 @@
-import type { LeadPermissionKey } from '@goodboy/core/auto';
+import { OFFLINE_PACKAGE_MANAGERS, type LeadPermissionKey } from '@goodboy/core/auto';
 
 export type PermissionOption = Readonly<{ value: string; label: string }>;
 
@@ -56,7 +56,7 @@ export const PERMISSION_ROWS: ReadonlyArray<PermissionRowCopy> = [
   {
     key: 'dependencies',
     title: 'Add or upgrade dependencies',
-    help: 'Asked before install: npm, pnpm, yarn, pip, cargo. Codex relies on the net.',
+    help: `Asked before install. Offline: ${OFFLINE_PACKAGE_MANAGERS.join(', ')}. Others rely on the net.`,
     asksBefore: 'a new dependency',
     options: [ASK, ALLOW],
   },

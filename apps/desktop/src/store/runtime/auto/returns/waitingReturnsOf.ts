@@ -1,5 +1,11 @@
 import { AUTO_TREE_LIMITS, storedResultOf, type WaitingReturn } from '@goodboy/core/auto';
-import { listAutoDelegations, listAutoOutbox, type AutoTree, type Database } from '@goodboy/db';
+import {
+  listAutoDelegations,
+  listAutoGrantsOfTree,
+  listAutoOutbox,
+  type AutoTree,
+  type Database,
+} from '@goodboy/db';
 import { isAutoReturnDecided } from '../../../../features/auto/isAutoReturnDecided';
 import { rebriefCountOf } from './rebriefCountOf';
 import { returnCountOf } from './returnCountOf';
@@ -24,9 +30,18 @@ export const waitingReturnsOf = async ({
     return [];
   }
   const delegations = await listAutoDelegations({ db, treeId: tree.id });
+  const grants = await listAutoGrantsOfTree({ db, treeId: tree.id });
+  const askingUser = new Set(
+    grants
+      .filter(
+        (grant) => grant.kind !== 'pull_request' && grant.isCurrent && grant.state === 'asked',
+      )
+      .map((grant) => grant.delegationId),
+  );
   return delegations.flatMap((delegation): ReadonlyArray<WaitingReturn> => {
     if (
       !returned.has(delegation.id) ||
+      askingUser.has(delegation.id) ||
       delegation.state !== 'settled' ||
       delegation.outcome !== 'blocked' ||
       isAutoReturnDecided({ delegation, delegations })

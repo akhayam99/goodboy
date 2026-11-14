@@ -1227,9 +1227,9 @@ asked, allowed, declined or used. It is current while its attempt is the latest
 attempt of its delegation in the tree's generation, or while no newer text was
 asked for the same subject. `answerAutoGrantStatement` moves only a current,
 asked row, so a second answer and an answer for a superseded attempt or text are
-dropped. An allowance is used up at launch: the launcher reads
+dropped. An allowance is used up at launch: `startAttempt` reads
 `listAutoGrantAllowances` and puts `markAutoGrantUsedStatement` in the
-transaction that inserts the next attempt, so a crash after Allow and before the
+transaction that inserts the next attempt ([Launch guard](#launch-guard)), so a crash after Allow and before the
 start relaunches with the allowance, and a second launch with the same allowance
 aborts.
 
@@ -1319,6 +1319,66 @@ publishes.
   host (GitHub, GitLab, Bitbucket). The scene data for `work-lead-push` is
   `features/auto/testing/workLeadPushView.ts`.
 
+### Launch guard
+
+The Add or upgrade dependencies and Change protected files rows are enforced
+when a writer agent starts. The lists live once, in
+`packages/core/src/auto/launchGuard.ts`: `PROTECTED_FILE_PATTERNS` (host CI
+config, git hooks, code owners; env files are off the list because git ignores
+them) and `PACKAGE_MANAGERS` (per manager: the add and upgrade commands, the
+install commands, manifests, lockfiles and the offline settings).
+`OFFLINE_PACKAGE_MANAGERS` names the managers with settings (npm, pnpm, pip, uv,
+cargo, each checked by hand against the real tool: an add that would download
+fails); yarn, bun and go are covered by the deny rules and the backstop only,
+and the row's help line says so.
+
+- **At the start.** `launchChildren.ts` reads both rows with
+  `readLaunchPermissions` (`store/runtime/auto/level/`, a failed read asks both)
+  for a writer and hands them to `startAttempt`. `launchGuardStart`
+  (`store/runtime/auto/launchGuard/`) reads the allowances of the delegation the
+  new one retries (`listAutoGrantAllowances`), builds the guard with
+  `launchGuardOf` and stores it in `write_set_json.guard`; the
+  `markAutoGrantUsedStatement` of every allowance sits in the same transaction
+  as the attempt insert, so Allow twice starts one attempt and a crash after
+  Allow relaunches with the allowance. With both rows at Allow there is no guard
+  and the write set is exactly `{ worktreePath }`. A resumed attempt
+  (`answerQuestion`) copies the guard of the paused one, and a relaunch reads
+  the stored guard, never today's rows.
+- **On the spawn.** `resolveChildTurn` reads the guard of the latest attempt of
+  the child's delegation (an unreadable attempt refuses the turn), and
+  `readTurnStream` sends `launchGuardRulesOf` as `launchGuard`: Claude deny
+  rules for the add and upgrade commands, edits of manifests and lockfiles and
+  edits of each protected pattern (appended to `--disallowedTools` in
+  `cli_args.rs`), the offline settings in the environment
+  (`providers/launch_guard.rs`, which refuses a guard on a CLI other than
+  Claude or Codex and any reserved name), and for Codex no
+  `sandbox_workspace_write.network_access=true`. Codex has no per-file rule:
+  for protected files the backstop is the enforcement.
+- **An allowance lifts one.** A dependency allowance lifts the dependency rules
+  and settings for that attempt and keeps the protected ones; a protected file
+  allowance lifts only the pattern that holds its path.
+- **The brief.** `launchGuardBriefOf` (`kickoff.ts`) is added to the brief at
+  launch: do not add or upgrade, installing what the lockfile holds is fine,
+  and when a new one is needed end with `needs="dependency"` (or
+  `needs="protected_file"`) and one line: the package, the version and why, or
+  the path and why. An allowance adds "You may add nock@14.0.1".
+- **The ask.** When the attempt returns with that need and its guard asks it,
+  `needGrantsOf` adds the `auto_grants` row in the settle transaction
+  (`settleAttempt` `grants`), subject from `needSubjectOf` (`nock@14.0.1`, or the
+  path; a path off the list asks nothing). The Lead reads "the user is asked to
+  allow it" and `waitingReturnsOf` leaves the agent out of its decisions while
+  the grant is asked. After `answerGrant`, `restartAfterGrant` starts the agent
+  again through `continueChild` (from the user): Allow with that one allowance,
+  "Do it without" with the answer in the brief. Neither is undone, and a late
+  answer for a superseded attempt is dropped. When the restart is refused (the
+  tree is blocked or at its limit), the agent goes back to the Lead's decisions
+  and the allowance waits for the next retry of that agent.
+- `launchGuard.test.ts` (one case per package manager), `launchGuard.sqlite.test.ts`
+  (Allow as today, the stored guard, a later row change, Allow once, Do it
+  without, one protected path) and the Rust spawn tests in
+  `turn/fake_cli_tests.rs` (rules, settings and network at Ask, byte-equal at
+  Allow, an allowance that lifts one) cover it.
+
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
 the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
 like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`
@@ -1382,7 +1442,8 @@ child and the MOUNTS line it is filled from. Auto keeps its read tools and answe
 itself; when it reports what happens next it describes a hand over and names the role ("I asked
 an implementer to reinstall the dependencies"), never an action of its own. The brief of every
 writer child carries `AUTO_DEPENDENCIES_RULE`: install missing dependencies with the project's
-package manager in its own mount, never link or copy `node_modules` from another checkout.
+package manager in its own mount, never link or copy `node_modules` from another checkout. When
+the dependencies row asks, the [launch guard](#launch-guard) adds its own section after it.
 
 Only a writer role has a shell; Scout, Planner, Investigator and Reviewer run with `Read,Grep,Glob`
 (`READ_ONLY_ROLES` in `cli_args.rs`). `packages/core/src/auto/roleTools.ts` holds that fact for Auto:

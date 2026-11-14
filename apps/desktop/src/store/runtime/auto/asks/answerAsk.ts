@@ -3,11 +3,15 @@ import { getAutoDelegation, getAutoGrant } from '@goodboy/db';
 import type { AutoDelegationId } from '@goodboy/types';
 import type { AskAnswer, AskAnswerResult } from '../../../../features/auto/askAnswerPort';
 import type { AutoRuntime } from '../createAutoRuntime';
+import { restartAfterGrant } from '../launchGuard/restartAfterGrant';
 import { answerGrant } from './answerGrant';
 import { answerPullRequest } from './answerPullRequest';
 import { parseLeadAskId } from './parseLeadAskId';
 
-export type AskRuntime = Pick<AutoRuntime, 'ctx' | 'confirm' | 'publish' | 'drive'>;
+export type AskRuntime = Pick<
+  AutoRuntime,
+  'ctx' | 'confirm' | 'publish' | 'drive' | 'continueChild'
+>;
 
 type Params = {
   readonly runtime: AskRuntime;
@@ -69,6 +73,9 @@ export const answerAsk = async ({ runtime, askId, answer }: Params): Promise<Ask
   const outcome = await answerGrant({ ctx: runtime.ctx, grantId: ref.grantId, answer });
   if (outcome.treeId !== null) {
     await runtime.drive(outcome.treeId);
+  }
+  if (grant !== null && outcome.result !== 'settled') {
+    await restartAfterGrant({ runtime, grant, answer });
   }
   return outcome.result;
 };
