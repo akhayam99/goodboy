@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   publishOfResult,
   pullRequestOfResult,
@@ -483,6 +483,114 @@ describe('a pull request while the push row says Ask', () => {
     expect(world.state.ports.publications).toHaveLength(1);
     expect(world.state.ports.pushes).toEqual([]);
     expect(await asksOf(world)).toEqual([]);
+  });
+});
+
+describe('the push a pull request needs', () => {
+  it('opens the pull request on the commit the gate checked', async () => {
+    const world = await worldOf({ pullRequest: 'allow' });
+    await runChild({ world, child: scribe({}), text: scribeText });
+
+    expect(world.state.ports.publications).toHaveLength(1);
+    expect(world.state.ports.publications[0]?.sha).toBe('abc123');
+  });
+
+  it('opens nothing over a change no allowance covers, at the push value when checks pass', async () => {
+    const world = await worldOf({ pullRequest: 'allow' });
+    await setRow({ world, change: { key: 'protectedFiles', value: 'ask' } });
+    world.state.ports.setHostChanges(pathOf({ mount: LEDGER_MOUNT }), [
+      'src/export.ts',
+      '.github/workflows/ci.yml',
+    ]);
+    await runChild({ world, child: scribe({}), text: scribeText });
+
+    expect(world.state.ports.hostReads.at(-1)).toMatchObject({ head: 'abc123' });
+    expect(world.state.ports.publications).toEqual([]);
+    expect(world.state.ports.pushes).toEqual([]);
+  });
+
+  it('raises no push ask over a change no allowance covers', async () => {
+    const world = await worldOf({ push: 'ask', pullRequest: 'allow' });
+    await setRow({ world, change: { key: 'dependencies', value: 'ask' } });
+    world.state.ports.setHostChanges(pathOf({ mount: LEDGER_MOUNT }), ['pnpm-lock.yaml']);
+    await runChild({ world, child: scribe({}), text: scribeText });
+
+    expect(await asksOf(world)).toEqual([]);
+    expect(world.state.ports.publications).toEqual([]);
+  });
+});
+
+describe('a held pull request and the rows of now', () => {
+  it('asks for the pull request when its row turned to Ask while it waited for the push', async () => {
+    const world = await worldOf({ push: 'ask', pullRequest: 'allow' });
+    await runChild({ world, child: scribe({}), text: scribeText });
+    const pushAsk = await onlyAskOf(world);
+    await setRow({ world, change: { key: 'pullRequest', value: 'ask' } });
+
+    expect(await answererOf(world)({ askId: pushAsk.id, answer: 'allow' })).toBe('allowed');
+
+    expect(world.state.ports.pushes).toHaveLength(1);
+    expect(world.state.ports.publications).toEqual([]);
+    expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'awaiting_confirm' });
+    const pullRequestAsk = await onlyAskOf(world);
+    expect(pullRequestAsk.kind).toBe('pull_request');
+
+    expect(await answererOf(world)({ askId: pullRequestAsk.id, answer: 'allow' })).toBe('allowed');
+    expect(world.state.ports.publications).toHaveLength(1);
+  });
+
+  it('drops a pull request answer after Stop started a new generation', async () => {
+    const world = await worldOf({ pullRequest: 'ask' });
+    await runChild({ world, child: scribe({}), text: scribeText });
+    const ask = await onlyAskOf(world);
+    await world.state.world.db.execute(
+      'UPDATE auto_trees SET generation = generation + 1 WHERE id = ?',
+      [world.treeId],
+    );
+
+    expect(await answererOf(world)({ askId: ask.id, answer: 'allow' })).toBe('settled');
+    expect(world.state.ports.publications).toEqual([]);
+  });
+
+  it('opens nothing again for an older generation after the host refused it', async () => {
+    const world = await worldOf({ pullRequest: 'ask' });
+    world.state.ports.setPublications([{ kind: 'failed', message: 'base branch is missing.' }]);
+    await runChild({ world, child: scribe({}), text: scribeText });
+    const ask = await onlyAskOf(world);
+    const answer = answererOf(world);
+    expect(await answer({ askId: ask.id, answer: 'allow' })).toBe('allowed');
+    await world.state.world.db.execute(
+      'UPDATE auto_trees SET generation = generation + 1 WHERE id = ?',
+      [world.treeId],
+    );
+
+    expect(await answer({ askId: ask.id, answer: 'allow' })).toBe('settled');
+    expect(world.state.ports.publications).toHaveLength(1);
+  });
+
+  it('says so when the host opened the pull request and the save after it failed', async () => {
+    const world = await worldOf({ pullRequest: 'ask' });
+    await runChild({ world, child: scribe({}), text: scribeText });
+    const ask = await onlyAskOf(world);
+    const db = world.runtime.ctx.db;
+    const transaction = db.transaction.bind(db);
+    const spy = vi.spyOn(db, 'transaction').mockImplementation(async (params) => {
+      const isOpenedSave = params.statements.some((statement) =>
+        (statement.params ?? []).some(
+          (value) => typeof value === 'string' && value.includes('"state":"opened"'),
+        ),
+      );
+      if (isOpenedSave) {
+        throw new Error('database is locked');
+      }
+      return transaction(params);
+    });
+
+    await expect(answererOf(world)({ askId: ask.id, answer: 'allow' })).rejects.toThrow(
+      'Pull request #421 is open at https://github.com/harborline/ledger-core/pull/421, but Goodboy could not save that',
+    );
+    spy.mockRestore();
+    expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'opening' });
   });
 });
 

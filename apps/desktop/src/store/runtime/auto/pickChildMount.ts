@@ -2,14 +2,19 @@ import {
   isAutoWriterRole,
   pickAutoMount,
   type AutoDelegationRole,
+  type LeadPermissionValue,
   type MountPickOutcome,
   type PickableMount,
 } from '@goodboy/core/auto';
 import type { SessionId } from '@goodboy/types';
 import type { AutoPorts } from './ports';
 
+const ASK_FIRST =
+  'Adding a project asks the user first, so nothing was added. Ask for the project with a mount block, then delegate this work again.';
+
 type Params = {
   readonly ports: AutoPorts;
+  readonly addProject: LeadPermissionValue<'addProject'>;
   readonly sessionId: SessionId;
   readonly role: AutoDelegationRole;
   readonly requested: string | null;
@@ -20,6 +25,7 @@ type Params = {
 
 export const pickChildMount = async ({
   ports,
+  addProject,
   sessionId,
   role,
   requested,
@@ -30,6 +36,9 @@ export const pickChildMount = async ({
   const first = pickAutoMount({ role, requested, mounts, primaryMountId });
   if (first.kind === 'picked' || first.code !== 'mount_missing' || !isAutoWriterRole({ role })) {
     return first;
+  }
+  if (addProject === 'ask') {
+    return { ...first, message: `${first.message} ${ASK_FIRST}` };
   }
   const added = await ports.mountTaskFolders({ sessionId, requested, text: task });
   if (added.mounted.length > 0) {

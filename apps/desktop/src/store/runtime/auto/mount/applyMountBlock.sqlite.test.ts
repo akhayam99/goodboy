@@ -6,6 +6,7 @@ import { writeAutoLevel } from '../level/writeAutoLevel';
 import { writeLeadPermission } from '../level/writeLeadPermission';
 import type { MountProjectOutcome } from '../ports';
 import {
+  autoDelegates,
   autoTurnEndsWithBlock,
   makeRuntimeWorld,
   userSays,
@@ -161,5 +162,38 @@ describe('the mount action of the block', () => {
     await autoTurnEndsWithBlock({ world, block: MOUNT });
 
     expect(world.state.ports.mountProjectCalls[0]?.mode).toBe(mode);
+  });
+});
+
+describe('a writer delegated to a project that is not added', () => {
+  it.each([
+    ['ask', 0],
+    ['whenAllowed', 1],
+  ] as const)('adds nothing for it while Add a project says %s', async (value, calls) => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await writeLeadPermission({
+      db: world.state.world.db,
+      target: { treeId: world.treeId },
+      change: { key: 'addProject', value },
+      nowMs: AUTO_SEED_NOW,
+    });
+    await userSays({ world, id: 'outbox-user-1', text: 'fix the retries in payments-api' });
+    const outcome = await autoDelegates({
+      world,
+      spec: {
+        children: [
+          {
+            role: 'implementer',
+            task: 'fix the retries in payments-api',
+            reason: 'a code change',
+            mount: 'payments-api',
+          },
+        ],
+      },
+    });
+
+    expect(outcome.isOk).toBe(false);
+    expect(world.state.ports.taskFolderCalls).toHaveLength(calls);
+    expect(world.state.ports.childTurns).toEqual([]);
   });
 });

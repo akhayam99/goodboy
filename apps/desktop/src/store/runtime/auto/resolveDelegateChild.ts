@@ -48,6 +48,7 @@ import { readRunGuidance } from '../runGuidance/readRunGuidance';
 import type { AutoContinue } from '../../../features/auto/delegationContinueOf';
 import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
+import { readAdmissionPermissions } from './admission/readAdmissionPermissions';
 import { refusalMountNote } from './mount/refusalMountNote';
 import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
@@ -436,8 +437,10 @@ export const resolveDelegateChild = async ({
       message: roleCannotRunCommandsMessage({ role, match: commandMention }),
     });
   }
+  const { addProject } = await readAdmissionPermissions({ db: ctx.db, treeId: tree.id });
   const picked = await pickChildMount({
     ports: ctx.ports,
+    addProject,
     sessionId: grant.sessionId,
     role,
     requested: child.mount ?? revise?.producerMountId ?? null,

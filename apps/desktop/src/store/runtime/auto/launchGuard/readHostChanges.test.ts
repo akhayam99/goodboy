@@ -56,7 +56,9 @@ describe('the files a push would send to the host', () => {
       calls,
     });
 
-    expect(await readHostChanges({ readers })(PARAMS)).toEqual(['pnpm-lock.yaml', 'src/retry.ts']);
+    const changes = await readHostChanges({ readers })(PARAMS);
+    expect(changes.paths).toEqual(['pnpm-lock.yaml', 'src/retry.ts']);
+    expect(changes.patch).toContain('diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml');
     expect(calls).toEqual([{ base: 'abc123', isFromMergeBase: false }]);
   });
 
@@ -64,7 +66,7 @@ describe('the files a push would send to the host', () => {
     const calls: Array<Call> = [];
     const readers = readersOf({ hostHead: 'def456', diffs: {}, calls });
 
-    expect(await readHostChanges({ readers })(PARAMS)).toEqual([]);
+    expect(await readHostChanges({ readers })(PARAMS)).toEqual({ paths: [], patch: '' });
     expect(calls).toEqual([]);
   });
 
@@ -76,7 +78,7 @@ describe('the files a push would send to the host', () => {
       calls,
     });
 
-    expect(await readHostChanges({ readers })(PARAMS)).toEqual(['pnpm-lock.yaml']);
+    expect((await readHostChanges({ readers })(PARAMS)).paths).toEqual(['pnpm-lock.yaml']);
     expect(calls).toEqual([{ base: 'origin/main', isFromMergeBase: true }]);
   });
 
@@ -84,7 +86,7 @@ describe('the files a push would send to the host', () => {
     const calls: Array<Call> = [];
     const readers = readersOf({ hostHead: 'fff999', diffs: { main: ['Cargo.lock'] }, calls });
 
-    expect(await readHostChanges({ readers })(PARAMS)).toEqual(['Cargo.lock']);
+    expect((await readHostChanges({ readers })(PARAMS)).paths).toEqual(['Cargo.lock']);
     expect(calls).toEqual([
       { base: 'fff999', isFromMergeBase: false },
       { base: 'origin/main', isFromMergeBase: true },

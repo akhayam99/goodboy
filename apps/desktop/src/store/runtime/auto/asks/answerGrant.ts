@@ -16,6 +16,7 @@ type Params = {
   readonly ctx: AgentVerbContext;
   readonly grantId: AutoGrantId;
   readonly answer: AskAnswer;
+  readonly fromState?: 'asked' | 'declined';
 };
 
 export type AnswerGrantOutcome = Readonly<{
@@ -29,9 +30,10 @@ export const answerGrant = async ({
   ctx,
   grantId,
   answer,
+  fromState = 'asked',
 }: Params): Promise<AnswerGrantOutcome> => {
   const grant = await getAutoGrant({ db: ctx.db, grantId });
-  if (grant === null || grant.state !== 'asked' || !grant.isCurrent) {
+  if (grant === null || grant.state !== fromState || !grant.isCurrent) {
     return SETTLED;
   }
   const nowMs = ctx.now();
@@ -50,6 +52,7 @@ export const answerGrant = async ({
         answer: answer === 'allow' ? 'allowed' : 'declined',
         nowMs,
         abortCode: ABORT_STATE,
+        fromState,
       }),
       {
         sql: 'UPDATE auto_trees SET phase_rev = phase_rev + 1, updated_at = ? WHERE id = ?',

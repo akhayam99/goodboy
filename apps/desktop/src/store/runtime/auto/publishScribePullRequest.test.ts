@@ -65,6 +65,7 @@ const harness = ({ endings }: HarnessParams) => {
         mountId: 'mount-ledger-core',
         agentId: AGENT_ID,
         output: extractScribeText(assistantText),
+        sha: 'abc123',
       },
     });
   return { publish, calls };
@@ -81,6 +82,7 @@ describe('publishing the pull request an Auto Scribe wrote', () => {
       mountId: MOUNT_ID,
       agentId: AGENT_ID,
       output: { prTitle: 'Add the ledger export', prBody: 'Exports the ledger as CSV.' },
+      pushSha: 'abc123',
     });
   });
 

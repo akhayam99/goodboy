@@ -131,9 +131,12 @@ export const launchGuardOf = ({ rows, allowances }: GuardOfParams): LaunchGuard 
   if (rows.dependencies === 'allow' && rows.protectedFiles === 'allow') {
     return null;
   }
-  const allowedPackages = allowances
-    .filter((allowance) => allowance.kind === 'dependency')
-    .map((allowance) => allowance.subject);
+  const allowedPackages =
+    rows.dependencies === 'ask'
+      ? allowances
+          .filter((allowance) => allowance.kind === 'dependency')
+          .map((allowance) => allowance.subject)
+      : [];
   const allowedPaths = allowances
     .filter((allowance) => allowance.kind === 'protected_file')
     .map((allowance) => allowance.subject);
@@ -263,6 +266,12 @@ const DEPENDENCY_RULES: ReadonlyArray<string> = [
   ...fileRulesOf({ patterns: DEPENDENCY_FILES.map((file) => `**/${file}`) }),
 ];
 
+const LOCKFILE_RULES: ReadonlyArray<string> = fileRulesOf({
+  patterns: [...new Set(PACKAGE_MANAGERS.flatMap((manager) => manager.lockfiles))].map(
+    (file) => `**/${file}`,
+  ),
+});
+
 const OFFLINE_ENV: ReadonlyArray<LaunchGuardEnv> = PACKAGE_MANAGERS.flatMap((manager) =>
   manager.env.map(([name, value]) => ({ name, value })),
 );
@@ -280,13 +289,14 @@ export const guardedPatternsOf = ({ guard }: GuardParams): ReadonlyArray<string>
 
 export const launchGuardRulesOf = ({ guard }: GuardParams): LaunchGuardRules | null => {
   const isDependencyAsk = guard.dependencies === 'ask';
+  const lockfileRules = !isDependencyAsk && guard.allowedPackages.length > 0 ? LOCKFILE_RULES : [];
   const protectedPatterns = guardedPatternsOf({ guard });
-  if (!isDependencyAsk && protectedPatterns.length === 0) {
+  if (!isDependencyAsk && protectedPatterns.length === 0 && lockfileRules.length === 0) {
     return null;
   }
   return {
     deniedTools: [
-      ...(isDependencyAsk ? DEPENDENCY_RULES : []),
+      ...(isDependencyAsk ? DEPENDENCY_RULES : lockfileRules),
       ...fileRulesOf({ patterns: protectedPatterns }),
     ],
     env: isDependencyAsk ? OFFLINE_ENV : [],

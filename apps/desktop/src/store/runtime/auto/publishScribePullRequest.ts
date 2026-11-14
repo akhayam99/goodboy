@@ -27,6 +27,7 @@ export const publishScribePullRequest = async ({
     mountId,
     agentId: params.agentId,
     output,
+    pushSha: params.sha,
   });
   const work = getState().scribeWork[scribeKeyOf({ mountId, kind: 'pr' })];
   if (work === undefined || work.agentId !== params.agentId) {

@@ -171,6 +171,7 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     readMountSnapshot: ({ worktreePath }) => deps.worktreeSnapshot({ worktreePath }),
     readCommittedFiles: async (params) =>
       pathsOfPatch({ patch: await deps.worktreeDiffRange(params) }),
+    readCommittedPatch: deps.worktreeDiffRange,
     readHostChanges: readHostChanges({
       readers: {
         baseBranchOf: baseBranchReaderOf({ getState: deps.getState }),

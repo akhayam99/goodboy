@@ -1,3 +1,4 @@
+import { unattributedDependencyPathsOf } from './dependencyChanges';
 import {
   DEPENDENCY_FILES,
   PROTECTED_FILE_PATTERNS,
@@ -24,12 +25,14 @@ type RulesParams = {
   readonly rules: ChangeRules;
 };
 
-const isDependencyAsked = ({ rules }: RulesParams): boolean =>
-  rules.rows.dependencies === 'ask' &&
-  (rules.guard === null || rules.guard.allowedPackages.length === 0);
+const allowedPackagesOf = ({ rules }: RulesParams): ReadonlyArray<string> =>
+  rules.guard === null ? [] : rules.guard.allowedPackages;
 
 export const isChangeGateOn = ({ rules }: RulesParams): boolean =>
-  isDependencyAsked({ rules }) || rules.rows.protectedFiles === 'ask';
+  rules.rows.dependencies === 'ask' || rules.rows.protectedFiles === 'ask';
+
+export const isDependencyPatchNeeded = ({ rules }: RulesParams): boolean =>
+  rules.rows.dependencies === 'ask' && allowedPackagesOf({ rules }).length > 0;
 
 type PathParams = {
   readonly path: string;
@@ -57,24 +60,31 @@ const isPathAllowed = ({ guard, path }: AllowedParams): boolean =>
 
 type GateParams = RulesParams & {
   readonly paths: ReadonlyArray<string> | null;
+  readonly patch: string | null;
 };
 
-export const changeGateOf = ({ rules, paths }: GateParams): ChangeGateVerdict => {
+export const changeGateOf = ({ rules, paths, patch }: GateParams): ChangeGateVerdict => {
   if (!isChangeGateOn({ rules })) {
     return { kind: 'clear' };
   }
   if (paths === null) {
     return { kind: 'unread' };
   }
-  const isDependencyAsk = isDependencyAsked({ rules });
+  const clean = paths.map((path) => cleanPathOf({ path }));
   const isFileAsk = rules.rows.protectedFiles === 'ask';
-  const refused = paths
-    .map((path) => cleanPathOf({ path }))
-    .filter(
-      (path) =>
-        (isDependencyAsk && isDependencyFile({ path })) ||
-        (isFileAsk && isProtectedFile({ path }) && !isPathAllowed({ guard: rules.guard, path })),
-    );
+  const unattributed =
+    rules.rows.dependencies === 'ask'
+      ? unattributedDependencyPathsOf({
+          paths: clean.filter((path) => isDependencyFile({ path })),
+          patch,
+          allowedPackages: allowedPackagesOf({ rules }),
+        })
+      : [];
+  const refused = clean.filter(
+    (path) =>
+      unattributed.includes(path) ||
+      (isFileAsk && isProtectedFile({ path }) && !isPathAllowed({ guard: rules.guard, path })),
+  );
   return refused.length === 0 ? { kind: 'clear' } : { kind: 'refused', paths: refused };
 };
 

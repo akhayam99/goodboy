@@ -200,14 +200,35 @@ const TESTER = {
 
 type AllowedParams = {
   readonly child: Readonly<Record<string, unknown>>;
+  readonly added?: ReadonlyArray<string>;
 };
 
-const allowedWorld = async ({ child }: AllowedParams) => {
+type ManifestParams = {
+  readonly added: ReadonlyArray<string>;
+};
+
+const manifestPatchOf = ({ added }: ManifestParams): string =>
+  [
+    'diff --git a/package.json b/package.json',
+    '@@ -20,2 +20,3 @@',
+    ...added.map((line) => `+    ${line},`),
+    'diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml',
+    '@@ -1,1 +1,2 @@',
+    '+  nock: 14.0.1',
+    'diff --git a/test/retry.test.ts b/test/retry.test.ts',
+  ].join('\n');
+
+const allowedWorld = async ({ child, added = ['"nock": "^14.0.1"'] }: AllowedParams) => {
   const world = await makeRuntimeWorld({ capUsd: 10 });
   world.state.ports.setMounts([LEDGER_MOUNT]);
   world.state.ports.setChecks([TYPECHECK]);
   world.state.ports.setSnapshots(LEDGER_PATH, [START]);
-  world.state.ports.setCommittedFiles(LEDGER_PATH, ['test/retry.test.ts', 'pnpm-lock.yaml']);
+  world.state.ports.setCommittedFiles(LEDGER_PATH, [
+    'test/retry.test.ts',
+    'package.json',
+    'pnpm-lock.yaml',
+  ]);
+  world.state.ports.setPatch(LEDGER_PATH, manifestPatchOf({ added }));
   await writeRows({ world, dependencies: 'ask' });
   await userSays({ world, id: 'outbox-user-1', text: 'cover the payments-api retries' });
   const outcome = await autoDelegates({ world, spec: { children: [child] } });
@@ -288,6 +309,22 @@ describe('the landing backstop after an allowance', () => {
       head: 'abc123',
     });
     expect(world.state.ports.pushes).toHaveLength(1);
+  });
+
+  it('refuses a package the allowance does not name, and its lockfile', async () => {
+    const world = await allowedWorld({
+      child: implementer(LEDGER_PUSH),
+      added: ['"nock": "^14.0.1"', '"left-pad": "^1.3.0"'],
+    });
+    await allowAndRestart({ world });
+
+    expect(await retriedOf({ world })).toMatchObject({
+      outcome: 'failed',
+      reason:
+        'it changed package.json, pnpm-lock.yaml, which no allowance covers, so its checks did not run and nothing landed',
+    });
+    expect(world.state.ports.checkRuns).toEqual([]);
+    expect(world.state.ports.pushes).toEqual([]);
   });
 });
 

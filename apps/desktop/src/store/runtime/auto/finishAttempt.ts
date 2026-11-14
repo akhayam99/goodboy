@@ -44,6 +44,7 @@ import { stoppedRevise } from './reviseFailure/stoppedRevise';
 import type { ChildTurnEnded } from './ports';
 import { pushSettledPublish } from './settledPush/pushSettledPublish';
 import { readCommittedFilesOf } from './readCommittedFiles';
+import { readCommittedPatchOf } from './launchGuard/readCommittedPatchOf';
 import { readSnapshot } from './readSnapshot';
 import { reviseAskOf } from './reviseAskOf';
 import type { SettleAttemptOutcome } from './settleAttempt';
@@ -232,6 +233,7 @@ const attributionOf = async ({
     delegation,
     attempt,
     changedPaths: attributed.isComplete ? attributed.changedPaths : null,
+    readPatch: () => readCommittedPatchOf({ ports: ctx.ports, worktreePath, baseline, result }),
   });
   return {
     changedFiles: attributed.changedFiles,

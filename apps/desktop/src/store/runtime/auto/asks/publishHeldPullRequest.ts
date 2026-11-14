@@ -1,5 +1,11 @@
 import type { ResultPullRequest } from '@goodboy/core/auto';
-import type { AutoDelegation, PlainStatement } from '@goodboy/db';
+import {
+  allowedAutoGrantGuard,
+  type AutoDelegation,
+  type AutoGrantId,
+  type GuardedStatement,
+  type PlainStatement,
+} from '@goodboy/db';
 import { brandId, type SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import type { ScribePublication } from '../ports';
@@ -10,14 +16,36 @@ import { isStatementsWritten } from './isStatementsWritten';
 import { pullRequestRecordStatement } from './pullRequestRecordStatement';
 
 const NO_SESSION = 'The session of this pull request is unknown.';
+const ABORT_GENERATION = 'pull_request_generation';
+const ABORT_ALLOWANCE = 'pull_request_allowance';
+const SAVE_TRIES = 3;
 
 type Params = {
   readonly ctx: AgentVerbContext;
   readonly delegation: AutoDelegation;
   readonly record: ResultPullRequest;
+  readonly sha: string;
 };
 
-const claimOf = async ({ ctx, delegation, record }: Params): Promise<ResultPullRequest | null> => {
+type ClaimParams = Omit<Params, 'sha'>;
+
+type GenerationParams = {
+  readonly delegation: AutoDelegation;
+};
+
+const currentGenerationGuard = ({ delegation }: GenerationParams): GuardedStatement => ({
+  sql: `SELECT 1 FROM auto_delegations owner JOIN auto_trees tree ON tree.id = owner.tree_id
+    WHERE owner.id = ? AND owner.generation = tree.generation`,
+  params: [delegation.id],
+  abortWhen: 'noRows',
+  abortCode: ABORT_GENERATION,
+});
+
+const claimOf = async ({
+  ctx,
+  delegation,
+  record,
+}: ClaimParams): Promise<ResultPullRequest | null> => {
   const nowMs = ctx.now();
   const claimed: ResultPullRequest = {
     ...record,
@@ -28,6 +56,15 @@ const claimOf = async ({ ctx, delegation, record }: Params): Promise<ResultPullR
   const isClaimed = await isStatementsWritten({
     ctx,
     statements: [
+      currentGenerationGuard({ delegation }),
+      ...(record.grantId === null
+        ? []
+        : [
+            allowedAutoGrantGuard({
+              grantId: brandId<AutoGrantId>({ value: record.grantId }),
+              abortCode: ABORT_ALLOWANCE,
+            }),
+          ]),
       pullRequestRecordStatement({
         delegation,
         record: claimed,
@@ -40,7 +77,7 @@ const claimOf = async ({ ctx, delegation, record }: Params): Promise<ResultPullR
   return isClaimed ? claimed : null;
 };
 
-const openHeld = async ({ ctx, delegation, record }: Params): Promise<ScribePublication> => {
+const openHeld = async ({ ctx, delegation, record, sha }: Params): Promise<ScribePublication> => {
   const sessionId = delegation.target['sessionId'];
   if (typeof sessionId !== 'string') {
     return { kind: 'failed', message: NO_SESSION };
@@ -56,6 +93,7 @@ const openHeld = async ({ ctx, delegation, record }: Params): Promise<ScribePubl
         commitMessages: [],
         changelogEntry: null,
       },
+      sha,
     })
     .catch((error: unknown): ScribePublication => ({
       kind: 'failed',
@@ -74,30 +112,58 @@ const grantUsedStatement = ({ grantId, nowMs }: UsedParams): PlainStatement => (
   params: [nowMs, grantId],
 });
 
+type SettleParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegation: AutoDelegation;
+  readonly settled: ResultPullRequest;
+};
+
+const isSettledSaved = async ({ ctx, delegation, settled }: SettleParams): Promise<boolean> => {
+  for (let tries = 0; tries < SAVE_TRIES; tries += 1) {
+    const nowMs = ctx.now();
+    const isSaved = await isStatementsWritten({
+      ctx,
+      statements: [
+        pullRequestRecordStatement({ delegation, record: settled, fromState: 'opening' }),
+        ...(settled.state === 'opened' && settled.grantId !== null
+          ? [grantUsedStatement({ grantId: settled.grantId, nowMs })]
+          : []),
+        bumpTreeStatement({ delegation, nowMs }),
+      ],
+    });
+    if (isSaved) {
+      return true;
+    }
+  }
+  return false;
+};
+
+type UnsavedParams = {
+  readonly published: ScribePublication;
+};
+
+const unsavedMessageOf = ({ published }: UnsavedParams): string =>
+  published.kind === 'opened'
+    ? `Pull request #${published.number} is open at ${published.url}, but Goodboy could not save that, so Auto still shows it as opening.`
+    : `The pull request was not opened (${published.message}), and Goodboy could not save that, so Auto still shows it as opening.`;
+
 export const publishHeldPullRequest = async ({
   ctx,
   delegation,
   record,
+  sha,
 }: Params): Promise<boolean> => {
   const claimed = await claimOf({ ctx, delegation, record });
   if (claimed === null) {
     return false;
   }
-  const published = await openHeld({ ctx, delegation, record: claimed });
-  const nowMs = ctx.now();
+  const published = await openHeld({ ctx, delegation, record: claimed, sha });
   const settled: ResultPullRequest =
     published.kind === 'opened'
       ? { ...claimed, state: 'opened', number: published.number, url: published.url }
       : { ...claimed, state: 'failed', message: published.message };
-  await isStatementsWritten({
-    ctx,
-    statements: [
-      pullRequestRecordStatement({ delegation, record: settled, fromState: 'opening' }),
-      ...(settled.state === 'opened' && settled.grantId !== null
-        ? [grantUsedStatement({ grantId: settled.grantId, nowMs })]
-        : []),
-      bumpTreeStatement({ delegation, nowMs }),
-    ],
-  });
+  if (!(await isSettledSaved({ ctx, delegation, settled }))) {
+    throw new Error(unsavedMessageOf({ published }));
+  }
   return true;
 };

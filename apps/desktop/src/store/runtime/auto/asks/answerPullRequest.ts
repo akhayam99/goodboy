@@ -67,7 +67,16 @@ export const answerPullRequest = async ({
       answer === 'allow' &&
       (grant.state === 'allowed' || grant.state === 'declined') &&
       OPEN_AGAIN_STATES.has(held.record.state);
-    return canOpenAgain ? opened({ ctx, ...held }) : 'settled';
+    if (!canOpenAgain) {
+      return 'settled';
+    }
+    if (grant.state === 'declined') {
+      const allowed = await answerGrant({ ctx, grantId: grant.id, answer, fromState: 'declined' });
+      if (allowed.result !== 'allowed') {
+        return 'settled';
+      }
+    }
+    return opened({ ctx, ...held });
   }
   const answered = await answerGrant({ ctx, grantId: grant.id, answer });
   if (answered.result === 'settled') {

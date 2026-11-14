@@ -1,7 +1,7 @@
 import { pathsOfPatch } from '@goodboy/core/auto';
 import type { DiffRangeParams } from '../../../../features/worktree/worktree';
 import type { DiffFromMergeBaseParams } from '../../../../features/worktree/worktreeDiffFromMergeBase';
-import type { AutoPorts, ReadHostChangesParams } from '../ports';
+import type { AutoPorts, HostChanges, ReadHostChangesParams } from '../ports';
 import type { RemoteHeadReaders } from '../readRemoteHead';
 
 export type BaseBranchParams = Pick<ReadHostChangesParams, 'sessionId' | 'worktreePath'>;
@@ -34,19 +34,28 @@ const fromBaseOf = async ({ readers, params }: FromBaseParams): Promise<string> 
     .catch(() => readers.diffFromMergeBase({ worktreePath, base, head }));
 };
 
+type PatchParams = {
+  readonly patch: string;
+};
+
+const changesOf = ({ patch }: PatchParams): HostChanges => ({
+  paths: pathsOfPatch({ patch }),
+  patch,
+});
+
 export const readHostChanges =
   ({ readers }: Params): AutoPorts['readHostChanges'] =>
   async ({ sessionId, worktreePath, branch, head }: ReadHostChangesParams) => {
     const params = { sessionId, worktreePath, branch, head };
     const hostHead = await readers.remoteHeadOf({ worktreePath, branch });
     if (hostHead === null || hostHead === '') {
-      return pathsOfPatch({ patch: await fromBaseOf({ readers, params }) });
+      return changesOf({ patch: await fromBaseOf({ readers, params }) });
     }
     if (hostHead === head) {
-      return [];
+      return changesOf({ patch: '' });
     }
     const patch = await readers
       .diffRange({ worktreePath, base: hostHead, head })
       .catch(() => fromBaseOf({ readers, params }));
-    return pathsOfPatch({ patch });
+    return changesOf({ patch });
   };

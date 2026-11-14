@@ -51,7 +51,10 @@ type RefParams = {
 };
 
 const currentGrantSql = ({ ref }: RefParams): string => `(
-  (${ref}.attempt_id IS NULL OR EXISTS (
+  ((${ref}.attempt_id IS NULL AND EXISTS (
+    SELECT 1 FROM auto_delegations owner JOIN auto_trees owner_tree ON owner_tree.id = owner.tree_id
+    WHERE owner.id = ${ref}.delegation_id AND owner.generation = owner_tree.generation
+  )) OR EXISTS (
     SELECT 1 FROM auto_attempts bound JOIN auto_trees tree ON tree.id = bound.tree_id
     WHERE bound.id = ${ref}.attempt_id AND bound.generation = tree.generation
       AND NOT EXISTS (
@@ -186,6 +189,7 @@ type AnswerGrantStatementParams = {
   readonly answer: AutoGrantAnswer;
   readonly nowMs: number;
   readonly abortCode: string;
+  readonly fromState?: Extract<AutoGrantState, 'asked' | 'declined'>;
 };
 
 export const answerAutoGrantStatement = ({
@@ -193,11 +197,28 @@ export const answerAutoGrantStatement = ({
   answer,
   nowMs,
   abortCode,
+  fromState = 'asked',
 }: AnswerGrantStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_grants SET state = ?, answered_at = ?, updated_at = ?
-    WHERE id = ? AND state = 'asked' AND ${currentGrantSql({ ref: 'auto_grants' })}`,
-  params: [answer, nowMs, nowMs, grantId],
+    WHERE id = ? AND state = ? AND ${currentGrantSql({ ref: 'auto_grants' })}`,
+  params: [answer, nowMs, nowMs, grantId, fromState],
   abortWhen: 'noChanges',
+  abortCode,
+});
+
+type AllowedGuardParams = {
+  readonly grantId: AutoGrantId;
+  readonly abortCode: string;
+};
+
+export const allowedAutoGrantGuard = ({
+  grantId,
+  abortCode,
+}: AllowedGuardParams): GuardedStatement => ({
+  sql: `SELECT 1 FROM auto_grants
+    WHERE id = ? AND state = 'allowed' AND ${currentGrantSql({ ref: 'auto_grants' })}`,
+  params: [grantId],
+  abortWhen: 'noRows',
   abortCode,
 });
 
