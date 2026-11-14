@@ -1153,6 +1153,20 @@ default (compare and swap on the workspace value) or on one Lead
 (`setAutoTreePermissionsIfUnchanged`, compare and swap on the JSON it read); a
 null value is Reset and removes the row. A lost swap re-reads and retries once,
 then fails with "changed in another window"; a failed write keeps the old value.
+
+The panel for these rows is `features/auto/permissions/`: `LeadPermissionsPanel`
+shows the preset tabs (Custom lights by itself and is not pickable), the nine
+rows on one grid, the spend limit read only, the four locked rows and the
+closing sentence of `permissionSentenceOf`. A row saves when you change it;
+there is no draft. An own row shows "This Lead" (or "Set here" on the default)
+with **Reset**, which writes null; the other rows follow the default live. A
+failed write keeps the old value and shows the error under its row, and the
+panel reads again after every write. Picking a preset writes the level and
+clears the own rows; on a Lead it pins a row only where a workspace default
+would still disagree with the preset. `LeadPermissionsChip` mounts the panel
+from `AutoLevelChip` (through `WorkAwareChip`) in Start work and on the Lead
+page when Work is on; with Work off the level chip stays. Workspace settings
+show it as **Autonomy defaults** in place of the **Auto asks you** row.
 A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level with the switch
 on and off, each precedence step, the stale pair) and

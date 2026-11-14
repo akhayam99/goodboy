@@ -41,7 +41,9 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef }: Props) =
     >
       {kind}
       <span ref={asksSlotRef} data-settings-slot="asks" className="inline-flex empty:hidden" />
-      {auto === null ? null : <AutoLevelSetting sessionId={sessionId} workspaceId={workspaceId} />}
+      {auto === null ? null : (
+        <AutoLevelSetting sessionId={sessionId} workspaceId={workspaceId} treeId={auto.treeId} />
+      )}
       {auto === null ? (
         <SessionLimitSetting sessionId={sessionId} />
       ) : (
