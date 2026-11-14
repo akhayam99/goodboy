@@ -104,8 +104,18 @@ describe('the browser tier', () => {
     });
   });
 
-  it('pushes at the reader threshold: 1344 is the first main that fits 720', () => {
-    expect(drawerLayoutOf({ main: 1343, sizing: 'browser', savedWidth: 720 }).mode).toBe('overlay');
+  it('pushes like the terminal does, narrowing toward 480 before it ever lies over the page', () => {
+    expect(drawerLayoutOf({ main: 1103, sizing: 'browser', savedWidth: 720 }).mode).toBe('overlay');
+    expect(drawerLayoutOf({ main: 1104, sizing: 'browser', savedWidth: 720 })).toEqual({
+      mode: 'push',
+      width: 480,
+      dragMax: 480,
+    });
+    expect(drawerLayoutOf({ main: 1194, sizing: 'browser', savedWidth: 720 })).toEqual({
+      mode: 'push',
+      width: 570,
+      dragMax: 570,
+    });
     expect(drawerLayoutOf({ main: 1344, sizing: 'browser', savedWidth: 720 })).toEqual({
       mode: 'push',
       width: 720,
@@ -134,11 +144,11 @@ describe('the browser tier', () => {
     });
   });
 
-  it('lies over the page once even the default does not fit', () => {
-    expect(drawerLayoutOf({ main: 1200, sizing: 'browser', savedWidth: 1400 })).toEqual({
+  it('lies over the page once even the narrowest browser does not fit', () => {
+    expect(drawerLayoutOf({ main: 1100, sizing: 'browser', savedWidth: 1400 })).toEqual({
       mode: 'overlay',
-      width: 1184,
-      dragMax: 1184,
+      width: 1084,
+      dragMax: 1084,
     });
   });
 
