@@ -5,6 +5,8 @@ import { useConversationAsks } from '../../../store/hooks/useConversationAsks';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { dockPlanRowOf } from '../dockPlanRowOf';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
+import { askBarsOf } from './askBarOf';
+import { AutoDockAsk } from './AutoDockAsk';
 import { AutoDockLive } from './AutoDockLive';
 import { AutoDockPlan } from './AutoDockPlan';
 import { AutoNextAction } from './AutoNextAction';
@@ -38,6 +40,9 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
   const isRevisionAsked = nextStep !== null && nextStep.reviseOf === plan?.artifact.artifactId;
   const isNextShown = !hasAskAbove && nextStep !== null && (!isPlanWaiting || isRevisionAsked);
   const projectAsk = hasAskAbove || isPlanWaiting || isNextShown ? null : projectAskOf({ view });
+  const asks = askBarsOf({ view });
+  const askBar =
+    hasAskAbove || isPlanWaiting || isNextShown || projectAsk !== null ? null : asks.first;
   return (
     <div data-auto-dock="" data-dock-row="" className="flex min-w-0 flex-col gap-2 empty:hidden">
       {plan === null || hasAskAbove ? null : (
@@ -68,6 +73,15 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
       )}
       {projectAsk === null ? null : (
         <AutoProjectAsk sessionId={sessionId} rootAgentId={rootAgent.id} ask={projectAsk} />
+      )}
+      {askBar === null ? null : (
+        <AutoDockAsk
+          sessionId={sessionId}
+          view={view}
+          rootAgent={rootAgent}
+          bar={askBar}
+          moreCount={asks.moreCount}
+        />
       )}
       <AutoDockLive sessionId={sessionId} view={view} rootAgent={rootAgent} actions={actions} />
     </div>

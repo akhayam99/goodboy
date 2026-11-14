@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { COLLAPSED_RAIL_WIDTH, DrawerColumn } from '@goodboy/ui';
+import { leadPermissionsOf, type StoredLeadPermissionRows } from '@goodboy/core/auto';
+import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
 import type { AgentQueuedTurn } from '../../../../../store/slices/agentQueue/types';
 import { SceneAutoTreeNav } from '../u26/SceneAutoTreeNav';
@@ -30,6 +32,12 @@ type Props = {
   readonly mountAct?: 'pending' | 'failing';
   readonly hasLeadPage?: boolean;
   readonly isWorkOn?: boolean;
+  readonly viewOf?: (params: ViewOfParams) => AutoTreeView;
+  readonly leadRows?: StoredLeadPermissionRows;
+};
+
+type ViewOfParams = {
+  readonly view: AutoTreeView;
 };
 
 const TRAY_IMAGE_DATA_URL =
@@ -64,6 +72,8 @@ export const AutoChatScene = ({
   mountAct,
   hasLeadPage = false,
   isWorkOn = false,
+  viewOf,
+  leadRows,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const sizing = useAppStore(selectDrawerSizing);
@@ -82,7 +92,23 @@ export const AutoChatScene = ({
       agentProviderOverride: { [AUTO_ROOT_ID]: 'anthropic' },
       agentModelOverride: { [AUTO_ROOT_ID]: 'opus-5.5' },
       agentEffortOverride: { [AUTO_ROOT_ID]: 'medium' },
-      autoTreeViews: { [AUTO_SESSION.id]: [scene.view] },
+      autoTreeViews: {
+        [AUTO_SESSION.id]: [viewOf === undefined ? scene.view : viewOf({ view: scene.view })],
+      },
+      ...(leadRows === undefined
+        ? {}
+        : {
+            readLeadPermissions: async () =>
+              leadPermissionsOf({
+                leadRows,
+                defaultRows: {},
+                sessionLevel: 'plan',
+                workspaceLevel: null,
+                isPlanApprovalOff: false,
+                isWorkFlowOn: true,
+                spendLimitUsd: 10,
+              }),
+          }),
       loadAutoTrees: async () => undefined,
       selectedAgentId: { [AUTO_SESSION.id]: selectedId },
       agentTurnState: { [AUTO_ROOT_ID]: scene.rootTurn },
@@ -144,7 +170,7 @@ export const AutoChatScene = ({
       });
     }, PLAN_OPEN_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [state, isPlanOpen, selectedId, mountAct, isWorkOn]);
+  }, [state, isPlanOpen, selectedId, mountAct, isWorkOn, viewOf, leadRows]);
 
   if (!isReady || agent === null) {
     return null;
