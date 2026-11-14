@@ -7,6 +7,7 @@ import type {
   PickableMount,
   RemoteRead,
 } from '@goodboy/core/auto';
+import type { ExtractedScribeText } from '@goodboy/core/context';
 import type { WorkflowRoutingWireFields } from '@goodboy/core/orchestrator';
 import type { AutoDelegation } from '@goodboy/db';
 import type {
@@ -240,7 +241,7 @@ export type PublishScribeParams = Readonly<{
   sessionId: SessionId;
   mountId: string;
   agentId: AgentId;
-  assistantText: string;
+  output: ExtractedScribeText;
 }>;
 
 export type ScribePublication =

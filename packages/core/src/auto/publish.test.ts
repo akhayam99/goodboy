@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canPutBackPublish,
   canRetryPublish,
+  isPublishAskedOf,
   publishGateOf,
   publishOfRequest,
   publishOfResult,
@@ -48,10 +49,22 @@ describe('the publish gate of a writer', () => {
   });
 });
 
+describe('which publish waits for you', () => {
+  it('asks a force push at every push value and a plain push only at Ask', () => {
+    expect(isPublishAskedOf({ mode: 'force', push: 'whenChecksPass' })).toBe(true);
+    expect(isPublishAskedOf({ mode: 'force', push: 'ask' })).toBe(true);
+    expect(isPublishAskedOf({ mode: 'push', push: 'ask' })).toBe(true);
+    expect(isPublishAskedOf({ mode: 'push', push: 'whenChecksPass' })).toBe(false);
+  });
+});
+
 describe('what the card and the digest say about a publish', () => {
   it('names each state', () => {
     expect(publishTextOf({ publish: aPublish() })).toBe(
       'Waiting for you to confirm the force push of harborline/fix-ledger',
+    );
+    expect(publishTextOf({ publish: aPublish({ mode: 'push' }) })).toBe(
+      'Waiting for you to confirm the push of harborline/fix-ledger at a1b2c3d',
     );
     expect(publishTextOf({ publish: aPublish({ state: 'pushed' }) })).toBe(
       'Force pushed harborline/fix-ledger at a1b2c3d, the earlier online version is kept as a backup',

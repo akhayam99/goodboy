@@ -1157,6 +1157,60 @@ the ask leaves both windows on their next read. `asks.sqlite.test.ts` and
 attempt, an older commit, the crash before launch, counts by id and the old
 start ask.
 
+### Publish gates
+
+The Push a branch and Open or update a pull request rows are enforced in
+Goodboy's own publish step, never in the agent (an agent cannot push at all).
+`readPublishPermissions` (`store/runtime/auto/level/`) reads both effective
+values for the tree, with the Work switch from the `work.enabled` setting; a
+read that fails reads as Ask for both, so a broken read holds and never
+publishes.
+
+- **Push.** `planPublish` takes the push value. `isPublishAskedOf`
+  (`packages/core/src/auto/publish.ts`) is true for a force push at every value
+  (it keeps its backup, as before) and for a plain push at Ask. A plain push at
+  Ask is written `awaiting_confirm` instead of `pushing`, bound to its branch and
+  the checked commit, so nothing reaches the host and the commits stay local. It
+  lists as `push:<delegation>:<commit>` and reads "Waiting for you to confirm
+  the push of <branch> at <sha>". Push runs the publish act `confirm` (one keyed
+  queue per worktree, the `expectedState` guard, so two answers push once);
+  Don't push writes `declined`, and `confirm` on a declined plain push is Push
+  now. A retry of an allowed push pushes the recorded commit once; a retry of a
+  push that was never confirmed plans again and asks again at Ask. A new attempt
+  plans its own commit and asks again; an answer for an older commit is dropped.
+  At When checks pass the path is today's, value for value.
+- **Pull request.** The gate sits at publication, not at the Scribe's start.
+  When a Scribe ends completed with text and the row says Ask, `finishAttempt`
+  calls `holdScribePullRequest`: it inserts the `auto_grants` row
+  (`grant-pr-<attempt>`, kind `pull_request`, subject the mount id, text version
+  `pullRequestTextVersionOf`: the attempt plus a hash of the exact title and
+  body) before the settle, and the settle writes the held text to
+  `result_json.verified.pullRequest` (`ResultPullRequest`,
+  `packages/core/src/auto/pullRequestAsk.ts`). Nothing reaches the host. The
+  delegation completes with "The pull request waits for you to open it: <title>".
+  `leadAsksOf` lists the grant only while a settled delegation of the current
+  generation holds its text, so a grant left by a dropped settle never shows. `answerAsk`
+  hands a pull request grant to `answerPullRequest`: Open moves the grant
+  through `answerGrant`, claims the record (`awaiting_confirm`, `failed` or
+  `declined` to `opening`, guarded on its state, a stale `opening` only after
+  `PUSH_LIVE_WINDOW_MS`), calls the `publishScribePullRequest` port with the held
+  title and body unchanged, then writes `opened` with the number and link and
+  the grant `used` in one transaction, or `failed` with the reason and the text
+  kept. Open again on a failed or declined record retries once per claim; a
+  second Open while one runs is settled. Not yet writes `declined` and keeps the
+  text. A newer text on the same mount (an update) asks again, and the answer
+  for the older text is dropped because its grant is no longer current. At Allow
+  the Scribe's text goes to the port as today. The port carries the extracted
+  `output`, so the title and body the ask shows are the ones handed to the host
+  call; the host path still adds its closing references and the hidden Scribe
+  signature to the body, as on the Branch page.
+- `publishGates.sqlite.test.ts` covers the held push, Push, Don't push and Push
+  now, a retry that pushes once, a newer commit, the workspace default, force at
+  both values, the held text, Open twice, Not yet, a refused host and Open
+  again, an update, Allow as today, and one case per host (GitHub, GitLab,
+  Bitbucket). The scene data for `work-lead-push` is
+  `features/auto/testing/workLeadPushView.ts`.
+
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
 the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
 like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`
