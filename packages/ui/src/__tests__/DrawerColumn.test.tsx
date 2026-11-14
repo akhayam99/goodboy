@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 
-import { createElement, useContext, useSyncExternalStore, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { createElement, useSyncExternalStore, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
@@ -23,7 +22,6 @@ import {
   type DrawerSizing,
 } from '../drawerGeometry';
 import { registerEscapeLayer } from '../escape';
-import { DrawerEdgeContext } from '../drawerEdgeContext';
 import { DURATION_QUICK_MS, DURATION_BASE_MS } from '../motionTimings';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
@@ -86,6 +84,7 @@ const renderSized = (sizing: DrawerSizing, frame: DrawerColumnFrame = 'none') =>
 
 const panel = () => screen.getByRole('complementary', { name: 'Side panel' });
 const card = () => panel().querySelector<HTMLElement>('[data-drawer-card]');
+const box = () => panel().querySelector<HTMLElement>('[data-container="drawer"]');
 const content = () => panel().querySelector<HTMLElement>('[data-drawer-content]');
 const scrim = () => document.querySelector<HTMLElement>('[data-drawer-scrim]');
 const pageOf = (container: HTMLElement) =>
@@ -113,20 +112,22 @@ describe('DrawerColumn pushing', () => {
     renderColumn('drafts');
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET * 2}px`);
-    expect(card()?.dataset['container']).toBe('drawer');
-    expect(card()?.className).toContain('rounded-frame');
-    expect(card()?.className).toContain('bg-drawer');
-    expect(card()?.className).not.toContain('shadow');
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(box()?.dataset['container']).toBe('drawer');
+    expect(box()?.className).toContain('rounded-l-frame');
+    expect(box()?.className).toContain('bg-drawer');
+    expect(box()?.className).not.toContain('shadow');
   });
 
-  it('keeps the 8px inset and the full border on the pushing card', () => {
+  it('keeps the 8px gap to the page, flush on the right, with a border on three sides', () => {
     stubColumnWidth(1094);
     renderColumn('drafts');
 
-    expect(card()?.parentElement?.className).toContain('py-2');
-    expect(card()?.parentElement?.className).toContain('pr-2');
-    expect(card()?.className).toMatch(/(^|\s)border(\s|$)/);
+    expect(box()?.parentElement?.className).toContain('py-2');
+    expect(box()?.parentElement?.className).not.toContain('pr-2');
+    expect(box()?.className).toContain('border-l');
+    expect(box()?.className).toContain('border-y');
+    expect(box()?.className).not.toMatch(/(^|\s)border(\s|$)/);
   });
 
   it('opens a reader drawer at 720 and pushes it when the page container keeps its room', () => {
@@ -135,7 +136,7 @@ describe('DrawerColumn pushing', () => {
 
     expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
     expect(handle()).not.toBeNull();
   });
 
@@ -179,13 +180,14 @@ describe('DrawerColumn pushing', () => {
     expect(panel().previousElementSibling).toBe(pageOf(container));
   });
 
-  it('keeps a closed column empty, zero wide and inert', () => {
+  it('keeps a closed column without a rail empty and zero wide', () => {
     stubColumnWidth(1094);
     renderColumn(null);
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('closed');
     expect(panel().style.width).toBe('0px');
-    expect(panel().hasAttribute('inert')).toBe(true);
+    expect(card()).toBeNull();
+    expect(handle()).toBeNull();
   });
 
   it('pushes only when the main area keeps a 464px column beside the drawer track', () => {
@@ -239,11 +241,11 @@ describe('DrawerColumn over the page', () => {
   it('draws the overlay card with left corners, a left border only and a large shadow', () => {
     stubColumnWidth(678);
     renderColumn('drafts');
-    const className = card()?.className ?? '';
+    const className = box()?.className ?? '';
     expect(className).toContain('bg-drawer');
 
-    expect(card()?.parentElement?.className).not.toContain('py-2');
-    expect(card()?.parentElement?.className).not.toContain('pr-2');
+    expect(box()?.parentElement?.className).not.toContain('py-2');
+    expect(box()?.parentElement?.className).not.toContain('pr-2');
     expect(className).toContain('rounded-l-frame');
     expect(className).not.toMatch(/(^|\s)rounded-frame(\s|$)/);
     expect(className).toContain('border-l');
@@ -428,7 +430,7 @@ describe('DrawerColumn sizes', () => {
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '900');
     renderColumn('drafts');
 
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_INSET}px`);
   });
 
   it('reads a width saved before the 384 floor back at the floor', () => {
@@ -436,18 +438,18 @@ describe('DrawerColumn sizes', () => {
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '340');
     renderColumn('drafts');
 
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MIN + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MIN + DRAWER_INSET}px`);
   });
 
   it('keeps the two tiers apart: each reads and writes only its own saved width', () => {
     stubColumnWidth(2400);
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '500');
     const side = renderSized('side');
-    expect(panel().style.width).toBe(`${500 + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${500 + DRAWER_INSET}px`);
     side.unmount();
 
     const reader = renderSized('reader');
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
     fireEvent.keyDown(handleOf(), { key: 'ArrowLeft' });
 
     expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBe(String(READER_DRAWER_DEFAULT + 8));
@@ -455,19 +457,19 @@ describe('DrawerColumn sizes', () => {
     reader.unmount();
 
     renderSized('side');
-    expect(panel().style.width).toBe(`${500 + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${500 + DRAWER_INSET}px`);
   });
 
   it('reads the reader width back clamped to 480 and 1000', () => {
     stubColumnWidth(2600);
     localStorage.setItem(READER_DRAWER_STORAGE_KEY, '1500');
     const high = renderSized('reader');
-    expect(panel().style.width).toBe(`${READER_DRAWER_MAX + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_MAX + DRAWER_INSET}px`);
     high.unmount();
 
     localStorage.setItem(READER_DRAWER_STORAGE_KEY, '300');
     renderSized('reader');
-    expect(panel().style.width).toBe(`${READER_DRAWER_MIN + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_MIN + DRAWER_INSET}px`);
   });
 
   it('writes the reader width once, at the end of a drag', () => {
@@ -480,7 +482,7 @@ describe('DrawerColumn sizes', () => {
     fireEvent.mouseMove(window, { clientX: 800 });
 
     expect(setItem).not.toHaveBeenCalled();
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + 200 + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + 200 + DRAWER_INSET}px`);
 
     fireEvent.mouseUp(window);
 
@@ -494,11 +496,11 @@ describe('DrawerColumn sizes', () => {
     stubColumnWidth(2600);
     localStorage.setItem(READER_DRAWER_STORAGE_KEY, '900');
     renderSized('reader');
-    expect(panel().style.width).toBe(`${900 + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${900 + DRAWER_INSET}px`);
 
     fireEvent.doubleClick(handleOf());
 
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
     expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBe(String(READER_DRAWER_DEFAULT));
   });
 
@@ -539,7 +541,7 @@ describe('DrawerColumn sizes', () => {
     );
 
     expect(setItem).not.toHaveBeenCalled();
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + 49 + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + 49 + DRAWER_INSET}px`);
 
     fireEvent.mouseUp(window);
 
@@ -560,7 +562,7 @@ describe('DrawerColumn sizes', () => {
     fireEvent.mouseDown(handle, { button: 0, clientX: 1000 });
     fireEvent.mouseMove(window, { clientX: 0 });
 
-    expect(panel().style.width).toBe(`${room + DRAWER_INSET * 2}px`);
+    expect(panel().style.width).toBe(`${room + DRAWER_INSET}px`);
 
     fireEvent.mouseUp(window);
 
@@ -621,7 +623,7 @@ describe('DrawerColumn sizes', () => {
         savedWidth: sizing === 'reader' ? READER_DRAWER_DEFAULT : RIGHT_DRAWER_DEFAULT,
       });
       const aside = drawerAsideWidthOf({ width, mode });
-      const inner = card()?.parentElement ?? null;
+      const inner = box()?.parentElement ?? null;
       const gutter = inner?.firstElementChild ?? null;
 
       expect(aside).toBeLessThanOrEqual(columnWidth);
@@ -629,16 +631,15 @@ describe('DrawerColumn sizes', () => {
       expect(panel().style.width).toBe(`${aside}px`);
       expect(gutter?.className).toContain('w-2');
       expect(gutter?.className).toContain('shrink-0');
-      expect(card()?.className).toContain('min-w-0');
-      expect(card()?.className).toContain('overflow-clip');
+      expect(box()?.className).toContain('min-w-0');
+      expect(box()?.className).toContain('overflow-clip');
       if (mode === 'overlay') {
         expect(inner?.style.minWidth).toBe(`${aside}px`);
       }
       if (mode === 'push') {
         expect(inner?.style.minWidth).toBe('0');
-        expect(panel().style.getPropertyValue('--goodboy-drawer-track')).toBe(`${aside}px`);
+        expect(panel().style.getPropertyValue('--goodboy-drawer-panel')).toBe(`${width}px`);
         expect(panel().className).toContain('overflow-clip');
-        expect(card()?.parentElement?.className).toContain('pr-2');
       }
     },
   );
@@ -672,7 +673,7 @@ describe('DrawerColumn as two containers', () => {
     expect(page?.dataset['sheet']).toBe('pushed');
     expect(page?.className).toContain('rounded-frame');
     expect(page?.className).toContain('border-frame-edge');
-    expect(drawer?.className).toContain('rounded-frame');
+    expect(drawer?.className).toContain('rounded-l-frame');
     expect(drawer?.className).toContain('border-frame-edge');
     expect(drawer?.parentElement?.className).not.toContain('py-2');
   });
@@ -851,7 +852,7 @@ describe('DrawerColumn closing', () => {
     expect(DRAWER_EXIT_MS).toBe(DURATION_QUICK_MS);
   });
 
-  it.each([0, 16, 200])(
+  it.each([0, 16, 100])(
     'never moves the page when it closes from over the page, read at %ims',
     (elapsed) => {
       openThenClose(678);
@@ -900,7 +901,6 @@ describe('DrawerColumn closing', () => {
     openThenClose(678);
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('closed');
-    expect(panel().hasAttribute('inert')).toBe(true);
     expect(card()?.hasAttribute('inert')).toBe(true);
     expect(card()?.className).toContain('pointer-events-none');
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -947,14 +947,17 @@ describe('DrawerColumn closing', () => {
     expect(scrim()?.className).toContain('animate-fade-in');
   });
 
-  it('remembers it closed from over the page: the aside stays out of the flow at 0px', () => {
-    openThenClose(678);
+  it('after closing from over the page: the aside is back in the flow at its closed width', () => {
+    const before = openThenClose(678);
+    const pageClass = page().className;
     advance(300);
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('closed');
-    expect(panel().className).toContain('absolute');
-    expect(panel().className).not.toContain('transition-[width]');
+    expect(panel().className).toMatch(/(^|\s)relative(\s|$)/);
+    expect(panel().className).not.toContain('absolute');
     expect(panel().style.width).toBe('0px');
+    expect(page().className).toBe(pageClass);
+    expect(before.container.querySelector('[data-drawer-spacer]')).toBeNull();
   });
 
   it('closes from pushing at once when the card has no layout to animate: no scrim, no exit', () => {
@@ -970,9 +973,12 @@ describe('DrawerColumn closing', () => {
 
   describe('with a laid out card', () => {
     const layOut = () => {
-      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
-        DOMRect.fromRect({ x: 0, y: 0, width: 400, height: 600 }),
-      );
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function rectOf(
+        this: HTMLElement,
+      ) {
+        const width = this.hasAttribute('data-drawer-edge') ? 0 : 400;
+        return DOMRect.fromRect({ x: 0, y: 0, width, height: 600 });
+      });
     };
     const reduceMotion = (isReduced: boolean) => {
       vi.stubGlobal(
@@ -1090,7 +1096,7 @@ describe('DrawerColumn closing', () => {
     expect(scrim()).toBeNull();
     expect(panel().getAttribute('data-drawer-exit')).toBeNull();
     expect(panel().getAttribute('data-drawer-mode')).toBe('closed');
-    expect(panel().className).toContain('absolute');
+    expect(panel().className).not.toContain('absolute');
     expect(panel().style.width).toBe('0px');
     expect(page().hasAttribute('inert')).toBe(false);
   };
@@ -1164,148 +1170,5 @@ describe('DrawerColumn closing', () => {
 
     expect(clone).not.toHaveBeenCalled();
     clone.mockRestore();
-  });
-});
-
-const EDGE_WIDTH = 44;
-
-type EdgeWidthsParams = {
-  readonly column: number;
-};
-
-const stubEdgeWidths = ({ column }: EdgeWidthsParams) => {
-  class EdgeObserver {
-    private readonly callback: ObserverCallback;
-    constructor(callback: ObserverCallback) {
-      this.callback = callback;
-    }
-    observe(target: Element) {
-      const isEdge = target.hasAttribute('data-drawer-edge');
-      this.callback([{ contentRect: { width: isEdge ? EDGE_WIDTH : column } }]);
-    }
-    disconnect() {}
-  }
-  vi.stubGlobal('ResizeObserver', EdgeObserver);
-  stubEdgeRect();
-};
-
-const stubEdgeRect = () => {
-  const original = Element.prototype.getBoundingClientRect;
-  const spy = vi
-    .spyOn(Element.prototype, 'getBoundingClientRect')
-    .mockImplementation(function rectOf(this: Element) {
-      const rect = original.call(this);
-      return this.hasAttribute('data-drawer-edge') && this.childElementCount > 0
-        ? new DOMRect(rect.x, rect.y, EDGE_WIDTH, rect.height)
-        : rect;
-    });
-  cleanups.push(() => spy.mockRestore());
-};
-
-const stubSilentObserver = ({ column }: EdgeWidthsParams) => {
-  class SilentEdgeObserver {
-    private readonly callback: ObserverCallback;
-    constructor(callback: ObserverCallback) {
-      this.callback = callback;
-    }
-    observe(target: Element) {
-      if (!target.hasAttribute('data-drawer-edge')) {
-        this.callback([{ contentRect: { width: column } }]);
-      }
-    }
-    disconnect() {}
-  }
-  vi.stubGlobal('ResizeObserver', SilentEdgeObserver);
-  stubEdgeRect();
-};
-
-const renderReaderWithTools = () =>
-  render(
-    <DrawerColumn
-      main={<ToolColumn />}
-      drawer={<div>Plan</div>}
-      sizing="reader"
-      frame="sheet"
-      ariaLabel="Side panel"
-      resizeLabel="Resize side panel"
-    />,
-  );
-
-const ToolColumn = () => {
-  const host = useContext(DrawerEdgeContext);
-  const tools = (
-    <div role="toolbar" aria-label="Session tools">
-      <button type="button">Scripts</button>
-    </div>
-  );
-  return (
-    <>
-      {tools}
-      {host === null ? null : createPortal(tools, host)}
-    </>
-  );
-};
-
-const renderWithTools = (drawer: string | null) =>
-  render(
-    <DrawerColumn
-      main={<ToolColumn />}
-      drawer={drawer === null ? null : <div>{drawer}</div>}
-      frame="sheet"
-      ariaLabel="Side panel"
-      resizeLabel="Resize side panel"
-    />,
-  );
-
-describe('DrawerColumn edge', () => {
-  it('keeps the tools column clickable above the scrim while a drawer lies over the page at 1100', () => {
-    stubEdgeWidths({ column: 852 });
-    const { container } = renderWithTools('Scripts');
-    const edge = container.querySelector<HTMLElement>('[data-drawer-edge]');
-    const live = edge?.querySelector('[role="toolbar"]') ?? null;
-
-    expect(pageOf(container).hasAttribute('inert')).toBe(true);
-    expect(live).not.toBeNull();
-    expect(live?.closest('[inert]')).toBeNull();
-    expect(edge?.className).toContain('z-30');
-    expect(scrim()?.className).toContain('z-10');
-    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
-  });
-
-  it('ends the overlay card at the left edge of the tools column at 1100', () => {
-    stubEdgeWidths({ column: 852 });
-    renderReaderWithTools();
-
-    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
-    expect(Number.parseFloat(panel().style.width) + EDGE_WIDTH).toBeLessThanOrEqual(852);
-  });
-
-  it('narrows the overlay card so it and the tools column fit a narrow sheet', () => {
-    stubEdgeWidths({ column: 640 });
-    renderReaderWithTools();
-
-    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
-    expect(Number.parseFloat(panel().style.width) + EDGE_WIDTH).toBeLessThanOrEqual(640);
-  });
-
-  it('measures the tools column once it mounts, without waiting for an observer', () => {
-    stubSilentObserver({ column: 852 });
-    renderReaderWithTools();
-
-    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
-  });
-
-  it('draws no edge copy while the drawer pushes the page or is closed', () => {
-    stubEdgeWidths({ column: 1300 });
-    const pushed = renderWithTools('Scripts');
-
-    expect(pushed.container.querySelector('[data-drawer-edge]')).toBeNull();
-    expect(screen.getAllByRole('toolbar', { name: 'Session tools' })).toHaveLength(1);
-    pushed.unmount();
-
-    stubEdgeWidths({ column: 852 });
-    const closed = renderWithTools(null);
-
-    expect(closed.container.querySelector('[data-drawer-edge]')).toBeNull();
   });
 });

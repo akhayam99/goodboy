@@ -84,7 +84,7 @@ describe('the plan and report drawer scenes', () => {
 
     await screen.findByTestId('plan-drawer');
     expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
-    expect(panel().style.width).toBe('736px');
+    expect(panel().style.width).toBe('728px');
     const frame = within(panel()).getByRole('region');
     expect(headerButtons(frame)).toContain('Open page');
     expect(headerButtons(frame)).toContain('Copy markdown');
@@ -97,7 +97,7 @@ describe('the plan and report drawer scenes', () => {
 
     await screen.findByTestId('plan-drawer');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe('1016px');
+    expect(panel().style.width).toBe('1008px');
     expect(screen.getByTestId('plan-drawer').closest('[data-page-column]')).not.toBeNull();
   });
 
@@ -105,7 +105,7 @@ describe('the plan and report drawer scenes', () => {
     renderScene('reportdrawer-720');
 
     await screen.findByTestId('artifact-reading-drawer');
-    expect(panel().style.width).toBe('736px');
+    expect(panel().style.width).toBe('728px');
     const frame = within(panel()).getByRole('region');
     expect(headerButtons(frame)).toEqual(['Open page', 'Close']);
   });

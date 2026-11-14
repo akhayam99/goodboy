@@ -709,7 +709,7 @@ describe('moving across every place keeps one frame', () => {
     expect(sidePanelMode()).toBe('closed');
     const parked = document.querySelector('main aside[aria-label="Side panel"]');
     expect(parked?.hasAttribute('data-drawer-parked')).toBe(true);
-    expect(parked?.hasAttribute('inert')).toBe(true);
+    expect(parked?.querySelector('[data-drawer-card]')?.hasAttribute('inert')).toBe(true);
     expect(parked?.hasAttribute('data-drawer-exit')).toBe(false);
     await escape();
 

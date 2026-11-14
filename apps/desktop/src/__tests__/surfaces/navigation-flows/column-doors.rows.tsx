@@ -48,13 +48,7 @@ const DOOR_ORDER: ReadonlyArray<string> = [
 ];
 
 const railTool = (name: 'terminal' | 'browser'): HTMLElement => {
-  const [button] = screen
-    .getAllByTestId(`pane-toggle-${name}`)
-    .filter((candidate) => candidate.closest('[data-drawer-edge]') === null);
-  if (button === undefined) {
-    throw new Error(`No ${name} button on the right rail`);
-  }
-  return button;
+  return screen.getByTestId(`pane-toggle-${name}`);
 };
 
 const doorIdsInColumn = (): ReadonlyArray<string> =>

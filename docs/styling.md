@@ -167,32 +167,36 @@ size.
 The sheet is drawn by `DrawerColumn`, not by `main`: `AppShell`'s `main` is a
 plain grid cell and `DrawerColumn` with `frame="sheet"` draws the page
 container (`data-container="page"`, the sheet shape above) and, beside it, the
-drawer container (`data-container="drawer"`), 0px wide while closed. While a
-drawer pushes, the page container rounds all four corners and the drawer
-container stands 8px to its right and 8px from the window's right edge, both
-with `frame-edge` and `rounded-frame`; the drawer container takes `bg-drawer`,
-one step quieter than `bg-background`. Pushing, its aside is the container
-width plus two 8px insets; over the page it is the container width plus the 8px
-handle gutter, because the container is flush with the window's right edge. It
-opens beside the page: the pane gives up the drawer's track and the centred
-column slides left to re-centre in what is left of it (see The content
-column). The drawer pushes only while the content, excluding the session rail
-and tools, keeps 464px for a side drawer or 560px for a reader, plus 48px of
-gutters. Both tiers include two 8px insets. `drawerLayoutOf` owns this rule;
-`DrawerContentContext` supplies the whole column width and the registered
-content inset. A side drawer at 400 pushes from 928px of content-column width;
-a reader at 720 pushes from 1344px. Below its threshold it
-lies over the page, full height, with a scrim and an `inert` page, never
-squeezed. While it lies over the page, `DrawerColumn` draws an edge host
-(`data-drawer-edge`) at the right edge above the scrim and hands it to the page
-through `DrawerEdgeContext`; the right rail draws there, once: `ShellToolRail`
-portals its one tree into the edge and keeps an empty seat of the rail's width
-in place (`SessionFrame` portals a second copy in a frame without the shell
-rail), and the card sits left of it, so a tool can still switch or
-close the drawer. The host is measured after every commit (and by a
-`ResizeObserver` after that), and `drawerLayoutOf` takes its width as
-`edgeWidth`: the overlay card plus the column always fit in the sheet, so the
-column never covers the card's primary or its Close. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
+drawer container (`data-container="drawer"`). The drawer container holds the
+panel and the tool rail: one surface (`bg-drawer`, one step quieter than
+`bg-background`), flush with the window's right edge, rounded on its two left
+corners (`rounded-l-frame`), with a `frame-edge` border on three sides, 8px from
+the page container (the resize handle sits in that gap). The page container
+rounds all four corners whenever the rail is there. Closed, the container is the
+rail alone, 44px wide, and its aside is that plus the 8px gutter. The rail is
+the anchor: `DrawerColumn` draws one rail host (`data-drawer-edge`) as the
+last child of the container and hands it to the page through `DrawerEdgeContext`;
+`ShellToolRail` (and `SessionFrame` in a frame without the shell rail) portals
+the one rail tree into it. The host is the same element closed, pushing, over
+the page and while a handle drags, so the rail never moves; a panel opens
+inward, immediately left of it, with no gap, line or radius between them. The
+aside is the panel width plus the 8px gutter plus the rail (`drawerAsideWidthOf`
+takes `railWidth`). The pane gives up that width and the centred column slides
+left to re-centre in what is left of it (see The content column). The drawer
+pushes only while the content, excluding the session rail and tools, keeps 464px
+for a side drawer or 560px for a reader, plus 48px of gutters. `drawerLayoutOf`
+owns this rule and takes the measured rail width as the content inset and as
+`edgeWidth`; `DrawerContentContext` supplies the whole column width. A side
+drawer at 400 pushes from 972px of column width (928 of content plus the 44px
+rail); a reader at 720 pushes from 1388px. Below its threshold it lies over the
+page, full height, with a scrim and an `inert` page, never squeezed. Over the
+page the aside is absolute at the window edge and a spacer of the closed width
+stays in the flow, so the page does not grow; the rail sits above the scrim in
+the same container, so a tool can still switch or close the panel. The host is
+measured after every commit (and by a `ResizeObserver` after that), so the
+overlay panel plus the rail always fit in the sheet and the column never covers
+the panel's primary or its Close. Only the panel animates; the rail does not.
+`sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) and `browser` (720, drag 480 to the room the session column leaves, so
 past 1000 on a wide window; it shrinks to the room on a narrower window while 720 fits); each tier
 has its own saved width and a handle. `placement="overlay"` skips the push

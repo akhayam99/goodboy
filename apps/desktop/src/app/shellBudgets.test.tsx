@@ -186,9 +186,9 @@ describe('the tool rail with the drawer edge shown stays inside its budget', () 
     );
   });
 
-  it('draws the one tree in the drawer edge and keeps a seat for it in the rail', () => {
+  it('draws the one tree in the drawer rail and leaves no seat behind in the page', () => {
     expect(edge.querySelectorAll('[data-testid="session-tools"]').length).toBe(1);
-    expect(document.querySelectorAll('[data-slot="tool-rail-seat"]').length).toBe(1);
+    expect(document.querySelectorAll('[data-slot="tool-rail-seat"]').length).toBe(0);
   });
 
   it('loops over no session when an unrelated value changes', () => {

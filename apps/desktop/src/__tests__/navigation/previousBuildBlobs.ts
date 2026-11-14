@@ -104,17 +104,27 @@ const STUDIO_BLOBS: ReadonlyArray<ExpectedBlob> = Object.entries(STUDIOS).map(([
   expected: studio,
 }));
 
-const DRAWER_BLOBS: ReadonlyArray<ExpectedBlob> = Object.entries(DRAWERS).map(
-  ([kind, payload]) => ({
-    name: `drawer ${kind}`,
-    kind,
-    blob: blobOf({
-      place: SESSION_PLACE,
-      drawer: { kind, sessionId: SESSION, payload },
-    }),
-    expected: { kind, sessionId: SESSION, payload },
+const FOLDED_DRAWER_LENSES: Readonly<Record<string, string>> = {
+  ask: 'context',
+  context: 'context',
+  explore: 'files',
+  spawned: 'workflows',
+};
+
+type DrawerBlob = ExpectedBlob & {
+  readonly foldedLens: string | null;
+};
+
+const DRAWER_BLOBS: ReadonlyArray<DrawerBlob> = Object.entries(DRAWERS).map(([kind, payload]) => ({
+  name: `drawer ${kind}`,
+  kind,
+  blob: blobOf({
+    place: SESSION_PLACE,
+    drawer: { kind, sessionId: SESSION, payload },
   }),
-);
+  expected: { kind, sessionId: SESSION, payload },
+  foldedLens: FOLDED_DRAWER_LENSES[kind] ?? null,
+}));
 
 const PLACE_BLOBS: ReadonlyArray<PreviousBuildBlob> = [
   { name: 'board', kind: 'board', blob: blobOf({ place: BOARD_PLACE, scroll: { queue: 12 } }) },

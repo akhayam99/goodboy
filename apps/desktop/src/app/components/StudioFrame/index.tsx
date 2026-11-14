@@ -11,7 +11,6 @@ import {
 import {
   cn,
   DrawerColumn,
-  DrawerEdgeContext,
   PAGE_FRAME,
   readStudioRailWidth,
   SHEET_CLASSES,
@@ -33,7 +32,7 @@ import { STUDIO_META } from './studioMeta';
 import { captureStudioOpener } from './captureStudioOpener';
 import { restoreStudioOpener } from './restoreStudioOpener';
 import { StudioSkeleton } from './StudioSkeleton';
-import { StudioRail } from './StudioRail';
+import { ShellToolRail } from '../ShellToolRail';
 import { useOneRightPanel } from '../../hooks/useOneRightPanel';
 import type { StudioPlacement } from './studioPlacement';
 
@@ -98,7 +97,6 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
   const isUnderTrail = isBandDrawn || isOuterUnderTrail;
 
   const isPanelShown = useOneRightPanel({ spec: drawerSpec, isActive: isDrawerHost });
-  const shellEdge = useContext(DrawerEdgeContext);
   const motion = isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in';
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
   const bandNode = isBandDrawn ? (
@@ -177,7 +175,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
                 >
                   {framed}
                 </div>
-                <StudioRail shellEdge={shellEdge} />
+                <ShellToolRail />
               </div>
             }
             drawer={

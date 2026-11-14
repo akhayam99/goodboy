@@ -332,10 +332,22 @@ describe('the named widths of the plan', () => {
 });
 
 describe('the aside of each mode', () => {
-  it('is 0 closed, the card plus both insets pushing, the card plus the handle gutter over the page', () => {
+  it('is 0 closed, the card plus the handle gutter pushing or over the page', () => {
     expect(drawerAsideWidthOf({ width: 400, mode: 'closed' })).toBe(0);
-    expect(drawerAsideWidthOf({ width: 400, mode: 'push' })).toBe(drawerTrackOf(400));
+    expect(drawerAsideWidthOf({ width: 400, mode: 'push' })).toBe(400 + DRAWER_INSET);
     expect(drawerAsideWidthOf({ width: 400, mode: 'overlay' })).toBe(400 + DRAWER_INSET);
+  });
+
+  it('adds the rail to every mode, and keeps the gutter and the rail when closed', () => {
+    expect(drawerAsideWidthOf({ width: 400, mode: 'closed', railWidth: 44 })).toBe(
+      DRAWER_INSET + 44,
+    );
+    expect(drawerAsideWidthOf({ width: 400, mode: 'push', railWidth: 44 })).toBe(
+      400 + DRAWER_INSET + 44,
+    );
+    expect(drawerAsideWidthOf({ width: 400, mode: 'overlay', railWidth: 44 })).toBe(
+      400 + DRAWER_INSET + 44,
+    );
   });
 });
 

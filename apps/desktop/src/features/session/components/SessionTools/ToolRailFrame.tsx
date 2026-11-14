@@ -128,7 +128,7 @@ export const ToolRailFrame = ({ session, terminalSignal }: Props) => {
         event.currentTarget.querySelectorAll<HTMLButtonElement>('button')[next]?.focus();
       }}
       className={cn(
-        'flex h-full shrink-0 flex-col items-center gap-2 bg-background px-0.5 pb-3',
+        'flex h-full shrink-0 flex-col items-center gap-2 px-0.5 pb-3',
         PANE_RHYTHM.headerInset,
       )}
     >
