@@ -258,12 +258,12 @@ describe('ChatView', () => {
     const { container } = render(<ChatView session={session} />);
     const content = container.querySelector('[data-scroll-content]');
 
-    expect(PAGE_MEASURE.agent).toBe('measure');
+    expect(PAGE_MEASURE.agent).toBe('reading');
     expect(content?.closest('[data-page-column]')).not.toBeNull();
     expect(content?.parentElement?.querySelectorAll('[data-scroll-content]')).toHaveLength(1);
   });
 
-  it('ends the transcript on a 48px floor under the last line', () => {
+  it('ends the transcript on a 24px floor under the last line', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
     transcriptItems.current = [
       { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
@@ -272,7 +272,7 @@ describe('ChatView', () => {
     const tail = container.querySelector<HTMLElement>('[data-transcript-tail]');
 
     expect(tail?.style.height).toBe(`${TRANSCRIPT_FLOOR_PX}px`);
-    expect(TRANSCRIPT_FLOOR_PX).toBe(48);
+    expect(TRANSCRIPT_FLOOR_PX).toBe(24);
     expect(tail?.previousElementSibling?.hasAttribute('data-scroll-content')).toBe(true);
   });
 

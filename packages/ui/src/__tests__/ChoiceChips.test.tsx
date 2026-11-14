@@ -55,6 +55,25 @@ const checked = () =>
     .map((option) => option.textContent);
 
 describe('ChoiceChips', () => {
+  it('stands as a vertical list of one row per choice when asked, still picked with the arrows', () => {
+    const onChange = vi.fn();
+    render(
+      <ChoiceChips
+        ariaLabel="Next step choices"
+        options={OPTIONS}
+        value="first"
+        orientation="vertical"
+        onChange={onChange}
+      />,
+    );
+
+    const list = screen.getByRole('listbox', { name: 'Next step choices' });
+    expect(list.getAttribute('aria-orientation')).toBe('vertical');
+    expect(within(list).getAllByRole('option')).toHaveLength(3);
+    fireEvent.keyDown(chipAt(0), { key: 'ArrowDown' });
+    expect(onChange).toHaveBeenCalledWith('second');
+  });
+
   it('is a listbox with one selected option and a roving tab stop', () => {
     render(<Harness />);
 

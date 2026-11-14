@@ -8,6 +8,7 @@ import { AUTO_STATE_TONE } from './autoStateTone';
 import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
 import { AutoDockPlanComments } from './AutoDockPlanComments';
 import { focusAgentComposer } from './focusAgentComposer';
+import { useLoadedFlowWord } from '../../../shared/hooks/useLoadedFlowWord';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -38,6 +39,7 @@ export const AutoDockPlan = ({
     sessionId,
     artifactId: brandId<ArtifactId>({ value: artifactId }),
   });
+  const flow = useLoadedFlowWord();
   const plan = useSessionPlans(sessionId).find((candidate) => candidate.id === artifactId) ?? null;
   const hasUnsentComments = useDraftPlanComments({ sessionId, plan });
   if (model === null) {
@@ -65,7 +67,7 @@ export const AutoDockPlan = ({
           aria-live="polite"
           className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
         >
-          Plan v{model.version} approved, Auto did not hear it
+          {`Plan v${model.version} approved, ${flow} did not hear it`}
         </span>
         <span className="flex-1" />
         {openPlan}
@@ -74,10 +76,10 @@ export const AutoDockPlan = ({
           size="sm"
           disabled={model.isBusy}
           isBusy={model.isBusy}
-          busyLabel="Telling Auto"
+          busyLabel={`Telling ${flow}`}
           onClick={() => void model.tellAuto()}
         >
-          Tell Auto
+          {`Tell ${flow}`}
         </Button>
       </div>
     );

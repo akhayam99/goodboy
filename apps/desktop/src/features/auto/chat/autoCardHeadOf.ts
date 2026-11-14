@@ -6,6 +6,7 @@ export type AutoCardHead = Readonly<{
   name: string;
   meta: string;
   word: string;
+  isWordShown: boolean;
   isOpen: boolean;
 }>;
 
@@ -47,6 +48,7 @@ export const autoCardHeadOf = ({ delegations }: Params): AutoCardHead => {
     name: isPlanning ? 'Plan' : isBuilding ? 'Build' : 'Review',
     meta: count === 1 ? '1 agent' : `${count} agents`,
     word: headWordOf({ delegations, isOpen }),
+    isWordShown: count > 1,
     isOpen,
   };
 };

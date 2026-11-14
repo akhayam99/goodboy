@@ -1,31 +1,16 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { useContext, useMemo, useState, type ReactNode } from 'react';
 import { PaneShell } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
-import {
-  useAppStore,
-  useExecutedAgentRouting,
-  useSessionAnsweredQuestions,
-  useSessionOpenQuestions,
-  useTranscript,
-} from '../../../../store';
-import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
-import { executedRoutingOf } from '../../../auto/executedRoutingOf';
-import { agentHeadingOf } from './agentHeadingOf';
+import { useAppStore, useTranscript } from '../../../../store';
+import { classifyAgent } from '../../agent-kind';
 import { agentBriefOf } from './agentBriefOf';
 import type { OpenTranscriptAt } from '../../../chat/openTranscriptAt';
-import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { AgentProviderMark } from './AgentProviderMark';
 import { AgentHeaderActions } from '../AgentHeaderActions';
-import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
-import { isQuestionDelegate } from '../../../context/questionDelegate';
-import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { AgentRunSettings } from './AgentRunSettings';
-import { AgentAnsweringFor } from './AgentAnsweringFor';
-import { AgentConversationEnd } from './AgentConversationEnd';
 import { AgentHeader } from './AgentHeader';
-import { AgentTitle } from './AgentTitle';
+import { useAgentInsertions } from './useAgentInsertions';
+import { AgentPaneTitle } from './AgentPaneTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
 import { AgentDockLead } from './AgentDockLead';
@@ -35,6 +20,9 @@ import { useRewriterComposer } from '../../hooks/useRewriterComposer';
 import { useMoveToAutoOpen } from '../../hooks/useMoveToAutoOpen';
 import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
+import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
+import { AgentHeadSlots } from './AgentHeadSlots';
+import { DockStopButton } from '../../../../shared/components/DockStopButton';
 
 type RunStepFrame = {
   readonly heading: ReactNode;
@@ -52,6 +40,7 @@ type Props = {
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
   readonly headerLead?: ReactNode;
+  readonly headerState?: ReactNode;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
@@ -64,6 +53,7 @@ export const AgentDetailPane = ({
   context,
   runStep,
   headerLead,
+  headerState,
 }: Props) => {
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
@@ -82,72 +72,20 @@ export const AgentDetailPane = ({
   const [hasNextAction, setHasNextAction] = useState(false);
   const [asksSlot, setAsksSlot] = useState<HTMLElement | null>(null);
   const openDrawer = useAppStore((state) => state.openDrawer);
+  const isInHead = useContext(SessionHeadSlotsContext) !== null;
   const events = useTranscript(agent.id);
   const briefLine = useMemo(() => agentBriefOf({ events }), [events]);
   const brief = autoChat.childTask ?? briefLine;
-  const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
-  const executed = useExecutedAgentRouting({ agent });
-  const routing = useAgentHeaderRouting({ session, agent });
-  const openQuestions = useSessionOpenQuestions(session.id);
-  const answeredQuestions = useSessionAnsweredQuestions(session.id);
-
-  const answeredQuestion = useMemo(() => {
-    if (!isQuestionDelegate({ agent })) {
-      return null;
-    }
-    return (
-      [...openQuestions, ...answeredQuestions].find(
-        (question) => question.id === agent.sourceThreadId,
-      ) ?? null
-    );
-  }, [agent, openQuestions, answeredQuestions]);
-  const asker = runs?.find((run) => run.id === agent.parentAgentId) ?? null;
-
-  const insertions = useMemo((): ReadonlyArray<TranscriptInsertion> => {
-    const leading: ReadonlyArray<TranscriptInsertion> =
-      answeredQuestion === null
-        ? []
-        : [
-            {
-              key: `answering-for-${agent.id}`,
-              beforeMs: 0,
-              node: (
-                <AgentAnsweringFor
-                  sessionId={session.id}
-                  question={answeredQuestion}
-                  asker={asker}
-                />
-              ),
-            },
-          ];
-    const hasEnd =
-      !isAutoRoot &&
-      (agent.status === 'completed' || (runs ?? []).some((run) => run.parentAgentId === agent.id));
-    const end: ReadonlyArray<TranscriptInsertion> = hasEnd
-      ? [
-          {
-            key: `conversation-end-${agent.id}`,
-            beforeMs: null,
-            node: <AgentConversationEnd session={session} agent={agent} />,
-          },
-        ]
-      : [];
-    const tail: ReadonlyArray<TranscriptInsertion> =
-      runStep === undefined
-        ? []
-        : [{ key: `run-tail-${agent.id}`, beforeMs: null, node: runStep.tail }];
-    return [...leading, ...(autoChat.insertions ?? []), ...end, ...tail];
-  }, [agent, answeredQuestion, asker, autoChat.insertions, isAutoRoot, runs, session, runStep]);
+  const insertions = useAgentInsertions({
+    session,
+    agent,
+    isAutoRoot,
+    autoInsertions: autoChat.insertions,
+    runTail: runStep?.tail,
+  });
 
   const openTranscript: OpenTranscriptAt = ({ turn }) =>
     openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id, turn } });
-  const heading = agentHeadingOf({ name: agent.name, kind, brief });
-  const isChipShown = !isAutoRoot && heading !== brief && heading !== AGENT_KIND_META[kind].noun;
-  const shownRouting = executedRoutingOf({ executed, fallback: routing });
-  const headerMenu = useObjectMenuTrigger({
-    target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
-    anchorKey: `agent-header:${agent.id}`,
-  });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
   const hasComposer = !isRewriterFinished && adoption === null && !isMoveOpen;
   const isDocked = hasComposer && session.state.kind !== 'ended';
@@ -161,6 +99,25 @@ export const AgentDetailPane = ({
         isRunStep={runStep !== undefined}
       />
     );
+  const headStop = isInHead ? autoChat.stop : null;
+  const actions =
+    runStep === undefined ? (
+      <>
+        {isInHead ? null : headerState}
+        {headStop === null ? null : <DockStopButton stop={headStop} />}
+        {headerLead}
+        <AgentHeaderActions
+          key={agent.id}
+          agent={agent}
+          sessionId={session.id}
+          hasStateButton={false}
+          omit={agentHeaderOmitOf({ isAutoRoot })}
+          onDeleted={onBack}
+        />
+      </>
+    ) : (
+      runStep.actions
+    );
   const runSettings =
     runStep === undefined ? (
       <AgentRunSettings
@@ -168,10 +125,14 @@ export const AgentDetailPane = ({
         agent={agent}
         autoView={isAutoRoot ? (autoChat.tree?.view ?? null) : null}
         asksSlotRef={setAsksSlot}
+        isInHead={isInHead}
+        trailing={isInHead ? actions : null}
+        {...(isInHead && headerState !== undefined && { state: headerState })}
       />
     ) : null;
   const lead = (
     <>
+      {isInHead ? runSettings : null}
       {context}
       {isDocked || isInWorkflowRun ? null : stoppedNotice}
       {runStep === undefined ? (
@@ -179,93 +140,74 @@ export const AgentDetailPane = ({
       ) : null}
     </>
   );
-
-  return (
-    <PaneShell
-      page="agent"
-      scroll="self"
-      lead={lead}
-      header={
-        <AgentHeader
-          below={runSettings}
-          title={
-            <span
-              className="flex min-w-0 items-center gap-2"
-              onContextMenu={headerMenu.onContextMenu}
-              onKeyDown={headerMenu.onKeyDown}
-            >
-              {runStep === undefined ? (
-                <>
-                  {isChipShown ? <AgentKindChip kind={kind} /> : null}
-                  <AgentTitle agent={agent} sessionId={session.id} brief={brief} />
-                </>
-              ) : (
-                runStep.heading
-              )}
-              {isAutoRoot ? null : <AgentProviderMark provider={shownRouting.provider} />}
-            </span>
-          }
-          actions={
-            runStep === undefined ? (
-              <>
-                {headerLead}
-                <AgentHeaderActions
-                  key={agent.id}
-                  agent={agent}
-                  sessionId={session.id}
-                  hasStateButton={false}
-                  omit={agentHeaderOmitOf({ isAutoRoot })}
-                  onDeleted={onBack}
-                />
-              </>
-            ) : (
-              runStep.actions
-            )
-          }
+  const title = (
+    <AgentPaneTitle
+      session={session}
+      agent={agent}
+      brief={brief}
+      runHeading={runStep?.heading}
+      isInline={isInHead}
+    />
+  );
+  const chat = (
+    <ChatView
+      session={session}
+      agentId={agent.id}
+      isActive={isChatActive}
+      topInset="tight"
+      mode="conversation"
+      onOpenTranscript={openTranscript}
+      hasAdvanceRow={runStep === undefined}
+      {...(runStep === undefined && { controlSlots: { asks: asksSlot } })}
+      {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
+      {...(runStep?.liveSentence !== undefined && { liveSentence: runStep.liveSentence })}
+      composerStop={headStop === null ? autoChat.stop : { ...headStop, isButtonInHead: true }}
+      isFailureOwned={autoChat.isFailureOwned}
+      {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
+      hasComposer={hasComposer}
+      composerPlaceholder={
+        rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
+      }
+      composerLead={
+        <AgentDockLead
+          session={session}
+          agent={agent}
+          autoDock={autoChat.dock}
+          stopped={stoppedNotice}
+          isDocked={isDocked}
+          isRunStep={runStep !== undefined}
+          isTreeAtRest={isAutoRoot ? autoChat.isTreeAtRest : null}
         />
       }
-    >
-      <ChatView
-        session={session}
-        agentId={agent.id}
-        isActive={isChatActive}
-        topInset="tight"
-        mode="conversation"
-        onOpenTranscript={openTranscript}
-        hasAdvanceRow={runStep === undefined}
-        {...(runStep === undefined && { controlSlots: { asks: asksSlot } })}
-        {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
-        {...(runStep?.liveSentence !== undefined && { liveSentence: runStep.liveSentence })}
-        composerStop={autoChat.stop}
-        isFailureOwned={autoChat.isFailureOwned}
-        {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
-        hasComposer={hasComposer}
-        composerPlaceholder={
-          rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
-        }
-        composerLead={
-          <AgentDockLead
-            session={session}
-            agent={agent}
-            autoDock={autoChat.dock}
-            stopped={stoppedNotice}
-            isDocked={isDocked}
-            isRunStep={runStep !== undefined}
-            isTreeAtRest={isAutoRoot ? autoChat.isTreeAtRest : null}
-          />
-        }
-        composerNotice={
-          <AgentComposerNotice
-            session={session}
-            agent={agent}
-            rewriter={rewriter}
-            adoption={adoption}
-            isMoveOpen={isMoveOpen}
-            onCloseMove={() => setIsMoveOpen(false)}
-          />
-        }
-        insertions={insertions}
-      />
-    </PaneShell>
+      composerNotice={
+        <AgentComposerNotice
+          session={session}
+          agent={agent}
+          rewriter={rewriter}
+          adoption={adoption}
+          isMoveOpen={isMoveOpen}
+          onCloseMove={() => setIsMoveOpen(false)}
+        />
+      }
+      insertions={insertions}
+    />
+  );
+
+  return (
+    <>
+      {isInHead ? (
+        <AgentHeadSlots title={title} actions={actions} isRunStep={runStep !== undefined} />
+      ) : null}
+      <PaneShell
+        page="agent"
+        scroll="self"
+        lead={lead}
+        {...(!isInHead && {
+          header: <AgentHeader below={runSettings} title={title} actions={actions} />,
+        })}
+      >
+        {chat}
+      </PaneShell>
+    </>
   );
 };

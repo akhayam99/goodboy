@@ -260,7 +260,13 @@ session head (the title row and the tabs or crumbs, drawn once by `SessionWorksp
 the `column` measure), the page header, the body and the footer share the same column
 edges, so moving from Overview to Runs to Agents to a settings page never shifts the first
 letter, and the head never moves between tabs. Its actions end at the column's right edge,
-the page header actions' right edge. The gutter is 24px a side, 16px once the
+the page header actions' right edge. A detail page (an agent, a lead, a run) draws no title
+of its own: `SessionHeadFrame` hands it three slots through `SessionHeadSlotsContext`, and
+`HeadSlotPortal` puts its name in the last crumb (rename and the object menu stay on it),
+its state word, spend, Settings, more menu and run controls at the right end of the crumb row,
+and a side column such as the lead's Agents beside the head and the page, full height, with
+its header on the frame first row (`PANE_RHYTHM.firstRow`). The head and the page then
+centre in the space left of that column, so they keep one left edge. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
@@ -397,6 +403,9 @@ Three width tiers, one rule each:
 | column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                                 |
 | full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)                                                        |
 
+The agent transcript takes `PageColumn width="reading"`: the 720 measure, starting on the
+column's left edge instead of centring, so it keeps the left edge of the session head.
+
 A body that owns its scroll (`scroll="self"`: the agent transcript and its
 composer) puts its own `PageColumn` around the scrolling content and the
 composer, so it shares the header's edges; the scroll viewport spans the pane
@@ -444,14 +453,17 @@ inside the column. Tables, code and cards take the whole column. An Agent page i
 the exception: it reads in the 720px measure, header to composer.
 
 A conversation sits in the 720px measure, with no exception: the agent
-transcript, its header and its composer share one centred column (`PAGE_MEASURE.agent`),
-so a line holds about 98 characters of the 15/24 message text (`text-prose`).
+transcript, the rows above it and its composer share one column (`PAGE_MEASURE.agent`,
+the `reading` width), so a line holds about 98 characters of the 15/24 message text
+(`text-prose`). Inside a session that column starts on the left edge of the 960 column,
+under the session title and crumbs, instead of centring itself: one left edge for the head,
+the crumbs and the conversation (the chat room keeps the centred `measure`).
 Tables and code scroll inside the column. A user or injected card keeps a fixed
 48px start gap (`PANE_RHYTHM.message.user`) in the agent transcript, Chat, the
 Ask panel and the fix run drawer. The rhythm is set by the parent's gap
 (`PANE_RHYTHM.transcript`): 32px between turns, 16px between the blocks of a
-turn, 12px between paragraphs of a message. The last line sits 48px above the composer
-(`TRANSCRIPT_FLOOR_PX`) and a sent message 40px
+turn, 12px between paragraphs of a message. The last line sits 32px above the composer,
+the turn gap (`TRANSCRIPT_FLOOR_PX`, 24, plus the composer's 8px top), and a sent message 40px
 under the top of the view, both in `useScrollPin`.
 
 **The Branch page** is one detail whose header, Ask button and every section body share the 960px

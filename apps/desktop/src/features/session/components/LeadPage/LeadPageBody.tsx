@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Button } from '@goodboy/ui';
+import { useCallback, useContext, useMemo, useState } from 'react';
+import { Button, cn } from '@goodboy/ui';
 import { brandId, type Agent, type AgentId, type Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { agentPlace } from '../../../../store/slices/navigation/place';
@@ -10,7 +10,12 @@ import type { LeadTreeDataModel } from '../../../auto/tree/LeadTreeData';
 import { spawnRecordOf } from '../../../auto/tree/spawnRecordOf';
 import { AgentDetailPane } from '../AgentDetailPane';
 import { useLeadSelectionStore } from '../../hooks/useLeadSelectionStore';
+import { leadAgentCountOf } from '../../../auto/tree/leadAgentCountOf';
+import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
+import { HeadSlotPortal } from '../HeadSlotPortal';
+import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
 import { LeadHeaderWord } from './LeadHeaderWord';
+import { LeadPageRailHead } from './LeadPageRailHead';
 import { LeadPageRecord } from './LeadPageRecord';
 import { LeadPageTree } from './LeadPageTree';
 import { leadLayoutOf } from './leadLayoutOf';
@@ -39,8 +44,11 @@ export const LeadPageBody = ({
   onBack,
   onQueuedChange,
 }: Props) => {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const layout = leadLayoutOf({ width: usePaneWidth({ ref: rootRef }) });
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  const slots = useContext(SessionHeadSlotsContext);
+  const isWork = useIsWorkOn();
+  const isInHead = slots !== null;
+  const layout = leadLayoutOf({ width: usePaneWidth({ node: slots?.frame ?? root }) });
   const [isAgentsOpen, setIsAgentsOpen] = useState(false);
   const navigate = useAppStore((state) => state.navigate);
   const selectedId = useLeadSelectionStore((state) => state.selectedByLead[agent.id] ?? null);
@@ -83,7 +91,7 @@ export const LeadPageBody = ({
       }),
     [navigate, session.id],
   );
-  const agentCount = items.filter((item) => item.kind === 'agent').length;
+  const agentCount = leadAgentCountOf({ items });
   const isNarrow = layout === 'narrow';
   const isWide = layout === 'wide';
   const tree = (
@@ -105,25 +113,51 @@ export const LeadPageBody = ({
         onOpenTranscript={onOpenTranscript}
       />
     );
-  const headerLead = (
+  const headerState = isWork ? (
+    <LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />
+  ) : undefined;
+  const headerLead = isNarrow ? (
+    <Button
+      variant="ghost"
+      size="sm"
+      aria-expanded={isAgentsOpen}
+      onClick={() => setIsAgentsOpen(!isAgentsOpen)}
+    >
+      {`Agents ${agentCount}`}
+    </Button>
+  ) : null;
+
+  const rails = isNarrow ? null : (
     <>
-      <LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />
-      {isNarrow ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-expanded={isAgentsOpen}
-          onClick={() => setIsAgentsOpen(!isAgentsOpen)}
+      <aside
+        aria-label="Agents"
+        data-lead-rail=""
+        className={cn(
+          'flex min-h-0 shrink-0 flex-col bg-background',
+          TREE_WIDTH_CLASS,
+          isInHead && 'h-full border-l border-border-soft motion-safe:animate-fade-in',
+        )}
+      >
+        {isInHead ? <LeadPageRailHead count={agentCount} /> : null}
+        {isWide ? tree : (recordPanel ?? tree)}
+      </aside>
+      {isWide && recordPanel !== null ? (
+        <aside
+          aria-label="Record"
+          className={cn(
+            'flex min-h-0 w-[380px] shrink-0 flex-col bg-background',
+            isInHead && 'h-full border-l border-border-soft',
+          )}
         >
-          {`Agents ${agentCount}`}
-        </Button>
+          {recordPanel}
+        </aside>
       ) : null}
     </>
   );
 
   return (
     <div
-      ref={rootRef}
+      ref={setRoot}
       data-lead-page={agent.id}
       data-layout={layout}
       className="flex min-h-0 min-w-0 flex-1"
@@ -137,6 +171,7 @@ export const LeadPageBody = ({
               isChatActive={isChatActive}
               onBack={onBack}
               headerLead={headerLead}
+              {...(headerState !== undefined && { headerState })}
             />
           </AutoSelectAgentContext.Provider>
         </QueuedNotesReportContext.Provider>
@@ -154,22 +189,7 @@ export const LeadPageBody = ({
           </aside>
         ) : null}
       </div>
-      {isNarrow ? null : (
-        <aside
-          aria-label="Agents"
-          className={`flex min-h-0 shrink-0 flex-col bg-background ${TREE_WIDTH_CLASS}`}
-        >
-          {isWide ? tree : (recordPanel ?? tree)}
-        </aside>
-      )}
-      {isWide && recordPanel !== null ? (
-        <aside
-          aria-label="Record"
-          className="flex min-h-0 w-[380px] shrink-0 flex-col bg-background"
-        >
-          {recordPanel}
-        </aside>
-      ) : null}
+      {isInHead ? <HeadSlotPortal slot="aside">{rails}</HeadSlotPortal> : rails}
     </div>
   );
 };

@@ -1,4 +1,6 @@
+import { useContext } from 'react';
 import { PANE_RHYTHM, PaneShell, TERMINAL_DIM, cn } from '@goodboy/ui';
+import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import type { Session } from '@goodboy/types';
 import { RunAddStep } from '../AgentTree/RunAddStep';
 import { RunWriteDestination } from '../AgentTree/RunWriteDestination';
@@ -18,14 +20,18 @@ type Props = {
 export const RunOverviewPage = ({ session, view }: Props) => {
   const { run, workflow, isDiscarded, isCompleted } = view;
   const sessionId = session.id;
+  const isInHead = useContext(SessionHeadSlotsContext) !== null;
   const runningStep =
     view.agents.find((agent) => agent.parentAgentId == null && agent.status === 'running') ?? null;
 
+  const head = <RunPageHead session={session} view={view} stepAgentId={runningStep?.id ?? null} />;
+
   return (
     <HintRowStateProvider>
+      {isInHead ? head : null}
       <PaneShell
         page="run"
-        header={<RunPageHead session={session} view={view} stepAgentId={runningStep?.id ?? null} />}
+        {...(!isInHead && { header: head })}
         headerRhythm="section"
         animationClassName="motion-safe:animate-fade-in"
       >

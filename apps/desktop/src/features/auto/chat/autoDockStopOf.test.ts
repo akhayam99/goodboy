@@ -20,6 +20,7 @@ describe('autoDockStopOf', () => {
       rootAgent: ROOT,
       isStopping: false,
       stop: vi.fn(),
+      flow: 'Auto',
     });
 
     expect(stop).toMatchObject({ label: 'Stop Auto and 1 agent', phase: 'idle', sentence: '' });
@@ -38,9 +39,28 @@ describe('autoDockStopOf', () => {
       rootAgent: ROOT,
       isStopping: false,
       stop: vi.fn(),
+      flow: 'Auto',
     });
 
     expect(stop?.label).toBe('Stop Auto and 1 agent');
+  });
+
+  it('names the lead when the work switch is on', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+    });
+
+    const stop = autoDockStopOf({
+      view,
+      rootTurn: null,
+      rootAgent: ROOT,
+      isStopping: false,
+      stop: vi.fn(),
+      flow: 'Lead',
+    });
+
+    expect(stop?.label).toBe('Stop Lead and 1 agent');
   });
 
   it('offers none for a tree that rests', () => {
@@ -51,6 +71,7 @@ describe('autoDockStopOf', () => {
         rootAgent: ROOT,
         isStopping: false,
         stop: vi.fn(),
+        flow: 'Auto',
       }),
     ).toBeNull();
   });

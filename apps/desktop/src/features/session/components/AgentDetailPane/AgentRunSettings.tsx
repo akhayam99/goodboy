@@ -1,4 +1,4 @@
-import type { RefCallback } from 'react';
+import type { ReactNode, RefCallback } from 'react';
 import type { Agent, Session } from '@goodboy/types';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';
@@ -16,9 +16,20 @@ type Props = {
   readonly agent: Agent;
   readonly autoView: AutoView | null;
   readonly asksSlotRef: RefCallback<HTMLElement>;
+  readonly isInHead?: boolean;
+  readonly trailing?: ReactNode;
+  readonly state?: ReactNode;
 };
 
-export const AgentRunSettings = ({ session, agent, autoView, asksSlotRef }: Props) => {
+export const AgentRunSettings = ({
+  session,
+  agent,
+  autoView,
+  asksSlotRef,
+  isInHead = false,
+  trailing = null,
+  state = null,
+}: Props) => {
   const agentSpendUsd = useAgentSpend({ sessionId: session.id, agentId: agent.id });
   const line = (
     <AgentSettingsLine
@@ -41,6 +52,10 @@ export const AgentRunSettings = ({ session, agent, autoView, asksSlotRef }: Prop
       spend={spendTextOf({ spentUsd: budget === null ? agentSpendUsd : budget.spentUsd })}
       settings={line}
       revealEvent={autoView === null ? undefined : autoLimitOpenEvent({ treeId: autoView.tree.id })}
+      isInHead={isInHead}
+      trailing={trailing}
+      leading={state}
+      isStateShown={state === null}
     />
   );
 };
