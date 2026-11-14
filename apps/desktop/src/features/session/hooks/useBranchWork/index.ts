@@ -6,11 +6,14 @@ import { useMountRows } from '../../../../shared/hooks/useMountRows';
 import { branchWorkArtifactsRegistration } from '../../../artifacts/branchWorkArtifactsRegistration';
 import type { BranchWork, BranchWorkParams } from '../../../branch/branchWorkTab';
 import { branchGroupKeyOfMount, branchGroupsOf, type BranchGroup } from '../../branchGroupsOf';
+import type { BranchLead } from '../../branchLeadsOf';
+import { branchStoryLineOf } from '../../branchStoryLineOf';
 import { branchWorkCountsOf } from '../../branchWorkCountsOf';
 import {
   questionBranchGroupsOf,
   type QuestionBranchGroup,
 } from '../../components/SessionWorkspace/parts/questionsLensModel';
+import { useBranchLeads } from '../useBranchLeads';
 import { useQuestionsLens } from '../useQuestionsLens';
 import { useSessionRuns } from '../useSessionRuns';
 
@@ -21,6 +24,9 @@ export type BranchWorkView = Readonly<{
   mountPath: string | null;
   mounts: ReadonlyArray<MountRowView>;
   runs: BranchGroup | null;
+  leads: ReadonlyArray<BranchLead>;
+  story: string | null;
+  onToggleLeadFold: (foldId: string) => void;
   questions: QuestionBranchGroup | null;
   questionAgents: ReadonlyArray<Agent>;
   isQuestionsLoaded: boolean;
@@ -57,6 +63,9 @@ export const useBranchWork = ({
         : (branchGroupsOf({ runs, mounts }).find((group) => group.key === groupKey) ?? null),
     [groupKey, mounts, runs],
   );
+  const branchLeads = useBranchLeads({ sessionId, group: runGroup, mountId, mounts });
+  const { leads, earlier, onToggleFold } = branchLeads;
+  const story = useMemo(() => branchStoryLineOf({ leads }), [leads]);
   const questionGroup = useMemo(
     () =>
       groupKey === null
@@ -90,7 +99,10 @@ export const useBranchWork = ({
       groupKey,
       mountPath,
       mounts,
-      runs: runGroup,
+      runs: earlier,
+      leads,
+      story,
+      onToggleLeadFold: onToggleFold,
       questions: questionGroup,
       questionAgents: agents,
       isQuestionsLoaded: questionsLens.isLoaded,

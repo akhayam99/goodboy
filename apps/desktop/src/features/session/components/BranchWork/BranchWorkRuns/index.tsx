@@ -4,7 +4,6 @@ import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { useRowReturn } from '../../../../../shared/hooks/useRowReturn';
-import { NAMES } from '../../../../../shared/utils/names';
 import { alsoOnOf, type BranchGroup } from '../../../branchGroupsOf';
 import { openBranchWork } from '../../../openBranchWork';
 import { openBranchWorkTab } from '../../../openBranchWorkTab';
@@ -20,6 +19,7 @@ type Props = {
   readonly group: BranchGroup;
   readonly mounts: ReadonlyArray<MountRowView>;
   readonly mountPath: string | null;
+  readonly label: string;
   readonly onLeave: () => void;
 };
 
@@ -43,7 +43,7 @@ type RevealParams = {
 
 const Icon = CONCEPT_ICONS.workflows;
 
-export const BranchWorkRuns = ({ session, group, mounts, mountPath, onLeave }: Props) => {
+export const BranchWorkRuns = ({ session, group, mounts, mountPath, label, onLeave }: Props) => {
   const sessionId = session.id;
   const canOpenBranch = useCanOpenBranchWork({ sessionId });
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(() => new Set());
@@ -106,7 +106,7 @@ export const BranchWorkRuns = ({ session, group, mounts, mountPath, onLeave }: P
       onRevealRun={reveal}
       renderRow={renderRow}
       heading={{
-        label: NAMES.runs,
+        label,
         mark: <Icon size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />,
         action: (
           <Button
