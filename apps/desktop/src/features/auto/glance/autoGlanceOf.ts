@@ -9,6 +9,7 @@ import { isAutoPausedAtLimit } from '../isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
 import { openRoleNouns } from '../openRoleNouns';
+import { needsYouRoleNouns } from '../needsYouRoleNouns';
 import { runningRoleNouns } from '../runningRoleNouns';
 
 type Params = {
@@ -79,13 +80,19 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   }
   const nouns = openRoleNouns({ delegations: view.delegations });
   if (phase === 'waiting' && nouns.length > 0) {
-    const running = runningRoleNouns({ delegations: view.delegations });
-    const queued = nouns.filter((noun) => !running.includes(noun));
+    const needsYou = needsYouRoleNouns({ delegations: view.delegations });
+    const running = runningRoleNouns({ delegations: view.delegations }).filter(
+      (noun) => !needsYou.includes(noun),
+    );
+    const queued = nouns.filter((noun) => !running.includes(noun) && !needsYou.includes(noun));
     const sentence = [
+      ...(needsYou.length === 0
+        ? []
+        : [`${joinNouns({ nouns: needsYou })} ${needsYou.length === 1 ? 'needs' : 'need'} you`]),
       ...(running.length === 0 ? [] : [`${joinNouns({ nouns: running })} running`]),
       ...(queued.length === 0 ? [] : [`${joinNouns({ nouns: queued })} queued`]),
     ].join(', ');
-    return glanceOf({ state: 'running', sentence });
+    return glanceOf({ state: needsYou.length === 0 ? 'running' : 'waiting', sentence });
   }
   if (phase === 'delegating') {
     return glanceOf({ state: 'running', sentence: 'Starting agents' });
