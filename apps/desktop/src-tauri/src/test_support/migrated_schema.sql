@@ -1246,7 +1246,7 @@ CREATE TABLE auto_attempts (
   write_set_json TEXT CHECK (write_set_json IS NULL OR json_valid(write_set_json)),
   started_at INTEGER NOT NULL,
   ended_at INTEGER,
-  end_reason TEXT,
+  end_reason TEXT, launch_snapshot TEXT CHECK (launch_snapshot IS NULL OR json_valid(launch_snapshot)),
   UNIQUE (delegation_id, ordinal),
   CHECK ((state = 'ended') = (outcome IS NOT NULL)),
   FOREIGN KEY (delegation_id) REFERENCES auto_delegations(id) ON DELETE CASCADE,
@@ -1347,7 +1347,7 @@ CREATE TABLE "auto_trees" (
   updated_at INTEGER NOT NULL,
   hard_deadline_at INTEGER NOT NULL,
   scheduler_owner TEXT,
-  owner_lease_expires_at INTEGER,
+  owner_lease_expires_at INTEGER, permissions TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(permissions)),
   FOREIGN KEY (root_agent_id) REFERENCES agents(id) ON DELETE CASCADE,
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
   FOREIGN KEY (primary_mount_id) REFERENCES session_worktrees(id) ON DELETE SET NULL
@@ -1463,6 +1463,23 @@ CREATE TABLE turn_admissions (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   UNIQUE (agent_id)
+);
+
+CREATE TABLE auto_grants (
+  id TEXT PRIMARY KEY,
+  tree_id TEXT NOT NULL REFERENCES auto_trees(id) ON DELETE CASCADE,
+  delegation_id TEXT REFERENCES auto_delegations(id) ON DELETE CASCADE,
+  attempt_id TEXT REFERENCES auto_attempts(id) ON DELETE CASCADE,
+  text_version TEXT,
+  kind TEXT NOT NULL CHECK (kind IN ('dependency', 'protected_file', 'pull_request')),
+  subject TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'asked' CHECK (state IN ('asked', 'allowed', 'declined', 'used')),
+  answered_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  CHECK ((attempt_id IS NULL) <> (text_version IS NULL)),
+  CHECK ((kind = 'pull_request') = (text_version IS NOT NULL)),
+  CHECK ((state = 'asked') = (answered_at IS NULL))
 );
 
 CREATE INDEX idx_permission_audit_retry_created ON permission_audit_retry(created_at);
@@ -1880,6 +1897,16 @@ CREATE INDEX idx_browser_tabs_session ON browser_tabs(session_id, position);
 CREATE INDEX idx_browser_tabs_project ON browser_tabs(project_id, position);
 
 CREATE INDEX idx_browser_visits_session ON browser_visits(session_id, updated_at);
+
+CREATE INDEX idx_auto_grants_tree ON auto_grants(tree_id, state);
+
+CREATE INDEX idx_auto_grants_delegation ON auto_grants(delegation_id) WHERE delegation_id IS NOT NULL;
+
+CREATE UNIQUE INDEX idx_auto_grants_attempt
+  ON auto_grants(attempt_id, kind, subject) WHERE attempt_id IS NOT NULL;
+
+CREATE UNIQUE INDEX idx_auto_grants_text
+  ON auto_grants(tree_id, subject, text_version) WHERE text_version IS NOT NULL;
 
 CREATE VIEW live_agents AS SELECT * FROM agents WHERE deleted_at IS NULL;
 
