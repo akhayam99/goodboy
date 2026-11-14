@@ -55,7 +55,7 @@ Below is the full index. Other docs and agents use it to find their way.
 
 ## Code-area ownership
 
-`pnpm check:doc-refs` fails when a glob below matches no file. Run `node scripts/split-features.mjs --check` to verify the feature-doc contract, which reads the first two columns of the 19 feature areas.
+`pnpm check:doc-refs` fails when a glob below matches no file. Run `node scripts/split-features.mjs --check` to verify the feature-doc contract, which reads the first two columns of the 20 feature areas.
 
 The recipe column links the steps for the change you are about to make: [recipes](recipes/). The guards column names what fails if a step is skipped: `rules` is `check:rules`, `ratchets` is `check:baselines`, `doc-refs` is `check:doc-refs`, `scenes` is the scene registry test.
 
@@ -70,6 +70,7 @@ The recipe column links the steps for the change you are about to make: [recipes
 | storage        | `apps/desktop/src/features/storage/**`                         | [features/storage.md](features/storage.md)                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | setup          | `apps/desktop/src/features/onboarding/**`                      | [features/setup.md](features/setup.md)                             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | start          | `apps/desktop/src/features/session/**`                         | [features/start.md](features/start.md)                             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
+| work           | `apps/desktop/src/features/work/**`                            | [features/work.md](features/work.md)                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | overview       | `apps/desktop/src/features/file-versions/**`                   | [features/overview.md](features/overview.md)                       | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | switching      | `apps/desktop/src/features/notifications/**`                   | [features/switching.md](features/switching.md)                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |
 | search         | `apps/desktop/src/features/search/**`                          | [features/search.md](features/search.md)                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md)                                              | rules, doc-refs, scenes          |

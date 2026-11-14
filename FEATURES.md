@@ -33,7 +33,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 
 [More on tasks and your tools](docs/features/inbox.md)
 
-<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="one-start-form"></a><a id="the-kind-chip"></a><a id="the-model-of-a-run"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
+<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="one-start-form"></a><a id="the-kind-chip"></a><a id="the-model-of-a-run"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a><a id="start-work"></a>
 
 ## Start a task
 
@@ -45,6 +45,18 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 - **Review a pull request**: A pull request waiting on you in Tasks shows Review pull request in place of Start.
 
 [More on starting a task](docs/features/start.md)
+
+<a id="work-section"></a><a id="lead"></a><a id="permission-rows"></a>
+
+## Work
+
+One page lists every Lead of a workspace, whatever session it runs in. A Lead is the agent that plans a job, hands it to helpers and asks you only for what your permission rows say.
+
+- **Work section**: Open Work to see every Lead of the workspace in one list, and see which ones need you.
+- **Lead**: A Lead reads one of five words: Working, Waits for you, Resting, Stopped or Finished.
+- **Permission rows**: A Lead's autonomy is nine rows you can read and change.
+
+[More on work](docs/features/work.md)
 
 <a id="session-overview"></a><a id="refresh-a-session"></a><a id="activity"></a><a id="full-log"></a><a id="cards"></a><a id="new-session-overview-experimental"></a><a id="next"></a><a id="time-left"></a><a id="changes"></a><a id="file-versions"></a>
 

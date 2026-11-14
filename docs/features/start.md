@@ -36,12 +36,12 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 - Outside a session, ⌘K **Start a run** opens the New session page on Auto picks.
 - Setup's last step draws this field too, pinned to Scout, so the first start teaches the second.
 
-### Start work (Work switch on)
+### Start work
 
-With the Work switch on, the doors that start an Auto or Orchestrator run open one composer instead of starting. With it off, every row above behaves as written.
+With [Work](work.md) on, the doors that start an Auto or Orchestrator run open one composer instead of starting. With it off, every row above behaves as written.
 
 - The composer opens at the top of the Work page. It holds the goal and the chips Session, Project, Branch, Asks you, Limit and Model.
-- Its doors are **Start work** on the Work page, **Start work** in a session's New menu and in ⌘K, **Start work on this branch** in an open board row, and the start router's rows for Auto and Orchestrator. A preset or a role you named still starts at once.
+- Its doors are **Start work** on the Work page, in a session's New menu and in ⌘K. An open board row has **Start work on this branch**, and the start router's rows for Auto and Orchestrator open it too. A preset or a role you named still starts at once.
 - Each door fills in what it knows. From Work the session is **New session**. Inside a session it is that session. From a branch row the branch is filled in.
 - The write names workspace, session or new, project and branch, and reads nothing from the page you are on after the press. They are its once-only key, so a double press starts one Lead.
 - A new session is created for the Lead and removed again if the start fails. A failed start keeps the composer and its text, with the error, and Start becomes **Retry**.
