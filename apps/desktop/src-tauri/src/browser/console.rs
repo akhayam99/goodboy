@@ -16,6 +16,10 @@ pub(crate) const MAX_ANSWER_BYTES: usize = 4_000_000;
 const MAX_DOC_CHARS: usize = 32;
 
 const HOOK: &str = include_str!("console_hook.js");
+const APP_SCRIPT_SOURCE: &str = "user-script:";
+const IPC_FALLBACK_TEXT: &str = "IPC custom protocol failed";
+const REJECTION_TEXT: &str = "Unhandled rejection";
+const WINDOW_REFUSAL_TEXT: &str = "not allowed on window";
 const READ_NAME_SLOT: &str = "__GOODBOY_CONSOLE_READ__";
 const READ_TIMEOUT: Duration = Duration::from_secs(1);
 
@@ -107,8 +111,22 @@ fn method_of(raw: Option<String>) -> Option<String> {
         .filter(|method| !method.is_empty() && method.chars().all(|c| c.is_ascii_uppercase()))
 }
 
+fn is_app_noise(raw: &RawEntry) -> bool {
+    if raw.kind != EntryKind::Console {
+        return false;
+    }
+    raw.source
+        .as_deref()
+        .is_some_and(|source| source.starts_with(APP_SCRIPT_SOURCE))
+        || raw.text.starts_with(IPC_FALLBACK_TEXT)
+        || (raw.text.starts_with(REJECTION_TEXT) && raw.text.contains(WINDOW_REFUSAL_TEXT))
+}
+
 fn entry_of(value: serde_json::Value) -> Option<ConsoleEntry> {
     let raw: RawEntry = serde_json::from_value(value).ok()?;
+    if is_app_noise(&raw) {
+        return None;
+    }
     let is_network = raw.kind == EntryKind::Network;
     Some(ConsoleEntry {
         seq: raw.seq,
@@ -363,6 +381,58 @@ mod tests {
         let network = &read.entries[1];
         assert_eq!(network.method, None);
         assert_eq!(network.status, Some(502));
+    }
+
+    #[test]
+    fn keeps_the_apps_own_injected_script_messages_out_of_the_page_console() {
+        let answer = json!({
+            "doc": "k3x9",
+            "entries": [
+                {
+                    "seq": 1,
+                    "kind": "console",
+                    "level": "warn",
+                    "text": "IPC custom protocol failed, Tauri will now use the postMessage interface",
+                    "source": "user-script:38",
+                },
+                {
+                    "seq": 2,
+                    "kind": "console",
+                    "level": "error",
+                    "text": "Unhandled rejection: notification.is_permission_granted not allowed on window \"main\"",
+                    "source": null,
+                },
+                {
+                    "seq": 3,
+                    "kind": "console",
+                    "level": "error",
+                    "text": "Unhandled rejection: Error: checkout failed",
+                    "source": "checkout.js:12",
+                },
+                {
+                    "seq": 4,
+                    "kind": "network",
+                    "level": "info",
+                    "text": "/assets/app.js",
+                    "source": null,
+                    "method": "GET",
+                    "status": null,
+                },
+            ],
+        })
+        .to_string();
+        let read = answer_of(&answer, &Cursor::of(None, 0)).expect("reads");
+        assert_eq!(seqs_of(&read), vec![3, 4]);
+        assert_eq!(read.entries[1].status, None);
+        assert_eq!(read.entries[1].level, EntryLevel::Info);
+    }
+
+    #[test]
+    fn the_hook_records_every_request_and_drops_the_oldest_of_the_same_kind_first() {
+        assert!(HOOK.contains("recordNetwork(method, response.status, address)"));
+        assert!(HOOK.contains("recordNetwork(request.method, xhr.status, request.address)"));
+        assert!(HOOK.contains("ring[index].kind === entry.kind"));
+        assert!(HOOK.contains("type: 'resource'"));
     }
 
     #[test]

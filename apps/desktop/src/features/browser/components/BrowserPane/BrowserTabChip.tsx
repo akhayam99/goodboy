@@ -15,7 +15,7 @@ export const BrowserTabChip = ({ label, url, isSelected, isPin, onSelect, onClos
   <div
     data-browser-tab=""
     className={cn(
-      'flex h-7 max-w-48 shrink-0 items-center rounded-md',
+      'flex h-7 min-w-24 max-w-48 shrink items-center rounded-md',
       isSelected && 'bg-selected',
     )}
   >

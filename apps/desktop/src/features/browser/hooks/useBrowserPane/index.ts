@@ -14,7 +14,6 @@ import { browserPaneRequests } from '../../browserPaneRequests';
 import { hostOf } from '../../hostOf';
 import { isFileAddress } from '../../isFileAddress';
 import { isTabGone } from '../../isTabGone';
-import { LOAD_STALLED_TEXT } from '../../loadStalledText';
 import { openPage } from '../../openPage';
 import { pinProjectOf } from '../../pinProjectOf';
 import { shownTabOf } from '../../shownTabOf';
@@ -158,17 +157,7 @@ export const useBrowserPane = ({ sessionId }: Params): BrowserPaneModel => {
   useFavicon({ liveId: shownLiveId, url });
   useTabLoad({
     sessionId,
-    onFinished: ({ tabId }) => {
-      refresh();
-      if (tabId === shownLiveIdRef.current) {
-        setError((current) => (current === LOAD_STALLED_TEXT ? null : current));
-      }
-    },
-    onStalled: ({ tabId }) => {
-      if (tabId === shownLiveIdRef.current) {
-        setError(LOAD_STALLED_TEXT);
-      }
-    },
+    onFinished: () => refresh(),
   });
 
   useEffect(() => {

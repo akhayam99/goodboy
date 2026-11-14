@@ -240,10 +240,74 @@ describe('the browser console', () => {
     expect(screen.getByRole('button', { name: 'Console' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    within(region).getByText('Since the last load');
 
     fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
 
+    expect(shownLevels()).toEqual(['error POST 500/api/orders/confirm']);
+  });
+
+  it('filters the console by level and by search, and says when nothing matches', async () => {
+    const region = await openConsole();
+    await waitFor(() => expect(shownLevels()).toHaveLength(4));
+
+    fireEvent.click(within(region).getByRole('button', { name: 'Filter by level' }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Errors' }));
+    expect(shownLevels()).toEqual(['error TypeError: retry is not a functioncheckout.js:214']);
+
+    fireEvent.click(within(region).getByRole('button', { name: 'Filter by level' }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'All levels' }));
+    fireEvent.change(within(region).getByRole('searchbox', { name: 'Search the log' }), {
+      target: { value: 'ledger' },
+    });
+    expect(shownLevels()).toEqual(['log ledger-core: confirm step mounted']);
+
+    fireEvent.change(within(region).getByRole('searchbox', { name: 'Search the log' }), {
+      target: { value: 'zzz' },
+    });
+    within(region).getByText('Nothing matches the filter');
+  });
+
+  it('expands a row to show the whole message', async () => {
+    const region = await openConsole();
+    await waitFor(() => expect(shownLevels()).toHaveLength(4));
+
+    const row = within(region).getByRole('button', {
+      name: 'error: TypeError: retry is not a function',
+    });
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(row);
+
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    expect(within(region).getByLabelText('Details').textContent).toBe(
+      'TypeError: retry is not a function\ncheckout.js:214',
+    );
+  });
+
+  it('lists every request on the network tab, loaded ones included', async () => {
+    reader = async () =>
+      heard({
+        entries: [
+          ...ENTRIES,
+          entryOf({
+            seq: 7,
+            level: 'info',
+            text: '/assets/app.js',
+            kind: 'network',
+            method: 'GET',
+          }),
+        ],
+      });
+    const region = await openConsole();
+    await waitFor(() => expect(shownLevels()).toHaveLength(4));
+
+    fireEvent.click(within(region).getByRole('tab', { name: /Network/ }));
+
+    expect(shownLevels()).toEqual([
+      'error POST 500/api/orders/confirm',
+      'info GET loaded/assets/app.js',
+    ]);
+    fireEvent.click(within(region).getByRole('button', { name: 'Filter by level' }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Failed' }));
     expect(shownLevels()).toEqual(['error POST 500/api/orders/confirm']);
   });
 
@@ -343,7 +407,8 @@ describe('the browser console', () => {
     const region = await openConsole();
     await waitFor(() => expect(shownLevels()).toHaveLength(4));
 
-    fireEvent.click(within(region).getByRole('button', { name: /Send to Implementer/ }));
+    fireEvent.click(within(region).getByRole('button', { name: /Send to session/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /This session/ }));
 
     const [handoff] = store.getState().outputHandoffs[IMPLEMENTER] ?? [];
     expect(handoff?.fileName).toBe('checkout-console.md');
