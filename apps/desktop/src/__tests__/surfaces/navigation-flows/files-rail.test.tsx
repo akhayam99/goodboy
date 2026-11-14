@@ -22,7 +22,7 @@ class ChangesPageWidth {
     this.callback = callback;
   }
   observe(target: Element) {
-    if (target.hasAttribute('data-changes-page')) {
+    if (target.hasAttribute('data-session-head-frame') || target.hasAttribute('data-branch-pane')) {
       this.callback([{ contentRect: { width: target.getBoundingClientRect().width } }]);
     }
   }

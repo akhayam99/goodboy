@@ -9,6 +9,7 @@ export type SessionHeadSlots = {
   readonly title: HTMLElement | null;
   readonly meta: HTMLElement | null;
   readonly aside: HTMLElement | null;
+  readonly lead: HTMLElement | null;
   readonly frame: HTMLElement | null;
   readonly isTitleClaimed: boolean;
   readonly isHeadingClaimed: boolean;

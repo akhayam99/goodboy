@@ -43,6 +43,7 @@ const writeFolded = ({ surface, isFolded }: WriteParams): void => {
 type Params = SurfaceParams & {
   readonly foldBelow?: number;
   readonly foldedByDefaultBelow?: number;
+  readonly pane?: HTMLElement | null;
 };
 
 export type StudioRailFold = {
@@ -56,6 +57,7 @@ export const useStudioRailFold = ({
   surface,
   foldBelow = STUDIO_RAIL_FOLD_BELOW,
   foldedByDefaultBelow,
+  pane = null,
 }: Params): StudioRailFold => {
   const paneRef = useRef<HTMLDivElement | null>(null);
   const [isFolded, setIsFolded] = useState(() =>
@@ -72,7 +74,7 @@ export const useStudioRailFold = ({
   }, [isNarrow]);
 
   useEffect(() => {
-    const node = paneRef.current;
+    const node = pane ?? paneRef.current;
     if (node === null || typeof ResizeObserver === 'undefined') {
       return;
     }
@@ -84,7 +86,7 @@ export const useStudioRailFold = ({
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [pane]);
 
   const setFolded = useCallback(
     (isNowFolded: boolean) => {

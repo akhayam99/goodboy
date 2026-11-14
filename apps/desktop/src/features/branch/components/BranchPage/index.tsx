@@ -22,6 +22,7 @@ import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { useBitbucketRemote } from '../../hooks/useBitbucketRemote';
 import { useBranchIdentity } from '../../hooks/useBranchIdentity';
+import { useBranchRailSlot } from '../../hooks/useBranchRailSlot';
 import { useBranchStart } from '../../hooks/useBranchStart';
 import { usePullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import { pullRequestNextStepOf } from '../../pullRequestNextStepOf';
@@ -74,6 +75,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
+  const rail = useBranchRailSlot({ isActive });
   const historyCommits = useAppStore((s) =>
     historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits ?? null),
   );
@@ -335,6 +337,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           diff={diff}
           hasPullRequest={pr !== null && pr.state === 'open'}
           isReadOnly={isReadOnly}
+          railSlot={rail.railSlot}
           commitTotal={entryFacts.commits.count}
         />
       );
@@ -448,7 +451,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
             isPushNext={!isStepHidden && controls.primary?.actionId === 'diff.push'}
             isSetupOfferShown={!isChanges}
-            width={isChanges ? 'full' : 'column'}
             baseRow={baseRow}
             onOpenComments={() => selectTab('comments')}
           />
@@ -461,7 +463,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   return (
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
       <TabActionsSlotContext.Provider value={tabActionsSlot}>
-        <div data-branch-pane="" className="relative flex h-full min-h-0 min-w-0 flex-1">
+        <div
+          ref={rail.setOwnPane}
+          data-branch-pane=""
+          className="relative flex h-full min-h-0 min-w-0 flex-1"
+        >
+          {rail.isFramed ? null : (
+            <div ref={rail.setOwnLead} data-branch-lead="" className="flex shrink-0 empty:hidden" />
+          )}
           {detail}
         </div>
       </TabActionsSlotContext.Provider>

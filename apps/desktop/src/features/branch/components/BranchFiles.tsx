@@ -19,6 +19,7 @@ type Props = {
   readonly diff: SessionDiff;
   readonly hasPullRequest: boolean;
   readonly isReadOnly: boolean;
+  readonly railSlot: Readonly<{ host: HTMLElement; pane: HTMLElement; isShown: boolean }> | null;
   readonly commitTotal: number | null;
 };
 
@@ -29,6 +30,7 @@ export const BranchFiles = ({
   diff,
   hasPullRequest,
   isReadOnly,
+  railSlot,
   commitTotal,
 }: Props) => {
   const sessionId = session.id as SessionId;
@@ -64,6 +66,7 @@ export const BranchFiles = ({
         worktreePath={worktreePath}
         diff={diff}
         isReadOnly={isReadOnly}
+        railSlot={railSlot}
         filesFact={filesHeadFactOf({ files: diff.files })}
         commitTotal={commitTotal}
         notice={

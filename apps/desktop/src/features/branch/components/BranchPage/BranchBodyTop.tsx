@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { PageColumn, type PageColumnWidth } from '@goodboy/ui';
+import { PageColumn } from '@goodboy/ui';
 import type { Session, SessionProjectMount } from '@goodboy/types';
 import type { FixRun } from '../../../resolve/fixRun';
 import type { LaneStatus } from '../../../resolve/laneStatus';
@@ -17,7 +17,6 @@ type Props = {
   readonly isFixRunShown: boolean;
   readonly isPushNext: boolean;
   readonly isSetupOfferShown: boolean;
-  readonly width: PageColumnWidth;
   readonly baseRow: ReactNode;
   readonly onOpenComments: () => void;
 };
@@ -31,11 +30,10 @@ export const BranchBodyTop = ({
   isFixRunShown,
   isPushNext,
   isSetupOfferShown,
-  width,
   baseRow,
   onOpenComments,
 }: Props) => (
-  <PageColumn width={width} className="flex shrink-0 flex-col gap-2 pb-3 empty:hidden">
+  <PageColumn width="column" className="flex shrink-0 flex-col gap-2 pb-3 empty:hidden">
     <BranchRunningLine session={session} mount={mount} isActive={isActive} />
     <BranchWorkLines
       session={session}
