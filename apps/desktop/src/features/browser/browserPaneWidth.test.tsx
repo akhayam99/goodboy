@@ -58,7 +58,7 @@ const renderBrowserPane = () => {
 
 const pane = () => screen.getByRole('complementary', { name: 'Browser' });
 const handle = () => screen.getByRole('separator', { name: 'Resize browser' });
-const trackOf = (width: number): string => `${width + DRAWER_INSET * 2}px`;
+const trackOf = (width: number): string => `${width + DRAWER_INSET}px`;
 
 beforeAll(async () => {
   store = await importStore();

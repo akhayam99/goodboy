@@ -1,11 +1,11 @@
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRegistration } from '../../store/slices/drawer/drawerRegistration';
-import { TerminalDrawer } from './components/TerminalDrawer';
+import { LazyTerminalDrawer } from './components/LazyTerminalDrawer';
 
 export const terminalDrawerRegistration: DrawerRegistration<'terminal'> = {
   kind: 'terminal',
   render: ({ drawer, closeDrawer }) => (
-    <TerminalDrawer
+    <LazyTerminalDrawer
       key={drawerKey(drawer)}
       sessionId={drawer.sessionId}
       terminalId={drawer.payload.terminalId}

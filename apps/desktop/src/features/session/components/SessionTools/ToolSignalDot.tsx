@@ -1,5 +1,5 @@
 import { StatusDot, type Tone } from '@goodboy/ui';
-import type { ToolSignal } from './useToolSignal';
+import type { ToolSignal } from './ToolSignal';
 
 const TONE = {
   error: 'danger',

@@ -3,7 +3,8 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { pressShortcut } from '../../helpers/pressKey';
-import { type Row, WAIT, settle, useAppStore } from './harness';
+import { openLens } from '../../../features/session/openLens';
+import { type Ctx, type Row, WAIT, settle, useAppStore } from './harness';
 
 const DRAFT = 'why is the build red on payments-api';
 
@@ -17,23 +18,18 @@ const pressEscape = async (): Promise<void> => {
 
 const openedKind = (): string | null => selectOpenDrawer(useAppStore.getState())?.kind ?? null;
 
-const openAsk = async (): Promise<void> => {
-  pressShortcut({ id: 'ask.open' });
+const openAskDrawer = async ({ sessionId }: Ctx): Promise<void> => {
+  useAppStore.getState().openDrawer({ kind: 'ask', sessionId, payload: null });
   await settle();
   await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
 };
 
-const openContextOverAsk = async (): Promise<void> => {
-  await openAsk();
+const openContextOverAsk = async (ctx: Ctx): Promise<void> => {
+  await openAskDrawer(ctx);
   await composer();
-  const sessionId = selectOpenDrawer(useAppStore.getState())?.sessionId;
-  expect(sessionId).toBeDefined();
-  if (sessionId == null) {
-    return;
-  }
   useAppStore.getState().openDrawer({
     kind: 'context',
-    sessionId,
+    sessionId: ctx.sessionId,
     payload: { section: 'goal', view: 'current' },
   });
   await settle();
@@ -43,7 +39,7 @@ const openContextOverAsk = async (): Promise<void> => {
 export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: the drawer it replaced waits in a back chip, the chip swaps, Esc walks back',
-    covers: ['key:ask.open', 'openAsk', 'openDrawer', 'closeDrawer'],
+    covers: ['openDrawer', 'closeDrawer'],
     open: openContextOverAsk,
     lands: async () => {
       await userEvent.setup().click(await screen.findByRole('button', { name: 'Back to Ask' }));
@@ -74,25 +70,24 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'ask draft: type, Esc, Esc, ⌘L brings the draft back and the composer has focus',
+    name: 'ask draft: type, leave the tab, ⌘L brings the draft back and the composer has focus',
     covers: ['key:ask.open', 'openAsk'],
     open: async () => {
-      await openAsk();
+      pressShortcut({ id: 'ask.open' });
+      await settle();
       const field = await composer();
       await waitFor(() => expect(document.activeElement).toBe(field), WAIT);
       fireEvent.change(field, { target: { value: DRAFT } });
       await settle();
       expect(field.value).toBe(DRAFT);
     },
-    lands: async () => {
-      await pressEscape();
-      expect(openedKind()).toBe('ask');
-      expect(document.activeElement).not.toBe(await composer());
+    lands: async (ctx) => {
+      openLens({ sessionId: ctx.sessionId, lens: null });
+      await settle();
+      expect(openedKind()).toBeNull();
 
-      await pressEscape();
-      await waitFor(() => expect(openedKind()).toBeNull(), WAIT);
-
-      await openAsk();
+      pressShortcut({ id: 'ask.open' });
+      await settle();
       const reopened = await composer();
       expect(reopened.value).toBe(DRAFT);
       await waitFor(() => expect(document.activeElement).toBe(reopened), WAIT);
@@ -100,9 +95,9 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'ask drawer: an empty composer closes on the first Esc and the header says Close',
-    covers: ['key:ask.open', 'openAsk'],
-    open: async () => {
-      await openAsk();
+    covers: ['openDrawer'],
+    open: async (ctx) => {
+      await openAskDrawer(ctx);
       await composer();
     },
     lands: async () => {

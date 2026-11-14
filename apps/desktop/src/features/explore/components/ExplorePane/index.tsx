@@ -19,10 +19,10 @@ import { exploreMetaOf } from '../../exploreMeta';
 import { EXPLORE_ROOT_PATH, ancestorPathsOf } from '../../exploreRows';
 import { useExploreChanges } from '../../hooks/useExploreChanges';
 import { useExploreChangedView } from '../../hooks/useExploreChangedView';
-import { useExploreListing } from '../../hooks/useExploreListing';
-import { useExploreRoot } from '../../hooks/useExploreRoot';
+import { useExploreListing } from '../../../diff/FilesMode/useExploreListing';
+import { useExploreRoot } from '../../../diff/FilesMode/useExploreRoot';
 import { ExploreNoFolder } from './ExploreNoFolder';
-import { ExploreProjectChip } from './ExploreProjectChip';
+import { ExploreProjectChip } from '../../../diff/FilesMode/ExploreProjectChip';
 import { ExploreTree } from './ExploreTree';
 
 type Props = {

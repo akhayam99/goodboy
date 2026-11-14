@@ -28,6 +28,7 @@ import type { HeldScope } from '../../types';
 
 type CommitScope = Extract<HeldScope, { kind: 'commit' }>;
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { selectIsContextTabOpen } from '../../../../store/slices/contextDrawer/selectIsContextTabOpen';
 import { PaletteOverlay } from './index';
 import type { AppStore } from '../../../../store/store';
 
@@ -631,11 +632,8 @@ describe('PaletteOverlay, Ask in chat', () => {
     });
 
     expect(onClose).toHaveBeenCalled();
-    expect(useAppStore.getState().drawer).toEqual({
-      kind: 'ask',
-      sessionId: PAYOUT,
-      payload: null,
-    });
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId: PAYOUT })).toBe(true);
     expect(sendAskQuestion).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: PAYOUT, question: 'Why did the tester fail?' }),
     );

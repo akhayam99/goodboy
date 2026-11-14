@@ -16,6 +16,8 @@ vi.mock('../../shared/lib/db', () => ({
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { openLens } from '../../features/session/openLens';
+import { selectIsContextTabOpen } from '../../store/slices/contextDrawer/selectIsContextTabOpen';
 import type { Session } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -279,7 +281,7 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('opens and closes the context drawer from the session tools', async () => {
+  it('opens the Context tab from its door and leaves it by another tab', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
     await mountFlow(
@@ -289,18 +291,17 @@ describe('main flows on the real store', () => {
         <DrawerHost />
       </>,
     );
-    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
-    fireEvent.click(screen.getByTestId('pane-toggle-context'));
-    await settle();
-
-    expect(useAppStore.getState().drawer).toEqual(
-      expect.objectContaining({ kind: 'context', sessionId }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(false);
+    act(() => useAppStore.getState().openContextDrawer({ sessionId }));
     await settle();
 
     expect(useAppStore.getState().drawer).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(true);
+    screen.getByTestId('context-tab');
+    act(() => openLens({ sessionId, lens: null }));
+    await settle();
+
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(false);
     expectNoRenderLoop();
   });
 

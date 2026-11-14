@@ -70,7 +70,11 @@ const preparePlan = (): void => {
 const prepareContext = (): void => {
   seedActivityRunScene();
   useAppStore.setState({ selectedAgentId: {} });
-  useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'goal' });
+  useAppStore.getState().openDrawer({
+    kind: 'context',
+    sessionId: SESSION_ID,
+    payload: { section: 'goal', view: 'current' },
+  });
 };
 
 type EntryParams = {

@@ -11,6 +11,7 @@ type Props = {
   readonly alternate: DiffAlternate | null;
   readonly onChange: (view: DiffView) => void;
   readonly selector: ReactNode;
+  readonly onShowAllFiles?: () => void;
 };
 
 const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
@@ -66,7 +67,14 @@ const switchLabelOf = ({
     : `Show working tree (${count})`;
 };
 
-export const DiffEmptyState = ({ view, baseBranch, alternate, onChange, selector }: Props) => {
+export const DiffEmptyState = ({
+  view,
+  baseBranch,
+  alternate,
+  onChange,
+  selector,
+  onShowAllFiles,
+}: Props) => {
   const switchLabel = switchLabelOf({ alternate, baseBranch });
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center pb-12">
@@ -82,6 +90,11 @@ export const DiffEmptyState = ({ view, baseBranch, alternate, onChange, selector
               {alternate === null || switchLabel === null ? null : (
                 <Button size="sm" variant="secondary" onClick={() => onChange(alternate.view)}>
                   {switchLabel}
+                </Button>
+              )}
+              {onShowAllFiles === undefined ? null : (
+                <Button size="sm" variant="secondary" onClick={onShowAllFiles}>
+                  All files
                 </Button>
               )}
               {selector}

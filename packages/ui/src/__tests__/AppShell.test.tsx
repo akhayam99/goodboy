@@ -256,9 +256,11 @@ describe('AppShell studio in the main slot', () => {
     expect(panel.hasAttribute('data-drawer-parked')).toBe(true);
     expect(panel.getAttribute('data-drawer-mode')).toBe('closed');
     expect(panel.hasAttribute('data-drawer-exit')).toBe(false);
-    expect(panel.hasAttribute('inert')).toBe(true);
-    expect(panel.className).toContain('invisible');
-    expect(panel.className).toContain('absolute');
+    const parkedCard = panel.querySelector<HTMLElement>('[data-drawer-card]');
+    expect(parkedCard?.hasAttribute('inert')).toBe(true);
+    expect(parkedCard?.className).toContain('invisible');
+    expect(parkedCard?.className).toContain('absolute');
+    expect(panel.style.width).toBe('0px');
     expect(document.querySelector('[data-drawer-main]')?.getAttribute('data-sheet')).not.toBe(
       'pushed',
     );
@@ -273,8 +275,9 @@ describe('AppShell studio in the main slot', () => {
     );
 
     expect(panel.hasAttribute('data-drawer-parked')).toBe(false);
-    expect(panel.hasAttribute('inert')).toBe(false);
-    expect(panel.className).not.toContain('invisible');
+    const openCard = panel.querySelector<HTMLElement>('[data-drawer-card]');
+    expect(openCard?.hasAttribute('inert')).toBe(false);
+    expect(openCard?.className).not.toContain('invisible');
     expect(screen.getByRole('textbox', { name: 'decision draft' })).toBe(field);
     expect(field.value).toBe('ship on Friday');
   });
@@ -303,7 +306,7 @@ describe('AppShell studio in the main slot', () => {
 });
 
 describe('AppShell right drawer', () => {
-  it('keeps a closed drawer as a zero-width, inert column beside the main area', () => {
+  it('keeps a closed drawer without a rail as a zero-width column beside the main area', () => {
     render(<AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />);
 
     const grid = screen
@@ -311,7 +314,7 @@ describe('AppShell right drawer', () => {
       .closest('[style*="grid-template-columns"]') as HTMLElement;
     const panel = screen.getByRole('complementary', { name: 'Side panel' });
     expect(grid.style.gridTemplateAreas).toBe('"left lhandle main"');
-    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(panel.querySelector('[data-drawer-card]')).toBeNull();
     expect(panel.style.width).toBe('0px');
   });
 

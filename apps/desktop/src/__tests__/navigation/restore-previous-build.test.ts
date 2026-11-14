@@ -179,6 +179,11 @@ describe('layouts saved by the previous build', () => {
       const state = await restoredFrom({ entry });
 
       expect(state.currentSessionId).toBe(SESSION);
+      if (entry.foldedLens !== null) {
+        expect(state.drawer).toBeNull();
+        expect(state.activeLens[SESSION]).toBe(entry.foldedLens);
+        return;
+      }
       expect(state.drawer).toEqual(entry.expected);
     },
   );

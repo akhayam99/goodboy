@@ -483,11 +483,6 @@ export const clickMenuItem = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('menuitem', { name }));
 };
 
-export const clickFirstButton = async (name: RegExp): Promise<void> => {
-  const [first] = await screen.findAllByRole('button', { name });
-  await click(first!);
-};
-
 const LEVEL = '[data-level-layer="session"]';
 
 const sessionTab = (label: RegExp): HTMLElement =>

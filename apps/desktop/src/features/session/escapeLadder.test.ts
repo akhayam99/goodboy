@@ -136,11 +136,20 @@ describe('the Esc ladder', () => {
   });
 
   it('does what the back row does on a list page', () => {
-    useAppStore.getState().navigate({ to: RUNS });
+    useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION, lens: 'linear' }) });
 
     escapeLadder({});
 
     expect(keyNow()).toBe(`s/${SESSION}`);
+  });
+
+  it('stays on a page tab, which has no back row', () => {
+    useAppStore.getState().navigate({ to: RUNS });
+    const before = keyNow();
+
+    escapeLadder({});
+
+    expect(keyNow()).toBe(before);
   });
 
   it('does nothing on the Overview, which has no back row', () => {

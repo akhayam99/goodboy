@@ -287,7 +287,7 @@
   "apps/desktop/src/features/explore/components/ExplorePane/ExploreProjectChip.test.tsx": 1,
   "apps/desktop/src/features/explore/components/ExplorePane/index.test.tsx": 1,
   "apps/desktop/src/features/explore/hooks/useExploreChanges/index.test.ts": 1,
-  "apps/desktop/src/features/explore/hooks/useExplorePreview/index.test.ts": 1,
+  "apps/desktop/src/features/diff/FilesMode/useExplorePreview/index.test.ts": 1,
   "apps/desktop/src/features/history/historyEngine.test.ts": 1,
   "apps/desktop/src/features/history/JobBanner/index.test.tsx": 1,
   "apps/desktop/src/features/integrations/bitbucket/bitbucketPullRequestTransport.test.ts": 1,

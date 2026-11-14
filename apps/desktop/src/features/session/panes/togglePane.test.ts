@@ -33,41 +33,41 @@ const shownKind = (): string | null => selectDrawerPanel(store.getState())?.kind
 
 describe('togglePane under a page', () => {
   it('closes the page and shows the parked pane instead of closing it unseen', () => {
-    togglePane({ sessionId: SESSION_ID, pane: 'context' });
+    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
     expect(shownKind()).toBeNull();
 
-    togglePane({ sessionId: SESSION_ID, pane: 'context' });
+    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('context');
+    expect(shownKind()).toBe('scripts');
   });
 
   it('leaves Impact opened from Guide in one press and shows the parked pane', () => {
-    togglePane({ sessionId: SESSION_ID, pane: 'context' });
+    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
     store.getState().openStudio({ studio: { kind: 'guide' } });
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 
-    togglePane({ sessionId: SESSION_ID, pane: 'context' });
+    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('context');
+    expect(shownKind()).toBe('scripts');
   });
 
   it('closes the page and opens the pane when nothing was parked', () => {
     store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
 
-    togglePane({ sessionId: SESSION_ID, pane: 'context' });
+    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
 
     expect(store.getState().appStudio).toBeNull();
-    expect(shownKind()).toBe('context');
+    expect(shownKind()).toBe('scripts');
   });
 
   it('still closes a shown pane on a session', () => {
-    togglePane({ sessionId: SESSION_ID, pane: 'context' });
-    expect(shownKind()).toBe('context');
+    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
+    expect(shownKind()).toBe('scripts');
 
-    togglePane({ sessionId: SESSION_ID, pane: 'context' });
+    togglePane({ sessionId: SESSION_ID, pane: 'scripts' });
 
     expect(shownKind()).toBeNull();
   });

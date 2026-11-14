@@ -28,8 +28,11 @@ draws the same list.
   [branch-page.md](branch-page.md)). Never two rows.
 - **Changes on every session.** A branchless session shows its file versions; a session with
   a branch shows the Branch page pinned on its Changes section, without its own strip.
-- **Context** shows the existing Context panel until the Context tab replaces it; the Projects
-  and Linked cards (`SessionLevel`) wait for that tab.
+- **Context** is `ContextTab`: the Projects and Linked cards (`SessionLevel`, handed in through
+  `ContextCardsContext`), goal, decisions, summary and explanations (`ContextDrawer` in page
+  mode) and Ask at the foot. `openContextDrawer` navigates to the tab and keeps the section,
+  view and highlight in the place's rows (`context.section`, `context.view`,
+  `context.highlight`, read by the tab); it does not open a drawer.
 - **No fold, no width.** The rail's fold, its width and its page-column fold key are gone with
   it; `SessionFrame` keeps the session tools rail and its drawer inset only.
 
@@ -104,7 +107,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   to another place. Only one level shows, so a session never carries a nested
   card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
-  Overview, Changes (with the count of changed files) in a branchless session only, Runs,
+  Overview, Changes (with the count of changed files; its `Changed` and `All files` modes
+  hold the files of the session, see the Changes section of branch-page.md), Runs,
   Artifacts, and Questions last, always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
   **Runs is the one entry for work** (ux27 one flow, unit 1): it folds the
@@ -353,7 +357,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   still in the session but whose steps did not load says "This run couldn't be
   read" with Retry (`RunMetadataMissing`), never that it is gone.
 
-The tools (Explore, Context, Ask, Agents, Scripts, Terminal, Browser) are panes, not pages:
+The tools (Terminal and Browser) are panes, not pages:
 they open from the right rail at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -674,7 +678,8 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
   the content (see The session tools), so no header carries a second `⋯` (pinned by
   `scene-primaries.test.tsx`). `PaneActionsContext` stays for a page that
   lends its own action to a nested header (the issue detail's back word).
-  ⌘L (`ask.open`, app plane) opens Ask or, when it is open, focuses its box;
+  ⌘L (`ask.open`, app plane) opens the Context tab (`openAsk`) and focuses the Ask box; Ask
+  keeps its conversation and starts no agent;
   the key is bound once per visible session (`useAskOpenShortcut` in
   `SessionWorkspace`), not by the row, so two mounted pages never bind it
   twice.
@@ -694,29 +699,28 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 
 ## The session tools
 
-The right rail is one 44px column at the sheet's right edge on every screen of
+The right rail is one 44px column at the window's right edge on every screen of
 a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
 the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
-Workflows). Those three pages fade their content in and out while the rail
+Workflows). It lives in the drawer container, never in the page container, and
+every panel opens inward of it (see home-and-drawer.md, The rail is the anchor).
+Those three pages fade their content in and out while the rail
 stays still (`StudioFrame` animates its `data-studio-motion` nodes, never the
-`StudioRail`); a record panel open with the page fades in with it, and one
+rail); a record panel open with the page fades in with it, and one
 opened later keeps the drawer's own motion. Moving between the shell rail and
 a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
-record panel shown as an overlay the rail copies itself above that panel's
+record panel shown as an overlay the rail stays where it is, above that panel's
 scrim, as it does above the shell's. It holds two
-groups by scope. On a session page with no page open, the Session group holds
-Explore, Context, Ask, Agents and Scripts (`SESSION_TOOLS`), under the caption
-Session (`ToolGroupCaption`, `text-rail`). At its foot, on every screen, the
-Workspace group holds Terminal and Browser (`WORKSPACE_TOOLS`) with no
-caption, since a 44px column cannot fit the word; a flexible gap keeps it
-anchored to the bottom, one separator sits above it when the Session group
-shows, and the column keeps the same inset at its foot as at its top. A test
+column holds two tools, Terminal and Browser (`RAIL_TOOLS`), under the caption
+Tools (`ToolGroupCaption`, `text-rail`), on every page of the app, in a session
+or outside one. Explore, Agents, Scripts, Context and Ask have no button on it:
+they open from their pages and keyboard shortcuts. A test
 scene or frame without the shell rail keeps the column inside `SessionFrame`
 (`ShellRailContext`).
 Each tool keeps its pane id and shortcut; Terminal shows ``⌃` `` and Browser
 has no shortcut. `SessionToolButton` names every tool below its icon in the
 9px `text-rail` caption role: secondary (`TEXT_ROLE.secondary`) when closed,
-label strength when open, and the Session caption is secondary too, so every
+label strength when open, and the Tools caption is secondary too, so every
 caption keeps its contrast in light mode. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
@@ -860,17 +864,14 @@ Folding the rail leaves the column in place.
   tier pane, so the session rail folds to icons while it is open.
   [browser.md](../browser.md#the-pane) owns its address row, its tabs and the
   rules for the native view.
-- **Context signals ride on Context.** A 6px dot in the Context tool's right
-  slot (on the folded icon, its corner) marks decisions changed since the last
-  look (info), a running summary (info, pulsing) or a failed summary (danger)
-  (`useToolSignal`, over `contextNoteOf`); the row's tooltip and accessible
-  name say why. The group loads the seen marker and the decisions once, as
-  the old chip did.
-- **Scripts and Terminal signal too.** The Scripts button shows a running dot
-  while a script of the session runs and a danger dot for a failed run nobody
-  opened (`scriptsSignalOf`; the drawer marks the run seen in `scriptRunsSeen`
-  when its output is open, so the dot clears on that run and returns on the next
-  failure). The Terminal button shows a dot when a command that ran more than
+- **Terminal holds the scripts.** The folder pill ends with "All terminals"
+  (the Terminal page). A Scripts menu ends the tab row (`TerminalScriptsMenu`):
+  a pick opens a new tab in the pill's folder and types the command
+  (`scriptCommandOf`). The panel loads on first open (`LazyTerminalDrawer`). A
+  worktree that goes away under an open terminal shows "This worktree was
+  removed" instead of closing silently. The Scripts chord still opens the old
+  drawer until it is removed.
+- **Terminal signals on its button.** The Terminal button shows a dot when a command that ran more than
   ten seconds ended while the drawer was closed (`useTerminalFinishSignal`, a
   3 second poll of `terminal_list_live` kept to the latest answer, state in
   `terminalFinishes`, cleared when the drawer opens). It says "finished", never

@@ -67,7 +67,6 @@
   "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": 1,
   "apps/desktop/src/features/diff/components/FileRail.tsx": 1,
   "apps/desktop/src/features/explore/components/ExploreFileDrawer.tsx": 1,
-  "apps/desktop/src/features/explore/components/ExplorePane/ExploreProjectChip.tsx": 1,
   "apps/desktop/src/features/impact/components/ImpactStudio/OverviewEmpty.tsx": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxDetail.tsx": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxFacetRail.tsx": 1,

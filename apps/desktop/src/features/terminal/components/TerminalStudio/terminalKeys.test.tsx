@@ -99,6 +99,7 @@ beforeEach(async () => {
     monitor_snapshot: { listeners: [], processes: [], takenAt: 0, isPlatformSupported: true },
     process_ledger_list: [],
     monitor_watched_ports: [],
+    project_scripts_scan: [],
   });
   store.setState({
     currentWorkspaceId: WORKSPACE_ID,

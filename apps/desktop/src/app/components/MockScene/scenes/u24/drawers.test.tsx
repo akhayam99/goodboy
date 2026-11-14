@@ -84,7 +84,7 @@ describe('the drawer split scenes', () => {
     const drawer = container.querySelector('[data-container="drawer"]');
     expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe('736px');
+    expect(panel().style.width).toBe('728px');
     expect(page?.contains(drawer ?? null)).toBe(false);
     expect(page?.getAttribute('data-sheet')).toBe('pushed');
   });
@@ -109,7 +109,7 @@ describe('the drawer split scenes', () => {
     expect(useAppStore.getState().drawer?.kind).toBe('context');
     expect(panel().getAttribute('data-drawer-sizing')).toBe('side');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe('416px');
+    expect(panel().style.width).toBe('408px');
   });
 
   it('opens the Explore file drawer in the reader tier, pushed at 1920', async () => {

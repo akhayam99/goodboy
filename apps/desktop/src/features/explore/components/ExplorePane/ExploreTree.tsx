@@ -37,7 +37,7 @@ import {
   type ExploreListing,
 } from '../../exploreRows';
 import { exploreTreeKey } from '../../exploreTreeKey';
-import { useExploreOpen } from '../../hooks/useExploreOpen';
+import { useExploreOpen } from '../../../diff/FilesMode/useExploreOpen';
 import type { ExploreOpenFailure } from '../../openFailure';
 import { openStartRun } from '../../../session/startRun/openStartRun';
 import { ExploreRow } from './ExploreRow';

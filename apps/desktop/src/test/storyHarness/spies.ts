@@ -5,6 +5,7 @@ import type {
   WorktreeWriterLease,
   WriteSetLease,
 } from '../../features/worktree/worktree';
+import { EMPTY_CHANGED_FILES } from './emptyChangedFiles';
 import { createInvokeMock, createInvokeRouter } from '../invokeMock';
 import type { InvokeHandlers } from '../invokeMock';
 import type { writeAttachment } from '../../features/chat/turn';
@@ -489,7 +490,7 @@ export const storySpies = {
     async (_args: { readonly repoPath: string }): Promise<string | null> => null,
   ),
   worktreeGitDirectory: vi.fn(async (_args: WorktreeBaseArgs): Promise<string | null> => null),
-  worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => ({ files: [], numstat: '' })),
+  worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => EMPTY_CHANGED_FILES),
   listBranchCommits: vi.fn(
     async (
       _worktreePath: string,

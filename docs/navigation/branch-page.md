@@ -426,6 +426,21 @@ final width, fades out (`fold-label-out`) or in (`fold-label-in`); a switch betw
 overlay (the page crossing 1224px) remounts the rail in place, with no move. The rail head reads `Viewed N of M` with a `Next` button, the keyboard button and Fold, then the
 filter field (`/`) with the filter menu beside it (scope and grouping), then the tree;
 a viewed file row shows a check, and the one control for Viewed is the file header.
+The rail head carries a segmented control, `Changed N` and `All files`, with the diff totals at its
+right (`ModeControl`, the count from the one `filesHead` fact of `SessionDiffPane`). `All files`
+swaps the list for `AllFilesTree` (`features/diff/components/ChangeTree`): the worktree in the same
+tree, 28 high rows, a changed file with its counts and status letter, an unchanged one muted with no
+counts, a deleted one struck through, a closed folder with changes its muted sum
+(`folderSumsOf`). Folders load when opened (`useExploreListing`), the switch lists only the
+root, and a deleted file or a folder that exists only in the diff comes from `allFilesListingOf`.
+A click on a changed or deleted file scrolls to its diff; a click on an unchanged file opens
+`FileReader` in place of the diff (`Unchanged against main`, the line count, `Open in editor`,
+`Back to the changes`), and a failed read says `Couldn't read this file` with Retry in place.
+The filter searches the loaded and changed files in `All files`; viewed, next and the keys count
+changed files only. The mode is kept per session and folder in `exploreChangedView` and
+`PLACE_ROWS.changesMode` opens it on `All files`. The scope pill first in the toolbar
+(`ChangesScopePill`, the project and branch chip) picks the branch on the session Changes tab and is
+a label on a pull request page. With no change, `No changes against main` offers `All files`.
 The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
 then `Display ⌄`. Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one

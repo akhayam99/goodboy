@@ -17,6 +17,7 @@ import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/c
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 import { collectAskPackInput } from '../../features/session/ask/collectAskPackInput';
+import { ContextTab } from '../../features/session/components/ContextTab';
 import { seriesStripsOf } from '../../store/slices/pr-series/seriesStripsOf';
 import { MountsScene } from '../../app/components/MockScene/scenes/MountsScene';
 
@@ -87,13 +88,15 @@ const present = ({ value, what }: PresentParams): HTMLElement => {
 const notices = () => within(screen.getByRole('region', { name: 'Notices' }));
 
 describe('Overview capabilities from the session Overview', () => {
-  it('shows the goal as prose and opens it in the Context drawer', async () => {
+  it('shows the goal as prose and opens it in the Context tab', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
 
     expect(screen.queryByRole('button', { name: /^Goal: Split the ledger/ })).toBeNull();
     const sessionId = Object.keys(useAppStore.getState().sessionSlots)[0] ?? '';
+    const openContext = vi.fn();
     act(() => {
       useAppStore.setState((state) => ({
+        openContextDrawer: openContext,
         sessionSlots: {
           ...state.sessionSlots,
           [sessionId]: [
@@ -109,7 +112,7 @@ describe('Overview capabilities from the session Overview', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Goal: Reviewers read the ledger/ }));
     await advance();
 
-    expect(useAppStore.getState().drawer?.kind).toBe('context');
+    expect(openContext).toHaveBeenCalledWith({ sessionId, section: 'goal' });
   });
 
   it('offers Add a goal and the quiet start on a blank session', async () => {
@@ -125,19 +128,18 @@ describe('Overview capabilities from the session Overview', () => {
     screen.getByRole('button', { name: /From chat: Payments retry design/ });
   });
 
-  it('keeps Write title and goal from linked work in the Context pane, opened from the session tools', async () => {
+  it('keeps Write title and goal from linked work in the Context tab', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
 
     expect(
       header().queryByRole('button', { name: 'Write title and goal from linked work' }),
     ).toBeNull();
-    fireEvent.click(
-      within(screen.getByRole('toolbar', { name: 'Tools' })).getByRole('button', {
-        name: /^Context/,
-      }),
-    );
-    await advance();
-
+    const current = useAppStore.getState().currentSessionId;
+    const session = useAppStore.getState().sessions.find((candidate) => candidate.id === current);
+    if (session === undefined) {
+      throw new Error('Missing session');
+    }
+    render(<ContextTab session={session} />);
     await advance();
     const action = screen.getByRole('button', { name: 'Write title and goal from linked work' });
     expect(action.getAttribute('data-variant')).toBe('secondary');

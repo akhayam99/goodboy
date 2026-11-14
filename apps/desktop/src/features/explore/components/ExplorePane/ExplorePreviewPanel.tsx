@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Button, Markdown, Notice, ScrollFade, Skeleton } from '@goodboy/ui';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 import { type ExploreEntry } from '../../explore';
-import type { ExplorePreviewState } from '../../hooks/useExplorePreview';
+import type { ExplorePreviewState } from '../../../diff/FilesMode/useExplorePreview';
 import type { ExplorePreviewKind } from '../../previewKindOf';
 import { ExplorePathLine } from './ExplorePathLine';
 import { SourceView } from '../../../../shared/components/SourceView';

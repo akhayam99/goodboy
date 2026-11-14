@@ -58,7 +58,7 @@ export const BranchWork = ({ session, work }: Props) => {
   return (
     <PageColumn width="column" className="flex min-w-0 flex-col gap-4 pb-5">
       {story === null ? null : (
-        <p data-testid="branch-work-story" className="max-w-[760px] text-prose text-foreground">
+        <p data-testid="branch-work-story" className="text-prose text-foreground">
           {story}
         </p>
       )}

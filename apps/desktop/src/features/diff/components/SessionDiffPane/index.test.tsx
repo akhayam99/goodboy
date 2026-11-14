@@ -31,6 +31,11 @@ const baseStore = () => ({
   emitNotification: vi.fn(),
   navigate: vi.fn(),
   reviewDrafts: {},
+  exploreChangedView: {},
+  exploreExpanded: {},
+  navigation: {},
+  setExploreChangedView: vi.fn(),
+  setExploreExpanded: vi.fn(),
   loadReviewDrafts: vi.fn(),
   addReviewDraft: vi.fn(),
   updateReviewDraft: vi.fn(),
@@ -67,6 +72,10 @@ vi.mock('../../hooks/useDiffReviewThreads', () => ({
 
 vi.mock('../../hooks/useDiffNotes', () => ({
   useDiffNotes: () => ({ threads: [], allowFileLevel: h.store['allowFileLevel'] === true }),
+}));
+
+vi.mock('./ChangesScopePill', () => ({
+  ChangesScopePill: () => null,
 }));
 
 vi.mock('../DiffViewSelector', () => ({

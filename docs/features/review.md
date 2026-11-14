@@ -139,6 +139,8 @@ Read the branch against its base in **Changes**, unified or split. The changed f
 
 <sub>Screenshot from Goodboy 0.31.12</sub>
 
+Switch the list from **Changed** to **All files** to see the whole worktree in the same tree. Changed files are marked. An unchanged file opens in place, with **Back to the changes**. The project and branch chip at the start of the toolbar picks another branch.
+
 ### Write review
 
 Review someone else's pull request from its diff. Click a line number to leave a comment, then press **Review** to choose **Comment**, **Approve** or **Request changes** and add a summary. GitHub receives it as one review.

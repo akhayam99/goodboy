@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Info } from 'lucide-react';
 import { EmptyLine } from '@goodboy/ui';
 import { ExplorePreviewPanel } from '../../features/explore/components/ExplorePane/ExplorePreviewPanel';
-import { useExplorePreview } from '../../features/explore/hooks/useExplorePreview';
+import { useExplorePreview } from '../../features/diff/FilesMode/useExplorePreview';
 import { previewKindOf } from '../../features/explore/previewKindOf';
 import { splitPath } from '../../features/diff/lib/fileStatus';
 

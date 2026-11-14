@@ -346,6 +346,8 @@ c13-workflows-history-filter
 c2-next-step
 card-rails
 changelog
+changes-files-all
+changes-files-reading
 chat-empty-noprojects
 chat-empty-stage
 chat-first-run

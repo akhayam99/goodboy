@@ -79,8 +79,6 @@
   "apps/desktop/src/features/session/central/branches/useBranchDetails": 1,
   "apps/desktop/src/features/session/central/branches/useBranchFacts": 1,
   "apps/desktop/src/features/session/central/branches/useBranchLabels": 1,
-  "apps/desktop/src/features/session/central/branches/useBranchNames": 1,
-  "apps/desktop/src/features/session/central/done/useDoneRows": 1,
   "apps/desktop/src/features/session/central/next/useActionCardActions": 1,
   "apps/desktop/src/features/session/central/next/useNextCards": 1,
   "apps/desktop/src/features/session/central/next/useOpenNeedsYou": 1,

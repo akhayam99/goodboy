@@ -22,7 +22,7 @@ const DrawerOverlayNarrowScene = () => {
   useEffect(() => {
     seedActivityRunScene();
     useAppStore.setState({ selectedAgentId: {} });
-    seedSessionAsk({ state: 'answer' });
+    seedSessionAsk({ state: 'answer', isDrawer: true });
     setIsReady(true);
   }, []);
 

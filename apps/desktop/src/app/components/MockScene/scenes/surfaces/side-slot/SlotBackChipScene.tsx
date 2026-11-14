@@ -6,7 +6,7 @@ import { useAppStore } from '../../../../../../store';
 import { selectDrawerSizing } from '../../../../../../store/slices/drawer/selectDrawerSizing';
 import type { OpenDrawer } from '../../../../../../store/slices/drawer/state';
 import { sessionTerminalOwner } from '../../../../../../store/slices/terminal/terminalOwner';
-import { SessionTools } from '../../../../../../features/session/components/SessionTools';
+import { SlotSceneRail } from './SlotSceneRail';
 import { DrawerHost } from '../../../../DrawerHost';
 import { mockSceneIpc } from '../../mockSceneIpc';
 import { shellPromptLines, terminalSnapshotAnswer } from '../../terminalSceneOutput';
@@ -94,13 +94,17 @@ export const SlotBackChipScene = ({ state, hasRail = false }: Props) => {
       style={state === 'narrow' ? { width: NARROW_WIDTH_PX } : undefined}
     >
       <DrawerColumn
-        main={<PlanDrawerRunStub />}
+        main={
+          <>
+            <PlanDrawerRunStub />
+            {hasRail ? <SlotSceneRail sessionId={PLAN_DRAWER_SESSION_ID} /> : null}
+          </>
+        }
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         sizing={sizing}
         ariaLabel="Side panel"
         resizeLabel="Resize side panel"
       />
-      {hasRail ? <SessionTools sessionId={PLAN_DRAWER_SESSION_ID} /> : null}
     </main>
   );
 };
