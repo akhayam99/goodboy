@@ -163,7 +163,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           <WorkspaceFieldRow
             workspaceId={workspaceId}
             field="attribution"
-            help="Signs every comment and review reply Goodboy posts."
+            help='Adds "Written by Goodboy" to every comment and reply.'
           >
             <Switch
               ariaLabel="Attribution line"
@@ -186,7 +186,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           <WorkspaceFieldRow
             workspaceId={workspaceId}
             field="resolveOnGithub"
-            help="Off leaves it open for the reviewer to resolve. Bitbucket threads always stay open."
+            help="Off leaves it to the reviewer. Bitbucket threads stay open."
           >
             <Switch
               ariaLabel={NAMES.markThreadResolved}
@@ -197,7 +197,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           <WorkspaceFieldRow
             workspaceId={workspaceId}
             field="editPostedReply"
-            help="After a squash or fixup, adds an Update line to a reply Goodboy already posted. GitHub may notify people."
+            help="After a squash or fixup, adds an Update line. GitHub may notify."
           >
             <Switch
               ariaLabel="Edit the posted reply"
@@ -206,16 +206,15 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             />
           </WorkspaceFieldRow>
         </Band>
-        <Band
-          inset="content"
-          label="Commits"
-          ariaLabel="Commits"
-          hint="For fixes made to answer a comment."
-          headingLevel={2}
-        >
-          <WorkspaceFieldRow workspaceId={workspaceId} field="resolveCommitStyle" layout="stacked">
+        <Band inset="content" label="Commits" ariaLabel="Commits" headingLevel={2}>
+          <WorkspaceFieldRow
+            workspaceId={workspaceId}
+            field="resolveCommitStyle"
+            layout="stacked"
+            help="Fixup targets the commit that added the line."
+          >
             <SegmentedTabs
-              ariaLabel="Commit style"
+              ariaLabel="A fix for a comment lands as"
               size="sm"
               value={commitSave.value}
               options={RESOLVE_COMMIT_STYLES.map((style) => ({

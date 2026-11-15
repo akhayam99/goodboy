@@ -9,6 +9,8 @@ import { SWITCH_SETTING } from '../../switchSetting';
 import { SettingRow } from './SettingRow';
 import { UpdatesWhatsNewRow } from './UpdatesWhatsNewRow';
 
+const DOWNLOAD_LABEL = 'Download in the background';
+
 type Props = {
   readonly isFocused?: boolean;
 };
@@ -42,15 +44,15 @@ export const UpdatesSection = ({ isFocused = false }: Props) => {
           <UpdateVersionRow installedVersion={installedVersion} />
           <UpdatesWhatsNewRow />
           <SettingRow
-            label="Download updates in the background"
+            label={DOWNLOAD_LABEL}
             rowKey="background-download"
-            help="Restart to use a new version once it lands."
+            help="New versions land while you work."
             isChanged={!save.value}
             onReset={() => void save.save({ value: true })}
             save={save}
           >
             <Switch
-              ariaLabel="Download updates in the background"
+              ariaLabel={DOWNLOAD_LABEL}
               checked={save.value}
               onChange={(isNext) => void save.save({ value: isNext })}
             />

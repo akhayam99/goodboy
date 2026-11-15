@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
 import { Band, Switch } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAwayAlertsStore } from '../../../notifications/away/awayAlertsStore';
 import { useSettingSave } from '../../hooks/useSettingSave';
 import { settingRowKey } from '../../settingRowKey';
 import { SWITCH_SETTING } from '../../switchSetting';
 import { SettingRow } from './SettingRow';
 
-const BANNER_HELP = 'A system banner when an agent needs you and Goodboy is behind.';
-const BADGE_HELP = 'The number of sessions that need you, on the app icon.';
+const BANNER_HELP = 'When an agent needs you and Goodboy is in the background.';
+const BADGE_HELP = 'Sessions that need you, on the app icon.';
 
 type ValueParams<Value> = {
   readonly value: Value;
@@ -56,7 +57,7 @@ export const AwayAlertsBand = () => {
     <Band inset="content" label="Notifications" headingLevel={2}>
       <div className="flex flex-col">
         <SettingRow
-          label="Banner when you are away"
+          label={NAMES.bannerWhenAway}
           rowKey="away-banner"
           help={BANNER_HELP}
           isChanged={banner.value}
@@ -64,7 +65,7 @@ export const AwayAlertsBand = () => {
           save={banner}
         >
           <Switch
-            ariaLabel="Banner when you are away"
+            ariaLabel={NAMES.bannerWhenAway}
             checked={banner.value}
             onChange={(isNext) => void banner.save({ value: isNext })}
           />

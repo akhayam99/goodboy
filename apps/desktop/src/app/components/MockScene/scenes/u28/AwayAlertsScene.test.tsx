@@ -25,7 +25,7 @@ describe('the away alerts scenes', () => {
     const Scene = U28_AWAY_ALERTS_SCENES[id];
     render(<Scene />);
 
-    expect(stateOf('Banner when you are away')).toBe(banner);
+    expect(stateOf('Banner when away')).toBe(banner);
     expect(stateOf('Dock badge')).toBe('true');
   });
 });

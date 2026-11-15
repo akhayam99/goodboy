@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { Band, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppSettingSave } from '../../hooks/useAppSettingSave';
 import { SETTING_TERMINAL_EXIT_STATUS } from '../../settings';
 import { SWITCH_SETTING } from '../../switchSetting';
 import { SettingRow } from './SettingRow';
 
-const LABEL = 'Show if a command passed or failed';
-const HELP = 'A small zsh hook; your own shell files stay untouched.';
+const HELP = 'A check or a cross after each command. Your dotfiles stay untouched.';
 
 export const TerminalExitStatusBand = () => {
   const raw = useAppStore((state) => state.settings[SETTING_TERMINAL_EXIT_STATUS]);
@@ -39,7 +39,7 @@ export const TerminalExitStatusBand = () => {
     <Band inset="content" label="Built-in terminal" headingLevel={2}>
       <div className="flex flex-col">
         <SettingRow
-          label={LABEL}
+          label={NAMES.commandStatus}
           rowKey="command-status"
           help={HELP}
           isChanged={!save.value}
@@ -47,7 +47,7 @@ export const TerminalExitStatusBand = () => {
           save={save}
         >
           <Switch
-            ariaLabel={LABEL}
+            ariaLabel={NAMES.commandStatus}
             checked={save.value}
             onChange={(isOn) => void save.save({ value: isOn })}
           />

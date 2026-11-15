@@ -5,6 +5,7 @@ import { Band, Button, Listbox } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../shared/utils/names';
 import { searchProgressLabel } from '../../../search/components/SearchMode/searchProgressLabel';
 import { SettingRow } from './SettingRow';
 
@@ -85,21 +86,21 @@ export const SearchIndexBand = () => {
     <Band
       inset="content"
       label="Search"
-      hint={`What ${shortcutGlyphs('search.open')} finds. The index never leaves this Mac.`}
+      hint={`What ${shortcutGlyphs('search.open')} finds.`}
       headingLevel={2}
     >
       <div className="flex flex-col">
         <SettingRow
           label="Index"
           rowKey="search-index"
-          help={progress ?? 'Kept up to date as you work.'}
+          help={progress ?? 'Kept up to date as you work. Never leaves this Mac.'}
         >
           <span className="text-meta text-muted-foreground">{size}</span>
         </SettingRow>
         <SettingRow
-          label="Rebuild"
+          label="Rebuild the index"
           rowKey="search-rebuild"
-          help="Empties the index and fills it again from your sessions while the app is idle."
+          help="Empties it and fills it again while the app is idle."
         >
           <Button
             size="sm"
@@ -113,9 +114,9 @@ export const SearchIndexBand = () => {
           </Button>
         </SettingRow>
         <SettingRow
-          label="Leave out"
+          label={NAMES.skipFolders}
           rowKey="search-leave-out"
-          help="Sessions, messages and branches of these folders stop showing in search."
+          help="Their sessions and branches stay out of search."
           isChanged={excluded.length > 0}
           onReset={() => void changeExcluded({ next: [] })}
         >
@@ -125,7 +126,7 @@ export const SearchIndexBand = () => {
             searchable
             noun="folder"
             placeholder="No folder"
-            ariaLabel="Folders search leaves out"
+            ariaLabel={NAMES.skipFolders}
             options={options}
             value={excluded}
             onChange={(values) => void changeExcluded({ next: values as ReadonlyArray<ProjectId> })}

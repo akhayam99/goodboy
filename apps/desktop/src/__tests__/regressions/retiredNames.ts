@@ -245,4 +245,18 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'new-turns-start-in', pattern: /\bNew turns start in\b/, use: NAMES.startsIn },
   { id: 'the-turn-failed', pattern: /^The turn (?:failed|stopped)$/, use: NAMES.failed },
   { id: 'turn-finished', pattern: /^Turn finished\b/, use: NAMES.replyFinished },
+  {
+    id: 'banner-when-you-are-away',
+    pattern: /\bBanner when you are away\b/,
+    use: NAMES.bannerWhenAway,
+  },
+  { id: 'links-bare', pattern: /^Links$/, use: NAMES.linksInSession },
+  { id: 'keys-from-before', pattern: /\bKeys from before 0\.15\.5\b/, use: NAMES.classicSendKeys },
+  {
+    id: 'show-if-a-command-passed',
+    pattern: /\bShow if a command passed or failed\b/,
+    use: NAMES.commandStatus,
+  },
+  { id: 'exit-status', pattern: /^Exit status$/, use: NAMES.commandStatus },
+  { id: 'leave-out', pattern: /^Leave out$/, use: NAMES.skipFolders },
 ];

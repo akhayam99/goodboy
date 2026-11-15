@@ -60,6 +60,13 @@ const typeAndPress = (init: { readonly metaKey?: boolean }) => {
 };
 
 describe('ClassicComposerKeysField', () => {
+  it('names the row Classic send keys and says which key does what', () => {
+    render(<ClassicComposerKeysField />);
+
+    screen.getByRole('switch', { name: 'Classic send keys' });
+    screen.getByText(/adds a line and .+ starts, as before 0\.15\.5\./);
+  });
+
   it('starts on Enter until the switch is on, then on Cmd+Enter only, and saves the choice', async () => {
     render(
       <>

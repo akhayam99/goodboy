@@ -1,6 +1,7 @@
 import { Switch } from '@goodboy/ui';
 import { useComposerClassicKeys } from '../../../../shared/hooks/useComposerClassicKeys';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppSettingSave } from '../../hooks/useAppSettingSave';
 import { SETTING_COMPOSER_CLASSIC_KEYS } from '../../settings';
 import { SWITCH_SETTING } from '../../switchSetting';
@@ -17,15 +18,15 @@ export const ClassicComposerKeysField = () => {
 
   return (
     <SettingRow
-      label="Keys from before 0.15.5"
+      label={NAMES.classicSendKeys}
       rowKey="classic-send-keys"
-      help={`Starting an agent adds a line on ${shortcutGlyphs('composer.send')} and starts on ${shortcutGlyphs('composer.submit')}, and review replies send on ${shortcutGlyphs('composer.send')}.`}
+      help={`${shortcutGlyphs('composer.send')} adds a line and ${shortcutGlyphs('composer.submit')} starts, as before 0.15.5.`}
       isChanged={save.value}
       onReset={() => void save.save({ value: false })}
       save={save}
     >
       <Switch
-        ariaLabel="Keys from before 0.15.5"
+        ariaLabel={NAMES.classicSendKeys}
         checked={save.value}
         onChange={(isNext) => void save.save({ value: isNext })}
       />

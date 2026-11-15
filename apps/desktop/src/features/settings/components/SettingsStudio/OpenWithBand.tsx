@@ -11,13 +11,13 @@ import {
 } from '../../settings';
 import { useAppStore } from '../../../../store';
 
-import { ownBrowserClickWord } from '../../../browser/ownBrowserClickWord';
 import { useAppSettingSave } from '../../hooks/useAppSettingSave';
 import { LinksOpenField } from './LinksOpenField';
 import { ToolChoiceField, type ToolChoice } from './ToolChoiceField';
 
 const EDITOR_HELP = 'Opens session worktrees.';
-const TERMINAL_HELP = 'Opens projects, and runs provider commands.';
+const TERMINAL_HELP = 'Opens projects and runs provider CLIs.';
+const BROWSER_HELP = 'Opens wireframes and links outside a session.';
 
 const BROWSER_LABELS: Readonly<Record<string, string>> = {
   safari: 'Safari',
@@ -138,7 +138,6 @@ export const OpenWithBand = () => {
   const browsers = isBrowserMissing
     ? [...detectedBrowsers, { id: browserApp, label: missingBrowserLabel }]
     : detectedBrowsers;
-  const browserHelp = `Your browser, for links you ${ownBrowserClickWord()}, wireframes, and anything opened outside a session.`;
   const browserChoices: ReadonlyArray<ToolChoice> = [
     SYSTEM_BROWSER,
     ...browsers.map((browser) => ({
@@ -172,7 +171,7 @@ export const OpenWithBand = () => {
         <ToolChoiceField
           label="Browser"
           rowKey="open-browser"
-          help={browserHelp}
+          help={BROWSER_HELP}
           value={browserApp}
           defaultValue={DEFAULT_BROWSER_APP}
           choices={browserChoices}

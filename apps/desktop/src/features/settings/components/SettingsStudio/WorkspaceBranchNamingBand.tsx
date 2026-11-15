@@ -60,7 +60,7 @@ export const WorkspaceBranchNamingBand = ({ workspaceId }: Props) => {
       <WorkspaceFieldRow
         workspaceId={workspaceId}
         field="branchPrefix"
-        help="Starts every new session branch. Letters, numbers, - and /."
+        help="Starts every session branch. a to z, 0 to 9, - and /."
       >
         <Input
           type="text"

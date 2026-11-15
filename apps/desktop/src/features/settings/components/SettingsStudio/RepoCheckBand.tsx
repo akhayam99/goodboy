@@ -10,7 +10,7 @@ import { READ_FAILED } from '../../../../store/slices/notifications/errorRecover
 import { useAppSettingSave } from '../../hooks/useAppSettingSave';
 import { SettingRow } from './SettingRow';
 
-const HELP = 'How often each base branch is compared with origin.';
+const HELP = 'How often base branches are fetched. Goodboy never pulls.';
 
 const INTERVAL_OPTIONS: ReadonlyArray<SegmentedTabOption<string>> = [
   { value: '0', label: 'Off' },
@@ -52,12 +52,7 @@ export const RepoCheckBand = () => {
   }, [raw, loadSetting, reportError]);
 
   return (
-    <Band
-      inset="content"
-      label="Git"
-      hint="Fetches origin in the background. Goodboy never pulls by itself."
-      headingLevel={2}
-    >
+    <Band inset="content" label="Git" headingLevel={2}>
       <div className="flex flex-col">
         <SettingRow
           label="Check origin"

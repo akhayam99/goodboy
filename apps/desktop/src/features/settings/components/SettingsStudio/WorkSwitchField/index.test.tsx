@@ -49,9 +49,7 @@ describe('WorkSwitchField', () => {
         <WordProbe />
       </>,
     );
-    expect(
-      screen.getByRole('switch', { name: 'Work (experimental)' }).getAttribute('aria-checked'),
-    ).toBe('false');
+    expect(screen.getByRole('switch', { name: 'Work' }).getAttribute('aria-checked')).toBe('false');
     expect(screen.getByTestId('word').textContent).toBe('Auto');
   });
 

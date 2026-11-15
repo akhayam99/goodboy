@@ -10,7 +10,7 @@ type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
-const HELP = 'The providers a new run may use, and the backup when one is out.';
+const HELP = 'Which model each role uses.';
 
 export const DefaultModelsSetting = ({ workspaceId }: Props) => {
   const summary = usePolicySummary({ workspaceId });

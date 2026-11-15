@@ -10,7 +10,7 @@ import { DANGER_ZONE } from './dangerZone';
 import { SettingRow } from './SettingRow';
 
 const DISCONNECT_NOTE =
-  'Files stay on disk. Open the folder again to restore it with its sessions.';
+  'Files stay on disk. Open the folder again to bring it back with its sessions.';
 
 type DisconnectTitleParams = {
   readonly name: string;

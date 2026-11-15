@@ -1,6 +1,7 @@
 import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { ownBrowserClickWord } from '../../../../browser/ownBrowserClickWord';
 import { useLinksOpen } from '../../../../../shared/hooks/useLinksOpen';
+import { NAMES } from '../../../../../shared/utils/names';
 import {
   DEFAULT_LINKS_OPEN,
   SETTING_LINKS_OPEN,
@@ -32,9 +33,9 @@ export const LinksOpenField = () => {
 
   return (
     <SettingRow
-      label="Links"
+      label={NAMES.linksInSession}
       rowKey="links-open"
-      help={`Click on a link, plan or report, in a session. ${ownBrowserClickWord()}: your browser.`}
+      help={`Where a click opens. ${ownBrowserClickWord()} opens the other one.`}
       isChanged={save.value !== DEFAULT_LINKS_OPEN}
       onReset={() => void save.save({ value: DEFAULT_LINKS_OPEN })}
       save={save}
@@ -44,7 +45,7 @@ export const LinksOpenField = () => {
         value={save.value}
         options={LINKS_OPTIONS}
         onChange={(to) => void save.save({ value: to })}
-        ariaLabel="Links"
+        ariaLabel={NAMES.linksInSession}
       />
     </SettingRow>
   );

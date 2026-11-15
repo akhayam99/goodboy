@@ -15,7 +15,7 @@ export const ResetAppScene = () => {
       </h2>
       <FieldRow
         label="Delete all data"
-        help="Every workspace, session, transcript and rule. Keychain keys are untouched."
+        help="Every workspace, session, transcript and rule. Keychain keys stay."
       >
         {isDone ? (
           <span className="text-meta text-muted-foreground">Local data deleted.</span>
