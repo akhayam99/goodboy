@@ -318,7 +318,10 @@ describe('main flows on the real store', () => {
       />,
     );
     expect(screen.queryByRole('list', { name: 'Providers settings' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Connections' }));
+    const movedRow = screen
+      .getAllByRole('button', { name: 'Open Connections' })
+      .find((button) => button.dataset.settingsMoved === 'connections');
+    fireEvent.click(movedRow!);
     expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
     cleanup();
 

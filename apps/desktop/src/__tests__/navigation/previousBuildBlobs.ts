@@ -53,6 +53,7 @@ const STUDIOS: Readonly<Record<string, object>> = {
   chat: { kind: 'chat', chatId: 'chat-northwind' },
   browser: { kind: 'browser', sessionId: SESSION, tabId: 'tab-checkout' },
   terminal: { kind: 'terminal', terminalId: 'terminal-1', sessionId: SESSION, worktree: null },
+  connections: { kind: 'connections', focus: { kind: 'provider', provider: 'anthropic' } },
 };
 
 const DRAWERS: Readonly<Record<string, unknown>> = {
