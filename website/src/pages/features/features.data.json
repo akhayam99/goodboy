@@ -1305,8 +1305,7 @@
           "title": "Drift warning",
           "text": "Get a notification when an agent steps outside its role, like a planner editing files.",
           "group": "Agents",
-          "also": "drift warning",
-          "shown": true
+          "also": "drift warning"
         },
         {
           "title": "Subagents from plan parts",
@@ -1350,8 +1349,7 @@
           "title": "Permission rows",
           "text": "A Lead's autonomy is nine rows you can read and change.",
           "group": "Work",
-          "also": "permission rows",
-          "shown": true
+          "also": "permission rows"
         },
         {
           "title": "Terminal",
