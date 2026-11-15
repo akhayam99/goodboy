@@ -15,7 +15,6 @@ import { TimelineEmpty } from '../../components/SessionWorkspace/parts/TimelineP
 import { TimelineRevealRow } from '../../components/SessionWorkspace/parts/TimelinePane/TimelineRevealRow';
 import { TimelineRow } from '../../components/SessionWorkspace/parts/TimelinePane/TimelineRow';
 import { TimelineSkeleton } from '../../components/SessionWorkspace/parts/TimelinePane/TimelineSkeleton';
-import { ActionColumnContext } from '../../components/SessionWorkspace/parts/TimelinePane/ActionColumnContext';
 import { useTimelineRowProps } from '../../components/SessionWorkspace/parts/TimelinePane/useTimelineRowProps';
 import { useTimelineRows } from '../../components/SessionWorkspace/parts/TimelinePane/useTimelineRows';
 import { NAMES } from '../../../../shared/utils/names';
@@ -28,10 +27,9 @@ const LOG_ROW_BOX = '[content-visibility:auto] data-row-near:[content-visibility
 
 type Props = {
   readonly session: Session;
-  readonly hasRowActions?: boolean;
 };
 
-export const LogPane = ({ session, hasRowActions = true }: Props) => {
+export const LogPane = ({ session }: Props) => {
   const sessionId = session.id;
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const pending = usePendingAction({ sessionId });
@@ -66,7 +64,7 @@ export const LogPane = ({ session, hasRowActions = true }: Props) => {
     [groups, setAnchored, showAllAnchored],
   );
   const rows = useTimelineRows({ session, view: 'all', query, explode });
-  const { rowPropsFor, hasActionColumn } = useTimelineRowProps({ session, explode, rows });
+  const { rowPropsFor } = useTimelineRowProps({ session, explode, rows });
   const { entries, viewEntries } = rows;
   const shownRowIds = useRef<ReadonlySet<string>>(new Set());
   const wasShown = shownRowIds.current;
@@ -79,81 +77,78 @@ export const LogPane = ({ session, hasRowActions = true }: Props) => {
   const isSearching = query.trim() !== '';
 
   return (
-    <ActionColumnContext.Provider value={hasRowActions && hasActionColumn}>
-      <section
-        ref={sectionRef}
-        aria-label="Log entries"
-        className="@container/activity flex flex-col gap-2"
-      >
-        <div className="flex items-center gap-2">
-          <Input
-            type="search"
-            aria-label="Search the log"
-            placeholder="Search the log"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          {rows.unreadAgentIds.size > 0 ? (
-            <Button
-              variant="quiet"
-              size="sm"
-              disabled={pending.pendingKeys.has(MARK_SEEN_KEY)}
-              onClick={() =>
-                void pending.run({
-                  key: MARK_SEEN_KEY,
-                  failureTitle: "Couldn't mark the agents as seen",
-                  task: () => markAllAgentsSeen(sessionId),
-                })
-              }
-            >
-              <CheckCheck size={ICON_SIZE.row} aria-hidden />
-              {NAMES.markAsRead}
-            </Button>
-          ) : null}
+    <section
+      ref={sectionRef}
+      aria-label="Log entries"
+      className="@container/activity flex flex-col gap-2"
+    >
+      <div className="flex items-center gap-2">
+        <Input
+          type="search"
+          aria-label="Search the log"
+          placeholder="Search the log"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        {rows.unreadAgentIds.size > 0 ? (
+          <Button
+            variant="quiet"
+            size="sm"
+            disabled={pending.pendingKeys.has(MARK_SEEN_KEY)}
+            onClick={() =>
+              void pending.run({
+                key: MARK_SEEN_KEY,
+                failureTitle: "Couldn't mark the agents as seen",
+                task: () => markAllAgentsSeen(sessionId),
+              })
+            }
+          >
+            <CheckCheck size={ICON_SIZE.row} aria-hidden />
+            {NAMES.markAsRead}
+          </Button>
+        ) : null}
+      </div>
+      {isLoading ? (
+        <TimelineSkeleton />
+      ) : viewEntries.length === 0 ? (
+        <TimelineEmpty view="log" isSearching={isSearching} onClearSearch={() => setQuery('')} />
+      ) : (
+        <div className="flex flex-col gap-1">
+          <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
+            <div ref={listRef} className="@container flex flex-col [overflow-anchor:none]">
+              {rows.laidOutItems.map((item, index) => {
+                const props = rowPropsFor({ item, index });
+                if (props === null) {
+                  return null;
+                }
+                const slot = item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
+                const row = <TimelineRow {...props} />;
+                return (
+                  <div
+                    key={item.id}
+                    data-log-row=""
+                    className={LOG_ROW_BOX}
+                    style={{ containIntrinsicSize: `auto ${item.height}px` }}
+                  >
+                    {slot === undefined ? (
+                      row
+                    ) : (
+                      <TimelineRevealRow
+                        groupId={slot.groupId}
+                        isLeaving={explode.leavingIds.has(slot.groupId)}
+                        isShown={wasShown.has(item.id)}
+                        onSettled={explode.settle}
+                      >
+                        {row}
+                      </TimelineRevealRow>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </WorkTimeProvider>
         </div>
-        {isLoading ? (
-          <TimelineSkeleton />
-        ) : viewEntries.length === 0 ? (
-          <TimelineEmpty view="log" isSearching={isSearching} onClearSearch={() => setQuery('')} />
-        ) : (
-          <div className="flex flex-col gap-1">
-            <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-              <div ref={listRef} className="@container flex flex-col [overflow-anchor:none]">
-                {rows.laidOutItems.map((item, index) => {
-                  const props = rowPropsFor({ item, index });
-                  if (props === null) {
-                    return null;
-                  }
-                  const slot =
-                    item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
-                  const row = <TimelineRow {...props} />;
-                  return (
-                    <div
-                      key={item.id}
-                      data-log-row=""
-                      className={LOG_ROW_BOX}
-                      style={{ containIntrinsicSize: `auto ${item.height}px` }}
-                    >
-                      {slot === undefined ? (
-                        row
-                      ) : (
-                        <TimelineRevealRow
-                          groupId={slot.groupId}
-                          isLeaving={explode.leavingIds.has(slot.groupId)}
-                          isShown={wasShown.has(item.id)}
-                          onSettled={explode.settle}
-                        >
-                          {row}
-                        </TimelineRevealRow>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </WorkTimeProvider>
-          </div>
-        )}
-      </section>
-    </ActionColumnContext.Provider>
+      )}
+    </section>
   );
 };

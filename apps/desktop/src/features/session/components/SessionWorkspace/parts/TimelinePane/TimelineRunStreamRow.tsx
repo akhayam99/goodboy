@@ -16,11 +16,7 @@ import { TimelineModelCell } from './TimelineModelCell';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowMeta } from './TimelineRowMeta';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
-import {
-  TimelineStreamRow,
-  type TimelineBranchKey,
-  type TimelineRowAction,
-} from './TimelineStreamRow';
+import { TimelineStreamRow, type TimelineBranchKey } from './TimelineStreamRow';
 
 type Props = {
   readonly item: TimelineRowItem;
@@ -29,7 +25,6 @@ type Props = {
   readonly railWidth: number;
   readonly sessionId: SessionId;
   readonly openTarget: TimelineOpenTarget | null;
-  readonly action: TimelineRowAction | null;
   readonly diffStat: MountDiffStat | null;
   readonly runLane: TimelineLaneTarget | null;
   readonly roleModels: RoleModelPreferences | null;
@@ -47,7 +42,6 @@ export const TimelineRunStreamRow = ({
   railWidth,
   sessionId,
   openTarget,
-  action,
   diffStat,
   runLane,
   roleModels,
@@ -92,7 +86,6 @@ export const TimelineRunStreamRow = ({
       railWidth={railWidth}
       sessionId={sessionId}
       openTarget={openTarget}
-      action={action}
       diffStat={diffStat}
       identity={{
         hasGlyph: true,

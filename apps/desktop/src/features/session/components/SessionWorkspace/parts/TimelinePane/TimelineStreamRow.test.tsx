@@ -26,7 +26,6 @@ import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import { TimelineModelCell } from './TimelineModelCell';
 import { TimelineRowMeta } from './TimelineRowMeta';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
-import { ActionColumnContext } from './ActionColumnContext';
 import { TimelineStreamRow } from './TimelineStreamRow';
 import type { CardWrap, TimelineRowIdentity } from './timelineRowIdentity';
 
@@ -116,21 +115,17 @@ const railOf = (): RailRow => ({
 
 type RenderParams = {
   readonly onOpen?: () => void;
-  readonly action?: { readonly label: string; readonly onAct: () => void } | null;
 };
 
-const renderRow = ({ onOpen = vi.fn(), action = null }: RenderParams = {}) =>
+const renderRow = ({ onOpen = vi.fn() }: RenderParams = {}) =>
   render(
-    <ActionColumnContext.Provider value={action !== null}>
-      <TimelineStreamRow
-        item={itemOf()}
-        rail={railOf()}
-        railWidth={32}
-        sessionId={SESSION_ID}
-        openTarget={{ label: 'Open chat', open: onOpen }}
-        action={action}
-      />
-    </ActionColumnContext.Provider>,
+    <TimelineStreamRow
+      item={itemOf()}
+      rail={railOf()}
+      railWidth={32}
+      sessionId={SESSION_ID}
+      openTarget={{ label: 'Open chat', open: onOpen }}
+    />,
   );
 
 afterEach(cleanup);
@@ -145,7 +140,6 @@ describe('TimelineStreamRow', () => {
         railWidth={32}
         sessionId={SESSION_ID}
         openTarget={{ label: 'Hide changes', open: vi.fn() }}
-        action={null}
         expansion={{ isExpanded: true, controlsId: 'row-detail' }}
         detailHeight={48}
         detail={<div id="row-detail">+ D12 Key on the event id</div>}
@@ -173,17 +167,6 @@ describe('TimelineStreamRow', () => {
 
     expect(row.getAttribute('aria-label')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open chat' })).toBeNull();
-  });
-
-  it('keeps a continuation action as its own target beside the row', () => {
-    const onOpen = vi.fn();
-    const onAct = vi.fn();
-    renderRow({ onOpen, action: { label: 'Answer', onAct } });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
-
-    expect(onAct).toHaveBeenCalledTimes(1);
-    expect(onOpen).not.toHaveBeenCalled();
   });
 
   it('centres the marker on the rail anchor rather than on the row box', () => {
@@ -219,7 +202,6 @@ describe('TimelineStreamRow', () => {
         railWidth={32}
         sessionId={SESSION_ID}
         openTarget={null}
-        action={null}
       />,
     );
 
@@ -245,7 +227,6 @@ describe('TimelineStreamRow', () => {
         railWidth={32}
         sessionId={SESSION_ID}
         openTarget={null}
-        action={null}
       />,
     );
 
@@ -254,15 +235,6 @@ describe('TimelineStreamRow', () => {
     expect(screen.getByText('Implement the parser').parentElement?.className).not.toContain(
       'hover:bg-muted/40',
     );
-  });
-
-  it('boxes the trailing action to the same height as the row content line', () => {
-    renderRow({ action: { label: 'Answer', onAct: vi.fn() } });
-    const wrapper = screen.getByTestId('timeline-row-action');
-    const content = screen.getByRole('button', { name: /Implement the parser/ });
-
-    expect(wrapper.getAttribute('style')).toBe(content.getAttribute('style'));
-    expect(wrapper.className).toContain('items-center');
   });
 
   it('spins the run marker in its lane hue while the orchestrator is choosing', () => {
@@ -275,7 +247,6 @@ describe('TimelineStreamRow', () => {
         railWidth={32}
         sessionId={SESSION_ID}
         openTarget={null}
-        action={null}
         state={
           <TimelineRowStateLine
             state={{ phase: 'running', reason: { kind: 'deciding' }, ask: null }}
@@ -298,7 +269,6 @@ describe('TimelineStreamRow', () => {
         railWidth={32}
         sessionId={SESSION_ID}
         openTarget={null}
-        action={null}
       />,
     );
 
@@ -337,7 +307,6 @@ describe('TimelineStreamRow', () => {
         railWidth={32}
         sessionId={SESSION_ID}
         openTarget={{ label: 'Open chat', open: onOpen }}
-        action={null}
         runLane={{ laneId: 'lane:run:one', title: 'Orchestrated workflow 3', open: openRun }}
       />,
     );
@@ -405,7 +374,6 @@ describe('TimelineStreamRow, hover cards', () => {
         railWidth={32}
         sessionId={SESSION_ID}
         openTarget={{ label: 'Open chat', open: vi.fn() }}
-        action={null}
         identity={withIdentity ? IDENTITY : null}
         meta={
           <TimelineRowMeta
