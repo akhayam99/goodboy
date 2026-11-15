@@ -107,6 +107,8 @@ export const useAppOverlays = ({
 
   const openNewChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
 
+  const openConnections = useCallback(() => openDestination({ id: 'connections' }), []);
+
   const openMonitoring = useCallback(() => openDestination({ id: 'monitoring' }), []);
 
   const openImpact = useCallback(() => openDestination({ id: 'impact' }), []);
@@ -197,6 +199,7 @@ export const useAppOverlays = ({
     openAddWorkspace,
     openChangelog,
     openChat,
+    openConnections,
     openGuide,
     openInbox,
     openPalette,

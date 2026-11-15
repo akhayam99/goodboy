@@ -148,6 +148,7 @@ export const NAMES = {
   work: 'Work',
   workflows: 'Workflows',
   chat: 'Chat',
+  connections: 'Connections',
   impact: 'Impact',
   monitoring: 'Monitoring',
   browser: 'Browser',

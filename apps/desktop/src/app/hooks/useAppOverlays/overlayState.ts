@@ -17,6 +17,7 @@ export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }
     case 'terminal':
     case 'browser':
     case 'monitoring':
+    case 'connections':
       return false;
     default: {
       const unreachable: never = overlay;

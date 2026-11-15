@@ -53,6 +53,7 @@ const STUDIO_KINDS: ReadonlyArray<StudioKind> = [
   'terminal',
   'browser',
   'monitoring',
+  'connections',
 ];
 
 const pressEscape = () => fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });

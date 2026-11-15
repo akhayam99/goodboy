@@ -17,6 +17,7 @@ describe('the destination list', () => {
       'Work',
       'Workflows',
       'Chat',
+      'Connections',
       'Impact',
       'Monitoring',
       'Notifications',
@@ -57,6 +58,11 @@ describe('the destination list', () => {
 
   it('keeps the former name Sessions searchable on Board', () => {
     expect(destinationOf({ id: 'board' }).aliases).toContain('Sessions');
+  });
+
+  it('finds Connections by Providers and by Integrations', () => {
+    expect(destinationOf({ id: 'connections' }).label).toBe(NAMES.connections);
+    expect(destinationOf({ id: 'connections' }).aliases).toEqual(['Providers', 'Integrations']);
   });
 
   it('keeps the former name Changelog searchable on What is new', () => {

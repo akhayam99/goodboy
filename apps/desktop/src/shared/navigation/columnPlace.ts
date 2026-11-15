@@ -32,6 +32,8 @@ const studioPlace = ({ studio }: StudioParams): ColumnPlace => {
       return 'inbox';
     case 'chat':
       return 'chat';
+    case 'connections':
+      return 'connections';
     case 'workflow':
       return 'workflows';
     case 'work':
@@ -73,6 +75,7 @@ export const columnPlaceOf = ({ hasSession, isDraftShown, studio }: Params): Col
 const STUDIO_OVER_SESSION: ReadonlySet<ColumnPlace> = new Set<ColumnPlace>([
   'inbox',
   'chat',
+  'connections',
   'work',
   'workflows',
   'terminal',
