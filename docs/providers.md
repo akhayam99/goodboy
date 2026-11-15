@@ -168,7 +168,11 @@ Goodboy stores keys in your system keychain, not in its own database.
 ## Defaults and task models
 
 Go to **Settings** → **Providers** → **Models** to choose what a workspace
-uses when you leave a model on **Auto**. It is one page in three parts.
+uses when you leave a model on **Auto**. A first line says that accounts, usage
+and which models show in the picker live in **Connections**, with **Open
+Connections** beside it (`DefaultsPanel/ConnectionsPointer`). Below it each group
+is one band with its label: Runs, Providers, Choosing models, Chat, Agents and
+Background tasks.
 
 - **When a provider is out**: the workspace's provider policy, summed up on the row
   ("Claude, Codex · Cursor as backup"). The row opens the list in place: drag a
@@ -217,6 +221,14 @@ all to Auto**, in the menu at the top right, clears every pin after a confirm th
 how many. The page header carries no count. Each provider page counts its own pins in
 the Models group header (`ProviderPage/ModelsGroup/PinnedCount`, `3 pinned`): the chat
 model, the roles and the tasks of this workspace that use that provider.
+
+Every run, chat, agent and background task row sits on one column template
+(`DefaultsPanel/roleGrid.ts`): name, job, model, effort and the source chip, then the
+open chevron. A task or chat row's picker spans the model and effort columns and keeps
+an empty chevron slot, so the columns line up down the page. The job column hides when
+the page is narrower than 720 px. `node scripts/validate-scenes.mjs --only models-grid`
+checks the `settings-providers-scope` scene at 960 and 1280 px: one template, no row
+past its band, no sideways scroll.
 
 Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows one
 shape, the same as the chat row: the provider glyph, the model, its effort when the
