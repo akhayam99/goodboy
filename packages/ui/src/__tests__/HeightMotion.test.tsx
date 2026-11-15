@@ -67,6 +67,18 @@ afterEach(() => {
 });
 
 describe('HeightMotion', () => {
+  it('cancels the parent gap while open with nothing inside, so an empty slot adds no band', () => {
+    render(
+      <HeightMotion isOpen parentGapRem={2}>
+        {null}
+      </HeightMotion>,
+    );
+
+    expect(wrapper().dataset.heightMotion).toBe('rest');
+    expect(wrapper().style.height).toBe('0px');
+    expect(wrapper().style.marginTop).toBe('-2rem');
+  });
+
   it('opens from zero height and cancels the parent gap when the first item arrives on an empty mount', () => {
     const view = render(slot({ isOpen: false }));
     resizeAll();

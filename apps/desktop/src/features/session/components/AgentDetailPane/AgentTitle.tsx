@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { InteractiveRow, ScrollFade, Tooltip, cn, TruncatedText } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -8,6 +8,7 @@ import { agentObjectKey } from '../../../actions/agentObjectKey';
 import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 import { classifyAgent } from '../../agent-kind';
+import { agentTaskLabelOf } from '../../../auto/agentTaskLabelOf';
 import { AgentBriefCrumb } from './AgentBriefCrumb';
 import { agentHeadingOf } from './agentHeadingOf';
 import { firstLineOf } from './firstLineOf';
@@ -31,6 +32,8 @@ export const AgentTitle = ({
   const renameAgent = useAppStore((state) => state.renameAgent);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const fixRunName = useFixRunName({ sessionId, agentId: agent.id });
+  const views = useAppStore((state) => state.autoTreeViews[sessionId]);
+  const task = useMemo(() => agentTaskLabelOf({ views, agentId: agent.id }), [views, agent.id]);
   const rename = useInlineRename({
     value: agent.name,
     onCommit: (next) => renameAgent(sessionId, agent.id, next),
@@ -69,7 +72,7 @@ export const AgentTitle = ({
     agentHeadingOf({ name: agentDisplayName({ name: agent.name, kind }), kind, brief });
 
   if (brief !== null && displayName === brief && isInline) {
-    return <AgentBriefCrumb brief={brief} onRename={rename.start} />;
+    return <AgentBriefCrumb brief={brief} task={task} onRename={rename.start} />;
   }
 
   if (brief !== null && displayName === brief) {

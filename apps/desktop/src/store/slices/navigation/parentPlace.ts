@@ -85,9 +85,6 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     const root = resolveRootAgent({ agents, agentId: view.agentId });
     const isRunHome = root?.workflowRunId != null && root.stepId != null;
     const runId = isRunHome ? (agent?.workflowRunId ?? null) : null;
-    if (runId === null && home === 'workflows' && root?.id === view.agentId) {
-      return sessionPlace({ sessionId });
-    }
     return sessionPlace({
       sessionId,
       lens: home,

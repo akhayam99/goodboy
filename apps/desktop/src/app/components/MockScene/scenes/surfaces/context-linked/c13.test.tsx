@@ -75,7 +75,9 @@ describe.each(['light', 'dark'])('u36 Context and linked work in %s', (theme) =>
           'Connection lost. Open the record in its provider or reconnect in Settings.',
         );
         screen.getByRole('button', { name: 'More actions for HBL-142' });
-        expect(document.querySelector('[data-session-back]')).toBeNull();
+        expect(
+          document.querySelector('[data-session-back]')?.closest('[data-session-head]'),
+        ).not.toBeNull();
         return;
       }
       const linked = await screen.findByRole('list', { name: 'Linked work' });

@@ -54,7 +54,7 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
           data-testid="artifact-new"
         >
           <Plus size={ICON_SIZE.row} aria-hidden />
-          New
+          New artifact
           <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
         </Button>
       }

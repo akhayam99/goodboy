@@ -12,11 +12,11 @@ type Props = {
 
 export const SessionOverviewPane = ({ session }: Props) => (
   <PaneShell page="overview" animationClassName="animate-fade-in">
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1 empty:hidden">
       <GoalTeaser session={session} />
       <SessionDropPill />
-      <TaskDragLayer />
     </div>
+    <TaskDragLayer />
     <WorkTimeProvider sessionId={session.id} workspaceId={session.workspaceId}>
       <CentralColumn session={session} />
     </WorkTimeProvider>

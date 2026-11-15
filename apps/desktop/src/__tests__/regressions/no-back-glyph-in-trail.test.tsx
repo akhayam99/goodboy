@@ -22,6 +22,9 @@ const BACK_GLYPH = '.lucide-chevron-left, .lucide-arrow-left';
 const BACK_CHARACTERS = /[‹←]/;
 const SESSION_SCENE = 'shell';
 const SESSION_TABS = '[data-session-head]';
+const TAB_HEAD = '[data-session-head][data-head-nav="tabs"]';
+const SECONDARY_SCENE = 'session-head-branch';
+const CRUMBS = '[data-session-crumbs]';
 
 const KEPT = [
   'SettingsColumnNav.tsx',
@@ -83,7 +86,7 @@ const paneShellActionsOf = ({ source }: ActionsParams): ReadonlyArray<string> =>
 };
 
 describe('no back glyph in a trail', () => {
-  it('draws the session trail with no back glyph, no back glyph in the session tabs, and names every back glyph Back', async () => {
+  it('draws the session trail with no back glyph, none on the session tabs and outside the head back button, and names every back glyph Back', async () => {
     const Scene = MOCK_SCENES[SESSION_SCENE];
     if (Scene === undefined) {
       throw new Error(`no scene ${SESSION_SCENE}`);
@@ -98,8 +101,15 @@ describe('no back glyph in a trail', () => {
       timeout: 4_000,
     });
     expect(Array.from(document.querySelectorAll(TRAIL)).filter(hasBackGlyph)).toEqual([]);
+    expect(document.querySelector(`${TAB_HEAD} [data-session-back]`)).toBeNull();
     const glyphs = Array.from(document.querySelectorAll(BACK_GLYPH));
-    expect(glyphs.some((glyph) => glyph.closest(SESSION_TABS) !== null)).toBe(false);
+    expect(glyphs.some((glyph) => glyph.closest(TAB_HEAD) !== null)).toBe(false);
+    expect(
+      glyphs.some(
+        (glyph) =>
+          glyph.closest(SESSION_TABS) !== null && glyph.closest('[data-session-back]') === null,
+      ),
+    ).toBe(false);
     for (const glyph of glyphs) {
       const button = glyph.closest('button');
       const label = button?.getAttribute('aria-label') ?? '';
@@ -107,6 +117,32 @@ describe('no back glyph in a trail', () => {
         button?.hasAttribute('data-nav-arrow') === true ? /^(Back|Forward)(: |$)/ : /^Back to /,
       );
     }
+  });
+
+  it('allows the back glyph on a secondary page only in the head back button, never in the crumbs', async () => {
+    window.history.replaceState(null, '', `/?scene=${SECONDARY_SCENE}`);
+    const Scene = MOCK_SCENES[SECONDARY_SCENE];
+    if (Scene === undefined) {
+      throw new Error(`no scene ${SECONDARY_SCENE}`);
+    }
+    render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    await waitFor(() => expect(document.querySelector(CRUMBS)).not.toBeNull(), {
+      timeout: 4_000,
+    });
+    const crumbs = document.querySelector(CRUMBS);
+    expect(crumbs === null ? true : hasBackGlyph(crumbs)).toBe(false);
+    const head = document.querySelector(SESSION_TABS);
+    const glyphs = Array.from(head?.querySelectorAll(BACK_GLYPH) ?? []);
+    expect(glyphs).toHaveLength(1);
+    const button = glyphs[0]?.closest('button') ?? null;
+    expect(button?.hasAttribute('data-session-back')).toBe(true);
+    expect(button?.closest('[data-slot="pane-title-row"]')).not.toBeNull();
+    expect(button?.getAttribute('aria-label') ?? '').toMatch(/^Back to /);
   });
 
   it('fails on a fixture trail that carries a chevron-left before its segments', () => {

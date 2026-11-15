@@ -1,12 +1,17 @@
 import { AnchoredPopover, Button, PopoverBody, useDropdown } from '@goodboy/ui';
+import type { AgentTaskLabel } from '../../../auto/agentTaskLabelOf';
+import { MiddleText } from '../../../../shared/components/MiddleText';
 import { firstLineOf } from './firstLineOf';
 
 type Props = {
   readonly brief: string;
+  readonly task: AgentTaskLabel | null;
   readonly onRename: () => void;
 };
 
-export const AgentBriefCrumb = ({ brief, onRename }: Props) => {
+const LAST_WORD = /\s[^\s…]+$/;
+
+export const AgentBriefCrumb = ({ brief, task, onRename }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
     expectedHeight: 240,
@@ -30,7 +35,19 @@ export const AgentBriefCrumb = ({ brief, onRename }: Props) => {
           onDoubleClick={onRename}
           className="min-w-0 max-w-full px-1"
         >
-          <span className="min-w-0 truncate">{firstLineOf({ text: brief }) ?? brief}</span>
+          {task === null ? (
+            <span className="min-w-0 truncate">{firstLineOf({ text: brief }) ?? brief}</span>
+          ) : (
+            <span data-agent-task-crumb="" className="flex min-w-0 items-center gap-1">
+              <span className="shrink-0">{task.role}</span>
+              <span aria-hidden className="shrink-0 text-muted-foreground">
+                ·
+              </span>
+              <span className="flex min-w-0">
+                <MiddleText value={task.title} tail={LAST_WORD} />
+              </span>
+            </span>
+          )}
         </Button>
       }
     >

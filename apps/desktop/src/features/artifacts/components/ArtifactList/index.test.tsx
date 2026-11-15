@@ -75,7 +75,9 @@ describe('ArtifactList states', () => {
     renderList();
 
     expect(screen.getByRole('heading', { level: 2, name: 'No artifacts yet' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'New artifact' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'New artifact' })).toEqual([
+      screen.getByTestId('artifact-new'),
+    ]);
     expect(screen.queryByRole('tablist', { name: 'Artifact kind' })).toBeNull();
     fireEvent.click(screen.getByTestId('artifact-new'));
 

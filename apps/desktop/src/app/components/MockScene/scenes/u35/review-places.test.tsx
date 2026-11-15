@@ -74,7 +74,7 @@ describe('the u35 review place scenes', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Add the stuck-delivery banner' }));
     await waitFor(() =>
-      expect(document.querySelectorAll('[data-session-crumbs] li')).toHaveLength(2),
+      expect(document.querySelectorAll('[data-session-crumbs] li')).toHaveLength(3),
     );
   });
 

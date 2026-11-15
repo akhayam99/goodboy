@@ -206,8 +206,35 @@ describe('the session head', () => {
     expect(labels[0]).toBe('Overview');
     expect(labels[1]).toBe('Artifacts');
     expect(labels).toHaveLength(3);
-    expect(document.querySelector('[data-session-back]')).toBeNull();
     expect(headOf().querySelector('[aria-current="page"]')?.textContent).toBe(labels[2]);
+  });
+
+  it('puts a back button before the title on a detail and none on a tab', async () => {
+    go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'plans' }) });
+    const tab = renderWorkspace();
+    expect(document.querySelector('[data-session-back]')).toBeNull();
+    tab.unmount();
+
+    go({ to: ARTIFACT_PLACE });
+    renderWorkspace();
+    await waitFor(() => expect(headOf().getAttribute('data-head-nav')).toBe('crumbs'));
+
+    const row = headOf().querySelector('[data-slot="pane-title-row"]');
+    const back = row?.querySelector<HTMLButtonElement>('[data-session-back]') ?? null;
+    expect(back?.getAttribute('aria-label')).toBe('Back to Artifacts');
+    expect(row?.querySelector('button')).toBe(back);
+    expect(back?.closest('[data-session-crumbs]')).toBeNull();
+
+    act(() => back?.click());
+
+    const { place } = captureLocation({ state: useAppStore.getState() });
+    expect(place.at === 'session' ? place.view : null).toMatchObject({
+      lens: 'plans',
+      target: null,
+      agentId: null,
+    });
+    await waitFor(() => expect(headOf().getAttribute('data-head-nav')).toBe('tabs'));
+    expect(document.querySelector('[data-session-back]')).toBeNull();
   });
 
   it.each([

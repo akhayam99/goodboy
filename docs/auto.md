@@ -1615,7 +1615,13 @@ The Auto prompt asks for it (`READING_ORDER_RULE`, after the level rules) and
 every child kickoff asks for it in its expected output
 (`OUTCOME_EXPECTED_NOTE`). `core/auto/outcome.ts` owns the reading:
 `parseOutcomeLine` takes the last block, `stripOutcomeLine` removes the blocks
-from the prose, and `outcomeLineOf` decides the line shown. The model's words
+from the prose, and `outcomeLineOf` decides the line shown. Both read the markers
+tolerantly, because models mistype the close: any `outcome` word led by `<` or `/`
+runs (up to six) and closed by up to three `>` is a marker, a slash makes it a close, a
+second open ends the block like a close, a stray close is dropped, and an open with
+nothing after it hides the rest of the text as before. The scan is one linear walk over
+the word, with no regular expression, so `</<<outcome>>` never reaches the line or eats
+the body below it. `AssistantText` strips the outcome before the other control markers. The model's words
 never override the facts: red checks give "Checks failed: n", a failed,
 declined or put back push gives the "Not pushed" text of `publishTextOf`. A
 missing line falls back to the outcome word ("Done", "Failed: reason"), and a
