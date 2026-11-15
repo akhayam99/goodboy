@@ -60,6 +60,20 @@ describe('resolveSettingsFocus', () => {
     expect(resolve({ last: MODELS })).toEqual(MODELS);
   });
 
+  it('reopens a saved Updates page on General, and a saved iPhone page on iPhone', () => {
+    expect(resolve({ last: { scope: 'app', section: 'updates' } })).toEqual(GENERAL);
+    expect(resolve({ last: { scope: 'app', section: 'iphone' } })).toEqual({
+      scope: 'app',
+      section: 'iphone',
+    });
+  });
+
+  it('keeps an explicit Updates link so General can scroll to its band', () => {
+    const focus: SettingsFocus = { scope: 'app', section: 'updates' };
+
+    expect(resolveSettingsFocus({ focus, last: null, groups: WITH_WORKSPACE })).toEqual(focus);
+  });
+
   it('falls back to General when the last page needs a workspace that is gone', () => {
     expect(
       resolve({ last: { scope: 'workspace', section: 'projects' }, groups: WITHOUT_WORKSPACE }),

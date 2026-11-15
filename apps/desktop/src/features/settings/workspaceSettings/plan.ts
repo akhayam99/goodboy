@@ -3,11 +3,7 @@ import type { AppStore } from '../../../store/store';
 import { normalizeWorkspaceProfile } from '../../../shared/utils/normalizeWorkspaceProfile';
 import { editPostedReplyKey } from '../../resolve/editPostedReplySetting';
 import { isWorkspaceOwnedOverride, pageKeys, type WorkspaceSettingField } from '../pageKeys';
-import {
-  PLAN_PAGES,
-  type PlanPage,
-  type WorkspacePage,
-} from '../components/SettingsStudio/workspacePages';
+import { PLAN_PAGES, type PlanPage } from '../components/SettingsStudio/workspacePages';
 import { effectiveValue, fieldDef, isChanged, sameValue } from './fields';
 import {
   mergeWrites,
@@ -15,7 +11,7 @@ import {
   type WorkspaceSettingsWrite,
 } from './snapshot';
 
-export type PlanScope = 'all' | WorkspacePage;
+export type PlanScope = 'all' | PlanPage;
 
 export type PlanItem = {
   readonly field: WorkspaceSettingField;

@@ -24,7 +24,7 @@ Open a real login shell in the workspace folder or any linked worktree.
 - One line per worktree shows the project, the branch and a dot while a shell runs a process.
 - The line names the command that runs. When it ends, the line says it passed, or that it failed with its exit code.
 - The exit status and the command it belongs to come from a small hook a zsh terminal adds when it starts. Your own shell files and hooks are never changed. Other shells show no status.
-- **Settings › General › Built-in terminal** turns the hook off for the terminals you open next.
+- **Settings › Advanced › Built-in terminal** turns the hook off for the terminals you open next.
 - Each worktree shows its terminals as tabs with a **+** to add one. A tab selects on a click anywhere on its body.
 - Issue chips and the diff stay on the session, not here.
 - The folder path line shows only for a plain folder, never for a worktree.

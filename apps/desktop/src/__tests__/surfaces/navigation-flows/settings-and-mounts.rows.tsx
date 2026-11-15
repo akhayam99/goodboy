@@ -38,7 +38,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
       () => heading('Appearance'),
     ),
   },
-  ...APP_SECTIONS.map((section): Row => ({
+  ...APP_SECTIONS.filter((section) => section.id !== 'iphone').map((section): Row => ({
     name: `settings rail: ${section.label}`,
     covers: ['openSettings', 'scope:app', `settings:${section.id}`],
     open: () => openSettingsRail(new RegExp(`^${section.label}`)),

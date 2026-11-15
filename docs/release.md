@@ -159,7 +159,8 @@ The version pill in the Goodboy line, and in the corner of Home
 (`WorkspaceLauncher`), opens and closes the card (`toggleUpdateCard`). The card
 also opens by itself once an update is ready, runs into agents or fails. Later
 and Esc close it and snooze that version for three days (`updateSnoozeGate`);
-the pill stays. **Settings > App > Updates** is the manual home: the installed
+the pill stays. The Updates band of **Settings > This Mac > General** is the
+manual home (the old `updates` section id opens General scrolled to it): the installed
 version, the last check, **Check for updates** (also in the Goodboy menu of the
 macOS menu bar), the same verbs while an update is pending, the background
 download switch and What's new. A failed check shows there only, never as a card

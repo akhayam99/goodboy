@@ -1,16 +1,22 @@
-import { useEffect, useState } from 'react';
-import { Band, Switch } from '@goodboy/ui';
+import { useEffect, useRef, useState } from 'react';
+import { Band, Switch, appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateVersionRow } from '../../../updater/components/UpdateVersionRow';
 import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../settings/settings';
 import { SettingRow } from './SettingRow';
+import { UpdatesWhatsNewRow } from './UpdatesWhatsNewRow';
 
-export const UpdatesSection = () => {
+type Props = {
+  readonly isFocused?: boolean;
+};
+
+export const UpdatesSection = ({ isFocused = false }: Props) => {
   const loadSetting = useAppStore((state) => state.loadSetting);
   const saveSetting = useAppStore((state) => state.saveSetting);
   const installedVersion = useInstalledVersion();
   const [isAutoDownload, setIsAutoDownload] = useState(true);
+  const bandRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD).then((value) =>
@@ -18,28 +24,37 @@ export const UpdatesSection = () => {
     );
   }, [loadSetting]);
 
+  useEffect(() => {
+    if (isFocused) {
+      appScrollIntoView({ element: bandRef.current, block: 'start' });
+    }
+  }, [isFocused]);
+
   const onToggleAutoDownload = (next: boolean): void => {
     setIsAutoDownload(next);
     void saveSetting(SETTING_UPDATER_AUTO_DOWNLOAD, next ? 'true' : 'false');
   };
 
   return (
-    <Band inset="content" label="Version" headingLevel={2}>
-      <div className="flex flex-col">
-        <UpdateVersionRow installedVersion={installedVersion} />
-        <SettingRow
-          label="Download updates in the background"
-          help="Restart to use a new version once it lands."
-          isChanged={!isAutoDownload}
-          onReset={() => onToggleAutoDownload(true)}
-        >
-          <Switch
-            ariaLabel="Download updates in the background"
-            checked={isAutoDownload}
-            onChange={onToggleAutoDownload}
-          />
-        </SettingRow>
-      </div>
-    </Band>
+    <div ref={bandRef} className="flex flex-col">
+      <Band inset="content" label="Updates" headingLevel={2}>
+        <div className="flex flex-col">
+          <UpdateVersionRow installedVersion={installedVersion} />
+          <UpdatesWhatsNewRow />
+          <SettingRow
+            label="Download updates in the background"
+            help="Restart to use a new version once it lands."
+            isChanged={!isAutoDownload}
+            onReset={() => onToggleAutoDownload(true)}
+          >
+            <Switch
+              ariaLabel="Download updates in the background"
+              checked={isAutoDownload}
+              onChange={onToggleAutoDownload}
+            />
+          </SettingRow>
+        </div>
+      </Band>
+    </div>
   );
 };

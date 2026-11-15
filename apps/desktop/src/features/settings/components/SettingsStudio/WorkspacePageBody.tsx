@@ -12,15 +12,11 @@ import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 import { WorkspaceNameBand } from './WorkspaceNameBand';
 import { WorkspaceDisconnectBand } from './WorkspaceDisconnectBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
-import {
-  isFolderOptionsSection,
-  isTrackWithGitSection,
-  type WorkspacePage,
-} from './workspacePages';
+import { isFolderOptionsSection, isTrackWithGitSection, type PlanPage } from './workspacePages';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly page: WorkspacePage;
+  readonly page: PlanPage;
   readonly section?: string;
   readonly requestClose: () => void;
 };

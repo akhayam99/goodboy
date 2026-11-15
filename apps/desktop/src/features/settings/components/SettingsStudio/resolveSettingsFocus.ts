@@ -1,5 +1,6 @@
 import type { SettingsFocus, SettingsPageScope, SettingsStudioScope } from '../../settingsFocus';
 import { MODELS_PAGE_SECTION, isModelsPage } from '../../isModelsPage';
+import { appSectionOf } from './appSections';
 import { settingsPageKey, type SettingsGroup } from './settingsDirectory';
 
 const GENERAL: SettingsFocus = { scope: 'app', section: 'general' };
@@ -54,6 +55,9 @@ const movedSettingsFocus = ({ focus }: MovedParams): SettingsFocus => {
   return moved === undefined ? current : { ...current, ...moved.to };
 };
 
+const savedPageOf = ({ focus }: MovedParams): SettingsFocus =>
+  focus.scope === 'app' ? { ...focus, section: appSectionOf({ section: focus.section }) } : focus;
+
 type PageFocusParams = {
   readonly scope: SettingsPageScope;
   readonly focus: SettingsFocus;
@@ -77,7 +81,7 @@ export const resolveSettingsFocus = ({ focus, last, groups }: ResolveParams): Se
   if (last === null || last.scope === 'home') {
     return GENERAL;
   }
-  const page = movedSettingsFocus({ focus: last });
+  const page = savedPageOf({ focus: movedSettingsFocus({ focus: last }) });
   const key = settingsPageKey({
     scope: page.scope === 'home' ? 'app' : page.scope,
     section: page.section,

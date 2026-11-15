@@ -235,20 +235,22 @@ describe('SettingsStudio', () => {
       />,
     );
 
-  it('nests the app items under App in the one navigation rail', () => {
+  it('nests the app items under This Mac in the one navigation rail, iPhone left out', () => {
     renderApp();
 
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
-    const items = screen.getByRole('list', { name: 'App settings' });
+    const items = screen.getByRole('list', { name: 'This Mac settings' });
     expect(
       within(items)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(APP_SECTIONS.map((section) => section.label));
+    ).toEqual(
+      APP_SECTIONS.filter((section) => section.id !== 'iphone').map((section) => section.label),
+    );
     expect(APP_SECTIONS.map((section) => section.id)).toEqual([
       'general',
-      'updates',
       'shortcuts',
+      'advanced',
       'storage',
       'backup',
       'iphone',
@@ -258,7 +260,22 @@ describe('SettingsStudio', () => {
     ).toBe('true');
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
     expect(screen.getByText('Open with')).toBeDefined();
-    expect(screen.queryByRole('region', { name: 'Version' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Updates' }).textContent).toBe('Updates');
+    expect(screen.queryByRole('heading', { level: 2, name: 'Search' })).toBeNull();
+  });
+
+  it('puts git, the terminal, search and experiments on Advanced', () => {
+    renderApp({ section: 'advanced' });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Advanced' }).textContent).toBe(
+      'Advanced',
+    );
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual(expect.arrayContaining(['Git', 'Built-in terminal', 'Search', 'Experiments']));
+    expect(screen.getByRole('switch', { name: 'Work (experimental)' }).tagName).toBe('BUTTON');
+    expect(screen.queryByRole('switch', { name: 'Auto agent' })).toBeNull();
+    expect(screen.queryByText('Open with')).toBeNull();
   });
 
   it('names the default editor before the detected list arrives', () => {
@@ -268,12 +285,26 @@ describe('SettingsStudio', () => {
     expect(screen.getAllByText('VS Code').length).toBeGreaterThan(0);
   });
 
-  it('gives Updates its own page with the installed version as its meta', () => {
-    renderApp({ section: 'updates' });
+  it('opens an old Updates link on General, scrolled to its Updates band', () => {
+    const onScopeChange = vi.fn();
+    renderApp({ section: 'updates', onScopeChange });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Updates' })).toBeDefined();
-    expect(document.querySelector('[data-slot="pane-meta"]')?.textContent).toMatch(/^Goodboy /);
-    expect(screen.getByRole('button', { name: "Open What's new" })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'General' }).textContent).toBe('General');
+    expect(screen.getByRole('button', { name: "Open What's new" }).textContent).toBe(
+      "Open What's new",
+    );
+    expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: 'start' });
+    expect(onScopeChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps iPhone reachable by its id with no phone paired', () => {
+    renderApp({ section: 'iphone' });
+
+    const items = screen.getByRole('list', { name: 'This Mac settings' });
+    expect(within(items).getByRole('button', { name: 'iPhone' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
   });
 
   it.each([
@@ -479,6 +510,22 @@ describe('SettingsStudio', () => {
 
       expect(screen.getByRole('heading', { level: 1, name: 'Storage' })).toBeDefined();
       expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'storage' });
+    } finally {
+      state.lastSettingsFocus = null;
+    }
+  });
+
+  it('reopens a saved Updates page as General, without the scroll', () => {
+    state.lastSettingsFocus = { scope: 'app', section: 'updates' };
+    try {
+      const onScopeChange = vi.fn();
+      renderHome(onScopeChange);
+
+      expect(screen.getByRole('heading', { level: 1, name: 'General' }).textContent).toBe(
+        'General',
+      );
+      expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'general' });
+      expect(scrollIntoViewMock).not.toHaveBeenCalledWith({ block: 'start' });
     } finally {
       state.lastSettingsFocus = null;
     }

@@ -92,7 +92,7 @@ A pull leaves some branches alone.
 - A base branch checked out with uncommitted files says so instead of offering **Pull**.
 - A base branch that would not fast-forward, or is checked out in another worktree, is skipped.
 
-**Settings › General › Repositories** sets how often it checks (Off, 5, 15 or 30 minutes). Several windows on one workspace share one fetch.
+**Settings › Advanced › Git** sets how often it checks (Off, 5, 15 or 30 minutes). Several windows on one workspace share one fetch.
 
 ⌘K **Pull main in all linked repos** and **Pull <branch> in <repo>** run the same pull. A toast lists each repo with its branch, and the title counts updated, skipped and failed.
 

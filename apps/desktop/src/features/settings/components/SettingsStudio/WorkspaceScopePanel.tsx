@@ -12,7 +12,7 @@ import { projectsCountLine } from './projectsCountLine';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 import { WorkspacePageBody } from './WorkspacePageBody';
 import { WorkspaceSettingsFlow, type FlowMode } from './WorkspaceSettingsFlow';
-import { workspacePageEntry, workspacePageOf, type WorkspacePage } from './workspacePages';
+import { planPageOf, workspacePageEntry, type PlanPage } from './workspacePages';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -23,19 +23,19 @@ type Props = {
 
 export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, requestClose }: Props) => {
   const hasOtherWorkspace = useAppStore((s) => s.workspaces.some((w) => w.id !== workspaceId));
-  const page = workspacePageOf({ section });
+  const page = planPageOf({ section });
   const entry = workspacePageEntry({ page });
   const ownsSettings = pageKeys({ page }).length > 0;
   const changedCount = usePageChangedCount({ workspaceId, page });
   const projectsMeta = useAppStore((s) => projectsCountLine({ projects: s.projects, workspaceId }));
   const branchesMeta = useBranchesMeta({ workspaceId });
-  const metaByPage: Readonly<Partial<Record<WorkspacePage, string | undefined>>> = {
+  const metaByPage: Readonly<Partial<Record<PlanPage, string | undefined>>> = {
     projects: projectsMeta,
     branches: branchesMeta,
   };
   const [flow, setFlow] = useState<{
-    readonly page: WorkspacePage;
-    readonly scope: WorkspacePage | 'all';
+    readonly page: PlanPage;
+    readonly scope: PlanPage | 'all';
     readonly mode: FlowMode;
   } | null>(initialFlow === undefined ? null : { page, scope: 'all', mode: initialFlow });
   const openFlow = flow !== null && flow.page === page ? flow : null;
