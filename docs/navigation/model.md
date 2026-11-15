@@ -106,6 +106,14 @@
   integrations of the workspace (`features/connections`); it has no shortcut and answers to
   Providers and Integrations in ⌘K. The amber dot on it names what needs fixing, such as
   "Connections, Claude is about to run out" (`selectProviderAttention`, named by `doorSignalOf`).
+  An integration row opens that tool's page inside Connections (`IntegrationDetail`, the place
+  `{ kind: 'connections', focus: { kind: 'tool', tool } }`); the crumbs read Connections, then
+  the tool, and Up returns to the list (`leaveToolPage`). The page says what the tool does in the
+  workspace, one row per use with its count and a link to Tasks: the counts are the open records
+  Tasks last loaded (`toolUseCountsOf`, read through `selectToolUseCount`), nothing shows before
+  Tasks loaded them, and a tool whose key is missing reads Paused. A missing or bad key is
+  replaced in place (`replaceIntegrationKey`): the host checks the new key first, the keychain
+  slot of the binding is rewritten, and the binding itself is kept.
   Work is an eighth door between Tasks and Workflows, with a New badge outlined in the primary colour,
   and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`
   (key `+work`, `features/work/components/WorkPage`): every Lead of the workspace across sessions,

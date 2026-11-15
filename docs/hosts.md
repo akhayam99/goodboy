@@ -126,6 +126,8 @@ A body of a provider in the last row loads only after you press **Load**, throug
 
 `secret_set` and `secret_delete` accept only `provider_credential.<id>`, where the id is 1 to 64 letters, digits or dashes. Every other keychain slot (integration credentials, legacy slots) is written by Rust alone.
 
+`integration_binding_replace_secret` swaps the key of a connected tool without touching the connection. It names the workspace, the tool and the credential the page read, refuses a workspace binding that now points at another credential, and rewrites only that credential's keychain slot and cache. The store runs the host's validate command with the new key first (`verifyReplacementKey`), so a key the host refuses is never saved. GitHub keeps its own token commands.
+
 ## Cloning from a host
 
 The Workspace step of setup clones through `repo_clone.rs`, the one clone path in the app. It knows three hosts by domain (`github.com`, `gitlab.com`, `bitbucket.org`) and accepts `https://`, `git@` and `ssh://git@` addresses with an owner and a name; GitLab also takes subgroups. Any other address, a `/tree/` link or a leading dash is refused as `unknown_source` before a process starts.
