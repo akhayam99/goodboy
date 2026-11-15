@@ -6,6 +6,8 @@ import type { AgentQueuedTurn } from '../../../../store/slices/agentQueue/types'
 import { useSessionRunHistory } from '../../../../shared/hooks/useSessionRunHistory';
 import { agentSpendById } from '../../../session/timeline/agentSpendById';
 import { autoTreeOfAgent } from '../../autoTreeOfAgent';
+import { autoTreeWordOf } from '../../autoTreeWordOf';
+import type { LeadTreeRootState } from '../../tree/leadTreeRootState';
 import { leadTreeDelegationsOf } from '../../tree/leadTreeDelegationsOf';
 import { leadTreeItemsOf, type LeadTreeItem } from '../../tree/leadTreeItemsOf';
 import { leadTreeOf, type LeadTree } from '../../tree/leadTreeOf';
@@ -25,6 +27,7 @@ type Params = {
 
 export type LeadTreeModel = Readonly<{
   items: ReadonlyArray<LeadTreeItem>;
+  root: LeadTreeRootState | null;
   tree: LeadTree | null;
   delegations: ReadonlyArray<AutoDelegation>;
   onEditNote: (noteId: string) => void;
@@ -50,10 +53,18 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
     () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
     [agentRunHistory, agents, telemetry],
   );
+  const rootTurn = useAppStore((state) => state.agentTurnState[rootAgentId] ?? null);
   const view = useMemo(
     () => autoTreeOfAgent({ views, agentId: rootAgentId })?.view ?? null,
     [views, rootAgentId],
   );
+  const root = useMemo((): LeadTreeRootState | null => {
+    if (view === null) {
+      return null;
+    }
+    const state = autoTreeWordOf({ view, rootTurn });
+    return { node: state.node, word: state.word, ask: view.rootAsk };
+  }, [view, rootTurn]);
   const { rows } = queued;
   const model = useMemo(() => {
     if (view === null) {
@@ -90,6 +101,7 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
   }, [view, rows, queue, agents, spendByAgentId, rootAgentId]);
   return {
     items: model.items,
+    root,
     tree: model.tree,
     delegations: view?.delegations ?? NO_DELEGATIONS,
     onEditNote: queued.onEdit,

@@ -393,10 +393,11 @@ Five rules:
    that is not `StudioDetail` takes `h-full`: `flex-1` there does nothing, and an empty
    child (the Browser page's native view) measures zero high.
 2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
-   (288, resizable 220 to 420). No page draws a second rail column. The one exception is the
-   file list of the branch Changes tab: it is portaled into the session frame's left slot as a
-   full height column (`railWidth="wide"`, 340, resizable to 560) so the session head and the
-   diff keep the 960 column, the mirror of the Agents column of a run page.
+   (288, resizable 220 to 420). No page draws a second rail column. The two exceptions are the
+   file list of the branch Changes tab and the Agents column of an Auto run and its agents'
+   pages (`RunAgentsRail`): each is portaled into the session frame's left slot as a full
+   height column (`railWidth="wide"`, 340, resizable to 560, folded under a 1060 frame) so
+   the session head and the page keep their centred column.
 3. **Stage pages are only the Board, the Terminal and the Browser.** Nothing else is fluid.
 4. **The page title row and the drawer header share one line.** `DrawerFrame` draws its
    header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 8px

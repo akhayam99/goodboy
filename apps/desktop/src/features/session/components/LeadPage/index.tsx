@@ -9,11 +9,12 @@ import { LeadPageBody } from './LeadPageBody';
 type Props = {
   readonly session: Session;
   readonly agent: Agent;
+  readonly shownAgent?: Agent;
   readonly isChatActive: boolean;
   readonly onBack: () => void;
 };
 
-export const LeadPage = ({ session, agent, isChatActive, onBack }: Props) => {
+export const LeadPage = ({ session, agent, shownAgent = agent, isChatActive, onBack }: Props) => {
   const [queued, setQueued] = useState<QueuedNotes>(EMPTY_QUEUED_NOTES);
   const queue = useAppStore((state) => state.agentQueue[agent.id] ?? EMPTY_ARRAY);
   return (
@@ -22,6 +23,7 @@ export const LeadPage = ({ session, agent, isChatActive, onBack }: Props) => {
         <LeadPageBody
           session={session}
           agent={agent}
+          shownAgent={shownAgent}
           isChatActive={isChatActive}
           model={model}
           onBack={onBack}

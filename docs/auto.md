@@ -660,46 +660,45 @@ another branch says `also on` with that branch, and that note opens its Work tab
 the Branch page knows the mount. The line has no button of its own: it opens the Lead
 page, and the tree opens it too. A Lead is never listed on a branch it has no run on.
 
-### The spawn record
+### Why an agent exists
 
-`SpawnRecord` (`apps/desktop/src/features/auto/tree/SpawnRecord/index.tsx`) answers why
-one agent exists, in eight fields: Why, Brief, Role, Model, Went in, Done when,
-Result and Attempts. `spawnRecordOf` builds it from the stored delegation rows
-through `delegationCardOf`, and nothing is computed outside that path. Why is the
-stored `reason` (cut at 240 characters when written). Role is the role plus the
-stored `roleReason`, with the role fit as "Why not X" when both are stored. Model
-is the routing the delegation recorded and its `reason`. Done when is the stored
-`doneWhen`. Attempts counts the `retryOf` chain behind the agent.
-
-Went in reads the launch snapshot (`launchSnapshotOf`, `request.launchSnapshot`)
-and lists it as given to the agent, never as read by it. An agent without a
-snapshot reads "Not recorded": a state, not an error, and nothing is recomputed
-from today's images. The record lives in the one right slot, is never stored,
-and Esc or the close button closes it without a history entry. The record of an
-agent is a pure function of that agent's rows, so a late result for another
-agent does not repaint it. "Open transcript" opens the agent's own page; its
-back row returns to the Lead.
+The page of an agent Auto started answers why it exists at the top of its
+transcript, in the block `AutoChildBrief`
+(`apps/desktop/src/features/auto/child/AutoChildBrief.tsx`, inserted by
+`useAutoChildChat`). Every line comes from the stored delegation row through
+`delegationCardOf`: Why Auto chose the role (the stored `reason`), Why not the
+role fit when both are stored, Done when (`doneWhen`), Went in (the launch
+snapshot, `launchSnapshotOf`, as given to the agent, never as read by it; no
+line without a snapshot), the routing, and Attempt n with the last attempt's
+result when the `retryOf` chain is longer than one (`delegationAttemptsOf`). The
+brief itself is the first message of the transcript and the full brief opens from
+the page crumb (`AgentBriefCrumb`); the result is the end card (`AutoChildEnd`).
+The block is a pure function of that agent's rows, so a late result for another
+agent does not repaint it. There is no side panel for an agent's record.
 
 ### The Lead page
 
-`LeadPage` (`features/session/components/LeadPage/index.tsx`) is the page of an
-Auto root agent, at the address the Auto page always had
-(`s/{session}/workflows/agent/{agent}`). `AgentOverlay` draws it for an agent
-of kind `auto` and `AgentDetailPane` for every other agent; the chat, the
-header and the action bar are `AgentDetailPane` and `AutoDock`, unchanged. The
-layout follows the width of the pane (`leadLayoutOf`): from 1180 up the chat,
-the tree (330) and the record when an agent is selected; from 860 to 1180 the
-chat and the tree, with the record covering the tree and a back arrow; under
-860 the chat alone, and the tree opens from an "Agents" count in the header.
-The tree never folds: its header ("Agents 15") counts every agent and every
-agent keeps its own row.
+`LeadPage` (`features/session/components/LeadPage/index.tsx`) is the frame of
+an Auto run: the page of its root agent, at the address the Auto page always had
+(`s/{session}/workflows/agent/{agent}`), and the page of every agent under it.
+`AgentOverlay` draws it whenever the root of the shown agent (`resolveRootAgent`)
+is of kind `auto`, keyed by the root, and `AgentDetailPane` alone for every
+other agent. The centre is `AgentDetailPane` of the shown agent: the run's chat
+and `AutoDock` for the root, the agent's own transcript for any other.
+The Agents rail (`RunAgentsRail`) sits in the session frame's left slot
+(`data-session-lead`, the slot of the Changes files rail) with the same rules: it
+opens at 340, is resizable up to 560 and remembered (`run-agents` rail surface),
+and folds to a "Show agents" toggle when the frame is under 1060. Its header
+("Agents 15") is on the frame's first row and counts every agent. The first row
+is the run itself (`LeadTreeRootRow`, the root's title and state word from
+`autoTreeWordOf`); the agents hang under it on the trace spine. The marked row is
+the shown agent: the selection is the address, so a reload, Back and Forward
+restore it. A click or Enter on a row opens that agent's page in the centre;
+the rail is not remounted, so it keeps its scroll. A click on an agent line in
+the run's chat opens that agent's page too.
 The tree is `useLeadTree` over the composer's queued rows: `ChatInput` reports
 them through `QueuedNotesReportContext` (`useReportQueuedNotes`), so a queued note is a
-tree node whose Edit and Remove are the composer's own. A click on a line of
-the chat or a row of the tree selects that agent. The selection is window
-local, never stored and never an address (`useLeadSelectionStore`);
-`openLeadAgent` is the door a compact tree on the board or the Work tab calls to
-open the Lead page with an agent selected.
+tree node whose Edit and Remove are the composer's own.
 
 ## Plans
 

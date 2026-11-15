@@ -133,8 +133,6 @@ const DOORS: ReadonlyArray<readonly [string, () => void | Promise<void>]> = [
         throw new Error('no Implementer line');
       }
       fireEvent.click(within(line).getByRole('button', { name: /^Open / }));
-      const record = await screen.findByRole('complementary', { name: /^Record of/ }, WAIT);
-      fireEvent.click(within(record).getByRole('button', { name: 'Open transcript' }));
     },
   ],
 ];

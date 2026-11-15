@@ -4,8 +4,10 @@ import { SessionWorkspace } from '../../../../../../features/session/components/
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../../store';
 import { agentPlace } from '../../../../../../store/slices/navigation/place';
+import type { AgentId } from '@goodboy/types';
 import { seedActivityRunScene } from '../../activityRunSeed';
 import { ShellFrame, seedShellChrome } from '../../shellChrome';
+import { runPageChildEventsOf } from './runPageChildEventsOf';
 import {
   AUTO_PLAN,
   AUTO_PLAN_STORED,
@@ -24,11 +26,17 @@ type Props = {
   readonly state: AutoSceneState;
   readonly theme: 'dark' | 'light';
   readonly extend?: (params: ExtendParams) => AutoSceneData;
+  readonly shownAgentId?: AgentId;
 };
 
 const keepScene = ({ scene }: ExtendParams): AutoSceneData => scene;
 
-export const RunPageScene = ({ state, theme, extend = keepScene }: Props) => {
+export const RunPageScene = ({
+  state,
+  theme,
+  extend = keepScene,
+  shownAgentId = AUTO_ROOT_ID,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -50,10 +58,16 @@ export const RunPageScene = ({ state, theme, extend = keepScene }: Props) => {
       agentEffortOverride: { [AUTO_ROOT_ID]: 'medium' },
       autoTreeViews: { [AUTO_SESSION.id]: [scene.view] },
       loadAutoTrees: async () => undefined,
-      selectedAgentId: { [AUTO_SESSION.id]: AUTO_ROOT_ID },
+      selectedAgentId: { [AUTO_SESSION.id]: shownAgentId },
       agentTurnState: { [AUTO_ROOT_ID]: scene.rootTurn },
       agentQueue: { [AUTO_ROOT_ID]: [] },
-      transcripts: { [AUTO_ROOT_ID]: scene.events },
+      transcripts:
+        shownAgentId === AUTO_ROOT_ID
+          ? { [AUTO_ROOT_ID]: scene.events }
+          : {
+              [AUTO_ROOT_ID]: scene.events,
+              [shownAgentId]: runPageChildEventsOf({ agentId: shownAgentId }),
+            },
       loadAgentTranscript: async () => undefined,
       sessionPlans: { [AUTO_SESSION.id]: scene.hasPlanArtifact ? [AUTO_PLAN] : [] },
       sessionArtifacts: { [AUTO_SESSION.id]: scene.hasPlanArtifact ? [AUTO_PLAN_STORED] : [] },
@@ -61,13 +75,14 @@ export const RunPageScene = ({ state, theme, extend = keepScene }: Props) => {
       sessionAnsweredQuestions: { [AUTO_SESSION.id]: [] },
       sessionEvents: { [AUTO_SESSION.id]: [] },
       drawer: null,
+      navigate: useAppStore.getInitialState().navigate,
     });
     useAppStore.getInitialState().navigate({
-      to: agentPlace({ sessionId: AUTO_SESSION.id, agentId: AUTO_ROOT_ID }),
+      to: agentPlace({ sessionId: AUTO_SESSION.id, agentId: shownAgentId }),
       mode: 'replace',
     });
     setIsReady(true);
-  }, [state, theme, extend]);
+  }, [state, theme, extend, shownAgentId]);
 
   if (!isReady) {
     return null;

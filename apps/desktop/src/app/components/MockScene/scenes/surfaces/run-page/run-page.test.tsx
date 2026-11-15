@@ -91,14 +91,18 @@ describe('the run page scenes', () => {
     expect(container.querySelectorAll('[data-glance]')).toHaveLength(1);
   });
 
-  it('run-page-many gives the Agents column its own header beside the head, counting every agent once', async () => {
+  it('run-page-many puts the Agents rail in the left slot, the run first, counting every agent once', async () => {
     const container = await mount({ name: 'run-page-many' });
 
-    const aside = partOf({ root: container, selector: '[data-session-aside]' });
-    const rail = within(aside).getByRole('complementary', { name: 'Agents' });
+    const lead = partOf({ root: container, selector: '[data-session-lead]' });
+    expect(partOf({ root: container, selector: '[data-session-aside]' }).childElementCount).toBe(0);
+    const rail = within(lead).getByRole('complementary', { name: 'Agents' });
     within(rail).getByRole('heading', { name: 'Agents' });
     expect(rail.querySelector('[data-lead-rail-head]')?.textContent).toBe('Agents3');
-    expect(within(rail).getAllByRole('treeitem')).toHaveLength(3);
+    const rows = within(rail).getAllByRole('treeitem');
+    expect(rows).toHaveLength(4);
+    expect(rows[0]?.getAttribute('aria-label')).toMatch(/^Run, /);
+    expect(rows[0]?.getAttribute('aria-selected')).toBe('true');
   });
 
   it('run-page-plan says the state of a one agent plan card once, on its row', async () => {

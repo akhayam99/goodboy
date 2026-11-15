@@ -46,7 +46,6 @@ type Props = {
   readonly onBack: () => void;
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
-  readonly agentsToggle?: ReactNode;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
@@ -58,7 +57,6 @@ export const AgentDetailPane = ({
   onBack,
   context,
   runStep,
-  agentsToggle,
 }: Props) => {
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
@@ -150,17 +148,14 @@ export const AgentDetailPane = ({
     );
   const actions =
     runStep === undefined ? (
-      <>
-        {agentsToggle}
-        <AgentHeaderActions
-          key={agent.id}
-          agent={agent}
-          sessionId={session.id}
-          hasStateButton={false}
-          omit={agentHeaderOmitOf({ isAutoRoot })}
-          onDeleted={onBack}
-        />
-      </>
+      <AgentHeaderActions
+        key={agent.id}
+        agent={agent}
+        sessionId={session.id}
+        hasStateButton={false}
+        omit={agentHeaderOmitOf({ isAutoRoot })}
+        onDeleted={onBack}
+      />
     ) : (
       runStep.actions
     );
