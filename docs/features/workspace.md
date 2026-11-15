@@ -124,13 +124,13 @@ Choose how new session branches are named: a **Branch prefix**, with or without 
 
 ### New runs start as
 
-Choose how **Start a run** handles a new ask in this workspace: **Let Auto pick**, **Workflow** or **Auto agent**. With a session open, a second row, **New runs in this session start as**, sets that session's own default, which wins over the workspace one. Either reaches new runs only, and each change shows a toast with **Undo**.
+Choose how **Start a run** handles a new ask in this workspace with **Start as** in **Run defaults**: **Let Auto pick**, **Workflow** or **Auto agent**. With a session open, a second row, **New runs in this session start as**, sets that session's own default, which wins over the workspace one. Either reaches new runs only, and each change shows a toast with **Undo**.
 
 ### Auto asks you
 
-Choose how much Auto may do alone in this workspace: **Every step**, **After the plan** (the default) or **Never**. It is separate from the workflow **Asks you** default, so workflows can keep asking at every step while Auto goes on after the plan. Each Auto can change its own level from its page.
+Choose how much Auto may do alone in this workspace with **Auto agent asks you**: **Every step**, **After the plan** (the default) or **Never**. It sits under **Workflow asks you**, so workflows can keep asking at every step while Auto goes on after the plan. Each Auto can change its own level from its page.
 
-With the Work switch on, this row gives way to a band named **Asks you**. The three levels are presets. Each permission is its own row: the plan, agents that read or write, push, pull request, dependencies, protected files, add a project and close the work. Four rules never change. One sentence says what a new Lead asks you before. A row saves when you change it, and **Reset** returns it to the level.
+With the Work switch on, the same row holds an **Asks you** button that opens the permissions. The three levels are presets. Each permission is its own row: the plan, agents that read or write, push, pull request, dependencies, protected files, add a project and close the work. Four rules never change. One sentence says what a new Lead asks you before. A row saves when you change it, and **Reset** returns it to the level.
 
 ### Monitoring
 

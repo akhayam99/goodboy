@@ -6,7 +6,6 @@ import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
-import { WorkflowRulesPanel } from '../../../workflows/workflowRulesPanel';
 import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
 import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 import { WorkspaceNameBand } from './WorkspaceNameBand';
@@ -44,12 +43,7 @@ export const WorkspacePageBody = ({
     case 'profile':
       return <WorkspaceProfileSection workspaceId={workspaceId} />;
     case 'general':
-      return (
-        <>
-          <WorkflowRulesPanel workspaceId={workspaceId} />
-          <WorkspaceDefaultsGrid workspaceId={workspaceId} />
-        </>
-      );
+      return <WorkspaceDefaultsGrid workspaceId={workspaceId} />;
     case 'branches':
       return (
         <>

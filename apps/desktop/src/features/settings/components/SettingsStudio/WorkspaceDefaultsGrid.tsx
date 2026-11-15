@@ -7,9 +7,8 @@ import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
-import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
+import { WorkflowRulesPanel } from '../../../workflows/workflowRulesPanel';
 import { AutoLevelDefaultRow } from './AutoLevelDefaultRow';
-import { AutonomyDefaultsBand } from './AutonomyDefaultsBand';
 import { BranchTemplateField } from './BranchTemplateField';
 import { RunDefaultField } from './RunDefaultField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
@@ -47,7 +46,6 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
     (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultBranchPrefix,
   );
   const reportError = useAppStore((s) => s.reportError);
-  const isWorkOn = useIsWorkOn();
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [busy, setBusy] = useState(false);
@@ -93,109 +91,115 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
     }
   };
 
+  const branchesRows = (
+    <>
+      <WorkspaceFieldRow
+        workspaceId={workspaceId}
+        field="branchPrefix"
+        help="Starts every new session branch. Letters, numbers, - and /."
+      >
+        <Input
+          type="text"
+          value={branchPrefix}
+          onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
+          onBlur={() => void commitBranchPrefix()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              void commitBranchPrefix();
+            }
+          }}
+          placeholder={DEFAULT_BRANCH_PREFIX}
+          disabled={busy}
+          maxLength={16}
+          spellCheck={false}
+          autoComplete="off"
+          aria-label="Branch prefix"
+          className="w-40 font-mono"
+        />
+      </WorkspaceFieldRow>
+      <WorkspaceFieldRow
+        workspaceId={workspaceId}
+        field="branchTemplate"
+        layout="stacked"
+        help="The name a new session branch gets. Existing branches keep their names."
+      >
+        <BranchTemplateField workspaceId={workspaceId} />
+      </WorkspaceFieldRow>
+      <WorkspaceFieldRow
+        workspaceId={workspaceId}
+        field="attribution"
+        help="Signs every comment and review reply Goodboy posts."
+      >
+        <Switch
+          ariaLabel="Attribution line"
+          checked={attributionFooter}
+          disabled={busy}
+          onChange={(next) =>
+            void persistOverrides({
+              patch: { attributionFooter: next },
+              failureTitle: "Couldn't save the attribution line setting",
+            })
+          }
+        />
+      </WorkspaceFieldRow>
+    </>
+  );
+
   return (
     <>
+      <WorkflowRulesPanel
+        workspaceId={workspaceId}
+        runRows={
+          <>
+            <AutoLevelDefaultRow workspaceId={workspaceId} />
+            <RunDefaultField workspaceId={workspaceId} />
+          </>
+        }
+      >
+        <Band inset="content" label="Agents" ariaLabel="Agents" headingLevel={2}>
+          <WorkspaceFieldRow
+            workspaceId={workspaceId}
+            field="parallelAgents"
+            help="Lets eligible agents split independent work and reconcile it in one output."
+          >
+            <Switch
+              ariaLabel="Parallel agents"
+              checked={parallelAgents}
+              disabled={busy}
+              onChange={(next) =>
+                void persistOverrides({
+                  patch: { parallelAgents: next },
+                  failureTitle: "Couldn't save the parallel agents setting",
+                })
+              }
+            />
+          </WorkspaceFieldRow>
+          <WorkspaceFieldRow
+            workspaceId={workspaceId}
+            field="verbosity"
+            help="How much agents explain while they work."
+          >
+            <VerbositySelect
+              value={verbosity}
+              onChange={(v) =>
+                void persistOverrides({
+                  patch: { defaultVerbosity: v },
+                  failureTitle: "Couldn't save the output verbosity",
+                })
+              }
+              disabled={busy}
+            />
+          </WorkspaceFieldRow>
+        </Band>
+      </WorkflowRulesPanel>
       <Band
         inset="content"
         label="Branches and comments"
         ariaLabel="Branches and comments"
         headingLevel={2}
       >
-        <WorkspaceFieldRow
-          workspaceId={workspaceId}
-          field="branchPrefix"
-          help="Starts every new session branch. Letters, numbers, - and /."
-        >
-          <Input
-            type="text"
-            value={branchPrefix}
-            onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
-            onBlur={() => void commitBranchPrefix()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                void commitBranchPrefix();
-              }
-            }}
-            placeholder={DEFAULT_BRANCH_PREFIX}
-            disabled={busy}
-            maxLength={16}
-            spellCheck={false}
-            autoComplete="off"
-            aria-label="Branch prefix"
-            className="w-40 font-mono"
-          />
-        </WorkspaceFieldRow>
-        <WorkspaceFieldRow
-          workspaceId={workspaceId}
-          field="branchTemplate"
-          layout="stacked"
-          help="The name a new session branch gets. Existing branches keep their names."
-        >
-          <BranchTemplateField workspaceId={workspaceId} />
-        </WorkspaceFieldRow>
-        <WorkspaceFieldRow
-          workspaceId={workspaceId}
-          field="attribution"
-          help="Signs every comment and review reply Goodboy posts."
-        >
-          <Switch
-            ariaLabel="Attribution line"
-            checked={attributionFooter}
-            disabled={busy}
-            onChange={(next) =>
-              void persistOverrides({
-                patch: { attributionFooter: next },
-                failureTitle: "Couldn't save the attribution line setting",
-              })
-            }
-          />
-        </WorkspaceFieldRow>
+        {branchesRows}
       </Band>
-
-      <Band
-        inset="content"
-        label="Agents"
-
-        ariaLabel="Agents"
-        headingLevel={2}
-      >
-        <WorkspaceFieldRow
-          workspaceId={workspaceId}
-          field="parallelAgents"
-          help="Lets eligible agents split independent work and reconcile it in one output."
-        >
-          <Switch
-            ariaLabel="Parallel agents"
-            checked={parallelAgents}
-            disabled={busy}
-            onChange={(next) =>
-              void persistOverrides({
-                patch: { parallelAgents: next },
-                failureTitle: "Couldn't save the parallel agents setting",
-              })
-            }
-          />
-        </WorkspaceFieldRow>
-        <WorkspaceFieldRow
-          workspaceId={workspaceId}
-          field="verbosity"
-          help="How much agents explain while they work."
-        >
-          <VerbositySelect
-            value={verbosity}
-            onChange={(v) =>
-              void persistOverrides({
-                patch: { defaultVerbosity: v },
-                failureTitle: "Couldn't save the output verbosity",
-              })
-            }
-            disabled={busy}
-          />
-        </WorkspaceFieldRow>
-        <RunDefaultField workspaceId={workspaceId} />
-        {isWorkOn ? null : <AutoLevelDefaultRow workspaceId={workspaceId} />}
-      </Band>
-      {isWorkOn ? <AutonomyDefaultsBand workspaceId={workspaceId} /> : null}
     </>
   );
 };

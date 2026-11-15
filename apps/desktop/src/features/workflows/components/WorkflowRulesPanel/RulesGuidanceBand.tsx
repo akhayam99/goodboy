@@ -44,7 +44,13 @@ export const RulesGuidanceBand = ({ workspaceId, rules, onChange }: Props) => {
 
   const isEmpty = rules.standingGuidance.trim() === '';
   return (
-    <Band label="Guidance" ariaLabel="Guidance" headingLevel={3} inset="content">
+    <Band
+      label="Guidance"
+      ariaLabel="Guidance"
+      hint="Every new run reads these first."
+      headingLevel={2}
+      inset="content"
+    >
       <PromptField
         kind="document"
         label="Guidance"

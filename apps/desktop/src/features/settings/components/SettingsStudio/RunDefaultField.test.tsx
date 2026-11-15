@@ -46,7 +46,7 @@ describe('RunDefaultField', () => {
   it('shows only the workspace default outside a session', () => {
     render(<RunDefaultField workspaceId={WORKSPACE.id} />);
 
-    screen.getByRole('tablist', { name: 'New runs start as' });
+    screen.getByRole('tablist', { name: 'Start as' });
     expect(screen.queryByRole('tablist', { name: 'New runs in this session start as' })).toBeNull();
   });
 

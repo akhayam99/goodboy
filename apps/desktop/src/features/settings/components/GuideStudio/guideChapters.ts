@@ -342,11 +342,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Asks you and pause',
-        desc: 'Asks you: Every step, After the plan or Never sets how often a run stops for you. Pause run lets the step in flight finish, and Stop run asks first.',
+        desc: 'Every step, After the plan or Never sets how often a run stops for you, one row per kind in Run defaults. Pause run lets the step in flight finish, and Stop run asks first.',
       },
       {
         term: NAMES.runDefaults,
-        desc: 'This tab in Workflows sets what new runs start with: when it asks you, a limit and guidance. A run keeps the rules it started with.',
+        desc: 'This Settings page sets what new runs start with. A run keeps the rules it started with.',
       },
       {
         term: 'Open questions',
