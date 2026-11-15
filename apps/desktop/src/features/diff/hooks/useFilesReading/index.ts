@@ -58,7 +58,7 @@ const savedFileOf = ({ state, worktreePath }: SavedParams): string | null => {
   return rows[PLACE_ROWS.filesOpen] ?? null;
 };
 
-const entryOf = ({ relPath }: PathParams): ExploreEntry => ({
+const readerEntryOf = ({ relPath }: PathParams): ExploreEntry => ({
   name: relPath.split('/').at(-1) ?? relPath,
   relPath,
   isDir: false,
@@ -95,7 +95,7 @@ export const useFilesReading = ({
   const isSavedChanged =
     savedPath !== null && review.allFiles.some((file) => file.path === savedPath);
   const savedEntry = useMemo(
-    () => (savedPath === null ? null : entryOf({ relPath: savedPath })),
+    () => (savedPath === null ? null : readerEntryOf({ relPath: savedPath })),
     [savedPath],
   );
   const openFile = isAll && !isSavedChanged ? savedEntry : null;
