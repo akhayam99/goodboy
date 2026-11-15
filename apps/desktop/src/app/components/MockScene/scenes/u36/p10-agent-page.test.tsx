@@ -164,8 +164,8 @@ describe('one agent, one page', () => {
 
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
     screen.getByText('1 file changed');
-    expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toBe(
-      'Auto',
+    expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toMatch(
+      /^Why does the ledger retry post a second credit/,
     );
   });
 

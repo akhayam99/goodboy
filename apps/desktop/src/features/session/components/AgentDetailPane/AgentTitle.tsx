@@ -9,6 +9,7 @@ import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 import { classifyAgent } from '../../agent-kind';
 import { agentTaskLabelOf } from '../../../auto/agentTaskLabelOf';
+import { autoRunTitleOf } from '../../autoRunTitleOf';
 import { AgentBriefCrumb } from './AgentBriefCrumb';
 import { agentHeadingOf } from './agentHeadingOf';
 import { firstLineOf } from './firstLineOf';
@@ -34,6 +35,7 @@ export const AgentTitle = ({
   const fixRunName = useFixRunName({ sessionId, agentId: agent.id });
   const views = useAppStore((state) => state.autoTreeViews[sessionId]);
   const task = useMemo(() => agentTaskLabelOf({ views, agentId: agent.id }), [views, agent.id]);
+  const runTitle = useAppStore((state) => autoRunTitleOf({ state, sessionId, agentId: agent.id }));
   const rename = useInlineRename({
     value: agent.name,
     onCommit: (next) => renameAgent(sessionId, agent.id, next),
@@ -66,13 +68,14 @@ export const AgentTitle = ({
   }
 
   const kind = classifyAgent({ agent, override: kindOverride });
-  const displayName =
+  const fullName =
     heading ??
     (kind === 'resolver' && isAutoResolverName({ name: agent.name }) ? fixRunName : null) ??
     agentHeadingOf({ name: agentDisplayName({ name: agent.name, kind }), kind, brief });
+  const displayName = brief === null && heading === undefined ? (runTitle ?? fullName) : fullName;
 
   if (brief !== null && displayName === brief && isInline) {
-    return <AgentBriefCrumb brief={brief} task={task} onRename={rename.start} />;
+    return <AgentBriefCrumb brief={brief} task={task} label={runTitle} onRename={rename.start} />;
   }
 
   if (brief !== null && displayName === brief) {

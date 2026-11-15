@@ -283,8 +283,8 @@ describe('c07 Auto scenes', () => {
     expect(
       sessionHead().querySelector('[data-slot="pane-title-row"] [data-session-back]'),
     ).not.toBeNull();
-    screen.getByRole('button', { name: 'Back to Auto' });
-    expect(crumbLabels().at(-2)).toBe('Auto');
+    screen.getByRole('button', { name: /^Back to Why does the ledger retry post a second credit/ });
+    expect(crumbLabels().at(-2)).toMatch(/^Why does the ledger retry post a second credit/);
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(screen.queryByText('Implementer · Implementer')).toBeNull();
     expect(

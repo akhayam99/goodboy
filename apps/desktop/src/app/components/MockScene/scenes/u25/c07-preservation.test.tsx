@@ -163,8 +163,8 @@ describe('Auto: every capability keeps a home in Auto', () => {
       ),
     ).toBeDefined();
     expect(screen.queryByText('Open Auto')).toBeNull();
-    expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toBe(
-      'Auto',
+    expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toMatch(
+      /^Why does the ledger retry post a second credit/,
     );
   });
 });

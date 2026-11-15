@@ -2,6 +2,8 @@ import { Button, TruncatedText, WorkNode, type WorkNodeState } from '@goodboy/ui
 import type { Agent, AgentStatus, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
+import { autoChildStatusOf } from '../../../auto/autoChildStatusOf';
+import { delegationNodeOf } from '../../../auto/chat/delegationNodeOf';
 import { classifyAgent } from '../../agent-kind';
 import { describeAgentStatus } from '../../agent-status';
 
@@ -22,6 +24,7 @@ const NODE_STATE: Record<AgentStatus, WorkNodeState> = {
 
 export const DelegationLines = ({ sessionId, agents }: Props) => {
   const overrides = useAppStore((state) => state.agentKindOverride);
+  const views = useAppStore((state) => state.autoTreeViews[sessionId]);
   const navigate = useAppStore((state) => state.navigate);
   if (agents.length === 0) {
     return null;
@@ -30,7 +33,9 @@ export const DelegationLines = ({ sessionId, agents }: Props) => {
     <ul aria-label="Delegations" className="flex flex-col gap-1">
       {agents.map((child) => {
         const kind = classifyAgent({ agent: child, override: overrides[child.id] ?? null });
-        const word = describeAgentStatus({ status: child.status }).label;
+        const status = autoChildStatusOf({ views, agent: child });
+        const word = status?.word ?? describeAgentStatus({ status: child.status }).label;
+        const node = status === null ? NODE_STATE[child.status] : delegationNodeOf({ status });
         return (
           <li
             key={child.id}
@@ -38,12 +43,7 @@ export const DelegationLines = ({ sessionId, agents }: Props) => {
             className="flex h-7 min-w-0 items-center gap-2 text-meta"
           >
             <span className="flex size-5 shrink-0 items-center justify-center">
-              <WorkNode
-                size="sm"
-                state={NODE_STATE[child.status]}
-                mark={{ kind: 'dot' }}
-                label={word}
-              />
+              <WorkNode size="sm" state={node} mark={{ kind: 'dot' }} label={word} />
             </span>
             <AgentKindChip kind={kind} />
             <TruncatedText className="min-w-0 truncate text-foreground" tooltip={child.name}>

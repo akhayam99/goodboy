@@ -81,7 +81,10 @@ See every agent of a run beside its page. An Auto run and every agent under it s
 - Picking a row shows that agent's conversation in the middle and marks the row; picking the run row shows the run again. The column keeps its place. **↑** and **↓** move through the rows, **Enter** opens one.
 - An agent's page starts with why Auto started it: the reason for the role, when it is done, what went in, the model and the attempt.
 - A note you queued in the composer shows as a row of the tree, with **Edit** and **Remove**.
-- **Stop** sits in the head, on the crumb row. **Esc** goes one crumb up.
+- A page has one **Stop**. On a running agent it sits in the box you type in, and the line at the end of the conversation leaves it there. **Esc** goes one crumb up.
+- An agent says its state with the word of its row: in the head, in the lines of the agents it started and in the column.
+- The run reads the same name everywhere: its crumb, the run page and the first row of the column. A deep agent keeps the first crumb and the last two; the crumbs between them fold into one **…** that lists them.
+- The box you type in on an agent's page names the model Auto chose for that agent.
 
 Each agent row shows its model by name with the effort, muted. It hides when the panel is too narrow to keep the title whole.
 
@@ -236,7 +239,7 @@ This part is for contributors and agents who change the feature.
 - Anchoring: `useScrollPin` anchors the last `[data-turn]` at `ANCHOR_TOP_PX` when `anchorKeyOf` gives a new key, and `TRANSCRIPT_FLOOR_PX` is the 24 px tail. The `u31-chat-anchoring` scene shows a message just sent.
 - Speaker: `TurnFooter` takes a `previousRunId` and names the model only on a change. The `u31-chat-reading` scene shows a long Auto exchange.
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
-- Header glance and dock: `useConversationGlance` and `conversationAskOf` give both one word, `useConversationAsks` lists what asks; `useAutoTreeActions` opens the child page. `AutoChildEnd` leaves a failed child's Retry to `DockFailureLine`; `p10-agent-page.test.tsx` proves there is one and it retries the child.
+- Header glance and dock: `useConversationGlance` and `conversationAskOf` give both one word, `useConversationAsks` lists what asks; `useAutoTreeActions` opens the child page. `AutoChildEnd` leaves a failed child's Retry to `DockFailureLine`; `p10-agent-page.test.tsx` proves there is one and it retries the child. It also leaves Stop to the dock whenever the dock draws one (`isAgentStopInDockOf`, which `isAgentStopInDockOf.test.ts` holds to `conversationStopOf`). An Auto child's head word, its rail row and the lines of the agents it started (`DelegationLines`) read `autoChildStatusOf`. That is the status of its last delegation, and `delegationGlanceOf` turns it into the head glance. The run name is `autoRunTitleOf` for the crumbs (`placeTitleOf`), the run page crumb and the rail root row. `run-agent.test.tsx` checks all of it on the run page scenes.
 - Ask in the chat or the dock: `useAskDock` gives `conversationRows` the asks the dock holds. An ask it does not hold keeps its transcript card in the last turn, which is how a second window answers one. An answer there reaches this window through `agent-turn` on `goodboy:data-changed` and `refreshAgentAsks`, which reads the saved decision and the agent's status. A stopped agent or a later message lapses the ask, so it gets no card.
 - File drop: `useFileDropTarget` counts a `data-drop-composer` box only when the user can see it. A box in an inert or hidden layer is no target: the page kept under an agent page, a section page or a drawer. The one box on screen takes a drop anywhere. `fileDrop.test.tsx` drops an image on the agent page while the Runs page under it keeps its own box.
 - Focus after an ask: `useDockAskFocus` sends a focus that fell to the body to the message field of its own box. `focusAgentComposer` targets `data-composer-field`, never a docked answer field.

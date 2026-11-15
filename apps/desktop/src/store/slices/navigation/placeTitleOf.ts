@@ -1,6 +1,7 @@
 import { agentDisplayName } from '../../../shared/utils/agentDisplayName';
 import { LENS_LABEL } from '../../../features/session/lens-labels';
 import { agentTaskLabelOf } from '../../../features/auto/agentTaskLabelOf';
+import { autoRunTitleOf } from '../../../features/session/autoRunTitleOf';
 import { isDefaultAgentName } from '../../../features/session/isDefaultAgentName';
 import { NAMES } from '../../../shared/utils/names';
 import type { AppState } from '../../types';
@@ -48,6 +49,10 @@ export const placeTitleOf = ({ state, place }: Params): PlaceTitle => {
     );
     if (agent === undefined) {
       return word({ title: 'Agent' });
+    }
+    const runTitle = autoRunTitleOf({ state, sessionId, agentId: agent.id });
+    if (runTitle !== null) {
+      return name({ title: runTitle });
     }
     const task = agentTaskLabelOf({ views: state.autoTreeViews[sessionId], agentId: agent.id });
     if (task !== null && isDefaultAgentName({ name: agent.name, kind: task.kind })) {

@@ -675,7 +675,10 @@ activity yet show the plain overview with its actions.
   that still has its role name reads `{Role} · {short task}` (`agentTaskLabelOf`: the role noun
   and the first sentence of its task through `taskTitleOf`, never the raw prompt; the head
   draws the task middle cut, the full brief one click away), a run `Session › Runs ›
-{run title}` (the run's title, else its workflow's name, else `Run`), a run step adds its
+{run title}` (the run's title, else its workflow's name, else `Run`), an Auto run and every
+  agent under it name the run through `autoRunTitleOf` (features/session: the first line of
+  the ask, else of the run's first message, else the flow word of `flowWordOf`, never a fixed
+  `Auto`), which the run page crumb and the Agents rail root row read too, a run step adds its
   step names, an artifact `Session › Artifacts › {artifact title}`, a branch or pull request
   `Session › {branch name}` (one crumb with a file or a thread open), a GitHub issue, a linked
   task and a branchless Changes place `Session › {page}`. Names come from `placeTitleOf`
@@ -683,7 +686,10 @@ activity yet show the plain overview with its actions.
   read too. A crumb is a quiet `xs` button; a click calls `upTo` with its place: a real
   navigation, so a reload or a deep link with no history below still goes there; when the
   entry below is that place it is a Back instead of a push. The last crumb is the page
-  (`aria-current="page"`). A tab (`isTabView`: the Overview, Runs, Artifacts, Questions,
+  (`aria-current="page"`). Five crumbs or more fold (`crumbFoldOf`): the first and the last two
+  stay, the ones between become one `…` crumb whose menu lists them (`SessionCrumbFold`), and
+  a crumb between the first and the page is capped at 192px so the page crumb keeps the room.
+  A tab (`isTabView`: the Overview, Runs, Artifacts, Questions,
   Context, also with a question drawer open) draws the tabs, and a drawer keeps its
   `DrawerFrame` back. `every-place-has-a-way-up.test.tsx` walks one place per lens and per
   target kind, renders `SessionWorkspace` with the head and fails when the drawn crumbs differ

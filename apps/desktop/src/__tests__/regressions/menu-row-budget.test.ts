@@ -30,6 +30,8 @@ const PENDING: Readonly<Record<string, string>> = {
 const DATA_DRIVEN: Readonly<Record<string, string>> = {
   'app/components/AppTopBar/NavCluster/HistoryArrow.tsx':
     'a radio list of the last twelve stops of the history stack, a list and not a menu of fixed rows',
+  'app/components/SessionHead/SessionCrumbFold.tsx':
+    'the middle crumbs a trail folds, at most five since crumbsOf caps the chain at eight, pinned in crumbFoldOf.test.ts',
   'features/branch/components/BranchHeader/BranchOverflow.tsx':
     'rows built from registry actions, capped by branchMenuRows.test.ts',
   'features/search/components/SearchMode/SearchHitActions.tsx':

@@ -1,6 +1,6 @@
 import { getAgentById, insertAgent, type AutoDelegation, type Database } from '@goodboy/db';
-import { PROVIDER_IDS, type Agent, type AgentId, type SessionId } from '@goodboy/types';
-import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
+import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import { autoChildRoutingOf } from '../../../features/auto/autoChildRoutingOf';
 
 export type CreateAutoChildParams = Readonly<{
   db: Database;
@@ -15,16 +15,6 @@ export type CreateAutoChildOutcome = Readonly<{
   kind: 'created' | 'exists';
   agent: Agent;
 }>;
-
-type RoutingTextParams = {
-  readonly delegation: AutoDelegation;
-  readonly key: string;
-};
-
-const routingText = ({ delegation, key }: RoutingTextParams): string | undefined => {
-  const value = delegation.routing[key];
-  return typeof value === 'string' ? value : undefined;
-};
 
 type NextOrdinalParams = {
   readonly db: Database;
@@ -51,11 +41,6 @@ export const createAutoChild = async ({
   if (existing !== null) {
     return { kind: 'exists', agent: existing };
   }
-  const providerText = routingText({ delegation, key: 'provider' });
-  const effortText = routingText({ delegation, key: 'effort' });
-  const modelText = routingText({ delegation, key: 'model' });
-  const provider = PROVIDER_IDS.find((candidate) => candidate === providerText);
-  const effort = EFFORT_LEVELS.find((level) => level === effortText);
   try {
     const agent = await insertAgent(db, {
       id: delegation.childAgentId,
@@ -65,9 +50,7 @@ export const createAutoChild = async ({
       status: 'pending',
       kind,
       parentAgentId,
-      ...(modelText === undefined ? {} : { modelOverride: modelText }),
-      ...(provider === undefined ? {} : { providerOverride: provider }),
-      ...(effort === undefined ? {} : { effort }),
+      ...autoChildRoutingOf({ delegation }),
     });
     return { kind: 'created', agent };
   } catch (error) {
