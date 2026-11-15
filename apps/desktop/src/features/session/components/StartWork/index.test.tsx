@@ -20,7 +20,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { openStartRun } from '../../startRun/openStartRun';
 import { StartWork } from '.';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
@@ -86,20 +85,5 @@ describe('the Start work composer', () => {
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('No provider'));
     expect(onClose).not.toHaveBeenCalled();
     screen.getByDisplayValue(TEXT);
-  });
-});
-
-describe('the start door', () => {
-  it('opens the composer with the switch on and the router with it off', () => {
-    openStartRun({ sessionId: SESSION.id, text: TEXT });
-    expect(useAppStore.getState().workStart).toEqual({
-      sessionId: SESSION.id,
-      projectId: null,
-      branch: null,
-      text: TEXT,
-    });
-    useAppStore.setState({ workStart: null, settings: { 'work.enabled': 'false' } });
-    openStartRun({ sessionId: SESSION.id, text: TEXT });
-    expect(useAppStore.getState().workStart).toBeNull();
   });
 });

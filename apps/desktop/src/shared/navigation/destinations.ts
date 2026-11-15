@@ -8,7 +8,6 @@ export type FootDestinationId = 'settings' | 'guide' | 'whatsNew';
 export type DestinationId =
   | 'board'
   | 'inbox'
-  | 'work'
   | 'workflows'
   | 'chat'
   | 'connections'
@@ -60,14 +59,6 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     home: 'column',
     scope: 'workspace',
     aliases: formerNamesOf(NAMES.tasks),
-  },
-  {
-    id: 'work',
-    label: NAMES.work,
-    icon: CONCEPT_ICONS.work,
-    home: 'column',
-    scope: 'workspace',
-    aliases: ['Leads', 'Lead'],
   },
   {
     id: 'workflows',

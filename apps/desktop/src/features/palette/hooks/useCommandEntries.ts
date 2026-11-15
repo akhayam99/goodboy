@@ -249,18 +249,18 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     if (hasWorkspace) {
       const workspaceId = currentWorkspace.id;
       out.push(
-        ...DESTINATIONS.filter(
-          (destination) => destination.home !== 'foot' && (destination.id !== 'work' || isWork),
-        ).map((destination): PaletteEntry => ({
-          key: destinationPaletteKeyOf({ id: destination.id }),
-          label: destination.label,
-          ...(destination.aliases.length > 0 && { secondary: destination.aliases }),
-          kind: 'goto',
-          group: null,
-          icon: destination.icon,
-          ...(destination.shortcutId !== undefined && { shortcut: destination.shortcutId }),
-          run: () => runDestination({ id: destination.id }),
-        })),
+        ...DESTINATIONS.filter((destination) => destination.home !== 'foot').map(
+          (destination): PaletteEntry => ({
+            key: destinationPaletteKeyOf({ id: destination.id }),
+            label: destination.label,
+            ...(destination.aliases.length > 0 && { secondary: destination.aliases }),
+            kind: 'goto',
+            group: null,
+            icon: destination.icon,
+            ...(destination.shortcutId !== undefined && { shortcut: destination.shortcutId }),
+            run: () => runDestination({ id: destination.id }),
+          }),
+        ),
         ...leadEntries({
           rows: leadRows,
           open: ({ sessionId: leadSessionId, agentId }) =>

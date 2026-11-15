@@ -20,7 +20,7 @@ import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { createDrawerSlice } from '../drawer';
 import { createNavigationSlice } from '.';
 import { captureWindowLocation } from './captureWindowLocation';
-import { agentPlace, sessionPlace } from './place';
+import { sessionPlace } from './place';
 import { EMPTY_FOCUS, type Location } from './types';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
@@ -61,59 +61,45 @@ const windowStore = ({ isWork }: WindowParams) =>
     ...createDrawerSlice({ set, get }),
   }));
 
-const storedWork: Location = {
+const storedWork: Location = JSON.parse(
+  JSON.stringify({
+    workspaceId: WS,
+    place: sessionPlace({ sessionId: S1 }),
+    studio: { kind: 'work', filter: 'needsYou' },
+    focus: { ...EMPTY_FOCUS, drawer: { kind: 'scripts', sessionId: S1, payload: null } },
+  }),
+);
+
+const storedSession: Location = {
   workspaceId: WS,
-  place: { at: 'board' },
-  studio: { kind: 'work', filter: 'needsYou' },
+  place: sessionPlace({ sessionId: S1, lens: 'workflows', agentId: LEAD }),
+  studio: null,
   focus: EMPTY_FOCUS,
 };
 
-describe('the Work destination', () => {
-  it('opens a Lead inside its session and Back returns to the list with its filter', () => {
-    const store = windowStore({ isWork: true });
-    store.getState().switchStudio({ studio: { kind: 'work', filter: 'needsYou' } });
-
-    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: LEAD }) });
-
-    expect(store.getState().appStudio).toBeNull();
-    expect(captureWindowLocation({ state: store.getState() }).place).toEqual(
-      sessionPlace({ sessionId: S1, lens: 'workflows', agentId: LEAD }),
-    );
-
-    store.getState().back();
-
-    expect(store.getState().appStudio).toEqual({ kind: 'work', filter: 'needsYou' });
-  });
-
-  it('keeps the filter a window picked across a reload', async () => {
-    const before = windowStore({ isWork: true });
-    before.getState().switchStudio({ studio: { kind: 'work' } });
-    before.getState().amendStudio({ studio: { kind: 'work', filter: 'working' } });
-    const saved: Location = JSON.parse(
-      JSON.stringify(captureWindowLocation({ state: before.getState() })),
-    );
-
-    const after = windowStore({ isWork: true });
-    await after.getState().restoreLocation({ location: saved });
-
-    expect(after.getState().appStudio).toEqual({ kind: 'work', filter: 'working' });
-  });
-
-  it('restores a stored Work place with the switch on', async () => {
-    const store = windowStore({ isWork: true });
-
-    await store.getState().restoreLocation({ location: storedWork });
-
-    expect(store.getState().appStudio).toEqual({ kind: 'work', filter: 'needsYou' });
-  });
-
-  it('opens the Board for a stored Work place with the switch off', async () => {
-    const store = windowStore({ isWork: false });
+describe('a saved place on the retired Work page', () => {
+  it.each([true, false])('opens the Board with the Work setting %s', async (isWork) => {
+    const store = windowStore({ isWork });
 
     await store.getState().restoreLocation({ location: storedWork });
 
     expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().drawer).toBeNull();
     expect(store.getState().currentSessionId).toBeNull();
     expect(captureWindowLocation({ state: store.getState() }).place).toEqual({ at: 'board' });
+  });
+
+  it('folds each window on its own, so a second window keeps its session', async () => {
+    const first = windowStore({ isWork: true });
+    const second = windowStore({ isWork: true });
+
+    await Promise.all([
+      first.getState().restoreLocation({ location: storedWork }),
+      second.getState().restoreLocation({ location: storedSession }),
+    ]);
+
+    expect(captureWindowLocation({ state: first.getState() }).place).toEqual({ at: 'board' });
+    expect(second.getState().currentSessionId).toBe(S1);
+    expect(captureWindowLocation({ state: second.getState() }).place).toEqual(storedSession.place);
   });
 });

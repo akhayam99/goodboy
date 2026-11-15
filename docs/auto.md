@@ -17,8 +17,8 @@ agents started by hand keep working.
 
 One app-wide setting, **Work** (`SETTING_WORK_ENABLED`, under
 Experiments on the Advanced page, off by default), moves doors, names and
-engine rules, never views. Off: no Work section, the word Auto, "Start a run"
-opens the router, the level chip. On: Work, the word Lead, one composer,
+engine rules, never views. Off: the word Auto, "Start a run" opens the
+router, the level chip. On: the word Lead, the start field in Runs,
 permission rows. `flowWordOf` (`shared/lib/flowWordOf.ts`, read through
 `useFlowWord`) is the only place that picks Auto or Lead, aria-labels
 included; `flowRulesOf` in the same folder holds the rest of the matrix and
@@ -764,24 +764,23 @@ reader.
 
 ### The workspace read
 
-The Work list reads every Lead of a workspace across its open sessions, not one
+The ⌘K Lead rows read every Lead of a workspace across its open sessions, not one
 session at a time. `listAutoWorkTreesOfWorkspace`
 (`packages/db/src/queries/auto-work-trees.ts`) returns each tree with its
 session goal, the project of its primary mount and its branches: the primary
 mount and every mount its delegations of the current generation target,
 each branch once. The `work` slice (`store/slices/work/`) loads each session
 through `readAutoTreeViews`, so a Lead carries the same view the Lead page
-reads. `loadWorkLeads({ workspaceId, filter })` keeps only the latest read; a
-read for a workspace or filter the window left is dropped. A failed read keeps
-the old rows and sets `isWorkStale`; the next poll retries. A change made in
-another window shows on the next read.
+reads. `loadWorkLeads({ workspaceId })` keeps only the latest read; a read for a
+workspace the window left is dropped. A failed read keeps the old rows of the
+same workspace; the next poll retries. A change made in another window shows on
+the next read.
 
-`workRowsOf` (`features/work/workRowsOf.ts`) owns every number of the list. It
+`workRowsOf` (`features/work/workRowsOf.ts`) owns every number of the rows. It
 makes one row per Lead (a Lead on two branches is one row), takes the state word
 from `autoTreeWordOf` and so from `leadStopOf`, the pending asks from
-`leadAsksOf`, the agents running and the spend from the view, and the four
-filter counts (All open, Needs you, Working, Finished). A filter's count is the
-number of its rows. A Stopped Lead is in no filter.
+`leadAsksOf`, and the agents running and the spend from the view. A Stopped Lead
+is not open.
 
 ## Plans
 

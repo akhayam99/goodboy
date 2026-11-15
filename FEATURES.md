@@ -50,9 +50,8 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 ## Work
 
-One page lists every Lead of a workspace, whatever session it runs in. A Lead is the agent that plans a job, hands it to helpers and asks you only for what your permission rows say.
+A Lead is the agent that plans a job, hands it to helpers and asks you only for what your permission rows say. It runs inside its session, and the Board shows which run waits for you.
 
-- **Work section**: Open Work to see every Lead of the workspace in one list, and see which ones need you.
 - **Lead**: A Lead reads one of five words: Working, Waits for you, Resting, Stopped or Finished.
 - **Permission rows**: A Lead's autonomy is nine rows you can read and change.
 

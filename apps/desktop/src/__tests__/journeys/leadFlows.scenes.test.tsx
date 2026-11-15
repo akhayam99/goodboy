@@ -81,16 +81,3 @@ describe('journey: a Lead page with a pending ask, switch off, on, off', () => {
     }
   });
 });
-
-describe('journey: the Work list, switch off, on, off', () => {
-  it('shows the Work item in the sidebar only with the switch on', async () => {
-    await journey.mount({ name: 'work-list' });
-
-    for (const position of CYCLE) {
-      await flip({ position });
-
-      expect(hasButton(/^Work$/)).toBe(position === 'on');
-      expect(hasButton('Start work')).toBe(true);
-    }
-  });
-});
