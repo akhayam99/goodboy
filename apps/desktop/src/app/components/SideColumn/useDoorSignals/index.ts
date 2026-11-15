@@ -7,7 +7,8 @@ import { workspacePortSet } from '../../../../features/monitoring/workspacePortS
 import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { selectProviderAttention } from '../../../../store/slices/providers/selectProviderAttention';
+import { useToolChecks } from '../../../../features/connections/hooks/useToolChecks';
+import { connectionsAttentionOf } from '../../../../features/connections/model/connectionsAttentionOf';
 import type { ColumnDoorId } from '../../../../shared/navigation/columnPlace';
 import { doorSignalOf, type DoorSignal } from '../doorSignal';
 
@@ -29,7 +30,9 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
   );
   const { attention } = useNowSessions({});
   const nowMs = useNow(PROVIDER_CLOCK_MS);
-  const providerAttention = useAppStore((state) => selectProviderAttention({ state, nowMs }));
+  const currentWorkspaceId = useAppStore((state) => state.currentWorkspaceId);
+  useToolChecks({ workspaceId: currentWorkspaceId });
+  const connectionsAttention = useAppStore((state) => connectionsAttentionOf({ state, nowMs }));
 
   return useMemo(() => {
     const split = splitPortRows({
@@ -51,7 +54,7 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
       chat: doorSignalOf({ kind: 'chat', count: runningCount, hasUnread }),
       connections: doorSignalOf({
         kind: 'connections',
-        reasons: providerAttention === null ? [] : [providerAttention],
+        reasons: connectionsAttention === null ? [] : [connectionsAttention],
       }),
       monitoring: hasSnapshot
         ? doorSignalOf({ kind: 'monitoring', ...monitoringSignal({ split }) })
@@ -62,7 +65,7 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
     taskNewCount,
     runningCount,
     hasUnread,
-    providerAttention,
+    connectionsAttention,
     rows,
     hasSnapshot,
     scanned,

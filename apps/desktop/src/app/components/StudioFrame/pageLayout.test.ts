@@ -41,7 +41,7 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
   },
   {
     page: 'connections',
-    files: ['features/connections/components/ConnectionsStudio/ConnectionsPage.tsx'],
+    files: ['features/connections/components/ConnectionsIndex/index.tsx'],
   },
   {
     page: 'notifications',

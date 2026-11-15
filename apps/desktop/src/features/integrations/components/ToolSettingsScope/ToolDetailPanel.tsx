@@ -10,7 +10,7 @@ import { FORM_BODIES } from '../../formBodies';
 import { toolHealthOf } from '../../toolHealthOf';
 import { useCredentialSecret } from '../../useCredentialSecret';
 import { useIntegrationTarget } from '../../useIntegrationTarget';
-import { toolIdentity } from './toolIdentity';
+import { toolIdentity } from '../../toolIdentity';
 import type { GithubConnection } from '../../github/useGithubConnection';
 import { GithubAccountRows } from './GithubAccountRows';
 

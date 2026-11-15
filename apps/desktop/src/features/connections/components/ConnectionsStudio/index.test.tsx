@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -19,6 +19,8 @@ import {
 import { ConnectionsStudio } from './index';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
+
+const CLAUDE_FOCUS = { provider: 'anthropic' } as const;
 
 let useAppStore: StoryStore;
 
@@ -31,6 +33,7 @@ beforeEach(async () => {
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE.id,
+    refreshProviders: vi.fn(async () => undefined),
     providers: [
       {
         id: 'anthropic',
@@ -49,52 +52,28 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+const viewportOf = (): HTMLElement => {
+  const viewport = screen.getByRole('region', { name: 'Providers' }).parentElement;
+  if (viewport === null) {
+    throw new Error('no viewport');
+  }
+  return viewport;
+};
+
 describe('ConnectionsStudio', () => {
-  it('lists the providers of this Mac and the integrations of the workspace under one title', async () => {
+  it('shows the index when no provider is in focus', async () => {
     render(<ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />);
-
-    await screen.findByRole('heading', { name: 'Connections' });
-    const providers = screen.getByRole('region', { name: 'Providers' });
-    const tools = screen.getByRole('region', { name: 'Integrations' });
-    within(providers).getByText('This Mac, every workspace');
-    within(providers).getByRole('button', { name: /^Claude/ });
-    within(providers).getByLabelText('Not signed in');
-    within(tools).getByText('Harborline workspace');
-    within(tools).getByRole('button', { name: 'GitHub' });
-  });
-
-  it('keeps only the providers when no workspace is open', async () => {
-    render(<ConnectionsStudio currentWorkspace={null} onClose={() => undefined} />);
 
     await screen.findByRole('region', { name: 'Providers' });
-    expect(screen.queryByRole('region', { name: 'Integrations' })).toBeNull();
+    screen.getByRole('region', { name: 'Integrations' });
   });
 
-  it('opens the provider page inside Connections from its row', async () => {
-    const onOpen = vi.fn();
-    window.addEventListener('goodboy:open-settings', onOpen);
-    render(<ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />);
-
-    fireEvent.click(await screen.findByRole('button', { name: /^Claude/ }));
-
-    expect(onOpen).not.toHaveBeenCalled();
-    expect(useAppStore.getState().appStudio).toEqual({
-      kind: 'connections',
-      focus: { provider: 'anthropic' },
-    });
-    window.removeEventListener('goodboy:open-settings', onOpen);
-  });
-
-  it('shows the provider page under a trail that leads back to Connections', async () => {
-    const refreshProviders = vi.fn(async () => undefined);
-    useAppStore.setState({ refreshProviders });
-    useAppStore.getState().openStudio({
-      studio: { kind: 'connections', focus: { provider: 'anthropic' } },
-    });
+  it('shows the provider page under a trail that leads back to the index', async () => {
+    useAppStore.getState().openStudio({ studio: { kind: 'connections', focus: CLAUDE_FOCUS } });
     render(
       <ConnectionsStudio
         currentWorkspace={WORKSPACE}
-        focus={{ provider: 'anthropic' }}
+        focus={CLAUDE_FOCUS}
         onClose={() => undefined}
       />,
     );
@@ -103,7 +82,30 @@ describe('ConnectionsStudio', () => {
     expect(screen.queryByRole('region', { name: 'Providers' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Connections' }));
 
-    expect(refreshProviders).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().refreshProviders).toHaveBeenCalledOnce();
     expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
+  });
+
+  it('returns to the index at the scroll it had before the provider page opened', async () => {
+    const { rerender } = render(
+      <ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />,
+    );
+    await screen.findByRole('region', { name: 'Providers' });
+    const before = viewportOf();
+    before.scrollTop = 240;
+    fireEvent.scroll(before);
+
+    rerender(
+      <ConnectionsStudio
+        currentWorkspace={WORKSPACE}
+        focus={CLAUDE_FOCUS}
+        onClose={() => undefined}
+      />,
+    );
+    await screen.findByRole('heading', { level: 1, name: 'Claude' });
+    rerender(<ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />);
+
+    await screen.findByRole('region', { name: 'Providers' });
+    expect(viewportOf().scrollTop).toBe(240);
   });
 });
