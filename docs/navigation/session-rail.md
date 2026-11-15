@@ -88,8 +88,9 @@ The text below was written for the rail. The cards it names (`SessionLevel/Level
   **Refresh session** (⌘R, `useSessionRefresh`, the same call as the key and
   the palette) and **More session actions** (`⋯`, `ObjectOverflowMenu` over
   the `session` registry kind), which holds five rows at most:
-  **Limit: none** or **Limit: $5.00** (`session.spend`), **Autopilot: on** or
-  **Autopilot: off** (`session.autopilotOn` / `Off`, a press flips it),
+  **Limit: none** or **Limit: $5.00** (`session.spend`), **Asks you: Every
+  step** or **Asks you: Never** (`session.asksNever` / `asksEveryStep`, a
+  press flips it),
   **Stop running (2)** while agents run, **Archive** and **Delete**
   (`sessionMenuOf`). A row that has a control beside it (Pin, Refresh, the
   title for Rename, the rail entries for the lenses and the log) is not in

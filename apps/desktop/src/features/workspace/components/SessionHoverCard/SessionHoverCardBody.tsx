@@ -69,7 +69,7 @@ export const SessionHoverCardBody = ({
   const facts = [
     isPinned && !isArchived ? 'Pinned' : null,
     isNamedByGoodboy ? 'Named by Goodboy' : null,
-    summary.isAutorun ? NAMES.autopilot : null,
+    summary.isAutorun ? `${NAMES.asksYou}: ${NAMES.asksNever}` : null,
     summary.agentCount === null ? null : `${summary.agentCount} ${agentWord}`,
     draftCount > 0 ? `${draftCount} ${draftWord}` : null,
     summary.cost !== null && summary.cost > 0 ? formatUsd(summary.cost) : null,

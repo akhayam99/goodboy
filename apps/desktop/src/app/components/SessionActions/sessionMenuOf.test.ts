@@ -5,10 +5,10 @@ import { sessionMenuOf } from './sessionMenuOf';
 describe('sessionMenuOf', () => {
   it('keeps only the rows with no control beside them, five at most while one state shows', () => {
     const { only } = sessionMenuOf({ limitUsd: null });
-    const showing = only.filter((id) => id !== 'session.autopilotOff' && id !== 'session.restore');
+    const showing = only.filter((id) => id !== 'session.asksEveryStep' && id !== 'session.restore');
     expect(showing).toEqual([
       'session.spend',
-      'session.autopilotOn',
+      'session.asksNever',
       'session.stopAll',
       'session.archive',
       'session.delete',
@@ -35,11 +35,11 @@ describe('sessionMenuOf', () => {
     }
   });
 
-  it('shows the limit and the Autopilot state in the rows', () => {
+  it('shows the limit and the Asks you state in the rows', () => {
     expect(sessionMenuOf({ limitUsd: null }).relabel.get('session.spend')).toBe('Limit: none');
     expect(sessionMenuOf({ limitUsd: 5 }).relabel.get('session.spend')).toBe('Limit: $5.00');
     const { relabel } = sessionMenuOf({ limitUsd: null });
-    expect(relabel.get('session.autopilotOn')).toBe('Autopilot: off');
-    expect(relabel.get('session.autopilotOff')).toBe('Autopilot: on');
+    expect(relabel.get('session.asksNever')).toBe('Asks you: Every step');
+    expect(relabel.get('session.asksEveryStep')).toBe('Asks you: Never');
   });
 });

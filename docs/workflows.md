@@ -971,13 +971,14 @@ run and its agents restorable.
 
 ### Hands-free runs
 
-**Autopilot** makes a run hands-free. Each next step starts without you
-clicking. One run goes hands-free with **Asks you** set to **Never**; the
-whole session does with
-**Turn on Autopilot** in the session `⋯` (the registry verbs
-`session.autopilotOn` and `session.autopilotOff` in
+A hands-free run starts each next step without you clicking. One run goes
+hands-free with **Asks you** set to **Never**; the whole session does with
+**Asks you: Every step** in the session `⋯`, a press flips it to **Never**
+(the registry verbs `session.asksNever` "Start next steps without asking" and
+`session.asksEveryStep` "Ask before starting each step" in
 `features/actions/kinds/session.ts`, also in the right click and the palette;
-the Runs page header has no switch). A run without its own setting follows
+the Runs page header has no switch; the old Turn on Autopilot and Turn off
+Autopilot find them in the palette). A run without its own setting follows
 the session.
 
 - The session's autorun also covers agents running outside a workflow

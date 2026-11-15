@@ -37,8 +37,9 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'command-palette', pattern: /\bCommand palette\b/i, use: NAMES.searchOrRun },
   { id: 'open-as-page', pattern: /\bOpen as page\b/, use: NAMES.openFullPage },
   { id: 'beside-the-session', pattern: /^Beside the session$/, use: NAMES.dock },
-  { id: 'autorun', pattern: /\bAutorun\b/i, use: NAMES.autopilot },
-  { id: 'run-on-its-own', pattern: /\bRun on its own\b/i, use: NAMES.autopilot },
+  { id: 'autorun', pattern: /\bAutorun\b/i, use: NAMES.asksYou },
+  { id: 'run-on-its-own', pattern: /\bRun on its own\b/i, use: NAMES.asksYou },
+  { id: 'autopilot', pattern: /\bAutopilot\b/, use: NAMES.asksYou },
   { id: 'ask-before-each-step', pattern: /\bAsk before each step\b/i, use: NAMES.everyStep },
   { id: 'ask-after-the-plan', pattern: /\bAsk after the plan\b/i, use: NAMES.afterThePlan },
   { id: 'when-to-ask', pattern: /\bWhen to ask\b/i, use: NAMES.asksYou },
@@ -52,7 +53,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   {
     id: 'autopilot-agent',
     pattern: /\bAutopilot (?:agent|mode)\b|\bAuto mode\b/,
-    use: NAMES.autopilot,
+    use: NAMES.asksYou,
   },
   {
     id: 'waiting-on-you',

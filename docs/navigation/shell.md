@@ -81,7 +81,7 @@ never exists on one surface only.
   that cannot run stays in it with its reason as a tooltip), Open the full log,
   Limit, Rename, Pin session or Unpin session, **Refresh session** (`session.refresh`, the
   same `refreshSession` `⌘R` runs in a session, blocked while a refresh is in
-  flight), Autopilot, Start a run, Link work, the copies, Archive and Delete,
+  flight), Start next steps without asking, Start a run, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is
   `select-none`, like every row that carries `ROW_HOVER` or `ROW_INTERACTIVE`
   (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the Board card): see
@@ -106,10 +106,10 @@ never exists on one surface only.
   write those roles.
 - **What each object offers.** A session: Open, Comments, Changes, Open in terminal
   (one choice per worktree), Open in
-  editor; Rename (inline, in the row that opened the menu), Turn on Autopilot or
-  Turn off Autopilot (the session's autorun, the default of a run started
-  without its own setting and of agents outside a workflow; the Runs page
-  header has no switch), Start a run, Link
+  editor; Rename (inline, in the row that opened the menu), Start next steps
+  without asking or Ask before starting each step (the session's Asks you: the
+  default of a run started without its own setting and of agents outside a
+  workflow; the Runs page header has no switch), Start a run, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with its
   confirm and Undo, and Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. Archive N asks once for all of them

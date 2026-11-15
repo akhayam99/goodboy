@@ -1997,7 +1997,8 @@ session up again in Goodboy.
   **Every step**, **After the plan** or **Never** (it was Autonomy with Ask me,
   Balanced and Autopilot, and before that Autorun, Run on its own and When to
   ask). An agent's permission mode sits under the same chip on its page, with
-  **Ask first** as its asking word. The session's **Autopilot** keeps its name.
+  **Ask first** as its asking word. The session says the same words: its menu
+  row reads **Asks you: Every step** or **Asks you: Never** (it was Autopilot).
 - **Needs you** is the one name for anything that waits on you: the top bar
   group, the board column, the questions list and the Overview section above
   Next.

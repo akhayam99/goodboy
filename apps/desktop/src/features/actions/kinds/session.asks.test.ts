@@ -59,6 +59,9 @@ const idsNow = (): ReadonlyArray<string> =>
     (action) => action.id,
   );
 
+const labelOf = ({ id }: { readonly id: string }): string | undefined =>
+  SESSION_KIND.actions.find((action) => action.id === id)?.label;
+
 const env: ActionEnv = {
   getState: () => useAppStore.getState(),
   showToast: vi.fn(),
@@ -77,22 +80,27 @@ const runNow = async ({ id }: { readonly id: string }): Promise<void> => {
 const isAutoRun = (): boolean =>
   sessionById(useAppStore.getState().sessions, SESSION_ID)?.autoRun === true;
 
-describe('the session Autopilot verbs', () => {
-  it('turns the session autorun on from the menu, then offers to turn it off', async () => {
-    expect(idsNow()).toContain('session.autopilotOn');
-    expect(idsNow()).not.toContain('session.autopilotOff');
-
-    await runNow({ id: 'session.autopilotOn' });
-
-    expect(isAutoRun()).toBe(true);
-    expect(idsNow()).toContain('session.autopilotOff');
-    expect(idsNow()).not.toContain('session.autopilotOn');
+describe('the session Asks you verbs', () => {
+  it('say what they do', () => {
+    expect(labelOf({ id: 'session.asksNever' })).toBe('Start next steps without asking');
+    expect(labelOf({ id: 'session.asksEveryStep' })).toBe('Ask before starting each step');
   });
 
-  it('turns it back off, so the way back is always there', async () => {
-    await runNow({ id: 'session.autopilotOn' });
+  it('starts next steps without asking from the menu, then offers to ask again', async () => {
+    expect(idsNow()).toContain('session.asksNever');
+    expect(idsNow()).not.toContain('session.asksEveryStep');
 
-    await runNow({ id: 'session.autopilotOff' });
+    await runNow({ id: 'session.asksNever' });
+
+    expect(isAutoRun()).toBe(true);
+    expect(idsNow()).toContain('session.asksEveryStep');
+    expect(idsNow()).not.toContain('session.asksNever');
+  });
+
+  it('asks before each step again, so the way back is always there', async () => {
+    await runNow({ id: 'session.asksNever' });
+
+    await runNow({ id: 'session.asksEveryStep' });
 
     expect(isAutoRun()).toBe(false);
   });
@@ -109,7 +117,7 @@ describe('the session Autopilot verbs', () => {
       ],
     });
 
-    expect(idsNow()).not.toContain('session.autopilotOn');
-    expect(idsNow()).not.toContain('session.autopilotOff');
+    expect(idsNow()).not.toContain('session.asksNever');
+    expect(idsNow()).not.toContain('session.asksEveryStep');
   });
 });
