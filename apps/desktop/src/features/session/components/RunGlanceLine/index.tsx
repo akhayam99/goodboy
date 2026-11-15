@@ -149,7 +149,7 @@ export const RunGlanceLine = ({
         id={settingsId}
         data-open={isOpen}
         className={cn(
-          'min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-3 py-2',
+          'min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-3 py-3',
           isOpen ? 'flex' : 'hidden',
         )}
       >

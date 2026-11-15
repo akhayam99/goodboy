@@ -69,26 +69,9 @@ describe('sticky-surface', () => {
 describe('sticky-surface-head', () => {
   const body = utilityBody('sticky-surface-head');
 
-  it('is a quieter frost than the page row: more fill, less blur, no shadow', () => {
-    expect(body).toContain('color-mix(in oklab, var(--color-background) 86%, transparent)');
-    expect(body).toContain('backdrop-filter: blur(8px) saturate(1.2);');
-    expect(body).not.toMatch(/shadow|gradient/);
-    expect(fillAlphaOf({ name: 'sticky-surface-head' })).toBeGreaterThan(
-      fillAlphaOf({ name: 'sticky-surface' }),
-    );
-  });
-
-  it.each(THEME_NAMES)('keeps head text at 4.5:1 over any backdrop in %s', (theme) => {
-    const alpha = fillAlphaOf({ name: 'sticky-surface-head' });
-    const fill = rgbOf({ theme, name: 'background' });
-    const failures = backdropsOf({ theme }).flatMap((backdrop) => {
-      const frost = over({ top: fill, base: backdrop, alpha });
-      return PINNED_TEXT.map((name) => ({
-        name,
-        ratio: contrastRatio({ first: rgbOf({ theme, name }), second: frost }),
-      })).filter(({ ratio }) => ratio < BODY_FLOOR);
-    });
-    expect(failures).toEqual([]);
+  it('is the opaque sheet: no blur, no alpha, no shadow, so nothing reads through the head', () => {
+    expect(body).toContain('background-color: var(--color-background);');
+    expect(body).not.toMatch(/backdrop-filter|color-mix|transparent|shadow|gradient/);
   });
 });
 
@@ -102,7 +85,7 @@ describe('sticky-surface-subtle', () => {
   });
 });
 
-describe.each(['sticky-surface', 'sticky-surface-head', 'sticky-surface-subtle'])('%s', (name) => {
+describe.each(['sticky-surface', 'sticky-surface-subtle'])('%s', (name) => {
   it('turns opaque and drops the blur under reduced transparency', () => {
     const body = utilityBody(name);
 
