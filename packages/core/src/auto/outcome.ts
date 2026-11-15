@@ -64,8 +64,13 @@ const isMarkerWordAt = ({ text, at }: CharParams): boolean => {
   );
 };
 
+const ASCII_UPPER_RE = /[A-Z]/g;
+
+const asciiLowerOf = ({ text }: TextParams): string =>
+  text.replace(ASCII_UPPER_RE, (char) => char.toLowerCase());
+
 const markersOf = ({ text }: TextParams): ReadonlyArray<OutcomeMarker> => {
-  const lower = text.toLowerCase();
+  const lower = asciiLowerOf({ text });
   const markers: OutcomeMarker[] = [];
   let at = lower.indexOf(MARKER_NAME);
   while (at !== -1) {
