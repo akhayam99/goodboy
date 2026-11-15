@@ -4,15 +4,16 @@
 
 ## Lens surfaces
 
-- **One header grid for every page.** A 40px band (the crumb at the column's left,
-  Ask or Close at its right edge), then one 32px title row directly under it with the
+- **One header grid for every page.** An 8px inset, then one 32px title row with the
   page's only `h1` (`text-title`) and its actions at the right, the optional meta line
-  4px under the row, and the tabs on their own row under the meta line. The title's
-  centre is 56px under the pane top and its left edge is the column's content edge on
-  every page, studio and sub-page, the Board included (it keeps an empty 40px band
-  above its title). The row is fixed (`h-8`, centred, never wraps, a long title
-  truncates), no glyph ever indents the title, and the crumb names the structure while
-  the `h1` names the object. `frameGeometryOf` (`packages/ui`) is that table.
+  under the row, and the tabs on their own row under the meta line. The title's centre is
+  24px under the pane top and its left edge is the column's content edge on every page,
+  studio and sub-page. The row is fixed (`h-8`, centred, never wraps, a long title
+  truncates), and the crumbs name the structure while the `h1` names the object. A session
+  page draws this row in the session head, where a secondary page puts its back button
+  before the title ([session-rail.md](session-rail.md#session-page-tabs)); the blocks
+  of a page header sit `PANE_RHYTHM.block` apart. `frameGeometryOf` (`packages/ui`) is that
+  table.
 - **A lens you leave stays alive.** `SessionWorkspace` gives the lens panes to one
   `PaneSwap`, keyed by surface, and keeps the last three visited (`LENS_KEEP_ALIVE_CAP`)
   mounted under `Activity`: scroll, filters and open threads come back as they were, and
@@ -107,9 +108,9 @@
   second `Answer` on the timeline row.
 - **The focused issue page says where the issue lives.** The issue is an
   address (`external-task` target, `focusedExternalTask`): a card opens it
-  through `openExternalTaskLens`, so the crumbs read `Session › {provider}`.
+  through `openExternalTaskLens`, so the crumbs read `Overview › {provider}`.
   The rail owns the linked work list and its history fold. The page draws no back
-  button of its own. `Remove link from this session` sits in the record's `⋯`, asks first and
+  button of its own: the head's back button goes one crumb up. `Remove link from this session` sits in the record's `⋯`, asks first and
   leaves an Undo toast; once the unlink lands, the address is replaced by the
   Overview, unless the user already moved on. A failure keeps the record and its error. A `Placed on` property in the Links group shows
   `This session` or the branches; its value (`TaskPlacementMenu`) opens the
@@ -172,7 +173,7 @@ Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. W
   [Concepts](../concepts.md). Cmd+A is not in the shortcut table:
   the system reserves it. "Resolve" names the area, never a button. The page
   exists with or without a pull request: without one the primary is `Create PR`
-  (the creation form replaces the tab body, trail `Session › Branch ▾ › New
+  (the creation form replaces the tab body, crumbs `Overview › Branch ▾ › New
 pull request`) and Comments lists the session's notes. Every door to a pull
   request lands here: the worktree row chip, the board card badge, the context
   strip and the Checks chip. Everything Comments shows comes from one durable

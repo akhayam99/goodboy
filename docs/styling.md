@@ -483,8 +483,7 @@ transcript or a diff, asks for `scroll="self"`.
 
 A Session page reads as one centred column: every child, banner, card and
 footer sits on the same edges. Only prose keeps the 720px measure, aligned left
-inside the column. Tables, code and cards take the whole column. An Agent page is
-the exception: it reads in the 880px reading column, header to composer.
+inside the column. Tables, code and cards take the whole column.
 
 An agent conversation sits in the 880px reading column, with no exception: the session
 head, the transcript, the rows above it and its composer share one centred column

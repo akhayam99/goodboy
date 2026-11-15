@@ -236,13 +236,15 @@ while the menu is open. Colour changes take `--duration-quick` on `--ease-enter`
 moves.
 
 **Above the title.** A studio page below a door names its place with a `Trail`
-handed to its header through `PageTrailContext`; a session page hands one quiet
-`‹ Back to X` row instead (`SessionBackRow`, one entry, the real parent).
-`PageHeader` draws it first, a 24px line (`data-slot="page-trail"`) above the
+handed to its header through `PageTrailContext`. `PageHeader` draws it first, a
+24px line (`data-slot="page-trail"`) above the
 title row in the header's 8px gap, on the title's left edge, with no band,
 border or background. `PaneShell` clears the context for its body, so only the
 page's own header draws it. The last trail crumb names the kind and carries
-`aria-current="page"`; a link crumb may carry a `tooltip` and a `shortcut`.
+`aria-current="page"`; a link crumb may carry a `tooltip` and a `shortcut`. A
+session page has no trail and no back row: its head draws a back button before
+the title and the crumbs under it
+([session-rail.md](../../../docs/navigation/session-rail.md#crumbs)).
 
 **Crumb menus.** Every trail segment with siblings opens one `CrumbMenu`: a
 `floating` popover, radius 8, `border-soft`, 4px padding, a 26px heading
