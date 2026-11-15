@@ -119,13 +119,12 @@ export const ChangeTree = ({
   const stage = useElementWidth();
   const railWidth = stage.width ?? 0;
   const hasDelta = railWidth >= DELTA_MIN_RAIL_PX;
-  const viewportRef = useRef<HTMLDivElement | null>(null);
   const [cursorId, setCursorId] = useState<string | null>(null);
   const [isTreeFocused, setIsTreeFocused] = useState(false);
   useEscapeLayer(onLeave, isTreeFocused);
   const layout = useMemo(() => layoutRows({ rows, heightOf: rowHeightOf }), [rows]);
   const isWindowed = rows.length > WINDOW_MIN_ROWS;
-  const { scrollTop, viewport } = useRowWindow({ viewportRef, isWindowed });
+  const { viewportRef, scrollTop, viewport } = useRowWindow({ isWindowed });
   const { start, end } = isWindowed
     ? windowOf({ layout, count: rows.length, scrollTop, viewport })
     : { start: 0, end: rows.length };
@@ -144,7 +143,7 @@ export const ChangeTree = ({
     (id: string) => {
       revealTreeRow({ viewportRef, isWindowed, rows, layout, id, domId: domIdOf({ id }) });
     },
-    [isWindowed, layout, rows],
+    [isWindowed, layout, rows, viewportRef],
   );
 
   const revealRef = useRef(reveal);

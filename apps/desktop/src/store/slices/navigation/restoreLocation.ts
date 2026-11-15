@@ -4,6 +4,7 @@ import { applyLocation } from './applyLocation';
 import { canonicalLocation } from './canonicalLocation';
 import { currentStack, stackKey } from './currentStack';
 import { replaceTop } from './history';
+import { withKnownMount } from './withKnownMount';
 import { withoutRemovedPages } from './withoutRemovedPages';
 import type { GetFn, Location, SetFn } from './types';
 
@@ -44,7 +45,7 @@ export const restoreLocation = (set: SetFn, get: GetFn) => {
       }
     }
     const state = get();
-    const kept = placeStillThere({ get, location: cleaned });
+    const kept = withKnownMount({ state, location: placeStillThere({ get, location: cleaned }) });
     const canonical = canonicalLocation({ state, request: kept.place });
     const next: Location = {
       ...kept,

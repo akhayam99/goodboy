@@ -15,8 +15,10 @@ import { create } from 'zustand';
 import {
   brandId,
   type AgentId,
+  type MountId,
   type ProjectId,
   type SessionId,
+  type SessionProjectMount,
   type WorkspaceId,
 } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
@@ -25,7 +27,7 @@ import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from '../../sto
 import { createDrawerSlice } from '../drawer';
 import { createNavigationSlice } from '.';
 import { agentPlace, sessionPlace } from './place';
-import { EMPTY_FOCUS } from './types';
+import { EMPTY_FOCUS, type Location } from './types';
 import { captureWindowLocation } from './captureWindowLocation';
 import { parseLocation } from '../../../features/workspace/windowLayout';
 
@@ -143,5 +145,94 @@ describe('the rest of a reload', () => {
     const stack = store.getState().navigation[WS];
     expect(store.getState().activeLens[S1]).toBe('workflows');
     expect(stack?.entries[stack.index]?.focus.scroll).toEqual({ runs: 3 });
+  });
+});
+
+const LEDGER = '/work/ledger-core';
+const NOTIFY = '/work/notify-relay';
+
+type MountParams = {
+  readonly id: string;
+  readonly path: string;
+};
+
+const mountOn = ({ id, path }: MountParams): SessionProjectMount => ({
+  mountId: brandId<MountId>({ value: id }),
+  sessionId: S1,
+  projectId: brandId<ProjectId>({ value: `project-${id}` }),
+  mountName: id,
+  worktreePath: path,
+  lastWorktreePath: null,
+  repoRoot: path,
+  branch: 'feature',
+  baseBranch: 'main',
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+});
+
+type FileParams = {
+  readonly sessionDir: string;
+};
+
+const savedExploreFile = ({ sessionDir }: FileParams): Location =>
+  JSON.parse(
+    JSON.stringify({
+      workspaceId: WS,
+      place: {
+        at: 'session',
+        sessionId: S1,
+        view: { lens: 'workflows', agentId: null, target: null },
+      },
+      studio: null,
+      focus: {
+        drawer: {
+          kind: 'explore-file',
+          sessionId: S1,
+          payload: {
+            sessionDir,
+            entry: { relPath: 'src/config.ts', name: 'config.ts', isDir: false },
+            from: 'explore',
+          },
+        },
+        scroll: {},
+      },
+    }),
+  );
+
+const twoProjectStore = () => {
+  const store = restoreTestStore();
+  store.setState({
+    sessionProjectMounts: {
+      [S1]: [
+        mountOn({ id: 'ledger-core', path: LEDGER }),
+        mountOn({ id: 'notify-relay', path: NOTIFY }),
+      ],
+    },
+    sessionActiveMount: { [S1]: brandId<MountId>({ value: 'ledger-core' }) },
+  });
+  return store;
+};
+
+describe('a file saved from the older Explore tree', () => {
+  it('reopens under the project it was read in, not the open one', async () => {
+    const store = twoProjectStore();
+
+    await store.getState().restoreLocation({ location: savedExploreFile({ sessionDir: NOTIFY }) });
+
+    expect(store.getState().diffMountPath[S1]).toBe(NOTIFY);
+    expect(store.getState().diffFocus[S1]).toEqual({ kind: 'branch', path: 'src/config.ts' });
+  });
+
+  it('opens no file of another project when its own project is gone', async () => {
+    const store = twoProjectStore();
+
+    await store
+      .getState()
+      .restoreLocation({ location: savedExploreFile({ sessionDir: '/work/acme-gone' }) });
+
+    expect(store.getState().diffMountPath[S1]).toBe(LEDGER);
+    expect(store.getState().diffFocus[S1] ?? null).toBeNull();
   });
 });

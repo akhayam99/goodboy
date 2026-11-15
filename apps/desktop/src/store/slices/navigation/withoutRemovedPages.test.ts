@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type WorkflowRunId } from '@goodboy/types';
 import { nextSessionId } from '@goodboy/types/testing';
+import { CONTEXT_ROWS } from '../contextDrawer/contextRows';
 import { PLACE_ROWS } from './placeRows';
 import type { Location } from './types';
 import { withoutRemovedPages } from './withoutRemovedPages';
@@ -349,5 +350,26 @@ describe('retired Context and provider addresses', () => {
     expect(next.place).toMatchObject({ view: { lens: 'context' } });
     expect(next.focus.drawer).toBeNull();
     expect(next.focus.returnRows).toMatchObject({ [PLACE_ROWS.contextSection]: 'explanations' });
+  });
+
+  it('keeps the section and the history view of a saved Context panel apart', () => {
+    const location = storedLevel({
+      lens: 'agents',
+      agentId: null,
+      target: null,
+      selection: {},
+      drawer: {
+        kind: 'context',
+        sessionId: SESSION_ID,
+        payload: { section: 'summary', view: 'versions' },
+      },
+    });
+    const next = withoutRemovedPages({ location });
+
+    expect(next.place).toMatchObject({ view: { lens: 'context' } });
+    expect(next.focus.returnRows).toMatchObject({
+      [CONTEXT_ROWS.section]: 'summary',
+      [CONTEXT_ROWS.view]: 'versions',
+    });
   });
 });

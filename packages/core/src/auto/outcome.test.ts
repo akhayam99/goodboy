@@ -69,6 +69,13 @@ describe('reading the outcome line of a message', () => {
     expect(stripOutcomeLine({ text }).length).toBe(50_000 - 6);
   });
 
+  it('keeps marker offsets when the text holds a letter whose lower case is longer', () => {
+    const text = '<<outcome>>İ fixed<</outcome>>\nDetails';
+    expect(parseOutcomeLine({ text })).toBe('İ fixed');
+    expect(stripOutcomeLine({ text })).toBe('Details');
+    expect(parseOutcomeLine({ text: 'İİ <<OUTCOME>>Done<</Outcome>>' })).toBe('Done');
+  });
+
   it('flattens lines and caps the text at 100 characters', () => {
     const long = `Updated the retry policy in payments-api ${'and checked it '.repeat(12)}`;
     const line = parseOutcomeLine({ text: `<<outcome>>${long}<</outcome>>` });
