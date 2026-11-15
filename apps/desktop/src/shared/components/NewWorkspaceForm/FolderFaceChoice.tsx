@@ -90,8 +90,8 @@ export const FolderFaceChoice = ({ folder, draft, isBusy }: Props) => {
               {folder.name} holds {large.size}
               {large.media === null ? '' : `, mostly ${large.media}`}.
             </span>{' '}
-            Goodboy keeps versions of files under 15 MB. Larger files are not saved, so a restore
-            cannot bring them back.
+            Goodboy keeps versions of files under 15 MB. Larger files aren&apos;t saved, so a
+            restore can&apos;t recover them.
           </span>
         </p>
       )}
