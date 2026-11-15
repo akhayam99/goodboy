@@ -331,7 +331,7 @@ describe('StoragePage', () => {
     };
     render(<StoragePage />);
 
-    screen.getByText('Brought back 1 folder.');
+    screen.getByText('Restored 1 folder.');
     screen.getByText(/a folder already exists there/);
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(state.undoStorageRemoval).toHaveBeenCalledTimes(1);

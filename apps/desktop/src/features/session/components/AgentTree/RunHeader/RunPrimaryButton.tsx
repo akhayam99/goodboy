@@ -117,7 +117,7 @@ export const RunPrimaryButton = ({ session, view, kind, label, variant }: Props)
     },
     restore: {
       icon: Undo2,
-      hint: 'Bring this run back',
+      hint: 'Restore this run',
       failure: "Couldn't restore the run",
       run: () => restoreWorkflow(sessionId, runId),
     },

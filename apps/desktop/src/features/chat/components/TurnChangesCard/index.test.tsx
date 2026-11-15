@@ -119,7 +119,7 @@ describe('TurnChangesCard', () => {
 
     expect(await screen.findByText('Restored reply 1.')).toBeDefined();
     await waitFor(() => expect(screen.getAllByText('restored')).toHaveLength(2));
-    fireEvent.click(screen.getByRole('button', { name: 'Bring it back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo restore' }));
     await waitFor(() => expect(screen.queryAllByText('restored')).toHaveLength(0));
   });
 

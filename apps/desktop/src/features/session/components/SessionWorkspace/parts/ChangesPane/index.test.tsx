@@ -350,9 +350,9 @@ describe('ChangesPane', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Undo changes from this reply/ }));
 
-    expect(await screen.findByText('Restored reply 2.')).toBeDefined();
+    const band = (await screen.findByText('Restored reply 2.')).closest('[role="status"]');
     await waitFor(() => expect(row({ name: 'faq.md, reply 2' }).textContent).toContain('Restored'));
-    fireEvent.click(screen.getByRole('button', { name: 'Bring it back' }));
+    fireEvent.click(within(band as HTMLElement).getByRole('button', { name: 'Undo restore' }));
     await waitFor(() => expect(row({ name: 'faq.md, reply 2' }).textContent).toContain('+1'));
   });
 });

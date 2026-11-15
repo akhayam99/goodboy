@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { ProviderRunId, SessionId } from '@goodboy/types';
 import { Button, formatError, ICON_SIZE, Notice, type NoticeTone } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 import {
   historyCandidatesOf,
@@ -150,7 +151,7 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
           disabled={isBusy}
           onClick={() => run({ target: undoTargetOf({ outcome }), isForced: false })}
         >
-          Bring it back
+          {NAMES.undoRestore}
         </Button>
       );
     }

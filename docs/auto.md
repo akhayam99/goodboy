@@ -389,8 +389,9 @@ writing to it reopens it to **Deciding**.
   reads. The button uses `useAutoPlanApproval`, the same as the plan view;
   approving sends the approval to the Auto root, so the run stays inside Auto.
   If the approval is saved but Auto was not told, the plan view keeps open with
-  **Tell Auto**, and the dock that approved it reads "Plan v1 approved, Auto did
-  not hear it" with the same **Tell Auto**: it sends "Approved plan v1." again.
+  **Resend approval**, and the dock that approved it reads "Plan v1 approved.
+  Couldn't send it to Auto." with the same **Resend approval**: it sends
+  "Approved plan v1." again.
   When two plans exist the dock shows the one that waits for your OK, else the
   newest (`dockPlanRowOf`). An approved plan is the
   artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the line does
@@ -559,7 +560,7 @@ writing to it reopens it to **Deciding**.
   came back (summary, files changed, checks with their source, open questions,
   `DelegationResult`: the outcome line first, where a red check or a failed push replaces the
   child's own sentence; then chips for files changed, the checks verdict, each failing check,
-  **Retry checks**, the push state with **Retry push** and **Put back**, and each
+  **Retry checks**, the push state with **Retry push** and **Undo force push**, and each
   open question, four at most then **+N**; last a closed **Earlier in this reply, N lines** with the summary
   as markdown, open only when the outcome is red, any artifact block dropped by
   `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
@@ -845,7 +846,7 @@ colour (`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side borde
 - An alternative declines the primary first, then sends the Auto root one
   structured message: `Next step: <role>` on the first line, the hint after it.
   If the decline lost, no message is sent. If the message fails, the card stays as
-  "Declined. Auto was not told." with **Tell Auto**, which sends only the message.
+  "Declined. Couldn't send it to Auto." with **Resend answer**, which sends only the message.
 - **Decline** declines and tells nothing.
 - A failed start keeps the pick and the hint, shows the reason in the card and
   reads **Retry** on the same delegation. A `lost` answer reads "No longer open".
@@ -1908,7 +1909,7 @@ no migration, outcome still `completed`:
   (`history_backup_create`, kept stamp so the History prune never drops it), and a second one of
   the start head when it differs; a backup that cannot be kept (the online commit is not in this
   copy) holds with "Fetch the branch and try again". A branch that was not online at the start gets
-  no backup and no **Put back**. It refuses work whose tree differs from the start
+  no backup and no **Undo force push**. It refuses work whose tree differs from the start
   (`readCommittedFiles` start to sha) unless `changesContent` is set. It then waits as
   `awaiting_confirm`: one **Force push** / **Don't push** row per delegate batch
   (`PublishRunRow` in `AutoDelegationLines`, rows from `publishRowsOf`), one `publish` bridge call
@@ -1922,7 +1923,7 @@ no migration, outcome still `completed`:
   `settleRow` writes it again once, then writes a retryable failure "The push ran but its result
   was not saved. Retry the push to check the branch online" so the card never stays on
   **Pushing**. Then one line per branch from `publishLineOf` (the same words and tone as the
-  `DelegationResult` chip): pushed with **Put back**, "Not pushed" when declined, put back, or a
+  `DelegationResult` chip): pushed with **Undo force push**, "Not pushed" when declined, undone, or a
   danger notice with the reason and **Retry push**. A failed row raises no toast; a refused answer
   whose saved record no longer waits for that act (`isPublishOpenOf`) is quiet too, because the
   reloaded card already shows the state. That check reads the store after `loadAutoTrees`, so a
@@ -1943,11 +1944,11 @@ no migration, outcome still `completed`:
 - `publishAct` (`confirm`, `decline`, `retry`, `put_back`) runs in the main window through one
   keyed queue per worktree, writes with `patchAutoDelegationPublishStatement` and the attempt twin
   guarded by generation, and answers one row per branch, so two of four branches can succeed.
-  **Put back** pushes the backed up online sha (`leaseSha`) with the lease on the pushed sha first;
+  **Undo force push** pushes the backed up online sha (`leaseSha`) with the lease on the pushed sha first;
   a lost lease, or a failure whose read back does not show the backup online, changes nothing online
-  or here and keeps **Put back** on offer. Only after origin is back does it move the local
+  or here and keeps **Undo force push** on offer. Only after origin is back does it move the local
   branch with the History restore, and only when the head is still the pushed sha; otherwise the card
-  reads "Put back" with "The local branch was left as it is: " and the reason.
+  reads "Force push undone" with "The local branch was left as it is: " and the reason.
 - Auto reads the line in the digest ("Pushed ...", "Not pushed: ...", "Waiting for you to confirm
   ..."). It is not sent again when a later click changes it.
 

@@ -55,14 +55,8 @@ export const PublishResultLine = ({ row, isBusy, onRetry, onPutBack, onPushNow }
         </Button>
       ) : null}
       {line.canPutBack ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          isBusy={isBusy}
-          busyLabel="Putting back"
-          onClick={onPutBack}
-        >
-          Put back
+        <Button variant="ghost" size="sm" isBusy={isBusy} busyLabel="Undoing" onClick={onPutBack}>
+          Undo force push
         </Button>
       ) : null}
     </div>

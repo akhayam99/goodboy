@@ -67,10 +67,10 @@ describe('what the card and the digest say about a publish', () => {
       'Waiting for you to confirm the push of harborline/fix-ledger at a1b2c3d',
     );
     expect(publishTextOf({ publish: aPublish({ state: 'pushed' }) })).toBe(
-      'Force pushed harborline/fix-ledger at a1b2c3d, the earlier online version is kept as a backup',
+      'Force pushed harborline/fix-ledger at a1b2c3d, the earlier origin version is kept as a backup',
     );
     expect(publishTextOf({ publish: aPublish({ state: 'pushed', backupRef: null }) })).toBe(
-      'Force pushed harborline/fix-ledger at a1b2c3d, it was not online before',
+      "Force pushed harborline/fix-ledger at a1b2c3d, it wasn't on origin before",
     );
     expect(publishTextOf({ publish: aPublish({ state: 'pushed', mode: 'push' }) })).toBe(
       'Pushed harborline/fix-ledger at a1b2c3d',
@@ -82,7 +82,7 @@ describe('what the card and the digest say about a publish', () => {
       'Not pushed: you declined the push of harborline/fix-ledger',
     );
     expect(publishTextOf({ publish: aPublish({ state: 'put_back' }) })).toBe(
-      'Put back: harborline/fix-ledger is online as it was when the agent started',
+      'Force push undone: origin has harborline/fix-ledger as it was before the agent started',
     );
     expect(
       publishTextOf({ publish: aPublish({ state: 'failed', message: 'the checks are red' }) }),

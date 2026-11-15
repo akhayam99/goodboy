@@ -22,6 +22,13 @@ const BANNED_PHRASES: ReadonlyArray<string> = [
   'Fold into',
   'fold it in',
   'Nothing below to combine with',
+  'Bring it back',
+  'Bring this run back',
+  'Brought back',
+  'Put back',
+  'Putting back',
+  'did not hear it',
+  'Telling Auto',
 ];
 
 const BANNED_LABELS: ReadonlyArray<string> = ['Keep', 'Separate', 'Stop keeping', 'Remove'];

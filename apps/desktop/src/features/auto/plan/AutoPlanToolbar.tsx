@@ -20,16 +20,16 @@ export const AutoPlanToolbar = ({ model }: Props) => {
       {model.isToldFailed ? (
         <>
           <span className="min-w-0 truncate text-meta text-muted-foreground">
-            Approved, Auto did not hear it
+            Approved. Couldn&apos;t send it to Auto.
           </span>
           <Button
             size="sm"
             disabled={model.isBusy}
             isBusy={model.isBusy}
-            busyLabel="Telling Auto"
+            busyLabel="Sending"
             onClick={() => void model.tellAuto()}
           >
-            Tell Auto
+            Resend approval
           </Button>
         </>
       ) : null}

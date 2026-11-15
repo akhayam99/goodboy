@@ -48,14 +48,14 @@ export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntol
       </div>
       {untold !== null ? (
         <FormActions error={model.error}>
-          <p className="min-w-0 flex-1 text-muted-foreground">{`Declined. ${flow} was not told.`}</p>
+          <p className="min-w-0 flex-1 text-muted-foreground">{`Declined. Couldn't send it to ${flow}.`}</p>
           <Button
             size="sm"
             isBusy={model.isBusy}
-            busyLabel={`Telling ${flow}`}
+            busyLabel="Sending"
             onClick={() => void model.tell()}
           >
-            {`Tell ${flow}`}
+            Resend answer
           </Button>
         </FormActions>
       ) : model.lostNote !== null ? (

@@ -843,7 +843,7 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
 
     await vi.waitFor(() =>
       expect(errorTexts({ agentId })).toContain(
-        "Auto didn't get word that this continuation didn't start. Tell Auto in its chat what happened.",
+        "Couldn't tell Auto this continuation didn't start. Say what happened in its chat.",
       ),
     );
     expect(spawns()).toEqual([]);
