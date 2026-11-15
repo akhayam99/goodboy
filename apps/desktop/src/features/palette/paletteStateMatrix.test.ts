@@ -57,7 +57,6 @@ const AGENT: AgentFacts = {
   isClosedByUser: false,
   isWorkflowStep: false,
   hasMount: true,
-  lastReply: null,
   provider: 'anthropic',
   modelKey: null,
   hiddenModels: null,
