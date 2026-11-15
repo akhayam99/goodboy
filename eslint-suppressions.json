@@ -4519,11 +4519,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/reports/components/ReportStudio/ReportProvenanceRow.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/reports/components/ReportStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

@@ -13,7 +13,11 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { brandId } from '@goodboy/types';
 import type { LensKind } from '../../../store';
+import type { TerminalTabId } from '../../../shared/types/terminal';
+import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
+import { selectDockDrawer } from '../../../store/slices/drawer/selectDockDrawer';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../test/fakeResizeObserver';
 import {
@@ -194,6 +198,39 @@ describe('the session head', () => {
     expect(ask?.getAttribute('aria-pressed')).toBe('true');
     act(() => ask?.click());
     expect(useAppStore.getState().drawer).toBeNull();
+  });
+
+  it.each([
+    { order: 'Ask before the Terminal', isAskFirst: true },
+    { order: 'the Terminal before Ask', isAskFirst: false },
+  ])('presses Ask and closes only Ask beside the dock, opened $order', ({ isAskFirst }) => {
+    go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
+    renderWorkspace();
+    const ask = document.querySelector<HTMLElement>('[data-session-action="ask"]');
+    const openTerminal = () =>
+      useAppStore.getState().openDrawer({
+        kind: 'terminal',
+        sessionId: FLOW_SESSION_ID,
+        payload: { terminalId: brandId<TerminalTabId>({ value: 'term-ledger' }) },
+      });
+
+    act(() => {
+      if (isAskFirst) {
+        useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID });
+        openTerminal();
+        return;
+      }
+      openTerminal();
+      useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID });
+    });
+
+    expect(selectDetailDrawer({ state: useAppStore.getState() })?.kind).toBe('ask');
+    expect(ask?.getAttribute('aria-pressed')).toBe('true');
+    act(() => ask?.click());
+
+    expect(selectDetailDrawer({ state: useAppStore.getState() })).toBeNull();
+    expect(selectDockDrawer({ state: useAppStore.getState() })?.kind).toBe('terminal');
+    expect(ask?.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('replaces the tabs with Session, Artifacts and the item on an artifact', async () => {
