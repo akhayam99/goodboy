@@ -323,11 +323,9 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
-- **Providers names its scope in the page header.** Every page of
-  the scope (Models and each provider) carries the scope as the meta line of
-  its title: the workspace name when one is open, `All workspaces` when there
-  is none (`ProviderSettingsScope` passes `scopeLabel`). The name
-  appears once per page.
+- **Models names its workspace in the page header.** The Models page of This
+  workspace carries the workspace name as the meta line of its title
+  (`DefaultsPanel` takes `scopeLabel`). Provider pages live in Connections.
 - **Workspace settings is one page per area, each part in a card.** A
   workspace page carries the page title and one line of
   help; every part is a `Band` with one heading style (eyebrow, icon, hint
@@ -480,9 +478,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   calls it once per studio and hands the result to the rail and the home, and
   a test mounts the home on the strict `invoke` mock to keep it free of
   commands and loads at render. A dot appears only
-  when something needs doing: warning on Providers when a connected
-  CLI is too old for a model it serves or no provider is connected
-  (`selectProviderAttention`, with the reason as the dot's label), info on
+  when something needs doing: info on
   Updates while an app update is ready (`updatesText`), info on Storage with "N GB can go" as
   its label once clean idle folders pass 10 GB (warning when the disk has
   under 10 GB free and at least 1 GB can go, `storageAttention`),
@@ -491,9 +487,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   worse of its two dots, `appAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
   `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). A dot means only "needs you": a tool whose health is bad shows a
-  warning or danger dot named by its reason (`toolAttention`), and a connected,
-  healthy provider or tool shows none (no green dot for connected). No rail row is red: the destructive actions sit at the
+  workspace). A dot means only "needs you", never "connected"; provider and
+  tool health lives on their Connections tiles and the Connections door. No rail row is red: the destructive actions sit at the
   bottom of their page, Reset (Delete all data) at the end of Backup and
   Disconnect at the end of Projects, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between

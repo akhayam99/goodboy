@@ -475,7 +475,7 @@ The top bar says what is happening now. The column takes you to places.
 Preferences live in Settings. Each item has one home; anything else that shows
 it is a signal that links there. Every chip on the right opens the home of the
 number it shows: Now ends on Monitoring, Usage opens the Providers menu and
-from it Settings > Providers, Spend opens Impact on its Spend tab. The bell
+from it a provider page in Connections, Spend opens Impact on its Spend tab. The bell
 opens its own popover.
 
 On macOS the window has no native title bar: the traffic lights sit inside the
@@ -913,7 +913,7 @@ a top bar icon; it opens its Overview
 tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
 open its Spend tab. The **Providers menu** is not a door to the Providers and
 models page: it changes things in place (`app/components/ProvidersMenu`, opened
-from the Limits strip). Settings > Providers is the one home for
+from the Limits strip). Connections is the one home for
 providers and usage; the menu holds no usage figure and sends there with
 **Manage providers** (a door). It lists the same `ProviderPolicyList` as the
 Models row When a provider is out, writing through the same
@@ -921,7 +921,7 @@ Models row When a provider is out, writing through the same
 then Manage providers. It reads the cached providers and never refreshes them
 on open. What's new is a tab of Help and a palette row, so it earns no
 door here. The connected tools have no glyph strip any more: Tasks' Source
-filter is the tool door, and Connect a tool lives in Settings > Integrations.
+filter is the tool door, and Connect a tool lives in Connections.
 
 - **The release notice answers "have you read the notes for what you're
   running"**, not "has a new release been published". After an update, one

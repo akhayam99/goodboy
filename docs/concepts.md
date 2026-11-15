@@ -1613,7 +1613,7 @@ A connection to a tool lives on the **workspace**. Goodboy calls it a
   Goodboy uses it before the workspace binding.
 - GitHub works the same way. A workspace with no GitHub key of its own uses
   the key for all workspaces, then your `gh` CLI login. Both are set in one
-  place, **Settings > Integrations > GitHub**, in an **All workspaces** row and a
+  place, **Connections > GitHub**, in an **All workspaces** row and a
   **This workspace** row. App settings have no GitHub section.
 - Secrets stay inside Goodboy. Agents reach your tools only through the
   [query bridge](query-bridge.md).
@@ -1783,8 +1783,8 @@ selected project stays listed even at zero, and a project's count is the
 records tied to it. A GitHub or GitLab record belongs to the project whose
 remote (`Project.remoteUrl`) is its repo. A tracker record never belongs to a
 project; its row shows the tracker's own project or team instead. A Sentry error
-belongs to every project linked to its Sentry project in Settings, Integrations,
-Sentry, where each project can read several Sentry projects and one Sentry
+belongs to every project linked to its Sentry project in Connections, Sentry,
+where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
 suggested from Sentry code mappings and wait for your Link. Tasks reads the
 first page of every linked Sentry project besides the connected one, in one
@@ -1992,7 +1992,7 @@ session up again in Goodboy.
   `secondaryHeaders.test.ts` keep every secondary page on that header.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
-  request. Tools connect from Settings > Integrations.
+  request. Tools connect from Connections.
 - **Asks you** is the setting that decides how often a run stops for you:
   **Every step**, **After the plan** or **Never** (it was Autonomy with Ask me,
   Balanced and Autopilot, and before that Autorun, Run on its own and When to

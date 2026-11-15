@@ -182,10 +182,10 @@ keeps its own copy of the rules (`attachWorkflowToSession` copies them at start)
   close (a blank amount is no limit), and what happens at the limit, Pause or
   Warn only, applied on click
 - **Models** (`DefaultModelsSetting`): the policy in one line ("Claude, Codex ·
-  Cursor as backup") and **Open Providers**. It holds no switch and
+  Cursor as backup") and **Open Models**. It holds no switch and
   lists no provider: the order and the **Send new steps to the provider with
-  the most room** option live in Settings > Providers, the one home
-  of the provider policy
+  the most room** option live in Settings > This workspace > Models, the one
+  home of the provider policy
 - No separate Auto limit: a limit stored under the old Auto limit
   (`auto.treeLimitUsd`) is folded into the **Limit** above once at boot, for
   every workspace (`foldAutoLimitsAtBoot`, `foldAutoLimitIntoRunDefaults`). The
@@ -249,7 +249,7 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
 with it off (m217); new workspaces start with it on. The switch is the
 **Send new steps to the provider with the most room** option of the policy popover in
-Settings > Providers, with one sentence under it: with it off, "New
+Settings > This workspace > Models, with one sentence under it: with it off, "New
 steps follow the provider order."; with it on and a provider passed, where the
 next step goes and how full the passed one is, and otherwise that steps of one
 run can land on different providers (`nextStepPick`, `spreadSentence`).

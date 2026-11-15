@@ -332,8 +332,8 @@ header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 A provider tile in **Connections** opens its page there, under the trail
 `Connections > Claude` (Esc goes back up). A provider in the Not set up row opens the
-same page on its install or sign in step. **Settings > Providers** shows the same page
-until that folder moves to Connections. The page has four groups, in the same order
+same page on its install or sign in step. Settings has no provider pages; its rail ends
+with a row that opens Connections. The page has four groups, in the same order
 for every provider: **Usage**, **Models in the picker**, **Account** and a closed
 **What works with Claude** row that holds the permissions table and says how many
 modes work fully (`4 of 6 work fully`). The head carries the glyph, the name, one
@@ -637,8 +637,8 @@ and the helper tasks), while an explicit pick, an agent pin or a retry still run
 request made because something just changed (`isFresh`: connect, sign-out, Check again)
 queues exactly one more run. Every run carries a sequence number and a result older than
 the last applied one is dropped. Triggers: boot, focus after 5 minutes (60 seconds while a
-provider is not healthy), **Check again**, connect and sign-out, and a click in the
-Settings rail only when the last confirmation is older than 60 seconds. A first "not
+provider is not healthy), **Check again**, connect and sign-out, and opening a provider
+page only when the last confirmation is older than 60 seconds. A first "not
 logged in" answer asks again by itself 12 seconds later, so the second answer does not
 wait for the next focus. Each standing
 change writes one line to the app log through `log_provider_standing`:

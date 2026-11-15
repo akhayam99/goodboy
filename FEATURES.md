@@ -16,7 +16,7 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 - **Your agents**: Goodboy runs the coding agents already on this Mac, and one ready agent is enough.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
 - **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.
-- **Integrations**: Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page, and see the account behind each.
+- **Integrations**: Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from Connections, and see the account behind each.
 
 [More on set up](docs/features/setup.md)
 
