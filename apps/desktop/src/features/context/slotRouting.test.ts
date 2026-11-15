@@ -4,7 +4,7 @@ import { SLOT_KEYS, type SlotKey } from '@goodboy/core/context';
 import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import type { AgentRole, ContextSlot } from '@goodboy/types';
 import { buildContextPreamble } from '../../store/slices/turn/preamble';
-import { ROLE_SLOTS, rolesReadingSlot } from './slotRouting';
+import { ROLE_SLOTS } from './slotRouting';
 
 const ROLES = Object.keys(ROLE_REGISTRY) as ReadonlyArray<AgentRole>;
 
@@ -38,14 +38,5 @@ describe('ROLE_SLOTS', () => {
     expect(preambleFor({ role: 'reviewer' })).toContain('decisions value for Harborline');
     expect(preambleFor({ role: 'scout' })).not.toContain('decisions value for Harborline');
     expect(ROLE_SLOTS.scout).toEqual(['goal', 'last_output_summary']);
-  });
-
-  it('names the roles that read a slot', () => {
-    expect(rolesReadingSlot({ slot: 'decisions' })).not.toContain('scout');
-    expect(rolesReadingSlot({ slot: 'decisions' })).not.toContain('docs');
-    expect(rolesReadingSlot({ slot: 'decisions' })).toContain('reviewer');
-    expect([...rolesReadingSlot({ slot: 'last_output_summary' })].sort()).toEqual(
-      ROLES.filter((role) => role !== 'resolver').sort(),
-    );
   });
 });

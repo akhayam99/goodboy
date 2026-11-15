@@ -52,7 +52,12 @@ const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
 const AGENT = brandId<AgentId>({ value: 'agent-1' });
 const SRC = join(__dirname, '..', '..');
-const RETIRED_DRAWER_KINDS: ReadonlyArray<string> = ['context', 'explore'];
+const RETIRED_DRAWER_KINDS: ReadonlyArray<string> = [
+  'context',
+  'explore',
+  'session-log',
+  'spawned',
+];
 
 const FORMER_KEYS = {
   sessionSidebarCollapsed: 'goodboy:sessions-sidebar-collapsed',
@@ -157,9 +162,9 @@ describe('layouts saved by the previous build', () => {
 
     for (const entry of retired) {
       const state = await restoredFrom({ entry });
-      expect(entry.foldedLens).not.toBeNull();
+      expect(entry.isFolded).toBe(true);
       expect(state.drawer).toBeNull();
-      expect(state.activeLens[SESSION]).toBe(entry.foldedLens);
+      expect(state.activeLens[SESSION] ?? null).toBe(entry.foldedLens);
     }
   });
 
@@ -221,9 +226,9 @@ describe('layouts saved by the previous build', () => {
       const state = await restoredFrom({ entry });
 
       expect(state.currentSessionId).toBe(SESSION);
-      if (entry.foldedLens !== null) {
+      if (entry.isFolded) {
         expect(state.drawer).toBeNull();
-        expect(state.activeLens[SESSION]).toBe(entry.foldedLens);
+        expect(state.activeLens[SESSION] ?? null).toBe(entry.foldedLens);
         return;
       }
       expect(state.drawer).toEqual(entry.expected);

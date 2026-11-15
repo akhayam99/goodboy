@@ -47,9 +47,6 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
     case 'scripts':
       openBranchTerminal({ sessionId, mountPath: null });
       return;
-    case 'spawned':
-      state.openDrawer({ kind: 'spawned', sessionId, payload: null });
-      return;
     default: {
       const exhaustive: never = pane;
       return exhaustive;

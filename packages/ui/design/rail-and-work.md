@@ -365,7 +365,7 @@ pointer: hovering it for 450ms marks it seen when the pointer leaves, never
 while it is still on the row.
 `row-interactive-is-shared.test.ts` holds the listed rows to the shared string.
 
-A tree indents by one step. `treeIndentPx({ depth })` (12px a level on an 8px base) is the only source: the Changes tree and the All files tree set their row padding with it, so a user moving between them sees the same indent. Arrow keys in the Changes and Files trees are one pure function, `treeKeyMove` in `shared/utils`: Down and Up move a row, Right opens a branch and then enters its first child, Left closes an open branch and then goes to the parent, Enter and Space act on the row, Home and End jump. Each tree maps its rows to that shape and its result back to its own action. The session tree of the spawned panel keeps `treeKeyTargetOf`, because its rows run newest first. `hand-indent.test.ts` counts a `pl-5`, `pl-7` or `pl-9` and an inline `paddingLeft` that does not come from `treeIndentPx`.
+A tree indents by one step. `treeIndentPx({ depth })` (12px a level on an 8px base) is the only source: the Changes tree and the All files tree set their row padding with it, so a user moving between them sees the same indent. Arrow keys in the Changes and Files trees are one pure function, `treeKeyMove` in `shared/utils`: Down and Up move a row, Right opens a branch and then enters its first child, Left closes an open branch and then goes to the parent, Enter and Space act on the row, Home and End jump. Each tree maps its rows to that shape and its result back to its own action. `hand-indent.test.ts` counts a `pl-5`, `pl-7` or `pl-9` and an inline `paddingLeft` that does not come from `treeIndentPx`.
 
 **The rule of seen.** An agent is seen when it is open and the window is in
 front: visible and focused. Opening it (`selectAgent`) stamps it, and the agent
@@ -641,7 +641,7 @@ workflow builder keeps its role pill because the role is a field there.
 
 The right side uses three columns, in this order after the state word: the
 model block (`ModelBlock`, drawn by `TimelineModelCell`), the stacked time and
-cost column (`TimelineRowMeta`) and the action column. `ModelBlock` is the same
+cost column (`TimelineRowMeta`) and, in a run tree, the action column. `ModelBlock` is the same
 trick as the time and cost stack: a 24px glyph cell centred on the row midline
 (14px icons, two providers overlap by 6px), then two 16px lines. Line 1 is the
 model and version and sits on the baseline of the time, line 2 is the variant
@@ -656,14 +656,14 @@ glyph cell stays. The title keeps a 160px floor (`WORK_ROW.label`) down to a
 the model and the stack past the edge the other rows end on. A live agent ends on its current routing; an agent that has
 not started shows its planned model in faint. Every row holds the model and the
 stack, empty when it has nothing to say, so duration and cost line up down the
-feed. The action column is a fixed 80px, `justify-end`, and a feed draws it on
+feed. The action column of a run tree is a fixed 80px, `justify-end`, drawn on
 every row as soon as one row has an action, so the model and the stack end on
 the same edge in every row (`scripts/validate-scenes.mjs` measures it on
 `step-rows-activity`, `step-rows-runs` and `workflow-run-plan-review` at 1100,
-1440 and 1920). Action labels are verbs from `ROW_ACTION_LABEL`
-(`features/workTreeModel/rowActionLabels.ts`): Answer, Skip, Open plan, Open,
-Start, Resume, Retry. A label never passes nine characters and the row title
-names the object ("Start", never "Start implementer"). A row has no menu slot.
+1440 and 1920). The log has no action column. Action labels are verbs from
+`ROW_ACTION_LABEL` (`features/workTreeModel/rowActionLabels.ts`): Answer and
+Open plan. A label never passes nine characters and the row title
+names the object. A row has no menu slot.
 
 The role glyph before the title and the model cell are the only two hover
 targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`).

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { aSession, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import { selectCheckChain } from './selectCheckChain';
-import { selectFixOffers } from './selectFixOffers';
 
 const sessionId = aSession().id;
 const url = 'https://github.com/harborline/payments-api/actions/runs/31/job/42';
@@ -45,12 +44,11 @@ describe.each(KIND_PAIRS)('the check chain with $name', ({ analyst, fixer }) => 
     checkFixCommits: {},
   });
 
-  it('finds the analysis and offers the fix', () => {
+  it('finds the analysis in proposal', () => {
     const state = stateOf([analysis]);
     const chain = selectCheckChain({ state, sessionId, url });
     expect(chain.state).toBe('proposal');
     expect(chain.debugger?.id).toBe(analysis.id);
-    expect(selectFixOffers({ state, sessionId })).toContain(analysis.id);
   });
   it('finds the fix as the child of the analysis', () => {
     const chain = selectCheckChain({ state: stateOf([analysis, fix]), sessionId, url });

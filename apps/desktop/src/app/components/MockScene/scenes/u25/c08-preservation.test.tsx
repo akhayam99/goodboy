@@ -28,7 +28,7 @@ import {
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { U25_C08_PRESET_RUN_SCENES } from './c08-preset-run';
-import { C08_IMPLEMENTER_ID, C08_REVIEWER_ID, C08_RUN_ID, C08_SESSION_ID } from './c08RunSeed';
+import { C08_IMPLEMENTER_ID, C08_RUN_ID, C08_SESSION_ID } from './c08RunSeed';
 
 const SETTLE_MS = 2_000;
 
@@ -111,8 +111,6 @@ const failWritesWith = ({ marker }: FailParams): { readonly heal: () => void } =
     },
   };
 };
-
-const runLevel = () => within(nodeOf('[data-spawned-panel="run"]'));
 
 const tail = () => within(nodeOf('[data-run-tail]'));
 
@@ -225,12 +223,6 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(tail().queryByRole('button', { name: 'Start run' })).toBeNull();
   });
 
-  it('Run name edit: the identity row renames inline', async () => {
-    await mount('c08-run-overview');
-    await press(runLevel().getByRole('button', { name: 'Fix flaky tests in the ledger export' }));
-    expect(runLevel().getByRole('textbox', { name: 'Run name' })).toBeDefined();
-  });
-
   it('Pause run is the one header button; Stop run with its confirm sits in the run menu', async () => {
     await mount('c08-run-overview');
     const live = within(
@@ -326,38 +318,6 @@ describe('run rows stay reachable from the preset run level', () => {
     await mount('c08-run-ready');
     expect(document.querySelector('[data-run-header-actions]')).toBeNull();
     tail().getByRole('button', { name: 'Start step 3' });
-  });
-
-  it('Sub agents sit under their step in the Agents panel', async () => {
-    await mount('c08-run-working');
-    act(() => {
-      useAppStore.setState((state) => ({
-        sessionPhaseRuns: {
-          ...state.sessionPhaseRuns,
-          [C08_SESSION_ID]: [
-            ...(state.sessionPhaseRuns[C08_SESSION_ID] ?? []),
-            {
-              id: JSON.parse('"mock-c08-sub-scout"'),
-              sessionId: C08_SESSION_ID,
-              parentAgentId: C08_IMPLEMENTER_ID,
-              ordinal: 9,
-              name: 'Map the batch writer',
-              kind: 'scout',
-              status: 'running',
-            },
-          ],
-        },
-      }));
-    });
-    await settle();
-    expect(runLevel().getByText('Map the batch writer')).toBeDefined();
-  });
-
-  it('Skipped and Blocked step words show in the Agents panel', async () => {
-    await mount('c08-run-ready');
-    patchAgent({ id: C08_REVIEWER_ID, patch: { status: 'skipped' } });
-    await settle();
-    expect(runLevel().getAllByRole('img', { name: 'Skipped' }).length).toBeGreaterThan(0);
   });
 
   it('Add step to a live or finished run opens the draft in the center', async () => {

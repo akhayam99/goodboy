@@ -18,11 +18,7 @@ import { agentRowIdentity } from './AgentRowIdentity';
 import { useAgentRowModels } from './useAgentRowModels';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
-import {
-  TimelineStreamRow,
-  type TimelineBranchKey,
-  type TimelineRowAction,
-} from './TimelineStreamRow';
+import { TimelineStreamRow, type TimelineBranchKey } from './TimelineStreamRow';
 
 type Props = {
   readonly item: TimelineRowItem;
@@ -31,7 +27,6 @@ type Props = {
   readonly railWidth: number;
   readonly sessionId: SessionId;
   readonly openTarget: TimelineOpenTarget | null;
-  readonly action: TimelineRowAction | null;
   readonly diffStat: MountDiffStat | null;
   readonly worktrees: ReadonlyArray<string>;
   readonly runLane: TimelineLaneTarget | null;
@@ -58,7 +53,6 @@ export const TimelineAgentStreamRow = ({
   railWidth,
   sessionId,
   openTarget,
-  action,
   diffStat,
   worktrees,
   runLane,
@@ -101,7 +95,6 @@ export const TimelineAgentStreamRow = ({
       railWidth={railWidth}
       sessionId={sessionId}
       openTarget={openTarget}
-      action={action}
       diffStat={diffStat}
       worktrees={worktrees}
       identity={identity}

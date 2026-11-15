@@ -168,7 +168,6 @@
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx": 2,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/pathSummaryList.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": 3,
-    "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineEntryRow.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineRunChip.tsx": 1,
     "apps/desktop/src/features/session/components/VerbositySelect/index.tsx": 1,
     "apps/desktop/src/features/session/mountQueryBridge/index.ts": 4,

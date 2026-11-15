@@ -188,8 +188,9 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.asksYou)).toEqual(['Autonomy', 'When to ask']);
     expect(formerNamesOf(NAMES.everyStep)).toEqual(['Ask me', 'Ask before each step']);
     expect(formerNamesOf(NAMES.afterThePlan)).toEqual(['Balanced', 'Ask after the plan']);
-    expect(formerNamesOf(NAMES.asksNever)).toEqual(['Autopilot', 'Autorun']);
-    expect(formerNamesOf(NAMES.autopilot)).toEqual(['Autorun', 'Run on its own']);
+    expect(formerNamesOf(NAMES.asksNever)).toEqual(['Autopilot', 'Autorun', 'Run on its own']);
+    expect(formerNamesOf(NAMES.startStepsWithoutAsking)).toEqual(['Turn on Autopilot']);
+    expect(formerNamesOf(NAMES.askBeforeEachStep)).toEqual(['Turn off Autopilot']);
   });
 
   it.each([
@@ -217,6 +218,8 @@ describe('names', () => {
     ['Start work', 'turn-into-work'],
     ['Start work from here', 'turn-into-work'],
     ['Run on its own', 'run-on-its-own'],
+    ['Turn on Autopilot', 'autopilot'],
+    ['Autopilot: on', 'autopilot'],
     ['Ask before each step', 'ask-before-each-step'],
     ['Ask after the plan', 'ask-after-the-plan'],
     ['When to ask', 'when-to-ask'],

@@ -454,7 +454,7 @@ describe('the session rail top row and its menu', () => {
     expect(labels.length).toBeLessThanOrEqual(5);
     expect(labels.length).toBeGreaterThan(0);
     for (const label of labels) {
-      expect(label).toMatch(/^(Limit: |Autopilot: |Stop running|Archive|Delete)/);
+      expect(label).toMatch(/^(Limit: |Asks you: |Stop running|Archive|Delete)/);
     }
     expect(labels.some((label) => /^(Pin|Unpin|Refresh|Rename)/.test(label))).toBe(false);
     expect(labels.some((label) => label.startsWith('Limit: none'))).toBe(true);

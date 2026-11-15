@@ -12,8 +12,8 @@ type SessionMenu = Readonly<{
 
 const SESSION_MENU_IDS: ReadonlyArray<string> = [
   'session.spend',
-  'session.autopilotOn',
-  'session.autopilotOff',
+  'session.asksNever',
+  'session.asksEveryStep',
   'session.stopAll',
   'session.archive',
   'session.restore',
@@ -24,7 +24,7 @@ export const sessionMenuOf = ({ limitUsd }: Params): SessionMenu => ({
   only: SESSION_MENU_IDS,
   relabel: new Map([
     ['session.spend', AUTO_LIMIT_COPY.labelOf({ usd: limitUsd })],
-    ['session.autopilotOn', `${NAMES.autopilot}: off`],
-    ['session.autopilotOff', `${NAMES.autopilot}: on`],
+    ['session.asksNever', `${NAMES.asksYou}: ${NAMES.everyStep}`],
+    ['session.asksEveryStep', `${NAMES.asksYou}: ${NAMES.asksNever}`],
   ]),
 });

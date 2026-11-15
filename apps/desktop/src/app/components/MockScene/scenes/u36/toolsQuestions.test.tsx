@@ -64,20 +64,8 @@ describe('the u36 tools and questions scenes', () => {
     for (const [name, Scene] of Object.entries(U36_TOOLS_QUESTIONS_SCENES)) {
       expect(MOCK_SCENES[name]).toBe(Scene);
     }
-    expect(Object.keys(U36_TOOLS_QUESTIONS_SCENES)).toHaveLength(4);
+    expect(Object.keys(U36_TOOLS_QUESTIONS_SCENES)).toHaveLength(2);
   });
-
-  it.each(['light', 'dark'])(
-    'u36-p7-tools-stay-%s holds the Agents tool open beside the Runs page, with what is live',
-    async (theme) => {
-      mount({ id: `u36-p7-tools-stay-${theme}` });
-
-      const panel = await screen.findByRole('region', { name: 'Agents' });
-      expect(useAppStore.getState().drawer?.kind).toBe('spawned');
-      within(panel).getByRole('button', { name: 'All runs' });
-      await screen.findByRole('list', { name: 'Runs' });
-    },
-  );
 
   it.each(['light', 'dark'])(
     'u36-p8-question-%s opens the question from its address with Recommended picked',

@@ -270,12 +270,12 @@ describe('the shell chapter', () => {
     expect(actions).toContain('Archive and Delete');
   });
 
-  it('shows what a run and Auto started in the Agents panel, with its key and no rail level', () => {
-    const agents = pointOf('shell', 'Agents panel');
-    [shortcutGlyphs('session.spawned'), 'run or Auto', 'j and k move between agents'].forEach(
+  it('opens Runs on what is running from its key, with no Agents panel', () => {
+    const agents = pointOf('shell', 'Running agents');
+    [shortcutGlyphs('session.spawned'), 'opens Runs on what is running', 'in the center'].forEach(
       (entry) => expect(agents).toContain(entry),
     );
-    expect(agents).not.toContain('‹ Runs');
+    expect(agents).not.toContain('Agents panel');
   });
 
   it('opens a branch in place from the Projects card', () => {

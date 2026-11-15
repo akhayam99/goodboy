@@ -96,18 +96,6 @@ describe('the u26 p11 Auto result scenes', () => {
     expect(tester.textContent).not.toContain('Show more');
   });
 
-  it('names the two reviewers apart in the Agents tree too', async () => {
-    mount({ id: 'u26-auto-results-light' });
-
-    const tree = await screen.findByRole('tree', { name: 'Auto agents' }, WAIT);
-    expect(
-      within(tree).getByRole('treeitem', { name: `Reviewer, ${FIRST_REVIEW}, Done` }),
-    ).toBeDefined();
-    expect(
-      within(tree).getByRole('treeitem', { name: `Reviewer, ${SECOND_REVIEW}, Done` }),
-    ).toBeDefined();
-  });
-
   it('opens the report of a reviewer from its card', async () => {
     mount({ id: 'u26-auto-results-light' });
 

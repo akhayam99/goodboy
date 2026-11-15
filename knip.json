@@ -30,12 +30,8 @@
         "src/features/chat/utils/transcript-items-trace.ts": ["exports"],
         "src/features/companion/mobileConfinement.ts": ["exports"],
         "src/features/history/historyEngine.ts": ["exports"],
-        "src/features/integrations/gitlab/MergeRequest/MrDetailPanel/mrDraftTitle.ts": ["exports"],
         "src/features/integrations/hooks/useIssueLookup/index.ts": ["exports"],
-        "src/features/context/slotRouting.ts": ["exports"],
-        "src/features/session/agent-kind.ts": ["exports"],
         "src/store/runtime/worktreeStatuses/cache.ts": ["exports"],
-        "src/features/workTreeModel/workTime.ts": ["exports"],
         "src/store/slices/artifacts/artifactScoutRun.ts": ["exports"],
         "src/store/slices/branch-cleanup/repoDeletesMergedBranches.ts": ["exports"],
         "src/store/slices/open-questions/resolveQuestionDelegate.ts": ["exports"],
@@ -44,11 +40,8 @@
         "src/store/slices/turn/turnStartWindow.ts": ["exports"],
         "src/store/slices/turn/workflowTurnBreaker.ts": ["exports"],
         "src/app/hooks/useAppOverlays/overlayState.ts": ["types"],
-        "src/features/history/historyBackupRef.ts": ["exports"],
         "src/store/slices/budget/index.ts": ["types"],
-        "src/store/slices/session-view/index.ts": ["exports"],
-        "src/store/slices/session-view/types.ts": ["exports"],
-        "src/features/session/timeline/activityView.ts": ["exports"]
+        "src/store/slices/session-view/index.ts": ["exports"]
       }
     },
     "packages/core": {

@@ -12,13 +12,9 @@ describe('row action labels', () => {
   });
 
   it('keep the verbs the row actions share one spelling for', () => {
-    expect(ROW_ACTION_LABEL).toMatchObject({
+    expect(ROW_ACTION_LABEL).toEqual({
       answer: 'Answer',
-      skip: 'Skip',
       openPlan: 'Open plan',
-      open: 'Open',
-      start: 'Start',
-      retry: 'Retry',
     });
   });
 

@@ -46,13 +46,6 @@ const mount = ({ id }: { readonly id: string }): void => {
   );
 };
 
-const rail = () => screen.getByRole('tree', { name: 'Auto agents' });
-
-const railLabels = (): ReadonlyArray<string> =>
-  within(rail())
-    .getAllByRole('treeitem')
-    .map((item) => item.getAttribute('aria-label') ?? '');
-
 const limitChip = () => screen.getByRole('button', { name: /^Limit: / });
 
 describe('the Auto chat scenes', () => {
@@ -83,29 +76,24 @@ describe('the Auto chat scenes', () => {
     }
   });
 
-  it('auto-chat-answering keeps the Work rail with Auto alone, its empty state and no card', async () => {
+  it('auto-chat-answering draws no card', async () => {
     mount({ id: 'auto-chat-answering' });
 
     expect(
       await screen.findByText(/Retries are posted by postCredit/, undefined, WAIT),
     ).toBeDefined();
-    expect(rail().querySelectorAll('[data-agent-id]')).toHaveLength(1);
-    expect(screen.getByText('No agents started yet')).toBeDefined();
     expect(screen.queryByRole('article')).toBeNull();
     expect(
       within(screen.getByTestId('agent-header-title-row')).queryByText('Experimental'),
     ).toBeNull();
   });
 
-  it('auto-chat-delegating shows Auto and the Planner on one rail, one line and the tail', async () => {
+  it('auto-chat-delegating shows one line and the tail', async () => {
     mount({ id: 'auto-chat-delegating' });
 
     expect(
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
-    const work = rail();
-    expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(2);
-    expect(railLabels().some((label) => label.endsWith('Starting'))).toBe(true);
     expect(screen.queryByRole('article')).toBeNull();
     const dock = document.querySelector('[data-dock-live]');
     if (!(dock instanceof HTMLElement)) {
@@ -142,15 +130,12 @@ describe('the Auto chat scenes', () => {
     ).toBeDefined();
   });
 
-  it('auto-chat-working has every child expanded and the budget numbers of one function', async () => {
+  it('auto-chat-working keeps the budget numbers of one function', async () => {
     mount({ id: 'auto-chat-working' });
 
     expect(
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
-    const work = rail();
-    expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(4);
-    expect(within(work).queryByText(/subagents/i)).toBeNull();
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
     expect(document.querySelector('[data-glance]')?.textContent).toContain('$0.27');
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
@@ -248,7 +233,6 @@ describe('the Auto chat scenes', () => {
     mount({ id: 'auto-chat-revising' });
 
     expect(await screen.findByText('revising v2', undefined, WAIT)).toBeDefined();
-    expect(within(rail()).getAllByRole('img', { name: 'Planner' })).toHaveLength(1);
   });
 
   it('auto-chat-confirm asks before the revise starts', async () => {
@@ -278,29 +262,25 @@ describe('the Auto chat scenes', () => {
     expect(
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
-    expect(railLabels().filter((label) => label.endsWith(', Idle'))).toHaveLength(1);
-    expect(rail().querySelectorAll('[data-agent-id]')).toHaveLength(5);
     expect(screen.getAllByRole('button', { name: /^Open (?!plan )/ })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
     expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$10\.00/);
   });
 
-  it('auto-chat-done says Idle in the rail with no tail, and Mark finished in the menu once', async () => {
+  it('auto-chat-done has no tail, and Mark finished in the menu once', async () => {
     mount({ id: 'auto-chat-done' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    expect(railLabels().some((label) => label.endsWith('Idle'))).toBe(true);
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
     await screen.findAllByRole('menuitem', undefined, WAIT);
     expect(screen.getAllByRole('menuitem', { name: /Mark finished/ })).toHaveLength(1);
   });
 
-  it('auto-chat-finished says Done with no tail and no longer offers Mark finished', async () => {
+  it('auto-chat-finished has no tail and no longer offers Mark finished', async () => {
     mount({ id: 'auto-chat-finished' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    expect(railLabels().some((label) => label.endsWith('Done'))).toBe(true);
     expect(screen.queryByText('Finished. Write to reopen.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });

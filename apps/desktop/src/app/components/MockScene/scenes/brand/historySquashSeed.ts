@@ -1,5 +1,5 @@
 import type { BranchCommit, HistoryGraph, HistoryStep } from '@goodboy/types';
-import { historyBackupRef } from '../../../../../features/history/historyBackupRef';
+import { historyBackupRef } from '../../../../../features/history/testing/historyBackupRef';
 import { historyEditText } from '../../../../../features/history/historyEditText';
 import {
   combineInto,

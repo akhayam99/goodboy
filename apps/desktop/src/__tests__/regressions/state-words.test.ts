@@ -21,8 +21,7 @@ const STATES: ReadonlyArray<GlanceState> = [
 ];
 const RETIRED = /^(?:Stuck|Blocked|Working|Planning|Pending)$/i;
 const STATE_PROPS: ReadonlySet<string> = new Set(['word', 'short', 'phrase']);
-const WORK_ROOT =
-  /^(?:features\/(?:session|auto|workflows|workTreeModel|live-state)\/|app\/components\/SpawnedPanel\/)/;
+const WORK_ROOT = /^features\/(?:session|auto|workflows|workTreeModel|live-state)\/.+/;
 const MEANING_BY_WORD: ReadonlyMap<string, string> = new Map(
   STATE_WORD_MEANINGS.map((entry) => [entry.word, entry.meaning]),
 );

@@ -48,7 +48,6 @@ export const installStoryPlan = ({ store }: Params): void => {
       });
       store.getState().navigate({
         to: agentPlace({ sessionId: STORY_SESSION_ID, agentId: STORY_ROOT_ID }),
-        drawer: { kind: 'spawned', sessionId: STORY_SESSION_ID, payload: null },
       });
       input.onStarted?.();
       scheduleCues({

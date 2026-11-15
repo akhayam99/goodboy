@@ -68,7 +68,7 @@ beforeEach(async () => {
   });
   act(() => {
     useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION }) });
-    useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION, payload: null });
   });
 });
 
@@ -84,7 +84,7 @@ describe('useAskChipOpen', () => {
     openChip(RESOLVER);
 
     const state = useAppStore.getState();
-    expect(selectOpenDrawer(state)?.kind).toBe('spawned');
+    expect(selectOpenDrawer(state)?.kind).toBe('scripts');
     expect(state.activeLens[SESSION]).toBe('branch');
     expect(state.branchTab[SESSION]).toBe('comments');
     expect(state.branchThreadId[SESSION]).toBe(THREAD);
@@ -94,7 +94,7 @@ describe('useAskChipOpen', () => {
     openChip(IMPLEMENTER);
 
     const state = useAppStore.getState();
-    expect(selectOpenDrawer(state)?.kind).toBe('spawned');
+    expect(selectOpenDrawer(state)?.kind).toBe('scripts');
     expect(state.activeLens[SESSION]).toBe('workflows');
   });
 });

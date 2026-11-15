@@ -312,14 +312,13 @@ export const seedC07 = ({
   if (place === 'auto' || place === 'session') {
     store.navigate({
       to: agentPlace({ sessionId: AUTO_SESSION.id, agentId: AUTO_ROOT_ID }),
-      drawer:
-        place === 'auto' ? { kind: 'spawned', sessionId: AUTO_SESSION.id, payload: null } : null,
+      drawer: null,
     });
   }
   if (place === 'child') {
     store.navigate({
       to: agentPlace({ sessionId: AUTO_SESSION.id, agentId: CHILD_ID[pane ?? 'implementer'] }),
-      drawer: { kind: 'spawned', sessionId: AUTO_SESSION.id, payload: null },
+      drawer: null,
     });
   }
   if (place === 'list' || place === 'start') {

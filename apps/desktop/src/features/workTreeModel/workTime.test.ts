@@ -6,7 +6,6 @@ import { agentWorkTime, estimateKeyOf } from './agentWorkTime';
 import { estimateBasis } from './estimateBasis';
 import {
   QUIET_TURN_AFTER_MS,
-  formatCostRange,
   formatEstimateRange,
   timeLeftLabel,
   workTime,
@@ -181,7 +180,6 @@ describe('estimate formatting', () => {
       '≈ 9m',
     );
     expect(formatEstimateRange({ lowMs: 30_000, midMs: 45_000, highMs: 90_000 })).toBe('<2m');
-    expect(formatCostRange({ lowUsd: 0.9, highUsd: 1.6 })).toBe('$0.90-1.60');
   });
 });
 

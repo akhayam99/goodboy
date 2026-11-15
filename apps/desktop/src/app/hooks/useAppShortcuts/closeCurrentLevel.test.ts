@@ -34,7 +34,7 @@ afterEach(() => {
 describe('closeCurrentLevel', () => {
   it('closes the open drawer of the current session', () => {
     store.setState({ currentSessionId: SESSION_ID });
-    store.getState().openDrawer({ kind: 'spawned', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
 
     closeCurrentLevel({});
 
@@ -43,12 +43,12 @@ describe('closeCurrentLevel', () => {
 
   it('closes an open popover first and keeps the drawer', () => {
     store.setState({ currentSessionId: SESSION_ID });
-    store.getState().openDrawer({ kind: 'spawned', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
     document.body.innerHTML = '<div role="dialog"></div>';
 
     closeCurrentLevel({});
 
-    expect(store.getState().drawer?.kind).toBe('spawned');
+    expect(store.getState().drawer?.kind).toBe('scripts');
   });
 
   it('closes a studio that covers the page', () => {

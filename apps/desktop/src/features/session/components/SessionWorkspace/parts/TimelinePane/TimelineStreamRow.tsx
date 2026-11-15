@@ -1,6 +1,6 @@
-import { useContext, type KeyboardEvent, type ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import { Button, ROW_INTERACTIVE, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
+import { ROW_INTERACTIVE, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { useHoverMarkViewed } from '../../../../hooks/useHoverMarkViewed';
@@ -10,7 +10,6 @@ import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeom
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
-import { ActionColumnContext } from './ActionColumnContext';
 import { TIMELINE_GUTTER } from './timelineLayout';
 import { TimelineClockLabel } from './TimelineClockLabel';
 import { isClocklessRow } from './timelineClock';
@@ -27,20 +26,12 @@ type TimelineRowExpansion = {
 
 export type TimelineBranchKey = (params: { readonly direction: 'expand' | 'collapse' }) => boolean;
 
-export type TimelineRowAction = {
-  readonly label: string;
-  readonly onAct: () => void;
-  readonly variant?: 'secondary';
-  readonly isBusy?: boolean;
-};
-
 type Props = {
   readonly item: TimelineRowItem;
   readonly rail: RailRow;
   readonly railWidth: number;
   readonly sessionId: SessionId;
   readonly openTarget: TimelineOpenTarget | null;
-  readonly action: TimelineRowAction | null;
   readonly diffStat?: MountDiffStat | null;
   readonly worktrees?: ReadonlyArray<string>;
   readonly meta?: ReactNode;
@@ -65,7 +56,6 @@ export const TimelineStreamRow = ({
   railWidth,
   sessionId,
   openTarget,
-  action,
   diffStat = null,
   worktrees,
   meta = null,
@@ -80,7 +70,6 @@ export const TimelineStreamRow = ({
   contextMenu,
   identity = null,
 }: Props) => {
-  const hasActionColumn = useContext(ActionColumnContext);
   const card = useRowCard({ isEnabled: identity !== null });
   const hover = useHoverMarkViewed({
     sessionId,
@@ -197,26 +186,6 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
-          {hasActionColumn ? (
-            <span
-              data-testid="timeline-row-action"
-              data-action-slot
-              data-meta-column="action"
-              className={WORK_META_COLUMN.action}
-              style={{ height: boxHeight }}
-            >
-              {action == null ? null : (
-                <Button
-                  variant={action.variant ?? 'ghost'}
-                  size="xs"
-                  isBusy={action.isBusy === true}
-                  onClick={action.onAct}
-                >
-                  {action.label}
-                </Button>
-              )}
-            </span>
-          ) : null}
         </div>
         {detail}
       </div>

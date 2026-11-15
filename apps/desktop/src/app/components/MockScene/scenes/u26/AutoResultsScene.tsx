@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DrawerColumn } from '@goodboy/ui';
-import { SceneAutoTreeNav } from './SceneAutoTreeNav';
+import { COLLAPSED_RAIL_WIDTH, DrawerColumn } from '@goodboy/ui';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
@@ -58,7 +57,11 @@ export const AutoResultsScene = ({ theme }: Props) => {
   return (
     <AutoReleaseContext.Provider value>
       <main className="flex h-screen bg-background text-foreground">
-        <SceneAutoTreeNav session={RESULTS_SESSION} rootAgentId={RESULTS_ROOT_ID} />
+        <nav
+          aria-label="Sidebar"
+          className="flex h-full shrink-0 flex-col border-r border-border-soft pt-1"
+          style={{ width: COLLAPSED_RAIL_WIDTH }}
+        />
         <DrawerColumn
           main={
             <AgentDetailPane

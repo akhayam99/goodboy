@@ -22,7 +22,7 @@ import { HistoryBatchDetail } from './HistoryBatchDetail';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
-import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
+import { TimelineStreamRow } from './TimelineStreamRow';
 import { timelineBranchKey } from './timelineBranchKey';
 import { timelineEntrySegmentsOf } from './timelineEntrySegmentsOf';
 import { segmentsToText } from '../../../../timeline/sessionEventPresentation';
@@ -32,7 +32,6 @@ export type TimelineEntryRowHandlers = {
   readonly openTargetFor: (params: {
     readonly entry: TimelineStreamEntry;
   }) => TimelineOpenTarget | null;
-  readonly runAction: (params: { readonly item: TimelineRowItem }) => void;
   readonly openDecisionInContext: (params: { readonly numbers: ReadonlyArray<number> }) => void;
   readonly toggleExpanded: (rowId: string) => void;
   readonly setDetailHeight: (params: DetailHeightParams) => void;
@@ -50,9 +49,6 @@ export type TimelineEntryRowProps = {
   readonly runLane: TimelineLaneTarget | null;
   readonly lanes: TimelineLaneControl | null;
   readonly handlers: TimelineEntryRowHandlers;
-  readonly actionLabel: string | null;
-  readonly actionVariant: TimelineRowAction['variant'] | null;
-  readonly actionBusy: boolean;
   readonly diffStat: MountDiffStat | null;
   readonly worktrees: ReadonlyArray<string>;
   readonly step: Step | null;
@@ -74,9 +70,6 @@ export const TimelineEntryRow = ({
   handlers,
   runLane,
   lanes,
-  actionLabel,
-  actionVariant,
-  actionBusy,
   diffStat,
   worktrees,
   step,
@@ -96,15 +89,6 @@ export const TimelineEntryRow = ({
     onSet: handlers.setGroupExpanded,
   });
   const target = handlers.openTargetFor({ entry });
-  const action: TimelineRowAction | null =
-    actionLabel === null
-      ? null
-      : {
-          label: actionLabel,
-          onAct: () => handlers.runAction({ item }),
-          ...(actionVariant !== null && { variant: actionVariant }),
-          ...(actionBusy && { isBusy: true }),
-        };
   const toggleNoun = batchDetail !== null ? 'branches' : 'changes';
   const toggleTarget: TimelineOpenTarget = {
     label: `${isExpanded ? 'Hide' : 'Show'} ${toggleNoun}`,
@@ -134,7 +118,6 @@ export const TimelineEntryRow = ({
         railWidth={railWidth}
         sessionId={sessionId}
         openTarget={target}
-        action={action}
         diffStat={diffStat}
         worktrees={worktrees}
         runLane={runLane}
@@ -157,7 +140,6 @@ export const TimelineEntryRow = ({
         railWidth={railWidth}
         sessionId={sessionId}
         openTarget={target}
-        action={action}
         diffStat={diffStat}
         runLane={runLane}
         roleModels={roleModels}
@@ -191,7 +173,6 @@ export const TimelineEntryRow = ({
             />
           ) : null
         }
-        action={action}
         diffStat={diffStat}
         runLane={runLane}
         lanes={lanes}
@@ -223,7 +204,6 @@ export const TimelineEntryRow = ({
           />
         ) : null
       }
-      action={action}
       diffStat={diffStat}
       runLane={runLane}
       lanes={lanes}

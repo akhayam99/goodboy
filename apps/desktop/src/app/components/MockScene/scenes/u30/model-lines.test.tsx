@@ -53,7 +53,7 @@ describe('the u30 model lines scene', () => {
     expect(MOCK_SCENES['u30-model-lines']).toBe(Scene);
   });
 
-  it('shows the model by name with its effort on every rail row, and none on the one line cards', async () => {
+  it('shows no model line on the one line cards and no raw model id', async () => {
     const Scene = U30_MODEL_LINES_SCENES['u30-model-lines'];
     render(
       <ToastProvider>
@@ -64,9 +64,6 @@ describe('the u30 model lines scene', () => {
     const cards = await screen.findAllByRole('status', undefined, WAIT);
     expect(cards.length).toBeGreaterThan(0);
     expect(document.querySelectorAll('[data-auto-child-card] [data-model-line]')).toHaveLength(0);
-    const tree = await screen.findByRole('tree', { name: 'Auto agents' }, WAIT);
-    const rowLines = Array.from(tree.querySelectorAll('[data-model-line]'));
-    expect(rowLines.length).toBeGreaterThan(0);
     expect(document.body.textContent).not.toMatch(/sonnet-5\.5|opus-5\.5/);
   });
 });

@@ -15,7 +15,6 @@ import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { branchLeadsOf } from '../session/branchLeadsOf';
 import { LeadHeaderWord } from '../session/components/LeadPage/LeadHeaderWord';
 import { sessionRunsOf } from '../session/sessionRunsOf';
-import { railRowsOf } from './chat/railRowsOf';
 import { aPlanRow, aView, FIXTURE_ROOT, FIXTURE_SESSION } from './testing/autoViewFixtures';
 
 let useAppStore: StoryStore;
@@ -104,18 +103,6 @@ const branchBlockWordOf = ({ view }: ViewParams): string | undefined =>
     openFoldIds: new Set(),
   }).leads[0]?.stateWord;
 
-type RootParams = ViewParams & {
-  readonly isWork: boolean;
-};
-
-const treeRootOf = ({ view, isWork }: RootParams) =>
-  railRowsOf({
-    view,
-    agents: [],
-    rootRouting: { provider: null, model: null, effort: null },
-    isWork,
-  })[0];
-
 type WorldParams = ViewParams & {
   readonly isWorkOn: boolean;
 };
@@ -129,24 +116,19 @@ const renderHeader = ({ view, isWorkOn }: WorldParams) => {
 };
 
 describe('the five Lead words, one function, every reader', () => {
-  it.each(CASES)(
-    '$name reads $word in the header, the row, the branch and the tree',
-    ({ view, word }) => {
-      renderHeader({ view, isWorkOn: true });
+  it.each(CASES)('$name reads $word in the header, the row and the branch', ({ view, word }) => {
+    renderHeader({ view, isWorkOn: true });
 
-      expect(Object.values(LEAD_STOP_WORDS)).toContain(word);
-      expect(screen.getByText(word).textContent).toBe(word);
-      expect(workRowWordOf({ view })).toBe(word);
-      expect(branchBlockWordOf({ view })).toBe(word);
-      expect(treeRootOf({ view, isWork: true })?.word).toBe(word);
-    },
-  );
+    expect(Object.values(LEAD_STOP_WORDS)).toContain(word);
+    expect(screen.getByText(word).textContent).toBe(word);
+    expect(workRowWordOf({ view })).toBe(word);
+    expect(branchBlockWordOf({ view })).toBe(word);
+  });
 
-  it('keeps the Auto words with Work off and shows no header word', () => {
+  it('shows no header word with Work off', () => {
     const view = viewOf({ phase: 'done' });
     const { container } = renderHeader({ view, isWorkOn: false });
 
     expect(container.textContent).toBe('');
-    expect(treeRootOf({ view, isWork: false })).toMatchObject({ label: 'Auto', word: 'Idle' });
   });
 });

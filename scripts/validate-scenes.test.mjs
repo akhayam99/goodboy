@@ -41,7 +41,6 @@ import { titleBandFailures } from './validateScenesTitleBand.mjs';
 import { pageColumnFailures } from './validateScenesPageColumn.mjs';
 import { frostFailures } from './validateScenesFrost.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
-import { drawerRevealFailures } from './validateScenesDrawerReveal.mjs';
 import { readingHoldFailures } from './validateScenesReadingHold.mjs';
 import {
   COLUMN_ROW_SELECTOR,
@@ -1241,31 +1240,6 @@ describe('updatePillFailures', () => {
       updatePillFailures({ scene: 'fixture', width: 1024, measured: null })[0]?.check,
       'the Goodboy row shows the update pill',
     );
-  });
-});
-
-describe('drawerRevealFailures', () => {
-  const still = { block: 'center', top: 0, left: 0 };
-
-  it('passes a card that every reveal leaves at the top left', () => {
-    const measured = { rows: 3, scrolls: [still, { ...still, block: 'nearest' }] };
-    assert.deepEqual(drawerRevealFailures({ scene: 'fixture', width: 1440, measured }), []);
-  });
-
-  it('fails a card that a reveal scrolled', () => {
-    const measured = { rows: 3, scrolls: [still, { block: 'nearest', top: 3354, left: 0 }] };
-    const [failure] = drawerRevealFailures({ scene: 'fixture', width: 1440, measured });
-    assert.equal(failure?.check, 'a reveal inside the drawer never scrolls the drawer card');
-    assert.equal(failure?.top, 3354);
-  });
-
-  it('fails a scene whose drawer holds no spawned agent row', () => {
-    for (const measured of [null, { rows: 0, scrolls: [] }]) {
-      assert.equal(
-        drawerRevealFailures({ scene: 'fixture', width: 1440, measured })[0]?.check,
-        'the drawer card holds spawned agent rows',
-      );
-    }
   });
 });
 

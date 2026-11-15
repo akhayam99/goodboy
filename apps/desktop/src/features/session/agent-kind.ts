@@ -453,8 +453,6 @@ const AGENT_ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES.filter(
   (role) => ROLE_REGISTRY[role].pickerEligible,
 );
 
-export const visibleAgentRoles = (): ReadonlyArray<AgentRole> => AGENT_ROLES;
-
 const WORKFLOW_AGENT_ROLES: ReadonlyArray<AgentRole> = AGENT_ROLES.filter(
   (role) => ROLE_REGISTRY[role].workflowEligible,
 );

@@ -1,18 +1,4 @@
-import { NAMES } from '../../shared/utils/names';
-
 export const ROW_ACTION_LABEL = {
   answer: 'Answer',
-  skip: 'Skip',
   openPlan: 'Open plan',
-  open: 'Open',
-  start: 'Start',
-  startFix: 'Start fix',
-  push: 'Push',
-  continue: 'Continue',
-  retry: 'Retry',
-  viewDiff: NAMES.changes,
-  copyPath: 'Copy path',
-  copied: 'Copied',
-  copyFailed: 'Failed',
-  relink: 'Re-link',
 } as const satisfies Record<string, string>;

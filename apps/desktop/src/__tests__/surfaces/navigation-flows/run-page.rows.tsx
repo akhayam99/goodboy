@@ -16,19 +16,9 @@ import {
 import { STORY_NOW } from '../../../store/storyHarness';
 import { BOARD_PLACE, agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import { openLens } from '../../../features/session/openLens';
-import { togglePane } from '../../../features/session/panes/togglePane';
 import { aPlan, aStoredPlan } from '../../../test/planFixtures';
 import userEvent from '@testing-library/user-event';
-import {
-  type Ctx,
-  type Row,
-  WAIT,
-  click,
-  heading,
-  openPalette,
-  settle,
-  useAppStore,
-} from './harness';
+import { type Ctx, type Row, WAIT, heading, openPalette, settle, useAppStore } from './harness';
 
 const WORKFLOW_ID = 'journey-run-page-workflow' as WorkflowId;
 const RUN_ID = 'journey-run-page-run' as WorkflowRunId;
@@ -310,30 +300,5 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: backToTheList,
-  },
-  {
-    name: 'the Agents panel follows the run and opens a step in the center with the tree kept open',
-    covers: ['openDrawer'],
-    open: async (ctx) => {
-      await openRunPage(ctx);
-      act(() => togglePane({ sessionId: ctx.sessionId, pane: 'spawned' }));
-      const panel = await screen.findByRole('region', { name: 'Agents' }, WAIT);
-      const tree = within(panel).getByRole('tree', { name: 'Run agents' });
-      const [first] = within(tree).getAllByRole('treeitem');
-      if (first === undefined) {
-        throw new Error('the run tree has no agent');
-      }
-      await click(first);
-      await waitFor(() => {
-        expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).not.toBeNull();
-      }, WAIT);
-      expect(useAppStore.getState().drawer?.kind).toBe('spawned');
-    },
-    lands: async () => {
-      await waitFor(() => {
-        expect(useAppStore.getState().drawer?.kind).toBe('spawned');
-      }, WAIT);
-      expect(screen.getByRole('tree', { name: 'Run agents' })).toBeDefined();
-    },
   },
 ];

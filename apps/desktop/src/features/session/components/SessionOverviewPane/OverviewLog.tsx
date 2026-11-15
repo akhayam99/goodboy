@@ -24,7 +24,7 @@ export const OverviewLog = ({ session }: Props) => {
   return (
     <div ref={sectionRef} data-overview-log="" className="flex flex-col gap-2">
       <SectionHeader label="Log" headingLevel={2} />
-      <LogPane session={session} hasRowActions={false} />
+      <LogPane session={session} />
     </div>
   );
 };
