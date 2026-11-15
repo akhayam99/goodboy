@@ -183,6 +183,12 @@ export const SHORTCUTS = {
     group: 'navigate',
     yieldsToText: true,
   },
+  'nav.crumbUp': {
+    combo: 'Escape',
+    label: 'Back one crumb in a session',
+    plane: 'pane',
+    group: 'navigate',
+  },
   'find.next': {
     combo: 'cmd+KeyG',
     label: 'Next match',
@@ -615,13 +621,7 @@ export const SHORTCUTS = {
     group: 'lists',
     scope: 'list',
   },
-  'list.reply': {
-    combo: 'KeyR',
-    label: 'Reply',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
+  'list.reply': { combo: 'KeyR', label: 'Reply', plane: 'pane', group: 'lists', scope: 'list' },
   'list.star': {
     combo: 'KeyS',
     label: 'Star or unstar',

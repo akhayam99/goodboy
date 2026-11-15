@@ -19,6 +19,8 @@ export const ROW_START_SCENES = [
   'branch-commits',
   'branch-pr-github',
   'artifacts-rows',
+  'c08-runs',
+  'r4-questions',
   'c06-agent-transcript',
   'c03-panes-context',
   'c06-agents-list',
@@ -171,6 +173,24 @@ export const rowStartProbe = async () => {
       },
     };
   };
+  const readEdges = () => {
+    const titleRows = [...document.querySelectorAll('[data-slot="pane-title-row"]')].filter(
+      (row) => isShown(row) && row.closest('[inert]') === null,
+    );
+    return [...document.querySelectorAll('[data-list-heading]')]
+      .filter((heading) => isShown(heading) && heading.closest('[inert]') === null)
+      .flatMap((heading) => {
+        const box = heading.getBoundingClientRect();
+        const head = titleRows
+          .map((row) => row.getBoundingClientRect())
+          .filter((row) => row.top < box.top && row.left <= box.right && row.right >= box.left)
+          .sort((one, other) => other.top - one.top)[0];
+        return head === undefined
+          ? []
+          : [{ label: labelOf(heading), left: box.left, head: head.left }];
+      });
+  };
+  const edges = readEdges();
   const frame = readFrame();
   const splits = [...document.querySelectorAll('[data-studio-rail]')].map((split) => ({
     kind: 'split',
@@ -179,10 +199,14 @@ export const rowStartProbe = async () => {
       .map(read),
   }));
   if (splits.length > 0) {
-    return { containers: splits, frame };
+    return { containers: splits, frame, edges };
   }
   const page = document.querySelector('[data-page-column]') ?? document.querySelector('main');
-  return { containers: page === null ? [] : [{ kind: 'page', columns: [read(page)] }], frame };
+  return {
+    containers: page === null ? [] : [{ kind: 'page', columns: [read(page)] }],
+    frame,
+    edges,
+  };
 };
 
 const round = (value) => Math.round(value * 10) / 10;
@@ -216,6 +240,21 @@ export const frameRowFailures = ({ scene, width, frame, tolerance = ROW_START_TO
   ];
 };
 
+export const listEdgeFailures = ({ scene, width, edges, tolerance = ROW_START_TOLERANCE_PX }) => {
+  const off = (edges ?? []).filter(({ left, head }) => Math.abs(left - head) > tolerance);
+  if (off.length === 0) {
+    return [];
+  }
+  return [
+    {
+      scene,
+      width,
+      check: 'every list heading starts on the left edge of the title row above it',
+      rows: off.map(({ label, left, head }) => `${label}: ${round(left)} vs ${round(head)}`),
+    },
+  ];
+};
+
 export const rowStartFailures = ({
   scene,
   width,
@@ -223,7 +262,10 @@ export const rowStartFailures = ({
   tolerance = ROW_START_TOLERANCE_PX,
 }) => {
   const containers = measured?.containers ?? [];
-  const failures = frameRowFailures({ scene, width, frame: measured?.frame, tolerance });
+  const failures = [
+    ...frameRowFailures({ scene, width, frame: measured?.frame, tolerance }),
+    ...listEdgeFailures({ scene, width, edges: measured?.edges, tolerance }),
+  ];
   if (containers.length === 0) {
     return [...failures, { scene, width, check: 'a page with columns is on screen' }];
   }
@@ -284,12 +326,16 @@ export const runRowStart = async ({ send, only, measure, open, run }) => {
       scene,
       task: async () => {
         const failures = [];
+        let headings = 0;
         for (const width of ROW_START_WIDTHS) {
           await open({ send, scene, width, zoom: 1, readySelector: ROW_START_READY });
           const measured = await run(send, rowStartProbe, null);
+          headings += measured?.edges?.length ?? 0;
           failures.push(...rowStartFailures({ scene, width, measured }));
         }
-        console.log(`${scene}: first rows compared, ${failures.length} misalignments`);
+        console.log(
+          `${scene}: first rows and ${headings} list headings compared, ${failures.length} misalignments`,
+        );
         return { failures, wraps: 0 };
       },
     });

@@ -96,7 +96,7 @@ export const PageHeader = (props: PageHeaderProps) => {
       <div
         className={cn(
           'flex min-w-0 flex-col',
-          props.toolbar == null ? 'gap-2' : 'gap-0',
+          props.toolbar == null ? PANE_RHYTHM.block : 'gap-0',
           animationClassName,
         )}
       >

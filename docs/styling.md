@@ -202,10 +202,11 @@ out (`animate-drawer-dock-out`), and `useSnapAfterFloat` lands the aside at its
 closed width with no width transition, so the rail stops where it started.
 `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) and `browser` (720, drag 480 to the room the session column leaves, so
-past 1000 on a wide window; it shrinks to the room on a narrower window while 720 fits); each tier
+past 1000 on a wide window; it shrinks to the room on a narrower window while 480 fits, so at
+1440 it pushes like the terminal instead of lying over the page); each tier
 has its own saved width and a handle. `placement="overlay"` skips the push
 rule for a drawer that always lies over the page; the thresholds (928 for
-`side`, 1344 for `reader`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
+`side`, 1344 for `reader`, 1104 for `browser`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
@@ -267,7 +268,9 @@ letter, and the head never moves between tabs. Its actions end at the column's r
 the page header actions' right edge. A detail page (an agent, a lead, a run) draws no title
 of its own: `SessionHeadFrame` hands it three slots through `SessionHeadSlotsContext`, and
 `HeadSlotPortal` puts its name in the last crumb (rename and the object menu stay on it),
-its state word, spend, Settings, more menu and run controls at the right end of the crumb row,
+its state word and spend as one quiet line (only the dot carries the tone), then the run
+settings toggle (a sliders icon) and the more menu side by side, and run controls at the right
+end of the crumb row,
 and a side column such as the lead's Agents beside the head and the page, full height, with
 its header on the frame first row (`PANE_RHYTHM.firstRow`). The head and the page then
 centre in the space left of that column, so they keep one left edge. The frame has the same
@@ -282,7 +285,11 @@ the page (`data-session-head-band`, `z-40`), and `useHeadInset` writes its heigh
 `ScrollFade` uses, never a margin) and its `RevealRegion` pads the pinned overlay by it, so
 content scrolls under the title row, the crumbs or tabs and the pinned rows alike, behind
 one `sticky-surface-head` frost. A page that is not a `PaneShell` starts below the head as
-before. The gutter is 24px a side, 16px once the
+before. The head breathes through two tokens, never per page: `PANE_RHYTHM.head.rows`
+(12px between the title row and the tabs or crumbs) and `PANE_RHYTHM.head.under` (20px under
+the head before the page starts). Inside a page header the blocks (the title with its meta
+line, the tabs, the toolbar) sit `PANE_RHYTHM.block` (12px) apart; a title and its meta line
+stay one block. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
@@ -302,7 +309,8 @@ One primitive draws the top of every page: `PageHeader`
 (`PANE_RHYTHM.headerInset`, 8px, none under a studio band), the 32px title
 row (`PaneTitleRow`, the only title row), the 8px under it (`PANE_RHYTHM.below`,
 so the band is 48px, or 64px with a meta line), a `badge` beside the title (a
-quiet count chip, as Tasks shows "1,024 open"), a `toolbar` row of 36px under
+quiet count chip, as Tasks shows "1,024 open"; `PaneTitleRow` also takes a `leading` control
+before the title, which only the session head's back button uses), a `toolbar` row of 36px under
 the band for the controls of a list (Tasks: scope, search, filters, grouping, menu;
 84px in all, no meta line), the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
@@ -334,8 +342,11 @@ model: toggle and folder pill with the Dock and Copy folder path actions on
 row 1, New terminal and the tab strip on row 2, the folder list and the shell
 on row 3. `validate-scenes --only row-start` measures the scenes in
 `validateScenesRowStart.mjs` at 1440 and fails a first row whose center line
-drifts over 1px between columns, a toolbar whose controls share no center line
-and a grid row whose top or bottom differs between columns. On every scene that
+drifts over 1px between columns, a toolbar whose controls share no center line,
+a grid row whose top or bottom differs between columns, and a list heading
+(`data-list-heading`) whose left edge is more than 1px off the title row above
+it; its line names how many list headings it compared, so Runs and Questions
+cannot pass by measuring nothing. On every scene that
 renders the app frame it also runs the frame check: the main sidebar's first
 row (New session) against the page's first row (the topmost visible controls of
 `[data-studio-host]` and the controls on their line), centres within 1px and

@@ -49,6 +49,10 @@ export const HeightMotion = ({ children, className, isOpen = true, parentGapRem 
       lastHeightRef.current = next;
       setHeight(next);
     });
+    if (lastHeightRef.current === null && inner.getBoundingClientRect().height === 0) {
+      lastHeightRef.current = 0;
+      setHeight(0);
+    }
     observer.observe(inner);
     return () => observer.disconnect();
   }, []);
@@ -62,6 +66,7 @@ export const HeightMotion = ({ children, className, isOpen = true, parentGapRem 
   }, [isMoving, height]);
 
   const isClosed = !isOpen && !isMoving;
+  const isEmpty = isOpen && !isMoving && height === 0;
   const shownHeight = isClosed ? 0 : height;
 
   return (
@@ -71,10 +76,11 @@ export const HeightMotion = ({ children, className, isOpen = true, parentGapRem 
       data-height-motion={motionStateOf({ isMoving, isClosed })}
       style={{
         height: shownHeight ?? undefined,
-        marginTop: isOpen ? undefined : `${-parentGapRem}rem`,
+        marginTop: isOpen && !isEmpty ? undefined : `${-parentGapRem}rem`,
       }}
       className={cn(
-        'min-w-0 motion-safe:transition-[height,margin] motion-safe:duration-200 motion-safe:ease-enter',
+        'min-w-0 motion-safe:duration-200 motion-safe:ease-enter',
+        isEmpty ? 'motion-safe:transition-[height]' : 'motion-safe:transition-[height,margin]',
         (isMoving || isClosed) && 'overflow-hidden',
       )}
     >

@@ -311,9 +311,8 @@ writing to it reopens it to **Deciding**.
 
 ## The chat
 
-- **The tree in the Agents panel.** What Auto spawned lives in the Agents
-  panel of the session tools ([navigation/session-rail.md](navigation/session-rail.md#the-session-tools)):
-  opening Auto agents or an Auto agent opens it, and it follows an Auto agent
+- **The tree in the Agents column.** What Auto spawned lives in the Agents
+  column of the run page ([The Lead page](#the-lead-page)): it follows an Auto agent
   or one of its children in the center. The tree reads top down
   with Auto first and one row per child under it, ordered by when Auto
   started them, in the list of launches and in a focused launch
@@ -497,7 +496,7 @@ writing to it reopens it to **Deciding**.
   result whose delivery row is not in the transcript is not drawn, never moved
   to the end, so a late result stays with the turn that read it; a reload and a
   second window read the same rows.
-- **The glance line and the cards.** The Auto page header keeps the back row, the title
+- **The glance line and the cards.** The Auto page keeps the session head with its crumbs, then the title
   and the menu, then one glance line, the same component for every run kind
   (`RunGlanceLine`: Auto, orchestrated, preset and a plain agent): a dot, the state word (**Needs
   you**, **Running**, **Queued**, **Ready**, **Paused**, **Failed**, **Stopping**,
@@ -887,7 +886,7 @@ error, a lost report, no closing), always with a sentence from
 `delegationSentenceOf`, never a reason code. **Needs you** appears on Auto only,
 when Auto asks you. The outcome stays `blocked` in SQLite; `autoSettledStateOf`
 turns it into the word, and `autoChildWordOf` is the one function the tail, the
-Agents panel, the delegation card and the Overview read. The dock draws no red
+Agents column, the delegation card and the Overview read. The dock draws no red
 recovery for a returned child, replaced or not (`useAutoChildRecovery` reads
 `autoSettledStateOf`), and the delegation card drops the **Blocked** outcome
 line and the reason sentence from a returned child's result: it reads no line
@@ -2065,7 +2064,13 @@ The Auto prompt asks for it (`READING_ORDER_RULE`, after the level rules) and
 every child kickoff asks for it in its expected output
 (`OUTCOME_EXPECTED_NOTE`). `core/auto/outcome.ts` owns the reading:
 `parseOutcomeLine` takes the last block, `stripOutcomeLine` removes the blocks
-from the prose, and `outcomeLineOf` decides the line shown. The model's words
+from the prose, and `outcomeLineOf` decides the line shown. Both read the markers
+tolerantly, because models mistype the close: any `outcome` word led by `<` or `/`
+runs (up to six) and closed by up to three `>` is a marker, a slash makes it a close, a
+second open ends the block like a close, a stray close is dropped, and an open with
+nothing after it hides the rest of the text as before. The scan is one linear walk over
+the word, with no regular expression, so `</<<outcome>>` never reaches the line or eats
+the body below it. `AssistantText` strips the outcome before the other control markers. The model's words
 never override the facts: red checks give "Checks failed: n", a failed,
 declined or put back push gives the "Not pushed" text of `publishTextOf`. A
 missing line falls back to the outcome word ("Done", "Failed: reason"), and a

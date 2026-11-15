@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { CopyButton } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { parseOutcomeLine } from '@goodboy/core/auto';
+import { parseOutcomeLine, stripOutcomeLine } from '@goodboy/core/auto';
 import {
   extractAllCommentResolved,
   isReviewThreadId,
@@ -40,7 +40,7 @@ export const AssistantText = ({
   isComplete = true,
   workingDir = null,
 }: Props) => {
-  const displayText = stripControlMarkers(text);
+  const displayText = stripControlMarkers(stripOutcomeLine({ text }));
   const outcomeText = parseOutcomeLine({ text });
   const reveal = useRevealedMarkdown({
     runId: runId ?? NO_RUN,

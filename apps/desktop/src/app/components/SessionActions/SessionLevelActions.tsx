@@ -17,11 +17,12 @@ import { sessionMenuOf } from './sessionMenuOf';
 type Props = {
   readonly session: Session;
   readonly controls: ActionControls;
+  readonly isMenuShown: boolean;
 };
 
 const PIN_IDS: ReadonlySet<string> = new Set(['session.pin', 'session.unpin']);
 
-export const SessionLevelActions = ({ session, controls }: Props) => {
+export const SessionLevelActions = ({ session, controls, isMenuShown }: Props) => {
   const sessionId = session.id;
   const refresh = useSessionRefresh();
   const isRefreshing = useAppStore((state) => state.sessionSyncing[sessionId] === true);
@@ -43,7 +44,7 @@ export const SessionLevelActions = ({ session, controls }: Props) => {
     });
   }, [loadSessionBudget, reportError, sessionId]);
 
-  const menu = (
+  const menu = !isMenuShown ? null : (
     <ArmedActionPopover
       armed={
         controls.confirming === null

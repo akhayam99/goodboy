@@ -6,6 +6,7 @@ import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { projectAskOf } from './chat/projectAskOf';
+import { needsYouRoleNouns } from './needsYouRoleNouns';
 
 export type AutoTreeState =
   'stopping' | 'stopped' | 'done' | 'failed' | 'idle' | 'asking' | 'paused' | 'running';
@@ -72,7 +73,9 @@ export const autoTreeWordOf = ({ view, rootTurn, isWork }: Params): AutoTreeWord
     phase: view.tree.phase,
     isRootTurnLive: rootTurn?.kind === 'running' || rootTurn?.kind === 'starting',
     isPlanReady: isAutoPlanAwaitingApproval({ view }),
-    isAsking: projectAskOf({ view }) !== null,
+    isAsking:
+      projectAskOf({ view }) !== null ||
+      needsYouRoleNouns({ delegations: view.delegations }).length > 0,
     isPausedAtLimit: isAutoPausedAtLimit({ view }),
   });
   const face = AUTO_FACES[autoStateOf({ lead })];

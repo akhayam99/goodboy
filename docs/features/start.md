@@ -138,7 +138,7 @@ Start a session from an issue in Tasks, with the issue linked and its goal writt
 
 A task is never a kind: **Pick from Tasks** works the same on every kind. Press Start. The session is created with the issue linked. The run starts as the kind you picked, or is routed like any other from Auto picks. If the start fails, the page keeps the issue and your text and Start becomes **Retry**.
 
-The Linked card in the session pages holds the linked work list, with older work under **Show history**. A row opens its record, with the session title as its first crumb above it. Unlink returns there after saving; a failure keeps the record open. Sentry rows open in **Tasks**, which their tooltip says, and name their issue, as in **Open PAYMENTS-42 in Tasks**. Work on any branch the session holds counts as current whichever branch is active; only work of a branch the session no longer holds, or already merged, goes under history. Search or run and provider shortcuts open **Link work** on that provider, also when the session pages are folded, and are not offered on an archived session.
+The Linked card in the Context tab holds the linked work list, with older work under **Show history**. A row opens its record, with the session title as its first crumb above it. Unlink returns there after saving; a failure keeps the record open. Sentry rows open in **Tasks**, which their tooltip says, and name their issue, as in **Open PAYMENTS-42 in Tasks**. Work on any branch the session holds counts as current whichever branch is active; only work of a branch the session no longer holds, or already merged, goes under history. Search or run and provider shortcuts open **Link work** on that provider, also when the session pages are folded, and are not offered on an archived session.
 
 ### Review a pull request
 
@@ -157,19 +157,17 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 **Tools beside the page**
 
-A thin column of icons sits at the right of every screen, before any open panel. In a session its top group holds the tools that read that session. They stay put on every page of the session, and an open tool stays open when you move to another page.
+A thin column of icons sits at the right of every screen, under the caption **Tools**. It holds **Terminal** (⌃\` or ⌘⌥T) and **Browser**. They open beside whatever you are doing and stay open as you move between sessions and pages. With a dock open, the column sits on the dock's left edge. See [Terminal](keyboard.md#terminal) and [Browser](keyboard.md#browser).
 
-| Tool        | Key  |
-| ----------- | ---- |
-| **Explore** | none |
-| **Context** | none |
-| **Ask**     | ⌘L   |
-| **Agents**  | none |
-| **Scripts** | ⌘⌥S  |
+The other views of a session open from its head and from the keyboard:
 
-⌘⌥X opens the Changes tab on All files, ⌘⌥C the Context tab and ⌘⌥A Runs on what is running.
-
-At its foot, on every screen, sit **Terminal** (⌃\` or ⌘⌥T) and **Browser**. They open beside whatever you are doing and stay open as you move between sessions and pages. See [Terminal](keyboard.md#terminal) and [Browser](keyboard.md#browser).
+| View                 | Key |
+| -------------------- | --- |
+| **Ask**              | ⌘L  |
+| **Context** tab      | ⌘⌥C |
+| **Runs** on running  | ⌘⌥A |
+| Changes on All files | ⌘⌥X |
+| **Scripts**          | ⌘⌥S |
 
 - **Context** opens on Goal; its cards share one menu for editing, versions and who reads them.
 - Hover one to read its name and key. Each tool shows its name below its icon, brighter while it is open.

@@ -1,4 +1,5 @@
 import type { ButtonIntent } from '@goodboy/ui';
+import { isStopVerb } from './isStopVerb';
 
 type Params = {
   readonly verb: string;
@@ -74,6 +75,7 @@ const PRIMARY_VERBS: ReadonlySet<string> = new Set([
 
 export const actionIntentOf = ({ verb }: Params): ButtonIntent => {
   if (
+    isStopVerb({ verb }) ||
     DESTRUCTIVE_VERBS.has(verb) ||
     DESTRUCTIVE_VERBS.has(verb.toLowerCase()) ||
     verb.endsWith('.delete') ||

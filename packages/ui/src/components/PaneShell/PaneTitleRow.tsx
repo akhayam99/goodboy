@@ -4,6 +4,7 @@ import { PANE_RHYTHM } from '../../paneRhythm';
 
 type Props = {
   readonly title?: ReactNode;
+  readonly leading?: ReactNode;
   readonly badge?: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
@@ -39,6 +40,7 @@ const titleNodeOf = ({ title, className, testId, isHeading }: TitleParams): Reac
 
 export const PaneTitleRow = ({
   title,
+  leading,
   badge,
   meta,
   actions,
@@ -52,8 +54,9 @@ export const PaneTitleRow = ({
       data-testid={rowTestId}
       className={cn('flex min-w-0 items-center justify-between gap-3', PANE_RHYTHM.headerRow)}
     >
-      {badge != null ? (
+      {badge != null || leading != null ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
+          {leading}
           {titleNodeOf({
             title,
             className: 'min-w-0 truncate text-title text-foreground',

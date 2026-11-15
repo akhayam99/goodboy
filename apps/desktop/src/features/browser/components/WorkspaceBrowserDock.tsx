@@ -20,7 +20,7 @@ export const WorkspaceBrowserDock = ({ onClose }: Props) => {
         <EmptyState
           tone={CONCEPT_TONE.browser}
           icon={CONCEPT_ICONS.browser}
-          title="No browser tabs yet"
+          title="No page open"
           description="Open Browser on a session. Its tabs show here."
         />
       </DrawerFrame>

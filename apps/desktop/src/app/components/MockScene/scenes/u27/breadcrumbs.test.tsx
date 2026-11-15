@@ -70,23 +70,34 @@ describe('breadcrumbs scenes', () => {
     ['run', 'Runs'],
     ['step', 'Duplicate credit fix'],
     ['artifact', 'Artifacts'],
-  ])('draws the session crumbs and no back row on the %s page', async (slug, parent) => {
-    mount({ id: `u27-breadcrumbs-after-${slug}-light` });
-    const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' });
-
-    within(crumbs).getByRole('button', { name: parent });
-    expect(document.querySelector('[data-session-back]')).toBeNull();
-    expect(document.querySelector('[data-slot="trail"]')).toBeNull();
-  });
-
-  it.each(['agent', 'branch-file'])(
-    'draws the session and the item as the crumbs of the %s page',
-    async (slug) => {
+  ])(
+    'draws the session crumbs and a head back to the parent on the %s page',
+    async (slug, parent) => {
       mount({ id: `u27-breadcrumbs-after-${slug}-light` });
       const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' });
 
-      expect(within(crumbs).getAllByRole('listitem')).toHaveLength(2);
-      expect(document.querySelector('[data-session-back]')).toBeNull();
+      within(crumbs).getByRole('button', { name: parent });
+      const back = screen.getByRole('button', { name: `Back to ${parent}` });
+      expect(back.closest('[data-session-head]')).not.toBeNull();
+      expect(document.querySelector('[data-slot="trail"]')).toBeNull();
+    },
+  );
+
+  it.each([
+    ['agent', 3],
+    ['branch-file', 2],
+  ] as const)(
+    'draws the session, the list and the item as the crumbs of the %s page',
+    async (slug, count) => {
+      mount({ id: `u27-breadcrumbs-after-${slug}-light` });
+      const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+
+      expect(within(crumbs).getAllByRole('listitem')).toHaveLength(count);
+      expect(
+        [...document.querySelectorAll('[data-session-back]')].filter(
+          (back) => back.closest('[data-session-head]') === null,
+        ),
+      ).toEqual([]);
     },
   );
 

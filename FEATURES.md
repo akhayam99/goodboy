@@ -65,7 +65,7 @@ One page lists every Lead of a workspace, whatever session it runs in. A Lead is
 Open a session to see what it is for, what needs you and what happened so far.
 
 - **Session overview**: Read a session as one page: the goal, what needs you, what runs and where each branch stands.
-- **Cards**: See what needs you, what runs, what is next, where each branch stands and what finished.
+- **Cards**: See what needs you, what runs, where each branch stands and what finished, on one board.
 - **Full log**: Follow what happened in a session in one list.
 - **Next**: Know the moves that unblock the task, such as answering a question, fixing a failing check or opening a pull request.
 
@@ -134,7 +134,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 [More on workflows](docs/features/workflows.md)
 
-<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a>
+<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
 
 ## Agents
 
@@ -144,6 +144,7 @@ Talk to agents, watch what they do and steer them while they work. You can ask q
 - **Ask in a session**: Ask what is happening in a session without leaving it.
 - **Roles**: Give each agent the job it is good at.
 - **Agent transcript**: Follow one agent's work as one conversation you can write in.
+- **Agents column**: See every agent of a run beside its page.
 
 [More on agents](docs/features/agents.md)
 
@@ -247,7 +248,7 @@ Drive Goodboy from the keyboard, run a shell in the session's worktree, and open
 
 - **Terminal**: Open a real login shell in the workspace folder or any linked worktree.
 - **Keyboard shortcuts, back and forward**: Move through Goodboy, change a shortcut and stop an agent without leaving the keyboard.
-- **Explore**: Browse the session folder as a file tree, with a preview of the selected file beside it, Open and Copy.
+- **Explore**: Browse the session folder as a file tree on the Changes page of a branch.
 - **Browser**: Open your dev server, a port or a link beside the session or on a page of its own, without leaving Goodboy.
 
 [More on keyboard and terminal](docs/features/keyboard.md)

@@ -5,12 +5,13 @@ import { AskButton } from './AskButton';
 
 type Props = {
   readonly session: Session;
+  readonly isDetail: boolean;
 };
 
-export const SessionHeadActions = ({ session }: Props) => (
+export const SessionHeadActions = ({ session, isDetail }: Props) => (
   <>
     <OverviewHeaderActions session={session} />
     <AskButton sessionId={session.id} />
-    <SessionHeaderActions session={session} />
+    <SessionHeaderActions session={session} isMenuShown={!isDetail} />
   </>
 );

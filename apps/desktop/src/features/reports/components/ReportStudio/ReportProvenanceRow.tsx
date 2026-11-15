@@ -28,7 +28,7 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
     >
       <Eyebrow label={reportType} className="shrink-0 rounded-sm bg-muted px-2 py-0.5" />
       {links.length === 0 ? (
-        <span className="shrink-0">no cited source maps to this session</span>
+        <span className="shrink-0">Cites no sources</span>
       ) : (
         <Eyebrow label="sources" className="shrink-0" />
       )}

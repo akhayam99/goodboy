@@ -116,6 +116,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
               title={title}
               cover={cover}
               devicePreset={model.devicePreset}
+              onNew={model.startDraft}
             />
             {isConsoleOpen && shownTab !== null ? (
               <BrowserConsole model={model} title={title} log={consoleLog} />

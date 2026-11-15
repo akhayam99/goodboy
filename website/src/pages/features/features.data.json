@@ -217,7 +217,7 @@
         },
         {
           "title": "Cards",
-          "text": "See what needs you, what runs, what is next, where each branch stands and what finished.",
+          "text": "See what needs you, what runs, where each branch stands and what finished, on one board.",
           "group": "Overview and activity",
           "main": true
         },
@@ -281,7 +281,7 @@
         },
         {
           "title": "Sidebar",
-          "text": "One column on the left holds Board, Tasks, Workflows, Chat, Impact, Monitoring and your sessions, on every screen. Terminal and Browser sit on the right rail of every page and stay open as you move. An open session adds its own rail with its pages, projects and branches. Fold the sidebar with ⌘B and the icons stay.",
+          "text": "One column on the left holds Board, Tasks, Workflows, Chat, Impact, Monitoring and your sessions, on every screen. Terminal and Browser sit in the tools column on the right of every page and stay open as you move. An open session has one head with the tabs Overview, Runs, Artifacts, Questions and Context, and crumbs replace the tabs on a branch, an artifact or a run. Fold the sidebar with ⌘B and the icons stay.",
           "group": "Search and navigation",
           "also": "sidebar"
         },
@@ -378,7 +378,7 @@
         },
         {
           "title": "Context drawer",
-          "text": "Open goal, decisions, summary and explanations in one column from any session page with the Context button, and copy them all with Copy context. A changed decision carries a mark until Mark as read.",
+          "text": "Open goal, decisions, summary and explanations in the Context tab of a session, with Projects and Linked beside them, and copy them all with Copy context. A changed decision carries a mark until Mark as read.",
           "group": "Shared context",
           "also": "context drawer"
         },
@@ -1182,7 +1182,7 @@
         },
         {
           "title": "Ask in a session",
-          "text": "Ask what is going on in a session with ⌘L. A panel reads it for you and writes its answer in live. Each thing you can do now gets a button.",
+          "text": "Ask what is going on in a session with ⌘L. A panel beside the page reads it for you and writes its answer in live. Each thing you can do now gets a button.",
           "group": "Agents",
           "also": "ask in a session"
         },
@@ -1229,6 +1229,13 @@
           "text": "Follow one agent's work as one conversation you can write in.",
           "group": "Agents",
           "main": true
+        },
+        {
+          "title": "Agents column",
+          "text": "See every agent of a run beside its page, with its state and time. Pick one to read its record next to the chat.",
+          "group": "Agents",
+          "also": "agents column",
+          "shown": true
         },
         {
           "title": "Queue or send now",
@@ -1366,7 +1373,7 @@
         },
         {
           "title": "Explore",
-          "text": "Browse the session folder as a file tree, with a chip for the project and a letter on changed files. A file opens in a drawer, and a changed file adds a Changes view.",
+          "text": "Browse the whole folder as a file tree on the Changes page of a branch, with a letter on changed files. A click on an unchanged file reads it in place.",
           "group": "Keyboard and terminal",
           "also": "explore"
         },

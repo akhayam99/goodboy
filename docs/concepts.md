@@ -770,7 +770,7 @@ time. A child that waits on a question can ask Auto for a scout or an investigat
 two at most. It is always available; there is no switch in Settings. **Start a
 run** starts it when one agent fits the ask, and `@` names a role instead. A person sees an Auto tree as one row in the
 Overview, as a row of **Runs** in the session, and as one chat with one
-line for each delegation, its tree in the Agents panel of the session tools
+line for each delegation, its tree in the Agents column of the run page
 ([auto.md](auto.md)).
 
 ### Agent kinds
@@ -1692,7 +1692,7 @@ suggestion, never silent. The store slice `tracker-moves` owns it:
 - **Bitbucket**: pull requests from start to finish, with description, diff,
   build results in plain words and review threads. Eight actions: approve,
   revoke, request changes, withdraw, comment, reply, merge, decline, and from the
-  Overview tab rename, edit the description, add reviewers and merge with the
+  Conversation tab rename, edit the description, add reviewers and merge with the
   strategy you pick. Its nouns are `pull request`, `PR` and `#42`, and Bitbucket
   has no draft. Issues go through Jira.
 - **Jira**: read full issues and act on them. Comment, assign, move to another

@@ -8,6 +8,7 @@ import { markdownPreview } from '../../../../shared/utils/markdownPreview';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { ChatArchivedRow } from './ChatArchivedRow';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { ChatPurgeConfirm } from './ChatPurgeConfirm';
 
 type Props = {
@@ -95,9 +96,9 @@ export const ChatArchivedView = ({
             onDelete={() => onDelete(chats.map((chat) => chat.id))}
             trigger={({ arm }) => (
               <Button
-                variant="ghost"
+                {...actionButtonLookOf({ verb: 'chat.delete', variant: 'ghost' })}
                 size="sm"
-                className="w-full justify-start text-danger"
+                className="w-full justify-start"
                 aria-haspopup="dialog"
                 onClick={arm}
               >

@@ -18,6 +18,7 @@ import { ThreadReactions } from '../ThreadReactions';
 import { useSlackDraft } from '../useSlackDraft';
 import { useSlackThread } from '../useSlackThread';
 import { useSlackThreadActions } from '../useSlackThreadActions';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -195,7 +196,7 @@ export const SlackThreadDetail = ({
                 Send
               </Button>
               <Button
-                variant="ghost"
+                {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
                 size="sm"
                 disabled={isSendingDraft}
                 onClick={() => slackDraft.discard()}

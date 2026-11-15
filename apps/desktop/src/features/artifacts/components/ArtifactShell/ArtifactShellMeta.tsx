@@ -36,7 +36,7 @@ export const ArtifactShellMeta = ({ artifact, plan, agents, state, onOpenAgent }
       items={[
         state === null ? null : <ArtifactStateWord key="state" state={state} />,
         creator === null ? (
-          <span key="creator">an agent that is gone</span>
+          <span key="creator">A removed agent</span>
         ) : (
           <button
             key="creator"

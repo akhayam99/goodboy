@@ -1,5 +1,8 @@
 import { Square } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
+
+const STOP_LOOK = actionButtonLookOf({ verb: 'stop', variant: 'quiet' });
 
 type Props = {
   readonly onStop: () => void;
@@ -23,7 +26,8 @@ export const StopRunButton = ({ onStop, label = STOP_COPY.label }: Props) => (
     trigger={({ isArmed, arm }) => (
       <Button
         size="xs"
-        variant="ghost-danger"
+        variant={STOP_LOOK.variant}
+        intent={STOP_LOOK.intent}
         aria-expanded={isArmed}
         aria-haspopup="dialog"
         onClick={arm}

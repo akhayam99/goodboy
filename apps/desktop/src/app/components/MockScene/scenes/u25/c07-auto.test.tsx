@@ -280,7 +280,10 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
     expect(screen.queryByPlaceholderText('Message Auto')).toBeNull();
-    expect(document.querySelector('[data-session-back]')).toBeNull();
+    expect(
+      sessionHead().querySelector('[data-slot="pane-title-row"] [data-session-back]'),
+    ).not.toBeNull();
+    screen.getByRole('button', { name: 'Back to Auto' });
     expect(crumbLabels().at(-2)).toBe('Auto');
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(screen.queryByText('Implementer · Implementer')).toBeNull();

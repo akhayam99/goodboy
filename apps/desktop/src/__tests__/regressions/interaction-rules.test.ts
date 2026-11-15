@@ -86,6 +86,10 @@ const variantOf = (attrs: string): string | null => {
   if (literal !== null) {
     return literal[1] ?? null;
   }
+  const look = /actionButtonLookOf\(\{[^}]*\bvariant: '(\w+)'/.exec(attrs);
+  if (look !== null) {
+    return look[1] ?? null;
+  }
   return /\bvariant=\{/.test(attrs) ? 'dynamic' : 'primary';
 };
 

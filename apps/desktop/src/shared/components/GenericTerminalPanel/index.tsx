@@ -23,6 +23,7 @@ import {
   type TerminalWebLinkHover,
   type TerminalWebLinkOpen,
 } from './registerWebLinks';
+import { watchTerminalFit } from './watchTerminalFit';
 
 export type TerminalChunk = {
   readonly bytes: Uint8Array;
@@ -266,10 +267,7 @@ export const GenericTerminalPanel = ({
     };
     void start();
 
-    const ro = new ResizeObserver(() => {
-      fitAndSync();
-    });
-    ro.observe(container);
+    const stopFit = watchTerminalFit({ container, onFit: fitAndSync });
 
     return () => {
       mounted = false;
@@ -278,7 +276,7 @@ export const GenericTerminalPanel = ({
       dataDisposable?.dispose();
       unlistenOutput?.();
       unlistenExit?.();
-      ro.disconnect();
+      stopFit();
       term.dispose();
       termRef.current = null;
       searchRef.current = null;

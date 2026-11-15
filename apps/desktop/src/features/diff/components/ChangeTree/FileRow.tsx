@@ -40,7 +40,10 @@ type Props = {
 
 const EXTENSION = /\.[^./]*$/;
 const LAST_SEGMENT = /[^/]*$/;
-const MARK_SLOT_PX = 22;
+const SLOT_GAP_PX = 8;
+const RING_SLOT_PX = 16;
+const MARK_LEFT_PX = ICON_SIZE.row + SLOT_GAP_PX;
+const MARK_SLOT_PX = MARK_LEFT_PX + RING_SLOT_PX + SLOT_GAP_PX;
 
 type TipParams = {
   readonly state: ViewedState;
@@ -149,13 +152,13 @@ export const FileRow = ({
           aria-label={STATUS_WORD[row.file.status]}
           className={cn('w-3 shrink-0 text-center text-chip', tone.text)}
         >
-          {row.file.status === 'modified' ? '' : STATUS_LETTER[row.file.status]}
+          {STATUS_LETTER[row.file.status]}
         </span>
       </button>
       {isViewed || state === 'stale' ? (
         <div
           className="pointer-events-none absolute top-1/2 -translate-y-1/2"
-          style={{ left: treeIndentPx({ depth: row.depth }) + 2 }}
+          style={{ left: treeIndentPx({ depth: row.depth }) + MARK_LEFT_PX }}
         >
           <span
             role="img"

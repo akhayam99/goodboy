@@ -354,9 +354,18 @@ afterEach(() => {
 });
 
 describe('the browser pane', () => {
+  it('offers one New tab action while no page is open, which opens the address field', () => {
+    renderPane();
+    screen.getByText('No page open');
+
+    fireEvent.click(screen.getByRole('button', { name: 'New tab' }));
+
+    expect(screen.getAllByRole('combobox', { name: 'Address or search' })).toHaveLength(1);
+  });
+
   it('opens a typed address in a new tab and shows its view where the placeholder is', async () => {
     renderPane();
-    screen.getByText('Open a page beside the session');
+    screen.getByText('No page open');
 
     await typeAddress({ text: 'localhost:5173/checkout' });
     await placeView();

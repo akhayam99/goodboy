@@ -1,4 +1,5 @@
 import { Button, Notice, Textarea, useEscapeLayer } from '@goodboy/ui';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import type { PlanEditorModel } from './usePlanEditor';
 
 type Props = {
@@ -27,7 +28,11 @@ export const PlanEditor = ({ editor, title }: Props) => {
               <Button variant="secondary" size="xs" onClick={() => void editor.copyDraft()}>
                 Copy your text
               </Button>
-              <Button variant="ghost" size="xs" onClick={editor.discard}>
+              <Button
+                {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
+                size="xs"
+                onClick={editor.discard}
+              >
                 Discard
               </Button>
             </span>

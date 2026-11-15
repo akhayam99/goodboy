@@ -287,7 +287,12 @@ state is a `StateDot` or a glyph in a 16px column.
   the heading row; a
   grouped grid (`isGrouped`) spaces its groups 32px apart, never with a divider.
   The label is level 2 (`text-heading`, 14/600, foreground) on a 20px row with
-  8px under it, and its count is `text-ui` faint.
+  8px under it, and its count is `text-ui` faint. The heading starts on the
+  grid's first track, the left edge of the page title row; the rows' hover fill
+  starts there too and their first glyph sits one gap in. Every list heading on a
+  session or branch page (the Artifacts groups, the Checks groups, the commit
+  count) carries `data-list-heading` and keeps that one edge, which the row-start
+  probe measures.
   `headingLevel` is 3 by default and 2 on a page whose title is the only heading
   above the groups. A group with no `label` draws its rows alone, with no heading
   and no count, for a lead group that needs no name above a named one.
@@ -490,7 +495,7 @@ row in the left column is 28px, and so are the pages nested under it. A tree
 row (the Auto work rail, a run's step tree) is two lines in 48px:
 `PANE_RHYTHM.tree.line` (28, the node sits on its centre) then
 `PANE_RHYTHM.tree.meta` (20); the work rail reads them from `railSpec.ts`. The
-Agents panel of one Auto conversation draws its row as `PANE_RHYTHM.tree.stateRow`
+Agents column of one Auto conversation draws its row as `PANE_RHYTHM.tree.stateRow`
 (48px minimum, the title at `text-row` for a working agent and `text-ui` muted
 otherwise, at most two lines, then a `text-meta` line), under a
 `PANE_RHYTHM.tree.stateHead` group label (28px), groups `stateGroups` (16px)
@@ -783,12 +788,20 @@ A `Button` carries an `intent` next to its variant. One map,
 action verb its intent, and `actionButtonLookOf` turns it into the intent and
 variant a call site passes. The `action-intents` scene shows every pair.
 
-| Intent        | Verbs                                      | Filled                                 | Outline | Quiet |
-| ------------- | ------------------------------------------ | -------------------------------------- | ------- | ----- |
-| `primary`     | push, open PR, review, run, continue       | the one next step of the row or header | no      | no    |
-| `neutral`     | everything else                            | no                                     | yes     | yes   |
-| `caution`     | rebase, force push, reset, rewrite history | only inside a confirm                  | default | yes   |
-| `destructive` | remove worktree, delete branch, discard    | only inside a confirm                  | default | yes   |
+| Intent        | Verbs                                         | Filled                                 | Outline | Quiet |
+| ------------- | --------------------------------------------- | -------------------------------------- | ------- | ----- |
+| `primary`     | push, open PR, review, run, continue          | the one next step of the row or header | no      | no    |
+| `neutral`     | everything else                               | no                                     | yes     | yes   |
+| `caution`     | rebase, force push, reset, rewrite history    | only inside a confirm                  | default | yes   |
+| `destructive` | remove worktree, delete branch, discard, stop | only inside a confirm                  | default | yes   |
+
+Stop has one look everywhere: destructive and quiet, whatever variant the call
+site asks for (`isStopVerb`). A neutral intent never fills: `Button` draws a
+`primary` variant with the `neutral` intent as the outline. A caution confirm
+(rebase, reset) passes `role="caution"` to `ConfirmPopover`, which fills its
+confirm button in the caution tone and focuses Cancel first. The
+`toned-verbs-take-their-intent` guard fails a Rebase, Reset, Discard, Delete or
+Stop button that takes no intent.
 
 Success is a state, never a button. Only caution and destructive use a tone,
 and only on the outline or quiet variant at rest. A row and a header hold at

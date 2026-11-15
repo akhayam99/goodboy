@@ -4,7 +4,7 @@
 
 ## Session page tabs
 
-**No left rail.** The column always shows the workspace: New session, the doors, then the
+**No session column.** The sidebar always shows the workspace: New session, the doors, then the
 Pinned and Sessions lists. A session row opens the session on its Overview. The session's
 pages are page tabs directly under the session title (`SessionPageTabs`, built on `PageTabs`):
 Overview, Runs, Artifacts, Questions and Context, on every session, with or without a
@@ -19,7 +19,10 @@ in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
   `SessionWorkspace` through `SessionHeadContext`, and `SessionWorkspace` draws it once, above
   every page and overlay, on the page column: the title row (the session title, renamed in
   place, then **New**, **Ask**, Pin, Refresh and More session actions) and under it the tab
-  strip. Every tab shows the same head at the same top, the title row on the sidebar's first
+  strip, whose bottom rule spans the column like the branch page tabs. A detail page drops More
+  session actions from the title row (`SessionHeadActions` `isDetail`), so a page shows one `⋯`,
+  the menu of what it shows (the run, the artifact, the pull request); the session menu is one
+  crumb up. Every tab shows the same head at the same top, the title row on the sidebar's first
   row line; no tab draws a title of its own ("Runs", "Questions", "Context" are the tab
   names), and a page intro, when kept, sits under the tabs in the muted role (the Runs lede).
   The pages below sit under the head (`UnderTrailContext`), so their own header adds no top
@@ -31,7 +34,12 @@ in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
   the navigation store). The crumbs are the `parentPlace` chain from the session Overview to
   the open place, one crumb per object (a branch with a file or a thread open is one crumb);
   each crumb but the last is a link that calls `upTo` with its place, and Esc goes one crumb
-  up (`escapeLadder`, `up`). There is no `Back to` line. The first crumb reads `Overview`,
+  up (`escapeLadder`, `up`). There is no `Back to` line; instead the title row starts with a
+  back button (`SessionBackButton`, an outline `ArrowLeft` icon button the size of the head's
+  other controls, its left edge on the column edge, the title shifted right by it) named
+  `Back to {parent crumb}` with Esc in its tooltip. It calls `up`, the chain Esc walks, so on
+  every page below a tab the user sees at once that the screen is secondary and how to leave
+  it. A tab draws no back button. The first crumb reads `Overview`,
   never the session title, which the title row above it already shows. The session title in
   the title row is the h1 on a tab and plain text on a detail, whose own title row holds the h1.
 - **Ask** in the title row opens the Ask panel as a detail panel (drawer kind `ask`, a reader
@@ -342,7 +350,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
 - **A preset run keeps the rail on the session.** Opening a run with a fixed
   step list (a saved workflow or Describe steps; `executionMode` not
   `dynamic`) shows the run page in the center and leaves the rail on level 1;
-  its spawned agents are in the Agents panel (see The session tools). Esc on
+  its spawned agents are in the Agents column of the run page. Esc on
   the run page goes one crumb up and lands on the Runs list, through
   history when the list is the page below.
   An orchestrated run shows its document with **Orchestrated** selected
@@ -662,8 +670,11 @@ activity yet show the plain overview with its actions.
 - **Every session place below a tab draws the crumbs in place of the tab strip.**
   `crumbsOf` (store, navigation) walks `parentPlace` from the open place up to the session
   and prepends the Overview, drawn as `Overview` (`NAMES.overview`). In the examples below
-  read `Session` as that first crumb. A main agent reads `Session ›
-{agent}`, a sub agent `Session › {parent agent} › {agent}`, a run `Session › Runs ›
+  read `Session` as that first crumb. A main agent reads `Session › Runs ›
+{agent}`, a sub agent `Session › Runs › {parent agent} › {agent}`; an agent Auto started
+  that still has its role name reads `{Role} · {short task}` (`agentTaskLabelOf`: the role noun
+  and the first sentence of its task through `taskTitleOf`, never the raw prompt; the head
+  draws the task middle cut, the full brief one click away), a run `Session › Runs ›
 {run title}` (the run's title, else its workflow's name, else `Run`), a run step adds its
   step names, an artifact `Session › Artifacts › {artifact title}`, a branch or pull request
   `Session › {branch name}` (one crumb with a file or a thread open), a GitHub issue, a linked
@@ -676,9 +687,12 @@ activity yet show the plain overview with its actions.
   Context, also with a question drawer open) draws the tabs, and a drawer keeps its
   `DrawerFrame` back. `every-place-has-a-way-up.test.tsx` walks one place per lens and per
   target kind, renders `SessionWorkspace` with the head and fails when the drawn crumbs differ
-  from `crumbsOf`, when a tab draws crumbs, or when a `Back to` row or a studio trail is
-  drawn. It also fails on a back arrow or chevron outside `DrawerFrame` and the history
-  arrows, with a named allowlist for the backs that are not a way up. The history arrows in the top bar are
+  from `crumbsOf`, when a tab draws crumbs or a back button, when a detail draws no head back
+  button named after its parent crumb, or when a studio trail is drawn. It also fails on a
+  back arrow or chevron outside `DrawerFrame`, the head back button and the history arrows,
+  with a named allowlist for the backs that are not a way up. `no-back-glyph-in-trail.test.tsx`
+  keeps the glyph out of the crumbs themselves: on a secondary page the head holds exactly one,
+  in the back button of the title row. The history arrows in the top bar are
   memory, not a way up: the left one reads `Back: {place}` and the right one
   `Forward: {place}` (an agent's name, a run's title, a page), with the
   session's title on a second line and `Hold for history` on a third; a hold or a

@@ -180,7 +180,7 @@ Rules around slices:
 
 - `components/`, `hooks/`, `types/`: shared components, hooks and types, by the rules above.
 - `utils/`: pure functions and constants. No `invoke`, no store, no React, no browser storage.
-- `lib/`: code that touches the runtime boundary: Tauri wrappers (`invokeCommand`, `db`, `dbBoot`, `editor`, `reveal`), the folder dialog (`pickFolder`), browser storage (`storage-keys`, `zoom`), theme and the feature flags. A pure function does not belong here: put it in `utils/`.
+- `lib/`: code that touches the runtime boundary: Tauri wrappers (`invokeCommand`, `db`, `dbBoot`, `editor`, `reveal`), the folder dialog (`pickFolder`), browser storage (`storage-keys`, `zoom` and the factor it last applied, `appliedZoom`), theme and the feature flags. A pure function does not belong here: put it in `utils/`.
 - `keyboard/`: the shortcut registry, its dispatcher, `useShortcut` and `isTypingTarget`.
 - `platform/`: operating system detection.
 - `detail-fields/`: the field builders the record detail panes render, one file per tracker.

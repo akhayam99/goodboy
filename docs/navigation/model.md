@@ -498,9 +498,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   the same after a reload, in a second window and from a link. History Back
   (⌘[) walks this window's stack of 50 and is empty after a reload. A top
   agent (a root agent at `s/{session}/workflows/agent/{agent}`, the one page
-  `canonicalAgent` resolves for every door) goes back to the session Overview,
-  and `upTo` writes its id into `focus.returnRows['board.lead']` so the board
-  brings its row into view; opened from the Work tab of a pull request it goes
+  `canonicalAgent` resolves for every door) goes back to Runs, the list that holds
+  it, so its crumbs read `Overview › Runs › {run}` like a workflow run; when an up
+  lands on the Overview, `upTo` writes the agent it left into
+  `focus.returnRows['board.lead']` so the board brings its row into view; opened from the Work tab of a pull request it goes
   back to that tab, read from `focus.runGroup`, which the window layout saves.
   A session tab (Overview, Runs, Artifacts, Questions, Context) is the top of
   its session and has no crumbs; a file open in a branchless session's Changes
@@ -523,10 +524,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   | Changes page                                                     | the Branch page Changes tab, on its branch                                 |
   | Context panel, any section, or the Goal, Decisions, Summary lens | the Context tab, `context.section` = that section (`history` for versions) |
   | Ask panel                                                        | unchanged, the Ask panel                                                   |
-  | Agents panel or Agents page                                      | Runs, `runs.filter` = `running`                                            |
+  | An address of the old Agents drawer or Agents page               | Runs, `runs.filter` = `running`                                            |
   | Scripts panel, a script run                                      | unchanged, the Scripts drawer                                              |
-  | Explore panel or page                                            | the Changes tab, `changes.mode` = `all`                                    |
-  | A file opened from the Explore tree                              | the Changes tab on that file, `changes.mode` = `all`                       |
+  | An address of the old Explore drawer or page                     | the Changes tab, `changes.mode` = `all`                                    |
+  | A file opened from the old Explore tree                          | the Changes tab on that file, `changes.mode` = `all`                       |
   | A file opened from a link, the full log, a reading panel         | unchanged                                                                  |
   | An unknown lens                                                  | the session Overview                                                       |
 
