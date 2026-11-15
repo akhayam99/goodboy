@@ -27,14 +27,14 @@ export const TrailFold = ({ segments }: Props) => {
       <AnchoredPopover
         dropdown={dropdown}
         role="menu"
-        ariaLabel="Folded crumbs"
+        ariaLabel="Hidden crumbs"
         anchorClassName="flex min-w-0 items-center"
         trigger={
-          <Tooltip content="Show folded crumbs" anchorClassName="flex shrink-0">
+          <Tooltip content="Show hidden crumbs" anchorClassName="flex shrink-0">
             <button
               type="button"
               onClick={toggle}
-              aria-label="Show folded crumbs"
+              aria-label="Show hidden crumbs"
               aria-haspopup="menu"
               aria-expanded={open}
               className={cn(TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS)}

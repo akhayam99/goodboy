@@ -192,7 +192,7 @@ describe('Trail', () => {
       const first = container.querySelector('[data-trail-segment]');
       expect(first?.getAttribute('data-trail-segment')).toBe('Overview');
       expect(first?.nextElementSibling).toBe(fold);
-      fireEvent.click(screen.getByRole('button', { name: 'Show folded crumbs' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Show hidden crumbs' }));
       expect(screen.getAllByRole('menuitem').length).toBeGreaterThan(0);
     } finally {
       if (width !== undefined) {

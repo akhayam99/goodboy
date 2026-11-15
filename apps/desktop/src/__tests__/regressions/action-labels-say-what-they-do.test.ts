@@ -45,6 +45,10 @@ const BANNED_PHRASES: ReadonlyArray<string> = [
   'View as sent to',
   'Go to the board',
   'See all shortcuts',
+  'olded crumbs',
+  'Fold tab list',
+  'Jump to latest',
+  'Stop leftovers',
 ];
 
 const BANNED_LABELS: ReadonlyArray<string> = ['Keep', 'Separate', 'Stop keeping', 'Remove'];
