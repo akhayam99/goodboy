@@ -1,4 +1,4 @@
-import { NAMES } from './names';
+import { NAMES } from '../names';
 
 type StateWordMeaning = {
   readonly word: string;

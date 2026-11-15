@@ -113,8 +113,8 @@ type NodeListParams = {
 };
 
 const launchOrderOf = ({ left, right }: OrderParams): number => {
-  const byLaunch = left.createdAt - right.createdAt;
-  return byLaunch !== 0 ? byLaunch : left.id.localeCompare(right.id);
+  const byTime = left.createdAt - right.createdAt;
+  return byTime !== 0 ? byTime : left.id.localeCompare(right.id);
 };
 
 const uniqueByAgent = ({ delegations }: DelegationsParams): ReadonlyArray<LeadTreeDelegation> => {

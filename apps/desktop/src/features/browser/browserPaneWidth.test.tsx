@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { DRAWER_INSET, DrawerColumn, READER_DRAWER_STORAGE_KEY } from '@goodboy/ui';
 import { aSession, nextSessionId } from '@goodboy/types/testing';
 import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
-import { selectDrawerSizing } from '../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../store/slices/drawer/testing/selectDrawerSizing';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../store/storyHarness')).tauriCoreModuleMock(),

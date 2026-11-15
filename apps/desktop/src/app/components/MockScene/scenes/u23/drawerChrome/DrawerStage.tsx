@@ -3,7 +3,7 @@ import { DrawerColumn, UnderTrailContext } from '@goodboy/ui';
 import { SessionOverviewPane } from '../../../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../../../store';
 import { selectDrawerPanel } from '../../../../../../store/slices/drawer/selectDrawerPanel';
-import { selectDrawerSizing } from '../../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../../DrawerHost';
 import { SESSION, seedActivityRunScene } from '../../activityRunSeed';
 

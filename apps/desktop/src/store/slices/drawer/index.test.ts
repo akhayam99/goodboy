@@ -5,8 +5,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { importStore, resetStoryStore, type StoryStore } from '../../storyHarness';
-import { selectDrawerSizing } from './selectDrawerSizing';
 import { selectOpenDrawer } from './selectOpenDrawer';
+import { selectDrawerSizing } from './testing/selectDrawerSizing';
 import type { DrawerRequest } from './state';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });

@@ -1295,7 +1295,6 @@
     "apps/desktop/src/store/slices/drawer/openDrawer.ts": 1,
     "apps/desktop/src/store/slices/drawer/selectDrawerPanel.ts": 1,
     "apps/desktop/src/store/slices/drawer/selectDrawerPlacement.ts": 1,
-    "apps/desktop/src/store/slices/drawer/selectDrawerSizing.ts": 1,
     "apps/desktop/src/store/slices/drawer/selectOpenDrawer.ts": 1,
     "apps/desktop/src/store/slices/drawer/toggleDrawer.ts": 1,
     "apps/desktop/src/store/slices/durationEstimates/loadSessionTurnSpans.ts": 1,

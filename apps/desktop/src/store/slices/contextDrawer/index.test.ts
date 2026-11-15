@@ -4,12 +4,15 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { brandId, type IsoDateTime, type SessionDecision, type SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { aDecision } from '../../../test/aDecision';
-import { decisionChangesSince, NO_DECISION_CHANGES } from './decisionChangesSince';
+import {
+  decisionChangesSince,
+  hasDecisionChanges,
+  NO_DECISION_CHANGES,
+} from './decisionChangesSince';
 import { sessionPlace } from '../navigation/place';
 import { currentStack } from '../navigation/currentStack';
 import { selectContextBaseline } from './selectContextBaseline';
 import { selectIsContextTabOpen } from './selectIsContextTabOpen';
-import { selectHasContextChange } from './selectHasContextChange';
 import { importStore, resetStoryStore, type StoryStore } from '../../storyHarness';
 
 const h = vi.hoisted(() => ({
@@ -221,12 +224,10 @@ describe('decisionChangesSince', () => {
   it('signals a change only when one happened after the last look', () => {
     const quiet = [row({ number: 1 })];
     const changed = [...quiet, row({ number: 2, createdAt: NEWER })];
-    const state = (ledger: ReadonlyArray<SessionDecision>) => ({
-      sessionDecisions: { [SESSION_ID]: ledger },
-      sessionContextSeenAt: { [SESSION_ID]: SEEN_AT },
-    });
+    const hasChangeIn = (ledger: ReadonlyArray<SessionDecision>) =>
+      hasDecisionChanges(decisionChangesSince({ ledger, since: SEEN_AT }));
 
-    expect(selectHasContextChange({ state: state(quiet), sessionId: SESSION_ID })).toBe(false);
-    expect(selectHasContextChange({ state: state(changed), sessionId: SESSION_ID })).toBe(true);
+    expect(hasChangeIn(quiet)).toBe(false);
+    expect(hasChangeIn(changed)).toBe(true);
   });
 });

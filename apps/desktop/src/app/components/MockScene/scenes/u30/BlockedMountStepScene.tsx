@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
 import { useAppStore, useSessionById } from '../../../../../store';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { DrawerHost } from '../../../DrawerHost';
 import { SideColumn } from '../../../SideColumn';

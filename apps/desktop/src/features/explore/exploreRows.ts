@@ -1,7 +1,6 @@
 import type { ExploreEntry } from './explore';
 import type { ExploreOpenFailure } from './openFailure';
 
-export const EXPLORE_ROW_PX = 40;
 export const EXPLORE_ROOT_PATH = '';
 
 export type ExploreListing = {
