@@ -571,7 +571,6 @@
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/PermissionsGroup.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/ResetCreditRow/resetCopy.ts": 5,
-    "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/usePlanLabel.ts": 1,
     "apps/desktop/src/features/providers/policy/policyRows.ts": 1,
     "apps/desktop/src/features/providers/provider-lifecycle.ts": 7,
     "apps/desktop/src/features/providers/providerAccountChip.ts": 1,

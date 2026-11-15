@@ -1,7 +1,7 @@
 import type { IntegrationBinding } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
 import { integrationLabel } from '../../shared/utils/integrationLabel';
-import { toolIdentity } from './components/ToolSettingsScope/toolIdentity';
+import { toolIdentity } from './toolIdentity';
 import { toolHealthOf, type ToolHealth } from './toolHealthOf';
 import type { ToolSecrets } from './useToolSecrets';
 

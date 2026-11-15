@@ -405,6 +405,7 @@ export const NON_SESSION_STATE_KEYS = [
   'browserFavicons',
   'browserDevicePresets',
   'autoClockAt',
+  'toolLastCheck',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

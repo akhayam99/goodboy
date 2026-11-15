@@ -1,0 +1,28 @@
+import type { GhTokenStatus, IntegrationBinding } from '@goodboy/types';
+import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
+
+type Params = {
+  readonly integrations: ReadonlyArray<IntegrationBinding>;
+  readonly githubStatuses: ReadonlyArray<GhTokenStatus | null | undefined>;
+};
+
+type BoundParams = {
+  readonly provider: IntegrationGlyphProvider;
+};
+
+export const connectedToolsOf = ({
+  integrations,
+  githubStatuses,
+}: Params): Readonly<Record<IntegrationGlyphProvider, boolean>> => {
+  const isBound = ({ provider }: BoundParams): boolean =>
+    integrations.some((binding) => binding.provider === provider);
+  return {
+    github: githubStatuses.some((status) => status != null && status.mode !== 'absent'),
+    gitlab: isBound({ provider: 'gitlab' }),
+    bitbucket: isBound({ provider: 'bitbucket' }),
+    linear: isBound({ provider: 'linear' }),
+    jira: isBound({ provider: 'jira' }),
+    sentry: isBound({ provider: 'sentry' }),
+    slack: isBound({ provider: 'slack' }),
+  };
+};

@@ -1,3 +1,4 @@
+import { checkTools } from './checkTools';
 import { connectBitbucket } from './connectBitbucket';
 import { connectGitlab } from './connectGitlab';
 import { connectJira } from './connectJira';
@@ -16,6 +17,7 @@ export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadIntegrations: loadIntegrations(set, get),
     refreshViewerIdentity: refreshViewerIdentity({ set, get }),
+    checkTools: checkTools({ set, get }),
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
     disconnectIntegration: disconnectIntegration(set),
