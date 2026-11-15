@@ -186,25 +186,22 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   over the same `sessionRunsOf` rows the page lists, and a test pins it to the
   Now card (`sessionRunsOf.test.ts`); the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
-- **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
-  `bg-subtle` surface (`rounded-lg`) whose edges sit on the page row
-  highlight edges: pages and cards share one column inset
-  (`SessionLevel/railInset`, `RAIL_INSET`). The card pads its sides 8px and
-  its top and bottom 4px (`CARD_INSET`, one constant read by `LevelCard`, so
-  Projects, Linked and any later level card cannot drift) and a card row adds
-  4px (`CARD_ROW_INSET`), so text, chevrons, dots and counts sit 12px in and
-  a hover fill keeps 8px of card around it. Every right
-  slot (counts, diff stat, the worst state dot, the `+` glyph) ends on the
-  card's inner line. Every `+` of a level card, header or project row, is
+- **Projects and Linked are cards** (`SessionLevel/LevelCard`), drawn in the
+  Context tab with the grammar of every Context card: a `Band` (rounded
+  `bg-fill`, 4px inset) whose head row is `ContextCardHead` (32px, the title
+  12px in, the count from `countSlotText` beside it, the actions in one right
+  slot on the title's centre line). The body pads 4px (`CONTEXT_CARD_BODY`)
+  and a card row adds 4px (`CARD_ROW_INSET`), so text, chevrons, dots and
+  counts sit 12px in, on the head's edge, and a hover fill keeps 8px of card
+  around it. Every `+` of a level card, header or project row, is
   `LevelAddTrigger` in its own 24px `xs` box, with no size override from the
-  card, so all of them share one right edge. It has a header row inside it: the
-  title and a fold chevron as one button, then the quiet meta and a `+` icon
-  button (`LevelAddTrigger`) at the right. A card folds from its header and
-  remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);
-  folded, Projects keeps the worst state of its worktrees as one dot in the
-  header (`useProjectsSignal`) and Linked its item count from 2, so a state
-  that needs you never hides in a fold. Cards sit 8px apart, 16px under the
-  pages.
+  card, so all of them share one right edge. The title and a fold chevron are
+  one button. A card folds from its header and remembers it
+  (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`); folded,
+  Projects keeps the worst state of its worktrees as one dot in the header
+  (`useProjectsSignal`), and Linked shows its item count from 2 open or
+  folded, so a state that needs you never hides in a fold. Cards sit 12px
+  apart (`PANE_RHYTHM.block`), like every block of the tab.
 - **Projects is one tree**, holding every branch of the session, so there is no
   second sidebar to go back from. A folder row (`SessionLevel/ProjectTree`) is
   its name and its `+`; the name toggles the folder and a chevron shows only

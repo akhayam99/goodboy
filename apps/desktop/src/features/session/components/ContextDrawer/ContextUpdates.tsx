@@ -1,6 +1,6 @@
-import { Fragment, useState } from 'react';
-import { ArrowUpRight } from 'lucide-react';
-import { Button, Collapsible, EmptyLine, ICON_SIZE, Notice, FOCUS_RING, cn } from '@goodboy/ui';
+import { Fragment, useId, useState, type ReactNode } from 'react';
+import { ArrowUpRight, ChevronRight } from 'lucide-react';
+import { Button, EmptyLine, ICON_SIZE, Notice, Reveal, FOCUS_RING, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -24,6 +24,7 @@ import {
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly action?: ReactNode;
 };
 
 const BUTTON_LABEL: Readonly<Record<ContextUpdatePhase, string>> = {
@@ -37,7 +38,8 @@ const BUTTON_LABEL: Readonly<Record<ContextUpdatePhase, string>> = {
 const TERM = 'text-meta text-faint-foreground';
 const VALUE = 'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-foreground';
 
-export const ContextUpdates = ({ sessionId }: Props) => {
+export const ContextUpdates = ({ sessionId, action }: Props) => {
+  const panelId = useId();
   const now = useNow(30_000);
   const { status, lastUpdate, lastAttempt, error } = useSummarizerStatus(sessionId);
   const round = useSummarizerRound(sessionId);
@@ -70,21 +72,38 @@ export const ContextUpdates = ({ sessionId }: Props) => {
   };
 
   return (
-    <Collapsible
-      open={isOpen}
-      onOpenChange={setIsOpen}
-      trigger={
-        <span
-          aria-label={`Context updates: ${headline}`}
-          className="inline-flex min-w-0 items-center gap-1 text-meta text-muted-foreground"
-        >
-          <ContextUpdateGlyph phase={phase} placement="status" />
-          <span className="truncate">{headline}</span>
-        </span>
-      }
-    >
-      {isOpen ? (
-        <div className="flex flex-col gap-3 pt-1">
+    <div data-context-status="" className="flex min-w-0 flex-col gap-2">
+      <div data-context-head="" className="flex h-8 min-w-0 items-center justify-between gap-2">
+        <div data-context-head-title="" className="flex min-w-0 items-center">
+          <Button
+            variant="quiet"
+            size="sm"
+            aria-label={`Context updates: ${headline}`}
+            aria-expanded={isOpen}
+            aria-controls={panelId}
+            onClick={() => setIsOpen(!isOpen)}
+            className="min-w-0 gap-1 px-0 font-normal hover:bg-transparent"
+          >
+            <ContextUpdateGlyph phase={phase} placement="status" />
+            <span className="truncate">{headline}</span>
+            <ChevronRight
+              size={ICON_SIZE.row}
+              aria-hidden
+              className={cn(
+                'shrink-0 text-faint-foreground motion-safe:transition-transform',
+                isOpen && 'rotate-90',
+              )}
+            />
+          </Button>
+        </div>
+        {action == null ? null : (
+          <div data-context-head-actions="" className="flex shrink-0 items-center gap-1">
+            {action}
+          </div>
+        )}
+      </div>
+      <Reveal open={isOpen} id={panelId}>
+        <div className="flex flex-col gap-3 rounded-lg bg-fill p-3">
           {phase === 'failed' ? (
             <Notice
               tone="danger"
@@ -164,7 +183,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
             {hint === '' ? null : <span className="text-meta text-muted-foreground">{hint}</span>}
           </div>
         </div>
-      ) : null}
-    </Collapsible>
+      </Reveal>
+    </div>
   );
 };

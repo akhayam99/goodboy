@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { SkeletonText } from '@goodboy/ui';
+import { EmptyLine, SkeletonText } from '@goodboy/ui';
 import { parseSummaryDocument, type SummarySectionKey } from '@goodboy/core/context';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { RawDocumentEditor } from './RawDocumentEditor';
@@ -47,6 +47,10 @@ export const SummarySection = ({
 
   if (isLoading) {
     return <SkeletonText lines={3} />;
+  }
+
+  if (value.trim() === '') {
+    return <EmptyLine>The summary starts after the first agent reply.</EmptyLine>;
   }
 
   return (

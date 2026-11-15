@@ -18,7 +18,7 @@ export const SummaryBlock = ({ title, body, icon }: Props) => {
       {items.length > 0 ? (
         <KeyLineList items={items} label={title} />
       ) : (
-        <EmptyLine className="text-meta text-faint-foreground">Nothing yet.</EmptyLine>
+        <EmptyLine>Nothing yet.</EmptyLine>
       )}
     </ContextBlock>
   );

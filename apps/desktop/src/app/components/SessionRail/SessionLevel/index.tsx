@@ -1,4 +1,4 @@
-import { ErrorStrip, ScrollFade, cn } from '@goodboy/ui';
+import { ErrorStrip, PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionLoading } from '../../../../store';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
@@ -6,7 +6,6 @@ import { LevelFolder } from './LevelFolder';
 import { LevelLinked } from './LevelLinked';
 import { LevelProjects } from './LevelProjects';
 import { LevelSkeleton } from './LevelSkeleton';
-import { RAIL_INSET } from './railInset';
 
 type Props = {
   readonly session: Session;
@@ -23,28 +22,24 @@ export const SessionLevel = ({ session, isActive }: Props) => {
   );
 
   return (
-    <div data-session-level="" className="flex min-h-0 flex-1 flex-col gap-1">
-      <ScrollFade className="min-h-0 flex-1">
-        <div className={cn('flex flex-col gap-4 pb-2', RAIL_INSET)}>
-          <ErrorStrip
-            label="this session's agents"
-            error={agentsError === null ? null : new Error(agentsError)}
-            onRetry={() => void openSessionAgents({ sessionId })}
-          />
-          {isLoading ? (
-            <LevelSkeleton />
+    <div data-session-level="" className={cn('flex min-w-0 flex-col', PANE_RHYTHM.block)}>
+      <ErrorStrip
+        label="this session's agents"
+        error={agentsError === null ? null : new Error(agentsError)}
+        onRetry={() => void openSessionAgents({ sessionId })}
+      />
+      {isLoading ? (
+        <LevelSkeleton />
+      ) : (
+        <div data-level-cards="" className={cn('flex flex-col', PANE_RHYTHM.block)}>
+          {isBranchless ? (
+            <LevelFolder session={session} />
           ) : (
-            <div data-level-cards="" className="flex flex-col gap-4">
-              {isBranchless ? (
-                <LevelFolder session={session} />
-              ) : (
-                <LevelProjects session={session} isActive={isActive} />
-              )}
-              <LevelLinked session={session} isActive={isActive} />
-            </div>
+            <LevelProjects session={session} isActive={isActive} />
           )}
+          <LevelLinked session={session} isActive={isActive} />
         </div>
-      </ScrollFade>
+      )}
     </div>
   );
 };

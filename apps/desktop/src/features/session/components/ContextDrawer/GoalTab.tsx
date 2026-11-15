@@ -139,16 +139,26 @@ export const GoalTab = ({
         onOpenVersions={onOpenVersions}
       >
         <EmptyLine
-          className="self-stretch"
           action={
-            <Button size="sm" disabled={isLocked} onClick={() => setIsEditing(true)}>
-              Write the goal
-            </Button>
+            <WriteFromWorkButton
+              sessionId={sessionId}
+              isLocked={isLocked}
+              look="action"
+              fallback={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={isLocked}
+                  onClick={() => setIsEditing(true)}
+                >
+                  Write the goal
+                </Button>
+              }
+            />
           }
         >
-          No goal yet. Every agent starts from it.
+          Every agent starts from the goal.
         </EmptyLine>
-        <WriteFromWorkButton sessionId={sessionId} isLocked={isLocked} />
         {isLocked ? (
           <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>
         ) : null}

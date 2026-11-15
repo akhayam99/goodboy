@@ -138,7 +138,6 @@
     "apps/desktop/src/features/review/components/ReviewThreadContent/index.tsx": 1,
     "apps/desktop/src/features/review/components/WriteReview/LineComment.tsx": 1,
     "apps/desktop/src/features/review/components/WriteReview/WriteReviewForm.tsx": 1,
-    "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountPreflightCard.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/versionHistoryList.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": 1,

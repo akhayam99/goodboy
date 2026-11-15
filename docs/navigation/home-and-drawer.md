@@ -493,7 +493,8 @@ The pane is one scroll with Goal, Decisions, Summary and Explanations as
 sections (`ContextSection`, no tabs); opening it on a section scrolls there. Each
 card has one `⋯` menu, **Edit**, **Versions** and **Change visibility**
 (`SlotSourceActions`), and no eye or second button. **Context updates**
-(`ContextUpdates`, a `Collapsible`) sits above the cards and says `Updated 2 min ago`,
+(`ContextUpdates`, a head row whose toggle and action slot share one centre line;
+the Context tab puts **Copy context** in that slot) sits above the cards and says `Updated 2 min ago`,
 `Queued`, `Updating…` or `Couldn't update`; open, it lists the last round
 (`summarizerRounds`: when, how many turns or a full pass, model and effort, tokens
 and cost, what changed as a comma list of links to the cards, every value on the same
@@ -505,7 +506,8 @@ Summary draws its State block only when the State holds more than its first sent
 
 Every card reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and
-folds the rest behind **Show N more** (`KeyLineList`); `summaryItems` splits a
+folds the rest behind **Show N more** (`KeyLineList` through `ContextExpander`, the
+one fold style of the tab); `summaryItems` splits a
 body into items, one per top-level bullet with its sub-bullets, or one per
 sentence for prose. Summary shows State when it says more than the glance line, then Next
 and Learned, then any section the summarizer did not name; Open questions are left out
