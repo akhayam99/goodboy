@@ -17,6 +17,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedSessionAsk } from '../../../../app/components/MockScene/scenes/sessionAskSeed';
 import { AskDrawer } from '../../ask/components/AskDrawer';
+import { ASK_FOCUS_EVENT } from '../../ask/askFocusEvent';
 import { currentStack } from '../../../../store/slices/navigation/currentStack';
 import { selectIsContextTabOpen } from '../../../../store/slices/contextDrawer/selectIsContextTabOpen';
 import { ContextCardsContext } from '../../contextCardsContext';
@@ -154,11 +155,15 @@ describe('the Context tab', () => {
   });
 
   it('opens Ask as a detail panel from ask.open, with its input focused', async () => {
+    const focusAsked = new Promise<void>((resolve) => {
+      window.addEventListener(ASK_FOCUS_EVENT, () => resolve(), { once: true });
+    });
     act(() => store.getState().openAsk({ sessionId: SESSION_ID }));
     expect(store.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION_ID });
 
     render(<AskDrawer sessionId={SESSION_ID} onClose={vi.fn()} />);
     const field = await screen.findByRole('textbox', { name: 'Ask about this session' });
+    await focusAsked;
     await waitFor(() => expect(document.activeElement).toBe(field));
   });
 });

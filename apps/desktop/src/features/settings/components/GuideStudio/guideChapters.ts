@@ -248,7 +248,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'shell',
     group: 'daily',
     title: 'Sidebar and session pages',
-    lead: 'The sidebar looks the same on every screen. A session opens its pages beside it, and the tools rail at the right holds Terminal and Browser.',
+    lead: 'The sidebar looks the same on every screen, and a session opens its pages beside it.',
     points: [
       {
         term: 'Sidebar',
@@ -264,15 +264,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context, with counts, plus Changes when the session has one branch. Runs holds plans, presets, Auto and agents. Context holds the Projects and Linked cards.',
+        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context, plus Changes with exactly one branch. Runs holds plans, presets, Auto and agents. Context holds the Projects and Linked cards. Below a tab, Esc goes one up.',
       },
       {
         term: 'Session actions and +',
         desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete.',
       },
       {
-        term: 'Running agents',
-        desc: `${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens in the center.`,
+        term: 'Agents rail',
+        desc: `A run or Auto lists its agents at the left. A row opens one in the centre; arrows move, Enter opens. ${shortcutGlyphs('session.spawned')} opens Runs on what is running.`,
       },
       {
         term: 'Tools rail',
@@ -438,10 +438,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Changes, Commits, Checks and Work. Rebase sits on its row, and Running here opens Monitoring on the branch.',
+        desc: 'Click a branch on the board or the Projects card and its page opens in place: Conversation, Changes, Commits, Checks, Work and Comments. Rebase sits on its row, and Running here opens Monitoring on the branch.',
       },
       {
-        term: 'Pull request',
+        term: 'Conversation',
         desc: 'One merge box says whether it can merge, then what holds it, worst first. Add reviewers or merge the ways the host allows; with none yet, a create form offers Write with Scribe.',
       },
       {
@@ -458,7 +458,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Changes',
-        desc: 'The diff, with the file list behind Files and Viewed N of M on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
+        desc: 'The diff, with its files in a rail on the left, Changed or All files, and Viewed N of M on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Checks',

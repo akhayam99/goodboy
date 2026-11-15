@@ -270,18 +270,18 @@ describe('the shell chapter', () => {
     expect(actions).toContain('Archive and Delete');
   });
 
-  it('opens Runs on what is running from its key, with no Agents panel', () => {
-    const agents = pointOf('shell', 'Running agents');
-    [shortcutGlyphs('session.spawned'), 'opens Runs on what is running', 'in the center'].forEach(
+  it('shows the agents of a run and Auto on the rail at the left, with its key and no rail level', () => {
+    const agents = pointOf('shell', 'Agents rail');
+    [shortcutGlyphs('session.spawned'), 'run or Auto', 'at the left', 'Enter opens'].forEach(
       (entry) => expect(agents).toContain(entry),
     );
     expect(agents).not.toContain('Agents panel');
   });
 
-  it('opens a branch in place from the Projects card', () => {
+  it('opens a branch in place from the board and the Projects card', () => {
     const branchPage = pointOf('review', 'Branch page');
-    ['in place', 'Pull request', 'Comments', 'Changes', 'Commits', 'Checks'].forEach((entry) =>
-      expect(branchPage).toContain(entry),
+    ['in place', 'Conversation', 'Comments', 'Changes', 'Commits', 'Checks', 'Work'].forEach(
+      (entry) => expect(branchPage).toContain(entry),
     );
     expect(branchPage).not.toContain('steps into');
   });
