@@ -179,6 +179,15 @@ const FORMER_BLOBS: ReadonlyArray<PreviousBuildBlob> = [
   },
 ];
 
+const WORK_STUDIO = { kind: 'work', filter: 'needsYou' } as const;
+
+const WORK_STUDIO_BLOB: ExpectedBlob = {
+  name: 'studio work',
+  kind: 'work',
+  blob: blobOf({ place: SESSION_PLACE, studio: WORK_STUDIO }),
+  expected: WORK_STUDIO,
+};
+
 const TERMINAL_DOCK_WITHOUT_SESSION: PreviousBuildBlob = {
   name: 'terminal dock without a session',
   kind: 'terminal',
@@ -190,6 +199,7 @@ const TERMINAL_DOCK_WITHOUT_SESSION: PreviousBuildBlob = {
 
 export const PREVIOUS_BUILD_BLOBS = {
   studios: STUDIO_BLOBS,
+  workStudio: WORK_STUDIO_BLOB,
   drawers: DRAWER_BLOBS,
   places: PLACE_BLOBS,
   draft: DRAFT_BLOB,
