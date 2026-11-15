@@ -264,7 +264,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: 'One head with the tabs Overview, Runs, Artifacts, Questions and Context, plus Changes with one project. Context holds the Projects and Linked cards. Below a tab, crumbs replace the tabs and Esc goes one up.',
+        desc: 'One head with the tabs Overview, Runs, Artifacts, Questions and Context, plus Changes with exactly one branch. Context holds the Projects and Linked cards. Below a tab, crumbs replace the tabs and Esc goes one up.',
       },
       {
         term: 'Session actions and +',
@@ -272,7 +272,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Agents rail',
-        desc: `A run or Auto lists its agents on a rail at the left. A row opens that agent in the centre; j and k hop, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running.`,
+        desc: `A run or Auto lists its agents on a rail at the left. A row opens that agent in the centre; the arrow keys move and Enter opens, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running.`,
       },
       {
         term: 'Tools rail',

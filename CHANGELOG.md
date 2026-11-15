@@ -33,7 +33,7 @@ Ask, in the session head, opens as a panel beside the page, so you can ask about
 #### One head for every session page
 <!-- gb area=sessions image=overview pr=2227 -->
 
-Every session page shows the same head: the title, New, Ask, pin and refresh, with the tabs Overview, Runs, Artifacts, Questions and Context under it. A session with one project adds Changes at the end.
+Every session page shows the same head: the title, New, Ask, pin and refresh, with the tabs Overview, Runs, Artifacts, Questions and Context under it. A session with exactly one branch adds Changes at the end.
 
 Overview opens on tiles for branches, questions, artifacts, spend and time, then a board of the branches grouped by state.
 

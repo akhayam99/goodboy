@@ -272,7 +272,7 @@ describe('the shell chapter', () => {
 
   it('shows the agents of a run and Auto on the rail at the left, with its key and no rail level', () => {
     const agents = pointOf('shell', 'Agents rail');
-    [shortcutGlyphs('session.spawned'), 'run or Auto', 'at the left', 'j and k hop'].forEach(
+    [shortcutGlyphs('session.spawned'), 'run or Auto', 'at the left', 'Enter opens'].forEach(
       (entry) => expect(agents).toContain(entry),
     );
     expect(agents).not.toContain('‹ Runs');
