@@ -384,7 +384,7 @@
         },
         {
           "title": "Who receives what",
-          "text": "Who reads this, in each card menu, lists the roles that receive that part, so you see what goes into each agent's prompt.",
+          "text": "Change visibility, in each card menu, lists the roles that receive that part, so you see what goes into each agent's prompt.",
           "group": "Shared context",
           "also": "who receives what"
         },
