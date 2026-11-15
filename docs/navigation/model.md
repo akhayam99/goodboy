@@ -104,8 +104,13 @@
   Needs you rows read the attention group of `useStageGroupedSessions`.
   Connections, after Chat at full weight, is the page of the providers on this Mac and the
   integrations of the workspace (`features/connections`); it has no shortcut and answers to
-  Providers and Integrations in ⌘K. The amber dot on it names what needs fixing, such as
-  "Connections, Claude is about to run out" (`selectProviderAttention`, named by `doorSignalOf`).
+  Providers and Integrations in ⌘K. Its index shows a tile per set up provider and integration
+  in a fixed order (`connectionGroups`), and a low Not set up row under each group with the verb
+  that sets it up. Health changes a tile's word and border, never its place. The tile word, the
+  header counts and the amber dot on the door all come from `connectionStateOf`; the dot names
+  what needs fixing, such as "Connections, Linear: Key missing" (`connectionsAttentionOf`, named
+  by `doorSignalOf`). The key check of each tool and its time live in memory in the store
+  (`checkTools`, `toolLastCheck`), at most once a minute unless the page's refresh forces it.
   Work is an eighth door between Tasks and Workflows, with a New badge outlined in the primary colour,
   and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`
   (key `+work`, `features/work/components/WorkPage`): every Lead of the workspace across sessions,
