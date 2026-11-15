@@ -3,6 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import type { WorkspaceSettingField } from '../../pageKeys';
 import { useFoldersWithOwn } from '../../hooks/useFoldersWithOwn';
 import { useWorkspaceField } from '../../hooks/useWorkspaceField';
+import { settingRowKeyOfField } from '../../settingRowKeyOfField';
 import { SettingRow } from './SettingRow';
 
 type Props = {
@@ -19,6 +20,7 @@ export const WorkspaceFieldRow = ({ workspaceId, field, help, layout, children }
   return (
     <SettingRow
       label={state.label}
+      rowKey={settingRowKeyOfField({ field })}
       help={help}
       layout={layout}
       chip={foldersNote}

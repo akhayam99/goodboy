@@ -59,7 +59,11 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
 
   return (
     <Band inset="content" label={DANGER_ZONE} ariaLabel={DANGER_ZONE} headingLevel={2}>
-      <SettingRow label="Disconnect this workspace" help={DISCONNECT_NOTE}>
+      <SettingRow
+        label="Disconnect this workspace"
+        rowKey="disconnect-workspace"
+        help={DISCONNECT_NOTE}
+      >
         <ConfirmPopover
           role="danger"
           icon={<Unplug size={ICON_SIZE.row} aria-hidden />}

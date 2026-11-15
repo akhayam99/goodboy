@@ -152,6 +152,7 @@ export const OpenWithBand = () => {
       <div className="flex flex-col">
         <ToolChoiceField
           label="Editor"
+          rowKey="open-editor"
           help={EDITOR_HELP}
           value={editorBinary}
           choices={editorChoices}
@@ -160,6 +161,7 @@ export const OpenWithBand = () => {
         />
         <ToolChoiceField
           label="Terminal"
+          rowKey="open-terminal"
           help={TERMINAL_HELP}
           value={terminalApp}
           defaultValue={DEFAULT_TERMINAL_APP}
@@ -169,6 +171,7 @@ export const OpenWithBand = () => {
         />
         <ToolChoiceField
           label="Browser"
+          rowKey="open-browser"
           help={browserHelp}
           value={browserApp}
           defaultValue={DEFAULT_BROWSER_APP}

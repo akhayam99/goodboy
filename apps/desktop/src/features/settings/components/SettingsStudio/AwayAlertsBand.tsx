@@ -57,6 +57,7 @@ export const AwayAlertsBand = () => {
       <div className="flex flex-col">
         <SettingRow
           label="Banner when you are away"
+          rowKey="away-banner"
           help={BANNER_HELP}
           isChanged={banner.value}
           onReset={() => void banner.save({ value: false })}
@@ -70,6 +71,7 @@ export const AwayAlertsBand = () => {
         </SettingRow>
         <SettingRow
           label="Dock badge"
+          rowKey="dock-badge"
           help={BADGE_HELP}
           isChanged={!badge.value}
           onReset={() => void badge.save({ value: true })}

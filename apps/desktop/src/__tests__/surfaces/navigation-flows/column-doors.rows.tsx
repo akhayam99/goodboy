@@ -129,7 +129,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette verb: Delete asks first',
     covers: ['palette:Delete…'],
-    open: () => openPalette(/^Delete/, 'delete'),
+    open: () => openPalette(/^Delete…/, 'delete'),
     lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
   },
   {

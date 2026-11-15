@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { FieldRow, Input, SegmentedTabs, formatError } from '@goodboy/ui';
+import { Input, SegmentedTabs, formatError } from '@goodboy/ui';
 import type { WorkflowRules, WorkflowSpendLimitMode, WorkspaceId } from '@goodboy/types';
+import { SettingRow } from '../../../settings/settingRow';
 import { useLimitAmountDraft } from '../../../../shared/hooks/useLimitAmountDraft';
 import { NAMES } from '../../../../shared/utils/names';
 
@@ -57,8 +58,9 @@ export const DefaultLimitSetting = ({ workspaceId, rules, patch }: Props) => {
   const error = draft.error ?? modeError;
   const stored = rules.spendLimitUsd === null ? '' : String(rules.spendLimitUsd);
   return (
-    <FieldRow
+    <SettingRow
       label={LABEL}
+      rowKey="spend-limit"
       help={
         <>
           {HELP}
@@ -102,6 +104,6 @@ export const DefaultLimitSetting = ({ workspaceId, rules, patch }: Props) => {
           onChange={(mode) => void setMode({ mode })}
         />
       </div>
-    </FieldRow>
+    </SettingRow>
   );
 };

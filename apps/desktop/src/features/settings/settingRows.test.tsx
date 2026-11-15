@@ -32,6 +32,14 @@ const PAGES: ReadonlyArray<SettingRowPage> = [
 
 const KEYS: ReadonlySet<string> = new Set(SETTING_ROWS.map((row) => row.key));
 
+const UNANCHORED: ReadonlySet<string> = new Set([
+  'pair-iphone',
+  'your-job',
+  'about-work',
+  'working-rules',
+  'explain-more',
+]);
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -91,6 +99,23 @@ const seedPage = (): void => {
 };
 
 describe('setting rows registry', () => {
+  it.each([
+    { scope: 'app', section: 'general', row: 'theme' },
+    { scope: 'workspace', section: 'branches', row: 'branch-prefix' },
+  ] as const)('opens $section and lights the $row row itself', async (focus) => {
+    const { container } = render(<SettingsFrame focus={focus} seed={seedPage} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+
+    const lit = container.querySelector<HTMLElement>(`[data-anchor="${focus.row}"]`);
+    expect(lit?.dataset.highlighted).toBe('');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+    expect(lit?.dataset.highlighted).toBeUndefined();
+  });
+
   it('gives every row a unique key', () => {
     expect(KEYS.size).toBe(SETTING_ROWS.length);
   });
@@ -103,10 +128,15 @@ describe('setting rows registry', () => {
       const expected = SETTING_ROWS.filter((row) => pageId(row.page) === pageId(page));
 
       expect(expected.filter((row) => !texts.has(row.label)).map((row) => row.key)).toEqual([]);
-      const anchored = [...detail.querySelectorAll<HTMLElement>('[data-setting-row]')].map(
-        (node) => node.dataset.settingRow ?? '',
+      const anchored = [...detail.querySelectorAll<HTMLElement>('[data-anchor]')].map(
+        (node) => node.dataset.anchor ?? '',
       );
       expect(anchored.filter((key) => !KEYS.has(key))).toEqual([]);
+      expect(
+        expected
+          .filter((row) => !UNANCHORED.has(row.key) && !anchored.includes(row.key))
+          .map((row) => row.key),
+      ).toEqual([]);
     },
   );
 });

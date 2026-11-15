@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FieldRow, SegmentedTabs } from '@goodboy/ui';
+import { SegmentedTabs } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAutoLevel } from '../../../../../shared/hooks/useAutoLevel';
 import { useIsWorkOn } from '../../../../../shared/hooks/useIsWorkOn';
@@ -9,11 +9,13 @@ import {
 } from '../../../../auto/permissions/LeadPermissionsChip';
 import { NAMES } from '../../../../../shared/utils/names';
 import { RUN_AUTONOMY_OPTIONS } from '../../../../workflows/runAutonomy';
+import { SettingRow } from '../SettingRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
+const ROW_KEY = 'auto-asks';
 const LABEL = `${NAMES.runKind.autoAgent} asks you`;
 const HELP = `How often a run started as ${NAMES.runKind.autoAgent} stops for your go.`;
 const WORK_HELP = `How often a run started as ${NAMES.runKind.autoAgent} stops, one permission at a time.`;
@@ -28,14 +30,15 @@ export const AutoLevelDefaultRow = ({ workspaceId }: Props) => {
   );
   if (isWorkOn) {
     return (
-      <FieldRow label={LABEL} help={WORK_HELP}>
+      <SettingRow label={LABEL} rowKey={ROW_KEY} help={WORK_HELP}>
         <LeadPermissionsChip target={target} />
-      </FieldRow>
+      </SettingRow>
     );
   }
   return (
-    <FieldRow
+    <SettingRow
       label={LABEL}
+      rowKey={ROW_KEY}
       help={
         <>
           {HELP}
@@ -63,6 +66,6 @@ export const AutoLevelDefaultRow = ({ workspaceId }: Props) => {
           void pick({ next }).finally(() => setIsSaving(false));
         }}
       />
-    </FieldRow>
+    </SettingRow>
   );
 };

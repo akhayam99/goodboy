@@ -62,7 +62,11 @@ export const WorkspaceNameBand = ({ workspaceId }: Props) => {
 
   return (
     <Band inset="content" label="Workspace" ariaLabel="Workspace" headingLevel={2}>
-      <SettingRow label="Name" help="Shown in the title bar and the workspace switcher.">
+      <SettingRow
+        label="Name"
+        rowKey="workspace-name"
+        help="Shown in the title bar and the workspace switcher."
+      >
         <Input
           type="text"
           value={draft}

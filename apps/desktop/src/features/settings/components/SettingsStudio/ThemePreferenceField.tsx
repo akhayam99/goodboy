@@ -20,6 +20,7 @@ export const ThemePreferenceField = () => {
   return (
     <SettingRow
       label="Theme"
+      rowKey="theme"
       help="Applies to every window."
       isChanged={preference !== DEFAULT_THEME_PREFERENCE}
       onReset={() => switchTheme({ to: DEFAULT_THEME_PREFERENCE })}

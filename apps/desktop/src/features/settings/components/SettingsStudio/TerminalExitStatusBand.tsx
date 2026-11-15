@@ -40,6 +40,7 @@ export const TerminalExitStatusBand = () => {
       <div className="flex flex-col">
         <SettingRow
           label={LABEL}
+          rowKey="command-status"
           help={HELP}
           isChanged={!save.value}
           onReset={() => void save.save({ value: true })}

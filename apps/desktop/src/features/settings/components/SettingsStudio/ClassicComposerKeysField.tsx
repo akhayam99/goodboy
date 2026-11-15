@@ -18,6 +18,7 @@ export const ClassicComposerKeysField = () => {
   return (
     <SettingRow
       label="Keys from before 0.15.5"
+      rowKey="classic-send-keys"
       help={`Starting an agent adds a line on ${shortcutGlyphs('composer.send')} and starts on ${shortcutGlyphs('composer.submit')}, and review replies send on ${shortcutGlyphs('composer.send')}.`}
       isChanged={save.value}
       onReset={() => void save.save({ value: false })}

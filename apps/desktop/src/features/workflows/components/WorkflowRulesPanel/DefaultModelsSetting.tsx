@@ -1,5 +1,6 @@
-import { Button, FieldRow } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
+import { SettingRow } from '../../../settings/settingRow';
 import { NAMES } from '../../../../shared/utils/names';
 import { MODELS_PAGE_SECTION } from '../../../settings/isModelsPage';
 import { openSettings } from '../../../settings/openSettings';
@@ -14,7 +15,7 @@ const HELP = 'The providers a new run may use, and the backup when one is out.';
 export const DefaultModelsSetting = ({ workspaceId }: Props) => {
   const summary = usePolicySummary({ workspaceId });
   return (
-    <FieldRow label={NAMES.models} help={HELP}>
+    <SettingRow label={NAMES.models} rowKey="run-models" help={HELP}>
       <div className="flex min-w-0 items-center gap-2">
         <span data-testid="rules-policy-summary" className="truncate text-row text-foreground">
           {summary}
@@ -27,6 +28,6 @@ export const DefaultModelsSetting = ({ workspaceId }: Props) => {
           {`Open ${NAMES.models}`}
         </Button>
       </div>
-    </FieldRow>
+    </SettingRow>
   );
 };

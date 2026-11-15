@@ -89,11 +89,16 @@ export const SearchIndexBand = () => {
       headingLevel={2}
     >
       <div className="flex flex-col">
-        <SettingRow label="Index" help={progress ?? 'Kept up to date as you work.'}>
+        <SettingRow
+          label="Index"
+          rowKey="search-index"
+          help={progress ?? 'Kept up to date as you work.'}
+        >
           <span className="text-meta text-muted-foreground">{size}</span>
         </SettingRow>
         <SettingRow
           label="Rebuild"
+          rowKey="search-rebuild"
           help="Empties the index and fills it again from your sessions while the app is idle."
         >
           <Button
@@ -109,6 +114,7 @@ export const SearchIndexBand = () => {
         </SettingRow>
         <SettingRow
           label="Leave out"
+          rowKey="search-leave-out"
           help="Sessions, messages and branches of these folders stop showing in search."
           isChanged={excluded.length > 0}
           onReset={() => void changeExcluded({ next: [] })}

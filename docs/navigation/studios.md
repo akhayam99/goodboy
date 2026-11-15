@@ -309,11 +309,16 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   before help), in place of the groups; the arrows move, Return opens, Esc
   clears (`useSettingsSearch`). A row pick opens its page on the same history
   entry with `row` in the focus; the row scrolls into view and lights for a
-  moment (`useSettingRowAnchor`, fed by `SettingRowFocusContext`), then the
-  focus drops `row`. With no match it says `No setting matches "x".` and points
-  to ⌘K for actions. `settingRows.test.tsx` renders every page and fails when a
-  registry label no longer renders, or a rendered `data-setting-row` key is not
-  in the registry. The status lines are read
+  moment (`useSettingRowAnchor`, fed by `SettingRowFocusContext`, inside
+  `SettingRow` through its `rowKey`; `FieldRow` takes the `anchor` and
+  `isHighlighted`), then the focus drops `row`. A workspace field row finds its
+  key by field (`settingRowKeyOfField`). ⌘K leaves out the row of Pair an
+  iPhone, which is already a command. With no match it says `No setting
+matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
+  every page and fails when a registry label no longer renders, a rendered
+  `data-anchor` key is not in the registry, or a registry row renders without
+  its anchor (the profile fields of `ProfileForm` and Pair an iPhone are the
+  named exceptions). The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
   opening Settings starts no loading of its own beyond one `bridge_status`
   read (no storage scan, no branch scan, no provider refresh). Without a workspace the

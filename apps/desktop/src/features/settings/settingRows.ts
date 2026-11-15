@@ -16,6 +16,7 @@ export type SettingRow = {
   readonly page: SettingRowPage;
   readonly band: string | null;
   readonly formerNames: ReadonlyArray<string>;
+  readonly field: WorkspaceSettingField | null;
 };
 
 type RowParams = {
@@ -25,11 +26,13 @@ type RowParams = {
   readonly page: SettingRowPage;
   readonly band: string | null;
   readonly formerNames?: ReadonlyArray<string>;
+  readonly field?: WorkspaceSettingField;
 };
 
-const row = ({ formerNames = [], ...entry }: RowParams): SettingRow => ({
+const row = ({ formerNames = [], field, ...entry }: RowParams): SettingRow => ({
   ...entry,
   formerNames: [...formerNames, ...formerNamesOf(entry.label)],
+  field: field ?? null,
 });
 
 type FieldRowParams = {
@@ -42,7 +45,12 @@ type FieldRowParams = {
 
 const fieldRow = ({ field, ...entry }: FieldRowParams): SettingRow => {
   const def = fieldDef({ field });
-  return row({ ...entry, label: def.label, page: { scope: 'workspace', section: def.page } });
+  return row({
+    ...entry,
+    field,
+    label: def.label,
+    page: { scope: 'workspace', section: def.page },
+  });
 };
 
 const GENERAL: SettingRowPage = { scope: 'app', section: 'general' };
@@ -290,10 +298,10 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   row({
     key: 'workflow-asks',
     label: `${NAMES.runKind.workflow} asks you`,
-    help: 'When a new workflow run stops for your go.',
+    help: `How often a run started as ${NAMES.runKind.workflow} stops for your go.`,
     page: RUN_DEFAULTS,
     band: NEW_RUNS,
-    formerNames: ['Asks you', 'Workflow runs ask you'],
+    formerNames: ['Asks you'],
   }),
   row({
     key: 'auto-asks',
@@ -321,7 +329,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   row({
     key: 'run-models',
     label: NAMES.models,
-    help: 'The providers a new run may use, and the backup when one is out.',
+    help: 'The providers a new run may use, and its backup.',
     page: RUN_DEFAULTS,
     band: NEW_RUNS,
   }),

@@ -74,6 +74,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
   {
     name: 'settings rail: the moved row opens Connections',
     covers: ['openSettings', 'studio:connections', 'settings:moved-to-connections'],
+    door: 'visible',
     open: () => openSettingsRail(/^Open Connections/),
     lands: both(
       () => studio('Connections'),

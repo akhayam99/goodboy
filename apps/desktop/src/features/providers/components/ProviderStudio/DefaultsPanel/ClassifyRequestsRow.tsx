@@ -1,5 +1,6 @@
-import { FieldRow, Switch } from '@goodboy/ui';
+import { Switch } from '@goodboy/ui';
 import { useClassifyRequests } from '../../../../../shared/hooks/useClassifyRequests';
+import { SettingRow } from '../../../../settings/settingRow';
 
 const HELP_OFF = 'Off: Auto starts on the request exactly as you typed it.';
 
@@ -9,8 +10,8 @@ const HELP_ON =
 export const ClassifyRequestsRow = () => {
   const { isOn, setIsOn } = useClassifyRequests();
   return (
-    <FieldRow label="Typed requests" help={isOn ? HELP_ON : HELP_OFF}>
+    <SettingRow label="Typed requests" rowKey="typed-requests" help={isOn ? HELP_ON : HELP_OFF}>
       <Switch ariaLabel="Let a small model read typed requests" checked={isOn} onChange={setIsOn} />
-    </FieldRow>
+    </SettingRow>
   );
 };

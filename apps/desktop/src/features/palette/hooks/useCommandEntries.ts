@@ -41,6 +41,7 @@ import { getWizardState, resumeSetup } from '../../onboarding/onboardingSettings
 import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
 import {
   CONNECTIONS_SETTING_KEY,
+  SETTING_ROW_KEY_PREFIX,
   settingsPaletteEntries,
 } from '../../settings/settingsPaletteEntries';
 import { connectionPaletteEntries } from '../../connections/connectionPaletteEntries';
@@ -455,6 +456,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       ...settingsPaletteEntries({ groups: settingsGroups, open: openSettingsDoor }).filter(
         (entry) =>
           entry.key !== 'setting:app:shortcuts' &&
+          entry.key !== `${SETTING_ROW_KEY_PREFIX}pair-iphone` &&
           (!hasWorkspace || entry.key !== CONNECTIONS_SETTING_KEY),
       ),
       ...connectionPaletteEntries({ providers, hasWorkspace }),

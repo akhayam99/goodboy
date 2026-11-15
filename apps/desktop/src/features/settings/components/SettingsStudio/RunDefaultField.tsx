@@ -32,6 +32,7 @@ export const RunDefaultField = ({ workspaceId }: Props) => {
       <RunDefaultRow
         scope={workspaceScope}
         label={RUN_ROUTE_COPY.workspaceDefault}
+        rowKey="start-as"
         help={RUN_ROUTE_COPY.workspaceDefaultHelp}
         fallback="auto"
       />

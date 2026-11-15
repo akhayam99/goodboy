@@ -6,6 +6,7 @@ import {
   type ReplyTemplateVariable,
 } from '../../../resolve/renderReplyTemplate';
 import type { SettingSave } from '../../hooks/useSettingSave';
+import { settingRowKeyOfField } from '../../settingRowKeyOfField';
 import { ReplyTemplateField } from './ReplyTemplateField';
 
 export type ReplyTemplateKey = 'replyTemplateFixed' | 'replyTemplateNoChange';
@@ -82,6 +83,7 @@ export const ReplyTemplatesBand = ({ saves }: Props) => {
         <ReplyTemplateField
           key={key}
           label={TEMPLATE_LABEL[key]}
+          rowKey={settingRowKeyOfField({ field: key }) ?? key}
           draft={drafts[key]}
           isDisabled={saves[key].isSaving}
           save={saves[key]}

@@ -8,6 +8,7 @@ export const ContrastPreferenceField = () => {
   return (
     <SettingRow
       label="More contrast"
+      rowKey="contrast"
       help="Stronger borders and quiet text. Follows your system setting too."
       isChanged={isOn}
       onReset={() => switchContrast({ isOn: false })}

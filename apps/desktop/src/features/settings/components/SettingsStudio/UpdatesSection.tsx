@@ -43,6 +43,7 @@ export const UpdatesSection = ({ isFocused = false }: Props) => {
           <UpdatesWhatsNewRow />
           <SettingRow
             label="Download updates in the background"
+            rowKey="background-download"
             help="Restart to use a new version once it lands."
             isChanged={!save.value}
             onReset={() => void save.save({ value: true })}

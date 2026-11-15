@@ -33,6 +33,7 @@ export const LinksOpenField = () => {
   return (
     <SettingRow
       label="Links"
+      rowKey="links-open"
       help={`Click on a link, plan or report, in a session. ${ownBrowserClickWord()}: your browser.`}
       isChanged={save.value !== DEFAULT_LINKS_OPEN}
       onReset={() => void save.save({ value: DEFAULT_LINKS_OPEN })}

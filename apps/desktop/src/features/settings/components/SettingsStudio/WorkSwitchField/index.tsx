@@ -19,6 +19,7 @@ export const WorkSwitchField = () => {
   return (
     <SettingRow
       label="Work (experimental)"
+      rowKey="work"
       help={HELP}
       isChanged={save.value}
       onReset={() => void save.save({ value: false })}

@@ -1,11 +1,13 @@
 import { useId } from 'react';
-import { Textarea } from '@goodboy/ui';
+import { Textarea, cn } from '@goodboy/ui';
 import { replyTemplateProblems } from '../../../resolve/renderReplyTemplate';
 import type { SettingSave } from '../../hooks/useSettingSave';
+import { useSettingRowAnchor } from '../../hooks/useSettingRowAnchor';
 import { SaveErrorHelp } from './SaveErrorHelp';
 
 type Props = {
   readonly label: string;
+  readonly rowKey: string;
   readonly draft: string;
   readonly isDisabled: boolean;
   readonly save: Pick<SettingSave<unknown>, 'error' | 'isSaving' | 'retry'>;
@@ -16,6 +18,7 @@ type Props = {
 
 export const ReplyTemplateField = ({
   label,
+  rowKey,
   draft,
   isDisabled,
   save,
@@ -24,10 +27,19 @@ export const ReplyTemplateField = ({
   onCommit,
 }: Props) => {
   const id = useId();
+  const anchor = useSettingRowAnchor({ rowKey });
   const problems = replyTemplateProblems({ template: draft });
 
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div
+      ref={anchor.ref}
+      data-anchor={rowKey}
+      data-highlighted={anchor.isHighlighted ? '' : undefined}
+      className={cn(
+        'flex min-w-0 flex-col gap-2 rounded-sm transition-colors duration-500',
+        anchor.isHighlighted && 'bg-selected',
+      )}
+    >
       <label htmlFor={id} className="text-meta font-medium text-foreground">
         {label}
       </label>

@@ -35,6 +35,7 @@ export const AppResetSection = () => {
     <Band inset="content" label={DANGER_ZONE} ariaLabel={DANGER_ZONE} headingLevel={2}>
       <SettingRow
         label={NAMES.deleteAllData}
+        rowKey="delete-all-data"
         help="Every workspace, session, transcript and rule. Keychain keys are untouched."
       >
         {wipeState === 'done' ? (

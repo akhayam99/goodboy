@@ -1495,7 +1495,9 @@ Settings can be set at four levels. The level closest to the work wins:
   answer. Saves of one row run in order, and an answer for an older change,
   success or failure, is dropped. The hook is `useSettingSave` (row key from
   `settingRowKey`, failures shared by the control and its reset in `rowSaves`),
-  wrapped by `useAppSettingSave` and `useWorkspaceOverrideSave`.
+  wrapped by `useAppSettingSave` and `useWorkspaceOverrideSave`. `SettingRow`
+  takes the save as `save` and writes the error under its help line; its
+  reset goes through the same save, so a failed reset stays on the row too.
 - **Workflows and saved steps** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is

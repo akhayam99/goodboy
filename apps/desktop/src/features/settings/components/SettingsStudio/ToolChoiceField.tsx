@@ -11,6 +11,7 @@ export type ToolChoice = {
 
 type Props = {
   readonly label: string;
+  readonly rowKey: string;
   readonly help: ReactNode;
   readonly value: string;
   readonly defaultValue?: string;
@@ -21,6 +22,7 @@ type Props = {
 
 export const ToolChoiceField = ({
   label,
+  rowKey,
   help,
   value,
   defaultValue,
@@ -30,6 +32,7 @@ export const ToolChoiceField = ({
 }: Props) => (
   <SettingRow
     label={label}
+    rowKey={rowKey}
     help={help}
     isChanged={defaultValue !== undefined && value !== defaultValue}
     onReset={defaultValue === undefined ? undefined : () => onChange(defaultValue)}

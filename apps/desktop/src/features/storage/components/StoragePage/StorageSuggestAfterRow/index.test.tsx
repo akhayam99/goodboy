@@ -75,12 +75,27 @@ describe('StorageSuggestAfterRow', () => {
 
     pick({ label: '7 days' });
 
-    await waitFor(() =>
-      expect(useAppStore.getState().notifications.some((n) => n.title.includes('cleanup'))).toBe(
-        true,
-      ),
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      "Couldn't save. Still 60 days.",
     );
     expect(useAppStore.getState().settings[STORAGE_SUGGEST_AFTER_KEY]).toBe('60');
     expect(trigger().textContent).toContain('60 days');
+    expect(useAppStore.getState().notifications.some((n) => n.title.includes('cleanup'))).toBe(
+      false,
+    );
+  });
+
+  it('resets to 30 days from the row', async () => {
+    useAppStore.setState({ settings: { [STORAGE_SUGGEST_AFTER_KEY]: '60' } });
+    render(<StorageSuggestAfterRow />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Suggest cleanup after to default' }));
+
+    await waitFor(() => expect(trigger().textContent).toContain('30 days'));
+    expect(storySpies.setSetting).toHaveBeenCalledWith(
+      expect.anything(),
+      STORAGE_SUGGEST_AFTER_KEY,
+      '30',
+    );
   });
 });

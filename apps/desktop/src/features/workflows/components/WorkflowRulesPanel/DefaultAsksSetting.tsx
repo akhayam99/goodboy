@@ -1,5 +1,6 @@
-import { FieldRow, SegmentedTabs } from '@goodboy/ui';
+import { SegmentedTabs } from '@goodboy/ui';
 import type { WorkflowAutonomy, WorkflowRules } from '@goodboy/types';
+import { SettingRow } from '../../../settings/settingRow';
 import { RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../runAutonomy';
 import { useAutonomyPick } from '../../hooks/useAutonomyPick';
 import { NAMES } from '../../../../shared/utils/names';
@@ -21,8 +22,9 @@ export const DefaultAsksSetting = ({ autonomy, patch }: Props) => {
     save: ({ next }) => patch({ autonomy: next }),
   });
   return (
-    <FieldRow
+    <SettingRow
       label={LABEL}
+      rowKey="workflow-asks"
       help={
         <>
           {HELP}
@@ -47,6 +49,6 @@ export const DefaultAsksSetting = ({ autonomy, patch }: Props) => {
         value={current.key}
         onChange={(next) => void pick({ next })}
       />
-    </FieldRow>
+    </SettingRow>
   );
 };

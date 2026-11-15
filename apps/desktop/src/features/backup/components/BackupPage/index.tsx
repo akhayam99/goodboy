@@ -87,7 +87,7 @@ export const BackupPage = () => {
             {exportError}
           </p>
         )}
-        <SettingRow label="Backup file">
+        <SettingRow label="Backup file" rowKey="backup-export">
           <Button isBusy={isExporting} busyLabel="Exporting…" onClick={() => void onExport()}>
             Export
           </Button>
@@ -108,7 +108,7 @@ export const BackupPage = () => {
         hint="Adds and updates. Never deletes."
         headingLevel={2}
       >
-        <SettingRow label="Setup file">
+        <SettingRow label="Setup file" rowKey="backup-import">
           <Button variant="secondary" onClick={() => void chooseImportFile()}>
             Import
           </Button>

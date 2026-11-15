@@ -61,6 +61,7 @@ export const RepoCheckBand = () => {
       <div className="flex flex-col">
         <SettingRow
           label="Check origin"
+          rowKey="check-origin"
           help={HELP}
           isChanged={save.value !== String(DEFAULT_REPO_CHECK_MINUTES)}
           onReset={() => void save.save({ value: String(DEFAULT_REPO_CHECK_MINUTES) })}
