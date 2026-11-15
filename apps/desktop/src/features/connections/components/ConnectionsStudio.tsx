@@ -1,8 +1,8 @@
 import type { Workspace } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { StudioShell } from '../../../../shared/components/StudioShell';
-import { NAMES } from '../../../../shared/utils/names';
-import { ConnectionsPage } from './ConnectionsPage';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { StudioShell } from '../../../shared/components/StudioShell';
+import { NAMES } from '../../../shared/utils/names';
+import { ConnectionsIndex } from './ConnectionsIndex';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
@@ -16,6 +16,6 @@ export const ConnectionsStudio = ({ currentWorkspace, onClose }: Props) => (
     title={NAMES.connections}
     onClose={onClose}
   >
-    {() => <ConnectionsPage workspaceName={currentWorkspace?.name ?? null} />}
+    {() => <ConnectionsIndex workspace={currentWorkspace} />}
   </StudioShell>
 );
