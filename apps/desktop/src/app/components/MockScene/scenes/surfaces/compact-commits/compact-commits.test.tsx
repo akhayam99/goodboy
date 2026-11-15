@@ -76,7 +76,7 @@ describe('compact commits scene', () => {
     expect(within(list).getAllByLabelText('Northwind')).toHaveLength(3);
     const first = within(list).getByRole('listitem', { name: 'Fix typo in CSV header' });
     fireEvent.click(within(first).getByRole('button', { name: 'More for f5c7d08' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /^Rename/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Reword/ }));
     screen.getByRole('textbox', { name: 'Commit subject' });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('textbox', { name: 'Commit subject' })).toBeNull();

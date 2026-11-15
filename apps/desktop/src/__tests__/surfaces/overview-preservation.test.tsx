@@ -182,11 +182,11 @@ describe('Overview capabilities from the session Overview', () => {
     expect(section.closest('[data-central-column]')).not.toBeNull();
   });
 
-  it('keeps Restore branch and Remove for a deleted branch in the notices slot', async () => {
+  it('keeps Restore branch and Remove from session for a deleted branch in the notices slot', async () => {
     await mountScene({ name: 'c05-overview-notices' });
 
     notices().getByRole('button', { name: /^Restore branch for/ });
-    notices().getByRole('button', { name: /^Remove for/ });
+    notices().getByRole('button', { name: /^Remove from session for/ });
   });
 
   it('keeps Reopen on a closed worktree and a failed Reopen raises a notice with Retry', async () => {
