@@ -333,7 +333,7 @@ describe('the Checks tab on Bitbucket', () => {
     draw('branch-pr-bitbucket-denied');
 
     expect(await screen.findByText('The API token lacks the pull request scope')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket in Connections' }));
     expect(useAppStore.getState().appStudio).toEqual({
       kind: 'connections',
       focus: { kind: 'tool', tool: 'bitbucket' },
