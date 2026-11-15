@@ -170,21 +170,32 @@ Rules are the workspace defaults every new run starts from. They live only in th
 them. The all-pages Restore defaults and Copy from in the workspace settings menu
 still carry them and list them as Workflow rules in the preview.
 
-The page is titled **Run defaults**: one chip line, the same chips and popovers
-as on a run page (`SettingChip`, now in `shared/components/SettingChip`, with
-`useLimitAmountDraft` in `shared/hooks`), then the guidance field. Each chip
-reads "new runs" as its source; a change reaches new runs only, since every run
-keeps its own copy of the rules (`attachWorkflowToSession` copies them at start).
+The page is titled **Run defaults** and has three bands, one row per setting
+(`FieldRow`). `WorkspaceDefaultsGrid` draws the page: `WorkflowRulesPanel` owns
+the **New runs** and **Guidance** bands and takes the settings rows it does not
+own (`runRows`: **Auto agent asks you** and **Start as**) and the **Agents** band
+(children: **Parallel agents**, **Reply length**) from it. A change reaches new
+runs only, since every run keeps its own copy of the rules
+(`attachWorkflowToSession` copies them at start). A failed save keeps the old
+value and shows the error under its row.
 
-- **Asks you** (`DefaultAsksSetting`): Every step, After the plan or Never, applied
-  on click. The hints are the ones the builder shows (`RUN_AUTONOMY_OPTIONS`)
-- **Limit** (`DefaultLimitSetting`): the amount per run, applied on Enter or
-  close (a blank amount is no limit), and what happens at the limit, Pause or
-  Warn only, applied on click
+- **Workflow asks you** (`DefaultAsksSetting`): Every step, After the plan or
+  Never, applied on click. The hints are the ones the builder shows
+  (`RUN_AUTONOMY_OPTIONS`)
+- **Auto agent asks you** (`AutoLevelDefaultRow`): the same three levels for
+  Auto. With Work on, the row holds `LeadPermissionsChip` on the workspace
+  default instead, so there is no separate Asks you band
+- **Start as** (`RunDefaultField`): Let Auto pick, Workflow or Auto agent. With
+  a session of this workspace open, a second row sets that session's default;
+  it is the only writer of the session default (`changeRunDefault`)
+- **Limit** (`DefaultLimitSetting`): the amount per run, applied on Enter (a
+  blank amount is no limit) or when the field loses focus, and what happens at
+  the limit, Pause or Warn only, applied on click (`useLimitAmountDraft` in
+  `shared/hooks`)
 - **Models** (`DefaultModelsSetting`): the policy in one line ("Claude, Codex ·
-  Cursor as backup") and **Open Providers**. It holds no switch and
+  Cursor as backup") and **Open Models**. It holds no switch and
   lists no provider: the order and the **Send new steps to the provider with
-  the most room** option live in Settings > Providers, the one home
+  the most room** option live on the Models page, the one home
   of the provider policy
 - No separate Auto limit: a limit stored under the old Auto limit
   (`auto.treeLimitUsd`) is folded into the **Limit** above once at boot, for

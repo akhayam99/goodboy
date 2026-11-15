@@ -27,7 +27,7 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 | 5     | A question, a check or one file                                                                          | An Auto agent                                                                                                 |
 | 6     | Nothing above                                                                                            | An Auto agent first                                                                                           |
 
-- **New runs start as** sets the default for the workspace. **New runs in this session start as** sets it for the open session. Both are in Settings.
+- **Start as** sets the default for the workspace. **New runs in this session start as** sets it for the open session. Both are in Settings, under **Run defaults**.
 - A workflow starts an orchestrated run. A preset seeds that run with its steps, in order. An agent starts Auto (or the role you named).
 - The reason is kept with the run.
 - If the start fails, the field keeps your text and Start becomes **Retry**.
