@@ -32,7 +32,11 @@ import { listGridFitFailures } from './validateScenesListGridFit.mjs';
 import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
-import { frameRowFailures, rowStartFailures } from './validateScenesRowStart.mjs';
+import {
+  frameRowFailures,
+  rowStartFailures,
+  sidebarMarkFailures,
+} from './validateScenesRowStart.mjs';
 import { titleBandFailures } from './validateScenesTitleBand.mjs';
 import { pageColumnFailures } from './validateScenesPageColumn.mjs';
 import { frostFailures } from './validateScenesFrost.mjs';
@@ -1945,6 +1949,55 @@ describe('rowStartFailures', () => {
         }).map((failure) => failure.check),
         [FRAME_CHECK, 'a page with columns is on screen'],
       );
+    });
+  });
+
+  describe('the sidebar trailing mark column', () => {
+    const markOf = ({ label, centerX = 216, centerY = 95, rowCenterY = 95, size = 16 }) => ({
+      label,
+      width: size,
+      height: size,
+      centerX,
+      centerY,
+      rowCenterY,
+    });
+    const checksOf = (marks) =>
+      sidebarMarkFailures({ scene: 'fixture', width: 1440, marks }).map((failure) => failure.check);
+
+    it('passes doors and session rows on one 16px box, one center x, each on its row line', () => {
+      assert.deepEqual(
+        checksOf([
+          markOf({ label: 'Board' }),
+          markOf({ label: 'Chat', centerY: 191, rowCenterY: 191 }),
+          markOf({ label: 'Tune the rate limiter', centerY: 359, rowCenterY: 359 }),
+        ]),
+        [],
+      );
+    });
+
+    it('fails a 14px mark beside 16px ones', () => {
+      assert.deepEqual(
+        checksOf([markOf({ label: 'Board' }), markOf({ label: 'Monitoring', size: 14 })]),
+        ['every sidebar trailing mark sits in one 16px box'],
+      );
+    });
+
+    it('fails a count that sits 4px left of the session marks', () => {
+      assert.deepEqual(
+        checksOf([markOf({ label: 'Board', centerX: 212 }), markOf({ label: 'Pinned row' })]),
+        ['every sidebar trailing mark shares one center x'],
+      );
+    });
+
+    it('fails a mark 2px above the center line of its row', () => {
+      assert.deepEqual(checksOf([markOf({ label: 'Pinned row', centerY: 93 })]), [
+        'every sidebar trailing mark sits on the center line of its row',
+      ]);
+    });
+
+    it('skips a scene without the app sidebar', () => {
+      assert.deepEqual(checksOf([]), []);
+      assert.deepEqual(checksOf(undefined), []);
     });
   });
 });
