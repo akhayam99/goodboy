@@ -286,17 +286,12 @@ describe('the shell chapter', () => {
     expect(branchPage).not.toContain('steps into');
   });
 
-  it('names the tools in their column at the right of every screen', () => {
-    const tools = pointOf('shell', 'Right rail');
-    [
-      'Ask',
-      'Terminal',
-      'Browser',
-      'Explore',
-      'Context',
-      'Scripts',
-      'right of every screen',
-    ].forEach((tool) => expect(tools).toContain(tool));
+  it('names the two tools of the rail at the right of every screen', () => {
+    const tools = pointOf('shell', 'Tools rail');
+    ['Terminal', 'Browser', 'right of every screen', 'Open full page'].forEach((tool) =>
+      expect(tools).toContain(tool),
+    );
+    ['Explore', 'Scripts', 'Dock'].forEach((gone) => expect(tools).not.toContain(gone));
   });
 });
 

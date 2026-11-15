@@ -97,7 +97,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Changes',
-        desc: "The session rail lists each reply's files. Restore a file or a whole reply, then Undo restore if you change your mind.",
+        desc: "Open changes on a reply, or ⌘⌥F, lists each reply's files. Restore a file or a whole reply, then Undo restore if you change your mind.",
       },
       {
         term: 'Saved versions',
@@ -248,7 +248,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'shell',
     group: 'daily',
     title: 'Sidebar and session pages',
-    lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the right rail holds the tools.',
+    lead: 'The sidebar looks the same on every screen. A session opens its pages beside it, and the tools rail at the right holds Terminal and Browser.',
     points: [
       {
         term: 'Sidebar',
@@ -264,7 +264,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: 'Tabs under the title: Overview, Changes, Runs, Artifacts, Questions and Context, with counts; Runs holds plans, presets, Auto and agents. Context holds the Projects and Linked cards.',
+        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context, with counts, plus Changes when the session has one branch. Runs holds plans, presets, Auto and agents. Context holds the Projects and Linked cards.',
       },
       {
         term: 'Session actions and +',
@@ -275,8 +275,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: `${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens in the center.`,
       },
       {
-        term: 'Right rail',
-        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open full page grows them; Dock puts them back.',
+        term: 'Tools rail',
+        desc: 'Terminal and Browser, at the right of every screen. A click opens the tool beside its icon, and it stays open as you move. Open full page turns it into a page.',
       },
     ],
     links: [],
