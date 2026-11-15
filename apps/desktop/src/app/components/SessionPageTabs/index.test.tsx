@@ -11,6 +11,8 @@ vi.mock('../../../shared/lib/db', async () =>
   (await import('../../../store/storyHarness')).dbLibModuleMock(),
 );
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
@@ -98,6 +100,14 @@ describe('the session page tabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Context/ }));
 
     expect(store.getState().activeLens[session.id]).toBe('context');
+  });
+
+  it('draws a tab count like a door count: one toned number, no dot beside it', () => {
+    const source = readFileSync(join(__dirname, 'index.tsx'), 'utf8');
+
+    expect(source).toContain('tintClasses(slot.tone).text');
+    expect(source).toContain("'text-faint-foreground'");
+    expect(source).not.toContain('StatusDot');
   });
 
   it('selects no tab on a page the tabs do not own', () => {

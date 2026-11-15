@@ -47,24 +47,30 @@ export const SessionToolButton = ({
     <span
       data-slot="session-tool"
       data-state={state}
-      className="relative flex min-w-0 flex-col items-center gap-0.5"
+      className="flex min-w-0 flex-col items-center gap-0.5"
     >
-      <IconButton
-        icon={tool.icon}
-        label={label}
-        shortcut={tool.shortcut}
-        tooltipSide="left"
-        size="md"
-        iconSize={ICON_SIZE.notice}
-        aria-pressed={isLit}
-        aria-current={isCurrent ? 'page' : undefined}
-        tabIndex={tabIndex}
-        data-testid={`pane-toggle-${tool.pane}`}
-        data-icon-tone={isLit ? tone : undefined}
-        className={cn(PRESSED_TOGGLE, isLit && selectedIconClass({ tone }))}
-        onFocus={onFocus}
-        onClick={isCurrent ? undefined : onToggle}
-      />
+      <span data-slot="tool-icon" className="relative flex">
+        <IconButton
+          icon={tool.icon}
+          label={label}
+          shortcut={tool.shortcut}
+          tooltipSide="left"
+          size="md"
+          iconSize={ICON_SIZE.notice}
+          aria-pressed={isLit}
+          aria-current={isCurrent ? 'page' : undefined}
+          tabIndex={tabIndex}
+          data-testid={`pane-toggle-${tool.pane}`}
+          data-icon-tone={isLit ? tone : undefined}
+          className={cn(PRESSED_TOGGLE, isLit && selectedIconClass({ tone }))}
+          onFocus={onFocus}
+          onClick={isCurrent ? undefined : onToggle}
+        />
+        {state === 'waiting' ? <ToolWaitingRing /> : null}
+        {signal === null ? null : <ToolSignalDot signal={signal} />}
+        {signal === null && isCountLoading ? <ToolCountSkeleton /> : null}
+        {signal === null && !isCountLoading && count > 0 ? <ToolCount count={count} /> : null}
+      </span>
       <span
         aria-hidden
         data-slot="tool-caption"
@@ -76,10 +82,6 @@ export const SessionToolButton = ({
       >
         {tool.label}
       </span>
-      {state === 'waiting' ? <ToolWaitingRing /> : null}
-      {signal === null ? null : <ToolSignalDot signal={signal} />}
-      {signal === null && isCountLoading ? <ToolCountSkeleton /> : null}
-      {signal === null && !isCountLoading && count > 0 ? <ToolCount count={count} /> : null}
     </span>
   );
 };

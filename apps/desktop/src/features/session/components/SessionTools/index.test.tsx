@@ -273,6 +273,12 @@ describe('SessionTools', () => {
     expect(toggle('terminal').getAttribute('aria-label')).toBe('Terminal, 2 running');
     const tool = toggle('terminal').closest('[data-slot="session-tool"]');
     expect(tool?.querySelector('[data-testid="tool-count"]')?.textContent).toBe('2');
+    expect(
+      toggle('terminal')
+        .closest('[data-slot="tool-icon"]')
+        ?.querySelector('[data-testid="tool-count"]')
+        ?.className.split(' '),
+    ).toEqual(expect.arrayContaining(['left-1/2', 'translate-x-1.5', '-top-1.5']));
     expect(tool?.querySelector('[data-signal]')).toBeNull();
     expect(
       toggle('browser')

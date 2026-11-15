@@ -170,6 +170,24 @@ describe('LeadTree', () => {
     screen.getByText('$0.31');
   });
 
+  it('keeps number and meter in fixed columns so roles and words line up at any depth', () => {
+    const child: LeadTreeItem = {
+      ...scout,
+      id: 'd4',
+      agentId: nextAgentId(),
+      depth: 1,
+      number: '2.1',
+    };
+    const { container } = render(<Harness items={[scout, implementer, child]} />);
+    const numbers = Array.from(container.querySelectorAll('[data-lead-tree-number]'));
+    const meters = Array.from(container.querySelectorAll('[data-lead-tree-meter]'));
+
+    expect(numbers.map((node) => node.textContent)).toEqual(['1', '2', '2.1']);
+    expect(numbers.every((node) => node.className.split(' ').includes('w-6'))).toBe(true);
+    expect(meters).toHaveLength(3);
+    expect(meters.every((node) => node.className.split(' ').includes('min-w-8'))).toBe(true);
+  });
+
   it('gives a queued note Edit and Remove', async () => {
     const user = userEvent.setup();
     const onEditNote = vi.fn();

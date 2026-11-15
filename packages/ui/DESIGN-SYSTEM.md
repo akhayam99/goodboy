@@ -312,10 +312,21 @@ state is a `StateDot` or a glyph in a 16px column.
 fill on every background. A running dot pulses (under `motion-safe`) only when
 the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
 chrome (top bar chips, doors, rail slots) stays static. A count next to a door
-lives in the dot's tooltip, never as colored text. The Board door is the one exception: it
-says how many sessions need you as a number (see the door pill below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
+lives in the dot's tooltip. The Board door is the one exception: it
+says how many sessions need you as a number (see the door pill below), drawn like
+every inline count (the marks table below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
 
 A session row carries one mark: the state of the node, or an empty 14px slot when the session is idle so titles keep one right edge (`StateNode` with `hasEmptySlot`).
+
+**Marks across pages.** One colour role per meaning on every page: success for done or added, warning for what needs you, danger for what failed or was deleted, info for what runs, neutral for the rest. A mark never takes a role for a second meaning. Counts come in two drawings only.
+
+| Surface                            | Mark                                   | Drawing                                                                                                                                                                                                                           |
+| ---------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session tabs, sidebar doors, bell  | inline count                           | the sidebar status mark's count drawing: one `text-chip` tabular number beside the word or icon, warning when it needs you, info while it runs, the quiet unread tone on the bell, faint otherwise; no dot beside it              |
+| Tools rail (Terminal, Browser)     | corner count, signal dot, waiting ring | `TOOL_CORNER_SLOT`: a 14px box on the icon button's corner, outside the 16px glyph, so it never covers the icon; the count is a `bg-hover` pill                                                                                   |
+| Top bar Now chip                   | state dot                              | warning dot for Needs you, neutral ring for Idle, info dot for running                                                                                                                                                            |
+| Agents rail                        | node, number, meter                    | `WorkNode` in the rail lane; the number in a fixed 24px right aligned slot and the spend or clock in a fixed meter slot (`LEAD_TREE_METER`, reserved on the run row too), so roles, words and costs share one column at any depth |
+| Files rail, All files, diff header | status letter                          | `FileStatusMark`: one letter in one 12px slot, A success, D danger, M and R neutral                                                                                                                                               |
 
 **A row title keeps one weight whatever its state.** Every title of a session, pinned, done, run, run-tree or notification row stays in its row role (`text-ui`, 13/400 in the sidebar) when it is unread, live, current or selected. State lives in the trailing mark and the text colour only: unread or new activity is the quiet unread dot (`isUnreadDot`: on the node's corner, or alone in the idle slot) plus full foreground; read is muted foreground; selected is the selected surface (`bg-selected`). Weight never marks state, the way Linear and Arc keep one weight down their sidebars and let a dot and colour carry unread. `row-title-weight.test.ts` fails a weight class keyed on unread, new, active, current or selected, and `@goodboy/ui` exports no unread title role.
 

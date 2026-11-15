@@ -7,6 +7,7 @@ import type { RailRow } from '../../../workTreeModel/railGeometry';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
 import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
+import { LEAD_TREE_METER } from './leadTreeMeter';
 import { LEAD_TREE_QUIET_NODES } from './leadTreeQuietNodes';
 import { LEAD_TREE_ROW } from './leadTreeRow';
 
@@ -73,7 +74,12 @@ export const LeadTreeAgentRow = memo(
           marker={<WorkNode state={node} label={word} mark={{ kind: 'dot' }} size="sm" />}
         />
         {isCompact ? null : (
-          <span className="shrink-0 text-chip tabular-nums text-faint-foreground">{number}</span>
+          <span
+            data-lead-tree-number=""
+            className="w-6 shrink-0 text-right text-chip tabular-nums text-faint-foreground"
+          >
+            {number}
+          </span>
         )}
         <AgentKindChip kind={kind} density="glyph" isDecorative />
         <span className="shrink-0 text-ui text-foreground">{role}</span>
@@ -92,7 +98,10 @@ export const LeadTreeAgentRow = memo(
         {isWordShown ? (
           <span className="shrink-0 text-meta text-muted-foreground">{word}</span>
         ) : null}
-        <span className="flex shrink-0 justify-end text-meta tabular-nums text-faint-foreground">
+        <span
+          data-lead-tree-meter=""
+          className={cn(LEAD_TREE_METER, 'text-meta tabular-nums text-faint-foreground')}
+        >
           {isSettled ? formatUsd(spendUsd) : <DelegationClock agentId={agentId} isLive />}
         </span>
       </div>

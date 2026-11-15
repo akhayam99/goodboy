@@ -23,9 +23,9 @@ export const STATUS_WORD: Record<FileDiffStatus, string> = {
 
 export const STATUS_TONE: Record<FileDiffStatus, Tone> = {
   added: 'success',
-  modified: 'warning',
+  modified: 'neutral',
   deleted: 'danger',
-  renamed: 'info',
+  renamed: 'neutral',
 };
 
 export type SplitPath = {
