@@ -76,6 +76,7 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
         state={node.state}
         label={node.label}
         mark={{ kind: 'dot' }}
+        size={item.grade === 'entry' ? 'md' : 'sm'}
         spinClassName={
           item.rowState.reason?.kind === 'deciding' ? (item.identity?.spin ?? undefined) : undefined
         }

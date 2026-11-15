@@ -13,16 +13,19 @@ type Props = {
 
 export const TimelineDayRule = ({ item, rail, railWidth, lanes = null }: Props) => (
   <div className="flex min-w-0 items-center" style={{ height: item.height }}>
-    <span className={cn('shrink-0 pr-2 text-chip text-muted-foreground', TIMELINE_GUTTER)}>
+    <span
+      className={cn('shrink-0 pr-2 text-right text-meta text-muted-foreground', TIMELINE_GUTTER)}
+    >
       {item.label}
     </span>
     <span className="relative shrink-0 self-stretch" style={{ width: railWidth }}>
       <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
     </span>
     <span className="flex min-w-0 flex-1 items-center gap-2 pl-2 pr-2">
-      <span className={cn('shrink-0 text-chip text-muted-foreground', TIMELINE_GUTTER_FALLBACK)}>
+      <span className={cn('shrink-0 text-meta text-muted-foreground', TIMELINE_GUTTER_FALLBACK)}>
         {item.label}
       </span>
+      <span data-testid="timeline-day-line" aria-hidden className="h-px min-w-0 flex-1 bg-border" />
     </span>
   </div>
 );
