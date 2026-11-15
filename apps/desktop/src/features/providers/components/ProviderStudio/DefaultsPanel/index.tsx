@@ -5,11 +5,9 @@ import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';
 import {
   Band,
-  BandStack,
   Button,
   ConfirmPopover,
   EmptyState,
-  Eyebrow,
   FieldRow,
   ICON_SIZE,
   PaneShell,
@@ -21,6 +19,8 @@ import { useAppStore } from '../../../../../store';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
+import { ConnectionsPointer } from './ConnectionsPointer';
+import { DefaultsGroup } from './DefaultsGroup';
 import { RoleRow } from './RoleRow';
 import { RunsSection } from './RunsSection';
 import { TaskModelRow } from './TaskModelRow';
@@ -66,16 +66,13 @@ const EMPTY_OVERRIDES: OverrideSettings = {
 };
 
 export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: Props) => {
-  const runsRef = useRef<HTMLElement>(null);
-  const tasksRef = useRef<HTMLElement>(null);
+  const rowsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (focusSection === undefined || !TASKS.some((task) => task.id === focusSection)) {
       return;
     }
-    const selector = `[data-default-row="${focusSection}"]`;
     appScrollIntoView({
-      element:
-        runsRef.current?.querySelector(selector) ?? tasksRef.current?.querySelector(selector),
+      element: rowsRef.current?.querySelector(`[data-default-row="${focusSection}"]`),
       block: 'center',
     });
   }, [focusSection]);
@@ -146,6 +143,8 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         )
       }
     >
+      <ConnectionsPointer />
+
       <SavedModelsNotice workspaceId={workspaceId} />
 
       <PinnedOffLine
@@ -156,107 +155,93 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         onConfirm={() => clearRoleModels({ roles: unrunnableRoles })}
       />
 
-      <RunsSection
-        workspaceId={workspaceId}
-        overrides={overrides}
-        connectedProviderIds={connectedProviderIds}
-        isDisabled={busy}
-        sectionRef={runsRef}
-        onRoleChange={persistRoleModel}
-        onTaskChange={persistTaskModel}
-      />
+      <div ref={rowsRef} className="contents">
+        <RunsSection
+          workspaceId={workspaceId}
+          overrides={overrides}
+          connectedProviderIds={connectedProviderIds}
+          isDisabled={busy}
+          onRoleChange={persistRoleModel}
+          onTaskChange={persistTaskModel}
+        />
 
-      <section aria-label="Providers" className="flex flex-col gap-1">
-        <Eyebrow label="Providers" />
-        {connectedProviderIds.length === 0 ? (
-          <FieldRow label="When a provider is out">
-            <EmptyState
-              size="section"
-              icon={CONCEPT_ICONS.providers}
-              tone={CONCEPT_TONE.providers}
-              title="No providers connected"
-            />
-          </FieldRow>
-        ) : (
-          <ProvidersInOrder workspaceId={workspaceId} />
-        )}
-      </section>
+        <Band label="Providers" ariaLabel="Providers" headingLevel={2} inset="content">
+          {connectedProviderIds.length === 0 ? (
+            <FieldRow label="When a provider is out">
+              <EmptyState
+                size="section"
+                icon={CONCEPT_ICONS.providers}
+                tone={CONCEPT_TONE.providers}
+                title="No providers connected"
+              />
+            </FieldRow>
+          ) : (
+            <ProvidersInOrder workspaceId={workspaceId} />
+          )}
+        </Band>
 
-      <section aria-label="Choosing models" className="flex flex-col gap-1">
-        <Eyebrow label="Choosing models" />
-        <OrchestratorModelPickRow workspaceId={workspaceId} />
-        <ClassifyRequestsRow />
-      </section>
+        <Band label="Choosing models" ariaLabel="Choosing models" headingLevel={2} inset="content">
+          <div className="flex flex-col">
+            <OrchestratorModelPickRow workspaceId={workspaceId} />
+            <ClassifyRequestsRow />
+          </div>
+        </Band>
 
-      <section aria-label="Chat" className="flex flex-col gap-2">
-        <Eyebrow label="Chat" />
-        <BandStack>
-          <Band>
-            <ChatModelRow
-              workspaceId={workspaceId}
-              connectedProviderIds={connectedProviderIds}
-              disabled={busy}
-            />
-          </Band>
-        </BandStack>
-      </section>
+        <Band label="Chat" ariaLabel="Chat" headingLevel={2}>
+          <ChatModelRow
+            workspaceId={workspaceId}
+            connectedProviderIds={connectedProviderIds}
+            disabled={busy}
+          />
+        </Band>
 
-      <section aria-label="Agents" className="flex flex-col gap-2">
-        <Eyebrow label="Agents" />
-        <BandStack>
+        <Band label="Agents" ariaLabel="Agents" headingLevel={2}>
           {DEFAULT_GROUPS.agents.map((group) => (
-            <div key={group.id} role="group" aria-label={group.label}>
-              <Band groupLabel={group.members.length > 1 ? group.label : undefined}>
-                {group.members.map((role) => (
-                  <RoleRow
-                    key={role}
+            <DefaultsGroup key={group.id} label={group.label}>
+              {group.members.map((role) => (
+                <RoleRow
+                  key={role}
+                  workspaceId={workspaceId}
+                  role={role}
+                  label={ROLE_LABEL[role]}
+                  help={ROLE_REGISTRY[role].summary}
+                  preference={overrides.roleModels?.[role] ?? null}
+                  isParallelOn={overrides.parallelAgents === true}
+                  connectedProviderIds={connectedProviderIds}
+                  disabled={busy}
+                  onChange={(preference) => persistRoleModel({ role, preference })}
+                />
+              ))}
+            </DefaultsGroup>
+          ))}
+        </Band>
+
+        <Band label="Background tasks" ariaLabel="Background tasks" headingLevel={2}>
+          {DEFAULT_GROUPS.tasks.map((group) => (
+            <DefaultsGroup key={group.id} label={group.label}>
+              {group.members.map((taskId) => {
+                const task = TASK_BY_ID.get(taskId);
+                if (task == null) {
+                  return null;
+                }
+                return (
+                  <TaskModelRow
+                    key={task.id}
                     workspaceId={workspaceId}
-                    role={role}
-                    label={ROLE_LABEL[role]}
-                    help={ROLE_REGISTRY[role].summary}
-                    preference={overrides.roleModels?.[role] ?? null}
-                    isParallelOn={overrides.parallelAgents === true}
+                    task={task.id}
+                    label={task.label}
+                    help={task.description}
+                    preference={overrides.taskModels?.[task.id] ?? null}
                     connectedProviderIds={connectedProviderIds}
                     disabled={busy}
-                    onChange={(preference) => persistRoleModel({ role, preference })}
+                    onChange={(preference) => persistTaskModel({ task: task.id, preference })}
                   />
-                ))}
-              </Band>
-            </div>
+                );
+              })}
+            </DefaultsGroup>
           ))}
-        </BandStack>
-      </section>
-
-      <section ref={tasksRef} aria-label="Background tasks" className="flex flex-col gap-2">
-        <Eyebrow label="Background tasks" />
-        <BandStack>
-          {DEFAULT_GROUPS.tasks.map((group) => (
-            <div key={group.id} role="group" aria-label={group.label}>
-              <Band groupLabel={group.members.length > 1 ? group.label : undefined}>
-                {group.members.map((taskId) => {
-                  const task = TASK_BY_ID.get(taskId);
-                  if (task == null) {
-                    return null;
-                  }
-                  return (
-                    <TaskModelRow
-                      key={task.id}
-                      workspaceId={workspaceId}
-                      task={task.id}
-                      label={task.label}
-                      help={task.description}
-                      preference={overrides.taskModels?.[task.id] ?? null}
-                      connectedProviderIds={connectedProviderIds}
-                      disabled={busy}
-                      onChange={(preference) => persistTaskModel({ task: task.id, preference })}
-                    />
-                  );
-                })}
-              </Band>
-            </div>
-          ))}
-        </BandStack>
-      </section>
+        </Band>
+      </div>
 
       {error != null ? <p className="text-meta text-danger">{error}</p> : null}
     </PaneShell>

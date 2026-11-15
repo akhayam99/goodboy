@@ -1,8 +1,7 @@
-import type { Ref } from 'react';
 import { isAutoOwnProvider } from '@goodboy/core/auto';
 import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';
-import { Band, BandStack, Eyebrow } from '@goodboy/ui';
+import { Band } from '@goodboy/ui';
 import type {
   AgentRole,
   AuxTaskId,
@@ -37,7 +36,6 @@ type Props = {
   readonly overrides: OverrideSettings;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly isDisabled: boolean;
-  readonly sectionRef: Ref<HTMLElement>;
   readonly onRoleChange: (params: RoleChangeParams) => void;
   readonly onTaskChange: (params: TaskChangeParams) => void;
 };
@@ -47,53 +45,46 @@ export const RunsSection = ({
   overrides,
   connectedProviderIds,
   isDisabled,
-  sectionRef,
   onRoleChange,
   onTaskChange,
 }: Props) => (
-  <section ref={sectionRef} aria-label={NAMES.runs} className="flex flex-col gap-2">
-    <Eyebrow label={NAMES.runs} />
-    <p className="text-meta text-muted-foreground">{RUNS_HELP}</p>
-    <BandStack>
-      <Band>
-        {DEFAULT_GROUPS.runs.agents.map((role) => (
-          <RoleRow
-            key={role}
-            workspaceId={workspaceId}
-            role={role}
-            label={ROLE_LABEL[role]}
-            help={ROLE_REGISTRY[role].summary}
-            preference={overrides.roleModels?.[role] ?? null}
-            isParallelOn={overrides.parallelAgents === true}
-            connectedProviderIds={
-              role === 'auto'
-                ? connectedProviderIds.filter((id) => isAutoOwnProvider({ provider: id }))
-                : connectedProviderIds
-            }
-            disabled={isDisabled}
-            onChange={(preference) => onRoleChange({ role, preference })}
-          />
-        ))}
-        {DEFAULT_GROUPS.runs.tasks.map((taskId) => {
-          const task = TASK_BY_ID.get(taskId);
-          if (task == null) {
-            return null;
-          }
-          return (
-            <TaskModelRow
-              key={task.id}
-              workspaceId={workspaceId}
-              task={task.id}
-              label={task.label}
-              help={task.description}
-              preference={overrides.taskModels?.[task.id] ?? null}
-              connectedProviderIds={connectedProviderIds}
-              disabled={isDisabled}
-              onChange={(preference) => onTaskChange({ task: task.id, preference })}
-            />
-          );
-        })}
-      </Band>
-    </BandStack>
-  </section>
+  <Band label={NAMES.runs} ariaLabel={NAMES.runs} hint={RUNS_HELP} headingLevel={2}>
+    {DEFAULT_GROUPS.runs.agents.map((role) => (
+      <RoleRow
+        key={role}
+        workspaceId={workspaceId}
+        role={role}
+        label={ROLE_LABEL[role]}
+        help={ROLE_REGISTRY[role].summary}
+        preference={overrides.roleModels?.[role] ?? null}
+        isParallelOn={overrides.parallelAgents === true}
+        connectedProviderIds={
+          role === 'auto'
+            ? connectedProviderIds.filter((id) => isAutoOwnProvider({ provider: id }))
+            : connectedProviderIds
+        }
+        disabled={isDisabled}
+        onChange={(preference) => onRoleChange({ role, preference })}
+      />
+    ))}
+    {DEFAULT_GROUPS.runs.tasks.map((taskId) => {
+      const task = TASK_BY_ID.get(taskId);
+      if (task == null) {
+        return null;
+      }
+      return (
+        <TaskModelRow
+          key={task.id}
+          workspaceId={workspaceId}
+          task={task.id}
+          label={task.label}
+          help={task.description}
+          preference={overrides.taskModels?.[task.id] ?? null}
+          connectedProviderIds={connectedProviderIds}
+          disabled={isDisabled}
+          onChange={(preference) => onTaskChange({ task: task.id, preference })}
+        />
+      );
+    })}
+  </Band>
 );
