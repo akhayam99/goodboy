@@ -1,11 +1,7 @@
-import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
-import { useCopyLink } from '@goodboy/ui';
-import type { OpenQuestion, Session, SessionId } from '@goodboy/types';
-import { useAppStore, useMountDiffStats, sessionPlace } from '../../../../../../../store';
+import { useCallback, useMemo, useRef } from 'react';
+import type { Session, SessionId } from '@goodboy/types';
+import { useAppStore, useMountDiffStats } from '../../../../../../../store';
 import { useSessionRoleModels } from '../../../../../../../shared/hooks/useSessionRoleModels';
-import { usePendingAction } from '../../../../../../../shared/hooks/usePendingAction';
-import { useAdvanceWorkflowAgent } from '../../../../../../workflows/useAdvanceWorkflowAgent';
-import { useOpenAgentQuestion } from '../../../../../../context/hooks/useOpenAgentQuestion';
 import type {
   TimelineRowItem,
   TimelineStreamItem,
@@ -13,20 +9,9 @@ import type {
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useAgentTouchedWorktrees } from '../../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../../hooks/useTimelineOpen';
-import { ROW_ACTION_LABEL } from '../../../../../../workTreeModel/rowActionLabels';
 import type { TimelineEntryRowHandlers } from '../TimelineEntryRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from '../TimelineRail';
 import type { TimelineRowProps } from '../TimelineRow';
-import type { TimelineRowAction } from '../TimelineStreamRow';
-import {
-  fixOfferKey,
-  selectFixOffers,
-} from '../../../../../../../store/slices/agents/selectFixOffers';
-import { selectCheckMount } from '../../../../../../../store/slices/agents/selectCheckMount';
-import { startCheckFix } from '../../../../../../branch/checks/startCheckFix';
-import { pushCheckFix } from '../../../../../../branch/checks/pushCheckFix';
-import { selectCheckPushOffers } from '../../../../../../../store/slices/agents/selectCheckPushOffers';
-import { selectCheckChain } from '../../../../../../../store/slices/agents/selectCheckChain';
 import type { TimelineRows } from '../useTimelineRows';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -44,29 +29,19 @@ type RowParams = {
 
 type RowPropsControl = {
   readonly rowPropsFor: (params: RowParams) => TimelineRowProps | null;
-  readonly hasActionColumn: boolean;
 };
 
 export const useTimelineRowProps = ({ session, explode, rows }: Params): RowPropsControl => {
   const sessionId: SessionId = session.id;
-  const navigate = useAppStore((s) => s.navigate);
-  const openMountDiff = useAppStore((s) => s.openMountDiff);
-  const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const openContextDrawer = useAppStore((s) => s.openContextDrawer);
-  const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const openTargetFor = useTimelineOpen({ sessionId });
-  const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
-  const pending = usePendingAction({ sessionId });
   const diffStats = useMountDiffStats(sessionId);
   const touchedWorktrees = useAgentTouchedWorktrees(sessionId);
   const roleModels = useSessionRoleModels({ sessionId });
-  const { copiedKey, failedKey, copy } = useCopyLink();
   const sessionProvider = session.providerPreference?.defaultProvider ?? null;
   const sessionEffort = session.effort ?? null;
-  const { worktrees, laneRuns, stream } = rows;
+  const { worktrees, laneRuns } = rows;
   const railWidth = rows.laneGutter;
-  const fixOffers = useAppStore((state) => selectFixOffers({ state, sessionId }));
-  const pushOffers = useAppStore((state) => selectCheckPushOffers({ state, sessionId }));
 
   const latestLaneRuns = useRef(laneRuns);
   latestLaneRuns.current = laneRuns;
@@ -142,153 +117,6 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
     return diffStats.get(worktreePath) ?? null;
   };
 
-  const answerAction = ({
-    question,
-  }: {
-    readonly question: OpenQuestion | null;
-  }): TimelineRowAction => ({
-    label: ROW_ACTION_LABEL.answer,
-    variant: 'secondary',
-    onAct: () => {
-      if (question != null) {
-        openAgentQuestion({ question });
-        return;
-      }
-      navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
-    },
-  });
-
-  const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
-    const { entry } = item;
-    if (entry.kind === 'event') {
-      if (entry.event.kind === 'issue_unlinked') {
-        const target = openTargetFor({ entry });
-        if (target == null) {
-          return null;
-        }
-        return { label: ROW_ACTION_LABEL.relink, onAct: target.open };
-      }
-    }
-    if (entry.kind === 'agent' && entry.agent.sourceCommentUrl !== undefined) {
-      const url = entry.agent.sourceCommentUrl;
-      const checkMountId = selectCheckMount({ state: useAppStore.getState(), url });
-      if (
-        checkMountId !== null &&
-        fixOffers.split('\n').includes(fixOfferKey({ agentId: entry.agent.id, url }))
-      ) {
-        return {
-          label: ROW_ACTION_LABEL.startFix,
-          variant: 'secondary',
-          isBusy: pending.pendingKeys.has(`fix:${entry.agent.id}`),
-          onAct: () =>
-            void pending.run({
-              key: `fix:${entry.agent.id}`,
-              failureTitle: "Couldn't start the Implementer",
-              task: () => startCheckFix({ sessionId, url, mountId: checkMountId }),
-            }),
-        };
-      }
-      if (
-        checkMountId !== null &&
-        pushOffers.split('\n').includes(fixOfferKey({ agentId: entry.agent.id, url }))
-      ) {
-        return {
-          label: ROW_ACTION_LABEL.push,
-          variant: 'secondary',
-          isBusy: pending.pendingKeys.has(`push:${entry.agent.id}`),
-          onAct: () =>
-            void pending.run({
-              key: `push:${entry.agent.id}`,
-              failureTitle: "Couldn't push the branch",
-              task: () =>
-                pushCheckFix({
-                  sessionId,
-                  mountId: checkMountId,
-                  fixAgentId: selectCheckChain({ state: useAppStore.getState(), sessionId, url })
-                    .fix?.id,
-                }),
-            }),
-        };
-      }
-    }
-    const mountPath = mountPathFor({ item });
-    if (mountPath != null) {
-      const stat = diffStatFor({ item });
-      if (stat != null && (stat.additions > 0 || stat.deletions > 0)) {
-        return {
-          label: ROW_ACTION_LABEL.viewDiff,
-          onAct: () => openMountDiff(sessionId, mountPath),
-        };
-      }
-      return {
-        label:
-          copiedKey === mountPath
-            ? ROW_ACTION_LABEL.copied
-            : failedKey === mountPath
-              ? ROW_ACTION_LABEL.copyFailed
-              : ROW_ACTION_LABEL.copyPath,
-        onAct: () => void copy({ text: mountPath }),
-      };
-    }
-    const { ask } = item.rowState;
-    if (ask == null) {
-      return null;
-    }
-    switch (ask.kind) {
-      case 'answer':
-        return answerAction({ question: ask.question });
-      case 'restartStep': {
-        const target = openTargetFor({ entry });
-        if (target == null) {
-          return null;
-        }
-        return { label: ROW_ACTION_LABEL.retry, onAct: target.open };
-      }
-      case 'runStep': {
-        const { agent } = ask;
-        return {
-          label: ROW_ACTION_LABEL.start,
-          isBusy: pending.pendingKeys.has(agent.id),
-          onAct: () =>
-            void pending.run({
-              key: agent.id,
-              failureTitle: "The next step didn't start",
-              task: () => advanceAgent({ agent }),
-            }),
-        };
-      }
-      case 'continue': {
-        const { agent } = ask;
-        return {
-          label: ROW_ACTION_LABEL.continue,
-          isBusy: pending.pendingKeys.has(agent.id),
-          onAct: () =>
-            void pending.run({
-              key: agent.id,
-              failureTitle: "Couldn't continue the agent",
-              task: () => continueStoppedAgent({ sessionId, agentId: agent.id }),
-            }),
-        };
-      }
-      case 'reviewComment':
-      case 'groupChild':
-        return null;
-      default: {
-        const exhaustive: never = ask;
-        return exhaustive;
-      }
-    }
-  };
-
-  const latestActionFor = useRef(actionFor);
-  useLayoutEffect(() => {
-    latestActionFor.current = actionFor;
-  });
-
-  const runAction = useCallback(({ item }: { readonly item: TimelineRowItem }) => {
-    latestActionFor.current({ item })?.onAct();
-  }, []);
-
   const openDecisionInContext = useCallback(
     ({ numbers }: { readonly numbers: ReadonlyArray<number> }) =>
       openContextDrawer({ sessionId, section: 'decisions', highlight: numbers }),
@@ -298,20 +126,12 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
   const handlers = useMemo(
     (): TimelineEntryRowHandlers => ({
       openTargetFor,
-      runAction,
       openDecisionInContext,
       toggleExpanded: rows.toggleExpanded,
       setDetailHeight: rows.setDetailHeight,
       setGroupExpanded: explode.set,
     }),
-    [
-      explode.set,
-      openDecisionInContext,
-      openTargetFor,
-      rows.setDetailHeight,
-      rows.toggleExpanded,
-      runAction,
-    ],
+    [explode.set, openDecisionInContext, openTargetFor, rows.setDetailHeight, rows.toggleExpanded],
   );
 
   const isGroupExpanded = ({ id }: { readonly id: string }): boolean =>
@@ -353,7 +173,6 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
       };
     }
     const { entry } = item;
-    const action = actionFor({ item });
     const agentId = entry.kind === 'agent' ? entry.agent.id : null;
     const stepId = entry.kind === 'agent' ? entry.agent.stepId : null;
     return {
@@ -365,9 +184,6 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
       handlers,
       runLane: rowLaneId === null ? null : runLaneFor({ laneId: rowLaneId }),
       lanes,
-      actionLabel: action === null ? null : action.label,
-      actionVariant: action?.variant ?? null,
-      actionBusy: action?.isBusy === true,
       diffStat: diffStatFor({ item }),
       worktrees: agentId === null ? NO_WORKTREES : (touchedWorktrees.get(agentId) ?? NO_WORKTREES),
       step: stepId == null ? null : (rows.stepById.get(stepId) ?? null),
@@ -388,9 +204,5 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
     };
   };
 
-  const hasActionColumn = stream.items.some(
-    (item) => item.kind === 'row' && actionFor({ item }) !== null,
-  );
-
-  return { rowPropsFor, hasActionColumn };
+  return { rowPropsFor };
 };

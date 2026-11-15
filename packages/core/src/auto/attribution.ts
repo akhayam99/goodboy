@@ -25,6 +25,7 @@ export type AttributedChanges = Readonly<{
   changedFiles: ReadonlyArray<ResultChangedFile>;
   hasReadOnlyViolation: boolean;
   isComplete: boolean;
+  changedPaths: ReadonlyArray<string>;
 }>;
 
 type HashMapParams = {
@@ -41,7 +42,7 @@ export const attributeChanges = ({
   committedPaths = null,
 }: AttributeChangesParams): AttributedChanges => {
   if (baseline === null || result === null) {
-    return { changedFiles: [], hasReadOnlyViolation: false, isComplete: false };
+    return { changedFiles: [], hasReadOnlyViolation: false, isComplete: false, changedPaths: [] };
   }
   const before = hashMapOf({ snapshot: baseline });
   const after = hashMapOf({ snapshot: result });
@@ -66,6 +67,7 @@ export const attributeChanges = ({
       ...preexisting.slice(0, ATTRIBUTION_LIST_CAP),
     ],
     hasReadOnlyViolation: !isWriter && changed.length > 0,
+    changedPaths: changed.map((file) => file.path),
     isComplete:
       !baseline.isPartial &&
       !result.isPartial &&

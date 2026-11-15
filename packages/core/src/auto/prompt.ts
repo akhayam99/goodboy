@@ -71,7 +71,21 @@ export const AUTO_STOP_EXAMPLE =
 export const AUTO_FINISH_EXAMPLE =
   '<<auto>>{"action":"finish","summary":"What was done and what the user should know."}<</auto>>';
 
-const delegationRules = (): string =>
+const FINISH_RULE = {
+  you: '- Finish: only when the user asked to close this conversation, no agent is working and nothing waits for you. It closes nothing: the conversation rests until the user marks it finished.',
+  lead: '- Finish: when the work is done, no agent is working and nothing waits for you. The user let you close the work: a finish block marks it finished. A message from the user opens it again.',
+} as const;
+
+const DONE_RULE = {
+  you: '- When you think the work is done, tell the user plainly what happened and suggest they mark the conversation finished. Send a finish block only when the user asked to close.',
+  lead: '- When the work is done, tell the user plainly what happened and end your reply with a finish block.',
+} as const;
+
+type DelegationRulesParams = {
+  readonly closer: keyof typeof FINISH_RULE;
+};
+
+const delegationRules = ({ closer }: DelegationRulesParams): string =>
   [
     'HOW TO DECIDE',
     '- You never call Goodboy from inside your turn. You decide by ending your final reply with at most one block, written last. Write nothing after it.',
@@ -91,7 +105,7 @@ const delegationRules = (): string =>
     '- Stop: stop a working agent whose work is no longer needed, with the reason in one line. Its work stays in its worktree and you can continue it later.',
     `  ${AUTO_STOP_EXAMPLE}`,
     '- When the user writes to one of your agents, that message continues the agent like your own continue: its answer comes back to you as a result.',
-    '- Finish: only when the user asked to close this conversation, no agent is working and nothing waits for you. It closes nothing: the conversation rests until the user marks it finished.',
+    FINISH_RULE[closer],
     `  ${AUTO_FINISH_EXAMPLE}`,
     '- With no block your reply is a plain answer to the user.',
     '- The block holds one JSON object with double quotes, on any number of lines. Write a line break inside a string as \\n. Do not put the block in a code fence.',
@@ -101,7 +115,7 @@ const delegationRules = (): string =>
     '- Every message you get starts with the state of this conversation: the agents that are open, the questions waiting for you, the budget left and the mounts. Each result carries the text of the artifact it made, cut when it is long. Treat that message as all you remember: do not rely on earlier turns.',
     '- The user sees each result in this chat as the card of the agent that made it: its name, its state and its own report, right above your reply. Never repeat or paste what an agent said. Name the agent as the results name it, by its title, and write only what you add: what the results mean together, where they disagree, what you decide next and what you need from the user.',
     '- When an agent asks a question you can answer, answer it with an answer block. When you cannot, leave the choice to the user as a next step proposal.',
-    '- When you think the work is done, tell the user plainly what happened and suggest they mark the conversation finished. Send a finish block only when the user asked to close.',
+    DONE_RULE[closer],
     '- A task that runs a command (git log, git ls-remote, a test, a build) goes only to a role that has a shell. Never give it to a read only role. When a result says the agent had no shell, hand the same task once to a role that has one instead of telling the user it is blocked.',
     '- Facts about a branch (commits since its base, its pull request, open review threads, checks) are not a command. Add `"facts":["<mount id>"]` to a scout, up to four mounts: Goodboy reads them on every host and puts them in the scout brief. Never give that work to a writer.',
     '- An agent never pushes. When the user wants a branch pushed, add `"publish":"push"` to the implementer or CI fixer that makes the change, or `"publish":{"mode":"force"}` for a history rewrite, with `"changesContent":true` only when the files are meant to change and `"reviewer":"<report id>"` to attach a reviewer report. Goodboy pushes the checked commit after the agent finishes and its checks are not red. A force push waits for the user to confirm and keeps a backup. A result says "Pushed", "Not pushed" or "Waiting for you to confirm"; never say a branch is pushed before it does.',
@@ -142,6 +156,7 @@ type AutoSystemPromptParams = {
   readonly level?: AutoLevel;
   readonly guidance?: string | null;
   readonly languageAnchor?: string;
+  readonly isLeadClosing?: boolean;
 };
 
 type GuidanceBlockParams = {
@@ -162,10 +177,13 @@ export const buildAutoSystemPrompt = ({
   level = DEFAULT_AUTO_LEVEL,
   guidance = null,
   languageAnchor = '',
+  isLeadClosing = false,
 }: AutoSystemPromptParams): string =>
   [
     AUTO_IDENTITY,
-    isDelegationEnabled ? delegationRules() : AUTO_ANSWER_ONLY,
+    isDelegationEnabled
+      ? delegationRules({ closer: isLeadClosing ? 'lead' : 'you' })
+      : AUTO_ANSWER_ONLY,
     ...(isDelegationEnabled
       ? [
           AUTO_LEVEL_RULES[level],

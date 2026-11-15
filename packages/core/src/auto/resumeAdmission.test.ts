@@ -3,6 +3,7 @@ import { brandId } from '@goodboy/types';
 import type { AgentId, AutoTreeId, SessionId } from '@goodboy/types';
 import type { AutoTree } from '@goodboy/db';
 import type { AdmissionSnapshot } from './admission';
+import { LEAD_PERMISSION_PRESETS } from './permissions';
 import { diagnoseResume } from './resumeAdmission';
 
 const NOW = 1_700_000_000_000;
@@ -50,6 +51,7 @@ const snapshot = (patch: Partial<AdmissionSnapshot> = {}): AdmissionSnapshot => 
   remainingUsd: 5,
   artifacts: [],
   isPlanApprovalRequired: true,
+  permissions: LEAD_PERMISSION_PRESETS.plan,
   ...patch,
 });
 

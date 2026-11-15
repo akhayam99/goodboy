@@ -1,26 +1,10 @@
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
 import { appScrollTo } from '@goodboy/ui';
+import { scrollParentOf } from '../../../../shared/utils/scrollParentOf';
 
 const SCROLL_ANCHOR_HOLD_MS = 260;
 
 const DRIFT_EPSILON = 0.01;
-
-const isScrollable = ({ element }: { readonly element: HTMLElement }): boolean => {
-  const { overflowY } = window.getComputedStyle(element);
-  return overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
-};
-
-const scrollParentOf = ({ element }: { readonly element: HTMLElement }): HTMLElement | null => {
-  let current = element.parentElement;
-  while (current !== null) {
-    if (isScrollable({ element: current })) {
-      return current;
-    }
-    current = current.parentElement;
-  }
-  const root = document.scrollingElement;
-  return root instanceof HTMLElement ? root : null;
-};
 
 type Params = {
   readonly listRef: RefObject<HTMLElement | null>;

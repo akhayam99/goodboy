@@ -1,5 +1,6 @@
 import { DECISION_FIRST_RULE } from '../decisionFirstRule';
 import { ROLE_REGISTRY } from '../roles';
+import { guardedPatternsOf, type LaunchGuard } from './launchGuard';
 import { isAutoWriterRole, type AutoDelegationRole } from './roles';
 import { OUTCOME_MAX_CHARS } from './outcome';
 import { OUTCOME_MARKER_EXAMPLE } from './readingOrderRule';
@@ -49,8 +50,64 @@ export const OUTCOME_EXPECTED_NOTE = `Start your last message with one \`<<outco
 export const AUTO_DEPENDENCIES_RULE =
   "If dependencies are missing, install them with the project's package manager in this mount. Never link or copy node_modules or other files from another checkout.";
 
+type GuardBriefParams = {
+  readonly guard: LaunchGuard;
+  readonly childAgentId: string;
+};
+
+type StopLineParams = {
+  readonly childAgentId: string;
+  readonly need: 'dependency' | 'protected_file';
+};
+
+const stopLineOf = ({ childAgentId, need }: StopLineParams): string =>
+  `stop and end your last message with \`<<step-done id="${childAgentId}" status="returned" needs="${need}">>\` on its own line`;
+
+export const launchGuardBriefOf = ({ guard, childAgentId }: GuardBriefParams): string | null => {
+  const parts: string[] = [];
+  if (guard.dependencies === 'ask') {
+    parts.push(
+      `**Dependencies** Do not add or upgrade a dependency and do not edit a manifest or a lockfile: your tools refuse it and the package managers run offline. Installing what the lockfile already holds is fine. If the work needs a new one, ${stopLineOf({ childAgentId, need: 'dependency' })} and one line after it: the package, the exact version and why, for example \`nock 14.0.1: stubs the host in the retry tests\`. You start again once the user answers.`,
+    );
+  }
+  if (guard.allowedPackages.length > 0) {
+    parts.push(
+      `**Allowed for this attempt** You may add ${guard.allowedPackages.join(', ')}. No other dependency. The add and upgrade commands stay blocked: write that one entry in the manifest yourself, at that exact version, then run the install command without arguments so the lockfile follows.`,
+    );
+  }
+  const kept = guardedPatternsOf({ guard });
+  if (kept.length > 0) {
+    parts.push(
+      `**Protected files** Do not change CI config, git hooks or code owners (${kept.join(', ')}). If the work needs one changed, ${stopLineOf({ childAgentId, need: 'protected_file' })} and one line after it: the path and why. You start again once the user answers.`,
+    );
+  }
+  if (guard.allowedPaths.length > 0) {
+    parts.push(`**Allowed for this attempt** You may change ${guard.allowedPaths.join(', ')}.`);
+  }
+  return parts.length === 0 ? null : parts.join('\n\n');
+};
+
 export const AUTO_KICKOFF_HEADER =
   'You were started by Auto and report back to Auto. A question you ask goes to Auto first. Never emit `<<fan-out>>`, `<<scout-split>>` or `<<handoff>>` markers and never start other agents yourself: Auto does that.';
+
+const GUIDANCE_HEADING = '**Guidance**\n';
+
+const TASK_HEADING = '\n\n**Task** ';
+
+type KickoffGuidanceParams = {
+  readonly kickoff: string;
+};
+
+export const kickoffGuidanceOf = ({ kickoff }: KickoffGuidanceParams): string | null => {
+  const start = kickoff.indexOf(`\n\n${GUIDANCE_HEADING}`);
+  if (start === -1) {
+    return null;
+  }
+  const rest = kickoff.slice(start + 2 + GUIDANCE_HEADING.length);
+  const end = rest.indexOf(TASK_HEADING);
+  const text = (end === -1 ? rest : rest.slice(0, end)).trim();
+  return text === '' ? null : text;
+};
 
 export type KickoffArtifactInput = Readonly<{
   artifactId: string;
@@ -243,7 +300,7 @@ export const composeDelegationKickoff = ({
   }
   const guidanceText = guidance?.trim() ?? '';
   if (guidanceText !== '') {
-    sections.push(`**Guidance**\n${guidanceText}`);
+    sections.push(`${GUIDANCE_HEADING}${guidanceText}`);
   }
   sections.push(revise === null ? `**Task** ${task}` : reviseSection({ revise }));
   sections.push(`**Done when** ${doneWhen ?? AUTO_DEFAULT_DONE_WHEN[role]}`);

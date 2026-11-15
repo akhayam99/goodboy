@@ -87,6 +87,7 @@ const runsOf = ({ agents }: { readonly agents: ReadonlyArray<Agent> }) =>
     revisingStarts: {},
     mounts: MOUNTS,
     projects: [],
+    isWork: false,
   });
 
 const onMount = (params: {

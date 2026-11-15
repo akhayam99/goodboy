@@ -14,3 +14,17 @@ export const ICON_STROKE = {
   hero: 1.5,
   check: 2.5,
 } as const;
+
+type IconStrokeParams = {
+  readonly size: number;
+};
+
+export const iconStrokeOf = ({ size }: IconStrokeParams): number => {
+  if (size <= ICON_SIZE.row) {
+    return ICON_STROKE.row;
+  }
+  if (size <= ICON_SIZE.notice) {
+    return ICON_STROKE.control;
+  }
+  return ICON_STROKE.hero;
+};

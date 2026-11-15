@@ -10,6 +10,7 @@ import type {
   BoardGroupId,
   BoardLead,
   BoardRow,
+  BoardSettled,
   BranchBoard,
 } from './boardTypes';
 
@@ -39,6 +40,13 @@ type Params = {
   readonly leads: ReadonlyArray<BoardLead>;
   readonly recencyByMountId?: ReadonlyMap<string, number>;
 };
+
+const NOTHING_SETTLED: BoardSettled = { spendUsd: 0, elapsedMs: 0, agentIds: [], leadIds: [] };
+
+type LiveWork = Pick<BoardAgent, 'isRunning' | 'isBlocked' | 'isFailed'>;
+
+const isLiveWork = ({ isRunning, isBlocked, isFailed }: LiveWork): boolean =>
+  isRunning || isBlocked || isFailed;
 
 type UniqueParams<Item extends { readonly id: string }> = {
   readonly items: ReadonlyArray<Item>;
@@ -279,27 +287,31 @@ export const branchBoardOf = ({
   const looseLeads = uniqueLeads.filter(
     (lead) => ownerOf({ mountId: lead.primaryMountId, knownMountIds }) === null,
   );
-  const loneSpend = spendByMount.get(null) ?? 0;
+  const looseRow = rowOf({
+    session,
+    branch: null,
+    asks: looseAsks,
+    agents: looseAgents,
+    leads: looseLeads,
+    spendUsd: spendByMount.get(null) ?? 0,
+    elapsedMs: elapsedByMount.get(null) ?? 0,
+  });
   const hasLooseWork =
-    looseAsks.length > 0 || looseAgents.length > 0 || looseLeads.length > 0 || loneSpend !== 0;
-  const looseRows =
-    hasLooseWork || branchRows.length === 0
-      ? [
-          rowOf({
-            session,
-            branch: null,
-            asks: looseAsks,
-            agents: looseAgents,
-            leads: looseLeads,
-            spendUsd: loneSpend,
-            elapsedMs: elapsedByMount.get(null) ?? 0,
-          }),
-        ]
-      : [];
+    looseAsks.length > 0 || looseAgents.some(isLiveWork) || looseLeads.some(isLiveWork);
+  const hasLooseRow = hasLooseWork || branchRows.length === 0;
+  const looseRows = hasLooseRow ? [looseRow] : [];
   const rows = [...branchRows, ...looseRows];
   const isAlone = branchRows.length === 1 && looseRows.length === 0;
   return {
     rows,
+    settled: hasLooseRow
+      ? NOTHING_SETTLED
+      : {
+          spendUsd: looseRow.spendUsd,
+          elapsedMs: looseRow.elapsedMs,
+          agentIds: looseRow.agentIds,
+          leadIds: looseRow.leadIds,
+        },
     groups: boardGroupsOf({ rows, recencyByMountId }),
     isGrouped: !isAlone,
     isAlone,

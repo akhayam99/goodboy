@@ -48,9 +48,6 @@ const mount = ({ Scene }: MountParams): void => {
   );
 };
 
-const autoLevel = async (): Promise<HTMLElement> =>
-  screen.findByRole('region', { name: 'Agents' }, WAIT);
-
 describe('Auto: every capability keeps a home in Auto', () => {
   it('Start Auto from the Start a run field on the Runs page, with the Limit chip', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start'] });
@@ -62,22 +59,10 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.queryByText(/Spend cap/)).toBeNull();
   });
 
-  it('Agents tree task, model and time: the task and the model in the row tooltip', async () => {
-    mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
-
-    const level = await autoLevel();
-    const implementer = within(level).getByRole('treeitem', { name: /^Implementer, / });
-    fireEvent.pointerEnter(implementer, { pointerType: 'mouse' });
-    const card = (await screen.findByTestId('fact-card', undefined, WAIT)).textContent;
-    expect(card).toContain('Post one credit per retry');
-    expect(card).toContain('Sonnet 5.5');
-  });
-
   it('Spent, Reserved, Left: the Limit chip says the limit, its popover the rest', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
-    await autoLevel();
-    fireEvent.click(screen.getByRole('button', { name: /^Limit: \$10\.00/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Limit: \$10\.00/ }, WAIT));
     const popover = screen.getByRole('dialog', { name: 'Limit' });
     expect(within(popover).getByText('Spent')).toBeDefined();
     expect(within(popover).getByText('$0.27')).toBeDefined();
@@ -100,7 +85,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.getByText('Not checked: timed out')).toBeDefined();
   });
 
-  it('Auto phase words and the one Stop: the dock of the Auto chat', async () => {
+  it('Auto phase words and the one Stop: the dock line and the session head', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
     const dock = await waitFor(() => {
@@ -111,7 +96,10 @@ describe('Auto: every capability keeps a home in Auto', () => {
     if (dock === null) {
       throw new Error('no dock');
     }
-    expect(within(dock).getByRole('button', { name: /^Stop Auto/ })).toBeDefined();
+    expect(within(dock).queryByRole('button', { name: /^Stop Auto/ })).toBeNull();
+    expect(
+      await screen.findByRole('button', { name: /^Stop Auto and \d agents?$/ }, WAIT),
+    ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 

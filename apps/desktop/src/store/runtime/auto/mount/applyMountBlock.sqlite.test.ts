@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { isRefusalPayload, mountNoteOf } from '@goodboy/core/auto';
 import { getAutoTree, listAutoOutbox } from '@goodboy/db';
-import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
+import { AUTO_SEED_NOW, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { writeAutoLevel } from '../level/writeAutoLevel';
+import { writeLeadPermission } from '../level/writeLeadPermission';
 import type { MountProjectOutcome } from '../ports';
 import {
+  autoDelegates,
   autoTurnEndsWithBlock,
   makeRuntimeWorld,
   userSays,
@@ -141,5 +143,57 @@ describe('the mount action of the block', () => {
     const world = await mountTurn('run', { kind: 'unknown' });
 
     expect((await refusalOf(world)).count).toBe(1);
+  });
+
+  it.each([
+    ['ask', 'ask'],
+    ['whenAllowed', 'allowance'],
+    ['allow', 'mount'],
+  ] as const)('reads Add a project %s as the %s mode', async (value, mode) => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await writeLeadPermission({
+      db: world.state.world.db,
+      target: { treeId: world.treeId },
+      change: { key: 'addProject', value },
+      nowMs: AUTO_SEED_NOW,
+    });
+    world.state.ports.setMountProjectOutcome({ kind: 'ask', name: 'ledger-core' });
+    await userSays({ world, id: 'outbox-user-1', text: 'create a worktree on ledger-core' });
+    await autoTurnEndsWithBlock({ world, block: MOUNT });
+
+    expect(world.state.ports.mountProjectCalls[0]?.mode).toBe(mode);
+  });
+});
+
+describe('a writer delegated to a project that is not added', () => {
+  it.each([
+    ['ask', 0],
+    ['whenAllowed', 1],
+  ] as const)('adds nothing for it while Add a project says %s', async (value, calls) => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await writeLeadPermission({
+      db: world.state.world.db,
+      target: { treeId: world.treeId },
+      change: { key: 'addProject', value },
+      nowMs: AUTO_SEED_NOW,
+    });
+    await userSays({ world, id: 'outbox-user-1', text: 'fix the retries in payments-api' });
+    const outcome = await autoDelegates({
+      world,
+      spec: {
+        children: [
+          {
+            role: 'implementer',
+            task: 'fix the retries in payments-api',
+            reason: 'a code change',
+            mount: 'payments-api',
+          },
+        ],
+      },
+    });
+
+    expect(outcome.isOk).toBe(false);
+    expect(world.state.ports.taskFolderCalls).toHaveLength(calls);
+    expect(world.state.ports.childTurns).toEqual([]);
   });
 });

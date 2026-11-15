@@ -1,6 +1,7 @@
 import { Button, Notice, splitErrorMessage } from '@goodboy/ui';
 import type { RestoreOutcome, RestoreTarget } from '../../../../../file-versions/useChangesRestore';
 import { restoreCopyOf } from '../../../../../file-versions/restoreCopyOf';
+import { NAMES } from '../../../../../../shared/utils/names';
 
 type Props = {
   readonly outcome: RestoreOutcome;
@@ -87,7 +88,7 @@ export const RestoreBand = ({ outcome, isBusy, onConfirm, onRetry, onUndo, onDis
       actions={
         outcome.target.scope === 'turn' ? (
           <Button variant="secondary" size="xs" isBusy={isBusy} disabled={isBusy} onClick={onUndo}>
-            Bring it back
+            {NAMES.undoRestore}
           </Button>
         ) : null
       }

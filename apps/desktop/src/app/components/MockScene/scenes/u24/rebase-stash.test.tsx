@@ -67,17 +67,17 @@ describe.each([false, true])('rebase stash scenes with dark theme %s', (isDark) 
   });
   it('forgets conflicted files after one anchored confirm', async () => {
     show({ name: 'rebase-restore-conflict', isDark });
-    fireEvent.click(await screen.findByRole('button', { name: 'Done, forget it' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Forget saved files' }));
     const confirm = await screen.findByRole('dialog');
     expect(confirm.textContent).toContain('They stay in the stash');
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Done, forget it' }));
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Forget saved files' }));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull());
   });
   it('forgets set-aside files without bringing them back', async () => {
     show({ name: 'rebase-bring-back', isDark });
-    fireEvent.click(await screen.findByRole('button', { name: 'Done, forget it' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Forget saved files' }));
     fireEvent.click(
-      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Done, forget it' }),
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Forget saved files' }),
     );
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull());
     expect(screen.queryByText('Rebased on main')).toBeNull();

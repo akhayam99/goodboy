@@ -15,6 +15,16 @@ the session rail ("Agent · Auto agent"), so the rail has no Auto entry
 to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
 agents started by hand keep working.
 
+One app-wide setting, **Work (experimental)** (`SETTING_WORK_ENABLED`, under
+Experiments on the General page, off by default), moves doors, names and
+engine rules, never views. Off: no Work section, the word Auto, "Start a run"
+opens the router, the level chip. On: Work, the word Lead, one composer,
+permission rows. `flowWordOf` (`shared/lib/flowWordOf.ts`, read through
+`useFlowWord`) is the only place that picks Auto or Lead, aria-labels
+included; `flowRulesOf` in the same folder holds the rest of the matrix and
+its table test pins both positions. A flip never loosens a running Lead and never loses a pending
+ask; a failed write keeps the old flow and shows the error on the row.
+
 ## Status
 
 The feature is on: `AUTO_GATES.isDelegationEnabled` is `true` and is the only gate. Settings has
@@ -99,7 +109,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   already spent. A limit exists only when a person sets one. The workspace default is the Limit
   of the Run defaults page (see [Workflows](workflows.md)), and a start never
   stores a limit: an amount typed on the form is for that run only.
-- A Next card that starts a role gets **Talk it through with Auto** as the last
+- A Next card that starts a role gets **Discuss with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
   (`features/actions/kinds/suggestion.ts`), shown whenever the card starts a
   role. It opens **Start a run** on Runs with the card as its text
@@ -194,7 +204,21 @@ message" and the composer keeps its text.
 **When a message waits.** A `user` row is delivered in every phase that takes a turn
 (`chooseDeliveryRows`), except while the tree is `waiting` for running agents: there it
 stays `pending` and goes with the next results, so a message typed during a long child run
-reaches Auto only when the child ends.
+reaches Auto only when the child ends. That is the switch off.
+
+**Answer while working.** With **Work** on (`flowRulesOf().isMessageDeliveredAtOnce`, read
+by `deliverNext` from the `work.enabled` setting at every delivery), a `user` row is delivered
+in `waiting` too, all pending user rows in one turn, while the agents keep running. The Lead
+may answer, start another agent or say it waits. Its turn moves the tree to `deciding`; an
+agent that settles meanwhile writes its results row as usual, and `settleAutoTurn` sends the
+tree to `merging`, so those results go in the next turn, once. Delivery stays once per
+outbox row id: a claimed or accepted row is never `pending` again, and a lapsed lease
+reuses the stored delivery and its delivery id. Stop wins: a stopping tree delivers nothing.
+The claim stores the turn number (`turns_used + 1`) in the stored delivery, and
+`readAutoTreeViews` reads a note sent while agents worked back as `readMessages` with that
+turn. The note words come from `noteWordOf`: "Queued" with the switch off, "Not read yet"
+and "Read at turn n" with it on. Remove is the undo until the note is read; a note the
+runtime could not deliver keeps "Not read yet" in the tree and stays editable.
 
 **One queue.** The chat holds only what Auto has read. Every message not delivered yet sits above
 the composer in one list, in send order (`QueuedMessages`, rows from `queuedRowsOf`): the `user`
@@ -211,6 +235,8 @@ the ids existed have no `outboxId` and stay where they were written.
 A row reads one status word and nothing else: "Waits for this reply", "Waits for <task of the
 child>" or "Waits for 2 agents" while the tree waits for running agents (`pendingMessageLineOf`,
 `waitingForOf`), and "Not delivered" for a blocked or stopped tree, with the reason in its tooltip.
+With **Work** on, every row that is not blocked or stopped reads "Not read yet" and offers no
+Send now, because it goes at once (`useQueuedRows` passes `isAtOnce`).
 **Send now** (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that
 one row at once as its own Auto turn, like a child's question, and leaves the children running. It
 runs in the tree's queue and claims the row with the tree's phase revision and the row's
@@ -248,7 +274,10 @@ on the echo (`operator_text` with
 `attachments`). The delivery that reads the row hands them to Auto's turn (`storedAttachments` on
 `sendTurn`, listed by full path in the prompt, never written again), and every child Auto starts
 after that message gets them in its brief (`childImagesOf`: the images of the accepted user rows
-of the tree's generation up to the delegation); the child page names them as chips. An image that
+of the tree's generation up to the delegation); the child page names them as chips. The launch
+reads those images once, into the launch snapshot of the attempt (see Why an agent exists), and
+starts the child with the stored list, so a relaunch after a crash hands over the same images
+even when the tree got more since. An image that
 cannot be written refuses the message with "Auto could not keep the images. Attach them again.":
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
@@ -266,7 +295,12 @@ Tester**, **Needs you**, **Reading the results**, **Failed**, **Stopping**,
 children are not rows of the Overview; they live in the Auto tree of the Agents
 panel.
 
-Auto never finishes itself. A tree that rests after its agents settled (stored
+Auto finishes itself only when the Lead may close the work: with the Work
+switch on and the Close the work row at Lead (never set by a preset), a
+`finish` block that was accepted settles the turn in the stored phase
+`finished` instead of a resting phase (`settleAutoTurn`, `readIsLeadClosing`),
+in the same guarded write. With the row at You, or the switch off, it rests.
+A tree that rests after its agents settled (stored
 phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark finished** in the agent menu
 (`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
 `finished` (m231) through `moveRestingAutoTree`: one write that needs a resting
@@ -277,25 +311,14 @@ writing to it reopens it to **Deciding**.
 
 ## The chat
 
-- **The tree in the Agents column.** What Auto spawned lives in the Agents
-  column of the run page ([The Lead page](#the-lead-page)): it follows an Auto agent
-  or one of its children in the center. The tree reads top down
-  with Auto first and one row per child under it, ordered by when Auto
-  started them, in the list of launches and in a focused launch
-  alike (one `SpawnedAutoGroup`); a live tree opens, a settled one in the list
-  folds to Auto with its count of children
-  ([navigation/session-rail.md](navigation/session-rail.md#the-session-tools)). Auto is titled by the
+- **The tree on the Lead page.** What Auto spawned lives in the tree of the
+  Lead page ([The Lead page](#the-lead-page)). Auto is titled by the
   first line of the ask it started with (`autoRootTitleOf`), which the tree
   view carries (`AutoTreeView.rootAsk`, `readFirstUserText`) so no transcript
   has to load. The ask is the root's first `operator_text`, else its first
   `user_text` not marked `deliveredBy: 'auto'`, never the delivery Auto builds
   (whose first line is the artifact ledger header); then the transcript brief,
-  then "Auto". A row is one line: state node, role glyph, name
-  and the time; its accessible name says the role, the name and the state
-  word, and its fact card (`railRowCardOf`) gives the name, the
-  state, the task Auto gave, the provider, the model and the effort as rows.
-  While Auto has no child it shows Auto alone ("Idle"
-  before a tree exists) and "No agents started yet". Every state word is gray beside its toned node and comes from
+  then "Auto". Every state word is gray beside its toned node and comes from
   one word map (`autoTreeWordOf` for Auto, `delegationCardOf` for a child):
   **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
   **Stopped**; the Auto agents list reads the same words.
@@ -355,8 +378,9 @@ writing to it reopens it to **Deciding**.
   reads. The button uses `useAutoPlanApproval`, the same as the plan view;
   approving sends the approval to the Auto root, so the run stays inside Auto.
   If the approval is saved but Auto was not told, the plan view keeps open with
-  **Tell Auto**, and the dock that approved it reads "Plan v1 approved, Auto did
-  not hear it" with the same **Tell Auto**: it sends "Approved plan v1." again.
+  **Resend approval**, and the dock that approved it reads "Plan v1 approved.
+  Couldn't send it to Auto." with the same **Resend approval**: it sends
+  "Approved plan v1." again.
   When two plans exist the dock shows the one that waits for your OK, else the
   newest (`dockPlanRowOf`). An approved plan is the
   artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the line does
@@ -377,7 +401,7 @@ writing to it reopens it to **Deciding**.
   row, a next step that revises the plan hides **Approve**, and a project ask
   waits behind a plan. **Comments not sent** reads "2 comments on plan v1 not
   sent to the Planner" with a filled **Send to planner**; **Approve anyway** and
-  **Discard my comments** sit in its menu (`AutoDockPlanComments`, the rule comes
+  **Discard your comments** sit in its menu (`AutoDockPlanComments`, the rule comes
   from `planPrimaryOf`); Discard asks first inside the menu and names a failure.
   Review changes stays out while a project ask, a next step or a plan waits
   (`isAutoTreeAtRestOf`). Once the tree rests, "Plan v1 approved" leaves the dock.
@@ -395,10 +419,11 @@ writing to it reopens it to **Deciding**.
   noun, numbered in the order Auto started them when a role has two or more,
   **Reviewer 1** and **Reviewer 2** (`autoChildLabelsOf`, adopted agents left out
   of the numbers). The role stays visible as its glyph, with the noun in its
-  tooltip and accessible name. The rail row, the Agents drawer, the delegation
+  tooltip and accessible name. The rail row, the delegation
   line, the result card and the delivery text Auto reads all take the name from
   that one function, so Auto and the screen say the same name. A stuck child is a Next card headed by its branch and
-  pull request ("Auto needs you" only when its branch is unknown) whose
+  pull request ("Auto needs you", or "Lead needs you" while Work is on, only
+  when its branch is unknown; `flowWordOf` through `useNextCards`) whose
   sentence names the role, never the quoted ask: `The scout never started.` (or
   `failed.`, `timed out.`, one verb per child state from
   `autoStuckKindOf` and `autoStuckVerbOf`; a child that returned to Auto is
@@ -434,7 +459,7 @@ writing to it reopens it to **Deciding**.
   earlier attempt whose agent is still in the session does not come back as a
   linked child (`autoGroupOf`).
   Every reader of `autoTreeViews` (Next, the Running card, the Done card,
-  the rail, the Agents drawer, the counts) sees the same list, so none of them
+  the rail, the counts) sees the same list, so none of them
   shows a card for it, and a moved child belongs to the session that holds it
   now. A child whose agent row does not exist yet (accepted, not started) stays.
   A **Retry** clicked after the child left reloads the trees, sends nothing and
@@ -525,7 +550,7 @@ writing to it reopens it to **Deciding**.
   came back (summary, files changed, checks with their source, open questions,
   `DelegationResult`: the outcome line first, where a red check or a failed push replaces the
   child's own sentence; then chips for files changed, the checks verdict, each failing check,
-  **Retry checks**, the push state with **Retry push** and **Put back**, and each
+  **Retry checks**, the push state with **Retry push** and **Undo force push**, and each
   open question, four at most then **+N**; last a closed **Earlier in this reply, N lines** with the summary
   as markdown, open only when the outcome is red, any artifact block dropped by
   `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
@@ -552,7 +577,8 @@ writing to it reopens it to **Deciding**.
   (`routeAutoChildTurn` passes `isBusy`, and `continueChild` answers it after the plain checks).
   Auto's continue passes the admission's artifact checks (`admissionChildRefusals`, fenced in its
   transaction by `inputArtifactStatementsOf`), and Auto's queued message waits as
-  `awaiting_confirm` at Every step or on a forced confirm (`admissionStateOf`). The person's own
+  `awaiting_confirm` when the start row of its role is Ask or on a forced confirm
+  (`admissionStateOf`). The person's own
   message goes on whatever the plan's state, and is refused only when an input artifact was
   discarded. The queue delivery id rides the port (`deliveryId`, kept in the continue's
   request), so a queued message sent again replays its delegation instead of running twice.
@@ -636,7 +662,7 @@ without a branch (`mountId` null), and the rows sum to the total.
 `LeadTree` (`features/session/components/LeadTree/index.tsx`) draws that model as
 the activity trace, in two densities. Every row is one 28px line on the trace
 rail (`spawnedRailOf` in `features/workTreeModel` lays it out, `SpawnedRailCell`
-beside `TimelineRail` draws it: the rail of the Agents drawer and the Full log): a spine through the top agents and an elbow
+beside `TimelineRail` draws it, as in the Full log): a spine through the top agents and an elbow
 for each child. The marker is the state node (a check when done, a breathing dot
 while it works, amber for Needs you, red for Failed), then the number, the role
 glyph, the role name and the title, cut in the middle with the whole title on
@@ -667,14 +693,34 @@ transcript, in the block `AutoChildBrief`
 (`apps/desktop/src/features/auto/child/AutoChildBrief.tsx`, inserted by
 `useAutoChildChat`). Every line comes from the stored delegation row through
 `delegationCardOf`: Why Auto chose the role (the stored `reason`), Why not the
-role fit when both are stored, Done when (`doneWhen`), Went in (the launch
-snapshot, `launchSnapshotOf`, as given to the agent, never as read by it; no
-line without a snapshot), the routing, and Attempt n with the last attempt's
-result when the `retryOf` chain is longer than one (`delegationAttemptsOf`). The
-brief itself is the first message of the transcript and the full brief opens from
-the page crumb (`AgentBriefCrumb`); the result is the end card (`AutoChildEnd`).
-The block is a pure function of that agent's rows, so a late result for another
-agent does not repaint it. There is no side panel for an agent's record.
+role fit when both are stored, Done when (`doneWhen`), Went in, the routing, and
+Attempt n with the last attempt's result when the `retryOf` chain is longer than
+one (`delegationAttemptsOf`). The brief itself is the first message of the
+transcript and the full brief opens from the page crumb (`AgentBriefCrumb`); the
+result is the end card (`AutoChildEnd`). The block is a pure function of that
+agent's rows, so a late result for another agent does not repaint it. There is
+no side panel for an agent's record.
+
+Went in (`AutoChildWentIn`) reads the launch snapshot and lists it as given to
+the agent, never as read by it: one line per note, image, artifact and guidance,
+with its detail (the turn a note was read at, an artifact's version). The
+snapshot is `auto_attempts.launch_snapshot`, written once by `startAttempt` in the same transaction that inserts the attempt, so a snapshot
+that cannot be written fails the start and never leaves a half-started attempt.
+`launchSnapshotFor` (`store/runtime/auto/launchSnapshot/`) builds it right
+before: the user notes up to the delegation (row id, with the turn the Lead read
+it at), their images (the full references the child is started with), the
+artifacts and versions the brief carried (`inputArtifacts` and the revise
+target), the run guidance in the brief (`kickoffGuidanceOf`) and the routing.
+Nothing rewrites it: a retry is a new delegation with its own first attempt and
+its own snapshot, and a resumed attempt after a question writes none.
+`readAutoTreeViews` loads the snapshots by delegation (`launchSnapshots`) and
+`childWentInOf` (`features/auto/child/childWentInOf.ts`) reads the one of the
+agent's latest delegation through `launchSnapshotOf`. A recorded snapshot with
+nothing in it reads "Nothing was given to the agent." An agent without a
+snapshot, for one started before the column existed, has no Went in line: a
+state, not an error, and nothing is recomputed from today's images; the images
+of its brief show as chips instead, and they are not repeated when a snapshot
+lists them.
 
 ### The Lead page
 
@@ -700,6 +746,43 @@ The tree is `useLeadTree` over the composer's queued rows: `ChatInput` reports
 them through `QueuedNotesReportContext` (`useReportQueuedNotes`), so a queued note is a
 tree node whose Edit and Remove are the composer's own.
 
+### Lead state words
+
+With the Work switch on, a Lead reads one of five words: **Working**, **Waits
+for you**, **Resting**, **Stopped**, **Finished**. `leadStopOf`
+(`packages/core/src/auto/leadStopOf.ts`) is the one function that picks it,
+from the stored phase, the Lead's own turn, a plan waiting for approval, a
+project ask and the spend limit. Plan ready, an ask, the limit and a failed
+turn are the reason next to **Waits for you**, never a sixth word; Stopping
+reads **Stopped** with the reason `stopping`. `autoTreeWordOf` calls it for
+every reader: the header word of the Lead page (`LeadHeaderWord`), the session row
+(`sessionRunsOf`), the Lead line of a branch Work tab (`branchLeadsOf`, which
+copies the row word). With the switch
+off the same function gives the Auto words of the Overview below, and the
+header shows no word. `leadStopReaders.test.tsx` checks every word in every
+reader.
+
+### The workspace read
+
+The Work list reads every Lead of a workspace across its open sessions, not one
+session at a time. `listAutoWorkTreesOfWorkspace`
+(`packages/db/src/queries/auto-work-trees.ts`) returns each tree with its
+session goal, the project of its primary mount and its branches: the primary
+mount and every mount its delegations of the current generation target,
+each branch once. The `work` slice (`store/slices/work/`) loads each session
+through `readAutoTreeViews`, so a Lead carries the same view the Lead page
+reads. `loadWorkLeads({ workspaceId, filter })` keeps only the latest read; a
+read for a workspace or filter the window left is dropped. A failed read keeps
+the old rows and sets `isWorkStale`; the next poll retries. A change made in
+another window shows on the next read.
+
+`workRowsOf` (`features/work/workRowsOf.ts`) owns every number of the list. It
+makes one row per Lead (a Lead on two branches is one row), takes the state word
+from `autoTreeWordOf` and so from `leadStopOf`, the pending asks from
+`leadAsksOf`, the agents running and the spend from the view, and the four
+filter counts (All open, Needs you, Working, Finished). A filter's count is the
+number of its rows. A Stopped Lead is in no filter.
+
 ## Plans
 
 The plan a Planner writes opens in the right drawer. Its second row shows
@@ -710,9 +793,10 @@ is a compare and swap on the version the drawer shows, then Auto is told once
 discarded one refuse it with a sentence and the drawer stays open. A second
 click, or a second window, on an approved version does not tell Auto again.
 A writer role (Implementer, Tester, Docs, Scribe, CI fixer, Rewriter) taking a
-plan needs its current revision approved, unless the session level is **Never**
-or the global approval switch is off. The admission snapshot reads the stored
-`agents.autoPlanApproval` setting for every handoff through
+plan needs its current revision approved while the Lead's Approve the plan row
+reads Ask (`isAdmissionPlanGateOn`); **Never** and the global approval switch
+both read Skip. The admission snapshot reads the rows for every handoff, and the
+rows read the stored `agents.autoPlanApproval` setting through
 `isAutoPlanApprovalRequired`; only the exact value `false` turns that switch
 off. There is no screen for that setting yet. **Ask for changes** opens the
 chat of Auto: a change written there makes Auto rework the same plan into
@@ -752,7 +836,7 @@ colour (`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side borde
 - An alternative declines the primary first, then sends the Auto root one
   structured message: `Next step: <role>` on the first line, the hint after it.
   If the decline lost, no message is sent. If the message fails, the card stays as
-  "Declined. Auto was not told." with **Tell Auto**, which sends only the message.
+  "Declined. Couldn't send it to Auto." with **Resend answer**, which sends only the message.
 - **Decline** declines and tells nothing.
 - A failed start keeps the pick and the hint, shows the reason in the card and
   reads **Retry** on the same delegation. A `lost` answer reads "No longer open".
@@ -955,17 +1039,20 @@ It decides by ending its final reply with at most one block:
   too. A stop on a child that already ended changes nothing and answers `alreadyEnded`, never a
   refusal.
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
-  waits. It stores nothing: the tree still rests as Idle until the user marks it finished. The
-  prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to
-  close.
+  waits, and the refusal says why. With Close the work at You it stores nothing: the tree still
+  rests as Idle until the user marks it finished, and the prompt asks Auto to suggest **Mark
+  finished** and to send `finish` only when the user asked to close. With Close the work at
+  Lead and the Work switch on, the turn settles as `finished` and the prompt
+  (`buildAutoSystemPrompt` with `isLeadClosing`) asks the Lead to end with `finish` once the
+  work is done. A user message to a finished Lead opens it again.
 - `mount` attaches a project of the workspace, on the branch the user named
   (`project`, optional `branch`, `reason`; `parseMountSpec`). It is how "create a worktree on
   app-web with branch X" is done: the worktree is the deliverable, so no implementer starts to
-  run `git worktree add`. `applyMountBlock` follows the Asks you level through the `mountProject`
-  port (`mountAutoProject`, which calls `ensureProjectMounted` with the branch as written):
-  **Never** mounts at once, **After the plan** mounts only when the materialization gate
-  allows it (the same allowance as `mountTaskFolders`) and otherwise asks, **Every step** always
-  asks. The result is a `refusal` row with a `mount` note (`state` `ask` or `done`), so replay,
+  run `git worktree add`. `applyMountBlock` follows the Add a project row through the
+  `mountProject` port (`mountAutoProject`, which calls `ensureProjectMounted` with the branch as
+  written): Allow (the **Never** preset) mounts at once, When the session allows it (**After the
+  plan**) mounts only when the materialization gate allows it (the same allowance as
+  `mountTaskFolders`) and otherwise asks, Ask (**Every step**) always asks. The result is a `refusal` row with a `mount` note (`state` `ask` or `done`), so replay,
   recovery and the one row per turn work as for a refused delegate. A project that is unknown
   or ambiguous falls back to the folder list. A done mount is written with the code `mounted`
   (`AUTO_MOUNTED_CODE`): it is never a refusal, so it adds no refusal to the count, no strike to
@@ -985,9 +1072,10 @@ It decides by ending its final reply with at most one block:
 
 The prompt takes an Asks you level, using the same three values as workflows
 with its own default, **After the plan**. Each turn reads the
-level saved for its session (`autoSystemPromptOf`, the same `readAutoLevel` that
-admission uses), so the prompt and the gates follow one setting and a read that fails
-fails the turn instead of guessing a level. **Every step** requires confirmation
+level saved for its session (`autoSystemPromptOf` through `readAutoLevel`; admission
+reads the permission rows, whose presets are these levels), so a tree without its own
+rows gets a prompt and gates from one setting, and a read that fails fails the turn
+instead of guessing a level. **Every step** requires confirmation
 for each child and a planner's plan before a change. **After the plan** lets
 readers start freely, requires a planner's plan and user approval before a
 writer, then continues without asking for each handoff. **Never** makes the
@@ -1021,11 +1109,13 @@ hints. Confirm and decline both check pending state inside their transaction, so
 a late decline cannot cancel a confirmed child. The proposal tests cover rollback,
 retry and competing decisions.
 
-Admission reads the session level from the database for every handoff, after
-resolving the child. **Every step** stores each child as waiting for its own
-Confirm or Cancel. At **Never**, an unapproved plan may be consumed by a
-writer, while revision and artifact checks still apply. Changing the level
-never starts a child already waiting for confirmation. An explicit child
+Admission reads the Lead's permission rows from the database for every
+handoff, after resolving the child ([Admission rows](#admission-rows)). With
+no stored rows they are the session level: **Every step** stores each child
+as waiting for its own Confirm or Cancel. At **Never**, an unapproved plan may
+be consumed by a writer, while revision and artifact checks still apply.
+Changing the level or a row never starts a child already waiting for
+confirmation. An explicit child
 `confirm: true` or an ambiguous revise still requires confirmation at any level.
 A plan feeds one writer per role: a second writer of the same role on a plan
 that an unsettled writer already took is refused `artifact_busy`, in the same
@@ -1042,7 +1132,7 @@ write takes a named session or workspace target, compares and swaps, retries
 one lost race and reports a failed write without updating window state. Picks made in one window
 run in call order per workspace (`changeAutoLevel` queues them), so the last pick wins
 and an older pick never retries over a newer one.
-`readAdmissionSnapshot` reads the persisted level and approval switch;
+`readAdmissionSnapshot` reads the effective rows (`readAdmissionPermissions`);
 `admit.ts` applies the same policy to the stored child state, receipt and
 plan consumption. The level tests in `store/runtime/auto/level/` check
 persistence, failures, second writers and pending confirmations.
@@ -1066,6 +1156,363 @@ in `packages/core/src/auto/level.ts`; `buildTurnSpawn` still rebuilds it with
 that default for every Auto turn. The level's planning instructions take
 precedence over the role-addition guidance below. `prompt.level.test.ts` checks
 each level's text and `store.auto-level-prompt.test.ts` checks what a turn sends.
+
+### Permission rows
+
+A Lead is an Auto tree: the screen says Lead, the code and the tables say
+`auto`. Its autonomy is nine rows, a spend limit and four locked rows
+(`packages/core/src/auto/permissions.ts`). The rows and their values are
+`LEAD_PERMISSION_VALUES`: Approve the plan (ask, skip), Start agents that read
+(ask, free), Start agents that write (ask, after the plan, free), Push a branch
+(ask, when checks pass), Open or update a pull request, Add or upgrade
+dependencies and Change protected files (ask, allow each), Add a project (ask,
+when the session allows it, allow) and Close the work (you, Lead). The spend
+limit is the tree's `cap_usd`, the same number the reservation guard reads. The
+locked rows are not stored and not editable: force push asks with a backup,
+merge is you, agents never push, the Lead never writes.
+
+The three levels are the three presets in `LEAD_PERMISSION_PRESETS`, value for
+value with what each level does today: Every step asks for the plan, every
+child and every project; After the plan asks for the plan, lets readers start
+and adds a project through the materialization allowance (`applyMountBlock`);
+Never skips the plan and starts and adds freely. No preset holds a new ask:
+push, pull request, dependencies and protected files are at their open value in
+all three, and ask only once a row is set to Ask.
+
+`leadPermissionsOf` is the one function that gives a row its effective value
+and its source, in this order: the Lead's own rows (`auto_trees.permissions`,
+m243), the workspace default (workspace value `auto.permissions`, read only
+while the Work switch is on), the session's level, the workspace level, then
+**After the plan**. The hidden `agents.autoPlanApproval` setting stands in for
+the default's Approve the plan row while no Lead row and no default row holds
+it, so a workspace that never opens the panel behaves as today; once a row
+holds it, the row owns it, and a stored Ask is never overridden by the setting.
+Start agents that write at After the plan with Approve the plan at Skip cannot
+both hold: when either comes from a stored row it reads as Ask and carries a
+`LeadPermissionNote` that says why; when the skip comes from the hidden setting and the writer
+row from a level, it reads as free, which is what that pair does today. The
+preset reads Custom as soon as the effective rows match none of the three.
+
+`store/runtime/auto/level/readLeadPermissions.ts` reads a tree, a session or a
+workspace target. `writeLeadPermission.ts` writes one row on the workspace
+default (compare and swap on the workspace value) or on one Lead
+(`setAutoTreePermissionsIfUnchanged`, compare and swap on the JSON it read); a
+null value is Reset and removes the row. A lost swap re-reads and retries once,
+then fails with "changed in another window"; a failed write keeps the old value.
+
+The panel for these rows is `features/auto/permissions/`: `LeadPermissionsPanel`
+shows the preset tabs (Custom lights by itself and is not pickable), the nine
+rows on one grid, the spend limit read only, the four locked rows and the
+closing sentence of `permissionSentenceOf`. A row saves when you change it;
+there is no draft. An own row shows "This Lead" (or "Set here" on the default)
+with **Reset**, which writes null; the other rows follow the default live. A
+failed write keeps the old value and shows the error under its row, and the
+panel reads again after every write. Picking a preset writes the level and
+clears the own rows; on a Lead it pins a row only where a workspace default
+would still disagree with the preset. `LeadPermissionsChip` mounts the panel
+from `AutoLevelChip` (through `WorkAwareChip`) in Start work and on the Lead
+page when Work is on; with Work off the level chip stays. Workspace settings
+show it as the **Asks you** band (`AutonomyDefaultsBand`) in place of the **Auto asks you** row.
+A row tightened while an agent runs applies to its next start. The tests are
+`permissions.test.ts` (the compatibility table for each level with the switch
+on and off, each precedence step, the stale pair) and
+`leadPermissions.sqlite.test.ts` (writes, Use default, two windows, failure).
+
+#### Admission rows
+
+Admission reads four rows, never the level
+(`store/runtime/auto/admission/readAdmissionPermissions.ts`, the Work switch
+from `work.enabled`): Start agents that read decides whether a reader role
+waits for your confirmation, Start agents that write the same for a writer
+role (`admissionStateOf`; After the plan and Free start it, and an explicit
+`confirm: true` still asks), Approve the plan turns the plan gate on for a
+writer that takes a plan (`isAdmissionPlanGateOn`, in
+`admissionChildRefusals` and in the transaction through
+`inputArtifactStatementsOf`), and Add a project picks the mount mode in
+`applyMountBlock`. With no stored rows every outcome equals the level.
+
+A row tightened before the launch holds it: when `launchChildren` claims an
+accepted child, `isStartRowHeld` reads its start row again and, when it now
+asks, moves the child back to `awaiting_confirm` instead of starting it. Only a
+start the user confirmed skips this: `confirmDelegation` writes
+`request.isStartConfirmed` in its transaction, a start from the user
+(`continueChild`) carries it, and admission writes it false, so a retry never
+inherits it.
+
+A row changed between a proposal and your confirm never loosens it: a waiting
+child stays waiting when its start row turns free, and `confirmDelegation`
+reads Approve the plan again and, when it now asks, checks in its own
+transaction that the writer's plan is approved at the revision it took
+(`readPlanApprovalGuards`). If not, the confirm returns `refused`, the
+proposal stays waiting and the action bar shows `CONFIRM_REFUSED_REASON`; the
+plan was used when the child was proposed, so the way out is to decline it.
+Two confirms start one child (the second reads `lost`). The tests are
+`admission/admissionRows.sqlite.test.ts` (a table per row and value, the
+default only with Work on), `level/admissionLevels.sqlite.test.ts`
+(unchanged, no stored rows) and `level/confirmationLifecycle.sqlite.test.ts`.
+
+### Asks
+
+An ask is anything a Lead waits for you to answer, and every ask has one id.
+`store/runtime/auto/asks/leadAsksOf.ts` lists the asks of one tree view: a start
+that waits for your confirmation (`start:<delegation>`, a delegation in
+`awaiting_confirm`, which keeps its one meaning, not started yet), a push that
+waits (`push:<delegation>:<commit>`, a publish record in `awaiting_confirm`), and
+one row of `auto_grants` per dependency, protected file or pull request ask
+(`grant:<id>`). A stopped or finished Lead lists none. Counts are by ask id, and
+the same need named twice by one attempt is one row (`insertAutoGrantStatement`
+ignores the duplicate). The plan and a project ask keep their own flows and are
+not in this list.
+
+A grant row (`packages/db/src/queries/auto-grants.ts`) is bound to the attempt
+that asked, or for a pull request to one version of its text, and its state is
+asked, allowed, declined or used. It is current while its attempt is the latest
+attempt of its delegation in the tree's generation; a pull request grant has no
+attempt and is current while its delegation is of the tree's generation and no
+newer text was asked for the same subject, so Stop turns its ask stale.
+`answerAutoGrantStatement` moves only a current,
+asked row, so a second answer and an answer for a superseded attempt or text are
+dropped. An allowance is used up at launch: `startAttempt` reads
+`listAutoGrantAllowances` and puts `markAutoGrantUsedStatement` in the
+transaction that inserts the next attempt ([Launch guard](#launch-guard)), so a crash after Allow and before the
+start relaunches with the allowance, and a second launch with the same allowance
+aborts.
+
+`answerAsk` (`store/runtime/auto/asks/answerAsk.ts`) is the one function that
+answers an ask, by id, in the main window: a start goes to `confirmDelegation`, a
+push to the publish act after it checked that the push still waits for that
+commit, a grant to `answerGrant`, which guards the tree (not stopped, owner
+lease), moves the row and bumps the phase revision, then drives the tree. It returns
+allowed, declined or settled, and settled means the answer was dropped.
+`createAskAnswerer` lets one answer per ask id run at a time: the same answer
+again shares its result, a different one gets settled. Another window answers
+through the `answerAsk` call of the Auto bridge (`features/auto/askAnswerPort.ts`);
+the ask leaves both windows on their next read. `asks.sqlite.test.ts` and
+`auto-grants.test.ts` cover a double answer, the other window, a superseded
+attempt, an older commit, the crash before launch, counts by id and the old
+start ask.
+
+### Publish gates
+
+The Push a branch and Open or update a pull request rows are enforced in
+Goodboy's own publish step, never in the agent (an agent cannot push at all).
+`readPublishPermissions` (`store/runtime/auto/level/`) reads both effective
+values for the tree, with the Work switch from the `work.enabled` setting; a
+read that fails reads as Ask for both, so a broken read holds and never
+publishes.
+
+- **Push.** `planPublish` takes the push value. `isPublishAskedOf`
+  (`packages/core/src/auto/publish.ts`) is true for a force push at every value
+  (it keeps its backup, as before) and for a plain push at Ask. A plain push at
+  Ask is written `awaiting_confirm` instead of `pushing`, bound to its branch and
+  the checked commit, so nothing reaches the host and the commits stay local. It
+  lists as `push:<delegation>:<commit>` and reads "Waiting for you to confirm
+  the push of <branch> at <sha>". Push runs the publish act `confirm` (one keyed
+  queue per worktree, the `expectedState` guard, so two answers push once);
+  Don't push writes `declined`, and `confirm` on a declined plain push is Push
+  now. A retry of an allowed push pushes the recorded commit once; a retry of a
+  push that was never confirmed plans again and asks again at Ask. A new attempt
+  plans its own commit and asks again; an answer for an older commit is dropped.
+  At When checks pass the path is today's, value for value.
+- **Pull request.** The gate sits at publication, not at the Scribe's start.
+  When a Scribe ends completed with text and the row says Ask, `finishAttempt`
+  calls `holdScribePullRequest`: it inserts the `auto_grants` row
+  (`grant-pr-<attempt>`, kind `pull_request`, subject the mount id, text version
+  `pullRequestTextVersionOf`: the attempt plus a hash of the exact title and
+  body) before the settle, and the settle writes the held text to
+  `result_json.verified.pullRequest` (`ResultPullRequest`,
+  `packages/core/src/auto/pullRequestAsk.ts`). Nothing reaches the host. The
+  delegation completes with "The pull request waits for you to open it: <title>".
+  `leadAsksOf` lists the grant only while a settled delegation of the current
+  generation holds its text, so a grant left by a dropped settle never shows. `answerAsk`
+  hands a pull request grant to `answerPullRequest`: Open moves the grant
+  through `answerGrant`, claims the record (`awaiting_confirm`, `failed` or
+  `declined` to `opening`, guarded on its state, a stale `opening` only after
+  `PUSH_LIVE_WINDOW_MS`; the same transaction checks that the delegation is of
+  the tree's generation and that its grant is a current allowance,
+  `allowedAutoGrantGuard`), calls the `publishScribePullRequest` port with the
+  held title and body unchanged and the commit the push gate checked, then
+  writes `opened` with the number and link and the grant `used` in one
+  transaction, or `failed` with the reason and the text kept. When that last
+  save still fails after three tries, `publishHeldPullRequest` throws with the
+  number and link, so the answer reports it; the record stays `opening` and a
+  later claim takes it once it is stale. Open again on a failed or declined record
+  retries once per claim (a declined grant moves back to allowed first); a
+  second Open while one runs is settled. Not yet writes `declined` and keeps the
+  text. A newer text on the same mount (an update) asks again, and the answer
+  for the older text is dropped because its grant is no longer current. At Allow
+  the Scribe's text goes to the port as today. The port carries the extracted
+  `output`, so the title and body the ask shows are the ones handed to the host
+  call; the host path still adds its closing references and the hidden Scribe
+  signature to the body, as on the Branch page.
+- **A pull request honours the push row.** Opening a pull request pushes the
+  branch (`createPrForSession`), so before any publication `openOrHoldPullRequest`
+  runs `pullRequestPushGateOf`. It reads the local head and the online head, and
+  every go carries that head: the port pushes exactly that commit
+  (`pushSha`, a pinned plain push), never the branch as it is by then. It goes
+  at once when the head is online or a publish record of the tree already
+  pushed that commit to the same target: a record counts only when its
+  delegation names the same mount and worktree (so the same remote) and the
+  same branch and commit, never another mount that shares them. Otherwise the commit would reach the host, so it first
+  runs the same host change check as a writer push (`hostChangeRefusalOf`, see
+  [Landing backstop](#landing-backstop)): a refused or unread change fails the
+  publication with the reason and raises no push ask. At When checks pass a
+  writer push of that commit that was held keeps the pull request held with its
+  reason; otherwise it goes. At push Ask the pull request record moves to
+  `awaiting_push` with a line ("The pull request opens after you push <branch>
+  at <sha>") and the push ask for that commit is reused (a writer's record for
+  the same branch and commit) or raised on the Scribe's own delegation as a
+  plain push record (`heldForPushStatements`; `publishAct` accepts a plain push
+  record on a Scribe). At pull request Allow this happens at the settle; at Ask
+  it happens on Open. After every publish act, `releaseHeldPullRequests` runs the
+  gate again for the held pull requests of each pushed or declined mount: Push
+  opens them once (the claim guards it), Don't push keeps them held with "Not
+  opened: you declined the push of <branch>, and the pull request needs it online
+  first", and Push now opens them. A held pull request without a grant (held at
+  Allow) is checked against the Pull request row of now: when it says Ask the
+  release asks for it (`grant-pr-held-<delegation>`) instead of opening it. A
+  branch or head that cannot be read fails the publication with a reason, never
+  opens it.
+- `publishGates.sqlite.test.ts` covers the held push, Push, Don't push and Push
+  now, a retry that pushes once, a newer commit, the workspace default, force at
+  both values, the held text, Open twice, Not yet, a refused host and Open
+  again, an update, Allow as today, the pull request behind the push row (push
+  Ask with pull request Allow, push Ask with pull request Ask and Don't push then
+  Push now, a reused writer push ask, a commit already online), the pinned
+  commit, a refused host change at both push values, a row turned to Ask while
+  the pull request waited, a stale generation on the answer and on Open again, a
+  failed save after the host opened it, and one case per host (GitHub, GitLab,
+  Bitbucket). The scene data for `work-lead-push` is
+  `features/auto/testing/workLeadPushView.ts`.
+
+### Launch guard
+
+The Add or upgrade dependencies and Change protected files rows are enforced
+when a writer agent starts. The lists live once, in
+`packages/core/src/auto/launchGuard.ts`: `PROTECTED_FILE_PATTERNS` (host CI
+config, git hooks, code owners; env files are off the list because git ignores
+them) and `PACKAGE_MANAGERS` (per manager: the add and upgrade commands, the
+install commands, manifests, lockfiles and the offline settings).
+`OFFLINE_PACKAGE_MANAGERS` names the managers with settings (npm, pnpm, pip, uv,
+cargo, each checked by hand against the real tool: an add that would download
+fails); yarn, bun and go are covered by the deny rules and the backstop only,
+and the row's help line says so.
+
+- **At the start.** `launchChildren.ts` reads both rows with
+  `readLaunchPermissions` (`store/runtime/auto/level/`, a failed read asks both)
+  for a writer and hands them to `startAttempt`. `launchGuardStart`
+  (`store/runtime/auto/launchGuard/`) reads the allowances of the delegation the
+  new one retries (`listAutoGrantAllowances`), builds the guard with
+  `launchGuardOf` and stores it in `write_set_json.guard`; the
+  `markAutoGrantUsedStatement` of every allowance sits in the same transaction
+  as the attempt insert, so Allow twice starts one attempt and a crash after
+  Allow relaunches with the allowance. With both rows at Allow there is no guard
+  and the write set is exactly `{ worktreePath }`. A resumed attempt
+  (`answerQuestion`) copies the guard of the paused one, and a relaunch reads
+  the stored guard, never today's rows.
+- **On the spawn.** `resolveChildTurn` reads the guard of the latest attempt of
+  the child's delegation (an unreadable attempt refuses the turn), and
+  `readTurnStream` sends `launchGuardRulesOf` as `launchGuard`: Claude deny
+  rules for the add and upgrade commands, edits of manifests and lockfiles and
+  edits of each protected pattern (appended to `--disallowedTools` in
+  `cli_args.rs`), the offline settings in the environment
+  (`providers/launch_guard.rs`, which refuses a guard on a CLI other than
+  Claude or Codex and any reserved name), and for Codex no
+  `sandbox_workspace_write.network_access=true`. Codex has no per-file rule:
+  for protected files the backstop is the enforcement.
+- **An allowance lifts one.** A dependency allowance names one package (and its
+  version when the need gave one). Deny rules cannot name an exception, so the
+  add, upgrade and install-with-arguments commands stay denied, and so do hand
+  edits of lockfiles; it lifts the manifest edit rules, the network and the
+  offline settings for that attempt, so the agent writes that one entry and
+  runs the install command without arguments. The backstop refuses any other
+  dependency change. A protected file allowance
+  lifts only the pattern that holds its path. A dependency allowance is dropped
+  when the row already allows every dependency.
+- **The brief.** `launchGuardBriefOf` (`kickoff.ts`) is added to the brief at
+  launch: do not add or upgrade, installing what the lockfile holds is fine,
+  and when a new one is needed end with `needs="dependency"` (or
+  `needs="protected_file"`) and one line: the package, the version and why, or
+  the path and why. An allowance adds "You may add nock@14.0.1" and says to
+  write that entry by hand and run the install without arguments.
+- **The ask.** When the attempt returns with that need and its guard asks it,
+  `needGrantsOf` adds the `auto_grants` row in the settle transaction
+  (`settleAttempt` `grants`), subject from `needSubjectOf` (`nock@14.0.1`, or the
+  path; a path off the list asks nothing). The Lead reads "the user is asked to
+  allow it" and `waitingReturnsOf` leaves the agent out of its decisions while
+  the grant is asked. After `answerGrant`, `restartAfterGrant` starts the agent
+  again through `continueChild` (from the user): Allow with that one allowance,
+  "Do it without" with the answer in the brief. Neither is undone, and a late
+  answer for a superseded attempt is dropped. When the restart is refused (the
+  tree is blocked or at its limit), the agent goes back to the Lead's decisions
+  and the allowance waits for the next retry of that agent.
+- `launchGuard.test.ts` (one case per package manager), `launchGuard.sqlite.test.ts`
+  (Allow as today, the stored guard, a later row change, Allow once, Do it
+  without, one protected path) and the Rust spawn tests in
+  `turn/fake_cli_tests.rs` (rules, settings and network at Ask, byte-equal at
+  Allow, an allowance that lifts one) cover it.
+
+### Landing backstop
+
+Deny rules match commands, so an agent that works around one can still change
+a manifest. The backstop is the net behind the launch guard, not the
+permission. `changeGateOf` (`packages/core/src/auto/changeGate.ts`) takes the
+rules (`readChangeRules` in `store/runtime/auto/launchGuard/`: both rows read
+now with `readLaunchPermissions`, a failed read asks both, plus the allowances
+in the attempt's stored guard), the changed paths and, when the attempt holds a
+dependency allowance, the patch (`isDependencyPatchNeeded`). A manifest or
+lockfile of any manager, in any folder, is refused while the dependencies row
+asks, unless an allowance explains it (`unattributedDependencyPathsOf`,
+`dependencyChanges.ts`). Every changed manifest line is read whole
+(`isManifestChangeCovered`): it must be one entry, the allowed package, with
+one version that is exactly the allowed one (a `^`, `~`, `=` or `==` prefix
+passes; a range, `||`, a second specifier, a second entry on the line, an
+inline table or extras are refused); a moved line, a block opener and a removed
+line of the allowed package pass. Every changed lockfile line must belong to the
+allowed package or to what it depends on in the same patch
+(`isLockfileChangeCovered`): pnpm, yarn, npm and bun locks by their indented
+entries, Cargo and uv locks by their `[[package]]` blocks, `go.sum` line by
+line, and a new entry of the allowed package must carry the allowed version.
+A line it cannot attribute holds the lockfile, as do a binary lockfile, a
+manifest or lockfile with no patch (not committed) and a patch that cannot be
+read. A protected file is
+refused while its row asks and no allowed path names it. With both rows at Allow nothing is read
+and the result goes on as before. A row tightened while the agent runs applies
+to its result here.
+
+- **At the end of an attempt.** `finishAttempt.ts` reads the changed files
+  first (`attributeChanges` `changedPaths`, the whole list, not the capped
+  `changedFiles`) and asks `landingRefusalOf`. A list that cannot be read in
+  full (a snapshot or the committed diff missing) is refused: closed, not open.
+  A refused result settles `failed` with the reason from `changeRefusalOf`,
+  which names the files and says nothing ran and nothing landed.
+  `verifyAttempt` is not called, so a changed script never
+  runs, the publish plan holds, the Scribe opens no pull request, a revise does
+  not reach `landAttemptRevision`, and the Lead reads the one refusal and may
+  start the agent again. Nothing to undo: nothing landed.
+- **At publish.** `planPublish` checks what the host would receive, not the
+  attempt's own range, on every plan, at the settle and on a retry. The
+  `readHostChanges` port (`launchGuard/readHostChanges.ts`) lists every path
+  between the branch head on the host (`worktreeRemoteHead`) and the commit to
+  push; when the branch is not on the host yet, or its head is not in the local
+  repository, it diffs from the merge base with the mount's base branch
+  (`worktreeDiffFromMergeBase`, a three dot `worktree_diff_range`, `origin/<base>`
+  first), and returns that patch with the paths. A gated
+  path holds the publish with `so nothing was pushed`; a list that cannot be
+  read holds it with the error and offers a retry. The pull request path runs
+  the same check (`hostChangeRefusalOf`) before its push.
+- A refused change stays in the worktree and a later attempt may work on top
+  of it. Its own diff no longer shows the change, so it can land, but the
+  publish still sees it on the way to the host and holds until an allowance
+  covers it.
+- `changeGate.test.ts`, `launchGuard/readHostChanges.test.ts`,
+  `launchGuard/changeGate.sqlite.test.ts` (a lockfile around the deny rule, a
+  protected file, an unread list, a covered change, Allow as today, a row
+  tightened before a retry, an allowed package landed and pushed, another
+  package beside the allowed one, a refused lockfile behind a clean retry, an
+  unreadable host list) and the Rust
+  `a_range_diff_from_the_merge_base_leaves_out_what_the_base_changed_since`
+  cover it.
 
 Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
 the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
@@ -1130,7 +1577,8 @@ child and the MOUNTS line it is filled from. Auto keeps its read tools and answe
 itself; when it reports what happens next it describes a hand over and names the role ("I asked
 an implementer to reinstall the dependencies"), never an action of its own. The brief of every
 writer child carries `AUTO_DEPENDENCIES_RULE`: install missing dependencies with the project's
-package manager in its own mount, never link or copy `node_modules` from another checkout.
+package manager in its own mount, never link or copy `node_modules` from another checkout. When
+the dependencies row asks, the [launch guard](#launch-guard) adds its own section after it.
 
 Only a writer role has a shell; Scout, Planner, Investigator and Reviewer run with `Read,Grep,Glob`
 (`READ_ONLY_ROLES` in `cli_args.rs`). `packages/core/src/auto/roleTools.ts` holds that fact for Auto:
@@ -1313,10 +1761,7 @@ artifact of this tree, `answerQuestion` stores its title, version and text (cut 
 as "Report handed over"; an unknown artifact is refused `artifact_unknown` and the parent stays paused.
 A failed helper is answered with a plain text. The same answer twice is one resume. `stopTree` cancels
 the helpers (a request with `request_json.parent`) first and waits for them before it cancels the
-rest. A restart keeps the parent paused and the helper running through `recover`. The Agents
-panel tree (`railRowsOf`, `autoSpawnedRowsOf`) draws a helper one level under its parent (`depth` 2,
-one `aria-level` deeper, the parent `aria-expanded`); a helper whose parent is not in the tree reads
-as a plain child. Substeps inside Runs and Orchestrated
+rest. A restart keeps the parent paused and the helper running through `recover`. Substeps inside Runs and Orchestrated
 runs are not built: they have no tree, no reservation and no root grant.
 
 **Children never push.** Auto children run under one product rule: only Goodboy pushes, and only
@@ -1451,7 +1896,7 @@ no migration, outcome still `completed`:
   (`history_backup_create`, kept stamp so the History prune never drops it), and a second one of
   the start head when it differs; a backup that cannot be kept (the online commit is not in this
   copy) holds with "Fetch the branch and try again". A branch that was not online at the start gets
-  no backup and no **Put back**. It refuses work whose tree differs from the start
+  no backup and no **Undo force push**. It refuses work whose tree differs from the start
   (`readCommittedFiles` start to sha) unless `changesContent` is set. It then waits as
   `awaiting_confirm`: one **Force push** / **Don't push** row per delegate batch
   (`PublishRunRow` in `AutoDelegationLines`, rows from `publishRowsOf`), one `publish` bridge call
@@ -1465,7 +1910,7 @@ no migration, outcome still `completed`:
   `settleRow` writes it again once, then writes a retryable failure "The push ran but its result
   was not saved. Retry the push to check the branch online" so the card never stays on
   **Pushing**. Then one line per branch from `publishLineOf` (the same words and tone as the
-  `DelegationResult` chip): pushed with **Put back**, "Not pushed" when declined, put back, or a
+  `DelegationResult` chip): pushed with **Undo force push**, "Not pushed" when declined, undone, or a
   danger notice with the reason and **Retry push**. A failed row raises no toast; a refused answer
   whose saved record no longer waits for that act (`isPublishOpenOf`) is quiet too, because the
   reloaded card already shows the state. That check reads the store after `loadAutoTrees`, so a
@@ -1486,11 +1931,11 @@ no migration, outcome still `completed`:
 - `publishAct` (`confirm`, `decline`, `retry`, `put_back`) runs in the main window through one
   keyed queue per worktree, writes with `patchAutoDelegationPublishStatement` and the attempt twin
   guarded by generation, and answers one row per branch, so two of four branches can succeed.
-  **Put back** pushes the backed up online sha (`leaseSha`) with the lease on the pushed sha first;
+  **Undo force push** pushes the backed up online sha (`leaseSha`) with the lease on the pushed sha first;
   a lost lease, or a failure whose read back does not show the backup online, changes nothing online
-  or here and keeps **Put back** on offer. Only after origin is back does it move the local
+  or here and keeps **Undo force push** on offer. Only after origin is back does it move the local
   branch with the History restore, and only when the head is still the pushed sha; otherwise the card
-  reads "Put back" with "The local branch was left as it is: " and the reason.
+  reads "Force push undone" with "The local branch was left as it is: " and the reason.
 - Auto reads the line in the digest ("Pushed ...", "Not pushed: ...", "Waiting for you to confirm
   ..."). It is not sent again when a later click changes it.
 
@@ -1552,7 +1997,7 @@ row, the line goes, and an admitted retry draws its delegation line. The mount o
 (`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
 writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
 one fits (Auto never guesses a write) and `mount_missing` when none does. Before a writer is
-refused `mount_missing`, `pickChildMount` lets it pick a folder the way a single agent does
+refused `mount_missing` while Add a project is not Ask, `pickChildMount` lets it pick a folder the way a single agent does
 (`mountTaskFolders`, the same rule as a new session's start, see
 [mounts.md](mounts.md#who-picks-the-folders)): the workspace project its `mount` names, or, with
 no mount named and none usable, the only repo, the repo of a linked task, or the repos its task
@@ -1627,3 +2072,20 @@ missing line falls back to the outcome word ("Done", "Failed: reason"), and a
 message with neither shows no line. The tone of the line is data
 (`success`, `danger`, `warning`, `neutral`); the screens that draw it come with
 the reading order work.
+
+### Action bar asks
+
+`AutoDock` draws the first push, pull request, dependency or protected file ask
+of `leadAsksOf` (`chat/askBarOf.ts`) in `AutoDockAsk`, after the plan and the
+next step: one state, one primary, one quiet answer. The labels are Push or
+Force push / Don't push, Open the pull request / Not yet, and Allow the named
+package or file / Do it without. More asks show as "+N more". The right end
+names the permission row, its value and its source (read in `chat/hooks/useAskPermissionRow/index.ts`). An
+answer goes through `answerAsk` by ask id (`chat/hooks/useAnswerAsk/index.ts`): a second answer to
+the same ask is dropped, a failure or a `refused` answer (with
+`CONFIRM_REFUSED_REASON`) keeps the ask and shows the reason in the bar, and an
+ask answered anywhere else leaves the bar on the next read. A pull request ask
+whose save threw after Open stays listed while its record still waits for
+confirmation, and Open again claims it once (`answerPullRequest.ts`). `PublishRunRow`
+draws a held plain push as well as a force push, with Push now after a
+declined plain push. The scenes are `work-lead-push` and `work-lead-dependency`.

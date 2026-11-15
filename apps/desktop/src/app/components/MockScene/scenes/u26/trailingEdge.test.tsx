@@ -93,7 +93,7 @@ describe('the right edge of the Projects card', () => {
     });
 
     const boxes = [
-      ...allIn('[data-card-actions] [data-level-add]'),
+      ...allIn('[data-context-head-actions] [data-level-add]'),
       ...allIn('[data-project-row] [aria-label^="New branch in"]'),
       ...allIn('[data-worktree-actions]'),
     ];

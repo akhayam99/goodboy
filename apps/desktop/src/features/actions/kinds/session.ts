@@ -23,6 +23,7 @@ import type { MountId, Session, SessionId, SessionProjectMount, WorkspaceId } fr
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
+import { LOG_LANDING } from '../../session/central/log/logLanding';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
@@ -34,7 +35,7 @@ import { sessionHasUnread } from '../../../store/slices/session-view/sessionHasU
 import { openStartRun } from '../../session/startRun/openStartRun';
 import { stopAllMessageOf } from '../../session/stopAllMessageOf';
 import { stopAllRunningAgents } from '../../session/stopAllRunningAgents';
-import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
+import { startLabelNow } from '../../work/startLabelNow';
 import { refreshSession } from '../../session/refreshSession';
 import { openSessionSpendLimitEdit } from '../../budget/openSessionSpendLimitEdit';
 import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
@@ -293,12 +294,11 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: CONCEPT_ICONS.timeline,
     group: 'open',
     when: () => true,
-    run: ({ facts, env }) =>
-      env.getState().openDrawer({
-        kind: 'session-log',
-        sessionId: facts.sessionId,
-        payload: { focusEntryId: null },
-      }),
+    run: ({ facts, env }) => {
+      const state = env.getState();
+      LOG_LANDING.request({ sessionId: facts.sessionId });
+      state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens: null }) });
+    },
   },
   {
     id: 'session.spend',
@@ -390,16 +390,16 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     },
   },
   {
-    id: 'session.autopilotOn',
-    label: `Turn on ${NAMES.autopilot}`,
+    id: 'session.asksNever',
+    label: NAMES.startStepsWithoutAsking,
     icon: Rocket,
     group: 'act',
     when: ({ facts }) => isUnarchived({ facts }) && !facts.session.autoRun,
     run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, true),
   },
   {
-    id: 'session.autopilotOff',
-    label: `Turn off ${NAMES.autopilot}`,
+    id: 'session.asksEveryStep',
+    label: NAMES.askBeforeEachStep,
     icon: Rocket,
     group: 'act',
     when: ({ facts }) => isUnarchived({ facts }) && facts.session.autoRun,
@@ -425,7 +425,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.startRun',
-    label: RUN_ROUTE_COPY.label,
+    label: startLabelNow,
     icon: CONCEPT_ICONS.workflows,
     group: 'act',
     when: isUnarchived,

@@ -12,7 +12,8 @@ import { DoorSignalMark } from './DoorSignalMark';
 import { RailButton } from './RailButton';
 import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
-import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { columnDoorsOf, openColumnDoor, type ColumnActions } from './columnDoors';
+import { useIsWorkOn } from '../../../shared/hooks/useIsWorkOn';
 import { useDoorSignals } from './useDoorSignals';
 import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 
@@ -40,6 +41,7 @@ export const ColumnRail = ({
   );
   const isDraftWaiting = hasDraft && place !== 'new';
   const signals = useDoorSignals({});
+  const isWork = useIsWorkOn();
   return (
     <nav
       aria-label="Sidebar"
@@ -69,7 +71,7 @@ export const ColumnRail = ({
               })}
               onSelect={requestNewSession}
             />
-            {COLUMN_DOORS.map((door) => {
+            {columnDoorsOf({ isWork }).map((door) => {
               const signal = signals[door.id];
               return (
                 <RailButton

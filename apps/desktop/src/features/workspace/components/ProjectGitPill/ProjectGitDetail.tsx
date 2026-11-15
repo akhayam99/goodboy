@@ -170,8 +170,8 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
         <div className="flex items-start gap-2 p-3 text-meta text-danger">
           <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span>
-            Goodboy cannot reach <span className="font-mono text-meta">{project.rootPath}</span>.
-            Reconnect the workspace once the folder is back.
+            Goodboy can&apos;t reach <span className="font-mono text-meta">{project.rootPath}</span>
+            . Reconnect the workspace once the folder is back.
           </span>
         </div>
       ) : status.state === 'absent' || status.state === 'unborn' ? (
@@ -197,7 +197,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
             {readFailure ? (
               <span className="flex items-center gap-1 text-meta text-warning">
                 <TriangleAlert size={ICON_SIZE.mark} aria-hidden />
-                Goodboy cannot read this checkout
+                Goodboy can&apos;t read this checkout
               </span>
             ) : null}
             {notes.map((note) => (

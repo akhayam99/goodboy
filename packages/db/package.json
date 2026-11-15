@@ -19,6 +19,10 @@
     "./test-helpers/auto-seeds": {
       "types": "./src/test-helpers/auto-seeds.ts",
       "default": "./src/test-helpers/auto-seeds.ts"
+    },
+    "./test-helpers/auto-work-seeds": {
+      "types": "./src/test-helpers/auto-work-seeds.ts",
+      "default": "./src/test-helpers/auto-work-seeds.ts"
     }
   },
   "scripts": {

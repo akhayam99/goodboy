@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { CONFIRM_REFUSED_REASON } from '../../../CONFIRM_REFUSED_REASON';
 import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
 import {
   currentDelegationDecisionPort,
@@ -120,6 +121,9 @@ export const useNextAction = ({
           if (choice.key === 'primary') {
             const result = await decide({ decision: 'confirm', note: hint });
             setLostNote(result === 'lost' ? LOST_NOTE : null);
+            if (result === 'refused') {
+              throw new Error(CONFIRM_REFUSED_REASON);
+            }
             return;
           }
           const result = await decide({ decision: 'decline' });

@@ -90,7 +90,7 @@ describe('WorkspaceReviewRepliesSection', () => {
     learn.mockResolvedValue('Short.\nSays "done in" before the sha.');
     renderWith({ replyVoice: 'mine' });
 
-    fireEvent.click(screen.getByRole('button', { name: /Learn from my replies/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Learn from your replies/ }));
 
     await waitFor(() =>
       expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
@@ -113,7 +113,7 @@ describe('WorkspaceReviewRepliesSection', () => {
     learn.mockRejectedValue(new Error("Couldn't find review replies you wrote in this workspace."));
     renderWith({ replyVoice: 'mine' });
 
-    fireEvent.click(screen.getByRole('button', { name: /Learn from my replies/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Learn from your replies/ }));
 
     expect(
       await screen.findByText("Couldn't find review replies you wrote in this workspace."),

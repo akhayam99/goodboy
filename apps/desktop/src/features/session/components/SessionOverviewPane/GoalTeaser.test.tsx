@@ -270,7 +270,7 @@ describe('GoalTeaser on the real store', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(fieldValue({ name: 'Proposed title' })).toBe(BRIEF.title));
     expect(
-      screen.getByText('Based on the titles of HL-204 and HL-211. Their text could not be read.'),
+      screen.getByText("Based on the titles of HL-204 and HL-211. Couldn't read their text."),
     ).toBeDefined();
   });
   it('offers the registered menu and palette action after dismissal', async () => {

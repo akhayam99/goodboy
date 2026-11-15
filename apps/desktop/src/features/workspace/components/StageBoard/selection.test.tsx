@@ -320,7 +320,7 @@ describe('StageBoard selection bar', () => {
     const confirm = screen.getByRole('group', { name: 'Stop 2 agents and archive?' });
     expect(screen.getAllByRole('group', { name: /^Stop/ })).toHaveLength(1);
     expect(confirm.textContent).toContain('Archive stops them first and keeps what they wrote.');
-    expect(confirm.textContent).toContain('Restore brings them back');
+    expect(confirm.textContent).toContain('Restore reopens them');
     expect(
       within(confirm).getByRole('button', { name: 'Stop 2 agents and archive' }),
     ).toBeDefined();

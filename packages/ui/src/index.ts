@@ -23,7 +23,7 @@ export { useDropdown } from './useDropdown';
 export { useDropdownDirection } from './useDropdownDirection';
 export { PopoverPortalProvider, usePopoverPortalTarget } from './PopoverPortalContext';
 export type { DropdownController } from './useDropdown';
-export { ICON_SIZE, ICON_STROKE } from './iconSize';
+export { ICON_SIZE, ICON_STROKE, iconStrokeOf } from './iconSize';
 export { TEXT_ROLE } from './textRoles';
 export type { TextRole } from './textRoles';
 export {
@@ -351,6 +351,8 @@ export { StatusDot } from './components/StatusDot';
 export type { StatusDotProps } from './components/StatusDot';
 export { StageTrack } from './components/StageTrack';
 export type { StageTrackProps, StageTrackStage, StageTrackState } from './components/StageTrack';
+export { StatusMark } from './components/StatusMark';
+export type { StatusMarkSpec, StatusMarkState } from './components/StatusMark/statusMarkSpec';
 export { StateDot } from './components/StateDot';
 export type { DotState, StateDotProps } from './components/StateDot';
 export { ListGrid } from './components/ListGrid/ListGrid';

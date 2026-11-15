@@ -199,7 +199,7 @@ export const FIX_RUN_COPY = {
   gone: 'This comment is no longer on the branch.',
   comment: 'Comment',
   rewritten: 'no longer on this branch, it was squashed or rewritten',
-  foldedInto: ({ sha }: { readonly sha: string }): string => `Folded into ${sha.slice(0, 7)}`,
+  foldedInto: ({ sha }: { readonly sha: string }): string => `Squashed into ${sha.slice(0, 7)}`,
   batch: ({ others }: { readonly others: number }): string =>
     `Fixed together with ${others} more ${others === 1 ? 'comment' : 'comments'}.`,
 } as const;

@@ -1,6 +1,5 @@
 {
   "apps/desktop/src/app/components/SideColumn/useDoorSignals/index.ts": 2,
-  "apps/desktop/src/app/components/SpawnedPanel/SpawnedLaunches.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": 1,
   "apps/desktop/src/features/artifacts/useArtifactScoutRoster/index.ts": 1,
   "apps/desktop/src/features/backup/components/BackupPage/index.tsx": 1,

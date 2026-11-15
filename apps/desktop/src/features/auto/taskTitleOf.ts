@@ -1,4 +1,5 @@
 import { DELEGATE_TITLE_WORDS } from '@goodboy/core/auto';
+import { withoutRawIdsOf } from './withoutRawIdsOf';
 
 type Params = {
   readonly request: Readonly<Record<string, unknown>>;
@@ -57,7 +58,7 @@ const wordsOf = ({ text }: TextParams): string =>
 export const taskTitleOf = ({ request }: Params): string | null => {
   const title = request['title'];
   if (typeof title === 'string') {
-    const words = wordsOf({ text: title.replaceAll('\n', ' ').trim() });
+    const words = wordsOf({ text: withoutRawIdsOf({ text: title.replaceAll('\n', ' ').trim() }) });
     if (words !== '') {
       return words;
     }
@@ -66,6 +67,7 @@ export const taskTitleOf = ({ request }: Params): string | null => {
   if (typeof task !== 'string') {
     return null;
   }
-  const sentence = firstSentenceOf({ text: taskLineOf({ text: task }) }).trim();
+  const line = withoutRawIdsOf({ text: taskLineOf({ text: task }) });
+  const sentence = firstSentenceOf({ text: line }).trim();
   return sentence === '' ? null : cutAtWordOf({ text: sentence });
 };

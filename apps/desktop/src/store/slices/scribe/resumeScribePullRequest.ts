@@ -10,12 +10,14 @@ export const resumeScribePullRequest = (set: SetFn, get: GetFn) => {
     agentId,
     output,
     kickoff = null,
+    pushSha,
   }: ResumeScribePullRequestInput): Promise<void> => {
     const key = scribeKeyOf({ mountId, kind: 'pr' });
+    const open = { key, ...(pushSha === undefined ? {} : { pushSha }) };
     const existing = get().scribeWork[key];
     if (existing !== undefined && existing.agentId === agentId) {
       patchScribeWork({ set, key, patch: { output } });
-      await get().openScribePullRequest({ key });
+      await get().openScribePullRequest(open);
       return;
     }
     const { isDraft, base } = pullRequestSettingsOfKickoff({ kickoff });
@@ -42,6 +44,6 @@ export const resumeScribePullRequest = (set: SetFn, get: GetFn) => {
         },
       },
     }));
-    await get().openScribePullRequest({ key });
+    await get().openScribePullRequest(open);
   };
 };

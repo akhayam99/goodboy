@@ -30,6 +30,7 @@ export type AutoAttempt = Readonly<{
   baseline: unknown;
   resultSnapshot: unknown;
   writeSet: unknown;
+  launchSnapshot: unknown;
   startedAt: number;
   endedAt: number | null;
   endReason: string | null;
@@ -48,6 +49,7 @@ type AttemptRow = {
   readonly baseline_json: string | null;
   readonly result_snapshot_json: string | null;
   readonly write_set_json: string | null;
+  readonly launch_snapshot: string | null;
   readonly started_at: number;
   readonly ended_at: number | null;
   readonly end_reason: string | null;
@@ -58,7 +60,8 @@ type ValueParams = {
 };
 
 const ATTEMPT_SELECT = `SELECT id, delegation_id, tree_id, generation, ordinal, state, outcome, run_id,
-  question_id, baseline_json, result_snapshot_json, write_set_json, started_at, ended_at, end_reason
+  question_id, baseline_json, result_snapshot_json, write_set_json, launch_snapshot, started_at,
+  ended_at, end_reason
   FROM auto_attempts`;
 
 const asState = ({ value }: ValueParams): AutoAttemptState =>
@@ -81,6 +84,7 @@ const toAttempt = ({ row }: ToAttemptParams): AutoAttempt => ({
   baseline: parseAutoJson({ text: row.baseline_json }),
   resultSnapshot: parseAutoJson({ text: row.result_snapshot_json }),
   writeSet: parseAutoJson({ text: row.write_set_json }),
+  launchSnapshot: parseAutoJson({ text: row.launch_snapshot }),
   startedAt: row.started_at,
   endedAt: row.ended_at,
   endReason: row.end_reason,
@@ -139,6 +143,7 @@ type InsertAttemptStatementParams = {
   readonly generation: number;
   readonly baseline: AutoJsonObject | null;
   readonly writeSet: AutoJsonObject | null;
+  readonly launchSnapshot?: AutoJsonObject | null;
   readonly nowMs: number;
 };
 
@@ -149,14 +154,16 @@ export const insertAutoAttemptStatement = ({
   generation,
   baseline,
   writeSet,
+  launchSnapshot = null,
   nowMs,
 }: InsertAttemptStatementParams): PlainStatement => ({
   sql: `INSERT INTO auto_attempts (
-      id, delegation_id, tree_id, generation, ordinal, baseline_json, write_set_json, started_at
+      id, delegation_id, tree_id, generation, ordinal, baseline_json, write_set_json,
+      launch_snapshot, started_at
     ) VALUES (
       ?, ?, ?, ?,
       (SELECT COALESCE(MAX(ordinal), 0) + 1 FROM auto_attempts WHERE delegation_id = ?),
-      ?, ?, ?
+      ?, ?, ?, ?
     )`,
   params: [
     id,
@@ -166,9 +173,43 @@ export const insertAutoAttemptStatement = ({
     delegationId,
     baseline === null ? null : JSON.stringify(baseline),
     writeSet === null ? null : JSON.stringify(writeSet),
+    launchSnapshot === null ? null : JSON.stringify(launchSnapshot),
     nowMs,
   ],
 });
+
+export type AutoLaunchSnapshotRow = Readonly<{
+  delegationId: AutoDelegationId;
+  attemptId: AutoAttemptId;
+  launchSnapshot: unknown;
+}>;
+
+type LaunchSnapshotDbRow = {
+  readonly id: string;
+  readonly delegation_id: string;
+  readonly launch_snapshot: string;
+};
+
+type ListLaunchSnapshotsParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+};
+
+export const listAutoLaunchSnapshotsOfTree = async ({
+  db,
+  treeId,
+}: ListLaunchSnapshotsParams): Promise<ReadonlyArray<AutoLaunchSnapshotRow>> => {
+  const rows = await db.select<LaunchSnapshotDbRow>(
+    `SELECT id, delegation_id, launch_snapshot FROM auto_attempts
+      WHERE tree_id = ? AND launch_snapshot IS NOT NULL ORDER BY started_at, ordinal`,
+    [treeId],
+  );
+  return rows.map((row) => ({
+    delegationId: brandId<AutoDelegationId>({ value: row.delegation_id }),
+    attemptId: brandId<AutoAttemptId>({ value: row.id }),
+    launchSnapshot: parseAutoJson({ text: row.launch_snapshot }),
+  }));
+};
 
 type MarkAttemptRunningStatementParams = {
   readonly attemptId: AutoAttemptId;

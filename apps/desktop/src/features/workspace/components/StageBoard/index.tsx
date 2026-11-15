@@ -161,8 +161,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         : 'This folder needs a git repository with one commit first';
   const unreachableDescription =
     projectGitStatuses.length === 1
-      ? 'Goodboy cannot reach this folder. Relink it in workspace settings.'
-      : 'Goodboy cannot reach these folders. Relink them in workspace settings.';
+      ? "Goodboy can't reach this folder. Relink it in workspace settings."
+      : "Goodboy can't reach these folders. Relink them in workspace settings.";
   const hasUnbornRepo = projectGitStatuses.some(({ status }) => status?.state === 'unborn');
   const blockedDescription = areAllRepoProjectsMissing
     ? unreachableDescription

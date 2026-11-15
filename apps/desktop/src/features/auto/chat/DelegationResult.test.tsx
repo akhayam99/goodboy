@@ -116,7 +116,7 @@ describe('DelegationResult summary', () => {
     screen.getByText('Not pushed: connection reset');
     fireEvent.click(screen.getByRole('button', { name: 'Retry push' }));
     expect(onRetryPublish).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Put back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Undo force push' })).toBeNull();
 
     rerender(<DelegationResult result={result} onRetryPublish={onRetryPublish} isActingPublish />);
     expect(screen.getByRole('button', { name: 'Retry push' }).hasAttribute('disabled')).toBe(true);
@@ -138,7 +138,7 @@ describe('DelegationResult summary', () => {
       <DelegationResult result={pushed} onPutBackPublish={onPutBackPublish} />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Put back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo force push' }));
     expect(onPutBackPublish).toHaveBeenCalledTimes(1);
 
     rerender(
@@ -156,7 +156,7 @@ describe('DelegationResult summary', () => {
         onPutBackPublish={onPutBackPublish}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Put back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Undo force push' })).toBeNull();
   });
 
   it('shows no push line when nothing was asked to publish', () => {

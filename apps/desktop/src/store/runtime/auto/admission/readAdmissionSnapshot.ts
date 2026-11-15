@@ -3,6 +3,7 @@ import {
   DEFAULT_AUTO_LEVEL,
   delegationDepthOf,
   isAutoWriterRole,
+  LEAD_PERMISSION_PRESETS,
   parseAutoDelegationRole,
   substepLinkOf,
   type AdmissionChild,
@@ -12,7 +13,6 @@ import {
 import {
   getAutoArtifact,
   getAutoTree,
-  getSetting,
   listAutoAttemptsOfDelegation,
   listAutoDelegations,
   listOpenAutoDelegations,
@@ -23,9 +23,7 @@ import {
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoTreeId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
-import { isAutoPlanApprovalRequired } from '../../../../features/auto/isAutoPlanApprovalRequired';
-import { SETTING_AUTO_PLAN_APPROVAL } from '../../../../features/settings/settings';
-import { readAutoLevel } from '../level/readAutoLevel';
+import { readAdmissionPermissions } from './readAdmissionPermissions';
 
 export type ReadAdmissionSnapshotParams = {
   readonly db: Database;
@@ -146,11 +144,10 @@ export const readAdmissionSnapshot = async ({
     }),
   );
   const parents = await parentFactsOf({ db, treeId, children });
-  const level =
+  const permissions =
     tree === null
-      ? DEFAULT_AUTO_LEVEL
-      : await readAutoLevel({ db, target: { sessionId: tree.sessionId } });
-  const approval = await getSetting(db, SETTING_AUTO_PLAN_APPROVAL);
+      ? LEAD_PERMISSION_PRESETS[DEFAULT_AUTO_LEVEL]
+      : await readAdmissionPermissions({ db, treeId });
   return {
     tree,
     ownerId,
@@ -163,9 +160,7 @@ export const readAdmissionSnapshot = async ({
     openChildAgentIds: open.map((delegation) => delegation.childAgentId),
     remainingUsd: autoRemainingForGates({ spend }),
     artifacts,
-    isPlanApprovalRequired:
-      isPlanApprovalRequired &&
-      isAutoPlanApprovalRequired({ settings: { [SETTING_AUTO_PLAN_APPROVAL]: approval ?? '' } }),
-    level,
+    isPlanApprovalRequired,
+    permissions,
   };
 };

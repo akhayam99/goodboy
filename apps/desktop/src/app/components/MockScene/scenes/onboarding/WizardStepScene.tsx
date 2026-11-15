@@ -59,7 +59,7 @@ const FOLLOW_UP: Partial<Readonly<Record<WizardSceneState, string>>> = {
   'tools-linear': 'Connect Linear',
   'agents-error': 'Output',
   'first-ask': 'Ask about the code',
-  'first-task': 'Pick up an issue',
+  'first-task': 'Pick an issue',
 };
 
 type Seeded = ReturnType<typeof seedWizardScene>;

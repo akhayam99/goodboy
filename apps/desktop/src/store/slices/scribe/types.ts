@@ -45,6 +45,7 @@ export type StopScribeInput = {
 
 export type OpenScribePullRequestInput = {
   readonly key: string;
+  readonly pushSha?: string;
 };
 
 export type ResumeScribePullRequestInput = {
@@ -53,6 +54,7 @@ export type ResumeScribePullRequestInput = {
   readonly agentId: AgentId;
   readonly output: ExtractedScribeText;
   readonly kickoff?: string | null;
+  readonly pushSha?: string;
 };
 
 export type RequestScribeInput = {

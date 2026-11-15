@@ -555,12 +555,17 @@ describe('Context drawer sections', () => {
     setLedger({ ledger: [] });
     store.setState({ sessionContextItems: { [SESSION_ID]: [] } });
     mount();
-    screen.getByText('No goal yet. Every agent starts from it.');
-    screen.getByText('A summary appears after the first agent reply.');
-    screen.getByText(
-      'No decisions yet. Agents record one when they settle a choice; you can add your own.',
-    );
-    screen.getByText('Nothing yet. Agents explain the topics you follow.');
+    const goalEmpty = screen.getByText('Every agent starts from the goal.').closest('[data-slot]');
+    if (!(goalEmpty instanceof HTMLElement)) {
+      throw new Error('the empty goal is one EmptyLine');
+    }
+    expect(within(goalEmpty).getAllByRole('button')).toHaveLength(1);
+    screen.getByText('The summary starts after the first agent reply.');
+    screen.getByText('Agents record a decision each time they settle a choice.');
+    screen.getByText('Agents explain the topics you follow, in plain words.');
+    for (const line of document.querySelectorAll('[data-context-section] p')) {
+      expect(line.closest('[data-slot="empty-line"]')).not.toBeNull();
+    }
   });
 
   it('keeps the Goal menu on an empty Goal and on a Goal being edited', () => {

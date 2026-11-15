@@ -217,9 +217,8 @@ the column edge. A pushing card grows from the window's right edge: the aside
 eases its width with its right edge fixed (`justify-end`, `overflow-clip`, so a
 field focused while it opens cannot scroll the track), the card follows it with
 its border and corners in view (the card clips with `overflow-clip` too: a
-`scrollIntoView` inside, such as `useSpawnedReveal` in the Agents drawer, would
-scroll an `overflow-hidden` card out of reach, and `pnpm validate:scenes --only
-drawer-reveal` fails when any reveal moves the card), and the content keeps its final width
+`scrollIntoView` inside would scroll an `overflow-hidden` card out of reach),
+and the content keeps its final width
 (`--goodboy-drawer-track` minus the 18px of handle gutter, inset and border)
 pinned to the right edge and fades in once there is room (`drawer-content-in`).
 Closing, the card keeps a copy of its content for `DURATION_BASE_MS` (220ms) while the
@@ -350,7 +349,9 @@ cannot pass by measuring nothing. On every scene that
 renders the app frame it also runs the frame check: the main sidebar's first
 row (New session) against the page's first row (the topmost visible controls of
 `[data-studio-host]` and the controls on their line), centres within 1px and
-tops within 1px when the two rows are the same height. It waits for running
+tops within 1px when the two rows are the same height, and the mark check
+(`sidebarMarkFailures`): every trailing mark of a sidebar door or session row
+is a 16px box on one centre x, on its row's centre line, within 1px. It waits for running
 animations to finish and skips controls hidden behind a sticky header. The
 `sidebar-frame-dark` and `sidebar-frame-light` scenes, Settings, New session, a
 session overview, Board, Tasks, Chat, Impact and Workflows are on its list.

@@ -699,24 +699,7 @@ export {
   type NewAutoArtifact,
   type RegisterAutoArtifactOutcome,
 } from './queries/auto-artifacts';
-export {
-  AUTO_ATTEMPT_STATES,
-  claimAutoAttemptPublishStatement,
-  endAutoAttemptStatement,
-  getAutoAttempt,
-  insertAutoAttemptStatement,
-  listAutoAttemptsOfDelegation,
-  listAutoAttemptsOfTree,
-  listLiveAutoAttempts,
-  markAutoAttemptRunningStatement,
-  mergeAutoAttemptBaselineStatement,
-  patchAutoAttemptChecksStatement,
-  patchAutoAttemptPublishStatement,
-  pauseAutoAttemptStatement,
-  settleAutoAttemptPublishStatement,
-  type AutoAttempt,
-  type AutoAttemptState,
-} from './queries/auto-attempts';
+export * from './queries/auto-attempts';
 export {
   AUTO_ADOPT_ABORT,
   AUTO_DETACH_ABORT,
@@ -749,12 +732,11 @@ export {
   patchAutoDelegationPublishStatement,
   settleAutoDelegationStatement,
   type AutoDelegation,
-  type AutoDelegationPatch,
   type AutoDelegationState,
   type AutoJsonObject,
   type AutoOutcome,
-  type NewAutoDelegation,
 } from './queries/auto-delegations';
+export * from './queries/auto-grants';
 export {
   AUTO_OUTBOX_KINDS,
   AUTO_OUTBOX_STATES,
@@ -774,7 +756,6 @@ export {
   withdrawAutoOutboxStatement,
   type AutoOutboxKind,
   type AutoOutboxRow,
-  type AutoOutboxState,
   type NewAutoOutbox,
 } from './queries/auto-outbox';
 export {
@@ -792,7 +773,6 @@ export {
   releaseAutoReservationStatement,
   type AutoReservation,
   type AutoReservationOwnerKind,
-  type AutoReservationState,
   type AutoTreeSpend,
 } from './queries/auto-reservations';
 export {
@@ -805,6 +785,7 @@ export {
   claimAutoTree,
   getAutoTree,
   getAutoTreeByRootAgent,
+  getAutoTreePermissions,
   insertAutoTree,
   listAutoTreesOfSession,
   listAutoAgentsWithoutTree,
@@ -812,16 +793,15 @@ export {
   recordAutoRefusal,
   releaseAutoTree,
   setAutoTreeCapIfUnchanged,
+  setAutoTreePermissionsIfUnchanged,
   lowerAutoTreeCapsOfSession,
   moveRestingAutoTree,
   AUTO_RESTING_PHASES,
   type AutoRestingPhase,
   type SetAutoTreeCapOutcome,
   type AutoPhase,
-  type AutoStopState,
   type AutoTree,
   type AutoTreeExpectation,
-  type AutoTreeLossReason,
   type AutoTreePhaseOutcome,
   type AutoTreePhasePatch,
   type InsertAutoTreeOutcome,
@@ -829,6 +809,7 @@ export {
   type NewAutoTree,
 } from './queries/auto-trees';
 export { countLiveAutoTrees } from './queries/auto-live-trees';
+export { listAutoWorkTreesOfWorkspace, type AutoWorkTree } from './queries/auto-work-trees';
 export {
   AUTO_ADMISSION_TREE_ABORT,
   AUTO_RESUME_TREE_ABORT,

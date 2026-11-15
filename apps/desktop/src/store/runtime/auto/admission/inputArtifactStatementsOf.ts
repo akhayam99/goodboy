@@ -1,4 +1,5 @@
 import {
+  isAdmissionPlanGateOn,
   isAutoWriterRole,
   type AdmissionSnapshot,
   type AutoDelegationRole,
@@ -32,8 +33,7 @@ export const inputArtifactStatementsOf = ({
       slot,
       artifactId: ref.artifactId,
       revision: ref.revision,
-      isApprovalRequired:
-        snapshot.isPlanApprovalRequired && snapshot.level !== 'run' && isPlan && isWriter,
+      isApprovalRequired: isAdmissionPlanGateOn(snapshot) && isPlan && isWriter,
       isConsumed: isPlan && isWriter,
       nowMs,
     });

@@ -39,5 +39,5 @@ export const capabilityReasonOf = ({ kind, capability }: Params): string | null 
   const noun = PULL_REQUEST_NOUNS[kind].long;
   const verb = VERB[capability];
   const host = REVIEW_SOURCE_LABEL[kind];
-  return `Goodboy cannot ${verb} a ${noun} on ${host} yet`;
+  return `Goodboy can't ${verb} a ${noun} on ${host} yet`;
 };

@@ -13,7 +13,7 @@ const agentsWord = ({ count }: CountParams): string =>
   count === 1 ? '1 agent' : `${count} agents`;
 
 const keptOf = ({ count }: CountParams): string =>
-  `Branches, worktrees and history stay on disk, and Restore brings ${count === 1 ? 'it' : 'them'} back.`;
+  `Branches, worktrees and history stay on disk, and Restore reopens ${count === 1 ? 'it' : 'them'}.`;
 
 export const archiveConfirmOf = ({
   sessionCount,

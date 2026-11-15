@@ -102,7 +102,11 @@ export const NowChip = ({ onOpenScript }: Props) => {
           'flex shrink-0 items-center gap-1 px-2 text-meta text-muted-foreground',
         )}
       >
-        <StatusDot tone="neutral" size="sm" isRing />
+        {needsYou.length > 0 ? (
+          <StatusDot tone="warning" size="sm" />
+        ) : (
+          <StatusDot tone="neutral" size="sm" isRing />
+        )}
         <span>{needsYou.length > 0 ? WAITING_WORD : IDLE_WORD}</span>
       </span>
     );

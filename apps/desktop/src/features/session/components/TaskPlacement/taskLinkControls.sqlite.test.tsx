@@ -257,8 +257,8 @@ describe('task link controls', () => {
         branch="hl/refund"
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Put on a branch hl/refund' }));
-    const picker = screen.getByRole('dialog', { name: 'Put on a branch' });
+    fireEvent.click(screen.getByRole('button', { name: 'Link work to hl/refund' }));
+    const picker = screen.getByRole('dialog', { name: 'Link work to this branch' });
     within(picker).getByRole('button', { name: 'New branch for HBL-412' });
     await act(async () => {
       fireEvent.click(within(picker).getByRole('menuitem', { name: /^HBL-412/ }));
@@ -278,7 +278,7 @@ describe('task link controls', () => {
         branch="hl/refund"
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Put on a branch hl/refund' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work to hl/refund' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('menuitem', { name: /^HBL-412/ }));
     });
@@ -294,11 +294,11 @@ describe('task link controls', () => {
       branch: TASK.branch ?? '',
     };
     const { container } = render(<PutOnBranchPopover {...props} />);
-    expect(screen.queryByRole('button', { name: /^Put on a branch/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Link work to/ })).toBeNull();
     await act(async () => {
       await useAppStore.getState().linkSessionExternalTask(SESSION_ID, { ...TASK, projectId });
     });
-    expect(screen.queryByRole('button', { name: /^Put on a branch/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Link work to/ })).toBeNull();
     await act(async () => {
       await useAppStore.getState().linkSessionExternalTask(SESSION_ID, {
         ...TASK,
@@ -308,8 +308,8 @@ describe('task link controls', () => {
         projectId,
       });
     });
-    screen.getByRole('button', { name: `Put on a branch ${props.branch}` });
-    expect(container.textContent).not.toContain('Put on a branch');
+    screen.getByRole('button', { name: `Link work to ${props.branch}` });
+    expect(container.textContent).not.toContain('Link work to');
   });
 
   it('opens the worktree form from the branch row action', async () => {
@@ -325,7 +325,7 @@ describe('task link controls', () => {
         branch="hl/refund"
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Put on a branch hl/refund' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work to hl/refund' }));
     fireEvent.click(screen.getByRole('button', { name: 'New branch for HBL-412' }));
     screen.getByRole('textbox', { name: 'Branch name' });
     screen.getByRole('button', { name: 'Create branch' });

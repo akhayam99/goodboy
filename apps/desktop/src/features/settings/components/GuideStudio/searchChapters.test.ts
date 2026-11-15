@@ -23,7 +23,7 @@ describe('searchChapters', () => {
 
   it('matches every word anywhere in a point, ignoring case', () => {
     expect(hits('USE reset')).toEqual(['providers: Use reset']);
-    expect(hits('squash')).toEqual(['commits: Shape the history']);
+    expect(hits('ONTO another')).toEqual(['commits: Shape the history']);
   });
 
   it('finds a chapter by the screen it links to', () => {

@@ -24,26 +24,26 @@ const openScriptsDrawer = async ({ sessionId }: Ctx): Promise<void> => {
   await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
 };
 
-const openAgentsOverScripts = async (ctx: Ctx): Promise<void> => {
+const openAskOverScripts = async (ctx: Ctx): Promise<void> => {
   await openScriptsDrawer(ctx);
-  useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: ctx.sessionId, payload: null });
+  useAppStore.getState().openDrawer({ kind: 'ask', sessionId: ctx.sessionId, payload: null });
   await settle();
-  await waitFor(() => expect(openedKind()).toBe('spawned'), WAIT);
+  await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
 };
 
 export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: the drawer it replaced waits in a back chip, the chip swaps, Esc walks back',
     covers: ['openDrawer', 'closeDrawer'],
-    open: openAgentsOverScripts,
+    open: openAskOverScripts,
     lands: async () => {
       await userEvent.setup().click(await screen.findByRole('button', { name: 'Back to Scripts' }));
       await settle();
       await waitFor(() => expect(openedKind()).toBe('scripts'), WAIT);
-      expect(await screen.findByRole('button', { name: 'Back to Agents' })).toBeDefined();
+      expect(await screen.findByRole('button', { name: 'Back to Ask' })).toBeDefined();
 
       await pressEscape();
-      await waitFor(() => expect(openedKind()).toBe('spawned'), WAIT);
+      await waitFor(() => expect(openedKind()).toBe('ask'), WAIT);
       expect(screen.queryByRole('button', { name: /^Back to / })).toBeNull();
 
       await pressEscape();
@@ -53,7 +53,7 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'slot: ⌘⇧W closes the top of the slot, then the drawer from the chip',
     covers: ['key:slot.close', 'closeDrawer'],
-    open: openAgentsOverScripts,
+    open: openAskOverScripts,
     lands: async () => {
       pressShortcut({ id: 'slot.close' });
       await settle();

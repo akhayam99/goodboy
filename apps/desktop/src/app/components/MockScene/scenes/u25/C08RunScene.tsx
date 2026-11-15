@@ -28,7 +28,6 @@ type Props = {
   readonly selection: C08Selection | 'list';
   readonly click?: C08Click;
   readonly extra?: () => void;
-  readonly isToolOpen?: boolean;
   readonly theme?: 'light' | 'dark';
 };
 
@@ -46,6 +45,7 @@ type ActionsParams = {
 const actionsOf = ({ open }: ActionsParams): ColumnActions => ({
   openBoard: open,
   openInbox: open,
+  openWork: open,
   openChat: open,
   openWorkflows: open,
   openNewChat: open,
@@ -70,14 +70,7 @@ const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   rowRename: `[data-row-key$="/${C08_RUN_ID}"]`,
 };
 
-export const C08RunScene = ({
-  state,
-  selection,
-  click = 'none',
-  extra,
-  isToolOpen = false,
-  theme,
-}: Props) => {
+export const C08RunScene = ({ state, selection, click = 'none', extra, theme }: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(C08_SESSION_ID);
   const sizing = useAppStore(selectDrawerSizing);
@@ -89,13 +82,8 @@ export const C08RunScene = ({
     }
     seedC08({ state, selection });
     extra?.();
-    if (selection !== 'list' || isToolOpen) {
-      useAppStore
-        .getState()
-        .openDrawer({ kind: 'spawned', sessionId: C08_SESSION_ID, payload: null });
-    }
     setIsSeeded(true);
-  }, [state, selection, extra, isToolOpen, theme]);
+  }, [state, selection, extra, theme]);
 
   useEffect(() => {
     if (!isSeeded || click === 'none') {

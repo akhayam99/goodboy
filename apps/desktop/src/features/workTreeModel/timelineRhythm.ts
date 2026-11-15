@@ -9,15 +9,15 @@ type GradeRhythm = {
 
 const GRADE: Record<TimelineRowGrade, GradeRhythm> = {
   entry: { lineHeight: 20, height: 40 },
-  step: { lineHeight: 16, height: 32 },
-  pending: { lineHeight: 16, height: 24 },
+  step: { lineHeight: 16, height: 28 },
+  pending: { lineHeight: 16, height: 28 },
   fact: { lineHeight: 16, height: 28 },
   count: { lineHeight: 16, height: 24 },
 };
 
 const GAP: Record<TimelineGap, number> = {
   none: 0,
-  sibling: 4,
+  sibling: 0,
   entry: 12,
   fact: 8,
 };

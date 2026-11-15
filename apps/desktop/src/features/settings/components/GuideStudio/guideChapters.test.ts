@@ -275,7 +275,7 @@ describe('the shell chapter', () => {
     [shortcutGlyphs('session.spawned'), 'run or Auto', 'at the left', 'Enter opens'].forEach(
       (entry) => expect(agents).toContain(entry),
     );
-    expect(agents).not.toContain('‹ Runs');
+    expect(agents).not.toContain('Agents panel');
   });
 
   it('opens a branch in place from the board and the Projects card', () => {
@@ -286,16 +286,12 @@ describe('the shell chapter', () => {
     expect(branchPage).not.toContain('steps into');
   });
 
-  it('names the tools on their rail at the right of every screen and Ask in the head', () => {
+  it('names the two tools of the rail at the right of every screen', () => {
     const tools = pointOf('shell', 'Tools rail');
-    [
-      'Terminal',
-      'Browser',
-      'right of every screen',
-      'Open full page',
-      'Ask, in the session head',
-    ].forEach((tool) => expect(tools).toContain(tool));
-    expect(tools).not.toContain('Explore');
+    ['Terminal', 'Browser', 'right of every screen', 'Open full page'].forEach((tool) =>
+      expect(tools).toContain(tool),
+    );
+    ['Explore', 'Scripts', 'Dock'].forEach((gone) => expect(tools).not.toContain(gone));
   });
 });
 
@@ -338,16 +334,19 @@ describe('the start, agent and workflow chapters', () => {
     expect(all).toContain('Also tidy commits with Auto');
   });
 
-  it('says Next leaves the follow ups of a run to its Running row', () => {
-    expect(pointOf('agents', 'Next')).toContain("that run's Running row");
+  it('names the Overview tiles and ends the page with the Log', () => {
+    const overview = pointOf('agents', 'Overview');
+    ['Tiles', 'branch by state', 'the Log at the end', 'Open the full log'].forEach((entry) =>
+      expect(overview).toContain(entry),
+    );
+    ['Classic', 'drawer', 'Running row'].forEach((gone) => expect(overview).not.toContain(gone));
   });
 
-  it('names the five Overview cards and drops the Classic switch', () => {
-    const cards = pointOf('agents', 'Overview cards');
-    ['Needs you', 'Running', 'Next', 'Branches', 'Done'].forEach((card) =>
-      expect(cards).toContain(card),
+  it('names the Work switch, the Lead and its asks', () => {
+    const work = pointOf('agents', 'Work and the Lead');
+    ['Work (experimental)', 'Lead', NAMES.startWork, 'Asks you'].forEach((entry) =>
+      expect(work).toContain(entry),
     );
-    expect(cards).not.toContain('Classic');
   });
 });
 

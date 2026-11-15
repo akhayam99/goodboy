@@ -14,7 +14,6 @@
   "apps/desktop/src/features/auto/plan/useAutoPlanApproval": 1,
   "apps/desktop/src/features/auto/useAutoMembership": 1,
   "apps/desktop/src/features/auto/useAutoTreeLimit": 1,
-  "apps/desktop/src/features/auto/useAutoTreeRows": 1,
   "apps/desktop/src/features/auto/useAutoTreeViews": 1,
   "apps/desktop/src/features/auto/useAutoTrees": 1,
   "apps/desktop/src/features/auto/useExecutedRoutingOf": 1,

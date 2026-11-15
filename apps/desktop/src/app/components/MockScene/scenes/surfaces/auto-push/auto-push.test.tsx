@@ -54,7 +54,7 @@ describe('the Auto force push scenes', () => {
   it('shows every branch result in place with its own action', async () => {
     const row = await show({ id: 'auto-push-results' });
 
-    within(row).getByRole('button', { name: 'Put back' });
+    within(row).getByRole('button', { name: 'Undo force push' });
     within(row).getByRole('button', { name: 'Retry push' });
     within(row).getByText('Pushing harborline/fix-payments at abc1234');
     within(row).getByText('Not pushed: you declined the push of acme/tidy-history');

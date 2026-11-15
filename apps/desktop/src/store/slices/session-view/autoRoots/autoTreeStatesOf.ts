@@ -37,7 +37,11 @@ export const autoTreeStatesOf = ({
     if (view === undefined) {
       return [];
     }
-    const tree = autoTreeWordOf({ view, rootTurn: state.agentTurnState[root.id] ?? null });
+    const tree = autoTreeWordOf({
+      view,
+      rootTurn: state.agentTurnState[root.id] ?? null,
+      isWork: false,
+    });
     return [
       {
         root,

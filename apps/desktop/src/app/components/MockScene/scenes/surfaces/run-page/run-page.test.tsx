@@ -111,4 +111,30 @@ describe('the run page scenes', () => {
     const card = screen.getByRole('group', { name: 'Plan' });
     expect(within(card).getAllByText('Done')).toHaveLength(1);
   });
+
+  it('run-page-lead-next lists the choices one per row under a title with no raw id, one primary', async () => {
+    const container = await mount({ name: 'run-page-lead-next' });
+
+    const next = screen.getByRole('region', { name: 'Next step' });
+    expect(next.textContent).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}/);
+    const list = within(next).getByRole('listbox', { name: 'Next step choices' });
+    expect(list.getAttribute('aria-orientation')).toBe('vertical');
+    expect(within(list).getAllByRole('option')).toHaveLength(3);
+    expect(within(list).getAllByText('Recommended')).toHaveLength(1);
+    within(next).getByRole('button', { name: 'Continue' });
+    const rail = partOf({ root: container, selector: '[data-run-agents-rail]' });
+    expect(rail.textContent).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}/);
+    screen.getByPlaceholderText('Message Lead, or describe changes to plan v1');
+  });
+
+  it('run-page-lead-working puts Stop with the run controls in the head and says the state once', async () => {
+    const container = await mount({ name: 'run-page-lead-working' });
+    const meta = partOf({ root: container, selector: '[data-session-head-meta]' });
+
+    within(meta).getByRole('button', { name: 'Stop Lead and 2 agents' });
+    expect(screen.getAllByRole('button', { name: /^Stop Lead/ })).toHaveLength(1);
+    expect(meta.querySelectorAll('[data-lead-state]')).toHaveLength(1);
+    expect(meta.textContent).not.toMatch(/Auto/);
+    screen.getByPlaceholderText('Message Lead');
+  });
 });

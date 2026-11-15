@@ -44,7 +44,7 @@ export const DockLiveLine = ({ live, stop, isStopArmed }: Props) => {
           Esc again to stop
         </span>
       ) : null}
-      <DockStopButton stop={stop} />
+      {stop.isButtonInHead === true ? null : <DockStopButton stop={stop} />}
     </div>
   );
 };

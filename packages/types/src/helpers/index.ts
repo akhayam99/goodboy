@@ -1,3 +1,4 @@
+export { baseNameOf } from './baseNameOf';
 export { clippedTextOf } from './clippedTextOf';
 export { isProviderId } from './isProviderId';
 export { isRecord } from './isRecord';

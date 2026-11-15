@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { cn, ICON_SIZE, PANE_RHYTHM, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
+import { Chip, cn, ICON_SIZE, PANE_RHYTHM, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 
 import { navEntryToneOf } from '../../../shared/components/navEntryToneOf';
@@ -21,6 +21,7 @@ type Props = {
   readonly shortcut?: ShortcutId;
   readonly isCurrent: boolean;
   readonly isQuiet?: boolean;
+  readonly badge?: string;
   readonly signal?: DoorSignal | undefined;
   readonly create?: DoorCreate;
   readonly action?: ReactNode;
@@ -34,6 +35,7 @@ export const ColumnDoorRow = ({
   shortcut,
   isCurrent,
   isQuiet = false,
+  badge,
   signal,
   create,
   action,
@@ -78,7 +80,16 @@ export const ColumnDoorRow = ({
         />
       </span>
       <span className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="truncate text-left">{label}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+        {badge === undefined ? null : (
+          <Chip
+            tone="primary"
+            kind="state"
+            emphasis="subtle"
+            label={badge}
+            className="h-4 rounded-md bg-transparent px-1 uppercase"
+          />
+        )}
       </span>
       {hasAction ? <span data-door-slot="action" aria-hidden className="size-6 shrink-0" /> : null}
       <span data-door-slot="signal" className={PANE_RHYTHM.navRail.mark}>

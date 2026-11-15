@@ -17,7 +17,7 @@ import type { HistoryItem } from './historyItem';
 import type { HistoryLabel } from './historyLabel';
 
 const HOLD_MS = 400;
-const HOLD_HINT = 'Hold for history';
+const HOLD_HINT = 'Hold to show history';
 
 type Props = {
   readonly direction: 'back' | 'forward';

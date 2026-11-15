@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
-import { getAutoTree, listAutoDelegations, listAutoOutbox } from '@goodboy/db';
+import { getAutoTree, listAutoDelegations, listAutoOutbox, setSetting } from '@goodboy/db';
 import { brandId, type SessionId } from '@goodboy/types';
+import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';
 import { deliverNext } from './deliver';
 import { addUserRow } from './testing/deliveryWorld';
@@ -19,8 +20,13 @@ const SCOUT = { role: 'scout', task: 'find the export callers', reason: 'read on
 
 const MESSAGE_ID = 'outbox-user-2';
 
-const waitingWorld = async (): Promise<RuntimeWorld> => {
+type WaitingParams = {
+  readonly isWork?: boolean;
+};
+
+const waitingWorld = async ({ isWork = false }: WaitingParams = {}): Promise<RuntimeWorld> => {
   const world = await makeRuntimeWorld();
+  await setSetting(world.state.world.db, SETTING_WORK_ENABLED, isWork ? 'true' : 'false');
   await userSays({ world, id: 'outbox-user-1', text: 'look at the ledger export' });
   await autoDelegates({ world, spec: { children: [SCOUT] } });
   await autoTurnEnds({ world });
@@ -114,32 +120,40 @@ describe('a message sent while the children run', () => {
     expect(await acceptedIds(world)).toContain(MESSAGE_ID);
   });
 
-  it('is delivered once when Send now races with the child finishing', async () => {
-    const world = await waitingWorld();
-    const turn = world.state.ports.childTurns[0];
-    if (turn === undefined) {
-      throw new Error('a child was expected');
-    }
+  it.each([false, true])(
+    'is delivered once, and the results once, when Send now races with the child finishing (Work %s)',
+    async (isWork) => {
+      const world = await waitingWorld({ isWork });
+      const turn = world.state.ports.childTurns[0];
+      if (turn === undefined) {
+        throw new Error('a child was expected');
+      }
 
-    await Promise.all([
-      world.runtime.sendNow({ treeId: world.treeId, rowId: MESSAGE_ID }),
-      childTurnEnds({
-        world,
-        index: 0,
-        text: `Found three callers.\n<<step-done id="${turn.childAgentId}">>`,
-      }),
-    ]);
-    await world.runtime.settled();
+      await Promise.all([
+        world.runtime.sendNow({ treeId: world.treeId, rowId: MESSAGE_ID }),
+        childTurnEnds({
+          world,
+          index: 0,
+          text: `Found three callers.\n<<step-done id="${turn.childAgentId}">>`,
+        }),
+      ]);
+      await world.runtime.settled();
+      if ((await pendingIds(world)).length > 0) {
+        await autoTurnEnds({ world });
+        await world.runtime.settled();
+      }
 
-    expect(turnsMentioning(world, 'also check notify-relay')).toHaveLength(1);
-    expect(await pendingIds(world)).toEqual([]);
-    expect(
-      (await listAutoOutbox({ db: world.state.world.db, treeId: WORLD_TREE })).filter(
-        (row) => row.id === MESSAGE_ID && row.state === 'accepted',
-      ),
-    ).toHaveLength(1);
-    expect(world.errors).toEqual([]);
-  });
+      expect(turnsMentioning(world, 'also check notify-relay')).toHaveLength(1);
+      expect(turnsMentioning(world, 'RESULTS FROM YOUR AGENTS')).toHaveLength(1);
+      expect(await pendingIds(world)).toEqual([]);
+      expect(
+        (await listAutoOutbox({ db: world.state.world.db, treeId: WORLD_TREE })).filter(
+          (row) => row.id === MESSAGE_ID && row.state === 'accepted',
+        ),
+      ).toHaveLength(1);
+      expect(world.errors).toEqual([]);
+    },
+  );
 
   it('goes with the results, after them, when the child finishes first', async () => {
     const world = await waitingWorld();

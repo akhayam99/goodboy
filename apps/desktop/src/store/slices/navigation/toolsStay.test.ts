@@ -50,7 +50,6 @@ const state = () => store.getState();
 
 const TOOLS: ReadonlyArray<readonly [string, DrawerRequest]> = [
   ['Scripts', { kind: 'scripts', sessionId: S1, payload: null }],
-  ['Agents', { kind: 'spawned', sessionId: S1, payload: null }],
 ];
 
 describe('a tool stays open through a move inside its session', () => {
@@ -73,12 +72,6 @@ describe('a tool stays open through a move inside its session', () => {
     },
   );
 
-  it('lets the Agents tool follow the page instead of the agent it revealed', () => {
-    state().openDrawer({ kind: 'spawned', sessionId: S1, payload: { agentId: AGENT } });
-    state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
-    expect(state().drawer).toEqual({ kind: 'spawned', sessionId: S1, payload: null });
-  });
-
   it('closes a reader or an item on a move, whatever tool it was opened from', () => {
     state().openDrawer({ kind: 'conversation', sessionId: S1, payload: { threadId: 't1' } });
     state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
@@ -88,25 +81,13 @@ describe('a tool stays open through a move inside its session', () => {
   it('keeps the tool open on Back and on the Back row to a page that had none', () => {
     state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     state().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
-    const tool: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
+    const tool: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
     state().openDrawer(tool);
     state().back();
     expect(state().drawer).toEqual(tool);
     state().forward();
     state().upTo({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     expect(state().drawer).toEqual(tool);
-  });
-
-  it('keeps a tool in the slot and a tool in the chip through a move', () => {
-    const explore: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
-    const ask: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
-    state().openDrawer(explore);
-    state().openDrawer(ask);
-
-    state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
-
-    expect(state().drawer).toEqual(ask);
-    expect(state().drawerBack).toEqual(explore);
   });
 
   it('closes a reader on a move and brings back the tool in its chip', () => {
@@ -133,7 +114,7 @@ describe('a tool stays open through a move inside its session', () => {
 
   it('empties the slot and the chip on another session', () => {
     state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
-    state().openDrawer({ kind: 'spawned', sessionId: S1, payload: null });
+    state().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
 
     state().navigate({ to: sessionPlace({ sessionId: S2 }) });
 
@@ -143,7 +124,7 @@ describe('a tool stays open through a move inside its session', () => {
 
   it('does not carry a tool back into another session', () => {
     state().navigate({ to: sessionPlace({ sessionId: S2 }) });
-    state().openDrawer({ kind: 'spawned', sessionId: S2, payload: null });
+    state().openDrawer({ kind: 'scripts', sessionId: S2, payload: null });
     state().back();
     expect(state().drawer).toBeNull();
   });
@@ -198,14 +179,14 @@ describe('a workspace tool stays across every move inside the window', () => {
 
   it('brings Terminal out of the chip when a session tool parks on the Board', () => {
     state().openDrawer(TERMINAL);
-    state().openDrawer({ kind: 'spawned', sessionId: S1, payload: null });
+    state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
 
     state().navigate({ to: BOARD_PLACE });
 
     expect(state().drawer).toEqual(TERMINAL);
     expect(state().drawerBack).toBeNull();
     state().back();
-    expect(state().drawer?.kind).toBe('spawned');
+    expect(state().drawer?.kind).toBe('scripts');
     expect(state().drawerBack).toEqual(TERMINAL);
   });
 });

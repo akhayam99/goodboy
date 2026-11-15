@@ -656,7 +656,7 @@ describe('putting a force push back', () => {
       delegationIds: await idsOf(world),
     });
 
-    expect(result.rows[0]?.message).toContain('Nothing was put back, online or here');
+    expect(result.rows[0]?.message).toContain('Nothing changed on origin or here');
     expect(world.state.ports.restores).toEqual([]);
     expect((await recordOf(world)).state).toBe('pushed');
   });

@@ -2,6 +2,8 @@ import {
   composeAnswerKickoff,
   isAutoProviderResuming,
   isAutoWriterRole,
+  launchGuardBriefOf,
+  storedLaunchGuardOf,
   type AutoDelegationRole,
 } from '@goodboy/core/auto';
 import {
@@ -16,11 +18,15 @@ import {
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { AGENT_NOT_CREATED_REASON } from '../../../features/auto/agentNotCreatedReason';
+import { isStartRowHeld } from './admission/isStartRowHeld';
 import { remoteJson, remoteOf, resumeOf, snapshotJson, snapshotOf } from './attemptBaseline';
 import { carriedSnapshot } from './carriedSnapshot';
 import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
+import { launchImagesOf } from './launchSnapshot/launchImagesOf';
+import { launchSnapshotFor } from './launchSnapshot/launchSnapshotFor';
+import { readLaunchPermissions } from './level/readLaunchPermissions';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
 import { routedModelOf } from '../../slices/turn/childTurn/routedModelOf';
 import { readSnapshot } from './readSnapshot';
@@ -74,18 +80,24 @@ const attemptToLaunch = async ({
 }: AttemptToLaunchParams): Promise<AutoAttempt | null> => {
   const isWriter = isAutoWriterRole({ role });
   if (delegation.state === 'accepted') {
+    if (await isStartRowHeld({ ctx, delegation, role })) {
+      return null;
+    }
     const carried = await carriedSnapshot({ ctx, delegation, worktreePath: target.worktreePath });
     const snapshot =
       carried ?? (await readSnapshot({ ports: ctx.ports, worktreePath: target.worktreePath }));
     const remote = isWriter
       ? await ctx.ports.readRemoteHead({ worktreePath: target.worktreePath, branch: null })
       : null;
+    const launchSnapshot = await launchSnapshotFor({ ctx, tree, delegation });
     const started = await ctx.scheduler.startAttempt({
       treeId: tree.id,
       delegationId: delegation.id,
       generation: tree.generation,
       baseline: { ...snapshotJson({ snapshot, nowMs: ctx.now() }), ...remoteJson({ remote }) },
       writeSet: isWriter ? { worktreePath: target.worktreePath } : null,
+      launchSnapshot,
+      guardRows: isWriter ? await readLaunchPermissions({ db: ctx.db, treeId: tree.id }) : null,
     });
     return started.kind === 'started' ? started.attempt : null;
   }
@@ -123,7 +135,11 @@ type TextParams = {
 const kickoffTextOf = ({ delegation, attempt }: TextParams): string => {
   const resume = resumeOf({ baseline: attempt.baseline });
   const kickoff = delegation.request['kickoff'];
-  const brief = typeof kickoff === 'string' ? kickoff : '';
+  const guard = storedLaunchGuardOf({ writeSet: attempt.writeSet });
+  const guardBrief =
+    guard === null ? null : launchGuardBriefOf({ guard, childAgentId: delegation.childAgentId });
+  const stored = typeof kickoff === 'string' ? kickoff : '';
+  const brief = guardBrief === null ? stored : `${stored}\n\n${guardBrief}`;
   if (resume !== null) {
     const provider = delegation.routing['provider'];
     const isResuming = typeof provider === 'string' && isAutoProviderResuming({ provider });
@@ -196,7 +212,9 @@ const startTurn = async ({
       role,
       ...routedModelOf({ delegation }),
       text: kickoffTextOf({ delegation, attempt }),
-      images: await childImagesOf({ ctx, tree, delegation }),
+      images:
+        launchImagesOf({ snapshot: attempt.launchSnapshot }) ??
+        (await childImagesOf({ ctx, tree, delegation })),
       mountTarget: target,
       runId: ctx.ports.newId(),
       captureMode: delegation.reviseOf === null ? 'new' : 'revise',

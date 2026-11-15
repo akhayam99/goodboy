@@ -7,6 +7,7 @@ import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { autoRootsOf } from '../../../auto/autoRootsOf';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { sessionRunsOf, type SessionRun } from '../../sessionRunsOf';
+import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
 import { useLiveAgentTurns } from '../../../../shared/hooks/useLiveAgentTurns';
 
 type Params = {
@@ -30,6 +31,7 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
   const mounts = useAppStore((state) => state.sessionMounts[sessionId] ?? NO_MOUNTS);
   const projects = useAppStore((state) => state.projects);
   const turnByAgentId = useLiveAgentTurns({ agents });
+  const isWork = useIsWorkOn();
   const revisingStarts = useAppStore(
     useShallow((state) => {
       const starts: Record<string, number> = {};
@@ -68,8 +70,10 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
         revisingStarts,
         mounts,
         projects,
+        isWork,
       }),
     [
+      isWork,
       attachedRuns,
       agents,
       kindOverride,

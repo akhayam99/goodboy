@@ -21,7 +21,6 @@ const WIDE_READER = { ...READER, sizing: 'reader' } as const;
 
 export const DRAWER_KINDS = {
   scripts: { ...TOOL, pane: 'scripts' },
-  spawned: { ...TOOL, pane: 'spawned' },
   terminal: { ...TOOL, pane: 'terminal' },
   browser: { ...TOOL, sizing: 'browser', pane: 'browser' },
   'explore-file': WIDE_READER,
@@ -36,7 +35,6 @@ export const DRAWER_KINDS = {
   'check-analysis': READER,
   conversation: READER,
   transcript: READER,
-  'session-log': READER,
   'history-versions': READER,
   'file-diff': WIDE_READER,
   'identifier-peek': WIDE_READER,

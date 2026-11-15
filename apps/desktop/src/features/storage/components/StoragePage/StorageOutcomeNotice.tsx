@@ -50,13 +50,13 @@ const undoBody = ({ outcome, folders }: SummaryParams): string | undefined => {
   const lines = failed.map(
     (entry) => `${folderNameOf({ path: entry.path, folders })}: ${entry.message}.`,
   );
-  return `${failed.length} could not come back. ${lines.join(' ')}`;
+  return `${failed.length} couldn't be restored. ${lines.join(' ')}`;
 };
 
 const undoTitle = ({ outcome }: Pick<SummaryParams, 'outcome'>): string =>
   outcome.undo === null || outcome.undo.restored === 0
-    ? 'No folder came back.'
-    : `Brought back ${pluralize(outcome.undo.restored, 'folder')}.`;
+    ? 'No folder was restored.'
+    : `Restored ${pluralize(outcome.undo.restored, 'folder')}.`;
 
 export const StorageOutcomeNotice = () => {
   const outcome = useAppStore((state) => state.storageOutcome);

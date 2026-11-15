@@ -56,7 +56,7 @@ describe('BootSplash slow boot recovery', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /restart/i }));
 
-    expect(screen.getByText('Still working, give it a moment')).toBeDefined();
+    expect(screen.getByText('Still working')).toBeDefined();
     expect(screen.queryByRole('button', { name: /restart/i })).toBeNull();
   });
 

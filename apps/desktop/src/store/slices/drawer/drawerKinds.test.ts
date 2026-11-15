@@ -52,7 +52,6 @@ describe('the drawer kind table', () => {
 describe('the pane a drawer lights', () => {
   it('lights the tool for a tool drawer', () => {
     expect(paneOf({ kind: 'scripts', sessionId: SESSION_ID, payload: null })).toBe('scripts');
-    expect(paneOf({ kind: 'spawned', sessionId: SESSION_ID, payload: null })).toBe('spawned');
   });
 
   it('lights the opener only when the child was opened from it', () => {

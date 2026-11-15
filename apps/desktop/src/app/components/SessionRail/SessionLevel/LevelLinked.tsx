@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Button, SelectableRow, cn } from '@goodboy/ui';
+import { EmptyLine, SelectableRow, cn } from '@goodboy/ui';
+import { ContextExpander } from '../../../../features/session/components/ContextDrawer/ContextExpander';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
 import { buildWorkItems } from '../../../../features/session/workItems';
@@ -16,7 +17,6 @@ import { LinkIssueAction } from '../../../../features/session/components/Session
 import { openGithubIssue } from '../../../../features/session/openGithubIssue';
 import { useMountRows } from '../../../../shared/hooks/useMountRows';
 import { githubRefOf } from './githubRefOf';
-import { countSlotText } from '../../../../shared/utils/countSlotText';
 import { LevelCard } from './LevelCard';
 import { CARD_ROW_INSET } from './railInset';
 import { useLevelCardFold } from './useLevelCardFold';
@@ -53,6 +53,7 @@ export const LevelLinked = ({ session, isActive }: Props) => {
     (s) => s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY,
   );
   const allExternalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
+  const isLinkedLoaded = useAppStore((s) => s.sessionExternalTasks[sessionId] !== undefined);
   const groups = useMountRows({ sessionId });
   const [isHistoryShown, setIsHistoryShown] = useState(false);
   const currentBranch = useSessionRepo({ sessionId })?.branch ?? null;
@@ -111,10 +112,7 @@ export const LevelLinked = ({ session, isActive }: Props) => {
   const tasks = [...currentTasks, ...(isHistoryShown ? historyTasks : [])];
   const isArchived = session.archivedAt != null;
   const fold = useLevelCardFold({ card: 'linked' });
-  const count = countSlotText({
-    count: linkedIssues.length + currentTasks.length + historyTasks.length,
-    isBesideGlyph: true,
-  });
+  const count = linkedIssues.length + currentTasks.length + historyTasks.length;
 
   return (
     <LevelCard
@@ -122,9 +120,7 @@ export const LevelLinked = ({ session, isActive }: Props) => {
       label="Linked"
       isOpen={fold.isOpen}
       onToggle={fold.toggle}
-      {...(count !== null && {
-        meta: <span className="text-meta tabular-nums text-faint-foreground">{count}</span>,
-      })}
+      count={count}
       {...(!isArchived && {
         action: <LinkIssueAction session={session} isShortcutOn={isActive} look="level" />,
       })}
@@ -170,16 +166,20 @@ export const LevelLinked = ({ session, isActive }: Props) => {
           </li>
         ))}
       </ul>
+      {isLinkedLoaded && count === 0 ? (
+        <div className={CARD_ROW_INSET}>
+          <EmptyLine>Issues, errors and threads this session works on.</EmptyLine>
+        </div>
+      ) : null}
       {historyTasks.length === 0 ? null : (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="self-start"
-          aria-expanded={isHistoryShown}
-          onClick={() => setIsHistoryShown((isShown) => !isShown)}
-        >
-          {`${isHistoryShown ? 'Hide' : 'Show'} history (${historyTasks.length})`}
-        </Button>
+        <div className={cn('flex', CARD_ROW_INSET)}>
+          <ContextExpander
+            label="History"
+            count={historyTasks.length}
+            isOpen={isHistoryShown}
+            onToggle={() => setIsHistoryShown((isShown) => !isShown)}
+          />
+        </div>
       )}
     </LevelCard>
   );

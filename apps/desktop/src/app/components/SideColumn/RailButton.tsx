@@ -1,6 +1,14 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { cn, ICON_SIZE, PANE_RHYTHM, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
+import {
+  cn,
+  ICON_SIZE,
+  iconStrokeOf,
+  PANE_RHYTHM,
+  tintClasses,
+  Tooltip,
+  FOCUS_RING,
+} from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 
 import { navEntryToneOf } from '../../../shared/components/navEntryToneOf';
@@ -97,10 +105,21 @@ export const RailButton = ({
         </span>
       ) : isIconSlotted ? (
         <span data-nav-icon="" className={PANE_RHYTHM.navRail.icon}>
-          <Icon size={iconSize} aria-hidden className={iconClass} />
+          <Icon
+            size={iconSize}
+            strokeWidth={iconStrokeOf({ size: iconSize })}
+            aria-hidden
+            className={iconClass}
+          />
         </span>
       ) : (
-        <Icon size={iconSize} aria-hidden data-nav-icon="" className={cn('shrink-0', iconClass)} />
+        <Icon
+          size={iconSize}
+          strokeWidth={iconStrokeOf({ size: iconSize })}
+          aria-hidden
+          data-nav-icon=""
+          className={cn('shrink-0', iconClass)}
+        />
       )}
       {badge}
     </button>

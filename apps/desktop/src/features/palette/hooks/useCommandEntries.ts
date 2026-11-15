@@ -59,6 +59,11 @@ import { scriptPinEntries, type PinnedScriptTarget } from '../sources/scriptPinE
 import { useScriptPins } from '../../scripts';
 import { runPinnedScript } from '../../scripts/runPinnedScript';
 import { repoEntries } from '../sources/repoEntries';
+import { leadEntries } from '../sources/leadEntries';
+import { useIsWorkOn } from '../../../shared/hooks/useIsWorkOn';
+import { flowRulesOf } from '../../work/flowRulesOf';
+import { openStartWork } from '../../work/openStartWork';
+import { useOpenLeadRows } from './useOpenLeadRows';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
 import { useSessionsEverywhere } from './useSessionsEverywhere';
@@ -138,6 +143,11 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const { showToast } = useToast();
   const innerColumn = useCurrentInnerColumn();
   const isInMainWindow = useIsMainWindow();
+  const isWork = useIsWorkOn();
+  const leadRows = useOpenLeadRows({
+    workspaceId: currentWorkspace?.id ?? null,
+    isEnabled: isWork,
+  });
   const canResumeSetup = isInMainWindow && getWizardState() !== 'done';
 
   return useMemo<ReadonlyArray<PaletteEntry>>(() => {
@@ -182,11 +192,16 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     if (sessionId === null) {
       out.push({
         key: 'action:start-run-auto-picks',
-        label: NAMES.startARun,
+        label: flowRulesOf({ isWork }).startLabel,
         kind: 'create',
         group: 'action',
         icon: CONCEPT_ICONS.autoRouting,
-        run: () => openNewSessionAs({ startKind: 'auto' }),
+        run: () =>
+          flowRulesOf({ isWork }).shouldStartOpenComposer
+            ? openStartWork({
+                seed: { sessionId: null, projectId: null, branch: null, text: '' },
+              })
+            : openNewSessionAs({ startKind: 'auto' }),
       });
     }
 
@@ -227,18 +242,23 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     if (hasWorkspace) {
       const workspaceId = currentWorkspace.id;
       out.push(
-        ...DESTINATIONS.filter((destination) => destination.home !== 'foot').map(
-          (destination): PaletteEntry => ({
-            key: destinationPaletteKeyOf({ id: destination.id }),
-            label: destination.label,
-            ...(destination.aliases.length > 0 && { secondary: destination.aliases }),
-            kind: 'goto',
-            group: null,
-            icon: destination.icon,
-            ...(destination.shortcutId !== undefined && { shortcut: destination.shortcutId }),
-            run: () => runDestination({ id: destination.id }),
-          }),
-        ),
+        ...DESTINATIONS.filter(
+          (destination) => destination.home !== 'foot' && (destination.id !== 'work' || isWork),
+        ).map((destination): PaletteEntry => ({
+          key: destinationPaletteKeyOf({ id: destination.id }),
+          label: destination.label,
+          ...(destination.aliases.length > 0 && { secondary: destination.aliases }),
+          kind: 'goto',
+          group: null,
+          icon: destination.icon,
+          ...(destination.shortcutId !== undefined && { shortcut: destination.shortcutId }),
+          run: () => runDestination({ id: destination.id }),
+        })),
+        ...leadEntries({
+          rows: leadRows,
+          open: ({ sessionId: leadSessionId, agentId }) =>
+            navigate({ to: agentPlace({ sessionId: leadSessionId, agentId }) }),
+        }),
         {
           key: 'goto:run-defaults',
           label: NAMES.runDefaults,
@@ -521,5 +541,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     settingsGroups,
     innerColumn,
     canResumeSetup,
+    isWork,
+    leadRows,
   ]);
 };

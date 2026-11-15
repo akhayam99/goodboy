@@ -68,9 +68,12 @@ export {
   type AdmissionChild,
   type AdmissionChildRefusal,
   type AdmissionLiveArtifact,
+  type AdmissionPermissions,
   type AdmissionSnapshot,
   type AdmissionVerdict,
 } from './admission';
+
+export { isAdmissionPlanGateOn } from './isAdmissionPlanGateOn';
 
 export {
   admissionChildRefusals,
@@ -89,6 +92,37 @@ export {
 export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './refusalUserReason';
 
 export { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
+
+export {
+  LEAD_LOCKED_ROWS,
+  LEAD_PERMISSION_KEYS,
+  LEAD_PERMISSION_PRESETS,
+  LEAD_PERMISSION_VALUES,
+  leadPermissionsOf,
+  parseLeadPermissionRows,
+  type EffectiveLeadPermission,
+  type EffectiveLeadPermissionRows,
+  type LeadLockedRow,
+  type LeadPermissionKey,
+  type LeadPermissionLayers,
+  type LeadPermissions,
+  type LeadPermissionsParams,
+  type LeadPermissionNote,
+  type LeadPermissionRows,
+  type LeadPermissionSource,
+  type LeadPermissionValue,
+  type StoredLeadPermissionRows,
+} from './permissions';
+
+export {
+  LEAD_STOP_WORDS,
+  leadStopOf,
+  type LeadStop,
+  type LeadStopFacts,
+  type LeadStopReason,
+  type LeadStopState,
+  type LeadStopWord,
+} from './leadStopOf';
 
 export { outcomeLineOf, parseOutcomeLine, stripOutcomeLine } from './outcome';
 
@@ -113,6 +147,15 @@ export {
   type SnapshotEntry,
 } from './attribution';
 
+export {
+  changeGateOf,
+  changeRefusalOf,
+  isChangeGateOn,
+  isDependencyPatchNeeded,
+  type ChangeGateVerdict,
+  type ChangeRules,
+  type ChangeStage,
+} from './changeGate';
 export { pathsOfPatch, type PathsOfPatchParams } from './patchPaths';
 
 export {
@@ -164,8 +207,31 @@ export {
 } from './branchFacts';
 
 export {
+  DEPENDENCY_FILES,
+  OFFLINE_PACKAGE_MANAGERS,
+  PACKAGE_MANAGERS,
+  PROTECTED_FILE_PATTERNS,
+  guardedPatternsOf,
+  isPathInPattern,
+  launchGuardOf,
+  launchGuardRulesOf,
+  needSubjectOf,
+  parseLaunchGuard,
+  storedLaunchGuardOf,
+  type LaunchAllowance,
+  type LaunchGuard,
+  type LaunchGuardEnv,
+  type LaunchGuardRows,
+  type LaunchGuardRules,
+  type LaunchGuardValue,
+  type PackageManager,
+} from './launchGuard';
+
+export {
   composeAnswerKickoff,
   composeDelegationKickoff,
+  kickoffGuidanceOf,
+  launchGuardBriefOf,
   type AnswerKickoffParams,
   type DelegationKickoffParams,
   type KickoffArtifactInput,
@@ -222,6 +288,7 @@ export {
   PUBLISH_MAX_TRIES,
   canPutBackPublish,
   canRetryPublish,
+  isPublishAskedOf,
   parseDelegatePublish,
   publishGateOf,
   publishOfRequest,
@@ -233,6 +300,13 @@ export {
   type PublishState,
   type ResultPublish,
 } from './publish';
+
+export {
+  pullRequestAskTextOf,
+  pullRequestOfResult,
+  pullRequestTextVersionOf,
+  type ResultPullRequest,
+} from './pullRequestAsk';
 
 export { remoteVerdictOf, type RemoteRead, type RemoteVerdictParams } from './remoteWatch';
 

@@ -349,7 +349,7 @@ type Route = {
   readonly isSidebarPage?: boolean;
 };
 
-const drawerRoute = (kind: 'scripts' | 'spawned'): Route => ({
+const drawerRoute = (kind: 'scripts' | 'ask'): Route => ({
   name: `${kind} drawer`,
   open: async () => {
     const sessionId = brandId<SessionId>({
@@ -371,7 +371,7 @@ const ROUTES: ReadonlyArray<Route> = [
     isSidebarPage: door.isSidebarPage,
   })),
   drawerRoute('scripts'),
-  drawerRoute('spawned'),
+  drawerRoute('ask'),
 ];
 
 describe('every route has exactly one way back', () => {

@@ -97,7 +97,7 @@ export const ScriptRunLog = ({ stdout, stderr, placeholder, onOpenFile = null }:
             onClick={jumpToLatest}
           >
             <ArrowDown size={ICON_SIZE.row} aria-hidden />
-            Jump to latest
+            Scroll to latest
           </Button>
         </div>
       )}

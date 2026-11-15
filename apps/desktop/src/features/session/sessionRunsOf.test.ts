@@ -27,8 +27,6 @@ import {
   nowModelOf,
 } from './central/now/testing/nowModelOf';
 import { pageSlotOf } from './pageSlot';
-import { buildTimelineStream } from './timeline/buildTimelineStream';
-import { runSpawnedRowsOf } from '../../app/components/SpawnedPanel/runSpawnedRowsOf';
 import { sessionRunCountsOf } from './sessionRunCountsOf';
 import { sessionRunsOf } from './sessionRunsOf';
 import { aMountView } from './testing/aMountView';
@@ -89,6 +87,7 @@ const runsOf = ({
     revisingStarts: {},
     mounts,
     projects: [PAYMENTS_PROJECT, LEDGER_PROJECT],
+    isWork: false,
   });
 
 const presetRun = () =>
@@ -340,23 +339,11 @@ describe('a permission-blocked agent', () => {
   const scout = () => handScout({ status: 'running' });
   const turns = new Map([['agent-scout', BLOCKED]]);
 
-  it('reads the same word on the Runs grid, the page count, the Running card and the Agents tree', () => {
+  it('reads the same word on the Runs grid, the page count and the Running card', () => {
     const runs = runsOf({ agents: [scout()], turns });
     const counts = sessionRunCountsOf({ runs });
     const model = nowModelOf({ agents: [scout()], turnByAgentId: turns });
     const [group] = liveGroupsOf({ model, agents: [scout()], now: FIXTURE_NOW });
-    const tree = runSpawnedRowsOf({
-      items: buildTimelineStream({
-        entries: model.entries,
-        unreadAgentIds: new Set(),
-        advanceByRunId: new Map(),
-        decidingRunIds: new Set(),
-        dayLabelFor: () => null,
-        turnByAgentId: turns,
-      }).items,
-      baseLevel: 0,
-    });
-    const row = tree.find((entry) => entry.kind === 'agent');
 
     expect(runs[0]).toMatchObject({
       dot: 'needsYou',
@@ -378,10 +365,6 @@ describe('a permission-blocked agent', () => {
       }).tone,
     ).toBe('warning');
     expect(group?.state).toBe('waiting');
-    expect(row).toMatchObject({
-      kind: 'agent',
-      row: { node: 'approval', word: 'Needs permission', isLive: false },
-    });
   });
 
   it('is running again once the turn is no longer blocked', () => {

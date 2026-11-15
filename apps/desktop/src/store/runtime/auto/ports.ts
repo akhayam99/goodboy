@@ -7,6 +7,7 @@ import type {
   PickableMount,
   RemoteRead,
 } from '@goodboy/core/auto';
+import type { ExtractedScribeText } from '@goodboy/core/context';
 import type { WorkflowRoutingWireFields } from '@goodboy/core/orchestrator';
 import type { AutoDelegation } from '@goodboy/db';
 import type {
@@ -173,6 +174,18 @@ export type ReadCommittedFilesParams = Readonly<{
   head: string;
 }>;
 
+export type ReadHostChangesParams = Readonly<{
+  sessionId: SessionId;
+  worktreePath: string;
+  branch: string;
+  head: string;
+}>;
+
+export type HostChanges = Readonly<{
+  paths: ReadonlyArray<string>;
+  patch: string;
+}>;
+
 export type ReadRemoteHeadParams = Readonly<{
   worktreePath: string;
   branch: string | null;
@@ -240,7 +253,8 @@ export type PublishScribeParams = Readonly<{
   sessionId: SessionId;
   mountId: string;
   agentId: AgentId;
-  assistantText: string;
+  output: ExtractedScribeText;
+  sha: string;
 }>;
 
 export type ScribePublication =
@@ -331,6 +345,8 @@ export type AutoPorts = Readonly<{
   startChildTurn: (params: StartChildTurnParams) => Promise<ChildStartOutcome>;
   readMountSnapshot: (params: ReadMountSnapshotParams) => Promise<MountSnapshot | null>;
   readCommittedFiles: (params: ReadCommittedFilesParams) => Promise<ReadonlyArray<string>>;
+  readCommittedPatch: (params: ReadCommittedFilesParams) => Promise<string>;
+  readHostChanges: (params: ReadHostChangesParams) => Promise<HostChanges>;
   readRemoteHead: (params: ReadRemoteHeadParams) => Promise<RemoteRead>;
   readBranchFacts: (params: ReadBranchFactsParams) => Promise<BranchFactsParts>;
   listChecks: (params: ListChecksParams) => Promise<AutoCheckList>;

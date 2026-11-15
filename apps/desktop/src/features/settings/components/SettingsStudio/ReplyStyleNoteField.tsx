@@ -67,7 +67,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
           onClick={() => void learn()}
         >
           <LearnIcon size={ICON_SIZE.row} aria-hidden />
-          {isLearning ? 'Reading your replies' : 'Learn from my replies'}
+          {isLearning ? 'Reading your replies' : 'Learn from your replies'}
         </Button>
         <span className="text-meta text-faint-foreground">
           {`Reads your last ${REVIEW_REPLY_SAMPLE_SIZE} review replies in this workspace.`}

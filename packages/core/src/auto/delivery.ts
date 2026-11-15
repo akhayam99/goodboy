@@ -53,6 +53,8 @@ const NEEDS_TEXT = {
   writer: 'an agent that can change files',
   decision: 'a decision from you',
   user: 'an answer from the user',
+  dependency: 'a dependency the user allows',
+  protected_file: 'a protected file the user allows',
 } as const satisfies Readonly<Record<Exclude<ChildNeeds['kind'], 'role'>, string>>;
 
 type NeedsTextParams = {

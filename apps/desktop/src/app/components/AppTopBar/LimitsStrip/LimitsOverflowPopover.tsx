@@ -85,12 +85,10 @@ export const LimitsOverflowPopover = ({
             TOP_BAR_CONTROL.height,
             TOP_BAR_CONTROL.radius,
             FOCUS_RING,
-            'flex shrink-0 items-center gap-1 px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
+            'flex shrink-0 items-center gap-2 px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
-          {hasShownChips ? null : <CONCEPT_ICONS.providers size={ICON_SIZE.control} aria-hidden />}
-          <span>{hasShownChips ? `+${hidden.length} ${noun}` : NAMES.usage}</span>
           {hasShownChips ? (
             <span data-limits-overflow-marks="" className="flex items-center gap-0.5">
               {hidden.slice(0, MAX_MARKS).map((chip) => (
@@ -99,7 +97,10 @@ export const LimitsOverflowPopover = ({
                 </span>
               ))}
             </span>
-          ) : null}
+          ) : (
+            <CONCEPT_ICONS.providers size={ICON_SIZE.control} aria-hidden />
+          )}
+          <span>{hasShownChips ? `+${hidden.length} ${noun}` : NAMES.usage}</span>
           {worst === null ? null : (
             <TriangleAlert
               data-limits-alert=""

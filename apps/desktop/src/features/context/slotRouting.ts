@@ -19,8 +19,3 @@ export const ROLE_SLOTS: Readonly<Record<AgentRole, ReadonlyArray<SlotKey>>> = {
   auto: SLOT_KEYS,
   custom: SLOT_KEYS,
 };
-
-export const rolesReadingSlot = ({ slot }: { readonly slot: SlotKey }): ReadonlyArray<AgentRole> =>
-  (Object.keys(ROLE_SLOTS) as ReadonlyArray<AgentRole>).filter((role) =>
-    ROLE_SLOTS[role].includes(slot),
-  );

@@ -65,7 +65,7 @@ type WriteReasonParams = {
 
 const writeBlockReason = ({ busy, canAct }: WriteReasonParams): string | null => {
   if (!canAct) {
-    return 'Goodboy cannot reach this merge request on GitLab from here.';
+    return "Goodboy can't reach this merge request on GitLab from here.";
   }
   if (busy !== null) {
     return 'Another change to this merge request is still running.';
@@ -87,7 +87,7 @@ const mergeBlockReason = ({ mr, canMerge, writeReason }: MergeReasonParams): str
     return 'GitLab says this merge request cannot be merged yet.';
   }
   if (!canMerge) {
-    return 'Goodboy cannot merge this merge request from here.';
+    return "Goodboy can't merge this merge request from here.";
   }
   return writeReason;
 };

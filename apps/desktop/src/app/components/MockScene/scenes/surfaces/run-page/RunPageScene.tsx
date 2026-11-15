@@ -5,8 +5,10 @@ import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../../store';
 import { autoChildRoutingOf } from '../../../../../../features/auto/autoChildRoutingOf';
 import { agentPlace } from '../../../../../../store/slices/navigation/place';
+import { SETTING_WORK_ENABLED } from '../../../../../../shared/lib/workSetting';
 import type { AgentId } from '@goodboy/types';
 import { seedActivityRunScene } from '../../activityRunSeed';
+import { leadNextStepView } from './leadNextStepView';
 import { ShellFrame, seedShellChrome } from '../../shellChrome';
 import { runPageChildEventsOf } from './runPageChildEventsOf';
 import {
@@ -26,6 +28,7 @@ type ExtendParams = {
 type Props = {
   readonly state: AutoSceneState;
   readonly theme: 'dark' | 'light';
+  readonly isLead?: boolean;
   readonly extend?: (params: ExtendParams) => AutoSceneData;
   readonly shownAgentId?: AgentId;
 };
@@ -35,6 +38,7 @@ const keepScene = ({ scene }: ExtendParams): AutoSceneData => scene;
 export const RunPageScene = ({
   state,
   theme,
+  isLead = false,
   extend = keepScene,
   shownAgentId = AUTO_ROOT_ID,
 }: Props) => {
@@ -50,7 +54,13 @@ export const RunPageScene = ({
       telemetryAt: AUTO_SESSION.updatedAt,
       lens: null,
     });
-    const scene = extend({ scene: autoSceneOf({ state }) });
+    const seeded = extend({ scene: autoSceneOf({ state }) });
+    const scene = isLead ? { ...seeded, view: leadNextStepView({ view: seeded.view }) } : seeded;
+    if (isLead) {
+      useAppStore.setState((current) => ({
+        settings: { ...current.settings, [SETTING_WORK_ENABLED]: 'true' },
+      }));
+    }
     const agents = scene.agents.map((agent) => {
       const delegation = [...scene.view.delegations]
         .reverse()
@@ -89,7 +99,7 @@ export const RunPageScene = ({
       mode: 'replace',
     });
     setIsReady(true);
-  }, [state, theme, extend, shownAgentId]);
+  }, [state, theme, isLead, extend, shownAgentId]);
 
   if (!isReady) {
     return null;

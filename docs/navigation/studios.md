@@ -61,7 +61,7 @@ in `studioMeta.ts`).
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows the opaque skeleton of that page
   (`STUDIO_META[kind].skeleton`, drawn through `PageSkeleton` on the page's header
-  inset and measure): `rows` (Tasks, Workflows, Monitoring, Notifications, Settings,
+  inset and measure): `rows` (Tasks, Work, Workflows, Monitoring, Notifications, Settings,
   Add workspace), `prose` (the guide, What's new), `room` (Chat), `terminal` and
   `cards` (Impact), with a rail skeleton where the page has a rail. With no
   studio open, no frame node exists, so nothing covers the page.
@@ -222,7 +222,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses the rows and the list keys but not the day
   grouping or a rail: its facets (source, show, type, project) sit in one Filter
-  menu of the header, next to the For me and All switch, the search, the grouping button (`Group: Source`) and
+  menu of the header, next to the For you and All switch, the search, the grouping button (`Group: Source`) and
   `⋯` (Refresh, Manage tools: the `taskList` kind of the action registry), and its rows are one `ListGrid` with a group per
   source, status or project (`taskGroupsOf`), the total on the label (`taskGroupTotalsOf`, starred rows included), five rows each until Show all, and
   each group is its own listbox of options. J and K move a cursor through the
@@ -397,7 +397,7 @@ folders · size` (`WorktreeRemoveButton`), with the sentence on idle days as
   its help line, and the folder `...` menu shows on hover and focus. `Prune`
   is a secondary button that confirms. Branches is a Workspace page
   (`branches`, `BranchesPage`): the workspace's After merge rule first, then
-  the branch list under one select (`Safe to delete`, `Needs a look`, `All`),
+  the branch list under one select (`Safe to delete`, `Check first`, `All`),
   then a `Recently deleted` fold row (restore or delete for good, loaded from
   `deleted_branches` on open, which also releases the refs of deletions older
   than 14 days). The page meta line reads `N safe to delete · M need a look`
@@ -436,9 +436,9 @@ workspaces` (folders whose owning workspace is gone or was never linked),
   the batched distance counts per branch), with the merge test cached by both
   tips (4096 entries at most) and fed each branch's merged pull request head
   (`listMergedRequestHeads`); protected branches never show. One select
-  (`Safe to delete`, the default, `Needs a look`, `All`) filters the list.
+  (`Safe to delete`, the default, `Check first`, `All`) filters the list.
   Safe to delete means merged by merge commit or rebase, merged by its pull
-  request with nothing after the merged head, or never used. Needs a look
+  request with nothing after the merged head, or never used. Check first
   means `Merged, then N new commits`, unmerged and gone on origin, local only
   for over 30 days, or older than 90 days; never preselected. Every branch
   row and every Recently deleted row sit on one grid (`BRANCH_TABLE_GRID`,

@@ -16,9 +16,9 @@ export type Props = {
 
 const lead = (direction: Props['direction'], kind: Props['kind']): string => {
   if (direction === 'lighter') {
-    return 'This looks light.';
+    return 'This task looks small.';
   }
-  return kind === 'optional' ? 'This might run heavy.' : 'This looks heavy.';
+  return kind === 'optional' ? 'This task may be large.' : 'This task looks large.';
 };
 
 const costLine = (

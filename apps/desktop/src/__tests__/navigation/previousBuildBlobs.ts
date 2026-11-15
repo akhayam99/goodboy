@@ -104,13 +104,15 @@ const STUDIO_BLOBS: ReadonlyArray<ExpectedBlob> = Object.entries(STUDIOS).map(([
   expected: studio,
 }));
 
-const FOLDED_DRAWER_LENSES: Readonly<Record<string, string>> = {
-  context: 'context',
-  explore: 'files',
-  spawned: 'workflows',
-};
+const FOLDED_DRAWER_LENSES: ReadonlyMap<string, string | null> = new Map<string, string | null>([
+  ['context', 'context'],
+  ['explore', 'files'],
+  ['spawned', 'workflows'],
+  ['session-log', null],
+]);
 
 type DrawerBlob = ExpectedBlob & {
+  readonly isFolded: boolean;
   readonly foldedLens: string | null;
 };
 
@@ -122,7 +124,8 @@ const DRAWER_BLOBS: ReadonlyArray<DrawerBlob> = Object.entries(DRAWERS).map(([ki
     drawer: { kind, sessionId: SESSION, payload },
   }),
   expected: { kind, sessionId: SESSION, payload },
-  foldedLens: FOLDED_DRAWER_LENSES[kind] ?? null,
+  isFolded: FOLDED_DRAWER_LENSES.has(kind),
+  foldedLens: FOLDED_DRAWER_LENSES.get(kind) ?? null,
 }));
 
 const PLACE_BLOBS: ReadonlyArray<PreviousBuildBlob> = [
@@ -179,6 +182,15 @@ const FORMER_BLOBS: ReadonlyArray<PreviousBuildBlob> = [
   },
 ];
 
+const WORK_STUDIO = { kind: 'work', filter: 'needsYou' } as const;
+
+const WORK_STUDIO_BLOB: ExpectedBlob = {
+  name: 'studio work',
+  kind: 'work',
+  blob: blobOf({ place: SESSION_PLACE, studio: WORK_STUDIO }),
+  expected: WORK_STUDIO,
+};
+
 const TERMINAL_DOCK_WITHOUT_SESSION: PreviousBuildBlob = {
   name: 'terminal dock without a session',
   kind: 'terminal',
@@ -190,6 +202,7 @@ const TERMINAL_DOCK_WITHOUT_SESSION: PreviousBuildBlob = {
 
 export const PREVIOUS_BUILD_BLOBS = {
   studios: STUDIO_BLOBS,
+  workStudio: WORK_STUDIO_BLOB,
   drawers: DRAWER_BLOBS,
   places: PLACE_BLOBS,
   draft: DRAFT_BLOB,

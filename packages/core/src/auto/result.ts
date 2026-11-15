@@ -337,6 +337,9 @@ type RenderResultParams = {
 };
 
 const REMOTE_MOVED_TEXT = 'The branch changed online while this agent worked';
+const USER_ALLOWS_LINE =
+  '  the user is asked to allow it: leave this agent, Goodboy starts it again with the answer';
+
 const REMOTE_UNKNOWN_TEXT =
   'Whether the branch changed online while this agent worked could not be read';
 
@@ -374,6 +377,9 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
   const needs = result.returned?.needs ?? null;
   if (needs !== null && needs.kind === 'role') {
     lines.push(`  it asks for the ${needs.role} role`);
+  }
+  if (needs !== null && (needs.kind === 'dependency' || needs.kind === 'protected_file')) {
+    lines.push(USER_ALLOWS_LINE);
   }
   const request = result.returned?.request ?? null;
   if (request !== null) {

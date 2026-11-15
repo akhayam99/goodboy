@@ -15,6 +15,7 @@ type Props = {
   readonly isStateShown?: boolean;
   readonly isInHead?: boolean;
   readonly trailing?: ReactNode;
+  readonly leading?: ReactNode;
 };
 
 const CHIP_OPEN_EVENTS: ReadonlyArray<string> = [
@@ -31,6 +32,7 @@ export const RunGlanceLine = ({
   isStateShown = true,
   isInHead = false,
   trailing = null,
+  leading = null,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const slots = useContext(SessionHeadSlotsContext);
@@ -57,6 +59,7 @@ export const RunGlanceLine = ({
       data-glance-place={isHeadRow ? 'head' : 'page'}
       className="flex min-h-6 min-w-0 items-center gap-2 text-meta"
     >
+      {leading}
       {isStateShown ? (
         <span
           aria-hidden="true"

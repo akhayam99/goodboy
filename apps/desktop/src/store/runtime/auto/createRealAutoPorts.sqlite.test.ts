@@ -55,6 +55,7 @@ const worldWithPorts = async (patch: Partial<RealAutoPortsDeps> = {}) => {
     lookupDeliveryRun: vi.fn(async () => null),
     worktreeSnapshot: vi.fn(async () => ({ head: 'abc123', entries: [], isPartial: false })),
     worktreeDiffRange: vi.fn(async () => 'diff --git a/src/export.ts b/src/export.ts\n'),
+    worktreeDiffFromMergeBase: vi.fn(async () => ''),
     worktreeCommitRange: vi.fn(async () => []),
     worktreeStatus: vi.fn(async () => ({ branch: 'ak/ledger-export' })),
     worktreeRemoteHead: vi.fn(async () => 'remote111'),

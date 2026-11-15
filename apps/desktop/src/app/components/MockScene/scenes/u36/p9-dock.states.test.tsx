@@ -220,7 +220,8 @@ describe('a Not delivered row over an open ask', () => {
 describe('the Auto dock', () => {
   it('names what Stop stops, and the limit, the failure and the project leave the chat', async () => {
     const running = await mount({ name: 'u36-p9-auto-running' });
-    within(running).getByRole('button', { name: /^Stop Auto and \d agents?$/ });
+    expect(within(running).queryByRole('button', { name: /^Stop Auto/ })).toBeNull();
+    within(document.body).getByRole('button', { name: /^Stop Auto and \d agents?$/ });
     cleanup();
 
     const capped = await mount({ name: 'u36-p9-auto-limit' });

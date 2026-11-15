@@ -624,12 +624,10 @@ export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   );
 };
 
-type PaneName = 'Explore' | 'Scripts' | 'Agents';
+type PaneName = 'Scripts';
 
 const PANE_KIND: Readonly<Record<PaneName, string>> = {
-  Explore: 'explore',
   Scripts: 'scripts',
-  Agents: 'spawned',
 };
 
 export const pane = (name: PaneName) => async (ctx: Ctx) => {

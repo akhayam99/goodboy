@@ -101,6 +101,7 @@ describe('m230 auto registry', () => {
 
   it('is additive: an older build refuses the upgraded file instead of reading it', async () => {
     const db = await makeMigratedTestDatabase();
+    const before = await autoTables(db);
     const olderBuild = migrations.filter((migration) => migration.version <= 229);
     const failure = await migrate(db, olderBuild).catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(DatabaseFromNewerBuildError);
@@ -108,6 +109,7 @@ describe('m230 auto registry', () => {
       unknownVersions: expect.arrayContaining([230]),
       highestKnownVersion: 229,
     });
-    expect(await autoTables(db)).toEqual([...TABLES].sort());
+    expect(before).toEqual(expect.arrayContaining([...TABLES]));
+    expect(await autoTables(db)).toEqual(before);
   });
 });

@@ -7,6 +7,7 @@ import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
+import { LOG_LANDING } from '../../../../../features/session/central/log/logLanding';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { CentralColumnPane } from './CentralColumnPane';
@@ -51,11 +52,7 @@ export const CentralColumnScene = ({
       ),
     }));
     if (isLogOpen) {
-      useAppStore.getState().openDrawer({
-        kind: 'session-log',
-        sessionId: COLUMN_SESSION_ID,
-        payload: { focusEntryId: null },
-      });
+      LOG_LANDING.request({ sessionId: COLUMN_SESSION_ID });
     }
     setIsReady(true);
   }, [theme, kind, isLogOpen, isArchived]);

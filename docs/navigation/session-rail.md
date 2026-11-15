@@ -88,8 +88,9 @@ The text below was written for the rail. The cards it names (`SessionLevel/Level
   **Refresh session** (⌘R, `useSessionRefresh`, the same call as the key and
   the palette) and **More session actions** (`⋯`, `ObjectOverflowMenu` over
   the `session` registry kind), which holds five rows at most:
-  **Limit: none** or **Limit: $5.00** (`session.spend`), **Autopilot: on** or
-  **Autopilot: off** (`session.autopilotOn` / `Off`, a press flips it),
+  **Limit: none** or **Limit: $5.00** (`session.spend`), **Asks you: Every
+  step** or **Asks you: Never** (`session.asksNever` / `asksEveryStep`, a
+  press flips it),
   **Stop running (2)** while agents run, **Archive** and **Delete**
   (`sessionMenuOf`). A row that has a control beside it (Pin, Refresh, the
   title for Rename, the rail entries for the lenses and the log) is not in
@@ -186,25 +187,22 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   over the same `sessionRunsOf` rows the page lists, and a test pins it to the
   Now card (`sessionRunsOf.test.ts`); the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
-- **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
-  `bg-subtle` surface (`rounded-lg`) whose edges sit on the page row
-  highlight edges: pages and cards share one column inset
-  (`SessionLevel/railInset`, `RAIL_INSET`). The card pads its sides 8px and
-  its top and bottom 4px (`CARD_INSET`, one constant read by `LevelCard`, so
-  Projects, Linked and any later level card cannot drift) and a card row adds
-  4px (`CARD_ROW_INSET`), so text, chevrons, dots and counts sit 12px in and
-  a hover fill keeps 8px of card around it. Every right
-  slot (counts, diff stat, the worst state dot, the `+` glyph) ends on the
-  card's inner line. Every `+` of a level card, header or project row, is
+- **Projects and Linked are cards** (`SessionLevel/LevelCard`), drawn in the
+  Context tab with the grammar of every Context card: a `Band` (rounded
+  `bg-fill`, 4px inset) whose head row is `ContextCardHead` (32px, the title
+  12px in, the count from `countSlotText` beside it, the actions in one right
+  slot on the title's centre line). The body pads 4px (`CONTEXT_CARD_BODY`)
+  and a card row adds 4px (`CARD_ROW_INSET`), so text, chevrons, dots and
+  counts sit 12px in, on the head's edge, and a hover fill keeps 8px of card
+  around it. Every `+` of a level card, header or project row, is
   `LevelAddTrigger` in its own 24px `xs` box, with no size override from the
-  card, so all of them share one right edge. It has a header row inside it: the
-  title and a fold chevron as one button, then the quiet meta and a `+` icon
-  button (`LevelAddTrigger`) at the right. A card folds from its header and
-  remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);
-  folded, Projects keeps the worst state of its worktrees as one dot in the
-  header (`useProjectsSignal`) and Linked its item count from 2, so a state
-  that needs you never hides in a fold. Cards sit 8px apart, 16px under the
-  pages.
+  card, so all of them share one right edge. The title and a fold chevron are
+  one button. A card folds from its header and remembers it
+  (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`); folded,
+  Projects keeps the worst state of its worktrees as one dot in the header
+  (`useProjectsSignal`), and Linked shows its item count from 2 open or
+  folded, so a state that needs you never hides in a fold. Cards sit 12px
+  apart (`PANE_RHYTHM.block`), like every block of the tab.
 - **Projects is one tree**, holding every branch of the session, so there is no
   second sidebar to go back from. A folder row (`SessionLevel/ProjectTree`) is
   its name and its `+`; the name toggles the folder and a chevron shows only
@@ -660,7 +658,7 @@ activity yet show the plain overview with its actions.
 
 ## Board model
 
-- **A branch is a row by its stored mount id, in any state.** A merged branch stays a row and a removed worktree keeps its row, because the row never reads the path. Work with no known branch lands in one row, "Not on a branch".
+- **A branch is a row by its stored mount id, in any state.** A merged branch stays a row and a removed worktree keeps its row, because the row never reads the path. Work with no known branch lands in one row, "Not on a branch", only while an agent or Lead there runs, waits for you or failed, or a question is open, or when the session has no branch at all; finished work with no branch draws no row and `branchBoardOf` hands its spend, time and counts to the tiles through `settled`.
 - **Groups are Needs you, In progress, Merged and Not on a branch.** An empty group is not drawn. Merged shows the 3 newest (`MERGED_FOLD_LIMIT`) unless it is the only group with branches. A session with one branch draws no groups.
 - **The stage of a row comes from that branch only.** `branchFactsFor` builds its facts and `deriveSessionStage` words them; the session's own error state and unread mark never reach a row.
 - **The five tiles are counted by id.** `sessionKpisOf` reads the board: Branches (merged of total), Needs you, Checks, Spend and Time. A Lead on two branches is two rows and one Lead; the rows sum to each tile.
@@ -700,7 +698,7 @@ activity yet show the plain overview with its actions.
   in the back button of the title row. The history arrows in the top bar are
   memory, not a way up: the left one reads `Back: {place}` and the right one
   `Forward: {place}` (an agent's name, a run's title, a page), with the
-  session's title on a second line and `Hold for history` on a third; a hold or a
+  session's title on a second line and `Hold to show history` on a third; a hold or a
   right click opens the History menu with the same names. A test that wants
   the arrow takes `[data-nav-arrow="back"]`.
 - **The session title row holds the session's actions, once.** The page headers under the
@@ -758,7 +756,10 @@ tool it replaces moves into the chip. Terminal names the running terminals
 (`Terminal, 2 running`), Browser names its tabs (`Browser, 3 tabs`); the words
 come from `toolFactOf` over `runningTerminalCount` and `browserTabCount`, and
 the same two numbers show in the icon's corner (`ToolCount`, `countTextOf`,
-9+ past nine) unless a signal dot holds that corner.
+9+ past nine) unless a signal dot holds that corner. Every corner mark (count,
+signal dot, waiting ring) anchors to the icon button, outside the 16px glyph
+(`TOOL_CORNER_SLOT`): the count and the dot share the top end corner, the ring
+the top start corner, and none ever covers the icon.
 
 Terminal and Browser are workspace tools: their dock opens with
 `toggleTerminalDock` and `toggleBrowserDock` from the rail, the palette, the Go
@@ -784,76 +785,20 @@ through `DrawerEdgeContext`. The page has a scrim and is inert until close.
 both rails ([styling.md](../styling.md)).
 Folding the rail leaves the column in place.
 
-- **Agents is the tree beside the page** (drawer kind `spawned`,
-  `app/components/SpawnedPanel`), in place of the old level 2 of the session
-  rail: the open run's tree, else what is live. Runs is the one list of work,
-  so the panel keeps no list of its own: its foot link **All runs** goes to the
-  Runs page (`openLens` workflows) and the panel stays open. Its body follows the page (`useSpawnedFocus`): on a preset run (from
-  Runs, the Running card, the Done card or a link to a step, read through
-  `presetRunFocusOf`) it shows the run's identity row (the state dot and the
-  title, which renames inline on click), and the run's agents as a tree; on an Auto
-  agent or one of its children it shows Auto and its children as a tree, "No
-  agents started yet" while Auto has none; Auto's limit sits on the Auto page's
-  settings line (`AgentSettingsLine`), not in this panel. With no run or Auto
-  open, it lists what is live, newest first
-  (`launchesOf` over `sessionRunsOf`: runs that are not archived and not
-  finished, orchestrated ones included, Auto roots and standalone agents; the
-  finished work is on Runs), each with its agents under it; a standalone agent is a
-  launch of one row (`SpawnedAgentGroup`: role glyph, name, state word on the
-  row) that opens its page in the center (`openSpawned` target `agent`), and
-  a session with nothing live says "Nothing live right now"; picking a launch
-  opens it in the center, and the tool, open already, stays through the move. A row
-  never opens a tool as a side effect: an Auto row of Runs opens the Auto page
-  and nothing beside it. The
+- **There is no Agents panel.** Runs is the one list of work: ⌘⌥A
+  (`session.spawned`) and its palette row open Runs on what is running, and a
+  window saved with the old `spawned` panel opens Runs filtered to Running
+  (`withoutRemovedPages`). A row never opens a tool as a side effect: an Auto
+  row of Runs opens the Auto page and nothing beside it. The
   Overview's run row opens that exact run page,
   including an orchestrated run, and Back returns to the Overview. Its step
   rows and status sentence are status, not parallel links to the Runs list.
-  The tree reads top down, like the step list of the run page: each parent
-  above its children, the first step on top, each child joined to its parent's
-  lane by the fork curve (`spawnedRailOf` in `features/workTreeModel` lays the rows out with
-  `layoutTimelineRail`, `SpawnedRailCell` draws them with `TimelineRail`; a
-  queued child dashes its lane). Every reader of the order goes through
-  `spawnedTreeItemsOf`, which is DOM order. A focused Auto launch is the same
-  `SpawnedAutoGroup` as the list, always open, so Auto and a run share one
-  layout. There is no Now row, no state grouping and no spend foot: limit and
-  spend live on the glance line of the page. A row opened from a done parent
-  says how many helpers failed (`helperUrgencyOf`, "1 of 2 helpers failed").
-  Focus stays on its row and `useSpawnedScrollHold` keeps the first visible
-  row's offset when a row lands above it. A row is one 28px line: the
-  state node on the rail, role glyph (the noun in its tooltip), title, a
-  fixed chevron slot and a fixed time column (`DelegationClock`, the clock
-  every work row reads), so icons and times line up down the list. The
-  selected agent is revealed when the panel opens or the selection changes:
-  a fold hiding it opens and the row scrolls to the middle, later changes
-  scroll only as far as needed, and an agent missing from the tree changes
-  nothing (`useSpawnedReveal`, `foldAncestorsOf`). A `spawned` drawer saved with a child target
-  takes precedence over the main selection (`useSpawnedFocus`). An Auto
-  root is titled by the ask it started with, loaded with the tree view, not
-  its transcript (`autoRootTitleOf`, the same title as the Auto agents list) and a child by `autoChildLabelsOf`
-  ([auto.md](../auto.md#the-chat)). Every Auto parent folds on its row (chevron,
-  Right opens, Left folds, `foldSpawnedRowsOf`): a tree live when it first
-  loads opens, a settled one folds, and a folded row keeps its state and says
-  its count of children ("3 agents"); settled sub agents of a run fold into one
-  row like the run page's (`useFoldedRunTree`). The rows are a `tree` with
-  `treeitem`s and `aria-level` (`SpawnedTree`): one tab stop on the newest
-  root, Up and Down and Home and End in screen order, Left to the parent
-  (below), Right to the nearest child (above) or to open a fold, Enter or
-  Space to open (`treeKeyTargetOf`).
-- **A row opens its agent in the center and the tree stays.** Every agent row
-  (a run step, an Auto child, the Auto root, an agent you started) goes
-  through `openSpawned` with target `agent`: it navigates to `agentPlace` and
-  the panel, a tool, survives the move (`keepToolDrawer`), so a child shows on the same
-  page as a top-level agent (`AgentDetailPane`, with the Auto notice for an
-  Auto child; a preset run step reads as its run step page through
-  `presetRunFocusOf`) and the tree stays open with the row selected, one click
-  per hop. A run head opens its run page the same way. **j** and **k** with
-  focus on a row of the tree open the next and the previous agent in screen
-  order (`SpawnedTree`, `hopTargetOf`), stop at the ends, and leave focus on
-  the row; **Up** and **Down** still only move focus, and Enter opens. The other
-  doors (the Overview, a delegation line, a run step, Who asked, a notification,
-  the palette) land on the same page: no agent opens in a side panel, and a
-  window saved with the old `auto-child` or `run-step` drawer opens the page
-  (`withoutRemovedPages`).
+- **An agent opens in the center.** Every door to an agent (the Overview, a
+  delegation line, a run step, Who asked, a notification, the palette) lands
+  on its page (`AgentDetailPane`, with the Auto notice for an Auto child; a
+  preset run step reads as its run step page through `presetRunFocusOf`): no
+  agent opens in a side panel, and a window saved with the old `auto-child` or
+  `run-step` drawer opens the page (`withoutRemovedPages`).
 - **A saved level 2 lands on its page.** A window saved on a run or on the
   Auto level before the panel opens on the same page and opens no panel
   (`withoutRemovedPages` drops the retired `sidebar-level` key); a tool it had

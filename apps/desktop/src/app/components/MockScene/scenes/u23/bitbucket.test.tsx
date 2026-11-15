@@ -348,10 +348,10 @@ describe('the session marks scene on Bitbucket', () => {
 
   const markOf = (title: string) => {
     const row = rowOf(title);
-    const node = row.querySelector('[role="img"]');
+    const node = row.querySelector('[data-row-state] [role="img"]');
     return {
       tone: row.querySelector('[data-node-tone]')?.getAttribute('data-node-tone'),
-      state: node?.getAttribute('data-node-state'),
+      state: node?.getAttribute('data-status-state'),
       words: (node?.getAttribute('aria-label') ?? '').replace(/, unseen$/, ''),
     };
   };

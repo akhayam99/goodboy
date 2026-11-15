@@ -127,7 +127,7 @@ const field = () => {
 
 const askTab = () => screen.getByRole('tab', { name: 'Ask about the code' });
 
-const issueTab = () => screen.getByRole('tab', { name: 'Pick up an issue' });
+const issueTab = () => screen.getByRole('tab', { name: 'Pick an issue' });
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -265,7 +265,7 @@ describe('FirstSessionStep with no task source', () => {
   it('hides the issue tab until a task source is connected and points at Tools', () => {
     const handlers = renderStep();
 
-    expect(screen.queryByRole('tab', { name: 'Pick up an issue' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Pick an issue' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Connect Linear or Jira' }));
 
     expect(handlers.onOpenTools).toHaveBeenCalledOnce();

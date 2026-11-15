@@ -135,9 +135,9 @@ describe('withoutRemovedPages', () => {
 
   it('keeps a live drawer open on its page', () => {
     const drawer: Location['focus']['drawer'] = {
-      kind: 'session-log',
+      kind: 'ask',
       sessionId: SESSION_ID,
-      payload: { focusEntryId: null },
+      payload: null,
     };
     const location: Location = {
       ...storedAt({ lens: 'questions' }),

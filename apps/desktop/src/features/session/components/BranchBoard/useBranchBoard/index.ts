@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, TelemetryRecord } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -60,6 +61,13 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
   const { mountGithub } = useSessionMountHosts({ sessionId });
   const now = useNow(CLOCK_MS, true);
   const views = useMemo(() => liveAutoViewsOf({ views: allViews, agents }), [agents, allViews]);
+  const rootTurns = useAppStore(
+    useShallow((state) =>
+      Object.fromEntries(
+        views.map((view) => [view.tree.rootAgentId, state.agentTurnState[view.tree.rootAgentId]]),
+      ),
+    ),
+  );
   const spendByAgentId = useMemo(
     () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
     [agentRunHistory, agents, telemetry],
@@ -75,8 +83,8 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
     return byMount;
   }, [entries, mountGithub]);
   const inputs = useMemo(
-    () => boardInputsOf({ agents, questions, views, spendByAgentId, now }),
-    [agents, now, questions, spendByAgentId, views],
+    () => boardInputsOf({ agents, questions, views, rootTurns, spendByAgentId, now }),
+    [agents, now, questions, rootTurns, spendByAgentId, views],
   );
   const board = useMemo(
     () =>

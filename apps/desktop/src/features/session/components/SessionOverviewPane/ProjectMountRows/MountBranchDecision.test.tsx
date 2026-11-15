@@ -187,10 +187,10 @@ describe('MountBranchDecision', () => {
     ).toBeDefined();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Put it back on ak/part-one' }).hasAttribute('disabled'),
+        screen.getByRole('button', { name: 'Check out ak/part-one' }).hasAttribute('disabled'),
       ).toBe(false),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Put it back on ak/part-one' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Check out ak/part-one' }));
 
     await waitFor(() =>
       expect(h.store.resolveMountBranchMismatch).toHaveBeenCalledWith({

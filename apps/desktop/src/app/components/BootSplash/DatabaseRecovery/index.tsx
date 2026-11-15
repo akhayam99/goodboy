@@ -39,7 +39,7 @@ export const DatabaseRecovery = ({ error }: Props) => {
         {NAMES.retry}
       </Button>
       <Button variant="ghost" size="sm" disabled={isRetrying} onClick={() => setIsConfirming(true)}>
-        Move aside and restart
+        Start with a new database
       </Button>
     </>
   );
@@ -50,7 +50,7 @@ export const DatabaseRecovery = ({ error }: Props) => {
       icon={<DatabaseBackup size={ICON_SIZE.control} aria-hidden />}
       title="Move the database aside?"
       description="The copy stays next to a new empty database."
-      confirmLabel="Move aside and restart"
+      confirmLabel="Start with a new database"
       onConfirm={moveDatabaseAside}
       onCancel={() => setIsConfirming(false)}
     />

@@ -6,6 +6,7 @@ import type {
   AdmissionChildRefusal,
   AdmissionSnapshot,
 } from './admission';
+import { isAdmissionPlanGateOn } from './isAdmissionPlanGateOn';
 import type { AutoRefusalCode } from './refusals';
 import { isAutoWriterRole } from './roles';
 import { substepRefusal } from './substepAdmission';
@@ -133,8 +134,7 @@ const inputRefusal = ({
     return { code: 'artifact_busy', latestRevision: live.revision };
   }
   const isApprovalNeeded =
-    snapshot.isPlanApprovalRequired &&
-    snapshot.level !== 'run' &&
+    isAdmissionPlanGateOn(snapshot) &&
     registered.kind === 'plan' &&
     isAutoWriterRole({ role: child.role });
   const isApproved =

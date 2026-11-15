@@ -997,9 +997,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       useAppStore
         .getState()
         .openDrawer({ kind: 'scripts', sessionId: ctx.sessionId, payload: null });
-      useAppStore
-        .getState()
-        .openDrawer({ kind: 'spawned', sessionId: ctx.sessionId, payload: null });
+      useAppStore.getState().openDrawer({ kind: 'ask', sessionId: ctx.sessionId, payload: null });
       await settle();
       await pickMenuItem({ id: 'slot.close' });
     },
@@ -1616,11 +1614,7 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
       if (sessionId === null) {
         throw new Error('the run world has no current session');
       }
-      useAppStore.getState().openDrawer({
-        kind: 'session-log',
-        sessionId,
-        payload: { focusEntryId: null },
-      });
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
       await settle(4);
       const lane = Array.from(
         document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),

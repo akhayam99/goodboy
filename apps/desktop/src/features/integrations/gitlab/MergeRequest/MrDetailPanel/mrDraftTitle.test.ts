@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { mrDraftTitle, stripDraftPrefix } from './mrDraftTitle';
+import { mrDraftTitle } from './mrDraftTitle';
 
 describe('mrDraftTitle', () => {
   it('prefixes a ready title when moving to draft', () => {
@@ -21,7 +21,7 @@ describe('mrDraftTitle', () => {
   });
 
   it('leaves a title that only starts with a similar word alone', () => {
-    expect(stripDraftPrefix({ title: 'Drafting the release notes' })).toBe(
+    expect(mrDraftTitle({ title: 'Drafting the release notes', isDraft: false })).toBe(
       'Drafting the release notes',
     );
   });

@@ -13,6 +13,7 @@ use auth_reason::AuthReason;
 pub(crate) mod auth_reason;
 pub(crate) mod cli_args;
 pub(crate) mod cli_probe;
+pub(crate) mod launch_guard;
 pub(crate) mod spec;
 pub mod test_connection;
 

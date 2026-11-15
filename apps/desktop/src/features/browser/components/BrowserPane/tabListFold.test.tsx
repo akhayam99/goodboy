@@ -211,7 +211,7 @@ describe('the browser tab list', () => {
     const list = await listOf();
     expect(list.getAttribute('data-tab-list')).toBe('list');
 
-    fireEvent.click(within(list).getByRole('button', { name: 'Fold tab list' }));
+    fireEvent.click(within(list).getByRole('button', { name: 'Collapse tab list' }));
     await waitFor(() => expect(list.getAttribute('data-tab-list')).toBe('rail'));
     expect(browserTabListPref.read()).toBe('rail');
     expect(within(list).queryByText('Tax rates')).toBeNull();

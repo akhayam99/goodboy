@@ -216,6 +216,35 @@ describe('branchBoardOf', () => {
     expect(board.rows.map((row) => row.id)).toEqual(['a', 'no-branch']);
     expect(board.groups.map((group) => group.id)).toEqual(['in-progress', 'not-on-branch']);
   });
+
+  it('draws no row for a finished run with no branch when every branch is merged', () => {
+    const board = boardOf({
+      branches: [branchOf('a', { state: 'merged' }), branchOf('b', { state: 'merged' })],
+      agents: [agentOf('g1', null, 2)],
+      leads: [leadOf('lead-2', null, 1)],
+    });
+    const kpis = sessionKpisOf({ board });
+    expect(board.rows.map((row) => row.id)).toEqual(['a', 'b']);
+    expect(board.groups.map((group) => group.id)).toEqual(['merged']);
+    expect(kpis.spendUsd).toBeCloseTo(3);
+    expect(kpis.agentCount).toBe(1);
+    expect(kpis.leadCount).toBe(2);
+  });
+
+  it('keeps the row for an agent running with no project', () => {
+    const running = { ...agentOf('g1', null), isRunning: true };
+    const board = boardOf({ branches: [branchOf('a', { state: 'merged' })], agents: [running] });
+    const loose = board.rows.find((row) => row.id === 'no-branch');
+    expect(loose?.group).toBe('not-on-branch');
+    expect(loose?.agentIds).toEqual(['g1']);
+    expect(board.settled.agentIds).toEqual([]);
+  });
+
+  it('keeps the row for a failed Lead with no branch', () => {
+    const failed = { ...leadOf('lead-2', null), isFailed: true };
+    const board = boardOf({ branches: [branchOf('a')], leads: [failed] });
+    expect(board.rows.map((row) => row.id)).toEqual(['a', 'no-branch']);
+  });
 });
 
 describe('sessionKpisOf', () => {
@@ -262,7 +291,9 @@ describe('sessionKpisOf', () => {
     expect(kpis.branches.merged).toBe(
       (inputs.branches ?? []).filter((branch) => branch.isFinished).length,
     );
-    expect(board.rows.reduce((sum, row) => sum + row.spendUsd, 0)).toBeCloseTo(kpis.spendUsd);
+    expect(board.rows.reduce((sum, row) => sum + row.spendUsd, board.settled.spendUsd)).toBeCloseTo(
+      kpis.spendUsd,
+    );
   });
 
   it('puts the Lead turns on its primary branch and each agent on its own', () => {

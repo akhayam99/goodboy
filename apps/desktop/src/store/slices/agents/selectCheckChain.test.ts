@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { aSession, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import { selectCheckChain } from './selectCheckChain';
-import { selectFixOffers } from './selectFixOffers';
-import { selectCheckPushOffers } from './selectCheckPushOffers';
 import type { CheckFixCommit } from '../check-fix-commits/types';
 
 const sessionId = aSession().id;
@@ -234,37 +232,5 @@ describe('check chain states', () => {
     });
     expect(chain.debugger?.id).toBe(debuggerAgent.id);
     expect(chain.fix?.kind).toBe('implementer');
-  });
-  it('offers Start fix only on a Debugger in proposal', () => {
-    expect(selectFixOffers({ state: stateOf({ agents: [debuggerAgent] }), sessionId })).toBe(
-      `${debuggerAgent.id}|${url}`,
-    );
-    expect(
-      selectFixOffers({ state: stateOf({ agents: [debuggerAgent, fixAgent()] }), sessionId }),
-    ).toBe('');
-    expect(
-      selectFixOffers({
-        state: stateOf({ agents: [debuggerAgent], text: 'Nothing.' }),
-        sessionId,
-      }),
-    ).toBe('');
-  });
-  it('offers Push only on the Debugger row of a chain fixed on the branch', () => {
-    const done = fixAgent({ status: 'completed' });
-    expect(
-      selectCheckPushOffers({
-        state: stateOf({ agents: [debuggerAgent, done], fact: LOCAL }),
-        sessionId,
-      }),
-    ).toBe(`${debuggerAgent.id}|${url}`);
-    expect(
-      selectCheckPushOffers({
-        state: stateOf({ agents: [debuggerAgent, done], fact: PUSHED }),
-        sessionId,
-      }),
-    ).toBe('');
-    expect(selectCheckPushOffers({ state: stateOf({ agents: [debuggerAgent] }), sessionId })).toBe(
-      '',
-    );
   });
 });

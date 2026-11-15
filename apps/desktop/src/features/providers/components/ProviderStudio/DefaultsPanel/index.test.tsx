@@ -657,7 +657,7 @@ describe('DefaultsPanel', () => {
     fireEvent.click(roleRow('Planner'));
 
     const gone = screen.getByRole('group', { name: /position 3, no longer in the catalog$/ });
-    expect(gone.textContent).toContain('Gone, skipped');
+    expect(gone.textContent).toContain('Not available');
     const add = screen.getByRole('button', { name: 'Up to 3' });
     expect(add.hasAttribute('disabled')).toBe(true);
   });

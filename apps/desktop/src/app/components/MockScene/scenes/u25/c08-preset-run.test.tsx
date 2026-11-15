@@ -55,14 +55,6 @@ const mount = async (name: SceneName): Promise<void> => {
 
 const hasSessionTabs = (): boolean => document.querySelector('[data-session-head]') !== null;
 
-const runPanel = (): HTMLElement => {
-  const panel = document.querySelector<HTMLElement>('[data-spawned-panel="run"]');
-  if (panel === null) {
-    throw new Error('no Agents panel on the run');
-  }
-  return panel;
-};
-
 const header = (): HTMLElement => {
   const node = document.querySelector<HTMLElement>('[data-run-header-actions]');
   if (node === null) {
@@ -109,15 +101,10 @@ describe('the c08 preset run scenes', () => {
     expect(within(grid).queryByText('First try at the flaky export tests')).toBeNull();
   });
 
-  it('c08-run-working keeps the page tabs on the session, shows the run in the Agents panel and embeds the running step', async () => {
+  it('c08-run-working keeps the page tabs on the session and embeds the running step', async () => {
     await mount('c08-run-working');
 
     expect(hasSessionTabs()).toBe(true);
-    const panel = within(runPanel());
-    expect(panel.queryByRole('button', { name: 'Back to Runs' })).toBeNull();
-    expect(panel.getByText('Fix flaky tests in the ledger export')).toBeDefined();
-    expect(panel.getByRole('tree', { name: 'Run agents' })).toBeDefined();
-    expect(panel.queryByText('Add step')).toBeNull();
     expect(document.querySelector('[data-run-spend-foot]')).toBeNull();
     expect(document.querySelector('[data-run-step-heading]')?.textContent).toMatch(
       /^Step 2 · Implementer/,
@@ -212,7 +199,6 @@ describe('the c08 preset run scenes', () => {
     expect(screen.queryByRole('button', { name: 'Run settings' })).toBeNull();
     const overview = document.querySelector<HTMLElement>('[data-run-overview]');
     within(overview ?? document.body).getByRole('button', { name: 'Add step' });
-    expect(within(runPanel()).queryByText('Add step')).toBeNull();
     expect(screen.getByRole('button', { name: 'Create report' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Create wireframe/ })).toBeDefined();
   });
@@ -237,15 +223,6 @@ describe('the c08 preset run scenes', () => {
     expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
     expect(live.queryByRole('button', { name: 'Stop run' })).toBeNull();
     expect(within(menu).getByText('Archive run')).toBeDefined();
-  });
-
-  it('c08-run-working keeps one tree row per step in the panel', async () => {
-    await mount('c08-run-working');
-
-    expect(hasSessionTabs()).toBe(true);
-    const tree = within(runPanel()).getByRole('tree', { name: 'Run agents' });
-    expect(within(tree).getAllByRole('treeitem').length).toBeGreaterThan(1);
-    expect(within(tree).getByRole('treeitem', { name: /Implementer/ })).toBeDefined();
   });
 
   it('c08-run-add-step opens the step draft in the center', async () => {

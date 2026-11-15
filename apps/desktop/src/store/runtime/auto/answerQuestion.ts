@@ -4,6 +4,8 @@ import {
   AUTO_MAX_OPEN_CHILDREN,
   diagnoseResume,
   isAutoWriterRole,
+  storedLaunchGuardOf,
+  type LaunchGuard,
 } from '@goodboy/core/auto';
 import {
   AUTO_RESUME_TREE_ABORT,
@@ -52,6 +54,11 @@ const questionTextOf = ({ attempt }: QuestionTextParams): string => {
   const snapshot = attempt.resultSnapshot;
   const question = isRecord(snapshot) ? snapshot['question'] : undefined;
   return typeof question === 'string' ? question : '';
+};
+
+const guardFieldOf = ({ attempt }: QuestionTextParams): { readonly guard?: LaunchGuard } => {
+  const guard = storedLaunchGuardOf({ writeSet: attempt.writeSet });
+  return guard === null ? {} : { guard };
 };
 
 const questionTailOf = ({ attempt }: QuestionTextParams): string => {
@@ -247,7 +254,9 @@ export const answerQuestion = async ({
         },
       },
       writeSet:
-        isAutoWriterRole({ role }) && typeof worktreePath === 'string' ? { worktreePath } : null,
+        isAutoWriterRole({ role }) && typeof worktreePath === 'string'
+          ? { worktreePath, ...guardFieldOf({ attempt: paused }) }
+          : null,
       nowMs,
     }),
     insertAutoReservationStatement({

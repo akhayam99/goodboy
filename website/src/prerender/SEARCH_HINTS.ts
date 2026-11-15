@@ -18,4 +18,5 @@ export const SEARCH_HINTS: Readonly<Record<string, string>> = {
   storage: 'free disk space and clean up branches',
   support: 'report a bug from inside the app',
   switching: 'move between tasks without losing your place',
+  work: 'every Lead agent and what it needs from you',
 };

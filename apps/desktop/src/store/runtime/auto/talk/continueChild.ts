@@ -378,6 +378,7 @@ export const continueChild = async ({
           request: {
             ...input.request,
             ...(deliveryId !== undefined && { deliveryId }),
+            isStartConfirmed: from === 'user',
             capture: { mode: 'new' },
             inputArtifacts: input.inputArtifacts.map((ref) => ({
               artifactId: ref.artifactId,
@@ -390,7 +391,11 @@ export const continueChild = async ({
           state:
             from === 'user'
               ? 'accepted'
-              : admissionStateOf({ snapshot, isConfirmForced: input.isConfirmForced }),
+              : admissionStateOf({
+                  permissions: snapshot.permissions,
+                  role: input.role,
+                  isConfirmForced: input.isConfirmForced,
+                }),
           retryOf: delegation.id,
           reviseOf: null,
           baseRevision: null,

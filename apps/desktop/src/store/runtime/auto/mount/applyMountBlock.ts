@@ -2,20 +2,20 @@ import {
   AUTO_MOUNTED_CODE,
   isAutoMountedCode,
   type AutoBlock,
-  type AutoLevel,
+  type LeadPermissionValue,
   type MountNote,
 } from '@goodboy/core/auto';
 import type { AutoTree } from '@goodboy/db';
-import { readAutoLevel } from '../level/readAutoLevel';
+import { readAdmissionPermissions } from '../admission/readAdmissionPermissions';
 import type { AutoTurnEnded, MountProjectOutcome, MountProjectParams } from '../ports';
 import type { AgentVerbContext } from '../verbContext';
 import { writeRefusal } from './writeRefusal';
 
-const MODE_OF_LEVEL = {
-  step: 'ask',
-  plan: 'allowance',
-  run: 'mount',
-} satisfies Readonly<Record<AutoLevel, MountProjectParams['mode']>>;
+const MODE_OF_ROW = {
+  ask: 'ask',
+  whenAllowed: 'allowance',
+  allow: 'mount',
+} satisfies Readonly<Record<LeadPermissionValue<'addProject'>, MountProjectParams['mode']>>;
 
 type MountBlock = Extract<AutoBlock, { action: 'mount' }>;
 
@@ -91,13 +91,13 @@ const writtenOf = ({ block, outcome }: OutcomeParams): Written => {
 };
 
 export const applyMountBlock = async ({ ctx, tree, ended, block }: Params): Promise<boolean> => {
-  const level = await readAutoLevel({ db: ctx.db, target: { sessionId: tree.sessionId } });
+  const { addProject } = await readAdmissionPermissions({ db: ctx.db, treeId: tree.id });
   const outcome = await ctx.ports.mountProject({
     sessionId: tree.sessionId,
     name: block.project,
     branch: block.branch,
     reason: block.reason,
-    mode: MODE_OF_LEVEL[level],
+    mode: MODE_OF_ROW[addProject],
   });
   const written = writtenOf({ block, outcome });
   await writeRefusal({

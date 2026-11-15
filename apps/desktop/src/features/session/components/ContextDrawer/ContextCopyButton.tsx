@@ -12,6 +12,6 @@ export const ContextCopyButton = ({ brief }: Props) =>
       value={brief}
       label={NAMES.copyContext}
       size={ICON_SIZE.row}
-      className="size-7 justify-center p-0"
+      className="size-6 justify-center p-0"
     />
   );

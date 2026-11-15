@@ -93,20 +93,35 @@
   Tasks, Workflows, Chat, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
   (New chat) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy line, with the bug icon, sit at the foot, the app's corner. A
-  door's trailing slot is a 6px dot (running, unread, warning); the count is in
-  its tooltip and accessible name, never a colored number. Board is the one
-  exception: it carries the number of sessions that need you, drawn like the
-  count on the Runs page entry (a 6px dot in the tone, amber or red, and the
-  number muted beside it, 9+ above nine, `TONE_COUNT_CLASS`; red only when one
-  of them is broken), named "Board, 2 sessions need you: Checks failing, 1
+  door's trailing slot is one `StatusMark` (`doorMarkOf`): a 6px dot (unread, warning, neutral)
+  or a number; the reasons are in its tooltip and accessible name. Board carries
+  the number of sessions that need you, the number alone in its tone (amber, red
+  as soon as one of them is broken, 9+ above nine), with no dot before it; a
+  port count on Monitoring is the same number, faint. It is named "Board, 2 sessions need you: Checks failing, 1
   question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
   Needs you rows read the attention group of `useStageGroupedSessions`.
+  Work is a seventh door between Tasks and Workflows, with a New badge outlined in the primary colour,
+  and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`
+  (key `+work`, `features/work/components/WorkPage`): every Lead of the workspace across sessions,
+  four filters (All open, Needs you, Working, Finished) whose counts come from `workRowsOf`, polled
+  by `useWorkLeads`, with the filter kept on the studio place so a reload and History Back restore it.
+  A row opens the Lead page inside its session through `agentPlace`; the back row of that page goes
+  to the session, never to Work. A stored Work place with the switch off opens the Board
+  (`foldedWorkPlace`, the `savedPlaceOnWork` rule of `flowRulesOf`). ⌘K lists Work and one
+  "Lead: title" row per open Lead (`leadEntries`), only with the switch on.
   Monitoring is the row after Impact, its page has no band and no Close, and
   it is the one way to the page in the chrome: the top bar holds no Monitoring
   icon. The column holds no tool: Terminal and Browser live on the right rail
-  (see The session tools), and the folded rail shows the same six doors. A pinned port that is down puts the warning dot on it, named "Monitoring,
+  (see The session tools), and the folded rail shows the same six doors.
+  The test for a home: a place you go to and read full width is a door; a tool
+  you open beside your work, in the dock with Open full page, is a rail icon.
+  Chat (a conversation list and its transcript) and Impact (a report of tiles
+  and tables) are places and stay doors. Monitoring (ports and processes) is
+  the one tool-like door, used beside Terminal, but it has no dock body and its
+  address is a page target per branch, so it stays a door until a dock body
+  exists. A pinned port that is down puts the warning dot on it, named "Monitoring,
   pinned port :5173 is down" (`monitoringSignal` lists the down pins,
   `doorSignalOf` names them). Inside a session the column stays the same and marks the open
   session's row; the session's own pages are the page tabs under
@@ -517,7 +532,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   | Scripts panel, a script run                                      | unchanged, the Scripts drawer                                              |
   | An address of the old Explore drawer or page                     | the Changes tab, `changes.mode` = `all`                                    |
   | A file opened from the old Explore tree                          | the Changes tab on that file, `changes.mode` = `all`                       |
-  | A file opened from a link, the full log, a reading panel         | unchanged                                                                  |
+  | A file opened from a link, a reading panel                       | unchanged                                                                  |
+  | The old Log panel                                                | the session Overview, its Log is the last section                          |
   | An unknown lens                                                  | the session Overview                                                       |
 
   The previous release must open every place this build saves: it folds a
@@ -561,7 +577,7 @@ operation when focus is outside a text field or terminal. Dismissing the
 toast does not discard the operation. An Undo that fails stays retryable.
 
 Session unlink snapshots all placements of one task, including every branch.
-A move (`Move to`, Take off, Put on a branch) is one operation: it replaces the
+A move (`Move to`, Remove from this branch, Link work to this branch) is one operation: it replaces the
 rows of that task in one write, so branch to branch is one Undo, and it
 snapshots the session placement it may create too. Undo compares the
 current placements with the operation's expected result and restores the

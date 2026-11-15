@@ -1,17 +1,23 @@
 import {
   CHECKS_RED_HOLD,
+  isPublishAskedOf,
   publishGateOf,
+  type ChangeRules,
   type DelegatePublish,
+  type LeadPermissionValue,
   type RemoteRead,
   type ResultChecksRun,
   type ResultPublish,
 } from '@goodboy/core/auto';
+import type { SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { snapshotOf } from './attemptBaseline';
+import { hostChangeRefusalOf } from './launchGuard/hostChangeRefusalOf';
 import type { AutoPorts } from './ports';
 
 export type PlanPublishParams = Readonly<{
   ports: AutoPorts;
+  sessionId: SessionId;
   worktreePath: string;
   branch: string | null;
   wanted: DelegatePublish;
@@ -23,6 +29,8 @@ export type PlanPublishParams = Readonly<{
   checksRun: ResultChecksRun | null;
   endHead: string | null;
   tries: number;
+  push: LeadPermissionValue<'push'>;
+  changes: ChangeRules;
 }>;
 
 const CONTENT_CHANGED =
@@ -76,6 +84,48 @@ const isSameTree = async ({
   }
 };
 
+type HostHoldParams = {
+  readonly ports: AutoPorts;
+  readonly sessionId: SessionId;
+  readonly worktreePath: string;
+  readonly wanted: DelegatePublish;
+  readonly branch: string;
+  readonly sha: string;
+  readonly tries: number;
+  readonly changes: ChangeRules;
+};
+
+const hostChangeHoldOf = async ({
+  ports,
+  sessionId,
+  worktreePath,
+  wanted,
+  branch,
+  sha,
+  tries,
+  changes,
+}: HostHoldParams): Promise<ResultPublish | null> => {
+  const refusal = await hostChangeRefusalOf({
+    ports,
+    sessionId,
+    worktreePath,
+    branch,
+    sha,
+    changes,
+  });
+  if (refusal === null) {
+    return null;
+  }
+  return held({
+    wanted,
+    branch,
+    sha,
+    message: refusal.message,
+    isRetryable: refusal.isRetryable,
+    tries,
+  });
+};
+
 export const planPublish = async (params: PlanPublishParams): Promise<ResultPublish> => {
   const { ports, worktreePath, branch, wanted, baseline, checksRun, tries } = params;
   const gate = publishGateOf({
@@ -105,6 +155,19 @@ export const planPublish = async (params: PlanPublishParams): Promise<ResultPubl
       tries,
     });
   }
+  const hostHold = await hostChangeHoldOf({
+    ports,
+    sessionId: params.sessionId,
+    worktreePath,
+    wanted,
+    branch,
+    sha,
+    tries,
+    changes: params.changes,
+  });
+  if (hostHold !== null) {
+    return hostHold;
+  }
   const remote = params.remote;
   const record: ResultPublish = {
     ...held({ wanted, branch, sha, message: '', isRetryable: false, tries }),
@@ -112,7 +175,9 @@ export const planPublish = async (params: PlanPublishParams): Promise<ResultPubl
     message: null,
   };
   if (wanted.mode === 'push') {
-    return { ...record, state: 'pushing' };
+    return isPublishAskedOf({ mode: wanted.mode, push: params.push })
+      ? record
+      : { ...record, state: 'pushing' };
   }
   if (remote === null || remote.kind === 'unknown') {
     return held({

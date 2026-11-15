@@ -12,6 +12,7 @@ import {
   type ResultArtifact,
   type ResultChangedFile,
   type ResultPublish,
+  type ResultPullRequest,
   type ResultRemote,
 } from '@goodboy/core/auto';
 import { captureArtifactFromTurnText } from '@goodboy/core/artifacts';
@@ -32,12 +33,18 @@ import { brandId, type ArtifactId, type AutoOutboxId } from '@goodboy/types';
 import { remoteOf, snapshotOf } from './attemptBaseline';
 import { attemptEnvelope, delegationRoleOf, isArtifactRole } from './attemptEnvelope';
 import { landAttemptRevision, type RevisionLanding } from './landAttemptRevision';
+import { landingRefusalOf } from './launchGuard/landingRefusalOf';
+import { needGrantsOf } from './launchGuard/needGrantsOf';
+import { readChangeRules } from './launchGuard/readChangeRules';
+import { scribePublicationOf } from './asks/scribePublicationOf';
+import { readPublishPermissions } from './level/readPublishPermissions';
 import { planPublish } from './planPublish';
 import { returnedRevise } from './reviseFailure/returnedRevise';
 import { stoppedRevise } from './reviseFailure/stoppedRevise';
 import type { ChildTurnEnded } from './ports';
 import { pushSettledPublish } from './settledPush/pushSettledPublish';
 import { readCommittedFilesOf } from './readCommittedFiles';
+import { readCommittedPatchOf } from './launchGuard/readCommittedPatchOf';
 import { readSnapshot } from './readSnapshot';
 import { reviseAskOf } from './reviseAskOf';
 import type { SettleAttemptOutcome } from './settleAttempt';
@@ -173,6 +180,7 @@ type Attribution = Readonly<{
   hasReadOnlyViolation: boolean;
   remote: ResultRemote | null;
   endHead: string | null;
+  refusal: string | null;
 }>;
 
 type RemoteWatchParams = {
@@ -204,7 +212,13 @@ const attributionOf = async ({
 }: AttributionParams): Promise<Attribution> => {
   const worktreePath = delegation.target['worktreePath'];
   if (typeof worktreePath !== 'string') {
-    return { changedFiles: [], hasReadOnlyViolation: false, remote: null, endHead: null };
+    return {
+      changedFiles: [],
+      hasReadOnlyViolation: false,
+      remote: null,
+      endHead: null,
+      refusal: null,
+    };
   }
   const result = await readSnapshot({ ports: ctx.ports, worktreePath });
   const remote = await remoteOfAttempt({ ctx, attempt, worktreePath });
@@ -214,11 +228,19 @@ const attributionOf = async ({
     ? await readCommittedFilesOf({ ports: ctx.ports, worktreePath, baseline, result })
     : null;
   const attributed = attributeChanges({ baseline, result, isWriter, committedPaths });
+  const refusal = await landingRefusalOf({
+    db: ctx.db,
+    delegation,
+    attempt,
+    changedPaths: attributed.isComplete ? attributed.changedPaths : null,
+    readPatch: () => readCommittedPatchOf({ ports: ctx.ports, worktreePath, baseline, result }),
+  });
   return {
     changedFiles: attributed.changedFiles,
     hasReadOnlyViolation: attributed.hasReadOnlyViolation,
     remote,
     endHead: result?.head ?? null,
+    refusal,
   };
 };
 
@@ -241,16 +263,20 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
     artifactId: brandId<ArtifactId>({ value: artifactId }),
   });
   const baseClusters = base?.kind === 'plan' ? (base.metadata.clusters?.length ?? 0) : 0;
+  const refusal = ended.exit === 'ok' ? attribution.refusal : null;
   const parsed =
-    ended.exit === 'ok'
+    ended.exit === 'ok' && refusal === null
       ? parseRevisionFromTurn({
           assistantText: ended.assistantText,
           expectedKind: base?.kind ?? 'plan',
           baseClusterCount: baseClusters,
         })
-      : ({ kind: 'failed', reason: 'no_new_version' } as const);
+      : ({ kind: 'failed', reason: refusal === null ? 'no_new_version' : 'ended' } as const);
   const isReturned =
-    ended.exit === 'ok' && closing.completion === 'blocked' && closing.returned?.needs != null;
+    refusal === null &&
+    ended.exit === 'ok' &&
+    closing.completion === 'blocked' &&
+    closing.returned?.needs != null;
   const artifacts: ReadonlyArray<ResultArtifact> =
     parsed.kind === 'ok' && base !== null
       ? [
@@ -276,7 +302,7 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
     costUsd: ended.costUsd,
     durationMs: ended.durationMs,
   });
-  if (envelope.outcome === 'blocked') {
+  if (envelope.outcome === 'blocked' && refusal === null) {
     return returnedRevise({ ...params, artifactId, envelope });
   }
   const landing: RevisionLanding | null =
@@ -289,7 +315,7 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
           sourceTurnId: ended.runId,
         }
       : null;
-  const failure = ended.exit === 'error' ? ended.failure : undefined;
+  const failure = refusal ?? (ended.exit === 'error' ? ended.failure : undefined);
   const settled = await ctx.scheduler.settleAttempt({
     attemptId: attempt.id,
     generation: ended.generation,
@@ -357,6 +383,9 @@ const plainOutcomeOf = ({ params, envelope }: PlainOutcomeParams): PlainOutcome 
   if (ended.exit === 'error' && ended.failure !== undefined) {
     return { outcome: 'failed', reason: ended.failure };
   }
+  if (attribution.refusal !== null && ended.exit === 'ok') {
+    return { outcome: 'failed', reason: attribution.refusal };
+  }
   if (attribution.hasReadOnlyViolation && ended.exit === 'ok') {
     return { outcome: 'failed', reason: 'role_read_only_violation' };
   }
@@ -372,14 +401,27 @@ type PublishedOutcomeParams = PlainOutcomeParams & {
 
 type PublishedOutcome = PlainOutcome & {
   readonly declared: DelegationResultV1['declared'];
+  readonly pullRequest: ResultPullRequest | null;
+  readonly raisedPush?: ResultPublish | null;
 };
+
+type LeadLineParams = {
+  readonly declared: DelegationResultV1['declared'];
+  readonly line: string;
+};
+
+const withLeadLine = ({ declared, line }: LeadLineParams): DelegationResultV1['declared'] => ({
+  ...declared,
+  summary: declared.summary === '' ? line : `${line}. ${declared.summary}`,
+  summarySource: declared.summarySource === 'none' ? 'child' : declared.summarySource,
+});
 
 const publishedOutcomeOf = async ({
   params,
   envelope,
   plain,
 }: PublishedOutcomeParams): Promise<PublishedOutcome> => {
-  const { ctx, ended, tree, delegation } = params;
+  const { ctx, ended, tree, delegation, attempt } = params;
   const mountId = delegation.target['mountId'];
   const isPublishable =
     delegationRoleOf({ delegation }) === 'scribe' &&
@@ -387,27 +429,29 @@ const publishedOutcomeOf = async ({
     ended.exit === 'ok' &&
     typeof mountId === 'string';
   if (!isPublishable) {
-    return { ...plain, declared: envelope.declared };
+    return { ...plain, declared: envelope.declared, pullRequest: null };
   }
-  const published = await ctx.ports.publishScribePullRequest({
-    sessionId: tree.sessionId,
+  const published = await scribePublicationOf({
+    ctx,
+    tree,
+    delegation,
+    attempt,
     mountId,
-    agentId: delegation.childAgentId,
     assistantText: ended.assistantText,
   });
   if (published.kind === 'failed') {
-    return { outcome: 'failed', reason: published.message, declared: envelope.declared };
+    return {
+      outcome: 'failed',
+      reason: published.message,
+      declared: envelope.declared,
+      pullRequest: null,
+    };
   }
-  const opened = `Pull request #${published.number} is open: ${published.url}`;
   return {
     ...plain,
-    declared: {
-      ...envelope.declared,
-      summary:
-        envelope.declared.summary === '' ? opened : `${opened}. ${envelope.declared.summary}`,
-      summarySource:
-        envelope.declared.summarySource === 'none' ? 'child' : envelope.declared.summarySource,
-    },
+    declared: withLeadLine({ declared: envelope.declared, line: published.line }),
+    pullRequest: published.pullRequest,
+    raisedPush: published.raisedPush,
   };
 };
 
@@ -434,8 +478,10 @@ const publishRecordOf = async ({
   if (!isPublisher || typeof mountId !== 'string' || typeof worktreePath !== 'string') {
     return null;
   }
+  const { push } = await readPublishPermissions({ db: ctx.db, treeId: delegation.treeId });
   return planPublish({
     ports: ctx.ports,
+    sessionId: params.tree.sessionId,
     worktreePath,
     branch: typeof branch === 'string' && branch !== '' ? branch : null,
     wanted,
@@ -447,6 +493,8 @@ const publishRecordOf = async ({
     checksRun: verification?.run ?? null,
     endHead: attribution.endHead,
     tries: 0,
+    push,
+    changes: await readChangeRules({ db: ctx.db, treeId: delegation.treeId, attempt }),
   });
 };
 
@@ -474,14 +522,10 @@ const artifactPersistenceOf = ({
 const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome> => {
   const { ctx, ended, tree, delegation, attempt, closing, attribution } = params;
   const artifacts = await capturedArtifacts({ ctx, delegation, tree, ended });
-  const verification = await verifyAttempt({
-    ctx,
-    tree,
-    delegation,
-    ended,
-    closing,
-    endHead: attribution.endHead,
-  });
+  const verification =
+    attribution.refusal === null
+      ? await verifyAttempt({ ctx, tree, delegation, ended, closing, endHead: attribution.endHead })
+      : null;
   const envelope = attemptEnvelope({
     delegation,
     attempt,
@@ -501,15 +545,23 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
     durationMs: ended.durationMs,
   });
   const plain = plainOutcomeOf({ params, envelope });
-  const { outcome, reason, declared } = await publishedOutcomeOf({
+  const { outcome, reason, declared, pullRequest, raisedPush } = await publishedOutcomeOf({
     params,
     envelope,
     plain,
   });
-  const publish = await publishRecordOf({ params, outcome, verification });
+  const publish = (await publishRecordOf({ params, outcome, verification })) ?? raisedPush ?? null;
   const settled: SettleAttemptOutcome = await ctx.scheduler.settleAttempt({
     attemptId: attempt.id,
     generation: ended.generation,
+    grants: needGrantsOf({
+      newId: ctx.ports.newId,
+      nowMs: ctx.now(),
+      delegation,
+      attempt,
+      closing,
+      outcome,
+    }),
     ending: {
       kind: 'ended',
       outcome,
@@ -521,7 +573,11 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
           outcome,
           reason,
           declared,
-          verified: { ...envelope.verified, ...(publish !== null && { publish }) },
+          verified: {
+            ...envelope.verified,
+            ...(publish !== null && { publish }),
+            ...(pullRequest !== null && { pullRequest }),
+          },
         },
       },
     },

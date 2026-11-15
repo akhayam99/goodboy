@@ -20,9 +20,8 @@ export const ContextTab = ({ session }: Props) => {
       <section
         aria-label={NAMES.context}
         data-testid="context-tab"
-        className="flex min-w-0 flex-col gap-6"
+        className="flex min-w-0 flex-col"
       >
-        {Cards === null ? null : <Cards session={session} />}
         <ContextDrawer
           key={sessionId}
           sessionId={sessionId}
@@ -30,6 +29,7 @@ export const ContextTab = ({ session }: Props) => {
           view={focus.view}
           highlight={focus.highlight}
           isPage
+          cards={Cards === null ? null : <Cards session={session} />}
           onClose={() => openLens({ sessionId, lens: null })}
         />
       </section>

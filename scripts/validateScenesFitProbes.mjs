@@ -1,4 +1,3 @@
-import { runDrawerReveal } from './validateScenesDrawerReveal.mjs';
 import { runFrost } from './validateScenesFrost.mjs';
 import { runListGridFit } from './validateScenesListGridFit.mjs';
 import { runReadingHold } from './validateScenesReadingHold.mjs';
@@ -11,7 +10,6 @@ import { runRowStart } from './validateScenesRowStart.mjs';
 import { runTitleBand } from './validateScenesTitleBand.mjs';
 
 export const runFitProbes = async (context) => {
-  await runDrawerReveal(context);
   await runFrost(context);
   await runListGridFit(context);
   await runQuestionCard(context);

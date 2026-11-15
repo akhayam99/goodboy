@@ -1,1 +1,1 @@
-export type ClusterPane = 'terminal' | 'scripts' | 'spawned' | 'browser';
+export type ClusterPane = 'terminal' | 'scripts' | 'browser';

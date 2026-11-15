@@ -1401,7 +1401,7 @@ was. ⌘↵ with the list focused pushes too. Behind it runs a
 How a reply reads is set in Settings, Workspace, **Replies and commits**:
 
 - **Voice**: Terse (the default), Friendly, Formal, or Your replies, which
-  follows a style note you can edit. **Learn from my replies** reads your last
+  follows a style note you can edit. **Learn from your replies** reads your last
   20 review replies in the workspace's repositories and writes that note. The
   voice goes into the agent's prompt
 - **Templates**: When fixed and When not changing. Goodboy fills them in code,
@@ -1722,7 +1722,7 @@ token on Sentry. A key saved for another workspace can be picked instead.
 Tasks is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
 record each, one line per record on the shared task grid (`taskColumns`:
-source, key, title, status glyph, priority, age). It opens on For me
+source, key, title, status glyph, priority, age). It opens on For you
 (`isForMeRecord`: tracker issues with an assignee, pull requests, starred
 records, records linked to a session) and switches to All in the header. The
 page title is the open count, since the studio bar already names Tasks. The
@@ -1997,7 +1997,8 @@ session up again in Goodboy.
   **Every step**, **After the plan** or **Never** (it was Autonomy with Ask me,
   Balanced and Autopilot, and before that Autorun, Run on its own and When to
   ask). An agent's permission mode sits under the same chip on its page, with
-  **Ask first** as its asking word. The session's **Autopilot** keeps its name.
+  **Ask first** as its asking word. The session says the same words: its menu
+  row reads **Asks you: Every step** or **Asks you: Never** (it was Autopilot).
 - **Needs you** is the one name for anything that waits on you: the top bar
   group, the board column, the questions list and the Overview section above
   Next.
@@ -2209,4 +2210,4 @@ is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). 
 
 A check analysis agent has `sourceKind` `failed_check` and keeps the originating check URL in `sourceCommentUrl`. The latest non-deleted agent for that session and URL owns the check row status; its transcript owns the finding and **Proposed fix**. The source type is in `packages/types/src/workflow.ts`, and the selector is `apps/desktop/src/store/slices/agents/selectCheckAnalysis.ts`.
 
-The fix's commit comes from the repository, not from the fix agent's transcript. `readCheckFixCommit` in `apps/desktop/src/store/slices/check-fix-commits/readCheckFixCommit.ts` lists the mount branch and takes the newest commit made after the fix started. `selectCheckChain` turns that fact into `fixed-local` (committed, not pushed), `fixed-pushed` (on the remote) or `fix-failed` (the fix ended with no new commit). The transcript's `commitOf` stands in only when the repository cannot be read. The Next card for failing checks is only the first hint, **Analyze** (`apps/desktop/src/features/suggestions/fixChecksSuggestionOf.ts`). Once the Debugger runs, every follow-up lives on its one Activity row, "CI fix · check · #318": a click opens the Debugger drawer while it analyzes or fixes, **Start fix** sits on the row once a fix is proposed (`selectFixOffers`), and **Push** once the fix is committed and not pushed (`selectCheckPushOffers`, `pushCheckFix`). Next drops all of them through `isOfferedByActivity`, and it hides the plain push card for that branch meanwhile. It comes back only to start something new: **Analyze** after an analysis without a fix, **Analyze again** when the check still fails after the push. The generic **Review the changes** card never fires for an agent whose `sourceKind` is `failed_check`.
+The fix's commit comes from the repository, not from the fix agent's transcript. `readCheckFixCommit` in `apps/desktop/src/store/slices/check-fix-commits/readCheckFixCommit.ts` lists the mount branch and takes the newest commit made after the fix started. `selectCheckChain` turns that fact into `fixed-local` (committed, not pushed), `fixed-pushed` (on the remote) or `fix-failed` (the fix ended with no new commit). The transcript's `commitOf` stands in only when the repository cannot be read. The Next card for failing checks is only the first hint, **Analyze** (`apps/desktop/src/features/suggestions/fixChecksSuggestionOf.ts`). Once the Debugger runs, its one Activity row, "CI fix · check · #318", opens the Debugger drawer while it analyzes or fixes. **Start fix** once a fix is proposed and **Push** once the fix is committed and not pushed (`pushCheckFix`) sit on the Overview cards, which pass `isActivityShown` false; the palette and the composer cards drop them through `isOfferedByActivity`, and hide the plain push card for that branch meanwhile. It comes back only to start something new: **Analyze** after an analysis without a fix, **Analyze again** when the check still fails after the push. The generic **Review the changes** card never fires for an agent whose `sourceKind` is `failed_check`.

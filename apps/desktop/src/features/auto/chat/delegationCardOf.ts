@@ -7,7 +7,6 @@ import { autoChildWordOf } from '../autoChildWordOf';
 import { autoSettledStateOf } from '../autoSettledStateOf';
 import { delegationResultOf, type DelegationResultView } from './delegationResultOf';
 import { recordField, textField } from './readJson';
-import { launchSnapshotOf, type LaunchSnapshotItem } from './launchSnapshotOf';
 import { settledStatusOf, type DelegationStatus } from './settledStatusOf';
 
 export type RoleKept = Readonly<{
@@ -30,7 +29,6 @@ export type DelegationCardModel = Readonly<{
   roleKept: RoleKept | null;
   doneWhen: string | null;
   modelReason: string | null;
-  wentIn: ReadonlyArray<LaunchSnapshotItem> | null;
   routingNote: string | null;
   status: DelegationStatus;
   isRevision: boolean;
@@ -179,7 +177,6 @@ export const delegationCardOf = ({
     roleKept: roleKeptOf({ request: delegation.request }),
     doneWhen: textField({ source: delegation.request, key: 'doneWhen' }),
     modelReason: textField({ source: delegation.routing, key: 'reason' }),
-    wentIn: launchSnapshotOf({ request: delegation.request }),
     routingNote: routingNoteOf({ routing: delegation.routing, modelLine }),
     status,
     isRevision: delegation.reviseOf !== null,

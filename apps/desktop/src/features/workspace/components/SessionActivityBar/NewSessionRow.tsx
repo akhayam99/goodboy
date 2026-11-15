@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { cn, ICON_SIZE, PANE_RHYTHM, ROW_INTERACTIVE, StatusDot, Tooltip } from '@goodboy/ui';
+import { cn, ICON_SIZE, PANE_RHYTHM, ROW_INTERACTIVE, StatusMark, Tooltip } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
@@ -43,7 +43,7 @@ export const NewSessionRow = ({ workspaceId, isCurrent, onNavigate }: Props) => 
         <span className="min-w-0 flex-1 truncate">New session</span>
         {isDraftWaiting ? (
           <span aria-hidden data-slot="draft-dot" className={PANE_RHYTHM.navRail.mark}>
-            <StatusDot tone="primary" size="sm" />
+            <StatusMark mark={{ kind: 'dot', tone: 'primary' }} />
           </span>
         ) : null}
       </button>

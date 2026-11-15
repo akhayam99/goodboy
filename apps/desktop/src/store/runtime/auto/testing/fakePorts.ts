@@ -13,12 +13,14 @@ import type {
   BranchFactsParts,
   MountProjectOutcome,
   MountProjectParams,
+  MountTaskFoldersParams,
   ListChecksParams,
   PublishScribeParams,
   PushBranchOutcome,
   PushBranchParams,
   ReadBranchFactsParams,
   ReadCommittedFilesParams,
+  ReadHostChangesParams,
   ReadRemoteHeadParams,
   RefreshSessionArtifactsParams,
   RestoreBackupOutcome,
@@ -130,6 +132,7 @@ export type FakePorts = AutoPorts &
     ensuredChildren: Array<EnsureChildAgentParams>;
     refreshes: Array<RefreshSessionArtifactsParams>;
     mountProjectCalls: Array<MountProjectParams>;
+    taskFolderCalls: Array<MountTaskFoldersParams>;
     setMountProjectOutcome: (outcome: MountProjectOutcome) => void;
     cancels: Array<CancelRunParams>;
     childMessages: Array<QueueChildMessageParams>;
@@ -153,6 +156,9 @@ export type FakePorts = AutoPorts &
     setRemoteReads: (path: string, reads: ReadonlyArray<RemoteRead>) => void;
     committedReads: Array<ReadCommittedFilesParams>;
     setCommittedFiles: (path: string, files: ReadonlyArray<string> | Error) => void;
+    hostReads: Array<ReadHostChangesParams>;
+    setHostChanges: (path: string, files: ReadonlyArray<string> | Error) => void;
+    setPatch: (path: string, patch: string) => void;
     checkRuns: Array<RunCheckParams>;
     checkLists: Array<ListChecksParams>;
     setChecks: (checks: ReadonlyArray<AutoCheckScript>) => void;
@@ -202,6 +208,7 @@ export const makeFakePorts = ({
   let ensureFailure: Error | null = null;
   let mountProjectOutcome: MountProjectOutcome = { kind: 'unknown' };
   const mountProjectCalls: Array<MountProjectParams> = [];
+  const taskFolderCalls: Array<MountTaskFoldersParams> = [];
   let cancelOutcome: CancelRunOutcome = { outcome: 'exited' };
   const cancelOutcomes = new Map<string, CancelRunOutcome>();
   const snapshots = new Map<string, Array<MountSnapshot | null>>();
@@ -211,6 +218,9 @@ export const makeFakePorts = ({
   const branchFacts = new Map<string, BranchFactsParts | Error | 'hang'>();
   const committedFiles = new Map<string, ReadonlyArray<string> | Error>();
   const committedReads: Array<ReadCommittedFilesParams> = [];
+  const hostChanges = new Map<string, ReadonlyArray<string> | Error>();
+  const committedPatches = new Map<string, string>();
+  const hostReads: Array<ReadHostChangesParams> = [];
   const checkRuns: Array<RunCheckParams> = [];
   const checkLists: Array<ListChecksParams> = [];
   const checkResults = new Map<string, CheckReport['status'] | Error>();
@@ -239,6 +249,7 @@ export const makeFakePorts = ({
     ensuredChildren,
     refreshes,
     mountProjectCalls,
+    taskFolderCalls,
     cancels,
     childMessages,
     setChildMessageSink: (next) => {
@@ -283,6 +294,13 @@ export const makeFakePorts = ({
     setCommittedFiles: (path, next) => {
       committedFiles.set(path, next);
     },
+    hostReads,
+    setHostChanges: (path, next) => {
+      hostChanges.set(path, next);
+    },
+    setPatch: (path, patch) => {
+      committedPatches.set(path, patch);
+    },
     checkRuns,
     checkLists,
     setChecks: (next) => {
@@ -318,7 +336,10 @@ export const makeFakePorts = ({
       refreshes.push(params);
     },
     loadMounts: async () => mounts,
-    mountTaskFolders: async () => ({ mounted: [], asked: [], failed: [] }),
+    mountTaskFolders: async (params) => {
+      taskFolderCalls.push(params);
+      return { mounted: [], asked: [], failed: [] };
+    },
     mountProject: async (params) => {
       mountProjectCalls.push(params);
       return mountProjectOutcome;
@@ -386,6 +407,15 @@ export const makeFakePorts = ({
         throw next;
       }
       return next;
+    },
+    readCommittedPatch: async (params) => committedPatches.get(params.worktreePath) ?? '',
+    readHostChanges: async (params) => {
+      hostReads.push(params);
+      const next = hostChanges.get(params.worktreePath) ?? committedFiles.get(params.worktreePath);
+      if (next instanceof Error) {
+        throw next;
+      }
+      return { paths: next ?? [], patch: committedPatches.get(params.worktreePath) ?? '' };
     },
     readRemoteHead: async (params) => {
       remoteReads.push(params);

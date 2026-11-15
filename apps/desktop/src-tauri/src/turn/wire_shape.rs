@@ -91,9 +91,19 @@ fn wire_shape_spawn_args_reads_camel_case() {
         "blocksPush": true,
         "isAutoChild": true,
         "excludesTmp": true,
+        "launchGuard": {
+            "deniedTools": ["Bash(pnpm add:*)"],
+            "env": [{ "name": "UV_OFFLINE", "value": "1" }],
+            "isNetworkOff": true,
+        },
         "deliveryId": "d1",
     }))
     .unwrap();
+    let guard = args.launch_guard.as_ref().expect("a launch guard");
+    assert_eq!(guard.denied_tools, vec!["Bash(pnpm add:*)".to_string()]);
+    assert_eq!(guard.env[0].name, "UV_OFFLINE");
+    assert_eq!(guard.env[0].value, "1");
+    assert!(guard.is_network_off);
     assert_eq!(args.run_id, "r1");
     assert_eq!(args.working_dir, "/w");
     assert_eq!(args.writable_roots, vec!["/w".to_string()]);

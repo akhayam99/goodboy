@@ -59,7 +59,7 @@ export const ArtifactContextDisclosure = ({
       </ul>
       {truncations.length === 0 ? null : (
         <div className="flex min-w-0 flex-col gap-0.5">
-          <Eyebrow label="Cut short" />
+          <Eyebrow label="Truncated" />
           {truncations.map((note) => (
             <span key={note} className="text-meta leading-relaxed text-faint-foreground">
               {note}

@@ -8,7 +8,6 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { BranchCommit } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -19,10 +18,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import {
-  refreshWorktreeStatuses,
-  resetWorktreeStatusCache,
-} from '../../../../../store/runtime/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { U24_CI_FIX_STATE_SCENES } from './ci-fix-state';
 
@@ -75,13 +71,6 @@ const rowPush = (): HTMLElement | null =>
   screen
     .queryAllByRole('button', { name: 'Push' })
     .find((button) => button.closest('[data-row-id]') !== null) ?? null;
-const requireRowPush = (): HTMLElement => {
-  const button = rowPush();
-  if (button === null) {
-    throw new Error('The Activity row has no Push');
-  }
-  return button;
-};
 
 describe('CI fix state scenes', () => {
   it('labels the checks row Not pushed and opens the Debugger with Push from the row', () => {
@@ -255,132 +244,14 @@ describe('CI fix state scenes', () => {
     expect(row?.textContent).toContain('Sonnet 5.5');
     expect(row?.textContent).not.toContain('Composer 2.5');
   });
-  it('offers Push on the log row of the chain and once on the Fix row of Needs you', () => {
+  it('offers Push once, on the Fix row of Needs you, and none on the log row of the chain', () => {
     show({ name: 'activity-check-fixed-local' });
     expect(screen.queryByText('payments-api / test is fixed on your branch')).toBeNull();
-    expect(rowPush()).not.toBeNull();
+    expect(rowPush()).toBeNull();
     const needsYou = screen.getByRole('region', { name: 'Branches' });
     expect(within(needsYou).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
     expect(screen.queryByText('Review the changes')).toBeNull();
-  });
-  it('pushes once from the Activity row and then drops the Push', async () => {
-    let isPushed = false;
-    const pushes: Array<unknown> = [];
-    store.setState({
-      refreshSessionPr: async () => undefined,
-      loadSessionMounts: async () => [],
-    });
-    show({ name: 'activity-check-fixed-local' });
-    const commits = (): ReadonlyArray<BranchCommit> => [
-      {
-        sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
-        shortSha: '9e4c1a7',
-        subject: 'Guard the retry against double credits',
-        author: 'Acme Dev',
-        timestamp: Math.floor(Date.now() / 1_000) + 3_600,
-        pushed: isPushed,
-        parentSha: null,
-      },
-    ];
-    mockSceneIpc((command, payload) => {
-      if (command === 'worktree_commits') {
-        return commits();
-      }
-      if (command === 'git_push') {
-        pushes.push(payload);
-        isPushed = true;
-        return { stdout: '', stderr: '', exitCode: 0 };
-      }
-      return null;
-    });
-    const push = requireRowPush();
-    fireEvent.click(push);
-    fireEvent.click(push);
-    await waitFor(() => expect(rowPush()).toBeNull());
-    expect(pushes).toHaveLength(1);
-  });
-  it('drops the row Push when the branch is pushed from somewhere else', async () => {
-    let isPushed = false;
-    show({ name: 'activity-check-fixed-local' });
-    const worktreePaths = Object.values(store.getState().sessionProjectMounts)
-      .flat()
-      .map((mount) => mount.worktreePath);
-    mockSceneIpc((command) => {
-      if (command === 'worktree_commits') {
-        return [
-          {
-            sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
-            shortSha: '9e4c1a7',
-            subject: 'Guard the retry against double credits',
-            author: 'Acme Dev',
-            timestamp: Math.floor(Date.now() / 1_000) + 3_600,
-            pushed: isPushed,
-            parentSha: null,
-          },
-        ];
-      }
-      if (command === 'worktree_status') {
-        return {
-          branch: 'hl/fix-duplicate-credit',
-          head: isPushed ? 'after-push' : 'before-push',
-          headSubject: null,
-          upstream: 'origin/hl/fix-duplicate-credit',
-          upstreamDistance: { kind: 'known', ahead: isPushed ? 0 : 1, behind: 0 },
-          mainDistance: { kind: 'known', ahead: 1, behind: 0 },
-          workingTree: {
-            kind: 'known',
-            staged: 0,
-            unstaged: 0,
-            untracked: 0,
-            unmerged: 0,
-            changed: 0,
-          },
-          inProgress: null,
-        };
-      }
-      return null;
-    });
-    await refreshWorktreeStatuses({ worktreePaths });
-    await waitFor(() => expect(rowPush()).not.toBeNull());
-    isPushed = true;
-    await refreshWorktreeStatuses({ worktreePaths });
-    await waitFor(() => expect(rowPush()).toBeNull());
-  });
-  it('keeps Push on the row and shows the error when the push fails', async () => {
-    const reportError = vi.fn(async (_params: unknown) => undefined);
-    store.setState({
-      refreshSessionPr: async () => undefined,
-      loadSessionMounts: async () => [],
-      reportError,
-    });
-    show({ name: 'activity-check-fixed-local' });
-    mockSceneIpc((command) => {
-      if (command === 'git_push') {
-        return { stdout: '', stderr: 'rejected: non-fast-forward', exitCode: 1 };
-      }
-      if (command === 'worktree_commits') {
-        return [
-          {
-            sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
-            shortSha: '9e4c1a7',
-            subject: 'Guard the retry against double credits',
-            author: 'Acme Dev',
-            timestamp: Math.floor(Date.now() / 1_000) + 3_600,
-            pushed: false,
-            parentSha: null,
-          },
-        ];
-      }
-      return null;
-    });
-    fireEvent.click(requireRowPush());
-    await waitFor(() =>
-      expect(reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Couldn't push the branch" }),
-      ),
-    );
-    await waitFor(() => expect(rowPush()?.hasAttribute('disabled')).toBe(false));
   });
   it.each(Object.keys(U24_CI_FIX_STATE_SCENES))(
     '%s has no accessibility violations',

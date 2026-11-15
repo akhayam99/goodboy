@@ -197,6 +197,33 @@ describe('actionCardsOf', () => {
     expect(cards).toHaveLength(3);
   });
 
+  it('names the Lead in the stuck, approval and blocked titles while Work is on', () => {
+    const cards = actionCardsOf({
+      ...NONE,
+      flow: 'Lead',
+      autoTargets: [
+        NEVER_STARTED,
+        {
+          ...NEVER_STARTED,
+          agentId: brandId<AgentId>({ value: 'agent-plan' }),
+          kind: 'approve',
+          plan: null,
+        },
+        {
+          ...NEVER_STARTED,
+          agentId: brandId<AgentId>({ value: 'agent-blocked' }),
+          kind: 'blocked',
+        },
+      ],
+    });
+
+    expect(cards.map((card) => card.title)).toEqual([
+      "Lead couldn't reply",
+      'Lead needs you',
+      'Lead needs approval',
+    ]);
+  });
+
   it('says a stuck child by its role, never its ask quoted or its own words in another language', () => {
     const failed = {
       ...NEVER_STARTED,

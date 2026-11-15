@@ -19,7 +19,7 @@ export const JumpToLatest = ({ isVisible, onJump }: Props) => (
   >
     <IconButton
       icon={ArrowDown}
-      label="Jump to latest"
+      label="Scroll to latest"
       size="md"
       variant="outline"
       onClick={onJump}

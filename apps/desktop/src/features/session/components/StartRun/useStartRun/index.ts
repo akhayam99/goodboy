@@ -44,6 +44,9 @@ import { useRunModel, type RunModelModel } from '../useRunModel';
 import type { IssueCandidate } from '../../../../integrations/fetchIssueCandidates';
 import type { SessionDraftMount } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { askWithFileOf } from '../../../startRun/askWithFileOf';
+import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
+import { flowRulesOf } from '../../../../work/flowRulesOf';
+import { openStartWork } from '../../../../work/openStartWork';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import type { StartRunFile } from '../../../startRun/startRunFileOf';
@@ -377,6 +380,30 @@ export const useStartRun = ({
               }),
             })
           : roleRunOf({ text: asked, role });
+      const isWork = state.settings[SETTING_WORK_ENABLED] === 'true';
+      if (
+        flowRulesOf({ isWork }).shouldStartOpenComposer &&
+        routed.role === null &&
+        routed.preset === null
+      ) {
+        openStartWork({
+          seed: {
+            sessionId,
+            projectId: mount?.projectId ?? null,
+            branch: null,
+            text:
+              file === null
+                ? routed.ask
+                : askWithFileOf({
+                    ask: routed.ask,
+                    relPath: file.relPath,
+                    absolutePath: file.absolutePath,
+                  }),
+          },
+        });
+        clearAsked({ asked });
+        return;
+      }
       const staged = stagedFiles;
       const attachments = await toAttachmentInputs(staged);
       const result =

@@ -11,7 +11,7 @@ type Props = {
   readonly lanes?: TimelineLaneControl | null;
 };
 
-const LABEL_CLASS = 'absolute -translate-y-1/2 text-eyebrow text-muted-foreground';
+const LABEL_CLASS = 'absolute -translate-y-1/2 text-meta text-muted-foreground';
 
 export const TimelineNowRule = ({ item, rail, railWidth, lanes = null }: Props) => (
   <div className="flex min-w-0" style={{ height: item.height }}>
@@ -25,7 +25,7 @@ export const TimelineNowRule = ({ item, rail, railWidth, lanes = null }: Props) 
       <span
         data-testid="timeline-now-dot"
         aria-hidden
-        className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-border"
+        className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted-foreground"
         style={{ left: RAIL_SPINE_X, top: item.ruleY }}
       />
     </span>

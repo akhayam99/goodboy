@@ -1,3 +1,4 @@
+import type { AskAnswer, AskAnswerPort } from '../askAnswerPort';
 import type { AutoChildTurnParams, AutoChildTurnPort } from '../autoChildTurnPort';
 import type { AutoUserTurnParams, AutoUserTurnPort } from '../autoUserTurnPort';
 import type { DelegationDecision, DelegationDecisionPort } from '../delegationDecisionPort';
@@ -32,7 +33,8 @@ export type AutoBridgeCall =
       delegationId: string;
       decision: DelegationDecision;
       hint?: string;
-    }>;
+    }>
+  | Readonly<{ kind: 'answerAsk'; askId: string; answer: AskAnswer }>;
 
 export type AutoBridgeRequest = Readonly<{
   id: string;
@@ -68,4 +70,5 @@ export type AutoBridgePorts = Readonly<{
   userTurn: AutoUserTurnPort;
   childTurn: AutoChildTurnPort;
   decision: DelegationDecisionPort;
+  answerAsk: AskAnswerPort;
 }>;

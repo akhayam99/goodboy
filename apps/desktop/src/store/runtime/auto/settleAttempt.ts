@@ -7,6 +7,7 @@ import {
   getAutoAttempt,
   getAutoDelegation,
   getAutoTree,
+  insertAutoGrantStatement,
   insertAutoOutboxStatement,
   pauseAutoAttemptStatement,
   reconcileAutoReservationStatement,
@@ -14,6 +15,7 @@ import {
   type AutoAttempt,
   type AutoOutcome,
   type Database,
+  type NewAutoGrant,
   type NewAutoOutbox,
   type Statement,
 } from '@goodboy/db';
@@ -48,6 +50,7 @@ export type SettleAttemptParams = Readonly<{
   ending: AttemptEnding;
   outbox?: ReadonlyArray<NewAutoOutbox>;
   revise?: ReviseFailure;
+  grants?: ReadonlyArray<NewAutoGrant>;
 }>;
 
 type SettleDropReason = 'unknown_attempt' | 'generation' | 'attempt_state' | 'not_owner';
@@ -240,6 +243,9 @@ const buildStatements = ({ params, attempt, ending }: BuildParams): ReadonlyArra
   });
   for (const outbox of params.outbox ?? []) {
     statements.push(insertAutoOutboxStatement({ outbox }));
+  }
+  for (const grant of params.grants ?? []) {
+    statements.push(insertAutoGrantStatement({ grant }));
   }
   return statements;
 };

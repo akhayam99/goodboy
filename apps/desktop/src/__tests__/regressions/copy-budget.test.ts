@@ -78,6 +78,9 @@ const RULES: ReadonlyArray<Rule> = [
     id: `retired-${retired.id}`,
     fix: `say "${retired.use}" instead`,
     matches: (copy) => {
+      if (retired.allowedPaths?.test(copy.path) === true) {
+        return false;
+      }
       if (retired.id === 'folders-noun' && copy.isConditionalBranch === true) {
         return false;
       }

@@ -81,7 +81,7 @@ never exists on one surface only.
   that cannot run stays in it with its reason as a tooltip), Open the full log,
   Limit, Rename, Pin session or Unpin session, **Refresh session** (`session.refresh`, the
   same `refreshSession` `⌘R` runs in a session, blocked while a refresh is in
-  flight), Autopilot, Start a run, Link work, the copies, Archive and Delete,
+  flight), Start next steps without asking, Start a run, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is
   `select-none`, like every row that carries `ROW_HOVER` or `ROW_INTERACTIVE`
   (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the Board card): see
@@ -106,10 +106,10 @@ never exists on one surface only.
   write those roles.
 - **What each object offers.** A session: Open, Comments, Changes, Open in terminal
   (one choice per worktree), Open in
-  editor; Rename (inline, in the row that opened the menu), Turn on Autopilot or
-  Turn off Autopilot (the session's autorun, the default of a run started
-  without its own setting and of agents outside a workflow; the Runs page
-  header has no switch), Start a run, Link
+  editor; Rename (inline, in the row that opened the menu), Start next steps
+  without asking or Ask before starting each step (the session's Asks you: the
+  default of a run started without its own setting and of agents outside a
+  workflow; the Runs page header has no switch), Start a run, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with its
   confirm and Undo, and Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. Archive N asks once for all of them
@@ -122,7 +122,7 @@ never exists on one surface only.
   changes; Message this agent (not on the agent's own page, where the composer is), Interrupt while a turn runs, Close or Reopen,
   Let Auto take it from here on an old standalone agent of a standard role,
   Detach from Auto on an agent that was moved, Change model (one submenu); copy the name; Delete agent. A
-  workflow run: Open run, View diff; Answer, Start run, Continue, Restart
+  workflow run: Open run, Open changes; Answer, Start run, Continue, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already
@@ -502,7 +502,7 @@ covered.
   page.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the label and the tooltip
-  (`Back: Comments`, the session on a second line, `Hold for history` on a
+  (`Back: Comments`, the session on a second line, `Hold to show history` on a
   third, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
   Chat left the bar for the column. Board, the column's first door, is pressed
@@ -531,10 +531,10 @@ covered.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
-  names the unit: "2 sessions running, 1 script running"; at zero one muted "Idle" slot is drawn so the chips beside it never move), Usage,
-  today's spend (hidden until the first cent today) and the bell (a 6px dot at its corner,
-  primary when unread, warning when an unread item carries an action; the count is the Unread
-  tab badge in its popover). There is no storage chip:
+  names the unit: "2 sessions running, 1 script running"; at zero one muted slot is drawn so the chips beside it never move: "Idle" with the neutral ring, or "Needs you" with the warning dot while a session waits on you), Usage,
+  today's spend (hidden until the first cent today) and the bell (its unread count beside
+  the icon, drawn like a door or tab count: one number, capped at 9+, in the quiet unread
+  tone, or warning when an unread item carries an action). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
@@ -588,8 +588,9 @@ never hide. A Usage chip is
 the provider glyph and one bar, the percent beside it only above 70%; every
 window lives in its tooltip and its accessible name. A provider with no
 figures yet draws no chip. The Usage chips past the ones that fit, and the
-providers with no figures, are the only overflow: a `+N providers` chip (`+1
-provider`, never a bare number; with no chip shown it reads `Usage`) takes the
+providers with no figures, are the only overflow: a `+N providers` chip (the
+hidden provider glyphs first, like a Usage chip, then `+1 provider`, never a bare
+number; with no chip shown it reads `Usage`) takes the
 tone of the worst hidden provider and lists them. It stays visible at every bar width. No other control moves into an
 overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
 only drop under zoom.

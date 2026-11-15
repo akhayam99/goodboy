@@ -158,6 +158,8 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub excludes_tmp: bool,
     #[serde(default)]
+    pub launch_guard: Option<crate::providers::launch_guard::LaunchGuardArgs>,
+    #[serde(default)]
     pub delivery_id: Option<String>,
     #[serde(default)]
     pub has_admission: bool,
@@ -238,6 +240,7 @@ pub(crate) struct SpawnOneArgs<'a> {
     pub blocks_push: bool,
     pub is_auto_child: bool,
     pub excludes_tmp: bool,
+    pub launch_guard: Option<&'a crate::providers::launch_guard::LaunchGuardArgs>,
 }
 
 pub(crate) const PUSH_BLOCK_URL: &str = "goodboy-blocked://history-rewriter";
@@ -399,6 +402,7 @@ fn spawn_one<E: TurnEmitter>(
         }
     }
 
+    crate::providers::launch_guard::apply_launch_guard_env(&mut command, args.launch_guard);
     apply_git_host_access(&mut command, &args);
     if crate::aux_spawn::is_copilot_binary(args.binary) {
         crate::aux_spawn::strip_tokens_copilot_refuses(&mut command);
@@ -624,6 +628,10 @@ fn spawn_turn(app: &AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
         crate::providers::cli_probe::ensure_confinement(binary, role)
             .map_err(TurnError::ConfinementUnproven)?;
     }
+    if let Some(guard) = args.launch_guard.as_ref() {
+        crate::providers::launch_guard::ensure_launch_guard(binary, guard)
+            .map_err(TurnError::ConfinementUnproven)?;
+    }
     let permission_mode = args
         .permission_mode
         .as_deref()
@@ -669,6 +677,7 @@ fn spawn_turn(app: &AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
             blocks_push: args.blocks_push,
             is_auto_child: args.is_auto_child,
             excludes_tmp: args.excludes_tmp,
+            launch_guard: args.launch_guard.as_ref(),
         },
     );
     if spawned.is_err() {
@@ -1268,6 +1277,7 @@ mod tests {
             blocks_push: false,
             is_auto_child: false,
             excludes_tmp: false,
+            launch_guard: None,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -1307,6 +1317,7 @@ mod tests {
             blocks_push: false,
             is_auto_child: false,
             excludes_tmp: false,
+            launch_guard: None,
         }
     }
 

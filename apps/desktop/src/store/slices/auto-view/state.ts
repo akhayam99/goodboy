@@ -1,5 +1,11 @@
 import type { AutoLevel } from '@goodboy/core/auto';
-import type { AutoArtifactLedgerRow, AutoDelegation, AutoOutcome, AutoTree } from '@goodboy/db';
+import type {
+  AutoArtifactLedgerRow,
+  AutoDelegation,
+  AutoGrant,
+  AutoOutcome,
+  AutoTree,
+} from '@goodboy/db';
 import type { AutoBudgetFacts, MountNote, OutcomeLine } from '@goodboy/core/auto';
 import type { AgentId, MessageAttachment, ProviderRunId, SessionId } from '@goodboy/types';
 
@@ -11,10 +17,13 @@ export type AutoTreeView = Readonly<{
   budget: AutoBudgetFacts | null;
   pendingRefusal: AutoPendingRefusal | null;
   pendingMessages: ReadonlyArray<AutoPendingMessage>;
+  readMessages?: ReadonlyArray<AutoReadMessage>;
   droppedMessageIds: ReadonlyArray<string>;
   deliveredResults: ReadonlyArray<AutoDeliveredResult>;
   rootAsk: string | null;
   level?: AutoLevel;
+  grantAsks?: ReadonlyArray<AutoGrant>;
+  launchSnapshots?: Readonly<Record<string, unknown>>;
 }>;
 
 export type AutoDeliveredArtifact = Readonly<{
@@ -49,6 +58,13 @@ export type AutoPendingMessage = Readonly<{
   createdAt: number;
   text: string;
   images: ReadonlyArray<MessageAttachment>;
+}>;
+
+export type AutoReadMessage = Readonly<{
+  rowId: string;
+  createdAt: number;
+  text: string;
+  turn: number;
 }>;
 
 export type AutoViewState = {

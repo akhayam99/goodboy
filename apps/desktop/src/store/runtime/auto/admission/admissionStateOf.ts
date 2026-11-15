@@ -1,12 +1,22 @@
-import type { AdmissionSnapshot } from '@goodboy/core/auto';
+import {
+  isAutoWriterRole,
+  type AdmissionPermissions,
+  type AutoDelegationRole,
+} from '@goodboy/core/auto';
 
 export type AdmissionStateParams = Readonly<{
-  snapshot: Pick<AdmissionSnapshot, 'level'>;
+  permissions: Pick<AdmissionPermissions, 'startReaders' | 'startWriters'>;
+  role: AutoDelegationRole;
   isConfirmForced: boolean;
 }>;
 
 export const admissionStateOf = ({
-  snapshot,
+  permissions,
+  role,
   isConfirmForced,
-}: AdmissionStateParams): 'accepted' | 'awaiting_confirm' =>
-  snapshot.level === 'step' || isConfirmForced ? 'awaiting_confirm' : 'accepted';
+}: AdmissionStateParams): 'accepted' | 'awaiting_confirm' => {
+  const isAsked = isAutoWriterRole({ role })
+    ? permissions.startWriters === 'ask'
+    : permissions.startReaders === 'ask';
+  return isAsked || isConfirmForced ? 'awaiting_confirm' : 'accepted';
+};

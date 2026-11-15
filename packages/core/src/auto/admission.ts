@@ -3,8 +3,13 @@ import { admissionChildRefusals } from './admissionChildRefusals';
 import { AUTO_BATCH_MAX_CHILDREN, AUTO_MAX_OPEN_CHILDREN, AUTO_TREE_LIMITS } from './limits';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
-import type { AutoLevel } from './level';
+import type { LeadPermissionRows } from './permissions';
 import type { AdmissionParentFacts, AdmissionSubstep } from './substepAdmission';
+
+export type AdmissionPermissions = Pick<
+  LeadPermissionRows,
+  'approvePlan' | 'startReaders' | 'startWriters' | 'addProject'
+>;
 
 export type AdmissionArtifactRef = Readonly<{
   artifactId: string;
@@ -43,7 +48,7 @@ export type AdmissionSnapshot = Readonly<{
   remainingUsd: number;
   artifacts: ReadonlyArray<AdmissionArtifactFacts & { readonly artifactId: string }>;
   isPlanApprovalRequired: boolean;
-  level?: AutoLevel;
+  permissions: AdmissionPermissions;
   parents?: ReadonlyArray<AdmissionParentFacts>;
 }>;
 

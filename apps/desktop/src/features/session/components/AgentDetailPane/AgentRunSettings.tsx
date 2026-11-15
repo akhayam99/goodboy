@@ -21,6 +21,7 @@ type Props = {
   readonly asksSlotRef: RefCallback<HTMLElement>;
   readonly isInHead?: boolean;
   readonly trailing?: ReactNode;
+  readonly state?: ReactNode;
 };
 
 export const AgentRunSettings = ({
@@ -30,6 +31,7 @@ export const AgentRunSettings = ({
   asksSlotRef,
   isInHead = false,
   trailing = null,
+  state = null,
 }: Props) => {
   const agentSpendUsd = useAgentSpend({ sessionId: session.id, agentId: agent.id });
   const line = (
@@ -62,6 +64,8 @@ export const AgentRunSettings = ({
       revealEvent={autoView === null ? undefined : autoLimitOpenEvent({ treeId: autoView.tree.id })}
       isInHead={isInHead}
       trailing={trailing}
+      leading={state}
+      isStateShown={state === null}
     />
   );
 };

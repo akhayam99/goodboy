@@ -726,7 +726,6 @@ r4-title-edit
 r4-title-edit-near-limit
 r4-title-row-edit
 r4-workspace-switcher
-rail-chat-cards
 rail-draft-dot
 rail-flyout
 rail-pinned
@@ -790,6 +789,10 @@ run-page-agent
 run-page-agent-light
 run-page-done
 run-page-done-light
+run-page-lead-agent
+run-page-lead-next
+run-page-lead-next-light
+run-page-lead-working
 run-page-many
 run-page-plan
 run-page-plan-light
@@ -857,6 +860,7 @@ settings-theme-dark
 settings-theme-light
 settings-theme-system
 settings-tools
+settings-work
 settings-workspace
 shell
 side-info-doors
@@ -1015,12 +1019,6 @@ u26-sessions-multi-light
 u26-sidebar-impact
 u26-sidebar-ports
 u26-sidebar-signals
-u26-spawned-auto-dark
-u26-spawned-auto-light
-u26-spawned-run-dark
-u26-spawned-run-light
-u26-spawned-transcript-dark
-u26-spawned-transcript-light
 u26-view-archived-dark
 u26-view-archived-light
 u26-view-new-dark
@@ -1065,10 +1063,6 @@ u26s-update-running
 u26s-update-settings
 u26s-whatsnew-release
 u26s-whatsnew-search
-u27-agents-tree-dark
-u27-agents-tree-focus-dark
-u27-agents-tree-focus-light
-u27-agents-tree-light
 u27-breadcrumbs-after-agent-dark
 u27-breadcrumbs-after-agent-light
 u27-breadcrumbs-after-artifact-dark
@@ -1079,7 +1073,6 @@ u27-breadcrumbs-after-run-dark
 u27-breadcrumbs-after-run-light
 u27-breadcrumbs-after-step-dark
 u27-breadcrumbs-after-step-light
-u27-launch-row-menu
 u27-one-flow-after-entry
 u27-one-flow-after-preset
 u27-one-flow-after-routed
@@ -1111,8 +1104,6 @@ u27-start-page-after-orchestrated-form
 u27-start-page-after-preset-form
 u27-start-page-after-workflow
 u28-agent-state-runs
-u28-agents-tool-empty
-u28-agents-tool-loose
 u28-away-alerts-asked-dark
 u28-away-alerts-on-dark
 u28-away-alerts-on-light
@@ -1135,7 +1126,6 @@ u28-start-run-route-line
 u28-step-ended-run
 u28-tasks-new
 u28-workspace-attention
-u30-agents-fold
 u30-blocked-mount-step
 u30-blocked-mount-step-shot
 u30-failure-reason
@@ -1165,7 +1155,6 @@ u31-next-step
 u31-overview
 u31-question-card
 u31-questions
-u31-rail
 u31-runs
 u31-runs-run
 u31-sidebar
@@ -1311,8 +1300,6 @@ u36-p6-gone-run-dark
 u36-p6-gone-run-light
 u36-p6-step-back-dark
 u36-p6-step-back-light
-u36-p7-tools-stay-dark
-u36-p7-tools-stay-light
 u36-p8-question-dark
 u36-p8-question-light
 u36-p9-always-stopped
@@ -1402,11 +1389,19 @@ ux39-p9-session-drawer
 ux39-p9-tasks-parked
 ux39-p9-workflows-parked
 wireframe-failed
+work-lead-dependency
 work-lead-plan
+work-lead-push
 work-lead-tree
 work-lead-tree-compact
 work-lead-tree-light
 work-lead-working
+work-list
+work-list-loading
+work-list-needs-you
+work-permissions
+work-permissions-custom
+work-start
 workflow
 workflow-run
 workflow-run-finished-sets

@@ -44,7 +44,7 @@ type ActionsParams = {
 
 const RECENT_LIMIT = 5;
 
-const JUMP_TO_TITLE = 'Jump to';
+const JUMP_TO_TITLE = 'Go to';
 
 const QUESTION_WORDS = 4;
 

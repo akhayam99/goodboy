@@ -285,6 +285,7 @@ describe('LimitsStrip', () => {
 
     const overflow = screen.getByRole('button', { name: '1 more provider' });
     expect(overflow.textContent).toBe('+1 provider');
+    expect(overflow.firstElementChild?.hasAttribute('data-limits-overflow-marks')).toBe(true);
     expect(marksOf(overflow)).toEqual(['codex']);
     expect(overflow.querySelector('[data-limits-alert]')?.getAttribute('class')).toContain(
       'text-danger',

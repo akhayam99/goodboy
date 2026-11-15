@@ -67,7 +67,7 @@ export const ToastsFirer = ({ variant }: Props) => {
       kind: 'success',
       message: 'Filed on GitHub, under your account.',
       title: 'Issue sent',
-      action: { label: 'View issue', onClick: noop },
+      action: { label: 'Open issue', onClick: noop },
     });
     showToast({
       kind: 'info',

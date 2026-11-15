@@ -27,7 +27,6 @@ import {
   selectNonResolverStandaloneAgents,
   storedAgentKind,
   visibleAgentKinds,
-  visibleAgentRoles,
   visibleWorkflowRoles,
 } from './agent-kind';
 
@@ -819,8 +818,7 @@ describe('boundary systemPrompts', () => {
 });
 
 describe('agent visibility', () => {
-  it('exposes picker-eligible roles and manually spawnable kinds', () => {
-    expect(visibleAgentRoles().length).toBeGreaterThan(3);
+  it('exposes manually spawnable kinds', () => {
     expect(visibleAgentKinds()).toEqual([
       'debugger',
       'docs',
@@ -831,33 +829,16 @@ describe('agent visibility', () => {
       'scout',
       'tester',
     ]);
-    expect(visibleAgentRoles()).toContain('docs');
-    expect(visibleAgentRoles()).toContain('resolver');
   });
 
   it('keeps the history rewriter hidden but named where it works', () => {
     expect(visibleAgentKinds()).not.toContain('rewriter');
-    expect(visibleAgentRoles()).not.toContain('rewriter');
     expect(AGENT_KIND_DEFAULTS.rewriter.visible).toBe(false);
     expect(AGENT_KIND_META.rewriter.label).toBe('History rewriter');
     expect(
       resolveAgentKind({ name: 'Rebase on main', firstUserText: null, override: 'rewriter' }),
     ).toBe('rewriter');
     expect(AGENT_KIND_DEFAULTS.rewriter.systemPrompt).toContain('<<history-done head=');
-  });
-
-  it('excludes artifact roles from the manual create-agent picker', () => {
-    expect(visibleAgentRoles()).toEqual([
-      'scout',
-      'investigator',
-      'planner',
-      'implementer',
-      'reviewer',
-      'tester',
-      'resolver',
-      'docs',
-      'custom',
-    ]);
   });
 });
 
@@ -867,7 +848,6 @@ describe('the CI debugger and the CI fixer', () => {
   it('stay out of the spawn menu, the role pickers and the workflow builder', () => {
     for (const kind of CI_KINDS) {
       expect(visibleAgentKinds()).not.toContain(kind);
-      expect(visibleAgentRoles()).not.toContain(kind);
       expect(visibleWorkflowRoles()).not.toContain(kind);
       expect(AGENT_KIND_DEFAULTS[kind].visible).toBe(false);
     }
@@ -963,7 +943,6 @@ describe('the Auto role, while it is not offered', () => {
 
   it('is offered by no picker and no workflow list', () => {
     expect(visibleAgentKinds()).not.toContain('auto');
-    expect(visibleAgentRoles()).not.toContain('auto');
     expect(visibleWorkflowRoles()).not.toContain('auto');
     expect(AGENT_KIND_DEFAULTS.auto.visible).toBe(false);
   });

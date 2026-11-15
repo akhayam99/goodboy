@@ -22,8 +22,11 @@ import type {
   PublishRowResult,
 } from '../../../features/auto/publishPort';
 import { remoteOf } from './attemptBaseline';
+import { releaseHeldPullRequests } from './asks/releaseHeldPullRequests';
 import { delegationRoleOf } from './attemptEnvelope';
 import { executePublish } from './executePublish';
+import { readChangeRules } from './launchGuard/readChangeRules';
+import { readPublishPermissions } from './level/readPublishPermissions';
 import { planPublish } from './planPublish';
 import type { PushBranchOutcome, RestoreBackupOutcome } from './ports';
 import { publishQueue } from './publishQueue';
@@ -45,10 +48,10 @@ const NOTHING_TO_ACT_ON = 'This agent has no push to act on.';
 const ALREADY_PUSHING = 'This push is already under way.';
 const NOT_WAITING = 'This push is not waiting for an answer.';
 const CANNOT_RETRY = 'This push cannot be tried again.';
-const CANNOT_PUT_BACK = 'This push cannot be put back.';
+const CANNOT_PUT_BACK = "This force push can't be undone.";
 const BRANCH_MOVED_SINCE_PUSH = 'it moved after the push.';
 const NOT_READABLE = 'it could not be read.';
-const NOTHING_CHANGED = 'Nothing was put back, online or here:';
+const NOTHING_CHANGED = "Couldn't undo the force push. Nothing changed on origin or here:";
 const LOCAL_LEFT = 'The local branch was left as it is:';
 const NOT_SAVED = 'The push was not saved on the card because the result moved on.';
 const STORAGE_FAILED =
@@ -260,7 +263,8 @@ const confirmRow = async ({
   worktreePath,
   record,
 }: RowParams): Promise<PublishRowResult> => {
-  if (record.state !== 'awaiting_confirm') {
+  const isPushNow = record.state === 'declined' && record.mode === 'push';
+  if (record.state !== 'awaiting_confirm' && !isPushNow) {
     return refused({ delegationId: delegation.id, message: NOT_WAITING });
   }
   return pushRow({
@@ -326,21 +330,27 @@ const remoteNowOf = async ({
 const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
   const { ctx, delegation, worktreePath, record } = params;
   const wanted = publishOfRequest({ request: delegation.request });
-  if (!canRetryPublish({ publish: record }) || wanted === null) {
+  if (!canRetryPublish({ publish: record })) {
     return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
   }
   if (record.isConfirmed && record.mode === 'push') {
     return pushRow({ ...params, toPush: record, fromState: record.state });
   }
+  if (wanted === null) {
+    return refused({ delegationId: delegation.id, message: CANNOT_RETRY });
+  }
   const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
-  const baseline = attempts.filter((attempt) => attempt.state === 'ended').at(-1)?.baseline;
+  const ended = attempts.filter((attempt) => attempt.state === 'ended').at(-1) ?? null;
+  const baseline = ended?.baseline;
   const ending = endingOf({ result: delegation.result });
   const remote =
     record.mode === 'force'
       ? await remoteNowOf({ ports: ctx.ports, worktreePath, branch: record.branch })
       : remoteOf({ baseline });
+  const { push } = await readPublishPermissions({ db: ctx.db, treeId: delegation.treeId });
   const planned = await planPublish({
     ports: ctx.ports,
+    sessionId: params.sessionId,
     worktreePath,
     branch: record.branch,
     wanted,
@@ -352,6 +362,8 @@ const retryRow = async (params: RowParams): Promise<PublishRowResult> => {
     checksRun: checksRunOfResult({ result: delegation.result }),
     endHead: record.sha,
     tries: record.tries + 1,
+    push,
+    changes: await readChangeRules({ db: ctx.db, treeId: delegation.treeId, attempt: ended }),
   });
   if (planned.state !== 'pushing') {
     return writeRecord({ ctx, delegation, record: planned });
@@ -490,7 +502,7 @@ const actOnOne = async ({ ctx, act, delegationId }: OneParams): Promise<PublishR
     typeof mountId !== 'string' ||
     typeof worktreePath !== 'string' ||
     typeof sessionId !== 'string' ||
-    delegationRoleOf({ delegation }) === 'scribe'
+    (delegationRoleOf({ delegation }) === 'scribe' && record.mode !== 'push')
   ) {
     return refused({ delegationId, message: NOTHING_TO_ACT_ON });
   }
@@ -526,5 +538,6 @@ export const publishAct = async ({
   for (const delegationId of delegationIds) {
     rows.push(await actOnOne({ ctx, act, delegationId }));
   }
+  await releaseHeldPullRequests({ ctx, rows });
   return { kind: 'done', rows };
 };

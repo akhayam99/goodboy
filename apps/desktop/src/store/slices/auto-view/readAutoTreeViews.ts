@@ -8,6 +8,8 @@ import {
 import {
   listAutoArtifactLedger,
   listAutoDelegations,
+  listAutoGrantsOfTree,
+  listAutoLaunchSnapshotsOfTree,
   listAutoOutbox,
   listAutoTreesOfSession,
   listGoneAutoChildIds,
@@ -23,6 +25,7 @@ import { userImagesOf } from '../../runtime/auto/userImagesOf';
 import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
 import { presentDelegationsOf } from './presentDelegationsOf';
+import { readMessagesOf } from './readMessagesOf';
 import type { AutoPendingMessage, AutoPendingRefusal, AutoTreeView } from './state';
 
 type Params = {
@@ -103,16 +106,27 @@ export const readAutoTreeViews = async ({
   const level = await readAutoLevel({ db, target: { sessionId } });
   return Promise.all(
     trees.map(async (tree): Promise<AutoTreeView> => {
-      const [delegations, goneChildIds, artifacts, spend, pending, accepted, rootAsk] =
-        await Promise.all([
-          listAutoDelegations({ db, treeId: tree.id }),
-          listGoneAutoChildIds({ db, treeId: tree.id, sessionId }),
-          listAutoArtifactLedger({ db, treeId: tree.id }),
-          readAutoTreeSpend({ db, treeId: tree.id }),
-          listAutoOutbox({ db, treeId: tree.id, states: ['pending', 'dropped'] }),
-          listAutoOutbox({ db, treeId: tree.id, states: ['accepted'], kinds: ['results'] }),
-          readFirstUserText({ db, agentId: tree.rootAgentId }),
-        ]);
+      const [
+        delegations,
+        goneChildIds,
+        artifacts,
+        spend,
+        pending,
+        accepted,
+        rootAsk,
+        grantAsks,
+        snapshots,
+      ] = await Promise.all([
+        listAutoDelegations({ db, treeId: tree.id }),
+        listGoneAutoChildIds({ db, treeId: tree.id, sessionId }),
+        listAutoArtifactLedger({ db, treeId: tree.id }),
+        readAutoTreeSpend({ db, treeId: tree.id }),
+        listAutoOutbox({ db, treeId: tree.id, states: ['pending', 'dropped'] }),
+        listAutoOutbox({ db, treeId: tree.id, states: ['accepted'] }),
+        readFirstUserText({ db, agentId: tree.rootAgentId }),
+        listAutoGrantsOfTree({ db, treeId: tree.id }),
+        listAutoLaunchSnapshotsOfTree({ db, treeId: tree.id }),
+      ]);
       const present = presentDelegationsOf({ delegations, goneChildIds: new Set(goneChildIds) });
       return {
         tree,
@@ -122,10 +136,15 @@ export const readAutoTreeViews = async ({
         budget: spend === null ? null : autoBudgetOf({ spend }),
         pendingRefusal: pendingRefusalOf({ tree, pending }),
         pendingMessages: pendingMessagesOf({ tree, pending }),
+        readMessages: readMessagesOf({ tree, accepted, delegations }),
         droppedMessageIds: droppedMessageIdsOf({ tree, pending }),
         deliveredResults: deliveredResultsOf({ accepted }),
         rootAsk,
         level,
+        grantAsks,
+        launchSnapshots: Object.fromEntries(
+          snapshots.map((row) => [String(row.delegationId), row.launchSnapshot]),
+        ),
       };
     }),
   );

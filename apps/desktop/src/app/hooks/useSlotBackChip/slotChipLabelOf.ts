@@ -51,8 +51,6 @@ export const slotChipLabelOf = ({ drawer, artifacts }: Params): SlotChipLabel =>
   switch (drawer.kind) {
     case 'scripts':
       return { kind: 'Scripts', title: null };
-    case 'spawned':
-      return { kind: 'Agents', title: null };
     case 'terminal':
       return { kind: 'Terminal', title: null };
     case 'explore-file':
@@ -87,8 +85,6 @@ export const slotChipLabelOf = ({ drawer, artifacts }: Params): SlotChipLabel =>
       return { kind: 'Comment', title: null };
     case 'transcript':
       return { kind: 'Transcript', title: null };
-    case 'session-log':
-      return { kind: 'Log', title: null };
     case 'history-versions':
       return { kind: 'Versions', title: null };
     case 'file-diff':

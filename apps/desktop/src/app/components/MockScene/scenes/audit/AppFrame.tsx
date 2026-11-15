@@ -74,6 +74,7 @@ export const AppFrame = ({
     () => ({
       openBoard: goToBoard,
       openInbox: overlays.openInbox,
+      openWork: overlays.openWork,
       openChat: overlays.openChat,
       openWorkflows: overlays.openWorkflows,
       openNewChat: overlays.openNewChat,

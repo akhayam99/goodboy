@@ -19,6 +19,7 @@ import { batchesOf } from '../batchesOf';
 import { mergedBatchesOf } from '../mergedBatchesOf';
 import { composerPlaceholderOf } from '../composerPlaceholderOf';
 import { useAutoTreeActions } from '../useAutoTreeActions';
+import { useLoadedFlowWord } from '../../../../shared/hooks/useLoadedFlowWord';
 
 type Params = {
   readonly session: Session;
@@ -47,6 +48,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId: agent.id }), [views, agent.id]);
   const view = tree?.kind === 'root' ? tree.view : null;
   const child = useAutoChildChat({ session, agent, tree });
+  const flow = useLoadedFlowWord();
 
   const insertions = useMemo(() => {
     if (view === null) {
@@ -105,6 +107,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
           rootAgent: agent,
           isStopping: actions.isStopping,
           stop: () => void actions.stop({ view }),
+          flow,
         });
 
   const dock =
@@ -123,7 +126,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     insertions: insertions ?? child.insertions,
     dock,
     composerPlaceholder:
-      view === null ? child.composerPlaceholder : composerPlaceholderOf({ view }),
+      view === null ? child.composerPlaceholder : composerPlaceholderOf({ view, flow }),
     childTask: child.task,
     stop,
     isFailureOwned: view?.tree.phase === 'blocked',

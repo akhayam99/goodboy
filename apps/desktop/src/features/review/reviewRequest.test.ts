@@ -92,7 +92,7 @@ describe('requestReview on note threads', () => {
     useAppStore.setState({
       navigate,
       currentSessionId: SESSION_ID,
-      drawer: { kind: 'spawned', sessionId: SESSION_ID, payload: null },
+      drawer: { kind: 'scripts', sessionId: SESSION_ID, payload: null },
     });
 
     fix([NOTE]);

@@ -1,6 +1,7 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import { useAppStore } from '../../../../store';
+import { CONFIRM_REFUSED_REASON } from '../../CONFIRM_REFUSED_REASON';
 import {
   currentDelegationDecisionPort,
   type DelegationDecision,
@@ -10,6 +11,7 @@ import { useBusyAct } from '../../hooks/useBusyAct';
 
 const NOT_READY_TITLE = "Couldn't answer Auto";
 const LOST_TITLE = 'Auto has already moved on';
+const REFUSED_TITLE = "This agent can't start yet";
 
 type DecideParams = {
   readonly delegationId: string;
@@ -40,6 +42,13 @@ export const useDelegationDecision = (): DelegationDecisionModel => {
               recovery: CHECK_STATE,
               title: LOST_TITLE,
               error: new Error('This question is no longer open.'),
+            });
+          }
+          if (result === 'refused') {
+            await reportError({
+              recovery: CHECK_STATE,
+              title: REFUSED_TITLE,
+              error: new Error(CONFIRM_REFUSED_REASON),
             });
           }
         },

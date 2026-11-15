@@ -15,7 +15,7 @@ import {
 import { LEDGER, LEDGER_COMMITS, LEDGER_GRAPH } from '../../testing/ledgerFixture';
 import { LEDGER_PRESET } from '../../testing/ledgerPreset';
 import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
-import { historyBackupRef } from '../../historyBackupRef';
+import { historyBackupRef } from '../../testing/historyBackupRef';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 
@@ -268,13 +268,13 @@ describe('CommitsHistory toolbar', () => {
     expect(
       screen.queryByText('Drag a commit to move it, drop it on another to fold it in.'),
     ).toBeNull();
-    expect(screen.queryByText('Fold in')).toBeNull();
+    expect(screen.queryByText('Fixup down')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Commits help' }));
     expect(screen.getByText('How to edit commits')).toBeDefined();
     expect(screen.getByText('Keys for this page')).toBeDefined();
-    expect(screen.getByText('Fold in')).toBeDefined();
-    expect(screen.getByText('Rename')).toBeDefined();
-    expect(screen.getByText('Remove')).toBeDefined();
+    expect(screen.getByText('Fixup down')).toBeDefined();
+    expect(screen.getByText('Reword')).toBeDefined();
+    expect(screen.getByText('Drop commit')).toBeDefined();
     slot.remove();
   });
 
@@ -409,10 +409,10 @@ describe('CommitsHistory', () => {
   it('builds the row menu from the commit actions, no icon buttons on the row', () => {
     const actions = setup();
     const taking = within(row(d));
-    expect(taking.queryByRole('button', { name: 'Rename' })).toBeNull();
+    expect(taking.queryByRole('button', { name: 'Reword' })).toBeNull();
     expect(taking.queryByRole('button', { name: 'Fixup down' })).toBeNull();
     fireEvent.click(within(row(b)).getByRole('button', { name: /More for/ }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /^Remove/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Drop commit/ }));
     expect(lastItems(actions)).toEqual(setVerb({ items: BASE, sha: b, verb: 'drop' }));
   });
 

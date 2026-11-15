@@ -92,6 +92,8 @@ const runCall = async ({ ports, turns, call }: CallParams): Promise<unknown> => 
         decision: call.decision,
         ...(call.hint === undefined ? {} : { hint: call.hint }),
       });
+    case 'answerAsk':
+      return ports.answerAsk({ askId: call.askId, answer: call.answer });
     default: {
       const unreachable: never = call;
       return unreachable;

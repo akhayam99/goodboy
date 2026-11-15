@@ -12,9 +12,9 @@ export const ExplanationsSection = ({ list }: Props) => {
   const now = useNow(60_000);
   if (list.visible.length === 0) {
     return (
-      <EmptyLine className="text-body text-muted-foreground">
-        Nothing yet. Agents explain the topics you follow.
-      </EmptyLine>
+      <div className="px-2">
+        <EmptyLine>Agents explain the topics you follow, in plain words.</EmptyLine>
+      </div>
     );
   }
   return (

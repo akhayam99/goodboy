@@ -12,12 +12,8 @@ export const AddDecisionRow = ({ isLocked, onAdd }: Props) => {
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="relative flex items-center">
-        <Plus
-          size={ICON_SIZE.row}
-          aria-hidden
-          className="pointer-events-none absolute left-2.5 text-faint-foreground"
-        />
+      <label className="flex min-w-0 items-center gap-2 rounded-md px-2 hover:bg-hover">
+        <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
         <Input
           aria-label="Add a decision"
           placeholder="Add a decision"
@@ -36,11 +32,13 @@ export const AddDecisionRow = ({ isLocked, onAdd }: Props) => {
             onAdd(draft.trim());
             setDraft('');
           }}
-          className="pl-8"
+          className="min-w-0 flex-1 border-transparent bg-transparent px-0 text-meta disabled:bg-transparent"
         />
       </label>
       {isLocked ? (
-        <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>
+        <p className="px-2 text-meta text-faint-foreground">
+          Editing opens when the update finishes.
+        </p>
       ) : null}
     </div>
   );

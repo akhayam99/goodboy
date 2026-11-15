@@ -103,7 +103,7 @@ describe('the Esc ladder', () => {
 
   it('leaves the page and the drawer alone while a menu or dialog is open', () => {
     useAppStore.getState().navigate({ to: RUN });
-    useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION, payload: null });
     const dialog = document.createElement('div');
     dialog.setAttribute('role', 'dialog');
     document.body.append(dialog);
@@ -116,7 +116,7 @@ describe('the Esc ladder', () => {
 
   it('closes an open drawer before it moves the page', () => {
     useAppStore.getState().navigate({ to: RUNS });
-    useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION, payload: null });
 
     escapeLadder({});
 
@@ -126,12 +126,12 @@ describe('the Esc ladder', () => {
 
   it('leaves a drawer parked under a page alone', () => {
     useAppStore.getState().navigate({ to: RUNS });
-    useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION, payload: null });
     useAppStore.getState().openStudio({ studio: { kind: 'workflow' } });
 
     escapeLadder({});
 
-    expect(useAppStore.getState().drawer?.kind).toBe('spawned');
+    expect(useAppStore.getState().drawer?.kind).toBe('scripts');
     expect(useAppStore.getState().appStudio?.kind).toBe('workflow');
   });
 

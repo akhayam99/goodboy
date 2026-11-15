@@ -235,6 +235,7 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
           role: child.role,
           request: {
             ...child.request,
+            isStartConfirmed: false,
             capture:
               revise === null
                 ? { mode: 'new' }
@@ -252,7 +253,11 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
           },
           target: child.target,
           routing: child.routing,
-          state: admissionStateOf({ snapshot, isConfirmForced: child.isConfirmForced }),
+          state: admissionStateOf({
+            permissions: snapshot.permissions,
+            role: child.role,
+            isConfirmForced: child.isConfirmForced,
+          }),
           retryOf: child.retryOf ?? null,
           reviseOf: revise === null ? null : revise.artifactId,
           baseRevision: revise === null ? null : revise.expectedRevision,
@@ -364,7 +369,11 @@ export const admitBatch = async (params: AdmitBatchParams): Promise<AdmitOutcome
         childAgentId: child.childAgentId,
         attemptId: child.attemptId,
         role: child.role,
-        state: admissionStateOf({ snapshot, isConfirmForced: child.isConfirmForced }),
+        state: admissionStateOf({
+          permissions: snapshot.permissions,
+          role: child.role,
+          isConfirmForced: child.isConfirmForced,
+        }),
       }));
       return {
         kind: 'accepted',

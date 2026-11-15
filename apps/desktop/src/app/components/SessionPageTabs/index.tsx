@@ -1,6 +1,5 @@
-import { PageTabs, StatusDot, type PageTabOption } from '@goodboy/ui';
+import { cn, PageTabs, tintClasses, type PageTabOption } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { TONE_COUNT_CLASS } from '../../../shared/components/toneCountClass';
 import { useSessionPageLens } from '../../../features/session/hooks/useSessionPageLens';
 import { openSessionPage } from '../../../features/session/openSessionPage';
 import { pageSlotOf } from '../../../features/session/pageSlot';
@@ -26,9 +25,15 @@ export const SessionPageTabs = ({ session }: Props) => {
       ...(slot !== null &&
         slot.text !== null && {
           badge: (
-            <span data-tab-count="" className={TONE_COUNT_CLASS}>
-              {slot.tone === null ? null : <StatusDot tone={slot.tone} size="sm" />}
-              <span>{slot.text}</span>
+            <span
+              data-tab-count=""
+              data-tab-count-tone={slot.tone ?? 'neutral'}
+              className={cn(
+                'shrink-0 text-chip tabular-nums',
+                slot.tone === null ? 'text-faint-foreground' : tintClasses(slot.tone).text,
+              )}
+            >
+              {slot.text}
             </span>
           ),
         }),

@@ -1,4 +1,5 @@
 import { isRecord, textOf } from '@goodboy/types/helpers';
+import type { LeadPermissionValue } from './permissions';
 
 export type PublishMode = 'push' | 'force';
 
@@ -80,6 +81,14 @@ export type PublishGate = Readonly<{ kind: 'go' }> | Readonly<{ kind: 'held'; me
 
 export const CHECKS_RED_HOLD = 'the checks are red';
 
+type AskedParams = {
+  readonly mode: PublishMode;
+  readonly push: LeadPermissionValue<'push'>;
+};
+
+export const isPublishAskedOf = ({ mode, push }: AskedParams): boolean =>
+  mode === 'force' || push === 'ask';
+
 export const publishGateOf = ({
   outcome,
   exit,
@@ -119,20 +128,22 @@ export const publishTextOf = ({ publish }: PublishTextParams): string => {
     case 'pushing':
       return `Pushing ${branch} at ${short}`;
     case 'awaiting_confirm':
-      return `Waiting for you to confirm the force push of ${branch}`;
+      return publish.mode === 'force'
+        ? `Waiting for you to confirm the force push of ${branch}`
+        : `Waiting for you to confirm the push of ${branch} at ${short}`;
     case 'pushed':
       if (publish.mode === 'push') {
         return `Pushed ${branch} at ${short}`;
       }
       return publish.backupRef === null
-        ? `Force pushed ${branch} at ${short}, it was not online before`
-        : `Force pushed ${branch} at ${short}, the earlier online version is kept as a backup`;
+        ? `Force pushed ${branch} at ${short}, it wasn't on origin before`
+        : `Force pushed ${branch} at ${short}, the earlier origin version is kept as a backup`;
     case 'declined':
       return `Not pushed: you declined the push of ${branch}`;
     case 'put_back':
       return publish.message === null
-        ? `Put back: ${branch} is online as it was when the agent started`
-        : `Put back: ${branch} is online as it was when the agent started. ${publish.message}`;
+        ? `Force push undone: origin has ${branch} as it was before the agent started`
+        : `Force push undone: origin has ${branch} as it was before the agent started. ${publish.message}`;
     case 'failed':
       return `Not pushed: ${publish.message ?? 'the push did not finish'}`;
     default: {

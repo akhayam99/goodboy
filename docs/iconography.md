@@ -41,7 +41,8 @@ Five tokens, exported from `@goodboy/ui`:
 | `ICON_SIZE.notice`  | 16  | 1.75   | The tone icon of a `Notice`                            |
 | `ICON_SIZE.hero`    | 18  | 1.5    | Empty states, studio headers, choice tiles             |
 
-A check mark takes `ICON_STROKE.check` (2.5) at any size. Import one spelling per
+`iconStrokeOf({ size })` gives the stroke of a size; `IconButton` and the
+folded rail's buttons draw with it. A check mark takes `ICON_STROKE.check` (2.5) at any size. Import one spelling per
 glyph: `TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck` and
 `SquareArrowOutUpRight` (the older aliases of those glyphs and the plain external-link glyph are
 banned by `lucide-one-spelling-per-glyph.test.ts`). Failure has three glyphs, one place
@@ -110,8 +111,12 @@ The stage board section of the guide uses it.
 | `building`  | `Hammer`                      | neutral |
 | `done`      | `CircleCheck`                 | merged  |
 
-The left column, the switcher and the hover card draw a session's state as a
-`WorkNode` mark, not as the stage glyph. The mark follows the reason that
+The left column draws a session's state as one `StatusMark` (`sessionMarkOf`):
+a bare glyph for what asks you (`MessageCircleQuestionMark`, `Hand`,
+`TriangleAlert`), a ring for what moves, a circled glyph for what settled,
+never a glyph inside a ring; packages/ui/DESIGN-SYSTEM.md → Status marks has the
+table. The switcher and the hover card draw it as a `WorkNode` mark, not as the
+stage glyph, as below. The mark follows the reason that
 holds the session, from `ATTENTION_REASON_META` in
 `features/session/session-stage.ts`, which gives each reason a mark, a tone and
 a sentence that the Board card, the Now chip rows and Search or run read too. Red
@@ -131,7 +136,7 @@ rows of Search or run. A finished session
 (`finished`) is the same solid disc in the `merged` violet with a white check,
 so a done session reads as complete beside the hollow rings; a session whose
 pull request closed unmerged keeps the muted check (`closed`). The check inside
-the 14px sidebar node is 12px, never smaller. Blue is moving or new: the
+the 14px node is 12px, never smaller. Blue is moving or new: the
 running ring, and the small dot of an unread reply. The sentence is the node's accessible
 label. DESIGN-SYSTEM.md owns the full table.
 

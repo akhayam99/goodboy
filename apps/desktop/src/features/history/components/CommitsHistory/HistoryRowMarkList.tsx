@@ -43,7 +43,7 @@ export const HistoryRowMarkList = ({
       <HistoryChangeMark
         key="takes-in"
         action={mark.takesInMode}
-        label={`${mark.takesInMode === 'fixup' ? 'Folds in' : 'Combines'} ${countNoun({ count: count, one: 'commit' })}`}
+        label={`${mark.takesInMode === 'fixup' ? 'Fixup of' : 'Squash of'} ${countNoun({ count: count, one: 'commit' })}`}
         facts={mark.takesIn.map((taken, index) => ({
           label: `Commit ${index + 1}`,
           value: titleOf(taken.sha),
@@ -62,8 +62,8 @@ export const HistoryRowMarkList = ({
         action={mark.into.mode}
         label={
           mark.into.mode === 'fixup'
-            ? `Folds into ${quoted({ text: titleOf(mark.into.target) })} (fixup)`
-            : `Combines with ${quoted({ text: titleOf(mark.into.target) })} (squash)`
+            ? `Fixup into ${quoted({ text: titleOf(mark.into.target) })}`
+            : `Squash into ${quoted({ text: titleOf(mark.into.target) })}`
         }
         note={
           mark.into.mode === 'fixup'
@@ -80,8 +80,8 @@ export const HistoryRowMarkList = ({
       <HistoryChangeMark
         key="rename"
         action="reword"
-        label="Renamed on Apply (reword)"
-        facts={[{ label: 'New name', value: mark.renamedTo }]}
+        label="Reworded on Apply"
+        facts={[{ label: 'New message', value: mark.renamedTo }]}
       >
         <PenLine size={ICON_SIZE.row} aria-hidden />
       </HistoryChangeMark>,
@@ -89,7 +89,7 @@ export const HistoryRowMarkList = ({
   }
   if (mark.isRemoved) {
     marks.push(
-      <HistoryChangeMark key="remove" action="drop" label="Removed on Apply (drop)">
+      <HistoryChangeMark key="remove" action="drop" label="Dropped on Apply">
         <Minus size={ICON_SIZE.row} aria-hidden />
       </HistoryChangeMark>,
     );

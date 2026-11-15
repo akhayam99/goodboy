@@ -4,6 +4,7 @@ type RetiredName = {
   readonly id: string;
   readonly pattern: RegExp;
   readonly use: string;
+  readonly allowedPaths?: RegExp;
 };
 
 export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
@@ -36,8 +37,9 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'command-palette', pattern: /\bCommand palette\b/i, use: NAMES.searchOrRun },
   { id: 'open-as-page', pattern: /\bOpen as page\b/, use: NAMES.openFullPage },
   { id: 'beside-the-session', pattern: /^Beside the session$/, use: NAMES.dock },
-  { id: 'autorun', pattern: /\bAutorun\b/i, use: NAMES.autopilot },
-  { id: 'run-on-its-own', pattern: /\bRun on its own\b/i, use: NAMES.autopilot },
+  { id: 'autorun', pattern: /\bAutorun\b/i, use: NAMES.asksYou },
+  { id: 'run-on-its-own', pattern: /\bRun on its own\b/i, use: NAMES.asksYou },
+  { id: 'autopilot', pattern: /\bAutopilot\b/, use: NAMES.asksYou },
   { id: 'ask-before-each-step', pattern: /\bAsk before each step\b/i, use: NAMES.everyStep },
   { id: 'ask-after-the-plan', pattern: /\bAsk after the plan\b/i, use: NAMES.afterThePlan },
   { id: 'when-to-ask', pattern: /\bWhen to ask\b/i, use: NAMES.asksYou },
@@ -51,7 +53,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   {
     id: 'autopilot-agent',
     pattern: /\bAutopilot (?:agent|mode)\b|\bAuto mode\b/,
-    use: NAMES.autopilot,
+    use: NAMES.asksYou,
   },
   {
     id: 'waiting-on-you',
@@ -180,6 +182,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     id: 'turn-into-work',
     pattern: /^(?:Turn into work|Start work(?: from here)?)$/,
     use: NAMES.startWorkFromChat,
+    allowedPaths: /^(?:features\/work\/|app\/components\/MockScene\/scenes\/u42\/)/,
   },
   {
     id: 'session-is-a-task',
@@ -236,7 +239,8 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'discard-request', pattern: /^Discard request$/, use: NAMES.decline },
   { id: 'mark-all-seen', pattern: /^Mark all seen$/, use: NAMES.markAsRead },
   { id: 'restore-turn', pattern: /^Restore turn(?: \d+)?$/, use: NAMES.undoReply },
-  { id: 'undo-restore-of-turn', pattern: /^Undo restore of turn\b/, use: NAMES.bringItBack },
+  { id: 'undo-restore-of-turn', pattern: /^Undo restore of turn\b/, use: NAMES.undoRestore },
+  { id: 'bring-it-back', pattern: /\bBring it back\b/, use: NAMES.undoRestore },
   { id: 'waits-for-this-turn', pattern: /^Waits for this turn\b/, use: NAMES.waitsForThisReply },
   { id: 'new-turns-start-in', pattern: /\bNew turns start in\b/, use: NAMES.startsIn },
   { id: 'the-turn-failed', pattern: /^The turn (?:failed|stopped)$/, use: NAMES.failed },

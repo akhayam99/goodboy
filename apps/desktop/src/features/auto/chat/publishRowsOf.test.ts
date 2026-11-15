@@ -91,6 +91,20 @@ describe('which push rows the card keeps', () => {
     expect(rows).toEqual([]);
   });
 
+  it('keeps a held plain push and the one declined, as plain rows', () => {
+    const held = publishRowsOf({
+      delegations: [
+        saved({ state: 'awaiting_confirm', isConfirmed: false, tries: 0, mode: 'push' }),
+      ],
+    });
+    const declined = publishRowsOf({
+      delegations: [saved({ state: 'declined', isConfirmed: false, tries: 0, mode: 'push' })],
+    });
+
+    expect(held.map((row) => row.isForce)).toEqual([false]);
+    expect(declined.map((row) => row.line.state)).toEqual(['declined']);
+  });
+
   it('keeps a row waiting for the answer', () => {
     const rows = publishRowsOf({
       delegations: [saved({ state: 'awaiting_confirm', isConfirmed: false, tries: 0 })],

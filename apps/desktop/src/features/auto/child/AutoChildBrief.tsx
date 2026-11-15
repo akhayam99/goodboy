@@ -2,20 +2,30 @@ import type { MessageAttachment } from '@goodboy/types';
 import { Chip } from '@goodboy/ui';
 import { RoutingLabel } from '../../../shared/components/RoutingLabel';
 import type { DelegationCardModel } from '../chat/delegationCardOf';
+import type { LaunchSnapshotItem } from '../chat/launchSnapshotOf';
 import type { ShownRouting } from '../executedRoutingOf';
+import { AutoChildWentIn } from './AutoChildWentIn';
 
 type Props = {
   readonly card: DelegationCardModel;
   readonly routing: ShownRouting;
   readonly images: ReadonlyArray<MessageAttachment>;
+  readonly wentIn: ReadonlyArray<LaunchSnapshotItem> | null;
   readonly attempts: number;
   readonly attemptsNote: string | null;
 };
 
 const AUTO_CHILD_LINE = 'Auto started this agent and reads your messages to it.';
 
-export const AutoChildBrief = ({ card, routing, images, attempts, attemptsNote }: Props) => {
-  const wentIn = card.wentIn ?? [];
+export const AutoChildBrief = ({
+  card,
+  routing,
+  images,
+  wentIn,
+  attempts,
+  attemptsNote,
+}: Props) => {
+  const shownImages = wentIn === null ? images : [];
   return (
     <section aria-label="Why Auto started it" className="flex min-w-0 flex-col gap-3 text-ui">
       <div className="flex min-w-0 flex-col gap-1">
@@ -38,12 +48,7 @@ export const AutoChildBrief = ({ card, routing, images, attempts, attemptsNote }
             {card.doneWhen}
           </p>
         )}
-        {wentIn.length === 0 ? null : (
-          <p data-auto-child-went-in="" className="text-foreground">
-            <span className="text-muted-foreground">Went in: </span>
-            {wentIn.map((item) => item.label).join(' · ')}
-          </p>
-        )}
+        {wentIn === null ? null : <AutoChildWentIn items={wentIn} />}
       </div>
       <div className="flex min-w-0 flex-col gap-2">
         <p className="flex min-w-0 items-center gap-1 text-muted-foreground">
@@ -61,9 +66,9 @@ export const AutoChildBrief = ({ card, routing, images, attempts, attemptsNote }
         {card.routingNote === null ? null : (
           <p className="text-faint-foreground">{card.routingNote}</p>
         )}
-        {images.length === 0 ? null : (
+        {shownImages.length === 0 ? null : (
           <ul aria-label="Images Auto passed on" className="flex min-w-0 flex-wrap gap-1">
-            {images.map((image) => (
+            {shownImages.map((image) => (
               <li key={image.id}>
                 <Chip tone="neutral" kind="reference" label={image.fileName} />
               </li>

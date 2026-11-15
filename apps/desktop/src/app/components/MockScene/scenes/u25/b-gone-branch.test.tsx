@@ -69,23 +69,23 @@ describe('the gone branch scenes', () => {
     expect(Object.keys(U25_B_GONE_BRANCH_SCENES)).toEqual(['gone-branch', 'gone-branch-restore']);
   });
 
-  it('gone-branch says the branch was deleted in the notices and offers Remove, never Reopen or Restore', async () => {
+  it('gone-branch says the branch was deleted in the notices and offers Remove from session, never Reopen or Restore', async () => {
     renderScene({ name: 'gone-branch' });
 
     const notice = await goneNotice();
 
-    within(notice).getByRole('button', { name: /^Remove for/ });
+    within(notice).getByRole('button', { name: /^Remove from session for/ });
     expect(within(notice).queryByRole('button', { name: /^Reopen for/ })).toBeNull();
     expect(within(notice).queryByRole('button', { name: /^Restore branch for/ })).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('gone-branch-restore offers Restore branch beside Remove', async () => {
+  it('gone-branch-restore offers Restore branch beside Remove from session', async () => {
     renderScene({ name: 'gone-branch-restore' });
 
     const notice = await goneNotice();
 
     within(notice).getByRole('button', { name: /^Restore branch for/ });
-    within(notice).getByRole('button', { name: /^Remove for/ });
+    within(notice).getByRole('button', { name: /^Remove from session for/ });
   });
 });

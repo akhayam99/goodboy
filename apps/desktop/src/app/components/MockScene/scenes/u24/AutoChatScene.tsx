@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { COLLAPSED_RAIL_WIDTH, DrawerColumn } from '@goodboy/ui';
+import { leadPermissionsOf, type StoredLeadPermissionRows } from '@goodboy/core/auto';
+import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
 import type { AgentQueuedTurn } from '../../../../../store/slices/agentQueue/types';
-import { SceneAutoTreeNav } from '../u26/SceneAutoTreeNav';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { LeadPage } from '../../../../../features/session/components/LeadPage';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
+import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
 import { DrawerHost } from '../../../DrawerHost';
 import { seedActivityRunScene } from '../activityRunSeed';
 import {
@@ -27,6 +29,13 @@ type Props = {
   readonly selected?: 'root' | 'planner';
   readonly mountAct?: 'pending' | 'failing';
   readonly hasLeadPage?: boolean;
+  readonly isWorkOn?: boolean;
+  readonly viewOf?: (params: ViewOfParams) => AutoTreeView;
+  readonly leadRows?: StoredLeadPermissionRows;
+};
+
+type ViewOfParams = {
+  readonly view: AutoTreeView;
 };
 
 const TRAY_IMAGE_DATA_URL =
@@ -60,6 +69,9 @@ export const AutoChatScene = ({
   selected = 'root',
   mountAct,
   hasLeadPage = false,
+  isWorkOn = false,
+  viewOf,
+  leadRows,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const sizing = useAppStore(selectDrawerSizing);
@@ -67,7 +79,6 @@ export const AutoChatScene = ({
   const selectedId: AgentId = selected === 'root' ? AUTO_ROOT_ID : PLANNER_ID;
   const data = autoSceneOf({ state });
   const agent = data.agents.find((candidate) => candidate.id === selectedId) ?? null;
-  const isRailNarrow = isDrawerOpen && (sizing === 'reader' || sizing === 'browser');
 
   useEffect(() => {
     seedActivityRunScene();
@@ -78,7 +89,23 @@ export const AutoChatScene = ({
       agentProviderOverride: { [AUTO_ROOT_ID]: 'anthropic' },
       agentModelOverride: { [AUTO_ROOT_ID]: 'opus-5.5' },
       agentEffortOverride: { [AUTO_ROOT_ID]: 'medium' },
-      autoTreeViews: { [AUTO_SESSION.id]: [scene.view] },
+      autoTreeViews: {
+        [AUTO_SESSION.id]: [viewOf === undefined ? scene.view : viewOf({ view: scene.view })],
+      },
+      ...(leadRows === undefined
+        ? {}
+        : {
+            readLeadPermissions: async () =>
+              leadPermissionsOf({
+                leadRows,
+                defaultRows: {},
+                sessionLevel: 'plan',
+                workspaceLevel: null,
+                isPlanApprovalOff: false,
+                isWorkFlowOn: true,
+                spendLimitUsd: 10,
+              }),
+          }),
       loadAutoTrees: async () => undefined,
       selectedAgentId: { [AUTO_SESSION.id]: selectedId },
       agentTurnState: { [AUTO_ROOT_ID]: scene.rootTurn },
@@ -91,6 +118,10 @@ export const AutoChatScene = ({
       sessionAnsweredQuestions: { [AUTO_SESSION.id]: [] },
       sessionEvents: { [AUTO_SESSION.id]: [] },
       drawer: null,
+      settings: {
+        ...useAppStore.getState().settings,
+        [SETTING_WORK_ENABLED]: isWorkOn ? 'true' : 'false',
+      },
       ...(state === 'mount-ask'
         ? {
             sessionProjectMounts: {
@@ -136,7 +167,7 @@ export const AutoChatScene = ({
       });
     }, PLAN_OPEN_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [state, isPlanOpen, selectedId, mountAct]);
+  }, [state, isPlanOpen, selectedId, mountAct, isWorkOn, viewOf, leadRows]);
 
   if (!isReady || agent === null) {
     return null;
@@ -144,15 +175,11 @@ export const AutoChatScene = ({
   return (
     <AutoReleaseContext.Provider value>
       <main className="flex h-screen bg-background text-foreground">
-        {isRailNarrow ? (
-          <nav
-            aria-label="Sidebar"
-            className="flex h-full shrink-0 flex-col border-r border-border-soft pt-1"
-            style={{ width: COLLAPSED_RAIL_WIDTH }}
-          />
-        ) : (
-          <SceneAutoTreeNav session={AUTO_SESSION} rootAgentId={AUTO_ROOT_ID} />
-        )}
+        <nav
+          aria-label="Sidebar"
+          className="flex h-full shrink-0 flex-col border-r border-border-soft pt-1"
+          style={{ width: COLLAPSED_RAIL_WIDTH }}
+        />
         <DrawerColumn
           main={
             hasLeadPage ? (

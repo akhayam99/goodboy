@@ -43,6 +43,7 @@ export type CreatePrInput = {
   readonly isScribeBody?: boolean;
   readonly excludedIssues?: ReadonlyArray<number>;
   readonly forcePush?: { readonly confirmedOnlyOnline: ReadonlyArray<string> | null };
+  readonly pushSha?: string;
   readonly onPushed?: () => void;
 };
 
@@ -114,6 +115,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     isScribeBody,
     excludedIssues,
     forcePush,
+    pushSha,
     onPushed,
   }: CreatePrInput): Promise<CreatedPr> => {
     const target = resolveSessionPrFetch({
@@ -207,7 +209,12 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
 
     const pushed = await get().pushBranch(
       forcePush === undefined
-        ? { sessionId, mountId: mount.id, mode: 'plain' }
+        ? {
+            sessionId,
+            mountId: mount.id,
+            mode: 'plain',
+            ...(pushSha === undefined ? {} : { sha: pushSha, expectedBranch: mount.branch }),
+          }
         : {
             sessionId,
             mountId: mount.id,

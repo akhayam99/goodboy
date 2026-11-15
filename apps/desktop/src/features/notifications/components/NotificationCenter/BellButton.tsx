@@ -1,5 +1,5 @@
 import { Bell } from 'lucide-react';
-import { cn, FOCUS_RING, ICON_SIZE, Tooltip, TOP_BAR_CONTROL } from '@goodboy/ui';
+import { cn, FOCUS_RING, ICON_SIZE, tintClasses, Tooltip, TOP_BAR_CONTROL } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 
 const BELL_COUNT_CAP = 9;
@@ -43,7 +43,10 @@ export const BellButton = ({ isOpen, isCurrent, unread, hasUnreadDebt, onClick }
           aria-hidden
           data-bell-dot={hasUnreadDebt ? 'warning' : 'unread'}
           data-bell-count=""
-          className={cn('text-chip tabular-nums', hasUnreadDebt ? 'text-warning' : 'text-primary')}
+          className={cn(
+            'text-chip tabular-nums',
+            tintClasses(hasUnreadDebt ? 'warning' : 'unread').text,
+          )}
         >
           {bellCountLabel({ count: unread })}
         </span>

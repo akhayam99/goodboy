@@ -13,7 +13,7 @@ describe('archiveConfirmOf', () => {
     expect(confirm?.title).toBe('Stop 1 agent and archive?');
     expect(confirm?.confirmLabel).toBe('Stop 1 agent and archive');
     expect(confirm?.description).toBe(
-      'Archive stops it first and keeps what it wrote. Branches, worktrees and history stay on disk, and Restore brings it back.',
+      'Archive stops it first and keeps what it wrote. Branches, worktrees and history stay on disk, and Restore reopens it.',
     );
     expect(confirm?.role).toBe('alert');
   });
@@ -23,7 +23,7 @@ describe('archiveConfirmOf', () => {
 
     expect(confirm?.confirmLabel).toBe('Stop 2 agents and archive');
     expect(confirm?.description).toBe(
-      'Archive stops them first and keeps what they wrote. Branches, worktrees and history stay on disk, and Restore brings them back.',
+      'Archive stops them first and keeps what they wrote. Branches, worktrees and history stay on disk, and Restore reopens them.',
     );
   });
 

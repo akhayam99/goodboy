@@ -148,6 +148,17 @@ describe('buildAutoSystemPrompt', () => {
     }
   });
 
+  it('lets the Lead send finish when it may close the work, and only on request otherwise', () => {
+    const asked = buildAutoSystemPrompt({ isDelegationEnabled: true });
+    const closing = buildAutoSystemPrompt({ isDelegationEnabled: true, isLeadClosing: true });
+
+    expect(asked).toContain('Send a finish block only when the user asked to close.');
+    expect(asked).not.toContain('The user let you close the work');
+    expect(closing).toContain('The user let you close the work');
+    expect(closing).toContain('end your reply with a finish block');
+    expect(closing).not.toContain('Send a finish block only when the user asked to close.');
+  });
+
   it('routes each kind of work to one role, generated from the role list', () => {
     const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
     const table = autoRoutingTable();

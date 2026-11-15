@@ -1,4 +1,5 @@
 import type { AgentId } from '@goodboy/types';
+import type { FlowWord } from '../../../../shared/lib/flowWordOf';
 import type { AutoPlanFacts } from '../../../auto/autoRetryTargetsOf';
 import type { AutoStuckKind } from '../../../auto/autoStuckKindOf';
 import { autoStuckVerbOf } from '../../../auto/autoStuckVerbOf';
@@ -45,6 +46,7 @@ type Params = {
   readonly owners: ReadonlyArray<NeedsYouOwner>;
   readonly suggestions: ReadonlyArray<SessionSuggestion>;
   readonly autoTargets: ReadonlyArray<AutoActionTarget>;
+  readonly flow?: FlowWord;
 };
 
 const PR_TARGET_PREFIX = 'pr:';
@@ -63,6 +65,10 @@ type SuggestionParams = {
 
 type AutoParams = {
   readonly target: AutoActionTarget;
+};
+
+type AutoCardParams = AutoParams & {
+  readonly flow: FlowWord;
 };
 
 type OwnedParams = SuggestionParams & {
@@ -101,18 +107,16 @@ const suggestionMountIdOf = ({ suggestion }: SuggestionParams): string | null =>
   return null;
 };
 
-const AUTO_STUCK = 'Auto needs you';
-
-const autoTitleOf = ({ target }: AutoParams): string => {
+const autoTitleOf = ({ target, flow }: AutoCardParams): string => {
   switch (target.kind) {
     case 'neverStarted':
     case 'failed':
     case 'timedOut':
-      return AUTO_STUCK;
+      return `${flow} needs you`;
     case 'approve':
-      return target.plan?.name ?? 'Auto needs approval';
+      return target.plan?.name ?? `${flow} needs approval`;
     case 'blocked':
-      return "Auto couldn't reply";
+      return `${flow} couldn't reply`;
     default: {
       const exhaustive: never = target.kind;
       return exhaustive;
@@ -165,12 +169,12 @@ const suggestionCardOf = ({ suggestion }: SuggestionParams): ActionCardModel => 
   folded: NO_CARDS,
 });
 
-const autoCardOf = ({ target }: AutoParams): ActionCardModel => ({
+const autoCardOf = ({ target, flow }: AutoCardParams): ActionCardModel => ({
   id: `auto:${target.agentId}:${target.kind}`,
   band: 0,
   priority: 0,
   kind: target.kind,
-  title: autoTitleOf({ target }),
+  title: autoTitleOf({ target, flow }),
   detail: autoDetailOf({ target }),
   mountId: target.mountId,
   source: { kind: 'auto', target },
@@ -270,6 +274,7 @@ export const actionCardsOf = ({
   owners,
   suggestions,
   autoTargets,
+  flow = 'Auto',
 }: Params): ReadonlyArray<ActionCardModel> => {
   const ownedQuestionIds = new Set(owners.flatMap((owner) => owner.questionIds));
   const cards = [
@@ -277,7 +282,7 @@ export const actionCardsOf = ({
     ...suggestions
       .filter((suggestion) => !isOwnedElsewhere({ suggestion, ownedQuestionIds }))
       .map((suggestion) => suggestionCardOf({ suggestion })),
-    ...autoTargets.map((target) => autoCardOf({ target })),
+    ...autoTargets.map((target) => autoCardOf({ target, flow })),
   ];
   return foldStoppedRebases({ cards: foldDivergedIntoStops({ cards: cards.sort(compareCards) }) });
 };

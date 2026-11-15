@@ -510,7 +510,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(optionNames().slice(0, 7)).toEqual([
-      'Rename',
+      'Reword',
       'Fixup down',
       'Squash down',
       'Move up',
@@ -526,7 +526,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     const release = focusCommitRow(commitScope({ onRename }));
     const { input } = openIn(PAYOUT);
 
-    type(input, 'rename');
+    type(input, 'reword');
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(onRename).toHaveBeenCalledTimes(1);
@@ -538,7 +538,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     openIn(PAYOUT);
 
     expect(optionNames().slice(0, 3)).toEqual(['Separate commit', 'Copy SHA', 'Copy subject']);
-    expect(optionNames()).not.toContain('Rename');
+    expect(optionNames()).not.toContain('Reword');
     release();
   });
 
@@ -550,7 +550,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     type(input, 'squash');
     const blocked = screen.getByRole('option', { name: 'Squash down' });
     expect(blocked.getAttribute('aria-disabled')).toBe('true');
-    expect(blocked.getAttribute('aria-description')).toBe('Nothing below to combine with');
+    expect(blocked.getAttribute('aria-description')).toBe('No commit below');
     release();
   });
 
@@ -574,7 +574,7 @@ describe('PaletteOverlay, Ask in chat', () => {
     expect(
       screen.getByRole('option', { name: 'Ask in chat' }).getAttribute('aria-description'),
     ).toBe('"pay export"');
-    expect(screen.getByText('Jump to')).toBeDefined();
+    expect(screen.getByText('Go to')).toBeDefined();
   });
 
   it('keeps the best match picked for a name, and Ask in chat picked for a question', () => {

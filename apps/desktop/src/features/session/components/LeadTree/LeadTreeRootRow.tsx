@@ -5,6 +5,7 @@ import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import type { RailRow } from '../../../workTreeModel/railGeometry';
 import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
+import { LEAD_TREE_METER } from './leadTreeMeter';
 import { LEAD_TREE_QUIET_NODES } from './leadTreeQuietNodes';
 import type { LeadTreeRoot } from './leadTreeRoot';
 import { LEAD_TREE_ROW } from './leadTreeRow';
@@ -52,6 +53,7 @@ export const LeadTreeRootRow = memo(
       {LEAD_TREE_QUIET_NODES.has(root.node) ? null : (
         <span className="shrink-0 text-meta text-muted-foreground">{root.word}</span>
       )}
+      <span aria-hidden data-lead-tree-meter="" className={LEAD_TREE_METER} />
     </div>
   ),
 );

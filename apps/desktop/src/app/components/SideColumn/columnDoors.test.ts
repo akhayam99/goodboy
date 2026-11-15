@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { COLUMN_DOORS } from './columnDoors';
+import { COLUMN_DOORS, columnDoorsOf } from './columnDoors';
 
 describe('the column doors', () => {
   it('names the tracker door Tasks and keeps its id', () => {
@@ -23,8 +23,8 @@ describe('the column doors', () => {
     expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists the six destinations and no tool', () => {
-    expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
+  it('lists the six destinations and no tool while the Work switch is off', () => {
+    expect(columnDoorsOf({ isWork: false }).map((entry) => entry.label)).toEqual([
       'Board',
       'Tasks',
       'Workflows',
@@ -32,6 +32,22 @@ describe('the column doors', () => {
       'Impact',
       'Monitoring',
     ]);
+  });
+
+  it('shows the Work door only with the switch on, between Tasks and Workflows, with a New badge', () => {
+    const on = columnDoorsOf({ isWork: true });
+
+    expect(on.map((entry) => entry.label)).toEqual([
+      'Board',
+      'Tasks',
+      'Work',
+      'Workflows',
+      'Chat',
+      'Impact',
+      'Monitoring',
+    ]);
+    expect(on.find((entry) => entry.id === 'work')?.badge).toBe('New');
+    expect(columnDoorsOf({ isWork: false }).some((entry) => entry.id === 'work')).toBe(false);
   });
 
   it('marks Impact and Monitoring as quiet reference doors', () => {

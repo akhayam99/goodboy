@@ -254,10 +254,7 @@ header wide, the title truncating first (`app/hooks/useSlotBackChip`,
 `slotChipLabelOf`). A click opens it and puts the current one in the chip.
 While the chip shows, the head draws no back row; without one, a drawer opened
 from another drawer keeps its quiet back row (`DrawerBackLink`, the row
-`DrawerFrame`'s `back` draws): **Back to agents**, **Back to Explore**,
-**Back to scripts**. The run step drawer has no `DrawerFrame` and draws the
-same `DrawerBackLink` above its transcript; **Back to agents** reopens the
-Agents drawer on the run it came from.
+`DrawerFrame`'s `back` draws), such as **Back to scripts** on a script run.
 
 Two slots per window. The `drawer`
 store slice holds `drawer` and `drawerBack`, each `{ kind, sessionId, payload }`
@@ -493,7 +490,8 @@ The pane is one scroll with Goal, Decisions, Summary and Explanations as
 sections (`ContextSection`, no tabs); opening it on a section scrolls there. Each
 card has one `⋯` menu, **Edit**, **Versions** and **Change visibility**
 (`SlotSourceActions`), and no eye or second button. **Context updates**
-(`ContextUpdates`, a `Collapsible`) sits above the cards and says `Updated 2 min ago`,
+(`ContextUpdates`, a head row whose toggle and action slot share one centre line;
+the Context tab puts **Copy context** in that slot) sits above the cards and says `Updated 2 min ago`,
 `Queued`, `Updating…` or `Couldn't update`; open, it lists the last round
 (`summarizerRounds`: when, how many turns or a full pass, model and effort, tokens
 and cost, what changed as a comma list of links to the cards, every value on the same
@@ -505,7 +503,8 @@ Summary draws its State block only when the State holds more than its first sent
 
 Every card reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and
-folds the rest behind **Show N more** (`KeyLineList`); `summaryItems` splits a
+folds the rest behind **Show N more** (`KeyLineList` through `ContextExpander`, the
+one fold style of the tab); `summaryItems` splits a
 body into items, one per top-level bullet with its sub-bullets, or one per
 sentence for prose. Summary shows State when it says more than the glance line, then Next
 and Learned, then any section the summarizer did not name; Open questions are left out
@@ -590,7 +589,7 @@ header action is Stop while it runs and Run again after (when it cannot run, a
 tooltip says why, never a native title); the body is a status
 line (state, time, project, branch), a `Command` disclosure closed by default,
 and the log, which follows the tail until you scroll up and then offers
-`Jump to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
+`Scroll to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
 hash) wraps at the edge instead of breaking every word. The status row under the log
 says `Following output` while it runs and the exit, time and Copy output after.
 `Send to the agent` sits next to it, while the run is live too, and

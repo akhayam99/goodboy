@@ -501,7 +501,7 @@ describe('Monitoring on a branch with leftovers, a search miss and shared proces
 
     renderPage();
 
-    await waitFor(() => expect(screen.queryByText('Stop leftovers')).not.toBeNull(), {
+    await waitFor(() => expect(screen.queryByText('Stop leftover processes')).not.toBeNull(), {
       timeout: 4000,
     });
     expect(screen.queryByText(NOTHING_RUNNING)).toBeNull();
@@ -527,7 +527,7 @@ describe('Monitoring on a branch with leftovers, a search miss and shared proces
     await waitFor(() => expect(screen.queryByText(NOTHING_RUNNING)).not.toBeNull(), {
       timeout: 4000,
     });
-    expect(screen.queryByText('Stop leftovers')).toBeNull();
+    expect(screen.queryByText('Stop leftover processes')).toBeNull();
   });
 
   it('does not report an empty branch when a saved search matches none of its ports', async () => {

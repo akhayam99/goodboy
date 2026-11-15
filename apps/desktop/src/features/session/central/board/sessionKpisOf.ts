@@ -14,7 +14,7 @@ type Params = {
 };
 
 export const sessionKpisOf = ({ board }: Params): SessionKpis => {
-  const { rows } = board;
+  const { rows, settled } = board;
   const branchRows = rows.filter((row) => row.mountId !== null);
   return {
     branches: {
@@ -24,9 +24,9 @@ export const sessionKpisOf = ({ board }: Params): SessionKpis => {
     needsYou: {
       askCount: new Set(rows.flatMap((row) => row.askIds)).size,
     },
-    spendUsd: rows.reduce((sum, row) => sum + row.spendUsd, 0),
-    elapsedMs: rows.reduce((sum, row) => sum + row.elapsedMs, 0),
-    leadCount: new Set(rows.flatMap((row) => row.leadIds)).size,
-    agentCount: new Set(rows.flatMap((row) => row.agentIds)).size,
+    spendUsd: rows.reduce((sum, row) => sum + row.spendUsd, settled.spendUsd),
+    elapsedMs: rows.reduce((sum, row) => sum + row.elapsedMs, settled.elapsedMs),
+    leadCount: new Set([...rows.flatMap((row) => row.leadIds), ...settled.leadIds]).size,
+    agentCount: new Set([...rows.flatMap((row) => row.agentIds), ...settled.agentIds]).size,
   };
 };

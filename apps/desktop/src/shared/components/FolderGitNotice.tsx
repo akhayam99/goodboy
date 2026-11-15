@@ -58,7 +58,7 @@ export const FolderGitNotice = ({ project, notice }: Props) => {
         return {
           title: `${project.name} is now a git repository.`,
           body: `Set up outside the app, with ${commits} on ${branch}. Found at ${at}.`,
-          primary: { label: 'Got it', run: () => dismiss({ projectId }) },
+          primary: { label: 'Dismiss', run: () => dismiss({ projectId }) },
           secondary: { label: 'Keep editing in place', run: () => keepInPlace({ projectId }) },
         };
       }

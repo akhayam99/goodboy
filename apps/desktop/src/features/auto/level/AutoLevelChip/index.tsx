@@ -1,7 +1,7 @@
 import type { AutoLevel } from '@goodboy/core/auto';
-import { AsksYouChip } from '../../../workflows/AsksYouChip';
-import { asksWordsOf } from '../../../workflows/asksWordsOf';
-import { runAutonomyOf } from '../../../workflows/runAutonomy';
+import type { LeadPermissionsTarget } from '../../permissions/LeadPermissionsChip';
+import { AsksLevelChip } from './AsksLevelChip';
+import { WorkAwareChip } from './WorkAwareChip';
 
 type PickParams = {
   readonly next: AutoLevel;
@@ -14,28 +14,14 @@ type Props = {
   readonly error: string | null;
   readonly isDisabled: boolean;
   readonly onPick: (params: PickParams) => void;
+  readonly permissions?: LeadPermissionsTarget;
 };
 
-const HELP =
-  'How much Auto may do alone. A change applies to what Auto starts next; an agent already waiting for your go keeps waiting.';
-
-export const AutoLevelChip = ({
-  value,
-  workspaceLevel,
-  workspaceName,
-  error,
-  isDisabled,
-  onPick,
-}: Props) => {
-  const own = runAutonomyOf({ autoRun: false, autonomy: value });
-  return (
-    <AsksYouChip
-      value={own.key}
-      words={asksWordsOf({ own, workspaceName, workspaceAutonomy: workspaceLevel })}
-      help={HELP}
-      error={error}
-      isDisabled={isDisabled}
-      onPick={onPick}
-    />
+export const AutoLevelChip = ({ permissions, ...level }: Props) => {
+  const chip = <AsksLevelChip {...level} />;
+  return permissions === undefined ? (
+    chip
+  ) : (
+    <WorkAwareChip target={permissions}>{chip}</WorkAwareChip>
   );
 };

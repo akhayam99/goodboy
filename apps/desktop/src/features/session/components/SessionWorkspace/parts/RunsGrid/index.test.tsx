@@ -86,6 +86,7 @@ const runsOf = ({ agents, blockedIds = [], attached = [], mounts = [] }: RunsPar
     revisingStarts: {},
     mounts,
     projects: [],
+    isWork: false,
   });
 
 type GridParams = {

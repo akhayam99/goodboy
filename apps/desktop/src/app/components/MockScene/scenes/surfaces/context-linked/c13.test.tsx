@@ -84,10 +84,21 @@ describe.each(['light', 'dark'])('u36 Context and linked work in %s', (theme) =>
       within(linked).getByRole('button', { name: 'Open PAYMENTS-42 in Tasks' });
       within(linked).getByRole('button', { name: 'Open HBL-97 on hl/surface-retry-state' });
       expect(screen.queryByText('Confirm the earlier retry rollout')).toBeNull();
-      fireEvent.click(screen.getByRole('button', { name: 'Show history (1)' }));
+      const history = screen.getByRole('button', { name: 'History 1' });
+      expect(history.getAttribute('aria-expanded')).toBe('false');
+      fireEvent.click(history);
       screen.getByText('Confirm the earlier retry rollout');
-      fireEvent.click(screen.getByRole('button', { name: 'Hide history (1)' }));
+      expect(history.getAttribute('aria-expanded')).toBe('true');
+      fireEvent.click(history);
       expect(screen.queryByText('Confirm the earlier retry rollout')).toBeNull();
+      const tab = screen.getByTestId('context-tab');
+      const heads = [...tab.querySelectorAll('[data-context-block] > * [data-context-head]')];
+      expect(heads.length).toBeGreaterThanOrEqual(6);
+      const status = tab.querySelector('[data-context-status] [data-context-head]');
+      expect(status?.querySelector('[data-context-head-actions]')).not.toBeNull();
+      expect(tab.firstElementChild?.firstElementChild?.hasAttribute('data-context-status')).toBe(
+        true,
+      );
     },
   );
 });

@@ -95,6 +95,13 @@ describe('retired names match whatever the casing', () => {
     expect(retiredIdsIn({ text })).toEqual([]);
   });
 
+  it('keeps the chat meaning of Start work retired outside the Work feature', () => {
+    const retired = RETIRED_NAMES.find((entry) => entry.id === 'turn-into-work');
+    expect(retired?.pattern.test('Start work')).toBe(true);
+    expect(retired?.allowedPaths?.test('features/work/components/StartWork/index.tsx')).toBe(true);
+    expect(retired?.allowedPaths?.test('features/workspace-chat/components/Panel.tsx')).toBe(false);
+  });
+
   it('leaves a data attribute alone', () => {
     expect(retiredIdsIn({ text: '[data-inbox-key="a"]' })).toEqual([]);
   });

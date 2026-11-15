@@ -349,7 +349,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
           placement="inline"
           role="alert"
           title={`Couldn't read the scripts of ${group.projectName}`}
-          body={summary ?? 'Goodboy could not read this folder.'}
+          body={summary ?? "Couldn't read this folder."}
           detail={detail}
           actions={
             <Button

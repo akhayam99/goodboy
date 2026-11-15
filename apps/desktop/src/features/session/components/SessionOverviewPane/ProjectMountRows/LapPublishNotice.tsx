@@ -84,7 +84,7 @@ export const LapPublishNotice = ({ sessionId, project, stage }: Props) => {
         {isPublishing ? (
           <PublishPanel
             project={project}
-            primaryLabel={changed !== null && changed > 0 ? 'Publish and move my work' : 'Publish'}
+            primaryLabel={changed !== null && changed > 0 ? 'Publish and move work' : 'Publish'}
             onPublished={(result) => {
               setIsPublishing(false);
               if (result.kind !== 'published') {

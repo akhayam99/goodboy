@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { ICON_SIZE, Markdown, FOCUS_RING, cn } from '@goodboy/ui';
+import { Markdown } from '@goodboy/ui';
+import { ContextExpander } from './ContextExpander';
 
 type Props = {
   readonly items: ReadonlyArray<string>;
@@ -39,23 +39,12 @@ export const KeyLineList = ({ items, label }: Props) => {
               ))}
             </ul>
           ) : null}
-          <button
-            type="button"
-            aria-expanded={isOpen}
-            aria-controls={listId}
-            onClick={() => setIsOpen(!isOpen)}
-            className={cn(
-              'flex items-center gap-1 self-start rounded-sm text-meta text-muted-foreground hover:text-foreground',
-              FOCUS_RING,
-            )}
-          >
-            {isOpen ? (
-              <ChevronDown size={ICON_SIZE.row} aria-hidden />
-            ) : (
-              <ChevronRight size={ICON_SIZE.row} aria-hidden />
-            )}
-            {isOpen ? 'Show less' : `Show ${rest.length} more`}
-          </button>
+          <ContextExpander
+            label={isOpen ? 'Show less' : `Show ${rest.length} more`}
+            isOpen={isOpen}
+            controlsId={listId}
+            onToggle={() => setIsOpen(!isOpen)}
+          />
         </>
       )}
     </div>

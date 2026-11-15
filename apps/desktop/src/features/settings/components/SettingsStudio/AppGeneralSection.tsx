@@ -6,6 +6,7 @@ import { SearchIndexBand } from './SearchIndexBand';
 import { RepoCheckBand } from './RepoCheckBand';
 import { AwayAlertsBand } from './AwayAlertsBand';
 import { TerminalExitStatusBand } from './TerminalExitStatusBand';
+import { WorkSwitchField } from './WorkSwitchField';
 
 export const AppGeneralSection = () => (
   <div className="flex flex-col gap-6">
@@ -25,5 +26,11 @@ export const AppGeneralSection = () => (
     <RepoCheckBand />
 
     <SearchIndexBand />
+
+    <Band inset="content" label="Experiments" headingLevel={2}>
+      <div className="flex flex-col">
+        <WorkSwitchField />
+      </div>
+    </Band>
   </div>
 );

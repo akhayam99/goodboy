@@ -1,5 +1,5 @@
-import { StatusDot } from '@goodboy/ui';
-import { TONE_COUNT_CLASS } from '../../../shared/components/toneCountClass';
+import { StatusMark } from '@goodboy/ui';
+import { doorMarkOf } from './doorMarkOf';
 import type { DoorSignal } from './doorSignal';
 
 type Props = {
@@ -8,42 +8,18 @@ type Props = {
 };
 
 export const DoorSignalMark = ({ signal, isDotOnly = false }: Props) => {
-  const tone = signal.tone ?? 'warning';
-  if (signal.countText !== undefined && !isDotOnly) {
-    return (
-      <span
-        aria-hidden
-        data-door-signal={signal.isWarning ? tone : 'neutral'}
-        data-door-count=""
-        className={TONE_COUNT_CLASS}
-      >
-        {signal.isWarning ? (
-          <StatusDot tone={tone === 'danger' ? 'danger' : 'warning'} size="sm" />
-        ) : null}
-        <span>{signal.countText}</span>
-      </span>
-    );
+  const mark = doorMarkOf({ signal, isDotOnly });
+  if (mark.kind === 'empty' || mark.kind === 'state') {
+    return null;
   }
-  if (signal.isWarning) {
-    return (
-      <span aria-hidden data-door-signal={tone} className="flex shrink-0">
-        <StatusDot tone={tone === 'danger' ? 'danger' : 'warning'} size="sm" />
-      </span>
-    );
-  }
-  if (signal.tone === 'neutral') {
-    return (
-      <span aria-hidden data-door-signal="neutral" className="flex shrink-0">
-        <StatusDot tone="neutral" size="sm" />
-      </span>
-    );
-  }
-  if (signal.isUnread) {
-    return (
-      <span aria-hidden data-door-signal="unread" className="flex shrink-0">
-        <StatusDot tone="unread" size="sm" />
-      </span>
-    );
-  }
-  return null;
+  return (
+    <span
+      aria-hidden
+      data-door-signal={mark.tone}
+      data-door-count={mark.kind === 'count' ? '' : undefined}
+      className="flex shrink-0"
+    >
+      <StatusMark mark={mark} />
+    </span>
+  );
 };

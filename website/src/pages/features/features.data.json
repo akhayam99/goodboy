@@ -85,6 +85,12 @@
           "shown": true
         },
         {
+          "title": "The Start work composer",
+          "text": "With Work on, every door to an Auto or Orchestrator run opens one composer for the goal first.",
+          "group": "Start a task",
+          "also": "Start work composer"
+        },
+        {
           "title": "One start form",
           "text": "Every door draws the same form: the New session page, a session's Runs page, ⌘K and the setup Scout run.",
           "group": "Start a task",
@@ -384,7 +390,7 @@
         },
         {
           "title": "Who receives what",
-          "text": "Who reads this, in each card menu, lists the roles that receive that part, so you see what goes into each agent's prompt.",
+          "text": "Change visibility, in each card menu, lists the roles that receive that part, so you see what goes into each agent's prompt.",
           "group": "Shared context",
           "also": "who receives what"
         },
@@ -1157,12 +1163,16 @@
       "id": "agents",
       "title": "Work with agents directly",
       "lead": "Ask questions, give each helper a job, and steer it from the keyboard or a real terminal.",
-      "groups": ["Agents", "Keyboard and terminal"],
+      "groups": ["Agents", "Work", "Keyboard and terminal"],
       "mocks": ["askcode"],
       "guides": [
         {
           "area": "agents",
           "label": "Agents"
+        },
+        {
+          "area": "work",
+          "label": "Work"
         },
         {
           "area": "keyboard",
@@ -1295,8 +1305,7 @@
           "title": "Drift warning",
           "text": "Get a notification when an agent steps outside its role, like a planner editing files.",
           "group": "Agents",
-          "also": "drift warning",
-          "shown": true
+          "also": "drift warning"
         },
         {
           "title": "Subagents from plan parts",
@@ -1322,6 +1331,25 @@
           "text": "Get agents and summaries in the language of your goal.",
           "group": "Agents",
           "also": "one language"
+        },
+        {
+          "title": "Work section",
+          "text": "Open Work to see every Lead of the workspace in one list, and see which ones need you.",
+          "group": "Work",
+          "also": "Work and Leads",
+          "shown": true
+        },
+        {
+          "title": "Lead",
+          "text": "A Lead reads one of five words: Working, Waits for you, Resting, Stopped or Finished.",
+          "group": "Work",
+          "also": "Lead states"
+        },
+        {
+          "title": "Permission rows",
+          "text": "A Lead's autonomy is nine rows you can read and change.",
+          "group": "Work",
+          "also": "permission rows"
         },
         {
           "title": "Terminal",

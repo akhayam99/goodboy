@@ -116,6 +116,7 @@ fn run_scenario(binary: &str, scenario: &Scenario) -> (Run, Vec<String>) {
         blocks_push: true,
         is_auto_child: false,
         excludes_tmp: false,
+        launch_guard: None,
     };
     spawn_one(
         &run.recorder,
