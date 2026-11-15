@@ -270,33 +270,32 @@ describe('the shell chapter', () => {
     expect(actions).toContain('Archive and Delete');
   });
 
-  it('shows what a run and Auto started in the Agents panel, with its key and no rail level', () => {
-    const agents = pointOf('shell', 'Agents panel');
-    [shortcutGlyphs('session.spawned'), 'run or Auto', 'j and k hop'].forEach((entry) =>
-      expect(agents).toContain(entry),
+  it('shows the agents of a run and Auto on the rail at the left, with its key and no rail level', () => {
+    const agents = pointOf('shell', 'Agents rail');
+    [shortcutGlyphs('session.spawned'), 'run or Auto', 'at the left', 'Enter opens'].forEach(
+      (entry) => expect(agents).toContain(entry),
     );
     expect(agents).not.toContain('‹ Runs');
   });
 
-  it('opens a branch in place from the Projects card', () => {
+  it('opens a branch in place from the board and the Projects card', () => {
     const branchPage = pointOf('review', 'Branch page');
-    ['in place', 'Pull request', 'Comments', 'Changes', 'Commits', 'Checks'].forEach((entry) =>
-      expect(branchPage).toContain(entry),
+    ['in place', 'Conversation', 'Comments', 'Changes', 'Commits', 'Checks', 'Work'].forEach(
+      (entry) => expect(branchPage).toContain(entry),
     );
     expect(branchPage).not.toContain('steps into');
   });
 
-  it('names the tools in their column at the right of every screen', () => {
-    const tools = pointOf('shell', 'Right rail');
+  it('names the tools on their rail at the right of every screen and Ask in the head', () => {
+    const tools = pointOf('shell', 'Tools rail');
     [
-      'Ask',
       'Terminal',
       'Browser',
-      'Explore',
-      'Context',
-      'Scripts',
       'right of every screen',
+      'Open full page',
+      'Ask, in the session head',
     ].forEach((tool) => expect(tools).toContain(tool));
+    expect(tools).not.toContain('Explore');
   });
 });
 

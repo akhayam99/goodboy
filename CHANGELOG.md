@@ -12,6 +12,71 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.35.1
+
+Every session page shares one head, details open as crumbs, the run page lists its agents on the left and Changes sits on the branch page.
+
+### New
+
+#### An Agents rail on the run page
+<!-- gb area=agents image=agent-page pr=2227 -->
+
+The run page has an Agents rail on its left, with the count in its header and the activity trace of every agent. Click a row and that agent opens in the centre, with the rail still beside it.
+
+#### Ask in a side panel
+<!-- gb area=sessions pr=2227 -->
+
+Ask, in the session head, opens as a panel beside the page, so you can ask about the session while you read it. The same button closes it.
+
+### Improved
+
+#### One head for every session page
+<!-- gb area=sessions image=overview pr=2227 -->
+
+Every session page shows the same head: the title, New, Ask, pin and refresh, with the tabs Overview, Runs, Artifacts, Questions and Context under it. A session with exactly one branch adds Changes at the end.
+
+Overview opens on tiles for branches, questions, artifacts, spend and time, then a board of the branches grouped by state.
+
+#### Crumbs and a back button below a tab
+<!-- gb area=sessions image=artifact-page pr=2227 -->
+
+A branch, a pull request, an artifact or a run keeps the session head and shows crumbs in place of the tabs, with a back button to the page above. Esc goes one crumb up, and a long trail folds its middle into a menu.
+
+#### Changes on the branch page
+<!-- gb area=review image=branch-changes pr=2227 -->
+
+The branch page tabs are Conversation, Changes, Commits, Checks, Work and Comments. Changes keeps its files in a rail on the left of the diff, switched between Changed and All files, and All files takes the place of the Explore panel.
+
+#### One head on the run page
+<!-- gb area=agents image=run-page pr=2227 -->
+
+The run page has one head: the crumbs, the run's state and its controls, with Pause run and Stop there while a workflow runs.
+
+#### A wider transcript that scrolls smoothly
+<!-- gb area=agents image=run-page-agents-rail pr=2227 -->
+
+The transcript sits in a wider centred column. Rows load ahead of view, so scrolling no longer jumps.
+
+#### Terminal and Browser docks share one frame
+<!-- gb area=sessions image=terminal-dock-rail pr=2227 -->
+
+The Terminal and Browser docks share one header and tab strip, and the tools rail sits on the dock's left edge. Each dock has Open full page, and Dock on the full page puts it back.
+
+#### Buttons by intent, with plain names
+<!-- gb area=app pr=2227 -->
+
+Rebase and force push read as caution. Removing a worktree, deleting a branch, discarding changes and Stop read as destructive. A row or a header has at most one filled button.
+
+Actions say what they do: Rebase on their commits, Abort rebase and Restore stashed files replace the old wording.
+
+### Fixed
+
+- The Browser dock shows its page at the right place and size at any app zoom, not only at 100%. <!-- gb area=sessions pr=2227 -->
+- Saved places from older versions reopen as they were, and a saved Explore file opens on Changes with All files. <!-- gb area=app pr=2227 -->
+- A long file tree switched between Changed and All files and back keeps scrolling and updating. <!-- gb area=review pr=2227 -->
+- An Auto run that started no agents shows as running or failed on the Overview board. <!-- gb area=agents pr=2227 -->
+- A reply with a mistyped outcome marker shows in full, and the marker no longer leaks into the outcome line. <!-- gb area=agents pr=2227 -->
+
 ## Goodboy v0.35.0
 
 Pull requests get an overview with faces and a rail, pages share one title band, the browser gains a console and width presets, and launch is faster.

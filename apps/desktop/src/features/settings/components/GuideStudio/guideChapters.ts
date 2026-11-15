@@ -248,7 +248,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'shell',
     group: 'daily',
     title: 'Sidebar and session pages',
-    lead: 'The sidebar looks the same on every screen. A session opens its rail beside it, and the right rail holds the tools.',
+    lead: 'The sidebar looks the same on every screen, and a session page has one head.',
     points: [
       {
         term: 'Sidebar',
@@ -264,19 +264,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: 'Tabs under the title: Overview, Changes, Runs, Artifacts, Questions and Context, with counts; Runs holds plans, presets, Auto and agents. Context holds the Projects and Linked cards.',
+        desc: 'One head with the tabs Overview, Runs, Artifacts, Questions and Context, plus Changes with exactly one branch. Context holds the Projects and Linked cards. Below a tab, crumbs replace the tabs and Esc goes one up.',
       },
       {
         term: 'Session actions and +',
         desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete.',
       },
       {
-        term: 'Agents panel',
-        desc: `Agents on the right rail shows the open run or Auto as a tree, else what is live, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens beside it; j and k hop.`,
+        term: 'Agents rail',
+        desc: `A run or Auto lists its agents on a rail at the left. A row opens that agent in the centre; the arrow keys move and Enter opens, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running.`,
       },
       {
-        term: 'Right rail',
-        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask, Agents and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open full page grows them; Dock puts them back.',
+        term: 'Tools rail',
+        desc: 'Terminal and Browser sit at the right of every screen and dock beside the page. Open full page grows a dock; Dock puts it back. Ask, in the session head, opens as a side panel.',
       },
     ],
     links: [],
@@ -438,10 +438,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Changes, Commits, Checks and Work. Rebase sits on its row, and Running here opens Monitoring on the branch.',
+        desc: 'Click a branch on the board or the Projects card and its page opens in place: Conversation, Changes, Commits, Checks, Work and Comments. Rebase sits on its row, and Running here opens Monitoring on the branch.',
       },
       {
-        term: 'Pull request',
+        term: 'Conversation',
         desc: 'One merge box says whether it can merge, then what holds it, worst first. Add reviewers or merge the ways the host allows; with none yet, a create form offers Write with Scribe.',
       },
       {
@@ -458,7 +458,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Changes',
-        desc: 'The diff, with the file list behind Files and Viewed N of M on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
+        desc: 'The diff, with its files in a rail on the left, Changed or All files, and Viewed N of M on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Checks',
