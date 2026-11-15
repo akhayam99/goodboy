@@ -87,7 +87,11 @@ describe('the task move scenes', () => {
       screen.getByRole('button', { name: 'Move NW-142 from api · feat/create-orders-endpoint' }),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
-    expect(document.querySelector('[data-session-back]')).toBeNull();
+    expect(
+      [...document.querySelectorAll('[data-session-back]')].filter(
+        (back) => back.closest('[data-session-head]') === null,
+      ),
+    ).toEqual([]);
     expect(document.querySelector('[data-slot="trail"]')).toBeNull();
   });
 

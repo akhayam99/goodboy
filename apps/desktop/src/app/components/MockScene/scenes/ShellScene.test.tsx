@@ -51,7 +51,11 @@ describe('the shell scene mounts the real session workspace', () => {
     await renderShell();
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
     expect(screen.getAllByRole('navigation', { name: 'Breadcrumb' }).length).toBeGreaterThan(0);
-    expect(document.querySelector('[data-session-back]')).toBeNull();
+    expect(
+      [...document.querySelectorAll('[data-session-back]')].filter(
+        (back) => back.closest('[data-session-head]') === null,
+      ),
+    ).toEqual([]);
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 

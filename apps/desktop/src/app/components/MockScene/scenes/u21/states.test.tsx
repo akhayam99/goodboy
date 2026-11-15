@@ -67,8 +67,9 @@ describe('the u21 page-state scenes', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: 'No artifacts yet' }),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'New artifact' })).toBeNull();
-    expect(screen.getByTestId('artifact-new')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'New artifact' })).toEqual([
+      screen.getByTestId('artifact-new'),
+    ]);
   });
 
   it('shows Artifacts filtered to nothing and clears the filter', async () => {

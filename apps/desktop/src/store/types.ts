@@ -108,6 +108,7 @@ import type { ThreadReadsState } from './slices/thread-reads/state';
 import type { SessionViewState } from './slices/session-view/state';
 import type { SessionPinsState } from './slices/session-pins/state';
 import type { RepoDivergenceState } from './slices/repo-divergence/state';
+import type { AutoViewState } from './slices/auto-view/state';
 
 export type SessionGithubState = {
   readonly pr: PullRequestState | null;
@@ -231,6 +232,7 @@ type AppSliceState = ArtifactsState &
   ThreadReadsState &
   SessionViewState &
   SessionPinsState &
-  RepoDivergenceState;
+  RepoDivergenceState &
+  AutoViewState;
 
 export type AppState = UndoState & ReviewDraftsState & AppSliceState;

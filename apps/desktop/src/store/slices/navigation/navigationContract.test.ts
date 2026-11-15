@@ -147,20 +147,20 @@ describe('one page for a Lead', () => {
 });
 
 describe('the back row and History Back', () => {
-  it('Lead to session: the back row goes to the Overview with the Lead row, History Back to Runs', () => {
+  it('Lead to session: the back row goes to Runs, the list that holds the run, as History Back does', () => {
     const store = windowStore();
-    store.getState().navigate({ to: RUNS });
+    store.getState().navigate({ to: OVERVIEW });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: LEAD }) });
 
-    expect(backRowOf({ store })).toEqual(OVERVIEW);
+    expect(backRowOf({ store })).toEqual(RUNS);
 
     store.getState().back();
-    expect(placeOf({ store })).toEqual(RUNS);
+    expect(placeOf({ store })).toEqual(OVERVIEW);
 
     store.getState().forward();
     store.getState().up();
-    expect(placeOf({ store })).toEqual(OVERVIEW);
-    expect(topOf({ store }).focus.returnRows).toEqual({ [PLACE_ROWS.boardLead]: LEAD });
+    expect(placeOf({ store })).toEqual(RUNS);
+    expect(topOf({ store }).focus.returnRows?.[PLACE_ROWS.boardLead]).toBeUndefined();
   });
 
   it('Work tab to Lead: the back row returns to the tab, never to a list', () => {
@@ -182,7 +182,7 @@ describe('the back row and History Back', () => {
     expect(backRowOf({ store })).toEqual(LEAD_PAGE);
   });
 
-  it('a direct open: the back row has the Overview, History Back has nothing', async () => {
+  it('a direct open: the back row has Runs, History Back has nothing', async () => {
     const store = windowStore();
     await store.getState().restoreLocation({
       location: {
@@ -193,7 +193,7 @@ describe('the back row and History Back', () => {
       },
     });
 
-    expect(backRowOf({ store })).toEqual(OVERVIEW);
+    expect(backRowOf({ store })).toEqual(RUNS);
     expect(depthOf({ store })).toBe(1);
 
     store.getState().back();

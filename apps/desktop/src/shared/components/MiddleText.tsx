@@ -14,7 +14,7 @@ export const MiddleText = ({ value, tail }: Props) => {
       <span aria-hidden className="truncate">
         {value.slice(0, at)}
       </span>
-      <span aria-hidden className="shrink-0">
+      <span aria-hidden className="shrink-0 whitespace-pre">
         {value.slice(at)}
       </span>
     </span>

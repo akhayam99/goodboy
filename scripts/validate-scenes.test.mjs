@@ -1847,6 +1847,21 @@ describe('rowStartFailures', () => {
     );
   });
 
+  it('fails a list heading that starts off the title row edge, as the Runs groups did', () => {
+    const measuredWith = (edges) => ({
+      containers: [{ kind: 'page', columns: [column()] }],
+      edges,
+    });
+    const checksOf = (edges) =>
+      rowStartFailures({ scene: 'c08-runs', width: 1440, measured: measuredWith(edges) }).map(
+        (failure) => failure.check,
+      );
+    assert.deepEqual(checksOf([{ label: 'Running', left: 360, head: 360 }]), []);
+    assert.deepEqual(checksOf([{ label: 'Running', left: 372, head: 360 }]), [
+      'every list heading starts on the left edge of the title row above it',
+    ]);
+  });
+
   it('fails a scene with no page', () => {
     assert.deepEqual(
       rowStartFailures({ scene: 'fixture', width: 1440, measured: { containers: [] } }).map(

@@ -41,7 +41,7 @@ export const HistoryNowColumn = ({
   onKeyDown,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2" onKeyDown={onKeyDown}>
-    <p data-history-count="" className="px-2 text-meta text-muted-foreground">
+    <p data-history-count="" data-list-heading="" className="text-meta text-muted-foreground">
       {countNoun({ count: rows.length, one: 'commit' })}
     </p>
     <HistoryNowList

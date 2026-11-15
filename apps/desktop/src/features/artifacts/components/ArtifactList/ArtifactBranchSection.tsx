@@ -102,7 +102,7 @@ export const ArtifactBranchSection = ({
       className="flex min-w-0 flex-col gap-2"
     >
       <div className="flex h-5 min-w-0 items-center gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div data-list-heading="" className="flex min-w-0 flex-1 items-center gap-2">
           {mark === null ? null : (
             <span className="flex shrink-0 items-center text-ui text-faint-foreground">{mark}</span>
           )}

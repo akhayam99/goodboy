@@ -40,6 +40,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionProjectMounts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionMounts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountBranchObservations', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'autoTreeViews', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountBranchGone', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'sessionActiveMount', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountCleanupProposals', keyedBy: 'session', evictOn: 'delete' },
@@ -403,6 +404,7 @@ export const NON_SESSION_STATE_KEYS = [
   'browserLoads',
   'browserFavicons',
   'browserDevicePresets',
+  'autoClockAt',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

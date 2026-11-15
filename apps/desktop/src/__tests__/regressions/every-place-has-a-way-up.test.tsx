@@ -40,7 +40,8 @@ import type { StoryStore } from '../../store/storyHarness';
 const SRC = join(__dirname, '..', '..');
 const UI_SRC = join(SRC, '..', '..', '..', 'packages', 'ui', 'src');
 const CRUMBS = '[data-session-crumbs] li';
-const OLD_WAYS_UP = '[data-session-back], [data-slot="trail"]';
+const OLD_WAYS_UP = '[data-slot="trail"]';
+const HEAD_BACK = '[data-session-head] [data-slot="pane-title-row"] [data-session-back]';
 const BACK_ICON = /\b(ArrowLeft|ChevronLeft)\b/;
 const FIRST_MOUNT_PATH = FLOW_MOUNTS[0]?.worktreePath ?? null;
 const FIRST_ARTIFACT_ID = CHAT_ARTIFACTS[0]?.id ?? null;
@@ -58,6 +59,7 @@ const WAYS_UP = new Set([
   DRAWER_FRAME,
   ...drawerFrameParts(),
   'app/components/AppTopBar/NavCluster/HistoryArrow.tsx',
+  'app/components/SessionHead/SessionBackButton.tsx',
 ]);
 
 const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
@@ -234,11 +236,16 @@ describe('every place has a way up', () => {
     if (PAGELESS[name] !== undefined) {
       expect(expected).toEqual([]);
       expect(headNav()).toBe('tabs');
+      expect(document.querySelectorAll('[data-session-back]')).toHaveLength(0);
       return;
     }
     expect(expected.length).toBeGreaterThan(1);
     await waitFor(() => expect(shownCrumbs()).toEqual(expected), { timeout: 4_000 });
     expect(headNav()).toBe('crumbs');
+    const backs = [...document.querySelectorAll('[data-session-back]')].filter(isShown);
+    expect(backs).toHaveLength(1);
+    expect(backs[0]?.matches(HEAD_BACK)).toBe(true);
+    expect(backs[0]?.getAttribute('aria-label')).toBe(`Back to ${expected.at(-2) ?? ''}`);
   });
 
   it('names only walked places as pageless', () => {

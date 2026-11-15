@@ -1,5 +1,7 @@
 import { agentDisplayName } from '../../../shared/utils/agentDisplayName';
 import { LENS_LABEL } from '../../../features/session/lens-labels';
+import { agentTaskLabelOf } from '../../../features/auto/agentTaskLabelOf';
+import { isDefaultAgentName } from '../../../features/session/isDefaultAgentName';
 import { NAMES } from '../../../shared/utils/names';
 import type { AppState } from '../../types';
 import type { LensKind } from '../session-view/types';
@@ -44,9 +46,14 @@ export const placeTitleOf = ({ state, place }: Params): PlaceTitle => {
     const agent = state.sessionPhaseRuns[sessionId]?.find(
       (candidate) => candidate.id === view.agentId,
     );
-    return agent === undefined
-      ? word({ title: 'Agent' })
-      : name({ title: agentDisplayName({ name: agent.name, kind: agent.kind ?? '' }) });
+    if (agent === undefined) {
+      return word({ title: 'Agent' });
+    }
+    const task = agentTaskLabelOf({ views: state.autoTreeViews[sessionId], agentId: agent.id });
+    if (task !== null && isDefaultAgentName({ name: agent.name, kind: task.kind })) {
+      return name({ title: `${task.role} · ${task.title}` });
+    }
+    return name({ title: agentDisplayName({ name: agent.name, kind: agent.kind ?? '' }) });
   }
   if (view.target?.kind === 'branch') {
     return word({ title: NAMES.branch });

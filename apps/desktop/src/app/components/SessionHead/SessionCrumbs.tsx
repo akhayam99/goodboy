@@ -2,34 +2,17 @@ import { useContext } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, ICON_SIZE, cn } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import type { AppState } from '../../../store/types';
-import { captureLocation } from '../../../store/slices/navigation/captureLocation';
-import { crumbsOf, type Crumb } from '../../../store/slices/navigation/crumbsOf';
 import { SessionHeadSlotsContext } from '../../../features/session/sessionHeadSlotsContext';
+import { sessionCrumbsOf } from './sessionCrumbsOf';
 
 type Props = {
   readonly session: Session;
 };
 
-type CrumbParams = {
-  readonly state: AppState;
-  readonly sessionId: SessionId;
-};
-
 type OpenParams = {
   readonly index: number;
-};
-
-const NO_CRUMBS: ReadonlyArray<Crumb> = [];
-
-const sessionCrumbsOf = ({ state, sessionId }: CrumbParams): ReadonlyArray<Crumb> => {
-  const { place } = captureLocation({ state });
-  if (place.at !== 'session' || place.sessionId !== sessionId) {
-    return NO_CRUMBS;
-  }
-  return crumbsOf({ state, place });
 };
 
 export const SessionCrumbs = ({ session }: Props) => {

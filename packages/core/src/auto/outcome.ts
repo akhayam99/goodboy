@@ -4,8 +4,6 @@ import type { ResultCheck, ResultChecksRun } from './result';
 
 export const OUTCOME_MAX_CHARS = 100;
 
-const OUTCOME_OPEN = '<<outcome>>';
-const OUTCOME_CLOSE = '<</outcome>>';
 const ELLIPSIS = '...';
 const WHITESPACE_RE = /\s+/g;
 const TRAILING_STOP_RE = /[.\s]+$/;
@@ -32,44 +30,112 @@ export const capOutcomeText = ({ text }: TextParams): string => {
   return `${head}${ELLIPSIS}`;
 };
 
-export const parseOutcomeLine = ({ text: canonical }: TextParams): string | null => {
+type OutcomeMarker = Readonly<{
+  start: number;
+  end: number;
+  isClose: boolean;
+}>;
+
+type OutcomeBlock = Readonly<{
+  start: number;
+  end: number;
+  body: string;
+}>;
+
+type OutcomeScan = Readonly<{
+  blocks: ReadonlyArray<OutcomeBlock>;
+  strays: ReadonlyArray<OutcomeMarker>;
+  openTailAt: number | null;
+}>;
+
+const MARKER_NAME = 'outcome';
+const MARKER_LEAD_MAX = 6;
+const MARKER_TRAIL_MAX = 3;
+
+type CharParams = {
+  readonly text: string;
+  readonly at: number;
+};
+
+const isMarkerWordAt = ({ text, at }: CharParams): boolean => {
+  const char = text.charAt(at);
+  return (
+    (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char === '-' || char === '_'
+  );
+};
+
+const markersOf = ({ text }: TextParams): ReadonlyArray<OutcomeMarker> => {
+  const lower = text.toLowerCase();
+  const markers: OutcomeMarker[] = [];
+  let at = lower.indexOf(MARKER_NAME);
+  while (at !== -1) {
+    const nameEnd = at + MARKER_NAME.length;
+    let start = at;
+    while (
+      start > 0 &&
+      at - start < MARKER_LEAD_MAX &&
+      (text.charAt(start - 1) === '<' || text.charAt(start - 1) === '/')
+    ) {
+      start -= 1;
+    }
+    let end = nameEnd;
+    while (end < text.length && end - nameEnd < MARKER_TRAIL_MAX && text.charAt(end) === '>') {
+      end += 1;
+    }
+    const lead = text.slice(start, at);
+    const isMarker =
+      lead.includes('<') &&
+      (end > nameEnd || lead.includes('<<')) &&
+      !isMarkerWordAt({ text, at: nameEnd }) &&
+      start >= (markers.at(-1)?.end ?? 0);
+    if (isMarker) {
+      markers.push({ start, end, isClose: lead.includes('/') });
+    }
+    at = lower.indexOf(MARKER_NAME, nameEnd);
+  }
+  return markers;
+};
+
+const scanOutcome = ({ text }: TextParams): OutcomeScan => {
+  const blocks: OutcomeBlock[] = [];
+  const strays: OutcomeMarker[] = [];
+  let open: OutcomeMarker | null = null;
+  for (const marker of markersOf({ text })) {
+    if (open === null) {
+      if (marker.isClose) {
+        strays.push(marker);
+        continue;
+      }
+      open = marker;
+      continue;
+    }
+    blocks.push({ start: open.start, end: marker.end, body: text.slice(open.end, marker.start) });
+    open = null;
+  }
+  return { blocks, strays, openTailAt: open === null ? null : open.start };
+};
+
+export const parseOutcomeLine = ({ text }: TextParams): string | null => {
   let found: string | null = null;
-  let from = 0;
-  while (from < canonical.length) {
-    const openAt = canonical.indexOf(OUTCOME_OPEN, from);
-    if (openAt === -1) {
-      break;
-    }
-    const bodyAt = openAt + OUTCOME_OPEN.length;
-    const closeAt = canonical.indexOf(OUTCOME_CLOSE, bodyAt);
-    if (closeAt === -1) {
-      break;
-    }
-    const body = capOutcomeText({ text: canonical.slice(bodyAt, closeAt) });
+  for (const block of scanOutcome({ text }).blocks) {
+    const body = capOutcomeText({ text: block.body });
     if (body !== '') {
       found = body;
     }
-    from = closeAt + OUTCOME_CLOSE.length;
   }
   return found;
 };
 
-export const stripOutcomeLine = ({ text: canonical }: TextParams): string => {
+export const stripOutcomeLine = ({ text }: TextParams): string => {
+  const { blocks, strays, openTailAt } = scanOutcome({ text });
+  const cuts = [...blocks, ...strays].sort((a, b) => a.start - b.start);
   const parts: string[] = [];
   let from = 0;
-  while (from < canonical.length) {
-    const openAt = canonical.indexOf(OUTCOME_OPEN, from);
-    if (openAt === -1) {
-      break;
-    }
-    parts.push(canonical.slice(from, openAt));
-    const closeAt = canonical.indexOf(OUTCOME_CLOSE, openAt + OUTCOME_OPEN.length);
-    if (closeAt === -1) {
-      return parts.join('').replace(BLANK_LINES_RE, '\n\n').trim();
-    }
-    from = closeAt + OUTCOME_CLOSE.length;
+  for (const cut of cuts) {
+    parts.push(text.slice(from, cut.start));
+    from = cut.end;
   }
-  parts.push(canonical.slice(from));
+  parts.push(text.slice(from, openTailAt === null ? text.length : Math.max(from, openTailAt)));
   return parts.join('').replace(BLANK_LINES_RE, '\n\n').trim();
 };
 

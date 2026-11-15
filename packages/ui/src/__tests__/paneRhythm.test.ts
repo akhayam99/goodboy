@@ -44,6 +44,14 @@ describe('PANE_RHYTHM', () => {
     });
   });
 
+  it('gives the session head and the header blocks under it more air than the title band', () => {
+    const gapOf = (token: string): number => Number(token.slice(token.indexOf('-') + 1)) * 4;
+    expect(gapOf(PANE_RHYTHM.head.rows)).toBe(12);
+    expect(gapOf(PANE_RHYTHM.head.under)).toBe(20);
+    expect(gapOf(PANE_RHYTHM.block)).toBe(12);
+    expect(gapOf(PANE_RHYTHM.head.under)).toBeGreaterThan(gapOf(PANE_RHYTHM.below.title));
+  });
+
   it('gives the groups gap in rem to a slot that cancels it while closed', () => {
     expect(PANE_RHYTHM.groups).toContain(`gap-${PANE_GROUPS_GAP_REM * 4}`);
   });

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { UnderHeadContext } from '@goodboy/ui';
+import { PANE_RHYTHM, UnderHeadContext, cn } from '@goodboy/ui';
 import {
   SessionHeadSlotsContext,
   type HeadClaimParams,
@@ -52,7 +52,11 @@ export const SessionHeadFrame = ({ head, children }: Props) => {
       <div ref={setFrame} data-session-head-frame="" className="flex h-full w-full min-w-0">
         <div ref={setLead} data-session-lead="" className="flex shrink-0 empty:hidden" />
         <div ref={columnRef} className="@container relative flex h-full min-w-0 flex-1 flex-col">
-          <div ref={headRef} data-session-head-band="" className="relative z-40 shrink-0 pb-2">
+          <div
+            ref={headRef}
+            data-session-head-band=""
+            className={cn('relative z-40 shrink-0', PANE_RHYTHM.head.under)}
+          >
             {head}
           </div>
           <UnderHeadContext.Provider value>{children}</UnderHeadContext.Provider>

@@ -21,6 +21,7 @@ import {
 import { anAgent, aSession, aWorkflowRun } from '@goodboy/types/testing';
 import { STORE_IMPORT_TIMEOUT_MS, importStore } from '../../storyHarness';
 import type { AppState } from '../../types';
+import { aDelegation, aView } from '../../../features/auto/testing/autoViewFixtures';
 import { crumbsOf } from './crumbsOf';
 import { parentPlace } from './parentPlace';
 import { BOARD_PLACE, branchPlace, sessionPlace } from './place';
@@ -128,9 +129,13 @@ describe('crumbsOf', () => {
       }),
       [FIRST, 'Changes'],
     ],
-    ['a Lead', agentAt({ agentId: MAIN }), [FIRST, 'planner']],
-    ['a sub agent', agentAt({ agentId: CHILD }), [FIRST, 'planner', 'scout']],
-    ['a sub sub agent', agentAt({ agentId: GRANDCHILD }), [FIRST, 'planner', 'scout', 'tester']],
+    ['a Lead', agentAt({ agentId: MAIN }), [FIRST, 'Runs', 'planner']],
+    ['a sub agent', agentAt({ agentId: CHILD }), [FIRST, 'Runs', 'planner', 'scout']],
+    [
+      'a sub sub agent',
+      agentAt({ agentId: GRANDCHILD }),
+      [FIRST, 'Runs', 'planner', 'scout', 'tester'],
+    ],
     ['a run', RUN, [FIRST, 'Runs', 'Close the settlement batch']],
     [
       'a run step',
@@ -201,6 +206,31 @@ describe('crumbsOf', () => {
       'Artifacts',
       'Settlement plan',
     ]);
+  });
+
+  it('names an Auto child by its role and short task, and keeps a name the user gave it', () => {
+    const delegation = {
+      ...aDelegation({ key: 'tester', role: 'tester', state: 'settled' }),
+      request: {
+        task: 'Read only, change nothing unless a check is red. Branch hl/fix-duplicate-credit.',
+      },
+    };
+    const agents = appState.sessionPhaseRuns[S1] ?? [];
+    const withRole = ({ name }: { readonly name: string }): AppState => ({
+      ...appState,
+      autoTreeViews: { [S1]: [aView({ delegations: [delegation] })] },
+      sessionPhaseRuns: {
+        [S1]: agents.map((agent) => (agent.id === GRANDCHILD ? { ...agent, name } : agent)),
+      },
+    });
+    const place = agentAt({ agentId: GRANDCHILD });
+
+    expect(crumbsOf({ state: withRole({ name: 'Tester' }), place }).at(-1)?.label).toBe(
+      'Tester · Read only, change nothing unless a check is red',
+    );
+    expect(crumbsOf({ state: withRole({ name: 'Retry check' }), place }).at(-1)?.label).toBe(
+      'Retry check',
+    );
   });
 
   it('points every crumb but the last at a place one Esc reaches', () => {
