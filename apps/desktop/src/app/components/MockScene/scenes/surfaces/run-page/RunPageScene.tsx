@@ -3,6 +3,7 @@ import { AutoReleaseContext } from '../../../../../../features/auto/autoReleaseC
 import { SessionWorkspace } from '../../../../../../features/session/components/SessionWorkspace';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../../store';
+import { autoChildRoutingOf } from '../../../../../../features/auto/autoChildRoutingOf';
 import { agentPlace } from '../../../../../../store/slices/navigation/place';
 import type { AgentId } from '@goodboy/types';
 import { seedActivityRunScene } from '../../activityRunSeed';
@@ -50,8 +51,14 @@ export const RunPageScene = ({
       lens: null,
     });
     const scene = extend({ scene: autoSceneOf({ state }) });
+    const agents = scene.agents.map((agent) => {
+      const delegation = [...scene.view.delegations]
+        .reverse()
+        .find((candidate) => candidate.childAgentId === agent.id);
+      return delegation === undefined ? agent : { ...agent, ...autoChildRoutingOf({ delegation }) };
+    });
     useAppStore.setState({
-      sessionPhaseRuns: { [AUTO_SESSION.id]: scene.agents },
+      sessionPhaseRuns: { [AUTO_SESSION.id]: agents },
       agentKindOverride: { [AUTO_ROOT_ID]: 'auto' },
       agentProviderOverride: { [AUTO_ROOT_ID]: 'anthropic' },
       agentModelOverride: { [AUTO_ROOT_ID]: 'opus-5.5' },
