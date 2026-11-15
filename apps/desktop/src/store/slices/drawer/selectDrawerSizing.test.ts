@@ -19,8 +19,8 @@ import {
 } from '@goodboy/ui';
 import type { AppState } from '../../types';
 import { selectDrawerPlacement } from './selectDrawerPlacement';
-import { selectDrawerSizing } from './selectDrawerSizing';
 import type { DrawerRequest } from './state';
+import { selectDrawerSizing } from './testing/selectDrawerSizing';
 
 const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });

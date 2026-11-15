@@ -4,7 +4,7 @@ import { requestRename } from '../../../../../shared/utils/renameRequest';
 import { runObjectKey } from '../../../../../features/actions/runObjectKey';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore, useSessionById } from '../../../../../store';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { SideColumn } from '../../../SideColumn';

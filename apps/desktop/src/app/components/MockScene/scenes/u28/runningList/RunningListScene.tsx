@@ -4,7 +4,7 @@ import { AutoReleaseContext } from '../../../../../../features/auto/autoReleaseC
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../../store';
 import { selectDrawerPlacement } from '../../../../../../store/slices/drawer/selectDrawerPlacement';
-import { selectDrawerSizing } from '../../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { shellArrangement } from '../../../../../shellArrangement';
 import { CentralColumnPane } from '../../u26/CentralColumnPane';
 import { seedRunningList } from './runningListSeed';

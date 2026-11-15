@@ -3,12 +3,11 @@ import { COLLAPSED_RAIL_WIDTH, DrawerColumn } from '@goodboy/ui';
 import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
 import type { AgentQueuedTurn } from '../../../../../store/slices/agentQueue/types';
 import { SceneAutoTreeNav } from '../u26/SceneAutoTreeNav';
-import { shellFoldsOf } from '../../../../shellArrangement/shellFoldsOf';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { LeadPage } from '../../../../../features/session/components/LeadPage';
 import { useAppStore } from '../../../../../store';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { seedActivityRunScene } from '../activityRunSeed';
 import {
@@ -68,7 +67,7 @@ export const AutoChatScene = ({
   const selectedId: AgentId = selected === 'root' ? AUTO_ROOT_ID : PLANNER_ID;
   const data = autoSceneOf({ state });
   const agent = data.agents.find((candidate) => candidate.id === selectedId) ?? null;
-  const folds = shellFoldsOf({ paneSizing: isDrawerOpen ? sizing : null });
+  const isRailNarrow = isDrawerOpen && (sizing === 'reader' || sizing === 'browser');
 
   useEffect(() => {
     seedActivityRunScene();
@@ -145,7 +144,7 @@ export const AutoChatScene = ({
   return (
     <AutoReleaseContext.Provider value>
       <main className="flex h-screen bg-background text-foreground">
-        {folds.isRailNarrow ? (
+        {isRailNarrow ? (
           <nav
             aria-label="Sidebar"
             className="flex h-full shrink-0 flex-col border-r border-border-soft pt-1"

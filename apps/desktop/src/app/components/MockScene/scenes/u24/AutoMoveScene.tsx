@@ -14,7 +14,7 @@ import { aDelegation, aTree } from '../../../../../features/auto/testing/autoVie
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { useAppStore } from '../../../../../store';
 import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { sceneClock } from '../../sceneClock';
 import { seedActivityRunScene } from '../activityRunSeed';
 import { AUTO_ROOT_ID, AUTO_SESSION } from './autoSceneSeed';

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { withoutKeys } from '../../../../../store/slices/workflows/patchWorkflowRun';
 import { DrawerHost } from '../../../DrawerHost';
 import { PlanDrawerRunStub } from '../u21/PlanDrawerRunStub';

@@ -15,7 +15,7 @@ import type {
 } from '@goodboy/types';
 import { AgentDetailPane } from '../../../../features/session/components/AgentDetailPane';
 import { useAppStore } from '../../../../store';
-import { selectDrawerSizing } from '../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../DrawerHost';
 
 type PlannerTranscriptVariant = 'ready' | 'revising' | 'replaced' | 'drawer';

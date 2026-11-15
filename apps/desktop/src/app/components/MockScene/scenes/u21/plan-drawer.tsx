@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { PlanDrawerRunStub } from './PlanDrawerRunStub';
 import { seedPlanDrawerScene, type PlanDrawerVariant } from './planDrawerSeed';

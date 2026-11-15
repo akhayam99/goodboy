@@ -2,7 +2,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ExploreEntry } from './explore';
 import {
-  EXPLORE_ROW_PX,
   ancestorPathsOf,
   entryRowsOf,
   flattenExploreRows,
@@ -12,6 +11,7 @@ import {
 import { layoutRows, windowOf } from '../../shared/utils/windowRows';
 
 const AT = '2026-09-14T15:40:00Z';
+const ROW_PX = 40;
 
 const dir = (relPath: string): ExploreEntry => ({
   name: relPath.slice(relPath.lastIndexOf('/') + 1),
@@ -208,21 +208,15 @@ describe('flattenExploreRows', () => {
     const many = Array.from({ length: 100_000 }, (_, index) => file(`f${index}.ts`));
     const rows = flattenExploreRows({ entriesByPath: { '': many }, ...NONE, expanded: {} });
     expect(rows).toHaveLength(100_000);
-    const layout = layoutRows({ rows, heightOf: () => EXPLORE_ROW_PX });
+    const layout = layoutRows({ rows, heightOf: () => ROW_PX });
     const range = windowOf({
       layout,
       count: rows.length,
-      scrollTop: 50_000 * EXPLORE_ROW_PX,
+      scrollTop: 50_000 * ROW_PX,
       viewport: 600,
     });
     expect(range.start).toBeGreaterThan(49_900);
     expect(range.end - range.start).toBeLessThan(40);
-  });
-});
-
-describe('EXPLORE_ROW_PX', () => {
-  it('is the 40px row of the scale', () => {
-    expect(EXPLORE_ROW_PX).toBe(40);
   });
 });
 
