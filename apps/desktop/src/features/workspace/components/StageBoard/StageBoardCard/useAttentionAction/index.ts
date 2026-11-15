@@ -10,6 +10,7 @@ import type { DynamicAction } from '../useDynamicActions';
 type Params = {
   readonly session: Session;
   readonly info: SessionStageInfo;
+  readonly verb: string | null;
 };
 
 type ToneParams = {
@@ -23,11 +24,12 @@ const actionToneOf = ({ tone }: ToneParams): DynamicAction['tone'] => {
   return 'primary';
 };
 
-export const useAttentionAction = ({ session, info }: Params): DynamicAction | null => {
+export const useAttentionAction = ({ session, info, verb }: Params): DynamicAction | null => {
   const navigate = useAppStore((state) => state.navigate);
   const sessionId = session.id;
   const reason = info.stage === 'attention' ? info.attention : null;
-  const label = reason === null ? '' : attentionWordsOf({ reason, counts: info });
+  const words = reason === null ? '' : attentionWordsOf({ reason, counts: info });
+  const label = verb ?? words;
   return useMemo((): DynamicAction | null => {
     if (reason === null) {
       return null;
