@@ -5,14 +5,14 @@ import { selectSlotDrawer, type DrawerSlot } from '../../store/slices/drawer/sel
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
-import { SessionScriptsDrawer } from '../../features/scripts/components/SessionScriptsDrawer';
+import { LazySessionScriptsDrawer } from '../../features/scripts/components/LazySessionScriptsDrawer';
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
-import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
+import { LazyScriptRunDrawer } from '../../features/scripts/components/LazyScriptRunDrawer';
 import { QuestionDrawer } from '../../features/session/components/QuestionDrawer';
 import { WritePanel } from '../../features/artifacts/components/WritePanel';
 import { NewDrawer } from '../../features/session/components/NewDrawer';
-import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
+import { LazyFixCommentsDrawer } from '../../features/resolve/components/LazyFixCommentsDrawer';
 import { ReviewCommentDrawerHost } from '../../features/resolve/components/ReviewCommentDrawer/ReviewCommentDrawerHost';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
 import { ExploreFileChanges } from './ExploreFileChanges';
@@ -81,7 +81,7 @@ const renderDrawer = ({
       );
     case 'scriptRun':
       return (
-        <ScriptRunDrawer
+        <LazyScriptRunDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           scriptKey={drawer.payload.scriptKey}
@@ -98,7 +98,7 @@ const renderDrawer = ({
       );
     case 'scripts':
       return (
-        <SessionScriptsDrawer
+        <LazySessionScriptsDrawer
           key={drawer.sessionId}
           sessionId={drawer.sessionId}
           onClose={closeDrawer}
@@ -135,7 +135,7 @@ const renderDrawer = ({
       );
     case 'fix-comments':
       return (
-        <FixCommentsDrawer
+        <LazyFixCommentsDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           mountId={drawer.payload.mountId}

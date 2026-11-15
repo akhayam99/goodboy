@@ -79,6 +79,7 @@ const ROW_CASES: ReadonlyArray<RowCase> = [
 
 beforeAll(async () => {
   await importStore();
+  await import('../../features/resolve/components/FixCommentsDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
