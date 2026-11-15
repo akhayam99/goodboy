@@ -100,7 +100,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.getByText('Not checked: timed out')).toBeDefined();
   });
 
-  it('Auto phase words and the one Stop: the dock of the Auto chat', async () => {
+  it('Auto phase words and the one Stop: the dock line and the session head', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
     const dock = await waitFor(() => {
@@ -111,7 +111,10 @@ describe('Auto: every capability keeps a home in Auto', () => {
     if (dock === null) {
       throw new Error('no dock');
     }
-    expect(within(dock).getByRole('button', { name: /^Stop Auto/ })).toBeDefined();
+    expect(within(dock).queryByRole('button', { name: /^Stop Auto/ })).toBeNull();
+    expect(
+      await screen.findByRole('button', { name: /^Stop Auto and \d agents?$/ }, WAIT),
+    ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
