@@ -60,7 +60,6 @@ export {
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
   canDrawerPush,
-  isRailFoldNeeded,
   drawerModeOf,
   drawerWidthOf,
   mainWidthOf,

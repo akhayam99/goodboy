@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AutoOutcome } from '@goodboy/db';
 import { anAgent } from '@goodboy/types/testing';
-import { STATE_WORD_MEANINGS } from '../../shared/utils/stateWordMeanings';
+import { STATE_WORD_MEANINGS } from '../../shared/utils/testing/stateWordMeanings';
 import { autoChildLive } from '../live-state/adapters/autoChildLive';
 import { autoChildWordOf } from './autoChildWordOf';
 import { autoGroupOf } from './autoGroupOf';

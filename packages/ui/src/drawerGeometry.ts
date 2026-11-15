@@ -300,15 +300,3 @@ export const pageBoxOf = ({
   const left = (space - width) / 2;
   return { left, right: left + width, width };
 };
-
-type FoldParams = {
-  readonly mainWidthPx: number;
-  readonly drawerWidthPx?: number;
-  readonly sizing: DrawerSizing;
-};
-
-export const isRailFoldNeeded = ({
-  mainWidthPx,
-  drawerWidthPx = RIGHT_DRAWER_DEFAULT,
-  sizing,
-}: FoldParams): boolean => !canDrawerPush({ mainWidthPx, drawerWidthPx, sizing });

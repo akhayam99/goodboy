@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { AppShell, READER_DRAWER_STORAGE_KEY } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { SESSION_ID, REPORT_ARTIFACT_ID, seedArtifactScene } from '../artifactSeed';

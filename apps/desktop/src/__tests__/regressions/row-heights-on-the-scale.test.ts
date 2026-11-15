@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { EXPLORE_ROW_PX } from '../../features/explore/exploreRows';
+import { ALL_FILES_ROW_PX } from '../../features/diff/lib/allFilesListing';
 import { productSources } from './scanControls';
 
 const ROW_HEIGHTS: ReadonlyArray<number> = [24, 28, 32, 36, 40, 48];
@@ -63,8 +63,8 @@ describe('one-line rows sit on the row scale', () => {
   });
 });
 
-describe('Explore rows', () => {
+describe('All files rows', () => {
   it('keeps the windowing constant on the row scale', () => {
-    expect(ROW_HEIGHTS).toContain(EXPLORE_ROW_PX);
+    expect(ROW_HEIGHTS).toContain(ALL_FILES_ROW_PX);
   });
 });
