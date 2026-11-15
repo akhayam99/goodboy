@@ -1218,7 +1218,7 @@ show it as the **Asks you** band (`AutonomyDefaultsBand`) in place of the **Auto
 A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level with the switch
 on and off, each precedence step, the stale pair) and
-`leadPermissions.sqlite.test.ts` (writes, Reset, two windows, failure).
+`leadPermissions.sqlite.test.ts` (writes, Use default, two windows, failure).
 
 #### Admission rows
 

@@ -66,7 +66,7 @@ export const LeadPermissionRow = ({
       <span className="flex items-baseline justify-end gap-2 text-meta">
         <span className="text-primary">{scope === 'lead' ? 'This Lead' : 'Set here'}</span>
         <Button variant="quiet" size="xs" disabled={isDisabled} onClick={onReset}>
-          Reset
+          Use default
         </Button>
       </span>
     ) : (

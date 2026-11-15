@@ -72,7 +72,7 @@ describe('LeadPermissionsData', () => {
     renderLead();
 
     await screen.findByText('This Lead');
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use default' }));
 
     await waitFor(() =>
       expect(change).toHaveBeenCalledWith({
