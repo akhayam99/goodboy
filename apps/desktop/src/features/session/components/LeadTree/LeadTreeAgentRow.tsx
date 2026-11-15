@@ -2,12 +2,12 @@ import { memo } from 'react';
 import type { AgentId } from '@goodboy/types';
 import { Tooltip, WorkNode, cn, formatUsd, type WorkNodeState } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { MiddleText } from '../../../../shared/components/MiddleText';
 import type { AgentKind } from '../../agent-kind';
 import type { RailRow } from '../../../workTreeModel/railGeometry';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
 import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import { LEAD_TREE_CURSOR } from './leadTreeCursor';
+import { LEAD_TREE_QUIET_NODES } from './leadTreeQuietNodes';
 import { LEAD_TREE_ROW } from './leadTreeRow';
 
 type Props = {
@@ -29,10 +29,6 @@ type Props = {
   readonly onSelect: (agentId: AgentId) => void;
 };
 
-const LAST_WORD = /\s[^\s…]+$/;
-
-const QUIET_NODES: ReadonlySet<WorkNodeState> = new Set(['done', 'running']);
-
 export const LeadTreeAgentRow = memo(
   ({
     id,
@@ -52,7 +48,7 @@ export const LeadTreeAgentRow = memo(
     isCompact,
     onSelect,
   }: Props) => {
-    const isWordShown = !QUIET_NODES.has(node);
+    const isWordShown = !LEAD_TREE_QUIET_NODES.has(node);
     return (
       <div
         role="treeitem"
@@ -87,9 +83,9 @@ export const LeadTreeAgentRow = memo(
           <Tooltip content={title} anchorClassName="flex min-w-0 flex-1">
             <span
               data-lead-tree-title=""
-              className="flex min-w-0 flex-1 text-meta text-muted-foreground"
+              className="min-w-0 flex-1 truncate text-meta text-muted-foreground"
             >
-              <MiddleText value={title} tail={LAST_WORD} />
+              {title}
             </span>
           </Tooltip>
         )}

@@ -786,11 +786,14 @@ run-header-archived
 run-header-failed
 run-header-held
 run-header-paused
+run-page-agent
+run-page-agent-light
 run-page-done
 run-page-done-light
 run-page-many
 run-page-plan
 run-page-plan-light
+run-page-subagent
 run-page-trace
 run-page-trace-light
 run-page-working
@@ -1400,7 +1403,6 @@ ux39-p9-tasks-parked
 ux39-p9-workflows-parked
 wireframe-failed
 work-lead-plan
-work-lead-record
 work-lead-tree
 work-lead-tree-compact
 work-lead-tree-light
