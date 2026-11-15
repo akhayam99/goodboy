@@ -135,7 +135,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             variant: 'secondary',
             run: actions.resolveMyself,
           },
-          { key: 'keep', label: 'Keep branch as it was', variant: 'ghost', run: actions.keep },
+          { key: 'keep', label: 'Abort rebase', variant: 'ghost', run: actions.keep },
         ];
       case 'rebasing-here':
         return [
@@ -215,7 +215,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
         return [{ key: 'dismiss', label: 'Dismiss', variant: 'ghost', run: controls.dismiss }];
       case 'origin-moved':
         return [
-          { key: 'bring-in', label: 'Bring them in', variant: 'primary', run: actions.bringIn },
+          { key: 'bring-in', label: NAMES.rebaseOnThem, variant: 'primary', run: actions.bringIn },
           {
             key: 'open-terminal',
             label: 'Resolve in terminal',

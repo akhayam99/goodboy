@@ -188,7 +188,7 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
       }
       runInline({
         key: 'bring-in',
-        failureTitle: "Couldn't bring the online commits in.",
+        failureTitle: "Couldn't rebase on their commits.",
         task: verbs.bringIn,
       });
     },
@@ -218,7 +218,7 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
       }
       attempt({
         key: 'bring-back',
-        failureTitle: "Couldn't bring your files back.",
+        failureTitle: "Couldn't restore your stashed files.",
         task: () => useAppStore.getState().bringBackHistoryFiles({ sessionId, mountId }),
       });
     },

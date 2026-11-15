@@ -299,7 +299,7 @@ describe('the job banner', () => {
     expect(screen.getByRole('button', { name: 'Undo rewrite' })).toBeDefined();
   });
 
-  it('names the new online commit and offers Bring them in, Resolve in terminal and Undo rebase', async () => {
+  it('names the new online commit and offers Rebase on their commits, Resolve in terminal and Undo rebase', async () => {
     await showRun({
       phase: 'stopped',
       backupRef: 'refs/goodboy/backup/1',
@@ -310,7 +310,7 @@ describe('the job banner', () => {
     expect(panel.textContent).toContain('Rebased here, but origin has 1 new commit');
     expect(panel.textContent).toContain('Fix the avatar size on narrow screens');
     expect(verbsIn({ node: panel })).toEqual([
-      'Bring them in',
+      'Rebase on their commits',
       'Resolve in terminal',
       'Undo rebase',
     ]);
@@ -351,7 +351,7 @@ describe('the job banner', () => {
       stop: { reason: 'origin-moved', message: 'Origin moved.', files: [], sha: null },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bring them in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rebase on their commits' }));
     await settle();
 
     expect(bringOriginIntoHistory).toHaveBeenCalledWith({
@@ -683,11 +683,7 @@ describe('a stop saved before a restart', () => {
     const saved = screen.getByRole('alert');
     expect(saved.textContent).toBe(liveTitle);
     expect(verbsIn({ node: saved })).toEqual(liveVerbs);
-    expect(liveVerbs).toEqual([
-      'Resolve with Auto',
-      'Resolve in terminal',
-      'Keep branch as it was',
-    ]);
+    expect(liveVerbs).toEqual(['Resolve with Auto', 'Resolve in terminal', 'Abort rebase']);
   });
 
   it('starts Auto from the saved stop and then says Auto has it', async () => {
@@ -777,7 +773,7 @@ describe('the rebase stop panel', () => {
     expect(verbsIn({ node: panel() })).toEqual([
       'Resolve with Auto',
       'Resolve in terminal',
-      'Keep branch as it was',
+      'Abort rebase',
     ]);
     expect(
       within(panel()).getByRole('button', { name: 'Resolve with Auto' }).hasAttribute('disabled'),
@@ -879,7 +875,7 @@ describe('the rebase stop panel', () => {
     useAppStore.setState({ keepRebaseStop });
     await showRun(conflictRun());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Keep branch as it was' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abort rebase' }));
     await settle();
 
     expect(keepRebaseStop).toHaveBeenCalledWith({
@@ -1088,7 +1084,7 @@ describe('the banner on a session with two branches', () => {
     const view = render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
     await settle();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Keep branch as it was' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abort rebase' }));
     await settle();
     screen.getByText('payments-api: git is busy');
 
@@ -1106,7 +1102,7 @@ describe('the banner on a session with two branches', () => {
     const keepRebaseStop = failingKeep();
     const view = render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
     await settle();
-    fireEvent.click(screen.getByRole('button', { name: 'Keep branch as it was' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abort rebase' }));
     await settle();
 
     view.rerender(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={OTHER_WORKTREE} />);
@@ -1135,7 +1131,7 @@ describe('the banner on a session with two branches', () => {
     useAppStore.setState({ keepRebaseStop });
     const view = render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
     await settle();
-    fireEvent.click(screen.getByRole('button', { name: 'Keep branch as it was' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abort rebase' }));
     await settle();
 
     view.rerender(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={OTHER_WORKTREE} />);

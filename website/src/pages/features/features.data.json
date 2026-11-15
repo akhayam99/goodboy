@@ -721,8 +721,8 @@
           "shown": true
         },
         {
-          "title": "Bring them into the plan",
-          "text": "If someone pushed after you applied, Goodboy lists their new commits and offers to add them to the plan.",
+          "title": "Rebase on their commits",
+          "text": "If someone pushed after you applied, Goodboy lists their new commits and offers to rebase on them.",
           "group": "Commits and history",
           "also": "new commits"
         },

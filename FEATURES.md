@@ -96,7 +96,7 @@ The Branch page holds one branch: its pull request, review comments, changed fil
 
 [More on review and resolve on the branch page](docs/features/review.md)
 
-<a id="rewrite-history"></a><a id="safe-apply"></a><a id="conflict-prediction"></a><a id="conflicts-merged-in-a-copy"></a><a id="push-with-lease-and-restore"></a><a id="backups"></a><a id="suggest-a-message"></a><a id="bring-them-into-the-plan"></a><a id="rebase-on-main"></a><a id="after-a-pull-request-merges"></a><a id="shape-the-history"></a><a id="safe-edits"></a><a id="conflicting-edits"></a>
+<a id="rewrite-history"></a><a id="safe-apply"></a><a id="conflict-prediction"></a><a id="conflicts-merged-in-a-copy"></a><a id="push-with-lease-and-restore"></a><a id="backups"></a><a id="suggest-a-message"></a><a id="bring-them-into-the-plan"></a><a id="rebase-on-their-commits"></a><a id="rebase-on-main"></a><a id="after-a-pull-request-merges"></a><a id="shape-the-history"></a><a id="safe-edits"></a><a id="conflicting-edits"></a>
 
 ## Commits and history
 

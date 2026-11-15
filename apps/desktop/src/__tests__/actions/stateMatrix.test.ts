@@ -446,7 +446,7 @@ describe('agent menu in every state', () => {
     expect(matrixOf(AGENT_TARGET)).toEqual(expected);
   });
 
-  it('offers the last reply once the agent answered', () => {
+  it('offers no copy of the last reply once the agent answered', () => {
     seed(standalone({ status: 'completed' }));
     useAppStore.setState({
       transcripts: {
@@ -457,7 +457,7 @@ describe('agent menu in every state', () => {
         ],
       },
     });
-    expect(matrixOf(AGENT_TARGET)).toContain('agent.copyReply');
+    expect(matrixOf(AGENT_TARGET)).not.toContain('agent.copyReply');
   });
 
   it('shows nothing for an agent that is gone', () => {

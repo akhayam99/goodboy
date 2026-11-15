@@ -251,13 +251,17 @@ describe('Context drawer', () => {
   });
 
   it.each(['Goal', 'Decisions', 'Summary'])(
-    'puts Edit, Versions and Who reads this in one %s menu, reachable with arrows',
+    'puts Edit, Versions and Change visibility in one %s menu, reachable with arrows',
     (label) => {
       mount();
       fireEvent.click(screen.getByRole('button', { name: `${label} actions` }));
       const menu = screen.getByRole('menu', { name: `${label} actions` });
       const items = within(menu).getAllByRole('menuitem');
-      expect(items.map((item) => item.textContent)).toEqual(['Edit', 'Versions', 'Who reads this']);
+      expect(items.map((item) => item.textContent)).toEqual([
+        'Edit',
+        'Versions',
+        'Change visibility',
+      ]);
       fireEvent.keyDown(items[0] ?? menu, { key: 'Home' });
       expect(document.activeElement).toBe(items[0]);
       fireEvent.keyDown(menu, { key: 'ArrowDown' });
@@ -568,7 +572,7 @@ describe('Context drawer sections', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['Edit', 'Versions', 'Who reads this']);
+    ).toEqual(['Edit', 'Versions', 'Change visibility']);
     expect(screen.queryByText(/^All roles/)).toBeNull();
     empty.unmount();
 
@@ -584,7 +588,7 @@ describe('Context drawer sections', () => {
     expect(screen.getByRole('menuitem', { name: 'Versions' }).getAttribute('aria-disabled')).toBe(
       'true',
     );
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Who reads this' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Change visibility' }));
     screen.getByText('Agents only.');
   });
 

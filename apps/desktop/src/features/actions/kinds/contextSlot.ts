@@ -46,7 +46,7 @@ export const CONTEXT_SLOT_KIND: ObjectKindDefinition<ContextSlotActionTarget, Co
     },
     {
       id: 'contextSlot.visibility',
-      label: 'Who reads this',
+      label: 'Change visibility',
       icon: Eye,
       group: 'act',
       when: () => true,

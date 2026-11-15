@@ -56,7 +56,8 @@ type BranchOutcomeParams = {
 
 const BUSY_MESSAGE = 'Another rebase runs on this branch.';
 
-const BRING_IN_CONFLICT = 'Their commits conflict with yours. Bring them in on its row.';
+const BRING_IN_CONFLICT =
+  'Their commits conflict with yours. Rebase on their commits from its row.';
 
 type BringInOutcomeParams = {
   readonly outcome: BringOriginOutcome | string;

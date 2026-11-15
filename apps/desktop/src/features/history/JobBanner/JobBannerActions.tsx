@@ -60,7 +60,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
       return (
         <>
           <Button size="sm" isBusy={pendingKeys.has('bring-back')} onClick={actions.bringBack}>
-            Bring them back
+            Restore stashed files
           </Button>
           <Button size="sm" variant="ghost" onClick={controls.openTerminal}>
             Open terminal

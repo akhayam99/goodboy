@@ -41,7 +41,7 @@ Open goal, decisions, summary and explanations in the **Context** tab, with Proj
 
 ### Who receives what
 
-See which agents read each part of the context. **Who reads this** in the card menu lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything. Agents that Auto starts read only their brief, so the line says "Auto children read only their brief" on every part but the goal.
+See which agents read each part of the context. **Change visibility** in the card menu lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything. Agents that Auto starts read only their brief, so the line says "Auto children read only their brief" on every part but the goal.
 
 ### Explanations
 

@@ -491,7 +491,7 @@ Decisions, Summary and Open questions in that order (`shareableContext`).
 The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 The pane is one scroll with Goal, Decisions, Summary and Explanations as
 sections (`ContextSection`, no tabs); opening it on a section scrolls there. Each
-card has one `⋯` menu, **Edit**, **Versions** and **Who reads this**
+card has one `⋯` menu, **Edit**, **Versions** and **Change visibility**
 (`SlotSourceActions`), and no eye or second button. **Context updates**
 (`ContextUpdates`, a `Collapsible`) sits above the cards and says `Updated 2 min ago`,
 `Queued`, `Updating…` or `Couldn't update`; open, it lists the last round
