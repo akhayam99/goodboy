@@ -151,7 +151,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Use reset',
-        desc: 'When Codex offers a free reset, its page shows the expiry and Use reset,.',
+        desc: 'When Codex offers a free reset, its page shows the expiry and Use reset.',
       },
       {
         term: NAMES.spendCap,
@@ -396,7 +396,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Agents use your tools',
-        desc: 'An agent asks Goodboy and Goodboy makes the call, so your keys never reach the agent. Keys stay in your system credential store.',
+        desc: 'Goodboy makes the call for the agent, so your keys never reach it. They stay in your system credential store.',
       },
       {
         term: NAMES.tasks,
@@ -415,8 +415,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Remove from this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
       },
       {
-        term: 'Slack',
-        desc: 'Pick the channels and what agents may do there. Replies default to Ask first and wait for your Send.',
+        term: 'Integration pages',
+        desc: `Each tool has a page in ${NAMES.connections}, and a missing key gets Paste a new key. On Slack's, pick the channels and what agents may do; replies default to Ask first.`,
       },
     ],
     links: [
