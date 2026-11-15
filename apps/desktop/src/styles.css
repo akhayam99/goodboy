@@ -191,6 +191,8 @@
   --column-frame: calc(var(--column-max) + 48px);
   --measure: 720px;
   --measure-frame: calc(var(--measure) + 48px);
+  --reading: 880px;
+  --reading-frame: calc(var(--reading) + 48px);
 
   --container-chrome-wide: 1280px;
   --container-chrome-labels: 960px;

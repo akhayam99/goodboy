@@ -14,7 +14,7 @@ type Props = {
 
 type Claims = Readonly<Record<HeadClaimParams['part'], number>>;
 
-const NO_CLAIMS: Claims = { title: 0, heading: 0 };
+const NO_CLAIMS: Claims = { title: 0, heading: 0, reading: 0 };
 
 export const SessionHeadFrame = ({ head, children }: Props) => {
   const [frame, setFrame] = useState<HTMLElement | null>(null);
@@ -41,6 +41,7 @@ export const SessionHeadFrame = ({ head, children }: Props) => {
       frame,
       isTitleClaimed: claims.title > 0,
       isHeadingClaimed: claims.heading > 0,
+      isReadingClaimed: claims.reading > 0,
       setTitle,
       setMeta,
       claim,
