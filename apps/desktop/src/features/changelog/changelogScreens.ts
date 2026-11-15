@@ -6,6 +6,7 @@ export const CHANGELOG_SCREENS = {
   inbox: NAMES.tasks,
   notifications: 'Notifications',
   impact: 'Impact',
+  connections: NAMES.connections,
   'settings/app': 'Settings',
   'settings/app/storage': 'Storage',
   'settings/providers': 'Providers',

@@ -19,6 +19,17 @@ describe('resolveChangelogScreenOverlay', () => {
     });
   });
 
+  it('opens Connections for its own screen and the two retired Settings screens', () => {
+    expect(resolveChangelogScreenOverlay({ screen: 'connections' })).toEqual({
+      kind: 'connections',
+      focus: null,
+    });
+    expect(resolveChangelogScreenOverlay({ screen: 'settings/providers' })).toEqual({
+      kind: 'connections',
+      focus: null,
+    });
+  });
+
   it('opens the workflow overlay for both workflow screens', () => {
     expect(resolveChangelogScreenOverlay({ screen: 'workflows' })).toEqual({ kind: 'workflow' });
     expect(resolveChangelogScreenOverlay({ screen: 'workflows/steps' })).toEqual({
