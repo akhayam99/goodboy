@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { leadPermissionsOf, type StoredLeadPermissionRows } from '@goodboy/core/auto';
+import { FLOATING_SURFACE, cn } from '@goodboy/ui';
 import { LeadPermissionsPanel } from '../../../../../features/auto/permissions/LeadPermissionsPanel';
 
 type SceneParams = {
@@ -19,14 +20,7 @@ const sceneOf = ({ leadRows, subtitle }: SceneParams) => {
   });
   return (
     <div className="flex min-h-screen items-start justify-center bg-background p-6">
-      <section
-        aria-label="Asks you"
-        className="flex w-[640px] flex-col gap-4 rounded-md border border-border-soft bg-subtle p-5"
-      >
-        <header className="flex flex-col gap-0.5">
-          <h2 className="text-title text-foreground">Asks you</h2>
-          <p className="text-meta text-muted-foreground">{subtitle}</p>
-        </header>
+      <section aria-label={subtitle} className={cn(FLOATING_SURFACE, 'flex w-125 flex-col')}>
         <LeadPermissionsPanel
           permissions={permissions}
           scope="lead"

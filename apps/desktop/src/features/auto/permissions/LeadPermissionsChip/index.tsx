@@ -58,7 +58,7 @@ export const LeadPermissionsChip = ({ target }: Props) => {
       role="dialog"
       ariaLabel={LABEL}
       anchorClassName="inline-flex min-w-0"
-      className="flex flex-col gap-3 p-4"
+      className="flex flex-col"
       trigger={
         <Button
           size="xs"
@@ -80,7 +80,7 @@ export const LeadPermissionsChip = ({ target }: Props) => {
       {permissions === null ? (
         <p
           role={model.readError === null ? 'status' : 'alert'}
-          className="text-meta text-muted-foreground"
+          className="p-4 text-meta text-muted-foreground"
         >
           {model.readError ?? 'Reading the permissions.'}
         </p>
