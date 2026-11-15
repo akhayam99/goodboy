@@ -287,7 +287,12 @@ state is a `StateDot` or a glyph in a 16px column.
   the heading row; a
   grouped grid (`isGrouped`) spaces its groups 32px apart, never with a divider.
   The label is level 2 (`text-heading`, 14/600, foreground) on a 20px row with
-  8px under it, and its count is `text-ui` faint.
+  8px under it, and its count is `text-ui` faint. The heading starts on the
+  grid's first track, the left edge of the page title row; the rows' hover fill
+  starts there too and their first glyph sits one gap in. Every list heading on a
+  session or branch page (the Artifacts groups, the Checks groups, the commit
+  count) carries `data-list-heading` and keeps that one edge, which the row-start
+  probe measures.
   `headingLevel` is 3 by default and 2 on a page whose title is the only heading
   above the groups. A group with no `label` draws its rows alone, with no heading
   and no count, for a lead group that needs no name above a named one.

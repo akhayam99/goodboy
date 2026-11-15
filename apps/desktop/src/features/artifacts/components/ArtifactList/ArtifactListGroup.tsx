@@ -41,7 +41,7 @@ export const ArtifactListGroup = ({
       aria-labelledby={headingId}
       className="flex min-w-0 flex-col gap-2"
     >
-      <div className="flex h-5 min-w-0 items-center gap-2">
+      <div data-list-heading="" className="flex h-5 min-w-0 items-center gap-2">
         <h2 id={headingId} className="flex items-center gap-2 text-heading text-foreground">
           {ARTIFACT_GROUP_LABEL[group]}
           {rows.length > 1 ? (

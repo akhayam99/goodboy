@@ -339,8 +339,11 @@ model: toggle and folder pill with the Dock and Copy folder path actions on
 row 1, New terminal and the tab strip on row 2, the folder list and the shell
 on row 3. `validate-scenes --only row-start` measures the scenes in
 `validateScenesRowStart.mjs` at 1440 and fails a first row whose center line
-drifts over 1px between columns, a toolbar whose controls share no center line
-and a grid row whose top or bottom differs between columns. On every scene that
+drifts over 1px between columns, a toolbar whose controls share no center line,
+a grid row whose top or bottom differs between columns, and a list heading
+(`data-list-heading`) whose left edge is more than 1px off the title row above
+it; its line names how many list headings it compared, so Runs and Questions
+cannot pass by measuring nothing. On every scene that
 renders the app frame it also runs the frame check: the main sidebar's first
 row (New session) against the page's first row (the topmost visible controls of
 `[data-studio-host]` and the controls on their line), centres within 1px and

@@ -56,8 +56,8 @@ export const ListGridGroup = ({
             isSticky && 'sticky-surface sticky top-0 z-10',
           )}
         >
-          <div className="col-start-2 col-end-[-1] flex min-w-0 items-center gap-3">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="col-start-1 col-end-[-1] flex min-w-0 items-center gap-3">
+            <div data-list-heading="" className="flex min-w-0 flex-1 items-center gap-2">
               {mark === undefined || mark === null ? null : (
                 <span data-list-grid-group-mark="" className="flex shrink-0 items-center">
                   {mark}
