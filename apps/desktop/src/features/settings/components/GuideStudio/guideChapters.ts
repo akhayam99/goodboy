@@ -642,15 +642,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.branches,
-        desc: 'Workspace, Branches starts with After merge: Ask first, Delete on this Mac or Also on origin, and a branch with later commits is left alone. Then the branches safe to delete, and Recently deleted restores one.',
+        desc: 'Workspace, Branches starts with Naming, then After merge: Ask first, Delete on this Mac or Also on origin, and a branch with later commits is left alone. Then the branches safe to delete, and Recently deleted restores one.',
       },
       {
         term: 'Other tools',
         desc: 'The Claude Code, Codex and Cursor folders on this Mac, read only, with how much came from Goodboy sessions.',
       },
       {
-        term: 'Security findings',
-        desc: 'The last section of Storage. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again restores it.',
+        term: 'Secrets in saved scripts',
+        desc: 'A band of the workspace Permissions page. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again restores it.',
       },
     ],
     links: [

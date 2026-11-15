@@ -120,7 +120,7 @@ Keep Goodboy's own folder out of your commits with one click. The card shows up 
 
 ### Branch names
 
-Choose how new session branches are named: a **Branch prefix**, with or without the task id, or a **Custom** template. Each choice shows the name it would give your last session, and existing branches keep their names.
+Choose how new session branches are named, under **Naming** on the **Branches** page: a **Branch prefix**, with or without the task id, or a **Custom** template. Each choice shows the name it would give your last session, and existing branches keep their names.
 
 ### New runs start as
 

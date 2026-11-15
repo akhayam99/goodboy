@@ -337,11 +337,15 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   `dev-project`) lands on Projects with the first commit review of the first
   plain code folder open. The workspace is renamed from the `Name` field of the
   Projects page, and its name is written once on that page, in the top bar
-  (the disconnect row says `Disconnect this workspace`). The attribution line
-  lives on Run defaults only, and Replies and commits links to it. Replies
-  and commits holds the reply voice and templates, `Mark thread as resolved`
-  and the commit style (`review-replies` stays its page id and anchor); Run
-  defaults is its own page of the workspace settings.
+  (the disconnect row says `Disconnect this workspace`). Replies and commits
+  holds a Replies band (the reply voice and the attribution line), the
+  templates, `Mark thread as resolved` and the commit style (`review-replies`
+  stays its page id and anchor); Run defaults is its own page of the
+  workspace settings and holds no branch or reply setting. Branches opens on
+  a Naming band (`WorkspaceBranchNamingBand`: Branch prefix and Branch name),
+  then After merge. Each field's page is `FIELD_PAGE` in
+  `features/settings/pageKeys.ts`, so Restore defaults, Copy from and the
+  changed count follow a field when it moves; override keys never change.
   The Projects page lists each folder once: one row per repository or plain
   folder under one count line (`3 projects, 1 plain folder`,
   `projectsCountLine`). A row opens in place; there is no second card for the
@@ -394,14 +398,16 @@ another repository` at its foot), Artifacts of deleted sessions, and
 folders · size` (`WorktreeRemoveButton`), with the sentence on idle days as
   its help line, and the folder `...` menu shows on hover and focus. `Prune`
   is a secondary button that confirms. Branches is a Workspace page
-  (`branches`, `BranchesPage`): the workspace's After merge rule first, then
-  the branch list under one select (`Safe to delete`, `Check first`, `All`),
+  (`branches`, `BranchesPage`): the Naming band and the workspace's After
+  merge rule first, then the branch list under one select (`Safe to delete`, `Check first`, `All`),
   then a `Recently deleted` fold row (restore or delete for good, loaded from
   `deleted_branches` on open, which also releases the refs of deletions older
   than 14 days). The page meta line reads `N safe to delete · M need a look`
   (`branchesMetaOf` through `useBranchesMeta`). A scope picker
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
-  `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
+  `Check again` (`StorageHeaderActions`); `Suggest cleanup after` is the last
+  row of the Worktrees band (`StorageSuggestAfterRow`), and a failed save
+  keeps the old number of days; the
   Branches header has the same picker without `Removed workspaces`
   (`BranchesHeaderActions`). `openStorage` and the
   cleanup notifications always land on Storage. The picker lists the current
@@ -458,9 +464,11 @@ workspaces` (folders whose owning workspace is gone or was never linked),
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete, which asks in a `ConfirmPopover` beside its button. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
-- **Security findings is a section at the end of the Storage page,
-  workspace-scoped** (`SecurityFindingsSection`; the old `security-findings`
-  address lands on Storage, and its warning dot sits on Storage). It scans the
+- **Security findings are the `Secrets in saved scripts` band of the
+  workspace's Permissions page**, after Rules (`SecurityFindingsSection`,
+  passed to `PermissionsSettings` as `afterRules`; the old
+  `security-findings` address lands on Permissions, and its warning dot sits
+  on Permissions). It scans the
   text Goodboy keeps for a workspace (saved scripts today; workflow steps,
   the profile, reply templates and permission rules are named in the design
   but not wired to a scan call yet) for known token shapes
