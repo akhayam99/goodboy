@@ -10,7 +10,7 @@ Open **Work** to see every Lead of the workspace in one list, and see which ones
 - Four filters sit above the list: **All open**, **Needs you**, **Working** and **Finished**. Each shows its count, and the filter you pick comes back after a reload or a Back.
 - A row shows the title, then the session goal, the project and the branch under it. At the right it shows the state in words, how many agents run, what the Lead spent and how long ago it changed.
 - A Lead that waits for you has a button on its row: **Review plan**, **Answer** or **Open**. A Lead on two branches is one row.
-- **Start work** opens the composer at the top of the page, as [Start work](start.md#start-work) describes. ⌘K lists Work and one row per open Lead.
+- **Start work** opens the composer at the top of the page, as [The Start work composer](start.md#the-start-work-composer) describes. ⌘K lists Work and one row per open Lead.
 - If a refresh fails, the list keeps what it read last, says "Couldn't refresh Leads" and offers **Retry**.
 
 ### Lead

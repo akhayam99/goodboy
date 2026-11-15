@@ -12,6 +12,80 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.36.0
+
+Work brings the Lead and asks you answer as rows, the Overview ends with the full log, and commit edits use git words.
+
+This version updates your data in one direction. To go back to 0.35, restore the backup Goodboy made before updating.
+
+### New
+
+#### Work and the Lead
+<!-- gb area=agents screen=settings/app image=work-page pr=2229 -->
+
+Turn on Work (experimental) in Settings, under Experiments, and the agent that leads a run is called the Lead. A Work section in the sidebar lists every Lead of the workspace, filtered by All open, Needs you, Working and Finished, and a row opens it in its session.
+
+Start work opens one composer from Work, a session, a branch row or the palette, with the session, project and branch filled in from where you started.
+
+The Lead reads a note you send while its agents work, and its state reads Working, Waits for you, Resting, Stopped or Finished.
+
+#### Choose what the Lead asks you
+<!-- gb area=agents image=permission-rows pr=2229 -->
+
+Asks you opens one row per decision: approve the plan, start agents that read or write, push a branch, open a pull request, add dependencies, change protected files, add a project and close the work. Start from Every step, After the plan or Never, for this Lead or as the workspace default, and Use default puts a row back.
+
+Force push always asks, merge is always yours, and agents never push: Goodboy pushes what they committed.
+
+#### Answer asks above the composer
+<!-- gb area=agents image=push-ask pr=2229 -->
+
+A row set to Ask waits above the composer, one at a time: Push or Don't push, Open the pull request, Allow a dependency or a protected file, or Do it without. A pull request waits until its branch is pushed.
+
+An agent that needs a dependency or a protected file you have not allowed stops before it starts and asks you. A change that touches them anyway is not pushed.
+
+#### What went in to an agent
+<!-- gb area=agents image=went-in pr=2229 -->
+
+An agent page lists what it was given when it started: the notes, artifacts, guidance and images that went in.
+
+### Improved
+
+#### The full log at the end of the Overview
+<!-- gb area=sessions image=overview-log pr=2229 -->
+
+The Overview ends with the Log, always open and drawn with the same trace as the Agents rail. Open the full log scrolls down to it, and the Log drawer is gone.
+
+#### One status mark per sidebar row
+<!-- gb area=app image=sidebar-marks pr=2229 -->
+
+Every sidebar row shows one mark in one column: needs you or failed first, then running, then unread. Icon buttons and rail icons share one stroke.
+
+#### Marks that match across pages
+<!-- gb area=review image=files-rail pr=2229 -->
+
+Files carry one status letter in the tree, All files and the diff header, green for added and red for deleted. Terminal and Browser counts sit at the icon's corner, and tab and bell counts look like the sidebar's.
+
+#### A tidier Context tab
+<!-- gb area=sessions image=context-tab pr=2229 -->
+
+Every Context card has one head row with its title, count and one action, on one edge. Projects and Linked no longer scroll over the status line, and Linked history reads History with its count.
+
+#### Git words for commit edits
+<!-- gb area=review pr=2229 -->
+
+Commit history says Reword, Drop commit, Fixup and Squash, and marks a commit Reworded or Dropped on Apply.
+
+Other actions say what they do: Undo restore, Undo force push, Resend approval, Restore this run, Remove from session and Dismiss.
+
+#### Start next steps without asking
+<!-- gb area=sessions pr=2229 -->
+
+Autopilot in the session menu is now Start next steps without asking, and Ask before starting each step turns it off. The menu and the hover card show the state as Asks you.
+
+### Fixed
+
+- A row for work not on a branch shows only while something there is live, not for work that already finished. <!-- gb area=sessions pr=2229 -->
+
 ## Goodboy v0.35.1
 
 Every session page shares one head, details open as crumbs, the run page lists its agents on the left and Changes sits on the branch page.

@@ -35,6 +35,7 @@ let store: StoryStore;
 
 beforeAll(async () => {
   store = await importStore();
+  await import('../../../../../features/terminal/components/TerminalDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {

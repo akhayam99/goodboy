@@ -9,5 +9,4 @@ type Params = {
 export const isStatementsWritten = ({ ctx, statements }: Params): Promise<boolean> =>
   ctx.db
     .transaction({ statements: [...statements] })
-    .then((outcome) => outcome.status === 'committed')
-    .catch((): boolean => false);
+    .then((outcome) => outcome.status === 'committed');

@@ -36,7 +36,7 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 - Outside a session, ⌘K **Start a run** opens the New session page on Auto picks.
 - Setup's last step draws this field too, pinned to Scout, so the first start teaches the second.
 
-### Start work
+### The Start work composer
 
 With [Work](work.md) on, the doors that start an Auto or Orchestrator run open one composer instead of starting. With it off, every row above behaves as written.
 

@@ -56,15 +56,26 @@ export const leadAsksOf = ({ view }: Params): ReadonlyArray<LeadAsk> => {
       },
     ];
   });
-  const heldGrantIds = new Set(
-    view.delegations
-      .filter(
-        (delegation) => delegation.state === 'settled' && delegation.generation === tree.generation,
-      )
-      .map((delegation) => pullRequestOfResult({ result: delegation.result })?.grantId),
+  const heldRecords = view.delegations
+    .filter(
+      (delegation) => delegation.state === 'settled' && delegation.generation === tree.generation,
+    )
+    .map((delegation) => pullRequestOfResult({ result: delegation.result }));
+  const heldGrantIds = new Set(heldRecords.map((record) => record?.grantId));
+  const unclaimedGrantIds = new Set(
+    heldRecords
+      .filter((record) => record?.state === 'awaiting_confirm')
+      .map((record) => record?.grantId),
   );
   const fromGrants = (view.grantAsks ?? [])
-    .filter((grant) => grant.state === 'asked' && grant.isCurrent)
+    .filter(
+      (grant) =>
+        grant.isCurrent &&
+        (grant.state === 'asked' ||
+          (grant.kind === 'pull_request' &&
+            grant.state === 'allowed' &&
+            unclaimedGrantIds.has(grant.id))),
+    )
     .filter((grant) => grant.kind !== 'pull_request' || heldGrantIds.has(grant.id))
     .map((grant): LeadAsk => ({
       id: leadAskIdOf({ ref: { kind: 'grant', grantId: grant.id } }),

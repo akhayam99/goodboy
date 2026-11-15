@@ -617,6 +617,65 @@ describe('a held pull request and the rows of now', () => {
     spy.mockRestore();
     expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'opening' });
   });
+
+  it('shows the error when the claim after Open throws, and Open again opens it once', async () => {
+    const world = await worldOf({ pullRequest: 'ask' });
+    await runChild({ world, child: scribe({}), text: scribeText });
+    const ask = await onlyAskOf(world);
+    const db = world.runtime.ctx.db;
+    const transaction = db.transaction.bind(db);
+    const spy = vi.spyOn(db, 'transaction').mockImplementation(async (params) => {
+      const isClaim = params.statements.some((statement) =>
+        (statement.params ?? []).some(
+          (value) => typeof value === 'string' && value.includes('"state":"opening"'),
+        ),
+      );
+      if (isClaim) {
+        throw new Error('database is locked');
+      }
+      return transaction(params);
+    });
+
+    await expect(answererOf(world)({ askId: ask.id, answer: 'allow' })).rejects.toThrow(
+      'database is locked',
+    );
+    spy.mockRestore();
+    expect(world.state.ports.publications).toEqual([]);
+    expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'awaiting_confirm' });
+    expect((await onlyAskOf(world)).id).toBe(ask.id);
+
+    expect(await answererOf(world)({ askId: ask.id, answer: 'allow' })).toBe('allowed');
+    expect(world.state.ports.publications).toHaveLength(1);
+    expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'opened', number: 421 });
+    expect(await asksOf(world)).toEqual([]);
+  });
+
+  it('settles without an error when the claim guard aborts after Open', async () => {
+    const world = await worldOf({ pullRequest: 'ask' });
+    await runChild({ world, child: scribe({}), text: scribeText });
+    const ask = await onlyAskOf(world);
+    const db = world.runtime.ctx.db;
+    const transaction = db.transaction.bind(db);
+    const spy = vi.spyOn(db, 'transaction').mockImplementation(async (params) => {
+      const isClaim = params.statements.some((statement) =>
+        (statement.params ?? []).some(
+          (value) => typeof value === 'string' && value.includes('"state":"opening"'),
+        ),
+      );
+      if (isClaim) {
+        await db.execute('UPDATE auto_trees SET generation = generation + 1 WHERE id = ?', [
+          world.treeId,
+        ]);
+      }
+      return transaction(params);
+    });
+
+    expect(await answererOf(world)({ askId: ask.id, answer: 'allow' })).toBe('settled');
+    spy.mockRestore();
+    expect(world.state.ports.publications).toEqual([]);
+    expect(await pullRequestRecordOf(world)).toMatchObject({ state: 'awaiting_confirm' });
+    expect(await asksOf(world)).toEqual([]);
+  });
 });
 
 describe.each([

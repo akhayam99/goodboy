@@ -252,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Board, Tasks, Workflows, Chat, Connections, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Board, Tasks, Work when on, Workflows, Chat, Connections, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
@@ -308,12 +308,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Hands Auto an older agent you started yourself; Detach from Auto takes it back. When Auto cannot decide, it reads Blocked with Retry.',
       },
       {
-        term: 'Overview cards',
-        desc: 'The Overview shows Needs you, Running, Next, Branches and Done, each with its count, and hides an empty card. Needs you holds runs, questions and fixes.',
+        term: 'Work and the Lead',
+        desc: 'Work (experimental), in Settings, calls the agent behind a run the Lead, lists every Lead under Work and adds Start work. Asks you sets one row per decision.',
       },
       {
-        term: 'Next',
-        desc: `Up to three moves that unblock the session, such as Start, Analyze or Push; what follows sits on that run's Running row. Not now hides one, and ${shortcutGlyphs('app.undo')} restores it.`,
+        term: 'Overview',
+        desc: 'Tiles, a board of each branch by state with its next step, and the Log at the end, always open. Open the full log scrolls to it.',
       },
     ],
     links: [],
