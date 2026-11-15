@@ -6,7 +6,7 @@ One page lists every Lead of a workspace, whatever session it runs in. A Lead is
 
 Open **Work** to see every Lead of the workspace in one list, and see which ones need you. A row opens the Lead in its session.
 
-- Work is off until you turn on **Work** under Experiments in Settings › App › General. While it is off, the section, the word Lead and the permission rows stay hidden, and Goodboy keeps the word Auto and its level chip.
+- Work is off until you turn on **Work** under Experiments in Settings › This Mac › Advanced. While it is off, the section, the word Lead and the permission rows stay hidden, and Goodboy keeps the word Auto and its level chip.
 - Four filters sit above the list: **All open**, **Needs you**, **Working** and **Finished**. Each shows its count, and the filter you pick comes back after a reload or a Back.
 - A row shows the title, then the session goal, the project and the branch under it. At the right it shows the state in words, how many agents run, what the Lead spent and how long ago it changed.
 - A Lead that waits for you has a button on its row: **Review plan**, **Answer** or **Open**. A Lead on two branches is one row.

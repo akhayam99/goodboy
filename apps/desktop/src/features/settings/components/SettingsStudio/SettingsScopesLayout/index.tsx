@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Search } from 'lucide-react';
 import {
   IconButton,
@@ -13,6 +13,8 @@ import type { SettingsFocus, SettingsScopeChange } from '../../../settingsFocus'
 import type { SettingsGroup } from '../settingsDirectory';
 import { SettingsRail } from '../SettingsRail';
 import { SettingsSearchResults } from '../SettingsSearchResults';
+import { useSettingsSearch } from '../../../hooks/useSettingsSearch';
+import { settingsSearchHitId } from '../../../settingsSearchHitId';
 
 const SETTINGS_RAIL_FOLD_BELOW = 720;
 const SETTINGS_RAIL_FOLDED_BY_DEFAULT_BELOW = 1200;
@@ -48,6 +50,17 @@ export const SettingsScopesLayout = ({
     (next: SettingsFocus) => amendStudio({ studio: { kind: 'settings', focus: next } }),
     [amendStudio],
   );
+  const listId = useId();
+  const search = useSettingsSearch({
+    groups,
+    query,
+    onOpen: openFocus,
+    onClear: () => setQuery(''),
+  });
+  const activeHitId =
+    isSearching && search.hits.length > 0
+      ? settingsSearchHitId({ listId, index: search.activeIndex })
+      : undefined;
 
   useEffect(() => {
     if (!isSearchAsked || fold.isCollapsed) {
@@ -76,6 +89,9 @@ export const SettingsScopesLayout = ({
             spellCheck={false}
             inputRef={searchRef}
             className="min-w-0 flex-1"
+            aria-controls={isSearching ? listId : undefined}
+            aria-activedescendant={activeHitId}
+            onKeyDown={(event) => search.keyDown({ event })}
           />
         }
         foldedActions={
@@ -101,10 +117,11 @@ export const SettingsScopesLayout = ({
             </div>
             {isSearching ? (
               <SettingsSearchResults
-                groups={groups}
+                listId={listId}
                 query={query}
-                onOpen={openFocus}
-                onPicked={() => setQuery('')}
+                hits={search.hits}
+                activeIndex={search.activeIndex}
+                onPick={search.pick}
               />
             ) : null}
           </ScrollFade>

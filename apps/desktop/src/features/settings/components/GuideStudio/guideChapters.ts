@@ -342,11 +342,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Asks you and pause',
-        desc: 'Asks you: Every step, After the plan or Never sets how often a run stops for you. Pause run lets the step in flight finish, and Stop run asks first.',
+        desc: 'Every step, After the plan or Never sets how often a run stops for you, one row per kind in Run defaults. Pause run lets the step in flight finish, and Stop run asks first.',
       },
       {
         term: NAMES.runDefaults,
-        desc: 'This tab in Workflows sets what new runs start with: when it asks you, a limit and guidance. A run keeps the rules it started with.',
+        desc: 'This Settings page sets what new runs start with. A run keeps the rules it started with.',
       },
       {
         term: 'Open questions',
@@ -642,15 +642,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.branches,
-        desc: 'Workspace, Branches starts with After merge: Ask first, Delete on this Mac or Also on origin, and a branch with later commits is left alone. Then the branches safe to delete, and Recently deleted restores one.',
+        desc: 'Workspace, Branches starts with Naming, then After merge: Ask first, Delete on this Mac or Also on origin, and a branch with later commits is left alone. Then the branches safe to delete, and Recently deleted restores one.',
       },
       {
         term: 'Other tools',
         desc: 'The Claude Code, Codex and Cursor folders on this Mac, read only, with how much came from Goodboy sessions.',
       },
       {
-        term: 'Security findings',
-        desc: 'The last section of Storage. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again restores it.',
+        term: 'Secrets in saved scripts',
+        desc: 'A band of the workspace Permissions page. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again restores it.',
       },
     ],
     links: [
@@ -674,19 +674,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'settings',
     group: 'housekeeping',
     title: 'Settings and backup',
-    lead: 'App settings apply everywhere and workspace settings to one workspace. Your whole setup can move to another Mac.',
+    lead: 'This Mac settings apply everywhere and workspace settings to one workspace. Your whole setup can move to another Mac.',
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App and This workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups This Mac and the workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
         desc: 'Copy from another workspace, or Restore defaults, previews every change before it applies. A field that differs from its default has a dot and a Reset.',
       },
       {
-        term: 'App pages',
-        desc: `General, Updates, ${NAMES.keyboardShortcuts}, Storage, ${NAMES.backupAndReset} and ${NAMES.iphone}, where ${NAMES.pairIphone} shows the code the phone scans.`,
+        term: 'This Mac pages',
+        desc: `General, with Updates at its end, ${NAMES.keyboardShortcuts}, Advanced, Storage and ${NAMES.backupAndReset}. ${NAMES.iphone} shows once a phone is paired.`,
       },
       {
         term: 'Open with',

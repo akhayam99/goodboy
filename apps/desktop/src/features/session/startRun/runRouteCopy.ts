@@ -56,8 +56,8 @@ export const RUN_ROUTE_COPY = {
   notEnded: 'The new run started, but this one did not end. Stop it so only one keeps going.',
   inPlace: 'Changes this run before its first step.',
   withPreset: 'With the preset',
-  workspaceDefault: 'New runs start as',
-  workspaceDefaultHelp: 'Start a run reads this before it picks. A session default wins.',
+  workspaceDefault: 'Start as',
+  workspaceDefaultHelp: 'Start run uses this unless the session has its own.',
   sessionDefault: 'New runs in this session start as',
   sessionDefaultHelp: ({ name }: NameParams) =>
     `Wins over the workspace default in ${name}. Runs already going keep theirs.`,

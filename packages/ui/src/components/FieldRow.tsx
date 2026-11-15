@@ -6,6 +6,7 @@ import {
   type ElementType,
   type ReactElement,
   type ReactNode,
+  type Ref,
 } from 'react';
 import { cn } from '../cn';
 import { BandDepthContext } from './Band/bandDepth';
@@ -36,7 +37,12 @@ export type FieldRowProps = {
   readonly children: ReactNode;
   readonly layout?: 'horizontal' | 'stacked';
   readonly className?: string;
+  readonly ref?: Ref<HTMLDivElement>;
+  readonly anchor?: string;
+  readonly isHighlighted?: boolean;
 };
+
+const HIGHLIGHT = 'rounded-sm transition-colors duration-500';
 
 export const FieldRow = ({
   label,
@@ -46,6 +52,9 @@ export const FieldRow = ({
   children,
   layout = 'horizontal',
   className,
+  ref,
+  anchor,
+  isHighlighted = false,
 }: FieldRowProps) => {
   const controlId = useId();
   const isInsideBand = useContext(BandDepthContext);
@@ -88,7 +97,18 @@ export const FieldRow = ({
 
   if (layout === 'stacked') {
     return (
-      <div className={cn('flex flex-col gap-2', rhythm, className)}>
+      <div
+        ref={ref}
+        data-anchor={anchor}
+        data-highlighted={isHighlighted ? '' : undefined}
+        className={cn(
+          'flex flex-col gap-2',
+          rhythm,
+          anchor !== undefined && HIGHLIGHT,
+          isHighlighted && 'bg-selected',
+          className,
+        )}
+      >
         {menu == null ? (
           labelBlock
         ) : (
@@ -104,9 +124,14 @@ export const FieldRow = ({
 
   return (
     <div
+      ref={ref}
+      data-anchor={anchor}
+      data-highlighted={isHighlighted ? '' : undefined}
       className={cn(
         'flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6',
         rhythm,
+        anchor !== undefined && HIGHLIGHT,
+        isHighlighted && 'bg-selected',
         className,
       )}
     >

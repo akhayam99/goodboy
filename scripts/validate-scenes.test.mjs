@@ -29,6 +29,7 @@ import {
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
+import { modelsGridFailures } from './validateScenesModelsGrid.mjs';
 import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
@@ -1469,6 +1470,55 @@ describe('listGridFitFailures', () => {
         (failure) => failure.check,
       ),
       ['no list grid to measure'],
+    );
+  });
+});
+
+describe('modelsGridFailures', () => {
+  const TEMPLATE = '135px 202.5px 180px 67.5px 75px 15px';
+  const rows = [
+    { label: 'Auto agent', template: TEMPLATE, right: 1240, edge: 1256, overflow: 0 },
+    { label: 'New chats', template: TEMPLATE, right: 1180, edge: 1256, overflow: 0 },
+  ];
+
+  it('passes rows on one template that end inside their band', () => {
+    assert.deepEqual(
+      modelsGridFailures({ scene: 'fixture', width: 1280, rows, pageOverflow: 0 }),
+      [],
+    );
+  });
+
+  it('fails a row on a template of its own', () => {
+    const drifted = [...rows, { ...rows[0], label: 'Scout', template: '128px 1fr' }];
+    assert.deepEqual(
+      modelsGridFailures({ scene: 'fixture', width: 1280, rows: drifted, pageOverflow: 0 }).map(
+        (failure) => failure.check,
+      ),
+      ['model rows sit on different column templates'],
+    );
+  });
+
+  it('fails a row past its band and a page that scrolls sideways', () => {
+    const over = [...rows, { ...rows[0], label: 'Planner', right: 1290 }];
+    const failures = modelsGridFailures({
+      scene: 'fixture',
+      width: 960,
+      rows: over,
+      pageOverflow: 24,
+    });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['a model row runs past its band', 'the page scrolls sideways'],
+    );
+    assert.deepEqual(failures[0]?.rows, [{ row: 'Planner', right: 1290, edge: 1256 }]);
+  });
+
+  it('fails a scene with no model rows', () => {
+    assert.deepEqual(
+      modelsGridFailures({ scene: 'fixture', width: 960, rows: [], pageOverflow: 0 }).map(
+        (failure) => failure.check,
+      ),
+      ['no model rows to measure'],
     );
   });
 });

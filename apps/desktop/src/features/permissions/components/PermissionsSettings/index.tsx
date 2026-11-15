@@ -29,11 +29,16 @@ import { RecentDecisions } from './RecentDecisions';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly renderDefaultRow?: (control: ReactNode) => ReactNode;
+  readonly afterRules?: ReactNode;
 };
 
 const asIs = (control: ReactNode): ReactNode => control;
 
-export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Props) => {
+export const PermissionsSettings = ({
+  workspaceId,
+  renderDefaultRow = asIs,
+  afterRules = null,
+}: Props) => {
   const workspaceName = useAppStore(
     (s) => s.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null,
   );
@@ -176,6 +181,8 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
       >
         <ProviderSupportTable />
       </Collapsible>
+
+      {afterRules}
 
       <Band
         inset="content"

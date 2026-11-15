@@ -1,20 +1,25 @@
 import { useEffect } from 'react';
-import { Band, FieldRow, Switch } from '@goodboy/ui';
+import { Band, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { NOTHING_CHANGED, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
+import { useAppSettingSave } from '../../hooks/useAppSettingSave';
 import { SETTING_TERMINAL_EXIT_STATUS } from '../../settings';
+import { SWITCH_SETTING } from '../../switchSetting';
+import { SettingRow } from './SettingRow';
 
 const LABEL = 'Show if a command passed or failed';
-
-type ChangeParams = {
-  readonly isOn: boolean;
-};
+const HELP = 'A small zsh hook; your own shell files stay untouched.';
 
 export const TerminalExitStatusBand = () => {
   const raw = useAppStore((state) => state.settings[SETTING_TERMINAL_EXIT_STATUS]);
   const loadSetting = useAppStore((state) => state.loadSetting);
-  const saveSetting = useAppStore((state) => state.saveSetting);
   const reportError = useAppStore((state) => state.reportError);
+  const save = useAppSettingSave({
+    settingKey: SETTING_TERMINAL_EXIT_STATUS,
+    saved: raw !== 'false',
+    ...SWITCH_SETTING,
+    failureTitle: "Couldn't save the terminal setting",
+  });
 
   useEffect(() => {
     if (raw !== undefined) {
@@ -30,28 +35,23 @@ export const TerminalExitStatusBand = () => {
     });
   }, [raw, loadSetting, reportError]);
 
-  const onChange = async ({ isOn }: ChangeParams) => {
-    try {
-      await saveSetting(SETTING_TERMINAL_EXIT_STATUS, isOn ? 'true' : 'false');
-    } catch (error) {
-      void reportError({
-        title: "Couldn't save the terminal setting",
-        error,
-        recovery: NOTHING_CHANGED,
-      });
-    }
-  };
-
   return (
     <Band inset="content" label="Built-in terminal" headingLevel={2}>
       <div className="flex flex-col">
-        <FieldRow label={LABEL} help="A small zsh hook; your own shell files stay untouched.">
+        <SettingRow
+          label={LABEL}
+          rowKey="command-status"
+          help={HELP}
+          isChanged={!save.value}
+          onReset={() => void save.save({ value: true })}
+          save={save}
+        >
           <Switch
             ariaLabel={LABEL}
-            checked={raw !== 'false'}
-            onChange={(isOn) => void onChange({ isOn })}
+            checked={save.value}
+            onChange={(isOn) => void save.save({ value: isOn })}
           />
-        </FieldRow>
+        </SettingRow>
       </div>
     </Band>
   );

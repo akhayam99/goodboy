@@ -24,6 +24,7 @@ import { roleRunFacts } from './roleRunFacts';
 import { resolutionNote } from '../resolutionNote';
 import { roleSetEntries } from '../../../../roleSetEntries';
 import { roleSetNoun } from '../../../../roleSetNoun';
+import { ROLE_GRID } from '../roleGrid';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -90,35 +91,29 @@ export const RoleRow = ({
   };
   const choices = entries.map((entry) => entry.choice);
 
-  const trailing = (
-    <RoleModelCells
-      provider={resolution.provider}
-      model={resolution.model}
-      effort={resolution.effort}
-      moreCount={Math.max(entries.length - 1, 0)}
-      isPinned={preference !== null}
-      skippedReason={skippedLine}
-    />
-  );
-
   return (
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
       trigger={
-        <span className="flex min-w-0 items-center gap-3">
-          <span className="min-w-0 flex-1 truncate text-body text-foreground @[600px]:w-32 @[600px]:flex-none">
-            {label}
-          </span>
+        <span data-role-grid="" className={ROLE_GRID.row}>
+          <span className={ROLE_GRID.name}>{label}</span>
           <TruncatedText
             className={cn(
-              'hidden min-w-0 flex-1 truncate text-meta @[600px]:block',
+              ROLE_GRID.job,
               isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
           >
             {summary}
           </TruncatedText>
-          {trailing}
+          <RoleModelCells
+            provider={resolution.provider}
+            model={resolution.model}
+            effort={resolution.effort}
+            moreCount={Math.max(entries.length - 1, 0)}
+            isPinned={preference !== null}
+            skippedReason={skippedLine}
+          />
         </span>
       }
     >

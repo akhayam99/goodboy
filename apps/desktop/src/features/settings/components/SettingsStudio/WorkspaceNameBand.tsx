@@ -1,8 +1,9 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { FieldRow, Input, useEscapeLayer } from '@goodboy/ui';
+import { Band, Input, useEscapeLayer } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { SettingRow } from './SettingRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -60,28 +61,34 @@ export const WorkspaceNameBand = ({ workspaceId }: Props) => {
   };
 
   return (
-    <FieldRow label="Workspace name">
-      <Input
-        type="text"
-        value={draft}
-        aria-label="Workspace name"
-        placeholder={workspace.slug}
-        maxLength={60}
-        disabled={isRenaming}
-        ref={inputRef}
-        onChange={(e) => setDraft(e.target.value)}
-        onFocus={() => setIsEditing(true)}
-        onBlur={() => {
-          setIsEditing(false);
-          void commit();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.currentTarget.blur();
-          }
-        }}
-        className="w-56"
-      />
-    </FieldRow>
+    <Band inset="content" label="Workspace" ariaLabel="Workspace" headingLevel={2}>
+      <SettingRow
+        label="Name"
+        rowKey="workspace-name"
+        help="Shown in the title bar and the workspace switcher."
+      >
+        <Input
+          type="text"
+          value={draft}
+          aria-label="Workspace name"
+          placeholder={workspace.slug}
+          maxLength={60}
+          disabled={isRenaming}
+          ref={inputRef}
+          onChange={(e) => setDraft(e.target.value)}
+          onFocus={() => setIsEditing(true)}
+          onBlur={() => {
+            setIsEditing(false);
+            void commit();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.currentTarget.blur();
+            }
+          }}
+          className="w-56"
+        />
+      </SettingRow>
+    </Band>
   );
 };

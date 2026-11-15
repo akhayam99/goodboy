@@ -24,6 +24,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { readAutoLevel } from '../../../../../store/runtime/auto/level/readAutoLevel';
 import { writeAutoLevel } from '../../../../../store/runtime/auto/level/writeAutoLevel';
+import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
 import { AutoLevelDefaultRow } from './index';
 
 const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -74,5 +75,16 @@ describe('AutoLevelDefaultRow', () => {
       await readAutoLevel({ db: storySqlite(), target: { sessionId: AUTO_SEED_SESSION } }),
     ).toBe('step');
     expect(useAppStore.getState().workspaceValues[WORKSPACE_ID]?.['auto.level']).toContain('run');
+  });
+
+  it('keeps the same row with Work on and opens each permission from it', async () => {
+    useAppStore.setState({ settings: { [SETTING_WORK_ENABLED]: 'true' } });
+    render(<AutoLevelDefaultRow workspaceId={WORKSPACE_ID} />);
+
+    screen.getByText('Auto agent asks you');
+    expect(screen.queryByRole('tablist', { name: 'Auto agent asks you' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^Asks you: / }));
+
+    screen.getByRole('dialog', { name: 'Asks you' });
   });
 });

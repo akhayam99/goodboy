@@ -581,7 +581,7 @@ describe('WorkspaceProjectsSection', () => {
     );
   });
 
-  it('lists each folder once, counts them, and opens a plain folder in its own row', () => {
+  it('lists each folder once, leaves the count to the page meta, and opens a plain folder in its own row', () => {
     state.projects = [
       {
         id: 'p-1',
@@ -607,9 +607,8 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('2 projects, 1 plain folder').textContent).toBe(
-      '2 projects, 1 plain folder',
-    );
+    screen.getByRole('heading', { name: 'Projects' });
+    expect(screen.queryByText(/^\d+ projects?\b/)).toBeNull();
     expect(screen.getAllByText('runbooks')).toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Plain folders' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Git repository' })).toBeNull();

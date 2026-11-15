@@ -1,9 +1,8 @@
 import type { Tone } from '@goodboy/ui';
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/utils/names';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
-import { APP_SECTIONS, appSectionOf, type AppSection } from './appSections';
-import { MODELS_PAGE_SECTION, isModelsPage } from '../../isModelsPage';
+import { APP_SECTIONS, IPHONE_SECTION_ID, appSectionOf, type AppSection } from './appSections';
+import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
 import type { RailSubtitles } from './railSubtitles';
 import { WORKSPACE_PAGES, workspacePageOf, type WorkspacePage } from './workspacePages';
 
@@ -19,6 +18,7 @@ type SettingsPage = {
   readonly label: string;
   readonly attention: SettingsAttention | null;
   readonly target: SettingsScopeChange;
+  readonly isHidden?: boolean;
 };
 
 export type SettingsGroup = {
@@ -39,27 +39,10 @@ export type SettingsStatus = {
 type Params = {
   readonly status: SettingsStatus;
   readonly workspaceName: string | null;
+  readonly isIphonePaired?: boolean;
 };
 
 const ATTENTION_TONES: ReadonlyArray<Tone> = ['info', 'warning', 'danger'];
-
-type RankParams = {
-  readonly attention: SettingsAttention | null;
-};
-
-const rankOf = ({ attention }: RankParams): number =>
-  attention === null ? -1 : ATTENTION_TONES.indexOf(attention.tone);
-
-type WorstParams = {
-  readonly attentions: ReadonlyArray<SettingsAttention | null>;
-};
-
-const worstAttention = ({ attentions }: WorstParams): SettingsAttention | null =>
-  attentions.reduce<SettingsAttention | null>(
-    (worst, attention) =>
-      rankOf({ attention }) > rankOf({ attention: worst }) ? attention : worst,
-    null,
-  );
 
 const attentionOf = ({
   text,
@@ -81,28 +64,48 @@ const appAttention = ({
   readonly section: AppSection;
   readonly subtitles: RailSubtitles;
 }): SettingsAttention | null => {
-  if (section === 'updates') {
+  if (section === 'general') {
     return attentionOf({ text: subtitles.updatesText, tone: subtitles.updatesTone });
   }
   if (section === 'storage') {
-    return worstAttention({
-      attentions: [
-        attentionOf({
-          text: subtitles.securityFindingsText,
-          tone: subtitles.securityFindingsTone,
-        }),
-        attentionOf({ text: subtitles.storageText, tone: subtitles.storageTone }),
-      ],
+    return attentionOf({ text: subtitles.storageText, tone: subtitles.storageTone });
+  }
+  return null;
+};
+
+type WorkspaceAttentionParams = {
+  readonly page: WorkspacePage;
+  readonly subtitles: RailSubtitles;
+};
+
+const workspaceAttention = ({
+  page,
+  subtitles,
+}: WorkspaceAttentionParams): SettingsAttention | null => {
+  if (page === 'projects') {
+    return attentionOf({ text: subtitles.workspaceText, tone: subtitles.workspaceTone });
+  }
+  if (page === PERMISSIONS_SECTION_ID) {
+    return attentionOf({
+      text: subtitles.securityFindingsText,
+      tone: subtitles.securityFindingsTone,
     });
   }
   return null;
 };
 
-const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
+const THIS_MAC = 'This Mac';
+
+const THIS_WORKSPACE = 'This workspace';
+
+const appGroup = ({
+  status,
+  isIphonePaired = false,
+}: Omit<Params, 'workspaceName'>): SettingsGroup => ({
   scope: 'app',
-  label: 'App',
+  label: THIS_MAC,
   concept: 'settings',
-  place: 'This Mac',
+  place: THIS_MAC,
   attention: undefined,
   tone: undefined,
   needsWorkspace: false,
@@ -111,43 +114,24 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
     label: section.label,
     attention: appAttention({ section: section.id, subtitles: status.subtitles }),
     target: { scope: 'app', section: section.id },
+    isHidden: section.id === IPHONE_SECTION_ID && !isIphonePaired,
   })),
 });
 
-const MODELS_AFTER_PAGE: WorkspacePage = 'general';
-
-const MODELS_PAGE_KEY = `workspace:${MODELS_PAGE_SECTION}`;
-
-const modelsPage: SettingsPage = {
-  key: MODELS_PAGE_KEY,
-  label: NAMES.models,
-  attention: null,
-  target: { scope: 'workspace', section: MODELS_PAGE_SECTION },
-};
-
 const workspacePagesOf = ({ status }: Pick<Params, 'status'>): ReadonlyArray<SettingsPage> =>
-  WORKSPACE_PAGES.flatMap((page): ReadonlyArray<SettingsPage> => {
-    const entry: SettingsPage = {
-      key: `workspace:${page.id}`,
-      label: page.label,
-      attention:
-        page.id === 'projects'
-          ? attentionOf({
-              text: status.subtitles.workspaceText,
-              tone: status.subtitles.workspaceTone,
-            })
-          : null,
-      target: { scope: 'workspace', section: page.id },
-    };
-    return page.id === MODELS_AFTER_PAGE ? [entry, modelsPage] : [entry];
-  });
+  WORKSPACE_PAGES.map((page): SettingsPage => ({
+    key: `workspace:${page.id}`,
+    label: page.label,
+    attention: workspaceAttention({ page: page.id, subtitles: status.subtitles }),
+    target: { scope: 'workspace', section: page.id },
+  }));
 
 const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   scope: 'workspace',
-  label: 'This workspace',
+  label: workspaceName ?? THIS_WORKSPACE,
   concept: 'workspace',
   needsWorkspace: true,
-  place: workspaceName ?? 'This workspace',
+  place: workspaceName ?? THIS_WORKSPACE,
   attention: status.subtitles.workspaceText,
   tone: status.subtitles.workspaceTone,
   pages: workspacePagesOf({ status }),
@@ -166,9 +150,6 @@ type PageKeyParams = {
 export const settingsPageKey = ({ scope, section }: PageKeyParams): string => {
   if (scope === 'app') {
     return `app:${appSectionOf({ section })}`;
-  }
-  if (isModelsPage({ section })) {
-    return MODELS_PAGE_KEY;
   }
   return `workspace:${workspacePageOf({ section })}`;
 };

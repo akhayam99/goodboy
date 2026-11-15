@@ -1,7 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SettingsFocus } from '../../settingsFocus';
-import { CONNECTIONS_SETTING_KEY, settingsPaletteEntries } from '../../settingsPaletteEntries';
+import {
+  CONNECTIONS_SETTING_KEY,
+  SETTING_ROW_KEY_PREFIX,
+  settingsPaletteEntries,
+} from '../../settingsPaletteEntries';
 import { resolveSettingsFocus } from './resolveSettingsFocus';
 import {
   settingsDirectory,
@@ -60,6 +64,20 @@ describe('resolveSettingsFocus', () => {
     expect(resolve({ last: MODELS })).toEqual(MODELS);
   });
 
+  it('reopens a saved Updates page on General, and a saved iPhone page on iPhone', () => {
+    expect(resolve({ last: { scope: 'app', section: 'updates' } })).toEqual(GENERAL);
+    expect(resolve({ last: { scope: 'app', section: 'iphone' } })).toEqual({
+      scope: 'app',
+      section: 'iphone',
+    });
+  });
+
+  it('keeps an explicit Updates link so General can scroll to its band', () => {
+    const focus: SettingsFocus = { scope: 'app', section: 'updates' };
+
+    expect(resolveSettingsFocus({ focus, last: null, groups: WITH_WORKSPACE })).toEqual(focus);
+  });
+
   it('falls back to General when the last page needs a workspace that is gone', () => {
     expect(
       resolve({ last: { scope: 'workspace', section: 'projects' }, groups: WITHOUT_WORKSPACE }),
@@ -116,7 +134,9 @@ describe('command palette settings entries', () => {
 
     const pageEntries = entries.filter(
       (entry) =>
-        !entry.key.startsWith('setting:workspace:flow:') && entry.key !== CONNECTIONS_SETTING_KEY,
+        !entry.key.startsWith('setting:workspace:flow:') &&
+        !entry.key.startsWith(SETTING_ROW_KEY_PREFIX) &&
+        entry.key !== CONNECTIONS_SETTING_KEY,
     );
 
     expect(pageEntries.map((entry) => entry.key)).toEqual(
@@ -173,7 +193,11 @@ describe('command palette settings entries', () => {
     },
     {
       from: { scope: 'app', section: 'security-findings' },
-      to: { scope: 'app', section: 'storage' },
+      to: { scope: 'workspace', section: 'permissions' },
+    },
+    {
+      from: { scope: 'workspace', section: 'security-findings' },
+      to: { scope: 'workspace', section: 'permissions' },
     },
     { from: { scope: 'app', section: 'shortcuts' }, to: { scope: 'app', section: 'shortcuts' } },
   ] satisfies ReadonlyArray<{ from: SettingsFocus; to: SettingsFocus }>)(

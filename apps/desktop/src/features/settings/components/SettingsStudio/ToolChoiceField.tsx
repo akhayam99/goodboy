@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { FieldRow, Listbox } from '@goodboy/ui';
+import { Listbox } from '@goodboy/ui';
+import type { SettingSave } from '../../hooks/useSettingSave';
+import { SettingRow } from './SettingRow';
 
 export type ToolChoice = {
   readonly value: string;
@@ -9,14 +11,33 @@ export type ToolChoice = {
 
 type Props = {
   readonly label: string;
-  readonly help: string;
+  readonly rowKey: string;
+  readonly help: ReactNode;
   readonly value: string;
+  readonly defaultValue?: string;
   readonly choices: ReadonlyArray<ToolChoice>;
+  readonly save?: Pick<SettingSave<unknown>, 'error' | 'isSaving' | 'retry'>;
   readonly onChange: (value: string) => void;
 };
 
-export const ToolChoiceField = ({ label, help, value, choices, onChange }: Props) => (
-  <FieldRow label={label} help={help}>
+export const ToolChoiceField = ({
+  label,
+  rowKey,
+  help,
+  value,
+  defaultValue,
+  choices,
+  save,
+  onChange,
+}: Props) => (
+  <SettingRow
+    label={label}
+    rowKey={rowKey}
+    help={help}
+    isChanged={defaultValue !== undefined && value !== defaultValue}
+    onReset={defaultValue === undefined ? undefined : () => onChange(defaultValue)}
+    save={save}
+  >
     <Listbox
       size="sm"
       value={value}
@@ -32,5 +53,5 @@ export const ToolChoiceField = ({ label, help, value, choices, onChange }: Props
         disabledReason: `Goodboy found only ${choices[0]?.label ?? 'one choice'} on this computer`,
       })}
     />
-  </FieldRow>
+  </SettingRow>
 );

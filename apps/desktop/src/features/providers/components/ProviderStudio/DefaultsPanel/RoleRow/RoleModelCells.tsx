@@ -3,6 +3,7 @@ import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { Chip, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 import { PROVIDER_BRAND } from '../../../provider-brand';
+import { ROLE_GRID } from '../roleGrid';
 import {
   routingLabelParts,
   routingNameText,
@@ -28,8 +29,8 @@ export const RoleModelCells = ({
   const label = routingLabelParts({ provider, model, effort });
   const ProviderGlyph = PROVIDER_BRAND[provider].icon;
   return (
-    <span className="flex min-w-0 items-center gap-3 text-meta">
-      <span data-role-summary className="flex w-44 min-w-0 items-center gap-2">
+    <>
+      <span data-role-summary className="flex min-w-0 items-center gap-2 text-meta">
         <ProviderGlyph
           size={ICON_SIZE.row}
           className="shrink-0 text-muted-foreground"
@@ -40,10 +41,10 @@ export const RoleModelCells = ({
           <span className="shrink-0 tabular-nums text-faint-foreground">+{moreCount}</span>
         ) : null}
       </span>
-      <span data-role-effort className="w-16 shrink-0 truncate text-muted-foreground">
+      <span data-role-effort className="min-w-0 truncate text-meta text-muted-foreground">
         {label.detail.join(' · ')}
       </span>
-      <span className="flex w-20 shrink-0 items-center gap-1">
+      <span className={ROLE_GRID.source}>
         <Chip kind="state" tone="neutral" label={isPinned ? 'Pinned' : 'Auto'} />
         {skippedReason === null ? null : (
           <Tooltip content={skippedReason}>
@@ -56,6 +57,6 @@ export const RoleModelCells = ({
           </Tooltip>
         )}
       </span>
-    </span>
+    </>
   );
 };

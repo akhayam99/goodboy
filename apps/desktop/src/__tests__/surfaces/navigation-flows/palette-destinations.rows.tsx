@@ -433,6 +433,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Connect a provider',
     covers: ['openStudio', 'studio:connections', 'palette:Connect a provider'],
+    door: 'palette',
     open: () => openPalette(/^Connect a provider/),
     lands: () => studio('Connections'),
   },

@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { createRef } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Band } from './Band';
@@ -66,5 +67,32 @@ describe('FieldRow', () => {
 
     expect(marker.parentElement?.textContent).toBe('Branch prefix');
     expect(menu.parentElement?.contains(screen.getByLabelText('Branch prefix'))).toBe(true);
+  });
+
+  it('puts the anchor and the ref on the row itself, so the band rhythm still sees it', () => {
+    const ref = createRef<HTMLDivElement>();
+    render(
+      <Band inset="content" label="Naming">
+        <FieldRow label="Theme" anchor="theme" ref={ref}>
+          <input aria-label="Theme" />
+        </FieldRow>
+      </Band>,
+    );
+
+    expect(ref.current?.dataset.anchor).toBe('theme');
+    expect(ref.current?.contains(screen.getByText('Theme'))).toBe(true);
+    expect(ref.current?.dataset.highlighted).toBeUndefined();
+  });
+
+  it('lights a highlighted row with the selected surface', () => {
+    const ref = createRef<HTMLDivElement>();
+    render(
+      <FieldRow label="Theme" anchor="theme" ref={ref} isHighlighted>
+        <input aria-label="Theme" />
+      </FieldRow>,
+    );
+
+    expect(ref.current?.dataset.highlighted).toBe('');
+    expect(ref.current?.className).toContain('bg-selected');
   });
 });

@@ -30,12 +30,7 @@ export const SettingsRail = ({ pageKey, groups, workspaceName, onSelect }: Props
       className={cn('flex flex-col gap-3', PANE_RHYTHM.navRail.body)}
     >
       {app === undefined ? null : (
-        <SettingsRailPageGroup
-          group={app}
-          label={app.label}
-          pageKey={pageKey}
-          onSelect={onSelect}
-        />
+        <SettingsRailPageGroup group={app} pageKey={pageKey} onSelect={onSelect} />
       )}
       {workspace === undefined || workspaceName === null ? (
         <SettingsRailPlaceholder
@@ -44,12 +39,7 @@ export const SettingsRail = ({ pageKey, groups, workspaceName, onSelect }: Props
           line="Open a workspace to see its settings."
         />
       ) : (
-        <SettingsRailPageGroup
-          group={workspace}
-          label={`${workspace.label} · ${workspaceName}`}
-          pageKey={pageKey}
-          onSelect={onSelect}
-        />
+        <SettingsRailPageGroup group={workspace} pageKey={pageKey} onSelect={onSelect} />
       )}
       <MovedToConnectionsRow />
     </nav>

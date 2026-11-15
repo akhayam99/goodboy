@@ -10,19 +10,21 @@ type Props = {
 
 export const SettingsRailPageList = ({ group, pageKey, onSelect }: Props) => (
   <ul aria-label={`${group.label} settings`} className="flex flex-col gap-0.5">
-    {group.pages.map((page) => (
-      <li key={page.key} data-settings-page={page.key}>
-        <SettingsNavRow
-          label={page.label}
-          isCurrent={page.key === pageKey}
-          status={
-            page.attention === null
-              ? null
-              : { tone: page.attention.tone, label: page.attention.text }
-          }
-          onClick={() => onSelect(page.target)}
-        />
-      </li>
-    ))}
+    {group.pages
+      .filter((page) => page.isHidden !== true || page.key === pageKey)
+      .map((page) => (
+        <li key={page.key} data-settings-page={page.key}>
+          <SettingsNavRow
+            label={page.label}
+            isCurrent={page.key === pageKey}
+            status={
+              page.attention === null
+                ? null
+                : { tone: page.attention.tone, label: page.attention.text }
+            }
+            onClick={() => onSelect(page.target)}
+          />
+        </li>
+      ))}
   </ul>
 );

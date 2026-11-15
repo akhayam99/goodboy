@@ -306,6 +306,7 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'settings frame: the moved row leads to a provider about to run out, with the notice on its page',
     covers: ['openSettings', 'studio:connections', 'settings:moved-to-connections'],
+    door: 'visible',
     open: async () => {
       seedPolicyScene({ workspaceId: useAppStore.getState().currentWorkspaceId as WorkspaceId });
       await clickButton('Settings');
