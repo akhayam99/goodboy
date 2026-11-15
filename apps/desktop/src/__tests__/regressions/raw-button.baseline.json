@@ -107,7 +107,7 @@
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 2,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/index.tsx": 1,
   "apps/desktop/src/features/reports/components/ReportStudio/ReportOutlineNav.tsx": 1,
-  "apps/desktop/src/features/reports/components/ReportStudio/ReportProvenanceRow.tsx": 3,
+  "apps/desktop/src/features/reports/components/ReportStudio/ReportProvenanceRow/index.tsx": 3,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/ModelChipPicker.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixRunSummary/FixRunThreads.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixRunSummary/index.tsx": 1,
