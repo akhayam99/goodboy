@@ -2,6 +2,20 @@ import { SectionHeader } from '@goodboy/ui';
 import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import { openSettings } from '../../../settings/openSettings';
 import type { ConnectionRow } from '../../connectionRow';
+import { openConnection } from '../../openConnection';
+
+type OpenParams = {
+  readonly row: ConnectionRow;
+};
+
+const openRow = ({ row }: OpenParams): void => {
+  const { provider } = row.target;
+  if (provider !== undefined) {
+    openConnection({ focus: { provider } });
+    return;
+  }
+  openSettings(row.target);
+};
 
 type Props = {
   readonly id: 'providers' | 'tools';
@@ -20,11 +34,7 @@ export const ConnectionsGroup = ({ id, label, place, rows }: Props) => (
     <ul className="flex flex-col gap-0.5">
       {rows.map((row) => (
         <li key={row.key} data-connections-row={row.key}>
-          <SettingsNavRow
-            label={row.label}
-            status={row.status}
-            onClick={() => openSettings(row.target)}
-          />
+          <SettingsNavRow label={row.label} status={row.status} onClick={() => openRow({ row })} />
         </li>
       ))}
     </ul>

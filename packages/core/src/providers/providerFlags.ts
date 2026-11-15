@@ -7,6 +7,7 @@ export type ProviderFlags = {
   readonly statusSlot: ProviderStatusSlot | null;
   readonly shouldReplayHistoryAsText: boolean;
   readonly hasAccountTest: boolean;
+  readonly canFollowRules: boolean;
 };
 
 export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
@@ -15,48 +16,56 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     statusSlot: 'providerStatus',
     shouldReplayHistoryAsText: false,
     hasAccountTest: true,
+    canFollowRules: true,
   },
   cursor: {
     binary: 'cursor-agent',
     statusSlot: 'cursorStatus',
     shouldReplayHistoryAsText: true,
     hasAccountTest: true,
+    canFollowRules: false,
   },
   codex: {
     binary: 'codex',
     statusSlot: 'codexStatus',
     shouldReplayHistoryAsText: true,
     hasAccountTest: true,
+    canFollowRules: false,
   },
   gemini: {
     binary: 'agy',
     statusSlot: 'geminiStatus',
     shouldReplayHistoryAsText: true,
     hasAccountTest: false,
+    canFollowRules: false,
   },
   copilot: {
     binary: 'copilot',
     statusSlot: null,
     shouldReplayHistoryAsText: false,
     hasAccountTest: false,
+    canFollowRules: false,
   },
   opencode: {
     binary: 'opencode',
     statusSlot: null,
     shouldReplayHistoryAsText: false,
     hasAccountTest: false,
+    canFollowRules: false,
   },
   openrouter: {
     binary: 'opencode',
     statusSlot: null,
     shouldReplayHistoryAsText: false,
     hasAccountTest: false,
+    canFollowRules: false,
   },
   moonshot: {
     binary: 'opencode',
     statusSlot: null,
     shouldReplayHistoryAsText: false,
     hasAccountTest: false,
+    canFollowRules: false,
   },
 };
 

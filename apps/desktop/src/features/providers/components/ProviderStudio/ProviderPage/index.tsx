@@ -3,7 +3,8 @@ import type { WorkspaceId } from '@goodboy/types';
 import { EmptyState, appScrollIntoView } from '@goodboy/ui';
 import type { ProviderDisplayInfo } from '../../../providers';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { ProviderPageBody } from './ProviderPageBody';
+import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
+import { ProviderDetailBody } from '../../../ProviderDetailBody';
 import { USAGE_SECTION_ID } from './UsageGroup/usageSectionId';
 
 type Props = {
@@ -13,7 +14,6 @@ type Props = {
   readonly focusModels?: boolean;
   readonly isUsageFocused?: boolean;
   readonly workspaceId?: WorkspaceId | null;
-  readonly scopeLabel?: string | null;
 };
 
 export const ProviderPage = ({
@@ -23,7 +23,6 @@ export const ProviderPage = ({
   focusModels = false,
   isUsageFocused = false,
   workspaceId = null,
-  scopeLabel = null,
 }: Props) => {
   useEffect(() => {
     if (!isUsageFocused || info === null) {
@@ -49,13 +48,13 @@ export const ProviderPage = ({
     );
   }
   return (
-    <ProviderPageBody
+    <ProviderDetailBody
       info={info}
-      autoConnect={autoConnect}
-      autoUpdate={autoUpdate}
-      focusModels={focusModels}
+      shouldAutoConnect={autoConnect}
+      shouldAutoUpdate={autoUpdate}
+      isModelsFocused={focusModels}
       workspaceId={workspaceId}
-      scopeLabel={scopeLabel}
+      animationClassName={SETTINGS_PANE_ENTRY}
     />
   );
 };

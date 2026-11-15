@@ -121,14 +121,14 @@ describe('ProviderPage', () => {
     expect(screen.queryByText(/about to run out|is out/)).toBeNull();
   });
 
-  it('lays out usage, models, permissions and account in that order', () => {
+  it('lays out usage, models, account and what works in that order', () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
 
     expect(regionNames()).toEqual([
       'Usage for anthropic',
       'Models in the picker',
-      'Permissions with Claude',
       'Account',
+      'What works with Claude',
     ]);
   });
 
@@ -144,7 +144,8 @@ describe('ProviderPage', () => {
     const codex = { ...info, id: 'codex', label: 'Codex', binary: 'codex' } as ProviderDisplayInfo;
     render(<ProviderPage info={codex} autoConnect={false} autoUpdate={false} />);
 
-    const permissions = within(screen.getByRole('region', { name: 'Permissions with Codex' }));
+    const permissions = within(screen.getByRole('region', { name: 'What works with Codex' }));
+    fireEvent.click(permissions.getByRole('button', { name: 'What works with Codex' }));
     const rows = permissions.getAllByRole('listitem').map((row) => row.textContent);
     expect(rows).toContain('Ask firstNot availableRuns as Read only');
     expect(rows).toContain('RulesNot followedOnly Claude follows Allow and Deny rules.');
@@ -266,12 +267,14 @@ describe('ProviderPage', () => {
     expect(state.connectProvider).toHaveBeenCalledWith('codex');
   });
 
-  it('opens the api keys only when asked', () => {
+  it('opens the api key form in the account only when asked', () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
-    expect(screen.queryByRole('region', { name: 'API keys for anthropic' })).toBeNull();
+    expect(screen.queryByRole('form', { name: 'Use an API key' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /Use an API key instead of your plan/ }));
 
-    expect(screen.getByRole('region', { name: 'API keys for anthropic' })).toBeDefined();
+    const account = within(screen.getByRole('region', { name: 'Account' }));
+    account.getByRole('form', { name: 'Use an API key' });
+    expect(screen.queryByRole('region', { name: 'API keys for anthropic' })).toBeNull();
   });
 });

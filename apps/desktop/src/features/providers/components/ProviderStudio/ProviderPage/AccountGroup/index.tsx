@@ -7,6 +7,7 @@ import { useAppStore } from '../../../../../../store';
 import { ProviderCredentialsSection } from '../../ProviderCredentialsSection';
 import { ProviderBindingsSection } from '../../ProviderBindingsSection';
 import { CliUpdateNotice } from '../../CliUpdateNotice';
+import { ApiKeyForm } from './ApiKeyForm';
 import { CliRow } from './CliRow';
 import { ConnectionHistory } from './ConnectionHistory';
 import { RuntimeRow } from './RuntimeRow';
@@ -21,14 +22,17 @@ export const AccountGroup = (props: AccountGroupProps) => {
     state.providerCredentials.some((credential) => credential.providerId === info.id),
   );
   const [isKeyOpen, setIsKeyOpen] = useState(false);
-  const showsKeys = hasKeyOption && (isApi || hasKeys || isKeyOpen);
+  const showsKeys = hasKeyOption && (isApi || hasKeys);
 
   return (
     <div className="flex flex-col gap-6">
       <Band label="Account" ariaLabel="Account">
         {isApi ? <RuntimeRow info={info} /> : <SignedInRow {...props} />}
         {isApi ? null : <CliRow info={info} />}
-        {hasKeyOption && !showsKeys ? (
+        {hasKeyOption && !showsKeys && isKeyOpen ? (
+          <ApiKeyForm providerId={info.id} onClose={() => setIsKeyOpen(false)} />
+        ) : null}
+        {hasKeyOption && !showsKeys && !isKeyOpen ? (
           <button
             type="button"
             onClick={() => setIsKeyOpen(true)}

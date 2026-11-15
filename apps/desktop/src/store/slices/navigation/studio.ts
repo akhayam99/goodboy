@@ -3,6 +3,7 @@ import type { TerminalTabId } from '../../../shared/types/terminal';
 import type { ImpactScope } from '../../../features/impact/lib';
 import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import type { SettingsFocus } from '../../../features/settings/settingsFocus';
+import type { ConnectionsFocus } from '../../../features/connections/connectionsFocus';
 import type { MonitoringTarget } from '../../../features/monitoring/monitoringTarget';
 import type { WorkFilter } from '../work/state';
 
@@ -23,7 +24,7 @@ export type StudioPlace =
   | { readonly kind: 'impact'; readonly scope: ImpactScope | null }
   | { readonly kind: 'changelog' }
   | { readonly kind: 'notifications' }
-  | { readonly kind: 'connections' }
+  | { readonly kind: 'connections'; readonly focus?: ConnectionsFocus | null }
   | { readonly kind: 'monitoring'; readonly target?: MonitoringTarget | null }
   | { readonly kind: 'chat'; readonly chatId: ChatId | null }
   | {
@@ -74,10 +75,11 @@ export const studioKey = ({ studio }: KeyParams): string => {
         studio.target?.projectId,
         studio.target?.branch,
       ]);
+    case 'connections':
+      return joined(['connections', studio.focus?.provider]);
     case 'guide':
     case 'changelog':
     case 'notifications':
-    case 'connections':
       return studio.kind;
     default: {
       const unreachable: never = studio;
