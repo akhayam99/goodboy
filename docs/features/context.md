@@ -30,7 +30,7 @@ Hand the next agent where things stand. After a reply the drawer shows **Next** 
 
 ### Context drawer
 
-Open goal, decisions, summary and explanations in the **Context** tab, with Projects and Linked beside them, and copy them with **Copy context**. It opens on Goal. Each card has its title and a count from two. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Who reads this**. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
+Open goal, decisions, summary and explanations in the **Context** tab, with Projects and Linked beside them, and copy them with **Copy context**. It opens on Goal. Every card has the same head: its title, a count from two, and its actions on the right. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Who reads this**. **Context updates** heads the tab with **Copy context** on the same line; it shows the last update and its model and cost, and **Update now** runs one on demand. An empty card says what it will hold and offers one action. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
@@ -60,3 +60,4 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 - Decision marks: `DecisionsSection` renders one list and `markContextRead` clears marks after persistence.
 - Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, and `shareableContext` keeps the complete text.
 - Card controls: `SlotSourceActions` keeps the three menu entries together.
+- Card head: `ContextCardHead` draws the head row of every Context card, Projects and Linked included, and `ContextExpander` every fold inside a card.

@@ -113,7 +113,9 @@ export const TaskDragScene = ({ target, isAlt = false }: Props) => {
         );
         if (chip === null) {
           const history = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
-            (button) => button.textContent?.startsWith('Show history') === true,
+            (button) =>
+              button.textContent?.startsWith('History') === true &&
+              button.getAttribute('aria-expanded') === 'false',
           );
           history?.click();
           return;

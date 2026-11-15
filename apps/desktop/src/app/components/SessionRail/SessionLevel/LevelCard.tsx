@@ -1,61 +1,52 @@
 import { useId, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { cn, FOCUS_RING, ICON_SIZE, Reveal } from '@goodboy/ui';
-
-import { CARD_INSET, CARD_ROW_INSET } from './railInset';
+import { Band, Reveal } from '@goodboy/ui';
+import { ContextCardHead } from '../../../../features/session/components/ContextDrawer/ContextCardHead';
+import { CONTEXT_CARD_BODY } from '../../../../features/session/components/ContextDrawer/contextCardBody';
 
 type Props = {
   readonly id: string;
   readonly label: string;
   readonly isOpen: boolean;
   readonly onToggle: () => void;
+  readonly count?: number;
   readonly meta?: ReactNode;
   readonly action?: ReactNode;
   readonly children: ReactNode;
 };
 
-export const LevelCard = ({ id, label, isOpen, onToggle, meta, action, children }: Props) => {
+export const LevelCard = ({
+  id,
+  label,
+  isOpen,
+  onToggle,
+  count,
+  meta,
+  action,
+  children,
+}: Props) => {
   const bodyId = useId();
   return (
     <div
       role="group"
       aria-labelledby={id}
       data-level-card={label}
+      data-context-block={label}
       data-open={isOpen ? '' : undefined}
-      className={cn('flex min-w-0 flex-col rounded-lg bg-subtle', CARD_INSET)}
+      className="min-w-0"
     >
-      <div className="flex h-7 min-w-0 items-center justify-between gap-2">
-        <h2 id={id} className="flex h-full min-w-0">
-          <button
-            type="button"
-            aria-expanded={isOpen}
-            aria-controls={bodyId}
-            onClick={onToggle}
-            className={cn(
-              'flex h-full min-w-0 items-center gap-1 rounded-md text-eyebrow text-faint-foreground hover:text-foreground',
-              CARD_ROW_INSET,
-              FOCUS_RING,
-            )}
-          >
-            <span className="truncate">{label}</span>
-            <ChevronDown
-              size={ICON_SIZE.row}
-              aria-hidden
-              className={cn(
-                'shrink-0 text-faint-foreground motion-safe:transition-transform',
-                !isOpen && '-rotate-90',
-              )}
-            />
-          </button>
-        </h2>
-        <div data-card-actions="" className="flex shrink-0 items-center gap-2">
-          {isOpen || meta === undefined ? null : meta}
-          {action}
-        </div>
-      </div>
-      <Reveal open={isOpen} id={bodyId}>
-        <div className="flex min-w-0 flex-col">{children}</div>
-      </Reveal>
+      <Band className="min-w-0">
+        <ContextCardHead
+          label={label}
+          headingId={id}
+          count={count}
+          meta={isOpen ? undefined : meta}
+          actions={action}
+          fold={{ isOpen, bodyId, onToggle }}
+        />
+        <Reveal open={isOpen} id={bodyId}>
+          <div className={CONTEXT_CARD_BODY.treeRows}>{children}</div>
+        </Reveal>
+      </Band>
     </div>
   );
 };

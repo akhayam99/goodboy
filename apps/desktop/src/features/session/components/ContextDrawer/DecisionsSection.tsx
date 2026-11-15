@@ -4,7 +4,7 @@ import { matchesClosedSearch } from './matchesClosedSearch';
 import { revealDecisionRow } from './revealDecisionRow';
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
+import { Undo2 } from 'lucide-react';
 import {
   EmptyLine,
   ICON_SIZE,
@@ -24,6 +24,7 @@ import { type DecisionChangesSince } from '../../../../store/slices/contextDrawe
 import { decisionChangeLabelOf } from './decisionChangeLabelOf';
 import { decisionRowsOf } from './decisionRowsOf';
 import { AddDecisionRow } from './AddDecisionRow';
+import { ContextExpander } from './ContextExpander';
 import { ClosedDecisionRow } from './ClosedDecisionRow';
 import { DecisionRowItem } from './DecisionRowItem';
 import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
@@ -252,11 +253,11 @@ export const DecisionsSection = ({
   ];
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       {activeRows.length === 0 ? (
-        <EmptyLine className="text-body text-muted-foreground">
-          No decisions yet. Agents record one when they settle a choice; you can add your own.
-        </EmptyLine>
+        <div className="px-2">
+          <EmptyLine>Agents record a decision each time they settle a choice.</EmptyLine>
+        </div>
       ) : (
         <div className="flex flex-col gap-2">
           {pendingRemovals.size === 0 ? null : (
@@ -276,7 +277,7 @@ export const DecisionsSection = ({
               </button>
             </div>
           )}
-          <div className="-mx-2 flex flex-col gap-0.5">
+          <div className="flex flex-col gap-0.5">
             {activeRows.map((row) => (
               <EnteringRow key={row.id} isEntering={!seenAtFirst.has(row.number)}>
                 <DecisionRowItem
@@ -327,26 +328,17 @@ export const DecisionsSection = ({
       )}
       {closed.length === 0 ? null : (
         <div className="flex flex-col gap-1">
-          <button
-            type="button"
-            aria-expanded={isClosedOpen}
-            onClick={() => setIsClosedOpen(!isClosedOpen)}
-            className={cn(
-              'flex items-center gap-2 self-start rounded-md px-2 py-1 text-meta text-muted-foreground hover:bg-hover',
-              FOCUS_RING,
-            )}
-          >
-            {isClosedOpen ? (
-              <ChevronDown size={ICON_SIZE.row} aria-hidden />
-            ) : (
-              <ChevronRight size={ICON_SIZE.row} aria-hidden />
-            )}
-            Replaced and removed
-            <span className="text-faint-foreground tabular-nums">{closed.length}</span>
-          </button>
+          <div className="flex px-2">
+            <ContextExpander
+              label="Replaced and removed"
+              count={closed.length}
+              isOpen={isClosedOpen}
+              onToggle={() => setIsClosedOpen(!isClosedOpen)}
+            />
+          </div>
           {isClosedOpen ? (
-            <div className="flex flex-col gap-2 px-1">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 px-2">
                 <SegmentedTabs
                   size="sm"
                   ariaLabel="Show"

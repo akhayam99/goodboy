@@ -45,7 +45,6 @@ import { SideColumn } from '../SideColumn';
 import { SessionContextCards } from '../SessionContextCards';
 import { SessionFrame } from './SessionFrame';
 import { SessionHead } from '../SessionHead';
-import { CARD_INSET } from './SessionLevel/railInset';
 
 let useAppStore: StoryStore;
 
@@ -249,7 +248,7 @@ describe('the session level projects and linked work', () => {
     expect(key?.textContent).toBe('PAYMENTS-API-3F2');
   });
 
-  it('gives the Projects card and the Linked card the same side padding, from one constant', () => {
+  it('draws the Projects card and the Linked card as the same band with the same head row', () => {
     seed();
     const payments = mountOf({ session: open, project: paymentsApi });
     useAppStore.setState({
@@ -283,7 +282,13 @@ describe('the session level projects and linked work', () => {
     const linked = within(sessionLayer()).getByRole('group', { name: 'Linked' });
     expect(projects.getAttribute('data-level-card')).toBe('Projects');
     expect(linked.getAttribute('data-level-card')).toBe('Linked');
-    expect(CARD_INSET).toBe('px-2 py-1');
+    const bands = [projects, linked].map((card) => card.querySelector('[data-band]'));
+    expect(bands.map((band) => band?.className)).toEqual([
+      bands[0]?.className,
+      bands[0]?.className,
+    ]);
+    expect(projects.querySelector('[data-context-head]')).not.toBeNull();
+    expect(linked.querySelector('[data-context-head]')).not.toBeNull();
   });
 
   it('lists a pull request once: a worktree that owns it hides the same number from Linked', () => {

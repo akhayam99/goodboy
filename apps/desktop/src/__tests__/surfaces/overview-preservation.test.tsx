@@ -142,7 +142,7 @@ describe('Overview capabilities from the session Overview', () => {
     render(<ContextTab session={session} />);
     await advance();
     const action = screen.getByRole('button', { name: 'Write title and goal from linked work' });
-    expect(action.getAttribute('data-variant')).toBe('secondary');
+    expect(action.getAttribute('data-variant')).toBe('quiet');
     expect(action.querySelector('svg')).not.toBeNull();
   });
 

@@ -1,6 +1,6 @@
 import { slotValue } from './slotValue';
 import { useWriteContextSlot } from './useWriteContextSlot';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BandStack, DrawerFrame, ScrollFade } from '@goodboy/ui';
 import { activeDecisionsNewestFirst } from '@goodboy/core/context';
 import type { SessionId } from '@goodboy/types';
@@ -54,6 +54,7 @@ type Props = {
   readonly view: ContextDrawerView;
   readonly highlight?: ReadonlyArray<number>;
   readonly isPage?: boolean;
+  readonly cards?: ReactNode;
   readonly onClose: () => void;
 };
 
@@ -63,6 +64,7 @@ export const ContextDrawer = ({
   view,
   highlight = EMPTY_ARRAY,
   isPage = false,
+  cards,
   onClose,
 }: Props) => {
   const slots = useSessionSlots(sessionId);
@@ -189,6 +191,7 @@ export const ContextDrawer = ({
         <ContextSection
           section="decisions"
           count={activeDecisionCount}
+          layout={rawSection === 'decisions' ? 'prose' : 'rows'}
           action={<MarkContextRead sessionId={sessionId} changes={changes} />}
           visibility={visibilityOf({ section: 'decisions' })}
           isLocked={isLocked}
@@ -227,23 +230,18 @@ export const ContextDrawer = ({
           onEdit={() => toggleRaw({ section: 'summary' })}
           onOpenVersions={() => openVersions({ section: 'summary' })}
         >
-          {summary.trim() === '' && !isLoading && rawSection !== 'summary' ? (
-            <p className="text-body text-muted-foreground">
-              A summary appears after the first agent reply.
-            </p>
-          ) : (
-            <SummarySection
-              value={summary}
-              isLoading={isLoading}
-              isRawEditing={rawSection === 'summary'}
-              onWrite={(next) => writeSlot({ section: 'summary', next })}
-              onCloseRawEditor={() => setRawSection(null)}
-            />
-          )}
+          <SummarySection
+            value={summary}
+            isLoading={isLoading}
+            isRawEditing={rawSection === 'summary'}
+            onWrite={(next) => writeSlot({ section: 'summary', next })}
+            onCloseRawEditor={() => setRawSection(null)}
+          />
         </ContextSection>
         <ContextSection
           section="explanations"
           count={learningList.visible.length}
+          layout="rows"
           visibility={youOnlyVisibility()}
         >
           <ExplanationsSection list={learningList} />
@@ -256,7 +254,7 @@ export const ContextDrawer = ({
 
   if (isPage) {
     return (
-      <ContextPageFrame sessionId={sessionId} action={copy} frameRef={scrollRef}>
+      <ContextPageFrame sessionId={sessionId} action={copy} cards={cards} frameRef={scrollRef}>
         {sections}
       </ContextPageFrame>
     );
