@@ -22,16 +22,16 @@ export const AwayAlertsBand = () => {
   const setBannerChoice = useAwayAlertsStore((state) => state.setBannerChoice);
 
   const writeBanner = useCallback(
-    async ({ value }: ValueParams<boolean>) => {
-      if (!setBannerChoice({ choice: value ? 'on' : 'off' })) {
+    async ({ value: isOn }: ValueParams<boolean>) => {
+      if (!setBannerChoice({ choice: isOn ? 'on' : 'off' })) {
         throw notStored();
       }
     },
     [setBannerChoice],
   );
   const writeBadge = useCallback(
-    async ({ value }: ValueParams<boolean>) => {
-      if (!setBadge({ isOn: value })) {
+    async ({ value: isOn }: ValueParams<boolean>) => {
+      if (!setBadge({ isOn })) {
         throw notStored();
       }
     },

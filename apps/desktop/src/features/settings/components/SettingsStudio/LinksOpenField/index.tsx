@@ -14,7 +14,7 @@ type ValueParams = {
   readonly value: LinksOpen;
 };
 
-const labelOf = ({ value }: ValueParams): string =>
+const linksLabelOf = ({ value }: ValueParams): string =>
   LINKS_OPTIONS.find((option) => option.value === value)?.label ?? value;
 
 export const LinksOpenField = () => {
@@ -22,7 +22,7 @@ export const LinksOpenField = () => {
     settingKey: SETTING_LINKS_OPEN,
     saved: useLinksOpen(),
     encode: ({ value }) => value,
-    display: labelOf,
+    display: linksLabelOf,
     failureTitle: "Couldn't save where links open",
   });
   const help = `Click on a link, plan or report, in a session. ${ownBrowserClickWord()}: your browser.`;

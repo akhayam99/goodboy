@@ -22,13 +22,13 @@ const failures = new Map<string, RowFailure>();
 const openRows = new Map<string, number>();
 const listeners = new Set<() => void>();
 
-const notify = (): void => {
+const tellListeners = (): void => {
   listeners.forEach((listener) => listener());
 };
 
 const clear = ({ key }: KeyParams): void => {
   if (failures.delete(key)) {
-    notify();
+    tellListeners();
   }
 };
 
@@ -38,7 +38,7 @@ export const rowSaves = {
   failureOf: ({ key }: KeyParams): RowFailure | null => failures.get(key) ?? null,
   fail: ({ key, failure }: FailParams): void => {
     failures.set(key, failure);
-    notify();
+    tellListeners();
   },
   clear,
   isOpen: ({ key }: KeyParams): boolean => (openRows.get(key) ?? 0) > 0,

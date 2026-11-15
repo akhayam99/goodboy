@@ -84,7 +84,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
     workspaceId,
     field: 'resolveOnGithub',
     saved: settings.resolveOnGithub,
-    patchOf: ({ value }) => ({ resolveOnGithub: value }),
+    patchOf: ({ value: isOn }) => ({ resolveOnGithub: isOn }),
   });
   const commitSave = useWorkspaceOverrideSave({
     workspaceId,
@@ -93,8 +93,8 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
     patchOf: ({ value }) => ({ resolveCommitStyle: value }),
   });
   const writeEdit = useCallback(
-    ({ value }: ValueParams<boolean>) =>
-      saveSetting(editKey, value ? EDIT_POSTED_REPLY_ON : EDIT_POSTED_REPLY_OFF),
+    ({ value: isOn }: ValueParams<boolean>) =>
+      saveSetting(editKey, isOn ? EDIT_POSTED_REPLY_ON : EDIT_POSTED_REPLY_OFF),
     [editKey, saveSetting],
   );
   const editSave = useSettingSave({
@@ -191,7 +191,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             <Switch
               ariaLabel={NAMES.markThreadResolved}
               checked={resolveSave.value}
-              onChange={(next) => void resolveSave.save({ value: next })}
+              onChange={(isNext) => void resolveSave.save({ value: isNext })}
             />
           </WorkspaceFieldRow>
           <WorkspaceFieldRow
@@ -202,7 +202,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             <Switch
               ariaLabel="Edit the posted reply"
               checked={editSave.value}
-              onChange={(next) => void editSave.save({ value: next })}
+              onChange={(isNext) => void editSave.save({ value: isNext })}
             />
           </WorkspaceFieldRow>
         </Band>

@@ -5671,11 +5671,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/ClassicComposerKeysField.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/OpenWithBand.tsx": {
     "react-hooks/exhaustive-deps": {
       "count": 1
@@ -5701,11 +5696,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/UpdatesSection.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceAfterMergeSection.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
@@ -5718,7 +5708,7 @@
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDefaultsGrid.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 5
+      "count": 1
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProfileSection.test.tsx": {
@@ -5739,11 +5729,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceReviewRepliesSection.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceReviewRepliesSection.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceScopePanel.test.tsx": {

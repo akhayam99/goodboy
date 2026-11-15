@@ -11,7 +11,7 @@ type Props = {
   readonly label: string;
   readonly value: string;
   readonly isDisabled: boolean;
-  readonly save: Pick<SettingSave<unknown>, 'error' | 'retry'>;
+  readonly save: Pick<SettingSave<unknown>, 'error' | 'isSaving' | 'retry'>;
   readonly onSave: (value: string) => void;
 };
 

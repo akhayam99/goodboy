@@ -17,7 +17,7 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly value: string | null;
   readonly isDisabled: boolean;
-  readonly save: Pick<SettingSave<unknown>, 'error' | 'retry'>;
+  readonly save: Pick<SettingSave<unknown>, 'error' | 'isSaving' | 'retry'>;
   readonly onSave: (note: string | null) => void;
 };
 

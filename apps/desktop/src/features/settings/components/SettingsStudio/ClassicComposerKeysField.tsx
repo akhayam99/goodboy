@@ -24,7 +24,7 @@ export const ClassicComposerKeysField = () => {
       <Switch
         ariaLabel="Keys from before 0.15.5"
         checked={save.value}
-        onChange={(next) => void save.save({ value: next })}
+        onChange={(isNext) => void save.save({ value: isNext })}
       />
     </FieldRow>
   );

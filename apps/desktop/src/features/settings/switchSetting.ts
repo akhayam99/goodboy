@@ -3,6 +3,6 @@ type ValueParams<Value> = {
 };
 
 export const SWITCH_SETTING = {
-  encode: ({ value }: ValueParams<boolean>): string => (value ? 'true' : 'false'),
-  display: ({ value }: ValueParams<boolean>): string => (value ? 'On' : 'Off'),
+  encode: ({ value: isOn }: ValueParams<boolean>): string => (isOn ? 'true' : 'false'),
+  display: ({ value: isOn }: ValueParams<boolean>): string => (isOn ? 'On' : 'Off'),
 };

@@ -144,7 +144,7 @@ describe('WorkspaceDefaultsGrid save errors', () => {
     fireEvent.keyDown(prefix, { key: 'Enter' });
     await answer({ index: 0, isOk: false });
 
-    expect((prefix as HTMLInputElement).value).toBe(DEFAULT_BRANCH_PREFIX);
+    expect(prefix).toHaveProperty('value', DEFAULT_BRANCH_PREFIX);
     expect(screen.getByRole('alert').textContent).toContain(
       `Couldn't save. Still ${DEFAULT_BRANCH_PREFIX}.`,
     );
@@ -153,7 +153,7 @@ describe('WorkspaceDefaultsGrid save errors', () => {
     await answer({ index: 1, isOk: true });
 
     expect(calls[1]?.patch.patch).toEqual({ defaultBranchPrefix: 'offline' });
-    await waitFor(() => expect((prefix as HTMLInputElement).value).toBe('offline'));
+    await waitFor(() => expect(prefix).toHaveProperty('value', 'offline'));
   });
 
   it('keeps a failed reset under its row and Retry resets', async () => {

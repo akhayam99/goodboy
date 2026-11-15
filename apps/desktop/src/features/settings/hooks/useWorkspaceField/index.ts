@@ -18,7 +18,7 @@ export type WorkspaceFieldState = {
   readonly isChanged: boolean;
   readonly defaultLabel: string;
   readonly reset: () => Promise<void>;
-  readonly save: Pick<SettingSave<string>, 'error' | 'retry'>;
+  readonly save: Pick<SettingSave<string>, 'error' | 'isSaving' | 'retry'>;
 };
 
 export const useWorkspaceField = ({ workspaceId, field }: Params): WorkspaceFieldState => {

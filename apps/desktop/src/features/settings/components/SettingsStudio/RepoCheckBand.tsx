@@ -20,7 +20,7 @@ type ValueParams = {
   readonly value: string;
 };
 
-const labelOf = ({ value }: ValueParams): string =>
+const intervalLabelOf = ({ value }: ValueParams): string =>
   INTERVAL_OPTIONS.find((option) => option.value === value)?.label ?? `${value} min`;
 
 export const RepoCheckBand = () => {
@@ -31,7 +31,7 @@ export const RepoCheckBand = () => {
     settingKey: SETTING_REPO_CHECK_MINUTES,
     saved: String(repoCheckMinutesOf({ value: raw })),
     encode: ({ value }) => value,
-    display: labelOf,
+    display: intervalLabelOf,
     failureTitle: "Couldn't save how often to check the repositories",
   });
 

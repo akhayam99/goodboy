@@ -51,13 +51,13 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
     workspaceId,
     field: 'attribution',
     saved: isAttributionEnabled({ overrides: wsOverrides }),
-    patchOf: ({ value }) => ({ attributionFooter: value }),
+    patchOf: ({ value: isOn }) => ({ attributionFooter: isOn }),
   });
   const parallelSave = useWorkspaceOverrideSave({
     workspaceId,
     field: 'parallelAgents',
     saved: parallelAgents,
-    patchOf: ({ value }) => ({ parallelAgents: value }),
+    patchOf: ({ value: isOn }) => ({ parallelAgents: isOn }),
   });
   const verbositySave = useWorkspaceOverrideSave({
     workspaceId,
@@ -130,7 +130,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
           <Switch
             ariaLabel="Attribution line"
             checked={attributionSave.value}
-            onChange={(next) => void attributionSave.save({ value: next })}
+            onChange={(isNext) => void attributionSave.save({ value: isNext })}
           />
         </WorkspaceFieldRow>
       </Band>
@@ -150,7 +150,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
           <Switch
             ariaLabel="Parallel agents"
             checked={parallelSave.value}
-            onChange={(next) => void parallelSave.save({ value: next })}
+            onChange={(isNext) => void parallelSave.save({ value: isNext })}
           />
         </WorkspaceFieldRow>
         <WorkspaceFieldRow

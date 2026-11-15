@@ -4,7 +4,7 @@ import type { SettingSave } from '../../hooks/useSettingSave';
 
 type Props = {
   readonly help?: ReactNode;
-  readonly save: Pick<SettingSave<unknown>, 'error' | 'retry'>;
+  readonly save: Pick<SettingSave<unknown>, 'error' | 'isSaving' | 'retry'>;
 };
 
 export const SaveErrorHelp = ({ help, save }: Props) => (
@@ -12,7 +12,13 @@ export const SaveErrorHelp = ({ help, save }: Props) => (
     {help}
     <span role="alert" className="flex flex-wrap items-center gap-2 text-danger">
       {save.error}
-      <Button variant="secondary" size="xs" onClick={() => void save.retry()}>
+      <Button
+        variant="secondary"
+        size="xs"
+        isBusy={save.isSaving}
+        disabled={save.isSaving}
+        onClick={() => void save.retry()}
+      >
         Retry
       </Button>
     </span>
