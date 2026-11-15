@@ -40,12 +40,12 @@ describe('the leftovers scene', () => {
   it('lists what an earlier run left, with one Stop leftovers button and the sweep line', async () => {
     renderScene('monitoring-leftovers');
 
-    const group = await screen.findByRole('group', { name: 'Leftovers' });
+    const group = await screen.findByRole('group', { name: 'Leftover processes' });
     expect(within(group).getByText('next-server')).toBeDefined();
     expect(
       within(group).getByText(/started by an agent in Round refund totals to minor units/),
     ).toBeDefined();
-    expect(within(group).getByRole('button', { name: 'Stop leftovers' })).toBeDefined();
+    expect(within(group).getByRole('button', { name: 'Stop leftover processes' })).toBeDefined();
     expect(screen.getByText('Stopped 3 processes left by an earlier run')).toBeDefined();
   });
 });

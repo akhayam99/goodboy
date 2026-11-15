@@ -25,7 +25,7 @@ describe('RightSizeCard', () => {
 
   it('renders the lighter copy for downgrades', () => {
     render(<RightSizeCard {...baseProps} />);
-    expect(screen.getByText(/this looks light/i)).toBeDefined();
+    expect(screen.getByText(/this task looks small/i)).toBeDefined();
   });
 
   it('renders the heavier copy for escalations', () => {
@@ -37,7 +37,7 @@ describe('RightSizeCard', () => {
         suggestedModel="claude-fable-5"
       />,
     );
-    expect(screen.getByText(/this looks heavy/i)).toBeDefined();
+    expect(screen.getByText(/this task looks large/i)).toBeDefined();
   });
 
   it('renders a plain savings line for strong lighter suggestions', () => {
@@ -68,7 +68,7 @@ describe('RightSizeCard', () => {
         suggestedModel="claude-fable-5"
       />,
     );
-    expect(screen.getByText(/this might run heavy/i)).toBeDefined();
+    expect(screen.getByText(/this task may be large/i)).toBeDefined();
     expect(screen.getByTestId('right-size-cost-line').textContent).toMatch(
       /optional, about 2x cost/i,
     );

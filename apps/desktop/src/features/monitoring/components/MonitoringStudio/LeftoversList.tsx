@@ -16,10 +16,10 @@ export const LeftoversList = ({ rows, now }: Props) => {
   const isStopping = pids.some((pid) => stopping[pid] === 'stopping');
 
   return (
-    <div role="group" aria-label="Leftovers" className="flex flex-col gap-1">
+    <div role="group" aria-label="Leftover processes" className="flex flex-col gap-1">
       <div className="flex items-center justify-between gap-2 px-2">
         <h3 className="flex items-center gap-1 text-meta text-foreground">
-          Leftovers
+          Leftover processes
           {rows.length > 1 ? (
             <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
           ) : null}
@@ -30,7 +30,7 @@ export const LeftoversList = ({ rows, now }: Props) => {
           disabled={isStopping}
           onClick={() => void stopLeftovers({ pids })}
         >
-          {isStopping ? 'Stopping' : 'Stop leftovers'}
+          {isStopping ? 'Stopping' : 'Stop leftover processes'}
         </Button>
       </div>
       <ul className="flex flex-col">

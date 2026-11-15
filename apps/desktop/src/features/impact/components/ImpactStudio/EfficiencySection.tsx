@@ -52,7 +52,7 @@ export const EfficiencySection = ({
       <ErrorStrip label="cache efficiency" error={cacheEfficiency.error} onRetry={onRetry} />
       <ErrorStrip label="context growth" error={contextGrowth.error} onRetry={onRetry} />
       <ErrorStrip label="turn distribution" error={turns.error} onRetry={onRetry} />
-      <ErrorStrip label="right-size nudges" error={nudges.error} onRetry={onRetry} />
+      <ErrorStrip label="right-size suggestions" error={nudges.error} onRetry={onRetry} />
       {isLoading &&
       cache === null &&
       context === null &&
@@ -110,7 +110,7 @@ export const EfficiencySection = ({
             />
           )}
         </StudioWidget>
-        <StudioWidget label="Right-size nudges" hint="Outcomes after a routing suggestion.">
+        <StudioWidget label="Right-size suggestions" hint="Outcomes after a routing suggestion.">
           <div className="flex flex-col gap-1">
             {nudgeData?.map((entry) => (
               <div key={entry.outcome ?? 'pending'} className="flex items-center gap-3 text-meta">

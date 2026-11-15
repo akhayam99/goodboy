@@ -234,7 +234,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       label: 'Detach from Auto',
       icon: CONCEPT_ICONS.auto,
       group: 'act',
-      description: () => 'Takes this agent back from Auto',
+      description: () => 'Stops Auto from managing this agent',
       when: ({ facts }) => facts.isAdopted,
       blockedReason: ({ facts }) => (facts.isTurnLive ? WAIT_FOR_TURN_REASON : null),
       run: async ({ facts, env }) => {

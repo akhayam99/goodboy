@@ -614,8 +614,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Asks first and names who loses the port. A process that does not exit offers Force stop; a refused stop keeps the row with its reason.',
       },
       {
-        term: 'Leftovers',
-        desc: 'Processes an earlier run left behind, with their age. Stop leftovers clears them.',
+        term: 'Leftover processes',
+        desc: 'Processes an earlier run left behind, with their age. Stop leftover processes ends them.',
       },
       {
         term: 'Hidden ports',
