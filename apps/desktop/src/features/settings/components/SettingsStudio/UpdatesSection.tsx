@@ -1,26 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Band, FieldRow, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateVersionRow } from '../../../updater/components/UpdateVersionRow';
-import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../settings/settings';
+import { useAppSettingSave } from '../../hooks/useAppSettingSave';
+import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../settings';
+import { SWITCH_SETTING } from '../../switchSetting';
+import { SaveErrorHelp } from './SaveErrorHelp';
+
+const HELP = 'Restart to use a new version once it lands.';
 
 export const UpdatesSection = () => {
   const loadSetting = useAppStore((state) => state.loadSetting);
-  const saveSetting = useAppStore((state) => state.saveSetting);
+  const stored = useAppStore((state) => state.settings[SETTING_UPDATER_AUTO_DOWNLOAD]);
   const installedVersion = useInstalledVersion();
-  const [isAutoDownload, setIsAutoDownload] = useState(true);
+  const save = useAppSettingSave({
+    settingKey: SETTING_UPDATER_AUTO_DOWNLOAD,
+    saved: stored !== 'false',
+    ...SWITCH_SETTING,
+    failureTitle: "Couldn't save background downloads",
+  });
 
   useEffect(() => {
-    void loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD).then((value) =>
-      setIsAutoDownload(value !== 'false'),
-    );
+    void loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD);
   }, [loadSetting]);
-
-  const onToggleAutoDownload = (next: boolean): void => {
-    setIsAutoDownload(next);
-    void saveSetting(SETTING_UPDATER_AUTO_DOWNLOAD, next ? 'true' : 'false');
-  };
 
   return (
     <Band inset="content" label="Version" headingLevel={2}>
@@ -28,12 +31,12 @@ export const UpdatesSection = () => {
         <UpdateVersionRow installedVersion={installedVersion} />
         <FieldRow
           label="Download updates in the background"
-          help="Restart to use a new version once it lands."
+          help={save.error === null ? HELP : <SaveErrorHelp help={HELP} save={save} />}
         >
           <Switch
             ariaLabel="Download updates in the background"
-            checked={isAutoDownload}
-            onChange={onToggleAutoDownload}
+            checked={save.value}
+            onChange={(isNext) => void save.save({ value: isNext })}
           />
         </FieldRow>
       </div>

@@ -20,13 +20,16 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import type { AppStore } from '../../../../store/types';
+import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { DEFAULT_BRANCH_PREFIX } from '../../settings';
 import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
 
-type Patch = Parameters<AppStore['patchWorkspaceOverrides']>[0];
+type Patch = {
+  readonly workspaceId: typeof WORKSPACE.id;
+  readonly patch: WorkspaceOverridesPatch;
+};
 
 type Call = {
   readonly patch: Patch;

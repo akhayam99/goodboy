@@ -9,7 +9,7 @@ export type ToolChoice = {
 
 type Props = {
   readonly label: string;
-  readonly help: string;
+  readonly help: ReactNode;
   readonly value: string;
   readonly choices: ReadonlyArray<ToolChoice>;
   readonly onChange: (value: string) => void;

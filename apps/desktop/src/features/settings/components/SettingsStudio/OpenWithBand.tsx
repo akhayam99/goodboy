@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Band, ICON_SIZE, Notice } from '@goodboy/ui';
 import { Globe } from 'lucide-react';
 import {
@@ -12,9 +12,13 @@ import {
 import { useAppStore } from '../../../../store';
 
 import { ownBrowserClickWord } from '../../../browser/ownBrowserClickWord';
+import { useAppSettingSave } from '../../hooks/useAppSettingSave';
 import { LinksOpenField } from './LinksOpenField';
+import { SaveErrorHelp } from './SaveErrorHelp';
 import { ToolChoiceField, type ToolChoice } from './ToolChoiceField';
-import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
+
+const EDITOR_HELP = 'Opens session worktrees.';
+const TERMINAL_HELP = 'Opens projects, and runs provider commands.';
 
 const BROWSER_LABELS: Readonly<Record<string, string>> = {
   safari: 'Safari',
@@ -36,10 +40,6 @@ const EDITOR_LABELS: Readonly<Record<string, string>> = {
   nvim: 'Neovim',
 };
 
-type TerminalChoiceParams = {
-  readonly id: string;
-};
-
 const TERMINAL_LABELS: Readonly<Record<string, string>> = {
   terminal: 'Terminal.app',
   iterm: 'iTerm',
@@ -55,17 +55,43 @@ const SYSTEM_BROWSER: ToolChoice = {
 
 export const OpenWithBand = () => {
   const loadSetting = useAppStore((s) => s.loadSetting);
-  const saveSetting = useAppStore((s) => s.saveSetting);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
   const loadDetectedBrowsers = useAppStore((s) => s.loadDetectedBrowsers);
   const loadDetectedTerminals = useAppStore((s) => s.loadDetectedTerminals);
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const detectedBrowsers = useAppStore((s) => s.detectedBrowsers);
   const detectedTerminals = useAppStore((s) => s.detectedTerminals);
-  const reportError = useAppStore((s) => s.reportError);
-  const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
-  const [browserApp, setBrowserApp] = useState(DEFAULT_BROWSER_APP);
-  const [terminalApp, setTerminalApp] = useState(DEFAULT_TERMINAL_APP);
+  const storedEditor = useAppStore((s) => s.settings[SETTING_EDITOR_BINARY]);
+  const storedBrowser = useAppStore((s) => s.settings[SETTING_BROWSER_APP]);
+  const storedTerminal = useAppStore((s) => s.settings[SETTING_TERMINAL_APP]);
+  const editorSave = useAppSettingSave({
+    settingKey: SETTING_EDITOR_BINARY,
+    saved: storedEditor ?? DEFAULT_EDITOR_BINARY,
+    encode: ({ value }) => (value === '' ? DEFAULT_EDITOR_BINARY : value),
+    display: ({ value }) =>
+      detectedEditors.find((editor) => editor.binary === value)?.label ??
+      EDITOR_LABELS[value] ??
+      value,
+    failureTitle: "Couldn't save the default editor",
+  });
+  const browserSave = useAppSettingSave({
+    settingKey: SETTING_BROWSER_APP,
+    saved: storedBrowser ?? DEFAULT_BROWSER_APP,
+    encode: ({ value }) => (value === '' ? DEFAULT_BROWSER_APP : value),
+    display: ({ value }) =>
+      value === DEFAULT_BROWSER_APP ? SYSTEM_BROWSER.label : (BROWSER_LABELS[value] ?? value),
+    failureTitle: "Couldn't save the default browser",
+  });
+  const terminalSave = useAppSettingSave({
+    settingKey: SETTING_TERMINAL_APP,
+    saved: storedTerminal ?? DEFAULT_TERMINAL_APP,
+    encode: ({ value }) => (value === '' ? DEFAULT_TERMINAL_APP : value),
+    display: ({ value }) => TERMINAL_LABELS[value] ?? value,
+    failureTitle: "Couldn't save the default terminal app",
+  });
+  const editorBinary = editorSave.value;
+  const browserApp = browserSave.value;
+  const terminalApp = terminalSave.value;
 
   useEffect(() => {
     if (detectedEditors.length === 0) {
@@ -76,51 +102,10 @@ export const OpenWithBand = () => {
   }, []);
 
   useEffect(() => {
-    void loadSetting(SETTING_EDITOR_BINARY).then((v) =>
-      setEditorBinary(v ?? DEFAULT_EDITOR_BINARY),
-    );
-    void loadSetting(SETTING_BROWSER_APP).then((v) => setBrowserApp(v ?? DEFAULT_BROWSER_APP));
-    void loadSetting(SETTING_TERMINAL_APP).then((v) => setTerminalApp(v ?? DEFAULT_TERMINAL_APP));
+    void loadSetting(SETTING_EDITOR_BINARY);
+    void loadSetting(SETTING_BROWSER_APP);
+    void loadSetting(SETTING_TERMINAL_APP);
   }, [loadSetting]);
-
-  const onChangeEditor = async (binary: string) => {
-    setEditorBinary(binary);
-    try {
-      await saveSetting(SETTING_EDITOR_BINARY, binary || DEFAULT_EDITOR_BINARY);
-    } catch (err) {
-      void reportError({
-        title: "Couldn't save the default editor",
-        error: err,
-        recovery: CHECK_STATE,
-      });
-    }
-  };
-
-  const onChangeBrowser = async (id: string) => {
-    setBrowserApp(id);
-    try {
-      await saveSetting(SETTING_BROWSER_APP, id || DEFAULT_BROWSER_APP);
-    } catch (err) {
-      void reportError({
-        title: "Couldn't save the default browser",
-        error: err,
-        recovery: CHECK_STATE,
-      });
-    }
-  };
-
-  const onChangeTerminal = async ({ id }: TerminalChoiceParams) => {
-    setTerminalApp(id);
-    try {
-      await saveSetting(SETTING_TERMINAL_APP, id === '' ? DEFAULT_TERMINAL_APP : id);
-    } catch (err) {
-      void reportError({
-        title: "Couldn't save the default terminal app",
-        error: err,
-        recovery: CHECK_STATE,
-      });
-    }
-  };
 
   const editors = detectedEditors.some((ed) => ed.binary === editorBinary)
     ? detectedEditors
@@ -154,6 +139,7 @@ export const OpenWithBand = () => {
   const browsers = isBrowserMissing
     ? [...detectedBrowsers, { id: browserApp, label: missingBrowserLabel }]
     : detectedBrowsers;
+  const browserHelp = `Your browser, for links you ${ownBrowserClickWord()}, wireframes, and anything opened outside a session.`;
   const browserChoices: ReadonlyArray<ToolChoice> = [
     SYSTEM_BROWSER,
     ...browsers.map((browser) => ({
@@ -167,24 +153,42 @@ export const OpenWithBand = () => {
       <div className="flex flex-col">
         <ToolChoiceField
           label="Editor"
-          help="Opens session worktrees."
+          help={
+            editorSave.error === null ? (
+              EDITOR_HELP
+            ) : (
+              <SaveErrorHelp help={EDITOR_HELP} save={editorSave} />
+            )
+          }
           value={editorBinary}
           choices={editorChoices}
-          onChange={(binary) => void onChangeEditor(binary)}
+          onChange={(binary) => void editorSave.save({ value: binary })}
         />
         <ToolChoiceField
           label="Terminal"
-          help="Opens projects, and runs provider commands."
+          help={
+            terminalSave.error === null ? (
+              TERMINAL_HELP
+            ) : (
+              <SaveErrorHelp help={TERMINAL_HELP} save={terminalSave} />
+            )
+          }
           value={terminalApp}
           choices={terminalChoices}
-          onChange={(id) => void onChangeTerminal({ id })}
+          onChange={(id) => void terminalSave.save({ value: id })}
         />
         <ToolChoiceField
           label="Browser"
-          help={`Your browser, for links you ${ownBrowserClickWord()}, wireframes, and anything opened outside a session.`}
+          help={
+            browserSave.error === null ? (
+              browserHelp
+            ) : (
+              <SaveErrorHelp help={browserHelp} save={browserSave} />
+            )
+          }
           value={browserApp}
           choices={browserChoices}
-          onChange={(id) => void onChangeBrowser(id)}
+          onChange={(id) => void browserSave.save({ value: id })}
         />
         {isBrowserMissing && (
           <Notice
