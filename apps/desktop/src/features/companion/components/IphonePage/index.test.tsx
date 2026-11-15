@@ -179,11 +179,12 @@ describe('IphonePage', () => {
     expect(invokedCommands()).not.toContain('bridge_stop');
   });
 
-  it('says on the page why a code could not be made, and retries', async () => {
-    mocks.startError = 'The port is taken';
+  it('says a code could not be made in one fixed sentence, never the exception, and retries', async () => {
+    mocks.startError = 'Cannot read properties of undefined';
     render(<IphonePage animationClassName="" onStopFailed={vi.fn()} />);
 
-    expect(await screen.findByText(/The port is taken/)).toBeTruthy();
+    expect((await screen.findByRole('alert')).textContent).toBe("Couldn't make a pairing code.");
+    expect(screen.queryByText(/Cannot read properties/)).toBeNull();
     mocks.startError = null;
     fireEvent.click(screen.getByRole('button', { name: /Retry/ }));
 

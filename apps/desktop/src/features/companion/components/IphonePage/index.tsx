@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Band, Button, formatError, Notice, PaneShell } from '@goodboy/ui';
+import { Band, Button, Notice, PaneShell } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
 import {
@@ -16,6 +16,9 @@ import { PairingCode } from './PairingCode';
 const STATUS_POLL_MS = 3_000;
 
 const PAIRING_STEPS = ['Open Goodboy on your iPhone.', 'Point the camera at this code.'];
+
+const PAIRING_CODE_FAILED = "Couldn't make a pairing code.";
+const DISCONNECT_FAILED = "Couldn't disconnect the paired devices.";
 
 type StopFailure = {
   readonly title: string;
@@ -88,9 +91,9 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
       setRemaining(next.expiresInSecs);
       setInfo(next);
       await refreshStatus();
-    } catch (failure) {
+    } catch {
       if (isMountedRef.current) {
-        setError(formatError(failure));
+        setError(PAIRING_CODE_FAILED);
         setInfo(null);
       }
     } finally {
@@ -107,8 +110,8 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
       await bridgeRevoke();
       setIsPairing(false);
       await mint();
-    } catch (failure) {
-      setError(formatError(failure));
+    } catch {
+      setError(DISCONNECT_FAILED);
     } finally {
       setIsRevoking(false);
     }
