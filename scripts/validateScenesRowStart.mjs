@@ -58,11 +58,15 @@ export const ROW_START_SCENES = [
   'run-page-done',
   'run-page-done-light',
   'run-page-many',
+  'run-page-lead-agent',
   'run-page-lead-next',
   'run-page-lead-next-light',
   'run-page-lead-working',
   'run-page-trace',
   'run-page-trace-light',
+  'run-page-agent',
+  'run-page-agent-light',
+  'run-page-subagent',
 ];
 export const ROW_START_WIDTHS = [1440];
 export const ROW_START_READY = '[data-studio-rail], [data-page-header], [data-page-column]';

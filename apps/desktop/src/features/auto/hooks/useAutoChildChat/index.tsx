@@ -11,6 +11,8 @@ import { useExecutedRoutingOf } from '../../useExecutedRoutingOf';
 import { AutoChildBrief } from '../../child/AutoChildBrief';
 import { AutoChildEnd } from '../../child/AutoChildEnd';
 import { briefImagesOf } from '../../child/briefImagesOf';
+import { childWentInOf } from '../../child/childWentInOf';
+import { delegationAttemptsOf } from '../../tree/delegationAttemptsOf';
 
 type Params = {
   readonly session: Session;
@@ -26,6 +28,8 @@ export type AutoChildChat = Readonly<{
 
 const NO_DELEGATIONS: ReadonlyArray<AutoDelegation> = [];
 
+const NO_SNAPSHOTS: Readonly<Record<string, unknown>> = {};
+
 const NOT_A_CHILD: AutoChildChat = {
   insertions: undefined,
   composerPlaceholder: undefined,
@@ -38,6 +42,7 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
   const executed = useExecutedRoutingOf({ agent });
   const delegation = tree?.kind === 'child' ? tree.delegation : null;
   const delegations = tree?.view.delegations ?? NO_DELEGATIONS;
+  const launchSnapshots = tree?.view.launchSnapshots ?? NO_SNAPSHOTS;
 
   return useMemo(() => {
     if (delegation === null) {
@@ -45,6 +50,7 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
     }
     const isReplaced = isAutoDelegationReplaced({ delegation, delegations });
     const card = delegationCardOf({ delegation, childAgent: agent, isReplaced });
+    const record = delegationAttemptsOf({ agentId: agent.id, delegations });
     return {
       insertions: [
         {
@@ -54,6 +60,9 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
             <AutoChildBrief
               card={card}
               images={images}
+              wentIn={childWentInOf({ agentId: agent.id, delegations, launchSnapshots })}
+              attempts={record.attempts}
+              attemptsNote={record.lastNote}
               routing={executedRoutingOf({
                 executed,
                 fallback: { provider: card.provider, model: card.model, effort: card.effort },
@@ -78,5 +87,5 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
       composerPlaceholder: `Message ${card.roleLabel}`,
       task: card.task,
     };
-  }, [agent, delegation, delegations, executed, images, session.id]);
+  }, [agent, delegation, delegations, launchSnapshots, executed, images, session.id]);
 };

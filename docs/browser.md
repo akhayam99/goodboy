@@ -617,7 +617,10 @@ A move never reloads the page: the same live webview, with the same id, gets
 new bounds or a new window. A form half typed and the scroll stay.
 
 - **Tab strip**: the Browser and the Terminal share one strip
-  (`ToolTabStrip`: a 40px row, the tabs, then New tab) and one tab look
+  (`ToolTabStrip`: the tabs, then New tab; 40px on a page grid, 36px in a
+  dock with `isUnderHead`, where it sits `PANE_RHYTHM.head.rows` under the
+  dock's first row, so dock tabs share the line of the session tabs or crumbs
+  and the first row the session title line) and one tab look
   (`toolTabClassName`: 28px, close inside the tab, the selected fill). A chip
   keeps its title up to 12rem, then the strip scrolls sideways with fade
   edges; the address row never wraps.

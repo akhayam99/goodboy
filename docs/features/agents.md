@@ -75,10 +75,11 @@ Write to an agent the same way everywhere. Every message and document field take
 
 ### Agents column
 
-See every agent of a run beside its page. The page of an Auto run keeps one session head, with the crumbs **Overview › the run**, and an **Agents** column on its right. The header reads **Agents** with a count that includes every agent, folded ones too. The column holds the tree of that run: one row per agent with its role, state and time, and the activity trace on its left edge.
+See every agent of a run beside its page. An Auto run and every agent under it share one page. It keeps one session head and an **Agents** column on the left, like the files of the Changes page. The header reads **Agents** with a count that includes every agent. The first row is the run itself; under it one row per agent with its role, task, state and cost, and the activity trace on its left edge.
 
-- On a wide window the column is always open. On a narrower one, **Agents** with its count in the header opens it.
-- Picking a row selects that agent and shows its record beside the chat. **Open transcript** in the record goes to that agent's own page.
+- The column opens wide, can be resized and remembers its width. On a narrow window it folds to **Show agents**.
+- Picking a row shows that agent's conversation in the middle and marks the row; picking the run row shows the run again. The column keeps its place. **↑** and **↓** move through the rows, **Enter** opens one.
+- An agent's page starts with why Auto started it: the reason for the role, when it is done, what went in, the model and the attempt.
 - A note you queued in the composer shows as a row of the tree, with **Edit** and **Remove**.
 - **Stop** sits in the head, on the crumb row. **Esc** goes one crumb up.
 

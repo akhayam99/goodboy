@@ -786,14 +786,18 @@ run-header-archived
 run-header-failed
 run-header-held
 run-header-paused
+run-page-agent
+run-page-agent-light
 run-page-done
 run-page-done-light
+run-page-lead-agent
 run-page-lead-next
 run-page-lead-next-light
 run-page-lead-working
 run-page-many
 run-page-plan
 run-page-plan-light
+run-page-subagent
 run-page-trace
 run-page-trace-light
 run-page-working
@@ -1406,7 +1410,6 @@ wireframe-failed
 work-lead-dependency
 work-lead-plan
 work-lead-push
-work-lead-record
 work-lead-tree
 work-lead-tree-compact
 work-lead-tree-light

@@ -39,7 +39,6 @@ type Props = {
   readonly onBack: () => void;
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
-  readonly headerLead?: ReactNode;
   readonly headerState?: ReactNode;
 };
 
@@ -52,7 +51,6 @@ export const AgentDetailPane = ({
   onBack,
   context,
   runStep,
-  headerLead,
   headerState,
 }: Props) => {
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
@@ -105,7 +103,6 @@ export const AgentDetailPane = ({
       <>
         {isInHead ? null : headerState}
         {headStop === null ? null : <DockStopButton stop={headStop} />}
-        {headerLead}
         <AgentHeaderActions
           key={agent.id}
           agent={agent}

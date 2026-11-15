@@ -180,8 +180,12 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       onClose={onClose}
       scroll="self"
     >
-      <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 flex-1 flex-col gap-2 pb-2">
+      <div
+        onKeyDown={handleKeyDown}
+        className="flex h-full min-h-0 flex-1 flex-col gap-2 pb-2 pt-1"
+      >
         <TerminalTabStrip
+          isUnderHead
           label={worktree.projectName}
           tabs={model.tabs}
           selectedId={selected.id}

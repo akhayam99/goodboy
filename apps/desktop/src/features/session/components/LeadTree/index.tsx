@@ -4,12 +4,17 @@ import { spawnedRailOf } from '../../../workTreeModel/spawnedRailOf';
 import { LeadTreeAgentRow } from './LeadTreeAgentRow';
 import { LeadTreeFoldRow } from './LeadTreeFoldRow';
 import { LeadTreeNoteRow } from './LeadTreeNoteRow';
+import { LeadTreeRootRow } from './LeadTreeRootRow';
+import type { LeadTreeRoot } from './leadTreeRoot';
 import type { LeadTreeItem } from '../../../auto/tree/leadTreeItemsOf';
 
 export type LeadTreeDensity = 'full' | 'compact';
 
+const ROOT_ROW_ID = 'lead-tree-root';
+
 type Props = {
   readonly items: ReadonlyArray<LeadTreeItem>;
+  readonly root?: LeadTreeRoot | null;
   readonly selectedAgentId: AgentId | null;
   readonly density?: LeadTreeDensity;
   readonly onSelect: (agentId: AgentId) => void;
@@ -39,6 +44,7 @@ const cursorStepOf = ({ ids, from, delta }: StepParams): string | null => {
 
 export const LeadTree = ({
   items,
+  root = null,
   selectedAgentId,
   density = 'full',
   onSelect,
@@ -47,20 +53,29 @@ export const LeadTree = ({
   onRemoveNote,
 }: Props) => {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const hasRoot = root !== null;
   const rail = useMemo(
     () =>
       spawnedRailOf({
-        nodes: items.map((item) => ({
-          id: item.id,
-          level: item.depth + 1,
-          isPending: item.kind === 'agent' && item.node === 'queued',
-        })),
+        nodes: [
+          ...(hasRoot ? [{ id: ROOT_ROW_ID, level: 1, isPending: false }] : []),
+          ...items.map((item) => ({
+            id: item.id,
+            level: item.depth + (hasRoot ? 2 : 1),
+            isPending: item.kind === 'agent' && item.node === 'queued',
+          })),
+        ],
       }),
-    [items],
+    [items, hasRoot],
   );
-  const ids = items.map((item) => item.id);
-  const selectedRowId =
-    items.find((item) => item.kind === 'agent' && item.agentId === selectedAgentId)?.id ?? null;
+  const ids = useMemo(
+    () => [...(hasRoot ? [ROOT_ROW_ID] : []), ...items.map((item) => item.id)],
+    [hasRoot, items],
+  );
+  const isRootSelected = root !== null && root.agentId === selectedAgentId;
+  const selectedRowId = isRootSelected
+    ? ROOT_ROW_ID
+    : (items.find((item) => item.kind === 'agent' && item.agentId === selectedAgentId)?.id ?? null);
   const cursorId =
     activeId !== null && ids.includes(activeId) ? activeId : (selectedRowId ?? ids[0] ?? null);
   const isCompact = density === 'compact';
@@ -77,6 +92,11 @@ export const LeadTree = ({
       if (event.key !== 'Enter' || event.target instanceof HTMLButtonElement) {
         return;
       }
+      if (root !== null && cursorId === ROOT_ROW_ID) {
+        event.preventDefault();
+        onSelect(root.agentId);
+        return;
+      }
       const item = items.find((candidate) => candidate.id === cursorId);
       if (item === undefined) {
         return;
@@ -89,8 +109,9 @@ export const LeadTree = ({
         onToggleFold(item.id);
       }
     },
-    [ids, items, cursorId, onSelect, onToggleFold],
+    [ids, items, root, cursorId, onSelect, onToggleFold],
   );
+  const rootRail = rail.railById.get(ROOT_ROW_ID);
 
   return (
     <div
@@ -102,6 +123,17 @@ export const LeadTree = ({
       className="group/tree flex min-w-0 flex-col outline-none"
       onKeyDown={onKeyDown}
     >
+      {root === null || rootRail === undefined ? null : (
+        <LeadTreeRootRow
+          id={ROOT_ROW_ID}
+          root={root}
+          rail={rootRail}
+          railWidth={rail.width}
+          isSelected={isRootSelected}
+          isActive={cursorId === ROOT_ROW_ID}
+          onSelect={onSelect}
+        />
+      )}
       {items.map((item) => {
         const isActive = item.id === cursorId;
         const itemRail = rail.railById.get(item.id);

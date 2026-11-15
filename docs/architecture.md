@@ -1120,7 +1120,7 @@ kept.
   `auto_artifact_versions` hang off it and go with it. m243 is additive: it adds
   `auto_trees.permissions` (the permission rows changed on this Lead as JSON, `{}`
   follows the workspace default), `auto_attempts.launch_snapshot` (what the
-  attempt was handed at launch, written once, NULL reads "Not recorded") and the
+  attempt was handed at launch, written once, NULL shows no Went in line) and the
   `auto_grants` table, which goes with its tree. `setAutoTreePermissionsIfUnchanged`
   is the one writer of the column and compares the JSON it read. The migration
   is a one-way step: a build from before it refuses the database

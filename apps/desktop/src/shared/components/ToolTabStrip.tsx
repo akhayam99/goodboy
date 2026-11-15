@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Plus } from 'lucide-react';
-import { IconButton, ScrollFade } from '@goodboy/ui';
+import { IconButton, ScrollFade, cn } from '@goodboy/ui';
 
 type Props = {
   readonly newLabel: string;
@@ -8,6 +8,7 @@ type Props = {
   readonly newShortcut?: string;
   readonly onNew: () => void;
   readonly trailing?: ReactNode;
+  readonly isUnderHead?: boolean;
   readonly children: ReactNode;
 };
 
@@ -17,9 +18,13 @@ export const ToolTabStrip = ({
   newShortcut,
   onNew,
   trailing = null,
+  isUnderHead = false,
   children,
 }: Props) => (
-  <div data-tool-tab-strip="" className="flex h-10 shrink-0 items-center gap-1 px-3">
+  <div
+    data-tool-tab-strip=""
+    className={cn('flex shrink-0 items-center gap-1 px-3', isUnderHead ? 'h-9' : 'h-10')}
+  >
     <ScrollFade
       orientation="horizontal"
       className="min-w-0 shrink"

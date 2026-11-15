@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { DrawerFrame } from '@goodboy/ui';
+import { DrawerFrame, PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReloadSurface } from '../../../../shared/hooks/useReloadSurface';
@@ -77,7 +77,7 @@ export const BrowserPane = ({ sessionId, onClose }: Props) => {
 
   return (
     <DrawerFrame title="Browser" isHeaderless onClose={onClose}>
-      <div ref={root} className="flex min-h-0 flex-1 flex-col gap-2">
+      <div ref={root} className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.head.rows)}>
         <BrowserAddressRow
           model={model}
           isAddressShortcutOn={isOnScreen}

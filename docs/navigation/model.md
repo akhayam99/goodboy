@@ -485,14 +485,12 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   `Overview` (`Session › Runs › {run}`,
   `Session › {parent agent} › {agent}`, `Session › Artifacts › {artifact}`,
   `Session › {branch}`); a sub agent's parent is the agent that spawned it.
-- **The Lead page lays out by pane width.** `LeadPage` measures its own pane,
-  not the window (`leadLayoutOf`): from 1180 up it shows chat, tree and the
-  record; from 860 to 1180 chat and tree, the record covering the tree with a
-  back arrow; under 860 the chat, the tree opening from an "Agents" count. The
-  selected agent is window local state (`useLeadSelectionStore`), not an
-  address and not stored: a reload reopens the page with no record. "Open
-  transcript" in the record navigates to the agent's page, whose parent crumb is
-  the Lead (`parentPlace`).
+- **An Auto run keeps one frame.** The run page and the page of every agent
+  under it draw the Agents rail in the frame's left slot (`LeadPage`,
+  `RunAgentsRail`). The marked row is the agent in the address, so a reload,
+  Back and Forward restore it; a row opens that agent's page in the centre and
+  the rail keeps its scroll. The agent's parent crumb is the agent that spawned
+  it, up to the run (`parentPlace`), and Esc walks the same way.
 - **Two Backs, and they differ.** The crumbs, Esc and ⌘↑ follow `parentPlace`: it
   only points inside the session, never at a list outside it, and it reads
   the same after a reload, in a second window and from a link. History Back
