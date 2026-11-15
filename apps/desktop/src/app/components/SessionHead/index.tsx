@@ -39,10 +39,16 @@ export const SessionHead = ({ session }: Props) => {
           leading={isDetail ? <SessionBackButton sessionId={sessionId} /> : null}
           title={<OverviewTitle session={session} />}
           isHeading={!isDetail || slots?.isHeadingClaimed === true}
-          actions={<SessionHeadActions session={session} />}
+          actions={<SessionHeadActions session={session} isDetail={isDetail} />}
         />
         <div className="flex min-w-0 items-center gap-3">
-          {isDetail ? <SessionCrumbs session={session} /> : <SessionPageTabs session={session} />}
+          {isDetail ? (
+            <SessionCrumbs session={session} />
+          ) : (
+            <div className="flex min-w-0 flex-1 flex-col">
+              <SessionPageTabs session={session} />
+            </div>
+          )}
           {isDetail && slots !== null ? (
             <div
               ref={slots.setMeta}

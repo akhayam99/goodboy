@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { Button, ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
+import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { Button, ICON_SIZE, IconButton, cn, tintClasses } from '@goodboy/ui';
+import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import type { Glance } from '../../glance/glanceOf';
 import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import { HeadSlotPortal } from '../HeadSlotPortal';
@@ -68,7 +69,14 @@ export const RunGlanceLine = ({
       ) : null}
       <span role="status" aria-live="polite" className="flex min-w-0 items-center gap-2">
         {isStateShown ? (
-          <span className={cn('shrink-0 text-row', tint.text)}>{glance.word}</span>
+          <span
+            className={cn(
+              'shrink-0',
+              isHeadRow ? 'text-meta text-muted-foreground' : cn('text-row', tint.text),
+            )}
+          >
+            {glance.word}
+          </span>
         ) : null}
         {glance.sentence === '' ? null : (
           <>
@@ -83,22 +91,52 @@ export const RunGlanceLine = ({
       </span>
       {isHeadRow ? null : <span className="flex-1" />}
       {spend === null ? null : (
-        <span className="shrink-0 tabular-nums text-faint-foreground">{spend}</span>
+        <>
+          {isHeadRow ? (
+            <span aria-hidden="true" className="text-faint-foreground">
+              ·
+            </span>
+          ) : null}
+          <span className="shrink-0 tabular-nums text-faint-foreground">{spend}</span>
+        </>
       )}
-      {settings === null ? null : (
-        <Button
-          variant="quiet"
-          size="xs"
-          aria-expanded={isOpen}
-          aria-label="Run settings"
-          aria-controls={settingsId}
-          onClick={() => setIsOpen((wasOpen) => !wasOpen)}
-        >
-          Settings
-          <ChevronDown size={ICON_SIZE.row} aria-hidden className={cn(isOpen && 'rotate-180')} />
-        </Button>
+      {isHeadRow ? (
+        <span data-glance-actions="" className="flex shrink-0 items-center gap-1">
+          {settings === null ? null : (
+            <IconButton
+              icon={SlidersHorizontal}
+              label="Run settings"
+              aria-expanded={isOpen}
+              aria-pressed={isOpen}
+              aria-controls={settingsId}
+              className={PRESSED_TOGGLE}
+              onClick={() => setIsOpen((wasOpen) => !wasOpen)}
+            />
+          )}
+          {trailing}
+        </span>
+      ) : (
+        <>
+          {settings === null ? null : (
+            <Button
+              variant="quiet"
+              size="xs"
+              aria-expanded={isOpen}
+              aria-label="Run settings"
+              aria-controls={settingsId}
+              onClick={() => setIsOpen((wasOpen) => !wasOpen)}
+            >
+              Settings
+              <ChevronDown
+                size={ICON_SIZE.row}
+                aria-hidden
+                className={cn(isOpen && 'rotate-180')}
+              />
+            </Button>
+          )}
+          {trailing}
+        </>
       )}
-      {trailing}
     </div>
   );
 

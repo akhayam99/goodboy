@@ -7,9 +7,10 @@ import { SessionLevelActions } from './SessionLevelActions';
 
 type Props = {
   readonly session: Session;
+  readonly isMenuShown?: boolean;
 };
 
-export const SessionHeaderActions = ({ session }: Props) => {
+export const SessionHeaderActions = ({ session, isMenuShown = true }: Props) => {
   const sessionId = session.id;
   const target = useMemo<ObjectTarget>(() => ({ kind: 'session', sessionId }), [sessionId]);
   const controls = useActionControls({ target, scopeKey: sessionId });
@@ -20,7 +21,7 @@ export const SessionHeaderActions = ({ session }: Props) => {
           <ActionStatusLine controls={controls} showReasons={false} />
         </div>
       )}
-      <SessionLevelActions session={session} controls={controls} />
+      <SessionLevelActions session={session} controls={controls} isMenuShown={isMenuShown} />
     </>
   );
 };
