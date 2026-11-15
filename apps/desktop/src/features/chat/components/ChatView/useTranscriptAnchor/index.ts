@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import { useScrollAnchor } from '../../../../../shared/hooks/useScrollAnchor';
+import { useRowPreload } from '../../../../../shared/hooks/useRowPreload';
 import { rowHeightCache } from '../rowHeightCache';
 
 const TRANSCRIPT_ROW_SELECTOR = '[data-find-root] > li > ul > li';
@@ -9,11 +10,13 @@ type Params = {
   readonly isHolding: () => boolean;
 };
 
-export const useTranscriptAnchor = ({ scrollerRef, isHolding }: Params) =>
-  useScrollAnchor({
+export const useTranscriptAnchor = ({ scrollerRef, isHolding }: Params) => {
+  useRowPreload({ viewportRef: scrollerRef, rowSelector: TRANSCRIPT_ROW_SELECTOR });
+  return useScrollAnchor({
     viewportRef: scrollerRef,
     rowSelector: TRANSCRIPT_ROW_SELECTOR,
     shouldHold: isHolding,
     isTopTracked: true,
     onRowMeasured: rowHeightCache.write,
   });
+};

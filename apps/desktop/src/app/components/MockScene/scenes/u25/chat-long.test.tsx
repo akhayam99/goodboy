@@ -95,7 +95,7 @@ describe('the long transcript scene', () => {
     expect(viewport?.style.overflowAnchor).toBe('none');
     const rows = [
       ...container.querySelectorAll<HTMLElement>('[data-find-root] > li > ul > li'),
-    ].filter((row) => row.style.contentVisibility === 'auto');
+    ].filter((row) => row.style.containIntrinsicSize.startsWith('auto '));
     expect(rows.length).toBeGreaterThanOrEqual(100);
     expect(rows.every((row) => (row.getAttribute('data-anchor-key') ?? '') !== '')).toBe(true);
   });
