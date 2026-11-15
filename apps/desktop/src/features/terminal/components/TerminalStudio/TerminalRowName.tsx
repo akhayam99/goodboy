@@ -86,7 +86,10 @@ export const TerminalRowName = ({
         setDraft(name);
       }}
       style={isTab ? { minWidth: 48 } : undefined}
-      className="min-w-0 flex-1 truncate text-left text-meta focus-visible:outline-none"
+      className={cn(
+        'min-w-0 flex-1 truncate text-left focus-visible:outline-none',
+        !isTab && 'text-meta',
+      )}
     >
       {name}
     </button>

@@ -616,15 +616,21 @@ open the Browser button on the right rail is selected and does nothing.
 A move never reloads the page: the same live webview, with the same id, gets
 new bounds or a new window. A form half typed and the scroll stay.
 
-- **Tab strip overflow**: a tab chip shrinks from 12rem to a 6rem minimum
-  (`BrowserTabChip`), then the strip scrolls sideways with fade edges
-  (`BrowserTabStrip`); the address row never wraps.
+- **Tab strip**: the Browser and the Terminal share one strip
+  (`ToolTabStrip`: a 40px row, the tabs, then New tab) and one tab look
+  (`toolTabClassName`: 28px, close inside the tab, the selected fill). A chip
+  keeps its title up to 12rem, then the strip scrolls sideways with fade
+  edges; the address row never wraps.
+- **One header order** for both docks: what the tool shows first (the
+  Terminal's folder pill, the Browser's address), then its own buttons, then
+  More, Open full page and Close. On a full page the last control of the first
+  row is **Dock** (`DockButton`, `NAMES.dock`), in the same place for both.
 - **Open full page** (`NAMES.openFullPage`, the one label the Terminal dock uses too) as a button in the pane's address row and in its More menu, shown with or without a tab,
   pushes the Browser page
   on the session and the shown tab
   (`promoteBrowserTab`), so ⌘[ brings the dock back. The page's placement takes
   the view through the owner rule above and places it at the page's rect.
-- **Dock** in the page's header closes the page and opens the dock on that
+- **Dock**, last in the page's address row, closes the page and opens the dock on that
   session (`demoteBrowserTab`), beside the place under the page. The page's
   placement hides the view and lets it go, and the pane shows it at the pane's
   rect. The pane shows the tab the page showed, because both read the
@@ -894,7 +900,7 @@ workspace profile stays signed out.
 ## Console
 
 The console is a region under the page, in the pane and on the Browser page.
-The Console button at the end of the address row, after More, opens it, and
+The Console button in the address row, after the pin and before More, opens it, and
 `browser.console` (⌘⇧J) toggles it while a tab is shown. It is a button, not
 a More row: More already holds eight rows against the five-row budget, and a
 toggle with a pressed state belongs beside the page it watches. Safari's
