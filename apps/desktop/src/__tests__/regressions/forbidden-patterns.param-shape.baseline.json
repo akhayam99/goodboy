@@ -473,7 +473,6 @@
     "apps/desktop/src/features/integrations/sentry/SentryProjectMap/suggestLinks.ts": 2,
     "apps/desktop/src/features/integrations/sentry/SentryStudio/useSentryIssues.ts": 3,
     "apps/desktop/src/features/integrations/slack/drafts.ts": 1,
-    "apps/desktop/src/features/integrations/slack/SlackSettings/index.tsx": 2,
     "apps/desktop/src/features/integrations/slack/SlackStudio/useSlackThreads.ts": 1,
     "apps/desktop/src/features/integrations/slack/slackThreadCandidates.ts": 1,
     "apps/desktop/src/features/integrations/slack/SlackThreadDetail/index.tsx": 1,

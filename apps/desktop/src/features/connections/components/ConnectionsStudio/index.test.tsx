@@ -16,6 +16,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { leaveToolPage } from '../../leaveToolPage';
 import { ConnectionsStudio } from './index';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
@@ -51,7 +52,9 @@ afterEach(cleanup);
 
 describe('ConnectionsStudio', () => {
   it('lists the providers of this Mac and the integrations of the workspace under one title', async () => {
-    render(<ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />);
+    render(
+      <ConnectionsStudio currentWorkspace={WORKSPACE} focus={null} onClose={() => undefined} />,
+    );
 
     await screen.findByRole('heading', { name: 'Connections' });
     const providers = screen.getByRole('region', { name: 'Providers' });
@@ -64,7 +67,7 @@ describe('ConnectionsStudio', () => {
   });
 
   it('keeps only the providers when no workspace is open', async () => {
-    render(<ConnectionsStudio currentWorkspace={null} onClose={() => undefined} />);
+    render(<ConnectionsStudio currentWorkspace={null} focus={null} onClose={() => undefined} />);
 
     await screen.findByRole('region', { name: 'Providers' });
     expect(screen.queryByRole('region', { name: 'Integrations' })).toBeNull();
@@ -73,7 +76,9 @@ describe('ConnectionsStudio', () => {
   it('opens the provider page in Settings from its row', async () => {
     const onOpen = vi.fn();
     window.addEventListener('goodboy:open-settings', onOpen);
-    render(<ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />);
+    render(
+      <ConnectionsStudio currentWorkspace={WORKSPACE} focus={null} onClose={() => undefined} />,
+    );
 
     fireEvent.click(await screen.findByRole('button', { name: /^Claude/ }));
 
@@ -82,5 +87,21 @@ describe('ConnectionsStudio', () => {
       detail: { scope: 'providers', provider: 'anthropic' },
     });
     window.removeEventListener('goodboy:open-settings', onOpen);
+  });
+
+  it('opens the tool page inside Connections from an integration row, and Up returns', async () => {
+    useAppStore.getState().openStudio({ studio: { kind: 'connections' } });
+    render(
+      <ConnectionsStudio currentWorkspace={WORKSPACE} focus={null} onClose={() => undefined} />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'GitLab' }));
+
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'gitlab' },
+    });
+    leaveToolPage({});
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
   });
 });

@@ -36,7 +36,7 @@ const TOOL_ROWS: ReadonlyArray<ConnectionRow> = TOOL_ORDER.map((tool) => ({
   key: `tool:${tool}`,
   label: integrationLabel({ provider: tool }),
   status: null,
-  target: { scope: 'tools', tool },
+  target: { kind: 'tool', tool },
 }));
 
 export const useConnectionRows = ({}: Params): Rows => {
@@ -63,7 +63,7 @@ export const useConnectionRows = ({}: Params): Rows => {
             key: `provider:${id}`,
             label: provider.label,
             status: connectionStatusOf({ label: status.subtitle, tone: status.tone }),
-            target: { scope: 'providers', provider: id },
+            target: { kind: 'settings', change: { scope: 'providers', provider: id } },
           },
         ];
       }),

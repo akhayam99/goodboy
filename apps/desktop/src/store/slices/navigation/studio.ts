@@ -5,6 +5,12 @@ import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import type { SettingsFocus } from '../../../features/settings/settingsFocus';
 import type { MonitoringTarget } from '../../../features/monitoring/monitoringTarget';
 import type { WorkFilter } from '../work/state';
+import type { IntegrationGlyphProvider } from '../../../shared/components/IntegrationGlyph';
+
+export type ConnectionsFocus = {
+  readonly kind: 'tool';
+  readonly tool: IntegrationGlyphProvider;
+};
 
 export type InboxStudioFocus = {
   readonly provider: InboxProvider | null;
@@ -23,7 +29,7 @@ export type StudioPlace =
   | { readonly kind: 'impact'; readonly scope: ImpactScope | null }
   | { readonly kind: 'changelog' }
   | { readonly kind: 'notifications' }
-  | { readonly kind: 'connections' }
+  | { readonly kind: 'connections'; readonly focus?: ConnectionsFocus | null }
   | { readonly kind: 'monitoring'; readonly target?: MonitoringTarget | null }
   | { readonly kind: 'chat'; readonly chatId: ChatId | null }
   | {
@@ -74,10 +80,11 @@ export const studioKey = ({ studio }: KeyParams): string => {
         studio.target?.projectId,
         studio.target?.branch,
       ]);
+    case 'connections':
+      return joined(['connections', studio.focus?.tool]);
     case 'guide':
     case 'changelog':
     case 'notifications':
-    case 'connections':
       return studio.kind;
     default: {
       const unreachable: never = studio;

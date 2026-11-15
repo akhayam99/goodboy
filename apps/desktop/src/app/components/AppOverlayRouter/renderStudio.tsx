@@ -143,7 +143,13 @@ export const renderStudio = ({
         <BrowserStudio sessionId={overlay.sessionId} tabId={overlay.tabId} onClose={close} />
       );
     case 'connections':
-      return <ConnectionsStudio currentWorkspace={currentWorkspace} onClose={close} />;
+      return (
+        <ConnectionsStudio
+          currentWorkspace={currentWorkspace}
+          focus={overlay.focus ?? null}
+          onClose={close}
+        />
+      );
     case 'monitoring':
       return currentWorkspace === null ? null : <MonitoringStudio onClose={close} />;
     default: {

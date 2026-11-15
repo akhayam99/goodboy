@@ -1,13 +1,26 @@
 import { SectionHeader } from '@goodboy/ui';
 import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import { openSettings } from '../../../settings/openSettings';
-import type { ConnectionRow } from '../../connectionRow';
+import type { ConnectionRow, ConnectionTarget } from '../../connectionRow';
+import { openToolPage } from '../../openToolPage';
 
 type Props = {
   readonly id: 'providers' | 'tools';
   readonly label: string;
   readonly place: string;
   readonly rows: ReadonlyArray<ConnectionRow>;
+};
+
+type OpenParams = {
+  readonly target: ConnectionTarget;
+};
+
+const openTarget = ({ target }: OpenParams): void => {
+  if (target.kind === 'tool') {
+    openToolPage({ tool: target.tool });
+    return;
+  }
+  openSettings(target.change);
 };
 
 export const ConnectionsGroup = ({ id, label, place, rows }: Props) => (
@@ -23,7 +36,7 @@ export const ConnectionsGroup = ({ id, label, place, rows }: Props) => (
           <SettingsNavRow
             label={row.label}
             status={row.status}
-            onClick={() => openSettings(row.target)}
+            onClick={() => openTarget({ target: row.target })}
           />
         </li>
       ))}
