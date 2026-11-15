@@ -491,7 +491,7 @@ outside the flow (`settledRebaseStops`, written by `settleStaleRebases` from the
 `head` payload and a git read newer than the stop), while the stop's branch is still an
 open, attached row of the session (Next and Needs you only: a merged or closed pull request,
 or a branch that left the session, takes the stop out, `openMountIds` from
-`useOpenStopMountIds`; **Keep branch as it was** records `history_restored` with
+`useOpenStopMountIds`; **Abort rebase** records `history_restored` with
 `reason: 'kept'`, read as "Kept <branch> as it was", which settles it like any later
 outcome) and, for a stop that names a rewriter
 (`agentId`), while that agent still exists: delete the agent and the stop moves to the
@@ -517,8 +517,8 @@ interrupted restore; a restored marker prevents applying it twice if cleanup
 was interrupted. A pending intent with no stash is rolled back, never kept. `pending_stash` and `write_journal` own this contract.
 
 The recovery, on the banner: `Undo rewrite`
-for a rewrite, `Retry with a note` when The rebase needs you, `Bring them
-into the plan` when origin moved, `Retry rebase` when the branch moved,
+for a rewrite, `Retry with a note` when The rebase needs you, `Rebase on their
+commits` when origin moved, `Retry rebase` when the branch moved,
 `Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,
 `Change the plan` and `Discard plan` for a stopped plan, `Reset branch to this
 version` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
@@ -1937,6 +1937,15 @@ session up again in Goodboy.
   from there. `names.test.ts` pins that. A word that goes away goes into
   `RETIRED_NAMES` (`__tests__/regressions/retiredNames.ts`) with the word to use
   instead, and `copy-budget.test.ts` fails on it.
+- An action label is a verb and an object in the developer's words: **Rebase on
+  their commits**, **Abort rebase**, **Restore stashed files**, never a metaphor
+  (**Bring them in**, **Take off this branch**) and never a verb alone when the
+  object is not obvious (**Keep**, **Separate**). Name the git verb the action
+  runs, and when it also pushes or rewrites history the label or its line says
+  so, and `actionIntentOf` gives it the caution intent. A copy action exists only
+  where the content is not already selectable: no **Copy last reply**, since the
+  reply is in the chat. `action-labels-say-what-they-do.test.ts` fails on the
+  phrases that went away.
 - **Run**, **Plan**, **Preset**, **Auto** and **Scout** each have one sentence in
   At a glance and in the Guide's Words chapter. A **workflow** is the saved
   definition in the Workflows library; it is called a **preset** only where a

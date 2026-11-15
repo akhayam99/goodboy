@@ -106,8 +106,8 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 **A stopped rebase**
 
 - Its row says in one sentence what stopped ("2 files conflict with main: MembersPage.tsx and 1 more. Your branch is as it was.").
-- It leads with the verb that fixes it: **Resolve with Auto**, **Bring them in**, **Retry rebase** or **Fix with an agent**.
-- **Resolve in terminal**, **Keep branch as it was**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
+- It leads with the verb that fixes it: **Resolve with Auto**, **Rebase on their commits**, **Retry rebase** or **Fix with an agent**.
+- **Resolve in terminal**, **Abort rebase**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
 - A click on its title opens the branch with the rebase panel.
 
 **Where a click goes**

@@ -95,7 +95,7 @@ export const useHistoryRunFlow = ({ sessionId, mountId, hasUpstream }: Params) =
     bringOrigin: () =>
       attempt({
         key: 'bring-origin',
-        failureTitle: "Couldn't bring origin into the history",
+        failureTitle: "Couldn't rebase on their commits",
         task: () => bringOriginIntoHistory({ sessionId, mountId }),
       }),
     restoreApplied: (run: HistoryRun) => {

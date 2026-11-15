@@ -410,7 +410,7 @@ describe('CommitsHistory', () => {
     const actions = setup();
     const taking = within(row(d));
     expect(taking.queryByRole('button', { name: 'Rename' })).toBeNull();
-    expect(taking.queryByRole('button', { name: 'Fold down' })).toBeNull();
+    expect(taking.queryByRole('button', { name: 'Fixup down' })).toBeNull();
     fireEvent.click(within(row(b)).getByRole('button', { name: /More for/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: /^Remove/ }));
     expect(lastItems(actions)).toEqual(setVerb({ items: BASE, sha: b, verb: 'drop' }));

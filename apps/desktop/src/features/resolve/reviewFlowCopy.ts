@@ -64,7 +64,7 @@ export const COMPOSE_COPY: Record<
   },
   fixAnyway: {
     label: 'What the fix should do',
-    submit: 'Fix it anyway',
+    submit: 'Fix with an agent anyway',
     placeholder: 'Optional. Say what the change should be',
   },
   rewrite: {

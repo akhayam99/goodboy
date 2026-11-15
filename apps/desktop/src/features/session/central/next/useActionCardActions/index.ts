@@ -335,7 +335,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
           run: runIt({ task: verbs.resolveWithAuto }),
         };
       case 'bring-in':
-        return { label: 'Bring them in', run: runIt({ task: verbs.bringIn }) };
+        return { label: NAMES.rebaseOnThem, run: runIt({ task: verbs.bringIn }) };
       case 'retry-rebase':
         return { label: 'Retry rebase', run: runIt({ task: verbs.retryRebase }) };
       case 'fix-push':
@@ -386,7 +386,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
         ? [
             {
               id: `${key}:keep`,
-              label: 'Keep branch as it was',
+              label: 'Abort rebase',
               run: later({ task: stopVerbs.keep }),
             },
           ]

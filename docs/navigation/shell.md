@@ -68,7 +68,7 @@ never exists on one surface only.
   Frequent alternatives stay visible beside it or on the row they affect.
   `⋯` holds copy and rare actions. A linked task is one row of the session
   level's Linked group (`LinkedTaskRow`): a click opens the task, a drag moves
-  it, and Unlink, Move to and Take off this branch sit in its right click
+  it, and Unlink, Move to and Remove from this branch sit in its right click
   menu (Shift+F10), with no kebab and no hover control.
   Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
   Overview branch row and in the Projects tree row menu. Link work is the single entry
@@ -253,7 +253,7 @@ never exists on one surface only.
   review draft asks in a popover. Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
-  Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
+  Close agent, Unlink, Stop tracking, Remove from this branch). The toast lasts
   about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
   Reversible removals never ask for confirmation. Removing a commit on the Commits tab acts immediately with Undo.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,

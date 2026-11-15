@@ -164,6 +164,12 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'start-an-agent', pattern: /\bStart an agent\b/, use: NAMES.startARun },
   { id: 'run-an-orchestrator', pattern: /\bRun an orchestrator\b/, use: NAMES.startRun },
   { id: 'move-to-auto', pattern: /\bMove to Auto\b/, use: NAMES.letAutoTakeIt },
+  { id: 'bring-them-in', pattern: /\bBring them in\b/, use: NAMES.rebaseOnThem },
+  {
+    id: 'bring-them-into-the-plan',
+    pattern: /\bBring them into the plan\b/,
+    use: NAMES.rebaseOnThem,
+  },
   { id: 'reset-chat', pattern: /^Reset chat$/, use: NAMES.newQuestion },
   {
     id: 'ask-the-agent-about-this',

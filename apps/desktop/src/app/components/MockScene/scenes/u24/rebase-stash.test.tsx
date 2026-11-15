@@ -84,9 +84,9 @@ describe.each([false, true])('rebase stash scenes with dark theme %s', (isDark) 
   });
   it('brings saved files back after an interrupted move', async () => {
     show({ name: 'rebase-bring-back', isDark });
-    fireEvent.click(await screen.findByRole('button', { name: 'Bring them back' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore stashed files' }));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull());
     expect(screen.queryByText('Rebased on main')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Bring them back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Restore stashed files' })).toBeNull();
   });
 });

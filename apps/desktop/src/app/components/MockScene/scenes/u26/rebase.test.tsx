@@ -106,7 +106,7 @@ describe('the u26 rebase scenes', () => {
     const inPrompt = within(prompt);
     expect(inPrompt.getByRole('button', { name: 'Resolve with Auto' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: 'Resolve in terminal' })).toBeDefined();
-    expect(inPrompt.getByRole('button', { name: 'Keep branch as it was' })).toBeDefined();
+    expect(inPrompt.getByRole('button', { name: 'Abort rebase' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: /Add a hint/ })).toBeDefined();
     expect(
       prompt
@@ -148,7 +148,7 @@ describe('the u26 rebase scenes', () => {
     );
   });
 
-  it('leaves the branch as it was on Keep branch as it was and closes the prompt', async () => {
+  it('leaves the branch as it was on Abort rebase and closes the prompt', async () => {
     await mount({ name: 'u26-rebase-conflict-light' });
     const [prompt] = screen
       .getAllByRole('alert')
@@ -156,7 +156,7 @@ describe('the u26 rebase scenes', () => {
     if (prompt === undefined) {
       throw new Error('no conflict prompt');
     }
-    fireEvent.click(within(prompt).getByRole('button', { name: 'Keep branch as it was' }));
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Abort rebase' }));
     await settle();
 
     expect(useAppStore.getState().historyRuns[firstMountId()]).toBeUndefined();

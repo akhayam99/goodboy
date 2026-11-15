@@ -74,6 +74,10 @@ talking to a market. There are two voices:
   row is 24 characters or fewer, without a period. `copy-budget.test.ts` counts
   what is left and lets the number fall and never grow. A sentence of 14 words
   that carries a fact is fine: raise the baseline in a change that says why.
+- **A button or menu label is a verb and an object.** Use the developer's
+  word: "Rebase on their commits", "Abort rebase", "Restore stashed files",
+  not "Bring them in" or "Keep". Offer a copy action only for content the user
+  cannot select where it is shown.
 - **No trailing period on titles, eyebrows, button labels, or list items.**
   Body sentences keep theirs. The one exception is a hero line that stands
   alone, because it is read like a spoken beat ("Stop re-explaining yourself.").
