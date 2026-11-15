@@ -398,6 +398,17 @@ confirm-worktree-remove
 confirmpopover
 connections-door
 connections-door-dark
+connections-tool-bitbucket
+connections-tool-github
+connections-tool-github-dark
+connections-tool-gitlab
+connections-tool-gitlab-dark
+connections-tool-jira
+connections-tool-jira-dark
+connections-tool-linear
+connections-tool-sentry
+connections-tool-slack
+connections-tool-slack-dark
 context-drawer
 context-mark-read
 controls-fields
