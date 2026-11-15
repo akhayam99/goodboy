@@ -1,55 +1,50 @@
-import { useMemo } from 'react';
 import { EmptyLine, PANE_RHYTHM, cn } from '@goodboy/ui';
 
-import { SettingsNavRow } from '../../../../../shared/components/SettingsNavRow';
-import { settingsPaletteEntries } from '../../../settingsPaletteEntries';
-import type { SettingsFocus } from '../../../settingsFocus';
-import type { SettingsGroup } from '../settingsDirectory';
+import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
+import { settingsSearchHitId } from '../../../settingsSearchHitId';
+import type { SettingsSearchHit } from '../../../settingsSearchHits';
+import { SettingsSearchHitRow } from './SettingsSearchHitRow';
+
+type PickParams = {
+  readonly index: number;
+};
 
 type Props = {
-  readonly groups: ReadonlyArray<SettingsGroup>;
+  readonly listId: string;
   readonly query: string;
-  readonly onOpen: (focus: SettingsFocus) => void;
-  readonly onPicked: () => void;
+  readonly hits: ReadonlyArray<SettingsSearchHit>;
+  readonly activeIndex: number;
+  readonly onPick: (params: PickParams) => void;
 };
 
-type MatchParams = {
-  readonly text: string;
-  readonly query: string;
-};
-
-const matches = ({ text, query }: MatchParams): boolean =>
-  text.toLowerCase().includes(query.trim().toLowerCase());
-
-export const SettingsSearchResults = ({ groups, query, onOpen, onPicked }: Props) => {
-  const results = useMemo(
-    () =>
-      settingsPaletteEntries({ groups, open: onOpen }).filter(
-        (entry) =>
-          matches({ text: entry.label, query }) ||
-          (entry.secondary ?? []).some((name) => matches({ text: name, query })),
-      ),
-    [groups, onOpen, query],
-  );
-
+export const SettingsSearchResults = ({ listId, query, hits, activeIndex, onPick }: Props) => {
+  if (hits.length === 0) {
+    return (
+      <div className={cn('flex flex-col', PANE_RHYTHM.navRail.body)}>
+        <EmptyLine className="px-2">
+          {`No setting matches "${query.trim()}".`}
+          <br />
+          {`Actions like Export live in ${shortcutGlyphs('palette.open')}.`}
+        </EmptyLine>
+      </div>
+    );
+  }
   return (
     <div
-      role="list"
+      id={listId}
+      role="listbox"
       aria-label="Matching settings"
       className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.body)}
     >
-      {results.map((entry) => (
-        <div role="listitem" key={entry.key}>
-          <SettingsNavRow
-            label={entry.label}
-            onClick={() => {
-              onPicked();
-              entry.run();
-            }}
-          />
-        </div>
+      {hits.map((hit, index) => (
+        <SettingsSearchHitRow
+          key={hit.key}
+          id={settingsSearchHitId({ listId, index })}
+          hit={hit}
+          isActive={index === activeIndex}
+          onPick={() => onPick({ index })}
+        />
       ))}
-      {results.length === 0 ? <EmptyLine className="px-2">No settings match</EmptyLine> : null}
     </div>
   );
 };

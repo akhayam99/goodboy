@@ -1,7 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SettingsFocus } from '../../settingsFocus';
-import { CONNECTIONS_SETTING_KEY, settingsPaletteEntries } from '../../settingsPaletteEntries';
+import {
+  CONNECTIONS_SETTING_KEY,
+  SETTING_ROW_KEY_PREFIX,
+  settingsPaletteEntries,
+} from '../../settingsPaletteEntries';
 import { resolveSettingsFocus } from './resolveSettingsFocus';
 import {
   settingsDirectory,
@@ -116,7 +120,9 @@ describe('command palette settings entries', () => {
 
     const pageEntries = entries.filter(
       (entry) =>
-        !entry.key.startsWith('setting:workspace:flow:') && entry.key !== CONNECTIONS_SETTING_KEY,
+        !entry.key.startsWith('setting:workspace:flow:') &&
+        !entry.key.startsWith(SETTING_ROW_KEY_PREFIX) &&
+        entry.key !== CONNECTIONS_SETTING_KEY,
     );
 
     expect(pageEntries.map((entry) => entry.key)).toEqual(

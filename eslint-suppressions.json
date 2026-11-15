@@ -5766,11 +5766,6 @@
       "count": 9
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/resolveSettingsFocus.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/resolveSettingsFocus.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1

@@ -298,10 +298,19 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
   the usage notice that used to close the Usage band). Every page is also an entry in Search or run
   (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`, `Workspace settings: Models`), built from
-  the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
-  rail (`SettingsSearchResults`) filters those same entries by name and former name, lists them in
-  place of the groups, and opens the one picked on the same history entry; with
-  no match it says `No settings match`. The status lines are read
+  the same list, so ⌘K and the rail cannot disagree. Every setting row has a
+  key in one registry (`settingRows.ts`: label, help, page, band, former names),
+  and ⌘K lists those rows too, tagged `Setting`, with "Page · Band" as detail.
+  `Search settings` in the rail (`settingsSearchHits`, `SettingsSearchResults`)
+  lists the matching pages, then the matching rows (label before former name
+  before help), in place of the groups; the arrows move, Return opens, Esc
+  clears (`useSettingsSearch`). A row pick opens its page on the same history
+  entry with `row` in the focus; the row scrolls into view and lights for a
+  moment (`useSettingRowAnchor`, fed by `SettingRowFocusContext`), then the
+  focus drops `row`. With no match it says `No setting matches "x".` and points
+  to ⌘K for actions. `settingRows.test.tsx` renders every page and fails when a
+  registry label no longer renders, or a rendered `data-setting-row` key is not
+  in the registry. The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
   opening Settings starts no loading of its own (no storage scan, no branch
   scan, no provider refresh). Without a workspace the Workspace and

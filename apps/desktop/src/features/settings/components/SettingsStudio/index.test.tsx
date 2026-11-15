@@ -541,10 +541,10 @@ describe('SettingsStudio, the page it draws', () => {
 
     const search = screen.getByRole('searchbox', { name: 'Search settings' });
     fireEvent.change(search, { target: { value: 'general' } });
-    const results = screen.getByRole('list', { name: 'Matching settings' });
+    const results = screen.getByRole('listbox', { name: 'Matching settings' });
     expect(screen.queryByRole('navigation', { name: 'Settings scopes' })).toBeNull();
     within(results)
-      .getAllByRole('button')
+      .getAllByRole('option')
       .slice(0, 1)
       .forEach((row) => fireEvent.click(row));
 

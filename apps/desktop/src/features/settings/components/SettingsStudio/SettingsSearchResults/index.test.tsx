@@ -15,8 +15,10 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { SettingsSearchResults } from './index';
-import { settingsDirectory, type SettingsStatus } from '../settingsDirectory';
+import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
+import { FIELD_PAGE } from '../../../pageKeys';
+import { SettingsScopesLayout } from '../SettingsScopesLayout';
+import { settingsDirectory, type SettingsGroup, type SettingsStatus } from '../settingsDirectory';
 
 const STATUS: SettingsStatus = {
   subtitles: {
@@ -33,6 +35,11 @@ const STATUS: SettingsStatus = {
 
 const GROUPS = settingsDirectory({ status: STATUS, workspaceName: 'Harborline' });
 
+const WITHOUT_IPHONE: ReadonlyArray<SettingsGroup> = GROUPS.map((group) => ({
+  ...group,
+  pages: group.pages.filter((page) => page.key !== 'app:iphone'),
+}));
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -47,45 +54,131 @@ afterEach(cleanup);
 
 type MountParams = {
   readonly query: string;
+  readonly groups?: ReadonlyArray<SettingsGroup>;
 };
 
-const mount = ({ query }: MountParams) => {
-  const onOpen = vi.fn();
-  const onPicked = vi.fn();
+const mount = ({ query, groups = GROUPS }: MountParams) => {
+  useAppStore
+    .getState()
+    .openStudio({ studio: { kind: 'settings', focus: { scope: 'app', section: 'general' } } });
   render(
-    <SettingsSearchResults groups={GROUPS} query={query} onOpen={onOpen} onPicked={onPicked} />,
+    <SettingsScopesLayout
+      pageKey="app:general"
+      groups={groups}
+      workspaceName="Harborline"
+      onScopeChange={vi.fn()}
+      placement="page"
+      detail={<div />}
+    />,
   );
-  return { onOpen, onPicked };
+  const field = screen.getByRole('searchbox', { name: 'Search settings' });
+  fireEvent.change(field, { target: { value: query } });
+  return { field };
+};
+
+const results = () => screen.getByRole('listbox', { name: 'Matching settings' });
+
+const optionLabels = (): ReadonlyArray<string> =>
+  within(results())
+    .getAllByRole('option')
+    .map((option) => option.firstElementChild?.textContent ?? '');
+
+const settingsFocus = () => {
+  const studio = useAppStore.getState().appStudio;
+  return studio?.kind === 'settings' ? studio.focus : null;
 };
 
 describe('SettingsSearchResults', () => {
-  it('lists the matching settings and opens the one picked', () => {
-    const { onOpen, onPicked } = mount({ query: 'models' });
+  it('finds the Theme row by its label and opens General on it with Return', () => {
+    const { field } = mount({ query: 'theme' });
 
-    const results = screen.getByRole('list', { name: 'Matching settings' });
-    fireEvent.click(within(results).getByRole('button', { name: /Models/ }));
+    const theme = within(results()).getByRole('option', { name: /Theme/ });
+    expect(theme.textContent).toBe('ThemeGeneral · Appearance');
+    expect(theme.getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(field, { key: 'Enter' });
 
-    expect(onPicked).toHaveBeenCalledOnce();
-    expect(onOpen).toHaveBeenCalledWith({ scope: 'workspace', section: 'models' });
+    expect(settingsFocus()).toEqual({ scope: 'app', section: 'general', row: 'theme' });
+    expect(field).toHaveProperty('value', '');
+  });
+
+  it('opens the page that holds the branch prefix', () => {
+    mount({ query: 'prefix' });
+
+    fireEvent.click(within(results()).getByRole('option', { name: /Branch prefix/ }));
+
+    expect(settingsFocus()).toEqual({
+      scope: 'workspace',
+      section: FIELD_PAGE.branchPrefix,
+      row: 'branch-prefix',
+    });
+  });
+
+  it.each([
+    { former: 'Resolve the thread after replying', label: 'Mark thread as resolved' },
+    { former: 'Skip folders', label: 'Leave out' },
+    { former: 'Classic send keys', label: 'Keys from before 0.15.5' },
+  ])('finds $label under its old label $former', ({ former, label }) => {
+    mount({ query: former });
+
+    expect(optionLabels()).toContain(label);
+  });
+
+  it('ranks label matches above help matches', () => {
+    mount({ query: 'workspace' });
+
+    const labels = optionLabels();
+    expect(labels.indexOf('Workspace name')).toBeGreaterThanOrEqual(0);
+    expect(labels.indexOf('Auto asks you')).toBeGreaterThan(labels.indexOf('Workspace name'));
+    expect(labels.indexOf('Auto asks you')).toBeGreaterThan(
+      labels.indexOf('Disconnect this workspace'),
+    );
+  });
+
+  it('finds the iPhone pairing row while the page is out of the rail', () => {
+    mount({ query: 'pair', groups: WITHOUT_IPHONE });
+
+    fireEvent.click(within(results()).getByRole('option', { name: /Pair an iPhone/ }));
+
+    expect(settingsFocus()).toEqual({ scope: 'app', section: 'iphone', row: 'pair-iphone' });
+  });
+
+  it('moves with the arrows and clears with Escape', () => {
+    const { field } = mount({ query: 'branch' });
+
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    const options = within(results()).getAllByRole('option');
+    expect(options[1]?.getAttribute('aria-selected')).toBe('true');
+    expect(field.getAttribute('aria-activedescendant')).toBe(options[1]?.id);
+
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(field).toHaveProperty('value', '');
+    expect(screen.queryByRole('listbox', { name: 'Matching settings' })).toBeNull();
+  });
+
+  it('lists the matching pages and opens the one picked', () => {
+    mount({ query: 'models' });
+
+    fireEvent.click(within(results()).getByRole('option', { name: /Workspace settings: Models/ }));
+
+    expect(settingsFocus()).toEqual({ scope: 'workspace', section: 'models' });
   });
 
   it.each(['Providers', 'integrations'])(
     'finds Go to Connections under the old name %s',
     (query) => {
-      const { onOpen, onPicked } = mount({ query });
+      mount({ query });
 
-      const results = screen.getByRole('list', { name: 'Matching settings' });
-      fireEvent.click(within(results).getByRole('button', { name: 'Go to Connections' }));
+      fireEvent.click(within(results()).getByRole('option', { name: 'Go to Connections' }));
 
-      expect(onPicked).toHaveBeenCalledOnce();
-      expect(onOpen).not.toHaveBeenCalled();
       expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
     },
   );
 
-  it('says so when nothing matches', () => {
-    mount({ query: 'no such page' });
+  it('says so when nothing matches and points to the palette for actions', () => {
+    mount({ query: 'zzz' });
 
-    screen.getByText('No settings match');
+    screen.getByText(
+      `No setting matches "zzz".Actions like Export live in ${shortcutGlyphs('palette.open')}.`,
+    );
   });
 });
