@@ -1,34 +1,39 @@
-import { isApiProvider } from '@goodboy/core/providers';
+import type { StateTone } from '@goodboy/ui';
+import { useNow } from '../../../../shared/hooks/useNow';
 import { useAppStore } from '../../../../store';
 import { INITIAL_HEALTH_MAP } from '../../../../store/slices/providers/providerHealth';
-import { useProviderLimitsChip } from '../../hooks/useProviderLimitsChip';
-import { providerRailStatus } from '../../providerRailStatus';
+import { connectionStateOf } from '../../../connections/model/connectionStateOf';
 import type { ProviderDisplayInfo } from '../../providers';
-import { providerStateWord, type ProviderStateWord } from '../providerStateWord';
 
 type Params = {
   readonly info: ProviderDisplayInfo;
-  readonly isReady: boolean;
 };
 
-export const useProviderStateWord = ({ info, isReady }: Params): ProviderStateWord => {
+type ProviderStateWord = {
+  readonly word: string;
+  readonly tone: StateTone;
+};
+
+const CLOCK_MS = 60_000;
+
+export const useProviderStateWord = ({ info }: Params): ProviderStateWord => {
   const cliRequirements = useAppStore((state) => state.cliRequirements);
   const health = useAppStore((state) => state.providerHealth[info.id]);
-  const { chip, nowMs } = useProviderLimitsChip({ providerId: info.id });
-  const rail = providerRailStatus({
-    provider: info,
-    state: {
-      cliRequirements,
-      ...(health !== undefined && { providerHealth: { ...INITIAL_HEALTH_MAP, [info.id]: health } }),
+  const limits = useAppStore((state) => state.providerLimits[info.id]);
+  const nowMs = useNow(CLOCK_MS);
+  const { word, tone } = connectionStateOf({
+    subject: {
+      kind: 'provider',
+      provider: info,
+      state: {
+        cliRequirements,
+        providerLimits: { [info.id]: limits },
+        ...(health !== undefined && {
+          providerHealth: { ...INITIAL_HEALTH_MAP, [info.id]: health },
+        }),
+      },
+      nowMs,
     },
-    nowMs,
-    isLimitIgnored: true,
   });
-  return providerStateWord({
-    info,
-    isApi: isApiProvider({ id: info.id }),
-    isReady,
-    rail,
-    limitState: chip.state,
-  });
+  return { word, tone: tone ?? 'neutral' };
 };

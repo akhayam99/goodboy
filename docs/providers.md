@@ -330,13 +330,15 @@ header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 ## The provider page
 
-A provider row in **Connections** opens its page there, under the trail
-`Connections > Claude` (Esc goes back up). **Settings > Providers** shows the same page
+A provider tile in **Connections** opens its page there, under the trail
+`Connections > Claude` (Esc goes back up). A provider in the Not set up row opens the
+same page on its install or sign in step. **Settings > Providers** shows the same page
 until that folder moves to Connections. The page has four groups, in the same order
 for every provider: **Usage**, **Models in the picker**, **Account** and a closed
 **What works with Claude** row that holds the permissions table and says how many
 modes work fully (`4 of 6 work fully`). The head carries the glyph, the name, one
-state word (`Ready`, `About to run out`, `Key saved`, `Not set up`), a check again
+state word, the same word as its tile in Connections (`Signed in`, `About to run out`,
+`Key saved`, `Not set up`), a check again
 button and the header menu; under it the facts sit as pills: the plan (`Max plan`), the
 account, the CLI version (`Claude CLI 2.1.282`) and the last check. The header menu
 holds **Check again**, **Sign in again**, **History**, **Copy CLI path** and, after a
@@ -1364,7 +1366,7 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `apps/desktop/src/store/slices/providers/providerHealth.ts`: standing, evidence and the breaker (pure reducer); `applyProviderProbe.ts` and `recordProviderRun.ts` feed it
 - `apps/desktop/src-tauri/src/provider_standing_log.rs`: the log line for a standing change
 - `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Models** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `AccountGroup` with `ApiKeyForm`)
-- `apps/desktop/src/features/providers/ProviderDetailBody/`: the provider page body (head, facts, group order, `PermissionsFold` over `permissionRows`), shared by Settings and `features/connections/components/ProviderDetail.tsx`
+- `apps/desktop/src/features/providers/ProviderDetailBody/`: the provider page body (head, facts, group order, `PermissionsFold` over `permissionRows`), shared by Settings and `features/connections/components/ProviderDetail.tsx`; its head word reads `features/connections/model/connectionStateOf.ts` through `useProviderStateWord`
 - `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
 - `apps/desktop/src-tauri/src/providers/spec.rs`: `PROVIDER_SPECS`, the Rust provider table

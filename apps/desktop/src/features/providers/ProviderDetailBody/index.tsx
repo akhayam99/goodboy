@@ -60,7 +60,7 @@ export const ProviderDetailBody = ({
     info,
     isReady,
   });
-  const stateWord = useProviderStateWord({ info, isReady });
+  const stateWord = useProviderStateWord({ info });
   const onRefresh = () => void refresh();
 
   return (

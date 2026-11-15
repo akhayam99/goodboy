@@ -130,7 +130,7 @@ describe('the provider detail body', () => {
       'Claude CLI 2.1.296',
     ]);
     screen.getByRole('heading', { level: 1, name: 'Claude' });
-    screen.getByText('Ready');
+    screen.getByText('Signed in');
   });
 
   it('turns a provider that is not installed into its setup path', () => {
