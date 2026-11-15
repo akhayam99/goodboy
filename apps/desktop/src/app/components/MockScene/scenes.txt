@@ -398,6 +398,15 @@ confirm-worktree-remove
 confirmpopover
 connections-door
 connections-door-dark
+connections-provider-anthropic
+connections-provider-anthropic-dark
+connections-provider-codex
+connections-provider-copilot
+connections-provider-cursor
+connections-provider-gemini
+connections-provider-moonshot
+connections-provider-opencode
+connections-provider-openrouter
 context-drawer
 context-mark-read
 controls-fields

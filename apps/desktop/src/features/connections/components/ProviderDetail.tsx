@@ -28,7 +28,7 @@ export const ProviderDetail = ({ focus, workspaceId }: Props) => {
   }, [provider]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <PageColumn
         width="column"
         className={cn('flex shrink-0 items-center empty:hidden', PANE_RHYTHM.firstRow)}
@@ -46,7 +46,7 @@ export const ProviderDetail = ({ focus, workspaceId }: Props) => {
           ]}
         />
       </PageColumn>
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {info === undefined ? (
           <PanelLoading label={`Looking for ${PROVIDER_LABEL[provider]}`} />
         ) : (
