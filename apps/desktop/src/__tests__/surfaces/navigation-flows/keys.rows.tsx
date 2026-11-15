@@ -997,9 +997,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       useAppStore
         .getState()
         .openDrawer({ kind: 'scripts', sessionId: ctx.sessionId, payload: null });
-      useAppStore
-        .getState()
-        .openDrawer({ kind: 'spawned', sessionId: ctx.sessionId, payload: null });
+      useAppStore.getState().openDrawer({ kind: 'ask', sessionId: ctx.sessionId, payload: null });
       await settle();
       await pickMenuItem({ id: 'slot.close' });
     },

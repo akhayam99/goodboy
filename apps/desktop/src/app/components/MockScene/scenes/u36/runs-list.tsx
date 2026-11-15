@@ -6,7 +6,7 @@ import { seedRunsByBranch, seedRunsByState, seedRunsEmpty } from './runsListSeed
 
 const openDrawerBesideList = (): void => {
   seedRunsByBranch();
-  useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: C08_SESSION_ID, payload: null });
+  useAppStore.getState().openDrawer({ kind: 'ask', sessionId: C08_SESSION_ID, payload: null });
 };
 
 export const U36_RUNS_LIST_SCENES = {

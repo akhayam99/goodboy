@@ -39,8 +39,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   are the exception: `keptTool` keeps them on every place, and their drawer may
   carry `sessionId: null`, so never index a session record by `drawer.sessionId`
   without checking it, and never read it as the current session. A reader, an item or a
-  form never survives a move. The Agents tool keeps no revealed agent through a
-  move: it follows the page. A row never opens a tool: the tool is open already
+  form never survives a move. A row never opens a tool: the tool is open already
   or the user did not ask for it.
 
 - A drawer parked under a studio is still in `state.drawer` and still mounted

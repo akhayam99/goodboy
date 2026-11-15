@@ -603,8 +603,7 @@ group. The Work tab draws the question and artifact groups of the branch the sam
 (`questionGroupCountOf`, `artifactBranchCountOf`), its **All questions** and **All artifacts**
 go through `openBranchWork`, and Back from Questions or Artifacts returns to Work
 (`parentPlace`). The artifacts section is registered by the artifacts feature
-(`branchWorkArtifactsRegistration`), so no cross feature import grows. In the Agents column an agent row
-names its branch only when its run touches two or more (`agentBranchLabelsOf`).
+(`branchWorkArtifactsRegistration`), so no cross feature import grows.
 Words say state and verbs are verbs: an agent you
 stopped reads **Stopped** and a run that has not started reads **Ready**, and
 the row always shows the real verb its page offers (`SessionRun.verb`):
@@ -704,12 +703,7 @@ A preset run is a recipe the user advances, and it draws the same page as an
 orchestrated run: one head (`RunPageHead`: the title, double click or Rename to
 rename it, the branch chips, one primary, the run `⋯`), the goal and the glance
 line (`OrchestratedGoal`), the step list top down (`OrchestratedChecklist`), then
-what only that kind has. A step opens one way for every kind, as its page. The
-Agents column of the run page holds the run's agents as
-a tree ([The Lead page](auto.md#the-lead-page)).
-Hovering a row opens a fact card with the name and the state (`runHeadCardOf` for
-the run, `runAgentCardOf` for an agent, with its role glyph), never a joined
-tooltip line.
+what only that kind has. A step opens one way for every kind, as its page.
 
 - **Overview** (`RunOverviewPage`): the head, the goal, the write destination
   ("Writes to ...") while 2 or more worktrees can be written

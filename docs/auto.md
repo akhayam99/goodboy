@@ -311,25 +311,14 @@ writing to it reopens it to **Deciding**.
 
 ## The chat
 
-- **The tree in the Agents column.** What Auto spawned lives in the Agents
-  column of the run page ([The Lead page](#the-lead-page)): it follows an Auto agent
-  or one of its children in the center. The tree reads top down
-  with Auto first and one row per child under it, ordered by when Auto
-  started them, in the list of launches and in a focused launch
-  alike (one `SpawnedAutoGroup`); a live tree opens, a settled one in the list
-  folds to Auto with its count of children
-  ([navigation/session-rail.md](navigation/session-rail.md#the-session-tools)). Auto is titled by the
+- **The tree on the Lead page.** What Auto spawned lives in the tree of the
+  Lead page ([The Lead page](#the-lead-page)). Auto is titled by the
   first line of the ask it started with (`autoRootTitleOf`), which the tree
   view carries (`AutoTreeView.rootAsk`, `readFirstUserText`) so no transcript
   has to load. The ask is the root's first `operator_text`, else its first
   `user_text` not marked `deliveredBy: 'auto'`, never the delivery Auto builds
   (whose first line is the artifact ledger header); then the transcript brief,
-  then "Auto". A row is one line: state node, role glyph, name
-  and the time; its accessible name says the role, the name and the state
-  word, and its fact card (`railRowCardOf`) gives the name, the
-  state, the task Auto gave, the provider, the model and the effort as rows.
-  While Auto has no child it shows Auto alone ("Idle"
-  before a tree exists) and "No agents started yet". Every state word is gray beside its toned node and comes from
+  then "Auto". Every state word is gray beside its toned node and comes from
   one word map (`autoTreeWordOf` for Auto, `delegationCardOf` for a child):
   **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
   **Stopped**; the Auto agents list reads the same words.
@@ -430,7 +419,7 @@ writing to it reopens it to **Deciding**.
   noun, numbered in the order Auto started them when a role has two or more,
   **Reviewer 1** and **Reviewer 2** (`autoChildLabelsOf`, adopted agents left out
   of the numbers). The role stays visible as its glyph, with the noun in its
-  tooltip and accessible name. The rail row, the Agents drawer, the delegation
+  tooltip and accessible name. The rail row, the delegation
   line, the result card and the delivery text Auto reads all take the name from
   that one function, so Auto and the screen say the same name. A stuck child is a Next card headed by its branch and
   pull request ("Auto needs you" only when its branch is unknown) whose
@@ -469,7 +458,7 @@ writing to it reopens it to **Deciding**.
   earlier attempt whose agent is still in the session does not come back as a
   linked child (`autoGroupOf`).
   Every reader of `autoTreeViews` (Next, the Running card, the Done card,
-  the rail, the Agents drawer, the counts) sees the same list, so none of them
+  the rail, the counts) sees the same list, so none of them
   shows a card for it, and a moved child belongs to the session that holds it
   now. A child whose agent row does not exist yet (accepted, not started) stays.
   A **Retry** clicked after the child left reloads the trees, sends nothing and
@@ -672,7 +661,7 @@ without a branch (`mountId` null), and the rows sum to the total.
 `LeadTree` (`features/session/components/LeadTree/index.tsx`) draws that model as
 the activity trace, in two densities. Every row is one 28px line on the trace
 rail (`spawnedRailOf` in `features/workTreeModel` lays it out, `SpawnedRailCell`
-beside `TimelineRail` draws it: the rail of the Agents drawer and the Full log): a spine through the top agents and an elbow
+beside `TimelineRail` draws it, as in the Full log): a spine through the top agents and an elbow
 for each child. The marker is the state node (a check when done, a breathing dot
 while it works, amber for Needs you, red for Failed), then the number, the role
 glyph, the role name and the title, cut in the middle with the whole title on
@@ -767,7 +756,7 @@ turn are the reason next to **Waits for you**, never a sixth word; Stopping
 reads **Stopped** with the reason `stopping`. `autoTreeWordOf` calls it for
 every reader: the header word of the Lead page (`LeadHeaderWord`), the session row
 (`sessionRunsOf`), the Lead line of a branch Work tab (`branchLeadsOf`, which
-copies the row word) and the root of the tree (`railRowsOf`). With the switch
+copies the row word). With the switch
 off the same function gives the Auto words of the Overview below, and the
 header shows no word. `leadStopReaders.test.tsx` checks every word in every
 reader.
@@ -1771,10 +1760,7 @@ artifact of this tree, `answerQuestion` stores its title, version and text (cut 
 as "Report handed over"; an unknown artifact is refused `artifact_unknown` and the parent stays paused.
 A failed helper is answered with a plain text. The same answer twice is one resume. `stopTree` cancels
 the helpers (a request with `request_json.parent`) first and waits for them before it cancels the
-rest. A restart keeps the parent paused and the helper running through `recover`. The Agents
-panel tree (`railRowsOf`, `autoSpawnedRowsOf`) draws a helper one level under its parent (`depth` 2,
-one `aria-level` deeper, the parent `aria-expanded`); a helper whose parent is not in the tree reads
-as a plain child. Substeps inside Runs and Orchestrated
+rest. A restart keeps the parent paused and the helper running through `recover`. Substeps inside Runs and Orchestrated
 runs are not built: they have no tree, no reservation and no root grant.
 
 **Children never push.** Auto children run under one product rule: only Goodboy pushes, and only

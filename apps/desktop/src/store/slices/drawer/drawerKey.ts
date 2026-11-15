@@ -26,8 +26,6 @@ export const drawerKey = (content: DrawerContent): string => {
       return 'new';
     case 'transcript':
       return `transcript:${content.payload.agentId}`;
-    case 'spawned':
-      return 'spawned';
     case 'fix-comments':
       return `fix-comments:${content.payload.mountId ?? ''}`;
     case 'terminal':

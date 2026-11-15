@@ -271,12 +271,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete.',
       },
       {
-        term: 'Agents panel',
-        desc: `Agents on the right rail shows the open run or Auto as a tree, else what is live, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens beside it; j and k move between agents.`,
+        term: 'Running agents',
+        desc: `${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens in the center.`,
       },
       {
         term: 'Right rail',
-        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask, Agents and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open full page grows them; Dock puts them back.',
+        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open full page grows them; Dock puts them back.',
       },
     ],
     links: [],

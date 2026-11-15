@@ -29,7 +29,7 @@ beforeEach(() => {
     },
     sessionOpenQuestions: {},
     agentTurnState: {},
-    drawer: { kind: 'spawned', sessionId: PLAN_FIXTURE_SESSION, payload: null },
+    drawer: { kind: 'scripts', sessionId: PLAN_FIXTURE_SESSION, payload: null },
     navigate,
   });
 });

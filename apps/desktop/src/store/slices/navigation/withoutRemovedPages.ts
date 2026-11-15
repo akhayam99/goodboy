@@ -245,7 +245,7 @@ const foldOfPanel = ({ drawer }: DrawerParams): PanelFold | null => {
   if (kind === 'explore') {
     return { place: sessionPlace({ sessionId, lens: 'files' }), rows: ALL_FILES };
   }
-  if (drawer.kind === 'spawned') {
+  if (kind === 'spawned') {
     return { place: sessionPlace({ sessionId, lens: 'workflows' }), rows: RUNNING_RUNS };
   }
   if (kind === 'session-log') {

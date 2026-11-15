@@ -144,12 +144,6 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'transcript', sessionId: SESSION, payload: { agentId: AGENT } },
   },
   {
-    kind: 'spawned',
-    region: 'Agents',
-    seed: seedSession,
-    drawer: { kind: 'spawned', sessionId: SESSION, payload: null },
-  },
-  {
     kind: 'explore-file',
     region: 'README.md',
     seed: seedSession,

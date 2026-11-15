@@ -13,7 +13,6 @@
   "apps/desktop/src/app/components/SideColumn/RailMoreButton.tsx": 1,
   "apps/desktop/src/app/components/SideColumn/RailPinnedRow.tsx": 1,
   "apps/desktop/src/app/components/SideColumn/RailSessionButton.tsx": 1,
-  "apps/desktop/src/app/components/SpawnedPanel/RunIdentityRow.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListGroup.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactPlanRuns.tsx": 1,

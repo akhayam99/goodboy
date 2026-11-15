@@ -254,10 +254,7 @@ header wide, the title truncating first (`app/hooks/useSlotBackChip`,
 `slotChipLabelOf`). A click opens it and puts the current one in the chip.
 While the chip shows, the head draws no back row; without one, a drawer opened
 from another drawer keeps its quiet back row (`DrawerBackLink`, the row
-`DrawerFrame`'s `back` draws): **Back to agents**, **Back to Explore**,
-**Back to scripts**. The run step drawer has no `DrawerFrame` and draws the
-same `DrawerBackLink` above its transcript; **Back to agents** reopens the
-Agents drawer on the run it came from.
+`DrawerFrame`'s `back` draws), such as **Back to scripts** on a script run.
 
 Two slots per window. The `drawer`
 store slice holds `drawer` and `drawerBack`, each `{ kind, sessionId, payload }`

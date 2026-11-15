@@ -1,13 +1,6 @@
 // @vitest-environment happy-dom
 
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  within,
-  type RenderResult,
-} from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getAutoTree,
@@ -28,12 +21,6 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
-import { railRowsOf } from '../../features/auto/chat/railRowsOf';
-import { autoSpawnedRowsOf } from '../../app/components/SpawnedPanel/autoSpawnedRowsOf';
-import type { SpawnedRow } from '../../app/components/SpawnedPanel/spawnedRow';
-import { spawnedRailOf } from '../../features/workTreeModel/spawnedRailOf';
-import { SpawnedTree } from '../../app/components/SpawnedPanel/SpawnedTree';
-import { SpawnedTreeRow } from '../../app/components/SpawnedPanel/SpawnedTreeRow';
 import { brandedId } from '../../features/history/testing/brandedId';
 import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { ToastProvider } from '../../shared/components/Toast';
@@ -282,65 +269,13 @@ const attemptReservations = async () =>
     (reservation) => reservation.ownerKind === 'attempt',
   );
 
-type WorkTreeParams = {
-  readonly rows: ReadonlyArray<SpawnedRow>;
-};
-
-const workTree = ({ rows }: WorkTreeParams) => {
-  const rail = spawnedRailOf({
-    nodes: rows.map((row) => ({ id: row.id, level: row.level, isPending: false })),
-  });
-  return (
-    <SpawnedTree label="Work">
-      {rows
-        .flatMap((row) => {
-          const rowRail = rail.railById.get(row.id);
-          return rowRail === undefined ? [] : [{ row, rowRail }];
-        })
-        .map(({ row, rowRail }) => (
-          <SpawnedTreeRow
-            key={row.id}
-            id={row.id}
-            level={row.level}
-            hasChildren={row.hasChildren}
-            rail={rowRail}
-            railWidth={rail.width}
-            glyph={null}
-            role={row.role}
-            title={row.title}
-            card={row.card}
-            word={row.word}
-            time={null}
-            isSelected={false}
-            onOpen={() => undefined}
-          />
-        ))}
-    </SpawnedTree>
-  );
-};
-
-const showRail = async (view: RenderResult) => {
+const loadedDelegations = async (): Promise<ReadonlyArray<string>> => {
   await useAppStore.getState().loadAutoTrees({ sessionId });
   const [treeView] = useAppStore.getState().autoTreeViews[sessionId] ?? [];
   if (treeView === undefined) {
     throw new Error('the Auto tree has no view');
   }
-  view.rerender(
-    workTree({
-      rows: autoSpawnedRowsOf({
-        rows: railRowsOf({
-          view: treeView,
-          agents: useAppStore.getState().sessionPhaseRuns[sessionId] ?? [],
-          rootRouting: { provider: null, model: null, effort: null },
-          isWork: false,
-        }),
-        baseLevel: 1,
-      }),
-    }),
-  );
-  return within(screen.getByRole('tree', { name: 'Work' }))
-    .getAllByRole('treeitem')
-    .map((item) => item.getAttribute('aria-label') ?? '');
+  return treeView.delegations.map((delegation) => `${delegation.role}, ${delegation.state}`);
 };
 
 const openTree = async () => {
@@ -356,11 +291,10 @@ const openTree = async () => {
 describe('journey: Auto delegates and a child finishes', () => {
   it('runs the parent, starts the child, and hands the result back', async () => {
     const db = storySqlite();
-    const view = render(workTree({ rows: [] }));
     await openTree();
     expect(await treePhase()).toBe('answering');
     expect(await listAutoDelegations({ db, treeId })).toEqual([]);
-    expect(await showRail(view)).toHaveLength(1);
+    expect(await loadedDelegations()).toEqual([]);
 
     await runtime.say({ treeId, text: 'Find who calls the ledger export' });
 
@@ -382,12 +316,7 @@ describe('journey: Auto delegates and a child finishes', () => {
     expect(useAppStore.getState().sessionPhaseRuns[sessionId]?.map((agent) => agent.id)).toContain(
       childId,
     );
-    const working = await showRail(view);
-    expect(working).toHaveLength(2);
-    expect(working[0]).toContain('Auto');
-    expect(working[0]).toContain('Running');
-    expect(working[1]).toContain('Scout');
-    expect(working[1]).toContain('Running');
+    expect(await loadedDelegations()).toEqual(['scout, running']);
     expect(autoPrompts).toHaveLength(1);
 
     childGate.open();
@@ -408,9 +337,7 @@ describe('journey: Auto delegates and a child finishes', () => {
         sql: "SELECT COUNT(*) AS reserved FROM auto_reservations WHERE state = 'reserved'",
       }),
     ).toEqual([{ reserved: 0 }]);
-    const finished = await showRail(view);
-    expect(finished[0]).toContain('Idle');
-    expect(finished[1]).toContain('Done');
+    expect(await loadedDelegations()).toEqual(['scout, settled']);
   });
 
   it('tells the parent a child failed when it ends without its report, and still settles the reservation', async () => {

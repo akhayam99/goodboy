@@ -21,7 +21,6 @@ const WIDE_READER = { ...READER, sizing: 'reader' } as const;
 
 export const DRAWER_KINDS = {
   scripts: { ...TOOL, pane: 'scripts' },
-  spawned: { ...TOOL, pane: 'spawned' },
   terminal: { ...TOOL, pane: 'terminal' },
   browser: { ...TOOL, sizing: 'browser', pane: 'browser' },
   'explore-file': WIDE_READER,

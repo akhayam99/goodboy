@@ -22,5 +22,5 @@ export const keptTool = ({ drawer, place }: Params): OpenDrawer | null => {
   if (row.surface !== 'tool' || row.pane === null) {
     return null;
   }
-  return drawer.kind === 'spawned' ? { ...drawer, payload: null } : drawer;
+  return drawer;
 };

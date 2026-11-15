@@ -785,76 +785,20 @@ through `DrawerEdgeContext`. The page has a scrim and is inert until close.
 both rails ([styling.md](../styling.md)).
 Folding the rail leaves the column in place.
 
-- **Agents is the tree beside the page** (drawer kind `spawned`,
-  `app/components/SpawnedPanel`), in place of the old level 2 of the session
-  rail: the open run's tree, else what is live. Runs is the one list of work,
-  so the panel keeps no list of its own: its foot link **All runs** goes to the
-  Runs page (`openLens` workflows) and the panel stays open. Its body follows the page (`useSpawnedFocus`): on a preset run (from
-  Runs, the Running card, the Done card or a link to a step, read through
-  `presetRunFocusOf`) it shows the run's identity row (the state dot and the
-  title, which renames inline on click), and the run's agents as a tree; on an Auto
-  agent or one of its children it shows Auto and its children as a tree, "No
-  agents started yet" while Auto has none; Auto's limit sits on the Auto page's
-  settings line (`AgentSettingsLine`), not in this panel. With no run or Auto
-  open, it lists what is live, newest first
-  (`launchesOf` over `sessionRunsOf`: runs that are not archived and not
-  finished, orchestrated ones included, Auto roots and standalone agents; the
-  finished work is on Runs), each with its agents under it; a standalone agent is a
-  launch of one row (`SpawnedAgentGroup`: role glyph, name, state word on the
-  row) that opens its page in the center (`openSpawned` target `agent`), and
-  a session with nothing live says "Nothing live right now"; picking a launch
-  opens it in the center, and the tool, open already, stays through the move. A row
-  never opens a tool as a side effect: an Auto row of Runs opens the Auto page
-  and nothing beside it. The
+- **There is no Agents panel.** Runs is the one list of work: ⌘⌥A
+  (`session.spawned`) and its palette row open Runs on what is running, and a
+  window saved with the old `spawned` panel opens Runs filtered to Running
+  (`withoutRemovedPages`). A row never opens a tool as a side effect: an Auto
+  row of Runs opens the Auto page and nothing beside it. The
   Overview's run row opens that exact run page,
   including an orchestrated run, and Back returns to the Overview. Its step
   rows and status sentence are status, not parallel links to the Runs list.
-  The tree reads top down, like the step list of the run page: each parent
-  above its children, the first step on top, each child joined to its parent's
-  lane by the fork curve (`spawnedRailOf` in `features/workTreeModel` lays the rows out with
-  `layoutTimelineRail`, `SpawnedRailCell` draws them with `TimelineRail`; a
-  queued child dashes its lane). Every reader of the order goes through
-  `spawnedTreeItemsOf`, which is DOM order. A focused Auto launch is the same
-  `SpawnedAutoGroup` as the list, always open, so Auto and a run share one
-  layout. There is no Now row, no state grouping and no spend foot: limit and
-  spend live on the glance line of the page. A row opened from a done parent
-  says how many helpers failed (`helperUrgencyOf`, "1 of 2 helpers failed").
-  Focus stays on its row and `useSpawnedScrollHold` keeps the first visible
-  row's offset when a row lands above it. A row is one 28px line: the
-  state node on the rail, role glyph (the noun in its tooltip), title, a
-  fixed chevron slot and a fixed time column (`DelegationClock`, the clock
-  every work row reads), so icons and times line up down the list. The
-  selected agent is revealed when the panel opens or the selection changes:
-  a fold hiding it opens and the row scrolls to the middle, later changes
-  scroll only as far as needed, and an agent missing from the tree changes
-  nothing (`useSpawnedReveal`, `foldAncestorsOf`). A `spawned` drawer saved with a child target
-  takes precedence over the main selection (`useSpawnedFocus`). An Auto
-  root is titled by the ask it started with, loaded with the tree view, not
-  its transcript (`autoRootTitleOf`, the same title as the Auto agents list) and a child by `autoChildLabelsOf`
-  ([auto.md](../auto.md#the-chat)). Every Auto parent folds on its row (chevron,
-  Right opens, Left folds, `foldSpawnedRowsOf`): a tree live when it first
-  loads opens, a settled one folds, and a folded row keeps its state and says
-  its count of children ("3 agents"); settled sub agents of a run fold into one
-  row like the run page's (`useFoldedRunTree`). The rows are a `tree` with
-  `treeitem`s and `aria-level` (`SpawnedTree`): one tab stop on the newest
-  root, Up and Down and Home and End in screen order, Left to the parent
-  (below), Right to the nearest child (above) or to open a fold, Enter or
-  Space to open (`treeKeyTargetOf`).
-- **A row opens its agent in the center and the tree stays.** Every agent row
-  (a run step, an Auto child, the Auto root, an agent you started) goes
-  through `openSpawned` with target `agent`: it navigates to `agentPlace` and
-  the panel, a tool, survives the move (`keepToolDrawer`), so a child shows on the same
-  page as a top-level agent (`AgentDetailPane`, with the Auto notice for an
-  Auto child; a preset run step reads as its run step page through
-  `presetRunFocusOf`) and the tree stays open with the row selected, one click
-  per hop. A run head opens its run page the same way. **j** and **k** with
-  focus on a row of the tree open the next and the previous agent in screen
-  order (`SpawnedTree`, `hopTargetOf`), stop at the ends, and leave focus on
-  the row; **Up** and **Down** still only move focus, and Enter opens. The other
-  doors (the Overview, a delegation line, a run step, Who asked, a notification,
-  the palette) land on the same page: no agent opens in a side panel, and a
-  window saved with the old `auto-child` or `run-step` drawer opens the page
-  (`withoutRemovedPages`).
+- **An agent opens in the center.** Every door to an agent (the Overview, a
+  delegation line, a run step, Who asked, a notification, the palette) lands
+  on its page (`AgentDetailPane`, with the Auto notice for an Auto child; a
+  preset run step reads as its run step page through `presetRunFocusOf`): no
+  agent opens in a side panel, and a window saved with the old `auto-child` or
+  `run-step` drawer opens the page (`withoutRemovedPages`).
 - **A saved level 2 lands on its page.** A window saved on a run or on the
   Auto level before the panel opens on the same page and opens no panel
   (`withoutRemovedPages` drops the retired `sidebar-level` key); a tool it had

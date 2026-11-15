@@ -243,7 +243,7 @@ describe('useFollowToast', () => {
       title: 'Plan approved',
       target: {
         place: sessionPlace({ sessionId }),
-        drawer: { kind: 'spawned', sessionId, payload: null },
+        drawer: { kind: 'ask', sessionId, payload: null },
       },
     });
 

@@ -148,12 +148,12 @@ describe('Linked work record', () => {
     mount();
     await requestUnlink();
     act(() => {
-      store.getState().openDrawer({ kind: 'spawned', sessionId: SESSION_ID, payload: null });
+      store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
     });
     await act(async () => {
       finish(true);
     });
-    expect(store.getState().drawer?.kind).toBe('spawned');
+    expect(store.getState().drawer?.kind).toBe('scripts');
     expect(store.getState().focusedExternalTask[SESSION_ID]?.externalId).toBe(TASK.externalId);
   });
 });
