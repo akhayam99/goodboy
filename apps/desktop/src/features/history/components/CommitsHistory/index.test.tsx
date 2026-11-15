@@ -15,7 +15,7 @@ import {
 import { LEDGER, LEDGER_COMMITS, LEDGER_GRAPH } from '../../testing/ledgerFixture';
 import { LEDGER_PRESET } from '../../testing/ledgerPreset';
 import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
-import { historyBackupRef } from '../../historyBackupRef';
+import { historyBackupRef } from '../../testing/historyBackupRef';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 

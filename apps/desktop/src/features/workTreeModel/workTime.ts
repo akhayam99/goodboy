@@ -1,5 +1,5 @@
-import type { CostRange, DurationEstimate, EstimateTier } from '@goodboy/core/estimates';
-import { formatUsd, type Fact } from '@goodboy/ui';
+import type { DurationEstimate, EstimateTier } from '@goodboy/core/estimates';
+import type { Fact } from '@goodboy/ui';
 import { formatDuration } from '../../shared/utils/time/formatDuration';
 import type { RowPhase } from './rowState';
 import { quietSentence } from './rowStateCopy';
@@ -79,15 +79,6 @@ export const formatEstimateRange = ({ lowMs, midMs, highMs }: RangeParams): stri
     return `${low}-${high}m`;
   }
   return `${minutesLabel({ minutes: low })}-${minutesLabel({ minutes: high })}`;
-};
-
-export const formatCostRange = ({ lowUsd, highUsd }: CostRange): string => {
-  const low = formatUsd(lowUsd);
-  const high = formatUsd(highUsd);
-  if (low === high) {
-    return `≈ ${high}`;
-  }
-  return `${low}-${high.replace('$', '')}`;
 };
 
 const FALLBACK_TIERS: ReadonlySet<EstimateTier> = new Set<EstimateTier>([

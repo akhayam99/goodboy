@@ -5,7 +5,6 @@ import { ARTIFACT_CTA_BLOCK_COPY } from '../../features/artifacts/artifactCtaSta
 import { RESOLVE_WORD_LABEL } from '../../features/resolve/commentProjection';
 import { COMPOSE_COPY, REVIEW_FLOW_LABEL } from '../../features/resolve/reviewFlowCopy';
 import { LENS_LABEL } from '../../features/session/lens-labels';
-import { ACTIVITY_VIEW_LABEL } from '../../features/session/timeline/activityView';
 import { ARCHIVED_SESSION_REASON } from '../../features/session/archivedSession';
 import { AGENT_STATUS_PRESENTATION } from '../../features/session/agent-status';
 import { SESSION_PAGE_INTRO } from '../../features/session/sessionPageIntro';
@@ -24,7 +23,6 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
   REVIEW_FLOW_LABEL: Object.values(REVIEW_FLOW_LABEL).filter((label) => !label.startsWith('↵')),
   COMPOSE_COPY: Object.values(COMPOSE_COPY).flatMap((copy) => [copy.label, copy.submit]),
   LENS_LABEL: Object.values(LENS_LABEL),
-  ACTIVITY_VIEW_LABEL: Object.values(ACTIVITY_VIEW_LABEL),
   ARCHIVED_SESSION_REASON: [ARCHIVED_SESSION_REASON],
   ROW_NODE_LABEL: Object.values(ROW_NODE_LABEL),
   AGENT_STATUS_PRESENTATION: Object.values(AGENT_STATUS_PRESENTATION).map(

@@ -5,7 +5,7 @@ import type {
   HistoryStep,
   PullRequestState,
 } from '@goodboy/types';
-import { historyBackupRef } from '../../../../../features/history/historyBackupRef';
+import { historyBackupRef } from '../../../../../features/history/testing/historyBackupRef';
 import {
   combineInto,
   initialPlanItems,

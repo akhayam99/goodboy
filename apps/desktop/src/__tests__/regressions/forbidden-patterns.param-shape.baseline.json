@@ -356,7 +356,6 @@
     "apps/desktop/src/features/context/hooks/useSendQuestionAsMessage/index.ts": 1,
     "apps/desktop/src/features/context/openQuestionsGate.ts": 1,
     "apps/desktop/src/features/context/questionDelegate.ts": 2,
-    "apps/desktop/src/features/context/slotRouting.ts": 1,
     "apps/desktop/src/features/diff/components/ChangeTree/FilterMenu.tsx": 2,
     "apps/desktop/src/features/diff/components/ChangeTree/index.tsx": 1,
     "apps/desktop/src/features/diff/components/ChangeTree/TreeHead.tsx": 1,
