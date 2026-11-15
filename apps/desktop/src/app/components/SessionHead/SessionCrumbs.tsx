@@ -5,6 +5,8 @@ import { Button, ICON_SIZE, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { SessionHeadSlotsContext } from '../../../features/session/sessionHeadSlotsContext';
+import { crumbFoldOf } from './crumbFoldOf';
+import { SessionCrumbFold } from './SessionCrumbFold';
 import { sessionCrumbsOf } from './sessionCrumbsOf';
 
 type Props = {
@@ -14,6 +16,8 @@ type Props = {
 type OpenParams = {
   readonly index: number;
 };
+
+const SEPARATOR_CLASS = 'shrink-0 text-faint-foreground';
 
 export const SessionCrumbs = ({ session }: Props) => {
   const sessionId = session.id;
@@ -29,25 +33,24 @@ export const SessionCrumbs = ({ session }: Props) => {
     }
     state.upTo({ to: crumb.place });
   };
+  const fold = crumbFoldOf({ count: labels.length });
+  const folded = fold.folded.map((index) => ({ index, label: labels[index] ?? '' }));
   return (
     <nav aria-label="Breadcrumb" data-session-crumbs="" className="flex h-9 min-w-0 flex-1">
       <ol className="flex min-w-0 flex-1 items-center gap-1">
-        {labels.map((label, index) => {
+        {fold.shown.map((index) => {
+          const label = labels[index] ?? '';
           const isCurrent = index === labels.length - 1;
-          return (
+          const crumb = (
             <li
               key={`${index}:${label}`}
               className={cn(
                 'flex min-w-0 items-center gap-1',
-                isCurrent ? 'min-w-32 flex-1' : index === 0 ? 'max-w-64 shrink' : 'shrink',
+                isCurrent ? 'min-w-32 flex-1' : index === 0 ? 'shrink-0' : 'max-w-48 shrink',
               )}
             >
               {index === 0 ? null : (
-                <ChevronRight
-                  size={ICON_SIZE.row}
-                  aria-hidden
-                  className="shrink-0 text-faint-foreground"
-                />
+                <ChevronRight size={ICON_SIZE.row} aria-hidden className={SEPARATOR_CLASS} />
               )}
               {isCurrent ? (
                 <span
@@ -78,6 +81,16 @@ export const SessionCrumbs = ({ session }: Props) => {
               )}
             </li>
           );
+          if (index !== 0 || folded.length === 0) {
+            return crumb;
+          }
+          return [
+            crumb,
+            <li key="fold" data-crumb-fold-item="" className="flex shrink-0 items-center gap-1">
+              <ChevronRight size={ICON_SIZE.row} aria-hidden className={SEPARATOR_CLASS} />
+              <SessionCrumbFold crumbs={folded} onOpen={open} />
+            </li>,
+          ];
         })}
       </ol>
     </nav>
