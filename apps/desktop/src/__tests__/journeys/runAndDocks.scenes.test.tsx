@@ -78,7 +78,7 @@ describe('journey: the run page, its Agents rail and an agent in the centre', ()
     expect(crumbs).toHaveLength(5);
     expect(journey.view().agentId).not.toBeNull();
     expect(screen.getAllByRole('button', { name: 'copy message' }).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: /^Back to Round once/ })).toBeDefined();
+    screen.getByRole('button', { name: /^Back to Round once/ });
   });
 });
 

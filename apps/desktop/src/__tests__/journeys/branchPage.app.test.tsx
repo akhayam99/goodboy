@@ -1,12 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn((command: string, args?: BridgeArgs) => bridge(command, args)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn(async () => () => undefined),
-  emit: vi.fn(async () => undefined),
-}));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../store/storyHarness')).tauriEventModuleMock(),
+);
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { describe, expect, it, vi } from 'vitest';
@@ -16,21 +15,21 @@ import { BOARD_PLACE } from '../../store/slices/navigation/place';
 import { captureLocation } from '../../store/slices/navigation/captureLocation';
 import {
   WAIT,
-  bridge,
   boot,
   clickBackArrow,
   click,
   clickButton,
   findSection,
   installNavigationHooks,
+  installStoryBridge,
   openBranchFiles,
   sectionLabels,
   settle,
   useAppStore,
-  type BridgeArgs,
 } from '../surfaces/navigation-flows/harness';
 
 installNavigationHooks();
+installStoryBridge();
 
 const viewOf = () => {
   const { place } = captureLocation({ state: useAppStore.getState() });
@@ -135,10 +134,7 @@ describe('journey: the branch page, its tabs and its files rail', () => {
     await clickButton(/^Back to Overview/);
 
     expect(viewOf().lens).toBeNull();
-    await waitFor(
-      () => expect(screen.getByRole('tablist', { name: 'Session pages' })).toBeDefined(),
-      WAIT,
-    );
+    await waitFor(() => screen.getByRole('tablist', { name: 'Session pages' }), WAIT);
     await clickBackArrow();
     expect(viewOf()).toBeDefined();
   });
