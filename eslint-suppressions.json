@@ -5718,7 +5718,7 @@
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDefaultsGrid.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 5
+      "count": 3
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProfileSection.test.tsx": {

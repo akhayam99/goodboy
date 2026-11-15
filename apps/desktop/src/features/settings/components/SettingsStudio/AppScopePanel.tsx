@@ -1,7 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import type { ReactNode } from 'react';
 import { PaneShell } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { BackupPage } from '../../../backup/components/BackupPage';
 import { iphoneSettingsPage } from '../../../companion/iphoneSettingsPage';
@@ -9,7 +8,6 @@ import { APP_VERSION } from '../../../../shared/lib/appVersion';
 import { useAppStore } from '../../../../store';
 import { AppResetSection } from './AppResetSection';
 import { AppGeneralSection } from './AppGeneralSection';
-import { SecurityFindingsSection } from './SecurityFindingsSection';
 import { ShortcutsSection } from './ShortcutsSection';
 import { UpdatesSection } from './UpdatesSection';
 import { UpdatesWhatsNewBand } from './UpdatesWhatsNewBand';
@@ -20,21 +18,19 @@ import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type Props = {
   readonly section: AppSection;
-  readonly workspaceId: WorkspaceId | null;
 };
 
 type PaneSection = Exclude<AppSection, 'iphone'>;
 
 type BodyProps = {
   readonly section: PaneSection;
-  readonly workspaceId: WorkspaceId | null;
 };
 
 const SECTION_ACTIONS: Readonly<Partial<Record<PaneSection, ReactNode>>> = {
   storage: STORAGE_APP_PAGES.storage.actions,
 };
 
-const SectionBody = ({ section, workspaceId }: BodyProps) => {
+const SectionBody = ({ section }: BodyProps) => {
   switch (section) {
     case 'general':
       return <AppGeneralSection />;
@@ -48,12 +44,7 @@ const SectionBody = ({ section, workspaceId }: BodyProps) => {
     case 'shortcuts':
       return <ShortcutsSection />;
     case 'storage':
-      return (
-        <>
-          {STORAGE_APP_PAGES.storage.body}
-          <SecurityFindingsSection workspaceId={workspaceId} />
-        </>
-      );
+      return STORAGE_APP_PAGES.storage.body;
     case 'backup':
       return (
         <>
@@ -68,7 +59,7 @@ const SectionBody = ({ section, workspaceId }: BodyProps) => {
   }
 };
 
-export const AppScopePanel = ({ section, workspaceId }: Props) => {
+export const AppScopePanel = ({ section }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
   const storageMeta = useStorageMeta();
   if (section === 'iphone') {
@@ -92,7 +83,7 @@ export const AppScopePanel = ({ section, workspaceId }: Props) => {
       meta={meta[section]}
       actions={SECTION_ACTIONS[section]}
     >
-      <SectionBody section={section} workspaceId={workspaceId} />
+      <SectionBody section={section} />
     </PaneShell>
   );
 };

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
@@ -149,11 +149,7 @@ describe('WorkspaceReviewRepliesSection', () => {
   it('turns off resolving on GitHub and picks the fixup commit style', () => {
     renderWith();
 
-    const [resolveSwitch] = screen.getAllByRole('switch');
-    if (resolveSwitch === undefined) {
-      throw new Error('resolve switch missing');
-    }
-    fireEvent.click(resolveSwitch);
+    fireEvent.click(screen.getByRole('switch', { name: 'Mark thread as resolved' }));
 
     expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
       workspaceId: WORKSPACE,
@@ -171,21 +167,37 @@ describe('WorkspaceReviewRepliesSection', () => {
   it('edits the posted reply by default and saves the switch per workspace', () => {
     renderWith();
 
-    const [, editSwitch] = screen.getAllByRole('switch');
-    if (editSwitch === undefined) {
-      throw new Error('edit switch missing');
-    }
-    expect(screen.getByText('Edit the posted reply')).toBeTruthy();
+    const editSwitch = screen.getByRole('switch', { name: 'Edit the posted reply' });
     expect(editSwitch.getAttribute('aria-checked')).toBe('true');
     fireEvent.click(editSwitch);
 
     expect(state.saveSetting).toHaveBeenCalledWith(`review.edit_posted_reply.${WORKSPACE}`, '0');
   });
 
-  it('leaves the attribution line to New sessions', () => {
+  it('holds the attribution line in the Replies band, under Voice', () => {
     renderWith({ attributionFooter: false });
 
-    expect(screen.getAllByRole('switch')).toHaveLength(2);
-    expect(screen.queryByText('Attribution line')).toBeNull();
+    const band = screen.getByRole('region', { name: 'Replies' });
+    const attribution = within(band).getByRole('switch', { name: 'Attribution line' });
+    within(band).getByRole('tablist', { name: 'Reply voice' });
+    expect(attribution.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(attribution);
+
+    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE,
+      patch: { attributionFooter: true },
+    });
+  });
+
+  it('keeps the attribution line as it was when the save fails', async () => {
+    state.patchWorkspaceOverrides.mockRejectedValueOnce(new Error('disk full'));
+    renderWith({ attributionFooter: false });
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Attribution line' }));
+
+    await waitFor(() => expect(state.reportError).toHaveBeenCalled());
+    expect(
+      screen.getByRole('switch', { name: 'Attribution line' }).getAttribute('aria-checked'),
+    ).toBe('false');
   });
 });

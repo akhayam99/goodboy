@@ -98,16 +98,24 @@ describe('settings rail rows', () => {
     expect(settingsPageKey({ scope: 'workspace', section: 'summarizer' })).toBe('workspace:models');
   });
 
-  it('puts the update dot on Updates and the worse of storage and findings on Storage', () => {
-    const app = pagesOf(LOUD_STATUS).filter((page) => page.key.startsWith('app:'));
-    const attentionOf = (key: string) => app.find((page) => page.key === key)?.attention;
+  it('puts the update dot on Updates, storage on Storage and findings on Permissions', () => {
+    const pages = pagesOf(LOUD_STATUS);
+    const attentionOf = (key: string) => pages.find((page) => page.key === key)?.attention;
 
     expect(attentionOf('app:general')).toBeNull();
     expect(attentionOf('app:updates')).toEqual({ text: 'Update available', tone: 'info' });
-    expect(attentionOf('app:storage')).toEqual({ text: '3 open findings', tone: 'warning' });
+    expect(attentionOf('app:storage')).toEqual({ text: '12 GB can go', tone: 'warning' });
+    expect(attentionOf('workspace:permissions')).toEqual({
+      text: '3 open findings',
+      tone: 'warning',
+    });
+    expect(attentionOf('workspace:projects')).toEqual({
+      text: '2 folders not found',
+      tone: 'warning',
+    });
   });
 
-  it('keeps a storage warning over an info line about findings', () => {
+  it('keeps the storage warning on Storage', () => {
     const status: SettingsStatus = {
       subtitles: {
         ...QUIET_STATUS.subtitles,

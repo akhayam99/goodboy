@@ -18,18 +18,8 @@ export const APP_SECTIONS = [
 
 const DEFAULT_APP_SECTION: AppSection = 'general';
 
-const APP_SECTION_ALIASES: ReadonlyMap<string, AppSection> = new Map<string, AppSection>([
-  ['security-findings', 'storage'],
-]);
-
 const isAppSection = (value: string | undefined): value is AppSection =>
   APP_SECTIONS.some((section) => section.id === value);
 
-export const appSectionOf = ({ section }: { readonly section?: string }): AppSection => {
-  if (isAppSection(section)) {
-    return section;
-  }
-  return (
-    (section === undefined ? undefined : APP_SECTION_ALIASES.get(section)) ?? DEFAULT_APP_SECTION
-  );
-};
+export const appSectionOf = ({ section }: { readonly section?: string }): AppSection =>
+  isAppSection(section) ? section : DEFAULT_APP_SECTION;

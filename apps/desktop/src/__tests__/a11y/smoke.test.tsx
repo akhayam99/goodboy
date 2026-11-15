@@ -236,7 +236,7 @@ describe('a11y smoke, SettingsStudio app scope', () => {
       storageStats: null,
       storageArtifacts: [],
     };
-    const { container } = renderInToasts(<AppScopePanel section="general" workspaceId={null} />);
+    const { container } = renderInToasts(<AppScopePanel section="general" />);
     await expectBaseline({ name: 'AppScopePanel open', container });
   });
 });

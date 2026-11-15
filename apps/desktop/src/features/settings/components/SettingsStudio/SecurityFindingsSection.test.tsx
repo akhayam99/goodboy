@@ -43,14 +43,6 @@ afterEach(() => {
 });
 
 describe('SecurityFindingsSection', () => {
-  it('asks for a workspace when there is none', () => {
-    render(<SecurityFindingsSection workspaceId={null} />);
-
-    expect(screen.getByText('Open a workspace to check its saved scripts.')).toBeDefined();
-    expect(screen.getByRole('heading', { level: 2, name: 'Security findings' })).toBeDefined();
-    expect(h.loadSecurityFindings).not.toHaveBeenCalled();
-  });
-
   it('loads findings on mount and shows the empty state once ready', async () => {
     render(<SecurityFindingsSection workspaceId={WORKSPACE_ID} />);
 
@@ -61,10 +53,11 @@ describe('SecurityFindingsSection', () => {
     expect(h.loadSecurityFindings).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID });
   });
 
-  it('reads as one section, its help line naming saved scripts only', () => {
+  it('reads as the secrets band, its help line naming saved scripts only', () => {
     render(<SecurityFindingsSection workspaceId={WORKSPACE_ID} />);
 
-    const section = screen.getByRole('region', { name: 'Security findings' });
+    const section = screen.getByRole('region', { name: 'Secrets in saved scripts' });
+    within(section).getByRole('heading', { level: 2, name: 'Secrets in saved scripts' });
     const help = 'Keys or tokens in your saved scripts. This text never leaves your Mac.';
     expect(within(section).getByText(help)).toBeDefined();
     expect(help.split(' ').length).toBeLessThanOrEqual(13);

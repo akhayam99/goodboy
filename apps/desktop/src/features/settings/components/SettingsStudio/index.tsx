@@ -107,12 +107,7 @@ export const SettingsStudio = ({
         />
       );
     }
-    return (
-      <AppScopePanel
-        section={appSectionOf({ section: focus.section })}
-        workspaceId={currentWorkspace?.id ?? null}
-      />
-    );
+    return <AppScopePanel section={appSectionOf({ section: focus.section })} />;
   };
 
   return (
