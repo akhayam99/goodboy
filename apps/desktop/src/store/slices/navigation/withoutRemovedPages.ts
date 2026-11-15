@@ -255,17 +255,17 @@ const foldOfPanel = ({ drawer }: DrawerParams): PanelFold | null => {
   if (path === null) {
     return null;
   }
+  const mountPath = treeMountOf({ drawer });
   return {
     place: sessionPlace({
       sessionId,
       lens: 'files',
-      target: {
-        kind: 'diff',
-        mountPath: treeMountOf({ drawer }),
-        focus: { kind: 'branch', path },
-      },
+      target: { kind: 'diff', mountPath, focus: { kind: 'branch', path } },
     }),
-    rows: ALL_FILES,
+    rows:
+      mountPath === null
+        ? ALL_FILES
+        : { ...ALL_FILES, [PLACE_ROWS.filesOpen]: path, [PLACE_ROWS.filesMount]: mountPath },
   };
 };
 

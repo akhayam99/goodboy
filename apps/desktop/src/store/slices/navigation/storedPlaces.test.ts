@@ -131,7 +131,11 @@ const STORED_PLACES: ReadonlyArray<Row> = [
         focus: { kind: 'branch', path: 'src/ledger.ts' },
       },
       drawer: null,
-      rows: { [PLACE_ROWS.changesMode]: 'all' },
+      rows: {
+        [PLACE_ROWS.changesMode]: 'all',
+        [PLACE_ROWS.filesOpen]: 'src/ledger.ts',
+        [PLACE_ROWS.filesMount]: WORKTREE,
+      },
     },
   ],
   [
