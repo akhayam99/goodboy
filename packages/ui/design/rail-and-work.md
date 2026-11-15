@@ -446,20 +446,22 @@ set while the dismissed fingerprint of its suggestion holds, and a reason that
 asks for input is never deferred. A session waiting for you also carries
 `attentionSince`, the time its winning reason became true when the store keeps
 one (a blocked turn, a question, a failed turn, an unread reply, a Slack draft),
-and the Needs you order follows it, falling back to the last edit. Mark as unread stamps the latest finished agent unseen (`markAgentUnviewed`, `lastViewedAt` cleared in the store and the database) and never the agent on screen in the open session, which counts as seen; Mark as read and Mark all as read stamp every unread agent (`markAllAgentsSeen`, `markSessionsRead`), and `sessionHasUnread` is the one test for a row's dot. An unread reply is not a mark: the node
-stays the quiet ring and takes the row's 6px dot (`hasUnread`), and the dot
-also shows on any other node while a reply waits among the other reasons.
+and the Needs you order follows it, falling back to the last edit. Mark as unread stamps the latest finished agent unseen (`markAgentUnviewed`, `lastViewedAt` cleared in the store and the database) and never the agent on screen in the open session, which counts as seen; Mark as read and Mark all as read stamp every unread agent (`markAllAgentsSeen`, `markSessionsRead`), and `sessionHasUnread` is the one test for a row's dot. An unread reply is not a mark: in the left column it is the row's 6px dot alone
+in the mark box, unless the session asks you, failed or runs, which outranks it
+(`sessionMarkOf`); on a `WorkNode` (switcher, hover card) the node takes the dot
+on its corner (`hasUnread`).
 
 The door pill. The Board door, the folded rail and the top bar say how many
 sessions need you with one function, `attentionCountOf` (read through
 `useWorkspaceAttention`), over every session of the workspace and never the
 project filter. A session counts when its stage is needs you and one of its
 reasons is `warning` or `danger`; a session waiting only on `unread-reply` or
-`pr-approved` is quiet and does not count. One session is the 6px dot, two or
-more a `rounded-full` pill with the number (`9+` above nine, `text-meta`), in
-`warning`, or `danger` as soon as one counted session has a danger reason
-(`agent-error`, `run-stopped`, `push-failed`, `ci-failed`). A door with only quiet
-sessions shows the neutral dot and no number. The tooltip and the label keep the
+`pr-approved` is quiet and does not count. On the Board door the count is the
+number alone in a `StatusMark` (`9+` above nine, `text-chip`), in `warning`, or
+`danger` as soon as one counted session has a danger reason (`agent-error`,
+`run-stopped`, `push-failed`, `ci-failed`); the folded rail, with no room for a
+number, shows the dot in that tone. A door with only quiet sessions shows the
+neutral dot and no number. The tooltip and the label keep the
 reasons ("3 need you: Checks failing, 1 question for you"). The top bar holds
 no target of its own for it, because the chrome is capped at 24: the Now chip
 leads with the same count as its first segment (a dot in the worst tone, the

@@ -350,7 +350,9 @@ cannot pass by measuring nothing. On every scene that
 renders the app frame it also runs the frame check: the main sidebar's first
 row (New session) against the page's first row (the topmost visible controls of
 `[data-studio-host]` and the controls on their line), centres within 1px and
-tops within 1px when the two rows are the same height. It waits for running
+tops within 1px when the two rows are the same height, and the mark check
+(`sidebarMarkFailures`): every trailing mark of a sidebar door or session row
+is a 16px box on one centre x, on its row's centre line, within 1px. It waits for running
 animations to finish and skips controls hidden behind a sticky header. The
 `sidebar-frame-dark` and `sidebar-frame-light` scenes, Settings, New session, a
 session overview, Board, Tasks, Chat, Impact and Workflows are on its list.

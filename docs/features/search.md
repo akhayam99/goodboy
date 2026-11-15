@@ -32,7 +32,7 @@ At the right of every page, a column of icons is named with its shortcut on hove
 
 **⌥⌘B** folds the list beside the page you are on, such as the files of the Changes page, Chat, Terminal, the Guide or Settings. Each of those lists has its Hide button at its top left.
 
-An amber dot on **Board** says sessions need you. A dot on **Monitoring** names the pinned port that is down.
+An amber number on **Board** says how many sessions need you. A dot on **Monitoring** names the pinned port that is down.
 
 A drawer that opens in the side slot keeps the one it replaced. That one waits in a chip at the left of the drawer head. **Esc**, the close button or **⌘⇧W** brings it back with its state. A third open drops the oldest.
 
