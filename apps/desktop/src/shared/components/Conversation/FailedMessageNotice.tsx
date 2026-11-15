@@ -20,7 +20,7 @@ export const FailedMessageNotice = ({ failure }: Props) => (
         <CopyButton value={failure.body} label="Copy text" presentation="icon">
           Copy text
         </CopyButton>
-        <Button size="sm" variant="ghost" onClick={failure.discard}>
+        <Button size="sm" variant="ghost" intent="destructive" onClick={failure.discard}>
           Discard
         </Button>
       </>

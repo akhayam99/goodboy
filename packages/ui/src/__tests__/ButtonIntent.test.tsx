@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { BUTTON_INTENT_CLASSES, Button } from '../components/Button';
+import { BUTTON_INTENT_CLASSES, BUTTON_VARIANT_CLASSES, Button } from '../components/Button';
 
 describe('Button intent', () => {
   afterEach(cleanup);
@@ -59,5 +59,16 @@ describe('Button intent', () => {
       </Button>,
     );
     expect(screen.getByRole('button').className).toContain('bg-fill');
+  });
+
+  it('never fills a neutral intent with the primary colour', () => {
+    render(
+      <Button variant="primary" intent="neutral">
+        Open
+      </Button>,
+    );
+    const className = screen.getByRole('button').className;
+    expect(className).not.toContain('bg-primary');
+    expect(className).toContain(BUTTON_VARIANT_CLASSES.secondary);
   });
 });

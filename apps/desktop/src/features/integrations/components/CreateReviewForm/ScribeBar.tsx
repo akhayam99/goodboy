@@ -5,6 +5,7 @@ import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import type { AgentSpawnConfigValue } from '../../../session/agentSpawnConfigValue';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import type { ScribeJob } from './useScribeJob';
 
 type Props = {
@@ -90,7 +91,11 @@ export const ScribeBar = ({
         <StatusDot tone="primary" size="sm" pulsing />
         <span className="min-w-0 truncate">{readingWord({ commitCount })}</span>
         <span className="shrink-0 text-meta tabular-nums text-faint-foreground">{`${seconds}s`}</span>
-        <Button variant="ghost" size="xs" onClick={onStop}>
+        <Button
+          {...actionButtonLookOf({ verb: 'stop', variant: 'quiet' })}
+          size="xs"
+          onClick={onStop}
+        >
           Stop
         </Button>
       </div>

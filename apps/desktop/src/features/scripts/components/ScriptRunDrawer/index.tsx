@@ -10,6 +10,7 @@ import { resolveScriptTarget } from '../../resolveScriptTarget';
 import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';
 import { scriptRecordOutput } from '../../scriptRecordOutput';
 import { useHandOutputToAgent } from '../../../../shared/hooks/useHandOutputToAgent';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { ScriptCommandDisclosure } from './ScriptCommandDisclosure';
 import { ScriptRunDock } from './ScriptRunDock';
 import { ScriptRunLog } from './ScriptRunLog';
@@ -97,7 +98,11 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
     });
 
   const action = scriptRun.isRunning ? (
-    <Button variant="secondary" size="sm" onClick={scriptRun.stop}>
+    <Button
+      {...actionButtonLookOf({ verb: 'stop', variant: 'quiet' })}
+      size="sm"
+      onClick={scriptRun.stop}
+    >
       <Square size={ICON_SIZE.row} aria-hidden />
       Stop
     </Button>

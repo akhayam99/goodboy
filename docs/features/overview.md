@@ -26,7 +26,7 @@ The Overview reads top to bottom:
 2. **The state.** One sentence from the running summary says where the work stands, with when it was written. It turns gray when it is older than a day.
 3. **What waits for you.** The **Needs you** group of the board comes first, and each row says why in words.
 4. **Where each branch stands.** Every row shows the six stages of its branch and the one step it stands at.
-5. **What it costs.** The **Spend** and **Time** tiles add up every branch.
+5. **What it costs.** The **Spend** and **Time** tiles add up every branch. Spend names its Leads and agents, and leaves out Leads when there are none.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
@@ -68,7 +68,8 @@ The board groups the branches in this order: **Needs you**, **In progress**, **M
 - A branch an agent works on shows its agents and its spend. A dot marks what is new since you last looked.
 - A long branch name is cut in the middle, so its end stays readable.
 - A branch with no pull request reads **No PR**. A step that does not apply is a short dash instead of a circle.
-- The **Not on a branch** row holds work that has no branch. It never offers a branch verb.
+- A row says each fact once. A column stays empty when the state already says it. A merged branch shows no checks.
+- The **Not on a branch** row holds work that has no branch. It names itself by its next step, such as the open question, and never offers a branch verb.
 - With many rows, **Merged** shows the first few and **Show 4 more** opens the rest.
 
 The **Questions** tile filters the board to the branches with an open question. One line says so, with **Clear** to leave. **Branches** clears the filter. The other tiles only read.
@@ -151,7 +152,7 @@ This part is for contributors and agents who change the feature.
 - Archive: `ArchivePrimary` is the header button when `isArchivePrimaryOf` holds (every branch merged, no live agent, no open question). In every other case Archive stays in the session menu with the same guards.
 - Loading skeleton: `SessionOverviewSkeleton` draws its cards from `overviewCardsOf` and the same surface (`OVERVIEW_CARD_SURFACE`). `SessionWorkspace` shows it through `SkeletonSwap`: nothing for the first 120 ms, then at least 160 ms. The notices slot animates its height with `HeightMotion` and `PANE_GROUPS_GAP_REM`.
 - The overview draws the branch board only. `liveGroupsOf` orders the live groups that feed the board.
-- Branch board model: `branchBoardOf` builds one row per branch in any state, plus a row without a branch. It sorts them into Needs you, In progress, Merged and Not on a branch. `branchFactsFor` feeds `deriveSessionStage` the facts of one branch only. A question on one branch leaves the others alone. `sessionKpisOf` reads the board for the Branches, Spend and Time tiles and counts Leads, agents and asks by id. Spend comes from `leadSpendByBranchOf`.
+- Branch board model: `branchBoardOf` builds one row per branch in any state, plus a row without a branch. It sorts them into Needs you, In progress, Merged and Not on a branch. `branchFactsFor` feeds `deriveSessionStage` the facts of one branch only. A question on one branch leaves the others alone. `boardRowCellsOf` picks the words of a row and drops a word an earlier cell already said. `sessionKpisOf` reads the board for the Branches, Spend and Time tiles and counts Leads, agents and asks by id. Spend comes from `leadSpendByBranchOf`.
 - Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the board.
 - Notices: `overviewNoticesOf` counts them for `overviewCardsOf`. A closed notice is not counted.
 - `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place above the board.

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import type { AutoPhase } from '@goodboy/db';
-import { aPlanRow, aView } from './testing/autoViewFixtures';
+import { aDelegation, aPlanRow, aView } from './testing/autoViewFixtures';
 import { autoTreeWordOf } from './autoTreeWordOf';
 
 type PhaseParams = {
@@ -23,6 +23,21 @@ describe('autoTreeWordOf', () => {
     ['delegating', 'running', 'Running'],
   ] as const)('reads the phase %s as the state %s and the word %s', (phase, state, word) => {
     expect(wordOf({ phase })).toMatchObject({ state, word });
+  });
+
+  it('reads Needs you while any agent of the run waits on you, even with others running', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        aDelegation({ key: 'impl', role: 'implementer', state: 'running' }),
+        aDelegation({ key: 'review', role: 'reviewer', state: 'awaiting_confirm' }),
+      ],
+    });
+
+    expect(autoTreeWordOf({ view, rootTurn: null })).toMatchObject({
+      state: 'asking',
+      word: 'Needs you',
+    });
   });
 
   it('never says Stuck or Blocked for an Auto that stopped replying: it failed', () => {

@@ -5,6 +5,7 @@ import type { ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../../engine';
 
 import { StepEditorFields } from '../../StepTree/StepEditorFields';
+import { actionButtonLookOf } from '../../../../actions/actionButtonLookOf';
 
 type Mode = 'builtin' | 'saved' | 'new';
 
@@ -95,11 +96,10 @@ export const SavedStepEditor = ({
         ) : null}
         {mode === 'new' ? (
           <Button
-            variant="ghost"
+            {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
             size="sm"
             onClick={onRemove}
             disabled={isBusy}
-            className="text-muted-foreground"
           >
             Discard
           </Button>

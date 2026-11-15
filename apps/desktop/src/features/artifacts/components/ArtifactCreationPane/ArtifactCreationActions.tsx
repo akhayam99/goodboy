@@ -5,6 +5,7 @@ import type { ProviderId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
 import type { ArtifactCreationRouting } from '../../../../store/slices/artifactDrafts/types';
 import type { ArtifactCreationGate } from '../../artifactCreationGate';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { ArtifactRoutingControl } from './ArtifactRoutingControl';
 
 const GENERATE_REASON_ID = 'artifact-generate-reason';
@@ -69,7 +70,7 @@ export const ArtifactCreationActions = ({
       onCancel={onDisarmDiscard}
       trigger={() => (
         <Button
-          variant="ghost"
+          {...actionButtonLookOf({ verb: hasDraft ? 'discard draft' : 'cancel', variant: 'ghost' })}
           size="sm"
           onClick={hasDraft ? onArmDiscard : onCancel}
           disabled={isStarting}

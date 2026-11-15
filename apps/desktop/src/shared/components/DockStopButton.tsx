@@ -17,6 +17,7 @@ export const DockStopButton = ({ stop }: Props) => {
   return (
     <Button
       variant="quiet"
+      intent="destructive"
       size="xs"
       isBusy={stop.phase === 'stopping'}
       busyLabel={NAMES.stopping}

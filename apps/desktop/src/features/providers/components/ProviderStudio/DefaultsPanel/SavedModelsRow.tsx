@@ -1,6 +1,7 @@
 import { Check, Trash2 } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
+import { actionButtonLookOf } from '../../../../actions/actionButtonLookOf';
 import type { SavedModelFacts } from './savedModelFacts';
 
 type Props = {
@@ -43,7 +44,7 @@ export const SavedModelsRow = ({ entry, onApply, onDiscard }: Props) => (
         onConfirm={onDiscard}
         trigger={({ arm }) => (
           <Button
-            variant="ghost"
+            {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
             size="xs"
             aria-label={`Discard the saved settings of ${entry.name}`}
             onClick={arm}

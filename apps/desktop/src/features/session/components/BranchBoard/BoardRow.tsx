@@ -10,7 +10,7 @@ import {
   tintClasses,
   Tooltip,
 } from '@goodboy/ui';
-import { agentsWordOf, checksWordsOf, stageWordOf } from '../../central/board/boardRowWordsOf';
+import { boardRowCellsOf } from '../../central/board/boardRowCellsOf';
 import { BoardBranchName } from './BoardBranchName';
 import { BoardOpenRow } from './BoardOpenRow';
 import { BoardRowAction } from './BoardRowAction';
@@ -26,8 +26,16 @@ const CELL = 'pointer-events-none relative min-w-0';
 const WIDE_ONLY = 'group-data-[narrow=true]/board:hidden';
 
 const BoardRowView = ({ rowId, isOpen }: Props) => {
-  const { rowById, entryByRowId, runningByRowId, mergedAtByMountId, newRowIds, now, onToggleRow } =
-    useBoardContext();
+  const {
+    rowById,
+    entryByRowId,
+    runningByRowId,
+    mergedAtByMountId,
+    cardsByRowId,
+    newRowIds,
+    now,
+    onToggleRow,
+  } = useBoardContext();
   const row = rowById.get(rowId);
   if (row === undefined) {
     return null;
@@ -35,9 +43,16 @@ const BoardRowView = ({ rowId, isOpen }: Props) => {
   const entry = entryByRowId.get(rowId) ?? null;
   const requestFact = entry === null ? null : entry.fact.request;
   const mergedAt = row.mountId === null ? null : (mergedAtByMountId.get(row.mountId) ?? null);
-  const checks = checksWordsOf({ entry });
   const tone = entry === null ? 'neutral' : entry.story.tone;
-  const agents = agentsWordOf({ runningCount: runningByRowId.get(rowId) ?? 0 });
+  const cells = boardRowCellsOf({
+    row,
+    entry,
+    mergedAt,
+    now,
+    runningCount: runningByRowId.get(rowId) ?? 0,
+    nextTitle: row.isMerged ? null : (cardsByRowId.get(rowId)?.[0]?.title ?? null),
+  });
+  const { checks, agents } = cells;
   return (
     <div data-board-row={rowId} className="col-span-full grid grid-cols-subgrid">
       <div className="relative col-span-full grid h-12 grid-cols-subgrid items-center rounded-md">
@@ -59,7 +74,7 @@ const BoardRowView = ({ rowId, isOpen }: Props) => {
         </span>
         <span data-board-cell="branch" className={cn(CELL, 'flex flex-col')}>
           {row.branch === null ? (
-            <span className="min-w-0 truncate text-row text-foreground">{row.stage.reason}</span>
+            <span className="min-w-0 truncate text-row text-foreground">{cells.title}</span>
           ) : (
             <span className="flex min-w-0 items-center gap-2">
               {newRowIds.has(rowId) ? (
@@ -91,9 +106,7 @@ const BoardRowView = ({ rowId, isOpen }: Props) => {
               <StageTrack stages={entry.story.steps} tone={tone} />
             </span>
           )}
-          <span className={cn('min-w-0 truncate', tintClasses(tone).text)}>
-            {stageWordOf({ row, entry, mergedAt, now })}
-          </span>
+          <span className={cn('min-w-0 truncate', tintClasses(tone).text)}>{cells.stage}</span>
         </span>
         <span
           data-board-cell="checks"
@@ -106,7 +119,7 @@ const BoardRowView = ({ rowId, isOpen }: Props) => {
           {checks.text}
         </span>
         <span data-board-cell="needs" className={cn(CELL, 'flex items-center gap-2 text-meta')}>
-          <BoardRowAction rowId={rowId} />
+          <BoardRowAction rowId={rowId} text={cells.next} />
         </span>
         <span
           data-board-cell="agents"

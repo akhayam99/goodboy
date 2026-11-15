@@ -89,7 +89,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
     return (
       <Band inset="content" label="Built from" ariaLabel="Built from">
         <div data-testid="built-from-missing">
-          <EmptyLine>Nothing was recorded for this generation.</EmptyLine>
+          <EmptyLine>No build record.</EmptyLine>
         </div>
       </Band>
     );

@@ -235,6 +235,7 @@ describe('ChangeTree', () => {
       rowById(id).querySelector<HTMLElement>('button')?.style.paddingLeft ?? '';
     expect(paddingOf({ id: 'dir:src/ledger' })).toBe('8px');
     expect(paddingOf({ id: 'dir:src/ledger/export' })).toBe('20px');
+    expect(paddingOf({ id: 'src/ledger/export/page.tsx' })).toBe('76px');
     screen.getAllByRole('treeitem').forEach((row) => {
       expect(row.querySelectorAll('i')).toHaveLength(0);
     });
