@@ -8,6 +8,8 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import { learnWorkspaceReplyStyle } from '../../../resolve/learnWorkspaceReplyStyle';
+import type { SettingSave } from '../../hooks/useSettingSave';
+import { SaveErrorHelp } from './SaveErrorHelp';
 
 const LearnIcon = CONCEPT_ICONS.enhance;
 
@@ -15,10 +17,11 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly value: string | null;
   readonly isDisabled: boolean;
+  readonly save: Pick<SettingSave<unknown>, 'error' | 'retry'>;
   readonly onSave: (note: string | null) => void;
 };
 
-export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: Props) => {
+export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSave }: Props) => {
   const id = useId();
   const [draft, setDraft] = useState(value ?? '');
   const [isLearning, setIsLearning] = useState(false);
@@ -88,6 +91,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
         }}
       />
       {error !== null && <p className="text-meta text-danger">{error}</p>}
+      {save.error === null ? null : <SaveErrorHelp save={save} />}
       <p className="text-meta text-muted-foreground">
         You can edit this note. Agents follow it instead of a preset, and replies stay terse until
         it has text.

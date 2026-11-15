@@ -156,6 +156,25 @@ describe('WorkspaceDefaultsGrid save errors', () => {
     await waitFor(() => expect((prefix as HTMLInputElement).value).toBe('offline'));
   });
 
+  it('keeps a failed reset under its row and Retry resets', async () => {
+    render(<WorkspaceDefaultsGrid workspaceId={WORKSPACE.id} />);
+    fireEvent.click(attribution());
+    await answer({ index: 0, isOk: true });
+    await waitFor(() => expect(attribution().getAttribute('aria-checked')).toBe('false'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Attribution line to default' }));
+    await answer({ index: 1, isOk: false });
+
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't save. Still Off.");
+    expect(attribution().getAttribute('aria-checked')).toBe('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await answer({ index: 2, isOk: true });
+
+    await waitFor(() => expect(attribution().getAttribute('aria-checked')).toBe('true'));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('keeps only the latest change when an older one fails after it', async () => {
     render(<WorkspaceDefaultsGrid workspaceId={WORKSPACE.id} />);
     const parallel = screen.getByRole('switch', { name: 'Parallel agents' });

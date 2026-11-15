@@ -4,15 +4,18 @@ import {
   REPLY_TEMPLATE_VARIABLES,
   replyTemplateProblems,
 } from '../../../resolve/renderReplyTemplate';
+import type { SettingSave } from '../../hooks/useSettingSave';
+import { SaveErrorHelp } from './SaveErrorHelp';
 
 type Props = {
   readonly label: string;
   readonly value: string;
   readonly isDisabled: boolean;
+  readonly save: Pick<SettingSave<unknown>, 'error' | 'retry'>;
   readonly onSave: (value: string) => void;
 };
 
-export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) => {
+export const ReplyTemplateField = ({ label, value, isDisabled, save: saved, onSave }: Props) => {
   const id = useId();
   const [draft, setDraft] = useState(value);
   const problems = replyTemplateProblems({ template: draft });
@@ -66,6 +69,7 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
           {problem}
         </p>
       ))}
+      {saved.error === null ? null : <SaveErrorHelp save={saved} />}
     </div>
   );
 };

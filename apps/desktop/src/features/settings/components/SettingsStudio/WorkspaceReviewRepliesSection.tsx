@@ -1,10 +1,12 @@
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/types';
 import { Band, BandStack, Markdown, SectionHeader, SegmentedTabs, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { NAMES } from '../../../../shared/utils/names';
+import { useSettingSave } from '../../hooks/useSettingSave';
+import { useWorkspaceOverrideSave } from '../../hooks/useWorkspaceOverrideSave';
+import { settingRowKey } from '../../settingRowKey';
+import { SWITCH_SETTING } from '../../switchSetting';
 import { buildResolutionReplyBody } from '../../../../store/slices/github/buildResolutionReplyBody';
 import {
   EDIT_POSTED_REPLY_OFF,
@@ -34,58 +36,75 @@ type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
+type ValueParams<Value> = {
+  readonly value: Value;
+};
+
 export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   const overrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
-  const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
-  const reportError = useAppStore((s) => s.reportError);
   const editKey = editPostedReplyKey({ workspaceId });
   const rawEdit = useAppStore((s) => s.settings[editKey]);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
-  const [isBusy, setIsBusy] = useState(false);
   const settings = replySettingsOf({ layers: [overrides] });
 
   useEffect(() => {
     void loadSetting(editKey);
   }, [loadSetting, editKey]);
 
-  const saveEditPostedReply = ({ isOn }: { readonly isOn: boolean }) => {
-    saveSetting(editKey, isOn ? EDIT_POSTED_REPLY_ON : EDIT_POSTED_REPLY_OFF).catch(
-      (error: unknown) =>
-        void reportError({
-          recovery: NOTHING_CHANGED,
-          title: "Couldn't save the review reply settings",
-          error,
-          workspaceId,
-        }),
-    );
-  };
-
-  const persist = async ({ patch }: { readonly patch: WorkspaceOverridesPatch }) => {
-    setIsBusy(true);
-    try {
-      await patchWorkspaceOverrides({ workspaceId, patch });
-    } catch (error) {
-      void reportError({
-        recovery: NOTHING_CHANGED,
-        title: "Couldn't save the review reply settings",
-        error,
-        workspaceId,
-      });
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const saveTemplate = ({
-    key,
-    value,
-    fallback,
-  }: {
-    readonly key: 'replyTemplateFixed' | 'replyTemplateNoChange';
-    readonly value: string;
-    readonly fallback: string;
-  }) => void persist({ patch: { [key]: value.trim() === fallback ? null : value } });
+  const voiceSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'replyVoice',
+    saved: settings.voice,
+    patchOf: ({ value }) => ({ replyVoice: value }),
+  });
+  const noteSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'replyStyleNote',
+    saved: settings.styleNote ?? '',
+    patchOf: ({ value }) => ({ replyStyleNote: value.trim() === '' ? null : value }),
+  });
+  const fixedSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'replyTemplateFixed',
+    saved: settings.templateFixed,
+    patchOf: ({ value }) => ({
+      replyTemplateFixed: value.trim() === REPLY_TEMPLATE_FIXED_DEFAULT ? null : value,
+    }),
+  });
+  const noChangeSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'replyTemplateNoChange',
+    saved: settings.templateNoChange,
+    patchOf: ({ value }) => ({
+      replyTemplateNoChange: value.trim() === REPLY_TEMPLATE_NO_CHANGE_DEFAULT ? null : value,
+    }),
+  });
+  const resolveSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'resolveOnGithub',
+    saved: settings.resolveOnGithub,
+    patchOf: ({ value }) => ({ resolveOnGithub: value }),
+  });
+  const commitSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'resolveCommitStyle',
+    saved: settings.commitStyle,
+    patchOf: ({ value }) => ({ resolveCommitStyle: value }),
+  });
+  const writeEdit = useCallback(
+    ({ value }: ValueParams<boolean>) =>
+      saveSetting(editKey, value ? EDIT_POSTED_REPLY_ON : EDIT_POSTED_REPLY_OFF),
+    [editKey, saveSetting],
+  );
+  const editSave = useSettingSave({
+    rowKey: settingRowKey({ workspaceId, row: 'editPostedReply' }),
+    saved: isEditPostedReplyOn({ raw: rawEdit }),
+    write: writeEdit,
+    display: SWITCH_SETTING.display,
+    failureTitle: "Couldn't save the review reply settings",
+    workspaceId,
+  });
 
   const preview = buildResolutionReplyBody({
     closure: { commitSha: PREVIEW_SHA, reply: VOICE_SAMPLE[settings.voice] },
@@ -117,21 +136,21 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             <SegmentedTabs
               ariaLabel="Reply voice"
               size="sm"
-              value={settings.voice}
+              value={voiceSave.value}
               options={REPLY_VOICES.map((voice) => ({
                 value: voice,
                 label: VOICE_LABEL[voice],
-                disabled: isBusy,
               }))}
-              onChange={(voice) => void persist({ patch: { replyVoice: voice } })}
+              onChange={(voice) => void voiceSave.save({ value: voice })}
             />
           </WorkspaceFieldRow>
-          {settings.voice === 'mine' && (
+          {voiceSave.value === 'mine' && (
             <ReplyStyleNoteField
               workspaceId={workspaceId}
-              value={settings.styleNote}
-              isDisabled={isBusy}
-              onSave={(note) => void persist({ patch: { replyStyleNote: note } })}
+              value={noteSave.value === '' ? null : noteSave.value}
+              isDisabled={noteSave.isSaving}
+              save={noteSave}
+              onSave={(note) => void noteSave.save({ value: note ?? '' })}
             />
           )}
         </Band>
@@ -144,27 +163,17 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
         >
           <ReplyTemplateField
             label="When fixed"
-            value={settings.templateFixed}
-            isDisabled={isBusy}
-            onSave={(value) =>
-              saveTemplate({
-                key: 'replyTemplateFixed',
-                value,
-                fallback: REPLY_TEMPLATE_FIXED_DEFAULT,
-              })
-            }
+            value={fixedSave.value}
+            isDisabled={fixedSave.isSaving}
+            save={fixedSave}
+            onSave={(value) => void fixedSave.save({ value })}
           />
           <ReplyTemplateField
             label="When not changing"
-            value={settings.templateNoChange}
-            isDisabled={isBusy}
-            onSave={(value) =>
-              saveTemplate({
-                key: 'replyTemplateNoChange',
-                value,
-                fallback: REPLY_TEMPLATE_NO_CHANGE_DEFAULT,
-              })
-            }
+            value={noChangeSave.value}
+            isDisabled={noChangeSave.isSaving}
+            save={noChangeSave}
+            onSave={(value) => void noChangeSave.save({ value })}
           />
         </Band>
         <Band
@@ -181,9 +190,8 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           >
             <Switch
               ariaLabel={NAMES.markThreadResolved}
-              checked={settings.resolveOnGithub}
-              disabled={isBusy}
-              onChange={(next) => void persist({ patch: { resolveOnGithub: next } })}
+              checked={resolveSave.value}
+              onChange={(next) => void resolveSave.save({ value: next })}
             />
           </WorkspaceFieldRow>
           <WorkspaceFieldRow
@@ -193,8 +201,8 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           >
             <Switch
               ariaLabel="Edit the posted reply"
-              checked={isEditPostedReplyOn({ raw: rawEdit })}
-              onChange={(next) => saveEditPostedReply({ isOn: next })}
+              checked={editSave.value}
+              onChange={(next) => void editSave.save({ value: next })}
             />
           </WorkspaceFieldRow>
         </Band>
@@ -209,13 +217,12 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             <SegmentedTabs
               ariaLabel="Commit style"
               size="sm"
-              value={settings.commitStyle}
+              value={commitSave.value}
               options={RESOLVE_COMMIT_STYLES.map((style) => ({
                 value: style,
                 label: COMMIT_STYLE_LABEL[style],
-                disabled: isBusy,
               }))}
-              onChange={(style) => void persist({ patch: { resolveCommitStyle: style } })}
+              onChange={(style) => void commitSave.save({ value: style })}
             />
           </WorkspaceFieldRow>
         </Band>

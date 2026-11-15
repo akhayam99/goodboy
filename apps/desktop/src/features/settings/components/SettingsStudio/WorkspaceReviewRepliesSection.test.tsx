@@ -50,6 +50,7 @@ const renderWith = (patch: Partial<OverrideSettings> = {}) => {
 beforeEach(() => {
   state.patchWorkspaceOverrides.mockClear();
   state.saveSetting.mockClear();
+  state.reportError.mockClear();
   state.settings = {};
   learn.mockReset();
 });
@@ -74,16 +75,18 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(preview.textContent).toContain('Leaving this as is.');
   });
 
-  it('saves the voice and shows the style note only for like my replies', () => {
+  it('saves the voice and shows the style note only for like my replies', async () => {
     renderWith({ replyVoice: 'mine', replyStyleNote: 'Short. Starts lowercase.' });
 
     expect(screen.getByLabelText('Style note')).toHaveProperty('value', 'Short. Starts lowercase.');
     fireEvent.click(screen.getByRole('tab', { name: 'Formal' }));
 
-    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE,
-      patch: { replyVoice: 'formal' },
-    });
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { replyVoice: 'formal' },
+      }),
+    );
   });
 
   it('learns a style note from my replies in this workspace and saves it', async () => {
@@ -133,20 +136,45 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(state.patchWorkspaceOverrides).not.toHaveBeenCalled();
   });
 
-  it('saves a valid template and stores the default as empty', () => {
+  it('saves a valid template and stores the default as empty', async () => {
     renderWith({ replyTemplateFixed: '{reason}\n\nDone in {commit}.' });
     const field = screen.getByLabelText('When fixed');
 
     fireEvent.change(field, { target: { value: '{reason}\n\nFixed in {commit_story}.' } });
     fireEvent.blur(field);
 
-    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE,
-      patch: { replyTemplateFixed: null },
-    });
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { replyTemplateFixed: null },
+      }),
+    );
   });
 
-  it('turns off resolving on GitHub and picks the fixup commit style', () => {
+  it('keeps the old template and says so under it when the save fails', async () => {
+    state.patchWorkspaceOverrides.mockRejectedValueOnce(new Error('disk is offline'));
+    renderWith();
+    const field = screen.getByLabelText('When fixed');
+
+    fireEvent.change(field, { target: { value: '{reason}\n\nDone in {commit}.' } });
+    fireEvent.blur(field);
+
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      "Couldn't save. Still {reason} Fixed in {commit_story}.",
+    );
+    expect(field).toHaveProperty('value', '{reason}\n\nFixed in {commit_story}.');
+    expect(state.reportError).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenLastCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { replyTemplateFixed: '{reason}\n\nDone in {commit}.' },
+      }),
+    );
+  });
+
+  it('turns off resolving on GitHub and picks the fixup commit style', async () => {
     renderWith();
 
     const [resolveSwitch] = screen.getAllByRole('switch');
@@ -155,20 +183,24 @@ describe('WorkspaceReviewRepliesSection', () => {
     }
     fireEvent.click(resolveSwitch);
 
-    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE,
-      patch: { resolveOnGithub: false },
-    });
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { resolveOnGithub: false },
+      }),
+    );
     cleanup();
     renderWith();
     fireEvent.click(screen.getByRole('tab', { name: 'Fixup of the commit that added the line' }));
-    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE,
-      patch: { resolveCommitStyle: 'fixup' },
-    });
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { resolveCommitStyle: 'fixup' },
+      }),
+    );
   });
 
-  it('edits the posted reply by default and saves the switch per workspace', () => {
+  it('edits the posted reply by default and saves the switch per workspace', async () => {
     renderWith();
 
     const [, editSwitch] = screen.getAllByRole('switch');
@@ -179,7 +211,9 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(editSwitch.getAttribute('aria-checked')).toBe('true');
     fireEvent.click(editSwitch);
 
-    expect(state.saveSetting).toHaveBeenCalledWith(`review.edit_posted_reply.${WORKSPACE}`, '0');
+    await waitFor(() =>
+      expect(state.saveSetting).toHaveBeenCalledWith(`review.edit_posted_reply.${WORKSPACE}`, '0'),
+    );
   });
 
   it('leaves the attribution line to New sessions', () => {
