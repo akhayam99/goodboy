@@ -1,3 +1,5 @@
+import { NAMES } from '../../shared/utils/names';
+
 export const ROW_ACTION_LABEL = {
   answer: 'Answer',
   skip: 'Skip',
@@ -8,7 +10,7 @@ export const ROW_ACTION_LABEL = {
   push: 'Push',
   continue: 'Continue',
   retry: 'Retry',
-  viewDiff: 'View diff',
+  viewDiff: NAMES.changes,
   copyPath: 'Copy path',
   copied: 'Copied',
   copyFailed: 'Failed',

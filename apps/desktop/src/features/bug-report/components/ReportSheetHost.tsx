@@ -159,7 +159,7 @@ export const ReportSheetHost = () => {
           url == null
             ? undefined
             : {
-                label: filed.kind === 'comment' ? 'View comment' : 'View issue',
+                label: filed.kind === 'comment' ? 'Open comment' : 'Open issue',
                 onClick: () => openLink({ url, sessionId: null, place: 'outside' }),
               },
       });

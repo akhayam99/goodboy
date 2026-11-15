@@ -1401,7 +1401,7 @@ was. ⌘↵ with the list focused pushes too. Behind it runs a
 How a reply reads is set in Settings, Workspace, **Replies and commits**:
 
 - **Voice**: Terse (the default), Friendly, Formal, or Your replies, which
-  follows a style note you can edit. **Learn from my replies** reads your last
+  follows a style note you can edit. **Learn from your replies** reads your last
   20 review replies in the workspace's repositories and writes that note. The
   voice goes into the agent's prompt
 - **Templates**: When fixed and When not changing. Goodboy fills them in code,
@@ -1722,7 +1722,7 @@ token on Sentry. A key saved for another workspace can be picked instead.
 Tasks is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
 record each, one line per record on the shared task grid (`taskColumns`:
-source, key, title, status glyph, priority, age). It opens on For me
+source, key, title, status glyph, priority, age). It opens on For you
 (`isForMeRecord`: tracker issues with an assignee, pull requests, starred
 records, records linked to a session) and switches to All in the header. The
 page title is the open count, since the studio bar already names Tasks. The

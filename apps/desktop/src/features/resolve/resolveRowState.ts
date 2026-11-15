@@ -88,7 +88,7 @@ const failedSentence = ({
     case 'resolve':
       return `Reply posted. ${provider} did not resolve the thread`;
     case 'uncertain':
-      return "We couldn't confirm the reply landed";
+      return "Couldn't confirm the reply was posted";
     default: {
       const exhaustive: never = step;
       return exhaustive;

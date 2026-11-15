@@ -42,7 +42,7 @@ export const strongTitle = ({ advice, nowMs }: AdviceParams): string => {
   if (advice.weekLeftPercent >= 50 || advice.weeklyRefillAt === null) {
     return `You still have ${advice.weekLeftPercent}% of this week left`;
   }
-  return `Your week refills by itself ${formatLimitReset({ iso: advice.weeklyRefillAt, nowMs })}`;
+  return `Your weekly limit resets ${formatLimitReset({ iso: advice.weeklyRefillAt, nowMs })}`;
 };
 
 export const strongBody = ({ advice, nowMs }: AdviceParams): string => {

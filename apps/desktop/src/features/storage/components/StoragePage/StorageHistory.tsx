@@ -12,7 +12,7 @@ import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { appDataBytesOf } from '../../appDataBytesOf';
 
 const PRUNE_CONFIRM =
-  'Deletes the streamed transcript of every archived session: tool calls, streaming output, subagent activity. Final messages stay. This cannot be undone.';
+  "Deletes the streamed transcript of every archived session: tool calls, streaming output, subagent activity. Final messages stay. This can't be undone.";
 
 const HistoryIcon = CONCEPT_ICONS.storage;
 

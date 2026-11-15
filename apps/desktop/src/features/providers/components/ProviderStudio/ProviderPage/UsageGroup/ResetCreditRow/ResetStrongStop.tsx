@@ -51,7 +51,7 @@ export const ResetStrongStop = ({ advice, count, nowMs, isBusy, onKeep, onConfir
               Use reset anyway
             </Button>
             <Button size="sm" autoFocus disabled={isBusy} onClick={onKeep}>
-              Keep my reset
+              Save reset for later
             </Button>
           </div>
         </div>

@@ -348,7 +348,7 @@ repeats a verb. A provider that is not connected shows only its connect card.
 - **Free resets**: when Codex holds a free reset, Usage shows it with its expiry
   and **Use reset**. The confirm opens in place of the row. When half the week or
   more is still left, or the week refills by itself within a day, it becomes a
-  strong stop: **Keep my reset** is the default, and **Use reset anyway** stays
+  strong stop: **Save reset for later** is the default, and **Use reset anyway** stays
   off until you tick that you understand. Goodboy sends
   `account/rateLimitResetCredit/consume` to `codex app-server`
   (`codex_consume_reset_credit`) with one attempt key, kept in

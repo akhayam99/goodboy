@@ -109,7 +109,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   already spent. A limit exists only when a person sets one. The workspace default is the Limit
   of the Run defaults page (see [Workflows](workflows.md)), and a start never
   stores a limit: an amount typed on the form is for that run only.
-- A Next card that starts a role gets **Talk it through with Auto** as the last
+- A Next card that starts a role gets **Discuss with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
   (`features/actions/kinds/suggestion.ts`), shown whenever the card starts a
   role. It opens **Start a run** on Runs with the card as its text
@@ -412,7 +412,7 @@ writing to it reopens it to **Deciding**.
   row, a next step that revises the plan hides **Approve**, and a project ask
   waits behind a plan. **Comments not sent** reads "2 comments on plan v1 not
   sent to the Planner" with a filled **Send to planner**; **Approve anyway** and
-  **Discard my comments** sit in its menu (`AutoDockPlanComments`, the rule comes
+  **Discard your comments** sit in its menu (`AutoDockPlanComments`, the rule comes
   from `planPrimaryOf`); Discard asks first inside the menu and names a failure.
   Review changes stays out while a project ask, a next step or a plan waits
   (`isAutoTreeAtRestOf`). Once the tree rests, "Plan v1 approved" leaves the dock.

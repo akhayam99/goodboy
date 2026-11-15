@@ -28,7 +28,7 @@ type Props = {
 };
 
 const SCOPE_OPTIONS = [
-  { value: 'for-me', label: 'For me' },
+  { value: 'for-me', label: 'For you' },
   { value: 'all', label: 'All' },
 ] as const satisfies ReadonlyArray<{ readonly value: TaskScope; readonly label: string }>;
 

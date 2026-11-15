@@ -157,7 +157,7 @@ export const SlackSettings = ({ workspaceId, slack, hasHeaderDisconnect = false 
           }
         />
         <Switch
-          label="Also under messages I send from Goodboy"
+          label="Also under your messages sent from Goodboy"
           checked={config.signature.own}
           onChange={(own) => persist({ ...config, signature: { ...config.signature, own } })}
         />

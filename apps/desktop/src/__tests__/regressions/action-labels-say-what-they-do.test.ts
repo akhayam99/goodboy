@@ -36,6 +36,15 @@ const BANNED_PHRASES: ReadonlyArray<string> = [
   'Gone, skipped',
   'Pick up an issue',
   'Got it',
+  'Talk it through',
+  'Keep my reset',
+  'Move my work',
+  'Discard my comments',
+  'Learn from my replies',
+  'give it a moment',
+  'View as sent to',
+  'Go to the board',
+  'See all shortcuts',
 ];
 
 const BANNED_LABELS: ReadonlyArray<string> = ['Keep', 'Separate', 'Stop keeping', 'Remove'];

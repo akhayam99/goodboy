@@ -647,7 +647,7 @@ describe('pull request writes on a host without a port', () => {
       run: mergePr(vi.fn(), asGet(state))(SESSION_ID, 12),
       state,
       title: "Couldn't merge !12",
-      message: 'Goodboy cannot change this pull request on its host yet',
+      message: "Goodboy can't change this pull request on its host yet",
     });
   });
 });

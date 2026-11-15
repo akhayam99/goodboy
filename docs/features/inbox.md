@@ -12,7 +12,7 @@ Agents on any provider can read and act on the tools you connected, without hold
 
 ### Tasks
 
-Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open in a chip beside it. The scope switch, search, filters, grouping and menu sit in one row under it. Tasks opens on **For me**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
+Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open in a chip beside it. The scope switch, search, filters, grouping and menu sit in one row under it. Tasks opens on **For you**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
 
 Items come in groups, by source unless you pick **Status**, **Project** or **None** from the grouping button, which names the current one (**Group: Source**). Each group names its total once, beside its label, shows its first five rows and **Show all**, and a starred item still counts in its source group; an expanded group draws only the rows on screen and names where you are ("41 of 312"), so a thousand open items never scroll forever. Every row has the same columns: source, key, title, status, priority and age. The key shows what tells rows apart (a Sentry error shows its number, a Slack thread has none), and a thread has no status. Rows carry no buttons: the row is the button.
 

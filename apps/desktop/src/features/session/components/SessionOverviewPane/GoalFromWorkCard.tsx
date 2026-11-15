@@ -137,9 +137,7 @@ export const GoalFromWorkCard = ({
           {unread.length > 0 ? (
             <p className="text-meta text-muted-foreground">
               Based on the titles of {unread.join(' and ')}.{' '}
-              {unread.length === 1
-                ? 'Its text could not be read.'
-                : 'Their text could not be read.'}
+              {unread.length === 1 ? "Couldn't read its text." : "Couldn't read their text."}
             </p>
           ) : null}
         </>

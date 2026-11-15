@@ -22,7 +22,7 @@ import { foldedVerbActions } from './actionCard';
 
 export const TALK_ACTION_ID = 'suggestion.talkWithAuto';
 
-const TALK_IT_THROUGH_LABEL = 'Talk it through with Auto';
+const TALK_IT_THROUGH_LABEL = 'Discuss with Auto';
 
 const MIN_REBASE_CHOICES = 2;
 

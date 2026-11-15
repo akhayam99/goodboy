@@ -241,7 +241,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: "The Now chip, providers, today's spend, theme button and bell sit on the right; spend opens Impact on Spend.",
       },
     ],
-    links: [{ label: 'Go to the board', target: { kind: 'board' } }],
+    links: [{ label: 'Open board', target: { kind: 'board' } }],
     extra: 'stages',
   },
   {
@@ -783,7 +783,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     links: [
       { label: 'Open Search or run', target: { kind: 'palette' } },
       {
-        label: 'See all shortcuts',
+        label: 'Show all shortcuts',
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } },

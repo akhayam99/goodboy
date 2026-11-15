@@ -276,7 +276,7 @@ describe('session menu in every state', () => {
       ?.resolve()
       .find((candidate) => candidate.id === 'session.delete');
     expect(action?.confirm?.description).toBe(
-      'Removed: transcript, file versions, images. Kept: cost. This cannot be undone.',
+      "Removed: transcript, file versions, images. Kept: cost. This can't be undone.",
     );
   });
 });

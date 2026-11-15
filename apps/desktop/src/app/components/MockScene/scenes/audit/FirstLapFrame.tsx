@@ -99,7 +99,7 @@ export const FirstLapFrame = ({ state, isOverview = false }: SceneProps) => {
           <div className="mx-auto flex h-full w-full max-w-xl flex-col justify-center px-6">
             <PublishPanel
               project={project}
-              primaryLabel="Publish and move my work"
+              primaryLabel="Publish and move work"
               onPublished={() => undefined}
               onCancel={() => undefined}
             />

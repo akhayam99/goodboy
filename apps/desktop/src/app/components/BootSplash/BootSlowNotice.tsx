@@ -23,7 +23,7 @@ export const BootSlowNotice = ({ elapsedMs, onRetry }: Props) => {
           Restart
         </Button>
       ) : null}
-      {hasRequestedRestart ? <span>Still working, give it a moment</span> : null}
+      {hasRequestedRestart ? <span>Still working</span> : null}
     </div>
   );
 };

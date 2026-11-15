@@ -22,10 +22,10 @@ describe('capabilityReasonOf', () => {
 
   it('names the noun and the host for a write that is not built', () => {
     expect(capabilityReasonOf({ kind: 'local', capability: 'canEditTitle' })).toMatch(
-      /^Goodboy cannot edit the title of a .+ yet$/,
+      /^Goodboy can't edit the title of a .+ yet$/,
     );
     expect(capabilityReasonOf({ kind: 'local', capability: 'canRequestReviewers' })).toMatch(
-      /^Goodboy cannot request reviewers for a .+ yet$/,
+      /^Goodboy can't request reviewers for a .+ yet$/,
     );
   });
 

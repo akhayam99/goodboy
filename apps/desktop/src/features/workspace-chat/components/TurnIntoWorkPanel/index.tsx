@@ -336,7 +336,7 @@ export const TurnIntoWorkPanel = ({
                 />
               </div>
               <BriefItems
-                label="What we know"
+                label="Known so far"
                 items={brief.know}
                 emptyLabel="Nothing noted yet"
                 removeLabel={(item) => `Remove ${item}`}
