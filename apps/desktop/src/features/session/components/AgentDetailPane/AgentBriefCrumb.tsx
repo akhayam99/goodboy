@@ -6,12 +6,13 @@ import { firstLineOf } from './firstLineOf';
 type Props = {
   readonly brief: string;
   readonly task: AgentTaskLabel | null;
+  readonly label: string | null;
   readonly onRename: () => void;
 };
 
 const LAST_WORD = /\s[^\s…]+$/;
 
-export const AgentBriefCrumb = ({ brief, task, onRename }: Props) => {
+export const AgentBriefCrumb = ({ brief, task, label, onRename }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
     expectedHeight: 240,
@@ -36,7 +37,9 @@ export const AgentBriefCrumb = ({ brief, task, onRename }: Props) => {
           className="min-w-0 max-w-full px-1"
         >
           {task === null ? (
-            <span className="min-w-0 truncate">{firstLineOf({ text: brief }) ?? brief}</span>
+            <span className="min-w-0 truncate">
+              {label ?? firstLineOf({ text: brief }) ?? brief}
+            </span>
           ) : (
             <span data-agent-task-crumb="" className="flex min-w-0 items-center gap-1">
               <span className="shrink-0">{task.role}</span>
