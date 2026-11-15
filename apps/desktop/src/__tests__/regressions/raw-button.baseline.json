@@ -72,7 +72,7 @@
   "apps/desktop/src/features/integrations/components/IntegrationCredentialPicker/CredentialRow.tsx": 1,
   "apps/desktop/src/features/integrations/components/IntegrationCredentialPicker/index.tsx": 1,
   "apps/desktop/src/features/integrations/components/LinkedWorkRow/index.tsx": 1,
-  "apps/desktop/src/features/integrations/components/ToolSettingsScope/GithubAccountRows/WorkspaceRow.tsx": 1,
+  "apps/desktop/src/features/integrations/github/GithubAccountRows/WorkspaceRow.tsx": 1,
   "apps/desktop/src/features/integrations/github/components/PullRequest/CheckRunRow.tsx": 1,
   "apps/desktop/src/features/integrations/github/components/PullRequest/ThreadPathChip.tsx": 1,
   "apps/desktop/src/features/integrations/jira/AssigneePicker.tsx": 1,

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -6,8 +6,9 @@ type Params = {
   readonly workspaceId: WorkspaceId | null;
 };
 
-export const useToolChecks = ({ workspaceId }: Params): void => {
+export const useToolChecks = ({ workspaceId }: Params): string | null => {
   const checkTools = useAppStore((state) => state.checkTools);
+  const [error, setError] = useState<string | null>(null);
   const bindingsKey = useAppStore((state) =>
     workspaceId === null
       ? ''
@@ -20,6 +21,11 @@ export const useToolChecks = ({ workspaceId }: Params): void => {
     if (workspaceId === null) {
       return;
     }
-    void checkTools({ workspaceId });
+    checkTools({ workspaceId }).then(
+      () => setError(null),
+      (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)),
+    );
   }, [workspaceId, bindingsKey, checkTools]);
+
+  return error;
 };

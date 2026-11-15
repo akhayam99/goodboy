@@ -12,7 +12,7 @@ import {
   SkeletonRow,
 } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
-import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
 
 import { useNow } from '../../../../shared/hooks/useNow';

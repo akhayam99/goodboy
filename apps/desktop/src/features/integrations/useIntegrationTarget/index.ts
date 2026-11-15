@@ -2,12 +2,10 @@ import { useMemo } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { IntegrationActionTarget } from '../../actions/types';
-import type { IntegrationGlyphProvider } from '../components/IntegrationGlyph';
-import { integrationLabel } from '../../../shared/utils/integrationLabel';
+import type { IntegrationGlyphProvider } from '../../../shared/components/IntegrationGlyph';
 import { requestCredentialRecheck } from '../credentials';
-import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import type { GithubConnection } from '../github/useGithubConnection';
-import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
+import { integrationTargetOf } from '../integrationTargetOf';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -26,54 +24,27 @@ export const useIntegrationTarget = ({
   const refreshGithubStatus = useAppStore((state) => state.refreshGithubStatus);
   const refreshGithub = github.refresh;
 
-  return useMemo((): IntegrationActionTarget => {
-    if (!isConnected) {
-      return {
-        kind: 'integration',
-        facts: {
-          label: integrationLabel({ provider }),
-          disconnectDescription: '',
-          onOpenTasks: null,
-          onCheck: null,
-          onDisconnect: null,
-        },
-      };
-    }
-    const onOpenTasks = () =>
-      dispatchWindowEvent({ name: 'goodboy:open-inbox', detail: { provider } });
-    if (provider === 'github') {
-      return {
-        kind: 'integration',
-        facts: {
-          label: integrationLabel({ provider }),
-          disconnectDescription: '',
-          onOpenTasks,
-          onCheck: async () => {
-            await refreshGithubStatus();
-            refreshGithub();
-          },
-          onDisconnect: null,
-        },
-      };
-    }
-    return {
-      kind: 'integration',
-      facts: {
-        label: integrationLabel({ provider }),
-        disconnectDescription: disconnectDescriptionOf({ provider }),
-        onOpenTasks,
+  return useMemo(
+    () =>
+      integrationTargetOf({
+        workspaceId,
+        provider,
+        isConnected,
         onCheck: async () => {
-          requestCredentialRecheck();
+          if (provider !== 'github') {
+            requestCredentialRecheck();
+            return;
+          }
+          await refreshGithubStatus();
+          refreshGithub();
         },
-        onDisconnect: () => disconnectIntegration({ workspaceId, provider }),
-      },
-    };
-  }, [
-    workspaceId,
-    provider,
-    isConnected,
-    disconnectIntegration,
-    refreshGithubStatus,
-    refreshGithub,
-  ]);
+        onDisconnect: async () => {
+          if (provider === 'github') {
+            return;
+          }
+          await disconnectIntegration({ workspaceId, provider });
+        },
+      }),
+    [workspaceId, provider, isConnected, disconnectIntegration, refreshGithubStatus, refreshGithub],
+  );
 };

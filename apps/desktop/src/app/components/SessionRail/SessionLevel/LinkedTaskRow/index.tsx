@@ -1,7 +1,7 @@
 import { SelectableRow, cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { IntegrationGlyph } from '../../../../../features/integrations/components/IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../../shared/components/IntegrationGlyph';
 import { ObjectMenuArea } from '../../../../../features/actions/components/ObjectMenuArea';
 import { taskKeyOf } from '../../../../../features/actions/kinds/task';
 import type { ObjectTarget } from '../../../../../features/actions/types';

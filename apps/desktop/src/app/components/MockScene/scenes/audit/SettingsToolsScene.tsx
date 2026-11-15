@@ -3,7 +3,7 @@ import type {
   IntegrationBindingId,
   IntegrationCredentialId,
 } from '@goodboy/types';
-import type { IntegrationGlyphProvider } from '../../../../../features/integrations/components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../../../../shared/components/IntegrationGlyph';
 import { useAppStore } from '../../../../../store';
 import { SettingsFrame } from './SettingsFrame';
 import { SETTINGS_WORKSPACE_ID } from './settingsSeed';

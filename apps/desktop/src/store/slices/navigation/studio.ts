@@ -76,7 +76,11 @@ export const studioKey = ({ studio }: KeyParams): string => {
         studio.target?.branch,
       ]);
     case 'connections':
-      return joined(['connections', studio.focus?.provider]);
+      return joined([
+        'connections',
+        studio.focus?.kind,
+        studio.focus?.kind === 'tool' ? studio.focus.tool : studio.focus?.provider,
+      ]);
     case 'guide':
     case 'changelog':
     case 'notifications':

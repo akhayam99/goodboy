@@ -3,8 +3,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { NAMES } from '../../../../shared/utils/names';
 import type { ConnectionsFocus } from '../../connectionsFocus';
-import { ConnectionsIndex } from '../ConnectionsIndex';
-import { ProviderDetail } from '../ProviderDetail';
+import { ConnectionsFocusView } from './ConnectionsFocusView';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
@@ -19,16 +18,6 @@ export const ConnectionsStudio = ({ currentWorkspace, focus = null, onClose }: P
     title={NAMES.connections}
     onClose={onClose}
   >
-    {() =>
-      focus === null ? (
-        <ConnectionsIndex workspace={currentWorkspace} />
-      ) : (
-        <ProviderDetail
-          key={focus.provider}
-          focus={focus}
-          workspaceId={currentWorkspace?.id ?? null}
-        />
-      )
-    }
+    {() => <ConnectionsFocusView currentWorkspace={currentWorkspace} focus={focus} />}
   </StudioShell>
 );

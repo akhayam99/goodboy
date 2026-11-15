@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { BrandGlyph } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { integrationLabel } from '../../../../shared/utils/integrationLabel';
+import { CONCEPT_ICONS } from '../conceptIcons';
+import { integrationLabel } from '../../utils/integrationLabel';
 
 export type IntegrationGlyphProvider =
   'bitbucket' | 'github' | 'gitlab' | 'jira' | 'linear' | 'sentry' | 'slack';

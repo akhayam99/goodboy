@@ -10,7 +10,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ToolSettingsScope } from '.';
-import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../../../shared/components/IntegrationGlyph';
 import type { ScopeFrameParts } from '../../../settings/components/SettingsStudio/types';
 
 const plainFrame = ({ detail }: ScopeFrameParts) => <>{detail}</>;
@@ -269,7 +269,10 @@ describe('ToolSettingsScope', () => {
     openHeaderMenu({ title: 'Linear' });
     fireEvent.click(screen.getByRole('menuitem', { name: 'Open in Tasks' }));
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'goodboy:open-inbox', detail: { provider: 'linear' } }),
+      expect.objectContaining({
+        type: 'goodboy:open-inbox',
+        detail: { provider: 'linear', workspaceId: WORKSPACE_ID },
+      }),
     );
   });
 

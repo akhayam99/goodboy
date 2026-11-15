@@ -12,7 +12,7 @@ import type { ConnectionsFocus } from '../connectionsFocus';
 import { openConnection } from '../openConnection';
 
 type Props = {
-  readonly focus: ConnectionsFocus;
+  readonly focus: Extract<ConnectionsFocus, { readonly kind: 'provider' }>;
   readonly workspaceId: WorkspaceId | null;
 };
 

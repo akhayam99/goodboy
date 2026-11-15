@@ -229,6 +229,7 @@
     "history_restore",
     "history_rewriter_collect",
     "history_rewriter_prepare",
+    "integration_binding_replace_secret",
     "integration_credential_forget",
     "integration_credential_has_secret",
     "integration_credentials_adopt",

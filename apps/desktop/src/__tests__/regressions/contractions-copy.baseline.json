@@ -31,7 +31,7 @@
   "features/history/rebaseJob.ts": 4,
   "features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/index.tsx": 1,
   "features/integrations/bitbucket/BitbucketStudio/usePrVerbs/prActionBlockReason.ts": 2,
-  "features/integrations/components/ToolSettingsScope/GithubAccountRows/GhMissingNotice.tsx": 1,
+  "features/integrations/github/GithubAccountRows/GhMissingNotice.tsx": 1,
   "features/integrations/github/github.ts": 4,
   "features/integrations/gitlab/MergeRequest/MrDetailPanel/useMrVerbs/index.ts": 5,
   "features/integrations/gitlab/useGitlabIssue.ts": 1,

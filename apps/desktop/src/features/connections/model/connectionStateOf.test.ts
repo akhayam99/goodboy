@@ -7,7 +7,7 @@ import type {
   ProviderId,
   ProviderLimits,
 } from '@goodboy/types';
-import type { ToolCheck } from '../../../store/slices/integrations/state';
+import type { IntegrationKeyCheck } from '../../../store/slices/integrations/state';
 import { INITIAL_EVIDENCE, INITIAL_HEALTH } from '../../../store/slices/providers/providerHealth';
 import type { ProviderDisplayInfo } from '../../providers/providers';
 import { connectionStateOf } from './connectionStateOf';
@@ -62,7 +62,8 @@ const limitsAt = ({ usedFraction }: LimitsParams): ProviderLimits => ({
 
 type ToolParams = {
   readonly isConnected: boolean;
-  readonly check: ToolCheck | undefined;
+  readonly hasKey?: boolean;
+  readonly keyCheck: IntegrationKeyCheck | null;
 };
 
 type StateParams = ProviderParams & {
@@ -196,53 +197,36 @@ describe('connectionStateOf, a provider', () => {
 });
 
 describe('connectionStateOf, a tool', () => {
-  const toolState = ({ isConnected, check }: ToolParams) =>
-    connectionStateOf({ subject: { kind: 'tool', isConnected, check } });
+  const toolState = ({ isConnected, hasKey = true, keyCheck }: ToolParams) =>
+    connectionStateOf({ subject: { kind: 'tool', isConnected, hasKey, keyCheck } });
 
   it('asks to connect a tool that is not connected', () => {
-    expect(toolState({ isConnected: false, check: undefined })).toMatchObject({
+    expect(toolState({ isConnected: false, keyCheck: null })).toMatchObject({
       word: 'Not set up',
       setupVerb: 'Connect',
     });
   });
 
-  it('says Connected, quiet, before and after a good check', () => {
-    expect(toolState({ isConnected: true, check: undefined })).toMatchObject({
+  it('says Checking until the first read of the key', () => {
+    expect(toolState({ isConnected: true, keyCheck: null })).toMatchObject({
+      word: 'Checking',
+      isChecking: true,
+    });
+  });
+
+  it('says Connected, quiet, after a good check and for a tool without a key', () => {
+    expect(
+      toolState({ isConnected: true, keyCheck: { isPresent: true, checkedAt: NOW } }),
+    ).toMatchObject({ word: 'Connected', tone: null });
+    expect(toolState({ isConnected: true, hasKey: false, keyCheck: null })).toMatchObject({
       word: 'Connected',
       tone: null,
     });
-    expect(
-      toolState({
-        isConnected: true,
-        check: { result: 'ok', checkedAtMs: NOW, isChecking: false },
-      }),
-    ).toMatchObject({ word: 'Connected', tone: null });
   });
 
   it('says Key missing in red when the keychain lost the key', () => {
     expect(
-      toolState({
-        isConnected: true,
-        check: { result: 'key-missing', checkedAtMs: NOW, isChecking: false },
-      }),
+      toolState({ isConnected: true, keyCheck: { isPresent: false, checkedAt: NOW } }),
     ).toMatchObject({ word: 'Key missing', tone: 'danger', reason: 'Key missing on this Mac' });
-  });
-
-  it("says Can't check after a failed check", () => {
-    expect(
-      toolState({
-        isConnected: true,
-        check: { result: 'failed', checkedAtMs: NOW, isChecking: false },
-      }),
-    ).toMatchObject({ word: "Can't check", tone: null });
-  });
-
-  it('says Checking while a check runs', () => {
-    expect(
-      toolState({
-        isConnected: true,
-        check: { result: 'key-missing', checkedAtMs: NOW, isChecking: true },
-      }),
-    ).toMatchObject({ word: 'Checking', isChecking: true });
   });
 });

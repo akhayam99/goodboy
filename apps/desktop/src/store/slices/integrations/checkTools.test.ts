@@ -23,7 +23,6 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
-import { toolCheckKey } from './toolCheckKey';
 
 const HARBORLINE = brandId<WorkspaceId>({ value: 'ws-harborline' });
 const NORTHWIND = brandId<WorkspaceId>({ value: 'ws-northwind' });
@@ -81,41 +80,38 @@ beforeEach(async () => {
 });
 
 describe('checkTools', () => {
-  it('writes each tool of the named workspace, with the key state and the time', async () => {
-    stubStoryInvoke({
-      integration_credential_has_secret: (payload: SecretPayload) =>
-        payload.credentialId === LINEAR_KEY,
-    });
+  it('writes the key state and the time of each key the named workspace uses', async () => {
+    const calls = vi.fn((payload: SecretPayload) => payload.credentialId === LINEAR_KEY);
+    stubStoryInvoke({ integration_credential_has_secret: calls });
 
     await useAppStore.getState().checkTools({ workspaceId: HARBORLINE });
 
-    const checks = useAppStore.getState().toolLastCheck;
-    expect(checks[toolCheckKey({ workspaceId: HARBORLINE, tool: 'linear' })]).toMatchObject({
-      result: 'ok',
-      isChecking: false,
-    });
-    expect(checks[toolCheckKey({ workspaceId: HARBORLINE, tool: 'sentry' })]).toMatchObject({
-      result: 'key-missing',
-    });
-    expect(checks[toolCheckKey({ workspaceId: HARBORLINE, tool: 'github' })]).toMatchObject({
-      result: 'ok',
-    });
-    expect(checks[toolCheckKey({ workspaceId: NORTHWIND, tool: 'linear' })]).toBeUndefined();
+    const checks = useAppStore.getState().integrationKeyChecks;
+    expect(checks[LINEAR_KEY]).toMatchObject({ isPresent: true });
+    expect(checks[SENTRY_KEY]).toMatchObject({ isPresent: false });
+    expect(checks[SENTRY_KEY]?.checkedAt).toBeGreaterThan(0);
+    expect(calls.mock.calls.map(([payload]) => payload.credentialId)).toEqual([
+      LINEAR_KEY,
+      SENTRY_KEY,
+    ]);
   });
 
-  it('records a failed check with its time and keeps nothing faked', async () => {
+  it('keeps the last key state and rejects when the keychain read fails', async () => {
+    useAppStore.setState({
+      integrationKeyChecks: { [LINEAR_KEY]: { isPresent: true, checkedAt: 1 } },
+    });
     stubStoryInvoke({
       integration_credential_has_secret: () => Promise.reject(new Error('keychain locked')),
     });
 
-    await useAppStore.getState().checkTools({ workspaceId: NORTHWIND });
+    await expect(
+      useAppStore.getState().checkTools({ workspaceId: NORTHWIND, isForced: true }),
+    ).rejects.toThrow('keychain locked');
 
-    const check =
-      useAppStore.getState().toolLastCheck[
-        toolCheckKey({ workspaceId: NORTHWIND, tool: 'linear' })
-      ];
-    expect(check?.result).toBe('failed');
-    expect(check?.checkedAtMs).not.toBeNull();
+    expect(useAppStore.getState().integrationKeyChecks[LINEAR_KEY]).toEqual({
+      isPresent: true,
+      checkedAt: 1,
+    });
   });
 
   it('skips a tool checked less than a minute ago, unless forced', async () => {
@@ -146,9 +142,6 @@ describe('checkTools', () => {
     answers[0]?.(false);
     await first;
 
-    expect(
-      useAppStore.getState().toolLastCheck[toolCheckKey({ workspaceId: NORTHWIND, tool: 'linear' })]
-        ?.result,
-    ).toBe('ok');
+    expect(useAppStore.getState().integrationKeyChecks[LINEAR_KEY]?.isPresent).toBe(true);
   });
 });

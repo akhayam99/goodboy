@@ -2,27 +2,28 @@ import type {
   WorkspaceId,
   IntegrationBinding,
   IntegrationCredential,
+  IntegrationCredentialId,
   IntegrationCredentialUsage,
 } from '@goodboy/types';
+import type { ToolUseCounts } from './toolUses';
 
-export type ToolCheckResult = 'ok' | 'key-missing' | 'failed';
-
-export type ToolCheck = {
-  readonly result: ToolCheckResult | null;
-  readonly checkedAtMs: number | null;
-  readonly isChecking: boolean;
+export type IntegrationKeyCheck = {
+  readonly isPresent: boolean;
+  readonly checkedAt: number;
 };
 
 export type IntegrationsState = {
   readonly workspaceIntegrations: Readonly<Record<WorkspaceId, ReadonlyArray<IntegrationBinding>>>;
   readonly integrationCredentials: ReadonlyArray<IntegrationCredential>;
   readonly integrationCredentialUsage: IntegrationCredentialUsage;
-  readonly toolLastCheck: Readonly<Record<string, ToolCheck>>;
+  readonly integrationKeyChecks: Readonly<Record<IntegrationCredentialId, IntegrationKeyCheck>>;
+  readonly toolUseCounts: Readonly<Record<WorkspaceId, ToolUseCounts>>;
 };
 
 export const integrationsInitialState: IntegrationsState = {
   workspaceIntegrations: {},
   integrationCredentials: [],
   integrationCredentialUsage: {},
-  toolLastCheck: {},
+  integrationKeyChecks: {},
+  toolUseCounts: {},
 };

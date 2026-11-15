@@ -2,7 +2,7 @@ import { Skeleton, PaneShell } from '@goodboy/ui';
 import { RecordHeader } from '../RecordHeader';
 import { RecordProperties } from '../RecordProperties';
 import type { ResolvedFact } from '../../../detail-fields/factTypes';
-import type { IntegrationGlyphProvider } from '../../../../features/integrations/components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../IntegrationGlyph';
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;

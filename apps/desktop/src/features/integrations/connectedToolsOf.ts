@@ -1,5 +1,5 @@
 import type { GhTokenStatus, IntegrationBinding } from '@goodboy/types';
-import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../shared/components/IntegrationGlyph';
 
 type Params = {
   readonly integrations: ReadonlyArray<IntegrationBinding>;

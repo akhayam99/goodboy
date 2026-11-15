@@ -1,11 +1,12 @@
 import { isApiProvider, limitsChipOf } from '@goodboy/core/providers';
 import { isProviderId } from '@goodboy/types/helpers';
-import type { ToolCheck } from '../../../store/slices/integrations/state';
+import type { IntegrationKeyCheck } from '../../../store/slices/integrations/state';
 import { formatLimitReset } from '../../providers/limits/formatLimitReset';
 import { providerRailStatus } from '../../providers/providerRailStatus';
 import type { ProviderDisplayInfo } from '../../providers/providers';
 import type { ConnectionState } from './connectionState';
 import { providerSetupVerb } from './providerSetupVerb';
+import { toolStateOf } from './toolStateOf';
 
 type ProviderSubject = {
   readonly kind: 'provider';
@@ -17,7 +18,8 @@ type ProviderSubject = {
 type ToolSubject = {
   readonly kind: 'tool';
   readonly isConnected: boolean;
-  readonly check: ToolCheck | undefined;
+  readonly hasKey: boolean;
+  readonly keyCheck: IntegrationKeyCheck | null;
 };
 
 type Params = {
@@ -103,22 +105,19 @@ const providerStateOf = ({ subject }: ProviderParams): ConnectionState => {
   return { ...BASE, word, tone: null };
 };
 
-const toolStateOf = ({ subject }: ToolParams): ConnectionState => {
-  const { isConnected, check } = subject;
-  if (!isConnected) {
+const toolConnectionOf = ({ subject }: ToolParams): ConnectionState => {
+  const tool = toolStateOf(subject);
+  if (tool.kind === 'notSetUp') {
     return notSetUp({ verb: 'Connect' });
   }
-  if (check?.isChecking === true) {
+  if (tool.kind === 'checking') {
     return CHECKING;
   }
-  if (check?.result === 'key-missing') {
-    return { ...BASE, word: 'Key missing', tone: 'danger', reason: 'Key missing on this Mac' };
+  if (tool.kind === 'keyMissing') {
+    return { ...BASE, word: tool.word, tone: 'danger', reason: 'Key missing on this Mac' };
   }
-  if (check?.result === 'failed') {
-    return { ...BASE, word: "Can't check", tone: null, reason: 'The last check failed' };
-  }
-  return { ...BASE, word: 'Connected', tone: null };
+  return { ...BASE, word: tool.word, tone: null };
 };
 
 export const connectionStateOf = ({ subject }: Params): ConnectionState =>
-  subject.kind === 'provider' ? providerStateOf({ subject }) : toolStateOf({ subject });
+  subject.kind === 'provider' ? providerStateOf({ subject }) : toolConnectionOf({ subject });

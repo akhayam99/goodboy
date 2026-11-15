@@ -14,7 +14,9 @@ export const ConnectionsProviderScene = ({ provider, theme }: Props) => (
     <BoardShellScene
       afterSeed={() => {
         seedConnectionsProviders();
-        useAppStore.getState().openStudio({ studio: { kind: 'connections', focus: { provider } } });
+        useAppStore
+          .getState()
+          .openStudio({ studio: { kind: 'connections', focus: { kind: 'provider', provider } } });
       }}
     />
   </ThemedScene>

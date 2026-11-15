@@ -2,7 +2,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { Chip } from '@goodboy/ui';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 import { useAppStore } from '../../../../store';
-import { toolCheckKey } from '../../../../store/slices/integrations/toolCheckKey';
+import { selectToolKeyCheck } from '../../../../store/slices/integrations/selectToolKeyCheck';
 import { toolIdentity } from '../../../integrations/toolIdentity';
 import type { ConnectionToolId } from '../../model/connectionState';
 import { connectionStateOf } from '../../model/connectionStateOf';
@@ -27,8 +27,11 @@ export const IntegrationTile = ({ tool, workspaceId, nowMs, onOpen }: Props) => 
   const githubUser = useAppStore(
     (state) => state.githubWorkspaceStatus[workspaceId]?.user ?? state.githubStatus?.user ?? null,
   );
-  const check = useAppStore((state) => state.toolLastCheck[toolCheckKey({ workspaceId, tool })]);
-  const state = connectionStateOf({ subject: { kind: 'tool', isConnected: true, check } });
+  const keyCheck = useAppStore((state) => selectToolKeyCheck({ state, workspaceId, tool }));
+  const hasKey = tool !== 'github';
+  const state = connectionStateOf({
+    subject: { kind: 'tool', isConnected: true, hasKey, keyCheck },
+  });
   const identity = tool === 'github' ? (githubUser ?? GITHUB_FALLBACK) : toolIdentity({ binding });
 
   return (
@@ -45,7 +48,11 @@ export const IntegrationTile = ({ tool, workspaceId, nowMs, onOpen }: Props) => 
           <Chip key={feed} tone="neutral" label={feed} bordered />
         ))}
       </span>
-      <span className="text-meta text-faint-foreground">{lastCheckLineOf({ check, nowMs })}</span>
+      {hasKey ? (
+        <span className="text-meta text-faint-foreground">
+          {lastCheckLineOf({ keyCheck, nowMs })}
+        </span>
+      ) : null}
     </ConnectionTile>
   );
 };

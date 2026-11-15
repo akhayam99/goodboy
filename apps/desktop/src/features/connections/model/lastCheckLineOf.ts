@@ -1,15 +1,15 @@
 import { formatAge } from '../../../shared/utils/time/formatAge';
-import type { ToolCheck } from '../../../store/slices/integrations/state';
+import type { IntegrationKeyCheck } from '../../../store/slices/integrations/state';
 
 type Params = {
-  readonly check: ToolCheck | undefined;
+  readonly keyCheck: IntegrationKeyCheck | null;
   readonly nowMs: number;
 };
 
-export const lastCheckLineOf = ({ check, nowMs }: Params): string => {
-  if (check === undefined || check.checkedAtMs === null) {
+export const lastCheckLineOf = ({ keyCheck, nowMs }: Params): string => {
+  if (keyCheck === null) {
     return 'Not checked yet';
   }
-  const age = formatAge({ from: check.checkedAtMs, now: Math.max(nowMs, check.checkedAtMs) });
-  return check.result === 'failed' ? `Last check failed ${age}` : `Checked ${age}`;
+  const age = formatAge({ from: keyCheck.checkedAt, now: Math.max(nowMs, keyCheck.checkedAt) });
+  return keyCheck.isPresent ? `Checked ${age}` : `Last check failed ${age}`;
 };

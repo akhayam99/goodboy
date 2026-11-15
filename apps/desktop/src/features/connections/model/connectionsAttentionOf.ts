@@ -1,5 +1,5 @@
 import { integrationLabel } from '../../../shared/utils/integrationLabel';
-import { toolCheckKey } from '../../../store/slices/integrations/toolCheckKey';
+import { selectToolKeyCheck } from '../../../store/slices/integrations/selectToolKeyCheck';
 import type { AppStore } from '../../../store/store';
 import { connectedToolsOf } from '../../integrations/connectedToolsOf';
 import { TOOL_ORDER } from '../../integrations/toolRailEntries';
@@ -17,7 +17,7 @@ type Params = {
     | 'workspaceIntegrations'
     | 'githubWorkspaceStatus'
     | 'githubStatus'
-    | 'toolLastCheck'
+    | 'integrationKeyChecks'
   >;
   readonly nowMs: number;
 };
@@ -48,7 +48,8 @@ const toolReasons = ({ state }: Params): ReadonlyArray<string> => {
       subject: {
         kind: 'tool',
         isConnected: connected[tool],
-        check: state.toolLastCheck[toolCheckKey({ workspaceId, tool })],
+        hasKey: tool !== 'github',
+        keyCheck: selectToolKeyCheck({ state, workspaceId, tool }),
       },
     });
     return connection.tone === null

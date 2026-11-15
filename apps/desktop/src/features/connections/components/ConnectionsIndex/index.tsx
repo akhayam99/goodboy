@@ -47,7 +47,7 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
   const providers = useAppStore((state) => state.providers);
   const groups = useConnectionGroups({ workspaceId });
   const { refresh, isRefreshing, error } = useConnectionsRefresh({ workspaceId });
-  useToolChecks({ workspaceId });
+  const checkError = useToolChecks({ workspaceId });
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const onScroll = useScrollMemory({
     memoryKey: `connections:${workspaceId ?? 'none'}`,
@@ -60,7 +60,7 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
       key={id}
       providerId={id}
       nowMs={nowMs}
-      onOpen={() => openConnection({ focus: { provider: id } })}
+      onOpen={() => openConnection({ focus: { kind: 'provider', provider: id } })}
     />
   ));
   const providerSetup = groups.providers.setup.flatMap((id) => {
@@ -80,6 +80,7 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
         onOpen={() =>
           openConnection({
             focus: {
+              kind: 'provider',
               provider: id,
               action: provider.connection === 'missing' ? 'install' : 'login',
             },
@@ -98,7 +99,7 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
             tool={tool}
             workspaceId={workspaceId}
             nowMs={nowMs}
-            onOpen={() => openSettings({ scope: 'tools', tool })}
+            onOpen={() => openConnection({ focus: { kind: 'tool', tool } })}
           />
         ));
   const toolSetup =
@@ -112,7 +113,7 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
             name={integrationLabel({ provider: tool })}
             verb="Connect"
             line={TOOL_CATALOG.find((entry) => entry.provider === tool)?.connectedLabel ?? ''}
-            onOpen={() => openSettings({ scope: 'tools', tool })}
+            onOpen={() => openConnection({ focus: { kind: 'tool', tool } })}
           />
         ));
 
@@ -127,7 +128,7 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
           label="Refresh connections"
           onClick={refresh}
           isLoading={isRefreshing}
-          error={error}
+          error={error ?? checkError}
         />
       }
     >

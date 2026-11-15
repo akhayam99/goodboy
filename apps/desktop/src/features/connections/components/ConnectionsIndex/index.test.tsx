@@ -139,7 +139,7 @@ describe('ConnectionsIndex', () => {
     const tools = screen.getByRole('region', { name: 'Integrations' });
     within(tools).getByText('Harborline workspace');
     within(tools).getByText('harborline-bot');
-    await waitFor(() => expect(within(tools).getAllByText(/^Checked /)).toHaveLength(2));
+    await waitFor(() => expect(within(tools).getAllByText(/^Checked /)).toHaveLength(1));
     within(tools).getByRole('button', { name: 'GitHub, Connected' });
     within(tools).getByRole('button', { name: 'Linear, Connected' });
     expect(
@@ -187,7 +187,7 @@ describe('ConnectionsIndex', () => {
     seed({ hasKey: true });
     render(<ConnectionsIndex workspace={WORKSPACE} />);
     const tools = await screen.findByRole('region', { name: 'Integrations' });
-    await waitFor(() => expect(within(tools).getAllByText(/^Checked /)).toHaveLength(2));
+    await waitFor(() => expect(within(tools).getAllByText(/^Checked /)).toHaveLength(1));
     const before = storySpies.tauriInvoke.mock.calls.filter(
       ([command]) => command === 'integration_credential_has_secret',
     ).length;
@@ -213,7 +213,7 @@ describe('ConnectionsIndex', () => {
 
     expect(useAppStore.getState().appStudio).toEqual({
       kind: 'connections',
-      focus: { provider: 'anthropic' },
+      focus: { kind: 'provider', provider: 'anthropic' },
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Which model each role uses' }));
@@ -233,12 +233,12 @@ describe('ConnectionsIndex', () => {
     expect(onOpen).not.toHaveBeenCalled();
     expect(useAppStore.getState().appStudio).toEqual({
       kind: 'connections',
-      focus: { provider: 'gemini', action: 'install' },
+      focus: { kind: 'provider', provider: 'gemini', action: 'install' },
     });
     window.removeEventListener('goodboy:open-settings', onOpen);
   });
 
-  it('opens an integration in Settings from its tile', async () => {
+  it('opens an integration page inside Connections from its tile', async () => {
     seed({ hasKey: true });
     const onOpen = vi.fn();
     window.addEventListener('goodboy:open-settings', onOpen);
@@ -246,9 +246,25 @@ describe('ConnectionsIndex', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /^Linear, / }));
 
-    expect(onOpen.mock.calls.map(([event]) => event.detail)).toEqual([
-      { scope: 'tools', tool: 'linear' },
-    ]);
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'linear' },
+    });
     window.removeEventListener('goodboy:open-settings', onOpen);
+  });
+
+  it('opens the page of an integration that is not set up inside Connections', async () => {
+    seed({ hasKey: true });
+    render(<ConnectionsIndex workspace={WORKSPACE} />);
+
+    const tools = await screen.findByRole('region', { name: 'Integrations' });
+    const setup = within(tools).getByRole('group', { name: 'Not set up' });
+    fireEvent.click(within(setup).getByRole('button', { name: /^Jira, / }));
+
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'jira' },
+    });
   });
 });

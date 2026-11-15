@@ -1,5 +1,5 @@
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import type { IntegrationGlyphProvider } from '../integrations/components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../shared/components/IntegrationGlyph';
 
 export type SettingsStudioScope = 'home' | 'app' | 'workspace' | 'providers' | 'tools';
 

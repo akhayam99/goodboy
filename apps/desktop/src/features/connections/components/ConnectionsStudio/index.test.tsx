@@ -20,7 +20,9 @@ import { ConnectionsStudio } from './index';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
 
-const CLAUDE_FOCUS = { provider: 'anthropic' } as const;
+const CLAUDE_FOCUS = { kind: 'provider', provider: 'anthropic' } as const;
+
+const GITLAB_FOCUS = { kind: 'tool', tool: 'gitlab' } as const;
 
 let useAppStore: StoryStore;
 
@@ -107,5 +109,45 @@ describe('ConnectionsStudio', () => {
 
     await screen.findByRole('region', { name: 'Providers' });
     expect(viewportOf().scrollTop).toBe(240);
+  });
+
+  it('shows the integration page under a trail that leads back to the index', async () => {
+    useAppStore.getState().openStudio({ studio: { kind: 'connections', focus: GITLAB_FOCUS } });
+    render(
+      <ConnectionsStudio
+        currentWorkspace={WORKSPACE}
+        focus={GITLAB_FOCUS}
+        onClose={() => undefined}
+      />,
+    );
+
+    await screen.findByRole('heading', { level: 1, name: 'GitLab' });
+    expect(screen.queryByRole('region', { name: 'Providers' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Connections' }));
+
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
+  });
+
+  it('returns to the index at the scroll it had before the integration page opened', async () => {
+    const { rerender } = render(
+      <ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />,
+    );
+    await screen.findByRole('region', { name: 'Providers' });
+    const before = viewportOf();
+    before.scrollTop = 180;
+    fireEvent.scroll(before);
+
+    rerender(
+      <ConnectionsStudio
+        currentWorkspace={WORKSPACE}
+        focus={GITLAB_FOCUS}
+        onClose={() => undefined}
+      />,
+    );
+    await screen.findByRole('heading', { level: 1, name: 'GitLab' });
+    rerender(<ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />);
+
+    await screen.findByRole('region', { name: 'Providers' });
+    expect(viewportOf().scrollTop).toBe(180);
   });
 });

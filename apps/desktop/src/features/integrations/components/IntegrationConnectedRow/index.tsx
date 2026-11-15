@@ -4,7 +4,10 @@ import { TriangleAlert, Unplug } from 'lucide-react';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { useCredentialSecret } from '../../useCredentialSecret';
 import { toolHealthOf } from '../../toolHealthOf';
-import { IntegrationGlyph, type IntegrationGlyphProvider } from '../IntegrationGlyph';
+import {
+  IntegrationGlyph,
+  type IntegrationGlyphProvider,
+} from '../../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 
 type Props = {

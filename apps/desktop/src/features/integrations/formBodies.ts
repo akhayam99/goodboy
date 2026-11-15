@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../shared/components/IntegrationGlyph';
 import { BitbucketFormBody } from './bitbucket/BitbucketFormBody';
 import { GitlabFormBody } from './gitlab/GitlabFormBody';
 import { JiraFormBody } from './jira/JiraFormBody';

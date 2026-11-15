@@ -108,14 +108,22 @@
   in a fixed order (`connectionGroups`), and a low Not set up row under each group with the verb
   that sets it up. Health changes a tile's word and border, never its place. The tile word, the
   word in a provider page's head, the header counts and the amber dot on the door all come from
-  `connectionStateOf`; the dot names what needs fixing, such as "Connections, Linear: Key
-  missing" (`connectionsAttentionOf`, named by `doorSignalOf`). The key check of each tool and
-  its time live in memory in the store (`checkTools`, `toolLastCheck`), at most once a minute
-  unless the page's refresh forces it. A provider tile, or a provider's Not set up row with its
-  install or sign in step, pushes the provider's detail page (`openConnection`, studio focus
-  `{ provider }`) under the trail Connections > Claude; the trail and Esc go back up to the
-  index at the scroll it had (`useScrollMemory`), and the door always lands on the index. An
-  integration tile still opens its page in Settings.
+  `connectionStateOf`, which takes a tool's word from `toolStateOf`, the same word the tool
+  page's head shows; the dot names what needs fixing, such as "Connections, Linear: Key
+  missing" (`connectionsAttentionOf`, named by `doorSignalOf`). The key check of each tool lives
+  in memory in the store, one entry per key with its time (`integrationKeyChecks`, written by
+  `checkIntegrationKey`, latest only); the index checks every key of the workspace at most once a
+  minute unless its refresh forces it (`checkTools`), and a failed read keeps the last answer and
+  shows the error on the refresh button. A tile, or a Not set up row, pushes its detail page
+  through `openConnection`: studio focus `{ kind: 'provider', provider }` (with the install or
+  sign in step) or `{ kind: 'tool', tool }` (`IntegrationDetail`), under the trail Connections >
+  Claude or Connections > GitLab; the trail and Esc go back up to the index at the scroll it had
+  (`useScrollMemory`), and the door always lands on the index. The tool page says what the tool
+  does in the workspace, one row per use with its count and a link to Tasks: the counts are the
+  open records Tasks last loaded (`toolUseCountsOf`, read through `selectToolUseCount`), nothing
+  shows before Tasks loaded them, and a tool whose key is missing reads Paused. A missing or bad
+  key is replaced in place (`replaceIntegrationKey`): the host checks the new key first, the
+  keychain slot of the binding is rewritten, and the binding itself is kept.
   Work is an eighth door between Tasks and Workflows, with a New badge outlined in the primary colour,
   and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`
   (key `+work`, `features/work/components/WorkPage`): every Lead of the workspace across sessions,

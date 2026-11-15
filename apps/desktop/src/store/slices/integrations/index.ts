@@ -1,3 +1,4 @@
+import { checkIntegrationKey } from './checkIntegrationKey';
 import { checkTools } from './checkTools';
 import { connectBitbucket } from './connectBitbucket';
 import { connectGitlab } from './connectGitlab';
@@ -9,7 +10,9 @@ import { disconnectIntegration } from './disconnectIntegration';
 import { forgetIntegrationCredential } from './forgetIntegrationCredential';
 import { loadIntegrationCredentials } from './loadIntegrationCredentials';
 import { loadIntegrations } from './loadIntegrations';
+import { noteToolUseCounts } from './noteToolUseCounts';
 import { refreshViewerIdentity } from './refreshViewerIdentity';
+import { replaceIntegrationKey } from './replaceIntegrationKey';
 import { updateSlackConfig } from './updateSlackConfig';
 import type { SliceDeps } from '../../slice-types';
 
@@ -17,7 +20,7 @@ export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadIntegrations: loadIntegrations(set, get),
     refreshViewerIdentity: refreshViewerIdentity({ set, get }),
-    checkTools: checkTools({ set, get }),
+    checkTools: checkTools({ get }),
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
     disconnectIntegration: disconnectIntegration(set),
@@ -28,5 +31,8 @@ export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
     connectBitbucket: connectBitbucket(set, get),
     connectSlack: connectSlack(set),
     updateSlackConfig: updateSlackConfig(set, get),
+    checkIntegrationKey: checkIntegrationKey({ set, get }),
+    replaceIntegrationKey: replaceIntegrationKey({ set, get }),
+    noteToolUseCounts: noteToolUseCounts({ set, get }),
   };
 };

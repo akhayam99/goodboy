@@ -101,7 +101,7 @@
     "apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/usePrVerbs/prActionBlockReason.ts": 1,
     "apps/desktop/src/features/integrations/bitbucket/client.ts": 4,
     "apps/desktop/src/features/integrations/components/CreateReviewForm/ReviewSettings.tsx": 1,
-    "apps/desktop/src/features/integrations/components/IntegrationGlyph/index.tsx": 1,
+    "apps/desktop/src/shared/components/IntegrationGlyph/index.tsx": 1,
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/LaunchMountRow.tsx": 1,
     "apps/desktop/src/features/integrations/github/components/GithubConnectionEmptyState.tsx": 2,
     "apps/desktop/src/features/integrations/github/components/MissingGithubRemoteEmptyState.tsx": 2,

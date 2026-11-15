@@ -1,9 +1,9 @@
 import type { GhTokenStatus } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '@goodboy/ui';
-import { GithubFormBody } from '../../../github/GithubFormBody';
-import { IntegrationConnectedRow } from '../../IntegrationConnectedRow';
-import { IntegrationGlyph } from '../../IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
+import { IntegrationConnectedRow } from '../../components/IntegrationConnectedRow';
+import { GithubFormBody } from '../GithubFormBody';
 
 type Props = {
   readonly status: GhTokenStatus;

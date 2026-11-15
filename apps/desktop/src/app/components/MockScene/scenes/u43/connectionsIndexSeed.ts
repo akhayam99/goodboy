@@ -12,8 +12,7 @@ import type {
 } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
-import type { ToolCheck } from '../../../../../store/slices/integrations/state';
-import { toolCheckKey } from '../../../../../store/slices/integrations/toolCheckKey';
+import type { IntegrationKeyCheck } from '../../../../../store/slices/integrations/state';
 
 export type ConnectionsIndexVariant = 'healthy' | 'warnings' | 'empty' | 'no-workspace';
 
@@ -100,6 +99,12 @@ type BindingParams = {
 
 const AT = brandId<IsoDateTime>({ value: '2026-11-01T09:00:00.000Z' });
 
+const GITLAB_KEY = brandId<IntegrationCredentialId>({ value: 'mock-connections-gitlab-key' });
+
+const LINEAR_KEY = brandId<IntegrationCredentialId>({ value: 'mock-connections-linear-key' });
+
+const SENTRY_KEY = brandId<IntegrationCredentialId>({ value: 'mock-connections-sentry-key' });
+
 const bindingsOf = ({ workspaceId }: BindingParams): ReadonlyArray<IntegrationBinding> => [
   {
     id: brandId<IntegrationBindingId>({ value: 'mock-connections-gitlab' }),
@@ -107,7 +112,7 @@ const bindingsOf = ({ workspaceId }: BindingParams): ReadonlyArray<IntegrationBi
     projectId: null,
     provider: 'gitlab',
     config: { userName: 'platform-lead', userId: '7', host: 'gitlab.northwind.dev' },
-    credentialId: brandId<IntegrationCredentialId>({ value: 'mock-connections-gitlab-key' }),
+    credentialId: GITLAB_KEY,
     createdAt: AT,
     updatedAt: AT,
   },
@@ -117,7 +122,7 @@ const bindingsOf = ({ workspaceId }: BindingParams): ReadonlyArray<IntegrationBi
     projectId: null,
     provider: 'linear',
     config: { workspaceUrlKey: 'harborline', viewerUserId: 'u-1', viewerName: 'Mara Quint' },
-    credentialId: brandId<IntegrationCredentialId>({ value: 'mock-connections-linear-key' }),
+    credentialId: LINEAR_KEY,
     createdAt: AT,
     updatedAt: AT,
   },
@@ -127,21 +132,20 @@ const bindingsOf = ({ workspaceId }: BindingParams): ReadonlyArray<IntegrationBi
     projectId: null,
     provider: 'sentry',
     config: { org: 'harborline', project: 'payments-api' },
-    credentialId: brandId<IntegrationCredentialId>({ value: 'mock-connections-sentry-key' }),
+    credentialId: SENTRY_KEY,
     createdAt: AT,
     updatedAt: AT,
   },
 ];
 
 type CheckParams = {
-  readonly result: ToolCheck['result'];
+  readonly isPresent: boolean;
   readonly minutesAgo: number;
 };
 
-const checkOf = ({ result, minutesAgo }: CheckParams): ToolCheck => ({
-  result,
-  checkedAtMs: Date.now() - minutesAgo * MINUTE_MS,
-  isChecking: false,
+const checkOf = ({ isPresent, minutesAgo }: CheckParams): IntegrationKeyCheck => ({
+  isPresent,
+  checkedAt: Date.now() - minutesAgo * MINUTE_MS,
 });
 
 type ProvidersParams = {
@@ -204,16 +208,12 @@ export const seedConnectionsIndex = ({ workspaceId, variant }: SeedParams): void
       ? {}
       : { [workspaceId]: { mode: 'gh-cli', available: true, user: 'harborline-bot' } },
     workspaceIntegrations: { [workspaceId]: isEmpty ? [] : bindingsOf({ workspaceId }) },
-    toolLastCheck: isEmpty
+    integrationKeyChecks: isEmpty
       ? {}
       : {
-          [toolCheckKey({ workspaceId, tool: 'github' })]: checkOf({ result: 'ok', minutesAgo: 2 }),
-          [toolCheckKey({ workspaceId, tool: 'gitlab' })]: checkOf({
-            result: isWarning ? 'key-missing' : 'ok',
-            minutesAgo: 5,
-          }),
-          [toolCheckKey({ workspaceId, tool: 'linear' })]: checkOf({ result: 'ok', minutesAgo: 1 }),
-          [toolCheckKey({ workspaceId, tool: 'sentry' })]: checkOf({ result: 'ok', minutesAgo: 8 }),
+          [GITLAB_KEY]: checkOf({ isPresent: !isWarning, minutesAgo: 5 }),
+          [LINEAR_KEY]: checkOf({ isPresent: true, minutesAgo: 1 }),
+          [SENTRY_KEY]: checkOf({ isPresent: true, minutesAgo: 8 }),
         },
     ...(variant === 'no-workspace' && { currentWorkspaceId: null }),
   });

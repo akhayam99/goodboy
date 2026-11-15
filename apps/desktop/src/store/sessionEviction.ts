@@ -203,6 +203,8 @@ export const NON_SESSION_STATE_KEYS = [
   'workspaceIntegrations',
   'integrationCredentials',
   'integrationCredentialUsage',
+  'integrationKeyChecks',
+  'toolUseCounts',
   'projectGitStatus',
   'projectCheckoutPulling',
   'repoDivergence',
@@ -405,7 +407,6 @@ export const NON_SESSION_STATE_KEYS = [
   'browserFavicons',
   'browserDevicePresets',
   'autoClockAt',
-  'toolLastCheck',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

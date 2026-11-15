@@ -1,6 +1,6 @@
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../conceptIcons';
-import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;
