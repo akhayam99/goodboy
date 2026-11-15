@@ -2,6 +2,7 @@ import { isProviderListLens } from './isProviderListLens';
 import { contextSectionOf } from './contextSectionOf';
 import { brandId, type AgentId, type SessionId, type WorkflowRunId } from '@goodboy/types';
 import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
+import { CONTEXT_ROWS } from '../contextDrawer/contextRows';
 import type { OpenDrawer } from '../drawer/state';
 import { LENS_KINDS, type LensKind } from '../session-view/types';
 import { sessionPlace } from './place';
@@ -199,13 +200,15 @@ type ContextPanelParams = {
   readonly payload: unknown;
 };
 
-const contextRowOf = ({ payload }: ContextPanelParams): string => {
-  if (fieldOf({ payload, key: 'view' }) === 'versions') {
-    return 'history';
-  }
+const contextRowsOf = ({ payload }: ContextPanelParams): Rows => {
   const value = fieldOf({ payload, key: 'section' }) ?? fieldOf({ payload, key: 'tab' });
   const section = value === 'learned' ? 'explanations' : value;
-  return CONTEXT_SECTIONS.has(section) ? String(section) : 'goal';
+  const sectionRow = {
+    [CONTEXT_ROWS.section]: CONTEXT_SECTIONS.has(section) ? String(section) : 'goal',
+  };
+  return fieldOf({ payload, key: 'view' }) === 'versions'
+    ? { ...sectionRow, [CONTEXT_ROWS.view]: 'versions' }
+    : sectionRow;
 };
 
 type FilePanelParams = {
@@ -231,7 +234,7 @@ const foldOfPanel = ({ drawer }: DrawerParams): PanelFold | null => {
   if (kind === 'context') {
     return {
       place: sessionPlace({ sessionId, lens: 'context' }),
-      rows: { [PLACE_ROWS.contextSection]: contextRowOf({ payload: drawer.payload }) },
+      rows: contextRowsOf({ payload: drawer.payload }),
     };
   }
   if (kind === 'explore') {

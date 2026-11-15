@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
+import { CONTEXT_ROWS } from '../contextDrawer/contextRows';
 import { branchPlace, sessionPlace } from './place';
 import { PLACE_ROWS } from './placeRows';
 import { opensInPreviousRelease } from './testing/opensInPreviousRelease';
@@ -64,7 +65,11 @@ const STORED_PLACES: ReadonlyArray<Row> = [
   [
     'the Context panel on its history',
     panel({ kind: 'context', payload: { section: 'goal', view: 'versions' } }),
-    { lens: 'context', drawer: null, rows: { [PLACE_ROWS.contextSection]: 'history' } },
+    {
+      lens: 'context',
+      drawer: null,
+      rows: { [PLACE_ROWS.contextSection]: 'goal', [CONTEXT_ROWS.view]: 'versions' },
+    },
   ],
   [
     'the Ask panel',
