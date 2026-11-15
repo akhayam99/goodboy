@@ -128,7 +128,60 @@ describe('WorkspaceScopePanel pages', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Projects');
     expect(screen.getByLabelText<HTMLInputElement>('Workspace name').value).toBe('Harborline');
     expect(screen.queryByRole('region', { name: 'Branches and comments' })).toBeNull();
-    screen.getByRole('region', { name: 'Disconnect workspace' });
+    const bands = screen.getAllByRole('region').map((region) => region.getAttribute('aria-label'));
+    expect(bands[0]).toBe('Workspace');
+    expect(bands.at(-1)).toBe('Danger zone');
+  });
+
+  it('shows the projects count once, from the header', () => {
+    stubStoryInvoke({
+      patch_workspace_overrides: null,
+      get_workspace_overrides: () => EMPTY_OVERRIDES,
+      project_git_status: {
+        state: 'missing',
+        branch: null,
+        headSubject: null,
+        upstreamDistance: { kind: 'unknown', reason: 'rev-list-failed' },
+        workingTree: { kind: 'unknown', reason: 'status-read-failed' },
+        upstream: null,
+        inProgress: null,
+      },
+      folder_git_probe: ({ path }: { readonly path: string }) => ({
+        path,
+        state: 'none',
+        rootPath: null,
+        branch: null,
+        commitCount: 0,
+        remoteUrl: null,
+      }),
+    });
+    useAppStore.setState({
+      projects: [
+        aProject({
+          workspaceId: HARBORLINE.id,
+          name: 'ledger-core',
+          rootPath: '/repos/ledger-core',
+        }),
+        aProject({
+          workspaceId: HARBORLINE.id,
+          name: 'payments-api',
+          rootPath: '/repos/payments-api',
+        }),
+        aProject({
+          workspaceId: HARBORLINE.id,
+          name: 'runbooks',
+          kind: 'folder',
+          rootPath: '/work/harborline/runbooks',
+        }),
+      ],
+    });
+    renderPage();
+
+    const header = screen.getByRole('heading', { level: 1 }).closest('[data-page-header]');
+    expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe(
+      '2 projects, 1 plain folder',
+    );
+    expect(screen.getAllByText(/^\d+ projects?\b/)).toHaveLength(1);
   });
 
   it.each(WORKSPACE_PAGES.map((page) => ({ id: page.id, label: page.label })))(
@@ -183,7 +236,7 @@ describe('WorkspaceScopePanel pages', () => {
     cleanup();
 
     renderPage({ section: 'review-replies' });
-    screen.getByRole('region', { name: 'Voice' });
+    screen.getByRole('region', { name: 'Replies' });
     cleanup();
 
     renderPage({ section: 'permissions' });

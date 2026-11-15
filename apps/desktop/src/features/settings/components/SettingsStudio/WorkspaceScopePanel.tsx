@@ -8,7 +8,7 @@ import { pageKeys } from '../../pageKeys';
 import { usePageChangedCount } from '../../hooks/usePageChangedCount';
 import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
 import { useBranchesMeta } from '../../../storage/useBranchesMeta';
-import { folderMetaOf } from './folderMetaOf';
+import { projectsCountLine } from './projectsCountLine';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 import { WorkspacePageBody } from './WorkspacePageBody';
 import { WorkspaceSettingsFlow, type FlowMode } from './WorkspaceSettingsFlow';
@@ -27,10 +27,10 @@ export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, request
   const entry = workspacePageEntry({ page });
   const ownsSettings = pageKeys({ page }).length > 0;
   const changedCount = usePageChangedCount({ workspaceId, page });
-  const folderMeta = useAppStore((s) => folderMetaOf({ projects: s.projects, workspaceId }));
+  const projectsMeta = useAppStore((s) => projectsCountLine({ projects: s.projects, workspaceId }));
   const branchesMeta = useBranchesMeta({ workspaceId });
   const metaByPage: Readonly<Partial<Record<WorkspacePage, string | undefined>>> = {
-    projects: folderMeta,
+    projects: projectsMeta,
     branches: branchesMeta,
   };
   const [flow, setFlow] = useState<{
