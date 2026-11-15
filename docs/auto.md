@@ -422,7 +422,8 @@ writing to it reopens it to **Deciding**.
   tooltip and accessible name. The rail row, the delegation
   line, the result card and the delivery text Auto reads all take the name from
   that one function, so Auto and the screen say the same name. A stuck child is a Next card headed by its branch and
-  pull request ("Auto needs you" only when its branch is unknown) whose
+  pull request ("Auto needs you", or "Lead needs you" while Work is on, only
+  when its branch is unknown; `flowWordOf` through `useNextCards`) whose
   sentence names the role, never the quoted ask: `The scout never started.` (or
   `failed.`, `timed out.`, one verb per child state from
   `autoStuckKindOf` and `autoStuckVerbOf`; a child that returned to Auto is

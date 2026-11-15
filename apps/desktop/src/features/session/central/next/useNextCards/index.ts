@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { useFlowWord } from '../../../../../shared/hooks/useFlowWord';
 import { useSessionSuggestionsFrom } from '../../../../suggestions/useSessionSuggestions';
 import { useTranscriptMountProposals } from '../../../../suggestions/useTranscriptMountProposals';
 import { transcriptOwnedProjectIds } from '../../../../suggestions/transcriptMountProposals';
@@ -41,6 +42,7 @@ export const useNextCards = ({ session, model, autoTargets }: Params): Result =>
     [transcriptProposals],
   );
   const { actionsFor, isHidden, openFor } = useActionCardActions({ session });
+  const flow = useFlowWord();
 
   const cards = useMemo(
     () =>
@@ -52,8 +54,9 @@ export const useNextCards = ({ session, model, autoTargets }: Params): Result =>
             !transcriptOwned.has(suggestion.payload.projectId),
         ),
         autoTargets,
+        flow,
       }).filter((card) => !isHidden({ card })),
-    [autoTargets, isHidden, model.owners, suggestions, transcriptOwned],
+    [autoTargets, flow, isHidden, model.owners, suggestions, transcriptOwned],
   );
 
   return { cards, actionsFor, openFor };
