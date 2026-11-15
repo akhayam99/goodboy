@@ -5,6 +5,7 @@ import { FieldRow, IconButton } from '@goodboy/ui';
 import type { WorkspaceSettingField } from '../../pageKeys';
 import { useFoldersWithOwn } from '../../hooks/useFoldersWithOwn';
 import { useWorkspaceField } from '../../hooks/useWorkspaceField';
+import { SaveErrorHelp } from './SaveErrorHelp';
 import { SettingLevelChip } from './SettingLevelChip';
 
 type Props = {
@@ -35,7 +36,12 @@ export const WorkspaceFieldRow = ({ workspaceId, field, help, layout, children }
     </>
   ) : null;
   return (
-    <FieldRow label={state.label} help={help} marker={marker} layout={layout}>
+    <FieldRow
+      label={state.label}
+      help={state.save.error === null ? help : <SaveErrorHelp help={help} save={state.save} />}
+      marker={marker}
+      layout={layout}
+    >
       {children}
     </FieldRow>
   );

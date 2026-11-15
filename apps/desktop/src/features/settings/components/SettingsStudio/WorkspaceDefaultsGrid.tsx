@@ -5,23 +5,17 @@ import { VerbositySelect } from '../../../../features/session/components/Verbosi
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
-import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
 import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
+import { useWorkspaceOverrideSave } from '../../hooks/useWorkspaceOverrideSave';
 import { AutoLevelDefaultRow } from './AutoLevelDefaultRow';
 import { AutonomyDefaultsBand } from './AutonomyDefaultsBand';
 import { BranchTemplateField } from './BranchTemplateField';
 import { RunDefaultField } from './RunDefaultField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-};
-
-type PersistParams = {
-  readonly patch: WorkspaceOverridesPatch;
-  readonly failureTitle: string;
 };
 
 const sanitized = (input: string): string =>
@@ -36,7 +30,6 @@ const committedPrefix = (input: string): string => input.trim().replace(/[-/]+$/
 
 export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
-  const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
   const verbosity = useAppStore(
     (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultVerbosity,
   );
@@ -46,51 +39,48 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   const resolvedBranchPrefix = useAppStore(
     (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultBranchPrefix,
   );
-  const reportError = useAppStore((s) => s.reportError);
   const isWorkOn = useIsWorkOn();
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [busy, setBusy] = useState(false);
-  const attributionFooter = isAttributionEnabled({ overrides: wsOverrides });
+  const [draftPrefix, setDraftPrefix] = useState<string | null>(null);
+  const prefixSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'branchPrefix',
+    saved: resolvedBranchPrefix,
+    patchOf: ({ value }) => ({ defaultBranchPrefix: value }),
+  });
+  const attributionSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'attribution',
+    saved: isAttributionEnabled({ overrides: wsOverrides }),
+    patchOf: ({ value }) => ({ attributionFooter: value }),
+  });
+  const parallelSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'parallelAgents',
+    saved: parallelAgents,
+    patchOf: ({ value }) => ({ parallelAgents: value }),
+  });
+  const verbositySave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'verbosity',
+    saved: verbosity,
+    patchOf: ({ value }) => ({ defaultVerbosity: value }),
+  });
 
   useEffect(() => {
-    setBranchPrefix(resolvedBranchPrefix);
-    setSavedBranchPrefix(resolvedBranchPrefix);
-  }, [workspaceId, resolvedBranchPrefix]);
+    setDraftPrefix(null);
+  }, [workspaceId]);
 
-  const persistOverrides = async ({ patch, failureTitle }: PersistParams) => {
-    setBusy(true);
-    try {
-      await patchWorkspaceOverrides({ workspaceId, patch });
-    } catch (err) {
-      void reportError({ recovery: NOTHING_CHANGED, title: failureTitle, error: err, workspaceId });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const commitBranchPrefix = async () => {
-    const cleaned = committedPrefix(branchPrefix);
-    const next = cleaned === '' ? DEFAULT_BRANCH_PREFIX : cleaned;
-    if (next === savedBranchPrefix) {
-      setBranchPrefix(next);
+  const commitBranchPrefix = () => {
+    if (draftPrefix === null) {
       return;
     }
-    setBusy(true);
-    try {
-      await patchWorkspaceOverrides({ workspaceId, patch: { defaultBranchPrefix: next } });
-      setBranchPrefix(next);
-      setSavedBranchPrefix(next);
-    } catch (err) {
-      void reportError({
-        title: "Couldn't save the branch prefix",
-        error: err,
-        workspaceId,
-        recovery: NOTHING_CHANGED,
-      });
-    } finally {
-      setBusy(false);
+    const cleaned = committedPrefix(draftPrefix);
+    const next = cleaned === '' ? DEFAULT_BRANCH_PREFIX : cleaned;
+    setDraftPrefix(null);
+    if (next === prefixSave.value) {
+      return;
     }
+    void prefixSave.save({ value: next });
   };
 
   return (
@@ -108,16 +98,15 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         >
           <Input
             type="text"
-            value={branchPrefix}
-            onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
-            onBlur={() => void commitBranchPrefix()}
+            value={draftPrefix ?? prefixSave.value}
+            onChange={(e) => setDraftPrefix(sanitized(e.target.value))}
+            onBlur={commitBranchPrefix}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                void commitBranchPrefix();
+                commitBranchPrefix();
               }
             }}
             placeholder={DEFAULT_BRANCH_PREFIX}
-            disabled={busy}
             maxLength={16}
             spellCheck={false}
             autoComplete="off"
@@ -140,14 +129,8 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         >
           <Switch
             ariaLabel="Attribution line"
-            checked={attributionFooter}
-            disabled={busy}
-            onChange={(next) =>
-              void persistOverrides({
-                patch: { attributionFooter: next },
-                failureTitle: "Couldn't save the attribution line setting",
-              })
-            }
+            checked={attributionSave.value}
+            onChange={(next) => void attributionSave.save({ value: next })}
           />
         </WorkspaceFieldRow>
       </Band>
@@ -166,14 +149,8 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         >
           <Switch
             ariaLabel="Parallel agents"
-            checked={parallelAgents}
-            disabled={busy}
-            onChange={(next) =>
-              void persistOverrides({
-                patch: { parallelAgents: next },
-                failureTitle: "Couldn't save the parallel agents setting",
-              })
-            }
+            checked={parallelSave.value}
+            onChange={(next) => void parallelSave.save({ value: next })}
           />
         </WorkspaceFieldRow>
         <WorkspaceFieldRow
@@ -182,14 +159,9 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
           help="How much agents explain while they work."
         >
           <VerbositySelect
-            value={verbosity}
-            onChange={(v) =>
-              void persistOverrides({
-                patch: { defaultVerbosity: v },
-                failureTitle: "Couldn't save the output verbosity",
-              })
-            }
-            disabled={busy}
+            value={verbositySave.value}
+            onChange={(v) => void verbositySave.save({ value: v })}
+            disabled={false}
           />
         </WorkspaceFieldRow>
         <RunDefaultField workspaceId={workspaceId} />
