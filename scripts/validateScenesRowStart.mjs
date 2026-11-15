@@ -194,6 +194,31 @@ export const rowStartProbe = async () => {
           : [{ label: labelOf(heading), left: box.left, head: head.left }];
       });
   };
+  const readMarks = () => {
+    const sidebar = document.querySelector('[data-side-column]');
+    if (sidebar === null) {
+      return [];
+    }
+    return [
+      ...sidebar.querySelectorAll(
+        '[data-door-slot="signal"], [data-row-state], [data-slot="draft-dot"]',
+      ),
+    ]
+      .filter((slot) => isShown(slot) && slot.closest('[inert]') === null)
+      .map((slot) => {
+        const box = slot.getBoundingClientRect();
+        const row = slot.closest('button')?.getBoundingClientRect() ?? box;
+        return {
+          label: labelOf(slot.closest('button') ?? slot),
+          width: box.width,
+          height: box.height,
+          centerX: box.left + box.width / 2,
+          centerY: box.top + box.height / 2,
+          rowCenterY: row.top + row.height / 2,
+        };
+      });
+  };
+  const marks = readMarks();
   const edges = readEdges();
   const frame = readFrame();
   const splits = [...document.querySelectorAll('[data-studio-rail]')].map((split) => ({
@@ -203,13 +228,14 @@ export const rowStartProbe = async () => {
       .map(read),
   }));
   if (splits.length > 0) {
-    return { containers: splits, frame, edges };
+    return { containers: splits, frame, edges, marks };
   }
   const page = document.querySelector('[data-page-column]') ?? document.querySelector('main');
   return {
     containers: page === null ? [] : [{ kind: 'page', columns: [read(page)] }],
     frame,
     edges,
+    marks,
   };
 };
 
@@ -259,6 +285,56 @@ export const listEdgeFailures = ({ scene, width, edges, tolerance = ROW_START_TO
   ];
 };
 
+export const SIDEBAR_MARK_PX = 16;
+
+export const sidebarMarkFailures = ({
+  scene,
+  width,
+  marks,
+  tolerance = ROW_START_TOLERANCE_PX,
+}) => {
+  const all = marks ?? [];
+  if (all.length === 0) {
+    return [];
+  }
+  const failures = [];
+  const offBox = all.filter(
+    (mark) =>
+      Math.abs(mark.width - SIDEBAR_MARK_PX) > tolerance ||
+      Math.abs(mark.height - SIDEBAR_MARK_PX) > tolerance,
+  );
+  if (offBox.length > 0) {
+    failures.push({
+      scene,
+      width,
+      check: `every sidebar trailing mark sits in one ${SIDEBAR_MARK_PX}px box`,
+      rows: offBox.map(({ label, width: w, height }) => `${label}: ${round(w)} x ${round(height)}`),
+    });
+  }
+  if (spread(all.map(({ centerX }) => centerX)) > tolerance) {
+    failures.push({
+      scene,
+      width,
+      check: 'every sidebar trailing mark shares one center x',
+      rows: all.map(({ label, centerX }) => `${label}: ${round(centerX)}`),
+    });
+  }
+  const offCenter = all.filter(
+    ({ centerY, rowCenterY }) => Math.abs(centerY - rowCenterY) > tolerance,
+  );
+  if (offCenter.length > 0) {
+    failures.push({
+      scene,
+      width,
+      check: 'every sidebar trailing mark sits on the center line of its row',
+      rows: offCenter.map(
+        ({ label, centerY, rowCenterY }) => `${label}: ${round(centerY)} vs ${round(rowCenterY)}`,
+      ),
+    });
+  }
+  return failures;
+};
+
 export const rowStartFailures = ({
   scene,
   width,
@@ -269,6 +345,7 @@ export const rowStartFailures = ({
   const failures = [
     ...frameRowFailures({ scene, width, frame: measured?.frame, tolerance }),
     ...listEdgeFailures({ scene, width, edges: measured?.edges, tolerance }),
+    ...sidebarMarkFailures({ scene, width, marks: measured?.marks, tolerance }),
   ];
   if (containers.length === 0) {
     return [...failures, { scene, width, check: 'a page with columns is on screen' }];
@@ -331,14 +408,16 @@ export const runRowStart = async ({ send, only, measure, open, run }) => {
       task: async () => {
         const failures = [];
         let headings = 0;
+        let marks = 0;
         for (const width of ROW_START_WIDTHS) {
           await open({ send, scene, width, zoom: 1, readySelector: ROW_START_READY });
           const measured = await run(send, rowStartProbe, null);
           headings += measured?.edges?.length ?? 0;
+          marks += measured?.marks?.length ?? 0;
           failures.push(...rowStartFailures({ scene, width, measured }));
         }
         console.log(
-          `${scene}: first rows and ${headings} list headings compared, ${failures.length} misalignments`,
+          `${scene}: first rows, ${headings} list headings and ${marks} sidebar marks compared, ${failures.length} misalignments`,
         );
         return { failures, wraps: 0 };
       },

@@ -1,6 +1,6 @@
 import { memo, useEffect, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { PANE_RHYTHM, ROW_INTERACTIVE, cn, tintClasses } from '@goodboy/ui';
+import { PANE_RHYTHM, ROW_INTERACTIVE, StatusMark, cn, tintClasses } from '@goodboy/ui';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
@@ -11,7 +11,7 @@ import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRen
 import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { overviewTitleHost } from '../../../session/overviewTitleHost';
 import { TitleField } from '../../../../shared/components/TitleField';
-import { StateNode } from '../../../../shared/components/StateNode';
+import { sessionMarkOf } from '../../../session/sessionMarkOf';
 
 type SelectionClickEvent = {
   readonly shiftKey: boolean;
@@ -142,6 +142,7 @@ const SessionActivityItemView = ({
     node.kind === 'done' ||
     node.kind === 'archived';
   const isQuiet = isCalm && !node.hasUnread && !isActive;
+  const mark = sessionMarkOf({ node });
 
   return (
     <div className="relative">
@@ -187,12 +188,19 @@ const SessionActivityItemView = ({
         )}
       >
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
-        <span data-row-state="" className={PANE_RHYTHM.navRail.mark}>
-          <StateNode
-            node={node}
-            isOnSelectedRow={isSelected || isCurrent}
-            hasEmptySlot
-            isUnreadDot
+        <span
+          aria-hidden
+          data-row-state=""
+          data-node-kind={node.kind}
+          data-node-tone={node.tone}
+          data-unread-dot={mark.kind === 'dot' && mark.tone === 'unread' ? '' : undefined}
+          className={PANE_RHYTHM.navRail.mark}
+        >
+          <StatusMark
+            mark={mark}
+            {...(mark.kind !== 'empty' && {
+              label: node.hasUnread ? `${node.label}, unseen` : node.label,
+            })}
           />
         </span>
       </button>

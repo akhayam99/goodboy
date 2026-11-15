@@ -312,11 +312,10 @@ state is a `StateDot` or a glyph in a 16px column.
 fill on every background. A running dot pulses (under `motion-safe`) only when
 the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
 chrome (top bar chips, doors, rail slots) stays static. A count next to a door
-lives in the dot's tooltip. The Board door is the one exception: it
-says how many sessions need you as a number (see the door pill below), drawn like
-every inline count (the marks table below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
+lives in the dot's tooltip, never as colored text. The Board door is the one exception: it
+says how many sessions need you as a number in its tone (see Status marks). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
 
-A session row carries one mark: the state of the node, or an empty 14px slot when the session is idle so titles keep one right edge (`StateNode` with `hasEmptySlot`).
+A session row in the left column carries one mark, a `StatusMark` from `sessionMarkOf`, or the empty 16px box when the session has nothing to say, so titles keep one right edge (see Status marks).
 
 **Marks across pages.** One colour role per meaning on every page: success for done or added, warning for what needs you, danger for what failed or was deleted, info for what runs, neutral for the rest. A mark never takes a role for a second meaning. Counts come in two drawings only.
 
@@ -328,7 +327,7 @@ A session row carries one mark: the state of the node, or an empty 14px slot whe
 | Agents rail                        | node, number, meter                    | `WorkNode` in the rail lane; the number in a fixed 24px right aligned slot and the spend or clock in a fixed meter slot (`LEAD_TREE_METER`, reserved on the run row too), so roles, words and costs share one column at any depth |
 | Files rail, All files, diff header | status letter                          | `FileStatusMark`: one letter in one 12px slot, A success, D danger, M and R neutral                                                                                                                                               |
 
-**A row title keeps one weight whatever its state.** Every title of a session, pinned, done, run, run-tree or notification row stays in its row role (`text-ui`, 13/400 in the sidebar) when it is unread, live, current or selected. State lives in the trailing mark and the text colour only: unread or new activity is the quiet unread dot (`isUnreadDot`: on the node's corner, or alone in the idle slot) plus full foreground; read is muted foreground; selected is the selected surface (`bg-selected`). Weight never marks state, the way Linear and Arc keep one weight down their sidebars and let a dot and colour carry unread. `row-title-weight.test.ts` fails a weight class keyed on unread, new, active, current or selected, and `@goodboy/ui` exports no unread title role.
+**A row title keeps one weight whatever its state.** Every title of a session, pinned, done, run, run-tree or notification row stays in its row role (`text-ui`, 13/400 in the sidebar) when it is unread, live, current or selected. State lives in the trailing mark and the text colour only: unread or new activity is the quiet unread dot (in the sidebar the dot alone in the mark box; elsewhere `isUnreadDot` on the node's corner) plus full foreground; read is muted foreground; selected is the selected surface (`bg-selected`). Weight never marks state, the way Linear and Arc keep one weight down their sidebars and let a dot and colour carry unread. `row-title-weight.test.ts` fails a weight class keyed on unread, new, active, current or selected, and `@goodboy/ui` exports no unread title role.
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the type specimen.
@@ -531,11 +530,11 @@ Done) is its own 24px row in `text-eyebrow`, with 12px above it
 (`sessionList.listGap`) and 4px under it (`sessionList.labelGap`), so it belongs
 to the list below; a fold chevron follows the label, so every label starts on
 the 16px edge. Every row is 28px. Titles truncate at one right edge, and every
-trailing mark (a door's signal, a row's state node, the New session draft dot)
-sits in one 14px column at the row's right padding (`navRail.mark`), so the
-marks read down one vertical line. A door's action (Chat's New chat, Board's
-filter) sits in a 24px slot just before that column (`navRail.action`), only on
-the doors that have one. A ticket key renders before the title in muted
+trailing mark (a door's signal, a row's state, the New session draft dot)
+is one `StatusMark` in one 16px column at the row's right padding
+(`navRail.mark`), so the marks read down one vertical line. A door's action
+(Chat's New chat, Board's filter) sits in a 24px slot just before that column
+(`navRail.action`), only on the doors that have one, visible at rest. A ticket key renders before the title in muted
 `text-code` (mono 12/18) on the title's baseline, never in the title's colour.
 Scene `sidebar-frame-dark` and `sidebar-frame-light` show pinned, unread,
 keyed and done rows in the app frame.
@@ -757,8 +756,66 @@ ternary. `icon-size-uses-a-token.test.ts` scans the app and `packages/ui`.
 | `ICON_SIZE.hero`    | 18  | empty states, studio headers, choice tiles                |
 
 Stroke is one rule, `ICON_STROKE` in the same file: 2 at `mark` and `row`, 1.75
-at `control` and `notice`, 1.5 at `hero`, and 2.5 on a check mark. A call site
-passes the token, never a number.
+at `control` and `notice`, 1.5 at `hero`, and 2.5 on a check mark, so every
+icon draws a line about 1px wide. A call site passes the token, never a number;
+`iconStrokeOf({ size })` picks it from the size, and `IconButton` and the
+folded rail's `RailButton` use it.
+
+One size per place, so a column never mixes sizes:
+
+| Place                                        | Size      | Notes                                           |
+| -------------------------------------------- | --------- | ----------------------------------------------- |
+| Left column doors, New session, door actions | `row`     | lucide concept glyph, `navRail.icon` slot       |
+| Left column trailing marks                   | `row`     | `StatusMark` glyphs in the 16px box             |
+| Folded rail (doors, Settings)                | `control` | `RailButton`, stroke 1.75                       |
+| Tools rail (Terminal, Browser)               | `notice`  | icon over its caption, both centred on the rail |
+| Page and session header actions              | `control` | `IconButton` `sm` and `md`                      |
+| List and table rows                          | `row`     | leading and trailing glyphs                     |
+
+## Status marks
+
+`StatusMark` (`packages/ui/src/components/StatusMark/`) is the one trailing
+mark of a sidebar row: a door, the New session row and every session row draw
+it, and other surfaces take it as they move to it. It is one 16px box
+(`size-4`), the drawing centred in it on both axes, and one mark per box:
+never a glyph inside a second ring, never a dot on its corner. The spec is
+`{ kind: 'state', state }`, `{ kind: 'dot', tone }`, `{ kind: 'count', tone, text }`
+or `{ kind: 'empty' }`; `label` names it (`role="img"`), otherwise it is hidden
+from the reader. `STATUS_MARK_DRAWING` in `statusMarkSpec.ts` is the table.
+
+| Family        | Meaning        | Mark       | Drawing                                       | Tone                                      |
+| ------------- | -------------- | ---------- | --------------------------------------------- | ----------------------------------------- |
+| Ring          | still moving   | `running`  | 12px ring, info arc turns (`spin-border`)     | info                                      |
+| Ring          | still moving   | `merging`  | 12px ring, primary arc turns                  | primary                                   |
+| Ring          | not started    | `queued`   | `CircleDashed`                                | faint                                     |
+| Bare glyph    | asks you       | `question` | `MessageCircleQuestionMark`                   | warning                                   |
+| Bare glyph    | asks you       | `approval` | `Hand`                                        | warning                                   |
+| Bare glyph    | asks you       | `budget`   | `Wallet`                                      | warning                                   |
+| Bare glyph    | asks you       | `alert`    | `TriangleAlert`                               | warning                                   |
+| Bare glyph    | asks you       | `ready`    | `Play`                                        | warning                                   |
+| Circled glyph | settled        | `failed`   | `CircleX`                                     | danger                                    |
+| Circled glyph | settled        | `done`     | `CircleCheck`                                 | success                                   |
+| Circled glyph | settled        | `approved` | `CircleCheck`                                 | success                                   |
+| Circled glyph | settled        | `merged`   | `CircleCheck`                                 | merged                                    |
+| Circled glyph | settled        | `closed`   | `CircleSlash`                                 | faint                                     |
+| Circled glyph | settled        | `stopped`  | `CircleStop`                                  | muted                                     |
+| Circled glyph | settled        | `skipped`  | `CircleMinus`                                 | faint                                     |
+| Dot           | something new  | `dot`      | 6px dot                                       | unread, primary, warning, danger, neutral |
+| Count         | how many       | `count`    | the number alone, `text-chip` tabular, no dot | warning, danger, or faint for neutral     |
+| Empty         | nothing to say | `empty`    | the empty box, so titles keep one right edge  |                                           |
+
+The circle carries meaning only where something moves: a ring is progress. A
+mark that asks you is one bare glyph in warning; a settled outcome is a single
+circled lucide glyph, the circle part of the glyph, never a container. Glyphs
+are `ICON_SIZE.row` with the row stroke.
+
+A session row picks one mark (`sessionMarkOf`): what asks you or failed, then
+running, then the unread dot, then the settled glyph, then empty. A door picks
+one (`doorMarkOf`): a count when the signal has one, else its dot. Board's count
+is amber or red, Monitoring's port count faint. The row-start probe
+(`scripts/validateScenesRowStart.mjs`, `sidebarMarkFailures`) fails a sidebar
+mark that is not 16px, not on the column's one centre x, or off its row's
+centre line, on every scene with the app sidebar.
 
 One glyph has one import spelling, the one `conceptIcons.ts` uses
 (`TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck`,

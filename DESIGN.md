@@ -399,6 +399,22 @@ rule with the exception in Status & signals.
 
 ## Components & interaction
 
+### Doors and tools
+
+A place you go to and read full width is a door in the left column (Board,
+Tasks, Workflows, Chat, Impact, Monitoring). A tool you open beside your work
+is an icon on the tools rail and opens the dock, with Open full page (Terminal,
+Browser). Chat and Impact are places. Monitoring is the one tool-like door,
+glanced at beside Terminal, and it stays a door until it has a dock body
+([docs/navigation/model.md](docs/navigation/model.md)).
+
+Every sidebar row ends on one trailing column: one `StatusMark` per row, 16px,
+centred on the row, the same x on doors and session rows. A ring means still
+moving, a bare glyph means it asks you, a circled glyph means settled, a dot
+means something new, a number counts. A door's action (Board's filter, Chat's
+plus) sits on its own column just before it
+([packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md#status-marks)).
+
 ### Action zones
 
 Actions sit with the object they affect. The slots that carry each zone are in

@@ -104,8 +104,8 @@ describe('PANE_RHYTHM', () => {
     });
 
     it('aligns the door marks and the row marks on one trailing column', () => {
-      expect(PANE_RHYTHM.navRail.mark).toContain('min-w-3.5');
-      expect(PANE_RHYTHM.navRail.action).toContain('right-7.5');
+      expect(PANE_RHYTHM.navRail.mark).toContain('size-4');
+      expect(PANE_RHYTHM.navRail.action).toContain('right-8');
     });
 
     it('gives the view menu a 28px target, as tall as a door and a row', () => {
