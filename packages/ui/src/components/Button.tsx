@@ -86,6 +86,9 @@ const variantClassesOf = ({ variant, intent }: Pick<ButtonClassParams, 'variant'
   if (intent === 'caution' || intent === 'destructive') {
     return BUTTON_INTENT_CLASSES[intent][toneLookOf({ variant })];
   }
+  if (intent === 'neutral' && variant === 'primary') {
+    return BUTTON_VARIANT_CLASSES.secondary;
+  }
   return BUTTON_VARIANT_CLASSES[variant];
 };
 

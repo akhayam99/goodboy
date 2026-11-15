@@ -23,6 +23,7 @@ import {
   type RunningScript,
 } from '../../../../features/scripts/hooks/useRunningScripts';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { SessionHoverCard } from '../../../../features/workspace/components/SessionHoverCard';
 import { useHoverCardTarget } from '../../../../features/workspace/components/SessionHoverCard/useHoverCardTarget';
@@ -46,6 +47,8 @@ type CountLabelParams = {
 
 const PANEL_WIDTH = 360;
 const PANEL_MAX_HEIGHT = 480;
+const IDLE_WORD = NAMES.idle;
+const WAITING_WORD = NAMES.needsYou;
 const SEGMENT = 'flex items-center gap-1';
 const SEGMENT_WORD = 'hidden text-muted-foreground @min-chrome-labels/topbar:inline';
 
@@ -59,7 +62,7 @@ const chipLabel = ({ running, scripts }: CountLabelParams): string =>
 
 export const NowChip = ({ onOpenScript }: Props) => {
   const workspace = useCurrentWorkspace();
-  const { running } = useNowSessions({});
+  const { running, needsYou } = useNowSessions({});
   const scripts = useRunningScripts();
   const navigate = useAppStore((state) => state.navigate);
   const cancelScript = useAppStore((state) => state.cancelScript);
@@ -100,7 +103,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
         )}
       >
         <StatusDot tone="neutral" size="sm" isRing />
-        <span>Idle</span>
+        <span>{needsYou.length > 0 ? WAITING_WORD : IDLE_WORD}</span>
       </span>
     );
   }

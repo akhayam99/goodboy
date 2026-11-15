@@ -73,6 +73,26 @@ describe('autoGlanceOf', () => {
     });
   });
 
+  it('says Needs you when an agent waits on you, never that it is queued', () => {
+    const glance = autoGlanceOf({
+      view: aView({
+        phase: 'waiting',
+        delegations: [
+          aDelegation({ key: 'impl', role: 'implementer', state: 'running' }),
+          aDelegation({ key: 'review', role: 'reviewer', state: 'paused' }),
+          aDelegation({ key: 'test', role: 'tester', state: 'accepted' }),
+        ],
+      }),
+      rootTurn: null,
+    });
+
+    expect(glance).toMatchObject({
+      state: 'waiting',
+      word: 'Needs you',
+      sentence: 'Reviewer needs you, Implementer running, Tester queued',
+    });
+  });
+
   it('says Failed when Auto stopped replying, never Stuck or Blocked', () => {
     expect(glanceOf('blocked')).toMatchObject({
       state: 'failed',

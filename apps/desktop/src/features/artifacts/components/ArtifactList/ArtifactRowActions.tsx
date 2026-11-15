@@ -1,4 +1,5 @@
 import { Button } from '@goodboy/ui';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import type { useArtifactRowModel } from './useArtifactRowModel';
 
 type Props = {
@@ -22,7 +23,7 @@ export const ArtifactRowActions = ({ model }: Props) => {
       {primary === null ? null : (
         <Button
           size="sm"
-          variant="secondary"
+          {...actionButtonLookOf({ verb: primary.id, variant: 'secondary' })}
           disabled={primary.blockedReason !== null}
           isBusy={controls.pendingId === primary.id}
           title={primary.blockedReason ?? primary.description ?? undefined}

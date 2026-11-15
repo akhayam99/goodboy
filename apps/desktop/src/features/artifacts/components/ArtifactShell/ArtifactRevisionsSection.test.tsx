@@ -141,17 +141,27 @@ describe('ArtifactRevisionsSection', () => {
     const restoreButton = await waitFor(() => screen.getByTestId('artifact-revision-restore'));
     fireEvent.click(restoreButton);
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('the artifact is gone');
+      expect(screen.getByRole('alert').textContent).toBe('Version 1 was not restored. Try again.');
     });
   });
 
-  it('surfaces a failed load instead of an empty list', async () => {
-    listArtifactRevisions.mockRejectedValueOnce(new Error('the database is locked'));
+  it('surfaces a failed load in plain words with Retry, never the exception text', async () => {
+    listArtifactRevisions.mockRejectedValueOnce(
+      new TypeError("Cannot read properties of undefined (reading 'invoke')"),
+    );
+    listArtifactRevisions.mockResolvedValueOnce([
+      revision({ revision: 2, author: 'user' }),
+      revision({ revision: 1, author: 'agent' }),
+    ]);
     render(
       <ArtifactRevisionsSection sessionId={SESSION_ID} artifact={artifact} creatorName="Scout" />,
     );
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('the database is locked');
-    });
+    const alert = await waitFor(() => screen.getByRole('alert'));
+    expect(alert.textContent).toContain('Revisions did not load.');
+    expect(alert.textContent).not.toContain('invoke');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    const rows = await waitFor(() => screen.getAllByTestId('artifact-revision-row'));
+    expect(rows).toHaveLength(2);
+    expect(listArtifactRevisions).toHaveBeenCalledTimes(2);
   });
 });

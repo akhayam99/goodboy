@@ -89,7 +89,7 @@ export const drawerLayoutOf = ({
   const tier = DRAWER_TIERS[sizing];
   const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing });
   const pushWidth =
-    tier.isShrinkable === true && room >= tier.fallback ? Math.min(savedWidth, room) : savedWidth;
+    tier.isShrinkable === true && room >= tier.min ? Math.min(savedWidth, room) : savedWidth;
   if (placement === 'auto' && room >= pushWidth) {
     return {
       mode: 'push',
@@ -152,7 +152,7 @@ export const panelPairLayoutOf = ({
   const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing }) - DRAWER_INSET;
   const dockRoom = room - detail.savedWidth;
   const dockWidth =
-    dockTier.isShrinkable === true && dockRoom >= dockTier.fallback
+    dockTier.isShrinkable === true && dockRoom >= dockTier.min
       ? Math.min(dock.savedWidth, dockRoom)
       : dock.savedWidth;
   if (placement === 'auto' && dockRoom >= dockWidth) {

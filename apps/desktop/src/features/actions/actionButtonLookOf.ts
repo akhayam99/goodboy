@@ -1,5 +1,6 @@
 import type { ButtonIntent, ButtonVariant } from '@goodboy/ui';
 import { actionIntentOf } from './actionIntentOf';
+import { isStopVerb } from './isStopVerb';
 
 type LookVariant = Extract<ButtonVariant, 'primary' | 'secondary' | 'ghost' | 'quiet'>;
 
@@ -15,6 +16,9 @@ export type ActionButtonLook = {
 
 export const actionButtonLookOf = ({ verb, variant }: Params): ActionButtonLook => {
   const intent = actionIntentOf({ verb });
+  if (isStopVerb({ verb })) {
+    return { intent, variant: 'quiet' };
+  }
   const rest = variant === 'primary' ? 'secondary' : variant;
   if (intent === 'caution' || intent === 'destructive') {
     return { intent, variant: rest };

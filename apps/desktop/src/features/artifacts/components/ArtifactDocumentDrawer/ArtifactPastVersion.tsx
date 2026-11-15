@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Button, SkeletonRow, formatError } from '@goodboy/ui';
+import { Button, SkeletonRow } from '@goodboy/ui';
 import type { ArtifactId } from '@goodboy/types';
 import type { ArtifactRevision } from '@goodboy/db';
 import { listArtifactRevisions } from '../../artifacts';
 import { dropLeadingTitleHeading } from '../../../../shared/utils/dropLeadingTitleHeading';
+import { ArtifactLoadFailed } from '../ArtifactLoadFailed';
 import { ArtifactProse } from '../ArtifactProse';
 
 type Props = {
@@ -15,11 +16,12 @@ type Props = {
 
 type LoadState =
   | Readonly<{ kind: 'loading' }>
-  | Readonly<{ kind: 'failed'; message: string }>
+  | Readonly<{ kind: 'failed' }>
   | Readonly<{ kind: 'ready'; revision: ArtifactRevision | null }>;
 
 export const ArtifactPastVersion = ({ artifactId, revision, latest, onOpenCurrent }: Props) => {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let isCurrent = true;
@@ -33,15 +35,15 @@ export const ArtifactPastVersion = ({ artifactId, revision, latest, onOpenCurren
           });
         }
       })
-      .catch((cause: unknown) => {
+      .catch(() => {
         if (isCurrent) {
-          setState({ kind: 'failed', message: formatError(cause) });
+          setState({ kind: 'failed' });
         }
       });
     return () => {
       isCurrent = false;
     };
-  }, [artifactId, revision]);
+  }, [artifactId, revision, loadAttempt]);
 
   return (
     <div data-testid="plan-drawer-past" className="flex min-w-0 flex-col gap-4">
@@ -53,9 +55,10 @@ export const ArtifactPastVersion = ({ artifactId, revision, latest, onOpenCurren
       </div>
       {state.kind === 'loading' ? <SkeletonRow label="Loading version" /> : null}
       {state.kind === 'failed' ? (
-        <span role="alert" className="text-meta text-danger">
-          {state.message}
-        </span>
+        <ArtifactLoadFailed
+          sentence={`Version ${revision} did not load.`}
+          onRetry={() => setLoadAttempt((attempt) => attempt + 1)}
+        />
       ) : null}
       {state.kind === 'ready' && state.revision === null ? (
         <p className="text-meta text-muted-foreground">This version is no longer stored.</p>

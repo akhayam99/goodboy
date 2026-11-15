@@ -9,9 +9,10 @@ type Props = {
   readonly rowId: string;
   readonly index?: number;
   readonly isLead?: boolean;
+  readonly text?: string;
 };
 
-export const BoardRowAction = ({ rowId, index = 0, isLead = true }: Props) => {
+export const BoardRowAction = ({ rowId, index = 0, isLead = true, text }: Props) => {
   const { cardsByRowId, actionsFor, openFor, rowById } = useBoardContext();
   const [isConfirming, setIsConfirming] = useState(false);
   const card = cardsByRowId.get(rowId)?.[index];
@@ -26,12 +27,13 @@ export const BoardRowAction = ({ rowId, index = 0, isLead = true }: Props) => {
   }
   if (card === undefined) {
     const count = index === 0 && row !== undefined ? row.askIds.length : 0;
-    return count === 0 ? null : (
-      <span className="min-w-0 flex-1 truncate text-foreground">
-        {count === 1 ? '1 open question' : `${count} open questions`}
-      </span>
+    const fallback = count === 1 ? '1 open question' : `${count} open questions`;
+    const shown = text ?? (count === 0 ? '' : fallback);
+    return shown === '' ? null : (
+      <span className="min-w-0 flex-1 truncate text-foreground">{shown}</span>
     );
   }
+  const shownTitle = text ?? card.title;
   const { main: mainVerb, failure } = actionsFor({ card });
   const open = openFor({ card });
   const onMain = () => {
@@ -91,7 +93,11 @@ export const BoardRowAction = ({ rowId, index = 0, isLead = true }: Props) => {
     );
   return (
     <>
-      <TruncatedText className="min-w-0 flex-1 text-foreground">{card.title}</TruncatedText>
+      {shownTitle === '' ? (
+        <span aria-hidden className="min-w-0 flex-1" />
+      ) : (
+        <TruncatedText className="min-w-0 flex-1 text-foreground">{shownTitle}</TruncatedText>
+      )}
       {buttonNode}
       {failure === null ? null : (
         <span role="alert" className="flex min-w-0 shrink items-center gap-1 text-danger">

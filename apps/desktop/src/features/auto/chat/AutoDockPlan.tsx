@@ -139,8 +139,8 @@ export const AutoDockPlan = ({
       className="flex min-h-7 min-w-0 items-center gap-2 text-meta text-muted-foreground"
     >
       <span
-        data-tone={state === 'approved' ? AUTO_STATE_TONE.artifact : undefined}
-        className={state === 'approved' ? tintClasses(AUTO_STATE_TONE.artifact).text : undefined}
+        data-tone={state === 'approved' ? AUTO_STATE_TONE.done : undefined}
+        className={state === 'approved' ? tintClasses(AUTO_STATE_TONE.done).text : undefined}
       >
         Plan v{model.version}
         {SETTLED_COPY[state]}
